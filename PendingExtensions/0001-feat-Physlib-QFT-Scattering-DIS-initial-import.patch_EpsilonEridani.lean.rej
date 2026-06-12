@@ -1,0 +1,17 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -210,6 +210,7 @@ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.Rows
+ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.StandardParameterization.Basic
+ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.StandardParameterization.StandardParameters
+ public import EpsilonEridani.Particles.NeutrinoPhysics.Basic
++public import EpsilonEridani.Particles.Parton.Basic
+ public import EpsilonEridani.Particles.StandardModel.AnomalyCancellation.Basic
+ public import EpsilonEridani.Particles.StandardModel.AnomalyCancellation.FamilyMaps
+ public import EpsilonEridani.Particles.StandardModel.AnomalyCancellation.NoGrav.Basic
+@@ -324,6 +325,7 @@ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Odd.Parameterization
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Permutations
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Sorts
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.VectorLike
++public import EpsilonEridani.QFT.Scattering.DIS.Basic
+ public import EpsilonEridani.QuantumMechanics.FiniteTarget
+ public import EpsilonEridani.QuantumMechanics.FreeParticle.Basic
+ public import EpsilonEridani.QuantumMechanics.HarmonicOscillator.Basic
