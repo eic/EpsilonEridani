@@ -29,6 +29,7 @@ public import EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions
 public import EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge
 public import EpsilonEridani.QFT.Scattering.DIS.Examples.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules
 public import EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.Basic
