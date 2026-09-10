@@ -1,0 +1,6 @@
+diff a/.gitignore b/.gitignore	(rejected hunks)
+@@ -7,3 +7,4 @@
+ __pycache__/
+ *.pyc
+ /.worktree/
++/.worktrees/
