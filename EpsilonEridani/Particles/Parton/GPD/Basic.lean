@@ -13,6 +13,18 @@ public import EpsilonEridani.Particles.Parton.PDF.Basic
 This module introduces generalized parton distribution (GPD) objects `H` and `E`
 and a forward-limit bridge to collinear PDFs.
 
+## Support convention
+
+A GPD `H(x, ξ, t)` is supported on `|x| ≤ 1`, not on `x ∈ [0, 1]`. The half `0 < x ≤ 1`
+carries the quark distribution and the half `-1 ≤ x < 0` the antiquark distribution,
+while the central band `|x| ≤ |ξ|` (the ERBL region) has no density interpretation at
+all. Restricting to `x ≥ 0` would make the polynomiality of the `x`-moments, the
+evenness of those moments in `ξ`, and the D-term all inexpressible, so the support
+condition here is stated as `x < -1 ∨ 1 < x → H = 0`.
+
+Reference: M. Diehl, *Generalized parton distributions*, Phys. Rept. **388** (2003) 41,
+§3.1-§3.2 (arXiv:hep-ph/0307382).
+
 -/
 
 @[expose] public section
@@ -46,6 +58,18 @@ def ForwardLimitToPdfAtScale
     (fPdf : PDF.Pdf Flavor)
     (Q2 : ℝ) : Prop :=
   ∀ i x, M.H i x 0 0 = fPdf i x Q2
+
+/-- Antiquark forward-limit relation at fixed scale `Q2`: `H(-x, 0, 0) = -f̄(x, Q2)`.
+
+The negative-`x` half of the corrected support carries the antiquark distribution, with
+the conventional relative minus sign (Diehl, Phys. Rept. **388** (2003) 41, eq. (3.9)).
+This relation is not expressible while the support is restricted to `x ≥ 0`, which is
+why it is stated here rather than in the original half-range interface. -/
+def AntiquarkForwardLimitToPdfAtScale
+    (M : Model Flavor)
+    (fBarPdf : PDF.Pdf Flavor)
+    (Q2 : ℝ) : Prop :=
+  ∀ i x, M.H i (-x) 0 0 = -fBarPdf i x Q2
 
 /-- Forward-limit bridge theorem from GPDs to collinear PDFs. -/
 lemma forwardLimit_bridge
