@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.PDF.Basic
+public import EpsilonEridani.Particles.Parton.PDF.Positivity
 public import EpsilonEridani.Particles.Parton.TMD.Reduction
 public import EpsilonEridani.Particles.Parton.GPD.Moments
 public import EpsilonEridani.Particles.Parton.Unified.Consistency
