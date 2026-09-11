@@ -1,0 +1,9 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -123,6 +123,7 @@ public import EpsilonEridani.Mathematics.CrossProductMatrix
+ public import EpsilonEridani.Mathematics.DataStructures.FourTree.Basic
+ public import EpsilonEridani.Mathematics.DataStructures.FourTree.UniqueMap
+ public import EpsilonEridani.Mathematics.DataStructures.Matrix.LieTrace
++public import EpsilonEridani.Mathematics.DataStructures.Matrix.PosSemidef
+ public import EpsilonEridani.Mathematics.Distribution.Basic
+ public import EpsilonEridani.Mathematics.Distribution.PowMul
+ public import EpsilonEridani.Mathematics.FDerivCurry
