@@ -1,0 +1,125 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -209,8 +209,16 @@ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.Relations
+ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.Rows
+ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.StandardParameterization.Basic
+ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.StandardParameterization.StandardParameters
++public import EpsilonEridani.Particles.Fragmentation.Basic
+ public import EpsilonEridani.Particles.NeutrinoPhysics.Basic
+ public import EpsilonEridani.Particles.Parton.Basic
++public import EpsilonEridani.Particles.Parton.GPD.Basic
++public import EpsilonEridani.Particles.Parton.GPD.Moments
++public import EpsilonEridani.Particles.Parton.PDF.Basic
++public import EpsilonEridani.Particles.Parton.TMD.Basic
++public import EpsilonEridani.Particles.Parton.TMD.Reduction
++public import EpsilonEridani.Particles.Parton.Unified.Basic
++public import EpsilonEridani.Particles.Parton.Unified.Consistency
+ public import EpsilonEridani.Particles.StandardModel.AnomalyCancellation.Basic
+ public import EpsilonEridani.Particles.StandardModel.AnomalyCancellation.FamilyMaps
+ public import EpsilonEridani.Particles.StandardModel.AnomalyCancellation.NoGrav.Basic
+@@ -255,8 +263,29 @@ public import EpsilonEridani.Particles.SuperSymmetry.SU5.FieldLabels
+ public import EpsilonEridani.Particles.SuperSymmetry.SU5.Potential
+ public import EpsilonEridani.QFT.AnomalyCancellation.Basic
+ public import EpsilonEridani.QFT.AnomalyCancellation.GroupActions
++public import EpsilonEridani.QFT.Factorization.Basic
++public import EpsilonEridani.QFT.Factorization.Convolution.Basic
++public import EpsilonEridani.QFT.Factorization.Convolution.Properties
++public import EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel
++public import EpsilonEridani.QFT.Factorization.DIS.HardKernel
++public import EpsilonEridani.QFT.Factorization.DIS.LO
++public import EpsilonEridani.QFT.Factorization.Evolution.Basic
++public import EpsilonEridani.QFT.Factorization.Evolution.Consistency
++public import EpsilonEridani.QFT.Factorization.Evolution.QCDCore
++public import EpsilonEridani.QFT.Factorization.Evolution.Solutions
++public import EpsilonEridani.QFT.Factorization.HigherOrder.Basic
+ public import EpsilonEridani.QFT.PerturbationTheory.CreateAnnihilate
++public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.Basic
++public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
++public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+ public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
++public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.CrossingSymmetry
++public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.FiniteSearch
++public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation
++public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TopologyEnumeration
++public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopDiagrammaticBridge
++public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopEvaluation
++public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
+ public import EpsilonEridani.QFT.PerturbationTheory.FieldOpFreeAlgebra.Basic
+ public import EpsilonEridani.QFT.PerturbationTheory.FieldOpFreeAlgebra.Grading
+ public import EpsilonEridani.QFT.PerturbationTheory.FieldOpFreeAlgebra.NormTimeOrder
+@@ -309,6 +338,16 @@ public import EpsilonEridani.QFT.PerturbationTheory.WickContraction.TimeCond
+ public import EpsilonEridani.QFT.PerturbationTheory.WickContraction.TimeContract
+ public import EpsilonEridani.QFT.PerturbationTheory.WickContraction.Uncontracted
+ public import EpsilonEridani.QFT.PerturbationTheory.WickContraction.UncontractedList
++public import EpsilonEridani.QFT.QCD.Basic
++public import EpsilonEridani.QFT.QCD.CasimirDerivation
++public import EpsilonEridani.QFT.QCD.OneLoopBeta
++public import EpsilonEridani.QFT.QCD.OneLoopBetaFromScalars
++public import EpsilonEridani.QFT.QCD.OneLoopCounterterms
++public import EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge
++public import EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions
++public import EpsilonEridani.QFT.QCD.Renormalization
++public import EpsilonEridani.QFT.QCD.RepresentationColor
++public import EpsilonEridani.QFT.QCD.SUNDerivation
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Basic
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.BasisLinear
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.ConstAbs
+@@ -326,6 +365,38 @@ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Permutations
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Sorts
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.VectorLike
+ public import EpsilonEridani.QFT.Scattering.DIS.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Examples.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Amplitudes.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Convolution.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Interference
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Channels
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.Conjectures
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.ExclusiveJoint
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.Gluon
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.Helicity
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.Unfolding
++public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.AccessMethods
++public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Bounds
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.NeutralCurrent
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE
++public import EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP
++public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Harmonics
++public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+ public import EpsilonEridani.QuantumMechanics.FiniteTarget
+ public import EpsilonEridani.QuantumMechanics.FreeParticle.Basic
+ public import EpsilonEridani.QuantumMechanics.HarmonicOscillator.Basic
+@@ -421,6 +492,12 @@ public import EpsilonEridani.Relativity.Special.TwinParadox.Basic
+ public import EpsilonEridani.Relativity.SpeedOfLight
+ public import EpsilonEridani.Relativity.Tensors.Basic
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Basic
++public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Basic
++public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Contraction
++public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Metric
++public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Modules
++public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Two
++public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Unit
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Lemmas
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Matrix.Pre
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Metrics.Basic
+@@ -463,6 +540,7 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.CoVector.Tensorial
+ public import EpsilonEridani.Relativity.Tensors.RealTensor.Contraction.CrossToEnd
+ public import EpsilonEridani.Relativity.Tensors.RealTensor.Matrix.Pre
+ public import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.Basic
++public import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
+ public import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.Pre
+ public import EpsilonEridani.Relativity.Tensors.RealTensor.Representation.Contraction
+ public import EpsilonEridani.Relativity.Tensors.RealTensor.ToComplex
