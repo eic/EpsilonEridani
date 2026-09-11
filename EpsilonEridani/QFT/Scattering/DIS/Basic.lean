@@ -37,6 +37,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.Inference.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.Unfolding
 public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness
+public import EpsilonEridani.QFT.Scattering.DIS.Inference.Identifiability
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.ExclusiveJoint
