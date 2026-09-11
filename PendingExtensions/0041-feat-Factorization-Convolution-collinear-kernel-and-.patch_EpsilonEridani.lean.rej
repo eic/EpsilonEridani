@@ -1,0 +1,16 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -266,11 +266,14 @@ public import EpsilonEridani.QFT.AnomalyCancellation.Basic
+ public import EpsilonEridani.QFT.AnomalyCancellation.GroupActions
+ public import EpsilonEridani.QFT.Factorization.Basic
+ public import EpsilonEridani.QFT.Factorization.Convolution.Basic
++public import EpsilonEridani.QFT.Factorization.Convolution.Collinear
++public import EpsilonEridani.QFT.Factorization.Convolution.Mellin
+ public import EpsilonEridani.QFT.Factorization.Convolution.Properties
+ public import EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel
+ public import EpsilonEridani.QFT.Factorization.DIS.HardKernel
+ public import EpsilonEridani.QFT.Factorization.DIS.LO
+ public import EpsilonEridani.QFT.Factorization.Evolution.Basic
++public import EpsilonEridani.QFT.Factorization.Evolution.CollinearForm
+ public import EpsilonEridani.QFT.Factorization.Evolution.Consistency
+ public import EpsilonEridani.QFT.Factorization.Evolution.QCDCore
+ public import EpsilonEridani.QFT.Factorization.Evolution.Solutions

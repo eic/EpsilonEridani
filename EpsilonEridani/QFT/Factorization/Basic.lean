@@ -6,6 +6,8 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Factorization.Convolution.Basic
+public import EpsilonEridani.QFT.Factorization.Convolution.Collinear
+public import EpsilonEridani.QFT.Factorization.Convolution.Mellin
 public import EpsilonEridani.QFT.Factorization.Convolution.Properties
 public import EpsilonEridani.QFT.Factorization.DIS.HardKernel
 public import EpsilonEridani.QFT.Factorization.DIS.LO
