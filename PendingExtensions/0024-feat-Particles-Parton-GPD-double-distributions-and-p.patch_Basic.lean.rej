@@ -1,0 +1,10 @@
+diff a/EpsilonEridani/Particles/Parton/Basic.lean b/EpsilonEridani/Particles/Parton/Basic.lean	(rejected hunks)
+@@ -8,6 +8,8 @@ module
+ public import EpsilonEridani.Particles.Parton.PDF.Basic
+ public import EpsilonEridani.Particles.Parton.TMD.Reduction
+ public import EpsilonEridani.Particles.Parton.GPD.Moments
++public import EpsilonEridani.Particles.Parton.GPD.DoubleDistribution
++public import EpsilonEridani.Particles.Parton.GPD.Polynomiality
+ public import EpsilonEridani.Particles.Parton.Unified.Consistency
+ /-!
+ 
