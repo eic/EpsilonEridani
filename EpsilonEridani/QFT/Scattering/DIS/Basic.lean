@@ -9,6 +9,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Bounds
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.AccessMethods
 public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Longitudinal
 public import EpsilonEridani.Particles.Parton.Basic
 public import EpsilonEridani.QFT.Factorization.DIS.LO
 public import EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel
