@@ -35,17 +35,6 @@ public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.Unfolding
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Harmonics
-public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Amplitudes.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Convolution.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Interference
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Channels
-public import EpsilonEridani.QFT.Scattering.DIS.Inference.Helicity
-public import EpsilonEridani.QFT.Scattering.DIS.Inference.Gluon
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.ExclusiveJoint
 public import EpsilonEridani.QFT.Scattering.DIS.Inference.Conjectures
