@@ -1,0 +1,24 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -213,10 +213,13 @@ public import EpsilonEridani.Particles.FlavorPhysics.CKMMatrix.StandardParameterization
+ public import EpsilonEridani.Particles.Fragmentation.Basic
+ public import EpsilonEridani.Particles.NeutrinoPhysics.Basic
+ public import EpsilonEridani.Particles.Parton.Basic
++public import EpsilonEridani.Particles.Parton.GPD.Ambiguity
+ public import EpsilonEridani.Particles.Parton.GPD.Basic
+ public import EpsilonEridani.Particles.Parton.GPD.Moments
+ public import EpsilonEridani.Particles.Parton.PDF.Basic
++public import EpsilonEridani.Particles.Parton.PDF.MsbarPositivity
+ public import EpsilonEridani.Particles.Parton.TMD.Basic
++public import EpsilonEridani.Particles.Parton.TMD.CollinsSoper
+ public import EpsilonEridani.Particles.Parton.TMD.Reduction
+ public import EpsilonEridani.Particles.Parton.Unified.Basic
+ public import EpsilonEridani.Particles.Parton.Unified.Consistency
+@@ -377,6 +380,8 @@ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Interference
+ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Channels
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness
+ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Inference.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Inference.Conjectures
