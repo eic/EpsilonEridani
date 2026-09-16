@@ -1,0 +1,14 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -492,12 +492,6 @@ public import EpsilonEridani.Relativity.Special.TwinParadox.Basic
+ public import EpsilonEridani.Relativity.SpeedOfLight
+ public import EpsilonEridani.Relativity.Tensors.Basic
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Basic
+-public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Basic
+-public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Contraction
+-public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Metric
+-public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Modules
+-public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Two
+-public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Dirac.Unit
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Lemmas
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Matrix.Pre
+ public import EpsilonEridani.Relativity.Tensors.ComplexTensor.Metrics.Basic
