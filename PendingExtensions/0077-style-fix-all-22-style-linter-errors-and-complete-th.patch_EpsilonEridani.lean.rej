@@ -1,0 +1,38 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -217,9 +217,12 @@ public import EpsilonEridani.Particles.NeutrinoPhysics.Basic
+ public import EpsilonEridani.Particles.Parton.Basic
+ public import EpsilonEridani.Particles.Parton.GPD.Ambiguity
+ public import EpsilonEridani.Particles.Parton.GPD.Basic
++public import EpsilonEridani.Particles.Parton.GPD.DoubleDistribution
+ public import EpsilonEridani.Particles.Parton.GPD.Moments
++public import EpsilonEridani.Particles.Parton.GPD.Polynomiality
+ public import EpsilonEridani.Particles.Parton.PDF.Basic
+ public import EpsilonEridani.Particles.Parton.PDF.MsbarPositivity
++public import EpsilonEridani.Particles.Parton.PDF.Positivity
+ public import EpsilonEridani.Particles.Parton.TMD.Basic
+ public import EpsilonEridani.Particles.Parton.TMD.CollinsSoper
+ public import EpsilonEridani.Particles.Parton.TMD.Reduction
+@@ -280,6 +283,7 @@ public import EpsilonEridani.QFT.Factorization.DIS.LO
+ public import EpsilonEridani.QFT.Factorization.Evolution.Basic
+ public import EpsilonEridani.QFT.Factorization.Evolution.CollinearForm
+ public import EpsilonEridani.QFT.Factorization.Evolution.Consistency
++public import EpsilonEridani.QFT.Factorization.Evolution.MomentSpace
+ public import EpsilonEridani.QFT.Factorization.Evolution.QCDCore
+ public import EpsilonEridani.QFT.Factorization.Evolution.Solutions
+ public import EpsilonEridani.QFT.Factorization.HigherOrder.Basic
+@@ -390,6 +394,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.Inference.Conjectures
+ public import EpsilonEridani.QFT.Scattering.DIS.Inference.ExclusiveJoint
+ public import EpsilonEridani.QFT.Scattering.DIS.Inference.Gluon
+ public import EpsilonEridani.QFT.Scattering.DIS.Inference.Helicity
++public import EpsilonEridani.QFT.Scattering.DIS.Inference.Identifiability
+ public import EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity
+ public import EpsilonEridani.QFT.Scattering.DIS.Inference.Unfolding
+ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.AccessMethods
+@@ -404,6 +409,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE
+ public import EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP
+ public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules
+ public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Harmonics
+ public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
