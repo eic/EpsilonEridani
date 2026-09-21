@@ -1,0 +1,9 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -225,6 +225,7 @@ public import EpsilonEridani.Particles.Parton.PDF.MsbarPositivity
+ public import EpsilonEridani.Particles.Parton.PDF.Positivity
+ public import EpsilonEridani.Particles.Parton.TMD.Basic
+ public import EpsilonEridani.Particles.Parton.TMD.CollinsSoper
++public import EpsilonEridani.Particles.Parton.TMD.PowerCorrections
+ public import EpsilonEridani.Particles.Parton.TMD.Reduction
+ public import EpsilonEridani.Particles.Parton.Unified.Basic
+ public import EpsilonEridani.Particles.Parton.Unified.Consistency
