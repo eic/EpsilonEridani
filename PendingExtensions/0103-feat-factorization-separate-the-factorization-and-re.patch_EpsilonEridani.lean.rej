@@ -1,0 +1,9 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -287,6 +287,7 @@ public import EpsilonEridani.QFT.Factorization.Evolution.MomentSpace
+ public import EpsilonEridani.QFT.Factorization.Evolution.QCDCore
+ public import EpsilonEridani.QFT.Factorization.Evolution.Solutions
+ public import EpsilonEridani.QFT.Factorization.HigherOrder.Basic
++public import EpsilonEridani.QFT.Factorization.Scales.Basic
+ public import EpsilonEridani.QFT.PerturbationTheory.CreateAnnihilate
+ public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.Basic
+ public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
