@@ -1,0 +1,9 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -365,6 +365,7 @@ public import EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge
+ public import EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions
+ public import EpsilonEridani.QFT.QCD.Renormalization
+ public import EpsilonEridani.QFT.QCD.RepresentationColor
++public import EpsilonEridani.QFT.QCD.SU2Generators
+ public import EpsilonEridani.QFT.QCD.SUNDerivation
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Basic
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.BasisLinear
