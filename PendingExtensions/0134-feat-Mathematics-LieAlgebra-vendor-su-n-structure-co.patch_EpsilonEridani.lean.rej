@@ -1,0 +1,11 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -142,6 +142,9 @@ public import EpsilonEridani.Mathematics.InnerProductSpace.Submodule
+ public import EpsilonEridani.Mathematics.KroneckerDelta.Basic
+ public import EpsilonEridani.Mathematics.KroneckerDelta.Contraction
+ public import EpsilonEridani.Mathematics.LeviCivita.Basic
++public import EpsilonEridani.Mathematics.LieAlgebra.Casimir
++public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary
++public import EpsilonEridani.Mathematics.LieAlgebra.StructureConstants
+ public import EpsilonEridani.Mathematics.LinearMaps
+ public import EpsilonEridani.Mathematics.LinearPMap
+ public import EpsilonEridani.Mathematics.List
