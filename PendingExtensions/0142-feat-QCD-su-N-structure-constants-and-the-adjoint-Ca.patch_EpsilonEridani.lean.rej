@@ -1,0 +1,9 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -372,6 +372,7 @@ public import EpsilonEridani.QFT.QCD.SU2Generators
+ public import EpsilonEridani.QFT.QCD.SU3Generators
+ public import EpsilonEridani.QFT.QCD.SUNDerivation
+ public import EpsilonEridani.QFT.QCD.SUNGenerators
++public import EpsilonEridani.QFT.QCD.SUNStructureConstants
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Basic
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.BasisLinear
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.ConstAbs
