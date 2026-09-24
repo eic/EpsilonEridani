@@ -1,0 +1,11 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -112,6 +112,9 @@ public import EpsilonEridani.FluidDynamics.FluidFlow.Newtonian
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Basic
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Bernoulli
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Isentropic
++public import EpsilonEridani.HepMC3.Ascii
++public import EpsilonEridani.HepMC3.Basic
++public import EpsilonEridani.HepMC3.Format
+ public import EpsilonEridani.LatticeQFT.Basic
+ public import EpsilonEridani.Mathematics.Calculus.AdjFDeriv
+ public import EpsilonEridani.Mathematics.Calculus.Divergence
