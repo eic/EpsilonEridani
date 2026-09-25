@@ -1,0 +1,22 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -112,9 +112,12 @@ public import EpsilonEridani.FluidDynamics.FluidFlow.Newtonian
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Basic
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Bernoulli
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Isentropic
++public import EpsilonEridani.Generator.Config
++public import EpsilonEridani.Generator.Event
+ public import EpsilonEridani.HepMC3.Ascii
+ public import EpsilonEridani.HepMC3.Basic
+ public import EpsilonEridani.HepMC3.Format
++public import EpsilonEridani.HepMC3.Graph
+ public import EpsilonEridani.LatticeQFT.Basic
+ public import EpsilonEridani.Mathematics.Calculus.AdjFDeriv
+ public import EpsilonEridani.Mathematics.Calculus.Divergence
+@@ -188,6 +191,7 @@ public import EpsilonEridani.Meta.Sorry
+ public import EpsilonEridani.Meta.TODO.Basic
+ public import EpsilonEridani.Meta.TODO.Global
+ public import EpsilonEridani.Meta.TransverseTactics
++public import EpsilonEridani.Numerics.Random
+ public import EpsilonEridani.Optics.Basic
+ public import EpsilonEridani.Optics.Polarization.Basic
+ public import EpsilonEridani.Particles.BeyondTheStandardModel.GeorgiGlashow.Basic
