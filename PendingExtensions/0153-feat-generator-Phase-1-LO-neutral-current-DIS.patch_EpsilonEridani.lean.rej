@@ -1,0 +1,29 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -113,7 +113,11 @@ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Basic
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Bernoulli
+ public import EpsilonEridani.FluidDynamics.ThermodynamicCauchyFlow.Isentropic
+ public import EpsilonEridani.Generator.Config
++public import EpsilonEridani.Generator.CrossSection
++public import EpsilonEridani.Generator.DISEvent
+ public import EpsilonEridani.Generator.Event
++public import EpsilonEridani.Generator.Kinematics
++public import EpsilonEridani.Generator.Sampler
+ public import EpsilonEridani.HepMC3.Ascii
+ public import EpsilonEridani.HepMC3.Basic
+ public import EpsilonEridani.HepMC3.Format
+@@ -191,6 +195,7 @@ public import EpsilonEridani.Meta.Sorry
+ public import EpsilonEridani.Meta.TODO.Basic
+ public import EpsilonEridani.Meta.TODO.Global
+ public import EpsilonEridani.Meta.TransverseTactics
++public import EpsilonEridani.Numerics.FourMom
+ public import EpsilonEridani.Numerics.Random
+ public import EpsilonEridani.Optics.Basic
+ public import EpsilonEridani.Optics.Polarization.Basic
+@@ -398,6 +403,7 @@ public import EpsilonEridani.QFT.QED.AnomalyCancellation.Sorts
+ public import EpsilonEridani.QFT.QED.AnomalyCancellation.VectorLike
+ public import EpsilonEridani.QFT.Scattering.DIS.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic
++public import EpsilonEridani.QFT.Scattering.DIS.CrossSection
+ public import EpsilonEridani.QFT.Scattering.DIS.Examples.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Amplitudes.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Convolution.Basic
