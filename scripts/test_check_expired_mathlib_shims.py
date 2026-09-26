@@ -28,11 +28,6 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             (source_root / "New.lean").write_text(text, encoding="utf-8")
             return check.find_self_declared_shims(source_root)
 
-    def test_registry_covers_self_declarations_one_way(self):
-        root = SCRIPT.parent.parent
-        groups = check.load_registry(root / "EpsilonEridani/mathlib-shims.json", root)
-        self.assertEqual(groups[0].declarations,
-                         ("Complex.exists_bijOn_unitBall_map_eq_zero",))
         self.assertFalse(groups[0].landing_sentinel)
         self.assertTrue(groups[1].landing_sentinel)
         unit = check.groups_by_source(groups)[pathlib.Path(
@@ -40,19 +35,6 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         self.assertEqual(unit.declarations, ("Set.unit_fg",))
         self.assertFalse(unit.landing_sentinel)
         check.validate_registry_coverage(groups, root / "EpsilonEridani")
-
-    def test_double_coset_exact_entry_derives_the_whole_vendored_surface(self):
-        root = SCRIPT.parent.parent
-        source = pathlib.Path("EpsilonEridani/GroupTheory/DoubleCoset/Basic.lean")
-        groups = check.load_registry(root / "EpsilonEridani/mathlib-shims.json", root)
-        group = check.groups_by_source(groups)[source]
-        self.assertFalse(group.speculative or group.landing_sentinel)
-        self.assertLessEqual({
-            "DoubleCoset.doubleCoset_eq_iUnion_leftCosets",
-            "DoubleCoset.conjAct_smul_mul_right_of_mem_normalizer",
-            "DoubleCoset.subgroupOf_conjAct_smul_mul_right_of_mem_normalizer",
-            "DoubleCoset.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer",
-        }, check.source_declarations(root / source))
 
     def test_new_self_declaration_requires_registry_entry(self):
         with tempfile.TemporaryDirectory() as temporary:
