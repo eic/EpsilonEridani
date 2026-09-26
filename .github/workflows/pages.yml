@@ -70,7 +70,7 @@ concurrency:
 env:
   # Run JavaScript actions on Node 24 (Node 20 is deprecated on GitHub runners).
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # Temporary escape hatch for `lake exe cache get Mathlib Physlib TauCeti`, kept only for an easy rollback
+  # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
   # return reads to the default endpoint on the next run: the cache tool treats unset,
@@ -542,7 +542,7 @@ jobs:
       - name: Fetch Mathlib oleans (docs project)
         if: steps.docs-plan.outputs.build == 'true'
         working-directory: docbuild
-        run: lake exe cache get Mathlib Physlib TauCeti
+        run: lake exe cache get
 
       # The generated docbuild/lean-toolchain symlink resolves to EpsilonEridani's root toolchain, so
       # there is no second independently pinned copy to drift. The pinned doc-gen4 source still
@@ -655,7 +655,7 @@ jobs:
 
       - name: Fetch Mathlib oleans (examples project)
         working-directory: web/examples
-        run: lake exe cache get Mathlib Physlib TauCeti
+        run: lake exe cache get
 
       - name: Build examples project (checks the showcased EpsilonEridani theorems)
         working-directory: web/examples
