@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
+  # Temporary escape hatch for `lake exe cache get Mathlib Physlib TauCeti`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
   # return reads to the default endpoint on the next run: the cache tool treats unset,
@@ -107,7 +107,7 @@ jobs:
           # This job elaborates every EpsilonEridani module, and Lean runs code at elaboration time.
           # Without this, checkout leaves an http.extraheader carrying GITHUB_TOKEN in the
           # workspace .git/config for the whole job, within reach of that code. Nothing here
-          # needs it: no step calls the GitHub API or pushes, `lake exe cache get` talks to
+          # needs it: no step calls the GitHub API or pushes, `lake exe cache get Mathlib Physlib TauCeti` talks to
           # Mathlib's own server, scripts/lake-cache-get.sh does anonymous GETs, and
           # `lake cache get` reads the local revision from .git without authenticating.
           persist-credentials: false
@@ -213,9 +213,9 @@ jobs:
 
       - name: Fetch Mathlib oleans, retrying with a forced full refetch
         run: |
-          if ! lake exe cache get; then
-            echo "::warning::lake exe cache get failed; forcing a full refetch"
-            lake exe cache get!
+          if ! lake exe cache get Mathlib Physlib TauCeti; then
+            echo "::warning::lake exe cache get Mathlib Physlib TauCeti failed; forcing a full refetch"
+            lake exe cache get! Mathlib Physlib TauCeti
           fi
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------
@@ -374,7 +374,7 @@ jobs:
       # Publish EpsilonEridani's OWN oleans (root-package only) to the Lake cache, so pr-build can
       # fetch them and recompile only a PR's changed modules instead of the whole library.
       # Mathlib's oleans are never uploaded: `-o` records only root-package outputs, and
-      # Mathlib stays on `lake exe cache get`. See pr-build.yml for the consuming side.
+      # Mathlib stays on `lake exe cache get Mathlib Physlib TauCeti`. See pr-build.yml for the consuming side.
       #
       # The upload is split across two jobs, and the split is the security boundary rather
       # than a convenience. THIS job runs `lake build` unsandboxed, as the runner user, on

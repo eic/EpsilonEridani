@@ -164,12 +164,12 @@ the live documentation describes.
 ## Building
 
 ```bash
-lake exe cache get                 # Mathlib's oleans
+lake exe cache get Mathlib Physlib TauCeti                 # Mathlib's oleans
 bash scripts/lake-cache-get.sh .   # Tau Ceti's own oleans
 lake build
 ```
 
-Both fetches matter, and they come from different places. `lake exe cache get` is Mathlib's own
+Both fetches matter, and they come from different places. `lake exe cache get Mathlib Physlib TauCeti` is Mathlib's own
 cache and covers only Mathlib. Tau Ceti's oleans live in a separate public cache that
 `scripts/lake-cache-get.sh` reads, anonymously and with no setup; without that second line
 `lake build` compiles the whole library from source, which takes hours. A miss is never fatal: the
