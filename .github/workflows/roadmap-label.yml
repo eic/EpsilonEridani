@@ -57,7 +57,7 @@ jobs:
       # roadmap/<Area> labels are legitimate).
       - uses: actions/checkout@v4
         with:
-          repository: eic/EpsilonEridaniRoadmap
+          repository: eic/EpsilonEridaniRoadmaps
           path: roadmap
           persist-credentials: false
 

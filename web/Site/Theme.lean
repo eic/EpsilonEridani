@@ -42,7 +42,7 @@ def theme : Theme := { Theme.default with
               <p class="foot-tag">"Let’s do lots of maths."</p>
               <ul class="foot-links">
                 <li><a href="https://github.com/eic/EpsilonEridani">"EpsilonEridani"</a></li>
-                <li><a href="https://github.com/eic/EpsilonEridaniRoadmap">"EpsilonEridaniRoadmap"</a></li>
+                <li><a href="https://github.com/eic/EpsilonEridaniRoadmaps">"EpsilonEridaniRoadmaps"</a></li>
                 <li><a href="https://github.com/eic/EpsilonEridaniReview">"EpsilonEridaniReview"</a></li>
               </ul>
               <p class="foot-legal">"AI-authored Lean mathematics · Apache-2.0"</p>
@@ -110,8 +110,8 @@ def theme : Theme := { Theme.default with
               <h3>"EpsilonEridani"</h3>
               <p>"The AI-authored Lean mathematics."</p>
             </a>
-            <a class="card repo" href="https://github.com/eic/EpsilonEridaniRoadmap">
-              <h3>"EpsilonEridaniRoadmap"</h3>
+            <a class="card repo" href="https://github.com/eic/EpsilonEridaniRoadmaps">
+              <h3>"EpsilonEridaniRoadmaps"</h3>
               <p>"The human-controlled roadmaps that direct the work."</p>
             </a>
             <a class="card repo" href="https://github.com/eic/EpsilonEridaniReview">

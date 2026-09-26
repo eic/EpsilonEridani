@@ -24,7 +24,7 @@ from chart_style import BAR_BG, MUTED, PALETTE, TEXT, base_css, card_rect, css_p
 
 REPOSITORIES = [
     ("eic/EpsilonEridani", "EpsilonEridani", PALETTE[1]),
-    ("eic/EpsilonEridaniRoadmap", "EpsilonEridaniRoadmap", PALETTE[0]),
+    ("eic/EpsilonEridaniRoadmaps", "EpsilonEridaniRoadmaps", PALETTE[0]),
     ("eic/EpsilonEridaniWorker", "EpsilonEridaniWorker", PALETTE[2]),
     ("eic/EpsilonEridaniReview", "EpsilonEridaniReview", PALETTE[4]),
 ]

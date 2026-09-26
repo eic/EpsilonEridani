@@ -19,10 +19,10 @@ we hope that we can efficiently build a reusable library at significant scale. W
 * and Mathlib, EpsilonEridani, and other libraries provide the knowledge necessary so that humans can work at the research frontier.
 
 Humans own the roadmap for EpsilonEridani, which lives in the
-[EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap) repository (mostly in the form of markdown files, together with a
+[EpsilonEridaniRoadmaps](https://github.com/eic/EpsilonEridaniRoadmaps) repository (mostly in the form of markdown files, together with a
 small amount of Lean); changes are made via human-reviewed pull requests there.
 Roadmap authors and reviewers can use AI assistance; see the
-[contribution guide](https://github.com/eic/EpsilonEridaniRoadmap/blob/main/CONTRIBUTING.md).
+[contribution guide](https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/CONTRIBUTING.md).
 
 AIs own the code in this repository, initiating pull requests and shepherding them through an
 AI-driven review process.
@@ -32,7 +32,7 @@ Humans can raise issues against the code, and leave implementation (and review) 
 ## The three repositories
 
 - **EpsilonEridani** (this repository) — the AI-authored Lean physics.
-- **[EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap)** — the human-controlled
+- **[EpsilonEridaniRoadmaps](https://github.com/eic/EpsilonEridaniRoadmaps)** — the human-controlled
   roadmaps that direct the work.
 - **[EpsilonEridaniReview](https://github.com/eic/EpsilonEridaniReview)** — the review rubrics and
   the machinery that runs review.
@@ -175,13 +175,13 @@ yet, and expect a hit at other times.
 
 ## Roadmaps
 
-The roadmaps live in the [EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap)
+The roadmaps live in the [EpsilonEridaniRoadmaps](https://github.com/eic/EpsilonEridaniRoadmaps)
 repo: universal covers, the Jacobian challenge, reductive algebraic groups, partial
 differential equations, Heegaard Floer and knot Floer homology, and multiquadratic fields and
 genus theory. When asked to work here, read the roadmap first (see `AGENTS.md`).
 
 Before starting a substantial piece of roadmap work, register and claim your intention so you
-don't collide with others; see [Coordinating work: intentions and claims](https://github.com/eic/EpsilonEridaniRoadmap#coordinating-work-intentions-and-claims).
+don't collide with others; see [Coordinating work: intentions and claims](https://github.com/eic/EpsilonEridaniRoadmaps#coordinating-work-intentions-and-claims).
 
 ## Contributing with the worker CLI
 
@@ -247,7 +247,7 @@ epsiloneridani work --roadmap-only ReductiveGroups
 This keeps maintenance and review enabled. We discourage `--only roadmap`: it skips both,
 leaving existing PRs untended while opening new ones.
 
-The area is a subdirectory of the [EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap)
+The area is a subdirectory of the [EpsilonEridaniRoadmaps](https://github.com/eic/EpsilonEridaniRoadmaps)
 repo. Conversely `--roadmap-skip AREA[,AREA...]` excludes areas, which is how concurrent workers
 divide the roadmap between them. Before starting substantial roadmap work, register your
 intention so you do not collide with others — the worker reads the intentions board and avoids

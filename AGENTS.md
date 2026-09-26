@@ -6,7 +6,7 @@ the three repos fit together; this file only adds the contract for agents workin
 ## Before you write code
 
 **Read the roadmap first.** The roadmaps live in the separate
-[EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap) repo. The roadmap gates
+[EpsilonEridaniRoadmaps](https://github.com/eic/EpsilonEridaniRoadmaps) repo. The roadmap gates
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
