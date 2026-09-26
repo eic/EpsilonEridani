@@ -9,6 +9,8 @@ import EpsilonEridani.HepMC3.Basic
 import EpsilonEridani.HepMC3.Format
 import EpsilonEridani.HepMC3.Graph
 import EpsilonEridani.Mathematics.DataStructures.Matrix.PosSemidef
+import EpsilonEridani.Mathematics.Distribution.BasicExtensions
+import EpsilonEridani.Mathematics.KroneckerDelta.BasicExtensions
 import EpsilonEridani.Mathematics.LieAlgebra.Casimir
 import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary
 import EpsilonEridani.Mathematics.LieAlgebra.StructureConstants
@@ -31,6 +33,9 @@ import EpsilonEridani.Particles.Parton.TMD.PowerCorrections
 import EpsilonEridani.Particles.Parton.TMD.Reduction
 import EpsilonEridani.Particles.Parton.Unified.Basic
 import EpsilonEridani.Particles.Parton.Unified.Consistency
+import EpsilonEridani.Particles.StandardModel.Fermions.DownSingletExtensions
+import EpsilonEridani.Particles.StandardModel.Fermions.LeptonDoubletExtensions
+import EpsilonEridani.Particles.StandardModel.HiggsBoson.BasicExtensions
 import EpsilonEridani.QFT.Factorization.Basic
 import EpsilonEridani.QFT.Factorization.Convolution.Basic
 import EpsilonEridani.QFT.Factorization.Convolution.Collinear
@@ -52,6 +57,7 @@ import EpsilonEridani.QFT.Factorization.Scales.Basic
 import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.Basic
 import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
 import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
 import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.CrossingSymmetry
 import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.FiniteSearch
 import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation
@@ -59,6 +65,7 @@ import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TopologyEnumeration
 import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopDiagrammaticBridge
 import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopEvaluation
 import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
+import EpsilonEridani.QFT.PerturbationTheory.WickAlgebra.NormalOrder.BasicExtensions
 import EpsilonEridani.QFT.QCD.Basic
 import EpsilonEridani.QFT.QCD.CasimirDerivation
 import EpsilonEridani.QFT.QCD.OneLoopBeta
@@ -113,4 +120,20 @@ import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Tensors.Longitudinal
 import EpsilonEridani.QFT.Shower.Sudakov
+import EpsilonEridani.Relativity.CliffordAlgebraExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.ContractionExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.DualLeftHandedExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.DualRightHandedExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.DualsExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.LeftHandedExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.MetricExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.RightHandedExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.TwoExtensions
+import EpsilonEridani.Relativity.Fermions.Weyl.UnitExtensions
+import EpsilonEridani.Relativity.LorentzGroup.Restricted.FromBoostRotationExtensions
+import EpsilonEridani.Relativity.PauliMatrices.AsTensorExtensions
+import EpsilonEridani.Relativity.PauliMatrices.RelationsExtensions
+import EpsilonEridani.Relativity.SL2C.BasicExtensions
+import EpsilonEridani.Relativity.Tensors.LeviCivita.ContractionsExtensions
+import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.BasicExtensions
 import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
