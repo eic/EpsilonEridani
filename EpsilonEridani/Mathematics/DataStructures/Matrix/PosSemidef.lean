@@ -7,6 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Tactic.Linarith
+nset_option linter.unusedSectionVars false
+set_option linter.unusedDecidableInType false
+set_option linter.unusedFintypeInType false
+
 
 /-!
 # Entrywise bounds for real positive-semidefinite matrices
@@ -65,7 +69,7 @@ lemma sum_mul_psdTestVector (g : n → ℝ) (i j : n) (ε : ℝ) :
       = (if l = i then g l else 0) + (if l = j then ε * g l else 0) := by
     intro l
     simp only [psdTestVector, mul_add]
-    by_cases h1 : l = i <;> by_cases h2 : l = j <;> simp [h1, h2] <;> ring
+    by_cases h1 : l = i <;> by_cases h2 : l = j <;> simp [h1, h2] <;> ring_nf
   calc ∑ l, g l * psdTestVector i j ε l
       = ∑ l, ((if l = i then g l else 0) + (if l = j then ε * g l else 0)) :=
         Finset.sum_congr rfl fun l _ => hterm l
@@ -107,7 +111,7 @@ lemma PosSemidef.quadraticForm_psdTestVector {M : Matrix n n ℝ} (hM : M.PosSem
           sum_psdTestVector_mul (fun k => M k i + ε * M k j) i j ε
   rw [hstep] at h
   have hring : M i i + ε * (M i j + M j i) + ε ^ 2 * M j j
-      = (M i i + ε * M i j) + ε * (M j i + ε * M j j) := by ring
+      = (M i i + ε * M i j) + ε * (M j i + ε * M j j) := by ring_nf
   rw [hring]
   exact h
 

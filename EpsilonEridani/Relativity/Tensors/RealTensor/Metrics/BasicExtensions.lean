@@ -1,6 +1,11 @@
 import Physlib.Relativity.Tensors.RealTensor.Metrics.Basic
 
+set_option linter.style.longLine false
+
 /-
+
+set_option linter.style.longLine false
+
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
 -/
@@ -14,7 +19,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +public import EpsilonEridani.Relativity.Tensors.RealTensor.Basic
 +public import EpsilonEridani.Relativity.Tensors.MetricTensor
 +public import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
- /-!
+  /-!
  
  ## Metrics as real Lorentz tensors
 @@ -18,11 +21,15 @@ open Module
@@ -30,11 +35,11 @@ Port these additions as standalone lemmas/extensions in this file.
  
 +open realLorentzTensor
 +
- /-!
+  /-!
  
  ## Definitions.
 @@ -30,12 +37,17 @@ namespace realLorentzTensor
- -/
+  /
  
  /-- The metric `ηᵢᵢ` as a complex Lorentz tensor. -/
 -abbrev coMetric (d : ℕ := 3) : ℝT[d, .down, .down] :=
@@ -53,7 +58,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +def kroneckerDelta (d : ℕ := 3) : ℝT[d, Color.up, Color.down] :=
 +  fromConstPair ((realLorentzTensor d).unit Color.down)
  
- /-!
+  /-!
  
 @@ -57,6 +69,26 @@ scoped[realLorentzTensor] notation "η" => @contrMetric
  open TensorSpecies

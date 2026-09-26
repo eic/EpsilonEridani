@@ -1,6 +1,11 @@
 import Physlib.Mathematics.KroneckerDelta.Basic
 
+set_option linter.style.longLine false
+
 /-
+
+set_option linter.style.longLine false
+
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
 -/
@@ -8,7 +13,7 @@ Port these additions as standalone lemmas/extensions in this file.
 /-
 -- Patch: 0007-feat-Mathematics-Relativity-generalized-Kronecker-de.patch
 @@ -5,11 +5,19 @@ Authors: Gregory J. Loges
- -/
+  /
  module
  
 +public import Mathlib.Algebra.BigOperators.Fin
@@ -24,7 +29,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +public import Mathlib.Data.Nat.Factorial.Basic
  public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 +public import Mathlib.Tactic
- /-!
+  /-!
  
  # Kronecker delta
 @@ -213,6 +221,756 @@ lemma generalizedKroneckerDelta_comp_perm {α ι : Type} [DecidableEq α] [Decid

@@ -1,5 +1,7 @@
 import Physlib.Relativity.SL2C.Basic
 
+set_option linter.style.longLine false
+
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
@@ -8,7 +10,7 @@ Port these additions as standalone lemmas/extensions in this file.
 /-
 -- Patch: 0005-refactor-Relativity-adapt-SL-2-C-and-Weyl-proofs-to-.patch
 @@ -34,8 +34,11 @@ Possibly to be moved to mathlib at some point.
- -/
+  /
  
  lemma inverse_coe (M : SL(2, ℂ)) : M.1⁻¹ = (M⁻¹).1 := by
 -  rw [SpecialLinearGroup.coe_inv, Matrix.inv_def, SpecialLinearGroup.det_coe]
@@ -20,7 +22,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +    _ = (M⁻¹).1 := by simp
  
  lemma transpose_coe (M : SL(2, ℂ)) : M.1ᵀ = (M.transpose).1 := rfl
- /-!
+  /-!
 @@ -52,7 +55,7 @@ we can define a representation a representation of `SL(2, ℂ)` on spacetime.
  @[simps!]
  noncomputable def toSelfAdjointMap (M : SL(2, ℂ)) :

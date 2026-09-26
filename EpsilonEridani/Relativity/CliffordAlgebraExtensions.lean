@@ -1,6 +1,11 @@
 import Physlib.Relativity.CliffordAlgebra
 
+set_option linter.style.longLine false
+
 /-
+
+set_option linter.style.longLine false
+
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
 -/
@@ -15,7 +20,7 @@ Port these additions as standalone lemmas/extensions in this file.
  public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
 +public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
  public import EpsilonEridani.Meta.TODO.Basic
- /-!
+  /-!
  # The Clifford Algebra
 @@ -39,6 +41,8 @@ TODO "Prove injectivity of ofCliffordAlgebra and construct the full isomorphism.
  namespace spaceTime

@@ -1,6 +1,11 @@
 import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 
+set_option linter.style.longLine false
+
 /-
+
+set_option linter.style.longLine false
+
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
 -/
@@ -8,7 +13,7 @@ Port these additions as standalone lemmas/extensions in this file.
 /-
 -- Patch: 0002-feat-second-wave.patch
 @@ -5,6 +5,12 @@ Authors: Joseph Tooby-Smith
- -/
+  /
  module
  
 +public import EpsilonEridani.QFT.QCD.Basic
@@ -17,7 +22,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +public import Mathlib.Data.Complex.Basic
 +public import Mathlib.Topology.Instances.Complex
 +
- /-!
+  /-!
  # Feynman diagrams
  
 @@ -20,6 +26,19 @@ with Wick contractions which are based on lists of `FieldOp`.
@@ -41,7 +46,7 @@ Port these additions as standalone lemmas/extensions in this file.
  
  This directory is currently a work in progress.
 @@ -28,3 +47,468 @@ This directory is currently a work in progress.
- -/
+  /
  
  @[expose] public section
 +
@@ -592,7 +597,7 @@ index 00000000..7dd0dc63
 +open scoped InnerProductSpace
 +open scoped Lorentz.Vector
 +
- /-! ### Field and Index Types -/
+  /-! ### Field and Index Types -/
  
  /-- Lorentz index (0=time, 1,2,3=spatial). -/
 -- 
@@ -604,7 +609,7 @@ index 00000000..7dd0dc63
 -- Patch: 0118-QCD-gauge-remove-vacuous-Prop-contracts-state-the-id.patch
 @@ -254,60 +254,54 @@ def quarkPropagatorLifted (k : Momentum) (mass ε : ℝ) (_hε : 0 < ε) :
  
- /-! ### Vertex Functions (Color-Stripped) -/
+  /-! ### Vertex Functions (Color-Stripped) -/
  
 -/-- Contract: gauge-fermion (matter-boson) vertex satisfies gauge-covariance.
 +/-- Numerical data attached to a gauge-fermion (matter-boson) vertex.
@@ -728,7 +733,7 @@ index 00000000..7dd0dc63
  /-- SU(2) weak-isospin gauge rules with coupling `g_w`. -/
 @@ -384,40 +374,18 @@ def su2GaugeRules (g_w : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_w
  
- /-! ### Diagram Assembly Theorems -/
+  /-! ### Diagram Assembly Theorems -/
  
 -/-- Contract: a tree-level Born gauge-boson–matter scattering diagram. -/
 -structure TreeGaugeBornDiagramAssumptions (rules : GaugeFeynmanRules)
@@ -871,7 +876,7 @@ index d304f4bf..896f628d 100644
 -abbrev GhostGluonVertexAssumptions := GhostGaugeBosonVertexAssumptions
 +abbrev GhostGluonVertexData := GhostGaugeBosonVertexData
  
- /-! ### Generic Gauge-Theory Feynman Rules Bundle -/
+  /-! ### Generic Gauge-Theory Feynman Rules Bundle -/
  
 @@ -328,13 +328,13 @@ structure GaugeFeynmanRules where
    /-- Ghost propagator (trivial for U(1), Faddeev-Popov for non-abelian). -/

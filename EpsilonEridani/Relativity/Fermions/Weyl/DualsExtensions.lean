@@ -1,5 +1,7 @@
 import Physlib.Relativity.Fermions.Weyl.Duals
 
+set_option linter.style.longLine false
+
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
