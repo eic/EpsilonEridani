@@ -1,0 +1,9 @@
+diff a/EpsilonEridani.lean b/EpsilonEridani.lean	(rejected hunks)
+@@ -440,6 +440,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Harmonics
+ public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Longitudinal
++public import EpsilonEridani.QFT.Shower.Sudakov
+ public import EpsilonEridani.QuantumMechanics.Blackbody.PlancksLaw
+ public import EpsilonEridani.QuantumMechanics.FiniteTarget
+ public import EpsilonEridani.QuantumMechanics.FreeParticle.Basic
