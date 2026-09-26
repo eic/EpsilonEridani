@@ -7,6 +7,16 @@ defaultTargets = ["EpsilonEridani"]
 # the platform-independent mapping automatically.
 platformIndependent = true
 
+[[require]]
+name = "Physlib"
+git = "https://github.com/leanprover-community/physlib"
+rev = "master"
+
+[[require]]
+name = "TauCeti"
+git = "https://github.com/TauCetiProject/TauCeti"
+rev = "main"
+
 # Mathlib's `rev` below always stays on "master"; lake-manifest.json carries the exact,
 # reproducible commit used by builds. Dependency automation must update only that manifest pin
 # and the matching toolchain, including for first-known-bad repair PRs.
@@ -36,7 +46,6 @@ globs = ["EpsilonEridani.*"]
 # the command linter discovers library files.
 leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1500, weak.linter.style.longFileDefValue = 1500, weak.linter.style.header = true, warningAsError = true }
 
-
 # Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the
 # built `EpsilonEridani` environment and rejects any axiom outside the standard allowlist
 # (catches sorry, native_decide, and home-rolled axioms). Run in CI after the build.
@@ -53,12 +62,3 @@ root = "scripts.Axioms"
 name = "module-system"
 root = "scripts.ModuleSystem"
 
-[[require]]
-name = "Physlib"
-git = "https://github.com/leanprover-community/physlib"
-rev = "master"
-
-[[require]]
-name = "TauCeti"
-git = "https://github.com/TauCetiProject/TauCeti"
-rev = "main"
