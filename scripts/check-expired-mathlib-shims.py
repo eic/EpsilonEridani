@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Report tracked Tau Ceti shims whose replacement exists in pinned Mathlib.
 
-The registry in ``TauCeti/mathlib-shims.json`` is AI-owned metadata kept out of module docstrings;
+The registry in ``EpsilonEridani/mathlib-shims.json`` is AI-owned metadata kept out of module docstrings;
 its schema and blocking policy are documented in ``docs/mathlib-shim-registry.md``. Exact
 replacements and broader landing sentinels carry different guidance. The default invocation is
 report-only; ``--fail-on-available`` turns an exact finding into an autonomous PR gate that hands
@@ -122,8 +122,8 @@ def load_registry(
         for source_raw in sources_raw:
             source = pathlib.Path(source_raw)
             if source.is_absolute() or ".." in source.parts or source.suffix != ".lean" \
-                    or not source.parts or source.parts[0] != "TauCeti":
-                raise ValueError(f"entry {index}: source must be a TauCeti/*.lean path: {source}")
+                    or not source.parts or source.parts[0] != "EpsilonEridani":
+                raise ValueError(f"entry {index}: source must be a EpsilonEridani/*.lean path: {source}")
             if source in seen_sources:
                 raise ValueError(f"entry {index}: duplicate source {source}")
             if require_sources and not (repo_root / source).is_file():
@@ -170,7 +170,7 @@ def validate_registry_coverage(groups: Sequence[ShimGroup], source_root: pathlib
     if untracked:
         rendered = "\n".join(f"  {source}" for source in untracked)
         raise ValueError(
-            "self-declared Mathlib shims are missing from TauCeti/mathlib-shims.json:\n"
+            "self-declared Mathlib shims are missing from EpsilonEridani/mathlib-shims.json:\n"
             f"{rendered}"
         )
 
@@ -247,7 +247,7 @@ def validate_registry_ratchet(
             if not base_path.is_file():
                 raise ValueError(f"base registry source does not exist under --base-root: {source}")
             if declared is None:
-                declared = tree_declarations(repo_root / "TauCeti")
+                declared = tree_declarations(repo_root / "EpsilonEridani")
             live_surface = source_declarations(base_path).intersection(declared)
             if live_surface and rehomed_surface is None:
                 covering_groups = tuple(candidate for candidate in groups if covers(candidate, base))
@@ -460,12 +460,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     repo_root = args.repo_root.resolve()
-    manifest = (args.manifest or repo_root / "TauCeti/mathlib-shims.json").resolve()
+    manifest = (args.manifest or repo_root / "EpsilonEridani/mathlib-shims.json").resolve()
     mathlib_root = (args.mathlib_root or repo_root / ".lake/packages/mathlib").resolve()
     lake_root = (args.lake_root or repo_root).resolve()
     try:
         groups = load_registry(manifest, repo_root)
-        validate_registry_coverage(groups, repo_root / "TauCeti")
+        validate_registry_coverage(groups, repo_root / "EpsilonEridani")
         base_groups: tuple[ShimGroup, ...] = ()
         if args.base_manifest is not None:
             if not args.base_manifest.is_file():

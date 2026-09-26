@@ -68,12 +68,12 @@ class GhStreamTest(unittest.TestCase):
 
     def test_gh_lines_returns_raw_strings_not_json(self):
         # `.[].filename` emits bare filenames; gh_lines must NOT json.loads them
-        # (json.loads("TauCeti/Foo.lean") would raise) -- the bug that broke
+        # (json.loads("EpsilonEridani/Foo.lean") would raise) -- the bug that broke
         # stranded-pr when it used gh_stream here.
         self.addCleanup(setattr, zp, "gh_api", core.gh_api)
-        core.gh_api = lambda path, jq=None, paginate=False: "TauCeti/Foo.lean\nlean-toolchain\n"
+        core.gh_api = lambda path, jq=None, paginate=False: "EpsilonEridani/Foo.lean\nlean-toolchain\n"
         self.assertEqual(sa.gh_lines("/x", jq=".[].filename"),
-                         ["TauCeti/Foo.lean", "lean-toolchain"])
+                         ["EpsilonEridani/Foo.lean", "lean-toolchain"])
 
 
 class MainRedTest(unittest.TestCase):
@@ -521,7 +521,7 @@ class DivergedHeadTest(unittest.TestCase):
     def _routes(self, tip):
         import json as _j
         prs = _j.dumps({"number": 9, "head": "aaaaaaaa", "draft": False,
-                        "updated_at": _ago(1), "head_ref": "feat", "head_repo": "fork/TauCeti",
+                        "updated_at": _ago(1), "head_ref": "feat", "head_repo": "fork/EpsilonEridani",
                         "author": "a", "labels": []}) + "\n"
         return [("/pulls?state=open", prs), ("/branches/", tip)]
 
@@ -619,7 +619,7 @@ class StuckLintRepairTest(unittest.TestCase):
         self.addCleanup(setattr, sa, "gh_stream", sa.gh_stream)
         sa.gh_stream = lambda path, **k: seen.append(path) or prs
         out = sa.detect_stuck_lint_repair()
-        self.assertIn(f"head=TauCetiProject:{sa.LINT_REPAIR_BRANCH}", seen[0])
+        self.assertIn(f"head=EpsilonEridaniProject:{sa.LINT_REPAIR_BRANCH}", seen[0])
         return out
 
     def test_an_old_repair_pr_alerts(self):

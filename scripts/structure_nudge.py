@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Advisory-only directory-structure nudge for PRs.
 
-For each ``.lean`` file a PR **adds** under ``TauCeti/``, inspect the CamelCase
+For each ``.lean`` file a PR **adds** under ``EpsilonEridani/``, inspect the CamelCase
 prefixes of its basename and report, as one advisory PR comment:
 
 * an existing subdirectory the file could join (``Dir/Prefix/`` already exists);
@@ -44,7 +44,7 @@ import subprocess
 import sys
 
 MARKER = "<!--structure:nudge-->"
-TRACKING_ISSUE = "https://github.com/TauCetiProject/TauCeti/issues/987"
+TRACKING_ISSUE = "https://github.com/EpsilonEridaniProject/EpsilonEridani/issues/987"
 
 _TOKEN_RE = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z0-9]*|[a-z0-9]+")
 
@@ -64,12 +64,12 @@ def _boundary_extends(base: str, prefix_tokens: list[str]) -> bool:
 def candidates_for(path: str, tree: set[str]) -> list[dict]:
     """Structure candidates for one added file against a tree of repo paths.
 
-    `path` is repo-relative (``TauCeti/Dir/Name.lean``); `tree` contains every
+    `path` is repo-relative (``EpsilonEridani/Dir/Name.lean``); `tree` contains every
     ``.lean`` path that exists alongside it (the base branch plus any other
     files added by the same PR, but not `path` itself).
     """
     p = pathlib.PurePosixPath(path)
-    if p.suffix != ".lean" or not str(p).startswith("TauCeti/"):
+    if p.suffix != ".lean" or not str(p).startswith("EpsilonEridani/"):
         return []
     d = str(p.parent)
     base = p.stem
@@ -137,7 +137,7 @@ def _gh_json(args: list[str]):
 
 
 def _local_tree() -> set[str]:
-    out = subprocess.run(["git", "ls-files", "TauCeti/**/*.lean", "TauCeti/*.lean"],
+    out = subprocess.run(["git", "ls-files", "EpsilonEridani/**/*.lean", "EpsilonEridani/*.lean"],
                          check=True, capture_output=True, text=True).stdout
     return {l for l in out.splitlines() if l.endswith(".lean")}
 
@@ -147,7 +147,7 @@ def run_pr(repo: str, pr: int, apply: bool) -> int:
                      "--jq", "{head: .head.sha}"])
     files = _gh_json(["api", "--paginate", f"repos/{repo}/pulls/{pr}/files?per_page=100",
                       "--jq", "[.[] | select(.status == \"added\") | .filename]"])
-    added = [f for f in files if f.endswith(".lean") and f.startswith("TauCeti/")]
+    added = [f for f in files if f.endswith(".lean") and f.startswith("EpsilonEridani/")]
     tree = _local_tree() | set(added)
     findings = {}
     for f in added:
@@ -199,7 +199,7 @@ def run_tree_dry_run() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Advisory structure nudge for PRs.")
-    ap.add_argument("--repo", default="TauCetiProject/TauCeti")
+    ap.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
     ap.add_argument("--pr", type=int, help="analyze a single PR")
     ap.add_argument("--apply", action="store_true",
                     help="post/update the advisory comment (otherwise print it)")

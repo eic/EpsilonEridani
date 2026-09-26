@@ -3,7 +3,7 @@
 Run with: python3 scripts/sync_web_pins.py          (write it)
           python3 scripts/sync_web_pins.py --check  (report, write nothing)
 
-`web/examples` compiles the TauCeti library, so it must do so with exactly the Lean and exactly
+`web/examples` compiles the EpsilonEridani library, so it must do so with exactly the Lean and exactly
 the Mathlib the library is written for. Both are therefore DERIVED from the root's rather than
 resolved independently, and neither is committed: `.gitignore` covers them, and the Pages
 workflow generates them before building.
@@ -16,7 +16,7 @@ therefore pins this project to exactly the stale toolchain that broke the site i
 2026, silently. Verified by measurement, not by reading elan's documentation.
 
 The alternative, which this replaces, was to commit both copies and keep them synced. That
-worked, but it put two files outside `TauCeti/` into every daily Mathlib bump, and the merge
+worked, but it put two files outside `EpsilonEridani/` into every daily Mathlib bump, and the merge
 policy refuses to auto-merge a pull request touching a lakefile or an unlisted path. So every
 bump would have stopped for a human. Deriving the manifest at build time keeps the bump touching
 only the root pins, which is what the policy already allows.
@@ -64,7 +64,7 @@ SUBVERSO_REQUIRE = _require("subverso", SUBVERSO_URL)
 # The path requirement on the repository root, which is what makes this project compile the
 # library at all. Written out because there is no committed manifest left to copy it from.
 TAUCETI_ENTRY = {
-    "type": "path", "scope": "", "name": "TauCeti",
+    "type": "path", "scope": "", "name": "EpsilonEridani",
     "manifestFile": "lake-manifest.json", "inherited": False,
     "dir": "../..", "configFile": "lakefile.toml",
 }

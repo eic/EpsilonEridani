@@ -51,7 +51,7 @@ class MessageContent(unittest.TestCase):
             "jeremy-kahn-brown-ai",
             ["roadmap/ConformalMapping"],
         )
-        self.assertIn("https://github.com/TauCetiProject/TauCeti/pull/1520", content)
+        self.assertIn("https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/1520", content)
         self.assertIn(
             "[jeremy-kahn-brown-ai](https://github.com/jeremy-kahn-brown-ai)",
             content,
@@ -66,9 +66,9 @@ class MessageContent(unittest.TestCase):
 
     def test_bot_author_is_plain_text(self):
         content = zulip.pr_message_content(
-            "1", "title", "tauceti-review-bot[bot]", ["roadmap/none"])
-        self.assertIn("author: tauceti-review-bot[bot]", content)
-        self.assertNotIn("github.com/tauceti-review-bot", content)
+            "1", "title", "epsiloneridani-review-bot[bot]", ["roadmap/none"])
+        self.assertIn("author: epsiloneridani-review-bot[bot]", content)
+        self.assertNotIn("github.com/epsiloneridani-review-bot", content)
         self.assertIn("roadmap: none", content)
 
     def test_metadata_is_sanitized(self):
@@ -91,13 +91,13 @@ class FindMessage(unittest.TestCase):
             return [self.message] if query in self.message["content"] else []
 
     def test_finds_pre_transfer_message(self):
-        old_url = "https://github.com/FormalFrontier/TauCeti/pull/12"
+        old_url = "https://github.com/FormalFrontier/EpsilonEridani/pull/12"
         z = self.FakeZulip({"id": 7, "sender_id": 42, "content": old_url, "reactions": []})
         self.assertEqual(zulip.find_message(z, "12", 42)["id"], 7)
         self.assertEqual(len(z.searches), 2)
 
     def test_ignores_another_authors_matching_message(self):
-        url = "https://github.com/TauCetiProject/TauCeti/pull/12"
+        url = "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/12"
         z = self.FakeZulip({"id": 7, "sender_id": 99, "content": url, "reactions": []})
         self.assertIsNone(zulip.find_message(z, "12", 42))
 
@@ -158,20 +158,20 @@ class Reconcile(unittest.TestCase):
     }
 
     def test_legacy_post_is_rewritten_in_place(self):
-        old = "https://github.com/FormalFrontier/TauCeti/pull/12"
+        old = "https://github.com/FormalFrontier/EpsilonEridani/pull/12"
         message = {"id": 7, "sender_id": 42, "content": old, "reactions": []}
         z = self.FakeZulip(message)
         changes = zulip.reconcile(
             z, "12", create=False, ci_override=None, bot_id=42, state=self.STATE)
         self.assertEqual(changes, 2)  # content plus the terminal merge reaction
         self.assertEqual(z.updated[0][0], 7)
-        self.assertIn("https://github.com/TauCetiProject/TauCeti/pull/12", z.updated[0][1])
+        self.assertIn("https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/12", z.updated[0][1])
         self.assertIn("author: [alice]", z.updated[0][1])
         self.assertIn("roadmap: PDE", z.updated[0][1])
         self.assertEqual(z.added, [(7, "merge")])
 
     def test_dry_run_reports_without_writing(self):
-        old = "https://github.com/FormalFrontier/TauCeti/pull/12"
+        old = "https://github.com/FormalFrontier/EpsilonEridani/pull/12"
         message = {"id": 7, "sender_id": 42, "content": old, "reactions": []}
         z = self.FakeZulip(message)
         changes = zulip.reconcile(
@@ -184,7 +184,7 @@ class Reconcile(unittest.TestCase):
     def test_unreported_ci_is_yellow_but_waiting_review_has_no_review_emoji(self):
         content = zulip.pr_message_content(
             "12", self.STATE["title"], self.STATE["author"], self.STATE["roadmaps"])
-        current = "https://github.com/TauCetiProject/TauCeti/pull/12"
+        current = "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/12"
         message = {"id": 7, "sender_id": 42, "content": content, "reactions": []}
         z = self.FakeZulip(message)
         open_state = {**self.STATE, "state": "open", "merged": False}
@@ -273,17 +273,17 @@ class TopicMessageIndex(unittest.TestCase):
                             {
                                 "id": 20,
                                 "sender_id": 42,
-                                "content": "https://github.com/TauCetiProject/TauCeti/pull/2",
+                                "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/2",
                             },
                             {
                                 "id": 10,
                                 "sender_id": 42,
-                                "content": "https://github.com/TauCetiProject/TauCeti/pull/1",
+                                "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/1",
                             },
                             {
                                 "id": 15,
                                 "sender_id": 99,
-                                "content": "https://github.com/TauCetiProject/TauCeti/pull/99",
+                                "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/99",
                             },
                         ],
                     }
@@ -293,12 +293,12 @@ class TopicMessageIndex(unittest.TestCase):
                         {
                             "id": 10,
                             "sender_id": 42,
-                            "content": "https://github.com/TauCetiProject/TauCeti/pull/1",
+                            "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/1",
                         },
                         {
                             "id": 5,
                             "sender_id": 42,
-                            "content": "https://github.com/FormalFrontier/TauCeti/pull/3",
+                            "content": "https://github.com/FormalFrontier/EpsilonEridani/pull/3",
                         },
                     ],
                 }

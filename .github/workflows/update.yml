@@ -1,12 +1,12 @@
 name: Update Dependencies
 
 # Keeps the mathlib pin moving using the leanprover-community/downstream-reports
-# composite actions (TauCeti is registered as a downstream there). Daily behavior:
+# composite actions (EpsilonEridani is registered as a downstream there). Daily behavior:
 #   - mathlib compatible: open/update a single "bump to last-known-good" PR.
 #   - mathlib incompatible: open a tracking issue naming the first-known-bad mathlib
 #     commit, plus a fix PR whose manifest is pinned at that commit (a ready-made branch to fix in
 #     place — not for merging as-is), and close the LKG bump PR until resolved.
-# PRs and pushes use the tauceti-review-bot App token so pr-build/review trigger
+# PRs and pushes use the epsiloneridani-review-bot App token so pr-build/review trigger
 # normally. Both update paths preserve Mathlib's `master` nomination and change only the
 # manifest/toolchain pins, so bump-guard can validate and auto-merge them once green.
 
@@ -30,8 +30,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -64,8 +64,8 @@ jobs:
           message: ${{ steps.bump.outputs.bump-description }}
           commit-message: ${{ steps.bump.outputs.commit-message }}
           token: ${{ steps.app-token.outputs.token }}
-          git-user-name: tauceti-review-bot[bot]
-          git-user-email: 290224625+tauceti-review-bot[bot]@users.noreply.github.com
+          git-user-name: epsiloneridani-review-bot[bot]
+          git-user-email: 290224625+epsiloneridani-review-bot[bot]@users.noreply.github.com
 
   open-issue:
     runs-on: ubuntu-latest
@@ -80,8 +80,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -95,8 +95,8 @@ jobs:
           open-pr: true
           preserve-lakefile: true
           token: ${{ steps.app-token.outputs.token }}
-          git-user-name: tauceti-review-bot[bot]
-          git-user-email: 290224625+tauceti-review-bot[bot]@users.noreply.github.com
+          git-user-name: epsiloneridani-review-bot[bot]
+          git-user-email: 290224625+epsiloneridani-review-bot[bot]@users.noreply.github.com
 
       - name: Close the LKG bump PR while a fix PR is open
         if: steps.track.outputs.pr-action == 'created' || steps.track.outputs.pr-action == 'noop-existing'
@@ -110,4 +110,4 @@ jobs:
             echo "No open LKG bump PR; nothing to close."
             exit 0
           fi
-          gh pr close "$lkg_pr" --comment "Closing in favor of #${FKB_PR}: TauCeti is currently incompatible with the latest mathlib, so attention should go to the PR whose manifest is pinned at the first-known-bad commit. A new last-known-good bump PR will be opened automatically once the incompatibility is resolved."
+          gh pr close "$lkg_pr" --comment "Closing in favor of #${FKB_PR}: EpsilonEridani is currently incompatible with the latest mathlib, so attention should go to the PR whose manifest is pinned at the first-known-bad commit. A new last-known-good bump PR will be opened automatically once the incompatibility is resolved."

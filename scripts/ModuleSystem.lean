@@ -1,10 +1,10 @@
 import Lean
 
 /-!
-# `module-system`: enforce that every `TauCeti` file opts into the module system
+# `module-system`: enforce that every `EpsilonEridani` file opts into the module system
 
 Human-owned governance machinery. This executable inspects the built `.olean`s of the
-`TauCeti` library and fails unless **every** module in `TauCeti` was elaborated with the
+`EpsilonEridani` library and fails unless **every** module in `EpsilonEridani` was elaborated with the
 `module` keyword, i.e. opts into the Lean module system.
 
 The signal is read from the compiled artifact, not the source text: each module's
@@ -24,9 +24,9 @@ part, which `readModuleData` loads on its own; we copy the `Bool` out and free t
 open Lean
 
 /-- The library whose modules must opt into the module system (the AI-owned mathematics). -/
-def auditedRoot : Name := `TauCeti
+def auditedRoot : Name := `EpsilonEridani
 
-/-- The module name for a `.lean` source path, e.g. `TauCeti/Foo/Bar.lean ↦ TauCeti.Foo.Bar`. -/
+/-- The module name for a `.lean` source path, e.g. `EpsilonEridani/Foo/Bar.lean ↦ EpsilonEridani.Foo.Bar`. -/
 def pathToModule (p : System.FilePath) : Name :=
   (p.withExtension "").components.foldl (fun n s => Name.mkStr n s) Name.anonymous
 
@@ -40,7 +40,7 @@ partial def collectLeanModules (dir : System.FilePath) : IO (Array Name) := do
       acc := acc.push (pathToModule entry.path)
   return acc
 
-/-- Every module in the `TauCeti` library: the root `TauCeti` plus all `TauCeti/**/*.lean`.
+/-- Every module in the `EpsilonEridani` library: the root `EpsilonEridani` plus all `EpsilonEridani/**/*.lean`.
 Enumerating the source tree (rather than only importing the root) means every module is
 audited regardless of the root, which is intentionally empty and imports nothing. -/
 def auditedModules : IO (Array Name) :=

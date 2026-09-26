@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sandbox-build.sh — the offline, bwrap-sandboxed build + audits + environment lint of
-# the candidate TauCeti sources, factored out of .github/workflows/pr-build.yml.
+# the candidate EpsilonEridani sources, factored out of .github/workflows/pr-build.yml.
 #
 # pr-build.yml invokes this workflow-pinned copy inside the bwrap sandbox with a fixed, comment-free
 # one-liner, so the workflow's `bash -c` payload
@@ -52,7 +52,7 @@ lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/DuplicateDeclara
 # home-rolled axioms, including ones reaching in through imports.
 lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/Axioms.lean"
 
-# Module-system audit: every TauCeti/ module must opt into the Lean module system
+# Module-system audit: every EpsilonEridani/ module must opt into the Lean module system
 # (read from each compiled module's isModule flag, not a textual grep).
 lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lean"
 
@@ -65,9 +65,9 @@ lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/ModuleSystem.lea
 # unaccounted nolints; fixed baseline entries print a ratchet reminder only.
 bash "$TRUSTED_SCRIPTS/lint-env.sh"
 
-# Source style lint. The trusted wrapper uses the shared validated TauCeti/ module list, applies
+# Source style lint. The trusted wrapper uses the shared validated EpsilonEridani/ module list, applies
 # Mathlib's copyright/Authors checks (excluding the deliberately empty root), and generates the
-# text-linter import root under .lake/ without relying on TauCeti.lean's imports.
+# text-linter import root under .lake/ without relying on EpsilonEridani.lean's imports.
 bash "$TRUSTED_SCRIPTS/lint-style.sh"
 
 # A merge-group commit that passes every audit is the exact commit GitHub will land. Pack its

@@ -18,7 +18,7 @@ PUBLISHER = ROOT / ".github/workflows/publish-lake-cache.yml"
 TOOLCHAIN_TAGS = ROOT / "scripts/toolchain_tags.py"
 SHA = "a" * 40
 TOOLCHAIN = "leanprover/lean4:v4.34.0-rc1"
-ENDPOINT = "https://cache.taucetiproject.org/revisions"
+ENDPOINT = "https://cache.epsiloneridaniproject.org/revisions"
 
 
 def response(body: str, returncode: int = 0, stderr: str = ""):
@@ -35,7 +35,7 @@ class ExactMapProbe(unittest.TestCase):
         url = cache_probe.exact_map_url(ENDPOINT + "/", TOOLCHAIN, SHA)
         self.assertEqual(
             url,
-            ENDPOINT + "/TauCetiProject/TauCeti/tc/"
+            ENDPOINT + "/EpsilonEridaniProject/EpsilonEridani/tc/"
             "leanprover--lean4---v4.34.0-rc1/" + SHA + ".jsonl",
         )
 
@@ -72,7 +72,7 @@ class ExactMapProbe(unittest.TestCase):
                 self.assertEqual(url, "")
 
         found, url, _reason = cache_probe.probe(
-            ENDPOINT, TOOLCHAIN, SHA, response(""), repository="../TauCeti",
+            ENDPOINT, TOOLCHAIN, SHA, response(""), repository="../EpsilonEridani",
         )
         self.assertFalse(found)
         self.assertEqual(url, "")
@@ -119,7 +119,7 @@ class MainWorkflowFallback(unittest.TestCase):
                         block.index('echo "exists=true"'))
 
     def test_only_a_probe_hit_suppresses_the_existing_staging_fallback(self):
-        block = step(self.workflow, "Stage TauCeti's oleans for the publish job")
+        block = step(self.workflow, "Stage EpsilonEridani's oleans for the publish job")
         self.assertIn("steps.cachecfg.outputs.enabled == 'true'", block)
         self.assertIn("steps.exact_cache.outputs.exists != 'true'", block)
         self.assertIn('echo "staged=true"', block)

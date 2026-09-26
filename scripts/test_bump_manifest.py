@@ -40,9 +40,9 @@ def top(name, **extra):
 def fixture():
     ml = dict(top("mathlib"), packages=[dep("batteries", "c" * 40, False),
                                         dep("Cli", "d" * 40, True)])
-    base = dict(top("TauCeti"), packages=[mathlib(REV_OLD), dep("batteries", "e" * 40, True),
+    base = dict(top("EpsilonEridani"), packages=[mathlib(REV_OLD), dep("batteries", "e" * 40, True),
                                           dep("Cli", "f" * 40, True)])
-    pr = dict(top("TauCeti"), packages=[mathlib(REV_NEW), dep("batteries", "c" * 40, True),
+    pr = dict(top("EpsilonEridani"), packages=[mathlib(REV_NEW), dep("batteries", "c" * 40, True),
                                         dep("Cli", "d" * 40, True)])
     return pr, ml, base
 
@@ -115,7 +115,7 @@ class BumpManifestTest(unittest.TestCase):
             self.assertNotIn("Traceback", result.stderr + result.stdout)
 
     def test_dependency_fields_beyond_the_old_four_are_compared(self):
-        for field, value in (("subDir", "../../TauCeti"), ("configFile", "evil.lean"),
+        for field, value in (("subDir", "../../EpsilonEridani"), ("configFile", "evil.lean"),
                              ("manifestFile", "../x.json"), ("scope", "someone-else")):
             with self.subTest(field=field):
                 pr, ml, base = fixture()
@@ -145,7 +145,7 @@ class BumpManifestTest(unittest.TestCase):
                 self.assertRejected(pr, ml, base, "mathlib entry changes fields other than `rev`")
 
     def test_top_level_fields_must_equal_base(self):
-        for field, value in (("packagesDir", "TauCeti/pkgs"), ("lakeDir", "TauCeti/lake"),
+        for field, value in (("packagesDir", "EpsilonEridani/pkgs"), ("lakeDir", "EpsilonEridani/lake"),
                              ("fixedToolchain", True), ("name", "other"), ("newField", 1)):
             with self.subTest(field=field):
                 pr, ml, base = fixture()

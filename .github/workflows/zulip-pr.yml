@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   zulip-pr:
-    if: github.repository == 'TauCetiProject/TauCeti'
+    if: github.repository == 'EpsilonEridaniProject/EpsilonEridani'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
@@ -39,8 +39,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-issues: read
           permission-pull-requests: read
       - uses: actions/checkout@v4

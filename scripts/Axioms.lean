@@ -1,10 +1,10 @@
 import Lean
 
 /-!
-# `axioms`: the axiom-allowlist audit for the `TauCeti` library
+# `axioms`: the axiom-allowlist audit for the `EpsilonEridani` library
 
-Human-owned governance machinery. This executable builds the `TauCeti` environment from
-its compiled `.olean`s and inspects, for every declaration *defined in `TauCeti`*, the
+Human-owned governance machinery. This executable builds the `EpsilonEridani` environment from
+its compiled `.olean`s and inspects, for every declaration *defined in `EpsilonEridani`*, the
 axioms it transitively depends on (`Lean.collectAxioms`). It fails unless every such
 declaration uses only the standard allowlist
 
@@ -19,9 +19,9 @@ imports. Run via `lake exe axioms` (after `lake build`).
 open Lean
 
 /-- The library whose declarations are audited (the AI-owned mathematics). -/
-def auditedRoot : Name := `TauCeti
+def auditedRoot : Name := `EpsilonEridani
 
-/-- Axioms permitted anywhere in `TauCeti`. -/
+/-- Axioms permitted anywhere in `EpsilonEridani`. -/
 def allowedAxioms : List Name := [``propext, ``Classical.choice, ``Quot.sound]
 
 /-- Build the environment from the given imported modules and run `act` in `CoreM`.
@@ -41,7 +41,7 @@ def withImportedEnv {α} (modules : Array Name) (act : CoreM α) : IO α := do
 /-- Is `mod` the audited library root or one of its submodules? -/
 def inAuditedLib (mod : Name) : Bool := mod == auditedRoot || auditedRoot.isPrefixOf mod
 
-/-- The module name for a `.lean` source path, e.g. `TauCeti/Foo/Bar.lean ↦ TauCeti.Foo.Bar`. -/
+/-- The module name for a `.lean` source path, e.g. `EpsilonEridani/Foo/Bar.lean ↦ EpsilonEridani.Foo.Bar`. -/
 def pathToModule (p : System.FilePath) : Name :=
   (p.withExtension "").components.foldl (fun n s => Name.mkStr n s) Name.anonymous
 
@@ -55,7 +55,7 @@ partial def collectLeanModules (dir : System.FilePath) : IO (Array Name) := do
       acc := acc.push (pathToModule entry.path)
   return acc
 
-/-- Every module in the `TauCeti` library: the root `TauCeti` plus all `TauCeti/**/*.lean`.
+/-- Every module in the `EpsilonEridani` library: the root `EpsilonEridani` plus all `EpsilonEridani/**/*.lean`.
 Enumerating the source tree (rather than only importing the root) means every module is
 audited regardless of the root, which is intentionally empty and imports nothing. -/
 def auditedModules : IO (Array Name) :=
@@ -64,7 +64,7 @@ def auditedModules : IO (Array Name) :=
 /-- Reader/State monad for the shared axiom-reachability pass: the `Environment` is read-only
 and the `NameMap Bool` memoizes, for every constant visited, whether it transitively depends on
 an axiom outside `allowedAxioms`. The map is threaded across *all* candidates so the shared
-`Mathlib`/`TauCeti` closure is walked once total, not re-walked per declaration. -/
+`Mathlib`/`EpsilonEridani` closure is walked once total, not re-walked per declaration. -/
 abbrev AxiomCacheM := ReaderT Environment (StateM (Lean.NameMap Bool))
 
 /-- Does `c` transitively depend on an axiom outside `allowedAxioms`? Memoized in the shared
@@ -79,7 +79,7 @@ in-progress constant contributes nothing. Adapted from Robin Arnez's mathlib-wid
 The fail-if-any-disallowed-axiom guarantee is sound: the declaration that *directly* mentions a
 disallowed axiom is always cached `true` (its badness comes from its own edge to the leaf axiom,
 not a back edge), and since the imported libraries are axiom-clean that declaration is itself an
-audited `TauCeti` candidate — so any violation fails the run. The `false` sentinel can, in a
+audited `EpsilonEridani` candidate — so any violation fails the run. The `false` sentinel can, in a
 cyclic declaration cluster, leave *other* members of the cluster cached clean, so the reported
 offender list may under-count (the next run flags the rest); it never lets a violation pass. -/
 partial def reachesDisallowedAxiom (c : Name) : AxiomCacheM Bool := do
@@ -103,7 +103,7 @@ partial def reachesDisallowedAxiom (c : Name) : AxiomCacheM Bool := do
   modify (·.insert c res)
   return res
 
-/-- Audit every declaration defined in `TauCeti`. Returns the number audited and a list of
+/-- Audit every declaration defined in `EpsilonEridani`. Returns the number audited and a list of
 violation messages, **already rendered to `String`**.
 
 The strings must be materialized here, inside the environment callback: declaration and
@@ -112,7 +112,7 @@ axiom `Name`s loaded from `.olean`s live in a memory-mapped region that is unmap
 def audit : CoreM (Nat × Array String) := do
   let env ← getEnv
   let modNames := env.allImportedModuleNames
-  -- Candidate declarations: those defined in a `TauCeti` module.
+  -- Candidate declarations: those defined in a `EpsilonEridani` module.
   let candidates : Array Name := env.constants.fold (init := #[]) fun acc declName _ =>
     match env.getModuleIdxFor? declName with
     | some idx =>

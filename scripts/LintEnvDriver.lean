@@ -4,7 +4,7 @@ import Batteries.Tactic.Lint
 # `lint-env` driver: Mathlib's default environment linters, compiled
 
 Human-owned governance machinery, run by `scripts/lint-env.sh`. It does exactly what the
-generated `#lint only <linters> in TauCeti` driver used to do, and prints the same report in the
+generated `#lint only <linters> in EpsilonEridani` driver used to do, and prints the same report in the
 same format, but as a compiled executable.
 
 It is faster because Batteries' lint framework and linters run natively; under `lean` they are
@@ -24,8 +24,8 @@ Usage: `lint-env-driver [--only-listed] <tag> <marker-file> <modules-file> <lint
 * Imports every module listed (one per line) in `<modules-file>`. `importModules` loads the closure
   at the `private` olean level, as the legacy (non-module) `#lint` driver did; see PRIVATE
   DECLARATIONS in `lint-env.sh`.
-* Runs exactly the named linters on the declarations of the `TauCeti` package, or, with
-  `--only-listed`, on just the declarations defined in the listed modules (the TauCeti modules
+* Runs exactly the named linters on the declarations of the `EpsilonEridani` package, or, with
+  `--only-listed`, on just the declarations defined in the listed modules (the EpsilonEridani modules
   they import are not linted). `lint-env.sh` uses that to lint only what a change touched.
 * Prints the report `#lint` would print. With violations, the header line carries the
   `<tag>:1:0: error: ` prefix that Lean gives an error diagnostic from a driver file named `<tag>`,
@@ -42,7 +42,7 @@ reports per-linter cost on those trace lines, CI logs will record what each lint
 open Lean Core Batteries.Tactic.Lint
 
 /-- The package whose declarations are linted. -/
-def lintedPackage : Name := `TauCeti
+def lintedPackage : Name := `EpsilonEridani
 
 unsafe def main (args : List String) : IO UInt32 := do
   let (onlyListed, args) := match args with

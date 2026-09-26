@@ -21,7 +21,7 @@ Detectors (each names the infra failure it implies):
   2. stale-pin       main's mathlib pin has not moved in several days. The bump has
                      stopped advancing, e.g. a wedged PR, an unresolved
                      first-known-bad freeze, or update.yml silently broken.
-  3. stranded-pr     A PR that is in-scope (TauCeti/ + allowed roots, bump-guard
+  3. stranded-pr     A PR that is in-scope (EpsilonEridani/ + allowed roots, bump-guard
                      green for any pin change), `build` green, every blocking
                      rubric green at HEAD, not draft/hold, mergeable, and quiet for
                      the grace window. auto-merge / the queue / merge-sweep broke.
@@ -41,7 +41,7 @@ Detectors (each names the infra failure it implies):
   6. main-red        The newest conclusive CI run on main is red, with no newer
                      successful run. The "main is always green" invariant is broken.
   7. stale-fkb       An open first-known-bad issue (label `dependency-incompatibility`)
-                     has been open past a grace window. A regression against TauCeti
+                     has been open past a grace window. A regression against EpsilonEridani
                      nobody has landed the fix for.
   8. eviction-loop   The merge queue has accepted and evicted the same green PR
                      repeatedly. One eviction looks like nothing (merge-sweep just
@@ -100,7 +100,7 @@ Environment:
     ZULIP_API_KEY, ZULIP_EMAIL, ZULIP_SITE   bot credentials (required unless --dry-run)
     ZULIP_CHANNEL                            default "Tau Ceti"
     ZULIP_TOPIC                              default "Stuck PRs"
-    GH_REPO                                  default "TauCetiProject/TauCeti"
+    GH_REPO                                  default "EpsilonEridaniProject/EpsilonEridani"
     GH_TOKEN / GITHUB_TOKEN                  used by `gh` for the GitHub API
 
 Only python3's standard library and an authenticated `gh` CLI are required. The
@@ -247,7 +247,7 @@ newest_status = core.newest_status
 
 def detect_stuck_bump():
     prs = gh_stream(
-        f"/repos/{REPO}/pulls?state=open&head=TauCetiProject:{LKG_BRANCH}&per_page=5",
+        f"/repos/{REPO}/pulls?state=open&head=EpsilonEridaniProject:{LKG_BRANCH}&per_page=5",
         jq='.[] | {number, head: .head.sha, created_at}', paginate=False)
     out = []
     for pr in prs:
@@ -278,7 +278,7 @@ def detect_stuck_bump():
 
 def detect_stuck_lint_repair():
     prs = gh_stream(
-        f"/repos/{REPO}/pulls?state=open&head=TauCetiProject:{LINT_REPAIR_BRANCH}&per_page=5",
+        f"/repos/{REPO}/pulls?state=open&head=EpsilonEridaniProject:{LINT_REPAIR_BRANCH}&per_page=5",
         jq='.[] | {number, created_at}', paginate=False)
     out = []
     for pr in prs:
@@ -293,8 +293,8 @@ def detect_stuck_lint_repair():
                     f"open over {LINT_REPAIR_STUCK_HOURS}h. Main carries environment-lint "
                     f"violations that PR builds do not see, because they lint only the modules "
                     f"a change touches.\n\n"
-                    f"**Fix:** check why TauCetiWorker's `lint-repair` stage is not greening it "
-                    f"(budget exhausted, or a violation it cannot fix), and fix TauCeti/ by hand."),
+                    f"**Fix:** check why EpsilonEridaniWorker's `lint-repair` stage is not greening it "
+                    f"(budget exhausted, or a violation it cannot fix), and fix EpsilonEridani/ by hand."),
             })
     return out
 
@@ -332,11 +332,11 @@ def detect_stale_pin():
 
 
 def is_automerge_scope(files):
-    """Mirror the path allowlist enforced by pr-build and TauCetiReview."""
+    """Mirror the path allowlist enforced by pr-build and EpsilonEridaniReview."""
     if not files:
         return False
-    allowed_roots = {"TauCeti.lean", "lake-manifest.json", "lean-toolchain"}
-    return all(path.startswith("TauCeti/") or path in allowed_roots for path in files)
+    allowed_roots = {"EpsilonEridani.lean", "lake-manifest.json", "lean-toolchain"}
+    return all(path.startswith("EpsilonEridani/") or path in allowed_roots for path in files)
 
 
 def open_prs():
@@ -580,7 +580,7 @@ def detect_stranded_prs():
                 f"green, and every blocking rubric green at HEAD, yet has sat unmerged "
                 f"for over {STRANDED_HOURS}h while merge-sweep runs hourly.\n\n"
                 f"**Fix:** the merge path is broken — check `auto-merge.yml`, the merge "
-                f"queue, and `merge-sweep.yml` (and the pinned TauCetiReview merge-only "
+                f"queue, and `merge-sweep.yml` (and the pinned EpsilonEridaniReview merge-only "
                 f"/ merge-sweep workflow) for why a ready PR is not being taken."),
         })
     return out

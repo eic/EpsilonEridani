@@ -165,7 +165,7 @@ thousands of requests and takes tens of minutes, so:
 - **the Pages workflow** fetches once, writes the charts, and derives
   `pipeline-health.json` from that snapshot plus a fresh readiness audit;
 - **anything else** should read the published
-  `https://taucetiproject.github.io/TauCeti/static/pipeline-health.json`
+  `https://epsiloneridaniproject.github.io/EpsilonEridani/static/pipeline-health.json`
   rather than repeat the walk.
 
 To work offline, dump a snapshot once and replay it:
@@ -173,7 +173,7 @@ To work offline, dump a snapshot once and replay it:
 ```
 scripts/pr_stats_graphs.py --dump-data snap.json --out-dir /tmp/charts
 scripts/pipeline_health.py --data snap.json
-# With the pinned engine at .tauceti-review/runner or TAUCETI_REVIEW_RUNNER:
+# With the pinned engine at .epsiloneridani-review/runner or TAUCETI_REVIEW_RUNNER:
 scripts/pipeline_health.py --data snap.json --verify-readiness
 ```
 

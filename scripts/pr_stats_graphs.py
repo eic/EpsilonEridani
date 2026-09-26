@@ -65,7 +65,7 @@ from pr_lifecycle import (  # noqa: F401  (re-exported for existing callers)
     review_cycle_starts,
 )
 
-SCOREBOARD_MARKER = "<!--tauceti-scoreboard-->"
+SCOREBOARD_MARKER = "<!--epsiloneridani-scoreboard-->"
 # A canonical scoreboard is the review engine's own comment: besides the public marker it
 # carries the machine-readable meta block, declares kind "scoreboard", and names the pull
 # request it was posted on.  Requiring all three rejects comments that merely quote the
@@ -539,7 +539,7 @@ def fetch_scoreboards(
         f"repos/{repo}/issues/comments?{query}",
         "--jq", f'.[] | select((.body // "") | contains({marker}))'
                 ' | . as $comment | ($comment.issue_url | split("/") | last) as $number'
-                ' | ([try ($comment.body | capture("<!--tauceti-meta:v1\\\\s+'
+                ' | ([try ($comment.body | capture("<!--epsiloneridani-meta:v1\\\\s+'
                 '(?<json>\\\\{[\\\\s\\\\S]*\\\\})\\\\s*-->").json'
                 ' | fromjson) catch null][0] // null) as $meta'
                 ' | {id: $comment.id, number: $number, created_at: $comment.created_at,'
@@ -1453,7 +1453,7 @@ def generate(
         "last_full_day": last_full_day.isoformat(),
         "definitions": {
             "review_cycle": cycles["definition"],
-            "review": "one canonical <!--tauceti-scoreboard--> comment on a pull request of this repository, identified by the tauceti-meta:v1 block naming that PR, whose posting login also authors a merged PR in the fetched snapshot",
+            "review": "one canonical <!--epsiloneridani-scoreboard--> comment on a pull request of this repository, identified by the epsiloneridani-meta:v1 block naming that PR, whose posting login also authors a merged PR in the fetched snapshot",
             "active_author": "distinct PR author opening a PR in the trailing seven-day window",
             "merge_latency": "PR creation timestamp to merge timestamp",
         },
@@ -1510,7 +1510,7 @@ def generate(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", default="TauCetiProject/TauCeti")
+    parser.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--data", type=Path, help="normalized offline snapshot")
     parser.add_argument("--dump-data", type=Path, help="write fetched normalized snapshot")

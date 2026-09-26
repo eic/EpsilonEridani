@@ -1,0 +1,196 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.AlgebraicTopology.FundamentalGroup.Product
+public import EpsilonEridani.Topology.Homotopy.HomotopyGroup.BasepointChange
+public import EpsilonEridani.Topology.Homotopy.HomotopyGroup.Product
+
+/-!
+# Aspherical spaces and Eilenberg--Mac Lane spaces of type `K(G, 1)`
+
+A based space is aspherical when it is path-connected and all of its homotopy groups in
+dimensions at least two are trivial. An Eilenberg--Mac Lane space of type `K(G, 1)` is an
+aspherical space whose fundamental group is isomorphic to `G`.
+
+The definitions are properties rather than structures carrying chosen isomorphisms. Thus they
+are invariant under changing an exhibited fundamental-group isomorphism, and do not retain
+noncanonical data. This file records independence of the base point, invariance under
+isomorphism of the target group, as well as closure under binary and indexed products.
+Invariance under homotopy equivalence, and so in particular under homeomorphism, is in
+`EpsilonEridani.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv`.
+
+The product results reuse the existing product isomorphisms for fundamental and higher
+homotopy groups.
+
+This implements the general API for `EpsilonEridaniRoadmap/UniversalCovers/README.md`, Stage 4,
+item 13, "`K(G, 1)` spaces". Concrete circle and torus examples are respectively in
+`EpsilonEridani.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane` and
+`EpsilonEridani.AlgebraicTopology.UniversalCover.Torus.EilenbergMacLane`.
+
+## Main declarations
+
+* `EpsilonEridani.IsAspherical`: path-connectedness together with vanishing homotopy groups in
+  dimensions at least two.
+* `EpsilonEridani.IsEilenbergMacLaneSpaceOne`: the property of being an Eilenberg--Mac Lane space
+  of type `K(G, 1)`.
+* `EpsilonEridani.IsAspherical.of_basepoint`, `EpsilonEridani.IsEilenbergMacLaneSpaceOne.of_basepoint`:
+  neither property depends on the base point.
+* `EpsilonEridani.IsAspherical.prod`, `EpsilonEridani.IsAspherical.pi`,
+  `EpsilonEridani.IsEilenbergMacLaneSpaceOne.prod`, `EpsilonEridani.IsEilenbergMacLaneSpaceOne.pi`:
+  closure under products.
+-/
+
+public section
+
+namespace EpsilonEridani
+
+open scoped Topology Topology.Homotopy
+
+noncomputable section
+
+universe u v w w'
+
+/-- A based space is aspherical when it is path-connected and every homotopy group in
+dimension at least two is trivial. -/
+def IsAspherical (X : Type u) [TopologicalSpace X] (x : X) : Prop :=
+  PathConnectedSpace X ∧ ∀ n : ℕ, Subsingleton (π_ (n + 2) X x)
+
+/-- Characteristic restatement of asphericity. -/
+theorem isAspherical_iff {X : Type u} [TopologicalSpace X] {x : X} :
+    IsAspherical X x ↔
+      PathConnectedSpace X ∧ ∀ n : ℕ, Subsingleton (π_ (n + 2) X x) :=
+  Iff.rfl
+
+namespace IsAspherical
+
+variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
+  {x : X} {y : Y}
+
+/-- Construct asphericity from path-connectedness and the vanishing of all homotopy groups
+in dimensions at least two. -/
+protected theorem mk (hX : PathConnectedSpace X)
+    (hπ : ∀ n : ℕ, Subsingleton (π_ (n + 2) X x)) : IsAspherical X x :=
+  ⟨hX, hπ⟩
+
+/-- An aspherical space is path-connected. -/
+protected theorem pathConnectedSpace (h : IsAspherical X x) : PathConnectedSpace X :=
+  h.1
+
+/-- Every homotopy group of an aspherical space in dimension at least two is trivial. -/
+protected theorem subsingleton_homotopyGroup (h : IsAspherical X x) (n : ℕ) :
+    Subsingleton (π_ (n + 2) X x) :=
+  h.2 n
+
+/-- **Asphericity does not depend on the base point.** An aspherical space is path connected, so
+its homotopy groups at any two points are isomorphic. -/
+theorem of_basepoint (h : IsAspherical X x) (x' : X) : IsAspherical X x' := by
+  let : PathConnectedSpace X := h.pathConnectedSpace
+  refine IsAspherical.mk h.pathConnectedSpace fun n ↦ ?_
+  let : Subsingleton (π_ (n + 2) X x) := h.subsingleton_homotopyGroup n
+  obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin (n + 2)) (x := x) (y := x')
+  exact φ.toEquiv.subsingleton_congr.mp inferInstance
+
+/-- The product of two aspherical spaces is aspherical. -/
+theorem prod (hX : IsAspherical X x) (hY : IsAspherical Y y) :
+    IsAspherical (X × Y) (x, y) := by
+  let : PathConnectedSpace X := hX.pathConnectedSpace
+  let : PathConnectedSpace Y := hY.pathConnectedSpace
+  refine ⟨inferInstance, fun n ↦ ?_⟩
+  let : Subsingleton (π_ (n + 2) X x) := hX.subsingleton_homotopyGroup n
+  let : Subsingleton (π_ (n + 2) Y y) := hY.subsingleton_homotopyGroup n
+  exact
+    (HomotopyGroup.prodEquiv (N := Fin (n + 2)) x y).subsingleton_congr.mpr inferInstance
+
+variable {ι : Type w} {Z : ι → Type u} [∀ i, TopologicalSpace (Z i)] {z : ∀ i, Z i}
+
+/-- An indexed product of aspherical spaces is aspherical. -/
+theorem pi (h : ∀ i, IsAspherical (Z i) (z i)) :
+    IsAspherical (∀ i, Z i) z := by
+  let : ∀ i, PathConnectedSpace (Z i) := fun i ↦ (h i).pathConnectedSpace
+  refine ⟨inferInstance, fun n ↦ ?_⟩
+  let : ∀ i, Subsingleton (π_ (n + 2) (Z i) (z i)) :=
+    fun i ↦ (h i).subsingleton_homotopyGroup n
+  exact inferInstance
+
+end IsAspherical
+
+/-- A based space is an Eilenberg--Mac Lane space of type `K(G, 1)` when it is aspherical
+and its fundamental group is isomorphic to `G`. -/
+def IsEilenbergMacLaneSpaceOne (G : Type u) [Group G]
+    (X : Type v) [TopologicalSpace X] (x : X) : Prop :=
+  IsAspherical X x ∧ Nonempty (FundamentalGroup X x ≃* G)
+
+/-- Characteristic restatement of the `K(G, 1)` property. -/
+theorem isEilenbergMacLaneSpaceOne_iff {G : Type u} [Group G]
+    {X : Type v} [TopologicalSpace X] {x : X} :
+    IsEilenbergMacLaneSpaceOne G X x ↔
+      IsAspherical X x ∧ Nonempty (FundamentalGroup X x ≃* G) :=
+  Iff.rfl
+
+namespace IsEilenbergMacLaneSpaceOne
+
+variable {G : Type u} {H : Type v} [Group G] [Group H]
+  {X : Type w} {Y : Type w'} [TopologicalSpace X] [TopologicalSpace Y]
+  {x : X} {y : Y}
+
+/-- Construct the `K(G, 1)` property from asphericity and an isomorphism between the
+fundamental group and `G`. -/
+protected theorem mk (hX : IsAspherical X x) (hπ : Nonempty (FundamentalGroup X x ≃* G)) :
+    IsEilenbergMacLaneSpaceOne G X x :=
+  ⟨hX, hπ⟩
+
+/-- A `K(G, 1)` space is aspherical. -/
+protected theorem isAspherical (h : IsEilenbergMacLaneSpaceOne G X x) :
+    IsAspherical X x :=
+  h.1
+
+/-- The fundamental group of a `K(G, 1)` space is isomorphic to `G`. -/
+protected theorem nonempty_fundamentalGroupMulEquiv (h : IsEilenbergMacLaneSpaceOne G X x) :
+    Nonempty (FundamentalGroup X x ≃* G) :=
+  h.2
+
+/-- **The `K(G, 1)` property does not depend on the base point.** -/
+theorem of_basepoint (h : IsEilenbergMacLaneSpaceOne G X x) (x' : X) :
+    IsEilenbergMacLaneSpaceOne G X x' := by
+  let : PathConnectedSpace X := h.isAspherical.pathConnectedSpace
+  exact IsEilenbergMacLaneSpaceOne.mk (h.isAspherical.of_basepoint x')
+    (h.nonempty_fundamentalGroupMulEquiv.map fun f ↦
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x' x).trans f)
+
+/-- Transporting the target group along an isomorphism preserves the `K(G, 1)` property. -/
+theorem of_mulEquiv (h : IsEilenbergMacLaneSpaceOne G X x) (e : G ≃* H) :
+    IsEilenbergMacLaneSpaceOne H X x :=
+  ⟨h.isAspherical, h.nonempty_fundamentalGroupMulEquiv.map fun f ↦ f.trans e⟩
+
+variable {G₁ : Type u} {G₂ : Type v} [Group G₁] [Group G₂]
+  {X₁ : Type w} {X₂ : Type w'} [TopologicalSpace X₁] [TopologicalSpace X₂]
+  {x₁ : X₁} {x₂ : X₂}
+
+/-- The product of a `K(G₁, 1)` space and a `K(G₂, 1)` space is a
+`K(G₁ × G₂, 1)` space. -/
+theorem prod (h₁ : IsEilenbergMacLaneSpaceOne G₁ X₁ x₁) (h₂ : IsEilenbergMacLaneSpaceOne G₂ X₂ x₂) :
+    IsEilenbergMacLaneSpaceOne (G₁ × G₂) (X₁ × X₂) (x₁, x₂) := by
+  refine ⟨h₁.isAspherical.prod h₂.isAspherical, ?_⟩
+  obtain ⟨e₁⟩ := h₁.nonempty_fundamentalGroupMulEquiv
+  obtain ⟨e₂⟩ := h₂.nonempty_fundamentalGroupMulEquiv
+  exact ⟨(FundamentalGroup.prodMulEquiv x₁ x₂).trans (e₁.prodCongr e₂)⟩
+
+variable {ι : Type w} {G' : ι → Type u} {Z : ι → Type v}
+  [∀ i, Group (G' i)] [∀ i, TopologicalSpace (Z i)] {z : ∀ i, Z i}
+
+/-- An indexed product of `K(Gᵢ, 1)` spaces is a `K(Π i, Gᵢ, 1)` space. -/
+theorem pi (h : ∀ i, IsEilenbergMacLaneSpaceOne (G' i) (Z i) (z i)) :
+    IsEilenbergMacLaneSpaceOne (∀ i, G' i) (∀ i, Z i) z := by
+  refine ⟨IsAspherical.pi fun i ↦ (h i).isAspherical, ?_⟩
+  exact ⟨(FundamentalGroup.piMulEquiv z).trans
+    (MulEquiv.piCongrRight fun i ↦ Classical.choice (h i).nonempty_fundamentalGroupMulEquiv)⟩
+
+end IsEilenbergMacLaneSpaceOne
+
+end
+
+end EpsilonEridani

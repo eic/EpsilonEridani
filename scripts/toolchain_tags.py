@@ -55,8 +55,8 @@ If a tag does not match the rule, the tool reports it and changes nothing.
 ## Environment
 
     GH_TOKEN / GITHUB_TOKEN   authenticates the `gh` CLI
-    GH_REPO                   this repository (default TauCetiProject/TauCeti)
-    LAKE_CACHE_REVISION_ENDPOINT_PUBLIC   default https://cache.taucetiproject.org/revisions
+    GH_REPO                   this repository (default EpsilonEridaniProject/EpsilonEridani)
+    LAKE_CACHE_REVISION_ENDPOINT_PUBLIC   default https://cache.epsiloneridaniproject.org/revisions
 
 Only python3's standard library, git, and an authenticated `gh` CLI.
 """
@@ -79,9 +79,9 @@ from lake_cache_probe import exact_map_url
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "pr_status"))
 import zulip as zp  # noqa: E402
 
-REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
+REPO = os.environ.get("GH_REPO", "EpsilonEridaniProject/EpsilonEridani")
 REVISIONS = os.environ.get("LAKE_CACHE_REVISION_ENDPOINT_PUBLIC",
-                           "https://cache.taucetiproject.org/revisions")
+                           "https://cache.epsiloneridaniproject.org/revisions")
 
 # Releases older than this are out of scope: the Lake artifact cache does not reach back
 # past them, so a tag could not promise a usable cache. Raise it, never lower it.
@@ -472,7 +472,7 @@ def render(rows, include_policy=True, collapse_old=False):
 
 def tag_message(row):
     pin = row["mathlib_rev"] or "unknown"
-    return (f"TauCeti {row['release']}\n\n"
+    return (f"EpsilonEridani {row['release']}\n\n"
             f"Lean toolchain: {row['toolchain']}\n"
             f"Mathlib:        {pin}\n"
             f"Commit:         {row['commit']} (first commit on main with this toolchain)\n\n"
@@ -491,8 +491,8 @@ def create_tag(row, dry_run=False):
         print(f"would tag {release} at {sha}\n" + tag_message(row))
         return False
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    tagger = git("config", "user.name", check=False) or "tauceti"
-    email = git("config", "user.email", check=False) or "tauceti@localhost"
+    tagger = git("config", "user.name", check=False) or "epsiloneridani"
+    email = git("config", "user.email", check=False) or "epsiloneridani@localhost"
     out = subprocess.run(
         ["gh", "api", "-X", "POST", f"repos/{REPO}/git/tags",
          "-f", f"tag={release}", "-f", f"message={tag_message(row)}",

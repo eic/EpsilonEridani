@@ -35,7 +35,7 @@ def pr(number, events, *, state="OPEN", created=None, merged=None):
 
 
 def snapshot(prs):
-    return {"schema_version": 1, "repo": "TauCetiProject/TauCeti",
+    return {"schema_version": 1, "repo": "EpsilonEridaniProject/EpsilonEridani",
             "fetched_at": iso(NOW), "prs": prs, "scoreboards": {}}
 
 

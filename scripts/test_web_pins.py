@@ -2,7 +2,7 @@
 
 Run with: python3 scripts/test_web_pins.py
 
-`web/examples` compiles the TauCeti library, so it needs a Lean toolchain and a Mathlib, and the
+`web/examples` compiles the EpsilonEridani library, so it needs a Lean toolchain and a Mathlib, and the
 only correct ones are the root project's. Nothing in Lake enforces that, and nothing outside
 `pages.yml` builds that project, so when they part company the only symptom is the three-hourly
 Pages job going red while every pull request stays green. That is not hypothetical: by September
@@ -24,7 +24,7 @@ the site in the first place. `test_deleting_the_toolchain_would_inherit_the_wron
 that trap open so nobody re-treads it.
 
 That also keeps a Mathlib bump touching only the root pins. Committing the copies put two files
-outside `TauCeti/` into every bump, and the merge policy refuses to auto-merge a pull request
+outside `EpsilonEridani/` into every bump, and the merge policy refuses to auto-merge a pull request
 touching a lakefile or an unlisted path, so each bump would have stopped for a human.
 
 These tests check the generator's output rather than any committed file, because after this
@@ -90,7 +90,7 @@ class WebPins(unittest.TestCase):
         self.assertNotEqual(
             tracked.returncode, 0,
             "web/examples/lean-toolchain is tracked again; committing it puts a file outside "
-            "TauCeti/ into every Mathlib bump and stops the bump auto-merging.")
+            "EpsilonEridani/ into every Mathlib bump and stops the bump auto-merging.")
         ignored = git("check-ignore", "-q", "web/examples/lean-toolchain")
         self.assertEqual(ignored.returncode, 0,
                          "web/examples/lean-toolchain is not covered by .gitignore")
@@ -100,7 +100,7 @@ class WebPins(unittest.TestCase):
         self.assertNotEqual(
             tracked.returncode, 0,
             "web/examples/lake-manifest.json is tracked again. It is generated from the root "
-            "pins; committing it puts a file outside TauCeti/ into every Mathlib bump and stops "
+            "pins; committing it puts a file outside EpsilonEridani/ into every Mathlib bump and stops "
             "the bump auto-merging.")
 
     def test_the_manifest_is_ignored(self):
@@ -123,9 +123,9 @@ class WebPins(unittest.TestCase):
     def test_it_adds_only_the_two_entries_the_root_lacks(self):
         extra = set(self.generated) - set(self.root)
         self.assertEqual(
-            extra, {"TauCeti", "subverso"},
+            extra, {"EpsilonEridani", "subverso"},
             "the generated manifest introduces packages the root does not pin: "
-            f"{sorted(extra - {'TauCeti', 'subverso'})}. Anything beyond the root closure, the "
+            f"{sorted(extra - {'EpsilonEridani', 'subverso'})}. Anything beyond the root closure, the "
             "path requirement, and SubVerso is unpinned by the root and free to drift.")
 
     def test_subverso_matches_the_verso_site(self):
@@ -138,12 +138,12 @@ class WebPins(unittest.TestCase):
             "write them.")
 
     def test_the_lakefile_still_builds_the_library(self):
-        # The premise of everything above: if the examples project stopped compiling TauCeti,
+        # The premise of everything above: if the examples project stopped compiling EpsilonEridani,
         # matching the root's pins would no longer be what makes the site build trustworthy.
         text = sync.EXAMPLES_LAKEFILE.read_text()
         self.assertRegex(
-            text, r'require\s+«?TauCeti»?\s+from\s+"\.\./\.\."',
-            "web/examples/lakefile.lean no longer requires TauCeti from '../..'; revisit the "
+            text, r'require\s+«?EpsilonEridani»?\s+from\s+"\.\./\.\."',
+            "web/examples/lakefile.lean no longer requires EpsilonEridani from '../..'; revisit the "
             "docstring above rather than deleting this test.")
 
     def test_the_lakefile_nominates_mathlib_the_way_the_root_does(self):

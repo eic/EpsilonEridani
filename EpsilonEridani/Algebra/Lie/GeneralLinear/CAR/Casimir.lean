@@ -1,0 +1,265 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.Algebra.Lie.GeneralLinear.Casimir
+public import EpsilonEridani.Algebra.Lie.GeneralLinear.Fock
+
+import EpsilonEridani.Algebra.Lie.GeneralLinear.CAR.HighestWeight
+import EpsilonEridani.Algebra.Lie.GeneralLinear.Basic
+import EpsilonEridani.LinearAlgebra.CliffordAlgebra.Basic
+
+/-!
+# The trace-form Casimir on the CAR module
+
+Let `Fᵢⱼ` be the normal-ordered quadratic lift of the matrix unit `Eᵢⱼ` to the Clifford
+algebra of the trace form. The trace-form Casimir acts on the left-regular CAR module by left
+multiplication with `∑ i, j, Fᵢⱼ Fⱼᵢ`. This file proves that this Clifford element is the scalar
+
+`N (2 N² - 1) / 4`.
+
+This scalar is the Casimir invariant used with the CAR occupation spectrum to constrain the
+highest weights of irreducible constituents. It is therefore an input to the constituent-weight
+comparison and the resulting isotypic decomposition of the left-regular CAR module.
+
+## Main results
+
+* `EpsilonEridani.representation_glCasimir_car_apply`: the Casimir acts on every CAR vector by the
+  scalar `N (2 N² - 1) / 4`.
+
+## References
+
+* D. Panyushev, *The exterior algebra and "spin" of an orthogonal g-module*,
+  Transformation Groups 6 (2001), 371–396, Proposition 2.4 and Example 2.5(1).
+* B. Kostant, *Clifford algebra analogue of the Hopf--Koszul--Samelson theorem*,
+  Advances in Mathematics 125 (1997), 275–350.
+-/
+
+public section
+
+namespace EpsilonEridani
+
+open CliffordAlgebra Finset
+open scoped EpsilonEridani
+
+noncomputable section
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+universe u
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+variable {N : ℕ}
+
+section CliffordCalculation
+
+attribute [local instance 2000] Classical.decEq
+
+private noncomputable abbrev carF (i j : Fin N) :
+    CliffordAlgebra (traceQuadraticForm K (Fin N)) :=
+  glCliffordHom (K := K) (n := Fin N) (Matrix.single i j 1)
+
+private noncomputable def carCasimirElement :
+    CliffordAlgebra (traceQuadraticForm K (Fin N)) :=
+  ∑ i : Fin N, ∑ j : Fin N,
+    carF (K := K) i j * carF j i
+
+omit [Invertible (2 : K)] in
+private theorem sum_carGenerator_cycle (a b : Fin N) :
+    (∑ i : Fin N, ∑ k : Fin N,
+      carGenerator (K := K) k i * carGenerator i b * carGenerator a k) =
+      ∑ i : Fin N, ∑ k : Fin N,
+        carGenerator (K := K) i b * carGenerator a k * carGenerator k i := by
+  have hcycle (i k : Fin N) :
+      carGenerator (K := K) k i * carGenerator i b * carGenerator a k =
+        carGenerator i b * carGenerator a k * carGenerator k i -
+          (if i = a then (2 : K) • carGenerator i b else 0) +
+            if k = b then (2 : K) • carGenerator a k else 0 := by
+    have hib := carGenerator_mul_add_swap (K := K) k i i b
+    have hak := carGenerator_mul_add_swap (K := K) k i a k
+    have hib' : carGenerator (K := K) k i * carGenerator i b =
+        algebraMap K _ (if i = i ∧ b = k then 2 * (1 * 1) else 0) -
+          carGenerator i b * carGenerator k i :=
+      eq_sub_iff_add_eq.mpr (by simp)
+    have hak' : carGenerator (K := K) k i * carGenerator a k =
+        algebraMap K _ (if i = a ∧ k = k then 2 * (1 * 1) else 0) -
+          carGenerator a k * carGenerator k i :=
+      eq_sub_iff_add_eq.mpr (by simp)
+    rw [hib', sub_mul, mul_assoc (carGenerator (K := K) i b), hak', mul_sub]
+    have hcentral (x : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
+        algebraMap K _ (2 : K) * x = x * algebraMap K _ (2 : K) :=
+      Algebra.commutes (2 : K) x
+    by_cases hia : i = a <;> by_cases hbk : b = k
+    all_goals try have hkb : k ≠ b := Ne.symm hbk
+    all_goals simp_all only [true_and, mul_one, and_true, ite_true, ite_false, map_zero,
+      zero_mul, Algebra.smul_def, map_ofNat]
+    all_goals noncomm_ring
+  simp_rw [hcycle]
+  simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib]
+  simp
+
+private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
+    Commute (carCasimirElement (K := K) (N := N)) (carGenerator (K := K) a b) := by
+  rw [commute_iff_lie_eq, carCasimirElement, sum_lie]
+  simp_rw [sum_lie]
+  have hleib (x y z : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
+      ⁅x * y, z⁆ = x * ⁅y, z⁆ + ⁅x, z⁆ * y := by
+    simp only [Ring.lie_def]
+    noncomm_ring
+  have hF (i j : Fin N) :
+      carF (K := K) i j =
+      (2 : K)⁻¹ • ∑ k : Fin N, carGenerator (K := K) i k * carGenerator k j := by
+    simpa only [carF, carGenerator_def] using
+      glCliffordHom_single (K := K) (n := Fin N) i j
+  have hA : (∑ i : Fin N, ∑ j : Fin N,
+      carF (K := K) i j * (if i = a then carGenerator (K := K) j b else 0)) =
+        ∑ j : Fin N, carF (K := K) a j * carGenerator j b := by
+    simp [mul_ite]
+  have hB : (∑ i : Fin N, ∑ j : Fin N,
+      carF (K := K) i j * (if b = j then carGenerator (K := K) a i else 0)) =
+        ∑ i : Fin N, carF (K := K) i b * carGenerator a i := by
+    simp [mul_ite]
+  have hC : (∑ i : Fin N, ∑ j : Fin N,
+      (if j = a then carGenerator (K := K) i b else 0) * carF j i) =
+        ∑ i : Fin N, carGenerator (K := K) i b * carF a i := by
+    simp [ite_mul]
+  have hD : (∑ i : Fin N, ∑ j : Fin N,
+      (if b = i then carGenerator (K := K) a j else 0) * carF j i) =
+        ∑ j : Fin N, carGenerator (K := K) a j * carF j b := by
+    simp [ite_mul]
+  -- The Leibniz rule leaves four sums. The two outer sums agree after expanding `F`, while the
+  -- cyclic CAR identity identifies the two inner sums; both pairs therefore cancel.
+  calc
+    ∑ i : Fin N, ∑ j : Fin N, ⁅carF (K := K) i j * carF j i, carGenerator a b⁆ =
+        (∑ j : Fin N, carF (K := K) a j * carGenerator j b) -
+          (∑ i : Fin N, carF (K := K) i b * carGenerator a i) +
+          (∑ i : Fin N, carGenerator (K := K) i b * carF a i) -
+          ∑ j : Fin N, carGenerator (K := K) a j * carF j b := by
+      simp_rw [hleib, glCliffordHom_single_lie_carGenerator, mul_sub, sub_mul,
+        Finset.sum_add_distrib,
+        Finset.sum_sub_distrib]
+      rw [hA, hB, hC, hD]
+      abel
+    _ = 0 := by
+      have hAD : (∑ j : Fin N, carF (K := K) a j * carGenerator j b) =
+          ∑ j : Fin N, carGenerator (K := K) a j * carF j b := by
+        simp_rw [hF, smul_mul_assoc, mul_smul_comm,
+          Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
+        rw [Finset.sum_comm]
+        simp only [mul_assoc]
+      have hBC : (∑ i : Fin N, carF (K := K) i b * carGenerator a i) =
+          ∑ i : Fin N, carGenerator (K := K) i b * carF a i := by
+        simp_rw [hF, smul_mul_assoc, mul_smul_comm,
+          Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
+        rw [Finset.sum_comm]
+        simpa only [← Finset.smul_sum, mul_assoc] using
+          congrArg ((2 : K)⁻¹ • ·) (sum_carGenerator_cycle (K := K) a b)
+      rw [hAD, hBC]
+      abel
+
+private theorem carCasimirElement_mem_even :
+    carCasimirElement (K := K) (N := N) ∈ even (traceQuadraticForm K (Fin N)) := by
+  have hF_even (i j : Fin N) :
+      carF (K := K) i j ∈ evenOdd (traceQuadraticForm K (Fin N)) 0 := by
+    rw [carF, glCliffordHom_single]
+    apply Submodule.smul_mem
+    apply Submodule.sum_mem
+    intro k _
+    simpa only [carGenerator_def] using
+      ι_mul_ι_mem_evenOdd_zero (traceQuadraticForm K (Fin N))
+        (Matrix.single i k 1) (Matrix.single k j 1)
+  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
+  apply Submodule.sum_mem
+  intro i _
+  apply Submodule.sum_mem
+  intro j _
+  simpa only [zero_add] using
+    SetLike.mul_mem_graded (hF_even i j) (hF_even j i)
+
+private theorem carCasimirElement_eq_algebraMap :
+    ∃ r : K, carCasimirElement (K := K) (N := N) =
+      algebraMap K (CliffordAlgebra (traceQuadraticForm K (Fin N))) r := by
+  apply exists_eq_algebraMap_of_mem_even_of_commute
+    (traceQuadraticForm K (Fin N)) (traceQuadraticForm_nondegenerate K (Fin N))
+      (carCasimirElement (K := K) (N := N)) carCasimirElement_mem_even
+  intro X
+  rw [Matrix.matrix_eq_sum_single X, map_sum]
+  apply Commute.sum_right
+  intro i _
+  rw [map_sum]
+  apply Commute.sum_right
+  intro j _
+  have hsingle : Matrix.single i j (X i j) =
+      X i j • Matrix.single i j (1 : K) := by
+    rw [Matrix.smul_single, smul_eq_mul, mul_one]
+  rw [hsingle, map_smul]
+  simpa only [carGenerator_def] using
+    (commute_carCasimirElement_carGenerator (K := K) i j).smul_right (X i j)
+
+end CliffordCalculation
+
+private theorem representation_glCasimir_eq_carCasimirElement_mul
+    (c : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
+    UniversalEnvelopingAlgebra.representation K (Matrix (Fin N) (Fin N) K)
+        (CliffordAlgebra (traceQuadraticForm K (Fin N))) (glCasimir K (Fin N)) c =
+      carCasimirElement (K := K) (N := N) * c := by
+  have hunit (i j : Fin N) :
+      glCliffordHom (K := K) (n := Fin N) (Matrix.single i j 1) =
+        carF (K := K) i j := by
+    congr 1
+    ext a b
+    simp only [Matrix.single_apply]
+    split_ifs <;> rfl
+  calc
+    _ = ∑ i : Fin N, ∑ j : Fin N,
+        ⁅Matrix.single i j (1 : K), ⁅Matrix.single j i (1 : K), c⁆⁆ :=
+      representation_glCasimir_apply K (Fin N) c
+    (∑ i : Fin N, ∑ j : Fin N,
+      ⁅Matrix.single i j (1 : K), ⁅Matrix.single j i (1 : K), c⁆⁆) =
+        ∑ i : Fin N, ∑ j : Fin N, carF (K := K) i j * (carF j i * c) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      apply Finset.sum_congr rfl
+      intro j _
+      rw [car_lie_def, car_lie_def, hunit, hunit]
+    _ = carCasimirElement * c := by
+      rw [carCasimirElement, Finset.sum_mul]
+      simp_rw [Finset.sum_mul, mul_assoc]
+
+private theorem carCasimirElement_eq_scalar :
+    carCasimirElement (K := K) (N := N) =
+      algebraMap K (CliffordAlgebra (traceQuadraticForm K (Fin N)))
+        ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) := by
+  obtain ⟨r, hr⟩ := carCasimirElement_eq_algebraMap (K := K) (N := N)
+  have hhighest :
+      IsGlHighestWeightVector (glHalfStaircase K N)
+        (carHighestWeightVector K (Fin N)) :=
+    isGlHighestWeightVector_glHalfStaircase_carHighestWeightVector (K := K) N
+  have hcasimir := glCasimir_smul_of_isGlHighestWeightVector (K := K)
+    hhighest
+  rw [representation_glCasimir_eq_carCasimirElement_mul, hr,
+    glCasimir_eigenvalue_glHalfStaircase] at hcasimir
+  have hscalar : r • carHighestWeightVector K (Fin N) =
+      ((N : K) * (2 * (N : K) ^ 2 - 1) / 4) • carHighestWeightVector K (Fin N) := by
+    simpa only [Algebra.smul_def] using hcasimir
+  have hr' : r = (N : K) * (2 * (N : K) ^ 2 - 1) / 4 :=
+    smul_left_injective K (carHighestWeightVector_ne_zero (K := K) (n := Fin N)) hscalar
+  rwa [hr'] at hr
+
+/-- The trace-form Casimir acts on the left-regular CAR module by the scalar
+`N (2 N² - 1) / 4`. -/
+@[simp]
+theorem representation_glCasimir_car_apply (F : Type u) [Field F] [Invertible (2 : F)] (N : ℕ)
+    (c : CliffordAlgebra (traceQuadraticForm F (Fin N))) :
+    UniversalEnvelopingAlgebra.representation F (Matrix (Fin N) (Fin N) F)
+        (CliffordAlgebra (traceQuadraticForm F (Fin N))) (glCasimir F (Fin N)) c =
+      ((N : F) * (2 * (N : F) ^ 2 - 1) / 4) • c := by
+  rw [representation_glCasimir_eq_carCasimirElement_mul, carCasimirElement_eq_scalar,
+    Algebra.smul_def]
+
+end
+
+end EpsilonEridani

@@ -6,12 +6,12 @@ the three repos fit together; this file only adds the contract for agents workin
 ## Before you write code
 
 **Read the roadmap first.** The roadmaps live in the separate
-[TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repo. The roadmap gates
+[EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap) repo. The roadmap gates
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
 asked for it or you found the gap yourself — say so and leave it to a human to add, rather than
-building it here. Never open a PR or an issue in TauCetiRoadmap yourself; reviewing a roadmap
+building it here. Never open a PR or an issue in EpsilonEridaniRoadmap yourself; reviewing a roadmap
 change needs human attention.
 
 Improving code that already exists is **always in scope** and needs no roadmap entry:
@@ -36,7 +36,7 @@ Use the canonical roadmap directory name. This is attribution, not authorization
 mathematics must still cite the exact roadmap file and target it advances, while a refactor
 needs no fresh roadmap claim but should name the one roadmap chiefly motivating it. Use
 `Roadmap: none` for genuinely general, cross-cutting, infrastructure, or dependency work.
-Do not infer the association from a `TauCeti/` directory name; code organization and roadmap
+Do not infer the association from a `EpsilonEridani/` directory name; code organization and roadmap
 scope do not coincide.
 
 ## The rules of the repo
@@ -53,7 +53,7 @@ scope do not coincide.
   import modules, deprecated shims (including `deprecated_module`), or duplicate theorem names.
   External users of an older revision must update to the canonical API on current `main`;
   breaking their source compatibility is not a reason to keep an obsolete surface.
-- `TauCeti/` is the only place code goes. `scripts/`, `.github/`, and the lakefile
+- `EpsilonEridani/` is the only place code goes. `scripts/`, `.github/`, and the lakefile
   (`lakefile.toml`/`lakefile.lean`) are human-owned. The two Lake *pins* —
   `lake-manifest.json` and `lean-toolchain` — are an exception: a **forward-only** bump of
   them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving
@@ -69,15 +69,15 @@ scope do not coincide.
   work the PR exists to do. This binds automated fix/review agents too: if a PR carries
   human-owned changes, leave it alone (skip it) rather than "fixing" it toward auto-merge.
 - **Do not `--admin`-merge AI-authored PRs.** Landing a PR is the review pipeline's job: it
-  merges only once every rubric is green (and, for `TauCeti/`-only diffs, CI is green). Using an
+  merges only once every rubric is green (and, for `EpsilonEridani/`-only diffs, CI is green). Using an
   admin override to bypass that gate — even when the reviews have not been run — defeats the
   project's quality control. If the pipeline is not producing verdicts, run the review
-  (`tauceti-review`) or leave the PR for a human; never force it through.
+  (`epsiloneridani-review`) or leave the PR for a human; never force it through.
 
 ## How review works
 
 Open a PR. After CI passes, AI review agents judge it against the rubrics in
-[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview) (correctness, reuse, API,
+[EpsilonEridaniReview](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview) (correctness, reuse, API,
 naming, placement, proofs, and more) and post `approve` / `request_changes` / `block`
 verdicts. Address their findings and push; re-review runs automatically on new commits, and a
 human can comment `/review` to re-trigger.
@@ -87,12 +87,12 @@ reverses a change an earlier finding required — do not silently satisfy one an
 re-fire. Contest one of the threads, link the conflicting one, and quote its wording (rubric
 and round). Explain why both cannot hold. Show the contradiction; do not just assert one.
 
-When every rubric approves on the current commit and the PR changes only `TauCeti/` (with CI
+When every rubric approves on the current commit and the PR changes only `EpsilonEridani/` (with CI
 green), it **merges automatically**. A PR that *also* changes `lake-manifest.json` and/or
 `lean-toolchain` can auto-merge too, but only once the `bump-guard` check confirms it is a
 forward-only bump and the sandboxed build passes against the new pins. A PR that touches any
 other human-owned path (`scripts/`, `.github/`, or the lakefile) always
 needs a human review. The
 review pipeline is sandboxed so it can run on untrusted PRs; see
-[`SECURITY.md`](https://github.com/TauCetiProject/TauCetiReview/blob/main/SECURITY.md) in
-TauCetiReview.
+[`SECURITY.md`](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/blob/main/SECURITY.md) in
+EpsilonEridaniReview.

@@ -2,7 +2,7 @@
 """Shared command-level Lean source parser and dot-notation namespace lint.
 
 The parser is intentionally syntactic and is shared by repository hygiene checks. The dot-notation
-lint finds declarations under ``TauCeti.<Mathlib namespace>`` with an explicit argument of
+lint finds declarations under ``EpsilonEridani.<Mathlib namespace>`` with an explicit argument of
 the corresponding type, including explicit section variables used by the declaration. Mathlib
 type namespaces are conservatively approximated by namespace commands in Mathlib's sources;
 organisational namespaces, namespaces belonging to sort-valued Tau Ceti declarations
@@ -527,7 +527,7 @@ def own_declaration_paths(sources: dict[pathlib.Path, str]) -> set[tuple[str, ..
         )
         for name in names:
             path = name.split(".")
-            if path and path[0] == "TauCeti":
+            if path and path[0] == "EpsilonEridani":
                 owned.add(tuple(path))
     return owned
 
@@ -705,7 +705,7 @@ def find_violations(
                     included_names.difference_update(names)
             one_shot_includes.clear()
             namespaces = [component for scope in stack for component in scope.components]
-            if not namespaces or namespaces[0] != "TauCeti":
+            if not namespaces or namespaces[0] != "EpsilonEridani":
                 continue
             if declaration.name is not None and declaration.name.startswith("_root_."):
                 continue
@@ -779,7 +779,7 @@ def main(argv: list[str] | None = None) -> int:
         "scripts/lint-dot-notation-baseline.txt"))
     parser.add_argument("--mathlib-root", type=pathlib.Path, default=pathlib.Path(
         ".lake/packages/mathlib/Mathlib"))
-    parser.add_argument("--source-root", type=pathlib.Path, default=pathlib.Path("TauCeti"))
+    parser.add_argument("--source-root", type=pathlib.Path, default=pathlib.Path("EpsilonEridani"))
     parser.add_argument("--write-baseline", action="store_true")
     args = parser.parse_args(argv)
 
@@ -828,7 +828,7 @@ def main(argv: list[str] | None = None) -> int:
     if not new:
         return 0
 
-    print("\nA Mathlib type's namespace is nested inside `namespace TauCeti`, so dot")
+    print("\nA Mathlib type's namespace is nested inside `namespace EpsilonEridani`, so dot")
     print("notation on that type does not elaborate. Move the declaration to the type's")
     print("root namespace. Watch for `open` and `variable` commands that must move with it.\n")
     print("If the namespace belongs to a Tau Ceti type, give its definition an explicit")

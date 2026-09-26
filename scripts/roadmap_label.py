@@ -11,10 +11,10 @@ itself with the roadmap that chiefly motivates the cleanup.
 A PR gets exactly one label, decided in this order:
 
 1. `roadmap/none` -- the diff touches an infrastructure path (anything outside
-   `TauCeti/`, the root `TauCeti.lean`, and the two ordinary Lake pins).
+   `EpsilonEridani/`, the root `EpsilonEridani.lean`, and the two ordinary Lake pins).
 2. `roadmap/none` -- the diff is a pin-only dependency bump.
 3. The one valid explicit ``Roadmap:`` declaration.
-4. One validated canonical ``focus`` in a ``tauceti-target:v1`` marker.
+4. One validated canonical ``focus`` in a ``epsiloneridani-target:v1`` marker.
 5. One canonical roadmap-file citation, for compatibility with older PR bodies.
 6. `roadmap/Unknown` -- attribution is absent, invalid, or conflicting.
 
@@ -26,7 +26,7 @@ evidence.
 ## Usage
 
     # classify one PR and print the label (no writes):
-    roadmap_label.py --pr 781 --repo TauCetiProject/TauCeti --roadmap-dir roadmap
+    roadmap_label.py --pr 781 --repo EpsilonEridaniProject/EpsilonEridani --roadmap-dir roadmap
     # ... and apply it (create the label if missing, drop any stale roadmap/* label),
     # leaving a nudge if it lands in roadmap/Unknown:
     roadmap_label.py --pr 781 --repo ... --roadmap-dir roadmap --apply --nudge
@@ -68,11 +68,11 @@ UNKNOWN_COLOR = "fbca04"   # yellow: needs a citation
 # --- the CI-allowed path set ----------------------------------------------
 
 # A PR whose files all match this is one an AI author may land without a human
-# override: `TauCeti/`, the root aggregator, and the two bump-guarded Lake pins.
-_ALLOWED_PATH = re.compile(r"^(?:TauCeti/|TauCeti\.lean$|lake-manifest\.json$|lean-toolchain$)")
+# override: `EpsilonEridani/`, the root aggregator, and the two bump-guarded Lake pins.
+_ALLOWED_PATH = re.compile(r"^(?:EpsilonEridani/|EpsilonEridani\.lean$|lake-manifest\.json$|lean-toolchain$)")
 
 _PINS = {"lake-manifest.json", "lean-toolchain"}
-_TARGET_MARKER = re.compile(r"<!--tauceti-target:v1 (\{[^}]*\})-->")
+_TARGET_MARKER = re.compile(r"<!--epsiloneridani-target:v1 (\{[^}]*\})-->")
 
 
 def is_infra(files: list[str]) -> bool:
@@ -136,7 +136,7 @@ def parse_declared_area(body: str, areas: set[str]) -> tuple[bool, str | None]:
 
 
 def parse_target_areas(body: str, areas: set[str]) -> set[str]:
-    """Canonical roadmap focuses from valid ``tauceti-target:v1`` markers."""
+    """Canonical roadmap focuses from valid ``epsiloneridani-target:v1`` markers."""
     found = set()
     for match in _TARGET_MARKER.finditer(body or ""):
         try:
@@ -151,7 +151,7 @@ def parse_target_areas(body: str, areas: set[str]) -> set[str]:
 def parse_cited_areas(body: str, areas: set[str]) -> set[str]:
     """Roadmap areas cited in the PR body, restricted to canonical ones.
 
-    Recognizes the forms authors actually use: a `TauCetiRoadmap/<Area>` path, and
+    Recognizes the forms authors actually use: a `EpsilonEridaniRoadmap/<Area>` path, and
     a bare `<Area>/README.md` or `<Area>/Suggested.lean`. `<Area>` must be an
     existing roadmap directory, so a typo or an unrelated path is ignored rather
     than minting a bogus label.
@@ -159,7 +159,7 @@ def parse_cited_areas(body: str, areas: set[str]) -> set[str]:
     if not body:
         return set()
     found: set[str] = set()
-    for m in re.finditer(r"TauCetiRoadmap/([A-Za-z0-9]+)", body):
+    for m in re.finditer(r"EpsilonEridaniRoadmap/([A-Za-z0-9]+)", body):
         if m.group(1) in areas:
             found.add(m.group(1))
     for m in re.finditer(r"\b([A-Za-z0-9]+)/(?:README\.md|Suggested\.lean)", body):
@@ -198,11 +198,11 @@ def canonical_areas(roadmap_dir: pathlib.Path) -> set[str]:
     """Active and completed roadmap directory names under a checkout.
 
     At the repository root, active areas live under the inner
-    `TauCetiRoadmap/` package and archived areas live under the sibling
+    `EpsilonEridaniRoadmap/` package and archived areas live under the sibling
     `Completed/` directory. Accepting the package directory itself remains
     useful for local one-area tests and older callers.
     """
-    inner = roadmap_dir / "TauCetiRoadmap"
+    inner = roadmap_dir / "EpsilonEridaniRoadmap"
     if not inner.is_dir():
         return {
             p.name for p in roadmap_dir.iterdir()
@@ -269,7 +269,7 @@ NUDGE_BODY = (
     "or dependency work. Refactors need no fresh roadmap authorization, but should "
     "name the one roadmap chiefly motivating them. For new mathematics, this "
     "attribution line does not replace the [scope rubric's]"
-    "(https://github.com/TauCetiProject/TauCetiReview/blob/main/rubrics/scope.md) "
+    "(https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/blob/main/rubrics/scope.md) "
     "requirement to cite the exact roadmap file and target."
 )
 
@@ -391,9 +391,9 @@ def _run_backfill(args, areas) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Assign roadmap labels to PRs.")
-    ap.add_argument("--repo", default="TauCetiProject/TauCeti")
+    ap.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
     ap.add_argument("--roadmap-dir", required=True,
-                    help="path to a TauCetiRoadmap checkout (for the canonical area set)")
+                    help="path to a EpsilonEridaniRoadmap checkout (for the canonical area set)")
     ap.add_argument("--pr", type=int, help="classify a single PR")
     ap.add_argument("--backfill", action="store_true", help="classify every PR")
     ap.add_argument("--limit", type=int, default=5000, help="max PRs for --backfill")

@@ -2,7 +2,7 @@
 """Compare header-prefix diagnostics with Mathlib's full-input checker.
 
 Run with `lake env python3 scripts/test_header_style.py`. Compiles only the
-trusted header driver; no TauCeti modules are built or imported.
+trusted header driver; no EpsilonEridani modules are built or imported.
 """
 
 import json
@@ -49,7 +49,7 @@ def cases():
 
 
 def main():
-    with tempfile.TemporaryDirectory(prefix="tauceti-header-test-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="epsiloneridani-header-test-") as tmp:
         tmp = Path(tmp)
         (tmp / "scripts").mkdir()
         subprocess.run(["lean", f"--root={ROOT}", "-o", str(tmp / "scripts/HeaderStyle.olean"),

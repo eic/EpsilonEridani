@@ -55,7 +55,7 @@ Usage:
     conflicts.py sweep [--dry-run]
 
 Environment:
-    GH_REPO                   default "TauCetiProject/TauCeti"
+    GH_REPO                   default "EpsilonEridaniProject/EpsilonEridani"
     GH_TOKEN / GITHUB_TOKEN   used by `gh` (needs issues:write)
 
 Only python3's standard library and an authenticated `gh` CLI are required.

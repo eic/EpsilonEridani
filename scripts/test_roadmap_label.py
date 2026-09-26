@@ -6,11 +6,11 @@ Run the fast, hermetic checks:
     python3 scripts/test_roadmap_label.py
 
 Optionally replay the whole PR history against a live GitHub (needs `gh` auth and
-a TauCetiRoadmap checkout); this is how the classifier was validated and is not
+a EpsilonEridaniRoadmap checkout); this is how the classifier was validated and is not
 run in CI:
 
     python3 scripts/test_roadmap_label.py --replay-live \
-        --repo TauCetiProject/TauCeti --roadmap-dir /path/to/TauCetiRoadmap
+        --repo EpsilonEridaniProject/EpsilonEridani --roadmap-dir /path/to/EpsilonEridaniRoadmap
 """
 
 from __future__ import annotations
@@ -34,8 +34,8 @@ AREAS = {
     "ReductiveGroups", "RepresentationTheory", "UniversalCovers",
 }
 
-TC = ["TauCeti/Analysis/Foo.lean"]        # an allowed (AI-ownable) math diff
-INFRA = ["TauCeti/Foo.lean", ".github/workflows/x.yml"]  # trips the scope guard
+TC = ["EpsilonEridani/Analysis/Foo.lean"]        # an allowed (AI-ownable) math diff
+INFRA = ["EpsilonEridani/Foo.lean", ".github/workflows/x.yml"]  # trips the scope guard
 
 # (name, title, body, files, expected_label)
 CASES = [
@@ -59,37 +59,37 @@ CASES = [
 
     # 2. target markers and citations are compatibility sources ---------------
     ("target marker", "refactor: share a proof",
-     '<!--tauceti-target:v1 {"focus":"PDE","id":"helper"}-->', TC,
+     '<!--epsiloneridani-target:v1 {"focus":"PDE","id":"helper"}-->', TC,
      "roadmap/PDE"),
     ("invalid target marker ignored", "refactor: share a proof",
-     '<!--tauceti-target:v1 {"focus":"pde-helper","id":"helper"}-->', TC,
+     '<!--epsiloneridani-target:v1 {"focus":"pde-helper","id":"helper"}-->', TC,
      "roadmap/Unknown"),
     ("full path", "feat: add semigroup exponential shifts",
-     "It advances TauCetiRoadmap/OneParameterSemigroups/README.md, Part A.", TC,
+     "It advances EpsilonEridaniRoadmap/OneParameterSemigroups/README.md, Part A.", TC,
      "roadmap/OneParameterSemigroups"),
     ("bare README path", "feat(Analysis/Contour): piecewise C1",
      "toward the roadmap (roadmap `ContourIntegration/README.md`: ...).", TC,
      "roadmap/ContourIntegration"),
     ("suggested.lean path", "feat: add quotient comodules",
-     "See TauCetiRoadmap/ReductiveGroups/Suggested.lean for the target.", TC,
+     "See EpsilonEridaniRoadmap/ReductiveGroups/Suggested.lean for the target.", TC,
      "roadmap/ReductiveGroups"),
     ("matching declaration marker and citation", "feat: add theorem",
-     'Roadmap: PDE\nTauCetiRoadmap/PDE/README.md\n'
-     '<!--tauceti-target:v1 {"focus":"PDE","id":"target"}-->',
+     'Roadmap: PDE\nEpsilonEridaniRoadmap/PDE/README.md\n'
+     '<!--epsiloneridani-target:v1 {"focus":"PDE","id":"target"}-->',
      TC, "roadmap/PDE"),
     ("declaration conflicts with citation", "feat: add theorem",
-     "Roadmap: PDE\nTauCetiRoadmap/ContourIntegration/README.md",
+     "Roadmap: PDE\nEpsilonEridaniRoadmap/ContourIntegration/README.md",
      TC, "roadmap/Unknown"),
     ("none conflicts with marker", "refactor: general cleanup",
-     'Roadmap: none\n<!--tauceti-target:v1 {"focus":"PDE","id":"target"}-->',
+     'Roadmap: none\n<!--epsiloneridani-target:v1 {"focus":"PDE","id":"target"}-->',
      TC, "roadmap/Unknown"),
 
     # 3. infra and pin-only overrides ------------------------------------------
     ("infra beats citation", "feat: add roadmap CI",
-     "advances TauCetiRoadmap/ContourIntegration/README.md", INFRA, "roadmap/none"),
+     "advances EpsilonEridaniRoadmap/ContourIntegration/README.md", INFRA, "roadmap/none"),
     ("infra feat (website)", "feat: add site favicon", "", [".github/x", "web/y"],
      "roadmap/none"),
-    ("empty diff", "feat: something", "advances TauCetiRoadmap/PDE/README.md", [],
+    ("empty diff", "feat: something", "advances EpsilonEridaniRoadmap/PDE/README.md", [],
      "roadmap/none"),
     ("pin-only bump", "chore: forward bump", "",
      ["lake-manifest.json", "lean-toolchain"], "roadmap/none"),
@@ -100,7 +100,7 @@ CASES = [
     ("fix missing attribution", "fix: drop the vacuous coe lemma", "",
      TC, "roadmap/Unknown"),
     ("mathlib bump", "chore: bump mathlib to 40b45a0, fix breaking changes", "",
-     ["TauCeti/A.lean", "lake-manifest.json", "lean-toolchain"], "roadmap/Unknown"),
+     ["EpsilonEridani/A.lean", "lake-manifest.json", "lean-toolchain"], "roadmap/Unknown"),
 
     # 5. missing or ambiguous evidence -> Unknown ------------------------------
     ("feat cites decl not file", "feat(Analysis/Contour): continuous argument lift",
@@ -111,10 +111,10 @@ CASES = [
 
     # edge: non-canonical area token is ignored (no bogus label) ---------------
     ("unknown area token", "feat: add thing",
-     "advances TauCetiRoadmap/NotARoadmap/README.md", TC, "roadmap/Unknown"),
+     "advances EpsilonEridaniRoadmap/NotARoadmap/README.md", TC, "roadmap/Unknown"),
     # edge: two areas cited -> no single roadmap to name, so Unknown -----------
     ("multi-area citation", "feat: add thing",
-     "spans TauCetiRoadmap/PDE/README.md and TauCetiRoadmap/Multiquadratic/README.md",
+     "spans EpsilonEridaniRoadmap/PDE/README.md and EpsilonEridaniRoadmap/Multiquadratic/README.md",
      TC, "roadmap/Unknown"),
 ]
 
@@ -128,23 +128,23 @@ def run_unit() -> int:
         print(f"  [{'ok' if ok else 'FAIL'}] {name}: {got}"
               + ("" if ok else f"  (expected {expected})"))
     # parse helper spot checks
-    assert rl.parse_cited_areas("TauCetiRoadmap/PDE/README.md", AREAS) == {"PDE"}
+    assert rl.parse_cited_areas("EpsilonEridaniRoadmap/PDE/README.md", AREAS) == {"PDE"}
     assert rl.parse_cited_areas("nothing here", AREAS) == set()
     assert rl.parse_target_areas(
-        '<!--tauceti-target:v1 {"focus":"PDE","id":"x"}-->', AREAS
+        '<!--epsiloneridani-target:v1 {"focus":"PDE","id":"x"}-->', AREAS
     ) == {"PDE"}
     assert rl.parse_declared_area("Roadmap: EffectiveBounds", AREAS) == (
         True, "EffectiveBounds")
     assert rl.parse_declared_area("nothing here", AREAS) == (False, None)
-    assert rl.is_infra(["TauCeti/A.lean"]) is False
+    assert rl.is_infra(["EpsilonEridani/A.lean"]) is False
     assert rl.is_infra(["scripts/x.sh"]) is True
     assert rl.is_pin_only(["lake-manifest.json", "lean-toolchain"]) is True
-    assert rl.is_pin_only(["TauCeti/A.lean", "lake-manifest.json"]) is False
+    assert rl.is_pin_only(["EpsilonEridani/A.lean", "lake-manifest.json"]) is False
 
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
         for directory in (
-            root / "TauCetiRoadmap" / "ContourIntegration",
+            root / "EpsilonEridaniRoadmap" / "ContourIntegration",
             root / "Completed" / "EffectiveBounds",
         ):
             directory.mkdir(parents=True)
@@ -190,7 +190,7 @@ def run_replay(repo: str, roadmap_dir: str) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--replay-live", action="store_true")
-    ap.add_argument("--repo", default="TauCetiProject/TauCeti")
+    ap.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
     ap.add_argument("--roadmap-dir")
     a = ap.parse_args()
     if a.replay_live:

@@ -6,7 +6,7 @@ import os
 import subprocess
 
 
-# Same pin paths as TauCetiReview runner/sweep.py; no candidate or merge policy here.
+# Same pin paths as EpsilonEridaniReview runner/sweep.py; no candidate or merge policy here.
 PIN_PATHS = {"lake-manifest.json", "lean-toolchain"}
 
 

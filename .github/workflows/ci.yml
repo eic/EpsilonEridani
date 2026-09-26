@@ -39,9 +39,9 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: TauCetiProject/TauCetiReview
+          repository: EpsilonEridaniProject/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
+          path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
 
@@ -104,7 +104,7 @@ jobs:
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       - uses: actions/checkout@v4
         with:
-          # This job elaborates every TauCeti module, and Lean runs code at elaboration time.
+          # This job elaborates every EpsilonEridani module, and Lean runs code at elaboration time.
           # Without this, checkout leaves an http.extraheader carrying GITHUB_TOKEN in the
           # workspace .git/config for the whole job, within reach of that code. Nothing here
           # needs it: no step calls the GitHub API or pushes, `lake exe cache get` talks to
@@ -154,22 +154,22 @@ jobs:
 
       # The two-library split is build convenience, not a trust boundary.
       # This guard is what actually stops the AI-owned library from inheriting
-      # sorried declarations: TauCeti/ may not import the roadmap/review trees.
-      - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
+      # sorried declarations: EpsilonEridani/ may not import the roadmap/review trees.
+      - name: Import-boundary guard (EpsilonEridani/ and EpsilonEridani.lean ⊬ roadmap/review)
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' TauCeti/ TauCeti.lean; then
-            echo "::error::TauCeti/ and TauCeti.lean must not import TauCetiRoadmap or TauCetiReview"
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmap|EpsilonEridaniReview)\b' EpsilonEridani/ EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ and EpsilonEridani.lean must not import EpsilonEridaniRoadmap or EpsilonEridaniReview"
             exit 1
           fi
 
       # No-set_option guard. `set_option` is an escape hatch (it can raise maxHeartbeats,
-      # silence linters, bump maxRecDepth, ...), so TauCeti/ source may not use it. Like the
+      # silence linters, bump maxRecDepth, ...), so EpsilonEridani/ source may not use it. Like the
       # import guard it is a textual scan that needs no elaboration, so it runs trusted and
       # outside the sandbox.
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      - name: No-set_option guard (EpsilonEridani/ and EpsilonEridani.lean use no set_option)
         run: |
-          if grep -rIn '^set_option ' TauCeti/ TauCeti.lean; then
-            echo "::error::TauCeti/ and TauCeti.lean may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
+          if grep -rIn '^set_option ' EpsilonEridani/ EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ and EpsilonEridani.lean may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
             exit 1
           fi
 
@@ -219,7 +219,7 @@ jobs:
           fi
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------
-      # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without
+      # Restore EpsilonEridani's OWN oleans before building, exactly as pr-build.yml does. Without
       # this, the post-merge run recompiled the whole library from scratch on every push,
       # spending about 49 minutes to reproduce oleans the merge-queue build had produced
       # minutes earlier. Because the publisher is serialized, that capped publication at
@@ -239,9 +239,9 @@ jobs:
               echo "LAKE_RESTORE_ARTIFACTS=true"
               echo "TAUCETI_CACHE_ENABLED=1"
             } >> "$GITHUB_ENV"
-            echo "::notice::Lake artifact cache enabled — restoring TauCeti's oleans and building incrementally"
+            echo "::notice::Lake artifact cache enabled — restoring EpsilonEridani's oleans and building incrementally"
           else
-            echo "::notice::Lake artifact cache not configured — building TauCeti/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
+            echo "::notice::Lake artifact cache not configured — building EpsilonEridani/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
           fi
 
       # Anonymous GETs from the PUBLIC read host, the same trusted, publisher-built data
@@ -258,7 +258,7 @@ jobs:
       # the same commit. That is a detector, not an equivalent guarantee, and its own header spells
       # out the exposure window it leaves. The two are a pair; do not enable this restore without
       # that nightly running.
-      - name: Fetch TauCeti's own oleans from the Lake cache
+      - name: Fetch EpsilonEridani's own oleans from the Lake cache
         if: ${{ env.TAUCETI_CACHE_ENABLED == '1' }}
         env:
           # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
@@ -273,8 +273,8 @@ jobs:
       - name: Lake archive reuse integration tests
         run: python3 scripts/test_lake_cache_reuse.py --integration
 
-      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
-      # The build globs every TauCeti/ module directly, so nothing depends on a root that
+      # No aggregator check: the root EpsilonEridani.lean is intentionally empty and imports nothing.
+      # The build globs every EpsilonEridani/ module directly, so nothing depends on a root that
       # re-exports the library.
       - name: Build
         env:
@@ -284,7 +284,7 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: lake build
 
-      # Main and already-audited merge-group commits publish TauCeti's Lake artifacts through the
+      # Main and already-audited merge-group commits publish EpsilonEridani's Lake artifacts through the
       # same secret-isolated workflow. Ordinary PR heads remain restore-only and cannot populate
       # a cache consumed by later builds.
       # GitHub cache keys are immutable; an exact restore needs no redundant save, while a
@@ -310,24 +310,24 @@ jobs:
         run: lake env lean --run scripts/DuplicateDeclarations.lean
 
       # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
-      # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
+      # EpsilonEridani environment and rejects any axiom outside {propext, Classical.choice,
       # Quot.sound}, catching sorry/admit (sorryAx), native_decide (Lean.ofReduceBool),
       # and home-rolled axioms, including ones reaching in through imports.
-      - name: Axiom audit (TauCeti/ uses only allowlisted axioms)
+      - name: Axiom audit (EpsilonEridani/ uses only allowlisted axioms)
         env:
           LAKE_NO_CACHE: "true"
         run: lake exe axioms
 
-      # Module-system audit. Inspects the built TauCeti `.olean`s and rejects any module that
+      # Module-system audit. Inspects the built EpsilonEridani `.olean`s and rejects any module that
       # did not opt into the Lean module system (a leading `module`). It reads each module's
       # `ModuleData.isModule` flag from the compiled artifact, so it cannot be fooled by a
       # `module` appearing in a comment or string the way a textual grep could.
-      - name: Module-system audit (every TauCeti/ file opts into `module`)
+      - name: Module-system audit (every EpsilonEridani/ file opts into `module`)
         env:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system
 
-      # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports the TauCeti/
+      # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports the EpsilonEridani/
       # modules in scope and runs Mathlib's default `#lint` set minus docBlame (simpNF,
       # checkType, synTaut, ...) plus a module-system-reliable docstring scan (the
       # docBlame linter is blind across module boundaries; see the script header),
@@ -338,7 +338,7 @@ jobs:
       # PR-time enforcement runs inside the
       # bwrap sandbox in pr-build.yml (this lint executes the linted code); this
       # post-merge run is the health check on main, like the audits above.
-      # Like PR builds and the merge queue, this lints only the TauCeti modules the push changed
+      # Like PR builds and the merge queue, this lints only the EpsilonEridani modules the push changed
       # (the whole library if a merged PR was labelled full-lint or was a lint repair PR); the
       # daily lint-full.yml run lints everything. Superseded runs of this workflow are cancelled,
       # so a push's scope can be skipped here, but its merge group already linted it.
@@ -359,8 +359,8 @@ jobs:
       - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
         run: python3 scripts/lint-dot-notation.py
 
-      # Source style lint. The wrapper validates one complete TauCeti/** source list, applies
-      # Mathlib's copyright/Authors checks directly (the empty TauCeti.lean root is exempt), and
+      # Source style lint. The wrapper validates one complete EpsilonEridani/** source list, applies
+      # Mathlib's copyright/Authors checks directly (the empty EpsilonEridani.lean root is exempt), and
       # generates an import-all module under .lake/ for lint-style's text-based checks. This is
       # deliberately narrower than the command header linter's unrelated import and module-doc
       # checks; the empty root makes that command linter skip every library module at this pin.
@@ -371,7 +371,7 @@ jobs:
         run: bash scripts/lint-style.sh
 
       # --- Lake artifact-cache publish (dormant until configured) ---------------------
-      # Publish TauCeti's OWN oleans (root-package only) to the Lake cache, so pr-build can
+      # Publish EpsilonEridani's OWN oleans (root-package only) to the Lake cache, so pr-build can
       # fetch them and recompile only a PR's changed modules instead of the whole library.
       # Mathlib's oleans are never uploaded: `-o` records only root-package outputs, and
       # Mathlib stays on `lake exe cache get`. See pr-build.yml for the consuming side.
@@ -399,7 +399,7 @@ jobs:
         run: |
           if [ -n "$S3_ARTIFACT_ENDPOINT" ] && [ -n "$S3_REVISION_ENDPOINT" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Lake cache upload configured; staging TauCeti's oleans"
+            echo "::notice::Lake cache upload configured; staging EpsilonEridani's oleans"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Lake cache upload not configured, skipping (set the LAKE_CACHE_ARTIFACT_ENDPOINT / LAKE_CACHE_REVISION_ENDPOINT repo variables and the LAKE_CACHE_KEY secret to enable)"
@@ -427,7 +427,7 @@ jobs:
             echo "::notice::Exact Lake cache map is absent or unreadable; retaining main's publication fallback"
           fi
 
-      - name: Stage TauCeti's oleans for the publish job
+      - name: Stage EpsilonEridani's oleans for the publish job
         id: stage
         if: ${{ steps.cachecfg.outputs.enabled == 'true' && steps.exact_cache.outputs.exists != 'true' }}
         env:

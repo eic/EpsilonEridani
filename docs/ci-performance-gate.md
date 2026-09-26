@@ -40,7 +40,7 @@ which uses of `decide`, kernel reduction, or metaprogramming are expensive.
 The performance workflow uses `pull_request_target` so its definition and
 performance tooling come from the trusted `github.workflow_sha` (the base
 commit for untrusted PR events). It checks out the candidate without credentials
-and overlays only regular files under `TauCeti/` (and `TauCeti.lean`) onto a
+and overlays only regular files under `EpsilonEridani/` (and `EpsilonEridani.lean`) onto a
 trusted checkout. Lake pins are overlaid only after the
 trusted `check-bump.sh` validates the same forward-only transition accepted by
 the required build. Candidate lakefiles and scripts are never run.
@@ -132,15 +132,15 @@ infrastructure PR; do not add source-level bypasses or per-file exceptions.
 
 ## Pre-merge validation (2026-08-12)
 
-- The [historical E8 regression](https://github.com/TauCetiProject/TauCeti/actions/runs/31561889305)
+- The [historical E8 regression](https://github.com/EpsilonEridaniProject/EpsilonEridani/actions/runs/31561889305)
   passed bwrap's confinement checks, entered the prepared read-only wrapper,
   and stopped `E8.lean` at 3000 seconds with exit code 124. The trusted report
   failed closed and posted a terminal failing `perf` status. The head phase
   took 303 seconds; the full job took 8 minutes 3 seconds including setup and
   cache preparation.
-- The [representative E6 addition](https://github.com/TauCetiProject/TauCeti/actions/runs/31561994227)
+- The [representative E6 addition](https://github.com/EpsilonEridaniProject/EpsilonEridani/actions/runs/31561994227)
   passed at 59.6 CPU-seconds. Its active job time was 5 minutes 28 seconds.
-- An [ordinary modified file](https://github.com/TauCetiProject/TauCeti/actions/runs/31561995756)
+- An [ordinary modified file](https://github.com/EpsilonEridaniProject/EpsilonEridani/actions/runs/31561995756)
   passed at 5.0 seconds on base and 4.9 seconds on head. Its active job time was
   3 minutes 40 seconds, versus 6 minutes 7 seconds for that commit's required
   build, so spare-runner parallel execution would add no merge-readiness delay.

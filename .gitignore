@@ -19,4 +19,4 @@ web/examples/lake-manifest.json
 web/examples/lean-toolchain
 
 # Pinned read-only merge policy used by status tooling and CI
-.tauceti-review/
+.epsiloneridani-review/

@@ -5,7 +5,7 @@ the Tau Ceti Statistics page:
 
 ```sh
 python3 scripts/pr_stats_graphs.py \
-  --repo TauCetiProject/TauCeti \
+  --repo EpsilonEridaniProject/EpsilonEridani \
   --out-dir web/static_files
 ```
 
@@ -31,9 +31,9 @@ It requires an authenticated `gh` CLI. In GitHub Actions, set `GH_TOKEN` to
   observed, since PRs predating the review-state labels cannot be reconstructed from those
   transitions.
 - **One review scoreboard** in the contributor history is one canonical
-  `<!--tauceti-scoreboard-->` comment on a pull request of this repository, attributed to
+  `<!--epsiloneridani-scoreboard-->` comment on a pull request of this repository, attributed to
   the GitHub login that posted it. Canonical means the comment carries the review engine's
-  `<!--tauceti-meta:v1 ...-->` block, declares kind `scoreboard`, and names that same PR,
+  `<!--epsiloneridani-meta:v1 ...-->` block, declares kind `scoreboard`, and names that same PR,
   so a comment on an ordinary issue, a quoted marker, or another PR's pasted scoreboard is
   not counted, and neither are the scoreboards from the project's first week, posted before
   the engine started stamping that block; `pr-stats.json` records how many marker comments
@@ -57,7 +57,7 @@ Save the normalized source snapshot while fetching:
 
 ```sh
 python3 scripts/pr_stats_graphs.py \
-  --repo TauCetiProject/TauCeti \
+  --repo EpsilonEridaniProject/EpsilonEridani \
   --out-dir /tmp/pr-stats \
   --dump-data /tmp/pr-stats-source.json
 ```

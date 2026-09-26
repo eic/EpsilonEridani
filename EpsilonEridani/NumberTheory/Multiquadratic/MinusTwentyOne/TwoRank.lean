@@ -1,0 +1,110 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.NumberTheory.Multiquadratic.Quadratic.TwoRank
+public import EpsilonEridani.NumberTheory.Multiquadratic.MinusTwentyOne.Basic
+import EpsilonEridani.Algebra.Group.ElementaryTwoQuotient.KleinFour
+import EpsilonEridani.NumberTheory.Multiquadratic.MinusTwentyOne.ClassNumber
+
+/-!
+# The `2`-rank of the class group of `ℚ(√-21)`
+
+Applying the genus-theoretic `2`-rank formula `2-rank Cl(K) = t - 1` to `K = ℚ(√-21)`. The
+fundamental discriminant is `-84 = (-4) · (-3) · (-7)`, a product of three prime discriminants, so
+`t = 3` rational primes ramify (`2`, `3` and `7`) and the `2`-rank of the class group is `2`.
+
+Combined with `NumberField.classNumber ℚ(√-21) = 4` (`MinusTwentyOne/ClassNumber.lean`), this
+determines the group structure: a commutative group of order `4` and `2`-rank `2` is a Klein
+four-group (`EpsilonEridani.isKleinFour_of_card_eq_four_of_twoRank_eq_two`), so `Cl ≅ (ℤ/2ℤ)²`. This
+is not an independent check — the class-number proof itself uses the ramified-prime lower bound
+`ncard_ramifiedPrimes_sub_one_le_twoRank` to get divisibility by `4`.
+
+## Main results
+
+* `EpsilonEridani.Multiquadratic.twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one`: the
+  presentation-independent statement.
+* `EpsilonEridani.Multiquadratic.twoRank_adjoinRoot_sqrt_neg_twenty_one_eq_two`: on the concrete model
+  `AdjoinRoot (X² + 21)`.
+* `EpsilonEridani.Multiquadratic.nonempty_classGroup_adjoinRoot_sqrt_neg_twenty_one_mulEquiv_zmod_two_sq`:
+  on the concrete model, the class group is isomorphic to `(ℤ/2ℤ)²`.
+-/
+
+public section
+
+open Polynomial NumberField
+open scoped NumberField
+
+namespace EpsilonEridani.Multiquadratic
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
+
+/-- **The `2`-rank of the class group of `ℚ(√-21)` is `2`.** Its fundamental discriminant `-84`
+factors as `(-4) · (-3) · (-7)` into three prime discriminants, so three rational primes ramify
+(`t = 3`) and `2-rank Cl = t - 1 = 2`. With `NumberField.classNumber ℚ(√-21) = 4` this pins down
+`Cl ≅ (ℤ/2ℤ)²`. -/
+theorem twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C (-21 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    EpsilonEridani.ClassGroup.twoRank (𝓞 K) = 2 := by
+  have hs : ∀ P ∈ ({-4, -3, -7} : Finset ℤ), IsPrimeDiscriminant P := by
+    intro P hP
+    fin_cases hP
+    · exact isPrimeDiscriminant_neg_four
+    · simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)]
+        using isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
+    · simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)]
+        using isPrimeDiscriminant_oddPrimeDiscriminant (p := 7) (by decide) (by decide)
+  have heven : ∀ P ∈ ({-4, -3, -7} : Finset ℤ), ∀ Q ∈ ({-4, -3, -7} : Finset ℤ),
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q := by
+    intro P hP Q hQ
+    fin_cases hP <;> fin_cases hQ <;> simp only [IsEvenPrimeDiscriminant] <;> decide
+  have hprod : ∏ P ∈ ({-4, -3, -7} : Finset ℤ), P = fundamentalDiscriminant (-21 : ℤ) := by
+    rw [Finset.prod_insert (by decide : (-4 : ℤ) ∉ ({-3, -7} : Finset ℤ)),
+      Finset.prod_insert (by decide : (-3 : ℤ) ∉ ({-7} : Finset ℤ)), Finset.prod_singleton,
+      fundamentalDiscriminant_of_mod_four_ne_one (by decide : (-21 : ℤ) % 4 ≠ 1)]
+    ring
+  have hncard : (ramifiedPrimes K).ncard = 3 := by
+    rw [ncard_ramifiedPrimes_eq_card hmin hgen squarefree_neg_twenty_one hs heven hprod,
+      Finset.card_insert_of_notMem (by decide : (-4 : ℤ) ∉ ({-3, -7} : Finset ℤ)),
+      Finset.card_insert_of_notMem (by decide : (-3 : ℤ) ∉ ({-7} : Finset ℤ)),
+      Finset.card_singleton]
+  rw [twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen squarefree_neg_twenty_one (by norm_num),
+    hncard]
+
+/-- **Worked example.** The concrete number field `AdjoinRoot (X² + 21)`, modelling `ℚ(√-21)`, has
+class-group `2`-rank `2`. Not `@[simp]`: the `@[simp]` lemma `twoRank_def` unfolds the left-hand
+side `twoRank _`, so this closed form is not in simp-normal form (`simpNF` rejects it), unlike the
+non-unfolded `classNumber` companion. -/
+theorem twoRank_adjoinRoot_sqrt_neg_twenty_one_eq_two :
+    EpsilonEridani.ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (-21 : ℚ)))) = 2 := by
+  obtain ⟨θ, hmin, hgen⟩ := NumberField.exists_minpoly_eq_X_sq_add_twenty_one_and_adjoin_eq_top
+  exact twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
+
+/-- **The class group of `ℚ(√-21)` is `(ℤ/2ℤ)²`.** For any presentation by an integral
+generator with minimal polynomial `X² + 21`, its ideal class group is isomorphic to the Klein four
+group. -/
+theorem nonempty_classGroup_mulEquiv_zmod_two_sq_of_minpoly_eq_X_sq_add_twenty_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C (-21 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    Nonempty (ClassGroup (𝓞 K) ≃* Multiplicative (ZMod 2 × ZMod 2)) := by
+  have hcard : Nat.card (ClassGroup (𝓞 K)) = 4 := by
+    simpa [NumberField.classNumber] using
+      NumberField.classNumber_eq_four_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
+  have hrank : EpsilonEridani.twoRank (ClassGroup (𝓞 K)) = 2 := by
+    rw [EpsilonEridani.twoRank_def, ← EpsilonEridani.ClassGroup.twoRank_def]
+    exact twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
+  have := EpsilonEridani.isKleinFour_of_card_eq_four_of_twoRank_eq_two hcard hrank
+  exact IsKleinFour.nonempty_mulEquiv
+
+/-- **Worked example.** The ideal class group of the concrete number-field model
+`AdjoinRoot (X² + 21)` is isomorphic to `(ℤ/2ℤ)²`. -/
+theorem nonempty_classGroup_adjoinRoot_sqrt_neg_twenty_one_mulEquiv_zmod_two_sq :
+    Nonempty
+      (ClassGroup (𝓞 (AdjoinRoot (X ^ 2 - C (-21 : ℚ)))) ≃*
+        Multiplicative (ZMod 2 × ZMod 2)) := by
+  obtain ⟨θ, hmin, hgen⟩ := NumberField.exists_minpoly_eq_X_sq_add_twenty_one_and_adjoin_eq_top
+  exact nonempty_classGroup_mulEquiv_zmod_two_sq_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
+
+end EpsilonEridani.Multiquadratic

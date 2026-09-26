@@ -69,20 +69,20 @@ class LintScopeTest(unittest.TestCase):
               "HEAD_REPO": "fork/r"}
     PR_COMPARE = f"repos/o/r/compare/{SHA_A}...fork:{SHA_B}"
 
-    def test_pull_request_lints_changed_tauceti_modules(self):
+    def test_pull_request_lints_changed_epsiloneridani_modules(self):
         # The scope comes from comparing the exact commits being built, across the fork.
         modules = self.run_scope(
             self.PR_ENV,
-            {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A/B.lean"),
-                                         f("added", "TauCeti/C.lean"),
-                                         f("renamed", "TauCeti/D'.lean"),
-                                         f("removed", "TauCeti/Gone.lean"),
+            {self.PR_COMPARE: {"files": [f("modified", "EpsilonEridani/A/B.lean"),
+                                         f("added", "EpsilonEridani/C.lean"),
+                                         f("renamed", "EpsilonEridani/D'.lean"),
+                                         f("removed", "EpsilonEridani/Gone.lean"),
                                          f("modified", "README.md"),
-                                         f("modified", "TauCeti/notes.md")]},
+                                         f("modified", "EpsilonEridani/notes.md")]},
              "repos/o/r/pulls/12": pr()})
-        self.assertEqual(modules, ["TauCeti.A.B", "TauCeti.C", "TauCeti.D'"])
+        self.assertEqual(modules, ["EpsilonEridani.A.B", "EpsilonEridani.C", "EpsilonEridani.D'"])
 
-    def test_no_tauceti_change_lints_nothing(self):
+    def test_no_epsiloneridani_change_lints_nothing(self):
         self.assertEqual(self.run_scope(
             self.PR_ENV,
             {self.PR_COMPARE: {"files": [f("modified", "lake-manifest.json")]},
@@ -96,11 +96,11 @@ class LintScopeTest(unittest.TestCase):
     def test_compare_cap_lints_everything(self):
         self.assertIsNone(self.run_scope(
             self.PR_ENV,
-            {self.PR_COMPARE: {"files": [f("modified", f"TauCeti/M{i}.lean") for i in range(300)]},
+            {self.PR_COMPARE: {"files": [f("modified", f"EpsilonEridani/M{i}.lean") for i in range(300)]},
              "repos/o/r/pulls/12": pr()}))
 
     def test_full_lint_label_and_repair_branch_lint_everything(self):
-        files = {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A.lean")]}}
+        files = {self.PR_COMPARE: {"files": [f("modified", "EpsilonEridani/A.lean")]}}
         for info in (pr(labels=["roadmap/none", "full-lint"]), pr(head_ref="lint-repair/main")):
             with self.subTest(info=info):
                 self.assertIsNone(self.run_scope(
@@ -109,18 +109,18 @@ class LintScopeTest(unittest.TestCase):
     def test_merge_group_reads_prs_from_squash_titles(self):
         compare = {"commits": [{"commit": {"message": "feat: x (#7)\n\nbody"}},
                                {"commit": {"message": "fix: y (#8)"}}],
-                   "files": [f("modified", "TauCeti/X.lean")]}
+                   "files": [f("modified", "EpsilonEridani/X.lean")]}
         responses = {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare,
                      "repos/o/r/pulls/7": pr(), "repos/o/r/pulls/8": pr()}
         env = {"EVENT": "merge_group", "BASE": SHA_A, "HEAD": SHA_B}
-        self.assertEqual(self.run_scope(env, responses), ["TauCeti.X"])
+        self.assertEqual(self.run_scope(env, responses), ["EpsilonEridani.X"])
         responses["repos/o/r/pulls/8"] = pr(labels=["full-lint"])
         self.assertIsNone(self.run_scope(env, responses))
 
     def test_unattributable_commits_lint_everything(self):
         compare = {"commits": [{"commit": {"message": "feat: x (#7)"}},
                                {"commit": {"message": "Merge branch main"}}],
-                   "files": [f("modified", "TauCeti/X.lean")]}
+                   "files": [f("modified", "EpsilonEridani/X.lean")]}
         self.assertIsNone(self.run_scope(
             {"EVENT": "push", "BASE": SHA_A, "HEAD": SHA_B},
             {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare, "repos/o/r/pulls/7": pr()}))
@@ -173,7 +173,7 @@ class PrBuildWiringTest(unittest.TestCase):
             self.assertEqual(out.returncode, 0, out.stderr)
             return ("repair_pr=1" in out.stdout, "INFRA=1" in github_env.read_text())
 
-    BOT = "tauceti-review-bot[bot]"
+    BOT = "epsiloneridani-review-bot[bot]"
 
     def test_dispatched_empty_repair_pr_is_built(self):
         self.assertEqual(self.repair_exemption(
@@ -195,7 +195,7 @@ class PrBuildWiringTest(unittest.TestCase):
 
     def test_nonempty_diff_is_not_exempted(self):
         self.assertEqual(self.repair_exemption(
-            "workflow_dispatch", "TauCeti/A.lean", api=f"lint-repair/main\to/r\t{self.BOT}"),
+            "workflow_dispatch", "EpsilonEridani/A.lean", api=f"lint-repair/main\to/r\t{self.BOT}"),
             (False, False))
 
     def test_only_the_full_lint_label_rebuilds(self):

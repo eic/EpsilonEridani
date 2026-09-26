@@ -2,8 +2,8 @@
 """Keep the shared claim namespace open to everyone who has landed a PR here, and sweep dead leases.
 
 Workers run by different people must not spend two subscriptions on the same job, so before starting
-one they take a lease: a `refs/tauceti-claims/<key>` ref, acquired by compare-and-swap, in a repository
-every worker can push to. That repository is TauCetiProject/tauceti-claims, and it holds nothing else:
+one they take a lease: a `refs/epsiloneridani-claims/<key>` ref, acquired by compare-and-swap, in a repository
+every worker can push to. That repository is EpsilonEridaniProject/epsiloneridani-claims, and it holds nothing else:
 no code, no Actions, no relationship to this one. Coordinating workers must never need write access to
 the library itself, which is the whole reason the leases do not live here.
 
@@ -38,13 +38,13 @@ import time
 REPO = os.environ.get("REPO", "")
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
 CLAIMS_TOKEN = os.environ.get("CLAIMS_TOKEN", "")
-CLAIMS_REPO = os.environ.get("CLAIMS_REPO", "TauCetiProject/tauceti-claims")
+CLAIMS_REPO = os.environ.get("CLAIMS_REPO", "EpsilonEridaniProject/epsiloneridani-claims")
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
 # A lease is swept only this long AFTER it expired. Taking over an expired lease is a CAS, so a
 # worker may legitimately be reviving one at the moment we look at it; the grace period means the
 # sweep cannot race that and delete a lease somebody is actively holding.
 SWEEP_GRACE_MINUTES = int(os.environ.get("SWEEP_GRACE_MINUTES", "60"))
-NS = "tauceti-claims"
+NS = "epsiloneridani-claims"
 
 
 def gh(args, token, check=True):
@@ -178,7 +178,7 @@ def sweep():
         if DRY_RUN:
             print(f"sweep: would delete expired {ref}")
             continue
-        # `/git/<ref>` is `/git/refs/tauceti-claims/<key>`: the ref name already carries its prefix.
+        # `/git/<ref>` is `/git/refs/epsiloneridani-claims/<key>`: the ref name already carries its prefix.
         deleted = gh(["api", "-X", "DELETE", f"/repos/{CLAIMS_REPO}/git/{ref}"], CLAIMS_TOKEN, check=False)
         if deleted.returncode == 0:
             print(f"sweep: deleted expired {ref}")

@@ -1,0 +1,391 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.RepresentationTheory.CharacterTable.ClassFunction
+-- The translation action `g • (x : G ⧸ S)` occurs in the statements about which summands vanish.
+public import Mathlib.GroupTheory.GroupAction.Quotient
+-- Non-public: `EpsilonEridani.smul_quotientGroup_mk_eq_self_iff` is used only inside a proof.
+import EpsilonEridani.GroupTheory.QuotientGroup.Basic
+import EpsilonEridani.GroupTheory.Coset.Basic
+
+/-!
+# The induced class function
+
+Induction of representations along a finite-index subgroup `S ≤ G` sends a character of `S` to a
+character of `G`, by the coset-representative formula
+`EpsilonEridani.character_indFDRep_sum_quotient`.  That formula makes sense for an arbitrary function on
+`S`, and this file takes it as the definition of the **induced class function**
+`EpsilonEridani.indClassFun`.  It is the linearization of induction on characters, and the map that turns
+the restriction/induction pair into an adjoint pair on class functions.
+
+Nothing here mentions a representation, so the file sits below
+`EpsilonEridani.RepresentationTheory.Induction.Character`, which imports it to identify the induced
+character with the induced class function of a character (`EpsilonEridani.indClassFun_ofFDRep_character`)
+and to deduce `EpsilonEridani.character_ind` from `EpsilonEridani.indClassFun_eq_natCard_inv_mul_sum`.
+
+## Main definitions
+
+* `EpsilonEridani.indTerm f g x`: the summand attached to a representative `x`, namely `f (x⁻¹ g x)`
+  when `x⁻¹ g x` lies in the subgroup and `0` otherwise.  It is the summand of the
+  induced-character formula too, which the character file uses at `f = ρ.character`, together
+  with the coset-invariance lemma `EpsilonEridani.indTerm_eq_of_mk_eq` and the evaluations
+  `EpsilonEridani.indTerm_conj` and `EpsilonEridani.indTerm_one`.
+* `EpsilonEridani.indClassFun S f`: the function `G → k` obtained from `f : S → k` by summing `f` over
+  those left coset representatives that conjugate `g` into `S`.  There is no division by `|S|`,
+  so it needs no invertibility hypothesis and no more than an additive commutative monoid of
+  coefficients.
+* `EpsilonEridani.indClassFunAddHom S`: the same construction packaged as an additive map
+  `(S → k) →+ (G → k)`, which is what lets a property be propagated through the additive
+  generation of an `AddSubgroup` of functions.
+* `EpsilonEridani.ClassFunction.ind S`: the same construction packaged as a `k`-linear map
+  `ClassFunction k S →ₗ[k] ClassFunction k G`.
+
+## Main statements
+
+* `EpsilonEridani.indTerm_eq_zero_of_smul_mk_ne` and
+  `EpsilonEridani.indClassFun_eq_sum_of_smul_eq_self_mem`: only the cosets `g` fixes contribute, so the
+  coset sum may be taken over any finite set of cosets containing the fixed ones.  This is what
+  turns the formula into a finite explicit computation for a concrete group.
+* `EpsilonEridani.indTerm_eq_of_mk_eq_of_conj`: a summand depends only on its coset representative when
+  the inducing function is invariant under conjugation in the subgroup.
+* `EpsilonEridani.indClassFun_mem_classFunction`: the induced function of a class function is a class
+  function.
+* `EpsilonEridani.natCard_mul_indClassFun`: the group-sum form, `|S| · (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`,
+  and its averaged corollary `EpsilonEridani.indClassFun_eq_natCard_inv_mul_sum`.
+* `EpsilonEridani.indClassFun_comp_subtype_mul`: the **projection formula**,
+  `Ind_S^G ((Res_S f) · ψ) = f · Ind_S^G ψ` for a class function `f` of `G`.
+
+Frobenius reciprocity for class functions, `⟨Ind f, h⟩_G = ⟨f, Res h⟩_S`, is
+`EpsilonEridani.frobenius_reciprocity_classFunction`; it needs the pairing, so it lives with the other
+reciprocities in `EpsilonEridani.RepresentationTheory.Induction.FrobeniusReciprocity`.
+
+## Implementation notes
+
+The definition sums over `Quotient.out` representatives of `G ⧸ S`, so it literally matches
+`EpsilonEridani.character_indFDRep_sum_quotient`.  For a general `f` the individual summands depend on
+that choice of representatives; being a class function is a sufficient condition for them not to,
+and that is what `EpsilonEridani.indClassFun_mem_classFunction` extracts, in the form of conjugation
+invariance of the total sum.  It is the only regime the results below use.
+
+`EpsilonEridani.indTerm` and the lemmas that evaluate it are shared, not internal to this file:
+`EpsilonEridani.RepresentationTheory.Induction.Character` sums it over right cosets and
+`EpsilonEridani.RepresentationTheory.Induction.FrobeniusReciprocity` sums it over all of `G`.
+`EpsilonEridani.indTerm_eq_of_mk_eq_of_conj` gives the additive, explicitly conjugation-invariant form of
+representative independence; `EpsilonEridani.indTerm_eq_of_mk_eq` specializes it to class functions.
+
+## References
+
+* [Induction and restriction roadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap/blob/main/EpsilonEridaniRoadmap/RepresentationTheory/InductionRestriction/README.md),
+  Layer 6 (`indClassFun`).
+* J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.2.
+* I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 5.
+-/
+
+public section
+
+namespace EpsilonEridani
+
+universe u v
+
+variable {k : Type u} {G : Type v} [Group G] {S : Subgroup G}
+
+section AddCommMonoid
+
+variable [AddCommMonoid k]
+
+open scoped Classical in
+/-- The summand of the induced class function attached to a representative `x`: the value of `f`
+at `x⁻¹ * g * x` when that element lies in the subgroup, and `0` otherwise.
+
+Specialized to the character of a representation of `S` this is the summand of the
+induced-character formula `EpsilonEridani.character_indFDRep_sum_quotient`. -/
+noncomputable def indTerm (f : S → k) (g x : G) : k :=
+  if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0
+
+open scoped Classical in
+/-- The defining case split of `EpsilonEridani.indTerm`. -/
+theorem indTerm_apply (f : S → k) (g x : G) :
+    indTerm f g x = if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0 :=
+  (rfl)
+
+/-- **A summand vanishes unless `g` fixes the coset of its representative.**  The conjugate
+`x⁻¹ g x` lies in `S` exactly when `g • xS = xS`, so only the fixed cosets contribute to
+`EpsilonEridani.indClassFun`. -/
+theorem indTerm_eq_zero_of_smul_mk_ne (f : S → k) {g x : G}
+    (h : g • (x : G ⧸ S) ≠ (x : G ⧸ S)) : indTerm f g x = 0 := by
+  classical
+  rw [indTerm, dite_eq_right fun hx => h (smul_quotientGroup_mk_eq_self_iff S g x |>.2 hx)]
+
+/-- Conjugating the argument of the summand translates the representative. -/
+theorem indTerm_conj (f : S → k) (g x c : G) :
+    indTerm f (c * g * c⁻¹) x = indTerm f g (c⁻¹ * x) := by
+  classical
+  have h : x⁻¹ * (c * g * c⁻¹) * x = (c⁻¹ * x)⁻¹ * g * (c⁻¹ * x) := by group
+  simp only [indTerm, h]
+
+open scoped Classical in
+/-- The value of the summand at the identity representative. -/
+theorem indTerm_one (f : S → k) (g : G) :
+    indTerm f g 1 = if h : g ∈ S then f ⟨g, h⟩ else 0 := by
+  simp [indTerm]
+
+/-- **A conjugation-invariant summand depends only on the left coset of its representative.**
+This is the weakly typed form of `EpsilonEridani.indTerm_eq_of_mk_eq`: it needs only an additive
+commutative monoid of coefficients and an explicit conjugation-invariance hypothesis on `f`. -/
+theorem indTerm_eq_of_mk_eq_of_conj {f : S → k}
+    (hf : ∀ y s : S, f (s * y * s⁻¹) = f y) (g x y : G)
+    (hxy : (QuotientGroup.mk x : G ⧸ S) = QuotientGroup.mk y) :
+    indTerm f g x = indTerm f g y := by
+  have hs : x⁻¹ * y ∈ S := QuotientGroup.leftRel_apply.mp (Quotient.exact' hxy)
+  let s : S := ⟨x⁻¹ * y, hs⟩
+  have hy : x * (s : G) = y := by simp [s]
+  rw [← hy]
+  classical
+  by_cases hx : x⁻¹ * g * x ∈ S
+  · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∈ S := by
+      simpa [mul_assoc] using S.mul_mem (S.mul_mem (S.inv_mem s.2) hx) s.2
+    rw [indTerm, dite_eq_left hx, indTerm, dite_eq_left hxs]
+    have helem : (⟨(x * (s : G))⁻¹ * g * (x * s), hxs⟩ : S) =
+        s⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s⁻¹⁻¹ := by
+      apply Subtype.ext
+      simp only [Subgroup.coe_mul, Subgroup.coe_inv, inv_inv]
+      group
+    rw [helem, hf ⟨x⁻¹ * g * x, hx⟩ s⁻¹]
+  · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∉ S := by
+      intro h
+      exact hx (by simpa [mul_assoc] using S.mul_mem (S.mul_mem s.2 h) (S.inv_mem s.2))
+    rw [indTerm, dite_eq_right hx, indTerm, dite_eq_right hxs]
+
+open scoped Classical in
+/-- **The induced class function.**  For `f : S → k` and `g : G`, sum `f (t⁻¹ g t)` over those
+left coset representatives `t` of `S` in `G` with `t⁻¹ g t ∈ S`.
+
+The sum has no division by `|S|`, so the definition needs nothing of the coefficients beyond
+addition; the averaged group-sum form is `EpsilonEridani.indClassFun_eq_natCard_inv_mul_sum`.  On a
+character it is the character of the induced representation, by
+`EpsilonEridani.indClassFun_ofFDRep_character`.
+
+The representatives are the fixed `Quotient.out` ones, so this is a function of `f` alone; but it
+is only for a class function `f` that the individual summands, and hence the sum, are independent
+of the representatives chosen.  `EpsilonEridani.ClassFunction.ind` is the bundled form on
+`EpsilonEridani.ClassFunction k S`, and is the canonical API. -/
+noncomputable def indClassFun (S : Subgroup G) [S.FiniteIndex] (f : S → k) : G → k := fun g =>
+  letI := Fintype.ofFinite (G ⧸ S)
+  ∑ t : G ⧸ S, indTerm f g (Quotient.out t)
+
+open scoped Classical in
+/-- The defining coset sum of `EpsilonEridani.indClassFun`. -/
+theorem indClassFun_apply [S.FiniteIndex] (f : S → k) (g : G) :
+    indClassFun S f g =
+      letI := Fintype.ofFinite (G ⧸ S)
+      ∑ t : G ⧸ S,
+        if h : (Quotient.out t)⁻¹ * g * Quotient.out t ∈ S then
+          f ⟨(Quotient.out t)⁻¹ * g * Quotient.out t, h⟩
+        else 0 :=
+  (rfl)
+
+/-- **The induced class function is a sum over the cosets that `g` fixes.**  The summand attached
+to any other coset vanishes (`EpsilonEridani.indTerm_eq_zero_of_smul_mk_ne`), so summing over a finite
+set `T` of cosets that contains every fixed one already gives the whole sum.  In practice `T` is
+the set of fixed cosets itself, which for a concrete group is a short explicit list. -/
+theorem indClassFun_eq_sum_of_smul_eq_self_mem [S.FiniteIndex] (f : S → k) (g : G)
+    (T : Finset (G ⧸ S)) (hT : ∀ t : G ⧸ S, g • t = t → t ∈ T) :
+    indClassFun S f g = ∑ t ∈ T, indTerm f g (Quotient.out t) := by
+  let := Fintype.ofFinite (G ⧸ S)
+  refine ((Finset.sum_subset (Finset.subset_univ T) fun t _ ht => ?_).trans rfl).symm
+  refine indTerm_eq_zero_of_smul_mk_ne f fun hfix => ht (hT t ?_)
+  rwa [QuotientGroup.out_eq'] at hfix
+
+/-! ### Additivity -/
+
+private theorem indTerm_zero (g x : G) : indTerm (S := S) (0 : S → k) g x = 0 := by
+  classical
+  by_cases h : x⁻¹ * g * x ∈ S <;> simp [indTerm, h]
+
+private theorem indTerm_add (f₁ f₂ : S → k) (g x : G) :
+    indTerm (f₁ + f₂) g x = indTerm f₁ g x + indTerm f₂ g x := by
+  classical
+  by_cases h : x⁻¹ * g * x ∈ S <;> simp [indTerm, h]
+
+/-- Induction of class functions kills the zero function. -/
+@[simp]
+theorem indClassFun_zero [S.FiniteIndex] : indClassFun S (0 : S → k) = 0 := by
+  funext g
+  simp [indClassFun, indTerm_zero]
+
+/-- Induction of class functions is additive. -/
+@[simp]
+theorem indClassFun_add [S.FiniteIndex] (f₁ f₂ : S → k) :
+    indClassFun S (f₁ + f₂) = indClassFun S f₁ + indClassFun S f₂ := by
+  funext g
+  simp [indClassFun, indTerm_add, Finset.sum_add_distrib]
+
+/-- **Induction of functions on a finite-index subgroup, as an additive map.**  It is
+`EpsilonEridani.indClassFun` bundled by the two lemmas above, which is what lets a property be propagated
+through the additive generation of an `AddSubgroup` of functions; `EpsilonEridani.ClassFunction.ind` is
+the finer bundling, as a `k`-linear map on class functions. -/
+noncomputable def indClassFunAddHom (S : Subgroup G) [S.FiniteIndex] :
+    (S → k) →+ (G → k) where
+  toFun := indClassFun S
+  map_zero' := indClassFun_zero
+  map_add' := indClassFun_add
+
+private theorem indClassFunAddHom_apply_aux (S : Subgroup G) [S.FiniteIndex] (ψ : S → k) :
+    indClassFunAddHom S ψ = indClassFun S ψ :=
+  rfl
+
+@[simp]
+theorem indClassFunAddHom_apply (S : Subgroup G) [S.FiniteIndex] (ψ : S → k) :
+    indClassFunAddHom S ψ = indClassFun S ψ :=
+  indClassFunAddHom_apply_aux S ψ
+
+end AddCommMonoid
+
+section Semiring
+
+variable [Semiring k]
+
+private theorem indTerm_smul (c : k) (f : S → k) (g x : G) :
+    indTerm (c • f) g x = c * indTerm f g x := by
+  classical
+  by_cases h : x⁻¹ * g * x ∈ S <;> simp [indTerm, h]
+
+/-- Induction of class functions is homogeneous. -/
+@[simp]
+theorem indClassFun_smul [S.FiniteIndex] (c : k) (f : S → k) :
+    indClassFun S (c • f) = c • indClassFun S f := by
+  funext g
+  simp [indClassFun, indTerm_smul, Finset.mul_sum]
+
+/-! ### Conjugation invariance -/
+
+section ClassFun
+
+variable {f : S → k}
+
+/-- The summand of the induced class function depends only on the left coset of its
+representative. -/
+theorem indTerm_eq_of_mk_eq (hf : f ∈ ClassFunction k S) (g x y : G)
+    (hxy : (QuotientGroup.mk x : G ⧸ S) = QuotientGroup.mk y) :
+    indTerm f g x = indTerm f g y :=
+  indTerm_eq_of_mk_eq_of_conj (ClassFunction.mem_iff.mp hf) g x y hxy
+
+/-- **The induced function of a class function is a class function.** -/
+theorem indClassFun_mem_classFunction [S.FiniteIndex] (hf : f ∈ ClassFunction k S) :
+    indClassFun S f ∈ ClassFunction k G := by
+  refine ClassFunction.mem_iff.mpr fun g c => ?_
+  let := Fintype.ofFinite (G ⧸ S)
+  calc indClassFun S f (c * g * c⁻¹)
+      = ∑ t : G ⧸ S, indTerm f g (c⁻¹ * Quotient.out t) := by
+        simp only [indClassFun, indTerm_conj]
+    _ = indClassFun S f g :=
+        Fintype.sum_equiv (MulAction.toPerm c⁻¹) _ _ fun t =>
+          indTerm_eq_of_mk_eq hf _ _ _ (QuotientGroup.mk_out_smul _ t).symm
+
+end ClassFun
+
+/-! ### The group-sum form -/
+
+open scoped Classical in
+/-- **The group-sum form of the induced class function**, with no division: summing the
+conjugation summand over all of `G` rather than over coset representatives multiplies the induced
+class function by the order of the subgroup. -/
+theorem natCard_mul_indClassFun [Fintype G] {f : S → k} (hf : f ∈ ClassFunction k S) (g : G) :
+    (Nat.card S : k) * indClassFun S f g =
+      ∑ x : G, if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0 := by
+  let := Fintype.ofFinite (G ⧸ S)
+  let e : G ≃ (G ⧸ S) × S := Subgroup.groupEquivQuotientProdSubgroup
+  have hterm (q : G ⧸ S) (s : S) : indTerm f g (e.symm (q, s)) = indTerm f g q.out := by
+    refine indTerm_eq_of_mk_eq hf _ _ _ ?_
+    exact (congrArg Prod.fst (e.apply_symm_apply (q, s))).trans (Quotient.out_eq' q).symm
+  calc (Nat.card S : k) * indClassFun S f g
+      = ∑ q : G ⧸ S, ∑ _s : S, indTerm f g q.out := by
+        simp [indClassFun, Finset.mul_sum]
+    _ = ∑ q : G ⧸ S, ∑ s : S, indTerm f g (e.symm (q, s)) :=
+        Finset.sum_congr rfl fun q _ => Finset.sum_congr rfl fun s _ => (hterm q s).symm
+    _ = ∑ x : G, indTerm f g x := by
+        rw [← e.symm.sum_comp (fun x => indTerm f g x), Fintype.sum_prod_type]
+    -- the remaining step only unfolds the summand
+    _ = _ := rfl
+
+/-! ### The projection formula -/
+
+section Projection
+
+variable {f : G → k}
+
+/-- **The projection formula, on a single summand.**  The summand only ever evaluates a function on
+`S` at a conjugate of `g`, so multiplying by the restriction of a class function `f` of `G`
+multiplies the summand by the constant `f g`.
+
+It is private: `EpsilonEridani.indClassFun_comp_subtype_mul` is the projection formula every consumer
+uses. -/
+private theorem indTerm_comp_subtype_mul (hf : f ∈ ClassFunction k G) (ψ : S → k) (g x : G) :
+    indTerm ((fun s : S => f s) * ψ) g x = f g * indTerm ψ g x := by
+  classical
+  by_cases h : x⁻¹ * g * x ∈ S
+  · have hconj : f (x⁻¹ * g * x) = f g := by
+      simpa using ClassFunction.mem_iff.mp hf g x⁻¹
+    simp [indTerm, h, hconj]
+  · simp [indTerm, h]
+
+/-- **The projection formula for the induced class function**:
+`Ind_S^G ((Res_S f) · ψ) = f · Ind_S^G ψ` for a class function `f` of `G` and an arbitrary
+function `ψ` on `S`.
+
+This is the class-function shadow of the tensor identity `EpsilonEridani.indProjection`, and it is what
+makes induction a map of modules over the ring of class functions: an induced function may be
+multiplied by `f` either before or after inducing.  Only `f` is required to be a class function;
+the identity is pointwise in `ψ`. -/
+theorem indClassFun_comp_subtype_mul [S.FiniteIndex] (hf : f ∈ ClassFunction k G) (ψ : S → k) :
+    indClassFun S ((fun s : S => f s) * ψ) = f * indClassFun S ψ := by
+  funext g
+  simp only [indClassFun, Pi.mul_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun t _ => indTerm_comp_subtype_mul hf ψ g _
+
+end Projection
+
+/-! ### The induced class function as a linear map -/
+
+namespace ClassFunction
+
+/-- **Induction of class functions**, packaged as a `k`-linear map
+`ClassFunction k S →ₗ[k] ClassFunction k G`. -/
+noncomputable def ind (S : Subgroup G) [S.FiniteIndex] :
+    ClassFunction k S →ₗ[k] ClassFunction k G where
+  toFun f := ⟨indClassFun S f.1, indClassFun_mem_classFunction f.2⟩
+  map_add' f₁ f₂ := Subtype.ext (indClassFun_add f₁.1 f₂.1)
+  map_smul' c f := Subtype.ext (indClassFun_smul c f.1)
+
+@[simp]
+theorem ind_apply [S.FiniteIndex] (f : ClassFunction k S) (g : G) :
+    (ind S f).1 g = indClassFun S f.1 g :=
+  (rfl)
+
+end ClassFunction
+
+end Semiring
+
+/-! ### Averaging -/
+
+section Field
+
+variable [Field k]
+
+open scoped Classical in
+/-- **The averaged group-sum form of the induced class function.**  The order of the subgroup must
+be invertible in the coefficient field; without that hypothesis
+`EpsilonEridani.natCard_mul_indClassFun` is the division-free identity to use. -/
+theorem indClassFun_eq_natCard_inv_mul_sum [Fintype G] {f : S → k}
+    (hS : IsUnit (Nat.card S : k)) (hf : f ∈ ClassFunction k S) (g : G) :
+    indClassFun S f g =
+      (Nat.card S : k)⁻¹ * ∑ x : G, if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0 := by
+  rw [← natCard_mul_indClassFun hf g, ← mul_assoc, inv_mul_cancel₀ hS.ne_zero, one_mul]
+
+end Field
+
+end EpsilonEridani

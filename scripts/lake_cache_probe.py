@@ -24,7 +24,7 @@ TOOLCHAIN = re.compile(r"\Aleanprover/lean4:[0-9A-Za-z][0-9A-Za-z._+-]*\Z")
 INPUT_HASH = re.compile(r"\A[0-9a-f]{16}\Z")
 ARTIFACT = re.compile(r"\A[0-9a-f]{16}\.ltar\Z")
 REPOSITORY = re.compile(r"\A[0-9A-Za-z_.-]+/[0-9A-Za-z_.-]+\Z")
-DEFAULT_REPOSITORY = "TauCetiProject/TauCeti"
+DEFAULT_REPOSITORY = "EpsilonEridaniProject/EpsilonEridani"
 
 
 def exact_map_url(endpoint: str, toolchain: str, revision: str,
@@ -81,7 +81,7 @@ def probe(endpoint: str, toolchain: str, revision: str, runner=None,
         return False, "", str(exc)
 
     runner = runner or subprocess.run
-    with tempfile.TemporaryDirectory(prefix="tauceti-cache-probe-") as directory:
+    with tempfile.TemporaryDirectory(prefix="epsiloneridani-cache-probe-") as directory:
         destination = pathlib.Path(directory) / "outputs.jsonl"
         try:
             result = runner(

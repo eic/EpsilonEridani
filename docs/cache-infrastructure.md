@@ -31,8 +31,8 @@ instead of per-run artifacts.
 GitHub Actions cache entries are immutable. If an entry is poisoned or the format becomes
 incompatible, bump `mathlib-ltar-v1` once in
 `.github/actions/restore-mathlib-ltars/action.yml`. To discard a single entry instead, find it with
-`gh cache list --repo TauCetiProject/TauCeti` and delete its exact key with
-`gh cache delete <key> --repo TauCetiProject/TauCeti`. A failed fetch also retries once with
+`gh cache list --repo EpsilonEridaniProject/EpsilonEridani` and delete its exact key with
+`gh cache delete <key> --repo EpsilonEridaniProject/EpsilonEridani`. A failed fetch also retries once with
 `lake exe cache get!`, which forces every linked file to be downloaded and unpacked again.
 
 Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
@@ -53,21 +53,21 @@ wiring when the pinned cache tool drops the flag.
 
 The 2026 account migration is complete. The live bucket, zone, custom domain,
 repository variables, and publisher credential are all in the dedicated
-TauCeti account. The source bucket in the personal account was deleted after
+EpsilonEridani account. The source bucket in the personal account was deleted after
 anonymous reads and an exact trusted publication succeeded.
 
 | | |
 |---|---|
-| Account | `tauceti` (accessible to `kim@lean-fro.org`) |
+| Account | `epsiloneridani` (accessible to `kim@lean-fro.org`) |
 | Account ID | `ec2169bdf033f56b009956d4b64ba8ef` |
 | Dashboard | https://dash.cloudflare.com/ec2169bdf033f56b009956d4b64ba8ef |
-| R2 bucket | `tauceti-cache` |
-| Registrar | `taucetiproject.org`, bought through Cloudflare Registrar in this same account |
+| R2 bucket | `epsiloneridani-cache` |
+| Registrar | `epsiloneridaniproject.org`, bought through Cloudflare Registrar in this same account |
 
 The account ID is not a secret: it is the subdomain of the S3 endpoint below. If the dashboard
 link 404s, the login you used is not a member of that account.
 
-This account is the TauCeti boundary. It should contain no Hex or Palomar resources.
+This account is the EpsilonEridani boundary. It should contain no Hex or Palomar resources.
 
 ## Endpoints
 
@@ -76,25 +76,25 @@ to sign them, so the read host must be public; only uploads use a key.
 
 | Purpose | Value | Used by |
 |---|---|---|
-| `LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC` | `https://cache.taucetiproject.org/artifacts` | `pr-build.yml` read |
-| `LAKE_CACHE_REVISION_ENDPOINT_PUBLIC` | `https://cache.taucetiproject.org/revisions` | `pr-build.yml` read |
-| `LAKE_CACHE_ARTIFACT_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/artifacts` | `ci.yml` upload |
-| `LAKE_CACHE_REVISION_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/revisions` | `ci.yml` upload |
+| `LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC` | `https://cache.epsiloneridaniproject.org/artifacts` | `pr-build.yml` read |
+| `LAKE_CACHE_REVISION_ENDPOINT_PUBLIC` | `https://cache.epsiloneridaniproject.org/revisions` | `pr-build.yml` read |
+| `LAKE_CACHE_ARTIFACT_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/epsiloneridani-cache/artifacts` | `ci.yml` upload |
+| `LAKE_CACHE_REVISION_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/epsiloneridani-cache/revisions` | `ci.yml` upload |
 | `LAKE_CACHE_KEY` (secret) | `<ACCESS_KEY_ID>:<SECRET>`, read-write | `ci.yml`, `publish-lake-cache` job only |
 
-Lake service names: `tauceti-public` for reads, `tauceti-r2` for uploads. Object keys are
-`artifacts/TauCetiProject/TauCeti/<hash>.art`, so the endpoint variables hold only the prefix and
+Lake service names: `epsiloneridani-public` for reads, `epsiloneridani-r2` for uploads. Object keys are
+`artifacts/EpsilonEridaniProject/EpsilonEridani/<hash>.art`, so the endpoint variables hold only the prefix and
 Lake appends the scope.
 
 ## Publisher credential
 
 The GitHub Actions secret `LAKE_CACHE_KEY` contains the S3 access-key pair for
-the non-expiring Cloudflare token named **TauCeti Lake cache R2 publisher**.
-The token belongs to the `tauceti` account and is restricted to object
-read/write/list access in `tauceti-cache`; it has no bucket-administration,
+the non-expiring Cloudflare token named **EpsilonEridani Lake cache R2 publisher**.
+The token belongs to the `epsiloneridani` account and is restricted to object
+read/write/list access in `epsiloneridani-cache`; it has no bucket-administration,
 Worker, DNS, Registrar, or billing authority.
 
-When rotating it, create the replacement in the `tauceti` account, install the
+When rotating it, create the replacement in the `epsiloneridani` account, install the
 new `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` pair as `LAKE_CACHE_KEY`, and let an
 isolated `publish-lake-cache` job publish an exact revision before revoking the
 old token. Do not put the token value in a repository variable or expose it to
@@ -116,7 +116,7 @@ went unnoticed for as long as it did. CI keeps passing the endpoints explicitly 
 never decide what CI does.
 
 Anything else reading this cache, including the worker exemplar in
-[`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker), must use the custom domain rather
+[`EpsilonEridaniProject/EpsilonEridaniWorker`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker), must use the custom domain rather
 than the bucket's `pub-<id>.r2.dev` development URL. Public access on that development URL is off and
 it answers 401 for every path, which a caller whose cache miss is non-fatal cannot tell from a cold
 revision.
@@ -157,7 +157,7 @@ Because it does not configure the workspace, `put-staged` cannot derive the tool
 halves of the upload scope, so the job passes `--rev` and `--toolchain` explicitly and relies on
 the default of no platform. That reproduces the scope `lake cache put` derived, verified by
 comparing the revision URLs the two commands emit, which are identical:
-`revisions/TauCetiProject/TauCeti/tc/leanprover--lean4---<version>/<rev>.jsonl`. The platform is
+`revisions/EpsilonEridaniProject/EpsilonEridani/tc/leanprover--lean4---<version>/<rev>.jsonl`. The platform is
 absent because `lakefile.toml` sets `platformIndependent = true`; the staging step fails loudly if
 that ever stops being true, since a silent mismatch would publish under a scope `pr-build` never
 reads.
@@ -176,7 +176,7 @@ Cloudflare rate-limits `r2.dev` public bucket URLs and documents them as develop
 (https://developers.cloudflare.com/r2/buckets/public-buckets/); exceeding the limit returns HTTP 429
 with Cloudflare error 1015
 (https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/).
-An R2 custom domain carries no such limit, so reads go through `cache.taucetiproject.org`. The
+An R2 custom domain carries no such limit, so reads go through `cache.epsiloneridaniproject.org`. The
 bucket's `r2.dev` URL is disabled, so there is nothing to silently fall back to.
 
 A custom domain requires the zone in the same Cloudflare account as the bucket
@@ -191,12 +191,12 @@ in-account.
 `.art` is not one of the extensions Cloudflare caches by default
 (https://developers.cloudflare.com/cache/concepts/default-cache-behavior/), so artifact reads are
 cached by an explicit Cache Rule. Dashboard: Caching, then Cache Rules, on the
-`taucetiproject.org` zone.
+`epsiloneridaniproject.org` zone.
 
 Rule expression:
 
 ```
-(http.host eq "cache.taucetiproject.org" and starts_with(http.request.uri.path, "/artifacts/"))
+(http.host eq "cache.epsiloneridaniproject.org" and starts_with(http.request.uri.path, "/artifacts/"))
 ```
 
 Settings: cache eligibility "Eligible for cache"; Edge TTL "Ignore cache-control header and use
@@ -212,7 +212,7 @@ Tiered Cache is a separate per-zone toggle and is not part of the rule above: Cl
 it as something you enable, under Caching, then Tiered Cache
 (https://developers.cloudflare.com/cache/how-to/tiered-cache/). Smart topology is available on
 every plan and needs no further configuration once Tiered Cache is on. Check the toggle on the
-`taucetiproject.org` zone rather than assuming it; the Cache Rule above is what does the work
+`epsiloneridaniproject.org` zone rather than assuming it; the Cache Rule above is what does the work
 either way.
 
 To check the rule is live, request the same artifact twice. `curl -I` works as well as a GET:
@@ -221,7 +221,7 @@ returning only the headers (https://developers.cloudflare.com/cache/concepts/cac
 `HEAD` reports the same `cf-cache-status` a `GET` would.
 
 ```bash
-U=https://cache.taucetiproject.org/artifacts/TauCetiProject/TauCeti/<hash>.art
+U=https://cache.epsiloneridaniproject.org/artifacts/EpsilonEridaniProject/EpsilonEridani/<hash>.art
 curl -s -o /dev/null -D - "$U" | grep -i cf-cache-status   # MISS on the first request
 curl -s -o /dev/null -D - "$U" | grep -i cf-cache-status   # HIT on the second
 ```
@@ -252,10 +252,10 @@ count per build varies with how much of the dependency cone a PR invalidates.
 To re-estimate, take an artifact count from any `sandboxed-build` job and a day's run count:
 
 ```bash
-JOB=$(gh run view --repo TauCetiProject/TauCeti <run-id> \
+JOB=$(gh run view --repo EpsilonEridaniProject/EpsilonEridani <run-id> \
         --json jobs -q '.jobs[]|select(.name=="sandboxed-build")|.databaseId' | head -1)
-gh run view --repo TauCetiProject/TauCeti --job "$JOB" --log | grep -c 'downloaded artifact'
-gh api -X GET repos/TauCetiProject/TauCeti/actions/workflows/pr-build.yml/runs \
+gh run view --repo EpsilonEridaniProject/EpsilonEridani --job "$JOB" --log | grep -c 'downloaded artifact'
+gh api -X GET repos/EpsilonEridaniProject/EpsilonEridani/actions/workflows/pr-build.yml/runs \
   -f created=YYYY-MM-DD -q .total_count
 ```
 

@@ -27,7 +27,7 @@ on:
   # The merge queue tests a batch (one or more PRs combined onto current main) before it lands. We
   # build the COMBINED merge-group commit exactly as GitHub synthesized it and post the `build`
   # status on it so the queue's required check is satisfied. A combined diff that reaches outside
-  # TauCeti/ gets a red scope status; the trusted build harness remains independent of that diff.
+  # EpsilonEridani/ gets a red scope status; the trusted build harness remains independent of that diff.
   merge_group:
     types: [checks_requested]
   workflow_dispatch:
@@ -100,7 +100,7 @@ jobs:
       # Lake artifact-cache knobs, off by default. The "Configure the Lake artifact cache"
       # step flips these on (and sets LAKE_CACHE_DIR) ONLY when the public cache endpoints
       # are installed as repo variables; until then they stay empty and the build runs
-      # exactly as before (a full recompile of TauCeti/). Declared here so the sandboxed
+      # exactly as before (a full recompile of EpsilonEridani/). Declared here so the sandboxed
       # build's `--setenv` list always has a defined value to pass.
       LAKE_ARTIFACT_CACHE: ""
       LAKE_RESTORE_ARTIFACTS: ""
@@ -133,7 +133,7 @@ jobs:
             REPO='${{ github.repository }}'
             SHA='${{ github.event.merge_group.head_sha }}'
             # Use the IMMUTABLE base SHA the queue synthesized this group on — NOT the mutable `main`
-            # tip, which may have advanced since the group was formed. Building the batch's TauCeti/
+            # tip, which may have advanced since the group was formed. Building the batch's EpsilonEridani/
             # as a different commit would test (and green-light) the wrong batch. This base_sha
             # drives the combined-diff scope compare and forward-bump policy input below.
             BASE_REF='${{ github.event.merge_group.base_sha }}'
@@ -198,7 +198,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO (author=${AUTHOR:-merge-group}, status -> $STATUS_SHA, bump delta vs merge-base $MB)"
 
-      - name: Scope guard — allow TauCeti sources and validated pins
+      - name: Scope guard — allow EpsilonEridani sources and validated pins
         env:
           GH_TOKEN: "${{ github.token }}"
           # Attacker-chosen strings: read them from the environment, never interpolate them.
@@ -220,9 +220,9 @@ jobs:
             files=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" --jq '.[].filename')
           fi
           echo "changed files:"; echo "$files"
-          # The root TauCeti.lean is allowed alongside TauCeti/: it is the (intentionally
+          # The root EpsilonEridani.lean is allowed alongside EpsilonEridani/: it is the (intentionally
           # empty) library root, normally untouched, but a PR may edit it. Everything else
-          # outside TauCeti/ (scripts/, .github/, arbitrary Lake config) routes to a human.
+          # outside EpsilonEridani/ (scripts/, .github/, arbitrary Lake config) routes to a human.
           # Candidate scripts are never used by the trusted harness, and a changed lakefile is
           # rejected before Lake executes, independently of this merge-policy status.
           # lake-manifest.json and lean-toolchain are also permitted, but ONLY as a
@@ -237,7 +237,7 @@ jobs:
           # BibTeX consumed only by the pages build, never by Lake or the harness, so nothing
           # here executes it. The rest of docbuild/ stays human-owned: lakefile.toml, the pin,
           # and the two generator scripts all feed the docs build itself.
-          # Two independent questions: does this reach outside TauCeti/, and does it change the
+          # Two independent questions: does this reach outside EpsilonEridani/, and does it change the
           # Lake pins. They used to share an `elif`, so a PR doing both was only ever answered as
           # out-of-scope: BUMP stayed unset, check-bump.sh never ran, and the report step could
           # not tell that apart from a PR with no pin change at all — so it posted the required
@@ -258,19 +258,19 @@ jobs:
                    || [ "${{ github.event_name }}" = "workflow_dispatch" ]; } \
               && [ "$PR_HEAD_REPO" = "${{ github.repository }}" ] \
               && [[ "$PR_HEAD_REF" == lint-repair/* ]] \
-              && [ "$PR_USER" = "tauceti-review-bot[bot]" ]; then
+              && [ "$PR_USER" = "epsiloneridani-review-bot[bot]" ]; then
             repair_pr=1
             echo "empty lint repair PR from the review bot: building it for its full lint"
           fi
           if [ -z "$files" ] && [ "$repair_pr" = 0 ]; then
             echo "INFRA=1" >> "$GITHUB_ENV"; echo "::warning::no files / unable to list — cannot determine scope, routing to human"
           elif [ -n "$files" ]; then
-            if echo "$files" | grep -vqE '^TauCeti/|^TauCeti\.lean$|^lake-manifest\.json$|^lean-toolchain$|^docbuild/docs/references\.bib$'; then
+            if echo "$files" | grep -vqE '^EpsilonEridani/|^EpsilonEridani\.lean$|^lake-manifest\.json$|^lean-toolchain$|^docbuild/docs/references\.bib$'; then
               if echo "$files" | grep -qE '^lakefile\.(toml|lean)$'; then
                 echo "HUMAN_LAKEFILE=1" >> "$GITHUB_ENV"
               fi
               echo "OUT_OF_SCOPE=1" >> "$GITHUB_ENV"
-              echo "::warning::PR changes paths outside TauCeti/ + Lake pins — its exact head is still sandbox-built when its Lake config is attested, but merging needs human review"
+              echo "::warning::PR changes paths outside EpsilonEridani/ + Lake pins — its exact head is still sandbox-built when its Lake config is attested, but merging needs human review"
             fi
           fi
           # Whether THIS pull request changes the Lake pins, asked of the immutable commit this
@@ -505,12 +505,12 @@ jobs:
       - name: Candidate source shape guard (reject symlinks)
         if: ${{ env.INFRA != '1' }}
         run: |
-          test -d pr/TauCeti && test ! -L pr/TauCeti
-          if find pr/TauCeti -type l -print | grep -q .; then
-            echo "::error::symlinks are not allowed under TauCeti/"
+          test -d pr/EpsilonEridani && test ! -L pr/EpsilonEridani
+          if find pr/EpsilonEridani -type l -print | grep -q .; then
+            echo "::error::symlinks are not allowed under EpsilonEridani/"
             exit 1
           fi
-          test -f pr/TauCeti.lean && test ! -L pr/TauCeti.lean
+          test -f pr/EpsilonEridani.lean && test ! -L pr/EpsilonEridani.lean
 
       - name: Prepare inherited Mathlib shim obligations
         if: ${{ env.INFRA != '1' }}
@@ -518,12 +518,12 @@ jobs:
           # Compare with the inherited registry (not today's base tip), so unrelated source
           # PRs from inheriting registry edits that landed after they branched.
           base_shims="$RUNNER_TEMP/base-mathlib-shims.json"
-          if [ -f mergebase/TauCeti/mathlib-shims.json ]; then
-            cp mergebase/TauCeti/mathlib-shims.json "$base_shims"
+          if [ -f mergebase/EpsilonEridani/mathlib-shims.json ]; then
+            cp mergebase/EpsilonEridani/mathlib-shims.json "$base_shims"
             echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
             echo "BASE_SHIM_ROOT=$(realpath mergebase)" >> "$GITHUB_ENV"
             echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
-          elif [ -f pr/TauCeti/mathlib-shims.json ]; then
+          elif [ -f pr/EpsilonEridani/mathlib-shims.json ]; then
             # A PR that introduces the registry has no inherited obligations, but its entries are
             # all new and must still be checked. An older PR containing neither copy predates the
             # mechanism and is left alone until it rebases onto a registry-bearing main.
@@ -535,25 +535,25 @@ jobs:
             echo "SHIM_CHECK=0" >> "$GITHUB_ENV"
           fi
 
-      - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
+      - name: Import-boundary guard (EpsilonEridani/ and EpsilonEridani.lean ⊬ roadmap/review)
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' pr/TauCeti/ pr/TauCeti.lean; then
-            echo "::error::TauCeti/ must not import TauCetiRoadmap or TauCetiReview"
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmap|EpsilonEridaniReview)\b' pr/EpsilonEridani/ pr/EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ must not import EpsilonEridaniRoadmap or EpsilonEridaniReview"
             exit 1
           fi
 
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      - name: No-set_option guard (EpsilonEridani/ and EpsilonEridani.lean use no set_option)
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn '^set_option ' pr/TauCeti/ pr/TauCeti.lean; then
-            echo "::error::TauCeti/ may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
+          if grep -rIn '^set_option ' pr/EpsilonEridani/ pr/EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
             exit 1
           fi
 
       # The trusted checker requires each source-only PR that declares a new temporary Mathlib shim
-      # to record a concrete expiry target in TauCeti's AI-owned registry. Keeping the registry under
-      # TauCeti/ lets a worker add or remove entries in the same autonomous source PR as the shim.
+      # to record a concrete expiry target in EpsilonEridani's AI-owned registry. Keeping the registry under
+      # EpsilonEridani/ lets a worker add or remove entries in the same autonomous source PR as the shim.
       - name: Temporary Mathlib shims have machine-checkable expiry targets
         id: shim_coverage
         if: ${{ env.INFRA != '1' && env.OUT_OF_SCOPE != '1' && env.SHIM_CHECK == '1' }}
@@ -565,7 +565,7 @@ jobs:
             --base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT"
           )
           python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+            --repo-root pr --manifest pr/EpsilonEridani/mathlib-shims.json "${args[@]}"
           rc=$?
           echo "SHIM_COVERAGE_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
@@ -769,7 +769,7 @@ jobs:
       # pin is inherited from its trusted merge base. For a validated bump it is the new pin — which
       # bump-guard proved is a *forward commit on Mathlib's own master* (same repo, never a fork),
       # so the code run here is still trusted Mathlib master under the project's "track master"
-      # policy; only the PR's TauCeti/ code stays untrusted and runs solely under bwrap below.
+      # policy; only the PR's EpsilonEridani/ code stays untrusted and runs solely under bwrap below.
       - name: Fetch Mathlib with the (bump-validated) config (network, no token; no PR code)
         if: ${{ env.INFRA != '1' }}
         # `set -o pipefail` is not optional here. A `run:` step with no explicit `shell:`
@@ -822,11 +822,11 @@ jobs:
           python3 gate/scripts/lint-dot-notation.py \
             --baseline gate/scripts/lint-dot-notation-baseline.txt \
             --mathlib-root pr/.lake/packages/mathlib/Mathlib \
-            --source-root pr/TauCeti
+            --source-root pr/EpsilonEridani
 
       # Enable Lake's built-in artifact cache for the build below ONLY when the public read
       # endpoints are configured (repo variables). Until then this is a no-op: LAKE_*
-      # stay empty and the sandboxed build recompiles TauCeti/ from scratch exactly as before.
+      # stay empty and the sandboxed build recompiles EpsilonEridani/ from scratch exactly as before.
       # The cache dir lives under pr/.lake/ so the offline sandboxed build (which binds
       # pr/.lake writable) can read what the network `lake cache get` step populates. We
       # never pass the cache *endpoints* into the sandbox, so the build stays offline and
@@ -846,9 +846,9 @@ jobs:
               echo "LAKE_RESTORE_ARTIFACTS=true"
               echo "TAUCETI_CACHE_ENABLED=1"
             } >> "$GITHUB_ENV"
-            echo "::notice::Lake artifact cache enabled — will fetch TauCeti's oleans and build incrementally"
+            echo "::notice::Lake artifact cache enabled — will fetch EpsilonEridani's oleans and build incrementally"
           else
-            echo "::notice::Lake artifact cache not configured — building TauCeti/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
+            echo "::notice::Lake artifact cache not configured — building EpsilonEridani/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
           fi
           # A merge-group head is the exact commit GitHub will land. Stage its outputs after every
           # sandboxed audit so the required build can wait for publication.
@@ -858,11 +858,11 @@ jobs:
             echo "::notice::merge-group outputs will be staged for pre-landing publication"
           fi
 
-      # Restore TauCeti's own root-package oleans from the public Lake cache. The workflow-pinned
+      # Restore EpsilonEridani's own root-package oleans from the public Lake cache. The workflow-pinned
       # trusted script retains hash-verified artifacts between attempts and retries only missing
       # downloads. If all attempts remain incomplete, it discards the partial cache and falls
       # back to no cache so ci.yml's post-merge build has the same final semantics.
-      - name: Fetch TauCeti's own oleans from the Lake cache (network, no token; no PR code)
+      - name: Fetch EpsilonEridani's own oleans from the Lake cache (network, no token; no PR code)
         if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' }}
         env:
           # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
@@ -927,7 +927,7 @@ jobs:
           bash gate/scripts/build-lint-driver.sh pr gate/scripts/LintEnvDriver.lean "$out"
           echo "LINT_DRIVER_DIR=$out" >> "$GITHUB_ENV"
 
-      # Which modules the environment lint covers: the TauCeti modules this change touches, or the
+      # Which modules the environment lint covers: the EpsilonEridani modules this change touches, or the
       # whole library for `full-lint`-labelled and lint-repair PRs (scripts/lint-scope.sh). Computed
       # on the host from GitHub metadata only, and mounted read-only into the sandbox.
       - name: Decide the environment-lint scope
@@ -954,7 +954,7 @@ jobs:
         env:
           # The sandboxed build is always offline: never let Lake reach out to a remote
           # cache from inside the sandbox. When the artifact cache is enabled above, it
-          # restores TauCeti's oleans purely from the locally-populated $LAKE_CACHE_DIR; when it is
+          # restores EpsilonEridani's oleans purely from the locally-populated $LAKE_CACHE_DIR; when it is
           # not, this is a normal full build. Either way, no network from in here.
           LAKE_NO_CACHE: "true"
         run: |
@@ -1044,7 +1044,7 @@ jobs:
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
           python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+            --repo-root pr --manifest pr/EpsilonEridani/mathlib-shims.json "${args[@]}"
           rc=$?
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
@@ -1178,12 +1178,12 @@ jobs:
           # build result (the bug this split fixes — an out-of-scope PR used to post its "human review"
           # verdict as a red `build`, so fix-ci churned on it and you could not see whether it compiled).
           # Kept separate from the required GitHub checks so a human-owned infrastructure PR can be
-          # merged after review, but required green by TauCetiReview's automatic merge policy. This
+          # merged after review, but required green by EpsilonEridaniReview's automatic merge policy. This
           # status is therefore a trusted, fail-closed input to every automatic merge decision.
           if [ "${{ env.SCOPE_OK }}" != "1" ]; then
             sc_state=failure; sc_desc="trusted scope guard did not complete — re-run pr-build"
           elif [ "${{ env.OUT_OF_SCOPE }}" = "1" ]; then
-            sc_state=failure; sc_desc="changes outside TauCeti/ — human review + merge required"
+            sc_state=failure; sc_desc="changes outside EpsilonEridani/ — human review + merge required"
           elif [ "${{ env.BUMP_BAD }}" = "1" ]; then
             sc_state=failure; sc_desc="Lake pin change failed the trusted bump validator"
           elif [ "${{ env.INFRA }}" = "1" ]; then
@@ -1195,7 +1195,7 @@ jobs:
           elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
             sc_state=failure; sc_desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
           else
-            sc_state=success; sc_desc="changes are in scope (TauCeti/, the allowed root files, and the bibliography only)"
+            sc_state=success; sc_desc="changes are in scope (EpsilonEridani/, the allowed root files, and the bibliography only)"
           fi
           post_status scope "$sc_state" "$sc_desc"
 

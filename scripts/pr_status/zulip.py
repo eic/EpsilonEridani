@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mirror a TauCeti PR's lifecycle onto Zulip emoji reactions.
+"""Mirror a EpsilonEridani PR's lifecycle onto Zulip emoji reactions.
 
 We keep exactly one bot-owned message per PR in a dedicated channel/topic
 (default: "Tau Ceti" > "PRs") and reconcile two independent, mutually-exclusive
@@ -14,7 +14,7 @@ groups of emoji reactions on it from the PR's status (see core.derive):
                              closed, not merged       -> closed-pr  (realm emoji)
 
 The status comes from core.derive, which reads GitHub truth (PR state, the
-canonical `<!--tauceti-scoreboard-->` comment's meta JSON, and the `build` commit
+canonical `<!--epsiloneridani-scoreboard-->` comment's meta JSON, and the `build` commit
 status). This sink only renders it, so the same `reconcile` powers both the
 event-driven GitHub Actions and a one-shot backfill over historical PRs. Run it
 as often as you like; it converges the reactions to match GitHub and nothing else.
@@ -58,7 +58,7 @@ Environment:
     ZULIP_API_KEY, ZULIP_EMAIL, ZULIP_SITE   bot credentials (required)
     ZULIP_CHANNEL                            default "Tau Ceti"
     ZULIP_TOPIC                              default "PRs"
-    GH_REPO                                  default "TauCetiProject/TauCeti"
+    GH_REPO                                  default "EpsilonEridaniProject/EpsilonEridani"
     GH_TOKEN / GITHUB_TOKEN                  used by `gh` for the GitHub API
 
 The only runtime dependencies are python3's standard library and an
@@ -95,7 +95,7 @@ TOPIC = os.environ.get("ZULIP_TOPIC", "PRs")
 ZWSP = "​"  # zero-width space, used to defuse mentions/linkifiers
 # Messages from before the repository transfer still contain this URL. Reconcile
 # recognizes it, then updates the post to REPO's canonical URL in place.
-LEGACY_REPOS = ("FormalFrontier/TauCeti",)
+LEGACY_REPOS = ("FormalFrontier/EpsilonEridani",)
 _MESSAGE_NOT_GIVEN = object()
 
 

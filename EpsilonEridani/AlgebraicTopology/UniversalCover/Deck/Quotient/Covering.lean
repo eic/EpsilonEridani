@@ -1,0 +1,80 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.AlgebraicTopology.UniversalCover.Deck.Quotient.ActingGroup
+public import EpsilonEridani.AlgebraicTopology.UniversalCover.Deck.Quotient.Basic
+public import EpsilonEridani.Topology.Covering.Quotient
+
+/-!
+# A regular covering is a quotient covering map for its deck group
+
+For a covering map `p : E → B` with preconnected total space whose deck action is regular
+(surjective, with `deck p` acting transitively on every fibre), `p` exhibits `B` as the
+quotient of `E` by the deck transformation group: `p` is a `IsQuotientCoveringMap` for
+`deck p`. This is the deck-side formulation of `UniversalCover x₀ / π₁(X, x₀) ≃ X`, packaged so
+that it consumes Mathlib's quotient covering map theory rather than re-deriving it.
+
+Conversely, a quotient covering map has regular deck action, for any acting group: its
+fibres are the orbits, and translation by a group element is a deck transformation. For a
+preconnected covering map, this gives an equivalence between being a quotient covering map
+for the deck group and regularity of the deck action.
+
+## Main declarations
+
+* `EpsilonEridani.Deck.IsRegular.isQuotientCoveringMap`: a regular, preconnected covering map is a
+  quotient covering map for its deck group.
+* `IsQuotientCoveringMap.isRegular`: quotient covering maps have regular deck action, whatever
+  the acting group.
+* `EpsilonEridani.Deck.isQuotientCoveringMap_iff_isRegular`: for a preconnected covering map, being a
+  quotient covering map for the deck group is equivalent to regularity of the deck action.
+* `EpsilonEridani.Deck.IsRegular.isOpenQuotientMap`: a regular covering map is an open quotient map.
+
+## References
+
+Mathlib's quotient covering map theory is `IsQuotientCoveringMap`
+(`Mathlib/Topology/Covering/Quotient.lean`).
+-/
+
+public section
+
+namespace EpsilonEridani
+
+variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
+
+namespace Deck
+
+/-- A regular covering map with preconnected total space is a quotient covering map for its
+deck transformation group: it presents the base as the quotient `E / deck p`. -/
+theorem IsRegular.isQuotientCoveringMap [PreconnectedSpace E] (hreg : IsRegular p)
+    (hp : IsCoveringMap p) : IsQuotientCoveringMap p (deck p) := by
+  rw [isQuotientCoveringMap_iff_isCoveringMap_and]
+  exact ⟨hp, hreg.1, inferInstance, isCancelSMul hp,
+    fun {e₁ e₂} => Deck.IsRegular.apply_eq_iff_mem_orbit hreg⟩
+
+/-- A quotient covering map for any acting group has regular deck action: its fibres are the
+orbits of the acting group, and each group element translates by a deck transformation. -/
+theorem _root_.IsQuotientCoveringMap.isRegular {G : Type*} [Group G] [MulAction G E]
+    (h : IsQuotientCoveringMap p G) : IsRegular p := by
+  refine isRegular_iff_exists_apply_eq.mpr ⟨h.surjective, fun {e e'} hee => ?_⟩
+  obtain ⟨g, hg⟩ := h.apply_eq_iff_mem_orbit.mp hee.symm
+  exact ⟨IsQuotientCoveringMap.toDeckHom h g, by
+    rw [IsQuotientCoveringMap.toDeckHom_apply]; exact hg⟩
+
+/-- For a covering map with preconnected total space, being a quotient covering map for the
+deck transformation group is equivalent to regularity of the deck action. -/
+theorem isQuotientCoveringMap_iff_isRegular [PreconnectedSpace E] (hp : IsCoveringMap p) :
+    IsQuotientCoveringMap p (deck p) ↔ IsRegular p := by
+  exact ⟨fun h => h.isRegular, fun hreg => hreg.isQuotientCoveringMap hp⟩
+
+/-- A regular covering map is an open quotient map. -/
+theorem IsRegular.isOpenQuotientMap (hreg : IsRegular p) (hp : IsCoveringMap p) :
+    IsOpenQuotientMap p :=
+  IsCoveringMap.isOpenQuotientMap hp hreg.1
+
+end Deck
+
+end EpsilonEridani

@@ -68,7 +68,7 @@ class ReportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "manifest.json").write_text(json.dumps([
-                {"kind": "modified", "slug": "f0000", "head_path": "TauCeti/X.lean"}
+                {"kind": "modified", "slug": "f0000", "head_path": "EpsilonEridani/X.lean"}
             ]))
             for side, value in (("base", base_value), ("head", head_value)):
                 (root / f"{side}.json").write_text(json.dumps([
@@ -89,7 +89,7 @@ class ReportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "manifest.json").write_text(json.dumps([
-                {"kind": "added", "slug": "f0000", "head_path": "TauCeti/New.lean"}
+                {"kind": "added", "slug": "f0000", "head_path": "EpsilonEridani/New.lean"}
             ]))
             (root / "base.json").write_text("[]")
             for value, expected in ((499_999_999_999, 0), (500_000_000_000, 1)):
@@ -107,7 +107,7 @@ class ReportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "manifest.json").write_text(json.dumps([
-                {"kind": "modified", "slug": "f0000", "head_path": "TauCeti/X.lean"}
+                {"kind": "modified", "slug": "f0000", "head_path": "EpsilonEridani/X.lean"}
             ]))
             (root / "base.json").write_text(json.dumps([
                 {"slug": "f0000", "status": "ok", "metric": "cpu", "value": 50.0}
@@ -129,21 +129,21 @@ class ManifestTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             base, head = root / "base", root / "head"
-            (base / "TauCeti").mkdir(parents=True)
-            (head / "TauCeti").mkdir(parents=True)
-            (base / "TauCeti" / "Old.lean").write_text("def old := 1\n")
-            (head / "TauCeti" / "New.lean").write_text("def new := 1\n")
+            (base / "EpsilonEridani").mkdir(parents=True)
+            (head / "EpsilonEridani").mkdir(parents=True)
+            (base / "EpsilonEridani" / "Old.lean").write_text("def old := 1\n")
+            (head / "EpsilonEridani" / "New.lean").write_text("def new := 1\n")
             (root / "files.json").write_text(json.dumps([
-                {"status": "renamed", "filename": "TauCeti/New.lean",
-                 "previous_filename": "TauCeti/Old.lean"}
+                {"status": "renamed", "filename": "EpsilonEridani/New.lean",
+                 "previous_filename": "EpsilonEridani/Old.lean"}
             ]))
             subprocess.run([
                 sys.executable, HERE / "manifest.py", "--files", root / "files.json",
                 "--base", base, "--head", head, "--output", root / "manifest.json",
             ], check=True)
             entry = json.loads((root / "manifest.json").read_text())[0]
-            self.assertEqual(entry["base_module"], "TauCeti.Old")
-            self.assertEqual(entry["head_module"], "TauCeti.New")
+            self.assertEqual(entry["base_module"], "EpsilonEridani.Old")
+            self.assertEqual(entry["head_module"], "EpsilonEridani.New")
 
 
 class HeartbeatCollectionTests(unittest.TestCase):
@@ -155,7 +155,7 @@ class HeartbeatCollectionTests(unittest.TestCase):
             (root / "outside").mkdir()
             (lake / "tmp").symlink_to(root / "outside", target_is_directory=True)
             (root / "manifest.json").write_text(json.dumps([
-                {"kind": "added", "slug": "f0000", "head_path": "TauCeti/New.lean"}
+                {"kind": "added", "slug": "f0000", "head_path": "EpsilonEridani/New.lean"}
             ]))
             result = subprocess.run([
                 sys.executable, HERE / "collect_heartbeats.py", "--lake-root", lake,

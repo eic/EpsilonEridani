@@ -510,7 +510,7 @@ jobs:
           mkdir -p base/.lake/tmp
 
       - name: Fetch immutable-base Tau Ceti oleans through the shared cache client
-        id: tauceti_cache
+        id: epsiloneridani_cache
         if: ${{ steps.manifest.outputs.count != '0' }}
         env:
           PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
@@ -579,7 +579,7 @@ jobs:
           # executed again. A hardlink clone reuses its public artifact set without a multi-minute
           # copy; candidate writes cannot reach trusted scripts or raw base results in RUNNER_TEMP.
           cp -al base/.lake head/.lake
-          if [ '${{ steps.tauceti_cache.outputs.enabled }}' = 1 ]; then
+          if [ '${{ steps.epsiloneridani_cache.outputs.enabled }}' = 1 ]; then
             echo "LAKE_CACHE_DIR=$PWD/head/.lake/cache" >> "$GITHUB_ENV"
           fi
 
@@ -739,7 +739,7 @@ jobs:
             description='Lake pin change failed trusted forward-bump validation'
           elif [ "$FILE_COUNT" = 0 ] && [ "$REPORT_OUTCOME" = success ]; then
             state=success
-            description='no added or modified TauCeti Lean files'
+            description='no added or modified EpsilonEridani Lean files'
           elif [ "$BASE_OUTCOME" = success ] && [ "$HEAD_OUTCOME" = success ] && [ "$REPORT_OUTCOME" = success ]; then
             state=success
             description="wall-time and $METRIC budgets passed"

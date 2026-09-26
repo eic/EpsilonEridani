@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Synchronize TauCeti's locked dependencies into the docs project.
+"""Synchronize EpsilonEridani's locked dependencies into the docs project.
 
 The docs project has additional direct dependencies, so it needs its own Lake
-manifest.  Its inherited TauCeti dependencies must nevertheless use the exact
+manifest.  Its inherited EpsilonEridani dependencies must nevertheless use the exact
 resolved revisions in the parent manifest, even when the parent's lakefile
 nominates a moving branch such as Mathlib's ``master``.
 """
@@ -70,4 +70,4 @@ if missing:
 docs["packages"] = merged
 DOCS_MANIFEST.write_text(json.dumps(docs, ensure_ascii=False, indent=1) + "\n")
 
-print(f"synchronized {len(copied)} TauCeti dependency pins into {DOCS_MANIFEST}")
+print(f"synchronized {len(copied)} EpsilonEridani dependency pins into {DOCS_MANIFEST}")

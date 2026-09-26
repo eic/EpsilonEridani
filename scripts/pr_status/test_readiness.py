@@ -15,7 +15,7 @@ PR = {"number": 1, "state": "open", "head": {"sha": HEAD}, "base": {"ref": "main
       "draft": False, "labels": []}
 STATUSES = {"build": "success", "scope": "success", "bump-guard": "success"}
 MERGE_BASE = "mergebase"
-PATHS = ["TauCeti/X.lean"]
+PATHS = ["EpsilonEridani/X.lean"]
 
 
 def board(states=None, head=HEAD, mode="commit", updated="2026-09-16T01:00:00Z", extra=None):
@@ -23,12 +23,12 @@ def board(states=None, head=HEAD, mode="commit", updated="2026-09-16T01:00:00Z",
         states = {r: "green" for r in readiness.engine().DEFAULT_RUBRICS}
     meta = {"head_sha": head, "mode": mode, "states": states, "merge_base_sha": MERGE_BASE}
     meta.update(extra or {})
-    return {"body": "<!--tauceti-scoreboard--><!--tauceti-meta:v1 " + json.dumps(meta) + "-->",
+    return {"body": "<!--epsiloneridani-scoreboard--><!--epsiloneridani-meta:v1 " + json.dumps(meta) + "-->",
             "updated_at": updated}
 
 
 def marker(head=HEAD, expires=NOW + 60):
-    return {"body": "<!--tauceti-review-in-progress " +
+    return {"body": "<!--epsiloneridani-review-in-progress " +
             json.dumps({"head": head, "expires_at": expires}) + "-->"}
 
 

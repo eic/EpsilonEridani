@@ -9,9 +9,9 @@ needs touching as the project grows. They are embedded as a raw HTML blob: each
 def locGraphs : Html := {{
   <div class="loc-graphs">
     <figure class="loc-figure">
-      <img class="loc-graph" src="static/loc-tauceti.svg"
+      <img class="loc-graph" src="static/loc-epsiloneridani.svg"
            alt="Tau Ceti: lines of Lean by date"/>
-      <figcaption>"The Lean library under " <code>"TauCeti/"</code> ", total lines by date."</figcaption>
+      <figcaption>"The Lean library under " <code>"EpsilonEridani/"</code> ", total lines by date."</figcaption>
     </figure>
     <figure class="loc-figure">
       <img class="loc-graph" src="static/loc-roadmap.svg"
@@ -120,7 +120,7 @@ deploy, so the figures cannot drift.
 The vertical scales differ by an order of magnitude and on purpose: the library is
 measured in tens of thousands of lines of Lean, the roadmap in thousands of lines of
 prose and target statements. The library figure counts only the mathematics — the
-files under `TauCeti/` — not the website or tooling.
+files under `EpsilonEridani/` — not the website or tooling.
 
 Which roadmap is all that Lean serving? Every pull request is labelled with the
 roadmap it advances, so we can split the library by roadmap. The chart below stacks
@@ -152,8 +152,8 @@ when those review-state transitions first appear in project history.
 
 Who has taken part? The snapshot below counts GitHub accounts that have
 opened a pull request or issue, participated in those conversations (including
-reviews), or authored a commit on the default branch of TauCeti, TauCetiRoadmap,
-TauCetiWorker, or TauCetiReview. Accounts recognised as automation are dropped:
+reviews), or authored a commit on the default branch of EpsilonEridani, EpsilonEridaniRoadmap,
+EpsilonEridaniWorker, or EpsilonEridaniReview. Accounts recognised as automation are dropped:
 logins carrying GitHub's `[bot]` suffix, together with the project's own automation
 aliases. Nothing verifies that the accounts left over belong to people, so any
 automation the filter does not recognise is still counted. The headline

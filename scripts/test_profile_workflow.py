@@ -44,8 +44,8 @@ def main() -> None:
     for fragment in (
         "git merge --no-commit",
         "path: pr",
-        "cp -a pr/TauCeti",
-        "cp -a pr/TauCeti.lean",
+        "cp -a pr/EpsilonEridani",
+        "cp -a pr/EpsilonEridani.lean",
         "head/scripts/profile/measure.sh",
     ):
         forbid(text, fragment)

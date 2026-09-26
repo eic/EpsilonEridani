@@ -76,7 +76,7 @@ def digest(parent: int, name: str) -> str:
         return result.hexdigest()
 
 
-def snapshot(root: Path, package: str = "TauCeti") -> dict:
+def snapshot(root: Path, package: str = "EpsilonEridani") -> dict:
     """Record input hashes and SHA-256 of the archives Lake has just verified."""
     if not re.fullmatch(r"[A-Za-z0-9_-]+", package):
         raise ValueError("invalid package name")

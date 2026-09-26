@@ -21,7 +21,7 @@ class ConfigAttestation(unittest.TestCase):
         self.mergebase.mkdir()
         self.candidate.mkdir()
         for directory in (self.mergebase, self.candidate):
-            (directory / "lakefile.toml").write_text('name = "TauCeti"\n')
+            (directory / "lakefile.toml").write_text('name = "EpsilonEridani"\n')
             (directory / "lake-manifest.json").write_text('{"packages": []}\n')
             (directory / "lean-toolchain").write_text("leanprover/lean4:v4.34.0-rc1\n")
         subprocess.run(["git", "init", "-q"], cwd=self.candidate, check=True)

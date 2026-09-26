@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # lint-scope.sh OUT_DIR — decide what the environment lint (scripts/lint-env.sh) covers.
 #
-# Environment lint normally checks only the TauCeti modules a change touches: not the modules
+# Environment lint normally checks only the EpsilonEridani modules a change touches: not the modules
 # they import, and not the modules that import them. A change can still break lint elsewhere (a
 # new simp lemma can take an existing one out of simp normal form); the daily full lint
 # (.github/workflows/lint-full.yml) catches that and opens a repair PR on `lint-repair/main`.
@@ -16,7 +16,7 @@
 #   BASE, HEAD       commit SHAs whose three-dot diff is the change: for a PR its base commit and
 #                    the exact head being built, so the scope is bound to that immutable commit
 #   HEAD_REPO        for a PR, the head repository (owner/name), which may be a fork
-# Output: if scoped, OUT_DIR/modules.txt lists the changed TauCeti modules (possibly none) and
+# Output: if scoped, OUT_DIR/modules.txt lists the changed EpsilonEridani modules (possibly none) and
 # `LINT_ONLY_MODULES=OUT_DIR/modules.txt` is appended to $GITHUB_ENV; if not,
 # `LINT_ONLY_MODULES=` is. It reads only GitHub API metadata, never candidate files.
 set -euo pipefail
@@ -69,7 +69,7 @@ for pr in $prs; do
   case ",$labels," in *,full-lint,*) full "#$pr is labelled full-lint" ;; esac
 done
 
-module_re="^TauCeti(/[A-Za-z_][A-Za-z0-9_']*)+\.lean$"
+module_re="^EpsilonEridani(/[A-Za-z_][A-Za-z0-9_']*)+\.lean$"
 : > "$LIST"
 while IFS=$'\t' read -r status file; do
   [ -n "${file:-}" ] || continue
@@ -79,6 +79,6 @@ while IFS=$'\t' read -r status file; do
   printf '%s\n' "${module//\//.}" >> "$LIST"
 done <<<"$files"
 LC_ALL=C sort -u -o "$LIST" "$LIST"
-echo "lint-scope: linting the $(grep -c . "$LIST" || true) changed TauCeti module(s):"
+echo "lint-scope: linting the $(grep -c . "$LIST" || true) changed EpsilonEridani module(s):"
 sed 's/^/  /' "$LIST"
 echo "LINT_ONLY_MODULES=$LIST" >> "$GITHUB_ENV"

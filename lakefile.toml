@@ -1,6 +1,6 @@
-name = "TauCeti"
-defaultTargets = ["TauCeti"]
-# TauCeti is a pure Lean package: its cached module outputs (.olean/.ilean/Lean IR/generated C)
+name = "EpsilonEridani"
+defaultTargets = ["EpsilonEridani"]
+# EpsilonEridani is a pure Lean package: its cached module outputs (.olean/.ilean/Lean IR/generated C)
 # are reusable across platforms. This deliberately excludes native libraries and precompiled
 # modules; keep it in sync if either is ever added. The axiom audit rejects native_decide, one
 # source of host-dependent elaboration. Lake filters platform-dependent executable outputs from
@@ -17,12 +17,12 @@ rev = "master"
 
 # AI-owned: all the mathematics. No sorries (enforced in CI).
 # This glob is AUTHORITATIVE for what gets built and axiom-audited: `lake build` builds
-# every TauCeti/*.lean directly, and the axiom audit enumerates the source tree, so an
-# orphaned/broken module still fails the build. The root TauCeti.lean re-exports nothing
+# every EpsilonEridani/*.lean directly, and the axiom audit enumerates the source tree, so an
+# orphaned/broken module still fails the build. The root EpsilonEridani.lean re-exports nothing
 # and is intentionally empty — a PR never has to touch it, and no code imports it.
 [[lean_lib]]
-name = "TauCeti"
-globs = ["TauCeti.*"]
+name = "EpsilonEridani"
+globs = ["EpsilonEridani.*"]
 # `longFile = 1500` is the hard ceiling the in-build linter enforces for every file. A
 # *newly added* file is held to a tighter 1000-line limit by the "New-file length guard" in
 # `.github/workflows/pr-build.yml`; only files that already exist may grow up to 1500. Both
@@ -30,7 +30,7 @@ globs = ["TauCeti.*"]
 # remove a `set_option` on every short file (fatal under `warningAsError`).
 #
 # `style.header = true` is inert during ordinary builds at the current Mathlib pin: that command
-# linter skips modules absent from the library root, and TauCeti.lean is intentionally empty. The
+# linter skips modules absent from the library root, and EpsilonEridani.lean is intentionally empty. The
 # copyright/Authors contract is enforced directly by scripts/HeaderStyle.lean through
 # scripts/lint-style.sh. Keep the option enabled for forward compatibility if Mathlib changes how
 # the command linter discovers library files.
@@ -38,14 +38,14 @@ leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFil
 
 
 # Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the
-# built `TauCeti` environment and rejects any axiom outside the standard allowlist
+# built `EpsilonEridani` environment and rejects any axiom outside the standard allowlist
 # (catches sorry, native_decide, and home-rolled axioms). Run in CI after the build.
 [[lean_exe]]
 name = "axioms"
 root = "scripts.Axioms"
 
 # Human-owned governance: the module-system audit (`lake exe module-system`). Inspects the
-# built `TauCeti` `.olean`s and rejects any module whose `ModuleData.isModule` flag is false,
+# built `EpsilonEridani` `.olean`s and rejects any module whose `ModuleData.isModule` flag is false,
 # i.e. any file that did not opt into the Lean module system with a leading `module`. Reads the
 # compiled artifact, not the source text, so a stray comment cannot fool it. Run in CI after
 # the build, alongside the axiom audit.

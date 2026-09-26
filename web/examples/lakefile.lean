@@ -2,7 +2,7 @@ import Lake
 open Lake DSL
 
 -- This project exists to type-check the theorems the site showcases against the real library,
--- and to extract highlighted snippets for Verso. It therefore compiles the TauCeti library
+-- and to extract highlighted snippets for Verso. It therefore compiles the EpsilonEridani library
 -- itself, which forces an invariant: it must build with EXACTLY the Lean and the Mathlib the
 -- library is written for.
 --
@@ -19,7 +19,7 @@ open Lake DSL
 -- broke the site, silently and with no file to notice. Measured, not assumed.
 --
 -- The pins used to be committed copies kept in step by the daily bump. That worked, but it put
--- two files outside `TauCeti/` into every bump, and the merge policy refuses to auto-merge a
+-- two files outside `EpsilonEridani/` into every bump, and the merge policy refuses to auto-merge a
 -- pull request touching a lakefile or an unlisted path, so each bump would have stopped for a
 -- human. Deriving them instead keeps a bump touching only the root pins.
 --
@@ -45,7 +45,7 @@ require subverso from git
 
 -- The real Tau Ceti library, from the repository root, so the showcased theorems are
 -- type-checked against exactly the library that proves them.
-require «TauCeti» from "../.."
+require «EpsilonEridani» from "../.."
 
 package «examples» where
 

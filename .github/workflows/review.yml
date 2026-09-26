@@ -18,7 +18,7 @@ jobs:
     # filters only by event type; ALL authorization happens inside the step (the repository
     # permission API, reliable regardless of public/private org membership, with author_association
     # as a fallback so /review never regresses). Author CONTESTS (a reply in a rubric thread) are no
-    # longer handled here: the local worker (tauceti) owns contest re-reviews so they have a single
+    # longer handled here: the local worker (epsiloneridani) owns contest re-reviews so they have a single
     # execution owner and one durable watermark, rather than racing a CI run.
     if: >
       (github.event_name == 'workflow_run'
@@ -74,12 +74,12 @@ jobs:
     needs: resolve
     # GENERATING reviews in CI spends API budget, so it is OFF unless the repo variable
     # CI_REVIEW_ENABLED is set to 'true'. While off, reviews are run from the command line
-    # (tauceti-review in TauCetiReview, or tauceti from TauCetiWorker). Merging is independent:
+    # (epsiloneridani-review in EpsilonEridaniReview, or epsiloneridani from EpsilonEridaniWorker). Merging is independent:
     # auto-merge.yml merges a green PR regardless of this gate. Re-enable by setting the variable.
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
-    # Pinned to a TauCetiReview commit; bump deliberately (an unpinned @main lets an upstream change
-    # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
-    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
+    # Pinned to a EpsilonEridaniReview commit; bump deliberately (an unpinned @main lets an upstream change
+    # break every contributor's review at once, and this workflow inherits EpsilonEridani's secrets).
+    uses: EpsilonEridaniProject/EpsilonEridaniReview/.github/workflows/review.yml@95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}

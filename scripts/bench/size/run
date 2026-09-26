@@ -17,7 +17,7 @@ def output_result(metric: str, value: float, unit: str | None = None) -> None:
 def measure_leans() -> None:
     lean_files = 0
     lean_lines = 0
-    for path in Path().glob("TauCeti/**/*.lean"):
+    for path in Path().glob("EpsilonEridani/**/*.lean"):
         lean_files += 1
         with open(path) as f:
             lean_lines += sum(1 for _ in f)

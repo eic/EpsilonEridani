@@ -1,4 +1,4 @@
-"""Read-only adapter to the exact TauCetiReview gate used by Auto-merge.
+"""Read-only adapter to the exact EpsilonEridaniReview gate used by Auto-merge.
 
 Labels and pipeline health call the deployed gate, rather than implementing a
 second interpretation of scoreboards. Set TAUCETI_REVIEW_RUNNER to its pinned
@@ -19,7 +19,7 @@ import core
 
 @functools.lru_cache(maxsize=1)
 def engine():
-    runner = Path(os.environ.get("TAUCETI_REVIEW_RUNNER", ".tauceti-review/runner")).resolve()
+    runner = Path(os.environ.get("TAUCETI_REVIEW_RUNNER", ".epsiloneridani-review/runner")).resolve()
     if not (runner / "merge_from_scoreboard.py").is_file():
         raise RuntimeError("Pinned review engine missing; set TAUCETI_REVIEW_RUNNER")
     sys.path.insert(0, str(runner))
@@ -100,7 +100,7 @@ def classify(pr, comments, statuses, paths, merge_base_sha, now=None):
             result["category"] = "review-in-progress"
         else:
             paths = set(paths)
-            human = not paths or any(not (p.startswith("TauCeti/") or p in gate.DEFAULT_ALLOW)
+            human = not paths or any(not (p.startswith("EpsilonEridani/") or p in gate.DEFAULT_ALLOW)
                                      for p in paths)
             if human:
                 result["category"] = "needs-human-review"

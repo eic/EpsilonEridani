@@ -195,23 +195,23 @@ class ScoreboardMeta(unittest.TestCase):
     @staticmethod
     def board(n, updated, association):
         return {
-            "body": f'<!--tauceti-scoreboard--><!--tauceti-meta:v1 {{"n":{n}}}-->',
+            "body": f'<!--epsiloneridani-scoreboard--><!--epsiloneridani-meta:v1 {{"n":{n}}}-->',
             "updated": updated,
             "author_association": association,
         }
 
     def test_parses_meta_with_nested_states(self):
         # Regression: a lazy `\{.*?\}` truncated at the first inner `}` and dropped the whole meta.
-        body = ('<!--tauceti-scoreboard-->\n'
-                '<!--tauceti-meta:v1 {"head_sha":"H","states":{"correctness":"blocking_block",'
+        body = ('<!--epsiloneridani-scoreboard-->\n'
+                '<!--epsiloneridani-meta:v1 {"head_sha":"H","states":{"correctness":"blocking_block",'
                 '"reuse":"green"},"full_rounds":2}--> trailing text')
         meta = core.scoreboard_meta_from([{"body": body, "updated": "2026-01-01"}])
         self.assertEqual(meta.get("states", {}).get("correctness"), "blocking_block")
         self.assertEqual(meta.get("full_rounds"), 2)
 
     def test_newest_supplied_comment_wins(self):
-        old = {"body": '<!--tauceti-scoreboard--><!--tauceti-meta:v1 {"n":1}-->', "updated": "2026-01-01"}
-        new = {"body": '<!--tauceti-scoreboard--><!--tauceti-meta:v1 {"n":2}-->', "updated": "2026-02-01"}
+        old = {"body": '<!--epsiloneridani-scoreboard--><!--epsiloneridani-meta:v1 {"n":1}-->', "updated": "2026-01-01"}
+        new = {"body": '<!--epsiloneridani-scoreboard--><!--epsiloneridani-meta:v1 {"n":2}-->', "updated": "2026-02-01"}
         self.assertEqual(core.scoreboard_meta_from([old, new]).get("n"), 2)
 
     def test_no_marker_is_empty(self):
@@ -297,7 +297,7 @@ class InProgress(unittest.TestCase):
     NOW = 1_700_000_000
 
     def marker(self, head, expires):
-        return {"body": '<!--tauceti-review-in-progress {"head": "%s", "expires_at": %d}-->' % (head, expires)}
+        return {"body": '<!--epsiloneridani-review-in-progress {"head": "%s", "expires_at": %d}-->' % (head, expires)}
 
     def test_unexpired_at_head_is_true(self):
         self.assertTrue(core.inprogress_from([self.marker(self.HEAD, self.NOW + 900)], self.HEAD, self.NOW))
@@ -309,7 +309,7 @@ class InProgress(unittest.TestCase):
         self.assertFalse(core.inprogress_from([self.marker("O" * 40, self.NOW + 900)], self.HEAD, self.NOW))
 
     def test_malformed_is_ignored(self):
-        self.assertFalse(core.inprogress_from([{"body": "<!--tauceti-review-in-progress {bad-->"}], self.HEAD, self.NOW))
+        self.assertFalse(core.inprogress_from([{"body": "<!--epsiloneridani-review-in-progress {bad-->"}], self.HEAD, self.NOW))
 
     def test_no_marker_is_false(self):
         self.assertFalse(core.inprogress_from([{"body": "just a comment"}], self.HEAD, self.NOW))
@@ -331,8 +331,8 @@ class Derive(unittest.TestCase):
 
     def test_contributor_scoreboard_drives_review_state(self):
         self.stub(comments=[{
-            "body": ('<!--tauceti-scoreboard-->'
-                     '<!--tauceti-meta:v1 {"head_sha":"H",'
+            "body": ('<!--epsiloneridani-scoreboard-->'
+                     '<!--epsiloneridani-meta:v1 {"head_sha":"H",'
                      '"states":{"correctness":"blocking_request"}}-->'),
             "updated": "2026-02-01",
             "author_association": "CONTRIBUTOR",
@@ -342,7 +342,7 @@ class Derive(unittest.TestCase):
     def test_contributor_inprogress_marker_drives_status(self):
         self.stub(ci="success",
                   comments=[{
-                      "body": '<!--tauceti-review-in-progress {"head": "H", "expires_at": 9999999999}-->',
+                      "body": '<!--epsiloneridani-review-in-progress {"head": "H", "expires_at": 9999999999}-->',
                       "author_association": "CONTRIBUTOR",
                   }])
         d = core.derive("1", now=1_700_000_000)
@@ -351,7 +351,7 @@ class Derive(unittest.TestCase):
 
     def test_terminal_clears_everything(self):
         self.stub(state="closed", merged=True, ci="success",
-                  comments=[{"body": '<!--tauceti-review-in-progress {"head": "H", "expires_at": 9999999999}-->'}])
+                  comments=[{"body": '<!--epsiloneridani-review-in-progress {"head": "H", "expires_at": 9999999999}-->'}])
         d = core.derive("1")
         self.assertEqual(d["lifecycle"], "merged")
         self.assertIsNone(d["ci"])

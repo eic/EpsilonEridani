@@ -12,18 +12,18 @@ version: "v0.2"
 project:
   name: "Tau Ceti"     # [required]
   authors:                     # [required] who did the formalization
-    - "AI author agents (the Lean code under TauCeti/)"
-    - "Human stewards (roadmaps, CI, review), TauCetiProject"
+    - "AI author agents (the Lean code under EpsilonEridani/)"
+    - "Human stewards (roadmaps, CI, review), EpsilonEridaniProject"
   license: "Apache-2.0"        # [required]
 
 # sources - what was formalized.
 # Tau Ceti has no single fixed source. Its specification is its own
-# human-authored, human-reviewed roadmaps in the TauCetiRoadmap repo, which play the role
+# human-authored, human-reviewed roadmaps in the EpsilonEridaniRoadmap repo, which play the role
 # of blueprints and themselves cite the mathematical literature.
 sources:                       # [required] list of sources
   - title: "Tau Ceti roadmaps (human-curated)"   # [required]
     authors: ["Tau Ceti human stewards"]         # [required]
-    id: "https://github.com/TauCetiProject/TauCetiRoadmap"  # [required]
+    id: "https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap"  # [required]
     type: "blueprint"
     license: "Apache-2.0"
     author_contacted: "n/a"
@@ -39,10 +39,10 @@ automation:
     spend_usd: "ongoing; varies by contributor"
     hardware: "API- and subscription-based; varies by contributor"
   notes: >
-    Open, multi-agent library. AIs own the code under TauCeti/: they initiate pull
+    Open, multi-agent library. AIs own the code under EpsilonEridani/: they initiate pull
     requests and shepherd them through an AI-driven review process. Humans own the
-    roadmaps (the TauCetiRoadmap repo: markdown plus sorry-allowed Lean target signatures)
-    and the review rubrics (the TauCetiReview repo), and may raise issues against the code.
+    roadmaps (the EpsilonEridaniRoadmap repo: markdown plus sorry-allowed Lean target signatures)
+    and the review rubrics (the EpsilonEridaniReview repo), and may raise issues against the code.
     The human/AI split is enforced by CODEOWNERS and branch protection; the main
     branch is always green. No single harness or model is mandated.
 
@@ -52,7 +52,7 @@ status:
     All of mathematics: past, present, and emerging. Tau Ceti is an
     open-ended, continuously evolving library downstream of Mathlib, not the
     formalization of a fixed target.
-  sorry_count: 0               # the code library (TauCeti/) forbids sorry; CI enforces this
+  sorry_count: 0               # the code library (EpsilonEridani/) forbids sorry; CI enforces this
   sorry_in_definitions: 0
   axioms:                      # the permitted allowlist (policy); current bootstrap content uses no non-standard axioms
     - "propext"
@@ -64,7 +64,7 @@ status:
 fidelity:
   divergences: >
     Not applicable in the usual sense: there is no fixed source to diverge from. The
-    human-authored roadmaps are the specification, and TauCeti/ may freely generalize.
+    human-authored roadmaps are the specification, and EpsilonEridani/ may freely generalize.
     Where a roadmap target needs material that lives only in an open or closed Mathlib
     PR, that material is vendored here with attribution rather than waited on.
 
@@ -73,11 +73,11 @@ review:
   status: "agent-reviewed"     # [required] intended process: AI peer review against human-authored rubrics
   reviewers:
     - "AI author agents (peer review of code PRs)"
-    - "Human stewards (rubrics in the TauCetiReview repo; review of roadmap PRs)"
+    - "Human stewards (rubrics in the EpsilonEridaniReview repo; review of roadmap PRs)"
   notes: >
-    Code PRs into TauCeti/ are peer-reviewed by AI agents against rubrics authored by
-    humans (the TauCetiReview repo). Merging requires a green CI run (build against pinned
-    Mathlib; no sorry/admit/sorryAx in TauCeti/; and TauCeti/ may not import the
+    Code PRs into EpsilonEridani/ are peer-reviewed by AI agents against rubrics authored by
+    humans (the EpsilonEridaniReview repo). Merging requires a green CI run (build against pinned
+    Mathlib; no sorry/admit/sorryAx in EpsilonEridani/; and EpsilonEridani/ may not import the
     roadmap/review trees) plus code-owner review, enforced by branch protection.
     Human-governed paths are human-reviewed. The library is bootstrapping, so little
     has been reviewed yet.
@@ -85,8 +85,8 @@ review:
 # alignment - how source statements map to formal declarations.
 alignment:
   note: >
-    The human-authored roadmaps in the TauCetiRoadmap repo are the closest thing to a
+    The human-authored roadmaps in the EpsilonEridaniRoadmap repo are the closest thing to a
     blueprint. Each roadmap (e.g. UniversalCovers, JacobianChallenge, ReductiveGroups)
     states its goals as sorry-allowed signatures in its Suggested.lean; the matching
-    sorry-free development lives (or will live) under TauCeti/.
-  roadmaps: "https://github.com/TauCetiProject/TauCetiRoadmap"
+    sorry-free development lives (or will live) under EpsilonEridani/.
+  roadmaps: "https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap"

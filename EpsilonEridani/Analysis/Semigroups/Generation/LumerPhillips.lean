@@ -1,0 +1,150 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.Analysis.Semigroups.Generation.LimitSemigroup
+public import EpsilonEridani.Analysis.Semigroups.Generation.Yosida.Generator
+public import EpsilonEridani.Analysis.Semigroups.Dissipative.Duality
+
+/-!
+# The Lumer--Phillips generation theorem
+
+A densely defined m-dissipative operator `A` on a real Banach space generates a strongly
+continuous contraction semigroup. The semigroup itself is built in
+`EpsilonEridani/Analysis/Semigroups/Generation/LimitSemigroup.lean` as the limit
+`S(t) x = lim_{lambda -> ∞} exp (t A_lambda) x` of the Yosida exponentials.
+
+The reusable generator-identification argument lives in
+`EpsilonEridani/Analysis/Semigroups/Generation/Yosida/Generator.lean`. This file supplies its hypotheses:
+the compact-time convergence defining `yosidaLimitSemigroup`, convergence of `A_lambda x` to
+`A x` on the dense domain, the contraction bound on the approximating semigroups, and the shared
+resolvent point `1`. Thus the generator of the limit semigroup is `A`.
+
+## Main results
+
+* `EpsilonEridani.Semigroups.IsMDissipative.yosidaLimitSemigroup_generator`: the generator of the
+  Yosida limit semigroup of a densely defined m-dissipative `A` is `A`.
+* `EpsilonEridani.Semigroups.IsMDissipative.exists_contractionSemigroup_generator_eq`: the
+  **Lumer--Phillips generation theorem**.
+* `EpsilonEridani.Semigroups.exists_contractionSemigroup_generator_eq_iff`: an operator generates a
+  contraction semigroup exactly when it is densely defined and m-dissipative.
+* The duality-set characterization with a nonpositive witness for each `x ∈ D(A)`.
+* The equivalent universal sign condition for every member of each duality set.
+
+## References
+
+* K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
+  Theorem II.3.15.
+* A. Pazy, *Semigroups of Linear Operators and Applications to Partial Differential Equations*,
+  Chapter 1, Theorem 4.3.
+-/
+
+public section
+
+noncomputable section
+
+open scoped NNReal Topology
+
+open Filter NormedSpace
+
+namespace EpsilonEridani.Semigroups
+
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+
+namespace IsMDissipative
+
+variable {A : X →ₗ.[ℝ] X}
+
+/-- **The generator of the Yosida limit semigroup is the operator it was built from.** For a
+densely defined m-dissipative `A`, the semigroup `yosidaLimitSemigroup` has generator `A`. -/
+@[simp]
+theorem yosidaLimitSemigroup_generator (hA : IsMDissipative A)
+    (hdense : Dense (A.domain : Set X)) :
+    (hA.yosidaLimitSemigroup hdense).toStronglyContinuousSemigroup.generator = A := by
+  let S := (hA.yosidaLimitSemigroup hdense).toStronglyContinuousSemigroup
+  apply S.generator_eq_of_yosidaApproximation (lambda := 1)
+    (hA.mem_resolventSet one_pos)
+    ((ContractionSemigroup.isMDissipative_generator _).mem_resolventSet one_pos)
+  · exact hA.tendsto_yosidaApproximation_apply_atTop hdense
+  · intro x t ht
+    have hx := hA.tendsto_yosidaLimit hdense ht (x : X)
+    rwa [← hA.yosidaLimitSemigroup_realOperator_apply hdense ht (x : X)] at hx
+  · intro x T hT
+    exact (hA.tendstoUniformlyOn_exp_yosidaApproximation hdense (A x) hT).congr_right
+      fun u hu => (hA.yosidaLimitSemigroup_realOperator_apply hdense hu.1 (A x)).symm
+  · refine fun _ => ⟨1, ?_⟩
+    filter_upwards [eventually_gt_atTop (0 : ℝ)] with lambda hlambda u hu
+    exact norm_exp_smul_yosidaApproximation_le_one
+      (hA.mul_norm_resolvent_le_one hlambda) hlambda hu.1
+
+/-- **The Lumer--Phillips generation theorem.** A densely defined m-dissipative operator on a
+real Banach space generates a strongly continuous contraction semigroup.
+
+Dissipativity plus the range condition packaged in `IsMDissipative` is exactly the hypothesis
+set of Lumer--Phillips; the semigroup produced is the strong limit of the semigroups generated
+by the Yosida approximations of `A`. -/
+theorem exists_contractionSemigroup_generator_eq (hA : IsMDissipative A)
+    (hdense : Dense (A.domain : Set X)) :
+    ∃ S : ContractionSemigroup X, S.toStronglyContinuousSemigroup.generator = A :=
+  ⟨hA.yosidaLimitSemigroup hdense, hA.yosidaLimitSemigroup_generator hdense⟩
+
+end IsMDissipative
+
+/-- **Lumer--Phillips as a characterization.** An unbounded operator on a real Banach space is
+the generator of a strongly continuous contraction semigroup if and only if it is densely
+defined and m-dissipative.
+
+The forward direction is the density of a generator domain together with the converse of
+Lumer--Phillips; the backward direction is the generation theorem. -/
+theorem exists_contractionSemigroup_generator_eq_iff (A : X →ₗ.[ℝ] X) :
+    (∃ S : ContractionSemigroup X, S.toStronglyContinuousSemigroup.generator = A) ↔
+      Dense (A.domain : Set X) ∧ IsMDissipative A := by
+  refine ⟨fun ⟨S, hS⟩ => ⟨?_, ?_⟩, fun ⟨hdense, hA⟩ =>
+    hA.exists_contractionSemigroup_generator_eq hdense⟩
+  · have hdom : (A.domain : Set X) =
+        (S.toStronglyContinuousSemigroup.domain : Set X) := by
+      rw [← hS, S.toStronglyContinuousSemigroup.generator_domain]
+    rw [hdom]
+    exact S.toStronglyContinuousSemigroup.dense_domain
+  · rw [← hS]
+    exact ContractionSemigroup.isMDissipative_generator S
+
+/-- **Lumer--Phillips in duality-map form.** An unbounded operator on a real Banach space
+generates a contraction semigroup exactly when it is densely defined, each `x ∈ D(A)` has a
+duality-set member `f` with `f (A x) ≤ 0`, and `lambda • I - A` maps `D(A)` onto `X` for some
+`lambda > 0`. -/
+theorem exists_contractionSemigroup_generator_eq_iff_exists_mem_dualitySet_apply_nonpos
+    (A : X →ₗ.[ℝ] X) :
+    (∃ S : ContractionSemigroup X, S.toStronglyContinuousSemigroup.generator = A) ↔
+      Dense (A.domain : Set X) ∧
+        (∀ x : A.domain, ∃ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0) ∧
+        ∃ lambda : ℝ, 0 < lambda ∧
+          Function.Surjective fun x : A.domain => lambda • (x : X) - A x := by
+  rw [exists_contractionSemigroup_generator_eq_iff, isMDissipative_iff,
+    isDissipative_iff_exists_mem_dualitySet_apply_nonpos]
+
+/-- **Lumer--Phillips with the universal duality-set sign condition.** A densely defined
+operator generates a contraction semigroup exactly when every member of the duality set of
+each `x ∈ D(A)` is nonpositive on `A x`, and the positive resolvent range condition holds. -/
+theorem exists_contractionSemigroup_generator_eq_iff_forall_mem_dualitySet_apply_nonpos
+    (A : X →ₗ.[ℝ] X) :
+    (∃ S : ContractionSemigroup X, S.toStronglyContinuousSemigroup.generator = A) ↔
+      Dense (A.domain : Set X) ∧ (∀ x : A.domain, ∀ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0) ∧
+        ∃ lambda : ℝ, 0 < lambda ∧
+          Function.Surjective fun x : A.domain => lambda • (x : X) - A x := by
+  refine ⟨fun h => ?_, fun ⟨hdense, hsign, hrange⟩ => ?_⟩
+  · obtain ⟨hdense, hA⟩ := (exists_contractionSemigroup_generator_eq_iff A).mp h
+    obtain ⟨S, rfl⟩ := h
+    exact ⟨hdense, fun x f hf => S.apply_generator_nonpos_of_mem_dualitySet x hf,
+      hA.exists_smul_sub_surjective⟩
+  · refine (exists_contractionSemigroup_generator_eq_iff A).mpr ⟨hdense, ?_, hrange⟩
+    refine (isDissipative_iff_exists_mem_dualitySet_apply_nonpos A).mpr fun x => ?_
+    obtain ⟨f, hf⟩ := dualitySet_nonempty ℝ (x : X)
+    exact ⟨f, hf, hsign x f hf⟩
+
+end EpsilonEridani.Semigroups
+
+end

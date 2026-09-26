@@ -769,7 +769,7 @@ def report(result: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--repo", default="TauCetiProject/TauCeti")
+    parser.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
     parser.add_argument("--data", type=Path, help="replay a normalized offline snapshot")
     parser.add_argument("--dump-data", type=Path, help="write the fetched snapshot")
     parser.add_argument("--since-data", type=Path,

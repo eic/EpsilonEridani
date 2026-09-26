@@ -1,13 +1,13 @@
 # Mathlib shim registry
 
-`TauCeti/mathlib-shims.json` records Tau Ceti source that is temporary pending an upstream
+`EpsilonEridani/mathlib-shims.json` records Tau Ceti source that is temporary pending an upstream
 Mathlib replacement. It is AI-owned data: a source-only migration PR may update the registry in
 the same commit as the Lean files it changes. The checker itself and its CI wiring under
 `scripts/` and `.github/` remain human-owned.
 
 Each JSON object has these fields:
 
-- `sources` (required): unique repository-relative `TauCeti/*.lean` paths sharing the same
+- `sources` (required): unique repository-relative `EpsilonEridani/*.lean` paths sharing the same
   upstream triggers.
 - `declarations`: fully qualified Lean declaration names to look up in pinned Mathlib.
 - `modules`: fully qualified `Mathlib.*` module names to look up in the pinned Mathlib source

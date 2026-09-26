@@ -30,7 +30,7 @@ def theme : Theme := { Theme.default with
                 <a href="statistics">"Statistics"</a>
                 <a href="progress">"Progress"</a>
                 <a href="about">"About"</a>
-                <a href="https://github.com/TauCetiProject/TauCeti">"GitHub"</a>
+                <a href="https://github.com/EpsilonEridaniProject/EpsilonEridani">"GitHub"</a>
               </nav>
             </div>
           </header>
@@ -41,9 +41,9 @@ def theme : Theme := { Theme.default with
             <div class="foot-inner">
               <p class="foot-tag">"Let’s do lots of maths."</p>
               <ul class="foot-links">
-                <li><a href="https://github.com/TauCetiProject/TauCeti">"TauCeti"</a></li>
-                <li><a href="https://github.com/TauCetiProject/TauCetiRoadmap">"TauCetiRoadmap"</a></li>
-                <li><a href="https://github.com/TauCetiProject/TauCetiReview">"TauCetiReview"</a></li>
+                <li><a href="https://github.com/EpsilonEridaniProject/EpsilonEridani">"EpsilonEridani"</a></li>
+                <li><a href="https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap">"EpsilonEridaniRoadmap"</a></li>
+                <li><a href="https://github.com/EpsilonEridaniProject/EpsilonEridaniReview">"EpsilonEridaniReview"</a></li>
               </ul>
               <p class="foot-legal">"AI-authored Lean mathematics · Apache-2.0"</p>
             </div>
@@ -56,14 +56,14 @@ def theme : Theme := { Theme.default with
     return {{
       <div class="frontpage">
         <section class="hero">
-          <img class="hero-img" src="static/tauceti-collaboration.jpg"
+          <img class="hero-img" src="static/epsiloneridani-collaboration.jpg"
                alt="A hexapus reaching toward an AI across a tide pool, beneath twin suns and a ringed planet."/>
           <div class="hero-copy">
             <h1 class="hero-title">"Tau Ceti"</h1>
             <p class="hero-tag">"Let’s do lots of maths."</p>
             <p class="hero-sub">"AI-authored Lean mathematics, directed by a human-owned roadmap and gated by open, adversarial review."</p>
             <div class="cta-row">
-              <a class="cta" href="https://github.com/TauCetiProject/TauCeti">"Explore the code →"</a>
+              <a class="cta" href="https://github.com/EpsilonEridaniProject/EpsilonEridani">"Explore the code →"</a>
               <a class="cta secondary" href="docs/">"Read the docs →"</a>
             </div>
           </div>
@@ -97,7 +97,7 @@ def theme : Theme := { Theme.default with
         <section class="band growth">
           <h2 class="section-title">"Growing fast"</h2>
           <a class="growth-link" href="statistics">
-            <img class="growth-img" src="static/loc-tauceti.svg"
+            <img class="growth-img" src="static/loc-epsiloneridani.svg"
                  alt="Tau Ceti: lines of Lean by date"/>
             <span class="growth-cta">"See the statistics →"</span>
           </a>
@@ -106,16 +106,16 @@ def theme : Theme := { Theme.default with
         <section class="band repos">
           <h2 class="section-title">"Three repositories"</h2>
           <div class="cards three">
-            <a class="card repo" href="https://github.com/TauCetiProject/TauCeti">
-              <h3>"TauCeti"</h3>
+            <a class="card repo" href="https://github.com/EpsilonEridaniProject/EpsilonEridani">
+              <h3>"EpsilonEridani"</h3>
               <p>"The AI-authored Lean mathematics."</p>
             </a>
-            <a class="card repo" href="https://github.com/TauCetiProject/TauCetiRoadmap">
-              <h3>"TauCetiRoadmap"</h3>
+            <a class="card repo" href="https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap">
+              <h3>"EpsilonEridaniRoadmap"</h3>
               <p>"The human-controlled roadmaps that direct the work."</p>
             </a>
-            <a class="card repo" href="https://github.com/TauCetiProject/TauCetiReview">
-              <h3>"TauCetiReview"</h3>
+            <a class="card repo" href="https://github.com/EpsilonEridaniProject/EpsilonEridaniReview">
+              <h3>"EpsilonEridaniReview"</h3>
               <p>"The review rubrics and the machinery that runs review."</p>
             </a>
           </div>

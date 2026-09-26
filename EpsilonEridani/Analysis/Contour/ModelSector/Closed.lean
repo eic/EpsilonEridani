@@ -1,0 +1,292 @@
+/-
+Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.Analysis.Contour.ModelSector.Corner
+public import EpsilonEridani.Analysis.Contour.PiecewiseC1On
+public import EpsilonEridani.Analysis.Contour.Winding.Number.Circle
+public import EpsilonEridani.Analysis.Contour.Winding.Number.Concat
+public import EpsilonEridani.Analysis.Contour.Winding.Number.Reparam
+
+/-!
+# The Hungerbühler–Wasem model sector
+
+The model sector of opening angle `α` at `z₀` is the closed curve made of a radial segment
+inward to `z₀` along direction `φ + α`, a radial segment back out along direction `φ`, and a
+circular arc of radius `r` sweeping `α` from `φ` round to `φ + α`, which closes the curve at the
+point it started from. Both radii are traversed before the arc — the parameterization on
+`[-r, r + α]` puts the corner at `0` and the arc on `(r, r + α]` — so the curve is traversed
+from the far end of the incoming radius, not from the corner.
+
+The geometry and closure hold for `0 ≤ r` and `0 ≤ α`, with `r = 0` and `α = 0` degenerate rather
+than ill-formed; only the winding number needs `0 < r`, so that the arc avoids its centre. For
+negative `r` or `α` the two parameter intervals reverse and this description does not apply.
+
+Its generalized winding number about its own corner is `α / 2π` — the value HW (2.4) attaches
+to a corner of interior angle `α` **when `0 < α < 2π`**, and the source of the `½` at a smooth
+crossing and the `1/6` at a `π/3` corner. Outside that range the formula still holds but the
+corner reading does not: at `α = 0` the two radii coincide, and for `α ≥ 2π` the arc wraps, so
+the curve is a multi-turn swept arc rather than a sector.
+
+The two radial segments are packaged as a single `twoRayCorner`, since neither has a principal
+value on its own; the arc is a reparametrised `circleMap`.
+
+## Main definitions
+
+* `EpsilonEridani.Contour.modelSector` — the model sector, on `[-r, r + α]` with the corner at parameter
+  `0`; closed when `0 ≤ r` and `0 ≤ α`. The winding number needs `0 < r`, so that the arc
+  avoids its centre.
+
+## Main results
+
+* `EpsilonEridani.Contour.windingNumber_closedModelSector` — its winding number about `z₀`
+  is `α / 2π`, for every `0 ≤ α`. This is the roadmap's acceptance criterion.
+* `EpsilonEridani.Contour.windingNumber_closedModelSector_eq_half` and
+  `EpsilonEridani.Contour.windingNumber_closedModelSector_eq_one_div_six` — the `½` at a smooth crossing
+  and the `1/6` at a `π/3` corner, the two values the valence formula consumes.
+
+This is Layer 1 of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
+
+## References
+
+* N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized Residue
+  Theorem*, arXiv:1808.00997 — (2.4).
+-/
+
+public section
+
+noncomputable section
+
+namespace EpsilonEridani.Contour
+
+open Filter MeasureTheory Set Topology
+
+/-- **The Hungerbühler–Wasem model sector** of radius `r` and opening angle `α` at `z₀`, with the
+incoming radius at angle `φ + α` and the outgoing one at angle `φ`.
+
+For `0 ≤ r` and `0 ≤ α`: on `[-r, r]` it is the two-ray corner through `z₀`, running from
+`z₀ + r e^{i(φ+α)}` in to `z₀` and back out to `z₀ + r e^{iφ}`; on `[r, r + α]` it is the arc of
+radius `r` from angle `φ` to `φ + α`, returning to the start. At `r = 0` or `α = 0` the
+corresponding piece degenerates to a point. For negative `r` or `α` the two intervals reverse and
+the branches no longer line up that way. -/
+def modelSector (z₀ : ℂ) (r φ α : ℝ) : ℝ → ℂ :=
+  fun t =>
+    if t ≤ r then
+      twoRayCorner z₀ (Complex.exp ((φ + α : ℝ) * Complex.I)) (Complex.exp ((φ : ℝ) * Complex.I)) t
+    else circleMap z₀ r (φ + (t - r))
+
+/-- Pointwise value of the model sector on the corner interval. -/
+@[simp]
+theorem modelSector_of_le {z₀ : ℂ} {r φ α t : ℝ} (ht : t ≤ r) :
+    modelSector z₀ r φ α t =
+      twoRayCorner z₀ (Complex.exp ((φ + α : ℝ) * Complex.I))
+        (Complex.exp ((φ : ℝ) * Complex.I)) t := ite_eq_left ht
+
+/-- Pointwise value of the model sector on the arc interval. -/
+@[simp]
+theorem modelSector_of_lt {z₀ : ℂ} {r φ α t : ℝ} (ht : r < t) :
+    modelSector z₀ r φ α t = circleMap z₀ r (φ + (t - r)) := ite_eq_right (not_le.mpr ht)
+
+/-- The model sector starts at the outer end of the incoming radius. -/
+-- Not a `simp` lemma: `modelSector_of_le` rewrites the left-hand side to its `twoRayCorner`
+-- branch first, so this is not in simp normal form (simpNF rejects the attribute).
+theorem modelSector_neg (z₀ : ℂ) {r : ℝ} (hr : 0 ≤ r) (φ α : ℝ) :
+    modelSector z₀ r φ α (-r) = circleMap z₀ r (φ + α) := by
+  rcases eq_or_lt_of_le hr with rfl | hpos
+  · simp [neg_zero, circleMap]
+  · rw [modelSector_of_le (by linarith), twoRayCorner_of_neg (by linarith)]
+    simp [circleMap]
+
+/-- The model sector ends at the outer end of the incoming radius, the same point it started
+from. -/
+@[simp]
+theorem modelSector_add (z₀ : ℂ) {r : ℝ} (hr : 0 ≤ r) (φ : ℝ) {α : ℝ} (hα : 0 ≤ α) :
+    modelSector z₀ r φ α (r + α) = circleMap z₀ r (φ + α) := by
+  rcases eq_or_lt_of_le hα with rfl | hpos
+  · rw [add_zero, modelSector_of_le le_rfl, twoRayCorner_of_nonneg hr]
+    simp [circleMap]
+  · rw [modelSector_of_lt (by linarith)]
+    ring_nf
+
+/-- **The model sector is a closed curve** for `0 ≤ r` and `0 ≤ α`. -/
+theorem modelSector_closed (z₀ : ℂ) {r : ℝ} (hr : 0 ≤ r) (φ : ℝ) {α : ℝ} (hα : 0 ≤ α) :
+    modelSector z₀ r φ α (-r) = modelSector z₀ r φ α (r + α) := by
+  rw [modelSector_neg z₀ hr φ α, modelSector_add z₀ hr φ hα]
+
+/-- On the corner interval the model sector is its two-ray corner. -/
+theorem modelSector_eqOn_corner (z₀ : ℂ) {r : ℝ} (hr : 0 ≤ r) (φ α : ℝ) :
+    EqOn (twoRayCorner z₀ (Complex.exp ((φ + α : ℝ) * Complex.I))
+        (Complex.exp ((φ : ℝ) * Complex.I))) (modelSector z₀ r φ α) (uIoo (-r) r) := by
+  intro t ht
+  rw [Set.uIoo_of_le (by linarith), Set.mem_Ioo] at ht
+  simp [modelSector, ht.2.le]
+
+/-- On the arc interval the model sector is the reparametrised circle map. -/
+theorem modelSector_eqOn_arc (z₀ : ℂ) (r φ : ℝ) {α : ℝ} (hα : 0 ≤ α) :
+    EqOn (circleMap z₀ r ∘ fun t => 1 * t + (φ - r)) (modelSector z₀ r φ α) (uIoo r (r + α)) := by
+  intro t ht
+  rw [Set.uIoo_of_le (by linarith), Set.mem_Ioo] at ht
+  have : ¬ t ≤ r := not_le.mpr ht.1
+  simp only [modelSector, ite_eq_right this, Function.comp_apply, one_mul]
+  ring_nf
+
+/-- The model sector is continuous: the two-ray corner and circular arc agree at their join. -/
+theorem continuous_modelSector {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r) (φ α : ℝ) :
+    Continuous (modelSector z₀ r φ α) := by
+  have harc : Continuous (circleMap z₀ r ∘ fun t : ℝ => φ + (t - r)) := by fun_prop
+  have heq : modelSector z₀ r φ α = fun t : ℝ =>
+      if t ≤ r then
+        twoRayCorner z₀ (Complex.exp ((φ + α : ℝ) * Complex.I))
+          (Complex.exp ((φ : ℝ) * Complex.I)) t
+      else circleMap z₀ r (φ + (t - r)) := by
+    funext t
+    by_cases ht : t ≤ r
+    · rw [ite_eq_left ht, modelSector_of_le ht]
+    · rw [ite_eq_right ht, modelSector_of_lt (lt_of_not_ge ht)]
+  rw [heq]
+  exact (continuous_twoRayCorner z₀ (Complex.exp ((φ + α : ℝ) * Complex.I))
+      (Complex.exp ((φ : ℝ) * Complex.I))).if_le harc continuous_id
+    (continuous_const : Continuous fun _ : ℝ => r) fun t ht => by
+      have ht' : t = r := by simpa only [id_eq] using ht
+      subst t
+      rw [twoRayCorner_of_nonneg hr]
+      simp [circleMap]
+
+/-- On a subinterval ending before the corner, the model sector is its incoming affine ray. -/
+private theorem modelSector_eqOn_incoming {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r) (φ α : ℝ)
+    {c d : ℝ} (hd : d ≤ 0) :
+    EqOn (modelSector z₀ r φ α)
+      (fun t : ℝ => z₀ - (t : ℂ) * Complex.exp ((φ + α : ℝ) * Complex.I)) (Icc c d) := by
+  intro t ht
+  have ht0 := (mem_Icc.mp ht).2.trans hd
+  rw [modelSector_of_le (ht0.trans hr)]
+  rcases ht0.eq_or_lt with rfl | htneg
+  · rw [twoRayCorner_of_nonneg le_rfl]
+    simp
+  · rw [twoRayCorner_of_neg htneg]
+
+/-- Between the corner and the arc join, the model sector is its outgoing affine ray. -/
+private theorem modelSector_eqOn_outgoing {z₀ : ℂ} {r φ α c d : ℝ} (hc : 0 ≤ c) (hd : d ≤ r) :
+    EqOn (modelSector z₀ r φ α)
+      (fun t : ℝ => z₀ + (t : ℂ) * Complex.exp ((φ : ℝ) * Complex.I)) (Icc c d) := by
+  intro t ht
+  have hct := hc.trans (mem_Icc.mp ht).1
+  rw [modelSector_of_le ((mem_Icc.mp ht).2.trans hd), twoRayCorner_of_nonneg hct]
+
+/-- On a subinterval starting after the ray join, the model sector is its circular arc. -/
+private theorem modelSector_eqOn_arc_closed {z₀ : ℂ} {r φ α c d : ℝ} (hr : 0 ≤ r) (hc : r ≤ c) :
+    EqOn (modelSector z₀ r φ α) (circleMap z₀ r ∘ fun t : ℝ => φ + (t - r)) (Icc c d) := by
+  intro t ht
+  rcases (hc.trans (mem_Icc.mp ht).1).eq_or_lt with h | hrt
+  · subst t
+    rw [modelSector_of_le le_rfl, twoRayCorner_of_nonneg hr]
+    simp [circleMap]
+  · rw [modelSector_of_lt hrt]
+    rfl
+
+/-- **The model sector is piecewise `C¹`.** For nonnegative radius it is affine on the two rays and
+smoothly parametrized on the circular arc, with corners only at the parameters `0` and `r`. The
+opening angle is unconstrained: for `α < 0` the parameter interval reverses, but the curve is
+still built from the same three pieces. -/
+theorem isPiecewiseC1On_modelSector {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r) (φ α : ℝ) :
+    IsPiecewiseC1On (modelSector z₀ r φ α) (-r) (r + α) := by
+  let p : Finset ℝ :=
+    ({0, r} : Finset ℝ).filter (fun t => t ∈ Ioo (min (-r) (r + α)) (max (-r) (r + α)))
+  refine IsPiecewiseC1On.of_breakpoints (continuous_modelSector hr φ α).continuousOn p
+    (fun t ht => (Finset.mem_filter.mp ht).2) fun c d hsub hdisj => ?_
+  rw [← Set.Icc_min_max] at hsub
+  -- A breakpoint strictly inside `[c, d]` lies strictly inside the parameter interval, so it is
+  -- in `p` — contradicting disjointness.  Hence `[c, d]` meets at most one piece.
+  have key : ∀ x ∈ ({0, r} : Finset ℝ), c < x → x < d → False := fun x hx hcx hxd => by
+    have hcd : c ≤ d := (hcx.trans hxd).le
+    have hxp : x ∈ p := Finset.mem_filter.mpr ⟨hx, mem_Ioo.mpr
+      ⟨(mem_Icc.mp (hsub ⟨le_rfl, hcd⟩)).1.trans_lt hcx,
+        hxd.trans_le (mem_Icc.mp (hsub ⟨hcd, le_rfl⟩)).2⟩⟩
+    exact Set.disjoint_left.mp hdisj hxp (mem_Ioo.mpr ⟨hcx, hxd⟩)
+  have hside : d ≤ 0 ∨ (0 ≤ c ∧ d ≤ r) ∨ r ≤ c := by
+    by_cases hd0 : d ≤ 0
+    · exact Or.inl hd0
+    have h0d : 0 < d := lt_of_not_ge hd0
+    have hc0 : 0 ≤ c := le_of_not_gt fun hc0 => key 0 (by simp) hc0 h0d
+    by_cases hdr : d ≤ r
+    · exact Or.inr (Or.inl ⟨hc0, hdr⟩)
+    exact Or.inr (Or.inr (le_of_not_gt fun hcr => key r (by simp) hcr (lt_of_not_ge hdr)))
+  rcases hside with hd | ⟨hc, hd⟩ | hc
+  · exact ((contDiff_const.sub
+      ((Complex.ofRealCLM.contDiff (n := 1)).mul contDiff_const)).contDiffOn).congr
+        (modelSector_eqOn_incoming hr φ α hd)
+  · exact ((contDiff_const.add
+      ((Complex.ofRealCLM.contDiff (n := 1)).mul contDiff_const)).contDiffOn).congr
+        (modelSector_eqOn_outgoing hc hd)
+  · exact (((contDiff_circleMap z₀ r).comp
+      (contDiff_const.add (contDiff_id.sub contDiff_const))).contDiffOn).congr
+        (modelSector_eqOn_arc_closed hr hc)
+
+/-- The two ray directions of the model sector have equal (unit) length. -/
+private theorem norm_modelSector_dirs (φ α : ℝ) :
+    ‖Complex.exp ((φ + α : ℝ) * Complex.I)‖ = ‖Complex.exp ((φ : ℝ) * Complex.I)‖ := by
+  rw [Complex.norm_exp_ofReal_mul_I, Complex.norm_exp_ofReal_mul_I]
+
+/-- **The swept-arc curve has winding number `α / 2π` about its corner.** The two radial segments
+contribute nothing and the arc contributes its swept angle.
+
+This holds for every `0 ≤ α`, and is the roadmap's acceptance criterion. The curve is the
+Hungerbühler–Wasem model sector of *interior angle* `α` only for `0 < α < 2π`: at `α = 0` the two
+radii coincide, and at `α ≥ 2π` the arc wraps — `α = 4π` traverses the circle twice, giving winding
+`2`. At both ends the formula stands; it is the corner reading that lapses. -/
+@[simp]
+theorem windingNumber_closedModelSector {z₀ : ℂ} {r : ℝ} (hr : 0 < r) (φ : ℝ) {α : ℝ} (hα : 0 ≤ α) :
+    windingNumber (modelSector z₀ r φ α) (-r) (r + α) z₀ = (α : ℂ) / (2 * (Real.pi : ℂ)) := by
+  have hrne : r ≠ 0 := ne_of_gt hr
+  have hcorner := modelSector_eqOn_corner z₀ hr.le φ α
+  have harc := modelSector_eqOn_arc z₀ r φ hα
+  have hcirc_diff : ∀ u ∈ uIcc (1 * r + (φ - r)) (1 * (r + α) + (φ - r)),
+      DifferentiableAt ℝ (circleMap z₀ r) u := fun u _ => differentiable_circleMap z₀ r u
+  have hcirc_deriv : ContinuousOn (deriv (circleMap z₀ r))
+      (uIcc (1 * r + (φ - r)) (1 * (r + α) + (φ - r))) := by
+    have hd : deriv (circleMap z₀ r) = fun θ => circleMap 0 r θ * Complex.I :=
+      funext fun θ => deriv_circleMap z₀ r θ
+    rw [hd]
+    exact ((continuous_circleMap 0 r).mul continuous_const).continuousOn
+  have hcirc_avoid : ∀ u ∈ uIcc (1 * r + (φ - r)) (1 * (r + α) + (φ - r)),
+      circleMap z₀ r u ≠ z₀ := fun _ _ => circleMap_ne_center hrne
+  have hpv_corner : CauchyPVExistsAt (modelSector z₀ r φ α) (-r) r (fun z => (z - z₀)⁻¹) z₀ :=
+    (cauchyPVExistsAt_inv_sub_twoRayCorner (norm_modelSector_dirs φ α) r).congr_curve hcorner
+  have hpv_arc : CauchyPVExistsAt (modelSector z₀ r φ α) r (r + α) (fun z => (z - z₀)⁻¹) z₀ :=
+    (cauchyPVExistsAt_circleMap_comp_affine 1 (φ - r) r (r + α)).congr_curve harc
+  rw [windingNumber_concat hpv_corner hpv_arc, ← windingNumber_congr_curve hcorner,
+    ← windingNumber_congr_curve harc,
+    windingNumber_eq_zero_twoRayCorner (norm_modelSector_dirs φ α) r,
+    windingNumber_comp_mul_add hcirc_diff hcirc_deriv hcirc_avoid,
+    windingNumber_circleMap_center hrne]
+  push_cast
+  ring
+
+/-- **A smooth crossing contributes winding `½`** — the `α = π` model sector (HW (2.4)). This is
+the coefficient of `ord_i f` in the valence formula: at the smooth boundary point `i` the contour
+indents by a semicircle. -/
+theorem windingNumber_closedModelSector_eq_half {z₀ : ℂ} {r : ℝ} (hr : 0 < r) (φ : ℝ) :
+    windingNumber (modelSector z₀ r φ Real.pi) (-r) (r + Real.pi) z₀ = 1 / 2 := by
+  rw [windingNumber_closedModelSector hr φ Real.pi_nonneg]
+  have hpi : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
+  field_simp
+
+/-- **A `π/3` corner contributes winding `1/6`** — the `α = π/3` model sector (HW (2.4)). The two
+such corners `ρ` and `ρ + 1` of the fundamental domain sum to the `1/3` coefficient of
+`ord_ρ f`. -/
+theorem windingNumber_closedModelSector_eq_one_div_six {z₀ : ℂ} {r : ℝ} (hr : 0 < r) (φ : ℝ) :
+    windingNumber (modelSector z₀ r φ (Real.pi / 3)) (-r) (r + Real.pi / 3) z₀ = 1 / 6 := by
+  rw [windingNumber_closedModelSector hr φ (by positivity)]
+  have hpi : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
+  push_cast
+  field_simp
+  ring
+
+end EpsilonEridani.Contour
+
+end
+
+end

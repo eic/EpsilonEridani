@@ -1,0 +1,324 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.GroupTheory.Presentation.GroupPresentation
+
+/-!
+# A transcribed presentation of the Harada--Norton group
+
+This file carries the `HN` row of the sporadic presentation data required by milestone S1 of
+`EpsilonEridaniRoadmap/CFSGStatement/README.md`. It records the corrected five-generator presentation of
+the Harada--Norton group given by Bray and Curtis as a `EpsilonEridani.GroupPresentation`, together with
+its source, generator convention, transcription notes, characteristic equations, and decidable
+checks on the compiled and freely reduced relator words.
+
+The nineteen relators are
+
+```text
+a⁴, [a²,b], b⁷, (ab²)⁴, a⁻²(abab³)³, ((ab)³ab⁻³)²,
+c²a², [a,c], [bab,c], (bab³c)³,
+d², (ad)², [b,d], d^(cbcb⁻¹)(cd)³,
+t⁵, t^a t², t^c t⁻², [t,b], (dt)³.
+```
+
+Here `[r,s] = r⁻¹s⁻¹rs` and `r^s = s⁻¹rs`, following the Magma source. Mathlib's
+`commutatorElement` uses the opposite commutator convention, so a source commutator is represented
+by `Relator.comm (.inv r) (.inv s)`. Conjugates are expanded directly in the structured
+expressions. The proved `EpsilonEridani.Relator.toWord_toFreeGroup` theorem is the audit boundary between
+these expressions and the signed words consumed by `PresentedGroup`.
+
+Section 4 of Bray--Curtis constructs `HN` as a quotient of a progenitor by coset enumeration over
+the visible subgroup `2·HS:2`. Section 5 derives the five-generator presentation used here. The
+authors' corrected Magma file `HNpb.m` gives the same nineteen relators exactly; in particular, it
+uses `(ad)²`, correcting the preprint's `[a,d]` at that position. The source describes `c` and `d`
+as generators adjoined while successively presenting `U₃(5):2` and `HS:2`, and `t` as the
+order-five symmetric generator whose final relations produce `HN`.
+
+For this audit, the source-to-Lean transcription was independently read against the first
+presentation in the corrected machine-readable `HNpb.m` file. All nineteen expressions agree in
+order, including the conjugation convention in the fourteenth relator. The fifth compiled word has
+the freely cancelling boundary `a⁻²a`; the checks below therefore record the raw total of `153`
+letters alongside the freely reduced length of each relator, and prove that every reduced word is
+cyclically reduced. This file asserts no order, finiteness, simplicity, or identification result.
+
+## Independent source-to-Lean read-through
+
+The independent read-through used the bytes of the corrected machine-readable source `HNpb.m`
+whose SHA-256 digest is
+`69a39c69670aa28dd28f2b3c9ec8f44c35086174d97ba4fc073a16ad7ecec596`. The first constructor is
+`G<a,b,c,d,t>`, fixing exactly the generator names and order used by the Lean row. Reading that
+constructor from top to bottom gives
+
+```text
+a⁴, [a²,b], b⁷, (ab²)⁴, a⁻²(abab³)³, ((ab)³ab⁻³)²,
+c²a², [a,c], [bab,c], (bab³c)³,
+d², (ad)², [b,d], d^(cbcb⁻¹)(cd)³,
+t⁵, t^a t², t^c t⁻², [t,b], (dt)³.
+```
+
+These are exactly the nineteen entries of `hnPresentation_transcribed`. In particular, the Lean
+row preserves the corrected twelfth word `(ad)²`; expands the Magma conjugates using
+`r^s = s⁻¹rs`, including the full conjugator `cbcb⁻¹` in the fourteenth word; and uses the source
+commutator `[r,s] = r⁻¹s⁻¹rs`. The same file contains a second nineteen-relator constructor whose
+only changed entry is the fifth, replaced there by `[a,b³]³`; the row explicitly transcribes the
+first presentation and therefore correctly retains `a⁻²(abab³)³`. There are no commented or
+optional entries inside that first constructor. This checks every source relator, inverse,
+exponent, conjugation boundary, and constructor boundary independently of the original
+transcription and closes this row's S1 source-to-Lean read-through.
+
+## Main definitions and results
+
+* `EpsilonEridani.Sporadic.hnPresentation`: the Bray--Curtis finite presentation of `HN`.
+* `EpsilonEridani.Sporadic.hnPresentation_transcribed` and the equations for the remaining fields: the
+  characterization of the sealed row.
+* `EpsilonEridani.Sporadic.hnPresentation_map_length_relators` and
+  `EpsilonEridani.Sporadic.hnPresentation_totalLength`: the compiled-word length checks.
+* `EpsilonEridani.Sporadic.hnPresentation_map_length_reduce_relators` and
+  `EpsilonEridani.Sporadic.isCyclicallyReduced_reduce_mem_hnPresentation_relators`: the corresponding
+  freely reduced checks.
+
+## References
+
+* J. N. Bray and R. T. Curtis, *Monomial modular representations and symmetric generation of the
+  Harada--Norton group*, J. Algebra **268** (2003), no. 2, 723--743, Sections 4--5,
+  <https://doi.org/10.1016/S0021-8693(03)00298-9>.
+* The authors' corrected version and known-errors record,
+  <https://webspace.maths.qmul.ac.uk/j.n.bray/Papers/HN/HN.html>, and the corrected
+  machine-readable presentation,
+  <https://webspace.maths.qmul.ac.uk/j.n.bray/Papers/HN/HNpb.m>.
+* The presentation-row characterization and audit theorem scaffold is adapted from the Janko-row
+  formalization in <https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/5283>.
+-/
+
+public section
+
+namespace EpsilonEridani.Sporadic
+
+private abbrev a : Relator (Fin 5) := .gen 0
+
+private abbrev b : Relator (Fin 5) := .gen 1
+
+private abbrev c : Relator (Fin 5) := .gen 2
+
+private abbrev d : Relator (Fin 5) := .gen 3
+
+private abbrev t : Relator (Fin 5) := .gen 4
+
+@[inherit_doc Relator.mul]
+local infixl:70 " ⬝ " => Relator.mul
+
+/-- The word `c b c b⁻¹` conjugating `d` in the fourteenth relator. -/
+private abbrev dConjugator : Relator (Fin 5) :=
+  c ⬝ b ⬝ c ⬝ .inv b
+
+/-- The corrected Bray--Curtis finite presentation of the Harada--Norton group `HN` on five
+generators.
+
+The paper proves that this is a presentation of the abstract group, rather than a
+semi-presentation used only to recognize generators inside an existing group. No structural
+property of the presented group is asserted here: this definition records only the cited
+generators and relators. -/
+def hnPresentation : GroupPresentation where
+  generatorNames := ["a", "b", "c", "d", "t"]
+  source := "J. N. Bray and R. T. Curtis, Monomial modular representations and symmetric \
+    generation of the Harada--Norton group, J. Algebra 268 (2003), 723--743"
+  sourceLocator := "Sections 4--5, especially p. 735; corrected Magma file HNpb.m at \
+    https://webspace.maths.qmul.ac.uk/j.n.bray/Papers/HN/HNpb.m"
+  generatorConvention := "The generators a, b, c, d and t of Bray--Curtis HNpb.m, in that order, \
+    so indices 0 through 4 have those names. Products are read left to right, negative exponents \
+    denote inverses, [r,s] denotes r^-1 s^-1 r s, and r^s denotes s^-1 r s."
+  transcriptionNotes := "The nineteen words in the first presentation of the corrected HNpb.m \
+    file are stored as nineteen relators equal to the identity. They agree in order and spelling \
+    with the five-generator presentation displayed in Section 5 of the corrected paper. The \
+    corrected source uses (a*d)^2 as its twelfth relator; the authors' known-errors record notes \
+    that the preprint's [a,d] at this position was wrong. An independent source-to-Lean \
+    read-through of the corrected HNpb.m file confirms all nineteen stored expressions and their \
+    order."
+  expectedGeneratorCount := 5
+  expectedRelatorCount := 19
+  transcribed :=
+    [ .pow a 4,
+      Relator.comm (.inv (.pow a 2)) (.inv b),
+      .pow b 7,
+      .pow (a ⬝ .pow b 2) 4,
+      .pow (.inv a) 2 ⬝ .pow (a ⬝ b ⬝ a ⬝ .pow b 3) 3,
+      .pow (.pow (a ⬝ b) 3 ⬝ a ⬝ .pow (.inv b) 3) 2,
+      .pow c 2 ⬝ .pow a 2,
+      Relator.comm (.inv a) (.inv c),
+      Relator.comm (.inv (b ⬝ a ⬝ b)) (.inv c),
+      .pow (b ⬝ a ⬝ .pow b 3 ⬝ c) 3,
+      .pow d 2,
+      .pow (a ⬝ d) 2,
+      Relator.comm (.inv b) (.inv d),
+      .inv dConjugator ⬝ d ⬝ dConjugator ⬝ .pow (c ⬝ d) 3,
+      .pow t 5,
+      .inv a ⬝ t ⬝ a ⬝ .pow t 2,
+      .inv c ⬝ t ⬝ c ⬝ .pow (.inv t) 2,
+      Relator.comm (.inv t) (.inv b),
+      .pow (d ⬝ t) 3 ]
+
+/-- The generator names recorded for `HN`. The row's body is sealed, so this equation is what shows
+a consumer that the transcription is on five generators, and it supplies the index bounds in
+`EpsilonEridani.Sporadic.hnPresentation_transcribed`. -/
+@[simp]
+theorem hnPresentation_generatorNames :
+    hnPresentation.generatorNames = ["a", "b", "c", "d", "t"] := by
+  simp [hnPresentation]
+
+/-- The bibliographic source recorded for `HN`. -/
+@[simp]
+theorem hnPresentation_source :
+    hnPresentation.source = "J. N. Bray and R. T. Curtis, Monomial modular representations and \
+      symmetric generation of the Harada--Norton group, J. Algebra 268 (2003), 723--743" := by
+  simp [hnPresentation]
+
+/-- The locator recorded for `HN`, including the corrected machine-readable presentation. -/
+@[simp]
+theorem hnPresentation_sourceLocator :
+    hnPresentation.sourceLocator = "Sections 4--5, especially p. 735; corrected Magma file HNpb.m \
+      at https://webspace.maths.qmul.ac.uk/j.n.bray/Papers/HN/HNpb.m" := by
+  simp [hnPresentation]
+
+/-- The generator and word conventions recorded for `HN`. -/
+@[simp]
+theorem hnPresentation_generatorConvention :
+    hnPresentation.generatorConvention = "The generators a, b, c, d and t of Bray--Curtis \
+      HNpb.m, in that order, so indices 0 through 4 have those names. Products are read left to \
+      right, negative exponents denote inverses, [r,s] denotes r^-1 s^-1 r s, and r^s denotes \
+      s^-1 r s." := by
+  simp [hnPresentation]
+
+/-- The transcription notes recorded for `HN`, including the corrected twelfth relator. -/
+@[simp]
+theorem hnPresentation_transcriptionNotes :
+    hnPresentation.transcriptionNotes = "The nineteen words in the first presentation of the \
+      corrected HNpb.m file are stored as nineteen relators equal to the identity. They agree in \
+      order and spelling with the five-generator presentation displayed in Section 5 of the \
+      corrected paper. The corrected source uses (a*d)^2 as its twelfth relator; the authors' \
+      known-errors record notes that the preprint's [a,d] at this position was wrong. An \
+      independent source-to-Lean read-through of the corrected HNpb.m file confirms all nineteen \
+      stored expressions and their order." := by
+  simp [hnPresentation]
+
+/-- The generator count stated by the `HN` source. -/
+@[simp]
+theorem hnPresentation_expectedGeneratorCount : hnPresentation.expectedGeneratorCount = 5 := by
+  simp [hnPresentation]
+
+/-- The relator count stated by the `HN` source. -/
+@[simp]
+theorem hnPresentation_expectedRelatorCount : hnPresentation.expectedRelatorCount = 19 := by
+  simp [hnPresentation]
+
+/-- The relator expressions transcribed for `HN`, with their generator indices written out.
+
+The row's body is sealed, so this is the equation that characterizes it: with
+`EpsilonEridani.GroupPresentation.relators_def` it determines the compiled words, and with
+`EpsilonEridani.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
+`EpsilonEridani.GroupPresentation.Group`, so a consumer auditing the transcription never has to unfold the
+row. Indices `0` through `4` are the generators `a`, `b`, `c`, `d` and `t`, and their bounds come
+from `EpsilonEridani.Sporadic.hnPresentation_generatorNames`. -/
+@[simp]
+theorem hnPresentation_transcribed :
+    hnPresentation.transcribed =
+      [ -- a⁴
+        .pow (.gen ⟨0, by simp⟩) 4,
+        -- [a², b]
+        Relator.comm (.inv (.pow (.gen ⟨0, by simp⟩) 2)) (.inv (.gen ⟨1, by simp⟩)),
+        -- b⁷
+        .pow (.gen ⟨1, by simp⟩) 7,
+        -- (ab²)⁴
+        .pow (.gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 2) 4,
+        -- a⁻²(abab³)³
+        .pow (.inv (.gen ⟨0, by simp⟩)) 2 ⬝
+          .pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝ .gen ⟨0, by simp⟩ ⬝
+            .pow (.gen ⟨1, by simp⟩) 3) 3,
+        -- ((ab)³ab⁻³)²
+        .pow (.pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩) 3 ⬝ .gen ⟨0, by simp⟩ ⬝
+          .pow (.inv (.gen ⟨1, by simp⟩)) 3) 2,
+        -- c²a²
+        .pow (.gen ⟨2, by simp⟩) 2 ⬝ .pow (.gen ⟨0, by simp⟩) 2,
+        -- [a, c]
+        Relator.comm (.inv (.gen ⟨0, by simp⟩)) (.inv (.gen ⟨2, by simp⟩)),
+        -- [bab, c]
+        Relator.comm
+          (.inv (.gen ⟨1, by simp⟩ ⬝ .gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩))
+          (.inv (.gen ⟨2, by simp⟩)),
+        -- (bab³c)³
+        .pow (.gen ⟨1, by simp⟩ ⬝ .gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 3 ⬝
+          .gen ⟨2, by simp⟩) 3,
+        -- d²
+        .pow (.gen ⟨3, by simp⟩) 2,
+        -- (ad)²
+        .pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨3, by simp⟩) 2,
+        -- [b, d]
+        Relator.comm (.inv (.gen ⟨1, by simp⟩)) (.inv (.gen ⟨3, by simp⟩)),
+        -- d^(cbcb⁻¹)(cd)³
+        .inv (.gen ⟨2, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝ .gen ⟨2, by simp⟩ ⬝
+            .inv (.gen ⟨1, by simp⟩)) ⬝ .gen ⟨3, by simp⟩ ⬝
+          (.gen ⟨2, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝ .gen ⟨2, by simp⟩ ⬝
+            .inv (.gen ⟨1, by simp⟩)) ⬝ .pow (.gen ⟨2, by simp⟩ ⬝ .gen ⟨3, by simp⟩) 3,
+        -- t⁵
+        .pow (.gen ⟨4, by simp⟩) 5,
+        -- t^a t²
+        .inv (.gen ⟨0, by simp⟩) ⬝ .gen ⟨4, by simp⟩ ⬝ .gen ⟨0, by simp⟩ ⬝
+          .pow (.gen ⟨4, by simp⟩) 2,
+        -- t^c t⁻²
+        .inv (.gen ⟨2, by simp⟩) ⬝ .gen ⟨4, by simp⟩ ⬝ .gen ⟨2, by simp⟩ ⬝
+          .pow (.inv (.gen ⟨4, by simp⟩)) 2,
+        -- [t, b]
+        Relator.comm (.inv (.gen ⟨4, by simp⟩)) (.inv (.gen ⟨1, by simp⟩)),
+        -- (dt)³
+        .pow (.gen ⟨3, by simp⟩ ⬝ .gen ⟨4, by simp⟩) 3 ] := by
+  simp [hnPresentation]
+
+/-- The generator and relator counts recorded for `HN` agree with the transcribed data. -/
+theorem hnPresentation_matchesMetadata : hnPresentation.matchesMetadata := by decide
+
+/-- The lengths of the nineteen compiled relator words for `HN`, in source order.
+
+The fifth source word contains the freely cancelling boundary `a⁻²a`; this theorem records the
+compiled words before reduction, exactly as `EpsilonEridani.GroupPresentation.relators` stores them. -/
+theorem hnPresentation_map_length_relators : hnPresentation.relators.map List.length =
+    [4, 6, 7, 12, 20, 20, 4, 4, 8, 18, 2, 4, 4, 15, 5, 5, 5, 4, 6] := by
+  simp [GroupPresentation.relators_def, hnPresentation]
+
+/-- The nineteen compiled `HN` relator words contain `153` letters before free reduction. -/
+theorem hnPresentation_totalLength : hnPresentation.totalLength = 153 := by
+  rw [GroupPresentation.totalLength_def, hnPresentation_map_length_relators]
+  decide
+
+/-- The compiled `HN` relator list is not freely, hence not cyclically, reduced: its fifth word
+contains the cancelling boundary `a⁻²a`. -/
+theorem hnPresentation_not_relatorsCyclicallyReduced :
+    ¬ hnPresentation.relatorsCyclicallyReduced := by
+  simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
+    hnPresentation, List.map_cons, List.map_nil, Relator.toWord_mul, Relator.toWord_pow,
+    Relator.toWord_inv, Relator.toWord_comm, Relator.toWord_gen]
+  decide
+
+/-- Free reduction makes every compiled `HN` relator word cyclically reduced. -/
+theorem isCyclicallyReduced_reduce_mem_hnPresentation_relators :
+    ∀ w ∈ hnPresentation.relators,
+      FreeGroup.IsCyclicallyReduced (FreeGroup.reduce w) := by
+  simp only [GroupPresentation.relators_def, hnPresentation_transcribed, List.map_cons,
+    List.map_nil, Relator.toWord_gen, Relator.toWord_inv, Relator.toWord_mul,
+    Relator.toWord_pow, Relator.toWord_comm]
+  decide
+
+/-- The freely reduced lengths of the nineteen `HN` relators, in source order. Only the fifth
+compiled word shortens, from `20` letters to `18`, so the reduced words carry `151` of the `153`
+compiled letters. -/
+theorem hnPresentation_map_length_reduce_relators :
+    hnPresentation.relators.map (fun w => (FreeGroup.reduce w).length) =
+      [4, 6, 7, 12, 18, 20, 4, 4, 8, 18, 2, 4, 4, 15, 5, 5, 5, 4, 6] := by
+  simp only [GroupPresentation.relators_def, hnPresentation_transcribed, List.map_cons,
+    List.map_nil, Relator.toWord_gen, Relator.toWord_inv, Relator.toWord_mul,
+    Relator.toWord_pow, Relator.toWord_comm]
+  decide
+
+end EpsilonEridani.Sporadic

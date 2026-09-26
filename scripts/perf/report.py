@@ -94,7 +94,7 @@ def main() -> int:
                 f"{fmt(new, args.metric)} | {verdict} |\n"
             )
     else:
-        out.append("_No added or modified `TauCeti/` Lean files._\n")
+        out.append("_No added or modified `EpsilonEridani/` Lean files._\n")
     out.append("\n")
     if args.run_url:
         out.append(f"<sub>[measurement run]({args.run_url}) · re-run with `/profile`</sub>\n")

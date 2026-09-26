@@ -1,0 +1,372 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+-- `EpsilonEridani.companionFinTwo` occurs in the statements below, `Matrix.scalar` and the `2 × 2` matrix
+-- notation come with it, and rational canonical form is what the classification runs on.
+public import EpsilonEridani.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
+-- `GL`, `Matrix.GeneralLinearGroup.scalar` and `Matrix.GeneralLinearGroup.det` occur in the
+-- statements below.
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+-- `Matrix.trace` occurs in the statements below, and `Matrix.trace_units_conj` in the proofs.
+public import Mathlib.LinearAlgebra.Matrix.Trace
+-- `ConjClasses` occurs in the statements below.
+public import Mathlib.Algebra.Group.Conj
+-- `EpsilonEridani.GL2NonSplitTorusHom` occurs in the elliptic conjugacy criterion below.
+public import EpsilonEridani.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
+-- Non-public: `Nat.card_units`, `Nat.card_sum` and `Nat.card_prod` are used only in the final
+-- count.
+import Mathlib.Algebra.GroupWithZero.Units.Fintype
+import Mathlib.SetTheory.Cardinal.Finite
+-- Non-public: the arithmetic of the final count is closed by `ring`, in the proof only.
+import Mathlib.Tactic.Ring
+-- Non-public: the non-scalar criterion and the finite-field Frobenius formulas are used only in
+-- the proof of the elliptic conjugacy criterion.
+import EpsilonEridani.LinearAlgebra.Matrix.GeneralLinearGroup.Centralizer
+import EpsilonEridani.FieldTheory.Finite.FrobeniusFixed
+import Mathlib.FieldTheory.Finite.Trace
+-- Non-public: lifting an invertible scalar matrix to a unit of `F` is used only inside the
+-- surjectivity half of the classification.
+import EpsilonEridani.Algebra.GroupWithZero.Units.Basic
+
+/-!
+# The conjugacy classes of `GL₂` over a field
+
+Rational canonical form in size two, proved in
+`EpsilonEridani.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo`, says that a non-scalar `2 × 2` matrix
+`M` over a field is similar to the companion matrix `!![0, -det M; 1, trace M]` of its
+characteristic polynomial `X² - (trace M) X + det M`. Read inside the group, it classifies the
+conjugacy classes of `GL₂(F)` completely: a scalar element is alone in its class, and two
+non-scalar elements are conjugate exactly when their traces and their determinants agree.
+
+Counting the classes over a finite field is then a matter of counting the invariants. The scalar
+classes are indexed by the units `a`, giving `q - 1` of them; the non-scalar classes are indexed by
+the pairs `(trace, det)` with the determinant a unit and the trace unconstrained, giving `q (q - 1)`
+of them. Altogether `q² - 1`, which is the number of irreducible complex representations of
+`GL₂(𝔽_q)`.
+
+The representative chosen here is uniform but anonymous. Over a finite field with a supplied
+degree-`2` extension it can be replaced by the four *named* normal forms — a scalar, a diagonal
+matrix with distinct entries, a Jordan block, and an element of the non-split torus — in
+`EpsilonEridani/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`.
+
+Being scalar is spelled `M ∈ Set.range (Matrix.scalar (Fin 2))`, as in
+`EpsilonEridani.LinearAlgebra.Matrix.Commute`, whose commutant computation is the companion result,
+describing the centralizer of a non-scalar matrix rather than its conjugacy class.
+
+## Main definitions
+
+* `EpsilonEridani.companionGL`: the companion matrix of `X² - t X + d` as an element of `GL₂`, for an
+  invertible constant term.
+* `EpsilonEridani.conjRepGLFinTwo`: the chosen representative of each conjugacy class of `GL₂(F)`, indexed
+  by `Fˣ ⊕ F × Fˣ`.
+* `EpsilonEridani.conjClassesGLFinTwoEquiv`: the resulting indexing of `ConjClasses (GL (Fin 2) F)`.
+
+## Main results
+
+* `EpsilonEridani.isConj_companionGL`: **rational canonical form inside `GL₂(F)`**, a non-scalar element
+  is conjugate to the companion element of its characteristic polynomial.
+* `EpsilonEridani.eq_of_mem_range_scalar_of_isConj`: a scalar element of `GL n R` is alone in its class,
+  `EpsilonEridani.not_isConj_of_mem_range_scalar`: it is therefore not conjugate to a non-scalar one, and
+  `EpsilonEridani.isConj_scalar_iff`: two scalar elements are conjugate only when they are equal.
+* `EpsilonEridani.isConj_iff_of_notMem_range_scalar`: **the classification**, two non-scalar elements of
+  `GL₂(F)` are conjugate exactly when they have the same trace and the same determinant.
+* `EpsilonEridani.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`: the elements of the non-split torus
+  conjugate to an elliptic element `u` are exactly `u` and its Frobenius conjugate `u^q`.
+* `EpsilonEridani.card_conjClasses_GL2`: `GL₂(𝔽_q)` has `q² - 1` conjugacy classes.
+
+## References
+
+* [Character theory roadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap/blob/main/EpsilonEridaniRoadmap/RepresentationTheory/CharacterTheory/README.md),
+  Layer 9, "The conjugacy classes (a build target)": class representatives and the count
+  `q² - 1 = Nat.card (ConjClasses (GL (Fin 2) F))`, matching the number of irreducibles. The final
+  theorem carries the name `card_conjClasses_GL2` the roadmap gives it there.
+* C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
+* J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §5.2.
+-/
+
+public section
+
+open Matrix
+
+namespace EpsilonEridani
+
+/-! ### Conjugacy invariants -/
+
+section Invariants
+
+variable {n : Type*} [DecidableEq n] [Fintype n] {R : Type*} [CommSemiring R]
+
+/-- Conjugate elements of `GL n R` have the same trace. -/
+theorem trace_val_eq_of_isConj {g h : GL n R} (hgh : IsConj g h) :
+    (g : Matrix n n R).trace = (h : Matrix n n R).trace := by
+  obtain ⟨c, hc⟩ := isConj_iff.1 hgh
+  rw [← hc, Units.val_mul, Units.val_mul]
+  exact (Matrix.trace_units_conj c _).symm
+
+/-- **A scalar element of `GL n R` is alone in its conjugacy class**: scalar matrices are
+central. -/
+theorem eq_of_mem_range_scalar_of_isConj {g h : GL n R}
+    (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n)) (hgh : IsConj g h) : g = h := by
+  obtain ⟨c, hc⟩ := isConj_iff.1 hgh
+  obtain ⟨a, ha⟩ := hg
+  have hcomm : c * g = g * c := by
+    refine Units.ext ?_
+    rw [Units.val_mul, Units.val_mul, ← ha]
+    exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
+  rw [← hc, hcomm, mul_assoc, mul_inv_cancel, mul_one]
+
+/-- **A scalar element and a non-scalar element of `GL n R` are never conjugate.** The class of a
+scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore a
+conjugacy invariant in its own right, and the one that trace and determinant miss: it separates a
+scalar matrix from a Jordan block with the same characteristic polynomial. -/
+theorem not_isConj_of_mem_range_scalar {g h : GL n R}
+    (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n))
+    (hh : (h : Matrix n n R) ∉ Set.range (Matrix.scalar n)) : ¬ IsConj g h := fun hgh =>
+  hh (eq_of_mem_range_scalar_of_isConj hg hgh ▸ hg)
+
+/-- **Two scalar elements of `GL n R` are conjugate exactly when they are equal.** A scalar element
+is alone in its class, and the scalar embedding is injective (`Matrix.scalar_inj`). -/
+theorem isConj_scalar_iff [Nonempty n] (a b : Rˣ) :
+    IsConj (Matrix.GeneralLinearGroup.scalar n a) (Matrix.GeneralLinearGroup.scalar n b) ↔
+      a = b :=
+  ⟨fun h => Units.ext (Matrix.scalar_inj.1 (by
+      simpa only [Matrix.GeneralLinearGroup.coe_scalar] using
+        congrArg Units.val (eq_of_mem_range_scalar_of_isConj ⟨(a : R), rfl⟩ h))),
+    fun h => h ▸ IsConj.refl _⟩
+
+end Invariants
+
+/-! ### The classification in `GL₂` -/
+
+section GeneralLinear
+
+variable {F : Type*} [Field F]
+
+/-- **The companion matrix of `X² - t X + d` as an element of `GL₂`**, for an invertible constant
+term `d`. Every non-scalar element of `GL₂(F)` is conjugate to exactly one of these, by
+`EpsilonEridani.isConj_companionGL` and `EpsilonEridani.isConj_iff_of_notMem_range_scalar`. -/
+def companionGL (t : F) (d : Fˣ) : GL (Fin 2) F :=
+  Matrix.GeneralLinearGroup.mkOfDetNeZero (companionFinTwo t (d : F))
+    (by rw [det_companionFinTwo]; exact d.ne_zero)
+
+@[simp]
+theorem coe_companionGL (t : F) (d : Fˣ) :
+    (companionGL t d : Matrix (Fin 2) (Fin 2) F) = companionFinTwo t (d : F) := (rfl)
+
+/-- **The determinant of a companion element of `GL₂` is its constant term**, as a unit. The
+matrix-level statement is `EpsilonEridani.det_companionFinTwo`, reached from here by
+`Matrix.GeneralLinearGroup.val_det_apply`. -/
+@[simp]
+theorem det_companionGL (t : F) (d : Fˣ) :
+    Matrix.GeneralLinearGroup.det (companionGL t d) = d :=
+  Units.ext (by rw [Matrix.GeneralLinearGroup.val_det_apply, coe_companionGL,
+    det_companionFinTwo])
+
+/-- A companion element of `GL₂` is not scalar. -/
+theorem companionGL_notMem_range_scalar (t : F) (d : Fˣ) :
+    (companionGL t d : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)) := by
+  rw [coe_companionGL]
+  exact companionFinTwo_notMem_range_scalar _ _
+
+/-- A scalar element of `GL₂` is never a companion element. -/
+theorem scalar_ne_companionGL (t : F) (d a : Fˣ) :
+    Matrix.GeneralLinearGroup.scalar (Fin 2) a ≠ companionGL t d := by
+  intro h
+  refine companionGL_notMem_range_scalar t d ⟨(a : F), ?_⟩
+  rw [← h]
+  rfl
+
+/-- **Rational canonical form inside `GL₂(F)`**: a non-scalar element is conjugate to the companion
+element of its characteristic polynomial. -/
+theorem isConj_companionGL {g : GL (Fin 2) F}
+    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) :
+    IsConj g (companionGL (g : Matrix (Fin 2) (Fin 2) F).trace
+      (Matrix.GeneralLinearGroup.det g)) := by
+  obtain ⟨P, hP, hPM⟩ := exists_det_ne_zero_mul_eq_mul_companionFinTwo hg
+  have hgp : g * Matrix.GeneralLinearGroup.mkOfDetNeZero P hP
+      = Matrix.GeneralLinearGroup.mkOfDetNeZero P hP *
+        companionGL (g : Matrix (Fin 2) (Fin 2) F).trace (Matrix.GeneralLinearGroup.det g) := by
+    refine Units.ext ?_
+    rw [Units.val_mul, Units.val_mul, coe_companionGL,
+      Matrix.GeneralLinearGroup.val_det_apply]
+    exact hPM
+  refine isConj_iff.2 ⟨(Matrix.GeneralLinearGroup.mkOfDetNeZero P hP)⁻¹, ?_⟩
+  rw [inv_inv, mul_assoc, hgp, ← mul_assoc, inv_mul_cancel, one_mul]
+
+/-- **The conjugacy classification of the non-scalar elements of `GL₂(F)`**: two of them are
+conjugate exactly when they have the same trace and the same determinant, that is, exactly when
+they have the same characteristic polynomial.
+
+The hypotheses are necessary: a scalar matrix has the same characteristic polynomial as the
+corresponding Jordan block, and the two are not conjugate. -/
+theorem isConj_iff_of_notMem_range_scalar {g h : GL (Fin 2) F}
+    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)))
+    (hh : (h : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) :
+    IsConj g h ↔ (g : Matrix (Fin 2) (Fin 2) F).trace = (h : Matrix (Fin 2) (Fin 2) F).trace ∧
+      (g : Matrix (Fin 2) (Fin 2) F).det = (h : Matrix (Fin 2) (Fin 2) F).det := by
+  refine ⟨fun hgh => ⟨trace_val_eq_of_isConj hgh, ?_⟩, fun ⟨ht, hd⟩ => ?_⟩
+  · have hdet : Matrix.GeneralLinearGroup.det g = Matrix.GeneralLinearGroup.det h :=
+      isConj_iff_eq.1 (Matrix.GeneralLinearGroup.det.map_isConj hgh)
+    simpa only [Matrix.GeneralLinearGroup.val_det_apply] using congrArg Units.val hdet
+  have hcomp : companionGL (g : Matrix (Fin 2) (Fin 2) F).trace
+      (Matrix.GeneralLinearGroup.det g)
+      = companionGL (h : Matrix (Fin 2) (Fin 2) F).trace (Matrix.GeneralLinearGroup.det h) := by
+    rw [ht]
+    congr 1
+    exact Units.ext (by
+      rw [Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.val_det_apply, hd])
+  have hg' := isConj_companionGL hg
+  rw [hcomp] at hg'
+  exact hg'.trans (isConj_companionGL hh).symm
+
+namespace GL2NonSplitTorus
+
+variable {E : Type*} [Field E] [Algebra F E] [Finite F]
+  (hE : Module.finrank F E = 2) {u v : Eˣ}
+
+/-- **The elements of the elliptic torus conjugate to a given elliptic element.** For `u : Eˣ`
+outside `F`, the matrix of `v : Eˣ` is conjugate to that of `u` exactly when `v` is `u` or its
+Frobenius conjugate `u^q`.
+
+Conjugate matrices have the same trace and determinant, which on the torus are the trace and the
+norm of the field element; and `u`, `u^q` are the two roots of `X² - Tr(u) X + N(u)`, so an element
+with those invariants is one of them. -/
+theorem isConj_gl2NonSplitTorusHom_iff (hu : (u : E) ∉ Set.range (algebraMap F E)) :
+    IsConj (GL2NonSplitTorusHom F E hE u) (GL2NonSplitTorusHom F E hE v) ↔
+      v = u ∨ v = u ^ Nat.card F := by
+  have hfin : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
+  have : Finite E := Module.finite_of_finite F
+  have hupow : ((u ^ Nat.card F : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
+    rw [Units.val_pow_eq_pow_val]
+    exact FiniteField.pow_natCard_notMem_range_algebraMap hE hu
+  -- the trace and the norm of a quadratic extension of a finite field, written out
+  have htr : ∀ w : E, algebraMap F E (Algebra.trace F E w) = w + w ^ Nat.card F := by
+    intro w
+    rw [FiniteField.algebraMap_trace_eq_sum_pow, hE]
+    simp [Finset.sum_range_succ]
+  have hnm : ∀ w : E, algebraMap F E (Algebra.norm F w) = w * w ^ Nat.card F := by
+    intro w
+    rw [FiniteField.algebraMap_norm_eq_prod_pow, hE]
+    simp [Finset.prod_range_succ]
+  constructor
+  · intro hconj
+    have htrace : Algebra.trace F E (v : E) = Algebra.trace F E (u : E) := by
+      rw [← trace_gl2NonSplitTorusHom hE, ← trace_gl2NonSplitTorusHom hE,
+        trace_val_eq_of_isConj hconj]
+    have hnorm : Algebra.norm F (v : E) = Algebra.norm F (u : E) := by
+      rw [← val_det_gl2NonSplitTorusHom hE, ← val_det_gl2NonSplitTorusHom hE]
+      exact congrArg Units.val
+        (isConj_iff_eq.1 (Matrix.GeneralLinearGroup.det.map_isConj hconj)).symm
+    have h1 : (v : E) + (v : E) ^ Nat.card F = (u : E) + (u : E) ^ Nat.card F := by
+      rw [← htr, ← htr, htrace]
+    have h2 : (v : E) * (v : E) ^ Nat.card F = (u : E) * (u : E) ^ Nat.card F := by
+      rw [← hnm, ← hnm, hnorm]
+    have key : ((v : E) - (u : E)) * ((v : E) - (u : E) ^ Nat.card F) = 0 := by
+      linear_combination (v : E) * h1 - h2
+    rcases mul_eq_zero.mp key with h | h
+    · exact Or.inl (Units.ext (sub_eq_zero.mp h))
+    · exact Or.inr (Units.ext (by rw [Units.val_pow_eq_pow_val]; exact sub_eq_zero.mp h))
+  · rintro (rfl | rfl)
+    · exact IsConj.refl _
+    · refine (isConj_iff_of_notMem_range_scalar
+        (notMem_range_scalar_gl2NonSplitTorusHom hE hu)
+        (notMem_range_scalar_gl2NonSplitTorusHom hE hupow)).mpr ⟨?_, ?_⟩
+      · rw [trace_gl2NonSplitTorusHom, trace_gl2NonSplitTorusHom]
+        refine FaithfulSMul.algebraMap_injective F E ?_
+        rw [htr, htr, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, add_comm]
+      · rw [← Matrix.GeneralLinearGroup.val_det_apply, ← Matrix.GeneralLinearGroup.val_det_apply,
+          val_det_gl2NonSplitTorusHom, val_det_gl2NonSplitTorusHom]
+        refine FaithfulSMul.algebraMap_injective F E ?_
+        rw [hnm, hnm, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, mul_comm]
+
+end GL2NonSplitTorus
+
+/-! ### Counting the classes -/
+
+/-- **The chosen representatives of the conjugacy classes of `GL₂(F)`**: the scalar matrix `a • 1`
+for a unit `a`, and the companion matrix of `X² - t X + d` for a scalar `t` and a unit `d`. The
+first family is the centre and the second exhausts the non-scalar classes. -/
+def conjRepGLFinTwo : Fˣ ⊕ F × Fˣ → GL (Fin 2) F
+  | Sum.inl a => Matrix.GeneralLinearGroup.scalar (Fin 2) a
+  | Sum.inr td => companionGL td.1 td.2
+
+@[simp]
+theorem conjRepGLFinTwo_inl (a : Fˣ) :
+    (conjRepGLFinTwo (Sum.inl a) : GL (Fin 2) F)
+      = Matrix.GeneralLinearGroup.scalar (Fin 2) a := (rfl)
+
+@[simp]
+theorem conjRepGLFinTwo_inr (t : F) (d : Fˣ) :
+    (conjRepGLFinTwo (Sum.inr (t, d)) : GL (Fin 2) F) = companionGL t d := (rfl)
+
+/-- **The representatives meet every conjugacy class of `GL₂(F)` exactly once.** Surjectivity is
+rational canonical form, injectivity the classification: a scalar is alone in its class, a
+companion element is never scalar, and two companion elements with the same trace and determinant
+are equal. -/
+theorem bijective_mk_conjRepGLFinTwo :
+    Function.Bijective fun x : Fˣ ⊕ F × Fˣ => ConjClasses.mk (conjRepGLFinTwo x) := by
+  constructor
+  · rintro (a | ⟨t, d⟩) (b | ⟨t', d'⟩) hab <;>
+      simp only [ConjClasses.mk_eq_mk_iff_isConj, conjRepGLFinTwo_inl,
+        conjRepGLFinTwo_inr] at hab
+    · rw [(isConj_scalar_iff a b).1 hab]
+    · exact absurd (eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(a : F), rfl⟩ hab)
+        (scalar_ne_companionGL t' d' a)
+    · exact absurd (eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(b : F), rfl⟩ hab.symm)
+        (scalar_ne_companionGL t d b)
+    · obtain ⟨ht, hd⟩ := (isConj_iff_of_notMem_range_scalar
+        (companionGL_notMem_range_scalar t d) (companionGL_notMem_range_scalar t' d')).1 hab
+      rw [coe_companionGL, coe_companionGL, trace_companionFinTwo, trace_companionFinTwo] at ht
+      rw [coe_companionGL, coe_companionGL, det_companionFinTwo, det_companionFinTwo] at hd
+      obtain rfl : t = t' := ht
+      obtain rfl : d = d' := Units.ext hd
+      rfl
+  · intro C
+    obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
+    by_cases hg : (g : Matrix (Fin 2) (Fin 2) F) ∈ Set.range (Matrix.scalar (Fin 2))
+    · obtain ⟨a, ha⟩ := (mem_range_iff_exists_units_map_eq (Matrix.scalar (Fin 2)) g).mp hg
+      -- `Matrix.GeneralLinearGroup.scalar` is `Units.map` of `Matrix.scalar`, but the two spell
+      -- the coercion to a monoid homomorphism differently, so compare the underlying matrices
+      -- instead of unfolding either definition.
+      have hrep : conjRepGLFinTwo (Sum.inl a) = g := by
+        rw [conjRepGLFinTwo_inl, ← ha]
+        exact Units.ext (by simp)
+      exact ⟨Sum.inl a, congrArg ConjClasses.mk hrep⟩
+    · exact ⟨Sum.inr ((g : Matrix (Fin 2) (Fin 2) F).trace, Matrix.GeneralLinearGroup.det g),
+        ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_companionGL hg).symm⟩
+
+/-- **The conjugacy classes of `GL₂(F)` are indexed by `Fˣ ⊕ F × Fˣ`**: a unit `a` indexes the
+class of the scalar `a • 1`, and a pair `(t, d)` the class of the elements with trace `t` and
+determinant `d` that are not scalar. -/
+noncomputable def conjClassesGLFinTwoEquiv : Fˣ ⊕ F × Fˣ ≃ ConjClasses (GL (Fin 2) F) :=
+  Equiv.ofBijective _ bijective_mk_conjRepGLFinTwo
+
+@[simp]
+theorem conjClassesGLFinTwoEquiv_apply (x : Fˣ ⊕ F × Fˣ) :
+    conjClassesGLFinTwoEquiv x = ConjClasses.mk (conjRepGLFinTwo x) := (rfl)
+
+end GeneralLinear
+
+/-- **`GL₂(𝔽_q)` has `q² - 1` conjugacy classes**: `q - 1` central ones and `q (q - 1)` non-scalar
+ones, indexed by their trace and their determinant. This is the number of irreducible complex
+representations of `GL₂(𝔽_q)`, whose four families have dimensions `1`, `q`, `q + 1` and
+`q - 1`.
+
+The name is the roadmap's; the statement is the roadmap's with `[Fintype F]` weakened to
+`[Finite F]`, nothing in the argument deciding equality. -/
+theorem card_conjClasses_GL2 (F : Type*) [Field F] [Finite F] :
+    Nat.card (ConjClasses (GL (Fin 2) F)) = Nat.card F ^ 2 - 1 := by
+  rw [← Nat.card_congr (conjClassesGLFinTwoEquiv (F := F)), Nat.card_sum, Nat.card_prod,
+    Nat.card_units F]
+  obtain ⟨m, hm⟩ : ∃ m, Nat.card F = m + 1 := ⟨Nat.card F - 1, by
+    have := Nat.card_pos (α := F)
+    omega⟩
+  have e1 : (m + 1) ^ 2 = m * m + 2 * m + 1 := by ring
+  rw [hm, Nat.add_sub_cancel, e1, Nat.add_sub_cancel]
+  ring
+
+end EpsilonEridani

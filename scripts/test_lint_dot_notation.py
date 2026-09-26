@@ -13,14 +13,14 @@ import lean_source as lint
 
 
 def findings(source: str, namespaces: set[str] | None = None):
-    return lint.find_violations({pathlib.Path("TauCeti/Test.lean"): source}, namespaces or {"Foo"})
+    return lint.find_violations({pathlib.Path("EpsilonEridani/Test.lean"): source}, namespaces or {"Foo"})
 
 
 class DotNotationLintTests(unittest.TestCase):
     def test_named_section_does_not_corrupt_namespace_stack(self):
         source = """\
 public section
-namespace TauCeti
+namespace EpsilonEridani
 namespace Foo
 def before (x : Foo) := x
 section Chain
@@ -33,16 +33,16 @@ def mutualTwo (x : Foo) := x
 end
 def afterMutual (x : Foo) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 end
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         [f"TauCeti.Foo.{name}" for name in
+                         [f"EpsilonEridani.Foo.{name}" for name in
                           ("before", "inside", "after", "mutualOne", "mutualTwo", "afterMutual")])
 
     def test_attribute_anonymous_instance_and_modifiers_are_detected(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 namespace Foo
 @[expose] def attributed : Foo → Foo := fun x => x
 @[simp,
@@ -61,7 +61,7 @@ class ClassDeclaration (x : Foo) : Prop where
 structure StructureDeclaration (x : Foo) where
   field : True
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         result = findings(source)
         names = [finding.declaration for finding in result]
@@ -70,37 +70,37 @@ end TauCeti
         for expected in ("attributed", "multilineAttribute", "nonrecursive", "namedInstance",
                          "localInstance", "partialDefinition", "unsafeDefinition",
                          "ClassDeclaration", "StructureDeclaration"):
-            self.assertIn(f"TauCeti.Foo.{expected}", names)
+            self.assertIn(f"EpsilonEridani.Foo.{expected}", names)
 
     def test_root_declaration_is_not_flagged(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 namespace Foo
 def _root_.Foo.correct (x : Foo) := x
 def misplaced (x : Foo) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.misplaced"])
+                         ["EpsilonEridani.Foo.misplaced"])
 
     def test_function_valued_binders_are_not_receivers(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 namespace Foo
 def returnsFoo : Foo := by
   exact (default : Foo)
 def takesFunction (f : Foo → Foo) := f
 def takesFoo (x : Foo) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.takesFoo"])
+                         ["EpsilonEridani.Foo.takesFoo"])
 
     def test_notation_receivers_and_dotted_subtypes(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 namespace ContinuousLinearMap
 def notationReceiver (T : E →L[𝕜] F) := T
 def dottedSubtype (hT : ContinuousLinearMap.IsFredholm T) := hT
@@ -158,7 +158,7 @@ end TensorProduct
 namespace LieHom
 def lieHomReceiver (f : L →ₗ⁅R⁆ L') := f
 end LieHom
-end TauCeti
+end EpsilonEridani
 """
         result = findings(source, {"AlgEquiv", "BialgHom", "CoalgEquiv",
                                    "ContinuousLinearMap", "ContinuousMap",
@@ -166,31 +166,31 @@ end TauCeti
                                    "Homeomorph", "LieHom", "LinearIsometryEquiv", "LinearMap",
                                    "LinearPMap", "RingHom", "TensorProduct"})
         self.assertEqual([finding.declaration for finding in result], [
-            "TauCeti.ContinuousLinearMap.notationReceiver",
-            "TauCeti.LinearMap.linearMapReceiver",
-            "TauCeti.Equiv.equivReceiver",
-            "TauCeti.ContinuousMap.continuousMapReceiver",
-            "TauCeti.ContinuousMultilinearMap.multilinearReceiver",
-            "TauCeti.RingHom.ringHomReceiver",
-            "TauCeti.AlgEquiv.algEquivReceiver",
-            "TauCeti.LinearIsometryEquiv.linearIsometryEquivReceiver",
-            "TauCeti.Homeomorph.homeomorphReceiver",
-            "TauCeti.Diffeomorph.withCornersReceiver",
-            "TauCeti.Diffeomorph.withCornersInfiniteReceiver",
-            "TauCeti.Diffeomorph.modelReceiver",
-            "TauCeti.Diffeomorph.modelInfiniteReceiver",
-            "TauCeti.BialgHom.bialgHomReceiver",
-            "TauCeti.CoalgEquiv.coalgEquivReceiver",
-            "TauCeti.LinearPMap.linearPMapReceiver",
-            "TauCeti.LinearPMap.semilinearPMapReceiver",
-            "TauCeti.Hom.categoryHomReceiver",
-            "TauCeti.TensorProduct.tensorProductReceiver",
-            "TauCeti.LieHom.lieHomReceiver",
+            "EpsilonEridani.ContinuousLinearMap.notationReceiver",
+            "EpsilonEridani.LinearMap.linearMapReceiver",
+            "EpsilonEridani.Equiv.equivReceiver",
+            "EpsilonEridani.ContinuousMap.continuousMapReceiver",
+            "EpsilonEridani.ContinuousMultilinearMap.multilinearReceiver",
+            "EpsilonEridani.RingHom.ringHomReceiver",
+            "EpsilonEridani.AlgEquiv.algEquivReceiver",
+            "EpsilonEridani.LinearIsometryEquiv.linearIsometryEquivReceiver",
+            "EpsilonEridani.Homeomorph.homeomorphReceiver",
+            "EpsilonEridani.Diffeomorph.withCornersReceiver",
+            "EpsilonEridani.Diffeomorph.withCornersInfiniteReceiver",
+            "EpsilonEridani.Diffeomorph.modelReceiver",
+            "EpsilonEridani.Diffeomorph.modelInfiniteReceiver",
+            "EpsilonEridani.BialgHom.bialgHomReceiver",
+            "EpsilonEridani.CoalgEquiv.coalgEquivReceiver",
+            "EpsilonEridani.LinearPMap.linearPMapReceiver",
+            "EpsilonEridani.LinearPMap.semilinearPMapReceiver",
+            "EpsilonEridani.Hom.categoryHomReceiver",
+            "EpsilonEridani.TensorProduct.tensorProductReceiver",
+            "EpsilonEridani.LieHom.lieHomReceiver",
         ])
 
     def test_scoped_variable_and_dotted_name_are_detected(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 namespace Foo
 variable (x : Foo)
 variable {y : Foo}
@@ -199,14 +199,14 @@ def implicitVariable : y = y := rfl
 end Foo
 def Foo.dotted (x : Foo) := x
 def Foo.termType (x : Foo.term) := x
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.fromVariable", "TauCeti.Foo.dotted"])
+                         ["EpsilonEridani.Foo.fromVariable", "EpsilonEridani.Foo.dotted"])
 
     def test_include_and_omit_follow_scope(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 namespace Foo
 variable (x : Foo)
 include x
@@ -222,179 +222,179 @@ include x in
 theorem includedOnce : True := True.intro
 theorem omittedFinally : True := True.intro
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)], [
-            "TauCeti.Foo.included",
-            "TauCeti.Foo.restored",
-            "TauCeti.Foo.includedOnce",
+            "EpsilonEridani.Foo.included",
+            "EpsilonEridani.Foo.restored",
+            "EpsilonEridani.Foo.includedOnce",
         ])
 
     def test_owned_names_are_lowercase_and_matched_by_full_path(self):
         sources = {
-            pathlib.Path("TauCeti/Own.lean"): """\
-namespace TauCeti
+            pathlib.Path("EpsilonEridani/Own.lean"): """\
+namespace EpsilonEridani
 def prod : Type := Nat
 namespace prod
 def fst (x : prod) := x
 end prod
-end TauCeti
+end EpsilonEridani
 """,
-            pathlib.Path("TauCeti/Other.lean"): """\
-namespace TauCeti
+            pathlib.Path("EpsilonEridani/Other.lean"): """\
+namespace EpsilonEridani
 namespace prod
 def correctlyOwned (x : prod) := x
 end prod
-end TauCeti
+end EpsilonEridani
 """,
-            pathlib.Path("TauCeti/Unrelated.lean"): """\
-namespace TauCeti.Other
+            pathlib.Path("EpsilonEridani/Unrelated.lean"): """\
+namespace EpsilonEridani.Other
 namespace prod
 def misplaced (x : prod) := x
 end prod
-end TauCeti.Other
+end EpsilonEridani.Other
 """,
-            pathlib.Path("TauCeti/Nested.lean"): """\
-namespace TauCeti
+            pathlib.Path("EpsilonEridani/Nested.lean"): """\
+namespace EpsilonEridani
 def Quiver.IsAcyclic : Type := Nat
-end TauCeti
+end EpsilonEridani
 """,
-            pathlib.Path("TauCeti/NestedOther.lean"): """\
-namespace TauCeti.Quiver.IsAcyclic
+            pathlib.Path("EpsilonEridani/NestedOther.lean"): """\
+namespace EpsilonEridani.Quiver.IsAcyclic
 def correctlyNested (x : Quiver.IsAcyclic) := x
-end TauCeti.Quiver.IsAcyclic
+end EpsilonEridani.Quiver.IsAcyclic
 """,
         }
         self.assertEqual([finding.declaration for finding in
                           lint.find_violations(sources, {"prod", "Quiver", "IsAcyclic"})],
-                         ["TauCeti.Other.prod.misplaced"])
+                         ["EpsilonEridani.Other.prod.misplaced"])
 
     def test_value_declaration_does_not_exempt_a_namespace(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 def Foo : Nat := 0
 namespace Foo
 def stillMisplaced (x : _root_.Foo) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.stillMisplaced"])
+                         ["EpsilonEridani.Foo.stillMisplaced"])
 
     def test_nested_owned_type_does_not_exempt_an_outer_namespace(self):
         source = """\
-namespace TauCeti.Foo
+namespace EpsilonEridani.Foo
 structure Owned
 namespace Owned
 def stillMisplaced (x : _root_.Foo) := x
 end Owned
-end TauCeti.Foo
+end EpsilonEridani.Foo
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.Owned.stillMisplaced"])
+                         ["EpsilonEridani.Foo.Owned.stillMisplaced"])
 
     def test_owned_type_does_not_exempt_a_nested_mathlib_named_namespace(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 def Owned : Type := Nat
 namespace Owned.Foo
 def stillMisplaced (x : _root_.Foo) := x
 end Owned.Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Owned.Foo.stillMisplaced"])
+                         ["EpsilonEridani.Owned.Foo.stillMisplaced"])
 
     def test_strict_implicit_type_binder_does_not_make_a_value_an_owned_type(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 def Foo ⦃α : Type⦄ (n : Nat) : Nat := n
 namespace Foo
 def stillMisplaced (x : _root_.Foo) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.stillMisplaced"])
+                         ["EpsilonEridani.Foo.stillMisplaced"])
 
     def test_explicit_receiver_after_strict_implicit_binder_is_detected(self):
         source = """\
-namespace TauCeti.Foo
+namespace EpsilonEridani.Foo
 theorem detected ⦃α : Type⦄ (x : _root_.Foo) : True := True.intro
-end TauCeti.Foo
+end EpsilonEridani.Foo
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.detected"])
+                         ["EpsilonEridani.Foo.detected"])
 
     def test_parenthesized_arrow_domain_does_not_make_a_value_an_owned_type(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 def Foo : (Type u) → Nat := fun _ ↦ 0
 namespace Foo
 def stillMisplaced (x : _root_.Foo) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.stillMisplaced"])
+                         ["EpsilonEridani.Foo.stillMisplaced"])
 
     def test_indexed_type_family_is_an_owned_type(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 def Foo : Nat → Type := fun _ ↦ Nat
 def Bar : Nat -> Type := fun _ ↦ Nat
 namespace Foo
 def correctlyOwned (x : _root_.Foo 0) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual(findings(source), [])
-        self.assertIn(("TauCeti", "Bar"), lint.own_declaration_paths(
-            {pathlib.Path("TauCeti/Test.lean"): source}))
+        self.assertIn(("EpsilonEridani", "Bar"), lint.own_declaration_paths(
+            {pathlib.Path("EpsilonEridani/Test.lean"): source}))
 
     def test_unannotated_type_alias_is_not_an_owned_type(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 abbrev Foo := Nat
 namespace Foo
 def stillMisplaced (x : _root_.Foo) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual([finding.declaration for finding in findings(source)],
-                         ["TauCeti.Foo.stillMisplaced"])
+                         ["EpsilonEridani.Foo.stillMisplaced"])
 
     def test_prop_and_opaque_sort_results_are_owned(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 def Predicate : Prop := True
 opaque Hidden : Type
 def Family : ∀ n : Nat, Type := fun _ ↦ Nat
 def Parenthesized : (Nat → Type) := fun _ ↦ Nat
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual(lint.own_declaration_paths(
-            {pathlib.Path("TauCeti/Test.lean"): source}),
-            {("TauCeti", "Predicate"), ("TauCeti", "Hidden"),
-             ("TauCeti", "Family"), ("TauCeti", "Parenthesized")})
+            {pathlib.Path("EpsilonEridani/Test.lean"): source}),
+            {("EpsilonEridani", "Predicate"), ("EpsilonEridani", "Hidden"),
+             ("EpsilonEridani", "Family"), ("EpsilonEridani", "Parenthesized")})
 
     def test_universe_annotation_is_not_part_of_a_declaration_name(self):
         source = """\
-namespace TauCeti
+namespace EpsilonEridani
 def Foo.{u} (X : Type u) : Type u := X
 namespace Foo
 def correctlyOwned (x : _root_.Foo Type) := x
 end Foo
-end TauCeti
+end EpsilonEridani
 """
         self.assertEqual(findings(source), [])
-        self.assertIn(("TauCeti", "Foo"), lint.own_declaration_paths(
-            {pathlib.Path("TauCeti/Test.lean"): source}))
+        self.assertIn(("EpsilonEridani", "Foo"), lint.own_declaration_paths(
+            {pathlib.Path("EpsilonEridani/Test.lean"): source}))
 
     def test_missing_mathlib_checkout_fails_loudly(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
-            source_root = root / "TauCeti"
+            source_root = root / "EpsilonEridani"
             source_root.mkdir()
             baseline = root / "baseline.txt"
             baseline.write_text("")
@@ -414,13 +414,13 @@ end TauCeti
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             mathlib = root / "Mathlib"
-            source_root = root / "TauCeti"
+            source_root = root / "EpsilonEridani"
             mathlib.mkdir()
             source_root.mkdir()
             (mathlib / "Foo.lean").write_text("namespace Foo\nend Foo\n")
             source = source_root / "Test.lean"
-            source.write_text("namespace TauCeti\nnamespace Foo\ndef bar (x : Foo) := x\n"
-                              "end Foo\nend TauCeti\n")
+            source.write_text("namespace EpsilonEridani\nnamespace Foo\ndef bar (x : Foo) := x\n"
+                              "end Foo\nend EpsilonEridani\n")
             baseline = pathlib.Path(directory) / "baseline.txt"
             baseline.write_text("")
             args = ["--mathlib-root", str(mathlib), "--source-root", str(source_root),
@@ -429,7 +429,7 @@ end TauCeti
             with contextlib.redirect_stdout(stdout):
                 self.assertEqual(lint.main(args), 1)
                 self.assertEqual(lint.main([*args, "--write-baseline"]), 0)
-                source.write_text("namespace TauCeti\ndef _root_.Foo.bar (x : Foo) := x\nend TauCeti\n")
+                source.write_text("namespace EpsilonEridani\ndef _root_.Foo.bar (x : Foo) := x\nend EpsilonEridani\n")
                 self.assertEqual(lint.main(args), 0)
             self.assertIn("1 new", stdout.getvalue())
             self.assertIn("1 ratchetable", stdout.getvalue())

@@ -3,7 +3,7 @@
  "packages":
  [{"type": "path",
    "scope": "",
-   "name": "TauCeti",
+   "name": "EpsilonEridani",
    "manifestFile": "lake-manifest.json",
    "inherited": false,
    "dir": "../",

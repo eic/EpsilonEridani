@@ -17,7 +17,7 @@ def lean_path(raw: object) -> str | None:
     path = PurePosixPath(raw)
     if path.is_absolute() or ".." in path.parts:
         raise ValueError(f"unsafe changed-file path: {raw!r}")
-    if raw == "TauCeti.lean" or (raw.startswith("TauCeti/") and raw.endswith(".lean")):
+    if raw == "EpsilonEridani.lean" or (raw.startswith("EpsilonEridani/") and raw.endswith(".lean")):
         if "`" in raw or "|" in raw:
             raise ValueError(f"Lean path contains unsafe report punctuation: {raw!r}")
         return raw

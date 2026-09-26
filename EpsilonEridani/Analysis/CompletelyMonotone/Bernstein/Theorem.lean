@@ -1,0 +1,149 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.Analysis.CompletelyMonotone.Laplace.Representation
+-- Non-public: the Chafaï approximating measures, their tightness, and the Prokhorov extraction are
+-- used only inside the proof; the statement mentions none of them.
+import EpsilonEridani.Analysis.CompletelyMonotone.Bernstein.Tightness
+import EpsilonEridani.MeasureTheory.Measure.Prokhorov
+
+/-!
+# Bernstein's theorem: existence of a representing measure
+
+A completely monotone function on `[0, ∞)` is the Laplace transform of a finite positive measure
+on `ℝ≥0`.
+
+## Main results
+
+* `EpsilonEridani.exists_representsLaplace_of_isCompletelyMonotone`
+
+## Scope
+
+This is the **existence** half of the Bernstein milestone in
+`EpsilonEridaniRoadmap/OneParameterSemigroups/README.md`, Part B. Uniqueness of the representing measure
+is `EpsilonEridani.RepresentsLaplace.unique`, the converse direction is
+`EpsilonEridani.isContinuousCompletelyMonotoneOnIoi_laplaceTransform`, and all three combine in
+`Bernstein/HausdorffBernsteinWidder.lean` as `EpsilonEridani.hausdorff_bernstein_widder` and
+`EpsilonEridani.hausdorff_bernstein_widder_existsUnique`.
+
+Finiteness of the representing measure is not an extra hypothesis but a consequence of complete
+monotonicity on the *closed* half-line: `IsCompletelyMonotone` builds in `Set.Ici 0`, so `f` takes a
+real value at `0`, and the representing measure has total mass `f 0`. On the open half-line alone
+the value at `0` need not exist and the representing measure can be infinite — `1/t` is completely
+monotone on `(0, ∞)` with representing measure Lebesgue.
+
+## Implementation
+
+`Bernstein/Measures.lean` supplies the Chafaï approximating measures `chafaiRescaled f n` on `ℝ≥0`
+and the reconstruction identity `f x - L = ∫ bernsteinKernel n x ∂(chafaiRescaled f n)`, where
+`L = lim_{t→∞} f t`. Those measures are uniformly mass-bounded and, by `Bernstein/Tightness.lean`,
+tight. The three remaining steps are:
+
+1. extract a weak limit `μ₀` from tightness;
+2. pass the reconstruction identity to that limit, replacing the Bernstein kernel by `e^{-xp}`,
+   which represents the non-constant part `f - L`;
+3. add the atom `L • δ₀`, whose Laplace transform is the constant `L`, to represent `f` itself.
+
+Step 1 uses `finite_measure_cluster_limit` rather than its subsequence form
+`finite_measure_subseq_limit`: the latter needs `FirstCountableTopology (FiniteMeasure ℝ≥0)`, and
+Mathlib's metrizability instances for spaces of measures are stated for `ProbabilityMeasure`, not
+`FiniteMeasure`. No subsequence is actually required — every ingredient is a filter limit, so an
+ultrafilter below `atTop` suffices, and being `NeBot` it still gives uniqueness of limits.
+
+## References
+
+* Roadmap: `EpsilonEridaniRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
+
+* D. Chafaï, *Aspects of the Bernstein theorem* (2013) — the approximating measures this proof
+  passes to the limit.
+* R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012), Ch. 1.
+-/
+
+public section
+
+open MeasureTheory Set Filter Topology
+open scoped NNReal ENNReal Topology
+
+namespace EpsilonEridani
+
+variable {f : ℝ → ℝ}
+
+/-- **The weak limit represents the non-constant part.** Along the ultrafilter `U`, the Chafaï
+measures converge weakly to `μ₀`; passing the reconstruction identity to that limit replaces the
+Bernstein kernel by `e^{-tp}` and exhibits `μ₀` as a representing measure for `f - L`, where `L` is
+the limit of `f` at infinity. The atom carrying `L` itself is added by the caller.
+
+Stated pointwise in `t`, which is how the caller consumes it. -/
+private theorem sub_eq_integral_exp_neg_mul_of_weak_limit {L : ℝ} {C : ℝ≥0} {μ₀ : Measure ℝ≥0}
+    {U : Ultrafilter ℕ} (hcm : IsCompletelyMonotone f) (hL : Tendsto f atTop (nhds L))
+    (hmass' : ∀ᶠ n in atTop, (chafaiRescaled f n) univ ≤ (C : ℝ≥0∞)) (hU : (U : Filter ℕ) ≤ atTop)
+    (hweak : ∀ g : BoundedContinuousFunction ℝ≥0 ℝ,
+      Tendsto (fun n => ∫ x, g x ∂(chafaiRescaled f n)) (U : Filter ℕ) (nhds (∫ x, g x ∂μ₀)))
+    {t : ℝ} (ht : 0 ≤ t) :
+    f t - L = ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂μ₀ := by
+  have : (U : Filter ℕ).NeBot := U.neBot'
+  have hlap : Tendsto (fun n => ∫ p, Real.exp (-(t * (p : ℝ))) ∂(chafaiRescaled f n))
+      (U : Filter ℕ) (nhds (∫ p, Real.exp (-(t * (p : ℝ))) ∂μ₀)) :=
+    chafaiRescaled_tendsto_laplace_integral_of_weak hweak ht
+  have herr : Tendsto (fun n => ∫ p : ℝ≥0,
+      (bernsteinKernel n t (p : ℝ) - Real.exp (-(t * (p : ℝ))))
+        ∂(chafaiRescaled f n)) (U : Filter ℕ) (nhds 0) :=
+    (integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound
+      (C := (C : ℝ)) (chafaiRescaled f)
+      (hmass'.mono fun n hn => hn.trans
+        (by simp [ENNReal.ofReal_coe_nnreal])) t ht).mono_left hU
+  -- the mass bound makes the Chafaï measures eventually finite along `U`
+  have hfin : ∀ᶠ n in (U : Filter ℕ), IsFiniteMeasure (chafaiRescaled f n) :=
+    Filter.Eventually.mono (hU hmass') fun n hn => ⟨hn.trans_lt ENNReal.coe_lt_top⟩
+  have hsplit : ∀ᶠ n in (U : Filter ℕ), ∫ p : ℝ≥0,
+      (bernsteinKernel n t (p : ℝ) - Real.exp (-(t * (p : ℝ)))) ∂(chafaiRescaled f n)
+        = (∫ p, bernsteinKernel n t (p : ℝ) ∂(chafaiRescaled f n))
+          - ∫ p, Real.exp (-(t * (p : ℝ))) ∂(chafaiRescaled f n) := by
+    filter_upwards [hfin] with n hn
+    exact integral_sub (integrable_bernsteinKernel (chafaiRescaled f n) n ht)
+      (integrable_exp_neg_mul (chafaiRescaled f n) ht)
+  -- The Bernstein integral is constantly `f t - L` once `n ≥ 2`.
+  have hconst : ∀ᶠ n in (U : Filter ℕ),
+      ∫ p, bernsteinKernel n t (p : ℝ) ∂(chafaiRescaled f n) = f t - L := by
+    have h2 : ∀ᶠ n in (U : Filter ℕ), 2 ≤ n := hU (eventually_ge_atTop 2)
+    filter_upwards [h2] with n hn
+    exact chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop f hcm n hn t ht L hL
+  -- Pass to the limit: `(f t - L) - ∫ laplace → 0`.
+  have hdiff : Tendsto (fun n => (f t - L)
+      - ∫ p, Real.exp (-(t * (p : ℝ))) ∂(chafaiRescaled f n)) (U : Filter ℕ) (nhds 0) := by
+    refine herr.congr' ?_
+    filter_upwards [hconst, hsplit] with n hn hs
+    rw [hs, hn]
+  have hlim := hdiff.add hlap
+  simp only [sub_add_cancel, zero_add] at hlim
+  exact tendsto_nhds_unique tendsto_const_nhds hlim
+
+/-- **Bernstein's theorem, existence half.** A completely monotone function on `[0, ∞)` is the
+Laplace transform of a finite positive measure on `ℝ≥0`.
+
+Uniqueness of that measure is not asserted here; it is `EpsilonEridani.RepresentsLaplace.unique`, and
+the two combine in the Hausdorff--Bernstein--Widder theorem. -/
+theorem exists_representsLaplace_of_isCompletelyMonotone
+    (hcm : IsCompletelyMonotone f) :
+    ∃ μ : Measure ℝ≥0, RepresentsLaplace μ f := by
+  obtain ⟨L, C, hL, hL_nn, -, hmass⟩ := chafaiRescaled_prokhorov_mass_bound f hcm
+  have hmass' : ∀ n, (chafaiRescaled f n) univ ≤ (C : ℝ≥0∞) := fun n => (hmass n).2
+  obtain ⟨μ₀, U, hU, hμ₀fin, -, hweak⟩ :=
+    finite_measure_cluster_limit (chafaiRescaled f) C hmass'
+      (isTightMeasureSet_range_chafaiRescaled hcm)
+  -- The limit represents the non-constant part `f - L`.
+  have key : ∀ t : ℝ, 0 ≤ t → f t - L = ∫ p, Real.exp (-(t * (p : ℝ))) ∂μ₀ :=
+    fun t ht => sub_eq_integral_exp_neg_mul_of_weak_limit hcm hL (.of_forall hmass') hU hweak ht
+  -- Add the atom `L · δ₀` to recover `f` itself.
+  have := hμ₀fin
+  refine ⟨μ₀ + L.toNNReal • Measure.dirac 0,
+    representsLaplace_iff.mpr ⟨inferInstance, fun t ht => ?_⟩⟩
+  rw [laplaceTransform_apply,
+    integral_exp_neg_mul_add_smul_dirac_zero μ₀ _ ht, Real.coe_toNNReal L hL_nn]
+  linarith [key t ht]
+
+end EpsilonEridani

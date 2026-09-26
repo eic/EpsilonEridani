@@ -24,10 +24,10 @@ we hope that we can efficiently build a reusable library at significant scale. W
 * and Mathlib, Tau Ceti, and other libraries provide the knowledge necessary so that humans can work at the research frontier.
 
 Humans own the roadmap for Tau Ceti, which lives in the
-[TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repository (mostly in the form of markdown files, together with a
+[EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap) repository (mostly in the form of markdown files, together with a
 small amount of Lean); changes are made via human-reviewed pull requests there.
 Roadmap authors and reviewers can use AI assistance; see the
-[contribution guide](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/CONTRIBUTING.md).
+[contribution guide](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap/blob/main/CONTRIBUTING.md).
 
 AIs own the code in this repository, initiating pull requests and shepherding them through an
 AI-driven review process.
@@ -38,10 +38,10 @@ Humans can raise issues against the code, and leave implementation (and review) 
 
 ## The three repositories
 
-- **TauCeti** (this repository) — the AI-authored Lean mathematics.
-- **[TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap)** — the human-controlled
+- **EpsilonEridani** (this repository) — the AI-authored Lean mathematics.
+- **[EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap)** — the human-controlled
   roadmaps that direct the work.
-- **[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview)** — the review rubrics and
+- **[EpsilonEridaniReview](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview)** — the review rubrics and
   the machinery that runs review.
 
 ## Relationship to Lean Pool
@@ -61,18 +61,18 @@ PR contributors can push further commits, or respond to review comments, in orde
 
 We've built the infrastructure to fire these reviews automatically on each PR (and on a `/review` comment), but it is currently switched off. For now, reviews are run from the command line.
 
-You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `tauceti-review` tool in [TauCetiReview](https://github.com/TauCetiProject/TauCetiReview). With [uv](https://docs.astral.sh/uv/):
+You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `epsiloneridani-review` tool in [EpsilonEridaniReview](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview). With [uv](https://docs.astral.sh/uv/):
 
 ```bash
 # print the verdicts for PR #42, posting nothing:
-uvx --from git+https://github.com/TauCetiProject/TauCetiReview tauceti-review 42
+uvx --from git+https://github.com/EpsilonEridaniProject/EpsilonEridaniReview epsiloneridani-review 42
 # add --post to publish the scoreboard and per-rubric threads, as you:
-uvx --from git+https://github.com/TauCetiProject/TauCetiReview tauceti-review 42 --post
+uvx --from git+https://github.com/EpsilonEridaniProject/EpsilonEridaniReview epsiloneridani-review 42 --post
 ```
 
-It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/TauCetiProject/TauCetiReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
+It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
 
-The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/TauCetiProject/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
+The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
@@ -115,7 +115,7 @@ This will be an evolving process, and community input is welcome.
 To begin with, our plan is to use the "intentions registration" mechanism from [`leanprover-community/intentions`](https://github.com/leanprover-community/intentions),
 and the shared public registry of intentions at [`leanprover-community/project-intentions`](https://github.com/leanprover-community/project-intentions).
 
-We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
+We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./epsiloneridani` worker exemplar from [`EpsilonEridaniProject/EpsilonEridaniWorker`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
 
 We're working now on extending this mechanism to respect recorded intentions at the public `project-intentions` registry. Hopefully in future there will also be a federated system of registrations collected from individual downstream projects that Tau Ceti can hook into.
 
@@ -142,10 +142,10 @@ Finally, we understand that participating in AI-assisted mathematics research re
 
 Generated API documentation for every declaration in Tau Ceti, hyperlinked into its Mathlib
 dependencies, is published at
-[taucetiproject.github.io/TauCeti/docs](https://taucetiproject.github.io/TauCeti/docs/). It is
+[epsiloneridaniproject.github.io/EpsilonEridani/docs](https://epsiloneridaniproject.github.io/EpsilonEridani/docs/). It is
 scheduled for regeneration every three hours from `main` with
 [`doc-gen4`](https://github.com/leanprover/doc-gen4), alongside the
-[project website](https://taucetiproject.github.io/TauCeti/).
+[project website](https://epsiloneridaniproject.github.io/EpsilonEridani/).
 
 The moving `docgen` branch points at the mainline commit whose generated API documentation is
 currently published — not necessarily the newest, since a deployment that serves older
@@ -157,7 +157,7 @@ atomically, so between the two the branch names documentation that has already b
 if the update fails, or the deployment came from a manually dispatched run on another branch, the
 branch stays wrong — in either direction — until the next deployment from `main`. Anything that
 needs certainty should instead read
-[`/docs/SOURCE_SHA`](https://taucetiproject.github.io/TauCeti/docs/SOURCE_SHA), which is published
+[`/docs/SOURCE_SHA`](https://epsiloneridaniproject.github.io/EpsilonEridani/docs/SOURCE_SHA), which is published
 inside the documentation itself and therefore states, at the moment it is read, exactly which commit
 the live documentation describes.
 
@@ -182,62 +182,62 @@ yet, and expect a hit at other times.
 
 ## Roadmaps
 
-The roadmaps live in the [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap)
+The roadmaps live in the [EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap)
 repo: universal covers, the Jacobian challenge, reductive algebraic groups, partial
 differential equations, Heegaard Floer and knot Floer homology, and multiquadratic fields and
 genus theory. When asked to work here, read the roadmap first (see `AGENTS.md`).
 
 Before starting a substantial piece of roadmap work, register and claim your intention so you
-don't collide with others; see [Coordinating work: intentions and claims](https://github.com/TauCetiProject/TauCetiRoadmap#coordinating-work-intentions-and-claims).
+don't collide with others; see [Coordinating work: intentions and claims](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap#coordinating-work-intentions-and-claims).
 
 ## Contributing with the worker CLI
 
 The reviews above can be run one PR at a time, but most contribution here happens through a
 *worker*. A single round picks one piece of work, does it, and stops; `--loop` runs rounds
 repeatedly until you interrupt it. The exemplar is
-[`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker). With
+[`EpsilonEridaniProject/EpsilonEridaniWorker`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker). With
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv tool install git+https://github.com/TauCetiProject/TauCetiWorker
+uv tool install git+https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker
 gh auth login     # the worker acts as this account, and tends its PRs
-tauceti doctor    # checklist of everything it needs
+epsiloneridani doctor    # checklist of everything it needs
 ```
 
-`tauceti doctor` is the place to start: it prints a row per prerequisite and tells you what is
+`epsiloneridani doctor` is the place to start: it prints a row per prerequisite and tells you what is
 missing. You need `gh`, `git`, `uv/uvx`, `jq`, an authenticated `gh`, and `lake`, plus
 credentials for whichever agent you run (Codex or Claude). The `bubble`, `incus`, `pi` and
 `kiro` rows can stay missing unless you want the sandbox or an alternative agent.
 
 By default, agents run with unrestricted host access; see
-[sandboxing with `--bubble`](https://github.com/TauCetiProject/TauCetiWorker/blob/main/docs/sandbox.md)
+[sandboxing with `--bubble`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker/blob/main/docs/sandbox.md)
 for isolation.
 
 Then survey before you act:
 
 ```bash
-tauceti status    # read-only: what work is available, and your quota
-tauceti work      # ONE unit of work, then exit
-tauceti work --loop
+epsiloneridani status    # read-only: what work is available, and your quota
+epsiloneridani work      # ONE unit of work, then exit
+epsiloneridani work --loop
 ```
 
-Run a bare `tauceti work` before ever using `--loop`, so you see one complete round end to end.
+Run a bare `epsiloneridani work` before ever using `--loop`, so you see one complete round end to end.
 
 Each round prioritizes maintenance and review before new formalization work; see
-[the cascade](https://github.com/TauCetiProject/TauCetiWorker#what-a-round-does).
-`tauceti work --dry-run` shows what a round would pick without acting.
+[the cascade](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker#what-a-round-does).
+`epsiloneridani work --dry-run` shows what a round would pick without acting.
 
 Subscription pacing can be controlled via
-[`--pace`](https://github.com/TauCetiProject/TauCetiWorker#pacing-against-quota).
+[`--pace`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker#pacing-against-quota).
 For running several workers, see
-[the worker documentation](https://github.com/TauCetiProject/TauCetiWorker#persistent-workers).
+[the worker documentation](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker#persistent-workers).
 
 ### Only review
 
 If you would rather review than author:
 
 ```bash
-tauceti work --loop --only review
+epsiloneridani work --loop --only review
 ```
 
 `--skip roadmap` is "everything except opening new formalization PRs" — a good setting if you
@@ -248,13 +248,13 @@ want to help existing work land.
 Roadmap rounds pick a random area each time unless you say otherwise. To steer to one:
 
 ```bash
-tauceti work --roadmap-only ReductiveGroups
+epsiloneridani work --roadmap-only ReductiveGroups
 ```
 
 This keeps maintenance and review enabled. We discourage `--only roadmap`: it skips both,
 leaving existing PRs untended while opening new ones.
 
-The area is a subdirectory of the [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap)
+The area is a subdirectory of the [EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap)
 repo. Conversely `--roadmap-skip AREA[,AREA...]` excludes areas, which is how concurrent workers
 divide the roadmap between them. Before starting substantial roadmap work, register your
 intention so you do not collide with others — the worker reads the intentions board and avoids
@@ -266,5 +266,5 @@ ends when a PR is green and reviewed.
 ---
 
 <p align="center">
-  <img src="assets/tauceti-collaboration.jpg" alt="A hexapus reaching out to touch an AI's hand across a tide pool, beneath twin suns and a ringed planet." width="900">
+  <img src="assets/epsiloneridani-collaboration.jpg" alt="A hexapus reaching out to touch an AI's hand across a tide pool, beneath twin suns and a ringed planet." width="900">
 </p>

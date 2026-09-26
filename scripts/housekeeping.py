@@ -5,7 +5,7 @@ Green PRs merge on their own (the merge queue, fed by auto-merge.yml). This cove
 jobs, in CI so the autonomous worker can stay focused on producing work, and so that EVERY PR ends up
 either merged or closed — never stranded:
 
-  empty    Close a roadmap PR (one carrying the `<!--tauceti-target:v1 ...-->` marker) whose diff
+  empty    Close a roadmap PR (one carrying the `<!--epsiloneridani-target:v1 ...-->` marker) whose diff
            against main is empty — its changes already landed in main, typically because a sibling
            worker attempt at the same target merged first. dedup only matches an OPEN twin, so once the
            twin merges this is what reaps the loser, instead of leaving it for the 7-day stale timer.
@@ -15,7 +15,7 @@ either merged or closed — never stranded:
            a PR is reviewed and fixed until it merges or this closes it. The decision is read from the
            scoreboard ledger (`full_rounds` + per-rubric `states`), so it holds whether or not the
            worker is running. A manual `review-budget-spent` label force-closes a PR early.
-  dedup    Close a newer PR that authors the same roadmap target (the `<!--tauceti-target:v1 ...-->`
+  dedup    Close a newer PR that authors the same roadmap target (the `<!--epsiloneridani-target:v1 ...-->`
            body marker) as an older open one. Keep the lowest PR number.
   stale    Close a PR whose latest review scoreboard still has a blocking rubric and which has had no
            activity for STALE_DAYS (default 7): a request for changes nobody acted on, under budget.
@@ -36,7 +36,7 @@ The one override is a `keep` label (also `hold`/`wip`/`human`/`do-not-close`): a
 is never auto-closed. By design these jobs do NOT spare human-touched PRs — anyone who wants a PR held
 adds `keep`. A failed close makes the job exit nonzero.
 
-A scoreboard is trusted only if it carries the `tauceti-scoreboard` marker AND its author is
+A scoreboard is trusted only if it carries the `epsiloneridani-scoreboard` marker AND its author is
 repo-associated (OWNER/MEMBER/COLLABORATOR). This destructive close policy is deliberately stricter
 than the worker and auto-merge scoreboard readers. The reviewer and the PR author are frequently the
 same account, so trust is by association, not by "not the author": an external author cannot forge a
@@ -80,7 +80,7 @@ CI_FAILED_LABEL = "ci-failed"
 # actively-pushing worker (which would bump updatedAt) is never raced into a wrong close.
 EMPTY_QUIET_MINUTES = int(os.environ.get("EMPTY_QUIET_MINUTES", "30"))
 
-TARGET_MARKER_RE = re.compile(r"<!--tauceti-target:v1 \{[^}]*\}-->")
+TARGET_MARKER_RE = re.compile(r"<!--epsiloneridani-target:v1 \{[^}]*\}-->")
 TARGET_ID_RE = re.compile(r'"id"\s*:\s*"([^"]+)"')
 # The reviewer posts one scoreboard comment per PR carrying a machine-readable meta block: `full_rounds`
 # (lifetime review passes) and `states` (per-rubric verdict). A rubric `state` not in {green, stale} is
@@ -141,7 +141,7 @@ def parse_ts(s: str) -> datetime.datetime:
 
 def latest_scoreboard_meta(pr: int):
     """The meta block of the newest TRUSTED review scoreboard comment, or None. Trust = the
-    `tauceti-scoreboard` marker AND a repo-associated author (so an external author cannot forge a
+    `epsiloneridani-scoreboard` marker AND a repo-associated author (so an external author cannot forge a
     verdict). Delegates to the shared `core.repo_associated_scoreboard_meta` so both the parse and the
     destructive trust policy live in one place; fails safe (None) on any API/parse error, so a hiccup
     never causes a wrong close."""
@@ -218,7 +218,7 @@ def main() -> int:
     # matches an OPEN twin, so once the twin merges nothing reaps the loser; this closes it directly
     # instead of waiting out the 7-day stale timer (and stops the worker thrashing on a done target).
     # Two guards keep a destructive close safe: it is scoped to autonomous roadmap PRs (those carrying the
-    # tauceti-target marker), so an intentionally empty human PR is left alone; and it acts only on a PR
+    # epsiloneridani-target marker), so an intentionally empty human PR is left alone; and it acts only on a PR
     # QUIET for EMPTY_QUIET_MINUTES, so an actively-pushing worker (which bumps updatedAt) is never raced.
     # The quiet window is also what guarantees the diff stats are settled: GitHub recomputes
     # changedFiles/additions/deletions promptly on each push or base move, so a PR untouched for the whole
@@ -275,7 +275,7 @@ def main() -> int:
         print(f"budget: #{n} ({reason})")
         failures += not close(n, BUDGET_COMMENT)
 
-    # dedup: a newer PR sharing a tauceti-target id with an older open one (keep the lowest number).
+    # dedup: a newer PR sharing a epsiloneridani-target id with an older open one (keep the lowest number).
     # List-only (the marker is in the body), so this pages cheaply; the marker is on roadmap PRs only.
     limit = 2000
     prs = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", str(limit),

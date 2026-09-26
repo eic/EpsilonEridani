@@ -15,7 +15,7 @@ class HumanAuthors(unittest.TestCase):
     def test_bots_never_get_the_claim_namespace(self):
         prs = [
             {"author": {"login": "alice", "is_bot": False}},
-            {"author": {"login": "tauceti-review", "is_bot": True}},
+            {"author": {"login": "epsiloneridani-review", "is_bot": True}},
             {"author": {"login": "dependabot[bot]"}},
         ]
         self.assertEqual(ca.human_authors(prs), {"alice"})
@@ -60,7 +60,7 @@ class HasAccess(unittest.TestCase):
 
 class Sweepable(unittest.TestCase):
     def lease(self, expires_at):
-        return json.dumps({"schema": "tauceti-claim/v1", "owner": "w1", "expires_at": expires_at})
+        return json.dumps({"schema": "epsiloneridani-claim/v1", "owner": "w1", "expires_at": expires_at})
 
     def test_a_live_lease_is_never_swept(self):
         self.assertFalse(ca.is_sweepable(self.lease(2000), 1000))

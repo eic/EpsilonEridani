@@ -1,0 +1,588 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
+public import Mathlib.MeasureTheory.Measure.Sub
+import EpsilonEridani.MeasureTheory.Measure.Coupling.Basic
+
+/-!
+# Couplings of two measures
+
+A *coupling*, or *transport plan*, of a measure `μ` on `X` and a measure `ν` on `Y` is a measure
+`π` on `X × Y` whose two marginals are `μ` and `ν`. It is the primitive object of optimal
+transport: the primal transport problem minimises a cost over the couplings of two fixed
+measures, so every statement about that problem is a statement about the set defined here.
+
+Nothing in this file needs a topology, a metric, a density, or a normalisation, and the two
+factors may be different measurable spaces. The relation is therefore stated for arbitrary
+measures, and the probability case is packaged separately as a subtype of
+`MeasureTheory.ProbabilityMeasure (X × Y)`.
+
+## Main definitions
+
+* `EpsilonEridani.IsCoupling π μ ν` — the plan-first coupling relation: `π.fst = μ` and
+  `π.snd = ν`;
+* `EpsilonEridani.Coupling μ ν` — couplings of two probability measures, bundled as a subtype of
+  `MeasureTheory.ProbabilityMeasure (X × Y)`;
+* `EpsilonEridani.Coupling.prod` — the independent coupling, and with it
+  `EpsilonEridani.Coupling.instNonempty`.
+
+## Main statements
+
+* `EpsilonEridani.IsCoupling.measure_prod_univ` and `EpsilonEridani.IsCoupling.measure_univ_prod` — the
+  marginal formulas on measurable cylinders, with the converse
+  `EpsilonEridani.isCoupling_of_measure_prod_univ_of_measure_univ_prod`;
+* `EpsilonEridani.IsCoupling.measurePreserving_fst`, `EpsilonEridani.IsCoupling.measurePreserving_snd`,
+  `EpsilonEridani.IsCoupling.integral_comp_fst`, and `EpsilonEridani.IsCoupling.integral_comp_snd` — projection
+  and integral-transfer forms of the marginal conditions;
+* `EpsilonEridani.IsCoupling.smul`, `EpsilonEridani.IsCoupling.add`, `EpsilonEridani.IsCoupling.sum` and
+  `EpsilonEridani.isCoupling_zero` — the relation is compatible with the additive and scalar structure
+  of measures, which is what mixtures of transport problems use;
+* `EpsilonEridani.IsCoupling.sub_add` — replacing a finite part of a coupling by a measure with the same
+  two marginals keeps the coupling property, which is how a plan is perturbed locally;
+* `EpsilonEridani.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
+  two couplings couples the two product measures;
+* `EpsilonEridani.IsCoupling.map_prod` — a coupling run alongside an independent sample, with measurable
+  maps applied to both coordinates, couples the two pushed-forward products;
+* `EpsilonEridani.exists_isCoupling_iff` — a finite measure and any other measure admit a coupling
+  exactly when they have the same total mass, the witness being their normalised product;
+* `EpsilonEridani.isCoupling_sum_map_pi` — pairing the source of each of finitely many independent
+  samples with the target of a permuted one preserves both total marginals;
+* `EpsilonEridani.isCoupling_map_swap_iff` and `EpsilonEridani.isCoupling_map_prodMap_iff` —
+  invariance of the relation under the coordinate swap and under measurable equivalences of the
+  two factors;
+* `EpsilonEridani.isCoupling_toMeasure_iff` — the coupling condition on bundled probability measures,
+  as the pair of equations for the two marginal pushforwards;
+* `EpsilonEridani.IsCoupling.eq_map_prodMk` — a coupling out of a Dirac measure is the
+  pushforward of its target along `y ↦ (x, y)`, so it is unique; `IsCoupling.eq_dirac`
+  specialises this to a pair of Dirac measures.
+
+## Implementation notes
+
+The argument order `IsCoupling π μ ν` takes the plan first, so that a hypothesis
+`hπ : IsCoupling π μ ν` supports dot notation such as `hπ.swap` and `hπ.map`. This convention,
+and the choice to state the relation for raw measures rather than only for bundled probability
+measures, follow Joseph K. Miller's Apache-2.0 `Vlasov.IsCoupling`
+(<https://github.com/Hydrodynamical/Vlasov_Meanfield_Formalization>), the closest existing Lean
+development of the same relation; no code is taken from it. The bundled subtype mirrors
+`EpsilonEridani.MultiCoupling`, the multi-marginal analogue already in this repository.
+
+The declarations sit in the bare `EpsilonEridani` namespace rather than in `EpsilonEridani.Measure`:
+`scripts/lint-dot-notation.py` rejects a new declaration under `EpsilonEridani.<Mathlib type
+namespace>` that takes an explicit argument of that type, because `π.IsCoupling μ ν` would not
+elaborate there anyway. Dot notation on `hπ` works under either namespace; the bare namespace is
+forced by the lint rule and matches `EpsilonEridani.MultiCoupling`.
+
+This is Layer 0, item 1 of the optimal-transport roadmap.
+
+## References
+
+* `EpsilonEridani/MeasureTheory/Measure/Coupling/Basic.lean` is the formal source for the
+  measure-preserving projection and integral-transfer declarations and proofs adapted here to the
+  plan-first `EpsilonEridani.IsCoupling` interface.
+* C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 1
+  ("Couplings and changes of variables"), Definition 1.1, which is this relation for two
+  probability measures. `EpsilonEridani.IsCoupling` states it for arbitrary measures, so the
+  probability case is the bundled `EpsilonEridani.Coupling`.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory Set
+
+namespace EpsilonEridani
+
+universe u v w
+
+variable {X : Type u} {Y : Type v} {X' : Type w} {Y' : Type*}
+  [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace X'] [MeasurableSpace Y']
+  {π : Measure (X × Y)} {μ : Measure X} {ν : Measure Y}
+
+/-- `IsCoupling π μ ν` says that the measure `π` on `X × Y` is a coupling, or transport plan,
+of `μ` and `ν`: its first marginal is `μ` and its second marginal is `ν`. -/
+structure IsCoupling (π : Measure (X × Y)) (μ : Measure X) (ν : Measure Y) : Prop where
+  /-- The first marginal of a coupling is the prescribed source measure. -/
+  fst_eq : π.fst = μ
+  /-- The second marginal of a coupling is the prescribed target measure. -/
+  snd_eq : π.snd = ν
+
+namespace IsCoupling
+
+/-- The first projection out of a coupling is measure preserving. -/
+theorem measurePreserving_fst (hπ : IsCoupling π μ ν) :
+    MeasurePreserving Prod.fst π μ :=
+  ⟨measurable_fst, hπ.fst_eq⟩
+
+/-- The second projection out of a coupling is measure preserving. -/
+theorem measurePreserving_snd (hπ : IsCoupling π μ ν) :
+    MeasurePreserving Prod.snd π ν :=
+  ⟨measurable_snd, hπ.snd_eq⟩
+
+section Integral
+
+section Composition
+
+variable {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
+
+/-- An integrable function of the first marginal remains integrable after composition with the
+first projection from a coupling. -/
+theorem integrable_comp_fst (hπ : IsCoupling π μ ν) {f : X → ε} (hf : Integrable f μ) :
+    Integrable (fun p : X × Y ↦ f p.1) π :=
+  hπ.measurePreserving_fst.integrable_comp_of_integrable hf
+
+/-- An integrable function of the second marginal remains integrable after composition with the
+second projection from a coupling. -/
+theorem integrable_comp_snd (hπ : IsCoupling π μ ν) {f : Y → ε} (hf : Integrable f ν) :
+    Integrable (fun p : X × Y ↦ f p.2) π :=
+  hπ.measurePreserving_snd.integrable_comp_of_integrable hf
+
+end Composition
+
+section Sum
+
+variable {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] [ContinuousAdd ε]
+
+/-- The sum of two integrable marginal functions is integrable against every coupling. -/
+theorem integrable_add_split (hπ : IsCoupling π μ ν) {f : X → ε} {g : Y → ε}
+    (hf : Integrable f μ) (hg : Integrable g ν) :
+    Integrable (fun p : X × Y ↦ f p.1 + g p.2) π :=
+  (hπ.integrable_comp_fst hf).add (hπ.integrable_comp_snd hg)
+
+end Sum
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A function of the first coordinate integrates against a coupling as it does against the first
+marginal. -/
+theorem integral_comp_fst (hπ : IsCoupling π μ ν) {f : X → E}
+    (hf : AEStronglyMeasurable f μ) : ∫ p, f p.1 ∂π = ∫ x, f x ∂μ := by
+  rw [← hπ.measurePreserving_fst.map_eq] at hf ⊢
+  exact (integral_map measurable_fst.aemeasurable hf).symm
+
+/-- A function of the second coordinate integrates against a coupling as it does against the second
+marginal. -/
+theorem integral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → E}
+    (hf : AEStronglyMeasurable f ν) : ∫ p, f p.2 ∂π = ∫ y, f y ∂ν := by
+  rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
+  exact (integral_map measurable_snd.aemeasurable hf).symm
+
+end Integral
+
+/-- A coupling gives the measurable cylinder `s ×ˢ univ` the source mass of `s`. -/
+theorem measure_prod_univ (hπ : IsCoupling π μ ν) {s : Set X} (hs : MeasurableSet s) :
+    π (s ×ˢ univ) = μ s := by
+  rw [prod_univ, ← Measure.fst_apply hs, hπ.fst_eq]
+
+/-- A coupling gives the measurable cylinder `univ ×ˢ t` the target mass of `t`. -/
+theorem measure_univ_prod (hπ : IsCoupling π μ ν) {t : Set Y} (ht : MeasurableSet t) :
+    π (univ ×ˢ t) = ν t := by
+  rw [univ_prod, ← Measure.snd_apply ht, hπ.snd_eq]
+
+/-- The source measure of a coupling has the total mass of the coupling. -/
+theorem measure_univ_left (hπ : IsCoupling π μ ν) : μ univ = π univ := by
+  rw [← hπ.fst_eq, Measure.fst_univ]
+
+/-- The target measure of a coupling has the total mass of the coupling. -/
+theorem measure_univ_right (hπ : IsCoupling π μ ν) : ν univ = π univ := by
+  rw [← hπ.snd_eq, Measure.snd_univ]
+
+/-- Coupled measures have equal total mass. Measures of different total mass are therefore not
+coupled by anything. -/
+theorem measure_univ_eq (hπ : IsCoupling π μ ν) : μ univ = ν univ :=
+  hπ.measure_univ_left.trans hπ.measure_univ_right.symm
+
+/-- A coupling of a finite measure is finite. -/
+theorem isFiniteMeasure [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) : IsFiniteMeasure π :=
+  ⟨by rw [← hπ.measure_univ_left]; exact measure_lt_top μ univ⟩
+
+/-- A coupling of a probability measure is a probability measure. -/
+theorem isProbabilityMeasure [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure π :=
+  ⟨by rw [← hπ.measure_univ_left, measure_univ]⟩
+
+/-- A coupling with a finite target measure is finite. -/
+theorem isFiniteMeasure_of_right [IsFiniteMeasure ν] (hπ : IsCoupling π μ ν) :
+    IsFiniteMeasure π :=
+  ⟨by rw [← hπ.measure_univ_right]; exact measure_lt_top ν univ⟩
+
+/-- A coupling with a probability target measure is a probability measure. -/
+theorem isProbabilityMeasure_of_right [IsProbabilityMeasure ν] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure π :=
+  ⟨by rw [← hπ.measure_univ_right, measure_univ]⟩
+
+/-- The target of a coupling of a probability measure is a probability measure. -/
+theorem isProbabilityMeasure_right [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure ν :=
+  ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
+
+/-- Exchanging the two coordinates of a coupling of `μ` and `ν` gives a coupling of `ν`
+and `μ`. -/
+protected theorem swap (hπ : IsCoupling π μ ν) : IsCoupling (π.map Prod.swap) ν μ where
+  fst_eq := Measure.fst_map_swap.trans hπ.snd_eq
+  snd_eq := Measure.snd_map_swap.trans hπ.fst_eq
+
+/-- Pushing a coupling forward coordinatewise along measurable maps couples the two
+pushforwards. -/
+protected theorem map (hπ : IsCoupling π μ ν) {f : X → X'} {g : Y → Y'} (hf : Measurable f)
+    (hg : Measurable g) : IsCoupling (π.map (Prod.map f g)) (μ.map f) (ν.map g) where
+  fst_eq := by
+    rw [← hπ.fst_eq]
+    simp only [Measure.fst, Measure.map_map measurable_fst (hf.prodMap hg),
+      Measure.map_map hf measurable_fst, Prod.map_fst']
+  snd_eq := by
+    rw [← hπ.snd_eq]
+    simp only [Measure.snd, Measure.map_map measurable_snd (hf.prodMap hg),
+      Measure.map_map hg measurable_snd, Prod.map_snd']
+
+/-- Scaling a coupling scales both of its marginals by the same factor. -/
+protected theorem smul (hπ : IsCoupling π μ ν) (c : ENNReal) :
+    IsCoupling (c • π) (c • μ) (c • ν) where
+  fst_eq := by
+    simpa only [Measure.fst, Measure.map_smul c measurable_fst.aemeasurable] using
+      congrArg (c • ·) hπ.fst_eq
+  snd_eq := by
+    simpa only [Measure.snd, Measure.map_smul c measurable_snd.aemeasurable] using
+      congrArg (c • ·) hπ.snd_eq
+
+/-- The sum of a coupling of `μ, ν` and a coupling of `μ', ν'` couples `μ + μ'` and `ν + ν'`. -/
+protected theorem add {σ : Measure (X × Y)} {μ' : Measure X} {ν' : Measure Y}
+    (hπ : IsCoupling π μ ν) (hσ : IsCoupling σ μ' ν') :
+    IsCoupling (π + σ) (μ + μ') (ν + ν') where
+  fst_eq := by rw [Measure.fst_add, hπ.fst_eq, hσ.fst_eq]
+  snd_eq := by rw [Measure.snd_add, hπ.snd_eq, hσ.snd_eq]
+
+/-- The sum of a family of couplings couples the sums of the two families of marginals. -/
+protected theorem sum {ι : Type*} {πs : ι → Measure (X × Y)} {μs : ι → Measure X}
+    {νs : ι → Measure Y} (h : ∀ i, IsCoupling (πs i) (μs i) (νs i)) :
+    IsCoupling (Measure.sum πs) (Measure.sum μs) (Measure.sum νs) where
+  fst_eq := (Measure.fst_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).fst_eq))
+  snd_eq := (Measure.snd_sum πs).trans (congrArg Measure.sum (funext fun i ↦ (h i).snd_eq))
+
+/-- **Rerouting part of a coupling.** Removing a finite part `κ ≤ π` of a coupling and putting
+back any measure `κ'` with the same two marginals as `κ` gives again a coupling of the same
+pair. -/
+protected theorem sub_add {κ κ' : Measure (X × Y)} [IsFiniteMeasure κ] (hπ : IsCoupling π μ ν)
+    (hκ : κ ≤ π) (hκ' : IsCoupling κ' κ.fst κ.snd) : IsCoupling (π - κ + κ') μ ν := by
+  have h := (IsCoupling.mk rfl rfl : IsCoupling (π - κ) (π - κ).fst (π - κ).snd).add hκ'
+  rwa [← Measure.fst_add, ← Measure.snd_add, Measure.sub_add_cancel_of_le hκ, hπ.fst_eq,
+    hπ.snd_eq] at h
+
+/-- Pushing a coupling forward along a measurable map of the source alone. -/
+protected theorem map_left (hπ : IsCoupling π μ ν) {f : X → X'} (hf : Measurable f) :
+    IsCoupling (π.map (Prod.map f id)) (μ.map f) ν := by
+  simpa only [Measure.map_id] using hπ.map hf measurable_id
+
+/-- Pushing a coupling forward along a measurable map of the target alone. -/
+protected theorem map_right (hπ : IsCoupling π μ ν) {g : Y → Y'} (hg : Measurable g) :
+    IsCoupling (π.map (Prod.map id g)) μ (ν.map g) := by
+  simpa only [Measure.map_id] using hπ.map measurable_id hg
+
+/-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
+coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
+protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}
+    [SFinite π] [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
+    IsCoupling ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
+      (μ.prod μ') (ν.prod ν') := by
+  have hX : Measurable (Prod.map Prod.fst Prod.fst : (X × Y) × X' × Y' → X × X') :=
+    measurable_fst.prodMap measurable_fst
+  have hY : Measurable (Prod.map Prod.snd Prod.snd : (X × Y) × X' × Y' → Y × Y') :=
+    measurable_snd.prodMap measurable_snd
+  constructor
+  · have h : ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).fst
+        = (π.prod π').map (Prod.map Prod.fst Prod.fst) :=
+      Measure.fst_map_prodMk hX hY
+    rw [h, ← Measure.map_prod_map π π' measurable_fst measurable_fst]
+    exact congrArg₂ Measure.prod hπ.fst_eq hπ'.fst_eq
+  · have h : ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))).snd
+        = (π.prod π').map (Prod.map Prod.snd Prod.snd) :=
+      Measure.snd_map_prodMk hX hY
+    rw [h, ← Measure.map_prod_map π π' measurable_snd measurable_snd]
+    exact congrArg₂ Measure.prod hπ.snd_eq hπ'.snd_eq
+
+/-- **Running a coupling alongside an independent sample.** If `π` couples `μ` and `ν`, then
+sampling `(x, y) ∼ π` and an independent `z ∼ η` and applying `f (·, z)` and `g (·, z)` to the two
+coordinates couples the pushforwards of `μ ⊗ η` along `f` and of `ν ⊗ η` along `g`. -/
+protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν) [SFinite π]
+    (η : Measure H) [SFinite η] {f : X × H → X'} {g : Y × H → Y'} (hf : Measurable f)
+    (hg : Measurable g) :
+    IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
+      ((μ.prod η).map f) ((ν.prod η).map g) := by
+  -- Pair `π` with the diagonal plan of `η`, rearrange, and push forward coordinatewise.
+  have hη' := MeasureTheory.isCoupling_diagonalCoupling η
+  have hη : IsCoupling (MeasureTheory.diagonalCoupling η) η η :=
+    ⟨hη'.fst_eq, hη'.snd_eq⟩
+  let _ : SFinite (MeasureTheory.diagonalCoupling η) := by
+    rw [← (MeasureTheory.measurePreserving_diagonal η).map_eq]
+    infer_instance
+  have h := (hπ.prodProdProdComm hη).map hf hg
+  have hprod : π.prod (MeasureTheory.diagonalCoupling η) =
+      (π.prod η).map (Prod.map id fun z ↦ (z, z)) :=
+    ((MeasurePreserving.id π).prod (MeasureTheory.measurePreserving_diagonal η)).map_eq.symm
+  rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)] at h
+
+end IsCoupling
+
+/-- The converse of `EpsilonEridani.IsCoupling.measure_prod_univ` and
+`EpsilonEridani.IsCoupling.measure_univ_prod`: the coupling relation can be checked on measurable
+cylinders, one for each factor. -/
+theorem isCoupling_of_measure_prod_univ_of_measure_univ_prod
+    (hs : ∀ s, MeasurableSet s → π (s ×ˢ univ) = μ s)
+    (ht : ∀ t, MeasurableSet t → π (univ ×ˢ t) = ν t) : IsCoupling π μ ν where
+  fst_eq := Measure.ext fun s hsm ↦ by rw [Measure.fst_apply hsm, ← prod_univ]; exact hs s hsm
+  snd_eq := Measure.ext fun t htm ↦ by rw [Measure.snd_apply htm, ← univ_prod]; exact ht t htm
+
+/-- The coupling relation is invariant under exchanging the two coordinates. -/
+@[simp]
+theorem isCoupling_map_swap_iff : IsCoupling (π.map Prod.swap) ν μ ↔ IsCoupling π μ ν :=
+  ⟨fun h ↦ ⟨Measure.snd_map_swap.symm.trans h.snd_eq, Measure.fst_map_swap.symm.trans h.fst_eq⟩,
+    IsCoupling.swap⟩
+
+/-- The coupling relation is invariant under measurable equivalences of the two factors. -/
+@[simp]
+theorem isCoupling_map_prodMap_iff (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') :
+    IsCoupling (π.map (Prod.map e f)) (μ.map e) (ν.map f) ↔ IsCoupling π μ ν := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.map e.measurable f.measurable⟩
+  simpa only [Measure.map_map (e.symm.measurable.prodMap f.symm.measurable)
+      (e.measurable.prodMap f.measurable), Prod.map_comp_map, e.symm_comp_self,
+    f.symm_comp_self, Prod.map_id, Measure.map_id, e.map_symm_map, f.map_symm_map] using
+    h.map e.symm.measurable f.symm.measurable
+
+/-- The zero measure couples the two zero measures. -/
+@[simp]
+theorem isCoupling_zero : IsCoupling (0 : Measure (X × Y)) (0 : Measure X) (0 : Measure Y) :=
+  ⟨Measure.fst_zero, Measure.snd_zero⟩
+
+/-- The product measure couples two probability measures, so probability measures always have
+a coupling. -/
+@[simp]
+theorem isCoupling_prod (μ : Measure X) (ν : Measure Y) [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] : IsCoupling (μ.prod ν) μ ν :=
+  ⟨Measure.fst_prod, Measure.snd_prod⟩
+
+/-- A finite measure and a measure of equal total mass are coupled by their normalised product.
+The equality makes the second measure finite. The statement includes the zero measures, where
+the normalising factor is `∞` and the plan is `0`. -/
+theorem isCoupling_inv_smul_prod [IsFiniteMeasure μ] (h : μ univ = ν univ) :
+    IsCoupling ((μ univ)⁻¹ • μ.prod ν) μ ν := by
+  let _ : IsFiniteMeasure ν := ⟨by rw [← h]; exact measure_lt_top μ univ⟩
+  rcases eq_or_ne (μ univ) 0 with h0 | h0
+  · have hμ : μ = 0 := Measure.measure_univ_eq_zero.mp h0
+    have hν : ν = 0 := Measure.measure_univ_eq_zero.mp (h ▸ h0)
+    subst hμ
+    subst hν
+    exact ⟨by simp, by simp⟩
+  · have hinv : (μ univ)⁻¹ * μ univ = 1 := ENNReal.inv_mul_cancel h0 (measure_ne_top μ univ)
+    refine ⟨?_, ?_⟩
+    · rw [Measure.fst, Measure.map_smul _ measurable_fst.aemeasurable, Measure.map_fst_prod,
+        smul_smul, ← h, hinv, one_smul]
+    · rw [Measure.snd, Measure.map_smul _ measurable_snd.aemeasurable, Measure.map_snd_prod,
+        smul_smul, hinv, one_smul]
+
+/-- A finite measure and any measure admit a coupling exactly when they have the same total
+mass. -/
+theorem exists_isCoupling_iff [IsFiniteMeasure μ] :
+    (∃ π : Measure (X × Y), IsCoupling π μ ν) ↔ μ univ = ν univ :=
+  ⟨fun ⟨_, hπ⟩ ↦ hπ.measure_univ_eq, fun h ↦ ⟨_, isCoupling_inv_smul_prod h⟩⟩
+
+/-- Draw independent samples `w i ∼ ρ i` of pairs and pair the source of `w i` with the target of
+`w (σ i)`. Summed over `i`, the laws of these permuted pairs have the same two marginals as
+`∑ i, ρ i`. -/
+theorem isCoupling_sum_map_pi {n : ℕ} (ρ : Fin n → Measure (X × Y))
+    [∀ i, IsProbabilityMeasure (ρ i)] (σ : Equiv.Perm (Fin n)) :
+    IsCoupling (Measure.sum fun i ↦ (Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2))
+      (Measure.sum ρ).fst (Measure.sum ρ).snd := by
+  have hev : ∀ i, MeasurePreserving (Function.eval i) (Measure.pi ρ) (ρ i) :=
+    measurePreserving_eval ρ
+  -- In both computations the remaining goal holds because `Prod.fst ∘ Function.eval i` is
+  -- `fun w ↦ (w i).1` by definition, and likewise for `Prod.snd`.
+  have hfst : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).fst = (ρ i).fst :=
+    fun i ↦ by
+      rw [Measure.fst_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
+        Measure.fst, ← (hev i).map_eq,
+        Measure.map_map measurable_fst (measurable_pi_apply i)]
+      rfl
+  have hsnd : ∀ i, ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)).snd = (ρ (σ i)).snd :=
+    fun i ↦ by
+      rw [Measure.snd_map_prodMk (measurable_pi_apply i).fst (measurable_pi_apply _).snd,
+        Measure.snd, ← (hev (σ i)).map_eq,
+        Measure.map_map measurable_snd (measurable_pi_apply (σ i))]
+      rfl
+  have h := IsCoupling.sum fun i ↦ (⟨hfst i, hsnd i⟩ : IsCoupling
+    ((Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)) (ρ i).fst (ρ (σ i)).snd)
+  rw [Measure.fst_sum, Measure.snd_sum, ← Measure.sum_comp_equiv σ fun i ↦ (ρ i).snd]
+  exact h
+
+section Dirac
+
+/-- A Dirac measure and a probability measure are coupled by the pushforward of the latter
+along `y ↦ (x, y)`. -/
+@[simp]
+theorem isCoupling_map_prodMk (x : X) (ν : Measure Y) [IsProbabilityMeasure ν] :
+    IsCoupling (ν.map (Prod.mk x)) (Measure.dirac x) ν := by
+  rw [← Measure.dirac_prod (ν := ν) x]
+  exact isCoupling_prod (Measure.dirac x) ν
+
+/-- Two Dirac measures are coupled by the Dirac measure at the pair. -/
+@[simp]
+theorem isCoupling_dirac_dirac (x : X) (y : Y) :
+    IsCoupling (Measure.dirac (x, y)) (Measure.dirac x) (Measure.dirac y) := by
+  rw [← Measure.dirac_prod_dirac]
+  exact isCoupling_prod (Measure.dirac x) (Measure.dirac y)
+
+variable {x : X} {y : Y}
+
+/-- A plan whose source marginal is a Dirac measure is the pushforward of its target marginal
+along `y ↦ (x, y)`. Together with `EpsilonEridani.isCoupling_map_prodMk` this says that a Dirac source
+has exactly one coupling with each probability target. -/
+theorem IsCoupling.eq_map_prodMk (hπ : IsCoupling π (Measure.dirac x) ν) :
+    π = ν.map (Prod.mk x) := by
+  let _ : IsFiniteMeasure π := hπ.isFiniteMeasure
+  apply ext_of_generate_finite _ generateFrom_prod.symm isPiSystem_prod
+  · rintro _ ⟨s, hs, t, ht, rfl⟩
+    rw [Measure.map_apply measurable_prodMk_left (hs.prod ht)]
+    by_cases hxs : x ∈ s
+    · rw [mk_preimage_prod_right hxs]
+      calc
+        π (s ×ˢ t) = π (univ ×ˢ t) := by
+          apply measure_eq_measure_of_null_sdiff
+            (Set.prod_mono (subset_univ s) Subset.rfl)
+          apply measure_mono_null (t := sᶜ ×ˢ (univ : Set Y))
+          · intro z hz
+            exact ⟨fun hzs ↦ hz.2 ⟨hzs, hz.1.2⟩, mem_univ z.2⟩
+          · rw [hπ.measure_prod_univ hs.compl, Measure.dirac_apply' x hs.compl]
+            simp [hxs]
+        _ = ν t := hπ.measure_univ_prod ht
+    · rw [mk_preimage_prod_right_eq_empty hxs, measure_empty]
+      apply measure_mono_null (Set.prod_mono Subset.rfl (subset_univ t))
+      rw [hπ.measure_prod_univ hs, Measure.dirac_apply' x hs]
+      simp [hxs]
+  · rw [Measure.map_apply measurable_prodMk_left MeasurableSet.univ, preimage_univ,
+      ← hπ.measure_univ_right]
+
+/-- Two Dirac measures have exactly one coupling, the Dirac measure at the pair. -/
+theorem IsCoupling.eq_dirac (hπ : IsCoupling π (Measure.dirac x) (Measure.dirac y)) :
+    π = Measure.dirac (x, y) := by
+  rw [hπ.eq_map_prodMk, Measure.map_dirac' measurable_prodMk_left]
+
+end Dirac
+
+/-- Being a coupling, read on bundled probability measures: the two marginal pushforwards are the
+prescribed marginals. This is the form in which the coupling condition is a pair of preimages of
+points under the marginal maps. -/
+@[simp]
+theorem isCoupling_toMeasure_iff {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
+    {π : ProbabilityMeasure (X × Y)} :
+    IsCoupling π.toMeasure μ.toMeasure ν.toMeasure ↔
+      π.map Prod.fst = μ ∧ π.map Prod.snd = ν := by
+  rw [← ProbabilityMeasure.toMeasure_injective.eq_iff (a := π.map Prod.fst),
+    ← ProbabilityMeasure.toMeasure_injective.eq_iff (a := π.map Prod.snd),
+    ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.toMeasure_map]
+  exact ⟨fun h ↦ ⟨h.fst_eq, h.snd_eq⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+/-- Couplings of two probability measures, bundled as a subtype of the probability measures on
+the product. The unbundled relation `EpsilonEridani.IsCoupling` is the one to use for raw
+measures; this type is the domain over which the probability transport problem is optimised. -/
+abbrev Coupling (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) : Type _ :=
+  {π : ProbabilityMeasure (X × Y) // IsCoupling π.toMeasure μ.toMeasure ν.toMeasure}
+
+namespace Coupling
+
+variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
+
+/-- Two bundled couplings are equal when their underlying measures are equal. -/
+@[ext]
+theorem ext {π σ : Coupling μ ν} (h : π.1.toMeasure = σ.1.toMeasure) : π = σ :=
+  Subtype.ext (ProbabilityMeasure.toMeasure_injective h)
+
+/-- The independent coupling of two probability measures: their product. -/
+def prod (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) : Coupling μ ν :=
+  ⟨μ.prod ν, by
+    rw [ProbabilityMeasure.toMeasure_prod]
+    exact isCoupling_prod _ _⟩
+
+/-- The underlying probability measure of the independent coupling is the product probability
+measure. -/
+@[simp]
+theorem coe_prod (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) :
+    (prod μ ν : ProbabilityMeasure (X × Y)) = μ.prod ν :=
+  (rfl)
+
+/-- Any two probability measures are coupled, by their product. -/
+instance instNonempty : Nonempty (Coupling μ ν) :=
+  ⟨prod μ ν⟩
+
+/-- The first marginal of a bundled coupling. -/
+def fst (π : Coupling μ ν) : ProbabilityMeasure X :=
+  π.1.map Prod.fst
+
+/-- The second marginal of a bundled coupling. -/
+def snd (π : Coupling μ ν) : ProbabilityMeasure Y :=
+  π.1.map Prod.snd
+
+/-- The underlying measure of the first marginal is the pushforward along the first projection.
+This is not a `simp` lemma: `simp` rewrites `π.fst` to `μ` via `fst_eq` instead. -/
+theorem coe_fst (π : Coupling μ ν) :
+    (π.fst).toMeasure = π.1.toMeasure.map Prod.fst :=
+  (rfl)
+
+/-- The underlying measure of the second marginal is the pushforward along the second projection.
+This is not a `simp` lemma: `simp` rewrites `π.snd` to `ν` via `snd_eq` instead. -/
+theorem coe_snd (π : Coupling μ ν) :
+    (π.snd).toMeasure = π.1.toMeasure.map Prod.snd :=
+  (rfl)
+
+/-- The first marginal of a bundled coupling is its prescribed source. -/
+@[simp]
+theorem fst_eq (π : Coupling μ ν) : π.fst = μ :=
+  ProbabilityMeasure.toMeasure_injective <| by
+    rw [fst, ProbabilityMeasure.toMeasure_map]
+    exact π.2.fst_eq
+
+/-- The second marginal of a bundled coupling is its prescribed target. -/
+@[simp]
+theorem snd_eq (π : Coupling μ ν) : π.snd = ν :=
+  ProbabilityMeasure.toMeasure_injective <| by
+    rw [snd, ProbabilityMeasure.toMeasure_map]
+    exact π.2.snd_eq
+
+/-- Exchanging the two coordinates of a bundled coupling. -/
+def swap (π : Coupling μ ν) : Coupling ν μ :=
+  ⟨π.1.map Prod.swap, by
+    rw [ProbabilityMeasure.toMeasure_map]
+    exact π.2.swap⟩
+
+/-- The underlying probability measure of the exchanged coupling is the pushforward along the
+coordinate swap. -/
+@[simp]
+theorem coe_swap (π : Coupling μ ν) :
+    (π.swap : ProbabilityMeasure (Y × X)) = π.1.map Prod.swap :=
+  (rfl)
+
+/-- Exchanging the coordinates twice is the identity. -/
+@[simp]
+theorem swap_swap (π : Coupling μ ν) : π.swap.swap = π := by
+  apply ext
+  simp only [coe_swap, ProbabilityMeasure.toMeasure_map,
+    Measure.map_map measurable_swap measurable_swap, Prod.swap_swap_eq, Measure.map_id]
+
+/-- Exchanging the coordinates of the independent coupling gives the independent coupling of the
+exchanged pair. -/
+@[simp]
+theorem swap_prod (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) :
+    (prod μ ν).swap = prod ν μ := by
+  apply ext
+  simp only [coe_swap, ProbabilityMeasure.toMeasure_map, coe_prod,
+    ProbabilityMeasure.toMeasure_prod, Measure.prod_swap]
+
+end Coupling
+
+end EpsilonEridani

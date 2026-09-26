@@ -1,8 +1,8 @@
-# TauCeti benchmark suite
+# EpsilonEridani benchmark suite
 
-This directory contains the TauCeti benchmark suite. It exists so that
+This directory contains the EpsilonEridani benchmark suite. It exists so that
 [radar](https://github.com/leanprover/radar), the Lean FRO performance-tracking service,
-can measure TauCeti on every commit and surface regressions over time. Results are viewable
+can measure EpsilonEridani on every commit and surface regressions over time. Results are viewable
 on the [Lean FRO radar instance](https://radar.lean-lang.org/).
 
 Radar runs this suite through its generic harness
@@ -10,7 +10,7 @@ Radar runs this suite through its generic harness
 `scripts/bench/run` in the repo root, executes it, and collects the resulting
 `measurements.jsonl`. The suite is adapted from
 [cslib's](https://github.com/leanprover/cslib/tree/master/scripts/bench); the only
-TauCeti-specific change is the source glob in the `size` benchmark.
+EpsilonEridani-specific change is the source glob in the `size` benchmark.
 
 To execute the entire suite, run `scripts/bench/run` in the repo root.
 To execute an individual benchmark, run `scripts/bench/<benchmark>/run` in the repo root.
@@ -25,9 +25,9 @@ in text editors that rely on the file ending.
 
 ## Benchmarks
 
-- [`build`](build/README.md) — builds TauCeti from scratch and records global, per-module, and
+- [`build`](build/README.md) — builds EpsilonEridani from scratch and records global, per-module, and
   longest-path build metrics (instructions, wall-clock, task-clock, max RSS).
-- [`size`](size/README.md) — counts `.lean` files and lines under `TauCeti/`, and `.olean`
+- [`size`](size/README.md) — counts `.lean` files and lines under `EpsilonEridani/`, and `.olean`
   files and bytes under `.lake/build/`.
 
 ## Adding a benchmark

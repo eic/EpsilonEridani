@@ -21,8 +21,8 @@
   };
   var REASON_SHORT = { "no-layers": "no layer inventory", "no-report": "no report yet", "not-transcribed": "report not transcribed",
     "transcription-retired": "transcription retired", "specification-changed": "README changed", "invalid-marker": "coverage marker invalid" };
-  var ROADMAP_REPO = "https://github.com/TauCetiProject/TauCetiRoadmap";
-  var LIBRARY_REPO = "https://github.com/TauCetiProject/TauCeti";
+  var ROADMAP_REPO = "https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap";
+  var LIBRARY_REPO = "https://github.com/EpsilonEridaniProject/EpsilonEridani";
   var GH_PRS = LIBRARY_REPO + "/pulls?q=is%3Apr+is%3Amerged+label%3Aroadmap%2F";
   var SORTS = ["activity", "done", "due", "name"];
   var SHOWS = ["all", "active", "completed", "reported", "unreported", "unassessed", "due"];
@@ -282,7 +282,7 @@
     function chips(r) {
       var out = "";
       if (r.completed) out += '<a class="pb-chip complete" href="' + ROADMAP_REPO + '/blob/main/Completed/README.md" title="The maintainers archived this roadmap as complete against its README; a human decision, separate from the report’s layer states.">declared complete</a>';
-      if (due(r)) out += '<span class="pb-chip behind" title="' + r.activity.since_report + ' pull requests merged since the report; TauCetiProgress opens a new window at ' + data.update_due_prs + '">update due</span>';
+      if (due(r)) out += '<span class="pb-chip behind" title="' + r.activity.since_report + ' pull requests merged since the report; EpsilonEridaniProgress opens a new window at ' + data.update_due_prs + '">update due</span>';
       return out;
     }
     function rowHtml(r, ctx, shownKids, totalKids) {
@@ -315,7 +315,7 @@
       } else if (r.completed) {
         left += "<h4>No report</h4><p>No STATUS.md has been written for this roadmap. It is archived as declared complete; see the archive’s README for the maintainers’ criterion.</p>";
       } else {
-        left += "<h4>No report yet</h4><p>TauCetiProgress has not written a STATUS.md for this roadmap. Its layers are unassessed, which says nothing about how much of them the library has.</p>";
+        left += "<h4>No report yet</h4><p>EpsilonEridaniProgress has not written a STATUS.md for this roadmap. Its layers are unassessed, which says nothing about how much of them the library has.</p>";
       }
       var sources = ['<a href="' + pinned(r.readme) + '">README used for these layers</a>', '<a href="' + ROADMAP_REPO + "/blob/main/" + esc(r.readme) + '">latest README</a>'];
       if (s) {
@@ -408,7 +408,7 @@
     }
 
     // ---- assemble ----
-    var head = typeof data.roadmap_head === "string" ? "TauCetiRoadmap@" + esc(data.roadmap_head.slice(0, 7)) : "TauCetiRoadmap";
+    var head = typeof data.roadmap_head === "string" ? "EpsilonEridaniRoadmap@" + esc(data.roadmap_head.slice(0, 7)) : "EpsilonEridaniRoadmap";
     var age = daysBetween(cutoff, new Date().toISOString());
     var when = "Pull requests count up to <b>" + esc(cutoff.replace("T", " ").replace("Z", " UTC")) + "</b>" +
       (data.collected_at ? " (fetched " + esc(data.collected_at.replace("T", " ").replace("Z", " UTC")) + ")" : " (when they were fetched is not recorded)") +
@@ -508,6 +508,6 @@
     })
     .catch(function (err) {
       root.innerHTML = '<p class="pb-error">The progress board could not be shown (' + esc(err.message) + "). The roadmaps themselves, with each one’s STATUS.md report, are at " +
-        '<a href="' + ROADMAP_REPO + '">TauCetiRoadmap</a>; the board’s data is <a href="static/progress.json">progress.json</a>.</p>';
+        '<a href="' + ROADMAP_REPO + '">EpsilonEridaniRoadmap</a>; the board’s data is <a href="static/progress.json">progress.json</a>.</p>';
     });
 })();

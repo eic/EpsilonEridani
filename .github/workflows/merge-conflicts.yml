@@ -60,7 +60,7 @@ concurrency:
 
 jobs:
   label:
-    if: github.repository == 'TauCetiProject/TauCeti'
+    if: github.repository == 'EpsilonEridaniProject/EpsilonEridani'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -71,8 +71,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-issues: write         # the label, and creating it on first use
           # WRITE, not read: commenting on a pull request is governed by the pull
           # requests permission, not issues, even though the endpoint is

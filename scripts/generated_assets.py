@@ -17,7 +17,7 @@ workflow rather than declaring it, so there is nothing to import.
 import pr_stats_graphs
 
 OTHER_ASSETS = [
-    "loc-tauceti.svg",        # scripts/loc_graph.py, TauCeti
+    "loc-epsiloneridani.svg",        # scripts/loc_graph.py, EpsilonEridani
     "loc-roadmap.svg",        # scripts/loc_graph.py, the roadmap repository
     "loc-per-roadmap.svg",    # scripts/loc_roadmap_graph.py
     "participation.svg",      # scripts/participant_graph.py

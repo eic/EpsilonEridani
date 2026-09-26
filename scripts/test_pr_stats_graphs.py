@@ -550,7 +550,7 @@ class MetricsTest(unittest.TestCase):
     @unittest.skipUnless(shutil.which("jq"), "jq is not installed")
     def test_scoreboard_jq_program_executes_and_validates_metadata(self):
         def fixture(number, user, association, meta):
-            body = f'<!--tauceti-scoreboard-->\n<!--tauceti-meta:v1 {json.dumps(meta)} -->'
+            body = f'<!--epsiloneridani-scoreboard-->\n<!--epsiloneridani-meta:v1 {json.dumps(meta)} -->'
             return {
                 "id": 5000 + number,
                 "issue_url": f"https://api.github.com/repos/example/project/issues/{number}",
@@ -570,7 +570,7 @@ class MetricsTest(unittest.TestCase):
                 "issue_url": "https://api.github.com/repos/example/project/issues/7",
                 "created_at": timestamp(2), "updated_at": timestamp(3),
                 "user": {"login": "missing-meta"}, "author_association": "MEMBER",
-                "body": "<!--tauceti-scoreboard-->",
+                "body": "<!--epsiloneridani-scoreboard-->",
             },
         ]
         with patch.object(stats, "run_gh", return_value="") as run:

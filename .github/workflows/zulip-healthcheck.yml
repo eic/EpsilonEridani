@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   zulip-healthcheck:
-    if: github.repository == 'TauCetiProject/TauCeti'
+    if: github.repository == 'EpsilonEridaniProject/EpsilonEridani'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

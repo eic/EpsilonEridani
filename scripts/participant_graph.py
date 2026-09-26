@@ -23,10 +23,10 @@ import time
 from chart_style import BAR_BG, MUTED, PALETTE, TEXT, base_css, card_rect, css_px
 
 REPOSITORIES = [
-    ("TauCetiProject/TauCeti", "TauCeti", PALETTE[1]),
-    ("TauCetiProject/TauCetiRoadmap", "TauCetiRoadmap", PALETTE[0]),
-    ("TauCetiProject/TauCetiWorker", "TauCetiWorker", PALETTE[2]),
-    ("TauCetiProject/TauCetiReview", "TauCetiReview", PALETTE[4]),
+    ("EpsilonEridaniProject/EpsilonEridani", "EpsilonEridani", PALETTE[1]),
+    ("EpsilonEridaniProject/EpsilonEridaniRoadmap", "EpsilonEridaniRoadmap", PALETTE[0]),
+    ("EpsilonEridaniProject/EpsilonEridaniWorker", "EpsilonEridaniWorker", PALETTE[2]),
+    ("EpsilonEridaniProject/EpsilonEridaniReview", "EpsilonEridaniReview", PALETTE[4]),
 ]
 
 # Some GitHub Apps surface through GraphQL as User nodes or without their REST
@@ -40,7 +40,7 @@ AUTOMATION_LOGINS = {
     "github-actions",
     "tau-ceti-claim-bot",
     "tau-ceti-roadmap-sync",
-    "tauceti-review-bot",
+    "epsiloneridani-review-bot",
     "web-flow",
 }
 

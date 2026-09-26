@@ -27,9 +27,9 @@ class ReuseTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.archive = self.root / ".lake/cache/artifacts/0123456789abcdef.ltar"
-        self.record = self.root / ".lake/cache/outputs/TauCeti/fedcba9876543210.json"
-        self.trace = self.root / ".lake/build/lib/lean/TauCeti/A.trace"
-        self.target = self.root / ".lake/build/ir/TauCeti/A.ltar"
+        self.record = self.root / ".lake/cache/outputs/EpsilonEridani/fedcba9876543210.json"
+        self.trace = self.root / ".lake/build/lib/lean/EpsilonEridani/A.trace"
+        self.target = self.root / ".lake/build/ir/EpsilonEridani/A.ltar"
         for path in (self.archive, self.record, self.trace, self.target):
             path.parent.mkdir(parents=True, exist_ok=True)
         self.archive.write_bytes(b"downloaded archive")
@@ -159,13 +159,13 @@ class StockLakeTests(unittest.TestCase):
                 toolchain = os.environ.get("ELAN_TOOLCHAIN") or (ROOT / "lean-toolchain").read_text().strip()
                 (directory / "lean-toolchain").write_text(toolchain + "\n")
                 (directory / "lakefile.toml").write_text(
-                    'name = "TauCeti"\nplatformIndependent = true\ndefaultTargets = ["TauCeti"]\n'
-                    '[[lean_lib]]\nname = "TauCeti"\nglobs = ["TauCeti.*"]\n')
-                (directory / "TauCeti").mkdir()
-                (directory / "TauCeti.lean").write_text("module\n")
-                (directory / "TauCeti/A.lean").write_text("module\npublic def a : Nat := 42\n")
-                (directory / "TauCeti/B.lean").write_text("module\npublic import TauCeti.A\npublic def b : Nat := a + 1\n")
-                (directory / "TauCeti/C.lean").write_text("module\npublic def c : Nat := 7\n")
+                    'name = "EpsilonEridani"\nplatformIndependent = true\ndefaultTargets = ["EpsilonEridani"]\n'
+                    '[[lean_lib]]\nname = "EpsilonEridani"\nglobs = ["EpsilonEridani.*"]\n')
+                (directory / "EpsilonEridani").mkdir()
+                (directory / "EpsilonEridani.lean").write_text("module\n")
+                (directory / "EpsilonEridani/A.lean").write_text("module\npublic def a : Nat := 42\n")
+                (directory / "EpsilonEridani/B.lean").write_text("module\npublic import EpsilonEridani.A\npublic def b : Nat := a + 1\n")
+                (directory / "EpsilonEridani/C.lean").write_text("module\npublic def c : Nat := 7\n")
                 return directory
 
             def run(directory, *args, expected=0):
@@ -188,14 +188,14 @@ class StockLakeTests(unittest.TestCase):
                 run(consumer, "cache", "unstage", str(root / "staging"))
                 saved = reuse.snapshot(consumer)
                 self.assertEqual(len(saved["entries"]), 4)
-                (consumer / "TauCeti/A.lean").write_text("module\npublic def a : Nat := 43\n")
-                (consumer / "TauCeti/C.lean").unlink()
-                (consumer / "TauCeti/D.lean").write_text("module\npublic def d : Nat := 8\n")
+                (consumer / "EpsilonEridani/A.lean").write_text("module\npublic def a : Nat := 43\n")
+                (consumer / "EpsilonEridani/C.lean").unlink()
+                (consumer / "EpsilonEridani/D.lean").write_text("module\npublic def d : Nat := 8\n")
                 run(consumer, "build", "--iofail")
                 if variant == "reuse":
                     # A future Lake with the upstream fix may already retain these.
-                    unchanged = [consumer / ".lake/build/ir/TauCeti.ltar",
-                                 consumer / ".lake/build/ir/TauCeti/B.ltar"]
+                    unchanged = [consumer / ".lake/build/ir/EpsilonEridani.ltar",
+                                 consumer / ".lake/build/ir/EpsilonEridani/B.ltar"]
                     retained = sum(path.exists() for path in unchanged)
                     self.assertEqual(reuse.reconnect(consumer, saved), 2 - retained)
                     self.assertTrue(all(path.exists() for path in unchanged))
@@ -203,13 +203,13 @@ class StockLakeTests(unittest.TestCase):
                     # describes the linked archives for the final output map.
                     for archive in unchanged:
                         archive.with_suffix(".ltar.hash").write_text("0000000000000000")
-                    self.assertFalse((consumer / ".lake/build/ir/TauCeti/A.ltar").exists())
-                    self.assertFalse((consumer / ".lake/build/ir/TauCeti/D.ltar").exists())
+                    self.assertFalse((consumer / ".lake/build/ir/EpsilonEridani/A.ltar").exists())
+                    self.assertFalse((consumer / ".lake/build/ir/EpsilonEridani/D.ltar").exists())
                 run(consumer, "build", "--no-build", "--rehash", "-o", ".lake/outputs.jsonl")
                 maps.append(mapping(consumer))
                 self.assertEqual(len(maps[-1][1]), 4)
             self.assertEqual(maps[0], maps[1])
-            (consumer / "TauCeti/B.lean").write_text("module\npublic def changed : Nat := 9\n")
+            (consumer / "EpsilonEridani/B.lean").write_text("module\npublic def changed : Nat := 9\n")
             run(consumer, "build", "--no-build", "--rehash", "-o", ".lake/stale.jsonl", expected=3)
 
 

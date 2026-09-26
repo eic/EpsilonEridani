@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# lake-cache-get.sh — restore TauCeti's OWN root-package oleans from the public Lake
+# lake-cache-get.sh — restore EpsilonEridani's OWN root-package oleans from the public Lake
 # artifact cache, factored out of .github/workflows/pr-build.yml so ci.yml can use the
 # same logic. Both callers want identical final semantics: a clean whole cache, or none at all.
 #
@@ -34,12 +34,12 @@
 # preserves verified artifacts and fetches only those still missing. If every attempt fails, we
 # discard the partial cache before the build so its final behavior remains exactly the same as
 # when the cache is switched off. See https://github.com/leanprover/lean4/pull/14651 and
-# https://github.com/TauCetiProject/TauCeti/issues/2062.
+# https://github.com/EpsilonEridaniProject/EpsilonEridani/issues/2062.
 set -euo pipefail
 
 PROJECT_DIR="${1:?usage: lake-cache-get.sh <project-dir>}"
-PUBLIC_ARTIFACT_ENDPOINT="${PUBLIC_ARTIFACT_ENDPOINT:-https://cache.taucetiproject.org/artifacts}"
-PUBLIC_REVISION_ENDPOINT="${PUBLIC_REVISION_ENDPOINT:-https://cache.taucetiproject.org/revisions}"
+PUBLIC_ARTIFACT_ENDPOINT="${PUBLIC_ARTIFACT_ENDPOINT:-https://cache.epsiloneridaniproject.org/artifacts}"
+PUBLIC_REVISION_ENDPOINT="${PUBLIC_REVISION_ENDPOINT:-https://cache.epsiloneridaniproject.org/revisions}"
 LAKE_CACHE_MAX_REVS="${LAKE_CACHE_MAX_REVS:-100}"
 case "$LAKE_CACHE_MAX_REVS" in
   ''|*[!0-9]*) echo "::error::LAKE_CACHE_MAX_REVS must be a natural number"; exit 1 ;;
@@ -49,9 +49,9 @@ esac
 # (the env-var form of endpoint config is deprecated). Anonymous GETs, so no key here.
 CFG="${RUNNER_TEMP:-/tmp}/lake-cache.toml"
 cat > "$CFG" <<TOML
-cache.defaultService = "tauceti-public"
+cache.defaultService = "epsiloneridani-public"
 [[cache.service]]
-name = "tauceti-public"
+name = "epsiloneridani-public"
 kind = "s3"
 artifactEndpoint = "$PUBLIC_ARTIFACT_ENDPOINT"
 revisionEndpoint = "$PUBLIC_REVISION_ENDPOINT"
@@ -87,8 +87,8 @@ clean=0
 for attempt in $(seq 1 $ATTEMPTS); do
   LOG="${RUNNER_TEMP:-/tmp}/cache-get-$attempt.log"
   rc=0
-  ( cd "$PROJECT_DIR" && LAKE_CONFIG="$CFG" lake cache get --service tauceti-public \
-      --repo TauCetiProject/TauCeti --max-revs="$LAKE_CACHE_MAX_REVS" ) > "$LOG" 2>&1 || rc=$?
+  ( cd "$PROJECT_DIR" && LAKE_CONFIG="$CFG" lake cache get --service epsiloneridani-public \
+      --repo EpsilonEridaniProject/EpsilonEridani --max-revs="$LAKE_CACHE_MAX_REVS" ) > "$LOG" 2>&1 || rc=$?
   cat "$LOG"
   if [ "$rc" = 0 ]; then clean=1; break; fi
   if grep -qE "$MISS_RE" "$LOG"; then break; fi
@@ -108,7 +108,7 @@ if [ "$clean" != 1 ]; then
   # not witness that. A cache the build cannot fully resolve is worse than none, because each
   # unresolvable entry becomes a build failure rather than a rebuild under `--iofail`.
   # Discarding it restores the no-cache path exactly.
-  echo "::warning::lake cache get did not complete cleanly; discarding the cache and building TauCeti/ from scratch"
+  echo "::warning::lake cache get did not complete cleanly; discarding the cache and building EpsilonEridani/ from scratch"
   discard_cache
   # Empty is NOT off: Lake parses an empty LAKE_ARTIFACT_CACHE as "unspecified" and then defaults
   # artifact-cache reads to true, and an empty LAKE_CACHE_DIR falls back to the workspace's own

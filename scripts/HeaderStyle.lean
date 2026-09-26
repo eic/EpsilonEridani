@@ -6,8 +6,8 @@ import Mathlib.Tactic.Linter.Header
 Human-owned governance machinery. Mathlib's `linter.style.header` deliberately skips a module
 unless the library root imports it. Tau Ceti's root is intentionally empty, so the ordinary
 command linter never reaches these files. This audit calls the linter's public
-`copyrightHeaderChecks` function on the validated `TauCeti/**` source list supplied by
-`scripts/lint-style.sh`. The deliberately empty library root `TauCeti.lean` is exempt, matching
+`copyrightHeaderChecks` function on the validated `EpsilonEridani/**` source list supplied by
+`scripts/lint-style.sh`. The deliberately empty library root `EpsilonEridani.lean` is exempt, matching
 Mathlib's own exclusion of its library root from the copyright-header check.
 
 This intentionally enforces the copyright block and `Authors:` contract from issue #3546, not the
@@ -48,7 +48,7 @@ def readCopyrightHeader (path : System.FilePath) : IO String :=
 code when the source list is empty or at least one file has a malformed header. -/
 unsafe def main (args : List String) : IO UInt32 := do
   if args.isEmpty then
-    IO.eprintln "header-style: received no validated TauCeti source files; the audit is miswired."
+    IO.eprintln "header-style: received no validated EpsilonEridani source files; the audit is miswired."
     return 1
   let mut failures : UInt32 := 0
   for path in args do
@@ -60,5 +60,5 @@ unsafe def main (args : List String) : IO UInt32 := do
   if failures != 0 then
     IO.eprintln s!"header-style: {failures} source file(s) have malformed copyright headers."
   else
-    IO.eprintln s!"header-style: all {args.length} TauCeti source file(s) have conforming headers."
+    IO.eprintln s!"header-style: all {args.length} EpsilonEridani source file(s) have conforming headers."
   return min failures 125

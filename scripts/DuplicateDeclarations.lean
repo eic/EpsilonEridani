@@ -6,7 +6,7 @@ import Lean
 Lean can accept compatible duplicate declarations when importing independently compiled
 modules. Inspect each artifact before import-environment merging can hide that collision.
 Enumerate the source tree, including modules not imported by the intentionally empty root.
-Also visit dependencies, rejecting collisions involving at least one TauCeti module.
+Also visit dependencies, rejecting collisions involving at least one EpsilonEridani module.
 
 Read all module-system artifact parts to include private declarations. Inspect `constNames`
 per module, allowing Lean-reserved auxiliaries realized lazily without a source declaration.
@@ -31,7 +31,7 @@ partial def sourceModules (dir : System.FilePath) : IO (Array Name) := do
 All mmap-backed names stay inside `withImportModules`' callback. -/
 def check (env : Environment) (localModules : NameSet) : IO UInt32 := do
   let modules := env.allImportedModuleNames
-  -- Every violation involves a TauCeti-owned name. Index those names first, then compare
+  -- Every violation involves a EpsilonEridani-owned name. Index those names first, then compare
   -- them against ALL modules, including dependencies; unrelated dependency names need no owner.
   let mut localNames : NameSet := {}
   for i in [:modules.size] do
@@ -68,16 +68,16 @@ def check (env : Environment) (localModules : NameSet) : IO UInt32 := do
   if bad != 0 then
     IO.eprintln "Keep one canonical declaration and import its module from the other files."
     return 1
-  IO.println s!"duplicate-declarations: checked {localModules.size} TauCeti modules and \
+  IO.println s!"duplicate-declarations: checked {localModules.size} EpsilonEridani modules and \
     {modules.size - localModules.size} dependency modules; no duplicate declarations."
   return 0
 
 def audit : IO UInt32 := do
   initSearchPath (← findSysroot)
-  let sources ← sourceModules "TauCeti"
+  let sources ← sourceModules "EpsilonEridani"
   if sources.isEmpty then
-    throw <| IO.userError "duplicate-declarations: no TauCeti source modules found"
-  let modules := sources.push `TauCeti
+    throw <| IO.userError "duplicate-declarations: no EpsilonEridani source modules found"
+  let modules := sources.push `EpsilonEridani
   let localModules := modules.foldl (fun s n => s.insert n) ({} : NameSet)
   -- Like the axiom audit, use private-level imports to include all artifact parts. Loading
   -- extension entries does not execute candidate initializers (`loadExts := false`). Lean's

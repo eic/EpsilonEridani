@@ -1,0 +1,102 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import EpsilonEridani.AlgebraicTopology.FundamentalGroup.Homeomorph
+public import EpsilonEridani.AlgebraicTopology.NotSimplyConnected
+public import EpsilonEridani.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
+public import EpsilonEridani.AlgebraicTopology.UniversalCover.RealProjective.Circle
+
+/-!
+# The fundamental group of the real projective line is `ℤ`
+
+For `n = 1`, real projective space `RP¹` is homeomorphic to the circle `Circle` via
+`EpsilonEridani.RealProjectiveSpace.Line.homeomorphCircle`.
+
+Transporting the circle computation `π₁(Circle, z) ≃* Multiplicative ℤ`
+(`Circle.fundamentalGroupMulEquiv`) across `RP¹ ≃ₜ Circle` gives
+
+  `π₁(RP¹, x) ≃* Multiplicative ℤ`
+
+at any basepoint `x : RealProjectiveSpace 1`.
+
+For `2 ≤ n`, the fundamental group computation is developed in the sibling module
+`EpsilonEridani.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Basic`, yielding
+`π₁(RPⁿ) ≅ ℤˣ` conditional on the simple-connectivity instance for `Sⁿ`.
+
+## Main declarations
+
+* `EpsilonEridani.RealProjectiveSpace.Line.fundamentalGroupMulEquiv`: `π₁(RP¹, x) ≃* Multiplicative ℤ` at
+  any basepoint.
+* `EpsilonEridani.RealProjectiveSpace.Line.nontrivial_fundamentalGroup`: `π₁(RP¹, x)` is nontrivial.
+* `EpsilonEridani.RealProjectiveSpace.Line.infinite_fundamentalGroup`: `π₁(RP¹, x)` is infinite.
+* `EpsilonEridani.RealProjectiveSpace.Line.card_fundamentalGroup`: `Nat.card (π₁(RP¹, x)) = 0`,
+  expressing infinitude under the `Nat.card` convention.
+* `EpsilonEridani.RealProjectiveSpace.Line.not_simplyConnectedSpace`: `RP¹` is not simply connected.
+* `EpsilonEridani.RealProjectiveSpace.Line.not_contractibleSpace`: `RP¹` is not contractible.
+
+## References
+
+This advances `EpsilonEridaniRoadmap/UniversalCovers/README.md`, Stage 4, item 13, `π₁(RPⁿ)`, by
+closing its `n = 1` case.
+-/
+
+public section
+
+namespace EpsilonEridani
+
+namespace RealProjectiveSpace
+
+namespace Line
+
+noncomputable section
+
+/-- **The fundamental group of the real projective line is infinite cyclic.** The isomorphism is
+obtained by transporting the complex-circle computation across `homeomorphCircle`. -/
+def fundamentalGroupMulEquiv (x : RealProjectiveSpace 1) :
+    FundamentalGroup (RealProjectiveSpace 1) x ≃* Multiplicative ℤ :=
+  (FundamentalGroup.homeomorphMulEquiv homeomorphCircle x).trans
+    (homeomorphCircle x).fundamentalGroupMulEquiv
+
+/-- `fundamentalGroupMulEquiv` factors as transport along `homeomorphCircle : RP¹ ≃ₜ Circle`,
+followed by the circle fundamental-group computation `Circle.fundamentalGroupMulEquiv` at the
+image basepoint. -/
+theorem fundamentalGroupMulEquiv_def (x : RealProjectiveSpace 1) :
+    fundamentalGroupMulEquiv x =
+      (FundamentalGroup.homeomorphMulEquiv homeomorphCircle x).trans
+        (homeomorphCircle x).fundamentalGroupMulEquiv :=
+  (rfl)
+
+/-- The fundamental group of `RP¹` at any basepoint is nontrivial. -/
+theorem nontrivial_fundamentalGroup (x : RealProjectiveSpace 1) :
+    Nontrivial (FundamentalGroup (RealProjectiveSpace 1) x) :=
+  (fundamentalGroupMulEquiv x).toEquiv.nontrivial
+
+/-- The fundamental group of `RP¹` at any basepoint is infinite. -/
+theorem infinite_fundamentalGroup (x : RealProjectiveSpace 1) :
+    Infinite (FundamentalGroup (RealProjectiveSpace 1) x) :=
+  Infinite.of_injective _ (fundamentalGroupMulEquiv x).symm.injective
+
+/-- The fundamental group of `RP¹` has `Nat.card` zero because it is infinite. -/
+@[simp]
+theorem card_fundamentalGroup (x : RealProjectiveSpace 1) :
+    Nat.card (FundamentalGroup (RealProjectiveSpace 1) x) = 0 := by
+  let := infinite_fundamentalGroup x
+  exact Nat.card_eq_zero_of_infinite
+
+/-- The real projective line is not simply connected. -/
+theorem not_simplyConnectedSpace : ¬ SimplyConnectedSpace (RealProjectiveSpace 1) :=
+  haveI := nontrivial_fundamentalGroup basepoint
+  not_simplyConnectedSpace_of_nontrivial_fundamentalGroup basepoint
+
+/-- The real projective line is not contractible. -/
+theorem not_contractibleSpace : ¬ ContractibleSpace (RealProjectiveSpace 1) :=
+  not_contractibleSpace_of_not_simplyConnectedSpace not_simplyConnectedSpace
+
+end
+end Line
+end RealProjectiveSpace
+end EpsilonEridani

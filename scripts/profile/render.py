@@ -209,7 +209,7 @@ if added_rows:
     out.append("\n")
 
 if not comparison_rows and not added_rows and not uncompared:
-    out.append("_No new or modified `TauCeti/` Lean files to profile._\n\n")
+    out.append("_No new or modified `EpsilonEridani/` Lean files to profile._\n\n")
 
 if run_url:
     out.append(f"<sub>[measurement run]({run_url}) · re-run with `/profile`</sub>\n")

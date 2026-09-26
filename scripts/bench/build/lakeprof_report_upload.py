@@ -24,7 +24,7 @@ def main() -> None:
     template_file = script_file.parent / "lakeprof_report_template.html"
 
     sha = run_stdout("git", "rev-parse", "@").strip()
-    base_url = f"https://speed.lean-lang.org/tauceti-out/{sha}"
+    base_url = f"https://speed.lean-lang.org/epsiloneridani-out/{sha}"
     report = run_stdout("lakeprof", "report", "-prc")
     with open(template_file) as f:
         template = f.read()

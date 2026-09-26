@@ -21,7 +21,7 @@ PIN_FILES = [[{"filename": "lean-toolchain"}]]
 class QueueRelease(unittest.TestCase):
     @patch.object(release, "gh_json")
     def test_pin_on_later_page(self, gh):
-        gh.side_effect = [[[{'filename': 'TauCeti/X.lean'}],
+        gh.side_effect = [[[{'filename': 'EpsilonEridani/X.lean'}],
                            [{'filename': 'lake-manifest.json'}]], state(status="MERGED")]
         self.assertTrue(release.should_sweep("o/r", 1, "closed"))
         self.assertIn("--paginate", gh.call_args_list[0].args)
@@ -44,7 +44,7 @@ class QueueRelease(unittest.TestCase):
 
     @patch.object(release, "gh_json")
     def test_ordinary_removal_does_not_sweep(self, gh):
-        gh.return_value = [[{"filename": "TauCeti/X.lean"}]]
+        gh.return_value = [[{"filename": "EpsilonEridani/X.lean"}]]
         self.assertFalse(release.should_sweep("o/r", 1, "dequeued"))
         gh.assert_called_once()
 

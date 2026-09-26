@@ -1,0 +1,286 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Data.Fin.Rev
+public import EpsilonEridani.KnotTheory.Grid.Diagram.Basic
+
+/-!
+# Coordinate reversal of grid states and diagrams
+
+This file adds coordinate reversal on the toroidal grid to the grid-combinatorial lane of the
+Heegaard Floer roadmap, alongside the already-developed diagonal reflection (`transpose`) and
+marking swap (`swapMarkings`). Rotation reverses both the column and the row coordinate by the
+map `(c, r) ↦ (cᵒ, rᵒ)` with `·ᵒ = Fin.rev`. It is the composition of the column and row
+relabelings by the coordinate reversal `Fin.revPerm`, so it reuses the existing relabeling API
+rather than introducing a new primitive. It carries a grid state to a grid state and a grid
+diagram to a grid diagram.
+
+In the coordinate convention used here, `GridState.rotate` reverses grid-point coordinates,
+whereas `GridDiagram.rotate` reverses the lower-left-coordinate names of marking squares. These
+are half-turns about different centres on the torus. Thus the paired operations preserve the
+grading results below but not marking avoidance, and do not give a symmetry of the fully blocked
+complex.
+
+Only the basic state/diagram operation and its point-set lemmas live here, parallel to where
+`transpose` is developed; the invariance of the `J`-pairing of two grid states under coordinate
+reversal is in `EpsilonEridani.KnotTheory.Grid.JFunction.Basic` (`GridState.J_rotate`). The gradings
+themselves are *not* rotation invariant: they pair a grid state against the markings, which sit at
+the centres of their squares, so the half-turn about a grid point that rotates a state and the
+half-turn about a square centre that rotates the markings are different maps of the torus.
+This distinction and its grading consequence follow the analysis in
+[EpsilonEridani pull request #3135](https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/3135).
+
+## Main definitions
+
+* `EpsilonEridani.GridState.rotate`: coordinate reversal of a grid state.
+* `EpsilonEridani.GridDiagram.rotate`: coordinate reversal of a grid diagram's marking-square names.
+
+## Main results
+
+* `EpsilonEridani.GridState.rotate_rotate`, `EpsilonEridani.GridDiagram.rotate_rotate`: rotation is an
+  involution on grid states and grid diagrams.
+* `EpsilonEridani.GridState.rotate_pointSet`, `EpsilonEridani.GridDiagram.rotate_OSet`,
+  `EpsilonEridani.GridDiagram.rotate_XSet`: the state point set and the diagram's marking-square sets
+  are the coordinate reversals of the original sets.
+* `EpsilonEridani.GridState.relabelRows_rotate`, `EpsilonEridani.GridState.relabelColumns_rotate`,
+  `EpsilonEridani.GridDiagram.swapMarkings_rotate`: rotation interacts predictably with the existing
+  relabeling, swap, and marking-swap operations.
+
+## References
+
+This advances `EpsilonEridaniRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G item 8,
+"Symmetries and the genus bound": coordinate reversal is among the standard grid symmetries in
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+-/
+
+@[expose] public section
+
+namespace EpsilonEridani
+
+variable {n : ℕ}
+
+/-- Reversing both coordinates of a coordinate pair twice returns the original pair. -/
+private theorem rev2_rev2 (p : Fin n × Fin n) :
+    Prod.map Fin.rev Fin.rev (Prod.map Fin.rev Fin.rev p) = p := by
+  obtain ⟨a, b⟩ := p
+  simp [Fin.rev_rev]
+
+/-- Conjugating a row or column swap by coordinate reversal swaps the reversed indices. -/
+private theorem revPerm_trans_swap_trans_revPerm (a b : Fin n) :
+    Fin.revPerm.trans ((Equiv.swap a b).trans Fin.revPerm) = Equiv.swap a.rev b.rev := by
+  ext c
+  by_cases hca : c = a.rev
+  · subst hca
+    simp
+  · by_cases hcb : c = b.rev
+    · subst hcb
+      simp
+    · have hca' : c.rev ≠ a := by
+        intro h
+        exact hca (Fin.rev_eq_iff.mp h)
+      have hcb' : c.rev ≠ b := by
+        intro h
+        exact hcb (Fin.rev_eq_iff.mp h)
+      simp [Equiv.swap_apply_of_ne_of_ne hca hcb, Equiv.swap_apply_of_ne_of_ne hca' hcb',
+        Fin.rev_rev]
+
+namespace GridState
+
+/-- Coordinate reversal of a grid state.
+
+This reverses both coordinates of the occupied grid points and is the composition of the column
+and row relabelings by `Fin.revPerm`. Geometrically it is a half-turn about a square center; the
+same operation on lower-left square names in `GridDiagram.rotate` is a half-turn about a grid
+point, so the two operations do not together preserve marking avoidance. -/
+def rotate (x : GridState n) : GridState n :=
+  (x.relabelColumns Fin.revPerm).relabelRows Fin.revPerm
+
+/-- The rotated state reads off a column by reversing it, applying the original state, and
+reversing the resulting row. -/
+@[simp]
+theorem rotate_apply (x : GridState n) (c : Fin n) :
+    x.rotate c = (x (Fin.rev c)).rev := by
+  simp [rotate]
+
+/-- In the rotated state, the occupied grid point in row `r` lies in the reversed column of the
+occupied grid point in row `r.rev` of the original state. -/
+theorem columnOfRow_rotate (x : GridState n) (r : Fin n) :
+    x.rotate.columnOfRow r = (x.columnOfRow r.rev).rev := by
+  apply x.rotate.toPerm.injective
+  simp [GridState.rotate_apply, Fin.rev_rev]
+
+/-- A grid point lies in the rotated state exactly when its coordinate reversal lies in the
+original state. -/
+theorem mem_pointSet_rotate (x : GridState n) (p : Fin n × Fin n) :
+    p ∈ x.rotate.pointSet ↔ Prod.map Fin.rev Fin.rev p ∈ x.pointSet := by
+  simp only [mem_pointSet, rotate_apply, Prod.map_fst, Prod.map_snd, Fin.rev_eq_iff]
+
+/-- The point set of the rotated state is the coordinate reversal of the original point set. -/
+theorem rotate_pointSet (x : GridState n) :
+    x.rotate.pointSet = x.pointSet.image (Prod.map Fin.rev Fin.rev) := by
+  ext p
+  rw [mem_pointSet_rotate, Finset.mem_image]
+  constructor
+  · intro hp
+    exact ⟨Prod.map Fin.rev Fin.rev p, hp, rev2_rev2 p⟩
+  · rintro ⟨q, hq, rfl⟩
+    rwa [rev2_rev2 q]
+
+/-- Coordinate reversal is an involution on grid states. -/
+@[simp]
+theorem rotate_rotate (x : GridState n) : x.rotate.rotate = x := by
+  ext c
+  simp [Fin.rev_rev]
+
+/-- Diagonal reflection commutes with coordinate reversal of a grid state. -/
+@[simp]
+theorem transpose_rotate (x : GridState n) : x.transpose.rotate = x.rotate.transpose := by
+  simp [rotate, GridState.relabelRows_relabelColumns]
+
+/-- Row relabeling before rotation becomes row relabeling by the conjugate permutation after
+rotation. -/
+@[simp]
+theorem relabelRows_rotate (ρ : Equiv.Perm (Fin n)) (x : GridState n) :
+    (x.relabelRows ρ).rotate = x.rotate.relabelRows (Fin.revPerm.trans (ρ.trans Fin.revPerm)) := by
+  ext c
+  simp [rotate, Fin.rev_rev]
+
+/-- Column relabeling before rotation becomes column relabeling by the conjugate permutation
+after rotation. -/
+@[simp]
+theorem relabelColumns_rotate (κ : Equiv.Perm (Fin n)) (x : GridState n) :
+    (x.relabelColumns κ).rotate =
+      x.rotate.relabelColumns (Fin.revPerm.trans (κ.trans Fin.revPerm)) := by
+  ext c
+  simp [rotate, Fin.rev_rev]
+
+/-- Swapping rows before rotation is the same as swapping the reversed rows after rotation. -/
+@[simp]
+theorem swapRows_rotate (a b : Fin n) (x : GridState n) :
+    (x.swapRows a b).rotate = x.rotate.swapRows a.rev b.rev := by
+  rw [swapRows, relabelRows_rotate, revPerm_trans_swap_trans_revPerm]
+  rfl
+
+/-- Swapping columns before rotation is the same as swapping the reversed columns after
+rotation. -/
+@[simp]
+theorem swapColumns_rotate (a b : Fin n) (x : GridState n) :
+    (x.swapColumns a b).rotate = x.rotate.swapColumns a.rev b.rev := by
+  rw [swapColumns, relabelColumns_rotate, revPerm_trans_swap_trans_revPerm]
+  rfl
+
+end GridState
+
+namespace GridDiagram
+
+variable {n : ℕ} (G : GridDiagram n)
+
+/-- Coordinate reversal of a grid diagram's marking-square names.
+
+It is the composition of the column and row relabelings by the coordinate reversal `Fin.revPerm`,
+applied to both marking states at once. Each relabeling is again a grid diagram, so rotation
+preserves the condition that no square carries both an `O` and an `X` marking. Here `Fin.rev`
+acts on the lower-left-coordinate names of marking squares, so this operation and
+`GridState.rotate` do not together preserve marking avoidance. -/
+def rotate (G : GridDiagram n) : GridDiagram n :=
+  (G.relabelColumns Fin.revPerm).relabelRows Fin.revPerm
+
+/-- The `O`-marking state of the rotated diagram is the rotation of the original `O`-state. -/
+@[simp]
+theorem rotate_O : G.rotate.O = G.O.rotate :=
+  rfl
+
+/-- The `X`-marking state of the rotated diagram is the rotation of the original `X`-state. -/
+@[simp]
+theorem rotate_X : G.rotate.X = G.X.rotate :=
+  rfl
+
+/-- In the rotated diagram, the `O` marking in row `r` lies in the reversed column of the
+original `O` marking in row `r.rev`. -/
+@[simp]
+theorem OColumnOfRow_rotate (r : Fin n) :
+    OColumnOfRow G.rotate r = (OColumnOfRow G r.rev).rev :=
+  GridState.columnOfRow_rotate G.O r
+
+/-- In the rotated diagram, the `X` marking in row `r` lies in the reversed column of the
+original `X` marking in row `r.rev`. -/
+@[simp]
+theorem XColumnOfRow_rotate (r : Fin n) :
+    XColumnOfRow G.rotate r = (XColumnOfRow G r.rev).rev :=
+  GridState.columnOfRow_rotate G.X r
+
+/-- The `O`-markings of the rotated diagram are the coordinate reversal of the original
+`O`-markings. -/
+theorem rotate_OSet : G.rotate.OSet = G.OSet.image (Prod.map Fin.rev Fin.rev) :=
+  GridState.rotate_pointSet G.O
+
+/-- The `X`-markings of the rotated diagram are the coordinate reversal of the original
+`X`-markings. -/
+theorem rotate_XSet : G.rotate.XSet = G.XSet.image (Prod.map Fin.rev Fin.rev) :=
+  GridState.rotate_pointSet G.X
+
+/-- A square lies in the rotated diagram's `O`-marking set exactly when its coordinate reversal
+lies in the original `O`-marking set. -/
+theorem mem_OSet_rotate (p : Fin n × Fin n) :
+    p ∈ G.rotate.OSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.OSet := by
+  rw [OSet, OSet, rotate_O]
+  exact GridState.mem_pointSet_rotate G.O p
+
+/-- A square lies in the rotated diagram's `X`-marking set exactly when its coordinate reversal
+lies in the original `X`-marking set. -/
+theorem mem_XSet_rotate (p : Fin n × Fin n) :
+    p ∈ G.rotate.XSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.XSet := by
+  rw [XSet, XSet, rotate_X]
+  exact GridState.mem_pointSet_rotate G.X p
+
+/-- Coordinate reversal is an involution on grid diagrams. -/
+@[simp]
+theorem rotate_rotate : G.rotate.rotate = G := by
+  ext c <;> simp
+
+/-- Diagonal reflection commutes with coordinate reversal of a grid diagram. -/
+@[simp]
+theorem transpose_rotate : G.transpose.rotate = G.rotate.transpose := by
+  ext c <;> simp [GridState.transpose_rotate]
+
+/-- Row relabeling before rotation becomes row relabeling by the conjugate permutation after
+rotation. -/
+@[simp]
+theorem relabelRows_rotate (ρ : Equiv.Perm (Fin n)) :
+    (G.relabelRows ρ).rotate = G.rotate.relabelRows (Fin.revPerm.trans (ρ.trans Fin.revPerm)) := by
+  ext c <;> simp
+
+/-- Column relabeling before rotation becomes column relabeling by the conjugate permutation
+after rotation. -/
+@[simp]
+theorem relabelColumns_rotate (κ : Equiv.Perm (Fin n)) : (G.relabelColumns κ).rotate =
+      G.rotate.relabelColumns (Fin.revPerm.trans (κ.trans Fin.revPerm)) := by
+  ext c <;> simp
+
+/-- Swapping rows before rotation is the same as swapping the reversed rows after rotation. -/
+@[simp]
+theorem swapRows_rotate (a b : Fin n) :
+    (G.swapRows a b).rotate = G.rotate.swapRows a.rev b.rev := by
+  rw [swapRows, relabelRows_rotate, revPerm_trans_swap_trans_revPerm]
+  rfl
+
+/-- Swapping columns before rotation is the same as swapping the reversed columns after
+rotation. -/
+@[simp]
+theorem swapColumns_rotate (a b : Fin n) :
+    (G.swapColumns a b).rotate = G.rotate.swapColumns a.rev b.rev := by
+  rw [swapColumns, relabelColumns_rotate, revPerm_trans_swap_trans_revPerm]
+  rfl
+
+/-- Exchanging the two marking states commutes with coordinate reversal. -/
+@[simp]
+theorem swapMarkings_rotate : G.swapMarkings.rotate = G.rotate.swapMarkings := by
+  ext c <;> simp [GridDiagram.rotate]
+
+end GridDiagram
+
+end EpsilonEridani

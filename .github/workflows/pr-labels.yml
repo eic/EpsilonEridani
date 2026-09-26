@@ -54,7 +54,7 @@ jobs:
   # the number comes from.
   label:
     if: >
-      github.repository == 'TauCetiProject/TauCeti' && (
+      github.repository == 'EpsilonEridaniProject/EpsilonEridani' && (
         (github.event_name == 'pull_request_target'
           && (github.event.action != 'edited' || github.event.changes.base != null)
           && (!contains(fromJSON('["labeled","unlabeled"]'), github.event.action)
@@ -64,10 +64,10 @@ jobs:
             && github.event.workflow_run.pull_requests[0] != null)
         || (github.event_name == 'issue_comment'
             && github.event.issue.pull_request != null
-            && (contains(github.event.comment.body, 'tauceti-scoreboard')
-                || contains(github.event.comment.body, 'tauceti-review-in-progress')
-                || contains(github.event.changes.body.from, 'tauceti-scoreboard')
-                || contains(github.event.changes.body.from, 'tauceti-review-in-progress')))
+            && (contains(github.event.comment.body, 'epsiloneridani-scoreboard')
+                || contains(github.event.comment.body, 'epsiloneridani-review-in-progress')
+                || contains(github.event.changes.body.from, 'epsiloneridani-scoreboard')
+                || contains(github.event.changes.body.from, 'epsiloneridani-review-in-progress')))
       )
     runs-on: ubuntu-latest
     # Serialize all events for one PR on its number. Don't cancel: GitHub already collapses a burst
@@ -85,8 +85,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-issues: write
           permission-pull-requests: write
           permission-contents: read
@@ -99,9 +99,9 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: TauCetiProject/TauCetiReview
+          repository: EpsilonEridaniProject/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
+          path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
 
@@ -118,7 +118,7 @@ jobs:
   # its concurrency on the result. See the `label` job above for why this exists for these events only.
   resolve:
     if: >
-      github.repository == 'TauCetiProject/TauCeti' && (
+      github.repository == 'EpsilonEridaniProject/EpsilonEridani' && (
         (github.event_name == 'workflow_dispatch' && inputs.pr != 'all')
         || (github.event_name == 'workflow_run'
             && github.event.workflow_run.event == 'pull_request_target'
@@ -133,8 +133,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-pull-requests: read
       - id: r
         env:
@@ -186,8 +186,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-issues: write
           permission-pull-requests: write
           permission-contents: read
@@ -200,9 +200,9 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: TauCetiProject/TauCetiReview
+          repository: EpsilonEridaniProject/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
+          path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
 
@@ -217,7 +217,7 @@ jobs:
   # Per-PR jobs can overlap this pass; both read fresh state and converge.
   sweep:
     if: >-
-      github.repository == 'TauCetiProject/TauCeti'
+      github.repository == 'EpsilonEridaniProject/EpsilonEridani'
       && (github.event_name == 'schedule'
         || (github.event_name == 'workflow_dispatch' && inputs.pr == 'all'))
     runs-on: ubuntu-latest
@@ -230,8 +230,8 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
+          owner: EpsilonEridaniProject
+          repositories: EpsilonEridani
           permission-issues: write
           permission-pull-requests: write
           permission-contents: read
@@ -242,9 +242,9 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: TauCetiProject/TauCetiReview
+          repository: EpsilonEridaniProject/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
+          path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
 

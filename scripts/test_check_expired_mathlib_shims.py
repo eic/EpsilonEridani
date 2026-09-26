@@ -23,28 +23,28 @@ SPEC.loader.exec_module(check)
 class ExpiredMathlibShimTests(unittest.TestCase):
     def self_declared(self, text: str) -> set[pathlib.Path]:
         with tempfile.TemporaryDirectory() as temporary:
-            source_root = pathlib.Path(temporary) / "TauCeti"
+            source_root = pathlib.Path(temporary) / "EpsilonEridani"
             source_root.mkdir()
             (source_root / "New.lean").write_text(text, encoding="utf-8")
             return check.find_self_declared_shims(source_root)
 
     def test_registry_covers_self_declarations_one_way(self):
         root = SCRIPT.parent.parent
-        groups = check.load_registry(root / "TauCeti/mathlib-shims.json", root)
+        groups = check.load_registry(root / "EpsilonEridani/mathlib-shims.json", root)
         self.assertEqual(groups[0].declarations,
                          ("Complex.exists_bijOn_unitBall_map_eq_zero",))
         self.assertFalse(groups[0].landing_sentinel)
         self.assertTrue(groups[1].landing_sentinel)
         unit = check.groups_by_source(groups)[pathlib.Path(
-            "TauCeti/RingTheory/DedekindDomain/SInteger/Unit.lean")]
+            "EpsilonEridani/RingTheory/DedekindDomain/SInteger/Unit.lean")]
         self.assertEqual(unit.declarations, ("Set.unit_fg",))
         self.assertFalse(unit.landing_sentinel)
-        check.validate_registry_coverage(groups, root / "TauCeti")
+        check.validate_registry_coverage(groups, root / "EpsilonEridani")
 
     def test_double_coset_exact_entry_derives_the_whole_vendored_surface(self):
         root = SCRIPT.parent.parent
-        source = pathlib.Path("TauCeti/GroupTheory/DoubleCoset/Basic.lean")
-        groups = check.load_registry(root / "TauCeti/mathlib-shims.json", root)
+        source = pathlib.Path("EpsilonEridani/GroupTheory/DoubleCoset/Basic.lean")
+        groups = check.load_registry(root / "EpsilonEridani/mathlib-shims.json", root)
         group = check.groups_by_source(groups)[source]
         self.assertFalse(group.speculative or group.landing_sentinel)
         self.assertLessEqual({
@@ -57,12 +57,12 @@ class ExpiredMathlibShimTests(unittest.TestCase):
     def test_new_self_declaration_requires_registry_entry(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
-            source_root = root / "TauCeti"
+            source_root = root / "EpsilonEridani"
             source_root.mkdir()
             (source_root / "New.lean").write_text(
                 "These declarations are a temporary shim pending Mathlib.", encoding="utf-8"
             )
-            with self.assertRaisesRegex(ValueError, "TauCeti/New.lean"):
+            with self.assertRaisesRegex(ValueError, "EpsilonEridani/New.lean"):
                 check.validate_registry_coverage((), source_root)
 
     def test_negated_temporary_shim_is_not_a_self_declaration(self):
@@ -73,23 +73,23 @@ class ExpiredMathlibShimTests(unittest.TestCase):
     def test_explicit_mathlib_deletion_is_a_self_declaration(self):
         self.assertEqual(self.self_declared(
             "When Mathlib bumps past the upstream PR, this file is deleted outright."
-        ), {pathlib.Path("TauCeti/New.lean")})
+        ), {pathlib.Path("EpsilonEridani/New.lean")})
 
     def test_vendored_migrate_and_delete_is_a_self_declaration(self):
         self.assertEqual(self.self_declared(
             "Vendored from mathlib4#1; migrate to Mathlib and delete this file when it merges."
-        ), {pathlib.Path("TauCeti/New.lean")})
+        ), {pathlib.Path("EpsilonEridani/New.lean")})
 
     def test_ported_copy_deleted_for_mathlib_is_a_self_declaration(self):
         self.assertEqual(self.self_declared(
             "This copy is deleted in favour of the Mathlib declarations once the PR lands."
-        ), {pathlib.Path("TauCeti/New.lean")})
+        ), {pathlib.Path("EpsilonEridani/New.lean")})
 
     def test_upstream_refactor_obligation_is_a_self_declaration(self):
         self.assertEqual(self.self_declared(
             "Coordinated with the upstream Mathlib effort. Should a canonical theorem land "
             "upstream, this file should be refactored onto it."
-        ), {pathlib.Path("TauCeti/New.lean")})
+        ), {pathlib.Path("EpsilonEridani/New.lean")})
 
     def test_bold_negation_is_not_a_self_declaration(self):
         self.assertEqual(self.self_declared("This is **not** a temporary shim."), set())
@@ -99,7 +99,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             root = pathlib.Path(temporary)
             manifest = root / "manifest.json"
             manifest.write_text(json.dumps([{
-                "sources": ["TauCeti/Missing.lean"],
+                "sources": ["EpsilonEridani/Missing.lean"],
                 "declarations": ["not a Lean name"],
                 "note": "invalid target fixture",
             }]), encoding="utf-8")
@@ -111,21 +111,21 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             root = pathlib.Path(temporary)
             manifest = root / "manifest.json"
             manifest.write_text(json.dumps([{
-                "sources": ["TauCeti/../Outside.lean"],
+                "sources": ["EpsilonEridani/../Outside.lean"],
                 "declarations": ["Future.name"],
                 "note": "invalid path fixture",
             }]), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "TauCeti/.*path"):
+            with self.assertRaisesRegex(ValueError, "EpsilonEridani/.*path"):
                 check.load_registry(manifest, root)
 
     def test_registry_requires_durable_context_note(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
-            (root / "TauCeti").mkdir()
-            (root / "TauCeti/Old.lean").touch()
+            (root / "EpsilonEridani").mkdir()
+            (root / "EpsilonEridani/Old.lean").touch()
             manifest = root / "manifest.json"
             manifest.write_text(json.dumps([{
-                "sources": ["TauCeti/Old.lean"],
+                "sources": ["EpsilonEridani/Old.lean"],
                 "declarations": ["Upstream.done"],
             }]), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "note must be a non-empty string"):
@@ -135,7 +135,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
             base_root = root / "base"
-            source = pathlib.Path("TauCeti/Old.lean")
+            source = pathlib.Path("EpsilonEridani/Old.lean")
             (root / source).parent.mkdir()
             (root / source).write_text("lemma oldShim : True := by trivial\n", encoding="utf-8")
             (base_root / source).parent.mkdir(parents=True)
@@ -154,7 +154,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "audit-only sentinel"):
                 check.validate_registry_ratchet((weakened,), (base,), root, base_root)
-            moved_source = pathlib.Path("TauCeti/Moved.lean")
+            moved_source = pathlib.Path("EpsilonEridani/Moved.lean")
             moved = root / moved_source
             (root / source).rename(moved)
             moved_group = check.dataclasses.replace(base, sources=(moved_source,))
@@ -168,8 +168,8 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
             base_root = root / "base"
-            source = pathlib.Path("TauCeti/Old.lean")
-            (root / "TauCeti").mkdir()
+            source = pathlib.Path("EpsilonEridani/Old.lean")
+            (root / "EpsilonEridani").mkdir()
             (base_root / source).parent.mkdir(parents=True)
             (base_root / source).write_text(
                 "lemma oldShim : True := by trivial\n", encoding="utf-8"
@@ -180,8 +180,8 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             check.validate_registry_ratchet((), (base,), root, base_root)
 
     def test_only_new_or_changed_groups_ignores_unchanged_base_entries(self):
-        one = pathlib.Path("TauCeti/One.lean")
-        two = pathlib.Path("TauCeti/Two.lean")
+        one = pathlib.Path("EpsilonEridani/One.lean")
+        two = pathlib.Path("EpsilonEridani/Two.lean")
         base = check.ShimGroup((one,), ("Upstream.one",), (), "base")
         unchanged = check.dataclasses.replace(base, note="note edits are not new obligations")
         added = check.ShimGroup((two,), ("Upstream.two",), (), "added")
@@ -206,7 +206,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             module.parent.mkdir(parents=True)
             module.touch()
             group = check.ShimGroup(
-                (pathlib.Path("TauCeti/One.lean"), pathlib.Path("TauCeti/Two.lean")),
+                (pathlib.Path("EpsilonEridani/One.lean"), pathlib.Path("EpsilonEridani/Two.lean")),
                 ("New.theorem", "Still.missing"),
                 ("Mathlib.Topology.NewThing", "Mathlib.Topology.Missing"),
                 "test group",
@@ -219,12 +219,12 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             self.assertIn("report does not fail the build", summary)
             blocking = check.markdown_summary((group,), available, blocking=True)
             self.assertIn("Sources with exact replacements block this PR", blocking)
-            self.assertIn("TauCeti/One.lean", summary)
+            self.assertIn("EpsilonEridani/One.lean", summary)
             self.assertIn("test group", summary)
 
     def test_speculative_target_is_labeled(self):
         group = check.ShimGroup(
-            (pathlib.Path("TauCeti/One.lean"),), ("Future.name",), (), "not named", True
+            (pathlib.Path("EpsilonEridani/One.lean"),), ("Future.name",), (), "not named", True
         )
         available = check.available_replacements((group,), {"Future.name"}, pathlib.Path("."))
         summary = check.markdown_summary((group,), available)
@@ -237,7 +237,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
 
     def test_landing_sentinel_requires_audit_not_source_deletion(self):
         group = check.ShimGroup(
-            (pathlib.Path("TauCeti/Mixed.lean"),),
+            (pathlib.Path("EpsilonEridani/Mixed.lean"),),
             ("Upstream.sentinel",),
             (),
             "mixed source",
@@ -253,7 +253,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         self.assertNotIn("delete this file", summary + warning)
         self.assertFalse(check.blocks_bump(available[0]))
         exact = check.AvailableReplacement(
-            pathlib.Path("TauCeti/Exact.lean"), ("declaration Upstream.exact",), "exact"
+            pathlib.Path("EpsilonEridani/Exact.lean"), ("declaration Upstream.exact",), "exact"
         )
         self.assertTrue(check.blocks_bump(exact))
         mixed = check.markdown_summary((group,), (available[0], exact), blocking=True)
@@ -262,7 +262,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
 
     def test_missing_mathlib_tree_rejects_module_checks(self):
         group = check.ShimGroup(
-            (pathlib.Path("TauCeti/One.lean"),), (), ("Mathlib.Topology.NewThing",), "test"
+            (pathlib.Path("EpsilonEridani/One.lean"),), (), ("Mathlib.Topology.NewThing",), "test"
         )
         with tempfile.TemporaryDirectory() as temporary:
             missing = pathlib.Path(temporary) / "missing"
@@ -272,7 +272,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
     def test_fail_on_available_is_the_bump_worker_gate(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
-            source_root = root / "TauCeti"
+            source_root = root / "EpsilonEridani"
             source_root.mkdir()
             (source_root / "Old.lean").write_text(
                 "This is a temporary Mathlib shim.\n"
@@ -281,7 +281,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             )
             manifest = source_root / "mathlib-shims.json"
             manifest.write_text(json.dumps([{
-                "sources": ["TauCeti/Old.lean"],
+                "sources": ["EpsilonEridani/Old.lean"],
                 "declarations": ["Upstream.done"],
                 "note": "exact replacement",
             }]), encoding="utf-8")
@@ -296,8 +296,8 @@ class ExpiredMathlibShimTests(unittest.TestCase):
 
     def test_workflow_uses_merge_base_and_scopes_feature_probes(self):
         workflow = (SCRIPT.parent.parent / ".github/workflows/pr-build.yml").read_text()
-        self.assertIn("cp mergebase/TauCeti/mathlib-shims.json", workflow)
-        self.assertNotIn("cp base/TauCeti/mathlib-shims.json", workflow)
+        self.assertIn("cp mergebase/EpsilonEridani/mathlib-shims.json", workflow)
+        self.assertNotIn("cp base/EpsilonEridani/mathlib-shims.json", workflow)
         self.assertIn('[ "${BUMP:-0}" = "1" ] || args+=(--only-new)', workflow)
         self.assertIn('--base-root "$BASE_SHIM_ROOT"', workflow)
         self.assertIn("env.SHIM_CHECK == '1'", workflow)

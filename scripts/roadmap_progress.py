@@ -16,8 +16,8 @@ Three kinds of evidence go into the output, and the page keeps them apart:
 
 * **Per-layer state** (done / partial / untouched / unassessed) is an assessment of the library at
   a particular revision, and the only place that assessment is made is the generated `STATUS.md`
-  that TauCetiProgress writes for a roadmap. Its prose cannot be aggregated, so this script reads
-  a machine-readable companion, a `tauceti-coverage:v1` marker beside the `tauceti-status:v1`
+  that EpsilonEridaniProgress writes for a roadmap. Its prose cannot be aggregated, so this script reads
+  a machine-readable companion, a `epsiloneridani-coverage:v1` marker beside the `epsiloneridani-status:v1`
   header, when one is present and fits. Fitting means it names this roadmap, the library commit
   of the status header, and the README it assessed (`readme_sha`, a hash of that README's text,
   which must match the README the layers were read from), and lists every layer id exactly once
@@ -26,9 +26,9 @@ Three kinds of evidence go into the output, and the page keeps them apart:
   sub-roadmap as well, naming it `Parent/Child` and bound to that sub-roadmap's own README; a
   sub-roadmap reads its own marker from the umbrella's report and nothing else there. That is
   what this page will accept, offered as a proposal to
-  TauCetiProgress, not a contract it has agreed to; a marker without the README binding is left
+  EpsilonEridaniProgress, not a contract it has agreed to; a marker without the README binding is left
   unassessed with a reason rather than applied to whatever README happens to be current. Until
-  TauCetiProgress emits such a marker,
+  EpsilonEridaniProgress emits such a marker,
   `scripts/roadmap_coverage.json` carries the same verdicts transcribed by hand from the prose.
   A transcription is bound to the exact report it was read from (its library commit and a hash of
   the report's text), to the exact specification it was read against (a hash of the README), and
@@ -71,20 +71,20 @@ import re
 import subprocess
 import sys
 
-AREAS_DIR = "TauCetiRoadmap"
+AREAS_DIR = "EpsilonEridaniRoadmap"
 COMPLETED_DIR = "Completed"
 AREA_PREFIX = "roadmap/"
 EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
 WEEKS = 16
 RECENT_DAYS = 30
-# TauCetiProgress opens a new reporting window once this many labelled PRs have merged since the
+# EpsilonEridaniProgress opens a new reporting window once this many labelled PRs have merged since the
 # last one, so this is the threshold at which a report is behind by its own rule. It is a
 # heuristic about when a new report is due, not a claim that nothing changed below it.
 UPDATE_DUE_PRS = 10
 
-STATUS_MARKER = "tauceti-status:v1"
-COVERAGE_MARKER = "tauceti-coverage:v1"
-_MARKER_RE = re.compile(r"<!--\s*(tauceti-[a-z-]+:v\d+)\s*(\{.*?\})\s*-->", re.S)
+STATUS_MARKER = "epsiloneridani-status:v1"
+COVERAGE_MARKER = "epsiloneridani-coverage:v1"
+_MARKER_RE = re.compile(r"<!--\s*(epsiloneridani-[a-z-]+:v\d+)\s*(\{.*?\})\s*-->", re.S)
 MALFORMED = "malformed"  # a marker that is present but whose JSON does not parse
 
 STATES = ("done", "partial", "untouched", "unassessed")
@@ -144,7 +144,7 @@ def layer_id(title: str) -> str:
 
 
 def markers(text: str) -> dict:
-    """Every `<!--tauceti-*:vN {json}-->` marker in a generated file, by name (first wins).
+    """Every `<!--epsiloneridani-*:vN {json}-->` marker in a generated file, by name (first wins).
 
     A marker whose JSON does not parse is recorded as `MALFORMED` rather than dropped, so a
     present-but-broken marker is reported as such instead of looking absent.
@@ -283,7 +283,7 @@ def _check_ids(by_id: dict, ids: list[str]) -> str | None:
 
 def states_from_marker(marker, name: str, layers: list[str], to_sha: str,
                        readme_sha: str) -> tuple[list[str] | None, str | None]:
-    """Per-layer states from a `tauceti-coverage:v1` marker, or (None, reason).
+    """Per-layer states from a `epsiloneridani-coverage:v1` marker, or (None, reason).
 
     It fits when it names this roadmap, this library commit and the README it assessed (a
     `readme_sha` matching, as a prefix of at least twelve characters, the hash of the README the
@@ -364,7 +364,7 @@ def states_from_transitional(entry, layers: list[str], to_sha: str, report_sha: 
 def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: str | None = None,
                  inherit: dict | None = None, links: dict | None = None) -> dict | None:
     """One roadmap row. `inherit` is a parent's parsed STATUS.md for a sub-roadmap without its
-    own: TauCetiProgress reports an umbrella roadmap as one unit, so its report is the only
+    own: EpsilonEridaniProgress reports an umbrella roadmap as one unit, so its report is the only
     account of the sub-roadmaps. It carries a marker per sub-roadmap, and hand transcriptions for
     one without a marker are bound to that report."""
     readme = dirpath / "README.md"
@@ -656,8 +656,8 @@ def main(argv=None) -> int:
     here = pathlib.Path(__file__).resolve().parent
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--roadmap-dir", type=pathlib.Path, required=True,
-                   help="a checkout of TauCetiRoadmap")
-    p.add_argument("--repo", default="TauCetiProject/TauCeti",
+                   help="a checkout of EpsilonEridaniRoadmap")
+    p.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani",
                    help="repository whose merged PRs carry the roadmap labels")
     p.add_argument("--data", type=pathlib.Path,
                    help="pull-request snapshot to read instead of querying gh")

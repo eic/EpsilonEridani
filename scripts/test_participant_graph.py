@@ -19,7 +19,7 @@ import participant_graph as pg
 class ParticipantGraphTest(unittest.TestCase):
     def test_filters_bot_suffixes_and_app_aliases(self):
         self.assertIsNone(pg.canonical_human("github-actions[bot]"))
-        self.assertIsNone(pg.canonical_human("tauceti-review-bot"))
+        self.assertIsNone(pg.canonical_human("epsiloneridani-review-bot"))
         self.assertIsNone(pg.canonical_human("Copilot"))
         self.assertIsNone(pg.canonical_human("claude"))
         self.assertEqual(pg.canonical_human("CBirkbeck"), "cbirkbeck")
@@ -130,7 +130,7 @@ class ParticipantGraphTest(unittest.TestCase):
 
         self.assertEqual(total, 5)
         self.assertIn('class="total" x="50" y="91">5</text>', svg)
-        self.assertIn("TauCetiRoadmap", svg)
+        self.assertIn("EpsilonEridaniRoadmap", svg)
         self.assertIn("2026-07-29", svg)
         self.assertIn("Multi-repo participants appear in each bar", svg)
         self.assertIn("<desc ", svg)

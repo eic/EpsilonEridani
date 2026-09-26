@@ -1,0 +1,219 @@
+/-
+Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Codex, Claude
+-/
+module
+
+public import EpsilonEridani.NumberTheory.ClassFieldTheory.Formation.Restriction
+public import EpsilonEridani.RepresentationTheory.Homological.TateCohomology.Functoriality
+
+/-!
+# Range comparisons for finite-layer Tate cohomology
+
+For a restriction of finite normal layers `K/E` inside `K/F`, the Galois group of `K/E` is
+identified with the image of its inclusion into the Galois group of `K/F`. This file transports
+Tate cohomology of the smaller layer along that identification, both with formation coefficients
+(`LayerRestriction.tateRangeIso`) and with trivial integral coefficients
+(`LayerRestriction.trivialTateRangeIso`). These comparisons are shared by Tate restriction and
+Tate corestriction between finite layers.
+
+## Main definitions
+
+* `EpsilonEridani.ClassFieldTheory.LayerRestriction.tateRangeIso`: Tate cohomology of the smaller layer
+  as Tate cohomology of the image subgroup.
+* `EpsilonEridani.ClassFieldTheory.LayerRestriction.trivialTateRangeIso`: the same comparison with
+  trivial integral coefficients.
+
+## Main results
+
+* `EpsilonEridani.ClassFieldTheory.LayerRestriction.tateRangeIso_hom` and
+  `EpsilonEridani.ClassFieldTheory.LayerRestriction.trivialTateRangeIso_hom`: each range comparison is
+  the Tate map of its compatible pair, in every degree.
+* `EpsilonEridani.ClassFieldTheory.LayerRestriction.tateRangeIso_inv_H0π`: in degree zero, the inverse
+  comparison sends the class of an invariant element to the class of the same element.
+* `EpsilonEridani.ClassFieldTheory.LayerRestriction.tateRangeIso_inv_HNegOneπ`: in degree minus one, the
+  inverse comparison sends the class of a norm-zero element to the class of its image under the
+  inverse coefficient identification.
+-/
+
+public noncomputable section
+
+open CategoryTheory Rep Representation
+
+namespace EpsilonEridani.ClassFieldTheory.LayerRestriction
+
+variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G] {small big : NormalLayer G}
+
+/-- The range of the inclusion between finite layer Galois groups is finite. -/
+noncomputable local instance instFintypeRange (T : LayerRestriction small big) :
+    Fintype T.galHom.range :=
+  Fintype.ofFinite _
+
+/-- The identification of coefficient modules intertwines the Galois action of the smaller layer
+with the action of the image of its Galois group in the larger one. This is the compatible pair
+along which `tateRangeIso` transports Tate cohomology. -/
+theorem isIntertwiningMap_repIso_range (T : LayerRestriction small big) (F : Formation G) :
+    (small.rep F).ρ.IsIntertwiningMap
+      ((Rep.res T.galHom.range.subtype (big.rep F)).ρ.comp
+        (MonoidHom.ofInjective T.galHom_injective : small.Gal ≃* T.galHom.range))
+      (Representation.equivOfIso (T.repIso F)).toLinearEquiv := by
+  refine ⟨fun g x ↦ ?_⟩
+  exact Rep.hom_comm_apply (T.repIso F).hom g x
+
+/-- Tate cohomology of the smaller layer, identified with Tate cohomology of the image of its
+Galois group in the larger one. The coefficient identification is `repIso`. -/
+def tateRangeIso (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
+    small.TateH F r ≅
+      tateCohomology (Rep.res T.galHom.range.subtype (big.rep F)) r :=
+  EpsilonEridani.TateCohomology.mapIso
+    (M := small.rep F)
+    (N := Rep.res T.galHom.range.subtype (big.rep F))
+    (e := MonoidHom.ofInjective T.galHom_injective)
+    (e' := (Representation.equivOfIso (T.repIso F)).toLinearEquiv)
+    (isIntertwiningMap_repIso_range T F) r
+
+/-- The range comparison is the Tate map attached to the compatible pair
+`isIntertwiningMap_repIso_range`. -/
+theorem tateRangeIso_hom (T : LayerRestriction small big) (F : Formation G) (r : ℤ) :
+    (T.tateRangeIso F r).hom =
+      EpsilonEridani.TateCohomology.map (T.isIntertwiningMap_repIso_range F) r := by
+  rw [tateRangeIso, EpsilonEridani.TateCohomology.mapIso_hom]
+
+/-- In degree zero, the inverse range comparison sends the class of an invariant of the image
+subgroup to the class of the same element, read through `repIso`, in the smaller layer. -/
+theorem tateRangeIso_inv_H0π (T : LayerRestriction small big) (F : Formation G)
+    (x : (Rep.res T.galHom.range.subtype (big.rep F)).ρ.invariants) :
+    (T.tateRangeIso F 0).inv (EpsilonEridani.TateCohomology.H0π _ x) =
+      EpsilonEridani.TateCohomology.H0π (small.rep F)
+        ⟨(T.repIso F).inv.hom x, fun g ↦ by
+          rw [← Rep.hom_comm_apply]
+          exact congrArg (T.repIso F).inv.hom (x.2 ⟨T.galHom g, g, rfl⟩)⟩ := by
+  rw [tateRangeIso, EpsilonEridani.TateCohomology.mapIso_inv,
+    EpsilonEridani.TateCohomology.H0π_comp_map_apply]
+  congr 1
+  ext
+  rw [EpsilonEridani.TateCohomology.mapInvariants_apply_coe]
+  simp
+
+-- The left-hand side is stated through `dsimp% only`: `simp` reduces the carrier of the source
+-- `ModuleCat.of ℤ (ker _)` of `HNegOneπ`, and the `abbrev`s `Rep.res`, `NormalLayer.rep` and
+-- `Formation.toRep` inside it, before it looks a term up, so the plain form is never found. This
+-- follows #8315; see the implementation notes of `Formation/Basic.lean`.
+/-- In degree minus one, the inverse range comparison sends the class of a norm-zero element of
+the image subgroup to the class of its image under the inverse coefficient identification. -/
+@[simp]
+theorem tateRangeIso_inv_HNegOneπ (T : LayerRestriction small big) (F : Formation G)
+    (x : LinearMap.ker (Rep.res T.galHom.range.subtype (big.rep F)).ρ.norm) :
+    (dsimp% only ((T.tateRangeIso F (-1)).inv (EpsilonEridani.TateCohomology.HNegOneπ _ x))) =
+      EpsilonEridani.TateCohomology.HNegOneπ (small.rep F) (EpsilonEridani.TateCohomology.mapKerNorm
+        (Representation.IsIntertwiningMap.symm (T.isIntertwiningMap_repIso_range F)) x) := by
+  rw [tateRangeIso, EpsilonEridani.TateCohomology.mapIso_inv,
+    EpsilonEridani.TateCohomology.HNegOneπ_comp_map_apply]
+
+/-! ### Trivial coefficients -/
+
+/-- The identity on `ℤ` intertwines the trivial action of the smaller Galois group with the
+trivial action of the image of its Galois group in the larger one. This is the compatible pair
+along which `trivialTateRangeIso` transports Tate cohomology. -/
+theorem isIntertwiningMap_trivial_range (T : LayerRestriction small big) :
+    (Rep.trivial ℤ small.Gal ℤ).ρ.IsIntertwiningMap
+      ((Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)).ρ.comp
+        (MonoidHom.ofInjective T.galHom_injective))
+      (LinearEquiv.refl ℤ ℤ) :=
+  ⟨fun _ _ ↦ rfl⟩
+
+/-- Tate cohomology with trivial integral coefficients on the smaller Galois group, identified
+with the restriction of the trivial representation on the larger Galois group to the image of
+the inclusion. -/
+def trivialTateRangeIso (T : LayerRestriction small big) (r : ℤ) :
+    small.TrivialTateH r ≅
+      tateCohomology (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) r :=
+  EpsilonEridani.TateCohomology.mapIso
+    (M := Rep.trivial ℤ small.Gal ℤ)
+    (N := Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+    (e := MonoidHom.ofInjective T.galHom_injective)
+    (e' := LinearEquiv.refl ℤ ℤ)
+    (isIntertwiningMap_trivial_range T) r
+
+/-- The trivial-coefficient range comparison is the Tate map attached to the compatible pair
+`isIntertwiningMap_trivial_range`. -/
+theorem trivialTateRangeIso_hom (T : LayerRestriction small big) (r : ℤ) :
+    (T.trivialTateRangeIso r).hom =
+      EpsilonEridani.TateCohomology.map T.isIntertwiningMap_trivial_range r := by
+  rw [trivialTateRangeIso, EpsilonEridani.TateCohomology.mapIso_hom]
+
+-- Stated through `dsimp% only`: the carriers of the trivial representations here are indexed
+-- unreduced, as `Rep.V` of a `Rep` structure literal, while `simp` reduces them to `ℤ` before it
+-- looks a term up, so the plain form is never found (the convention of #8315).
+/-- In degree zero, the trivial-coefficient range comparison preserves the integral invariant
+representing a Tate class. -/
+@[simp]
+theorem trivialTateRangeIso_hom_H0π (T : LayerRestriction small big)
+    (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
+    (dsimp% only ((T.trivialTateRangeIso 0).hom (EpsilonEridani.TateCohomology.H0π _ x))) =
+      EpsilonEridani.TateCohomology.H0π
+        (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+        ⟨(x : ℤ), fun _ ↦ rfl⟩ := by
+  rw [trivialTateRangeIso_hom, EpsilonEridani.TateCohomology.H0π_comp_map_apply]
+  congr 1
+  ext
+  exact EpsilonEridani.TateCohomology.mapInvariants_apply_coe _ _
+
+/-- In positive degrees, the trivial-coefficient range comparison agrees with the ordinary
+group-cohomology change-of-group isomorphism. -/
+@[simp, reassoc]
+theorem trivialTateRangeIso_hom_comp_isoGroupCohomology_hom
+    (T : LayerRestriction small big) (n : ℕ) [NeZero n] :
+    (T.trivialTateRangeIso n).hom ≫
+        (TateCohomology.isoGroupCohomology n).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) =
+      (TateCohomology.isoGroupCohomology n).hom.app (Rep.trivial ℤ small.Gal ℤ) ≫
+        (groupCohomology.mapIso
+          (B := Rep.trivial ℤ small.Gal ℤ)
+          (A := Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+          (MonoidHom.ofInjective T.galHom_injective) (LinearEquiv.refl ℤ ℤ)
+          (fun _ ↦ LinearMap.ext fun _ ↦ rfl) n).hom := by
+  rw [trivialTateRangeIso_hom, EpsilonEridani.TateCohomology.map_comp_isoGroupCohomology_hom,
+    groupCohomology.mapIso_hom]
+  congr 1
+  apply groupCohomology.map_congr rfl _ n
+  ext
+  simp [Representation.IsIntertwiningMap.ofRes_hom_toLinearMap]
+
+/-- The identity on `ℤ` as an equivariant map from the smaller Galois group's trivial
+representation to the range-comparison representation. -/
+def trivialRangeRepHom (T : LayerRestriction small big) :
+    Rep.trivial ℤ small.Gal ℤ ⟶
+      Rep.res (MonoidHom.ofInjective T.galHom_injective)
+        (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) :=
+  Rep.ofHom ⟨LinearMap.id, fun _ ↦ by ext; rfl⟩
+
+-- Stated through `dsimp% only` (#8315), for the reason given at `trivialTateRangeIso_hom_H0π`.
+/-- The trivial range comparison fixes each integer coefficient. -/
+@[simp]
+theorem trivialRangeRepHom_apply (T : LayerRestriction small big) (x : ℤ) :
+    (dsimp% only (T.trivialRangeRepHom x)) = x :=
+  (rfl)
+
+/-- Below degree minus one, the trivial-coefficient range comparison agrees with the
+group-homology change-of-group isomorphism. -/
+@[simp, reassoc]
+theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom
+    (T : LayerRestriction small big) (n : ℕ) :
+    (T.trivialTateRangeIso (Int.negSucc (n + 1))).hom ≫
+        (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+          (by rw [Int.negSucc_eq])).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) =
+      (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+          (by rw [Int.negSucc_eq])).hom.app (Rep.trivial ℤ small.Gal ℤ) ≫
+        groupHomology.map (MonoidHom.ofInjective T.galHom_injective)
+          T.trivialRangeRepHom (n + 1) := by
+  rw [trivialTateRangeIso_hom, EpsilonEridani.TateCohomology.map_comp_isoGroupHomology_hom]
+  congr 1
+  apply groupHomology.map_congr rfl _ (n + 1)
+  ext
+  simp [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, trivialRangeRepHom]
+
+end EpsilonEridani.ClassFieldTheory.LayerRestriction

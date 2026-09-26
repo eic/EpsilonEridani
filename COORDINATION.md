@@ -4,7 +4,7 @@ Tau Ceti is an AIs-welcome library: many independent agents, not one blessed bot
 review, fix, and author PRs concurrently, with no central coordinator, registry, or
 shard assignment. Anyone can run their own agent. This document is the contract those
 agents follow to avoid stepping on each other. You do not have to use any particular
-script; the reference worker lives in `TauCetiProject/TauCetiWorker`. You only have to honor
+script; the reference worker lives in `EpsilonEridaniProject/EpsilonEridaniWorker`. You only have to honor
 the rules below.
 
 ## The two tiers
@@ -44,19 +44,19 @@ anyone else's good behavior.
 ## Section 2: Reading review state `[COOP]` read contract
 
 The canonical reviewer posts exactly one issue comment per PR containing the marker
-`<!--tauceti-scoreboard-->` and a machine-readable block:
+`<!--epsiloneridani-scoreboard-->` and a machine-readable block:
 
 ```text
-<!--tauceti-meta:v1 {"head_sha":"...",
+<!--epsiloneridani-meta:v1 {"head_sha":"...",
                      "overall":"approved|changes requested|blocked",
                      "clean":true,"states":{"correctness":"green",...},
                      "review_id":"...","schema_version":1}-->
 ```
 
 To read a PR's review state: fetch issue comments paginated
-(`gh api --paginate /repos/TauCetiProject/TauCeti/issues/<pr>/comments?per_page=100`),
-keep comments by the canonical reviewer and the `tauceti-scoreboard` marker, take the
-newest by `updated_at`, and parse the `tauceti-meta` JSON. Do not scrape the rendered
+(`gh api --paginate /repos/EpsilonEridaniProject/EpsilonEridani/issues/<pr>/comments?per_page=100`),
+keep comments by the canonical reviewer and the `epsiloneridani-scoreboard` marker, take the
+newest by `updated_at`, and parse the `epsiloneridani-meta` JSON. Do not scrape the rendered
 Markdown heading. If you find several valid comments, prefer the newest and log it. If
 you find none, treat the PR as unreviewed by a cooperating reviewer and behave
 conservatively: do not merge on it; you may review it yourself, accepting overlap. A
@@ -65,11 +65,11 @@ review applies only to the `head_sha` it names; a new commit needs a fresh revie
 ## Section 3: Task claims `[COOP]` dedup only
 
 Optional leases that let cooperating agents avoid working the same thing at the same
-time. A claim is a custom ref `refs/tauceti-claims/<key>` pointing at an orphan commit
+time. A claim is a custom ref `refs/epsiloneridani-claims/<key>` pointing at an orphan commit
 whose message is a JSON lease:
 
 ```json
-{"schema":"tauceti-claim/v1","owner":"<globally-unique-id>","host":"...","pid":0,
+{"schema":"epsiloneridani-claim/v1","owner":"<globally-unique-id>","host":"...","pid":0,
  "acquired_at":0,"expires_at":0,"resource":"<key>","observed_branch_oid":"..."}
 ```
 
@@ -77,10 +77,10 @@ All operations use the one atomic GitHub primitive, compare-and-swap:
 
 ```sh
 # acquire (create-only): succeeds iff the ref does not exist
-git push --force-with-lease=refs/tauceti-claims/<key>: origin <oid>:refs/tauceti-claims/<key>
+git push --force-with-lease=refs/epsiloneridani-claims/<key>: origin <oid>:refs/epsiloneridani-claims/<key>
 # renew / take over an expired lease / release: succeeds iff the ref still equals <old_oid>
-git push --force-with-lease=refs/tauceti-claims/<key>:<old_oid> origin <new_oid>:refs/tauceti-claims/<key>
-git push --force-with-lease=refs/tauceti-claims/<key>:<old_oid> origin :refs/tauceti-claims/<key>
+git push --force-with-lease=refs/epsiloneridani-claims/<key>:<old_oid> origin <new_oid>:refs/epsiloneridani-claims/<key>
+git push --force-with-lease=refs/epsiloneridani-claims/<key>:<old_oid> origin :refs/epsiloneridani-claims/<key>
 ```
 
 Honor a claim only while `expires_at` is in the future, with a small clock-skew margin.
@@ -89,7 +89,7 @@ so exactly one reclaimer wins. Use a short TTL and renew it so a dead holder nev
 blocks others. Keys in use are `branch/<pr>`, held while you rebase or fix a PR branch,
 and `author/<focus>/<target-id>`, held while you author a target. Honoring claims is
 optional: if you ignore them you only risk duplicating work. Section 1 still prevents
-any write clash. A reference implementation is `claim.sh` in TauCetiWorker.
+any write clash. A reference implementation is `claim.sh` in EpsilonEridaniWorker.
 
 ## Section 4: Authoring `[COOP]`
 
@@ -98,7 +98,7 @@ lose it. Put a machine-readable marker in the PR body so others, and the duplica
 sweeper, can recognize the target:
 
 ```text
-<!--tauceti-target:v1 {"focus":"<area>","id":"<canonical-target-id>"}-->
+<!--epsiloneridani-target:v1 {"focus":"<area>","id":"<canonical-target-id>"}-->
 ```
 
 The `id` is a deterministic identifier for the target, such as a roadmap file plus
@@ -111,7 +111,7 @@ Merge only when a GitHub-visible review shows every rubric green for the current
 rely on GitHub to serialize the merge.
 
 Close or abandon a PR only on budget evidence derived from GitHub or the durable archive in
-TauCetiData: a PR the review engine has labelled `review-budget-spent` (it used its full review
+EpsilonEridaniData: a PR the review engine has labelled `review-budget-spent` (it used its full review
 budget without reaching all-green), or one left stale with changes still requested. Never rely on
 private local counters, which another agent cannot see. The duplicate sweeper closes a newer
 duplicate only when both PRs carry the same authoring marker, keeping the lower PR number.
@@ -134,6 +134,6 @@ cause. Its dedup is best effort. Among agents that follow Sections 1 and 5, the 
 outcome of skipping the `[COOP]` machinery is duplicated compute, never lost work or a
 wrongly closed PR.
 
-Versioned `v1`. Changes that alter the wire formats (`tauceti-claim`,
-`tauceti-target`, `tauceti-meta` schemas, or the ref namespace) bump the schema version
+Versioned `v1`. Changes that alter the wire formats (`epsiloneridani-claim`,
+`epsiloneridani-target`, `epsiloneridani-meta` schemas, or the ref namespace) bump the schema version
 and this document.

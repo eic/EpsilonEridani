@@ -1,11 +1,11 @@
-import TauCeti.RepresentationTheory.CharacterTable.Solvable
-import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
-import TauCeti.RepresentationTheory.Symmetric.TensorAction.GeneralLinear
+import EpsilonEridani.RepresentationTheory.CharacterTable.Solvable
+import EpsilonEridani.Analysis.Complex.Conformal.Jordan.Approach
+import EpsilonEridani.RepresentationTheory.Symmetric.TensorAction.GeneralLinear
 import SubVerso.Examples
 open SubVerso.Examples
 
 %example burnside
-open TauCeti in
+open EpsilonEridani in
 /-- Burnside's theorem — every finite group of order pᵃqᵇ, for primes p and q,
 is solvable. -/
 theorem burnside {G : Type*} [Group G] [Finite G] {p q a b : ℕ}
@@ -15,7 +15,7 @@ theorem burnside {G : Type*} [Group G] [Finite G] {p q a b : ℕ}
 %end
 
 %example caratheodory
-open TauCeti Set Metric Bornology in
+open EpsilonEridani Set Metric Bornology in
 /-- Carathéodory's boundary extension theorem — a Riemann map onto a Jordan
 domain extends to a homeomorphism of the closures. -/
 theorem caratheodory {Ω : Set ℂ}
@@ -29,7 +29,7 @@ theorem caratheodory {Ω : Set ℂ}
 %end
 
 %example schur_weyl
-open TauCeti in
+open EpsilonEridani in
 /-- Schur–Weyl duality — on the d-th tensor power of kⁿ, the images of the
 general linear and symmetric group algebras are each other's centralizers. -/
 theorem schur_weyl {k : Type*} [Field k] [Infinite k] {n d : ℕ}

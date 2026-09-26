@@ -40,7 +40,7 @@ def T(*paths: str) -> set[str]:
     return set(paths)
 
 
-D = "TauCeti/Analysis/Demo"
+D = "EpsilonEridani/Analysis/Demo"
 
 
 class TestCandidates(unittest.TestCase):
