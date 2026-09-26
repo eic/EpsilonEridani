@@ -10,7 +10,7 @@ a EpsilonEridaniRoadmap checkout); this is how the classifier was validated and 
 run in CI:
 
     python3 scripts/test_roadmap_label.py --replay-live \
-        --repo EpsilonEridaniProject/EpsilonEridani --roadmap-dir /path/to/EpsilonEridaniRoadmap
+        --repo eic/EpsilonEridani --roadmap-dir /path/to/EpsilonEridaniRoadmap
 """
 
 from __future__ import annotations
@@ -190,7 +190,7 @@ def run_replay(repo: str, roadmap_dir: str) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--replay-live", action="store_true")
-    ap.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
+    ap.add_argument("--repo", default="eic/EpsilonEridani")
     ap.add_argument("--roadmap-dir")
     a = ap.parse_args()
     if a.replay_live:

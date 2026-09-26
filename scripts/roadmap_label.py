@@ -26,7 +26,7 @@ evidence.
 ## Usage
 
     # classify one PR and print the label (no writes):
-    roadmap_label.py --pr 781 --repo EpsilonEridaniProject/EpsilonEridani --roadmap-dir roadmap
+    roadmap_label.py --pr 781 --repo eic/EpsilonEridani --roadmap-dir roadmap
     # ... and apply it (create the label if missing, drop any stale roadmap/* label),
     # leaving a nudge if it lands in roadmap/Unknown:
     roadmap_label.py --pr 781 --repo ... --roadmap-dir roadmap --apply --nudge
@@ -269,7 +269,7 @@ NUDGE_BODY = (
     "or dependency work. Refactors need no fresh roadmap authorization, but should "
     "name the one roadmap chiefly motivating them. For new mathematics, this "
     "attribution line does not replace the [scope rubric's]"
-    "(https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/blob/main/rubrics/scope.md) "
+    "(https://github.com/eic/EpsilonEridaniReview/blob/main/rubrics/scope.md) "
     "requirement to cite the exact roadmap file and target."
 )
 
@@ -391,7 +391,7 @@ def _run_backfill(args, areas) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Assign roadmap labels to PRs.")
-    ap.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
+    ap.add_argument("--repo", default="eic/EpsilonEridani")
     ap.add_argument("--roadmap-dir", required=True,
                     help="path to a EpsilonEridaniRoadmap checkout (for the canonical area set)")
     ap.add_argument("--pr", type=int, help="classify a single PR")

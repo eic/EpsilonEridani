@@ -51,7 +51,7 @@ class MessageContent(unittest.TestCase):
             "jeremy-kahn-brown-ai",
             ["roadmap/ConformalMapping"],
         )
-        self.assertIn("https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/1520", content)
+        self.assertIn("https://github.com/eic/EpsilonEridani/pull/1520", content)
         self.assertIn(
             "[jeremy-kahn-brown-ai](https://github.com/jeremy-kahn-brown-ai)",
             content,
@@ -97,7 +97,7 @@ class FindMessage(unittest.TestCase):
         self.assertEqual(len(z.searches), 2)
 
     def test_ignores_another_authors_matching_message(self):
-        url = "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/12"
+        url = "https://github.com/eic/EpsilonEridani/pull/12"
         z = self.FakeZulip({"id": 7, "sender_id": 99, "content": url, "reactions": []})
         self.assertIsNone(zulip.find_message(z, "12", 42))
 
@@ -165,7 +165,7 @@ class Reconcile(unittest.TestCase):
             z, "12", create=False, ci_override=None, bot_id=42, state=self.STATE)
         self.assertEqual(changes, 2)  # content plus the terminal merge reaction
         self.assertEqual(z.updated[0][0], 7)
-        self.assertIn("https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/12", z.updated[0][1])
+        self.assertIn("https://github.com/eic/EpsilonEridani/pull/12", z.updated[0][1])
         self.assertIn("author: [alice]", z.updated[0][1])
         self.assertIn("roadmap: PDE", z.updated[0][1])
         self.assertEqual(z.added, [(7, "merge")])
@@ -184,7 +184,7 @@ class Reconcile(unittest.TestCase):
     def test_unreported_ci_is_yellow_but_waiting_review_has_no_review_emoji(self):
         content = zulip.pr_message_content(
             "12", self.STATE["title"], self.STATE["author"], self.STATE["roadmaps"])
-        current = "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/12"
+        current = "https://github.com/eic/EpsilonEridani/pull/12"
         message = {"id": 7, "sender_id": 42, "content": content, "reactions": []}
         z = self.FakeZulip(message)
         open_state = {**self.STATE, "state": "open", "merged": False}
@@ -273,17 +273,17 @@ class TopicMessageIndex(unittest.TestCase):
                             {
                                 "id": 20,
                                 "sender_id": 42,
-                                "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/2",
+                                "content": "https://github.com/eic/EpsilonEridani/pull/2",
                             },
                             {
                                 "id": 10,
                                 "sender_id": 42,
-                                "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/1",
+                                "content": "https://github.com/eic/EpsilonEridani/pull/1",
                             },
                             {
                                 "id": 15,
                                 "sender_id": 99,
-                                "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/99",
+                                "content": "https://github.com/eic/EpsilonEridani/pull/99",
                             },
                         ],
                     }
@@ -293,7 +293,7 @@ class TopicMessageIndex(unittest.TestCase):
                         {
                             "id": 10,
                             "sender_id": 42,
-                            "content": "https://github.com/EpsilonEridaniProject/EpsilonEridani/pull/1",
+                            "content": "https://github.com/eic/EpsilonEridani/pull/1",
                         },
                         {
                             "id": 5,

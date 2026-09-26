@@ -1510,7 +1510,7 @@ def generate(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
+    parser.add_argument("--repo", default="eic/EpsilonEridani")
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--data", type=Path, help="normalized offline snapshot")
     parser.add_argument("--dump-data", type=Path, help="write fetched normalized snapshot")

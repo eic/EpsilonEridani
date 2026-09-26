@@ -62,7 +62,7 @@ jobs:
   # Runs once a night, so `github.token` has ample API budget and the App's secrets stay out of
   # this workflow entirely.
   pick-runner:
-    if: github.repository == 'EpsilonEridaniProject/EpsilonEridani'
+    if: github.repository == 'eic/EpsilonEridani'
     uses: ./.github/workflows/pick-runner.yml
     permissions:
       actions: read
@@ -72,7 +72,7 @@ jobs:
   # job for exactly that reason.
   verify:
     needs: pick-runner
-    if: ${{ !cancelled() && github.repository == 'EpsilonEridaniProject/EpsilonEridani' }}
+    if: ${{ !cancelled() && github.repository == 'eic/EpsilonEridani' }}
     # `container.privileged` is required and documented by Namespace for this case: without it
     # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
     # at all, for root as well as for the job user. The `-with-features` suffix on the machine
@@ -547,7 +547,7 @@ jobs:
     # than `||`.
     # The repository guard matters here too: on a fork `verify` is skipped, and without it this
     # job would fire on every schedule and fail for want of a Zulip secret it should not have.
-    if: ${{ always() && github.repository == 'EpsilonEridaniProject/EpsilonEridani'
+    if: ${{ always() && github.repository == 'eic/EpsilonEridani'
             && (needs.verify.result != 'success' || needs.verify.outputs.compare != 'agree') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -579,7 +579,7 @@ jobs:
           import urllib.request
 
           sha = os.environ.get("SHA") or ""
-          where = (f"[`{sha[:8]}`](https://github.com/EpsilonEridaniProject/EpsilonEridani/commit/{sha})"
+          where = (f"[`{sha[:8]}`](https://github.com/eic/EpsilonEridani/commit/{sha})"
                    if sha else "an unresolved commit")
           lines = [f"**Nightly verification did not come back clean** on {where}."]
 

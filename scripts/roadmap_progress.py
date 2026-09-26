@@ -657,7 +657,7 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--roadmap-dir", type=pathlib.Path, required=True,
                    help="a checkout of EpsilonEridaniRoadmap")
-    p.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani",
+    p.add_argument("--repo", default="eic/EpsilonEridani",
                    help="repository whose merged PRs carry the roadmap labels")
     p.add_argument("--data", type=pathlib.Path,
                    help="pull-request snapshot to read instead of querying gh")

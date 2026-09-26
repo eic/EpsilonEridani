@@ -41,7 +41,7 @@ concurrency:
 
 jobs:
   stuck-alerts:
-    if: github.repository == 'EpsilonEridaniProject/EpsilonEridani'
+    if: github.repository == 'eic/EpsilonEridani'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

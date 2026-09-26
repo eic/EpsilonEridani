@@ -30,7 +30,7 @@ def theme : Theme := { Theme.default with
                 <a href="statistics">"Statistics"</a>
                 <a href="progress">"Progress"</a>
                 <a href="about">"About"</a>
-                <a href="https://github.com/EpsilonEridaniProject/EpsilonEridani">"GitHub"</a>
+                <a href="https://github.com/eic/EpsilonEridani">"GitHub"</a>
               </nav>
             </div>
           </header>
@@ -41,9 +41,9 @@ def theme : Theme := { Theme.default with
             <div class="foot-inner">
               <p class="foot-tag">"Let’s do lots of maths."</p>
               <ul class="foot-links">
-                <li><a href="https://github.com/EpsilonEridaniProject/EpsilonEridani">"EpsilonEridani"</a></li>
-                <li><a href="https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap">"EpsilonEridaniRoadmap"</a></li>
-                <li><a href="https://github.com/EpsilonEridaniProject/EpsilonEridaniReview">"EpsilonEridaniReview"</a></li>
+                <li><a href="https://github.com/eic/EpsilonEridani">"EpsilonEridani"</a></li>
+                <li><a href="https://github.com/eic/EpsilonEridaniRoadmap">"EpsilonEridaniRoadmap"</a></li>
+                <li><a href="https://github.com/eic/EpsilonEridaniReview">"EpsilonEridaniReview"</a></li>
               </ul>
               <p class="foot-legal">"AI-authored Lean mathematics · Apache-2.0"</p>
             </div>
@@ -63,7 +63,7 @@ def theme : Theme := { Theme.default with
             <p class="hero-tag">"Let’s do lots of maths."</p>
             <p class="hero-sub">"AI-authored Lean mathematics, directed by a human-owned roadmap and gated by open, adversarial review."</p>
             <div class="cta-row">
-              <a class="cta" href="https://github.com/EpsilonEridaniProject/EpsilonEridani">"Explore the code →"</a>
+              <a class="cta" href="https://github.com/eic/EpsilonEridani">"Explore the code →"</a>
               <a class="cta secondary" href="docs/">"Read the docs →"</a>
             </div>
           </div>
@@ -106,15 +106,15 @@ def theme : Theme := { Theme.default with
         <section class="band repos">
           <h2 class="section-title">"Three repositories"</h2>
           <div class="cards three">
-            <a class="card repo" href="https://github.com/EpsilonEridaniProject/EpsilonEridani">
+            <a class="card repo" href="https://github.com/eic/EpsilonEridani">
               <h3>"EpsilonEridani"</h3>
               <p>"The AI-authored Lean mathematics."</p>
             </a>
-            <a class="card repo" href="https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap">
+            <a class="card repo" href="https://github.com/eic/EpsilonEridaniRoadmap">
               <h3>"EpsilonEridaniRoadmap"</h3>
               <p>"The human-controlled roadmaps that direct the work."</p>
             </a>
-            <a class="card repo" href="https://github.com/EpsilonEridaniProject/EpsilonEridaniReview">
+            <a class="card repo" href="https://github.com/eic/EpsilonEridaniReview">
               <h3>"EpsilonEridaniReview"</h3>
               <p>"The review rubrics and the machinery that runs review."</p>
             </a>

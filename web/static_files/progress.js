@@ -21,8 +21,8 @@
   };
   var REASON_SHORT = { "no-layers": "no layer inventory", "no-report": "no report yet", "not-transcribed": "report not transcribed",
     "transcription-retired": "transcription retired", "specification-changed": "README changed", "invalid-marker": "coverage marker invalid" };
-  var ROADMAP_REPO = "https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap";
-  var LIBRARY_REPO = "https://github.com/EpsilonEridaniProject/EpsilonEridani";
+  var ROADMAP_REPO = "https://github.com/eic/EpsilonEridaniRoadmap";
+  var LIBRARY_REPO = "https://github.com/eic/EpsilonEridani";
   var GH_PRS = LIBRARY_REPO + "/pulls?q=is%3Apr+is%3Amerged+label%3Aroadmap%2F";
   var SORTS = ["activity", "done", "due", "name"];
   var SHOWS = ["all", "active", "completed", "reported", "unreported", "unassessed", "due"];

@@ -23,10 +23,10 @@ import time
 from chart_style import BAR_BG, MUTED, PALETTE, TEXT, base_css, card_rect, css_px
 
 REPOSITORIES = [
-    ("EpsilonEridaniProject/EpsilonEridani", "EpsilonEridani", PALETTE[1]),
-    ("EpsilonEridaniProject/EpsilonEridaniRoadmap", "EpsilonEridaniRoadmap", PALETTE[0]),
-    ("EpsilonEridaniProject/EpsilonEridaniWorker", "EpsilonEridaniWorker", PALETTE[2]),
-    ("EpsilonEridaniProject/EpsilonEridaniReview", "EpsilonEridaniReview", PALETTE[4]),
+    ("eic/EpsilonEridani", "EpsilonEridani", PALETTE[1]),
+    ("eic/EpsilonEridaniRoadmap", "EpsilonEridaniRoadmap", PALETTE[0]),
+    ("eic/EpsilonEridaniWorker", "EpsilonEridaniWorker", PALETTE[2]),
+    ("eic/EpsilonEridaniReview", "EpsilonEridaniReview", PALETTE[4]),
 ]
 
 # Some GitHub Apps surface through GraphQL as User nodes or without their REST

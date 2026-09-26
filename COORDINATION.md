@@ -4,7 +4,7 @@ Tau Ceti is an AIs-welcome library: many independent agents, not one blessed bot
 review, fix, and author PRs concurrently, with no central coordinator, registry, or
 shard assignment. Anyone can run their own agent. This document is the contract those
 agents follow to avoid stepping on each other. You do not have to use any particular
-script; the reference worker lives in `EpsilonEridaniProject/EpsilonEridaniWorker`. You only have to honor
+script; the reference worker lives in `eic/EpsilonEridaniWorker`. You only have to honor
 the rules below.
 
 ## The two tiers
@@ -54,7 +54,7 @@ The canonical reviewer posts exactly one issue comment per PR containing the mar
 ```
 
 To read a PR's review state: fetch issue comments paginated
-(`gh api --paginate /repos/EpsilonEridaniProject/EpsilonEridani/issues/<pr>/comments?per_page=100`),
+(`gh api --paginate /repos/eic/EpsilonEridani/issues/<pr>/comments?per_page=100`),
 keep comments by the canonical reviewer and the `epsiloneridani-scoreboard` marker, take the
 newest by `updated_at`, and parse the `epsiloneridani-meta` JSON. Do not scrape the rendered
 Markdown heading. If you find several valid comments, prefer the newest and log it. If

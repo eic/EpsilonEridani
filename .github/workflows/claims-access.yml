@@ -1,6 +1,6 @@
 name: Claims Access
 
-# Admits contributors to the shared claim namespace, EpsilonEridaniProject/epsiloneridani-claims, so that workers
+# Admits contributors to the shared claim namespace, eic/epsiloneridani-claims, so that workers
 # run by different people do not spend two subscriptions on the same job. The rule is: anyone whose
 # pull request has been merged here. See scripts/claims_access.py for why, and for what `sweep` does.
 #
@@ -14,7 +14,7 @@ name: Claims Access
 # far bigger hammer than this job needs.
 #   1. Create an org-owned App, e.g. "epsiloneridani-claims-access", with repository permissions
 #      `Administration: write` (invite) and `Contents: write` (delete expired refs).
-#   2. Install it on EpsilonEridaniProject/epsiloneridani-claims, and on nothing else.
+#   2. Install it on eic/epsiloneridani-claims, and on nothing else.
 #   3. Add this repository's secrets CLAIMS_APP_ID and CLAIMS_APP_PRIVATE_KEY.
 # Then run it once from the Actions tab with dry-run to see who it would invite.
 
@@ -54,7 +54,7 @@ jobs:
         with:
           app-id: ${{ secrets.CLAIMS_APP_ID }}
           private-key: ${{ secrets.CLAIMS_APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: epsiloneridani-claims
 
       - uses: actions/checkout@v4

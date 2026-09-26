@@ -30,7 +30,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-contents: write
           permission-issues: write
@@ -80,7 +80,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-contents: write
           permission-issues: write

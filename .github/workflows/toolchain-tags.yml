@@ -51,7 +51,7 @@ jobs:
     # The ref guard is not decoration: workflow_dispatch lets any ref be selected, and the
     # job would otherwise check that branch out and report its history as main's.
     if: >-
-      github.repository == 'EpsilonEridaniProject/EpsilonEridani'
+      github.repository == 'eic/EpsilonEridani'
       && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # The wait below is bounded at 180 minutes; this bounds the job around it.

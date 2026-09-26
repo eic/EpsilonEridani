@@ -31,8 +31,8 @@ instead of per-run artifacts.
 GitHub Actions cache entries are immutable. If an entry is poisoned or the format becomes
 incompatible, bump `mathlib-ltar-v1` once in
 `.github/actions/restore-mathlib-ltars/action.yml`. To discard a single entry instead, find it with
-`gh cache list --repo EpsilonEridaniProject/EpsilonEridani` and delete its exact key with
-`gh cache delete <key> --repo EpsilonEridaniProject/EpsilonEridani`. A failed fetch also retries once with
+`gh cache list --repo eic/EpsilonEridani` and delete its exact key with
+`gh cache delete <key> --repo eic/EpsilonEridani`. A failed fetch also retries once with
 `lake exe cache get!`, which forces every linked file to be downloaded and unpacked again.
 
 Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
@@ -83,7 +83,7 @@ to sign them, so the read host must be public; only uploads use a key.
 | `LAKE_CACHE_KEY` (secret) | `<ACCESS_KEY_ID>:<SECRET>`, read-write | `ci.yml`, `publish-lake-cache` job only |
 
 Lake service names: `epsiloneridani-public` for reads, `epsiloneridani-r2` for uploads. Object keys are
-`artifacts/EpsilonEridaniProject/EpsilonEridani/<hash>.art`, so the endpoint variables hold only the prefix and
+`artifacts/eic/EpsilonEridani/<hash>.art`, so the endpoint variables hold only the prefix and
 Lake appends the scope.
 
 ## Publisher credential
@@ -116,7 +116,7 @@ went unnoticed for as long as it did. CI keeps passing the endpoints explicitly 
 never decide what CI does.
 
 Anything else reading this cache, including the worker exemplar in
-[`EpsilonEridaniProject/EpsilonEridaniWorker`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker), must use the custom domain rather
+[`eic/EpsilonEridaniWorker`](https://github.com/eic/EpsilonEridaniWorker), must use the custom domain rather
 than the bucket's `pub-<id>.r2.dev` development URL. Public access on that development URL is off and
 it answers 401 for every path, which a caller whose cache miss is non-fatal cannot tell from a cold
 revision.
@@ -157,7 +157,7 @@ Because it does not configure the workspace, `put-staged` cannot derive the tool
 halves of the upload scope, so the job passes `--rev` and `--toolchain` explicitly and relies on
 the default of no platform. That reproduces the scope `lake cache put` derived, verified by
 comparing the revision URLs the two commands emit, which are identical:
-`revisions/EpsilonEridaniProject/EpsilonEridani/tc/leanprover--lean4---<version>/<rev>.jsonl`. The platform is
+`revisions/eic/EpsilonEridani/tc/leanprover--lean4---<version>/<rev>.jsonl`. The platform is
 absent because `lakefile.toml` sets `platformIndependent = true`; the staging step fails loudly if
 that ever stops being true, since a silent mismatch would publish under a scope `pr-build` never
 reads.
@@ -221,7 +221,7 @@ returning only the headers (https://developers.cloudflare.com/cache/concepts/cac
 `HEAD` reports the same `cf-cache-status` a `GET` would.
 
 ```bash
-U=https://cache.epsiloneridaniproject.org/artifacts/EpsilonEridaniProject/EpsilonEridani/<hash>.art
+U=https://cache.epsiloneridaniproject.org/artifacts/eic/EpsilonEridani/<hash>.art
 curl -s -o /dev/null -D - "$U" | grep -i cf-cache-status   # MISS on the first request
 curl -s -o /dev/null -D - "$U" | grep -i cf-cache-status   # HIT on the second
 ```
@@ -252,10 +252,10 @@ count per build varies with how much of the dependency cone a PR invalidates.
 To re-estimate, take an artifact count from any `sandboxed-build` job and a day's run count:
 
 ```bash
-JOB=$(gh run view --repo EpsilonEridaniProject/EpsilonEridani <run-id> \
+JOB=$(gh run view --repo eic/EpsilonEridani <run-id> \
         --json jobs -q '.jobs[]|select(.name=="sandboxed-build")|.databaseId' | head -1)
-gh run view --repo EpsilonEridaniProject/EpsilonEridani --job "$JOB" --log | grep -c 'downloaded artifact'
-gh api -X GET repos/EpsilonEridaniProject/EpsilonEridani/actions/workflows/pr-build.yml/runs \
+gh run view --repo eic/EpsilonEridani --job "$JOB" --log | grep -c 'downloaded artifact'
+gh api -X GET repos/eic/EpsilonEridani/actions/workflows/pr-build.yml/runs \
   -f created=YYYY-MM-DD -q .total_count
 ```
 

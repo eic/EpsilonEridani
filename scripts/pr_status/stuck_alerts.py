@@ -100,7 +100,7 @@ Environment:
     ZULIP_API_KEY, ZULIP_EMAIL, ZULIP_SITE   bot credentials (required unless --dry-run)
     ZULIP_CHANNEL                            default "Tau Ceti"
     ZULIP_TOPIC                              default "Stuck PRs"
-    GH_REPO                                  default "EpsilonEridaniProject/EpsilonEridani"
+    GH_REPO                                  default "eic/EpsilonEridani"
     GH_TOKEN / GITHUB_TOKEN                  used by `gh` for the GitHub API
 
 Only python3's standard library and an authenticated `gh` CLI are required. The
@@ -247,7 +247,7 @@ newest_status = core.newest_status
 
 def detect_stuck_bump():
     prs = gh_stream(
-        f"/repos/{REPO}/pulls?state=open&head=EpsilonEridaniProject:{LKG_BRANCH}&per_page=5",
+        f"/repos/{REPO}/pulls?state=open&head=eic:{LKG_BRANCH}&per_page=5",
         jq='.[] | {number, head: .head.sha, created_at}', paginate=False)
     out = []
     for pr in prs:
@@ -278,7 +278,7 @@ def detect_stuck_bump():
 
 def detect_stuck_lint_repair():
     prs = gh_stream(
-        f"/repos/{REPO}/pulls?state=open&head=EpsilonEridaniProject:{LINT_REPAIR_BRANCH}&per_page=5",
+        f"/repos/{REPO}/pulls?state=open&head=eic:{LINT_REPAIR_BRANCH}&per_page=5",
         jq='.[] | {number, created_at}', paginate=False)
     out = []
     for pr in prs:

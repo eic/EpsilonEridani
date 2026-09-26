@@ -44,7 +44,7 @@ import subprocess
 import sys
 
 MARKER = "<!--structure:nudge-->"
-TRACKING_ISSUE = "https://github.com/EpsilonEridaniProject/EpsilonEridani/issues/987"
+TRACKING_ISSUE = "https://github.com/eic/EpsilonEridani/issues/987"
 
 _TOKEN_RE = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z0-9]*|[a-z0-9]+")
 
@@ -199,7 +199,7 @@ def run_tree_dry_run() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Advisory structure nudge for PRs.")
-    ap.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
+    ap.add_argument("--repo", default="eic/EpsilonEridani")
     ap.add_argument("--pr", type=int, help="analyze a single PR")
     ap.add_argument("--apply", action="store_true",
                     help="post/update the advisory comment (otherwise print it)")

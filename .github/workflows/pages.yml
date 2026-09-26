@@ -134,7 +134,7 @@ jobs:
 
       - name: Clone the roadmap repository (full history, for its chart)
         working-directory: ${{ github.workspace }}
-        run: git clone --quiet https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap.git /tmp/roadmap
+        run: git clone --quiet https://github.com/eic/EpsilonEridaniRoadmap.git /tmp/roadmap
 
       # Overwrites the checked-in SVGs in the runner only (never committed back). The
       # versions tracked in web/static_files/ are just fallback snapshots so a local
@@ -258,7 +258,7 @@ jobs:
         continue-on-error: true
         uses: actions/checkout@v4
         with:
-          repository: EpsilonEridaniProject/EpsilonEridaniReview
+          repository: eic/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .epsiloneridani-review
           sparse-checkout: runner

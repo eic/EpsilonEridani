@@ -58,7 +58,7 @@ Environment:
     ZULIP_API_KEY, ZULIP_EMAIL, ZULIP_SITE   bot credentials (required)
     ZULIP_CHANNEL                            default "Tau Ceti"
     ZULIP_TOPIC                              default "PRs"
-    GH_REPO                                  default "EpsilonEridaniProject/EpsilonEridani"
+    GH_REPO                                  default "eic/EpsilonEridani"
     GH_TOKEN / GITHUB_TOKEN                  used by `gh` for the GitHub API
 
 The only runtime dependencies are python3's standard library and an

@@ -619,7 +619,7 @@ class StuckLintRepairTest(unittest.TestCase):
         self.addCleanup(setattr, sa, "gh_stream", sa.gh_stream)
         sa.gh_stream = lambda path, **k: seen.append(path) or prs
         out = sa.detect_stuck_lint_repair()
-        self.assertIn(f"head=EpsilonEridaniProject:{sa.LINT_REPAIR_BRANCH}", seen[0])
+        self.assertIn(f"head=eic:{sa.LINT_REPAIR_BRANCH}", seen[0])
         return out
 
     def test_an_old_repair_pr_alerts(self):

@@ -35,7 +35,7 @@ class ExactMapProbe(unittest.TestCase):
         url = cache_probe.exact_map_url(ENDPOINT + "/", TOOLCHAIN, SHA)
         self.assertEqual(
             url,
-            ENDPOINT + "/EpsilonEridaniProject/EpsilonEridani/tc/"
+            ENDPOINT + "/eic/EpsilonEridani/tc/"
             "leanprover--lean4---v4.34.0-rc1/" + SHA + ".jsonl",
         )
 

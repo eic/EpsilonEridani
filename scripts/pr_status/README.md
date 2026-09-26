@@ -139,7 +139,7 @@ bookkeeping — a wrong label self-heals on the next run. It also makes the prob
 measurable without writing anything extra, since GitHub timestamps label changes:
 
 ```bash
-gh api --paginate "/repos/EpsilonEridaniProject/EpsilonEridani/issues/N/timeline?per_page=100" \
+gh api --paginate "/repos/eic/EpsilonEridani/issues/N/timeline?per_page=100" \
   --jq '.[] | select(.label.name == "merge-conflict") | "\(.event) \(.created_at) \(.actor.login)"'
 ```
 
@@ -210,7 +210,7 @@ a persistent Zulip config break, exactly like the healthcheck.
 1. **Create a dedicated Zulip bot** (Zulip → Settings → Bots → Add a new bot,
    type *Generic*). Subscribe it to the **Tau Ceti** channel: a bot can only
    post and react in channels it belongs to.
-2. **Add repository secrets** on `EpsilonEridaniProject/EpsilonEridani`:
+2. **Add repository secrets** on `eic/EpsilonEridani`:
    - `ZULIP_API_KEY`: the bot's API key
    - `ZULIP_EMAIL`: the bot's email (e.g. `epsiloneridani-pr-bot@leanprover.zulipchat.com`)
 
@@ -221,7 +221,7 @@ a persistent Zulip config break, exactly like the healthcheck.
    > `Malformed API key` (a 401). Use `--body`, which does not append one:
    >
    > ```bash
-   > gh secret set ZULIP_API_KEY --repo EpsilonEridaniProject/EpsilonEridani --body "$KEY"
+   > gh secret set ZULIP_API_KEY --repo eic/EpsilonEridani --body "$KEY"
    > ```
    >
    > Avoid `echo "$KEY" | gh secret set ...` (echo adds a newline). The script
@@ -262,10 +262,10 @@ python3 scripts/pr_status/labels.py reconcile-all
 
 # Zulip: needs the status bot credentials exported. This paginates the complete
 # PR history in one low-request stream and edits existing posts in place,
-# including posts whose URL predates the FormalFrontier -> EpsilonEridaniProject transfer.
+# including posts whose URL predates the FormalFrontier -> eic transfer.
 export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
 gh api --paginate \
-  'repos/EpsilonEridaniProject/EpsilonEridani/pulls?state=all&sort=created&direction=asc&per_page=100' \
+  'repos/eic/EpsilonEridani/pulls?state=all&sort=created&direction=asc&per_page=100' \
   --jq '.[] | {
     number,
     state,

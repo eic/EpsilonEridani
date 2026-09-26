@@ -54,7 +54,7 @@ jobs:
   # the number comes from.
   label:
     if: >
-      github.repository == 'EpsilonEridaniProject/EpsilonEridani' && (
+      github.repository == 'eic/EpsilonEridani' && (
         (github.event_name == 'pull_request_target'
           && (github.event.action != 'edited' || github.event.changes.base != null)
           && (!contains(fromJSON('["labeled","unlabeled"]'), github.event.action)
@@ -85,7 +85,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-issues: write
           permission-pull-requests: write
@@ -99,7 +99,7 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: EpsilonEridaniProject/EpsilonEridaniReview
+          repository: eic/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .epsiloneridani-review
           sparse-checkout: runner
@@ -118,7 +118,7 @@ jobs:
   # its concurrency on the result. See the `label` job above for why this exists for these events only.
   resolve:
     if: >
-      github.repository == 'EpsilonEridaniProject/EpsilonEridani' && (
+      github.repository == 'eic/EpsilonEridani' && (
         (github.event_name == 'workflow_dispatch' && inputs.pr != 'all')
         || (github.event_name == 'workflow_run'
             && github.event.workflow_run.event == 'pull_request_target'
@@ -133,7 +133,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-pull-requests: read
       - id: r
@@ -186,7 +186,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-issues: write
           permission-pull-requests: write
@@ -200,7 +200,7 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: EpsilonEridaniProject/EpsilonEridaniReview
+          repository: eic/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .epsiloneridani-review
           sparse-checkout: runner
@@ -217,7 +217,7 @@ jobs:
   # Per-PR jobs can overlap this pass; both read fresh state and converge.
   sweep:
     if: >-
-      github.repository == 'EpsilonEridaniProject/EpsilonEridani'
+      github.repository == 'eic/EpsilonEridani'
       && (github.event_name == 'schedule'
         || (github.event_name == 'workflow_dispatch' && inputs.pr == 'all'))
     runs-on: ubuntu-latest
@@ -230,7 +230,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-issues: write
           permission-pull-requests: write
@@ -242,7 +242,7 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: EpsilonEridaniProject/EpsilonEridaniReview
+          repository: eic/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .epsiloneridani-review
           sparse-checkout: runner

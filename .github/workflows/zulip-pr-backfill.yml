@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   backfill:
-    if: github.repository == 'EpsilonEridaniProject/EpsilonEridani'
+    if: github.repository == 'eic/EpsilonEridani'
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
@@ -35,7 +35,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-issues: read
           permission-pull-requests: read
@@ -58,7 +58,7 @@ jobs:
           # process. This stays well below GITHUB_TOKEN's 1,000 requests/hour
           # repository limit and authenticates the Zulip bot only once.
           gh api --paginate \
-            'repos/EpsilonEridaniProject/EpsilonEridani/pulls?state=all&sort=created&direction=asc&per_page=100' \
+            'repos/eic/EpsilonEridani/pulls?state=all&sort=created&direction=asc&per_page=100' \
             --jq '.[] | {
               number,
               state,

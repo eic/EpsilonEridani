@@ -15,7 +15,7 @@ WORKFLOWS = (
     ROOT / ".github/workflows/review.yml",
 )
 CALL_PIN = re.compile(
-    r"uses:\s+EpsilonEridaniProject/EpsilonEridaniReview/\.github/workflows/[^@\s]+@([0-9a-f]{40})"
+    r"uses:\s+eic/EpsilonEridaniReview/\.github/workflows/[^@\s]+@([0-9a-f]{40})"
 )
 CHECKOUT_PIN = re.compile(r"^\s+review_ref:\s+([0-9a-f]{40})\s*$", re.MULTILINE)
 
@@ -25,7 +25,7 @@ class WorkflowPins(unittest.TestCase):
         merge_pin = CALL_PIN.findall(WORKFLOWS[0].read_text())[0]
         for name, count in (("pr-labels.yml", 3), ("pages.yml", 1), ("ci.yml", 1)):
             text = (ROOT / ".github/workflows" / name).read_text()
-            pins = re.findall(r"repository: EpsilonEridaniProject/EpsilonEridaniReview\s+ref: ([0-9a-f]{40})", text)
+            pins = re.findall(r"repository: eic/EpsilonEridaniReview\s+ref: ([0-9a-f]{40})", text)
             self.assertEqual(pins, [merge_pin] * count, name)
 
     def test_workflow_and_checkout_pins_match(self):

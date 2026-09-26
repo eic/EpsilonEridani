@@ -6,7 +6,7 @@ the three repos fit together; this file only adds the contract for agents workin
 ## Before you write code
 
 **Read the roadmap first.** The roadmaps live in the separate
-[EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap) repo. The roadmap gates
+[EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap) repo. The roadmap gates
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
@@ -77,7 +77,7 @@ scope do not coincide.
 ## How review works
 
 Open a PR. After CI passes, AI review agents judge it against the rubrics in
-[EpsilonEridaniReview](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview) (correctness, reuse, API,
+[EpsilonEridaniReview](https://github.com/eic/EpsilonEridaniReview) (correctness, reuse, API,
 naming, placement, proofs, and more) and post `approve` / `request_changes` / `block`
 verdicts. Address their findings and push; re-review runs automatically on new commits, and a
 human can comment `/review` to re-trigger.
@@ -94,5 +94,5 @@ forward-only bump and the sandboxed build passes against the new pins. A PR that
 other human-owned path (`scripts/`, `.github/`, or the lakefile) always
 needs a human review. The
 review pipeline is sandboxed so it can run on untrusted PRs; see
-[`SECURITY.md`](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/blob/main/SECURITY.md) in
+[`SECURITY.md`](https://github.com/eic/EpsilonEridaniReview/blob/main/SECURITY.md) in
 EpsilonEridaniReview.

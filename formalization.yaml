@@ -13,7 +13,7 @@ project:
   name: "Tau Ceti"     # [required]
   authors:                     # [required] who did the formalization
     - "AI author agents (the Lean code under EpsilonEridani/)"
-    - "Human stewards (roadmaps, CI, review), EpsilonEridaniProject"
+    - "Human stewards (roadmaps, CI, review), eic"
   license: "Apache-2.0"        # [required]
 
 # sources - what was formalized.
@@ -23,7 +23,7 @@ project:
 sources:                       # [required] list of sources
   - title: "Tau Ceti roadmaps (human-curated)"   # [required]
     authors: ["Tau Ceti human stewards"]         # [required]
-    id: "https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap"  # [required]
+    id: "https://github.com/eic/EpsilonEridaniRoadmap"  # [required]
     type: "blueprint"
     license: "Apache-2.0"
     author_contacted: "n/a"
@@ -89,4 +89,4 @@ alignment:
     blueprint. Each roadmap (e.g. UniversalCovers, JacobianChallenge, ReductiveGroups)
     states its goals as sorry-allowed signatures in its Suggested.lean; the matching
     sorry-free development lives (or will live) under EpsilonEridani/.
-  roadmaps: "https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap"
+  roadmaps: "https://github.com/eic/EpsilonEridaniRoadmap"

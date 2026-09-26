@@ -189,7 +189,7 @@ jobs:
           export LAKE_CONFIG="$CFG"
 
           lake cache put-staged "$STAGING" --service epsiloneridani-r2 \
-            --repo EpsilonEridaniProject/EpsilonEridani --rev "$REVISION" --toolchain "$ELAN_TOOLCHAIN"
+            --repo eic/EpsilonEridani --rev "$REVISION" --toolchain "$ELAN_TOOLCHAIN"
 
           echo 'uploaded=true' >> "$GITHUB_OUTPUT"
           echo "::notice::uploaded the Lake cache for $REVISION"
@@ -210,7 +210,7 @@ jobs:
           set -euo pipefail
           observed=0
           for attempt in 1 2 3 4 5 6; do
-            if python3 scripts/lake_cache_probe.py --repo EpsilonEridaniProject/EpsilonEridani \
+            if python3 scripts/lake_cache_probe.py --repo eic/EpsilonEridani \
                 --expected "$STAGING/outputs.jsonl" \
                 "$PUBLIC_REVISION_ENDPOINT" "$ELAN_TOOLCHAIN" "$REVISION"; then
               observed=1

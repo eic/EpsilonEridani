@@ -39,7 +39,7 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v4
         with:
-          repository: EpsilonEridaniProject/EpsilonEridaniReview
+          repository: eic/EpsilonEridaniReview
           ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .epsiloneridani-review
           sparse-checkout: runner

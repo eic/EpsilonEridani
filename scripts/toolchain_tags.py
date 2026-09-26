@@ -55,7 +55,7 @@ If a tag does not match the rule, the tool reports it and changes nothing.
 ## Environment
 
     GH_TOKEN / GITHUB_TOKEN   authenticates the `gh` CLI
-    GH_REPO                   this repository (default EpsilonEridaniProject/EpsilonEridani)
+    GH_REPO                   this repository (default eic/EpsilonEridani)
     LAKE_CACHE_REVISION_ENDPOINT_PUBLIC   default https://cache.epsiloneridaniproject.org/revisions
 
 Only python3's standard library, git, and an authenticated `gh` CLI.
@@ -79,7 +79,7 @@ from lake_cache_probe import exact_map_url
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "pr_status"))
 import zulip as zp  # noqa: E402
 
-REPO = os.environ.get("GH_REPO", "EpsilonEridaniProject/EpsilonEridani")
+REPO = os.environ.get("GH_REPO", "eic/EpsilonEridani")
 REVISIONS = os.environ.get("LAKE_CACHE_REVISION_ENDPOINT_PUBLIC",
                            "https://cache.epsiloneridaniproject.org/revisions")
 

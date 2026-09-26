@@ -3,7 +3,7 @@
 
 Workers run by different people must not spend two subscriptions on the same job, so before starting
 one they take a lease: a `refs/epsiloneridani-claims/<key>` ref, acquired by compare-and-swap, in a repository
-every worker can push to. That repository is EpsilonEridaniProject/epsiloneridani-claims, and it holds nothing else:
+every worker can push to. That repository is eic/epsiloneridani-claims, and it holds nothing else:
 no code, no Actions, no relationship to this one. Coordinating workers must never need write access to
 the library itself, which is the whole reason the leases do not live here.
 
@@ -38,7 +38,7 @@ import time
 REPO = os.environ.get("REPO", "")
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
 CLAIMS_TOKEN = os.environ.get("CLAIMS_TOKEN", "")
-CLAIMS_REPO = os.environ.get("CLAIMS_REPO", "EpsilonEridaniProject/epsiloneridani-claims")
+CLAIMS_REPO = os.environ.get("CLAIMS_REPO", "eic/epsiloneridani-claims")
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
 # A lease is swept only this long AFTER it expired. Taking over an expired lease is a CAS, so a
 # worker may legitimately be reviving one at the moment we look at it; the grace period means the

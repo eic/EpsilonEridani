@@ -16,7 +16,7 @@ import re
 import subprocess
 import time
 
-REPO = os.environ.get("GH_REPO", "EpsilonEridaniProject/EpsilonEridani")
+REPO = os.environ.get("GH_REPO", "eic/EpsilonEridani")
 
 SCOREBOARD_MARKER = "<!--epsiloneridani-scoreboard-->"
 # Greedy `\{.*\}` (with re.S) so a meta object with a nested `"states": {...}` is captured whole: a

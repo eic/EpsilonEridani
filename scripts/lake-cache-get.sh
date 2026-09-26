@@ -34,7 +34,7 @@
 # preserves verified artifacts and fetches only those still missing. If every attempt fails, we
 # discard the partial cache before the build so its final behavior remains exactly the same as
 # when the cache is switched off. See https://github.com/leanprover/lean4/pull/14651 and
-# https://github.com/EpsilonEridaniProject/EpsilonEridani/issues/2062.
+# https://github.com/eic/EpsilonEridani/issues/2062.
 set -euo pipefail
 
 PROJECT_DIR="${1:?usage: lake-cache-get.sh <project-dir>}"
@@ -88,7 +88,7 @@ for attempt in $(seq 1 $ATTEMPTS); do
   LOG="${RUNNER_TEMP:-/tmp}/cache-get-$attempt.log"
   rc=0
   ( cd "$PROJECT_DIR" && LAKE_CONFIG="$CFG" lake cache get --service epsiloneridani-public \
-      --repo EpsilonEridaniProject/EpsilonEridani --max-revs="$LAKE_CACHE_MAX_REVS" ) > "$LOG" 2>&1 || rc=$?
+      --repo eic/EpsilonEridani --max-revs="$LAKE_CACHE_MAX_REVS" ) > "$LOG" 2>&1 || rc=$?
   cat "$LOG"
   if [ "$rc" = 0 ]; then clean=1; break; fi
   if grep -qE "$MISS_RE" "$LOG"; then break; fi

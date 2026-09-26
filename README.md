@@ -24,10 +24,10 @@ we hope that we can efficiently build a reusable library at significant scale. W
 * and Mathlib, Tau Ceti, and other libraries provide the knowledge necessary so that humans can work at the research frontier.
 
 Humans own the roadmap for Tau Ceti, which lives in the
-[EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap) repository (mostly in the form of markdown files, together with a
+[EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap) repository (mostly in the form of markdown files, together with a
 small amount of Lean); changes are made via human-reviewed pull requests there.
 Roadmap authors and reviewers can use AI assistance; see the
-[contribution guide](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap/blob/main/CONTRIBUTING.md).
+[contribution guide](https://github.com/eic/EpsilonEridaniRoadmap/blob/main/CONTRIBUTING.md).
 
 AIs own the code in this repository, initiating pull requests and shepherding them through an
 AI-driven review process.
@@ -39,9 +39,9 @@ Humans can raise issues against the code, and leave implementation (and review) 
 ## The three repositories
 
 - **EpsilonEridani** (this repository) — the AI-authored Lean mathematics.
-- **[EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap)** — the human-controlled
+- **[EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap)** — the human-controlled
   roadmaps that direct the work.
-- **[EpsilonEridaniReview](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview)** — the review rubrics and
+- **[EpsilonEridaniReview](https://github.com/eic/EpsilonEridaniReview)** — the review rubrics and
   the machinery that runs review.
 
 ## Relationship to Lean Pool
@@ -61,18 +61,18 @@ PR contributors can push further commits, or respond to review comments, in orde
 
 We've built the infrastructure to fire these reviews automatically on each PR (and on a `/review` comment), but it is currently switched off. For now, reviews are run from the command line.
 
-You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `epsiloneridani-review` tool in [EpsilonEridaniReview](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview). With [uv](https://docs.astral.sh/uv/):
+You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `epsiloneridani-review` tool in [EpsilonEridaniReview](https://github.com/eic/EpsilonEridaniReview). With [uv](https://docs.astral.sh/uv/):
 
 ```bash
 # print the verdicts for PR #42, posting nothing:
-uvx --from git+https://github.com/EpsilonEridaniProject/EpsilonEridaniReview epsiloneridani-review 42
+uvx --from git+https://github.com/eic/EpsilonEridaniReview epsiloneridani-review 42
 # add --post to publish the scoreboard and per-rubric threads, as you:
-uvx --from git+https://github.com/EpsilonEridaniProject/EpsilonEridaniReview epsiloneridani-review 42 --post
+uvx --from git+https://github.com/eic/EpsilonEridaniReview epsiloneridani-review 42 --post
 ```
 
-It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
+It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/eic/EpsilonEridaniReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
 
-The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/EpsilonEridaniProject/EpsilonEridaniReview/tree/main/rubrics). We'll update these as we see what is most useful!
+The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/eic/EpsilonEridaniReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
@@ -115,7 +115,7 @@ This will be an evolving process, and community input is welcome.
 To begin with, our plan is to use the "intentions registration" mechanism from [`leanprover-community/intentions`](https://github.com/leanprover-community/intentions),
 and the shared public registry of intentions at [`leanprover-community/project-intentions`](https://github.com/leanprover-community/project-intentions).
 
-We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./epsiloneridani` worker exemplar from [`EpsilonEridaniProject/EpsilonEridaniWorker`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
+We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./epsiloneridani` worker exemplar from [`eic/EpsilonEridaniWorker`](https://github.com/eic/EpsilonEridaniWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
 
 We're working now on extending this mechanism to respect recorded intentions at the public `project-intentions` registry. Hopefully in future there will also be a federated system of registrations collected from individual downstream projects that Tau Ceti can hook into.
 
@@ -182,24 +182,24 @@ yet, and expect a hit at other times.
 
 ## Roadmaps
 
-The roadmaps live in the [EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap)
+The roadmaps live in the [EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap)
 repo: universal covers, the Jacobian challenge, reductive algebraic groups, partial
 differential equations, Heegaard Floer and knot Floer homology, and multiquadratic fields and
 genus theory. When asked to work here, read the roadmap first (see `AGENTS.md`).
 
 Before starting a substantial piece of roadmap work, register and claim your intention so you
-don't collide with others; see [Coordinating work: intentions and claims](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap#coordinating-work-intentions-and-claims).
+don't collide with others; see [Coordinating work: intentions and claims](https://github.com/eic/EpsilonEridaniRoadmap#coordinating-work-intentions-and-claims).
 
 ## Contributing with the worker CLI
 
 The reviews above can be run one PR at a time, but most contribution here happens through a
 *worker*. A single round picks one piece of work, does it, and stops; `--loop` runs rounds
 repeatedly until you interrupt it. The exemplar is
-[`EpsilonEridaniProject/EpsilonEridaniWorker`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker). With
+[`eic/EpsilonEridaniWorker`](https://github.com/eic/EpsilonEridaniWorker). With
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv tool install git+https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker
+uv tool install git+https://github.com/eic/EpsilonEridaniWorker
 gh auth login     # the worker acts as this account, and tends its PRs
 epsiloneridani doctor    # checklist of everything it needs
 ```
@@ -210,7 +210,7 @@ credentials for whichever agent you run (Codex or Claude). The `bubble`, `incus`
 `kiro` rows can stay missing unless you want the sandbox or an alternative agent.
 
 By default, agents run with unrestricted host access; see
-[sandboxing with `--bubble`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker/blob/main/docs/sandbox.md)
+[sandboxing with `--bubble`](https://github.com/eic/EpsilonEridaniWorker/blob/main/docs/sandbox.md)
 for isolation.
 
 Then survey before you act:
@@ -224,13 +224,13 @@ epsiloneridani work --loop
 Run a bare `epsiloneridani work` before ever using `--loop`, so you see one complete round end to end.
 
 Each round prioritizes maintenance and review before new formalization work; see
-[the cascade](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker#what-a-round-does).
+[the cascade](https://github.com/eic/EpsilonEridaniWorker#what-a-round-does).
 `epsiloneridani work --dry-run` shows what a round would pick without acting.
 
 Subscription pacing can be controlled via
-[`--pace`](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker#pacing-against-quota).
+[`--pace`](https://github.com/eic/EpsilonEridaniWorker#pacing-against-quota).
 For running several workers, see
-[the worker documentation](https://github.com/EpsilonEridaniProject/EpsilonEridaniWorker#persistent-workers).
+[the worker documentation](https://github.com/eic/EpsilonEridaniWorker#persistent-workers).
 
 ### Only review
 
@@ -254,7 +254,7 @@ epsiloneridani work --roadmap-only ReductiveGroups
 This keeps maintenance and review enabled. We discourage `--only roadmap`: it skips both,
 leaving existing PRs untended while opening new ones.
 
-The area is a subdirectory of the [EpsilonEridaniRoadmap](https://github.com/EpsilonEridaniProject/EpsilonEridaniRoadmap)
+The area is a subdirectory of the [EpsilonEridaniRoadmap](https://github.com/eic/EpsilonEridaniRoadmap)
 repo. Conversely `--roadmap-skip AREA[,AREA...]` excludes areas, which is how concurrent workers
 divide the roadmap between them. Before starting substantial roadmap work, register your
 intention so you do not collide with others — the worker reads the intentions board and avoids

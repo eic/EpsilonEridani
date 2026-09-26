@@ -41,7 +41,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: EpsilonEridaniProject
+          owner: eic
           repositories: EpsilonEridani
           permission-contents: read
           permission-issues: write
@@ -57,7 +57,7 @@ jobs:
       # roadmap/<Area> labels are legitimate).
       - uses: actions/checkout@v4
         with:
-          repository: EpsilonEridaniProject/EpsilonEridaniRoadmap
+          repository: eic/EpsilonEridaniRoadmap
           path: roadmap
           persist-credentials: false
 

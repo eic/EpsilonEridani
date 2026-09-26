@@ -5,7 +5,7 @@ the Tau Ceti Statistics page:
 
 ```sh
 python3 scripts/pr_stats_graphs.py \
-  --repo EpsilonEridaniProject/EpsilonEridani \
+  --repo eic/EpsilonEridani \
   --out-dir web/static_files
 ```
 
@@ -57,7 +57,7 @@ Save the normalized source snapshot while fetching:
 
 ```sh
 python3 scripts/pr_stats_graphs.py \
-  --repo EpsilonEridaniProject/EpsilonEridani \
+  --repo eic/EpsilonEridani \
   --out-dir /tmp/pr-stats \
   --dump-data /tmp/pr-stats-source.json
 ```

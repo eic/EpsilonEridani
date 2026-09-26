@@ -1,5 +1,5 @@
 #!/bin/bash
-# A helper script to pull upstream infrastructure changes from TauCetiProject
+# A helper script to pull upstream infrastructure changes from eic
 # without causing merge conflicts with the actual math library contents.
 
 git fetch upstream

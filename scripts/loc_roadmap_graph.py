@@ -310,7 +310,7 @@ def render(dates, order, series, totals, title, out, omitted=0):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--repo", default="EpsilonEridaniProject/EpsilonEridani")
+    ap.add_argument("--repo", default="eic/EpsilonEridani")
     ap.add_argument("--data", help="JSON file of merged PRs (offline); else query gh")
     ap.add_argument("--title", default="Tau Ceti — lines of Lean per roadmap")
     ap.add_argument("--out", required=True)
