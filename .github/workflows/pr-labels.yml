@@ -100,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: eic/EpsilonEridaniReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
+          ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
           path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
@@ -201,7 +201,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: eic/EpsilonEridaniReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
+          ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
           path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
@@ -243,7 +243,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: eic/EpsilonEridaniReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
+          ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
           path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
