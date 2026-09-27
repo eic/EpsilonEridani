@@ -102,7 +102,7 @@ Three event-driven workflows drive it:
   while label churn on a closed PR can never create a late post.
 - [`zulip-pr-status.yml`](../../.github/workflows/zulip-pr-status.yml): on
   `workflow_run` of `pr-build` and `Review`. Refreshes the CI and review groups.
-- [`zulip-healthcheck.yml`](../../.github/workflows/zulip-healthcheck.yml): a
+- [`mattermost-healthcheck.yml`](../../.github/workflows/mattermost-healthcheck.yml): a
   schedule (every 6h) that runs `check` to probe the credentials, so a broken
   key is caught even during quiet periods with no PR activity.
 
