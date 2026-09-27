@@ -754,7 +754,7 @@ jobs:
       # remains authoritative and downloads every applicable hash that is still absent. The
       # workflow-pinned local action credits the corresponding Mathlib design and owns the key
       # namespace shared with ci.yml. This is separate from the much larger `./.lake` cache.
-      - name: Restore Mathlib's compressed download cache from main
+      - name: Restore Dependencies' compressed download cache from main
         if: ${{ env.INFRA != '1' }}
         uses: ./gate/.github/actions/restore-mathlib-ltars
         with:
@@ -770,7 +770,7 @@ jobs:
       # bump-guard proved is a *forward commit on Mathlib's own master* (same repo, never a fork),
       # so the code run here is still trusted Mathlib master under the project's "track master"
       # policy; only the PR's EpsilonEridani/ code stays untrusted and runs solely under bwrap below.
-      - name: Fetch Mathlib with the (bump-validated) config (network, no token; no PR code)
+      - name: Fetch Dependencies with the (bump-validated) config (network, no token; no PR code)
         if: ${{ env.INFRA != '1' }}
         # `set -o pipefail` is not optional here. A `run:` step with no explicit `shell:`
         # gets the runner default `bash -e {0}`, which does NOT set pipefail, so piping
@@ -795,7 +795,7 @@ jobs:
       # Only a bump is judged. A normal PR builds against its inherited pin, which it did not
       # choose and cannot fix; failing those would take every PR in the repo down for as
       # long as a bad pin sat on main, which is precisely backwards.
-      - name: Require a complete Mathlib cache for a bump
+      - name: Require a complete Dependencies cache for a bump
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         shell: bash
         run: |

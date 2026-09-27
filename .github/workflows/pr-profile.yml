@@ -502,7 +502,7 @@ jobs:
           fi
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch immutable-base Mathlib oleans (network, no candidate code)
+      - name: Fetch immutable-base Dependencies' oleans (network, no candidate code)
         if: ${{ steps.manifest.outputs.count != '0' }}
         run: |
           set -o pipefail

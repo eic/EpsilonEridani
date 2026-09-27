@@ -181,7 +181,7 @@ jobs:
       # blobs. The local action credits the corresponding Mathlib design and owns the shared key
       # namespace. Bump its `mathlib-ltar-v1` token if an incompatible or poisoned immutable entry
       # must be abandoned.
-      - name: Restore Mathlib's compressed download cache
+      - name: Restore Dependencies' compressed download cache
         id: mathlib_ltar_restore
         uses: ./.github/actions/restore-mathlib-ltars
         with:
@@ -211,7 +211,7 @@ jobs:
           lean --version
           lake --version
 
-      - name: Fetch Mathlib oleans, retrying with a forced full refetch
+      - name: Fetch Dependencies' oleans, retrying with a forced full refetch
         run: |
           if ! lake exe cache get Mathlib Physlib TauCeti; then
             echo "::warning::lake exe cache get Mathlib Physlib TauCeti failed; forcing a full refetch"
@@ -292,13 +292,13 @@ jobs:
       # Pruning is essential: without it, every prefix restore would carry all old pins forward
       # and each immutable snapshot would grow monotonically. If pruning itself breaks, leave main
       # green but skip publication rather than saving an unbounded snapshot.
-      - name: Prune Mathlib's download cache to the current pin
+      - name: Prune Dependencies' download cache to the current pin
         id: mathlib_ltar_prune
         if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' }}
         continue-on-error: true
         run: lake exe cache clean
 
-      - name: Save Mathlib's compressed download cache
+      - name: Save Dependencies' compressed download cache
         if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' && steps.mathlib_ltar_prune.outcome == 'success' }}
         continue-on-error: true
         uses: actions/cache/save@v4

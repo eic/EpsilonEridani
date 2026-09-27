@@ -539,7 +539,7 @@ jobs:
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
 
-      - name: Fetch Mathlib oleans (docs project)
+      - name: Fetch Dependencies' oleans (docs project)
         if: steps.docs-plan.outputs.build == 'true'
         working-directory: docbuild
         run: lake exe cache get Mathlib Physlib TauCeti
@@ -653,7 +653,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: python3 scripts/sync_web_pins.py
 
-      - name: Fetch Mathlib oleans (examples project)
+      - name: Fetch Dependencies' oleans (examples project)
         working-directory: web/examples
         run: lake exe cache get Mathlib Physlib TauCeti
 
