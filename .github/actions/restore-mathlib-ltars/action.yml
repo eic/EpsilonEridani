@@ -1,5 +1,5 @@
 name: Restore Dependencies compressed download cache
-description: Restore the trusted GitHub Actions snapshot of Mathlib's content-addressed .ltar files.
+description: Restore the trusted GitHub Actions snapshot of Dependencies' content-addressed .ltar files.
 
 inputs:
   project-dir:

@@ -457,7 +457,7 @@ jobs:
       # 0.12.0, so THIS REASON GOES AWAY once noble carries 0.12.0 or newer and the pin below
       # moves to it.
       #
-      # The second does not. `mkdir -p <tree>/.lake/tmp` and the Mathlib cache restore both run
+      # The second does not. `mkdir -p <tree>/.lake/tmp` and the Dependencies cache restore both run
       # in the trusted phase, before any sandbox exists, and both follow the symlink themselves.
       # No bubblewrap version fixes that, because bubblewrap is not involved. So this step stays
       # after the pin moves, unless those two callers are made symlink-safe at the same time.
@@ -809,10 +809,10 @@ jobs:
             exit 1
           fi
           if grep -qF 'some files were not found in the cache' "$log"; then
-            echo "::error::the bump target's Mathlib cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
+            echo "::error::the bump target's Dependencies cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
             exit 1
           fi
-          echo "Mathlib cache is complete at the bump target."
+          echo "Dependencies cache is complete at the bump target."
 
       # Text-only trusted lint: inspect the exact candidate sources after Mathlib's source tree is
       # available. The workflow-pinned Python does not elaborate or execute candidate code.
