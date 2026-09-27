@@ -54,6 +54,25 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
+  check-runner:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       startsWith(github.event.comment.body, '/profile') &&
+       (github.event.comment.user.login == github.event.issue.user.login ||
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
+    outputs:
+      runner_tag: ${{ vars.PROFILE_RUNNER_TAG }}
+      has_tag: ${{ vars.PROFILE_RUNNER_TAG != '' }}
+    steps:
+      - name: Warn if skipped
+        if: ${{ vars.PROFILE_RUNNER_TAG == '' }}
+        run: echo "::warning::vars.PROFILE_RUNNER_TAG is not defined. Skipping performance profiling."
+
   # Deliberately not named `perf`: the authoritative required context is the
   # commit status posted at the end, not this workflow's automatic check-run.
   performance-gate:
@@ -66,19 +85,10 @@ jobs:
     # labels this organisation does not serve is not rejected: it sits queued with an empty
     # runner name until it expires, taking the required builds with it. Before changing these
     # labels, confirm them in the organisation that will run the job.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true
+    needs: check-runner
+    if: ${{ needs.check-runner.outputs.has_tag == 'true' }}
+    runs-on: ${{ startsWith(needs.check-runner.outputs.runner_tag, '[') && fromJSON(needs.check-runner.outputs.runner_tag) || needs.check-runner.outputs.runner_tag }}
     timeout-minutes: 45
-    if: >-
-      github.event_name == 'pull_request_target' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'issue_comment' &&
-       github.event.issue.pull_request != null &&
-       startsWith(github.event.comment.body, '/profile') &&
-       (github.event.comment.user.login == github.event.issue.user.login ||
-        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
     env:
       BWRAP_VER: 0.9.0-1build1
       BWRAP_DEB_SHA256: dde30d1f24da50446d647ed504ec8dc5a714f171974d054c70a589b48ba38b48
