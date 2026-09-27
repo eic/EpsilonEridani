@@ -45,7 +45,8 @@ def api_request(method, path, data=None):
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
         with urllib.request.urlopen(req) as response:
-            return json.loads(response.read().decode("utf-8")) if response.read() else None
+            body = response.read()
+            return json.loads(body.decode("utf-8")) if body else None
     except urllib.error.HTTPError as e:
         if e.code in (401, 403):
             raise ConfigError(f"Mattermost auth failed ({e.code}): {e.read().decode('utf-8')}")
@@ -86,10 +87,10 @@ def fail_config(msg):
 
 def main(argv):
     cmd = argv[1] if len(argv) > 1 else None
-    if not BOT_TOKEN and cmd != "check":
+    if not (BOT_TOKEN and URL) and cmd != "check":
         # In actual usage without a token, workflows will skip via bash check, 
         # but just in case, handle it gracefully.
-        print("No MATTERMOST_BOT_TOKEN set, skipping.")
+        print("No MATTERMOST_BOT_TOKEN or URL set, skipping.")
         return 0
         
     if cmd == "check":
@@ -100,16 +101,32 @@ def main(argv):
             return fail_config(str(e))
             
     if cmd == "reconcile":
-        pr = argv[2]
+        if len(argv) <= 2:
+            print("Missing PR number")
+            return 2
+        pr = argv[2].lstrip("#")
+        if not pr.isdigit():
+            print(f"Not a PR number: {pr}")
+            return 0
+        rest = argv[3:]
+        create = "--create" in rest
+        create_if_open = "--create-if-open" in rest
+        strict = "--strict" in rest
+        ci_override = None
+        if "--ci" in rest:
+            ci_override = rest[rest.index("--ci") + 1]
+            
         try:
-            reconcile(pr)
+            reconcile(pr, create=create, create_if_open=create_if_open, ci_override=ci_override)
             return 0
         except ConfigError as e:
             return fail_config(str(e))
             
     if cmd == "backfill":
+        rest = argv[2:]
+        dry_run = "--dry-run" in rest
         try:
-            backfill(sys.stdin)
+            backfill(sys.stdin, dry_run=dry_run)
             return 0
         except ConfigError as e:
             return fail_config(str(e))
