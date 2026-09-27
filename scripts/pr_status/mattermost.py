@@ -173,6 +173,24 @@ def backfill(rows, dry_run=False):
     print("Backfilling...")
     seen = changes = 0
     failures = []
+    
+    for line in rows:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            st = json.loads(line)
+            pr = str(st["number"])
+            seen += 1
+            # For backfill we do NOT create if open; we only update existing ones,
+            # or you can pass create_if_open=False by default.
+            changes += reconcile(pr, create_if_open=False, state=st, dry_run=dry_run)
+        except Exception as e:
+            print(f"Failed to backfill PR from line: {e}", file=sys.stderr)
+            failures.append(line)
+            
+    if failures:
+        print(f"Failed to process {len(failures)} PRs during backfill", file=sys.stderr)
     return seen, changes, failures
 
 def fail_config(msg):
@@ -222,9 +240,10 @@ def main(argv):
     if cmd == "backfill":
         rest = argv[2:]
         dry_run = "--dry-run" in rest
+        strict = "--strict" in rest
         try:
-            backfill(sys.stdin, dry_run=dry_run)
-            return 0
+            _, _, failures = backfill(sys.stdin, dry_run=dry_run)
+            return 1 if failures and strict else 0
         except ConfigError as e:
             return fail_config(str(e))
             
