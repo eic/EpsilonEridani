@@ -79,7 +79,8 @@ REVIEW_EMOJIS = {
 
 def pr_message_content(pr, title, author, roadmaps):
     roadmap_str = f" [Roadmap: {', '.join(roadmaps)}]" if roadmaps else ""
-    return f"🚀 **New PR [#{pr}](https://github.com/{core.REPO}/pull/{pr}):** {title} (Author: @{author}){roadmap_str}\n\n<!-- [PR-{pr}-ANNOUNCEMENT] -->"
+    author_str = f" (Author: @{author})" if author else ""
+    return f"🚀 **New PR [#{pr}](https://github.com/{core.REPO}/pull/{pr}):** {title}{author_str}{roadmap_str}\n\n<!-- [PR-{pr}-ANNOUNCEMENT] -->"
 
 def get_team_id(channel_id):
     res = api_request("GET", f"/channels/{channel_id}")
@@ -106,7 +107,7 @@ def set_reaction(post_id, user_id, expected_emoji, current_reactions):
         if emoji == expected_emoji:
             already_has = True
         else:
-            api_request("DELETE", f"/users/me/posts/{post_id}/reactions/{emoji}")
+            api_request("DELETE", f"/users/{user_id}/posts/{post_id}/reactions/{emoji}")
             
     if expected_emoji and not already_has:
         api_request("POST", f"/posts/{post_id}/reactions", data={"user_id": user_id, "post_id": post_id, "emoji_name": expected_emoji})
@@ -118,6 +119,9 @@ def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=No
     content = pr_message_content(pr, st["title"], st.get("author", ""), st.get("roadmaps", []))
     
     team_id = get_team_id(CHANNEL_ID)
+    if not team_id:
+        raise ConfigError("Could not determine team_id for channel")
+        
     post = find_post(pr, team_id)
     
     if post is None:
