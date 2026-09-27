@@ -1,6 +1,5 @@
 import Physlib.Particles.StandardModel.Fermions.DownSinglet
 
-set_option linter.style.longLine false
 
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
@@ -18,7 +17,8 @@ Port these additions as standalone lemmas/extensions in this file.
      ring_nf
  
  /-- The gauge action on a pure spinor–colour tensor. -/
-diff --git a/EpsilonEridani/Particles/StandardModel/Fermions/LeptonDoublet.lean b/EpsilonEridani/Particles/StandardModel/Fermions/LeptonDoublet.lean
+diff --git a/EpsilonEridani/Particles/StandardModel/Fermions/LeptonDoublet.lean
+b/EpsilonEridani/Particles/StandardModel/Fermions/LeptonDoublet.lean
 index 1c85c5e0..9c89601d 100644
 --- a/EpsilonEridani/Particles/StandardModel/Fermions/LeptonDoublet.lean
 -/

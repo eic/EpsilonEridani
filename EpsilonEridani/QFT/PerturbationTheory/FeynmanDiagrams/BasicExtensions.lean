@@ -1,10 +1,8 @@
 import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 
-set_option linter.style.longLine false
 
 /-
 
-set_option linter.style.longLine false
 
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
@@ -514,7 +512,8 @@ Port these additions as standalone lemmas/extensions in this file.
 +end PerturbationTheory
 +end QFT
 +end EpsilonEridani
-diff --git a/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/CrossingSymmetry.lean b/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/CrossingSymmetry.lean
+diff --git a/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/CrossingSymmetry.lean
+b/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/CrossingSymmetry.lean
 new file mode 100644
 index 00000000..7dd0dc63
 --- /dev/null
@@ -807,7 +806,8 @@ index 00000000..7dd0dc63
  end FeynmanDiagrams
  end PerturbationTheory
  end QFT
-diff --git a/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/YangMillsGaugeData.lean b/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/YangMillsGaugeData.lean
+diff --git a/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/YangMillsGaugeData.lean
+b/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/YangMillsGaugeData.lean
 index d304f4bf..896f628d 100644
 --- a/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/YangMillsGaugeData.lean
 -/

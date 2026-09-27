@@ -1,6 +1,5 @@
 import Physlib.Relativity.Fermions.Weyl.Metric
 
-set_option linter.style.longLine false
 
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
@@ -53,7 +52,8 @@ Port these additions as standalone lemmas/extensions in this file.
 -  rw [Lorentz.SL2C.inverse_coe, eta_fin_two M.1]
 -  rw [SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two,
 -      Matrix.mul_fin_two, eta_fin_two !![M.1 1 1, -M.1 0 1; -M.1 1 0, M.1 0 0]ᵀ]
--  simp only [Fin.isValue, mul_zero, mul_neg, mul_one, zero_add, add_zero, transpose_apply, of_apply,
+-  simp only [Fin.isValue, mul_zero, mul_neg, mul_one, zero_add, add_zero, transpose_apply,
+of_apply,
 -    cons_val', cons_val_zero, empty_val', cons_val_fin_one, cons_val_one, cons_mul,
 -    Nat.succ_eq_add_one, Nat.reduceAdd, vecMul_cons, head_cons, zero_smul, tail_cons, one_smul,
 -    empty_vecMul, neg_smul, neg_cons, neg_neg, neg_empty, empty_mul, Equiv.symm_apply_apply]
@@ -67,7 +67,8 @@ Port these additions as standalone lemmas/extensions in this file.
 -  rw [Lorentz.SL2C.inverse_coe, eta_fin_two M.1]
 -  rw [SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two,
 -      Matrix.mul_fin_two, eta_fin_two !![M.1 1 1, -M.1 0 1; -M.1 1 0, M.1 0 0]ᵀ]
--  simp only [Fin.isValue, zero_mul, one_mul, zero_add, neg_mul, add_zero, transpose_apply, of_apply,
+-  simp only [Fin.isValue, zero_mul, one_mul, zero_add, neg_mul, add_zero, transpose_apply,
+of_apply,
 -    cons_val', cons_val_zero, empty_val', cons_val_fin_one, cons_val_one, cons_mul,
 -    Nat.succ_eq_add_one, Nat.reduceAdd, vecMul_cons, head_cons, smul_cons, smul_eq_mul, mul_zero,
 -    mul_one, smul_empty, tail_cons, neg_smul, mul_neg, neg_cons, neg_neg, neg_zero, neg_empty,

@@ -1,6 +1,5 @@
 import Physlib.Relativity.Fermions.Weyl.LeftHanded
 
-set_option linter.style.longLine false
 
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
@@ -31,7 +30,8 @@ Port these additions as standalone lemmas/extensions in this file.
  
  lemma rep_apply (M : SL(2,ℂ)) (ψ : LeftHandedWeyl) : rep M ψ = ⟨M.1 *ᵥ ψ.1⟩ := rfl
  
-diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean b/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
+diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
+b/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
 index 6a3f1eaf..43f06dcf 100644
 --- a/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
 -/
@@ -50,7 +50,8 @@ index 6a3f1eaf..43f06dcf 100644
      map_add' := by
        intro ψ ψ'
        simp only [toFin2ℂ, map_add, mulVec_add]
-diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean b/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
+diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
+b/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
 index 43f06dcf..e61188b9 100644
 --- a/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
 -/

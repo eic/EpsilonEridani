@@ -1,10 +1,8 @@
 import Physlib.Relativity.Tensors.RealTensor.Metrics.Basic
 
-set_option linter.style.longLine false
 
 /-
 
-set_option linter.style.longLine false
 
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
@@ -87,7 +85,8 @@ Port these additions as standalone lemmas/extensions in this file.
  lemma coMetric_eq_fromConstPair {d : ℕ} :
      η' d = fromConstPair (S := realLorentzTensor d) (c1 := .down) (c2 := .down)
        (Lorentz.preCoMetric d) := by
-diff --git a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean b/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean
+diff --git a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean
+b/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean
 new file mode 100644
 index 00000000..0454235a
 --- /dev/null

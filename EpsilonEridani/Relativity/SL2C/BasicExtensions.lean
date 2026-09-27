@@ -1,6 +1,5 @@
 import Physlib.Relativity.SL2C.Basic
 
-set_option linter.style.longLine false
 
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
@@ -34,12 +33,14 @@ Port these additions as standalone lemmas/extensions in this file.
          conjTranspose_mul, conjTranspose_conjTranspose,
 @@ -124,18 +127,16 @@ lemma toSelfAdjointMap_apply_pauliBasis'_inl (M : SL(2, ℂ)) :
  def toMatrix : SL(2, ℂ) →* Matrix (Fin 1 ⊕ Fin 3) (Fin 1 ⊕ Fin 3) ℝ where
-   toFun M := LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap M)
+   toFun M := LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap
+   M)
    map_one' := by
 -    simp only [toSelfAdjointMap, SpecialLinearGroup.coe_one, one_mul, conjTranspose_one,
 -      mul_one, Subtype.coe_eta]
 -    erw [LinearMap.toMatrix_one]
-+    change LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap 1) = 1
++    change LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap 1)
+= 1
 +    have hId : toSelfAdjointMap (1 : SL(2, ℂ)) = 1 := by
 +      ext A
 +      simp [toSelfAdjointMap]
@@ -85,15 +86,18 @@ Port these additions as standalone lemmas/extensions in this file.
 -- Patch: 0077-style-fix-all-22-style-linter-errors-and-complete-th.patch
 @@ -127,7 +127,8 @@ lemma toSelfAdjointMap_apply_pauliBasis'_inl (M : SL(2, ℂ)) :
  def toMatrix : SL(2, ℂ) →* Matrix (Fin 1 ⊕ Fin 3) (Fin 1 ⊕ Fin 3) ℝ where
-   toFun M := LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap M)
+   toFun M := LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap
+   M)
    map_one' := by
--    change LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap 1) = 1
+-    change LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap 1)
+= 1
 +    change LinearMap.toMatrix PauliMatrix.pauliBasis' PauliMatrix.pauliBasis'
 +      (toSelfAdjointMap 1) = 1
      have hId : toSelfAdjointMap (1 : SL(2, ℂ)) = 1 := by
        ext A
        simp [toSelfAdjointMap]
-diff --git a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean b/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean
+diff --git a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean
+b/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean
 index 0454235a..b7f5be0f 100644
 --- a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean
 -/

@@ -1,10 +1,8 @@
 import Physlib.Relativity.CliffordAlgebra
 
-set_option linter.style.longLine false
 
 /-
 
-set_option linter.style.longLine false
 
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
@@ -133,7 +131,8 @@ Port these additions as standalone lemmas/extensions in this file.
 +      ((@finSumFinEquiv 1 3).symm μ) : ℝ) : ℂ) *
 +      (coord a μ * coord b μ) =
 +      ((Lorentz.Vector.minkowskiProduct a b : ℝ) : ℂ) := by
-+  simp [coord, Fin.sum_univ_four, Lorentz.Vector.minkowskiProduct_toCoord, minkowskiMatrix.inl_0_inl_0,
++  simp [coord, Fin.sum_univ_four, Lorentz.Vector.minkowskiProduct_toCoord,
+minkowskiMatrix.inl_0_inl_0,
 +    minkowskiMatrix.inr_i_inr_i, Complex.ofReal_neg, sub_eq_add_neg, mul_assoc, mul_left_comm,
 +    mul_comm]
 +  ring_nf
@@ -318,16 +317,19 @@ Port these additions as standalone lemmas/extensions in this file.
 +
 +private lemma reverseConj_mul_transpose_mul_reverseConjInv_eq_slashProd_reverse
 +    (ks : List (Lorentz.Vector 3)) :
-+  reverseConj * Matrix.transpose (Slash.slashProd ks) * reverseConjInv = Slash.slashProd ks.reverse := by
++  reverseConj * Matrix.transpose (Slash.slashProd ks) * reverseConjInv = Slash.slashProd ks.reverse
+:= by
 +  induction ks using List.reverseRecOn with
 +  | nil =>
 +      simp [Slash.slashProd]
 +  | append_singleton ks k ih =>
 +      calc
 +        reverseConj * Matrix.transpose (Slash.slashProd (ks ++ [k])) * reverseConjInv
-+          = reverseConj * Matrix.transpose (Slash.slashProd ks * Slash.slash k) * reverseConjInv := by
++          = reverseConj * Matrix.transpose (Slash.slashProd ks * Slash.slash k) * reverseConjInv :=
+by
 +              simp [Slash.slashProd, List.map_append, List.prod_append]
-+        _ = reverseConj * (Matrix.transpose (Slash.slash k) * Matrix.transpose (Slash.slashProd ks)) * reverseConjInv := by
++        _ = reverseConj * (Matrix.transpose (Slash.slash k) * Matrix.transpose (Slash.slashProd
+ks)) * reverseConjInv := by
 +              simp [Matrix.transpose_mul]
 +        _ = (reverseConj * Matrix.transpose (Slash.slash k) * reverseConjInv) *
 +            (reverseConj * Matrix.transpose (Slash.slashProd ks) * reverseConjInv) := by
@@ -345,7 +347,8 @@ Port these additions as standalone lemmas/extensions in this file.
 +            simpa using (Matrix.trace_transpose (Slash.slashProd ks)).symm
 +    _ = Matrix.trace (reverseConj * Matrix.transpose (Slash.slashProd ks) * reverseConjInv) := by
 +          symm
-+          rw [Matrix.trace_mul_cycle (A := reverseConj) (B := Matrix.transpose (Slash.slashProd ks))
++          rw [Matrix.trace_mul_cycle (A := reverseConj) (B := Matrix.transpose (Slash.slashProd
+ks))
 +            (C := reverseConjInv)]
 +          simp [mul_assoc]
 +    _ = Matrix.trace (Slash.slashProd ks.reverse) := by

@@ -1,6 +1,5 @@
 import Physlib.Relativity.Fermions.Weyl.DualLeftHanded
 
-set_option linter.style.longLine false
 
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
@@ -32,7 +31,8 @@ Port these additions as standalone lemmas/extensions in this file.
      rw [Matrix.mul_inv_rev]
      exact transpose_mul _ _
  
-diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean b/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
+diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
+b/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
 index 277ce9bc..cec231be 100644
 --- a/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
 -/
@@ -62,7 +62,8 @@ index 277ce9bc..cec231be 100644
      show ((M.1 * N.1)⁻¹)ᵀ = _
      rw [Matrix.mul_inv_rev]
      exact transpose_mul _ _
-diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean b/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
+diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
+b/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
 index cec231be..6fa0ad6c 100644
 --- a/EpsilonEridani/Relativity/Fermions/Weyl/DualRightHanded.lean
 -/

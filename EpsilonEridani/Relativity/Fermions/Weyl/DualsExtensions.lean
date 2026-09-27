@@ -1,6 +1,5 @@
 import Physlib.Relativity.Fermions.Weyl.Duals
 
-set_option linter.style.longLine false
 
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
@@ -54,7 +53,8 @@ Port these additions as standalone lemmas/extensions in this file.
  
  lemma DualLeftHandedWeyl.dual_hom_apply (ψ : DualLeftHandedWeyl) :
      DualLeftHandedWeyl.dual ψ =
-diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/Two.lean b/EpsilonEridani/Relativity/Fermions/Weyl/Two.lean
+diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/Two.lean
+b/EpsilonEridani/Relativity/Fermions/Weyl/Two.lean
 index 5dd1e724..ccd13099 100644
 --- a/EpsilonEridani/Relativity/Fermions/Weyl/Two.lean
 -/

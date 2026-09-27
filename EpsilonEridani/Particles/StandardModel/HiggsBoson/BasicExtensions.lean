@@ -1,6 +1,5 @@
 import Physlib.Particles.StandardModel.HiggsBoson.Basic
 
-set_option linter.style.longLine false
 
 /-
 TODO: The following diffs represent upstream modifications to Physlib.
@@ -9,7 +8,8 @@ Port these additions as standalone lemmas/extensions in this file.
 
 /-
 -- Patch: 0087-fix-StandardModel-make-repGaugeGroupI-compile-agains.patch
-@@ -170,14 +170,22 @@ The gauge group of the Standard Model acts on `HiggsVec` by matrix multiplicatio
+@@ -170,14 +170,22 @@ The gauge group of the Standard Model acts on `HiggsVec` by matrix
+multiplicatio
  def repGaugeGroupI : Representation ℂ GaugeGroupI HiggsVec where
    toFun g :=
      { toFun φ := WithLp.toLp 2 <| g.toU1 ^ 3 • (g.toSU2.1 *ᵥ φ.ofLp)

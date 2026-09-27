@@ -1,10 +1,8 @@
 import Physlib.Mathematics.KroneckerDelta.Basic
 
-set_option linter.style.longLine false
 
 /-
 
-set_option linter.style.longLine false
 
 TODO: The following diffs represent upstream modifications to Physlib.
 Port these additions as standalone lemmas/extensions in this file.
@@ -151,7 +149,8 @@ Port these additions as standalone lemmas/extensions in this file.
 +  · have hlt : i < finLastOfPos m hm := by
 +      by_contra hi
 +      have hge : m - 1 ≤ i.1 := by
-+        exact le_of_not_gt (by intro h; exact hi (Fin.lt_def.mpr (by simpa [finLastOfPos] using h)))
++        exact le_of_not_gt (by intro h; exact hi (Fin.lt_def.mpr (by simpa [finLastOfPos] using
+h)))
 +      have hval : i.1 = m - 1 := by omega
 +      apply hlast
 +      ext
@@ -546,7 +545,8 @@ Port these additions as standalone lemmas/extensions in this file.
 +          simp [Fin.last]; omega
 +        rw [← pow_add, hsum]
 +        exact Odd.neg_one_pow (by use n - 1; omega)
-+      have hpow' := congrArg (fun t : ℤ => t * Matrix.det (fun (p q : Fin n) => δℤ (μ p) (ν q))) hpow
++      have hpow' := congrArg (fun t : ℤ => t * Matrix.det (fun (p q : Fin n) => δℤ (μ p) (ν q)))
+hpow
 +      simpa [mul_assoc] using hpow'
 +    simpa [kroneckerDelta] using hminor
 +  · intro l _ hl; simp [kroneckerDelta, Ne.symm hl]
@@ -789,7 +789,8 @@ Port these additions as standalone lemmas/extensions in this file.
  end Generalized
  
  end KroneckerDelta
-diff --git a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/Basic.lean b/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/Basic.lean
+diff --git a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/Basic.lean
+b/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/Basic.lean
 index f006a6b3..0b3d6f04 100644
 --- a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/Basic.lean
 -/
@@ -800,7 +801,8 @@ index f006a6b3..0b3d6f04 100644
            simp [Fin.last]; omega
          rw [← pow_add, hsum]
          exact Odd.neg_one_pow (by use n - 1; omega)
--      have hpow' := congrArg (fun t : ℤ => t * Matrix.det (fun (p q : Fin n) => δℤ (μ p) (ν q))) hpow
+-      have hpow' := congrArg (fun t : ℤ => t * Matrix.det (fun (p q : Fin n) => δℤ (μ p) (ν q)))
+hpow
 +      have hpow' := congrArg
 +        (fun t : ℤ => t * Matrix.det (fun (p q : Fin n) => δℤ (μ p) (ν q))) hpow
        simpa [mul_assoc] using hpow'
@@ -815,7 +817,8 @@ index f006a6b3..0b3d6f04 100644
      (lam : Fin (n - k) → ι) (ω : Fin (n - k) → ι) :
      (∑ μ : Fin k → ι,
        generalizedKroneckerDelta
-diff --git a/EpsilonEridani/QFT/Factorization/Evolution/Basic.lean b/EpsilonEridani/QFT/Factorization/Evolution/Basic.lean
+diff --git a/EpsilonEridani/QFT/Factorization/Evolution/Basic.lean
+b/EpsilonEridani/QFT/Factorization/Evolution/Basic.lean
 index 72b751fe..42346e98 100644
 --- a/EpsilonEridani/QFT/Factorization/Evolution/Basic.lean
 -/
