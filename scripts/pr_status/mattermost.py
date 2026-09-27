@@ -89,8 +89,9 @@ def get_team_id(channel_id):
 def find_post(pr, team_id, me_id):
     # 1. Real-time channel history (bypasses search indexing delays)
     res = api_request("GET", f"/channels/{CHANNEL_ID}/posts?per_page=200")
-    if res and "posts" in res:
-        for post_id, post in res["posts"].items():
+    if res and "posts" in res and "order" in res:
+        for post_id in res["order"]:
+            post = res["posts"].get(post_id, {})
             if post.get("user_id") != me_id:
                 continue
             if post.get("props", {}).get("eic_pr") == str(pr):
@@ -101,12 +102,13 @@ def find_post(pr, team_id, me_id):
     # 2. Fallback to Search API (for deep backfills where post is not in the last 200)
     if team_id:
         # Search for either the old tag or the PR link
-        res = api_request("POST", f"/teams/{team_id}/posts/search", data={"terms": f"{pr}", "is_or_search": False})
-        posts = res.get("posts", {})
-        for post_id, post in posts.items():
-            if post.get("channel_id") == CHANNEL_ID and post.get("user_id") == me_id:
-                if post.get("props", {}).get("eic_pr") == str(pr) or f"[PR-{pr}-ANNOUNCEMENT]" in post.get("message", ""):
-                    return post
+        res = api_request("POST", f"/teams/{team_id}/posts/search", data={"terms": f"pull/{pr}", "is_or_search": False})
+        if res and "posts" in res and "order" in res:
+            for post_id in res["order"]:
+                post = res["posts"].get(post_id, {})
+                if post.get("channel_id") == CHANNEL_ID and post.get("user_id") == me_id:
+                    if post.get("props", {}).get("eic_pr") == str(pr) or f"[PR-{pr}-ANNOUNCEMENT]" in post.get("message", ""):
+                        return post
     return None
 
 def set_reaction(post_id, user_id, expected_emoji, current_reactions):
