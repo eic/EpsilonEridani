@@ -147,12 +147,12 @@ jobs:
             --repo . --ref HEAD \
             --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-epsiloneridani.svg \
-            EpsilonEridani EpsilonEridani.lean
+            EpsilonEridani EpsilonEridani.lean TauCeti TauCeti.lean
           python3 scripts/loc_graph.py \
             --repo /tmp/roadmap --ref HEAD \
             --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
             --out web/static_files/loc-roadmap.svg \
-            EpsilonEridaniRoadmap EpsilonEridaniRoadmap.lean
+            EpsilonEridaniRoadmap EpsilonEridaniRoadmap.lean TauCetiRoadmap TauCetiRoadmap.lean
 
       # The per-roadmap chart is built from the PR labels (roadmap attribution is not in
       # git), so it queries gh rather than walking commits. A gh failure here must not sink
