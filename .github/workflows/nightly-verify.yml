@@ -155,7 +155,7 @@ jobs:
       # 0.12.0, so THIS REASON GOES AWAY once noble carries 0.12.0 or newer and the pin below
       # moves to it.
       #
-      # The second does not. `mkdir -p <tree>/.lake/tmp` and the Mathlib cache restore both run
+      # The second does not. `mkdir -p <tree>/.lake/tmp` and the Dependencies cache restore both run
       # in the trusted phase, before any sandbox exists, and both follow the symlink themselves.
       # No bubblewrap version fixes that, because bubblewrap is not involved. So this step stays
       # after the pin moves, unless those two callers are made symlink-safe at the same time.
@@ -354,12 +354,12 @@ jobs:
       # One restore serves both workspaces: same commit, so same manifest and toolchain, and the
       # action exports MATHLIB_CACHE_DIR for every later step. This holds Mathlib's artifacts only;
       # EpsilonEridani's own oleans are never in it, so it cannot pre-populate the from-source build.
-      - name: Restore Mathlib's compressed download cache
+      - name: Restore Dependencies' compressed download cache
         uses: ./fresh/.github/actions/restore-mathlib-ltars
         with:
           project-dir: fresh
 
-      - name: Fetch Mathlib oleans for both workspaces
+      - name: Fetch Dependencies' oleans for both workspaces
         run: |
           set -euo pipefail
           for dir in fresh reference; do

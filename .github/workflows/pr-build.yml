@@ -457,7 +457,7 @@ jobs:
       # 0.12.0, so THIS REASON GOES AWAY once noble carries 0.12.0 or newer and the pin below
       # moves to it.
       #
-      # The second does not. `mkdir -p <tree>/.lake/tmp` and the Mathlib cache restore both run
+      # The second does not. `mkdir -p <tree>/.lake/tmp` and the Dependencies cache restore both run
       # in the trusted phase, before any sandbox exists, and both follow the symlink themselves.
       # No bubblewrap version fixes that, because bubblewrap is not involved. So this step stays
       # after the pin moves, unless those two callers are made symlink-safe at the same time.
@@ -754,7 +754,7 @@ jobs:
       # remains authoritative and downloads every applicable hash that is still absent. The
       # workflow-pinned local action credits the corresponding Mathlib design and owns the key
       # namespace shared with ci.yml. This is separate from the much larger `./.lake` cache.
-      - name: Restore Mathlib's compressed download cache from main
+      - name: Restore Dependencies' compressed download cache from main
         if: ${{ env.INFRA != '1' }}
         uses: ./gate/.github/actions/restore-mathlib-ltars
         with:
@@ -770,7 +770,7 @@ jobs:
       # bump-guard proved is a *forward commit on Mathlib's own master* (same repo, never a fork),
       # so the code run here is still trusted Mathlib master under the project's "track master"
       # policy; only the PR's EpsilonEridani/ code stays untrusted and runs solely under bwrap below.
-      - name: Fetch Mathlib with the (bump-validated) config (network, no token; no PR code)
+      - name: Fetch Dependencies with the (bump-validated) config (network, no token; no PR code)
         if: ${{ env.INFRA != '1' }}
         # `set -o pipefail` is not optional here. A `run:` step with no explicit `shell:`
         # gets the runner default `bash -e {0}`, which does NOT set pipefail, so piping
@@ -795,7 +795,7 @@ jobs:
       # Only a bump is judged. A normal PR builds against its inherited pin, which it did not
       # choose and cannot fix; failing those would take every PR in the repo down for as
       # long as a bad pin sat on main, which is precisely backwards.
-      - name: Require a complete Mathlib cache for a bump
+      - name: Require a complete Dependencies cache for a bump
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         shell: bash
         run: |
@@ -809,10 +809,10 @@ jobs:
             exit 1
           fi
           if grep -qF 'some files were not found in the cache' "$log"; then
-            echo "::error::the bump target's Mathlib cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
+            echo "::error::the bump target's Dependencies cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
             exit 1
           fi
-          echo "Mathlib cache is complete at the bump target."
+          echo "Dependencies cache is complete at the bump target."
 
       # Text-only trusted lint: inspect the exact candidate sources after Mathlib's source tree is
       # available. The workflow-pinned Python does not elaborate or execute candidate code.

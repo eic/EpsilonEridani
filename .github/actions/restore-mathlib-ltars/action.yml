@@ -1,5 +1,5 @@
-name: Restore Mathlib compressed download cache
-description: Restore the trusted GitHub Actions snapshot of Mathlib's content-addressed .ltar files.
+name: Restore Dependencies compressed download cache
+description: Restore the trusted GitHub Actions snapshot of Dependencies' content-addressed .ltar files.
 
 inputs:
   project-dir:
@@ -26,7 +26,7 @@ runs:
   steps:
     # Own the cache tool's path as well as the GitHub cache path. Exporting it here prevents a
     # caller from restoring a valid snapshot somewhere `lake exe cache get Mathlib Physlib TauCeti` does not read.
-    - name: Select Mathlib cache directory
+    - name: Select Dependencies cache directory
       id: cache_dir
       shell: bash
       env:
