@@ -66,7 +66,7 @@ def check():
             raise ConfigError(f"Cannot access channel {CHANNEL_ID}: {e}")
 
 CI_EMOJIS = {
-    "running": "yellow_circle",
+    "running": "large_yellow_circle",
     "success": "white_check_mark",
     "failure": "x"
 }
