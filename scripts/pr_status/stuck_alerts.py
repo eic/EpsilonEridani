@@ -164,7 +164,7 @@ SCHEDULERS = {
     "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
     "housekeeping.yml":      ("queue housekeeping",        7),
-    "zulip-healthcheck.yml": ("zulip healthcheck",        15),
+    "mattermost-healthcheck.yml": ("mattermost healthcheck", 15),
     "merge-sweep.yml":       ("merge sweep",               4),
     # Every 15 minutes; the threshold is deliberately loose because GitHub
     # routinely delays a scheduled run well past its cadence.
