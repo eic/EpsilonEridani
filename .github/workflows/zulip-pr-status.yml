@@ -86,6 +86,10 @@ jobs:
           WF_NAME: ${{ github.event.workflow_run.name }}
           ACTION: ${{ github.event.action }}
         run: |
+          if [ -z "${ZULIP_API_KEY:-}" ] || [ -z "${ZULIP_EMAIL:-}" ]; then
+            echo "::warning::ZULIP_API_KEY or ZULIP_EMAIL is not set. Skipping Zulip PR status update."
+            exit 0
+          fi
           # pr-build posts the `build` commit status only at the end, so derive
           # the "running" (🟡) state from the workflow starting instead.
           CI_ARG=""

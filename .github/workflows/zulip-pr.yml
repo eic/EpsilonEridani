@@ -69,6 +69,10 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
         run: |
+          if [ -z "${ZULIP_API_KEY:-}" ] || [ -z "${ZULIP_EMAIL:-}" ]; then
+            echo "::warning::ZULIP_API_KEY or ZULIP_EMAIL is not set. Skipping Zulip PR lifecycle update."
+            exit 0
+          fi
           # A label event's payload can be stale when several label writes race.
           # Force those events through the API fallback so they read current truth.
           if [ "$ACTION" = "labeled" ] || [ "$ACTION" = "unlabeled" ]; then

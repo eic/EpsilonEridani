@@ -50,6 +50,10 @@ jobs:
           ZULIP_SITE: https://leanprover.zulipchat.com
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
+          if [ -z "${ZULIP_API_KEY:-}" ] || [ -z "${ZULIP_EMAIL:-}" ]; then
+            echo "::warning::ZULIP_API_KEY or ZULIP_EMAIL is not set. Skipping Zulip backfill."
+            exit 0
+          fi
           set -euo pipefail
           args=(--strict)
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi

@@ -34,4 +34,9 @@ jobs:
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
-        run: python3 scripts/pr_status/zulip.py check
+        run: |
+          if [ -z "${ZULIP_API_KEY:-}" ] || [ -z "${ZULIP_EMAIL:-}" ]; then
+            echo "::warning::ZULIP_API_KEY or ZULIP_EMAIL is not set. Skipping Zulip healthcheck."
+            exit 0
+          fi
+          python3 scripts/pr_status/zulip.py check
