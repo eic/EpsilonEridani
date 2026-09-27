@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Fermions.Weyl.RightHanded
 
 
@@ -32,10 +37,10 @@ Port these additions as standalone lemmas/extensions in this file.
 +    refine congrFun (congrArg _ ?_) _
 +    show (M.1 * N.1).map ⇑(starRingEnd ℂ) = _
 +    exact Matrix.map_mul
- 
+
  lemma rep_apply (M : SL(2,ℂ)) (ψ : RightHandedWeyl) : rep M ψ = ⟨M.1.map star *ᵥ ψ.1⟩ := rfl
- 
--- 
+
+--
 2.55.0
 
 -/
@@ -64,8 +69,8 @@ Port these additions as standalone lemmas/extensions in this file.
 +    -- fire on it. Stating the equation directly sidesteps that coercion.
      show (M.1 * N.1).map ⇑(starRingEnd ℂ) = _
      exact Matrix.map_mul
- 
--- 
+
+--
 2.55.0
 
 -/

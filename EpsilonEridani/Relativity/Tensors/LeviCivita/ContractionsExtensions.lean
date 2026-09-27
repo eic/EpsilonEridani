@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Tensors.LeviCivita.Contractions
 
 
@@ -22,7 +27,7 @@ Port these additions as standalone lemmas/extensions in this file.
        euclidLeviCivita_symbol_contract_one_last _ _
      _ = 6 * (if a = b then 1 else 0) := by
        by_cases hab : a = b
--- 
+--
 2.55.0
 
 -/

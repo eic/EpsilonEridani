@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.PauliMatrices.Relations
 
 
@@ -18,8 +23,8 @@ Port these additions as standalone lemmas/extensions in this file.
 +  simp only [Physlib.RatComplexNum.neg_I_mul_toComplexNum]
    apply Physlib.RatComplexNum.toComplexNum_eq_add_neg_add_add_iff.mpr
    decide +revert +kernel
- 
--- 
+
+--
 2.55.0
 
 -/

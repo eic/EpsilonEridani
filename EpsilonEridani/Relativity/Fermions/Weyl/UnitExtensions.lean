@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Fermions.Weyl.Unit
 
 
@@ -29,10 +34,10 @@ Port these additions as standalone lemmas/extensions in this file.
 +      exact isUnit_one
 +    simp only [mul_one, ← transpose_mul]
 +    rw [Matrix.mul_nonsing_inv _ hdet, Matrix.transpose_one]
- 
+
  /-- Applying the morphism `dualLeftLeftUnit` to `1` returns `dualLeftLeftUnitVal`. -/
  lemma dualLeftLeftUnit_apply_one : dualLeftLeftUnit (1 : ℂ) = dualLeftLeftUnitVal := by
--- 
+--
 2.55.0
 
 -/
@@ -61,7 +66,7 @@ Port these additions as standalone lemmas/extensions in this file.
      have hdet : IsUnit (M.1 : Matrix (Fin 2) (Fin 2) ℂ).det := by
        rw [show (M.1 : Matrix (Fin 2) (Fin 2) ℂ).det = 1 from M.2]
        exact isUnit_one
--- 
+--
 2.55.0
 
 -/

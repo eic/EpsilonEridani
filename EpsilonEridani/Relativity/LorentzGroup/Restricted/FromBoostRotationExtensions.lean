@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.LorentzGroup.Restricted.FromBoostRotation
 
 
@@ -18,9 +23,9 @@ Port these additions as standalone lemmas/extensions in this file.
 +  change Continuous (fun Λ : LorentzGroup.restricted d =>
 +    (generalizedBoost 0 (toVelocity Λ))⁻¹ * (Λ : LorentzGroup d))
    fun_prop
- 
+
  /-- The homeomorphism from the restricted Lorentz group to the product of
--- 
+--
 2.55.0
 
 -/

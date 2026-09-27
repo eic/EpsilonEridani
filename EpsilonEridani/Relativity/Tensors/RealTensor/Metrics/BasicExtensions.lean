@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Tensors.RealTensor.Metrics.Basic
 
 
@@ -12,13 +17,13 @@ Port these additions as standalone lemmas/extensions in this file.
 -- Patch: 0007-feat-Mathematics-Relativity-generalized-Kronecker-de.patch
 @@ -6,6 +6,9 @@ Authors: Robert Sneiderman, Joseph Tooby-Smith
  module
- 
+
  public import EpsilonEridani.Relativity.Tensors.RealTensor.Contraction.CrossToEnd
 +public import EpsilonEridani.Relativity.Tensors.RealTensor.Basic
 +public import EpsilonEridani.Relativity.Tensors.MetricTensor
 +public import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
   /-!
- 
+
  ## Metrics as real Lorentz tensors
 @@ -18,11 +21,15 @@ open Module
  open Matrix
@@ -26,25 +31,25 @@ Port these additions as standalone lemmas/extensions in this file.
  open TensorProduct
 +open Equiv
 +open TensorSpecies Tensor
- 
+
  noncomputable section
- 
+
  namespace realLorentzTensor
- 
+
 +open realLorentzTensor
 +
   /-!
- 
+
  ## Definitions.
 @@ -30,12 +37,17 @@ namespace realLorentzTensor
   /
- 
+
  /-- The metric `ηᵢᵢ` as a complex Lorentz tensor. -/
 -abbrev coMetric (d : ℕ := 3) : ℝT[d, .down, .down] :=
 -  (realLorentzTensor d).metricTensor .down
 +abbrev coMetric (d : ℕ := 3) : ℝT[d, Color.down, Color.down] :=
 +  (realLorentzTensor d).metricTensor Color.down
- 
+
  /-- The metric `ηⁱⁱ` as a complex Lorentz tensor. -/
 -abbrev contrMetric (d : ℕ := 3) : ℝT[d, .up, .up] :=
 -  (realLorentzTensor d).metricTensor .up
@@ -55,13 +60,13 @@ Port these additions as standalone lemmas/extensions in this file.
 +This is 1 when ρ = σ and 0 otherwise. -/
 +def kroneckerDelta (d : ℕ := 3) : ℝT[d, Color.up, Color.down] :=
 +  fromConstPair ((realLorentzTensor d).unit Color.down)
- 
+
   /-!
- 
+
 @@ -57,6 +69,26 @@ scoped[realLorentzTensor] notation "η" => @contrMetric
  open TensorSpecies
  open Tensor
- 
+
 +/- The covariant rank-4 Levi-Civita tensor in 3+1 dimensions. -/
 +/-
 +noncomputable def leviCivita4Co : ℝT[.down, .down, .down, .down] :=

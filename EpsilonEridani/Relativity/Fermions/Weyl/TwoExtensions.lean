@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Fermions.Weyl.Two
 
 
@@ -38,10 +43,10 @@ Port these additions as standalone lemmas/extensions in this file.
 +  have hTH : (((M.1)⁻¹)ᴴ)ᵀ = ((M.transpose⁻¹).1)ᴴ := congrArg Matrix.conjTranspose hT
 +  simp only [SL2C.toSelfAdjointMap_apply_coe]
 +  rw [hT, hTH]
- 
+
  lemma leftRightToMatrix_ρ_symm_selfAdjoint (v : Matrix (Fin 2) (Fin 2) ℂ)
      (hv : IsSelfAdjoint v) (M : SL(2,ℂ)) :
--- 
+--
 2.55.0
 
 -/

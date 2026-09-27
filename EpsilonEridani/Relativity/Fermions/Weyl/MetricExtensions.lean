@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Fermions.Weyl.Metric
 
 
@@ -11,7 +16,7 @@ Port these additions as standalone lemmas/extensions in this file.
 @@ -30,44 +30,64 @@ open CategoryTheory.MonoidalCategory
  /-- The raw `2x2` matrix corresponding to the metric for fermions. -/
  def metricRaw : Matrix (Fin 2) (Fin 2) ℂ := !![0, 1; -1, 0]
- 
+
 +/-- The determinant of the underlying matrix of an element of `SL(2, ℂ)` is a unit.
 +
 +  Everything in this file is phrased in terms of the raw subtype projection `M.1`, whereas
@@ -61,7 +66,7 @@ of_apply,
 +  ext i j
 +  fin_cases i <;> fin_cases j <;>
 +    simp [Matrix.mul_apply, Fin.sum_univ_two]
- 
+
  lemma metricRaw_comm (M : SL(2,ℂ)) : metricRaw * M.1 = (M.1⁻¹)ᵀ * metricRaw := by
 -  rw [metricRaw]
 -  rw [Lorentz.SL2C.inverse_coe, eta_fin_two M.1]
@@ -77,7 +82,7 @@ of_apply,
 +  ext i j
 +  fin_cases i <;> fin_cases j <;>
 +    simp [Matrix.mul_apply, Fin.sum_univ_two]
- 
+
  lemma star_comm_metricRaw (M : SL(2,ℂ)) : M.1.map star * metricRaw = metricRaw * ((M.1)⁻¹)ᴴ := by
 -  rw [metricRaw]
 -  rw [Lorentz.SL2C.inverse_coe, eta_fin_two M.1]
@@ -89,7 +94,7 @@ of_apply,
 +  ext i j
 +  fin_cases i <;> fin_cases j <;>
 +    simp [Matrix.mul_apply, Fin.sum_univ_two]
- 
+
  lemma metricRaw_comm_star (M : SL(2,ℂ)) : metricRaw * M.1.map star = ((M.1)⁻¹)ᴴ * metricRaw := by
 -  rw [metricRaw]
 -  rw [Lorentz.SL2C.inverse_coe, eta_fin_two M.1]
@@ -101,7 +106,7 @@ of_apply,
 +  ext i j
 +  fin_cases i <;> fin_cases j <;>
 +    simp [Matrix.mul_apply, Fin.sum_univ_two]
- 
+
  /-- The metric `εᵃᵃ` as an element of `(leftHanded ⊗ leftHanded).V`. -/
  def leftMetricVal : LeftHandedWeyl ⊗[ℂ] LeftHandedWeyl :=
 @@ -110,8 +130,7 @@ def leftMetric : (Representation.trivial ℂ SL(2,ℂ) ℂ).IntertwiningMap
@@ -111,7 +116,7 @@ of_apply,
 -    simp only [SpecialLinearGroup.det_coe, isUnit_iff_ne_zero, ne_eq, one_ne_zero,
 -      not_false_eq_true, mul_nonsing_inv, transpose_one, mul_one]
 +    rw [Matrix.mul_nonsing_inv _ (isUnit_det_coe M), Matrix.transpose_one, mul_one]
- 
+
  lemma leftMetric_apply_one : leftMetric (1 : ℂ) = leftMetricVal := by
    change (1 : ℂ) • leftMetricVal = leftMetricVal
 @@ -154,8 +173,7 @@ def dualLeftMetric : (Representation.trivial ℂ SL(2,ℂ) ℂ).IntertwiningMap
@@ -121,7 +126,7 @@ of_apply,
 -      simp only [SpecialLinearGroup.det_coe, isUnit_iff_ne_zero, ne_eq, one_ne_zero,
 -        not_false_eq_true, mul_nonsing_inv, mul_one]
 +      rw [Matrix.mul_nonsing_inv _ (isUnit_det_coe M), mul_one]
- 
+
  lemma dualLeftMetric_apply_one : dualLeftMetric (1 : ℂ) = dualLeftMetricVal := by
    change (1 : ℂ) • dualLeftMetricVal = dualLeftMetricVal
 @@ -208,8 +226,7 @@ def rightMetric : (Representation.trivial ℂ SL(2,ℂ) ℂ).IntertwiningMap
@@ -134,7 +139,7 @@ of_apply,
        rw [h1]
        simp
      · rw [← rightRightToMatrix_ρ_symm metricRaw M]
--- 
+--
 2.55.0
 
 -/

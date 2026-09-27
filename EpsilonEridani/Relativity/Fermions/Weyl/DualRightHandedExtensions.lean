@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Fermions.Weyl.DualRightHanded
 
 
@@ -30,7 +35,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +    show ((M.1 * N.1)⁻¹).conjTranspose = _
      rw [Matrix.mul_inv_rev]
      exact conjTranspose_mul _ _
- 
+
 diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/LeftHanded.lean
 b/EpsilonEridani/Relativity/Fermions/Weyl/LeftHanded.lean
 index c7136388..5ab09bf3 100644

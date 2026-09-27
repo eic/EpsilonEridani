@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Mathematics.Distribution.Basic
 
 
@@ -11,7 +16,7 @@ Port these additions as standalone lemmas/extensions in this file.
 /-
 -- Patch: 0001-feat-Physlib-QFT-Scattering-DIS-initial-import.patch
 @@ -129,7 +129,7 @@ on the size of `u` applied to `η`.
- 
+
  /-- The construction of a distribution from the following data:
  1. We take a finite set `s` of pairs `(k, n) ∈ ℕ × ℕ` that will be explained later.
 -2. We take a linear map `u` that evaluates the given Schwartz function `η`. At this stage we don't

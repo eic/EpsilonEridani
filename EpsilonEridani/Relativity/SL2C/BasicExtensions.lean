@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.SL2C.Basic
 
 
@@ -10,7 +15,7 @@ Port these additions as standalone lemmas/extensions in this file.
 -- Patch: 0005-refactor-Relativity-adapt-SL-2-C-and-Weyl-proofs-to-.patch
 @@ -34,8 +34,11 @@ Possibly to be moved to mathlib at some point.
   /
- 
+
  lemma inverse_coe (M : SL(2, ℂ)) : M.1⁻¹ = (M⁻¹).1 := by
 -  rw [SpecialLinearGroup.coe_inv, Matrix.inv_def, SpecialLinearGroup.det_coe]
 -  simp
@@ -19,7 +24,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +    M.1⁻¹ = (↑hdet.unit⁻¹ : ℂ) • M.1.adjugate := Matrix.nonsing_inv_apply _ hdet
 +    _ = M.1.adjugate := by simp
 +    _ = (M⁻¹).1 := by simp
- 
+
  lemma transpose_coe (M : SL(2, ℂ)) : M.1ᵀ = (M.transpose).1 := rfl
   /-!
 @@ -52,7 +55,7 @@ we can define a representation a representation of `SL(2, ℂ)` on spacetime.
@@ -56,18 +61,18 @@ Port these additions as standalone lemmas/extensions in this file.
 -    noncomm_ring
 +    ext A
 +    simp [toSelfAdjointMap, Matrix.conjTranspose_mul, Matrix.mul_assoc]
- 
+
  open Lorentz in
  lemma toMatrix_apply_contrMod (M : SL(2, ℂ)) (v : ContrMod 3) :
 @@ -175,7 +176,7 @@ def toLorentzGroup : SL(2, ℂ) →* LorentzGroup 3 where
      simp only [_root_.map_mul, lorentzGroupIsGroup_mul_coe]
- 
+
  lemma toLorentzGroup_eq_pauliBasis' (M : SL(2, ℂ)) :
 -    toLorentzGroup M = LinearMap.toMatrix
 +    (toLorentzGroup M).1 = LinearMap.toMatrix
      PauliMatrix.pauliBasis' PauliMatrix.pauliBasis' (toSelfAdjointMap M) := by
    rfl
- 
+
 @@ -283,7 +284,7 @@ lemma toLorentzGroup_det_one (M : SL(2, ℂ)) : det (toLorentzGroup M).val = 1 :
    have h : M.val = U * N * star U := M.val.schur_triangulation
    haveI : Invertible U.val := ⟨star U.val, U.property.left, U.property.right⟩
@@ -77,7 +82,7 @@ Port these additions as standalone lemmas/extensions in this file.
      _ = LinearMap.det (toSelfAdjointMap' (U * N * U.val⁻¹)) :=
        suffices star U = U.val⁻¹ by rw [h, this]
        calc star U.val
--- 
+--
 2.55.0
 
 -/

@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Particles.StandardModel.Fermions.LeptonDoublet
 
 
@@ -17,9 +22,9 @@ Port these additions as standalone lemmas/extensions in this file.
 -    simp [smul_smul, mul_comm, TensorProduct.map_map, valLinEquiv_symm_apply]
 +    simp [smul_smul, TensorProduct.map_map, valLinEquiv_symm_apply]
      ring_nf
- 
+
  /-- The gauge action on a pure spinor–weak tensor. -/
--- 
+--
 2.55.0
 
 -/

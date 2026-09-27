@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.PauliMatrices.AsTensor
 
 
@@ -76,9 +81,9 @@ Port these additions as standalone lemmas/extensions in this file.
 +          · simp only [one_apply_eq, Complex.ofReal_one, one_smul]
 +          · simp only [one_apply_ne' hb, Complex.ofReal_zero, zero_smul]
            · simp only [Finset.mem_univ, not_true_eq_false] at hb
- 
+
  /-- The map `𝟙_ (Rep ℂ SL(2,ℂ)) ⟶ complexContr ⊗ leftHanded ⊗ rightHanded` corresponding
--- 
+--
 2.55.0
 
 -/

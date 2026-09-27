@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Fermions.Weyl.Duals
 
 
@@ -27,7 +32,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +      Matrix.adjugate_fin_two]
 +    ext i j
 +    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
- 
+
  lemma LeftHandedWeyl.dual_hom_apply (ψ : LeftHandedWeyl) :
      LeftHandedWeyl.dual ψ =
 @@ -85,12 +91,17 @@ def DualLeftHandedWeyl.dual : DualLeftHandedWeyl.rep.IntertwiningMap LeftHandedW
@@ -50,7 +55,7 @@ Port these additions as standalone lemmas/extensions in this file.
 +      Matrix.adjugate_fin_two]
 +    ext i j
 +    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
- 
+
  lemma DualLeftHandedWeyl.dual_hom_apply (ψ : DualLeftHandedWeyl) :
      DualLeftHandedWeyl.dual ψ =
 diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/Two.lean

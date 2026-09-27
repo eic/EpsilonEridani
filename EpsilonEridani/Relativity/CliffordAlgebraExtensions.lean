@@ -1,3 +1,13 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.CliffordAlgebra
 
 
@@ -11,7 +21,7 @@ Port these additions as standalone lemmas/extensions in this file.
 /-
 -- Patch: 0012-feat-Relativity-gamma-matrix-anticommutator-and-Dira.patch
 @@ -7,7 +7,9 @@ module
- 
+
  public import Mathlib.Analysis.Complex.Basic
  public import Mathlib.Data.Matrix.Reflection
 +public import Mathlib.LinearAlgebra.Matrix.Trace
@@ -23,16 +33,16 @@ Port these additions as standalone lemmas/extensions in this file.
 @@ -39,6 +41,8 @@ TODO "Prove injectivity of ofCliffordAlgebra and construct the full isomorphism.
  namespace spaceTime
  open Complex
- 
+
 +set_option maxHeartbeats 1000000
 +
  noncomputable section diracRepresentation
- 
+
  /-- The γ⁰ gamma matrix in the Dirac representation. -/
 @@ -80,6 +84,12 @@ def γ5 : Matrix (Fin 4) (Fin 4) ℂ := I • (γ0 * γ1 * γ2 * γ3)
  @[simp]
  def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
- 
+
 +/-- The lowered gamma matrices in the Dirac representation. -/
 +@[simp]
 +def γDown (μ : Fin 4) : Matrix (Fin 4) (Fin 4) ℂ :=
@@ -40,12 +50,12 @@ Port these additions as standalone lemmas/extensions in this file.
 +    ((@finSumFinEquiv 1 3).symm μ) : ℝ) : ℂ) • γ μ
 +
  namespace γ
- 
+
  open spaceTime
 @@ -104,6 +114,336 @@ lemma γSet_subset_diracAlgebra : γSet ⊆ diracAlgebra :=
  lemma γ_in_diracAlgebra (μ : Fin 4) : γ μ ∈ diracAlgebra :=
    γSet_subset_diracAlgebra (γ_in_γSet μ)
- 
+
 +/-- The Clifford anticommutator identity for gamma matrices. -/
 +theorem gamma_anticomm (μ ν : Fin 4) :
 +    γ μ * γ ν + γ ν * γ μ =
@@ -384,8 +394,7 @@ ks))
  /-- The quadratic form of the clifford algebra corresponding to the `γ` matrices. -/
  @[simps!]
  def diracForm : QuadraticForm ℝ (Fin 4 → ℝ) :=
--- 
+--
 2.55.0
 
 -/
-

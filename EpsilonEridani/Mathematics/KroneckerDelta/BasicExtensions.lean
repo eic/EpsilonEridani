@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Mathematics.KroneckerDelta.Basic
 
 
@@ -13,7 +18,7 @@ Port these additions as standalone lemmas/extensions in this file.
 @@ -5,11 +5,19 @@ Authors: Gregory J. Loges
   /
  module
- 
+
 +public import Mathlib.Algebra.BigOperators.Fin
  public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
  public import Mathlib.Algebra.CharZero.Defs
@@ -28,12 +33,12 @@ Port these additions as standalone lemmas/extensions in this file.
  public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 +public import Mathlib.Tactic
   /-!
- 
+
  # Kronecker delta
 @@ -213,6 +221,756 @@ lemma generalizedKroneckerDelta_comp_perm {α ι : Type} [DecidableEq α] [Decid
      (Matrix.of fun i j => ((kroneckerDelta (μ i) (ν j) : ℕ) : ℤ)).det
    exact Matrix.det_submatrix_equiv_self e _
- 
+
 +/-- Extends two index blocks into a single `Fin n → α` map.
 +For indices `< k` it uses `μ`, and for indices `≥ k` it uses `lam` with the shifted index. -/
 +def extendIndices {α : Type} (k n : ℕ) (_hk : k ≤ n)
@@ -787,7 +792,7 @@ hpow
 +end GeneralizedContraction
 +
  end Generalized
- 
+
  end KroneckerDelta
 diff --git a/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/Basic.lean
 b/EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/Basic.lean
@@ -809,7 +814,7 @@ hpow
      simpa [kroneckerDelta] using hminor
    · intro l _ hl; simp [kroneckerDelta, Ne.symm hl]
 @@ -960,7 +961,7 @@ encoded intrinsically by `ι`, and the full-rank condition is `Fintype.card ι =
- 
+
  So this theorem is the main contraction law to use in downstream files. -/
  theorem generalizedKroneckerDelta_contraction (k n : ℕ) (hk : k ≤ n)
 -  (hfull : Fintype.card ι = n)
@@ -831,7 +836,7 @@ index 72b751fe..42346e98 100644
      (μ : ι → α) (ν : ι → α) : ℤ :=
 -  Matrix.det (fun i j => δℤ (μ i) (ν j))
 +  Matrix.det (Matrix.of fun i j => δℤ (μ i) (ν j))
- 
+
  /-- Swapping two of the upper indices of the generalized Kronecker delta negates it.
  This is one row transposition of the underlying determinant. -/
 @@ -363,19 +363,19 @@ private lemma generalizedKroneckerDelta_last_eq_front {m d : ℕ} (hm : 1 ≤ m)
@@ -1082,7 +1087,7 @@ index 72b751fe..42346e98 100644
      change (Fintype.card (Fin n) : ℤ) • (-D) + (Fintype.card ι : ℤ) * D =
        ((Fintype.card ι : ℤ) - n) * D
      rw [show (Fintype.card (Fin n) : ℤ) = n by simp]
--- 
+--
 2.55.0
 
 -/
@@ -1090,22 +1095,22 @@ index 72b751fe..42346e98 100644
 /-
 -- Patch: 0084-fix-review-omit-the-unused-Fintype-on-the-two-privat.patch
 @@ -627,6 +627,7 @@ section GeneralizedContraction
- 
+
  variable {ι : Type} [DecidableEq ι] [Fintype ι]
- 
+
 +omit [Fintype ι] in
  /-- Cyclic reindexing invariance for repeated-index placement.
- 
+
  Mathematically, this is the statement that moving the repeated index `l`
 @@ -667,6 +668,7 @@ private lemma generalizedKroneckerDelta_last_eq_front' {m : ℕ} (hm : 1 ≤ m)
                  (extendIndices 1 m hm (fun _ : Fin 1 => l) ν j)) := by
            rw [Matrix.det_submatrix_equiv_self]
- 
+
 +omit [Fintype ι] in
  /-- Generic version of `bordered_submatrix_last_eq`. -/
  private lemma bordered_submatrix_last_eq' (μ ν : Fin n → ι) (l : ι) :
      Matrix.submatrix
--- 
+--
 2.55.0
 
 -/

@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 
 
@@ -13,7 +18,7 @@ Port these additions as standalone lemmas/extensions in this file.
 @@ -5,6 +5,12 @@ Authors: Joseph Tooby-Smith
   /
  module
- 
+
 +public import EpsilonEridani.QFT.QCD.Basic
 +public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
 +public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
@@ -22,11 +27,11 @@ Port these additions as standalone lemmas/extensions in this file.
 +
   /-!
  # Feynman diagrams
- 
+
 @@ -20,6 +26,19 @@ with Wick contractions which are based on lists of `FieldOp`.
  In particular a Feynman diagram is a partition of a Multiset into
  disjoint pairs.
- 
+
 +## Standard Model Gauge Sectors
 +
 +This module provides Feynman rules for all three Standard Model gauge sectors:
@@ -41,11 +46,11 @@ Port these additions as standalone lemmas/extensions in this file.
 +replacement by explicit perturbative derivations.
 +
  ## Note
- 
+
  This directory is currently a work in progress.
 @@ -28,3 +47,468 @@ This directory is currently a work in progress.
   /
- 
+
  @[expose] public section
 +
 +noncomputable section
@@ -528,10 +533,10 @@ index 00000000..7dd0dc63
 +public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
  public import Mathlib.Data.Complex.Basic
  public import Mathlib.Topology.Instances.Complex
- 
+
 @@ -65,11 +66,18 @@ instance : DecidableEq LorentzIndex := by
    infer_instance
- 
+
  /-- Spacetime 4-momentum (in units of energy). -/
 -structure Momentum : Type where
 -  /-- Temporal component (energy). -/
@@ -550,21 +555,21 @@ index 00000000..7dd0dc63
 +  | Sum.inr 2 => p₃
 +
 +end Momentum
- 
+
  /-- Color index in fundamental or adjoint representation. -/
  structure ColorIndex (ColorDim : ℕ) : Type where
 @@ -89,11 +97,11 @@ variable {NumColors NumFlavors : ℕ} [Fact (1 < NumColors)] [Fact (0 < NumFlavo
- 
+
  /-- Euclidean spatial norm-squared of the spatial momentum components. -/
  def spatialNormSq (k : Momentum) : ℝ :=
 -  k.p.1 ^ 2 + k.p.2.1 ^ 2 + k.p.2.2 ^ 2
 +  ⟪Lorentz.Vector.spatialPart k, Lorentz.Vector.spatialPart k⟫_ℝ
- 
+
  /-- Minkowski momentum square with $(+,-,-,-)$ signature. -/
  def minkowskiSquare (k : Momentum) : ℝ :=
 -  k.E ^ 2 - spatialNormSq k
 +  ⟪k, k⟫ₘ
- 
+
  /-- Mass-shell polynomial $k^2 - m^2$. -/
  def massShellPolynomial (k : Momentum) (mass : ℝ) : ℝ :=
 @@ -207,10 +215,10 @@ def minkowskiMetric (μ ν : LorentzIndex) : ℝ :=
@@ -579,10 +584,10 @@ index 00000000..7dd0dc63
 +  | 1 => k (Sum.inr 0)
 +  | 2 => k (Sum.inr 1)
 +  | _ => k (Sum.inr 2)
- 
+
  /-- Minimal Dirac numerator container for $\gamma\!\cdot\!k + m$. -/
  structure DiracNumerator where
--- 
+--
 2.55.0
 
 -/
@@ -592,14 +597,14 @@ index 00000000..7dd0dc63
 @@ -56,6 +56,9 @@ namespace QFT
  namespace PerturbationTheory
  namespace FeynmanDiagrams
- 
+
 +open scoped InnerProductSpace
 +open scoped Lorentz.Vector
 +
   /-! ### Field and Index Types -/
- 
+
  /-- Lorentz index (0=time, 1,2,3=spatial). -/
--- 
+--
 2.55.0
 
 -/
@@ -607,9 +612,9 @@ index 00000000..7dd0dc63
 /-
 -- Patch: 0118-QCD-gauge-remove-vacuous-Prop-contracts-state-the-id.patch
 @@ -254,60 +254,54 @@ def quarkPropagatorLifted (k : Momentum) (mass ε : ℝ) (_hε : 0 < ε) :
- 
+
   /-! ### Vertex Functions (Color-Stripped) -/
- 
+
 -/-- Contract: gauge-fermion (matter-boson) vertex satisfies gauge-covariance.
 +/-- Numerical data attached to a gauge-fermion (matter-boson) vertex.
      Generic form: `V^μ = -i g γ^μ T^a` where `T^a` is a representation generator.
@@ -628,10 +633,10 @@ index 00000000..7dd0dc63
 -  isGaugeCovariant : Prop
 -  /-- Witness that gauge covariance holds. -/
 -  hGaugeCovariant : isGaugeCovariant
- 
+
  /-- Backward-compatible alias: quark-gluon vertex contract. -/
  abbrev QuarkGluonVertexAssumptions := GaugeFermionVertexAssumptions
- 
+
 -/-- Contract: 3-gauge-boson vertex satisfies non-abelian Yang-Mills structure.
 +/-- Numerical data attached to a 3-gauge-boson vertex.
      Generic form: `V^(3) ∝ g f^abc` where `f^abc` are the Lie algebra structure constants.
@@ -652,10 +657,10 @@ index 00000000..7dd0dc63
 -  hasKinematicFactors : Prop
 -  /-- Witness that kinematic factors are present. -/
 -  hKinematicFactors : hasKinematicFactors
- 
+
  /-- Backward-compatible alias: 3-gluon vertex contract. -/
  abbrev ThreeGluonVertexAssumptions := ThreeGaugeBosonVertexAssumptions
- 
+
 -/-- Contract: 4-gauge-boson vertex satisfies Yang-Mills self-coupling structure.
 +/-- Numerical data attached to a 4-gauge-boson vertex.
      Comes from the `[Dμ, Dν]²` term in the covariant-derivative expansion.
@@ -675,10 +680,10 @@ index 00000000..7dd0dc63
 -  hasColorPermutations : Prop
 -  /-- Witness that all color permutations appear. -/
 -  hColorPermutations : hasColorPermutations
- 
+
  /-- Backward-compatible alias: 4-gluon vertex contract. -/
  abbrev FourGluonVertexAssumptions := FourGaugeBosonVertexAssumptions
- 
+
 -/-- Contract: ghost-gauge-boson vertex satisfies Faddeev-Popov structure.
 -    Generic form: `V = -g f^abc ∂^μ`; absent in U(1), present in SU(2) and SU(3). -/
 +/-- Numerical data attached to a ghost-gauge-boson vertex.
@@ -697,7 +702,7 @@ index 00000000..7dd0dc63
 -  faddeevPopovIdentity : Prop
 -  /-- Witness to the Faddeev-Popov identity. -/
 -  hFaddeevPopovIdentity : faddeevPopovIdentity
- 
+
  /-- Backward-compatible alias: ghost-gluon vertex contract. -/
  abbrev GhostGluonVertexAssumptions := GhostGaugeBosonVertexAssumptions
 @@ -356,10 +346,10 @@ def nonAbelianGaugeRules (g : ℝ) : GaugeFeynmanRules where
@@ -713,7 +718,7 @@ index 00000000..7dd0dc63
 +  four_boson_vertex  := ⟨g^2⟩
 +  ghost_boson_vertex := ⟨g,   true, true⟩
    runningCoupling   := fun _ => g
- 
+
  /-- Standard minimal-subtraction non-abelian rules; alias for SU(3) (QCD). -/
 @@ -373,10 +363,10 @@ def u1AbelianGaugeRules (g : ℝ) : GaugeFeynmanRules where
    gauge_propagator  := gluonPropagator   -- same denominator form as any massless boson
@@ -728,12 +733,12 @@ index 00000000..7dd0dc63
 +  four_boson_vertex  := ⟨0⟩            -- no quartic self-coupling
 +  ghost_boson_vertex := ⟨0, false, false⟩    -- ghosts decouple
    runningCoupling   := fun _ => g
- 
+
  /-- SU(2) weak-isospin gauge rules with coupling `g_w`. -/
 @@ -384,40 +374,18 @@ def su2GaugeRules (g_w : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_w
- 
+
   /-! ### Diagram Assembly Theorems -/
- 
+
 -/-- Contract: a tree-level Born gauge-boson–matter scattering diagram. -/
 -structure TreeGaugeBornDiagramAssumptions (rules : GaugeFeynmanRules)
 -  (k_in k_out : Momentum) : Type where
@@ -747,7 +752,7 @@ index 00000000..7dd0dc63
 -/-- Backward-compatible alias. -/
 -abbrev TreeQuarkGluonBoxDiagramAssumptions := TreeGaugeBornDiagramAssumptions
 +/-- Contract: one-loop gauge diagram requiring regularization.
- 
+
 -/-- Constructive tree-level Born gauge-matter diagram amplitude data. -/
 -def treeGaugeBorn_amplitude
 -    (rules : GaugeFeynmanRules) (k_in k_out : Momentum) :
@@ -775,7 +780,7 @@ index 00000000..7dd0dc63
 -  hProperties : hasLoopIntegral ∧ needsRegularization
 +  /-- Witness that regularization is required. -/
 +  hNeedsRegularization : needsRegularization
- 
+
  /-- Backward-compatible alias. -/
  abbrev OneLoopBoxDiagramAssumptions := OneLoopGaugeDiagramAssumptions
 @@ -425,7 +393,7 @@ abbrev OneLoopBoxDiagramAssumptions := OneLoopGaugeDiagramAssumptions
@@ -784,13 +789,13 @@ index 00000000..7dd0dc63
      (k_in k_out : Momentum) (diag_asm : OneLoopGaugeDiagramAssumptions rules k_in k_out) :
 -    diag_asm.needsRegularization := diag_asm.hProperties.2
 +    diag_asm.needsRegularization := diag_asm.hNeedsRegularization
- 
+
  /-- Backward-compatible alias. -/
  lemma oneLoopBox_requiresRegularization (rules : GaugeFeynmanRules)
 @@ -507,18 +475,6 @@ structure OneLoopSelfEnergyEvaluationAssumptions
    canonical fermion self-energy master. -/
    hFermionMaster : fermionMaster = fermionSelfEnergyMaster
- 
+
 -/-! ### Connection to Renormalization -/
 -
 -/-- Contract: gauge Feynman rules + renormalization constants induce renormalized diagrams.
@@ -824,11 +829,11 @@ index d304f4bf..896f628d 100644
    colorCoupling : ℝ
    /-- Lorentz-structure flag (Dirac γ^μ term present). -/
    lorentzStructure : Bool
- 
+
  /-- Backward-compatible alias: quark-gluon vertex contract. -/
 -abbrev QuarkGluonVertexAssumptions := GaugeFermionVertexAssumptions
 +abbrev QuarkGluonVertexData := GaugeFermionVertexData
- 
+
  /-- Numerical data attached to a 3-gauge-boson vertex.
      Generic form: `V^(3) ∝ g f^abc` where `f^abc` are the Lie algebra structure constants.
 @@ -277,12 +277,12 @@ abbrev QuarkGluonVertexAssumptions := GaugeFermionVertexAssumptions
@@ -839,29 +844,29 @@ index d304f4bf..896f628d 100644
 +structure ThreeGaugeBosonVertexData where
    /-- Coupling strength (proportional to `g`). -/
    couplingStrength : ℝ
- 
+
  /-- Backward-compatible alias: 3-gluon vertex contract. -/
 -abbrev ThreeGluonVertexAssumptions := ThreeGaugeBosonVertexAssumptions
 +abbrev ThreeGluonVertexData := ThreeGaugeBosonVertexData
- 
+
  /-- Numerical data attached to a 4-gauge-boson vertex.
      Comes from the `[Dμ, Dν]²` term in the covariant-derivative expansion.
 @@ -290,19 +290,19 @@ abbrev ThreeGluonVertexAssumptions := ThreeGaugeBosonVertexAssumptions
- 
+
      Only the coupling strength is recorded; the color-tensor and cyclic-permutation
      content of the vertex is not asserted, for the same reason as in the 3-boson case. -/
 -structure FourGaugeBosonVertexAssumptions where
 +structure FourGaugeBosonVertexData where
    /-- Coupling strength (∝ g²). -/
    couplingStrength : ℝ
- 
+
  /-- Backward-compatible alias: 4-gluon vertex contract. -/
 -abbrev FourGluonVertexAssumptions := FourGaugeBosonVertexAssumptions
 +abbrev FourGluonVertexData := FourGaugeBosonVertexData
- 
+
  /-- Numerical data attached to a ghost-gauge-boson vertex.
      Generic form: `V = -g f^abc ∂^μ`; absent in U(1), present in SU(2) and SU(3).
- 
+
      The Faddeev-Popov identity itself is not asserted here: it is a statement about
      the gauge-fixed path-integral measure, which this library does not formalize. -/
 -structure GhostGaugeBosonVertexAssumptions where
@@ -871,13 +876,13 @@ index d304f4bf..896f628d 100644
    /-- Color structure: fully antisymmetric structure constants `f^abc`. -/
 @@ -311,7 +311,7 @@ structure GhostGaugeBosonVertexAssumptions where
    isDeri : Bool
- 
+
  /-- Backward-compatible alias: ghost-gluon vertex contract. -/
 -abbrev GhostGluonVertexAssumptions := GhostGaugeBosonVertexAssumptions
 +abbrev GhostGluonVertexData := GhostGaugeBosonVertexData
- 
+
   /-! ### Generic Gauge-Theory Feynman Rules Bundle -/
- 
+
 @@ -328,13 +328,13 @@ structure GaugeFeynmanRules where
    /-- Ghost propagator (trivial for U(1), Faddeev-Popov for non-abelian). -/
    ghost_propagator : ∀ (_k : Momentum) (ε : ℝ), 0 < ε → ℂ
@@ -895,7 +900,7 @@ index d304f4bf..896f628d 100644
 +  ghost_boson_vertex : GhostGaugeBosonVertexData
    /-- Running coupling at scale μ. -/
    runningCoupling : ℝ → ℝ
- 
+
 diff --git a/EpsilonEridani/QFT/QCD/SUNDerivation.lean b/EpsilonEridani/QFT/QCD/SUNDerivation.lean
 index 16ffa0a4..a1a05927 100644
 --- a/EpsilonEridani/QFT/QCD/SUNDerivation.lean

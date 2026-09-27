@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Relativity.Fermions.Weyl.LeftHanded
 
 
@@ -27,9 +32,9 @@ Port these additions as standalone lemmas/extensions in this file.
      simp only [LinearMap.coe_mk, AddHom.coe_mk, Module.End.mul_apply, LinearEquiv.apply_symm_apply,
        mulVec_mulVec]
 +    rfl
- 
+
  lemma rep_apply (M : SL(2,ℂ)) (ψ : LeftHandedWeyl) : rep M ψ = ⟨M.1 *ᵥ ψ.1⟩ := rfl
- 
+
 diff --git a/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
 b/EpsilonEridani/Relativity/Fermions/Weyl/RightHanded.lean
 index 6a3f1eaf..43f06dcf 100644

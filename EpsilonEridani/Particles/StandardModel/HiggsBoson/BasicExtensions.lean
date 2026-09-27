@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
 import Physlib.Particles.StandardModel.HiggsBoson.Basic
 
 
@@ -33,10 +38,10 @@ multiplicatio
 +    simp only [Module.End.mul_apply, LinearMap.coe_mk, AddHom.coe_mk, map_mul,
 +      Submonoid.coe_mul, WithLp.ofLp_toLp, mulVec_smul, smul_smul, mulVec_mulVec,
 +      mul_pow, mul_comm]
- 
+
  lemma repGaugeGroupI_apply (g : StandardModel.GaugeGroupI) (φ : HiggsVec) :
      repGaugeGroupI g φ = (WithLp.toLp 2 <| g.toU1 ^ 3 • (g.toSU2.1 *ᵥ φ.ofLp)) := rfl
--- 
+--
 2.55.0
 
 -/
@@ -50,10 +55,10 @@ multiplicatio
 -      Submonoid.coe_mul, WithLp.ofLp_toLp, mulVec_smul, smul_smul, mulVec_mulVec,
 -      mul_pow, mul_comm]
 +      Submonoid.coe_mul, mulVec_smul, smul_smul, mulVec_mulVec, mul_pow]
- 
+
  lemma repGaugeGroupI_apply (g : StandardModel.GaugeGroupI) (φ : HiggsVec) :
      repGaugeGroupI g φ = (WithLp.toLp 2 <| g.toU1 ^ 3 • (g.toSU2.1 *ᵥ φ.ofLp)) := rfl
--- 
+--
 2.55.0
 
 -/
