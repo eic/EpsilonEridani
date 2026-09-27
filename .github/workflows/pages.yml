@@ -103,7 +103,7 @@ jobs:
     steps:
       # Full history: scripts/loc_graph.py reconstructs the whole "lines by date"
       # series by walking every commit, so a shallow checkout would truncate the charts.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Same reasoning as ci.yml's build checkout: the token this workflow grants carries
           # `pages: write` and `id-token: write`, not just `contents: read`, so left in the
@@ -256,7 +256,7 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         id: merge-policy
         continue-on-error: true
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
           ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
@@ -416,7 +416,7 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Same reasoning as build-data's checkout, and it matters more here: this job elaborates
           # EpsilonEridani twice (the doc-gen4 build and the examples build), so a token left in

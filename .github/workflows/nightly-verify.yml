@@ -113,7 +113,7 @@ jobs:
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       - name: Check out main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           path: fresh
@@ -135,7 +135,7 @@ jobs:
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances
       # several times an hour, and comparing two different trees would report everything as divergent.
       - name: Check out the same commit for the reference build
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.rev.outputs.sha }}
           path: reference

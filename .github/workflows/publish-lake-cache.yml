@@ -50,7 +50,7 @@ jobs:
       # a later, key-free step can share the public URL contract with every other cache probe; it
       # is data, never executed, before or during the secret-bearing upload step.
       - name: Check out the toolchain pin and key-free confirmation helper
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.revision }}
           sparse-checkout: |

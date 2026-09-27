@@ -60,7 +60,7 @@ jobs:
       # Full history: the tool finds each release's commit by reading lean-toolchain at the
       # commits that change it, so a truncated clone would report the wrong ones. It refuses
       # to run in a shallow clone rather than answer from partial history.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0

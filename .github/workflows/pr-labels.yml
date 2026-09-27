@@ -92,12 +92,12 @@ jobs:
           permission-contents: read
       # The trusted base checkout: the labels script that runs is the one on the target branch, never
       # the version proposed by the PR.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: scripts/pr_status
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
           ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
@@ -193,12 +193,12 @@ jobs:
           permission-contents: read
       # The trusted base checkout: the labels script that runs is the one on the target branch, never
       # the version proposed by the PR.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: scripts/pr_status
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
           ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
@@ -235,12 +235,12 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           permission-contents: read
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: scripts/pr_status
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
           ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f

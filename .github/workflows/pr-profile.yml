@@ -182,7 +182,7 @@ jobs:
           fi
 
       - name: Checkout workflow-pinned trusted tooling
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.workflow_sha }}
           path: gate
@@ -192,7 +192,7 @@ jobs:
       # Current main is policy input only: a bump must move forward from it. The measured base is
       # the PR's merge base (or the immutable queue base), checked out separately below.
       - name: Checkout current policy base (trusted)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.base_sha }}
           path: policy
@@ -200,7 +200,7 @@ jobs:
           fetch-depth: 1
 
       - name: Checkout exact comparison base with complete cache ancestry
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.comparison_base }}
           path: base
@@ -208,7 +208,7 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout exact candidate head with complete cache ancestry
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           allow-unsafe-pr-checkout: true
           repository: ${{ steps.pr.outputs.head_repo }}

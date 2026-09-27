@@ -31,7 +31,7 @@ jobs:
       || github.event.pull_request.merged == true
     steps:
       # Only trusted main code runs here; no PR checkout or App credentials.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           sparse-checkout: scripts

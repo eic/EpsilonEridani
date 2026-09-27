@@ -44,7 +44,7 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # As in ci.yml: this job runs EpsilonEridani code, so keep GITHUB_TOKEN out of .git/config.
           persist-credentials: false

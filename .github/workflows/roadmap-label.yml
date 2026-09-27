@@ -49,13 +49,13 @@ jobs:
 
       # The base checkout (trusted): the classifier that runs is the one on the target
       # branch, not the version proposed by the PR.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       # The roadmap repo supplies the canonical area set (the source of truth for which
       # roadmap/<Area> labels are legitimate).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniRoadmaps
           path: roadmap
