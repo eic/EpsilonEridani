@@ -1,4 +1,4 @@
-name: Zulip PR backfill
+name: Mattermost PR backfill
 
 # Manually rewrite every existing bot-authored post in "Tau Ceti" > "PRs"
 # from current GitHub metadata. This is deliberately separate from the
@@ -21,7 +21,7 @@ permissions:
   statuses: read
 
 concurrency:
-  group: zulip-pr-backfill
+  group: mattermost-pr-backfill
   cancel-in-progress: false
 
 jobs:
@@ -45,13 +45,13 @@ jobs:
       - name: Reconcile all existing PR posts
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
-          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
-          ZULIP_SITE: https://leanprover.zulipchat.com
+          MATTERMOST_BOT_TOKEN: ${{ secrets.MATTERMOST_BOT_TOKEN }}
+          MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
+          MATTERMOST_URL: ${{ vars.MATTERMOST_URL }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          if [ -z "${ZULIP_API_KEY:-}" ] || [ -z "${ZULIP_EMAIL:-}" ]; then
-            echo "::warning::ZULIP_API_KEY or ZULIP_EMAIL is not set. Skipping Zulip backfill."
+          if [ -z "${MATTERMOST_BOT_TOKEN:-}" ] || [ -z "${MATTERMOST_CHANNEL_ID:-}" ]; then
+            echo "::warning::MATTERMOST_BOT_TOKEN or MATTERMOST_CHANNEL_ID is not set. Skipping Mattermost backfill."
             exit 0
           fi
           set -euo pipefail
@@ -60,7 +60,7 @@ jobs:
 
           # Pass the paginated listing's complete PR metadata to one long-lived
           # process. This stays well below GITHUB_TOKEN's 1,000 requests/hour
-          # repository limit and authenticates the Zulip bot only once.
+          # repository limit and authenticates the Mattermost bot only once.
           gh api --paginate \
             'repos/eic/EpsilonEridani/pulls?state=all&sort=created&direction=asc&per_page=100' \
             --jq '.[] | {
@@ -72,4 +72,4 @@ jobs:
               author: .user.login,
               roadmaps: [.labels[].name | select(startswith("roadmap/"))]
             }' |
-            python3 scripts/pr_status/zulip.py backfill "${args[@]}"
+            python3 scripts/pr_status/mattermost.py backfill "${args[@]}"

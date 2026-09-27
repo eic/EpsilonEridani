@@ -1,0 +1,42 @@
+name: Mattermost PR status (healthcheck)
+
+# Actively probe the Mattermost bot's credentials on a schedule, so a broken
+# MATTERMOST_BOT_TOKEN is caught even when no PR opens or builds for a while. The
+# per-PR workflows (mattermost-pr.yml / mattermost-pr-status.yml) only exercise the
+# integration when something happens on a PR; this one fails loudly on its own
+# cadence. `check` touches no PR and no message -- it just authenticates and
+# confirms the bot is subscribed to the channel.
+
+on:
+  schedule:
+  - cron: "37 */6 * * *"   # every six hours, offset off the hour
+  workflow_dispatch: {}
+
+permissions:
+  contents: read   # checkout the script
+
+concurrency:
+  group: mattermost-healthcheck
+  cancel-in-progress: true
+
+jobs:
+  mattermost-healthcheck:
+    if: github.repository == 'eic/EpsilonEridani'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/pr_status
+      - name: Probe Mattermost credentials
+        # No continue-on-error: a failed probe means the integration is broken
+        # and this run should go red. See scripts/pr_status/README.md.
+        env:
+          MATTERMOST_BOT_TOKEN: ${{ secrets.MATTERMOST_BOT_TOKEN }}
+          MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
+          MATTERMOST_URL: ${{ vars.MATTERMOST_URL }}
+        run: |
+          if [ -z "${MATTERMOST_BOT_TOKEN:-}" ] || [ -z "${MATTERMOST_CHANNEL_ID:-}" ]; then
+            echo "::warning::MATTERMOST_BOT_TOKEN or MATTERMOST_CHANNEL_ID is not set. Skipping Mattermost healthcheck."
+            exit 0
+          fi
+          python3 scripts/pr_status/mattermost.py check
