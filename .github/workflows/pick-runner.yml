@@ -33,7 +33,7 @@ on:
       # Optional. The App's installation token has a far larger hourly API budget than
       # `github.token`, which pr-build.yml's volume would exhaust. Without it, the picker
       # uses `github.token`.
-      APP_ID: { required: false }
+      APP_CLIENT_ID: { required: false }
       APP_PRIVATE_KEY: { required: false }
     outputs:
       github:
@@ -51,8 +51,8 @@ jobs:
       - name: Check for the App
         id: app
         env:
-          APP_ID: ${{ secrets.APP_ID }}
-        run: echo "present=$([ -n "$APP_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
+        run: echo "present=$([ -n "$APP_CLIENT_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       # Every repository in the organisation is public, so reading its Actions runs needs no
       # permission beyond metadata.
@@ -61,7 +61,7 @@ jobs:
         if: steps.app.outputs.present == 'true'
         continue-on-error: true
         with:
-          client-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           permission-metadata: read

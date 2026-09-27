@@ -40,9 +40,9 @@ jobs:
     steps:
       - name: Require the claims App
         env:
-          APP_ID: ${{ secrets.CLAIMS_APP_ID }}
+          APP_CLIENT_ID: ${{ secrets.CLAIMS_APP_CLIENT_ID }}
         run: |
-          if [ -z "$APP_ID" ]; then
+          if [ -z "$APP_CLIENT_ID" ]; then
             echo "::error::CLAIMS_APP_ID / CLAIMS_APP_PRIVATE_KEY are unset, so nobody can be admitted to the" \
                  "claim namespace and every fleet is coordinating only with itself. See the setup notes at the" \
                  "top of .github/workflows/claims-access.yml."
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: claims-token
         with:
-          client-id: ${{ secrets.CLAIMS_APP_ID }}
+          client-id: ${{ secrets.CLAIMS_APP_CLIENT_ID }}
           private-key: ${{ secrets.CLAIMS_APP_PRIVATE_KEY }}
           owner: eic
           repositories: epsiloneridani-claims
