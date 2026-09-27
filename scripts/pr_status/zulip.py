@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mirror a EpsilonEridani PR's lifecycle onto Zulip emoji reactions.
+"""Mirror an EpsilonEridani PR's lifecycle onto Zulip emoji reactions.
 
 We keep exactly one bot-owned message per PR in a dedicated channel/topic
 (default: "Tau Ceti" > "PRs") and reconcile two independent, mutually-exclusive
@@ -587,7 +587,12 @@ def main(argv):
     strict = "--strict" in rest
     ci_override = None
     if "--ci" in rest:
-        ci_override = rest[rest.index("--ci") + 1]
+        idx = rest.index("--ci")
+        if idx + 1 < len(rest):
+            ci_override = rest[idx + 1]
+        else:
+            log("missing value for --ci")
+            return 1
 
     try:
         reconcile(z, pr, create, ci_override, create_if_open=create_if_open)
