@@ -432,7 +432,7 @@ jobs:
       - name: Lay down the generated data
         id: site-data
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: site-data
           path: web/static_files
@@ -841,7 +841,7 @@ jobs:
       - name: Lay this run's data over it
         id: overlay
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: site-data
           # `static "static" ← "static_files"` in web/Main.lean: the generated assets are served
