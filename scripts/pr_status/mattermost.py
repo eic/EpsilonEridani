@@ -184,16 +184,14 @@ def backfill(rows, dry_run=False):
             seen += 1
             # For backfill we do NOT create if open; we only update existing ones,
             # or you can pass create_if_open=False by default.
-            reconcile(pr, create_if_open=False, state=st, dry_run=dry_run)
-            changes += 1
+            changes += reconcile(pr, create_if_open=False, state=st, dry_run=dry_run)
         except Exception as e:
             print(f"Failed to backfill PR from line: {e}", file=sys.stderr)
             failures.append(line)
             
     if failures:
         print(f"Failed to process {len(failures)} PRs during backfill", file=sys.stderr)
-        return 1
-    return 0
+    return seen, changes, failures
 
 def fail_config(msg):
     print(f"CONFIG ERROR: {msg}", file=sys.stderr)
@@ -242,9 +240,10 @@ def main(argv):
     if cmd == "backfill":
         rest = argv[2:]
         dry_run = "--dry-run" in rest
+        strict = "--strict" in rest
         try:
-            backfill(sys.stdin, dry_run=dry_run)
-            return 0
+            _, _, failures = backfill(sys.stdin, dry_run=dry_run)
+            return 1 if failures and strict else 0
         except ConfigError as e:
             return fail_config(str(e))
             
