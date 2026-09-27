@@ -587,21 +587,33 @@ def post_if_changed(rows, dry_run=False):
     api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
     site = (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip()
     if not (email and api_key):
-        raise RuntimeError("ZULIP_EMAIL / ZULIP_API_KEY are not set")
-    z = zp.Zulip(email, api_key, site)
-    zp.check(z)
-    message, previous = last_posted_report(z, z.my_user_id())
-    # One-time migration for reports posted before the command fence specified `shell`.
-    # It can be removed after the existing old-style report has been repaired.
-    if message and OLD_FENCE in message["content"]:
-        corrected = message["content"].replace(OLD_FENCE, SHELL_FENCE, 1)
-        log(f"correcting the shell fence in message {message['id']}")
-        z.update_message(message["id"], corrected)
-    if previous == digest:
-        log(f"state unchanged since the last post ({digest}); saying nothing")
-        return False
-    log(f"state changed ({previous or 'nothing posted yet'} -> {digest}); posting")
-    z.send_message(content)
+        print("::warning::ZULIP_EMAIL / ZULIP_API_KEY not set; skipping Zulip toolchain tags report", file=sys.stderr)
+    else:
+        z = zp.Zulip(email, api_key, site)
+        zp.check(z)
+        message, previous = last_posted_report(z, z.my_user_id())
+        if message and OLD_FENCE in message["content"]:
+            corrected = message["content"].replace(OLD_FENCE, SHELL_FENCE, 1)
+            log(f"correcting the shell fence in message {message['id']}")
+            z.update_message(message["id"], corrected)
+        if previous == digest:
+            log(f"state unchanged since the last post ({digest}); saying nothing")
+        else:
+            log(f"state changed ({previous or 'nothing posted yet'} -> {digest}); posting to Zulip")
+            z.send_message(content)
+
+    mm_token = (os.environ.get("MATTERMOST_BOT_TOKEN") or "").strip()
+    mm_channel = (os.environ.get("MATTERMOST_CHANNEL_ID") or "").strip()
+    mm_url = (os.environ.get("MATTERMOST_URL") or "").strip().rstrip("/")
+    if not (mm_token and mm_channel and mm_url):
+        print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID not set; skipping Mattermost toolchain tags report", file=sys.stderr)
+    else:
+        log("posting to Mattermost")
+        req = urllib.request.Request(f"{mm_url}/api/v4/posts", method="POST",
+            data=json.dumps({"channel_id": mm_channel, "message": content}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {mm_token}", "Content-Type": "application/json"})
+        urllib.request.urlopen(req)
+
     return True
 
 

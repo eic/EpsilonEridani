@@ -1,18 +1,18 @@
-name: Zulip PR status (lifecycle)
+name: Mattermost PR status (lifecycle)
 
-# Maintain the per-PR message + emoji in the "Tau Ceti" Zulip channel as a PR is
+# Maintain the per-PR message + emoji in the "Tau Ceti" Mattermost channel as a PR is
 # opened, reopened, merged, closed, or relabeled. CI- and review-status changes
-# are also handled by zulip-pr-status.yml; label events keep the roadmap shown in
+# are also handled by mattermost-pr-status.yml; label events keep the roadmap shown in
 # the post current and make the emoji follow the automatic status-label changes
 # promptly. A one-off reaction hiccup is cosmetic and the script swallows it
-# (exit 0); a *config* break (bad ZULIP_API_KEY, bot not subscribed) makes the
+# (exit 0); a *config* break (bad MATTERMOST_BOT_TOKEN, bot not subscribed) makes the
 # script exit non-zero so this run goes red -- that is the only way the breakage
 # is visible, since the integration otherwise fails silently.
 
 on:
   # These label writes use the repository GitHub App, not GITHUB_TOKEN, so they
   # generate workflow events. That is what makes review/roadmap changes refresh
-  # the Zulip post promptly.
+  # the Mattermost post promptly.
   pull_request_target:
     types: [opened, reopened, closed, labeled, unlabeled]
 
@@ -22,15 +22,15 @@ permissions:
   pull-requests: read   # read PR state
   statuses: read        # read the `build` commit status
 
-# Serialize all Zulip updates for a given PR head across both zulip workflows, so
+# Serialize all Mattermost updates for a given PR head across both zulip workflows, so
 # two events can't interleave and leave conflicting reactions. Don't cancel: each
 # run reconciles from fresh truth, and we want the last word, not a dropped one.
 concurrency:
-  group: zulip-pr-${{ github.event.pull_request.head.sha }}
+  group: mattermost-pr-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: false
 
 jobs:
-  zulip-pr:
+  mattermost-pr:
     if: github.repository == 'eic/EpsilonEridani'
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
-      - name: Reconcile Zulip reactions
+      - name: Reconcile Mattermost reactions
         # No continue-on-error: the script exits 0 for cosmetic/transient hiccups
         # and non-zero only for a persistent config break, which we *want* loud.
         # This run going red never blocks a PR: only `build` and `bump-guard` are
@@ -54,9 +54,9 @@ jobs:
         # ledger, not on this workflow.
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
-          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
-          ZULIP_SITE: https://leanprover.zulipchat.com
+          MATTERMOST_BOT_TOKEN: ${{ secrets.MATTERMOST_BOT_TOKEN }}
+          MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
+          MATTERMOST_URL: ${{ vars.MATTERMOST_URL }}
           PR: ${{ github.event.pull_request.number }}
           ACTION: ${{ github.event.action }}
           # Feed PR state straight from the event payload so reconcile needs no
@@ -69,8 +69,8 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
         run: |
-          if [ -z "${ZULIP_API_KEY:-}" ] || [ -z "${ZULIP_EMAIL:-}" ]; then
-            echo "::warning::ZULIP_API_KEY or ZULIP_EMAIL is not set. Skipping Zulip PR lifecycle update."
+          if [ -z "${MATTERMOST_BOT_TOKEN:-}" ] || [ -z "${MATTERMOST_CHANNEL_ID:-}" ]; then
+            echo "::warning::MATTERMOST_BOT_TOKEN or MATTERMOST_CHANNEL_ID is not set. Skipping Mattermost PR lifecycle update."
             exit 0
           fi
           # A label event's payload can be stale when several label writes race.
@@ -89,4 +89,4 @@ jobs:
             # only while current GitHub truth still says the PR is open.
             CREATE="--create-if-open"
           fi
-          python3 scripts/pr_status/zulip.py reconcile "$PR" $CREATE
+          python3 scripts/pr_status/mattermost.py reconcile "$PR" $CREATE
