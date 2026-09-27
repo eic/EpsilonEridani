@@ -80,20 +80,33 @@ REVIEW_EMOJIS = {
 def pr_message_content(pr, title, author, roadmaps):
     roadmap_str = f" [Roadmap: {', '.join(roadmaps)}]" if roadmaps else ""
     author_str = f" (Author: @{author})" if author else ""
-    return f"🚀 **New PR [#{pr}](https://github.com/{core.REPO}/pull/{pr}):** {title}{author_str}{roadmap_str}\n\n<!-- [PR-{pr}-ANNOUNCEMENT] -->"
+    return f"🚀 **New PR [#{pr}](https://github.com/{core.REPO}/pull/{pr}):** {title}{author_str}{roadmap_str}"
 
 def get_team_id(channel_id):
     res = api_request("GET", f"/channels/{channel_id}")
     return res.get("team_id")
 
-def find_post(pr, team_id):
-    tag = f"[PR-{pr}-ANNOUNCEMENT]"
-    data = {"terms": tag, "is_or_search": False}
-    res = api_request("POST", f"/teams/{team_id}/posts/search", data=data)
-    posts = res.get("posts", {})
-    for post_id, post in posts.items():
-        if post.get("channel_id") == CHANNEL_ID and tag in post.get("message", ""):
-            return post
+def find_post(pr, team_id, me_id):
+    # 1. Real-time channel history (bypasses search indexing delays)
+    res = api_request("GET", f"/channels/{CHANNEL_ID}/posts?per_page=200")
+    if res and "posts" in res:
+        for post_id, post in res["posts"].items():
+            if post.get("user_id") != me_id:
+                continue
+            if post.get("props", {}).get("eic_pr") == str(pr):
+                return post
+            if f"[PR-{pr}-ANNOUNCEMENT]" in post.get("message", ""):
+                return post
+                
+    # 2. Fallback to Search API (for deep backfills where post is not in the last 200)
+    if team_id:
+        # Search for either the old tag or the PR link
+        res = api_request("POST", f"/teams/{team_id}/posts/search", data={"terms": f"{pr}", "is_or_search": False})
+        posts = res.get("posts", {})
+        for post_id, post in posts.items():
+            if post.get("channel_id") == CHANNEL_ID and post.get("user_id") == me_id:
+                if post.get("props", {}).get("eic_pr") == str(pr) or f"[PR-{pr}-ANNOUNCEMENT]" in post.get("message", ""):
+                    return post
     return None
 
 def set_reaction(post_id, user_id, expected_emoji, current_reactions):
@@ -117,12 +130,16 @@ def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=No
     create = create or (create_if_open and st["state"] == "open" and not st["merged"])
     
     content = pr_message_content(pr, st["title"], st.get("author", ""), st.get("roadmaps", []))
+    props = {"eic_pr": str(pr)}
+    
+    me = api_request("GET", "/users/me")
+    me_id = me.get("id")
     
     team_id = get_team_id(CHANNEL_ID)
     if not team_id:
         raise ConfigError("Could not determine team_id for channel")
         
-    post = find_post(pr, team_id)
+    post = find_post(pr, team_id, me_id)
     
     if post is None:
         if not create:
@@ -133,11 +150,14 @@ def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=No
             return 1
             
         print(f"Creating message for PR #{pr}")
-        post = api_request("POST", "/posts", data={"channel_id": CHANNEL_ID, "message": content})
-    elif post.get("message") != content:
+        post = api_request("POST", "/posts", data={"channel_id": CHANNEL_ID, "message": content, "props": props})
+    elif post.get("message") != content or post.get("props", {}).get("eic_pr") != str(pr):
         if not dry_run:
             print(f"Updating message for PR #{pr}")
-            api_request("PUT", f"/posts/{post['id']}", data={"id": post["id"], "message": content})
+            # Merge props to preserve any Mattermost system props
+            new_props = post.get("props", {})
+            new_props.update(props)
+            api_request("PUT", f"/posts/{post['id']}", data={"id": post["id"], "message": content, "props": new_props})
             
     status = core.derive(pr, ci_override, state=st)
     
@@ -154,8 +174,7 @@ def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=No
         ci_emoji = CI_EMOJIS.get(status["ci"])
         
     if not dry_run and post:
-        me = api_request("GET", "/users/me")
-        user_id = me.get("id")
+        user_id = me_id
         
         # Get current reactions on the post
         reactions = post.get("metadata", {}).get("reactions")
