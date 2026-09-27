@@ -125,7 +125,7 @@ def set_reaction(post_id, user_id, expected_emoji, current_reactions):
             api_request("DELETE", f"/users/{user_id}/posts/{post_id}/reactions/{emoji}")
             
     if expected_emoji and not already_has:
-        api_request("POST", f"/posts/{post_id}/reactions", data={"user_id": user_id, "post_id": post_id, "emoji_name": expected_emoji})
+        api_request("POST", "/reactions", data={"user_id": user_id, "post_id": post_id, "emoji_name": expected_emoji})
 
 def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=None, dry_run=False):
     st = core.pr_state(pr) if state is None else state
