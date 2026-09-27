@@ -65,11 +65,104 @@ def check():
         except Exception as e:
             raise ConfigError(f"Cannot access channel {CHANNEL_ID}: {e}")
 
+CI_EMOJIS = {
+    "running": "large_yellow_circle",
+    "success": "white_check_mark",
+    "failure": "x"
+}
+
+REVIEW_EMOJIS = {
+    "running": "eyes",
+    "changes": "writing_hand",
+    "approved": "white_check_mark"
+}
+
+def pr_message_content(pr, title, author, roadmaps):
+    roadmap_str = f" [Roadmap: {', '.join(roadmaps)}]" if roadmaps else ""
+    return f"🚀 **New PR [#{pr}](https://github.com/{core.REPO}/pull/{pr}):** {title} (Author: @{author}){roadmap_str}\n\n<!-- [PR-{pr}-ANNOUNCEMENT] -->"
+
+def get_team_id(channel_id):
+    res = api_request("GET", f"/channels/{channel_id}")
+    return res.get("team_id")
+
+def find_post(pr, team_id):
+    tag = f"[PR-{pr}-ANNOUNCEMENT]"
+    data = {"terms": tag, "is_or_search": False}
+    res = api_request("POST", f"/teams/{team_id}/posts/search", data=data)
+    posts = res.get("posts", {})
+    for post_id, post in posts.items():
+        if post.get("channel_id") == CHANNEL_ID and tag in post.get("message", ""):
+            return post
+    return None
+
+def set_reaction(post_id, user_id, expected_emoji, current_reactions):
+    # Find emojis we placed
+    our_reactions = [r for r in current_reactions if r.get("user_id") == user_id]
+    
+    # If the expected emoji is already there, remove it from the list of ones to delete
+    already_has = False
+    for r in our_reactions:
+        emoji = r.get("emoji_name")
+        if emoji == expected_emoji:
+            already_has = True
+        else:
+            api_request("DELETE", f"/users/me/posts/{post_id}/reactions/{emoji}")
+            
+    if expected_emoji and not already_has:
+        api_request("POST", f"/posts/{post_id}/reactions", data={"user_id": user_id, "post_id": post_id, "emoji_name": expected_emoji})
+
 def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=None, dry_run=False):
     st = core.pr_state(pr) if state is None else state
-    print(f"Reconciling PR #{pr}...")
-    # NOTE: Full reconcile logic (search for hidden tag, edit post, update emojis) goes here.
-    # This is a stub for the PR implementation.
+    create = create or (create_if_open and st["state"] == "open" and not st["merged"])
+    
+    content = pr_message_content(pr, st["title"], st.get("author", ""), st.get("roadmaps", []))
+    
+    team_id = get_team_id(CHANNEL_ID)
+    post = find_post(pr, team_id)
+    
+    if post is None:
+        if not create:
+            print(f"no message for PR #{pr} yet and --create not set; nothing to do")
+            return 0
+        if dry_run:
+            print(f"would create message for PR #{pr}")
+            return 1
+            
+        print(f"Creating message for PR #{pr}")
+        post = api_request("POST", "/posts", data={"channel_id": CHANNEL_ID, "message": content})
+    elif post.get("message") != content:
+        if not dry_run:
+            print(f"Updating message for PR #{pr}")
+            api_request("PUT", f"/posts/{post['id']}", data={"id": post["id"], "message": content})
+            
+    status = core.derive(pr, ci_override, state=st)
+    
+    # Determine emojis
+    rev_emoji = None
+    ci_emoji = None
+    
+    if status["lifecycle"] == "merged":
+        rev_emoji = "merged"
+    elif status["lifecycle"] == "closed":
+        rev_emoji = "closed_book"
+    else:
+        rev_emoji = REVIEW_EMOJIS.get(status["review"])
+        ci_emoji = CI_EMOJIS.get(status["ci"])
+        
+    if not dry_run and post:
+        me = api_request("GET", "/users/me")
+        user_id = me.get("id")
+        
+        # Get current reactions on the post
+        reactions = post.get("metadata", {}).get("reactions")
+        if reactions is None:
+            # Need to fetch explicitly if not populated in search
+            reactions = api_request("GET", f"/posts/{post['id']}/reactions") or []
+            
+        # We simplify this by just clearing our old CI/Review emojis and setting the new ones
+        set_reaction(post["id"], user_id, rev_emoji, [r for r in reactions if r.get("emoji_name") in REVIEW_EMOJIS.values() or r.get("emoji_name") in ("merged", "closed_book")])
+        set_reaction(post["id"], user_id, ci_emoji, [r for r in reactions if r.get("emoji_name") in CI_EMOJIS.values()])
+        
     return 1
 
 def backfill(rows, dry_run=False):
