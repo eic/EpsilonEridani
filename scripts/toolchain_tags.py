@@ -586,6 +586,9 @@ def post_if_changed(rows, dry_run=False):
     email = (os.environ.get("ZULIP_EMAIL") or "").strip()
     api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
     site = (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip()
+    posted = False
+    previous = None
+
     if not (email and api_key):
         print("::warning::ZULIP_EMAIL / ZULIP_API_KEY not set; skipping Zulip toolchain tags report", file=sys.stderr)
     else:
@@ -601,20 +604,23 @@ def post_if_changed(rows, dry_run=False):
         else:
             log(f"state changed ({previous or 'nothing posted yet'} -> {digest}); posting to Zulip")
             z.send_message(content)
+            posted = True
 
-    mm_token = (os.environ.get("MATTERMOST_BOT_TOKEN") or "").strip()
-    mm_channel = (os.environ.get("MATTERMOST_CHANNEL_ID") or "").strip()
-    mm_url = (os.environ.get("MATTERMOST_URL") or "").strip().rstrip("/")
-    if not (mm_token and mm_channel and mm_url):
-        print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID not set; skipping Mattermost toolchain tags report", file=sys.stderr)
-    else:
-        log("posting to Mattermost")
-        req = urllib.request.Request(f"{mm_url}/api/v4/posts", method="POST",
-            data=json.dumps({"channel_id": mm_channel, "message": content}).encode("utf-8"),
-            headers={"Authorization": f"Bearer {mm_token}", "Content-Type": "application/json"})
-        urllib.request.urlopen(req)
+    if previous != digest:
+        mm_token = (os.environ.get("MATTERMOST_BOT_TOKEN") or "").strip()
+        mm_channel = (os.environ.get("MATTERMOST_CHANNEL_ID") or "").strip()
+        mm_url = (os.environ.get("MATTERMOST_URL") or "").strip().rstrip("/")
+        if not (mm_token and mm_channel and mm_url):
+            print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID not set; skipping Mattermost toolchain tags report", file=sys.stderr)
+        else:
+            log("posting to Mattermost")
+            req = urllib.request.Request(f"{mm_url}/api/v4/posts", method="POST",
+                data=json.dumps({"channel_id": mm_channel, "message": content}).encode("utf-8"),
+                headers={"Authorization": f"Bearer {mm_token}", "Content-Type": "application/json"})
+            urllib.request.urlopen(req)
+            posted = True
 
-    return True
+    return posted
 
 
 def main(argv=None):
