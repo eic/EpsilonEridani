@@ -35,3 +35,35 @@ def test_backfill_collects_stats_and_failures():
         assert len(failures) == 2
         assert failures[0] == '{"number": 124, "state"'
         assert failures[1] == '{"number": 125, "state": "open", "merged": false}'
+
+@patch("mattermost.api_request")
+@patch("mattermost.core.derive")
+@patch("mattermost.find_post")
+@patch("mattermost.get_team_id")
+def test_reconcile_emojis(mock_team_id, mock_find_post, mock_derive, mock_api):
+    mock_team_id.return_value = "team123"
+    mock_find_post.return_value = {
+        "id": "post123",
+        "message": "🚀 **New PR [#123](https://github.com/eic/EpsilonEridani/pull/123):** test",
+        "props": {"eic_pr": "123"}
+    }
+    
+    def api_side_effect(method, url, data=None):
+        if url == "/users/me":
+            return {"id": "bot_user_id"}
+        if url.endswith("/reactions") and method == "GET":
+            return []
+        return None
+    mock_api.side_effect = api_side_effect
+    
+    mock_derive.return_value = {
+        "lifecycle": "open",
+        "ci": "success",
+        "review": "white_check_mark"
+    }
+    
+    mattermost.reconcile("123", state={"title": "test", "state": "closed", "merged": True, "author": "", "roadmaps": []})
+    
+    # Check that POST to /reactions was called with the right emojis
+    mock_api.assert_any_call("POST", "/reactions", data={"user_id": "bot_user_id", "post_id": "post123", "emoji_name": "white_check_mark"})
+    mock_api.assert_any_call("POST", "/reactions", data={"user_id": "bot_user_id", "post_id": "post123", "emoji_name": "white_check_mark"})

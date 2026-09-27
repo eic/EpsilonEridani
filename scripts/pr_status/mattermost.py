@@ -168,7 +168,7 @@ def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=No
     ci_emoji = None
     
     if status["lifecycle"] == "merged":
-        rev_emoji = "merged"
+        rev_emoji = "tada"
     elif status["lifecycle"] == "closed":
         rev_emoji = "closed_book"
     else:
@@ -185,7 +185,7 @@ def reconcile(pr, create=False, ci_override=None, create_if_open=False, state=No
             reactions = api_request("GET", f"/posts/{post['id']}/reactions") or []
             
         # We simplify this by just clearing our old CI/Review emojis and setting the new ones
-        set_reaction(post["id"], user_id, rev_emoji, [r for r in reactions if r.get("emoji_name") in REVIEW_EMOJIS.values() or r.get("emoji_name") in ("merged", "closed_book")])
+        set_reaction(post["id"], user_id, rev_emoji, [r for r in reactions if r.get("emoji_name") in REVIEW_EMOJIS.values() or r.get("emoji_name") in ("tada", "closed_book", "merged")])
         set_reaction(post["id"], user_id, ci_emoji, [r for r in reactions if r.get("emoji_name") in CI_EMOJIS.values()])
         
     return 1
