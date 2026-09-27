@@ -586,7 +586,6 @@ def post_if_changed(rows, dry_run=False):
     email = (os.environ.get("ZULIP_EMAIL") or "").strip()
     api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
     site = (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip()
-    
     posted = False
     previous = None
 
