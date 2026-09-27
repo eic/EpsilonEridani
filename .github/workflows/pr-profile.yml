@@ -66,13 +66,46 @@ jobs:
        (github.event.comment.user.login == github.event.issue.user.login ||
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
     outputs:
-      runner_tag: ${{ vars.PROFILE_RUNNER_TAG }}
+      runner_tags: ${{ steps.normalize.outputs.runner_tags }}
       has_tag: ${{ vars.PROFILE_RUNNER_TAG != '' }}
     steps:
-      - name: Warn if skipped
-        if: ${{ vars.PROFILE_RUNNER_TAG == '' }}
-        run: echo "::warning::vars.PROFILE_RUNNER_TAG is not defined. Skipping performance profiling."
+      - name: Validate and normalize runner tags
+        id: normalize
+        if: ${{ vars.PROFILE_RUNNER_TAG != '' }}
+        env:
+          RAW_TAG: ${{ vars.PROFILE_RUNNER_TAG }}
+        run: |
+          if echo "$RAW_TAG" | jq -e '. | type == "array"' >/dev/null 2>&1; then
+            normalized=$(echo "$RAW_TAG" | jq -c '.')
+          else
+            normalized=$(echo -n "$RAW_TAG" | jq -Rc '[.]')
+          fi
+          echo "runner_tags=$normalized" >> "$GITHUB_OUTPUT"
 
+      - name: Post skipped perf status and warn
+        if: ${{ vars.PROFILE_RUNNER_TAG == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "::warning::vars.PROFILE_RUNNER_TAG is not defined. Skipping performance profiling."
+          case '${{ github.event_name }}' in
+            merge_group)
+              STATUS_SHA='${{ github.event.merge_group.head_sha }}'
+              ;;
+            pull_request_target)
+              STATUS_SHA='${{ github.event.pull_request.head.sha }}'
+              ;;
+            issue_comment)
+              STATUS_SHA=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}" --jq .head.sha)
+              ;;
+            workflow_dispatch)
+              STATUS_SHA=$(gh api "repos/${{ github.repository }}/pulls/${{ inputs.pr }}" --jq .head.sha)
+              ;;
+          esac
+          gh api -X POST "repos/${{ github.repository }}/statuses/$STATUS_SHA" \
+            -f state=success -f context=perf \
+            -f description='Skipped (no profile runner tag configured)' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
   # Deliberately not named `perf`: the authoritative required context is the
   # commit status posted at the end, not this workflow's automatic check-run.
   performance-gate:
@@ -87,7 +120,7 @@ jobs:
     # labels, confirm them in the organisation that will run the job.
     needs: check-runner
     if: ${{ needs.check-runner.outputs.has_tag == 'true' }}
-    runs-on: ${{ startsWith(needs.check-runner.outputs.runner_tag, '[') && fromJSON(needs.check-runner.outputs.runner_tag) || needs.check-runner.outputs.runner_tag }}
+    runs-on: ${{ fromJSON(needs.check-runner.outputs.runner_tags) }}
     timeout-minutes: 45
     env:
       BWRAP_VER: 0.9.0-1build1
