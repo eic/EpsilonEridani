@@ -57,4 +57,7 @@ jobs:
           ZULIP_SITE: https://leanprover.zulipchat.com
           ZULIP_CHANNEL: Tau Ceti
           ZULIP_TOPIC: Stuck PRs
+          MATTERMOST_BOT_TOKEN: ${{ secrets.MATTERMOST_BOT_TOKEN }}
+          MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
+          MATTERMOST_URL: ${{ vars.MATTERMOST_URL }}
         run: python3 scripts/pr_status/stuck_alerts.py

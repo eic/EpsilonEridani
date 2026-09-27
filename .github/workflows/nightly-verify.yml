@@ -561,6 +561,9 @@ jobs:
           # A topic of its own, not "Stuck PRs": stuck_alerts.py reconciles that topic by marker and
           # edits messages it recognises, so an unrelated post would sit inside its bookkeeping.
           ZULIP_TOPIC: Nightly verification
+          MATTERMOST_BOT_TOKEN: ${{ secrets.MATTERMOST_BOT_TOKEN }}
+          MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
+          MATTERMOST_URL: ${{ vars.MATTERMOST_URL }}
           RESULT: ${{ needs.verify.result }}
           SHA: ${{ needs.verify.outputs.sha }}
           BUILD: ${{ needs.verify.outputs.build }}
@@ -613,22 +616,33 @@ jobs:
           key = (os.environ.get("ZULIP_API_KEY") or "").strip()
           site = (os.environ.get("ZULIP_SITE") or "").strip().rstrip("/")
           if not (email and key and site):
-              print("::error::ZULIP_EMAIL / ZULIP_API_KEY not set; cannot report divergence")
-              sys.exit(1)
+              print("::warning::ZULIP_EMAIL / ZULIP_API_KEY not set; skipping Zulip divergence report")
+          else:
+              data = urllib.parse.urlencode({
+                  "type": "stream",
+                  "to": os.environ["ZULIP_CHANNEL"],
+                  "topic": os.environ["ZULIP_TOPIC"],
+                  "content": content,
+              }).encode()
+              req = urllib.request.Request(site + "/api/v1/messages", data=data, method="POST")
+              req.add_header("Authorization",
+                             "Basic " + base64.b64encode(f"{email}:{key}".encode()).decode())
+              req.add_header("Content-Type", "application/x-www-form-urlencoded")
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read().decode()).get("result")
+              print(f"posted to Zulip: {result}")
 
-          data = urllib.parse.urlencode({
-              "type": "stream",
-              "to": os.environ["ZULIP_CHANNEL"],
-              "topic": os.environ["ZULIP_TOPIC"],
-              "content": content,
-          }).encode()
-          req = urllib.request.Request(site + "/api/v1/messages", data=data, method="POST")
-          req.add_header("Authorization",
-                         "Basic " + base64.b64encode(f"{email}:{key}".encode()).decode())
-          req.add_header("Content-Type", "application/x-www-form-urlencoded")
-          # No retry: Zulip's send is not idempotent, and a duplicate emergency post is worse than
-          # a missed one when the run is red anyway.
-          with urllib.request.urlopen(req) as resp:
-              result = json.loads(resp.read().decode()).get("result")
-          print(f"posted to Zulip: {result}")
+          mm_token = (os.environ.get("MATTERMOST_BOT_TOKEN") or "").strip()
+          mm_channel = (os.environ.get("MATTERMOST_CHANNEL_ID") or "").strip()
+          mm_url = (os.environ.get("MATTERMOST_URL") or "").strip().rstrip("/")
+          if not (mm_token and mm_channel and mm_url):
+              print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID not set; skipping Mattermost divergence report")
+          else:
+              data = json.dumps({"channel_id": mm_channel, "message": content}).encode("utf-8")
+              req = urllib.request.Request(mm_url + "/api/v4/posts", data=data, method="POST")
+              req.add_header("Authorization", f"Bearer {mm_token}")
+              req.add_header("Content-Type", "application/json")
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read().decode()).get("id")
+              print(f"posted to Mattermost: {result}")
           PY

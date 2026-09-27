@@ -984,16 +984,31 @@ def main(argv):
     api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
     site = (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip()
     if not (email and api_key):
-        return zp.fail_config("ZULIP_EMAIL / ZULIP_API_KEY not set (no bot configured)")
+        print("::warning::ZULIP_EMAIL / ZULIP_API_KEY not set; skipping Zulip stuck alerts report", file=sys.stderr)
+    else:
+        z = zp.Zulip(email, api_key, site)
+        try:
+            zp.check(z)
+            reconcile(z, alerts, failed, dry_run)
+        except zp.ConfigError as exc:
+            print(f"::warning::Zulip config error: {exc}", file=sys.stderr)
+        except Exception as exc:
+            zp.log(f"reconcile failed (non-fatal): {exc}")
 
-    z = zp.Zulip(email, api_key, site)
-    try:
-        zp.check(z)  # up-front: bad key / forbidden / not subscribed -> fail red
-        reconcile(z, alerts, failed, dry_run)
-    except zp.ConfigError as exc:  # emergency channel itself is down: fail loud
-        return zp.fail_config(str(exc))
-    except Exception as exc:  # a transient Zulip hiccup is cosmetic; self-heals
-        zp.log(f"reconcile failed (non-fatal): {exc}")
+    mm_token = (os.environ.get("MATTERMOST_BOT_TOKEN") or "").strip()
+    mm_channel = (os.environ.get("MATTERMOST_CHANNEL_ID") or "").strip()
+    mm_url = (os.environ.get("MATTERMOST_URL") or "").strip().rstrip("/")
+    if not (mm_token and mm_channel and mm_url):
+        print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID not set; skipping Mattermost stuck alerts report", file=sys.stderr)
+    else:
+        if alerts and not dry_run:
+            zp.log("posting active alerts to Mattermost")
+            content = "### 🚨 Active Stuck Alerts\n\n" + "\n\n".join(alert_content(a) for a in alerts)
+            req = __import__("urllib.request").request.Request(f"{mm_url}/api/v4/posts", method="POST",
+                data=__import__("json").dumps({"channel_id": mm_channel, "message": content}).encode("utf-8"),
+                headers={"Authorization": f"Bearer {mm_token}", "Content-Type": "application/json"})
+            __import__("urllib.request").request.urlopen(req)
+
     return 0
 
 

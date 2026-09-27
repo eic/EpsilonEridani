@@ -78,6 +78,9 @@ jobs:
           # messages it recognises there, so an unrelated post would sit inside its
           # bookkeeping.
           ZULIP_TOPIC: Toolchain tags
+          MATTERMOST_BOT_TOKEN: ${{ secrets.MATTERMOST_BOT_TOKEN }}
+          MATTERMOST_CHANNEL_ID: ${{ secrets.MATTERMOST_CHANNEL_ID }}
+          MATTERMOST_URL: ${{ vars.MATTERMOST_URL }}
           SHA: ${{ github.sha }}
           WAIT: ${{ github.event_name == 'push' || inputs.wait }}
         run: |
