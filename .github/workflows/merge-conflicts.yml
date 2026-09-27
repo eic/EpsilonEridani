@@ -82,7 +82,7 @@ jobs:
       # `ref` is explicit because workflow_dispatch otherwise checks out the ref it
       # was dispatched from -- which would run a branch's copy of this script with
       # the App token minted above.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           sparse-checkout: scripts/pr_status

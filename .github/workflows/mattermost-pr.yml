@@ -43,7 +43,7 @@ jobs:
           repositories: EpsilonEridani
           permission-issues: read
           permission-pull-requests: read
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: scripts/pr_status
       - name: Reconcile Mattermost reactions

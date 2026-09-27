@@ -40,7 +40,7 @@ jobs:
           permission-issues: read
           permission-pull-requests: write
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Abandon stuck PRs and close duplicates
         env:

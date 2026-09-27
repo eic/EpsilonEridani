@@ -33,11 +33,11 @@ jobs:
   readiness-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
           ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
@@ -52,7 +52,7 @@ jobs:
   duplicate-audit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install elan (pinned + checksum) and the toolchain
@@ -102,7 +102,7 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # This job elaborates every EpsilonEridani module, and Lean runs code at elaboration time.
           # Without this, checkout leaves an http.extraheader carrying GITHUB_TOKEN in the
