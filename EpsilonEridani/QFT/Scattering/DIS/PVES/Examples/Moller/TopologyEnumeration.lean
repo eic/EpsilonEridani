@@ -11,12 +11,12 @@ public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TopologyEnum
 public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopDiagrammaticBridge
 public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopEvaluation
 public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation
-public import EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller
+public import EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller.Basic
 /-!
 
 # PVES MOLLER Examples: Two-Loop Topology Enumeration
 
-This module continues `EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller`,
+This module continues `EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller.Basic`,
 split out to stay under the file-length limit. It contains the Lean-native
 QGRAF-style topology enumeration workflow and the two-loop derivation bundle
 built from it.

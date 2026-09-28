@@ -365,7 +365,7 @@ def su2GaugeRules (g_w : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_w
 
 `needsRegularization` is a bare `Prop` parameter: instantiating it with `True` satisfies
 the contract, so the structure asserts nothing about the diagram on its own.  It is
-retained because `QFT.Scattering.DIS.PVES.Examples.Moller` projects it; stating it
+retained because `QFT.Scattering.DIS.PVES.Examples.Moller.Basic` projects it; stating it
 properly needs a representation of the loop integrand, which this module does not have. -/
 structure OneLoopGaugeDiagramAssumptions (rules : GaugeFeynmanRules)
   (k_in k_out : Momentum) : Type where
