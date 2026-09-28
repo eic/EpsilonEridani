@@ -211,7 +211,7 @@ lemma momentPolynomial_eval (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
       = ∑ k ∈ Finset.range (n + 2), momentCoeff dd dt n i k t * xi ^ k := by
   simp [momentPolynomial, Polynomial.eval_finsetSum]
 
-/-- **The analytic core.** The `n`-th moment of a GPD built from a double distribution and
+/- **The analytic core.** The `n`-th moment of a GPD built from a double distribution and
 a D-term is the explicit sum of `(β, α)` moments and the D-term moment, for physical
 skewness `|ξ| ≤ 1`. -/
 /- @[sorryful]
@@ -264,7 +264,7 @@ theorem mellinMomentGpd_ofDoubleDistribution
   -- this pass were each discharged and verified; this one is reported as open.
   sorry -/
 
-/-- **Polynomiality.** For a GPD built from a double distribution and a D-term, the `n`-th
+/- **Polynomiality.** For a GPD built from a double distribution and a D-term, the `n`-th
 `x`-moment is, at physical skewness, an even polynomial in `ξ` of degree at most `n + 1`.
 
 Inherits the `sorry` of `mellinMomentGpd_ofDoubleDistribution`, which supplies the
@@ -283,7 +283,7 @@ theorem mellinMomentGpd_polynomial
     rw [momentPolynomial_eval]
     exact mellinMomentGpd_ofDoubleDistribution dd dt n i xi t hxi -/
 
-/-- Polynomiality for a full GPD model built from double distributions.
+/- Polynomiality for a full GPD model built from double distributions.
 
 Inherits the `sorry` of `mellinMomentGpd_ofDoubleDistribution` through
 `mellinMomentGpd_polynomial`. -/
@@ -320,7 +320,7 @@ lemma momentPolynomial_coeff_top_eq_zero_of_even (dd : DoubleDistribution Flavor
   rw [momentPolynomial_coeff_top]
   exact dtMoment_eq_zero_of_even dt i n t hn
 
-/-- **The bridge to the assumption bundle — not yet a discharge.** Any GPD model built
+/- **The bridge to the assumption bundle — not yet a discharge.** Any GPD model built
 from double distributions satisfies `PolynomialityAssumptions`, *conditionally on*
 `mellinMomentGpd_ofDoubleDistribution`, which is a tagged `sorry`.
 
@@ -339,7 +339,7 @@ def polynomialityAssumptionsOfDoubleDistribution
   polynomial := fun n i xi t hxi => by
     exact mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi -/
 
-/-- The `n = 0` corollary of `GPD.Moments`, with its hypothesis supplied by the bridge
+/- The `n = 0` corollary of `GPD.Moments`, with its hypothesis supplied by the bridge
 above rather than by the caller.
 
 Since that bridge rests on `mellinMomentGpd_ofDoubleDistribution`, so does this: the
