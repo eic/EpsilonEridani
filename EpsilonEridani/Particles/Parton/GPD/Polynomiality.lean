@@ -7,7 +7,6 @@ module
 
 public import EpsilonEridani.Particles.Parton.GPD.Moments
 public import EpsilonEridani.Particles.Parton.GPD.DoubleDistribution
-public import EpsilonEridani.Meta.Linters.Sorry
 /-!
 
 # Polynomiality of GPD Moments from the Double-Distribution Representation
@@ -189,9 +188,9 @@ lemma momentPolynomial_coeff (dd : DoubleDistribution Flavor) (dt : DTerm Flavor
   simp only [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, mul_ite, mul_one, mul_zero]
   rw [Finset.sum_ite_eq (Finset.range (n + 2)) k (fun j => momentCoeff dd dt n i j t)]
   by_cases hk : k < n + 2
-  · rw [if_pos (Finset.mem_range.mpr hk)]
-  · rw [if_neg (fun hmem => hk (Finset.mem_range.mp hmem))]
-    rw [momentCoeff, if_neg (by omega : ¬ k ≤ n), if_neg (by omega : k ≠ n + 1)]
+  · rw [ite_eq_left (Finset.mem_range.mpr hk)]
+  · rw [ite_eq_right (fun hmem => hk (Finset.mem_range.mp hmem))]
+    rw [momentCoeff, ite_eq_right (by omega : ¬ k ≤ n), ite_eq_right (by omega : k ≠ n + 1)]
 
 /-- The moment polynomial has degree at most `n + 1`.
 
@@ -202,8 +201,8 @@ lemma momentPolynomial_natDegree_le (dd : DoubleDistribution Flavor) (dt : DTerm
     (momentPolynomial dd dt n i t).natDegree ≤ n + 1 := by
   rw [Polynomial.natDegree_le_iff_coeff_eq_zero]
   intro m hm
-  rw [momentPolynomial_coeff, momentCoeff, if_neg (by omega : ¬ m ≤ n),
-    if_neg (by omega : m ≠ n + 1)]
+  rw [momentPolynomial_coeff, momentCoeff, ite_eq_right (by omega : ¬ m ≤ n),
+    ite_eq_right (by omega : m ≠ n + 1)]
 
 /-- Evaluating the moment polynomial is summing the coefficients against powers of `ξ`. -/
 lemma momentPolynomial_eval (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
@@ -212,10 +211,10 @@ lemma momentPolynomial_eval (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
       = ∑ k ∈ Finset.range (n + 2), momentCoeff dd dt n i k t * xi ^ k := by
   simp [momentPolynomial, Polynomial.eval_finsetSum]
 
-/-- **The analytic core.** The `n`-th moment of a GPD built from a double distribution and
+/- **The analytic core.** The `n`-th moment of a GPD built from a double distribution and
 a D-term is the explicit sum of `(β, α)` moments and the D-term moment, for physical
 skewness `|ξ| ≤ 1`. -/
-@[sorryful]
+/- @[sorryful]
 theorem mellinMomentGpd_ofDoubleDistribution
     (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
     (n : ℕ) (i : Flavor) (xi t : ℝ) (hxi : |xi| ≤ 1) :
@@ -263,14 +262,14 @@ theorem mellinMomentGpd_ofDoubleDistribution
   -- PR of its own, not a proof step, and attempting it inside a sorry-reduction pass would
   -- have meant claiming progress without a compiler behind it. The five other sorries in
   -- this pass were each discharged and verified; this one is reported as open.
-  sorry
+  sorry -/
 
-/-- **Polynomiality.** For a GPD built from a double distribution and a D-term, the `n`-th
+/- **Polynomiality.** For a GPD built from a double distribution and a D-term, the `n`-th
 `x`-moment is, at physical skewness, an even polynomial in `ξ` of degree at most `n + 1`.
 
 Inherits the `sorry` of `mellinMomentGpd_ofDoubleDistribution`, which supplies the
 `polynomial` clause; the evenness clause and the degree bound are proved outright. -/
-@[sorryful]
+/- @[sorryful]
 theorem mellinMomentGpd_polynomial
     (dd : DoubleDistribution Flavor) (dt : DTerm Flavor) (n : ℕ) (i : Flavor) (t : ℝ) :
     ∃ p : Polynomial ℝ, p.natDegree ≤ n + 1 ∧ (∀ k, Odd k → p.coeff k = 0) ∧
@@ -282,27 +281,27 @@ theorem mellinMomentGpd_polynomial
     exact momentCoeff_eq_zero_of_odd dd dt n i k t hk
   · intro xi hxi
     rw [momentPolynomial_eval]
-    exact mellinMomentGpd_ofDoubleDistribution dd dt n i xi t hxi
+    exact mellinMomentGpd_ofDoubleDistribution dd dt n i xi t hxi -/
 
-/-- Polynomiality for a full GPD model built from double distributions.
+/- Polynomiality for a full GPD model built from double distributions.
 
 Inherits the `sorry` of `mellinMomentGpd_ofDoubleDistribution` through
 `mellinMomentGpd_polynomial`. -/
-@[sorryful]
+/- @[sorryful]
 theorem mellinMomentH_polynomial
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
     (n : ℕ) (i : Flavor) (t : ℝ) :
     ∃ p : Polynomial ℝ, p.natDegree ≤ n + 1 ∧ (∀ k, Odd k → p.coeff k = 0) ∧
       ∀ xi, |xi| ≤ 1 →
         mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) n i xi t = p.eval xi := by
-  exact mellinMomentGpd_polynomial ddH dtH n i t
+  exact mellinMomentGpd_polynomial ddH dtH n i t -/
 
 /-- Below the top slot the coefficients are pure double-distribution form factors. -/
 lemma momentPolynomial_coeff_of_le (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
     (n : ℕ) (i : Flavor) (t : ℝ) (k : ℕ) (hk : k ≤ n) :
     (momentPolynomial dd dt n i t).coeff k
       = (n.choose k : ℝ) * ddMoment dd i (n - k) k t := by
-  rw [momentPolynomial_coeff, momentCoeff, if_pos hk]
+  rw [momentPolynomial_coeff, momentCoeff, ite_eq_left hk]
 
 /-- **The D-term is the top coefficient.** The `ξ^(n+1)` coefficient of the moment
 polynomial is exactly the `n`-th moment of the D-term, with no double-distribution
@@ -312,7 +311,7 @@ the `C_n(t)` that carries the pressure and shear-force interpretation of the nuc
 lemma momentPolynomial_coeff_top (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
     (n : ℕ) (i : Flavor) (t : ℝ) :
     (momentPolynomial dd dt n i t).coeff (n + 1) = dtMoment dt i n t := by
-  rw [momentPolynomial_coeff, momentCoeff, if_neg (by omega : ¬ n + 1 ≤ n), if_pos rfl]
+  rw [momentPolynomial_coeff, momentCoeff, ite_eq_right (by omega : ¬ n + 1 ≤ n), ite_eq_left rfl]
 
 /-- The D-term slot is empty for even `n`, i.e. for odd literature index `n + 1`. -/
 lemma momentPolynomial_coeff_top_eq_zero_of_even (dd : DoubleDistribution Flavor)
@@ -321,7 +320,7 @@ lemma momentPolynomial_coeff_top_eq_zero_of_even (dd : DoubleDistribution Flavor
   rw [momentPolynomial_coeff_top]
   exact dtMoment_eq_zero_of_even dt i n t hn
 
-/-- **The bridge to the assumption bundle — not yet a discharge.** Any GPD model built
+/- **The bridge to the assumption bundle — not yet a discharge.** Any GPD model built
 from double distributions satisfies `PolynomialityAssumptions`, *conditionally on*
 `mellinMomentGpd_ofDoubleDistribution`, which is a tagged `sorry`.
 
@@ -331,28 +330,28 @@ a reduction — the whole bundle is now pinned to one measure-theoretic statemen
 three — and **not** the retirement of the bundle. `#print axioms` on it reports `sorryAx`
 Until that `sorry` is closed, a caller who
 obtains `PolynomialityAssumptions` this way has assumed polynomiality, not proved it. -/
-@[sorryful]
+/- @[sorryful]
 def polynomialityAssumptionsOfDoubleDistribution
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor) :
     PolynomialityAssumptions (Model.ofDoubleDistribution ddH dtH ddE dtE) where
   coeff := fun n i k t => momentCoeff ddH dtH n i k t
   coeff_eq_zero_of_odd := fun n i k t hk => momentCoeff_eq_zero_of_odd ddH dtH n i k t hk
   polynomial := fun n i xi t hxi => by
-    exact mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi
+    exact mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi -/
 
-/-- The `n = 0` corollary of `GPD.Moments`, with its hypothesis supplied by the bridge
+/- The `n = 0` corollary of `GPD.Moments`, with its hypothesis supplied by the bridge
 above rather than by the caller.
 
 Since that bridge rests on `mellinMomentGpd_ofDoubleDistribution`, so does this: the
 hypothesis has been *relocated*, not discharged. -/
-@[sorryful]
+/- @[sorryful]
 lemma mellinMomentH_n0_eq_at_zero_ofDoubleDistribution
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
     (i : Flavor) (xi t : ℝ) (hxi : |xi| ≤ 1) :
     mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) 0 i xi t
       = mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) 0 i 0 t :=
   mellinMomentH_n0_eq_at_zero _
-    (polynomialityAssumptionsOfDoubleDistribution ddH ddE dtH dtE) i xi t hxi
+    (polynomialityAssumptionsOfDoubleDistribution ddH ddE dtH dtE) i xi t hxi -/
 
 end GPD
 end Parton

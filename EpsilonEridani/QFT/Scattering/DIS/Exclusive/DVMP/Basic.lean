@@ -59,7 +59,7 @@ def dvmpObservable (T : TFF) (xi t Q2 : ℝ) : ℝ :=
 def IsTFFKernelRepresentedAtScale
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (_Q2 : ℝ) : Prop :=
@@ -68,7 +68,7 @@ def IsTFFKernelRepresentedAtScale
 /-- TFF-to-GPD convolution contract at fixed flavor and scale. -/
 def IsTFFConvolutionAtScale
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (_Q2 : ℝ) : Prop :=
@@ -78,7 +78,7 @@ def IsTFFConvolutionAtScale
 lemma tff_kernel_representation_bridge
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (Q2 : ℝ)
@@ -89,7 +89,7 @@ lemma tff_kernel_representation_bridge
 /-- Wrapper theorem exposing the TFF-to-GPD bridge contract. -/
 lemma tff_convolution_bridge
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (Q2 : ℝ)

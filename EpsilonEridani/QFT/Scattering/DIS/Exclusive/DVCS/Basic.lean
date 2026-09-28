@@ -43,7 +43,7 @@ def cffCombination (C : CFF) (xi t : ℝ) : ℝ :=
 def IsCFFKernelRepresentedAtScale
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (_Q2 : ℝ) : Prop :=
@@ -52,7 +52,7 @@ def IsCFFKernelRepresentedAtScale
 /-- Convolution contract at fixed flavor and scale. -/
 def IsCFFConvolutionAtScale
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (_Q2 : ℝ) : Prop :=
@@ -62,7 +62,7 @@ def IsCFFConvolutionAtScale
 lemma cff_kernel_representation_bridge
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (Q2 : ℝ)
@@ -73,7 +73,7 @@ lemma cff_kernel_representation_bridge
 /-- Wrapper theorem exposing the CFF-to-GPD bridge contract. -/
 lemma cff_convolution_bridge
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (Q2 : ℝ)

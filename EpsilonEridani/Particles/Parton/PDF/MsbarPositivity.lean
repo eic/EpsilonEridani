@@ -256,7 +256,7 @@ lemma coupling_bound_degenerate_at_zero {a Cmax fmin : ℝ} (hCmax : 0 < Cmax)
     (hfmin : fmin ≤ 0) (hsmall : a * Cmax ≤ fmin) :
     a ≤ 0 := by
   by_contra hpos
-  push Not at hpos
+  simp only [not_le] at hpos
   nlinarith [mul_pos hpos hCmax]
 
 end PDF

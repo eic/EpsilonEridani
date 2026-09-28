@@ -74,7 +74,7 @@ lemma metricDiagSignInt_mul_leviCivita4Int (μ ν ρ σ : Fin 4) :
 lemma leviCivita4UpInt_eq_neg (μ ν ρ σ : Fin 4) :
     leviCivita4UpInt μ ν ρ σ = -leviCivita4Int μ ν ρ σ := by
   unfold leviCivita4UpInt
-  simpa using metricDiagSignInt_mul_leviCivita4Int μ ν ρ σ
+  simp
 
 /- The two-index Levi-Civita contraction identity
 `ε^{μνρσ} ε_{μντω} = -2 (g^ρ_τ g^σ_ω - g^ρ_ω g^σ_τ)`,

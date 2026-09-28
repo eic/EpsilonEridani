@@ -33,25 +33,25 @@ variable {Flavor : Type}
 
 /-- The flavor-channel LO contribution represented as a convolution. -/
 def loChannel
-    (C : HardKernel Flavor) (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (C : HardKernel Flavor) (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x Q2 : ℝ) : ℝ :=
   Convolution.convolveAt (fun x' z => C i x' z Q2) (fun z => f i z Q2) x
 
 /-- The full LO structure function as a flavor sum of channel convolutions. -/
 def loStructureFunction [Fintype Flavor]
-    (C : HardKernel Flavor) (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (C : HardKernel Flavor) (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (x Q2 : ℝ) : ℝ :=
   ∑ i, loChannel C f i x Q2
 
 /-- Abstract statement that `F` is represented by an LO factorization formula. -/
 def IsLOFactorized [Fintype Flavor]
     (F : ℝ → ℝ → ℝ)
-    (C : HardKernel Flavor) (f : Physlib.Particles.Parton.PDF.Pdf Flavor) : Prop :=
+    (C : HardKernel Flavor) (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) : Prop :=
   ∀ x Q2, F x Q2 = loStructureFunction C f x Q2
 
 /-- Canonical LO representation theorem. -/
 lemma loStructureFunction_isFactorized [Fintype Flavor]
-    (C : HardKernel Flavor) (f : Physlib.Particles.Parton.PDF.Pdf Flavor) :
+    (C : HardKernel Flavor) (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) :
     IsLOFactorized (loStructureFunction C f) C f := by
   intro x Q2
   rfl
@@ -59,7 +59,7 @@ lemma loStructureFunction_isFactorized [Fintype Flavor]
 /-- A concrete corollary for a flavor-local kernel family. -/
 lemma loStructureFunction_singleFlavor_kernel [Fintype Flavor]
     (C0 : ℝ → ℝ → ℝ → ℝ)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (x Q2 : ℝ) :
     loStructureFunction (fun _ x' z q2 => C0 x' z q2) f x Q2
       = ∑ i, Convolution.convolveAt (fun x' z => C0 x' z Q2) (fun z => f i z Q2) x := by
@@ -86,9 +86,9 @@ lemma loPhysicsAssumptions_holds : LOPhysicsAssumptions := ⟨⟩
 lemma loFactorized_of_assumptions [Fintype Flavor]
     (F : ℝ → ℝ → ℝ)
     (C : HardKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (_hKernel : HardKernelAssumptions C)
-    (_hPdf : Physlib.Particles.Parton.PDF.Assumptions f)
+    (_hPdf : EpsilonEridani.Particles.Parton.PDF.Assumptions f)
     (_hPhys : LOPhysicsAssumptions)
     (hRep : IsLOFactorized F C f) :
     ∀ x Q2, F x Q2 = loStructureFunction C f x Q2 :=

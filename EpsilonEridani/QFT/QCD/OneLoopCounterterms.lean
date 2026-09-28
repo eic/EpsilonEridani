@@ -26,8 +26,8 @@ namespace QCD
 namespace OneLoopCounterterms
 
 open Renormalization
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
 
 /-- Weights used to assemble one-loop renormalization constants from a scalar master integral. -/
 structure CountertermWeights : Type where

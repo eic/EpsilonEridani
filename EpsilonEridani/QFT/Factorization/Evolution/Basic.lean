@@ -40,8 +40,8 @@ a coupled system of integro-differential equations, one per flavor channel.
 ## iii. Conventions
 
 - `αs` is the standard strong coupling, as constructed by
-  `Physlib.QFT.QCD.oneLoopAlphaS`, whose one-loop normalization uses
-  `β₀ = 11 / 3 * C_A - 4 / 3 * T_F * n_F` (`Physlib.QFT.QCD.beta0`). The conventional
+  `EpsilonEridani.QFT.QCD.oneLoopAlphaS`, whose one-loop normalization uses
+  `β₀ = 11 / 3 * C_A - 4 / 3 * T_F * n_F` (`EpsilonEridani.QFT.QCD.beta0`). The conventional
   prefactor `αs / (2 * π)` of the DGLAP equation is carried by `dglapRhsLogScale`. Before
   this module was corrected the factor `1 / (2 * π)` was absent altogether.
 - The last two real arguments of `SplittingKernel` are the momentum-fraction ratio
@@ -104,7 +104,7 @@ Naming this integrand keeps the integrability hypotheses of the linearity lemmas
 integrability of exactly this function. -/
 def dglapIntegrand
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i j : Flavor) (x Q2 z : ℝ) : ℝ :=
   Convolution.integrand (Convolution.collinearKernel (fun y => P i j y Q2))
     (fun z' => f j z' Q2) x z
@@ -121,7 +121,7 @@ The conventional prefactor `αs / (2 * π)` is *not* included here; it is suppli
 `dglapRhsLogScale`. -/
 def dglapOperator [Fintype Flavor]
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x Q2 : ℝ) : ℝ :=
   ∑ j, Convolution.convolveAt (Convolution.collinearKernel (fun y => P i j y Q2))
     (fun z => f j z Q2) x
@@ -129,7 +129,7 @@ def dglapOperator [Fintype Flavor]
 /-- The DGLAP operator in terms of its named integrand. -/
 lemma dglapOperator_eq_sum_integral [Fintype Flavor]
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x Q2 : ℝ) :
     dglapOperator P f i x Q2
       = ∑ j, ∫ z in Set.Icc (0 : ℝ) 1, dglapIntegrand P f i j x Q2 z :=
@@ -137,7 +137,7 @@ lemma dglapOperator_eq_sum_integral [Fintype Flavor]
 
 /-- The operator vanishes for identically zero splitting kernels. -/
 lemma dglapOperator_zero_kernel [Fintype Flavor]
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x Q2 : ℝ) :
     dglapOperator (fun _ _ _ _ => 0) f i x Q2 = 0 := by
   have h : ∀ j : Flavor,
@@ -159,7 +159,7 @@ carries integrability hypotheses because `Convolution.convolveAt` is a Bochner i
 /-- Additivity of the DGLAP operator in the parton densities. -/
 lemma dglapOperator_add [Fintype Flavor]
     (P : SplittingKernel Flavor)
-    (f g : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f g : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x Q2 : ℝ)
     (hf : ∀ j, MeasureTheory.IntegrableOn
       (fun z => dglapIntegrand P f i j x Q2 z) (Set.Icc (0 : ℝ) 1))
@@ -188,7 +188,7 @@ lemma dglapOperator_add [Fintype Flavor]
 /-- Homogeneity of the DGLAP operator in the parton densities. -/
 lemma dglapOperator_const_mul [Fintype Flavor]
     (P : SplittingKernel Flavor) (c : ℝ)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x Q2 : ℝ) :
     dglapOperator P (fun j y Q => c * f j y Q) i x Q2 = c * dglapOperator P f i x Q2 := by
   have hchan : ∀ j : Flavor,
@@ -226,21 +226,21 @@ abbrev RunningCoupling : Type := ℝ → ℝ
 `dglapRhsLogScale P αs f i x τ = (αs (exp τ) / (2 * π)) * dglapOperator P f i x (exp τ)`.
 
 The prefactor `1 / (2 * π)` is the conventional one, paired with `αs` normalized as the
-standard strong coupling (`Physlib.QFT.QCD.oneLoopAlphaS`, one-loop coefficient
-`Physlib.QFT.QCD.beta0`). The literature also uses `αs / (4 * π)` and
+standard strong coupling (`EpsilonEridani.QFT.QCD.oneLoopAlphaS`, one-loop coefficient
+`EpsilonEridani.QFT.QCD.beta0`). The literature also uses `αs / (4 * π)` and
 `a_s = αs / (4 * π)`, which rescale the splitting kernels by factors of two; the choice
 here must be respected by any concrete kernel supplied for `P`. -/
 def dglapRhsLogScale [Fintype Flavor]
     (P : SplittingKernel Flavor)
     (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ) : ℝ :=
   αs (Real.exp τ) / (2 * Real.pi) * dglapOperator P f i x (Real.exp τ)
 
 /-- The right-hand side vanishes for identically zero splitting kernels. -/
 lemma dglapRhsLogScale_zero_kernel [Fintype Flavor]
     (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ) :
     dglapRhsLogScale (fun _ _ _ _ => 0) αs f i x τ = 0 := by
   simp [dglapRhsLogScale, dglapOperator_zero_kernel]
@@ -248,7 +248,7 @@ lemma dglapRhsLogScale_zero_kernel [Fintype Flavor]
 /-- The right-hand side vanishes for identically zero coupling. -/
 lemma dglapRhsLogScale_zero_coupling [Fintype Flavor]
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ) :
     dglapRhsLogScale P (fun _ => 0) f i x τ = 0 := by
   simp [dglapRhsLogScale]
@@ -268,7 +268,7 @@ actually about. New developments should use `IsDGLAPLogScaleEquation`. -/
 def IsDGLAPFixedPoint [Fintype Flavor]
     (P : SplittingKernel Flavor)
     (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) : Prop :=
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) : Prop :=
   ∀ i x τ, f i x (Real.exp τ) = dglapRhsLogScale P αs f i x τ
 
 /-- The DGLAP evolution equation in the log-scale variable `τ = log Q2`: for every flavor
@@ -279,19 +279,19 @@ def IsDGLAPFixedPoint [Fintype Flavor]
   * f j z (exp τ)`.
 
 The derivative is taken with respect to `τ = log Q2`, matching the name: the density
-`Physlib.Particles.Parton.PDF.Pdf` carries `Q2`, so the composition with `Real.exp` is the
+`EpsilonEridani.Particles.Parton.PDF.Pdf` carries `Q2`, so the composition with `Real.exp` is the
 function that has the derivative, and the `exp` is kept explicit rather than introducing a
 second density type. -/
 def IsDGLAPLogScaleEquation [Fintype Flavor]
     (P : SplittingKernel Flavor)
     (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) : Prop :=
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) : Prop :=
   ∀ i x τ, HasDerivAt (fun s => f i x (Real.exp s)) (dglapRhsLogScale P αs f i x τ) τ
 
 /-- A solution of the DGLAP equation is differentiable in `τ = log Q2`. -/
 lemma differentiable_of_isDGLAPLogScaleEquation [Fintype Flavor]
     {P : SplittingKernel Flavor} {αs : RunningCoupling}
-    {f : Physlib.Particles.Parton.PDF.Pdf Flavor}
+    {f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor}
     (h : IsDGLAPLogScaleEquation P αs f) (i : Flavor) (x : ℝ) :
     Differentiable ℝ (fun s => f i x (Real.exp s)) :=
   fun τ => (h i x τ).differentiableAt
@@ -299,7 +299,7 @@ lemma differentiable_of_isDGLAPLogScaleEquation [Fintype Flavor]
 /-- The `deriv` form of the DGLAP equation. -/
 lemma deriv_of_isDGLAPLogScaleEquation [Fintype Flavor]
     {P : SplittingKernel Flavor} {αs : RunningCoupling}
-    {f : Physlib.Particles.Parton.PDF.Pdf Flavor}
+    {f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor}
     (h : IsDGLAPLogScaleEquation P αs f) (i : Flavor) (x τ : ℝ) :
     deriv (fun s => f i x (Real.exp s)) τ = dglapRhsLogScale P αs f i x τ :=
   (h i x τ).deriv

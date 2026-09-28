@@ -5,8 +5,10 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
+public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 
 # Two-Loop Evaluation
@@ -27,8 +29,8 @@ namespace QFT
 namespace PerturbationTheory
 namespace FeynmanDiagrams
 
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
 
 /-- Two-loop master integral data packaged as a Laurent expansion. -/
 structure TwoLoopMasterIntegral : Type where

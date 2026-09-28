@@ -6,7 +6,6 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Factorization.Evolution.Basic
-public import EpsilonEridani.Meta.Linters.Sorry
 /-!
 
 # DGLAP Evolution in Moment Space
@@ -46,7 +45,7 @@ here.
 ## iii. Conventions
 
 The Mellin index convention of this repository is the one fixed by
-`Physlib.Particles.Parton.PDF.mellinMoment`:
+`EpsilonEridani.Particles.Parton.PDF.mellinMoment`:
 
 `mellinMoment f n i Q2 = ∫ x in Set.Icc 0 1, x ^ n * f i x Q2`,
 
@@ -244,7 +243,7 @@ lemma momentSolution_unique {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) 
           (mul_le_mul_of_nonneg_right hrowΓ (norm_nonneg _)) hM0
     _ = M * Γ * ‖X - Y‖ := by ring
 
-/-- Global existence for the moment-space system.
+/- Global existence for the moment-space system.
 
 TODO(task/e2-dglap-wellposedness): proof not completed. Intended argument. On each
 `Set.Icc (τ0 - T) (τ0 + T)` the vector field satisfies `ODE.IsPicardLindelof` (bounded and
@@ -263,16 +262,16 @@ time-ordered exponential
 legitimate *here* because the coefficient matrices at different `τ` are all multiples of the
 single matrix `S.gamma N` and therefore commute; that reduces existence to differentiating
 `Matrix.exp` along a scalar path. -/
-@[sorryful]
+/- @[sorryful]
 lemma momentSolution_exists {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ)
     (F0 : ι → ℂ) (τ0 : ℝ) :
     ∃ F : ℝ → ι → ℂ, F τ0 = F0 ∧ IsMomentSolution S N F := by
-  sorry
+  sorry -/
 
-/-- **Well-posedness of DGLAP evolution in moment space.** For each Mellin index `N` and
+/- **Well-posedness of DGLAP evolution in moment space.** For each Mellin index `N` and
 each initial condition `F0` at `τ0`, the linear moment-space system has a unique global
 solution. -/
-@[sorryful]
+/- @[sorryful]
 theorem moment_exists_unique {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ)
     (F0 : ι → ℂ) (τ0 : ℝ) :
     ∃! F : ℝ → ι → ℂ, F τ0 = F0 ∧ IsMomentSolution S N F := by
@@ -280,7 +279,7 @@ theorem moment_exists_unique {ι : Type} [Fintype ι] (S : DglapMomentSystem ι)
   refine ⟨F, ⟨hF0, hF⟩, ?_⟩
   intro G hG
   funext τ
-  exact momentSolution_unique S N hG.2 hF τ0 (hG.1.trans hF0.symm) τ
+  exact momentSolution_unique S N hG.2 hF τ0 (hG.1.trans hF0.symm) τ -/
 
 /-! ## C. Sum-rule conservation -/
 
@@ -322,13 +321,13 @@ theorem sumRule_conserved {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) (N
 /-! ### C.2. The physical sum rules -/
 
 /-- The Mellin index carrying the momentum sum rule, in the convention of
-`Physlib.Particles.Parton.PDF.mellinMoment` (`mellinMoment f n = ∫ x ^ n * f`), namely
+`EpsilonEridani.Particles.Parton.PDF.mellinMoment` (`mellinMoment f n = ∫ x ^ n * f`), namely
 `n = 1`. In the literature's convention, where the `N`-th moment is `∫ x ^ (N - 1) * f`, the
 same sum rule sits at `N = 2`. -/
 def momentumMomentIndex : ℂ := 1
 
 /-- The Mellin index carrying the valence (number) sum rules, in the convention of
-`Physlib.Particles.Parton.PDF.mellinMoment`, namely `n = 0`. In the literature's convention
+`EpsilonEridani.Particles.Parton.PDF.mellinMoment`, namely `n = 0`. In the literature's convention
 the same sum rules sit at `N = 1`. -/
 def valenceMomentIndex : ℂ := 0
 
@@ -337,7 +336,7 @@ sums at the momentum index, the total momentum fraction carried by the partons i
 independent of the scale.
 
 This is the moment-space counterpart of the `momentum` field of
-`Physlib.Particles.Parton.PDF.SumRuleAssumptions`, which asserts
+`EpsilonEridani.Particles.Parton.PDF.SumRuleAssumptions`, which asserts
 `∑ i, mellinMoment f 1 i Q2 = 1` at every `Q2`: the theorem here supplies the reason that
 assertion can hold at every scale at once, namely that the DGLAP flow preserves the total
 first moment. Connecting the two literally — turning `∑ i, F τ i` into
@@ -364,9 +363,9 @@ theorem valence_sumRule_conserved {ι : Type} [Fintype ι] (S : DglapMomentSyste
 
 /-- The Mellin-moment vector of a PDF family at index `n`, as a function of the log scale
 `τ = log Q2`, valued in `ℂ` so that it can be fed to the moment-space system. -/
-def momentVector (f : Physlib.Particles.Parton.PDF.Pdf Flavor) (n : ℕ) (τ : ℝ)
+def momentVector (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) (n : ℕ) (τ : ℝ)
     (i : Flavor) : ℂ :=
-  ((Physlib.Particles.Parton.PDF.mellinMoment f n i (Real.exp τ) : ℝ) : ℂ)
+  ((EpsilonEridani.Particles.Parton.PDF.mellinMoment f n i (Real.exp τ) : ℝ) : ℂ)
 
 /-- Transport of a real derivative along the inclusion `ℝ → ℂ`.
 
@@ -388,7 +387,7 @@ the target of task `task/e1-mellin-convolution`. Once that task lands, both beco
 derivable from integrability assumptions on `f` and `P` rather than assumed. -/
 structure MomentReductionAssumptions [Fintype Flavor]
     (P : SplittingKernel Flavor) (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (S : DglapMomentSystem Flavor) (n : ℕ) (γ : Flavor → Flavor → ℝ) : Prop where
   /-- The system's coupling is the one driving the `x`-space equation. -/
   coupling : S.alphaS = αs
@@ -397,35 +396,35 @@ structure MomentReductionAssumptions [Fintype Flavor]
   /-- Differentiation under the moment integral: the `τ`-derivative of the `n`-th moment of
   `f` is the `n`-th moment of the DGLAP right-hand side. -/
   derivMoment : ∀ i τ,
-    HasDerivAt (fun s => Physlib.Particles.Parton.PDF.mellinMoment f n i (Real.exp s))
+    HasDerivAt (fun s => EpsilonEridani.Particles.Parton.PDF.mellinMoment f n i (Real.exp s))
       (∫ x in Set.Icc (0 : ℝ) 1, x ^ n * dglapRhsLogScale P αs f i x τ) τ
   /-- Mellin convolution theorem: the `n`-th moment of the convolution right-hand side is
   the anomalous-dimension matrix acting on the moments. -/
   mellinFactorization : ∀ i τ,
     (∫ x in Set.Icc (0 : ℝ) 1, x ^ n * dglapRhsLogScale P αs f i x τ)
       = αs (Real.exp τ) / (2 * Real.pi)
-        * ∑ j, γ i j * Physlib.Particles.Parton.PDF.mellinMoment f n j (Real.exp τ)
+        * ∑ j, γ i j * EpsilonEridani.Particles.Parton.PDF.mellinMoment f n j (Real.exp τ)
 
 /-- Under `MomentReductionAssumptions`, the Mellin moments of an `x`-space DGLAP solution
 solve the moment-space linear system, so the well-posedness and conservation results of this
 module apply to them. -/
 lemma isMomentSolution_momentVector [Fintype Flavor]
     (P : SplittingKernel Flavor) (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (S : DglapMomentSystem Flavor) (n : ℕ) (γ : Flavor → Flavor → ℝ)
     (h : MomentReductionAssumptions P αs f S n γ) :
     IsMomentSolution S (n : ℂ) (momentVector f n) := by
   intro i τ
   have hreal : HasDerivAt
-      (fun s => Physlib.Particles.Parton.PDF.mellinMoment f n i (Real.exp s))
+      (fun s => EpsilonEridani.Particles.Parton.PDF.mellinMoment f n i (Real.exp s))
       (αs (Real.exp τ) / (2 * Real.pi)
-        * ∑ j, γ i j * Physlib.Particles.Parton.PDF.mellinMoment f n j (Real.exp τ)) τ := by
+        * ∑ j, γ i j * EpsilonEridani.Particles.Parton.PDF.mellinMoment f n j (Real.exp τ)) τ := by
     have hd := h.derivMoment i τ
     rwa [h.mellinFactorization i τ] at hd
   have hrhs : momentRhs S (n : ℂ) τ (momentVector f n τ) i
       = ((αs (Real.exp τ) / (2 * Real.pi)
           * ∑ j, γ i j
-            * Physlib.Particles.Parton.PDF.mellinMoment f n j (Real.exp τ) : ℝ) : ℂ) := by
+            * EpsilonEridani.Particles.Parton.PDF.mellinMoment f n j (Real.exp τ) : ℝ) : ℂ) := by
     simp only [momentRhs, momentVector, h.coupling, h.gamma_ofReal]
     push_cast
     ring

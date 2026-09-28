@@ -52,7 +52,7 @@ variable {Flavor : Type}
 zero kernels and zero coupling. Both sides vanish identically, the left-hand side because
 the derivative of a constant function is zero. -/
 lemma toySolution_zeroKernel_zeroCoupling [Fintype Flavor]
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (hzero : ∀ i x Q2, f i x Q2 = 0) :
     IsDGLAPLogScaleEquation (fun _ _ _ _ => 0) (fun _ => 0) f := by
   intro i x τ
@@ -68,7 +68,7 @@ lemma toySolution_zeroKernel_zeroCoupling [Fintype Flavor]
 arbitrary running coupling. -/
 lemma toySolution_zeroKernel [Fintype Flavor]
     (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (hzero : ∀ i x Q2, f i x Q2 = 0) :
     IsDGLAPLogScaleEquation (fun _ _ _ _ => 0) αs f := by
   intro i x τ
@@ -94,7 +94,7 @@ linter also rejects a tag on a
 sorry-free declaration, the tag has been removed. -/
 lemma scale_independent_of_zeroKernel [Fintype Flavor]
     (αs : RunningCoupling)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (h : IsDGLAPLogScaleEquation (fun _ _ _ _ => 0) αs f)
     (i : Flavor) (x τ₁ τ₂ : ℝ) :
     f i x (Real.exp τ₁) = f i x (Real.exp τ₂) := by
@@ -112,7 +112,7 @@ coupling are satisfied by any PDF that is pointwise zero.
 This is the statement that the pre-correction `toySolution_zeroKernel_zeroCoupling` proved,
 back when `IsDGLAPLogScaleEquation` denoted the fixed-point condition. -/
 lemma toyFixedPoint_zeroKernel_zeroCoupling [Fintype Flavor]
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (hzero : ∀ i x Q2, f i x Q2 = 0) :
     IsDGLAPFixedPoint (fun _ _ _ _ => 0) (fun _ => 0) f := by
   intro i x τ

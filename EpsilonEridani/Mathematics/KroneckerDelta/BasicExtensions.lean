@@ -133,6 +133,7 @@ private lemma extendIndices_last_eq_front_cycleRange {α : Type} {m : ℕ} (hm :
     extendIndices (m - 1) m (Nat.sub_le _ _) μ (fun _ => l) =
       fun i => extendIndices 1 m hm (fun _ : Fin 1 => l) μ
         ((Fin.cycleRange (finLastOfPos m hm)) i) := by
+  have : NeZero m := ⟨Nat.ne_of_gt hm⟩
   funext i
   by_cases hlast : i = finLastOfPos m hm
   · subst i
@@ -257,6 +258,7 @@ private lemma extendIndices_succAbove_eq_cycleIcc {n : ℕ} (hn : 0 < n)
     {α : Type} (μ : Fin n → α) (i p : Fin n) :
     extendIndices n (n + 1) (Nat.le_succ n) μ (fun _ => μ i) (i.castSucc.succAbove p) =
       μ ((Fin.cycleIcc i (finLastOfPos n hn)) p) := by
+  have : NeZero n := ⟨Nat.ne_of_gt hn⟩
   by_cases hlast : p = finLastOfPos n hn
   · subst p
     have hrow : i.castSucc.succAbove (finLastOfPos n hn) = Fin.last n := by

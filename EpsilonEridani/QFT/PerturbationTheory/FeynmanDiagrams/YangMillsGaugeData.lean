@@ -67,7 +67,7 @@ namespace QFT
 namespace PerturbationTheory
 namespace FeynmanDiagrams
 
-open Physlib.QFT.QCD
+open EpsilonEridani.QFT.QCD
 open RepresentationColor
 
 /-! ### Generic Yang-Mills Gauge Data -/
@@ -232,7 +232,7 @@ def U1AdjointStatement : Prop :=
 lemma u1TraceStatement (Y : ℝ) : U1TraceStatement Y := by
   intro a b
   simp only [u1GenEntry, u1DeltaAdj, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, one_smul, if_pos (Subsingleton.elim a b)]
+    Fintype.card_fin, one_smul, ite_eq_left (Subsingleton.elim a b)]
   push_cast
   ring
 
@@ -240,7 +240,7 @@ lemma u1TraceStatement (Y : ℝ) : U1TraceStatement Y := by
 lemma u1FundamentalStatement (Y : ℝ) : U1FundamentalStatement Y := by
   intro i j
   simp only [u1GenEntry, u1DeltaFund, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, one_smul, if_pos (Subsingleton.elim i j)]
+    Fintype.card_fin, one_smul, ite_eq_left (Subsingleton.elim i j)]
   push_cast
   ring
 

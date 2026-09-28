@@ -62,7 +62,7 @@ only by helicity-independent amplitudes. -/
 lemma helicityAssumptions_of_product (g : ℤ → ℝ → ℝ → ℝ) :
     HelicityAssumptions ⟨fun lamIn lamOut xi t => g (lamIn * lamOut) xi t⟩ := by
   refine ⟨fun lamIn lamOut xi t => ?_⟩
-  show g (lamIn * lamOut) xi t = g (-lamIn * -lamOut) xi t
+  change g (lamIn * lamOut) xi t = g (-lamIn * -lamOut) xi t
   exact congrArg (fun z => g z xi t) (neg_mul_neg lamIn lamOut).symm
 
 /-- Rescaling interface for amplitude-model bookkeeping. -/

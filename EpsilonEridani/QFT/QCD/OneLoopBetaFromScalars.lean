@@ -26,7 +26,7 @@ namespace QCD
 namespace OneLoopBetaFromScalars
 
 open OneLoopBeta
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
 
 /-- Weights used to read primitive pole contributions from scalar master integrals. -/
 structure PrimitivePoleWeights : Type where

@@ -5,7 +5,7 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.Particles.StandardModel.Basic
+public import Physlib.Particles.StandardModel.Basic
 /-!
 
 # PVES Electroweak Parameters

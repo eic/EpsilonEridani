@@ -27,7 +27,7 @@ namespace QFT
 namespace Factorization
 namespace Evolution
 
-open Physlib.QFT.QCD
+open EpsilonEridani.QFT.QCD
 
 variable {Flavor : Type}
 
@@ -64,7 +64,7 @@ def IsQCDDGLAPLogScaleEquation [Fintype Flavor]
     (cf : QCD.ColorFactors)
     (lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) : Prop :=
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) : Prop :=
   IsDGLAPLogScaleEquation P (qcdRunningCoupling cf lambdaQCD2) f
 
 /-- DGLAP schema specialized to a gauge-group-derived color-factor model. -/
@@ -73,7 +73,7 @@ def IsQCDDGLAPLogScaleEquationOf
     [Fintype Flavor]
     (nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) : Prop :=
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) : Prop :=
   IsDGLAPLogScaleEquation P (qcdRunningCouplingOf G nF lambdaQCD2) f
 
 /-- DGLAP schema specialized to representation-derived QCD color data. -/
@@ -82,7 +82,7 @@ def IsQCDDGLAPLogScaleEquationFromRepresentation
     [Fintype Flavor]
     (nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) : Prop :=
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) : Prop :=
   IsDGLAPLogScaleEquation P (qcdRunningCouplingFromRepresentation G nF lambdaQCD2) f
 
 /-- One-loop beta coefficient through representation extraction data. -/
@@ -135,7 +135,7 @@ lemma isQCDDGLAPLogScaleEquationFromRepresentation_suN_iff_of_contracts
     [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (hContracts :
       (QCD.RepresentationColor.sunNormalizedData nC).traceNormalization ∧
         (QCD.RepresentationColor.sunNormalizedData nC).fundamentalCasimir ∧
@@ -151,7 +151,7 @@ lemma isQCDDGLAPLogScaleEquationFromRepresentation_suN_iff
     [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) :
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) :
     IsQCDDGLAPLogScaleEquationFromRepresentation (QCD.SUN nC) nF lambdaQCD2 P f
       ↔ IsQCDDGLAPLogScaleEquation (QCD.suNColorFactors nC nF) lambdaQCD2 P f :=
   isQCDDGLAPLogScaleEquationFromRepresentation_suN_iff_of_contracts nC nF lambdaQCD2 P f
@@ -164,7 +164,7 @@ lemma qcdDglap_rhs_suN_fromRepresentation_eq_of_contracts
     [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ)
     (hContracts :
       (QCD.RepresentationColor.sunNormalizedData nC).traceNormalization ∧
@@ -182,7 +182,7 @@ lemma qcdDglap_rhs_suN_fromRepresentation_eq
     [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ) :
     dglapRhsLogScale P
         (qcdRunningCouplingFromRepresentation (QCD.SUN nC) nF lambdaQCD2) f i x τ
@@ -208,7 +208,7 @@ lemma qcdDglap_rhs_def [Fintype Flavor]
     (cf : QCD.ColorFactors)
     (lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ) :
     dglapRhsLogScale P (qcdRunningCoupling cf lambdaQCD2) f i x τ
       = qcdRunningCoupling cf lambdaQCD2 (Real.exp τ) / (2 * Real.pi)
@@ -219,7 +219,7 @@ lemma qcdDglap_rhs_def [Fintype Flavor]
 lemma qcdDglap_zeroKernel_rhs [Fintype Flavor]
     (cf : QCD.ColorFactors)
     (lambdaQCD2 : ℝ)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ) :
     dglapRhsLogScale (fun _ _ _ _ => 0) (qcdRunningCoupling cf lambdaQCD2) f i x τ = 0 := by
   simp [dglapRhsLogScale, dglapOperator_zero_kernel]

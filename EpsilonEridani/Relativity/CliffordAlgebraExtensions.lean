@@ -9,6 +9,7 @@ import Physlib.Relativity.MinkowskiMatrix
 import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 import Physlib.Mathematics.LeviCivita.Basic
 import Physlib.Mathematics.KroneckerDelta.Basic
+import EpsilonEridani.Mathematics.KroneckerDelta.BasicExtensions
 
 /-!
 # Gamma matrix anticommutator and Dirac slash extensions
@@ -44,9 +45,6 @@ noncomputable section diracRepresentation
 def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
 
 /-- The lowered gamma matrices in the Dirac representation. -/
-@[simp]
-def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
-
 @[simp]
 def γDown (μ : Fin 4) : Matrix (Fin 4) (Fin 4) ℂ :=
   ((minkowskiMatrix ((@finSumFinEquiv 1 3).symm μ)
@@ -191,7 +189,8 @@ theorem trace_γ5_mul_γ_mul_γ_mul_γ_mul_γ (μ ν ρ σ : Fin 4) :
     Matrix.trace (γ5 * γ μ * γ ν * γ ρ * γ σ) =
       (4 * I) * (leviCivitaSymbol ![μ, ν, ρ, σ] : ℂ) := by
   fin_cases μ <;> fin_cases ν <;> fin_cases ρ <;> fin_cases σ <;>
-    norm_num [leviCivitaSymbol, generalizedKroneckerDelta, kroneckerDelta, γ5, γ, γ0, γ1, γ2, γ3,
+    norm_num [leviCivitaSymbol, KroneckerDelta.generalizedKroneckerDelta,
+      KroneckerDelta.kroneckerDelta, γ5, γ, γ0, γ1, γ2, γ3,
       Matrix.trace, Fin.sum_univ_four]
 
 @[simp]

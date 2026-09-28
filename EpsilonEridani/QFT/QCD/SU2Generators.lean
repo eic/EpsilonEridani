@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.QCD.CasimirDerivation
-public import EpsilonEridani.Relativity.PauliMatrices.Basic
+public import Physlib.Relativity.PauliMatrices.Basic
 /-!
 
 # Genuine `su(2)` normalized generator data
