@@ -5,7 +5,6 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.Meta.Linters.Sorry
 public import EpsilonEridani.Particles.Parton.GPD.Ambiguity
 public import EpsilonEridani.Particles.Parton.GPD.Moments
 /-!

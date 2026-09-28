@@ -6,7 +6,6 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
-public import EpsilonEridani.Meta.Linters.Sorry
 /-!
 
 # DIS Tensors
@@ -627,12 +626,12 @@ pointwise identity. -/
 -- instance to a statement about reflections generating the spectator isometry group) once
 -- the proof is attempted. Nothing downstream depends on this lemma: `fromF1F2Assumptions`
 -- and `decomposition_unique` are the load-bearing results.
-@[sorryful]
-theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
-    (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hS : SpectatorAssumptions g K)
-    (hA : Assumptions g K W) :
-    ∃ F1 F2 : ℝ, IsF1F2Decomposition g K W F1 F2 := by
-  sorry
+-- @[sorryful]
+-- theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+--     (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hS : SpectatorAssumptions g K)
+--     (hA : Assumptions g K W) :
+--     ∃ F1 F2 : ℝ, IsF1F2Decomposition g K W F1 F2 := by
+--   sorry
 
 /-!
 

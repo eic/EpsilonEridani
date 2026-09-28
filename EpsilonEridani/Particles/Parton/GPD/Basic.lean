@@ -93,6 +93,60 @@ lemma forwardLimit_bridge_symm
     fPdf i x Q2 = M.H i x 0 0 := by
   simpa using (hFwd i x).symm
 
+
+
+/-- The DGLAP region of GPD kinematics, `|ξ| < |x| ≤ 1`.
+
+Here the two active partons carry momentum fractions of the same sign, so the
+distribution retains a density interpretation: `x > 0` is the quark region and
+`x < 0` the antiquark region. -/
+def InDglapRegion (x xi : ℝ) : Prop := |xi| < |x| ∧ |x| ≤ 1
+
+/-- The ERBL region of GPD kinematics, `|x| ≤ |ξ|`.
+
+Here the two active partons carry momentum fractions of opposite sign, the GPD
+behaves like a meson distribution amplitude rather than a density, and positivity
+bounds do not apply. This is also where the D-term and the shadow GPDs live. -/
+def InErblRegion (x xi : ℝ) : Prop := |x| ≤ |xi|
+
+/-- The two kinematic regions are mutually exclusive. -/
+lemma not_inErblRegion_of_inDglapRegion {x xi : ℝ} (h : InDglapRegion x xi) :
+    ¬ InErblRegion x xi := by
+  intro h'
+  have h1 : |xi| < |x| := h.1
+  have h2 : |x| ≤ |xi| := h'
+  linarith
+
+/-- Inside the physical support the two kinematic regions are exhaustive. -/
+lemma inDglapRegion_or_inErblRegion {x xi : ℝ} (hx : |x| ≤ 1) :
+    InDglapRegion x xi ∨ InErblRegion x xi := by
+  rcases lt_trichotomy |xi| |x| with h | h | h
+  · exact Or.inl ⟨h, hx⟩
+  · exact Or.inr (le_of_eq h.symm)
+  · exact Or.inr (le_of_lt h)
+
+/-- Support of `H` in absolute-value form: `H` vanishes whenever `1 < |x|`. -/
+lemma H_eq_zero_of_one_lt_abs {M : Model Flavor} (h : Assumptions M)
+    (i : Flavor) (x xi t : ℝ) (hx : 1 < |x|) :
+    M.H i x xi t = 0 := by
+  refine h.supportH i x xi t ?_
+  rcases abs_cases x with ⟨hax, _⟩ | ⟨hax, _⟩
+  · rw [hax] at hx
+    exact Or.inr hx
+  · rw [hax] at hx
+    exact Or.inl (by linarith)
+
+/-- Support of `E` in absolute-value form: `E` vanishes whenever `1 < |x|`. -/
+lemma E_eq_zero_of_one_lt_abs {M : Model Flavor} (h : Assumptions M)
+    (i : Flavor) (x xi t : ℝ) (hx : 1 < |x|) :
+    M.E i x xi t = 0 := by
+  refine h.supportE i x xi t ?_
+  rcases abs_cases x with ⟨hax, _⟩ | ⟨hax, _⟩
+  · rw [hax] at hx
+    exact Or.inr hx
+  · rw [hax] at hx
+    exact Or.inl (by linarith)
+
 end GPD
 end Parton
 end Particles

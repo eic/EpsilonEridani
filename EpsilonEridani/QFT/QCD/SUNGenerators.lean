@@ -172,7 +172,7 @@ lemma piv_pos (l : Fin (N - 1)) : 0 < ((piv l : Fin N) : ℕ) := by
 
 lemma piv_lt_piv {l m : Fin (N - 1)} (h : l < m) : (piv l : Fin N) < piv m := by
   have : (l : ℕ) < (m : ℕ) := h
-  show ((piv l : Fin N) : ℕ) < ((piv m : Fin N) : ℕ)
+  change ((piv l : Fin N) : ℕ) < ((piv m : Fin N) : ℕ)
   rw [piv_val, piv_val]; omega
 
 lemma piv_ne_piv {l m : Fin (N - 1)} (h : l ≠ m) : (piv l : Fin N) ≠ piv m := by
@@ -285,17 +285,17 @@ lemma dVec_orth (l m : Fin (N - 1)) :
   rcases lt_trichotomy l m with h | h | h
   · have hlt : (piv l : Fin N) < piv m := piv_lt_piv h
     have hne : (piv l : Fin N) ≠ piv m := ne_of_lt hlt
-    rw [sum_lt_lt (le_of_lt hlt), if_neg (lt_asymm hlt), if_pos hlt, if_neg hne,
-      if_neg (ne_of_lt h)]
+    rw [sum_lt_lt (le_of_lt hlt), ite_eq_right (lt_asymm hlt), ite_eq_left hlt, ite_eq_right hne,
+      ite_eq_right (ne_of_lt h)]
     ring
   · subst h
-    rw [sum_lt_lt (le_refl (piv l : Fin N)), if_neg (lt_irrefl (piv l : Fin N)),
-      if_pos (rfl : (piv l : Fin N) = piv l), if_pos (rfl : l = l)]
+    rw [sum_lt_lt (le_refl (piv l : Fin N)), ite_eq_right (lt_irrefl (piv l : Fin N)),
+      ite_eq_left (rfl : (piv l : Fin N) = piv l), ite_eq_left (rfl : l = l)]
     ring
   · have hlt : (piv m : Fin N) < piv l := piv_lt_piv h
     have hne : (piv l : Fin N) ≠ piv m := (ne_of_lt hlt).symm
-    rw [sum_lt_gt (le_of_lt hlt), if_pos hlt, if_neg (lt_asymm hlt), if_neg hne,
-      if_neg (Ne.symm (ne_of_lt h))]
+    rw [sum_lt_gt (le_of_lt hlt), ite_eq_left hlt, ite_eq_right (lt_asymm hlt), ite_eq_right hne,
+      ite_eq_right (Ne.symm (ne_of_lt h))]
     ring
 
 /-- The normalized diagonal generators are trace-orthonormal with `T_F = 1/2`. -/
@@ -308,7 +308,7 @@ lemma dSum (l m : Fin (N - 1)) :
   rw [Finset.sum_congr rfl (fun p _ => hfac p), ← Finset.mul_sum, dVec_orth]
   by_cases h : l = m
   · subst h
-    rw [if_pos rfl, if_pos rfl, dNorm_mul_self]
+    rw [ite_eq_left rfl, ite_eq_left rfl, dNorm_mul_self]
     have hL : ((((piv l : Fin N) : ℕ)) : ℂ) ≠ 0 := by
       have := piv_pos l
       exact_mod_cast Nat.cast_ne_zero.mpr (by omega)
@@ -322,7 +322,7 @@ lemma dSum (l m : Fin (N - 1)) :
       have : (0 : ℝ) ≤ ((l : ℕ) : ℝ) := Nat.cast_nonneg _
       linarith [hre ▸ this]
     field_simp
-  · rw [if_neg h, if_neg h, mul_zero]
+  · rw [ite_eq_right h, ite_eq_right h, mul_zero]
 
 /-! ### The generators -/
 
@@ -412,7 +412,7 @@ lemma suNTraceStatement (N : ℕ) : SUNTraceStatement N := by
     simp only [suNGenEntry]
     rw [trace_offGen]
     simp only [suNDeltaAdj]
-    rw [if_neg (by simp)]
+    rw [ite_eq_right (by simp)]
     push_cast
     ring_nf
   -- symmetric × diagonal
@@ -420,7 +420,7 @@ lemma suNTraceStatement (N : ℕ) : SUNTraceStatement N := by
     simp only [suNGenEntry]
     rw [sum_off_diag _ _ (ne_of_lt hjk)]
     simp only [suNDeltaAdj]
-    rw [if_neg (by simp)]
+    rw [ite_eq_right (by simp)]
     simp
   -- antisymmetric × symmetric
   · obtain ⟨⟨j, k⟩, hjk⟩ := o
@@ -428,7 +428,7 @@ lemma suNTraceStatement (N : ℕ) : SUNTraceStatement N := by
     simp only [suNGenEntry]
     rw [trace_offGen]
     simp only [suNDeltaAdj]
-    rw [if_neg (by simp)]
+    rw [ite_eq_right (by simp)]
     push_cast
     ring_nf
   -- antisymmetric × antisymmetric
@@ -444,21 +444,21 @@ lemma suNTraceStatement (N : ℕ) : SUNTraceStatement N := by
     simp only [suNGenEntry]
     rw [sum_off_diag _ _ (ne_of_lt hjk)]
     simp only [suNDeltaAdj]
-    rw [if_neg (by simp)]
+    rw [ite_eq_right (by simp)]
     simp
   -- diagonal × symmetric
   · obtain ⟨⟨j', k'⟩, hjk'⟩ := o'
     simp only [suNGenEntry]
     rw [sum_diag_off _ _ (ne_of_lt hjk')]
     simp only [suNDeltaAdj]
-    rw [if_neg (by simp)]
+    rw [ite_eq_right (by simp)]
     simp
   -- diagonal × antisymmetric
   · obtain ⟨⟨j', k'⟩, hjk'⟩ := o'
     simp only [suNGenEntry]
     rw [sum_diag_off _ _ (ne_of_lt hjk')]
     simp only [suNDeltaAdj]
-    rw [if_neg (by simp)]
+    rw [ite_eq_right (by simp)]
     simp
   -- diagonal × diagonal
   · simp only [suNGenEntry]
@@ -500,13 +500,13 @@ lemma kd_quad (i j k l : Fin N) :
       = (if p = i then (kd i j * kd k l) * kd i k else 0) := by
     intro p
     by_cases hpi : i = p
-    · rw [← hpi, if_pos rfl, kd_self, kd_comm l i, kd_comm j i, kd_comm k i]
+    · rw [← hpi, ite_eq_left rfl, kd_self, kd_comm l i, kd_comm j i, kd_comm k i]
       by_cases hik : i = k
       · rw [← hik, kd_self]
         ring
       · rw [kd_eq_zero hik]
         ring
-    · rw [if_neg (fun hc => hpi hc.symm), kd_eq_zero hpi]
+    · rw [ite_eq_right (fun hc => hpi hc.symm), kd_eq_zero hpi]
       ring
   rw [Finset.sum_congr rfl (fun p _ => h p), Finset.sum_ite_eq']
   simp
@@ -548,9 +548,9 @@ lemma sum_offPair (h : Fin N → Fin N → ℂ) (hs : ∀ p q, h p q = h q p) :
       = h p q - (if p = q then h p q else 0) := by
     intro p q
     rcases lt_trichotomy p q with hc | hc | hc
-    · rw [if_pos hc, if_neg (lt_asymm hc), if_neg (ne_of_lt hc)]; ring
-    · rw [hc, if_neg (lt_irrefl q), if_pos rfl]; ring
-    · rw [if_neg (lt_asymm hc), if_pos hc, if_neg (Ne.symm (ne_of_lt hc))]; ring
+    · rw [ite_eq_left hc, ite_eq_right (lt_asymm hc), ite_eq_right (ne_of_lt hc)]; ring
+    · rw [hc, ite_eq_right (lt_irrefl q), ite_eq_left rfl]; ring
+    · rw [ite_eq_right (lt_asymm hc), ite_eq_left hc, ite_eq_right (Ne.symm (ne_of_lt hc))]; ring
   have hsum : (∑ p : Fin N, ∑ q : Fin N, (if p < q then h p q else 0))
       + (∑ p : Fin N, ∑ q : Fin N, (if q < p then h p q else 0))
       = (∑ p : Fin N, ∑ q : Fin N, h p q) - ∑ p : Fin N, h p p := by
@@ -691,7 +691,7 @@ lemma sum_range_ite_eq_succ (m j : ℕ) (hj : j < m) (f : ℕ → ℂ) :
   rw [Finset.sum_eq_single j]
   · simp
   · intro b _ hb
-    exact if_neg (by omega)
+    exact ite_eq_right (by omega)
   · intro hc
     exact absurd (Finset.mem_range.mpr hj) hc
 
@@ -720,7 +720,7 @@ lemma sum_dEnt_diag (n p : ℕ) (hp : p < n) :
   · subst hp0
     have hz : ∀ l ∈ Finset.range (n - 1),
         (if (0 : ℕ) = l + 1 then dWt l * ((l : ℂ) + 1) ^ 2 else 0) = 0 :=
-      fun l _ => if_neg (by omega)
+      fun l _ => ite_eq_right (by omega)
     rw [Finset.sum_eq_zero hz, add_zero]
     push_cast
     ring
@@ -774,12 +774,12 @@ lemma sum_dEnt (n p q : ℕ) (hp : p < n) (hq : q < n) :
     (∑ l ∈ Finset.range (n - 1), dWt l * (dEnt p l * dEnt q l))
       = (1 / 2 : ℂ) * ((if p = q then (1 : ℂ) else 0) - (n : ℂ)⁻¹) := by
   rcases lt_trichotomy p q with hc | hc | hc
-  · rw [sum_dEnt_off n p q hq hc, if_neg (by omega : ¬ (p = q))]
-  · rw [hc, sum_dEnt_diag n q hq, if_pos rfl]
+  · rw [sum_dEnt_off n p q hq hc, ite_eq_right (by omega : ¬ (p = q))]
+  · rw [hc, sum_dEnt_diag n q hq, ite_eq_left rfl]
   · have hsymm : ∀ l : ℕ, dWt l * (dEnt p l * dEnt q l) = dWt l * (dEnt q l * dEnt p l) := by
       intro l; ring
     rw [Finset.sum_congr rfl (fun l _ => hsymm l), sum_dEnt_off n q p hp hc,
-      if_neg (by omega : ¬ (p = q))]
+      ite_eq_right (by omega : ¬ (p = q))]
 
 /-! #### Transporting the diagonal family back to `Fin` -/
 

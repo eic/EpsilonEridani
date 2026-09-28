@@ -6,7 +6,6 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
-public import EpsilonEridani.Meta.Linters.Sorry
 /-!
 
 # Polarized Sum Rules

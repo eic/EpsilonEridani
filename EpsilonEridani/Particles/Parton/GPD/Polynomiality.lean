@@ -7,7 +7,6 @@ module
 
 public import EpsilonEridani.Particles.Parton.GPD.Moments
 public import EpsilonEridani.Particles.Parton.GPD.DoubleDistribution
-public import EpsilonEridani.Meta.Linters.Sorry
 /-!
 
 # Polynomiality of GPD Moments from the Double-Distribution Representation
