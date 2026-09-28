@@ -122,7 +122,7 @@ lemma beta0_suNColorFactors (nC nF : ℝ) :
 `2 nF < 11 Nc`. For `Nc = 3` this is the familiar `nF < 16.5`. -/
 lemma isAsymptoticallyFree_suNColorFactors (nC nF : ℝ) (h : 2 * nF < 11 * nC) :
     IsAsymptoticallyFree (suNColorFactors nC nF) := by
-  show (0 : ℝ) < beta0 (suNColorFactors nC nF)
+  change (0 : ℝ) < beta0 (suNColorFactors nC nF)
   rw [beta0_suNColorFactors]
   linarith
 
