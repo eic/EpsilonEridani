@@ -301,7 +301,7 @@ jobs:
       - name: Save Dependencies' compressed download cache
         if: ${{ steps.mathlib_ltar_restore.outputs.cache-hit != 'true' && steps.mathlib_ltar_prune.outcome == 'success' }}
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}

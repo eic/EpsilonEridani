@@ -243,7 +243,7 @@ jobs:
         # next run most of the walk, and the alternative is that one bad run condemns every later
         # one to a cold start.
         if: always() && steps.snapshot.outputs.present == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ${{ runner.temp }}/pr-snapshot.json
           key: pr-snapshot-${{ github.run_id }}
@@ -374,7 +374,7 @@ jobs:
       # optimisation against future outages, not a precondition for this deploy.
       - name: Save the data assets for the next run
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ${{ github.workspace }}/web/static_files
           key: site-data-v1-${{ github.run_id }}
@@ -601,7 +601,7 @@ jobs:
 
       - name: Save the generated API docs
         if: steps.docs-plan.outputs.build == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: docbuild/.lake/build/doc
           key: docs-html-v2-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}
@@ -777,7 +777,7 @@ jobs:
         # deploy to the fallback -- publishing an OLDER site because the cache write for the
         # newer one did not go through.
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: web/_out
           key: site-out-v1-${{ github.run_id }}
