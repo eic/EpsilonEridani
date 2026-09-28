@@ -6,8 +6,8 @@ Authors: Joseph Tooby-Smith
 module
 
 public import Mathlib
-public import EpsilonEridani.Relativity.MinkowskiMatrix
-public import EpsilonEridani.Mathematics.KroneckerDelta.Basic
+public import Physlib.Relativity.MinkowskiMatrix
+public import Physlib.Mathematics.KroneckerDelta.Basic
 
 /-!
 # The Levi-Civita symbol
