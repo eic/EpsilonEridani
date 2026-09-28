@@ -7,6 +7,7 @@ module
 
 public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
 public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 
