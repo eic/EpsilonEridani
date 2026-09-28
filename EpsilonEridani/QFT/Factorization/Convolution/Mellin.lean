@@ -20,8 +20,9 @@ DGLAP equation becomes, for each value of the Mellin index, an ordinary differen
 
 - **The transform.** `mellinDis f N = ∫_{(0,1]} x ^ (N - 1) * f x dx`. This is the DIS/literature
   convention: the momentum sum rule sits at `N = 2` and the number sum rule at `N = 1`.
-- **Relation to `mellinMoment`.** The repository's `Physlib.Particles.Parton.PDF.mellinMoment f n`
-  is `∫_{[0,1]} x ^ n * f x dx`, i.e. the *shifted* index: `mellinMoment f n = mellinDis f (n + 1)`
+- **Relation to `mellinMoment`.** The repository's
+  `EpsilonEridani.Particles.Parton.PDF.mellinMoment f n` is `∫_{[0,1]} x ^ n * f x dx`, i.e. the
+  *shifted* index: `mellinMoment f n = mellinDis f (n + 1)`
   (`mellinDis_eq_mellinMoment`). In particular the momentum sum rule is `mellinMoment f 1`, which
   is `mellinDis f 2`. Both conventions are in use in the literature and mixing them is a standing
   source of off-by-one errors; every statement below is in terms of `N`, with the `n + 1` bridge
@@ -180,11 +181,11 @@ lemma mellinDis_natCast_add_one_eq_ofReal (f : ℝ → ℝ) (n : ℕ) :
 Note that no assumption on the PDF is needed: the two domains `[0,1]` and `(0,1]` differ by a
 null set, whether or not the integrand is integrable. -/
 lemma mellinDis_eq_mellinMoment {Flavor : Type}
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
     mellinDis (fun x => f i x Q2) ((n : ℂ) + 1)
-      = ((Physlib.Particles.Parton.PDF.mellinMoment f n i Q2 : ℝ) : ℂ) := by
+      = ((EpsilonEridani.Particles.Parton.PDF.mellinMoment f n i Q2 : ℝ) : ℂ) := by
   rw [mellinDis_natCast_add_one_eq_ofReal]
-  simp only [Physlib.Particles.Parton.PDF.mellinMoment]
+  simp only [EpsilonEridani.Particles.Parton.PDF.mellinMoment]
   rw [MeasureTheory.integral_Icc_eq_integral_Ioc]
 
 /-!
@@ -249,7 +250,7 @@ assumption bundle is enough to state and use moment-space additivity downstream.
 lemma MellinConvolutionAssumptions.convolutionConvergent {C f : ℝ → ℝ} {N : ℂ}
     (h : MellinConvolutionAssumptions C f N) :
     MellinDisConvergent (convolveAt (collinearKernel C) f) N := by
-  show MeasureTheory.IntegrableOn
+  change MeasureTheory.IntegrableOn
     (fun x : ℝ => (x : ℂ) ^ (N - 1) * ((convolveAt (collinearKernel C) f x : ℝ) : ℂ))
     (Set.Ioc (0 : ℝ) 1)
   rw [← funext (integral_mellinIntegrand_eq C f N)]
@@ -384,14 +385,14 @@ theorem moment_convolveAt (C f : ℝ → ℝ) (n : ℕ)
 the form the sum-rule and evolution interfaces consume. Note the index shift: `mellinMoment ... n`
 appears against the weight `x ^ n`, i.e. at Mellin index `n + 1`. -/
 theorem mellinMoment_convolveAt {Flavor : Type} (C : ℝ → ℝ)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ)
     (h : MellinConvolutionAssumptions C (fun x => f i x Q2) ((n : ℂ) + 1)) :
     (∫ x in Set.Ioc (0 : ℝ) 1, x ^ n * convolveAt (collinearKernel C) (fun z => f i z Q2) x)
       = (∫ u in Set.Ioc (0 : ℝ) 1, u ^ n * C u)
-        * Physlib.Particles.Parton.PDF.mellinMoment f n i Q2 := by
+        * EpsilonEridani.Particles.Parton.PDF.mellinMoment f n i Q2 := by
   rw [moment_convolveAt C (fun x => f i x Q2) n h]
   congr 1
-  simp only [Physlib.Particles.Parton.PDF.mellinMoment]
+  simp only [EpsilonEridani.Particles.Parton.PDF.mellinMoment]
   rw [MeasureTheory.integral_Icc_eq_integral_Ioc]
 
 end Convolution
