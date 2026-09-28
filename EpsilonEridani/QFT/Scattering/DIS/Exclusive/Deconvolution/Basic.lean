@@ -82,7 +82,7 @@ namespace DIS
 namespace Exclusive
 namespace Deconvolution
 
-open Physlib.Particles.Parton.GPD
+open EpsilonEridani.Particles.Parton.GPD
 
 variable {Flavor : Type}
 
@@ -310,12 +310,12 @@ structure IsLeadingOrderDvcs (K : ComptonCoefficient) : Prop where
   homogeneous : ∀ (l x xi t : ℝ), 0 < l →
     K.C (l * x) (l * xi) t = ((l : ℝ) : ℂ)⁻¹ * K.C x xi t
 
-/-- **Non-uniqueness at leading order (arXiv:2303.12006, arXiv:2107.11312).** The
+/- **Non-uniqueness at leading order (arXiv:2303.12006, arXiv:2107.11312).** The
 leading-order DVCS Compton map has a shadow.
 
 Together with `exists_dTerm_of_agreeOnLowSkewnessDglap` in
-`Physlib.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness` this is the pair of
-statements the frontier task targets; see that module for why they do not collide. -/
+`EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness` this is the pair
+of statements the frontier task targets; see that module for why they do not collide. -/
 /- @[sorryful]
 theorem hasShadow_of_isLeadingOrderDvcs [Nonempty Flavor] (K : ComptonCoefficient)
     (hK : IsLeadingOrderDvcs K) :
