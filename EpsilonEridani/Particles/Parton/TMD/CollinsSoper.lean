@@ -318,7 +318,7 @@ lemma csKernel_sub_logRgSystem (gammaCusp0 : ℝ) (K0 K0' gammaV gammaV' : ℝ �
     (logRgSystem Flavor gammaCusp0 K0 gammaV).csKernel i x bT mu
         - (logRgSystem Flavor gammaCusp0 K0' gammaV').csKernel i x bT mu
       = K0 bT - K0' bT := by
-  show K0 bT - gammaCusp0 * Real.log mu - (K0' bT - gammaCusp0 * Real.log mu)
+  change K0 bT - gammaCusp0 * Real.log mu - (K0' bT - gammaCusp0 * Real.log mu)
       = K0 bT - K0' bT
   ring
 
