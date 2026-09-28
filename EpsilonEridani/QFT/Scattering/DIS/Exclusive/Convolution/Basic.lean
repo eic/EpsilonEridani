@@ -38,7 +38,7 @@ contribute to exclusive amplitudes. -/
 def convolveHAt
     {Flavor : Type}
     (K : Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (xi t : ℝ) : ℝ :=
   ∫ x in Set.Icc (-1 : ℝ) 1, K x xi t * M.H i x xi t
@@ -49,7 +49,7 @@ def unitKernel : Kernel :=
 
 lemma convolveHAt_unitKernel
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (xi t : ℝ) :
     convolveHAt unitKernel M i xi t = ∫ x in Set.Icc (-1 : ℝ) 1, M.H i x xi t := by
@@ -58,7 +58,7 @@ lemma convolveHAt_unitKernel
 lemma convolveHAt_eq_of_kernel_eq
     {Flavor : Type}
     (K K' : Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (xi t : ℝ)
     (hK : ∀ x xi' t', K x xi' t' = K' x xi' t') :
@@ -69,7 +69,7 @@ lemma convolveHAt_eq_of_kernel_eq
 lemma sharedImage_eq_of_kernel_eq
     {Flavor : Type}
     (Kdvcs Kdvmp : Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (xi t : ℝ)
     (hK : ∀ x xi' t', Kdvcs x xi' t' = Kdvmp x xi' t') :

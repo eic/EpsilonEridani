@@ -28,7 +28,7 @@ namespace QFT
 namespace QCD
 namespace Renormalization
 
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization
 
 /-- Minimal renormalization constants used in gauge-theory bookkeeping. -/
 structure RenormalizationConstants : Type where
@@ -45,6 +45,7 @@ structure RenormalizationConstants : Type where
   /-- Ghost-field renormalization constant. -/
   z3c : LaurentExpansionAtZero
 
+
 /-- Extract the `1/ε` coefficient from a Laurent expansion.
 
 This is the concrete pole-extraction seam used by the renormalization layer.
@@ -52,7 +53,7 @@ Later dimensional-regularization modules will supply actual Laurent expansions
 for loop integrals and counterterms.
 -/
 def poleCoeff (x : LaurentExpansionAtZero) : ℝ :=
-  Physlib.QFT.PerturbationTheory.DimensionalRegularization.poleCoeff x
+  EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.poleCoeff x
 
 /-- Slavnov-Taylor identities for the coupling renormalization constant, at the level of
 simple poles.
