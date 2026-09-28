@@ -45,6 +45,9 @@ def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
 
 /-- The lowered gamma matrices in the Dirac representation. -/
 @[simp]
+def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
+
+@[simp]
 def γDown (μ : Fin 4) : Matrix (Fin 4) (Fin 4) ℂ :=
   ((minkowskiMatrix ((@finSumFinEquiv 1 3).symm μ)
     ((@finSumFinEquiv 1 3).symm μ) : ℝ) : ℂ) • γ μ

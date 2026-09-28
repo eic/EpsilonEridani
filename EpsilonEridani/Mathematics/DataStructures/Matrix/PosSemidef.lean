@@ -50,18 +50,21 @@ for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
 namespace Matrix
 
 open scoped BigOperators
+/- NOTE: The lemmas in this file currently require `[Fintype n]`/decidability assumptions that are not reflected in their statement types under the pinned Mathlib definition of `Matrix.PosSemidef`, which triggers the unused* linters.
+   Please delete these suppressions once the Mathlib pin is updated or after upstreaming/rewriting the statements so the assumptions appear in the types. -/
+set_option linter.unusedSectionVars false
+set_option linter.unusedDecidableInType false
+set_option linter.unusedFintypeInType false
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The test vector `e i + ε • e j`: it takes the value `1` at `i`, the value `ε` at `j`, and
 `0` elsewhere. For `i = j` it degenerates to `(1 + ε) • e i`, which is harmless: every lemma
 below holds without an `i ≠ j` hypothesis. -/
-@[nolint unusedDecidableInType unusedFintypeInType]
 def psdTestVector {R : Type*} [Semiring R] (i j : n) (ε : R) : n → R :=
   fun k => (if k = i then 1 else 0) + ε * (if k = j then 1 else 0)
 
 /-- Contracting a function `g` against the test vector on the right picks out `g i + ε * g j`. -/
-@[nolint unusedDecidableInType unusedFintypeInType]
 lemma sum_mul_psdTestVector (g : n → ℝ) (i j : n) (ε : ℝ) :
     ∑ l, g l * psdTestVector i j ε l = g i + ε * g j := by
   have hterm : ∀ l : n, g l * psdTestVector i j ε l
@@ -77,7 +80,6 @@ lemma sum_mul_psdTestVector (g : n → ℝ) (i j : n) (ε : ℝ) :
     _ = g i + ε * g j := by simp
 
 /-- Contracting a function `g` against the test vector on the left picks out `g i + ε * g j`. -/
-@[nolint unusedDecidableInType unusedFintypeInType]
 lemma sum_psdTestVector_mul (g : n → ℝ) (i j : n) (ε : ℝ) :
     ∑ l, psdTestVector i j ε l * g l = g i + ε * g j := by
   calc ∑ l, psdTestVector i j ε l * g l = ∑ l, g l * psdTestVector i j ε l :=
@@ -85,7 +87,6 @@ lemma sum_psdTestVector_mul (g : n → ℝ) (i j : n) (ε : ℝ) :
     _ = g i + ε * g j := sum_mul_psdTestVector g i j ε
 
 /-- The quadratic form of a real positive-semidefinite matrix, written as an iterated sum. -/
-@[nolint unusedDecidableInType unusedFintypeInType]
 lemma PosSemidef.quadraticForm_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) (w : n → ℝ) :
     0 ≤ ∑ k, w k * ∑ l, M k l * w l := by
   -- At this pin, `Matrix.PosSemidef` is defined via `Finsupp.sum` over `n →₀ ℝ` (not a plain
@@ -97,7 +98,6 @@ lemma PosSemidef.quadraticForm_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) (
 
 /-- Nonnegativity of the quadratic form of a real positive-semidefinite matrix on the test
 vector `e i + ε • e j`, expanded as a quadratic polynomial in `ε`. -/
-@[nolint unusedDecidableInType unusedFintypeInType]
 lemma PosSemidef.quadraticForm_psdTestVector {M : Matrix n n ℝ} (hM : M.PosSemidef)
     (i j : n) (ε : ℝ) :
     0 ≤ M i i + ε * (M i j + M j i) + ε ^ 2 * M j j := by
@@ -118,7 +118,6 @@ lemma PosSemidef.quadraticForm_psdTestVector {M : Matrix n n ℝ} (hM : M.PosSem
   exact h
 
 /-- The diagonal entries of a real positive-semidefinite matrix are nonnegative. -/
-@[nolint unusedDecidableInType unusedFintypeInType]
 lemma PosSemidef.apply_self_nonneg {M : Matrix n n ℝ} (hM : M.PosSemidef) (i : n) :
     0 ≤ M i i := by
   linarith [hM.quadraticForm_psdTestVector i i 0]
@@ -129,7 +128,6 @@ row and column. Equivalently: the principal `2 × 2` minor on `{i, j}` is nonneg
 arithmetic-mean rather than the geometric-mean form.
 
 Stated multiplied out, without a division, so that it applies with no field side conditions. -/
-@[nolint unusedDecidableInType unusedFintypeInType]
 lemma PosSemidef.two_mul_abs_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
     2 * |M i j| ≤ M i i + M j j := by
   have hsymm : M j i = M i j := by
