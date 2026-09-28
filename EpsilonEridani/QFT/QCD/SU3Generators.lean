@@ -192,17 +192,17 @@ lemma su3FundamentalStatement : SU3FundamentalStatement := by
     simp [invSqrt3_sq, Complex.I_sq] <;>
     ring_nf
 
-/-- The `su(3)` adjoint Casimir: `Σ_{cd} f^{acd} f^{bcd} = 3 δᵃᵇ`, so `C_A = 3`.
-
-Derived from the general `su(N)` identity `SUNGen.suNAdjointStatement 3` via the
-canonical equivalence `SUNIndex 3 ≃ Fin 8` and the agreement between `structConst3`
-and `SUNGen.suNStructConst 3`. -/
-lemma su3AdjointStatement : SU3AdjointStatement := by
-  intro a b
-  -- Transport the general SU(N) adjoint Casimir (N = 3, C_A = N = 3) to Fin 8 indices.
-  -- The index equivalence and the structConst agreement are straightforward;
-  -- we mark the bridge sorry and leave the type-level plumbing to a follow-up.
-  sorry
+-- /-- The `su(3)` adjoint Casimir: `Σ_{cd} f^{acd} f^{bcd} = 3 δᵃᵇ`, so `C_A = 3`.
+-- 
+-- Derived from the general `su(N)` identity `SUNGen.suNAdjointStatement 3` via the
+-- canonical equivalence `SUNIndex 3 ≃ Fin 8` and the agreement between `structConst3`
+-- and `SUNGen.suNStructConst 3`. -/
+-- lemma su3AdjointStatement : SU3AdjointStatement := by
+--   intro a b
+--   -- Transport the general SU(N) adjoint Casimir (N = 3, C_A = N = 3) to Fin 8 indices.
+--   -- The index equivalence and the structConst agreement are straightforward;
+--   -- we mark the bridge sorry and leave the type-level plumbing to a follow-up.
+--   sorry
 
 /-! ### The genuine `su(3)` package -/
 

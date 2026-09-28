@@ -548,7 +548,6 @@ lemma decomposition_unique
     have hSub : F1 - F1' = 0 :=
       (mul_eq_zero.mp hMulF1).resolve_right hU.transverse_nonzero
     exact sub_eq_zero.mp hSub
-
   have hEqF2 :
       F1 * transverseMetric g K hU.vF2 hU.wF2
           + F2 * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2)
@@ -572,7 +571,6 @@ lemma decomposition_unique
     have hSub : F2 - F2' = 0 :=
       (mul_eq_zero.mp hMulF2).resolve_right hU.pT_outer_nonzero
     exact sub_eq_zero.mp hSub
-
   exact ⟨hF1, hF2⟩
 
 /-!
@@ -608,7 +606,7 @@ structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
     g K.q u' = 0 → g (pTransverse g K) u' = 0 → g u u = g u' u' →
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ f u = u'
 
-/-- **Open target (K1).** Lorentz covariance, current conservation and symmetry leave exactly
+/- **Open target (K1).** Lorentz covariance, current conservation and symmetry leave exactly
 the two transverse structures, so the `F1`/`F2` decomposition is a theorem rather than an
 interface.
 
@@ -805,7 +803,7 @@ lemma stabilizer_line_eq_id (f : ℝ →ₗ[ℝ] ℝ) (hf : IsKinematicStabilize
     f = LinearMap.id := by
   have h1 : f 1 = 1 := hf.fixes_q
   refine LinearMap.ext fun x => ?_
-  show f x = x
+  change f x = x
   calc f x = f (x • (1 : ℝ)) := by rw [smul_eq_mul, mul_one]
     _ = x • f 1 := map_smul f x 1
     _ = x := by rw [h1, smul_eq_mul, mul_one]

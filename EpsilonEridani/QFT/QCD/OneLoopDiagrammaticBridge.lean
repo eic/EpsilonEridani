@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation
 public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TopologyEnumeration
 /-!

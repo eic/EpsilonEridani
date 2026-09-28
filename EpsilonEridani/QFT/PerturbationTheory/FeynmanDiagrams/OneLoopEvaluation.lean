@@ -5,8 +5,10 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
+public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 
 # One-Loop Self-Energy Evaluation

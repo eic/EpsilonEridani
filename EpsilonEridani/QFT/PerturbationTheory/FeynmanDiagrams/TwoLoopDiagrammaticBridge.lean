@@ -5,7 +5,8 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+import Mathlib.Data.Finset.Basic
 /-!
 
 # Two-Loop Diagrammatic Bridge

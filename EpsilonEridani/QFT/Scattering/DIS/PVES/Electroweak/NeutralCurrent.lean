@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 /-!
 
 # PVES Neutral-Current Contracts

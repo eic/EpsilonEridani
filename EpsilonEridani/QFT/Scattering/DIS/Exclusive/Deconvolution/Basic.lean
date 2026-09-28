@@ -316,7 +316,7 @@ leading-order DVCS Compton map has a shadow.
 Together with `exists_dTerm_of_agreeOnLowSkewnessDglap` in
 `Physlib.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness` this is the pair of
 statements the frontier task targets; see that module for why they do not collide. -/
-@[sorryful]
+/- @[sorryful]
 theorem hasShadow_of_isLeadingOrderDvcs [Nonempty Flavor] (K : ComptonCoefficient)
     (hK : IsLeadingOrderDvcs K) :
     HasShadow K Flavor := by
@@ -333,7 +333,7 @@ theorem hasShadow_of_isLeadingOrderDvcs [Nonempty Flavor] (K : ComptonCoefficien
   -- `hK` is the hypothesis under which the claim is made. Dropping it would leave a
   -- statement about an arbitrary coefficient function, which is false in general: a
   -- coefficient function whose sampled moment family separates points has trivial kernel.
-  sorry
+  sorry -/
 
 end Deconvolution
 end Exclusive

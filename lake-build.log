@@ -1,0 +1,982 @@
+✔ [9/59] Built ImportGraph.Lean.Environment (1.2s)
+✔ [10/62] Built Batteries.Lean.Position (1.4s)
+✔ [11/62] Built Batteries.Lean.Meta.Inaccessible (1.4s)
+✔ [12/62] Built ImportGraph.Imports.ImportGraph (1.4s)
+✔ [13/63] Built Batteries.Tactic.Unreachable (1.8s)
+✔ [14/65] Built Batteries.Util.LibraryNote (1.8s)
+✔ [15/68] Built Batteries.Lean.Syntax (1.0s)
+✔ [16/82] Built ImportGraph.Graph.TransitiveClosure (1.1s)
+✔ [17/83] Built ImportGraph.Imports.Redundant (1.3s)
+✔ [18/83] Built Batteries.Tactic.Lint.Basic (3.2s)
+✔ [19/85] Built ImportGraph.Imports.RequiredModules (2.0s)
+✔ [20/85] Built Mathlib.Tactic.Linter.DirectoryDependency (3.6s)
+✔ [21/86] Built ImportGraph.Tools.RedundantImports (1.6s)
+✔ [22/86] Built ImportGraph.Tools.ImportDiff (2.8s)
+✔ [23/86] Built Batteries.Tactic.OpenPrivate (2.8s)
+✔ [24/86] Built Batteries.Tactic.Lint.TypeClass (1.9s)
+✔ [25/86] Built Batteries.CodeAction.Deprecated (3.1s)
+✔ [26/86] Built ImportGraph.Tools.MinImports (1.9s)
+✔ [27/87] Built Batteries.Tactic.Lint.Misc (2.0s)
+✔ [28/89] Built Batteries.Tactic.HelpCmd (5.5s)
+✔ [29/94] Built ImportGraph.Tools.FindHome (2.9s)
+✔ [30/94] Built Batteries.Util.ExtendedBinder (2.8s)
+✔ [31/104] Built Batteries.Tactic.Lint.Frontend (5.5s)
+✔ [32/118] Built ImportGraph.Tools (1.7s)
+✔ [33/128] Built Batteries.Tactic.Lint.Simp (4.2s)
+✔ [34/128] Built Batteries.Lean.NameMapAttribute (2.4s)
+✔ [35/132] Built Mathlib.Tactic.Linter.Header (4.8s)
+✖ [36/132] Building Batteries.Tactic.Alias (5.4s)
+trace: .> LEAN_PATH=/opt/lake/builds/packages/MD4Lean/.lake/build/lib/lean:/opt/lake/builds/packages/BibtexQuery/.lake/build/lib/lean:/opt/lake/builds/packages/UnicodeBasic/.lake/build/lib/lean:/opt/lake/builds/packages/leansqlite/.lake/build/lib/lean:/opt/lake/builds/packages/Cli/.lake/build/lib/lean:/opt/lake/builds/packages/doc-gen4/.lake/build/lib/lean:/opt/lake/builds/packages/batteries/.lake/build/lib/lean:/opt/lake/builds/packages/Qq/.lake/build/lib/lean:/opt/lake/builds/packages/aesop/.lake/build/lib/lean:/opt/lake/builds/packages/proofwidgets/.lake/build/lib/lean:/opt/lake/builds/packages/importGraph/.lake/build/lib/lean:/opt/lake/builds/packages/LeanSearchClient/.lake/build/lib/lean:/opt/lake/builds/packages/plausible/.lake/build/lib/lean:/opt/lake/builds/packages/Physlib/.lake/build/lib/lean:/opt/lake/builds/packages/TauCeti/.lake/build/lib/lean:/opt/lake/builds/packages/mathlib/.lake/build/lib/lean:/home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/.lake/build/lib/lean /opt/software/linux-skylake/lean4-4.33.1-hq3raetbmuyemcnjwe4r5knfhx2fiqsk/bin/lean /opt/lake/builds/packages/batteries/Batteries/Tactic/Alias.lean -o /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Tactic/Alias.olean -i /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Tactic/Alias.ilean -c /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Tactic/Alias.c --setup /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Tactic/Alias.setup.json --json
+error: Batteries/Tactic/Alias.lean:117:57: unexpected token '$'; expected ')'
+error: Batteries/Tactic/Alias.lean:118:29: unexpected token '$'; expected '#guard_msgs', '(', '_', 'abbrev', 'axiom', 'binder_predicate', 'builtin_cbv_simproc', 'builtin_cbv_simproc_decl', 'builtin_dsimproc', 'builtin_dsimproc_decl', 'builtin_grind_propagator', 'builtin_initialize', 'builtin_simproc', 'builtin_simproc_decl', 'cbv_simproc', 'cbv_simproc_decl', 'class', 'coinductive', 'declare_simp_like_tactic', 'declare_syntax_cat', 'def', 'dsimproc', 'dsimproc_decl', 'elab', 'elab_rules', 'example', 'grind_pattern', 'grind_propagator', 'inductive', 'infix', 'infixl', 'infixr', 'initialize', 'instance', 'macro', 'macro_rules', 'notation', 'opaque', 'postfix', 'prefix', 'recommended_spelling', 'register_builtin_option', 'register_error_explanation', 'register_option', 'register_tactic_tag', 'register_try?_tactic', 'simproc', 'simproc_decl', 'structure', 'syntax', 'tactic_extension', 'theorem', 'unif_hint' or identifier
+error: Batteries/Tactic/Alias.lean:122:45: unexpected token '$'; expected '#guard_msgs', '(', '_', 'abbrev', 'axiom', 'binder_predicate', 'builtin_cbv_simproc', 'builtin_cbv_simproc_decl', 'builtin_dsimproc', 'builtin_dsimproc_decl', 'builtin_grind_propagator', 'builtin_initialize', 'builtin_simproc', 'builtin_simproc_decl', 'cbv_simproc', 'cbv_simproc_decl', 'class', 'coinductive', 'declare_simp_like_tactic', 'declare_syntax_cat', 'def', 'dsimproc', 'dsimproc_decl', 'elab', 'elab_rules', 'example', 'grind_pattern', 'grind_propagator', 'inductive', 'infix', 'infixl', 'infixr', 'initialize', 'instance', 'macro', 'macro_rules', 'notation', 'opaque', 'postfix', 'prefix', 'recommended_spelling', 'register_builtin_option', 'register_error_explanation', 'register_option', 'register_tactic_tag', 'register_try?_tactic', 'simproc', 'simproc_decl', 'structure', 'syntax', 'tactic_extension', 'theorem', 'unif_hint' or identifier
+error: Lean exited with code 1
+✔ [37/132] Built Batteries.Tactic.Lint (2.0s)
+✔ [38/132] Built Batteries.Lean.Expr (2.1s)
+✔ [39/132] Built Batteries.Tactic.Init (3.0s)
+✔ [40/132] Built Batteries.Linter.UnreachableTactic (2.9s)
+✔ [41/132] Built Mathlib.Tactic.TypeStar (1.7s)
+✔ [42/132] Built Mathlib.Util.CodeActions.BinderPlicity (1.0s)
+✔ [43/132] Built Mathlib.Tactic.MinImports (3.6s)
+✔ [44/132] Built Batteries.Tactic.Trans (6.2s)
+✔ [45/132] Built Mathlib.Util.ParseCommand (1.0s)
+✔ [46/132] Built Mathlib.Lean.Elab.Tactic.Meta (1.9s)
+✔ [47/132] Built Mathlib.Tactic.DeclarationNames (1.8s)
+✔ [48/132] Built Mathlib.Lean.Environment (1.8s)
+✔ [49/132] Built Mathlib.Tactic.Linter.PrivateModule (2.1s)
+✔ [50/132] Built Mathlib.Tactic.Linter.TacticDocumentation (2.2s)
+✔ [51/132] Built Mathlib.Tactic.Linter.UnusedTacticExtension (2.3s)
+✔ [52/132] Built Mathlib.Tactic.Linter.Whitespace (3.6s)
+✔ [53/132] Built Batteries.Util.ProofWanted (9.8s)
+✔ [54/132] Built Mathlib.Tactic.Linter.OldObtain (2.0s)
+✔ [55/132] Built Mathlib.Tactic.Linter.InternalConstructor (2.2s)
+✔ [56/132] Built Mathlib.Tactic.Linter.Multigoal (2.9s)
+✔ [57/132] Built Mathlib.Tactic.Linter.HaveILetI (2.9s)
+✔ [58/132] Built Mathlib.Tactic.Linter.GlobalAttributeIn (2.5s)
+✔ [59/132] Built Mathlib.Lean.Expr.Basic (4.4s)
+✔ [60/132] Built Mathlib.Tactic.Linter.HashCommandLinter (3.3s)
+✔ [61/132] Built Mathlib.Tactic.Linter.EmptyLine (2.9s)
+✔ [62/136] Built Mathlib.Tactic.Lemma (2.2s)
+✔ [64/136] Built Mathlib.Tactic.Linter.AuxLemma (2.4s)
+✔ [65/136] Built Mathlib.Lean.Linter (2.1s)
+✔ [66/136] Built Mathlib.Tactic.Linter.DeprecatedSyntaxLinter (3.6s)
+✔ [67/136] Built Mathlib.Tactic.Linter.DocString (4.3s)
+✔ [68/136] Built Mathlib.Tactic.AdaptationNote (2.0s)
+✔ [69/136] Built Mathlib.Tactic.Linter.DocPrime (4.1s)
+✔ [70/136] Built Mathlib.Tactic.Linter.FlexibleLinter (7.3s)
+✔ [71/147] Built Mathlib.Util.CodeActions (2.0s)
+✔ [72/147] Built Mathlib.Lean.ContextInfo (2.4s)
+✔ [73/159] Built Mathlib.Lean.Elab.InfoTree (2.2s)
+✔ [74/159] Built Mathlib.Tactic.ExtractGoal (3.5s)
+✔ [75/159] Built Batteries.Lean.Except (1.7s)
+✔ [77/159] Built Mathlib.Tactic.Linter.Lint (2.6s)
+✔ [78/160] Built Mathlib.Tactic.Linter.UnusedTactic (3.2s)
+✔ [79/165] Built Aesop.Script.Tactic (1.5s)
+✔ [80/166] Built Aesop.Script.GoalWithMVars (1.5s)
+✔ [81/166] Built Batteries.Tactic.Congr (3.6s)
+✔ [82/168] Built Batteries.Lean.Meta.Basic (2.2s)
+✔ [83/168] Built Aesop.Nanos (2.2s)
+✔ [84/174] Built Mathlib.Tactic.Linter.Style (5.9s)
+✔ [85/174] Built Aesop.Index.DiscrTreeConfig (1.8s)
+✔ [86/177] Built Mathlib.Tactic.TacticAnalysis (4.0s)
+✔ [87/177] Built Mathlib.Tactic.Linter.UnusedInstancesInType (3.8s)
+✔ [88/178] Built Batteries.Tactic.PermuteGoals (2.2s)
+✔ [89/178] Built Aesop.Script.TacticState (2.1s)
+✔ [90/179] Built Batteries.Lean.MonadBacktrack (1.4s)
+✔ [91/179] Built Aesop.Check (1.9s)
+✔ [92/188] Built Batteries.Lean.Meta.SavedState (1.5s)
+✔ [93/189] Built Batteries.Data.Array.Merge (4.6s)
+✔ [94/189] Built Aesop.Rule.Name (2.4s)
+✔ [95/189] Built Aesop.Options.Public (2.5s)
+✔ [96/189] Built Aesop.Forward.PremiseIndex (1.4s)
+✔ [97/195] Built Aesop.Script.OptimizeSyntax (2.4s)
+✔ [98/196] Built Aesop.Forward.LevelIndex (1.0s)
+✔ [99/206] Built Aesop.Percent (1.4s)
+✔ [100/209] Built Aesop.Util.UnorderedArraySet (2.1s)
+✔ [101/213] Built Aesop.Options.Internal (1.3s)
+✔ [102/213] Built Aesop.Forward.SlotIndex (1.7s)
+✔ [103/215] Built Aesop.Util.UnionFind (1.7s)
+✔ [104/215] Built Batteries.Lean.TagAttribute (1.5s)
+✔ [105/218] Built Mathlib.Tactic.Linter.OverlappingInstances (5.6s)
+✔ [106/222] Built Batteries.Tactic.SeqFocus (2.3s)
+✔ [107/225] Built Aesop.RuleTac.RuleTerm (1.8s)
+✔ [108/231] Built Aesop.ElabM (1.7s)
+✔ [109/231] Built Aesop.Util.Tactic (1.4s)
+✔ [110/232] Built Aesop.Util.EqualUpToIds (8.7s)
+✔ [111/236] Built Batteries.Lean.AttributeExtra (2.4s)
+✔ [112/236] Built Aesop.Constants (1.3s)
+✔ [113/236] Built Mathlib.Tactic.TacticAnalysis.Declarations (8.0s)
+✔ [114/237] Built Batteries.Lean.Meta.UnusedNames (1.9s)
+✔ [115/239] Built Aesop.Util.Unfold (2.7s)
+✔ [116/239] Built Aesop.Util.OrderedHashSet (1.4s)
+✔ [117/240] Built Aesop.RuleTac.ElabRuleTerm (2.2s)
+✔ [118/244] Built Batteries.Lean.Meta.Expr (1.1s)
+✔ [119/247] Built Batteries.Lean.PersistentHashMap (1.3s)
+✔ [120/252] Built Batteries.Lean.Meta.InstantiateMVars (1.3s)
+✔ [121/262] Built Batteries.Lean.PersistentHashSet (1.4s)
+✔ [122/263] Built Aesop.Util.Basic (6.4s)
+✔ [123/263] Built Aesop.RuleSet.Name (1.6s)
+✔ [124/263] Built Batteries.Lean.Meta.DiscrTree (1.5s)
+✔ [125/265] Built Mathlib.Init (2.6s)
+✔ [126/265] Built Aesop.Util.Tactic.Unfold (2.4s)
+✔ [127/265] Built Batteries.Lean.HashSet (1.3s)
+✔ [128/267] Built Batteries.Linter.UnnecessarySeqFocus (4.0s)
+✔ [129/267] Built Aesop.Search.Expansion.Simp (1.9s)
+✔ [130/267] Built Aesop.RuleTac.Forward.Basic (2.1s)
+✔ [131/267] Built Aesop.Script.Util (1.9s)
+✔ [132/267] Built Aesop.RuleSet.Filter (1.6s)
+✔ [133/267] Built Aesop.EMap (2.7s)
+✔ [134/267] Built Aesop.Script.CtorNames (2.6s)
+✔ [135/267] Built Mathlib.Data.Option.Defs (2.0s)
+✔ [136/267] Built Aesop.Forward.Substitution (3.4s)
+✔ [137/267] Built Aesop.Tracing (3.2s)
+✔ [138/267] Built Mathlib.Control.Lawful (1.8s)
+✔ [139/267] Built Mathlib.Control.Combinators (2.2s)
+✔ [140/267] Built Mathlib.Data.Nat.Notation (1.9s)
+✔ [141/267] Built Mathlib.Tactic.Relation.Rfl (2.6s)
+✔ [142/267] Built Mathlib.Util.WithWeakNamespace (2.1s)
+✖ [143/267] Building Mathlib.Data.Nat.BinaryRec (2.0s)
+trace: .> LEAN_PATH=/opt/lake/builds/packages/MD4Lean/.lake/build/lib/lean:/opt/lake/builds/packages/BibtexQuery/.lake/build/lib/lean:/opt/lake/builds/packages/UnicodeBasic/.lake/build/lib/lean:/opt/lake/builds/packages/leansqlite/.lake/build/lib/lean:/opt/lake/builds/packages/Cli/.lake/build/lib/lean:/opt/lake/builds/packages/doc-gen4/.lake/build/lib/lean:/opt/lake/builds/packages/batteries/.lake/build/lib/lean:/opt/lake/builds/packages/Qq/.lake/build/lib/lean:/opt/lake/builds/packages/aesop/.lake/build/lib/lean:/opt/lake/builds/packages/proofwidgets/.lake/build/lib/lean:/opt/lake/builds/packages/importGraph/.lake/build/lib/lean:/opt/lake/builds/packages/LeanSearchClient/.lake/build/lib/lean:/opt/lake/builds/packages/plausible/.lake/build/lib/lean:/opt/lake/builds/packages/Physlib/.lake/build/lib/lean:/opt/lake/builds/packages/TauCeti/.lake/build/lib/lean:/opt/lake/builds/packages/mathlib/.lake/build/lib/lean:/home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/.lake/build/lib/lean /opt/software/linux-skylake/lean4-4.33.1-hq3raetbmuyemcnjwe4r5knfhx2fiqsk/bin/lean /opt/lake/builds/packages/mathlib/Mathlib/Data/Nat/BinaryRec.lean -o /opt/lake/builds/packages/mathlib/.lake/build/lib/lean/Mathlib/Data/Nat/BinaryRec.olean -i /opt/lake/builds/packages/mathlib/.lake/build/lib/lean/Mathlib/Data/Nat/BinaryRec.ilean -c /opt/lake/builds/packages/mathlib/.lake/build/ir/Mathlib/Data/Nat/BinaryRec.c --setup /opt/lake/builds/packages/mathlib/.lake/build/ir/Mathlib/Data/Nat/BinaryRec.setup.json --json
+error: Mathlib/Data/Nat/BinaryRec.lean:99:14: Unknown identifier `ite_eq_right`
+error: Mathlib/Data/Nat/BinaryRec.lean:99:31: Unknown identifier `ite_eq_right`
+error: Mathlib/Data/Nat/BinaryRec.lean:99:2: Type mismatch: After simplification, term
+  lt_succ_self ?m.127
+ has type
+  ?m.127 < succ ?m.127
+but is expected to have type
+  (if (n + 1 + 1) >>> 1 = 0 then 0 else ((n + 1 + 1) >>> 1).log2.succ) <
+    if n + 1 + 1 = 0 then 0 else ((n + 1 + 1) >>> 1).log2.succ.succ
+error: Mathlib/Data/Nat/BinaryRec.lean:87:28: failed to set reducibility status, `binaryRec` is not a definition
+
+Note: Use `set_option allowUnsafeReducibility true` to override reducibility status validation
+error: Mathlib/Data/Nat/BinaryRec.lean:158:0: Not a definitional equality: the left-hand side
+  binaryRec zero bit 0
+is not definitionally equal to the right-hand side
+  zero
+error: Mathlib/Data/Nat/BinaryRec.lean:160:35: Type mismatch
+  rfl
+has type
+  ?m.14 = ?m.14
+but is expected to have type
+  binaryRec zero bit 0 = zero
+error: Mathlib/Data/Nat/BinaryRec.lean:162:0: Not a definitional equality: the left-hand side
+  binaryRec zero bit 1
+is not definitionally equal to the right-hand side
+  bit true 0 zero
+error: Mathlib/Data/Nat/BinaryRec.lean:164:65: Type mismatch
+  rfl
+has type
+  ?m.11 = ?m.11
+but is expected to have type
+  binaryRec zero bit 1 = bit true 0 zero
+error: Mathlib/Data/Nat/BinaryRec.lean:173:11: Tactic `unfold` failed to unfold `binaryRec` in
+  binaryRec zero bit (Nat.bit false 0) = bit false 0 (binaryRec zero bit 0)
+error: Mathlib/Data/Nat/BinaryRec.lean:176:8: Invalid rewrite argument: Expected an equality or iff proof or definition name, but `?m.72` is a value of type
+  ?m.71
+error: Mathlib/Data/Nat/BinaryRec.lean:176:8: failed to elaborate eliminator, expected type is not available
+error: Mathlib/Data/Nat/BinaryRec.lean:190:33: Unknown identifier `dite_eq_left`
+error: Mathlib/Data/Nat/BinaryRec.lean:189:76: unsolved goals
+motive : Nat → Sort u
+zero : motive 0
+bit : (b : Bool) → (n : Nat) → (n = 0 → b = true) → motive n → motive (Nat.bit b n)
+⊢ (if h : 0 = 0 → true = true then bit true 0 h zero
+    else
+      have this := ⋯;
+      ⋯ ▸ zero) =
+    bit true 0 binaryRec'_one._proof_1 zero
+error: Mathlib/Data/Nat/BinaryRec.lean:196:46: Unknown identifier `dite_eq_left`
+error: Mathlib/Data/Nat/BinaryRec.lean:195:73: unsolved goals
+motive : Nat → Sort u
+zero : motive 0
+bit : (b : Bool) → (n : Nat) → (n = 0 → b = true) → motive n → motive (Nat.bit b n)
+b : Bool
+n : Nat
+h : n = 0 → b = true
+⊢ (if h : n = 0 → b = true then
+      bit b n h
+        (binaryRec zero
+          (fun b n ih ↦
+            if h : n = 0 → b = true then bit b n h ih
+            else
+              have this := ⋯;
+              ⋯ ▸ zero)
+          n)
+    else
+      have this := ⋯;
+      ⋯ ▸ zero) =
+    bit b n h (binaryRec' zero bit n)
+error: Mathlib/Data/Nat/BinaryRec.lean:206:40: Unknown identifier `dite_eq_left`
+error: Mathlib/Data/Nat/BinaryRec.lean:205:45: unsolved goals
+motive : Nat → Sort u
+zero : motive 0
+one : motive 1
+bit : (b : Bool) → (n : Nat) → n ≠ 0 → motive n → motive (Nat.bit b n)
+⊢ (if h' : 0 = 0 then
+      have this := ⋯;
+      ⋯ ▸ one
+    else bit true 0 h' zero) =
+    one
+error: Mathlib/Data/Nat/BinaryRec.lean:213:57: Unknown identifier `dite_eq_right`
+error: Mathlib/Data/Nat/BinaryRec.lean:212:53: unsolved goals
+motive : Nat → Sort u
+zero : motive 0
+one : motive 1
+bit : (b : Bool) → (n : Nat) → n ≠ 0 → motive n → motive (Nat.bit b n)
+b : Bool
+n : Nat
+h : n ≠ 0
+⊢ (if h' : n = 0 then
+      have this := ⋯;
+      ⋯ ▸ one
+    else
+      bit b n h'
+        (binaryRec' zero
+          (fun b n h ih ↦
+            if h' : n = 0 then
+              have this := ⋯;
+              ⋯ ▸ one
+            else bit b n h' ih)
+          n)) =
+    bit b n h (binaryRecFromOne zero one bit n)
+error: Lean exited with code 1
+✔ [144/267] Built Mathlib.Lean.Elab.Term (2.6s)
+✔ [145/267] Built Mathlib.Lean.Name (2.8s)
+✔ [146/267] Built Mathlib.Lean.Meta (2.8s)
+✔ [147/267] Built Mathlib.Tactic.SimpRw (3.3s)
+✔ [148/267] Built Mathlib.Tactic.Inhabit (2.5s)
+✔ [149/267] Built Mathlib.Tactic.Core (4.8s)
+✔ [150/267] Built Mathlib.Tactic.ExtendDoc (2.7s)
+✔ [151/267] Built Mathlib.Tactic.Simps.NotationClass (3.6s)
+✔ [152/267] Built Mathlib.Tactic.Use (4.5s)
+✔ [153/267] Built Mathlib.Tactic.Translate.Attributes (2.1s)
+✔ [154/267] Built Mathlib.Tactic.Eqns (2.5s)
+✔ [155/267] Built Mathlib.Data.String.Defs (2.4s)
+✔ [156/267] Built Mathlib.Basic.Nonempty (2.7s)
+✔ [157/267] Built Mathlib.Lean.PrettyPrinter.Delaborator (3.1s)
+✔ [158/268] Built Mathlib.Util.AddRelatedDecl (5.0s)
+✔ [159/268] Built Mathlib.Tactic.Translate.UnfoldBoundary (6.5s)
+✔ [160/269] Built Mathlib.Tactic.Push.Attr (4.2s)
+✔ [161/269] Built Mathlib.Tactic.Attr.Register (3.7s)
+✔ [162/269] Built Mathlib.Basic.IsEmpty.Defs (2.2s)
+✔ [163/269] Built Mathlib.Lean.Meta.Simp (3.5s)
+✔ [164/269] Built Aesop.Exception (1.8s)
+✔ [165/269] Built Batteries.Linter (1.0s)
+✔ [166/269] Built Aesop.RulePattern.Cache (1.0s)
+✔ [167/269] Built Mathlib.Basic.ExistsUnique (3.4s)
+✔ [168/269] Built Mathlib.Tactic.Translate.Reorder (8.0s)
+✔ [169/269] Built Aesop.Index.Basic (1.0s)
+✔ [171/270] Built Aesop.Util.Tactic.Ext (2.9s)
+✔ [172/270] Built Aesop.Stats.Basic (4.2s)
+✔ [173/271] Built Aesop.Script.Step (4.1s)
+✔ [174/271] Built Mathlib.Tactic.Translate.GuessName (3.0s)
+✔ [176/271] Built Mathlib.Tactic.SplitIfs (4.4s)
+✔ [177/271] Built Mathlib.Basic.Nontrivial.Defs (2.9s)
+✔ [178/271] Built Mathlib.Tactic.MkIffOfInductiveProp (5.9s)
+✔ [181/271] Built Batteries.Tactic.Basic (1.8s)
+✔ [184/273] Built Aesop.BaseM (2.0s)
+✔ [186/273] Built Mathlib.Tactic.ScopedNS (7.1s)
+✔ [188/273] Built Aesop.Script.SScript (2.5s)
+✔ [189/273] Built Mathlib.Logic.Function.Defs (3.8s)
+✔ [191/276] Built Aesop.Script.UScript (1.9s)
+✔ [192/276] Built Aesop.Script.ScriptM (2.2s)
+✖ [193/276] Building Batteries.Classes.Order (3.9s)
+trace: .> LEAN_PATH=/opt/lake/builds/packages/MD4Lean/.lake/build/lib/lean:/opt/lake/builds/packages/BibtexQuery/.lake/build/lib/lean:/opt/lake/builds/packages/UnicodeBasic/.lake/build/lib/lean:/opt/lake/builds/packages/leansqlite/.lake/build/lib/lean:/opt/lake/builds/packages/Cli/.lake/build/lib/lean:/opt/lake/builds/packages/doc-gen4/.lake/build/lib/lean:/opt/lake/builds/packages/batteries/.lake/build/lib/lean:/opt/lake/builds/packages/Qq/.lake/build/lib/lean:/opt/lake/builds/packages/aesop/.lake/build/lib/lean:/opt/lake/builds/packages/proofwidgets/.lake/build/lib/lean:/opt/lake/builds/packages/importGraph/.lake/build/lib/lean:/opt/lake/builds/packages/LeanSearchClient/.lake/build/lib/lean:/opt/lake/builds/packages/plausible/.lake/build/lib/lean:/opt/lake/builds/packages/Physlib/.lake/build/lib/lean:/opt/lake/builds/packages/TauCeti/.lake/build/lib/lean:/opt/lake/builds/packages/mathlib/.lake/build/lib/lean:/home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/.lake/build/lib/lean /opt/software/linux-skylake/lean4-4.33.1-hq3raetbmuyemcnjwe4r5knfhx2fiqsk/bin/lean /opt/lake/builds/packages/batteries/Batteries/Classes/Order.lean -o /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Classes/Order.olean -i /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Classes/Order.ilean -c /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Classes/Order.c --setup /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Classes/Order.setup.json --json
+error: Batteries/Classes/Order.lean:167:51: Unknown identifier `ite_eq_right`
+error: Batteries/Classes/Order.lean:167:22: unsolved goals
+α : Type u_1
+inst✝² : LT α
+inst✝¹ : DecidableLT α
+inst✝ : DecidableEq α
+lt_irrefl : ∀ (x : α), ¬x < x
+x : α
+⊢ ¬x < x
+error: Lean exited with code 1
+✔ [194/276] Built Mathlib.Lean.Meta.CongrTheorems (6.7s)
+✔ [196/277] Built Aesop.RuleTac.GoalDiff (5.4s)
+✔ [198/277] Built Aesop.Script.Check (4.1s)
+✔ [199/277] Built Mathlib.Logic.Relator (5.8s)
+✔ [202/284] Built Batteries.Control.ForInStep.Basic (2.6s)
+✔ [204/293] Built Aesop.RulePattern (8.8s)
+✔ [206/294] Built Mathlib.Tactic.SetNotationForOrder (10s)
+✔ [209/295] Built Aesop.Script.UScriptToSScript (6.2s)
+✔ [212/295] Built Aesop.Stats.File (3.2s)
+✔ [216/297] Built Aesop.RuleTac.Basic (4.6s)
+✔ [219/297] Built Aesop.Stats.Extension (4.0s)
+✔ [220/297] Built Aesop.Search.Expansion.Basic (2.8s)
+✔ [222/297] Built Aesop.Frontend.Basic (2.9s)
+✔ [223/300] Built Mathlib.Tactic.Simps.Basic (21s)
+✔ [236/317] Built Aesop.Index.RulePattern (7.7s)
+✔ [237/319] Built Aesop.Script.StructureDynamic (9.1s)
+✔ [239/321] Built Aesop.RuleTac.Tactic (3.9s)
+✔ [240/322] Built Aesop.Script.StructureStatic (7.1s)
+✔ [241/322] Built Aesop.Script.SpecificTactics (12s)
+✔ [242/325] Built Mathlib.Tactic.Simps (4.3s)
+✔ [251/325] Built Aesop.Stats.Report (4.0s)
+✔ [252/325] Built Mathlib.Util.AtLocation (3.8s)
+✔ [253/325] Built Mathlib.Tactic.Coe (3.5s)
+✔ [257/325] Built Aesop.Script.Main (3.3s)
+✔ [269/329] Built Aesop.RuleTac.Apply (3.4s)
+✔ [283/331] Built Aesop.RuleTac.Cases (3.8s)
+✔ [285/332] Built Aesop.RuleTac.Preprocess (2.4s)
+✔ [309/336] Built Mathlib.Tactic.Conv (8.0s)
+✔ [313/338] Built Qq.ForLean.ReduceEval (2.3s)
+✔ [314/344] Built Qq.ForLean.ToExpr (1.9s)
+✔ [316/348] Built Mathlib.Data.Int.Notation (3.4s)
+✔ [317/351] Built Mathlib.Util.CompileInductive (7.7s)
+✔ [318/357] Built Qq.Typ (2.4s)
+✔ [319/357] Built Qq.ForLean.Do (2.3s)
+✖ [320/357] Building Mathlib.Tactic.Lift (4.7s)
+trace: .> LEAN_PATH=/opt/lake/builds/packages/MD4Lean/.lake/build/lib/lean:/opt/lake/builds/packages/BibtexQuery/.lake/build/lib/lean:/opt/lake/builds/packages/UnicodeBasic/.lake/build/lib/lean:/opt/lake/builds/packages/leansqlite/.lake/build/lib/lean:/opt/lake/builds/packages/Cli/.lake/build/lib/lean:/opt/lake/builds/packages/doc-gen4/.lake/build/lib/lean:/opt/lake/builds/packages/batteries/.lake/build/lib/lean:/opt/lake/builds/packages/Qq/.lake/build/lib/lean:/opt/lake/builds/packages/aesop/.lake/build/lib/lean:/opt/lake/builds/packages/proofwidgets/.lake/build/lib/lean:/opt/lake/builds/packages/importGraph/.lake/build/lib/lean:/opt/lake/builds/packages/LeanSearchClient/.lake/build/lib/lean:/opt/lake/builds/packages/plausible/.lake/build/lib/lean:/opt/lake/builds/packages/Physlib/.lake/build/lib/lean:/opt/lake/builds/packages/TauCeti/.lake/build/lib/lean:/opt/lake/builds/packages/mathlib/.lake/build/lib/lean:/home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/.lake/build/lib/lean /opt/software/linux-skylake/lean4-4.33.1-hq3raetbmuyemcnjwe4r5knfhx2fiqsk/bin/lean /opt/lake/builds/packages/mathlib/Mathlib/Tactic/Lift.lean -o /opt/lake/builds/packages/mathlib/.lake/build/lib/lean/Mathlib/Tactic/Lift.olean -i /opt/lake/builds/packages/mathlib/.lake/build/lib/lean/Mathlib/Tactic/Lift.ilean -c /opt/lake/builds/packages/mathlib/.lake/build/ir/Mathlib/Tactic/Lift.c --setup /opt/lake/builds/packages/mathlib/.lake/build/ir/Mathlib/Tactic/Lift.setup.json --json
+error: Mathlib/Tactic/Lift.lean:57:19: Unknown identifier `dite_eq_left`
+error: Lean exited with code 1
+✔ [321/359] Built Qq.SortLocalDecls (2.3s)
+✔ [322/366] Built Plausible.Attr (1.8s)
+✔ [325/368] Built Plausible.Shrinkable (2.2s)
+✔ [326/369] Built Plausible.Random (2.7s)
+✔ [327/369] Built LeanSearchClient.Basic (1.6s)
+✔ [328/372] Built Batteries.CodeAction.Attr (3.8s)
+✔ [329/372] Built Plausible.Gen (4.7s)
+✔ [330/372] Built Mathlib.Tactic.ApplyCongr (3.3s)
+✔ [331/372] Built Batteries.Tactic.Case (7.8s)
+✔ [332/372] Built Mathlib.Util.Notation3 (35s)
+✔ [334/374] Built Plausible.DeriveShrinkable (7.5s)
+✔ [338/374] Built Batteries.CodeAction.Basic (3.7s)
+✔ [345/378] Built Plausible.Arbitrary (2.3s)
+✔ [346/378] Built Mathlib.Lean.Meta.Basic (3.3s)
+✔ [349/379] Built Mathlib.Tactic.ApplyWith (3.3s)
+✔ [350/380] Built Batteries.Tactic.GeneralizeProofs (12s)
+✔ [352/380] Built LeanSearchClient.Syntax (8.6s)
+✔ [353/381] Built Mathlib.Tactic.PPWithUniv (3.8s)
+✔ [354/382] Built Plausible.ArbitraryFueled (1.5s)
+✔ [355/382] Built Mathlib.Tactic.ApplyAt (3.6s)
+✔ [356/382] Built Batteries.CodeAction.Misc (9.1s)
+✔ [357/382] Built Plausible.Sampleable (3.1s)
+✔ [359/382] Built Mathlib.Tactic.CasesM (5.0s)
+✔ [361/382] Built Mathlib.Tactic.ClearExclamation (2.5s)
+✔ [362/382] Built Mathlib.Tactic.Check (4.6s)
+✔ [363/383] Built Mathlib.Tactic.ClearExcept (2.8s)
+✔ [371/396] Built Mathlib.Tactic.Basic (3.9s)
+✔ [372/399] Built Plausible.Functions (2.8s)
+✔ [374/400] Built LeanSearchClient.LoogleSyntax (5.1s)
+✔ [375/400] Built Mathlib.Tactic.Clear_ (3.2s)
+✔ [376/407] Built Qq.Macro (19s)
+✔ [377/410] Built ProofWidgets.Compat (1.0s)
+✔ [378/410] Built Batteries.Control.Lemmas (1.7s)
+✔ [379/413] Built LeanSearchClient (1.9s)
+✔ [380/413] Built ProofWidgets.Util (3.2s)
+✔ [381/415] Built Mathlib.Tactic.GCongr.ForwardAttr (2.9s)
+✔ [383/419] Built Plausible.DeriveArbitrary (6.8s)
+✔ [386/421] Built Batteries.Control.LawfulMonadState (4.3s)
+✔ [387/422] Built Plausible.Testable (7.5s)
+✔ [388/422] Built ProofWidgets.Component.Basic (3.4s)
+✔ [389/422] Built Qq.Commands (4.7s)
+✔ [390/422] Built Mathlib.Tactic.NthRewrite (3.2s)
+✔ [391/422] Built Mathlib.Tactic.Attr.Core (2.3s)
+✔ [392/429] Built Qq.Delab (4.0s)
+✔ [393/429] Built Batteries.Control.OptionT (2.0s)
+✔ [394/429] Built Plausible.Tactic (3.5s)
+✔ [395/430] Built ProofWidgets.Component.MakeEditLink (3.0s)
+✔ [396/432] Built ProofWidgets.Component.Panel.Basic (3.3s)
+✔ [397/432] Built Mathlib.Lean.FoldEnvironment (3.6s)
+✔ [398/432] Built Qq.MetaM (2.0s)
+✔ [399/432] Built Mathlib.Control.Basic (4.2s)
+✔ [400/432] Built Plausible (2.2s)
+✔ [401/432] Built Batteries.Control.AlternativeMonad (3.0s)
+✔ [402/435] Built Mathlib.Lean.GoalsLocation (3.6s)
+✔ [403/435] Built Mathlib.Lean.Meta.KAbstractPositions (4.7s)
+✔ [404/438] Built Mathlib.Lean.Meta.RefinedDiscrTree.Basic (5.8s)
+✔ [405/438] Built Qq.MatchImpl (3.3s)
+✔ [406/438] Built Qq.Simp (2.1s)
+✔ [407/438] Built Qq.AssertInstancesCommute (5.0s)
+✔ [408/440] Built ProofWidgets.Cancellable (4.1s)
+✔ [409/441] Built Batteries.Data.MLList.Basic (6.0s)
+✔ [410/442] Built ProofWidgets.Data.Html (14s)
+✔ [411/442] Built Mathlib.Tactic.Constructor (2.8s)
+✔ [412/442] Built Mathlib.Tactic.DepRewrite (17s)
+✔ [413/443] Built Mathlib.Lean.Meta.RefinedDiscrTree.Encode (5.9s)
+✔ [415/443] Built Mathlib.Lean.Meta.RefinedDiscrTree.Initialize (6.7s)
+✔ [416/444] Built Batteries.Control.Nondet.Basic (1.8s)
+✔ [417/444] Built Mathlib.Lean.MessageData.Trace (2.3s)
+✔ [418/444] Built ProofWidgets.Component.OfRpcMethod (2.5s)
+✔ [419/445] Built ProofWidgets.Component.RefreshComponent (2.6s)
+✔ [420/445] Built ProofWidgets.Component.FilterDetails (2.1s)
+✔ [421/446] Built Mathlib.Tactic.DSimpPercent (3.1s)
+✔ [422/446] Built Mathlib.Tactic.DefEqTransformations (5.1s)
+✔ [423/448] Built Mathlib.Tactic.Hint (3.2s)
+✔ [424/448] Built Mathlib.Tactic.TermCongr (11s)
+✔ [429/450] Built Mathlib.Lean.Meta.RefinedDiscrTree.Lookup (5.4s)
+✔ [431/450] Built Mathlib.Tactic.ErwQuestion (4.0s)
+✔ [436/452] Built Mathlib.Tactic.ExistsI (2.4s)
+✔ [437/452] Built Batteries.Util.Cache (2.4s)
+✔ [438/454] Built Mathlib.Tactic.CongrM (2.6s)
+✔ [439/460] Built Mathlib.Tactic.FailIfNoProgress (4.1s)
+✔ [440/461] Built Mathlib.Lean.Meta.RefinedDiscrTree (2.2s)
+✔ [443/462] Built Mathlib.Tactic.DefEqAbuse (6.4s)
+✔ [445/463] Built Mathlib.Tactic.FunProp.Mor (3.3s)
+✔ [446/463] Built Mathlib.Tactic.FunProp.Decl (4.3s)
+✔ [447/467] Built Mathlib.Tactic.Find (2.9s)
+✔ [448/467] Built Mathlib.Tactic.InferParam (2.5s)
+✔ [449/467] Built Qq.Match (13s)
+✔ [450/470] Built Mathlib.Tactic.GrindAttrs (2.7s)
+✔ [451/470] Built Mathlib.Tactic.GuardGoalNums (2.5s)
+✔ [452/471] Built Mathlib.Tactic.GuardHypNums (1.8s)
+✔ [453/472] Built Mathlib.Tactic.FunProp.ToBatteries (4.2s)
+✔ [454/473] Built Qq (1.8s)
+✔ [455/473] Built Mathlib.Tactic.Linter.HaveLetLinter (2.6s)
+✔ [456/474] Built Mathlib.Tactic.HigherOrder (3.4s)
+✔ [457/474] Built Mathlib.Util.TermReduce (3.1s)
+✔ [458/475] Built Mathlib.Tactic.Linter.UpstreamableDecl (2.8s)
+✔ [459/475] Built Mathlib.Tactic.Linter.PPRoundtrip (3.3s)
+✔ [460/477] Built Mathlib.Tactic.Linter.MinImports (3.4s)
+✔ [461/479] Built Mathlib.Tactic.Observe (4.0s)
+✔ [462/479] Built Mathlib.Tactic.OfNat (2.3s)
+✔ [463/479] Built Mathlib.Tactic.RSuffices (2.5s)
+✔ [464/483] Built Mathlib.Tactic.Linter (2.5s)
+✔ [465/483] Built Mathlib.Tactic.Rename (2.6s)
+✔ [466/484] Built Mathlib.Tactic.FunProp.FunctionData (4.3s)
+✔ [467/484] Built Mathlib.Tactic.Recover (2.9s)
+✔ [468/485] Built Mathlib.Util.Tactic (2.1s)
+✔ [469/485] Built Mathlib.Tactic.IrreducibleDef (4.8s)
+✔ [470/485] Built Mathlib.Lean.Elab.Tactic.Basic (2.3s)
+✔ [472/487] Built Mathlib.Tactic.Says (4.1s)
+✔ [473/488] Built Mathlib.Tactic.Set (4.4s)
+✔ [474/489] Built Mathlib.Tactic.FunProp.Types (3.9s)
+✔ [475/490] Built Mathlib.Tactic.SimpIntro (4.0s)
+✔ [476/492] Built Mathlib.Tactic.RenameBVar (2.0s)
+✔ [477/492] Built Mathlib.Tactic.Spread (3.0s)
+✔ [480/494] Built Mathlib.Tactic.Substs (2.3s)
+✔ [481/495] Built Mathlib.Tactic.Simproc.ExistsAndEq (5.4s)
+✔ [482/496] Built Mathlib.Tactic.Setm (3.6s)
+✔ [483/496] Built Mathlib.Tactic.SuccessIfFailWithMsg (2.6s)
+✔ [484/500] Built Mathlib.Tactic.SudoSetOption (2.5s)
+✔ [485/505] Built Mathlib.Tactic.SwapVar (2.2s)
+✔ [487/506] Built Mathlib.Tactic.ToLevel (2.1s)
+✔ [488/506] Built Mathlib.Tactic.ToExpr (2.6s)
+✔ [489/519] Built Mathlib.Tactic.Trace (2.1s)
+✔ [490/519] Built Mathlib.Tactic.UnsetOption (1.8s)
+✔ [496/520] Built Mathlib.Tactic.Widget.SelectInsertParamsClass (2.3s)
+✔ [498/523] Built Mathlib.Tactic.FunProp.Theorems (4.0s)
+✔ [502/523] Built Mathlib.Data.Ordering.Basic (2.1s)
+✔ [504/527] Built Mathlib.Util.TransImports (2.9s)
+✔ [505/531] Built Mathlib.Util.PrintSorries (3.5s)
+✔ [509/543] Built Mathlib.Util.WhatsNew (3.4s)
+✔ [512/543] Built Mathlib.Tactic.FunProp.Attr (2.7s)
+✔ [514/553] Built Mathlib.Util.CountHeartbeats (5.3s)
+✔ [516/577] Built Mathlib.Tactic.Widget.SelectPanelUtils (3.5s)
+✔ [517/577] Built Batteries.Data.Nat.Basic (1.7s)
+✔ [525/577] Built Mathlib.Tactic.Variable (6.2s)
+✔ [526/577] Built Mathlib.Logic.Function.ULift (2.4s)
+✔ [527/577] Built EpsilonEridani.Generator.Jets (1.6s)
+✔ [528/577] Built EpsilonEridani.Generator.Splitting (1.6s)
+✔ [529/577] Built Mathlib.Data.Int.DivMod (2.3s)
+✔ [530/577] Built Mathlib.Tactic.Monotonicity.Attr (2.1s)
+✔ [531/577] Built EpsilonEridani.HepMC3.Format (1.9s)
+✔ [532/577] Built Mathlib.Tactic.FastInstance (5.5s)
+✔ [540/613] Built EpsilonEridani.HepMC3.Graph (2.0s)
+✔ [546/616] Built EpsilonEridani.HepMC3.Ascii (1.9s)
+✔ [547/621] Built Mathlib.Tactic.FBinop (6.4s)
+✔ [549/644] Built Mathlib.Tactic.CrossRefAttribute (6.1s)
+✔ [594/661] Built Mathlib.Tactic.Widget.CongrM (3.6s)
+✔ [604/675] Built Batteries.Control.ForInStep.Lemmas (1.5s)
+✔ [613/676] Built Batteries.Classes.RatCast (1.2s)
+✔ [614/682] Built Mathlib.Util.AtomM (3.1s)
+✔ [625/719] Built Mathlib.Data.SProd (2.1s)
+✔ [667/740] Built Mathlib.Data.Bracket (2.0s)
+✔ [671/773] Built Mathlib.Tactic.Widget.Calc (6.1s)
+✔ [672/773] Built Mathlib.Logic.OpClass (1.8s)
+✔ [698/804] Built Mathlib.Data.List.Monad (1.8s)
+✔ [736/916] Built Mathlib.Tactic.Widget.Conv (6.9s)
+✔ [737/916] Built Mathlib.Data.Rat.Init (2.3s)
+✔ [758/920] Built Mathlib.Util.PPOptions (1.9s)
+✔ [760/920] Built Mathlib.Control.ULift (2.4s)
+✔ [762/951] Built Mathlib.Data.PNat.Notation (2.3s)
+✔ [764/951] Built Mathlib.Lean.Expr.Rat (2.2s)
+✔ [811/1153] Built Mathlib.Data.Option.NAry (3.3s)
+✔ [834/1187] Built Mathlib.Tactic.HaveI (2.8s)
+✔ [835/1207] Built Mathlib.Tactic.Widget.LibraryRewrite (10s)
+✔ [990/1324] Built Mathlib.Util.Qq (2.6s)
+✔ [992/1331] Built Mathlib.Data.List.Induction (4.6s)
+✔ [1024/1359] Built Mathlib.Logic.Function.CompTypeclasses (1.8s)
+✔ [1045/1432] Built Mathlib.Data.Int.Cast.Pi (2.1s)
+✔ [1047/1440] Built Mathlib.Data.Ineq (1.5s)
+✔ [1051/1478] Built Mathlib.Tactic.TryThis (2.4s)
+✔ [1062/1549] Built Mathlib.Util.AtomM.Recurse (2.5s)
+✔ [1072/1656] Built Mathlib.Tactic.FieldSimp.Attr (1.0s)
+✔ [1124/1890] Built Mathlib.Util.SynthesizeUsing (1.8s)
+✔ [1147/2086] Built Mathlib.Lean.Meta.Tactic.Rewrite (1.7s)
+✔ [1158/2304] Built Mathlib.Util.ElabWithoutMVars (1.0s)
+✔ [1166/2325] Built Mathlib.Tactic.Linarith.Oracle.SimplexAlgorithm.Datatypes (2.3s)
+✔ [1174/2559] Built Mathlib.Tactic.Polynomial.Core (2.4s)
+✔ [1176/2604] Built Mathlib.Data.Nat.MaxPowDiv (2.3s)
+✔ [1179/2653] Built Mathlib.Util.DelabNonCanonical (2.1s)
+✔ [1198/3235] Built Mathlib.Tactic.Linarith.Oracle.SimplexAlgorithm.Gauss (2.4s)
+✔ [1210/3253] Built Mathlib.Data.Nat.NthRoot.Defs (2.2s)
+✔ [1211/3253] Built Mathlib.Tactic.Linarith.Oracle.SimplexAlgorithm.SimplexAlgorithm (3.2s)
+✔ [1212/3257] Built Mathlib.Util.Delaborators (10s)
+✔ [1725/3257] Built Mathlib.Tactic.SuppressCompilation (4.5s)
+✔ [2322/3302] Built Mathlib.Tactic.BDSimp (2.5s)
+✔ [2324/3325] Built Mathlib.Tactic.Assume (2.9s)
+✔ [2325/3325] Built Mathlib.Tactic.CategoryTheory.CategoryStar (2.8s)
+✔ [2373/3337] Built Mathlib.Tactic.Linarith.Oracle.SimplexAlgorithm.PositiveVector (2.6s)
+✔ [3154/3350] Built Mathlib.CategoryTheory.ConcreteCategory.Bundled (2.5s)
+✔ [3161/3354] Built Mathlib.Util.Superscript (6.1s)
+✔ [3217/3357] Built Mathlib.Tactic.CategoryTheory.Coherence.Datatypes (4.9s)
+✔ [3224/3357] Built Mathlib.Tactic.Change (2.8s)
+✔ [3225/3357] Built Mathlib.Tactic.Clean (2.4s)
+✔ [3229/3359] Built Mathlib.CategoryTheory.ConcreteCategory.Notation (3.5s)
+✔ [3235/3360] Built Mathlib.Tactic.Eval (2.0s)
+✔ [3244/3362] Built Mathlib.Data.Stream.Defs (4.0s)
+✔ [3258/3363] Built Mathlib.Tactic.Explode.Datatypes (2.4s)
+✔ [3259/3363] Built Mathlib.Tactic.Ext (1.0s)
+✔ [3282/3366] Built Mathlib.Tactic.Echelon.Core (3.6s)
+✔ [3296/3371] Built Mathlib.Tactic.DuplicateDecls (5.3s)
+✔ [3334/3376] Built Mathlib.Tactic.Generalize (2.6s)
+✔ [3354/3388] Built Mathlib.Tactic.Explode.Pretty (2.3s)
+✔ [3356/3389] Built Mathlib.Tactic.FindSyntax (3.8s)
+✔ [3357/3389] Built Mathlib.Tactic.Have (3.3s)
+✔ [3358/3393] Built Mathlib.Tactic.Inclusion.Core.Types (2.0s)
+✔ [3360/3393] Built Batteries.Lean.HashMap (1.6s)
+✔ [3362/3394] Built Mathlib.Tactic.Inclusion.Core.DiscrTreeExt (3.1s)
+✔ [3363/3397] Built Mathlib.Tactic.Linter.DeprecatedModule (1.7s)
+✔ [3365/3399] Built Mathlib.Tactic.Linter.CommandRanges (2.7s)
+✔ [3654/3761] Built Mathlib.Tactic.Explode (3.0s)
+✔ [3731/3764] Built Mathlib.Tactic.Inclusion.Core.Extensions (3.3s)
+✔ [3736/3766] Built Mathlib.Tactic.CategoryTheory.Coherence.PureCoherence (10s)
+✔ [3745/3766] Built Mathlib.Tactic.Monotonicity.Basic (2.7s)
+✔ [3747/3767] Built Mathlib.Tactic.Linter.FindDeprecations (4.7s)
+✔ [3748/3776] Built Mathlib.Tactic.Polyrith (2.4s)
+✔ [3757/3776] Built Mathlib.Tactic.Linter.TextBased.UnicodeLinter (5.5s)
+✔ [3758/3777] Built Mathlib.Tactic.Inclusion.Extension.Core.Init (2.1s)
+✔ [3759/3777] Built Mathlib.Tactic.ReduceModChar.Ext (2.0s)
+✔ [3763/3779] Built Mathlib.Tactic.Relation.Symm (2.2s)
+✔ [3764/3780] Built Mathlib.Tactic.Replace (2.1s)
+✔ [3765/3783] Built Mathlib.Tactic.CategoryTheory.Coherence.Normalize (12s)
+✔ [3771/3783] Built Mathlib.Tactic.Recall (4.1s)
+✔ [3772/3785] Built Mathlib.Tactic.TypeCheck (1.6s)
+✔ [3773/3799] Built Mathlib.Tactic.StacksAttribute (2.1s)
+✔ [3825/3840] Built Batteries.Classes.Cast (2.1s)
+✔ [3826/3841] Built Mathlib.Tactic.Widget.GCongr (2.8s)
+✔ [3827/3844] Built ProofWidgets.Component.PenroseDiagram (3.4s)
+✔ [3828/3844] Built Mathlib.Tactic.WithoutCDot (2.8s)
+✔ [3830/3858] Built ProofWidgets.Presentation.Expr (3.9s)
+✔ [3832/3858] Built ProofWidgets.Component.HtmlDisplay (3.6s)
+✔ [3842/3864] Built Batteries.Control.ForInStep (1.0s)
+✔ [3845/3865] Built Batteries.Data.Array.Init.Lemmas (1.1s)
+✔ [3846/3865] Built Mathlib.Tactic.Linter.ValidatePRTitle (4.0s)
+✔ [3847/3865] Built Batteries.Lean.EStateM (2.3s)
+✔ [3848/3865] Built Batteries.Data.BitVec.Basic (1.5s)
+✔ [3851/3876] Built Batteries.Data.Bool (1.4s)
+✔ [3858/3879] Built Batteries.Data.Array.Match (2.4s)
+✔ [3859/3882] Built Batteries.Data.ByteSlice (1.7s)
+✔ [3862/3884] Built Batteries.Data.FloatArray (1.2s)
+✔ [3863/3885] Built Batteries.Data.ByteArray (2.6s)
+✖ [3864/3885] Building Batteries.Data.Float.Basic (1.7s)
+trace: .> LEAN_PATH=/opt/lake/builds/packages/MD4Lean/.lake/build/lib/lean:/opt/lake/builds/packages/BibtexQuery/.lake/build/lib/lean:/opt/lake/builds/packages/UnicodeBasic/.lake/build/lib/lean:/opt/lake/builds/packages/leansqlite/.lake/build/lib/lean:/opt/lake/builds/packages/Cli/.lake/build/lib/lean:/opt/lake/builds/packages/doc-gen4/.lake/build/lib/lean:/opt/lake/builds/packages/batteries/.lake/build/lib/lean:/opt/lake/builds/packages/Qq/.lake/build/lib/lean:/opt/lake/builds/packages/aesop/.lake/build/lib/lean:/opt/lake/builds/packages/proofwidgets/.lake/build/lib/lean:/opt/lake/builds/packages/importGraph/.lake/build/lib/lean:/opt/lake/builds/packages/LeanSearchClient/.lake/build/lib/lean:/opt/lake/builds/packages/plausible/.lake/build/lib/lean:/opt/lake/builds/packages/Physlib/.lake/build/lib/lean:/opt/lake/builds/packages/TauCeti/.lake/build/lib/lean:/opt/lake/builds/packages/mathlib/.lake/build/lib/lean:/home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/.lake/build/lib/lean /opt/software/linux-skylake/lean4-4.33.1-hq3raetbmuyemcnjwe4r5knfhx2fiqsk/bin/lean /opt/lake/builds/packages/batteries/Batteries/Data/Float/Basic.lean -o /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Data/Float/Basic.olean -i /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Data/Float/Basic.ilean -c /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Data/Float/Basic.c --setup /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Data/Float/Basic.setup.json --json
+error: Batteries/Data/Float/Basic.lean:139:18: Unknown constant `Float.nan`
+error: Batteries/Data/Float/Basic.lean:139:33: Unknown constant `Float.inf`
+error: Batteries/Data/Float/Basic.lean:143:27: Unknown constant `Float.inf`
+error: Lean exited with code 1
+✔ [3867/3888] Built Batteries.Data.DList.Basic (1.0s)
+✔ [3869/3889] Built Batteries.Data.List.ArrayMap (1.4s)
+✔ [3870/3893] Built Batteries.Data.List.Init.Lemmas (1.3s)
+✔ [3871/3893] Built Batteries.Data.List.Matcher (1.6s)
+✔ [3872/3894] Built Mathlib.Tactic.Linter.TextBased (9.5s)
+✔ [3875/3897] Built Batteries.Data.DList.Lemmas (1.8s)
+✔ [3876/3898] Built Batteries.Recycling.MonadSatisfying.Basic (4.0s)
+✔ [3877/3898] Built Batteries.Data.MLList.Heartbeats (1.7s)
+✔ [3879/3898] Built Batteries.Lean.System.IO (1.5s)
+✔ [3880/3898] Built Batteries.Data.BinaryHeap.Basic (6.1s)
+✔ [3881/3898] Built Batteries.Data.NameSet (1.2s)
+✔ [3882/3911] Built Batteries.Classes.SatisfiesM (1.1s)
+✔ [3883/3911] Built Batteries.Data.DList (1.5s)
+✔ [3895/3917] Built Batteries.Data.List.Interleave (4.1s)
+✔ [3896/3917] Built Batteries.Data.Nat.Bitwise.Lemmas (1.6s)
+✔ [3901/3917] Built Batteries.Recycling.MonadSatisfying.List (1.6s)
+✔ [3902/3918] Built Batteries.Data.MLList.IO (1.3s)
+✔ [3903/3919] Built Batteries.Data.BinaryHeap (1.3s)
+✔ [3904/3919] Built Batteries.Data.Nat.Bitwise (1.4s)
+✔ [3905/3920] Built Batteries.Data.RunningStats (1.9s)
+✔ [3906/3921] Built Batteries.Data.Stream (2.2s)
+✔ [3907/3927] Built Batteries.Data.List.Monadic (1.9s)
+✔ [3909/3935] Built Batteries.Data.MLList (1.4s)
+✔ [3913/3937] Built Batteries.Data.String.AsciiCasing (1.9s)
+✔ [3915/3938] Built Batteries.Data.String.Basic (1.9s)
+✔ [3916/3938] Built Batteries.Lean.IO.Process (1.6s)
+✔ [3917/3938] Built Batteries.Util.Panic (1.9s)
+✔ [3918/3938] Built Batteries.Recycling.MonadSatisfying.Array (5.8s)
+✔ [3919/3938] Built Batteries.Data.Random.MersenneTwister (5.1s)
+✔ [3920/3941] Built Batteries.Data.Nat.Bisect (6.8s)
+✔ [3921/3941] Built Batteries.Lean.LawfulMonad (1.8s)
+✔ [3923/3942] Built Batteries.Data.String.Matcher (1.4s)
+✔ [3924/3942] Built Batteries.Data.String.Legacy (3.4s)
+✔ [3927/3945] Built Batteries.Lean.LawfulMonadLift (1.0s)
+✔ [3929/3947] Built Batteries.Data.Array.Monadic (1.2s)
+✔ [3931/3947] Built Batteries.Data.Random (1.0s)
+✔ [3932/3948] Built Batteries.Recycling.MonadSatisfying.Vector (1.6s)
+✔ [3933/3948] Built Batteries.Lean.Meta.Simp (2.6s)
+✔ [3934/3949] Built Batteries.Lean.Util.EnvSearch (1.5s)
+✔ [3935/3951] Built Batteries.Recycling.MonadSatisfying.Lean (1.0s)
+✔ [3936/3951] Built Batteries.Data.Vector.Monadic (1.6s)
+✔ [3937/3951] Built Batteries.Tactic.Instances (2.9s)
+✔ [3938/3951] Built Batteries.Tactic.Lemma (2.8s)
+✔ [3940/3953] Built Batteries.Tactic.NoMatch (2.0s)
+✔ [3941/3953] Built Batteries.Tactic.PrintOpaques (2.6s)
+✔ [3942/3981] Built Batteries.Tactic.PrintDependents (3.1s)
+✔ [4276/4295] Built Batteries.Recycling.MonadSatisfying (1.7s)
+✔ [4286/4321] Built Batteries.Lean.SatisfiesM (1.6s)
+✔ [4751/4787] Built Batteries.Tactic.PrintPrefix (3.4s)
+✔ [4777/4869] Built Batteries.Util.Pickle (1.7s)
+✔ [5332/5415] Built Batteries.Tactic.ShowUnused (2.7s)
+✖ [5419/5584] Building Batteries.Data.UnionFind.Basic (7.1s)
+trace: .> LEAN_PATH=/opt/lake/builds/packages/MD4Lean/.lake/build/lib/lean:/opt/lake/builds/packages/BibtexQuery/.lake/build/lib/lean:/opt/lake/builds/packages/UnicodeBasic/.lake/build/lib/lean:/opt/lake/builds/packages/leansqlite/.lake/build/lib/lean:/opt/lake/builds/packages/Cli/.lake/build/lib/lean:/opt/lake/builds/packages/doc-gen4/.lake/build/lib/lean:/opt/lake/builds/packages/batteries/.lake/build/lib/lean:/opt/lake/builds/packages/Qq/.lake/build/lib/lean:/opt/lake/builds/packages/aesop/.lake/build/lib/lean:/opt/lake/builds/packages/proofwidgets/.lake/build/lib/lean:/opt/lake/builds/packages/importGraph/.lake/build/lib/lean:/opt/lake/builds/packages/LeanSearchClient/.lake/build/lib/lean:/opt/lake/builds/packages/plausible/.lake/build/lib/lean:/opt/lake/builds/packages/Physlib/.lake/build/lib/lean:/opt/lake/builds/packages/TauCeti/.lake/build/lib/lean:/opt/lake/builds/packages/mathlib/.lake/build/lib/lean:/home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/.lake/build/lib/lean /opt/software/linux-skylake/lean4-4.33.1-hq3raetbmuyemcnjwe4r5knfhx2fiqsk/bin/lean /opt/lake/builds/packages/batteries/Batteries/Data/UnionFind/Basic.lean -o /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Data/UnionFind/Basic.olean -i /opt/lake/builds/packages/batteries/.lake/build/lib/lean/Batteries/Data/UnionFind/Basic.ilean -c /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Data/UnionFind/Basic.c --setup /opt/lake/builds/packages/batteries/.lake/build/ir/Batteries/Data/UnionFind/Basic.setup.json --json
+error: Batteries/Data/UnionFind/Basic.lean:34:37: Unknown identifier `dite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:36:77: Unknown identifier `dite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:38:66: Unknown identifier `dite_eq_right`
+error: Batteries/Data/UnionFind/Basic.lean:218:16: Unknown identifier `dite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:226:93: unsolved goals
+case isTrue
+self : UnionFind
+x : Nat
+h : self.parent x = x
+h✝ : x < self.size
+⊢ ↑(self.root ⟨x, h✝⟩) = x
+error: Batteries/Data/UnionFind/Basic.lean:296:10: Unknown identifier `dite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:309:8: Unknown identifier `dite_eq_right`
+error: Batteries/Data/UnionFind/Basic.lean:323:10: Unknown identifier `ite_eq_right`
+error: Batteries/Data/UnionFind/Basic.lean:338:19: Unknown identifier `ite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:351:19: Unknown identifier `ite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:366:19: Unknown identifier `ite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:416:23: Unknown identifier `ite_eq_left`
+error: Batteries/Data/UnionFind/Basic.lean:414:47: unsolved goals
+self : UnionFind
+x : Fin self.size
+⊢ (if ↑x = ↑x then self.rootD ↑x else parentD (self.findAux ⟨self.arr[↑x].parent, ⋯⟩).s ↑x) = self.rootD ↑x
+error: Lean exited with code 1
+✔ [5767/5981] Built Mathlib.Algebra.Expr (1.7s)
+✔ [5768/5981] Built Mathlib.Algebra.HierarchyDesign (1.7s)
+✔ [6560/6774] Built Mathlib.Logic.Function.Coequalizer (1.9s)
+✔ [6770/6870] Built Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs (2.2s)
+✔ [7268/7334] Built Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Note (1.6s)
+✔ [7421/7434] Built Batteries.Tactic.SqueezeScope (7.1s)
+✔ [7458/7468] Built Mathlib.Data.Array.Defs (3.3s)
+✔ [7459/7468] Built Mathlib.Data.List.Palindrome (3.1s)
+✔ [7460/7468] Built Mathlib.Data.Nat.Cast.Synonym (3.1s)
+✔ [7529/7605] Built Mathlib.Data.Bool.AllAny (3.4s)
+✔ [7600/7709] Built Mathlib.Data.Fin.Init (3.6s)
+✔ [7603/7709] Built Mathlib.Data.String.Lemmas (3.2s)
+✔ [7604/7709] Built Mathlib.Deprecated.Aliases (3.1s)
+✔ [7815/7831] Built Mathlib.Lean.EnvExtension (3.1s)
+✔ [7823/7843] Built Mathlib.Lean.LocalContext (3.2s)
+✔ [7945/7984] Built Mathlib.Lean.CoreM (3.0s)
+✔ [7946/7984] Built Mathlib.Lean.Json (3.0s)
+✔ [7980/8034] Built Mathlib.Lean.MessageData.ForExprs (3.0s)
+✔ [8079/8105] Built Mathlib.Lean.Thunk (4.1s)
+✔ [8102/8158] Built Mathlib.Lean.Exception (4.5s)
+✔ [8402/8455] Built Mathlib.Lean.Meta.DiscrTree (4.8s)
+✔ [8594/8666] Built Mathlib.MeasureTheory.Measure.Typeclasses.NoAtoms (1.0s)
+✖ [8939/8972] Running EpsilonEridani.Meta.Linters.Sorry
+error: no such file or directory (error code: 4294967294)
+  file: /home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/EpsilonEridani/Meta/Linters/Sorry.lean
+✖ [8940/8972] Running EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/Tensors/Basic.lean: bad import 'EpsilonEridani.Meta.Linters.Sorry'
+✖ [8941/8972] Running EpsilonEridani.QFT.Factorization.DIS.LO
+error: EpsilonEridani/QFT/Factorization/DIS/LO.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic'
+✖ [8942/8972] Running EpsilonEridani.Particles.Parton.TMD.Reduction
+error: EpsilonEridani/Particles/Parton/TMD/Reduction.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+✖ [8943/8972] Running EpsilonEridani.Particles.Parton.Unified.Basic
+error: EpsilonEridani/Particles/Parton/Unified/Basic.lean: bad import 'EpsilonEridani.Particles.Parton.TMD.Reduction'
+✖ [8944/8972] Running EpsilonEridani.Particles.Parton.Unified.Consistency
+error: EpsilonEridani/Particles/Parton/Unified/Consistency.lean: bad import 'EpsilonEridani.Particles.Parton.Unified.Basic'
+✖ [8945/8972] Running EpsilonEridani.Particles.Parton.Basic
+error: EpsilonEridani/Particles/Parton/Basic.lean: bad import 'EpsilonEridani.Particles.Parton.TMD.Reduction'
+error: EpsilonEridani/Particles/Parton/Basic.lean: bad import 'EpsilonEridani.Particles.Parton.Unified.Consistency'
+✖ [8946/8972] Running EpsilonEridani.Particles.Parton.GPD.Polynomiality
+error: EpsilonEridani/Particles/Parton/GPD/Polynomiality.lean: bad import 'EpsilonEridani.Meta.Linters.Sorry'
+✔ [8947/8972] Built Mathlib.Order.Synonym (2.4s)
+✖ [9036/9115] Running EpsilonEridani.QFT.Factorization.Convolution.Mellin
+error: EpsilonEridani/QFT/Factorization/Convolution/Mellin.lean: bad import 'EpsilonEridani.Meta.Linters.Sorry'
+✖ [9037/9115] Running EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+error: no such file or directory (error code: 4294967294)
+  file: /home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/Basic.lean
+✖ [9038/9115] Running EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel
+error: EpsilonEridani/QFT/Factorization/DIS/DiagrammaticHardKernel.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+error: EpsilonEridani/QFT/Factorization/DIS/DiagrammaticHardKernel.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic'
+✖ [9039/9115] Running EpsilonEridani.Relativity.PauliMatrices.Basic
+error: no such file or directory (error code: 4294967294)
+  file: /home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/EpsilonEridani/Relativity/PauliMatrices/Basic.lean
+✖ [9040/9115] Running EpsilonEridani.QFT.QCD.SU2Generators
+error: EpsilonEridani/QFT/QCD/SU2Generators.lean: bad import 'EpsilonEridani.Relativity.PauliMatrices.Basic'
+✖ [9041/9115] Running EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/YangMillsGaugeData.lean: bad import 'EpsilonEridani.QFT.QCD.SU2Generators'
+✖ [9043/9115] Running EpsilonEridani.Relativity.Tensors.RealTensor.Vector.Basic
+error: no such file or directory (error code: 4294967294)
+  file: /home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/EpsilonEridani/Relativity/Tensors/RealTensor/Vector/Basic.lean
+✖ [9044/9115] Running EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+error: EpsilonEridani/QFT/PerturbationTheory/DimensionalRegularization/OneLoopScalars.lean: bad import 'EpsilonEridani.Relativity.Tensors.RealTensor.Vector.Basic'
+✖ [9045/9115] Running EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+error: EpsilonEridani/QFT/PerturbationTheory/DimensionalRegularization/TensorReduction.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars'
+✖ [9046/9115] Running EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/OneLoopEvaluation.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic'
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/OneLoopEvaluation.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction'
+✖ [9047/9115] Running EpsilonEridani.QFT.Factorization.HigherOrder.Basic
+error: EpsilonEridani/QFT/Factorization/HigherOrder/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+✖ [9048/9115] Running EpsilonEridani.QFT.Factorization.Evolution.Consistency
+error: EpsilonEridani/QFT/Factorization/Evolution/Consistency.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+✖ [9049/9115] Running EpsilonEridani.QFT.Factorization.Scales.Basic
+error: EpsilonEridani/QFT/Factorization/Scales/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+✖ [9050/9115] Running EpsilonEridani.QFT.QCD.OneLoopCounterterms
+error: EpsilonEridani/QFT/QCD/OneLoopCounterterms.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars'
+✖ [9051/9115] Running EpsilonEridani.QFT.QCD.OneLoopBetaFromScalars
+error: EpsilonEridani/QFT/QCD/OneLoopBetaFromScalars.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars'
+✖ [9052/9115] Running EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions
+error: EpsilonEridani/QFT/QCD/OneLoopNumeratorContractions.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopBetaFromScalars'
+error: EpsilonEridani/QFT/QCD/OneLoopNumeratorContractions.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction'
+✖ [9055/9115] Running EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge
+error: EpsilonEridani/QFT/QCD/OneLoopDiagrammaticBridge.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions'
+error: EpsilonEridani/QFT/QCD/OneLoopDiagrammaticBridge.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic'
+error: EpsilonEridani/QFT/QCD/OneLoopDiagrammaticBridge.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation'
+✖ [9056/9115] Running EpsilonEridani.QFT.Factorization.Basic
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.Convolution.Mellin'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.HigherOrder.Basic'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.Evolution.Consistency'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.Scales.Basic'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopCounterterms'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopBetaFromScalars'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge'
+error: EpsilonEridani/QFT/Factorization/Basic.lean: bad import 'EpsilonEridani.Particles.Parton.Basic'
+✖ [9057/9115] Running EpsilonEridani.QFT.Factorization.Evolution.CollinearForm
+error: EpsilonEridani/QFT/Factorization/Evolution/CollinearForm.lean: bad import 'EpsilonEridani.QFT.Factorization.Convolution.Mellin'
+✖ [9058/9115] Running EpsilonEridani.QFT.Factorization.Evolution.MomentSpace
+error: EpsilonEridani/QFT/Factorization/Evolution/MomentSpace.lean: bad import 'EpsilonEridani.Meta.Linters.Sorry'
+✖ [9061/9115] Running EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/BasicExtensions.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData'
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/BasicExtensions.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars'
+✖ [9063/9115] Running EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopDiagrammaticBridge
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/TwoLoopDiagrammaticBridge.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic'
+✖ [9064/9115] Running EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopEvaluation
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/TwoLoopEvaluation.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic'
+error: EpsilonEridani/QFT/PerturbationTheory/FeynmanDiagrams/TwoLoopEvaluation.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars'
+✖ [9100/9178] Running EpsilonEridani.QFT.QCD.SU3Generators
+error: EpsilonEridani/QFT/QCD/SU3Generators.lean: bad import 'EpsilonEridani.QFT.QCD.SU2Generators'
+✖ [9101/9178] Running EpsilonEridani.QFT.Scattering.DIS.Tensors.Longitudinal
+error: EpsilonEridani/QFT/Scattering/DIS/Tensors/Longitudinal.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+error: EpsilonEridani/QFT/Scattering/DIS/Tensors/Longitudinal.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic'
+✖ [9102/9178] Running EpsilonEridani.QFT.Scattering.DIS.Examples.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/Examples/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+error: EpsilonEridani/QFT/Scattering/DIS/Examples/Basic.lean: bad import 'EpsilonEridani.Particles.Parton.TMD.Reduction'
+✖ [9103/9178] Running EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/Polarized/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic'
+✖ [9104/9178] Running EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules
+error: EpsilonEridani/QFT/Scattering/DIS/Polarized/SumRules.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Polarized/SumRules.lean: bad import 'EpsilonEridani.Meta.Linters.Sorry'
+✖ [9105/9178] Running EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/Corrections/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+✖ [9106/9178] Running EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/SIDIS/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+✖ [9107/9178] Running EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/Exclusive/Deconvolution/Basic.lean: bad import 'EpsilonEridani.Meta.Linters.Sorry'
+✖ [9108/9178] Running EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness
+error: EpsilonEridani/QFT/Scattering/DIS/Exclusive/Deconvolution/Uniqueness.lean: bad import 'EpsilonEridani.Meta.Linters.Sorry'
+error: EpsilonEridani/QFT/Scattering/DIS/Exclusive/Deconvolution/Uniqueness.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic'
+✖ [9109/9178] Running EpsilonEridani.Particles.StandardModel.Basic
+error: no such file or directory (error code: 4294967294)
+  file: /home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/EpsilonEridani/Particles/StandardModel/Basic.lean
+✖ [9110/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Electroweak/Parameters.lean: bad import 'EpsilonEridani.Particles.StandardModel.Basic'
+✖ [9111/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.NeutralCurrent
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Electroweak/NeutralCurrent.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Electroweak/NeutralCurrent.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic'
+✖ [9112/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Interference/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.NeutralCurrent'
+✖ [9113/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Processes/EE.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic'
+✖ [9114/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Processes/EP.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Processes/EP.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic'
+✖ [9115/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Examples/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Examples/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP'
+✖ [9116/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Examples/Moller.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Examples/Moller.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopDiagrammaticBridge'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Examples/Moller.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopEvaluation'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Examples/Moller.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation'
+✖ [9117/9178] Running EpsilonEridani.QFT.Scattering.DIS.PVES.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.NeutralCurrent'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/PVES/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller'
+✖ [9118/9178] Running EpsilonEridani.QFT.Scattering.DIS.Inference.Helicity
+error: EpsilonEridani/QFT/Scattering/DIS/Inference/Helicity.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Inference/Helicity.lean: bad import 'EpsilonEridani.QFT.Factorization.HigherOrder.Basic'
+✖ [9119/9178] Running EpsilonEridani.QFT.Scattering.DIS.Inference.Gluon
+error: EpsilonEridani/QFT/Scattering/DIS/Inference/Gluon.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Inference/Gluon.lean: bad import 'EpsilonEridani.QFT.Factorization.HigherOrder.Basic'
+✖ [9120/9178] Running EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity
+error: EpsilonEridani/QFT/Scattering/DIS/Inference/JointHelicity.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Inference.Helicity'
+error: EpsilonEridani/QFT/Scattering/DIS/Inference/JointHelicity.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Inference.Gluon'
+✖ [9121/9178] Running EpsilonEridani.QFT.Scattering.DIS.Basic
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Longitudinal'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.Particles.Parton.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Factorization.HigherOrder.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopCounterterms'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopBetaFromScalars'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Examples.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Basic'
+error: EpsilonEridani/QFT/Scattering/DIS/Basic.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity'
+✖ [9125/9219] Running job computation
+error: EpsilonEridani: some modules have bad imports
+✖ [9162/9219] Running EpsilonEridani.Relativity.MinkowskiMatrix
+error: no such file or directory (error code: 4294967294)
+  file: /home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/EpsilonEridani/Relativity/MinkowskiMatrix.lean
+✖ [9163/9219] Running EpsilonEridani.Mathematics.KroneckerDelta.Basic
+error: no such file or directory (error code: 4294967294)
+  file: /home/wdconinc/git/epsiloneridani-forks/EpsilonEridani/EpsilonEridani/Mathematics/KroneckerDelta/Basic.lean
+✖ [9164/9219] Running EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
+error: EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean: bad import 'EpsilonEridani.Relativity.MinkowskiMatrix'
+error: EpsilonEridani/Relativity/Tensors/RealTensor/Metrics/LeviCivita.lean: bad import 'EpsilonEridani.Mathematics.KroneckerDelta.Basic'
+✖ [9165/9219] Running EpsilonEridani
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.Particles.Parton.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.Particles.Parton.GPD.Polynomiality'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.Particles.Parton.TMD.Reduction'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.Particles.Parton.Unified.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.Particles.Parton.Unified.Consistency'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.Convolution.Mellin'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.DIS.LO'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.Evolution.CollinearForm'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.Evolution.Consistency'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.Evolution.MomentSpace'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.HigherOrder.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Factorization.Scales.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopDiagrammaticBridge'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopEvaluation'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopBetaFromScalars'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopCounterterms'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.QCD.SU2Generators'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.QCD.SU3Generators'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Examples.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Inference.Gluon'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Inference.Helicity'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.NeutralCurrent'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.QFT.Scattering.DIS.Tensors.Longitudinal'
+error: EpsilonEridani.lean: bad import 'EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita'
+✔ [9166/9219] Built Mathlib.Util.FormatTable (4.1s)
+✔ [9167/9219] Built Mathlib.Util.AssertNoSorry (4.4s)
+✔ [9168/9219] Built Mathlib.Util.Simp (4.5s)
+✔ [9169/9219] Built Mathlib.Util.GetAllModules (4.5s)
+✔ [9170/9219] Built Mathlib.Util.LongNames (4.7s)
+✔ [9171/9219] Built Mathlib.Util.SleepHeartbeats (4.7s)
+✔ [9172/9219] Built Mathlib.Util.Export (6.4s)
+Some required targets logged failures:
+- Batteries.Tactic.Alias
+- Mathlib.Data.Nat.BinaryRec
+- Batteries.Classes.Order
+- Mathlib.Tactic.Lift
+- Batteries.Data.Float.Basic
+- Batteries.Data.UnionFind.Basic
+- EpsilonEridani.Meta.Linters.Sorry
+- EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+- EpsilonEridani.QFT.Factorization.DIS.LO
+- EpsilonEridani.Particles.Parton.TMD.Reduction
+- EpsilonEridani.Particles.Parton.Unified.Basic
+- EpsilonEridani.Particles.Parton.Unified.Consistency
+- EpsilonEridani.Particles.Parton.Basic
+- EpsilonEridani.Particles.Parton.GPD.Polynomiality
+- EpsilonEridani.QFT.Factorization.Convolution.Mellin
+- EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+- EpsilonEridani.QFT.Factorization.DIS.DiagrammaticHardKernel
+- EpsilonEridani.Relativity.PauliMatrices.Basic
+- EpsilonEridani.QFT.QCD.SU2Generators
+- EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
+- EpsilonEridani.Relativity.Tensors.RealTensor.Vector.Basic
+- EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+- EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+- EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation
+- EpsilonEridani.QFT.Factorization.HigherOrder.Basic
+- EpsilonEridani.QFT.Factorization.Evolution.Consistency
+- EpsilonEridani.QFT.Factorization.Scales.Basic
+- EpsilonEridani.QFT.QCD.OneLoopCounterterms
+- EpsilonEridani.QFT.QCD.OneLoopBetaFromScalars
+- EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions
+- EpsilonEridani.QFT.QCD.OneLoopDiagrammaticBridge
+- EpsilonEridani.QFT.Factorization.Basic
+- EpsilonEridani.QFT.Factorization.Evolution.CollinearForm
+- EpsilonEridani.QFT.Factorization.Evolution.MomentSpace
+- EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
+- EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopDiagrammaticBridge
+- EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TwoLoopEvaluation
+- EpsilonEridani.QFT.QCD.SU3Generators
+- EpsilonEridani.QFT.Scattering.DIS.Tensors.Longitudinal
+- EpsilonEridani.QFT.Scattering.DIS.Examples.Basic
+- EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
+- EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules
+- EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic
+- EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
+- EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic
+- EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Uniqueness
+- EpsilonEridani.Particles.StandardModel.Basic
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.NeutralCurrent
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Basic
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller
+- EpsilonEridani.QFT.Scattering.DIS.PVES.Basic
+- EpsilonEridani.QFT.Scattering.DIS.Inference.Helicity
+- EpsilonEridani.QFT.Scattering.DIS.Inference.Gluon
+- EpsilonEridani.QFT.Scattering.DIS.Inference.JointHelicity
+- EpsilonEridani.QFT.Scattering.DIS.Basic
+- job computation
+- EpsilonEridani.Relativity.MinkowskiMatrix
+- EpsilonEridani.Mathematics.KroneckerDelta.Basic
+- EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
+- EpsilonEridani
+error: build failed
