@@ -79,11 +79,11 @@ jobs:
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
     # Pinned to a EpsilonEridaniReview commit; bump deliberately (an unpinned @main lets an upstream change
     # break every contributor's review at once, and this workflow inherits EpsilonEridani's secrets).
-    uses: eic/EpsilonEridaniReview/.github/workflows/review.yml@1bcd4bf40636fee510157d7f02c8d58d99a4618f
+    uses: eic/EpsilonEridaniReview/.github/workflows/review.yml@73f61deb51cad9d881cd0f6f6f418afc78302499
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
-      review_ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
+      review_ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
       # Merging is handled by auto-merge.yml (the single merge path), so generation never merges.
       enable_automerge: false
     secrets: inherit
