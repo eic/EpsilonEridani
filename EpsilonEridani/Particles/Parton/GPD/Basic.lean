@@ -93,8 +93,6 @@ lemma forwardLimit_bridge_symm
     fPdf i x Q2 = M.H i x 0 0 := by
   simpa using (hFwd i x).symm
 
-
-
 /-- The DGLAP region of GPD kinematics, `|ξ| < |x| ≤ 1`.
 
 Here the two active partons carry momentum fractions of the same sign, so the

@@ -194,7 +194,6 @@ private lemma det_updateRow_finsum_smul {n : ℕ} (A : Matrix (Fin n) (Fin n) �
     {β : Type} [Fintype β] (w : β → ℤ) (f : β → Fin n → ℤ) :
     ∑ l, w l * Matrix.det (A.updateRow i (f l)) =
     Matrix.det (A.updateRow i (fun j => ∑ l, w l * f l j)) := by
-  have := Classical.decEq β
   have key : ∀ (t : Finset β),
       ∑ l ∈ t, w l * Matrix.det (A.updateRow i (f l)) =
       Matrix.det (A.updateRow i (fun j => ∑ l ∈ t, w l * f l j)) := by
