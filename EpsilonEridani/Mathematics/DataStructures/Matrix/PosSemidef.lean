@@ -50,6 +50,8 @@ for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
 namespace Matrix
 
 open scoped BigOperators
+/- NOTE: The lemmas in this file currently require `[Fintype n]`/decidability assumptions that are not reflected in their statement types under the pinned Mathlib definition of `Matrix.PosSemidef`, which triggers the unused* linters.
+   Please delete these suppressions once the Mathlib pin is updated or after upstreaming/rewriting the statements so the assumptions appear in the types. -/
 set_option linter.unusedSectionVars false
 set_option linter.unusedDecidableInType false
 set_option linter.unusedFintypeInType false
