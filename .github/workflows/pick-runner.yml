@@ -51,7 +51,7 @@ jobs:
       - name: Check for the App
         id: app
         env:
-          APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
+          APP_ID: ${{ secrets.APP_CLIENT_ID }}
         run: echo "present=$([ -n "$APP_CLIENT_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       # Every repository in the organisation is public, so reading its Actions runs needs no

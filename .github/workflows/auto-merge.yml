@@ -84,5 +84,5 @@ jobs:
       review_ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
     # Pass only the App credentials merge-only needs, not all of EpsilonEridani's secrets.
     secrets:
-      APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
+      APP_ID: ${{ secrets.APP_CLIENT_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
