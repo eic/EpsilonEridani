@@ -39,6 +39,10 @@ open Complex
 
 noncomputable section diracRepresentation
 
+/-- The gamma matrices in the Dirac representation, indexed as `γ0, γ1, γ2, γ3`. -/
+@[simp]
+def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
+
 /-- The lowered gamma matrices in the Dirac representation. -/
 @[simp]
 def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
