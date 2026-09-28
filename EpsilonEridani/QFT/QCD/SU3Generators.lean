@@ -174,14 +174,34 @@ def SU3AdjointStatement : Prop :=
 
 /-! ### Proofs of the identities -/
 
-/-- The fundamental `su(3)` generators `λᵃ/2` are trace-normalized with `T_F = 1/2`. -/
+/-- A double index sum of the form appearing in `SU3TraceStatement` is a matrix trace. -/
+private lemma sum_mul_eq_trace (M N : Matrix (Fin 3) (Fin 3) ℂ) :
+    (∑ i : Fin 3, ∑ j : Fin 3, M i j * N j i) = Matrix.trace (M * N) := by
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply]
+
+/-- The fundamental `su(3)` generators `λᵃ/2` are trace-normalized with `T_F = 1/2`.
+
+Routed through `Matrix.trace` and the closed-form `Matrix.mul_fin_three` /
+`Matrix.trace_fin_three_of` rewrites rather than a generic `Finset.sum` unfolding: the
+latter no longer finishes within the default heartbeat budget over all 64 cases. -/
 lemma su3TraceStatement : SU3TraceStatement := by
   intro a b
+  have h : (∑ i : Fin 3, ∑ j : Fin 3, su3GenEntry a i j * su3GenEntry b j i)
+      = (1 / 4 : ℂ) * Matrix.trace (gellMann3 a * gellMann3 b) := by
+    simp only [su3GenEntry, ← sum_mul_eq_trace]
+    rw [Finset.mul_sum]
+    congr 1
+    ext i
+    rw [Finset.mul_sum]
+    congr 1
+    ext j
+    ring
+  rw [h]
   fin_cases a <;> fin_cases b <;>
-    simp [su3GenEntry, su3DeltaAdj, gellMann3, Fin.sum_univ_three] <;>
-    ring_nf <;>
-    simp [invSqrt3_sq, Complex.I_sq] <;>
-    ring_nf
+    simp [gellMann3, Matrix.trace_fin_three, su3DeltaAdj]
+  all_goals ring_nf
+  all_goals simp [invSqrt3_sq]
+  all_goals ring_nf
 
 /-- The fundamental `su(3)` Casimir: `Σₐ (λᵃ/2)(λᵃ/2) = (4/3) · 1`. -/
 lemma su3FundamentalStatement : SU3FundamentalStatement := by
@@ -193,10 +213,14 @@ lemma su3FundamentalStatement : SU3FundamentalStatement := by
     ring_nf
 
 -- /-- The `su(3)` adjoint Casimir: `Σ_{cd} f^{acd} f^{bcd} = 3 δᵃᵇ`, so `C_A = 3`.
--- 
--- Derived from the general `su(N)` identity `SUNGen.suNAdjointStatement 3` via the
--- canonical equivalence `SUNIndex 3 ≃ Fin 8` and the agreement between `structConst3`
--- and `SUNGen.suNStructConst 3`. -/
+--
+-- Derived from the general `su(N)` identity `SUNGen.suNAdjointStatement` in
+-- `Physlib.QFT.QCD.SUNStructureConstants`, transported through the equivalence
+-- `SUNIndex 3 ≃ Fin 8` (the correspondence is: symmetric pairs (0,1),(0,2),(1,2) to
+-- a=0,3,5; antisymmetric pairs to a=1,4,6; diagonal l=0,1 to a=2,7 -- confirmed
+-- entrywise with no sign flips), rather than by an exhaustive 4096-term sweep, which
+-- times out well past the direct sweep already used for the smaller trace and
+-- fundamental identities above. -/
 -- lemma su3AdjointStatement : SU3AdjointStatement := by
 --   intro a b
 --   -- Transport the general SU(N) adjoint Casimir (N = 3, C_A = N = 3) to Fin 8 indices.
