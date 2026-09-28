@@ -44,7 +44,7 @@ import subprocess
 import sys
 
 MARKER = "<!--structure:nudge-->"
-TRACKING_ISSUE = "https://github.com/eic/EpsilonEridani/issues/987"
+TRACKING_ISSUE = "https://github.com/TauCetiProject/TauCeti/issues/987"
 
 _TOKEN_RE = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z0-9]*|[a-z0-9]+")
 
