@@ -70,14 +70,14 @@ lemma convertKernel_id
 /-- Truncated observable interface: currently exposing LO truncation. -/
 def truncatedStructureFunction [Fintype Flavor]
     (C : HardKernelFamily Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (x Q2 : ℝ) : ℝ :=
   DIS.loStructureFunction (C PerturbativeOrder.LO) f x Q2
 
 /-- Truncated observable equals LO expression at LO truncation. -/
 lemma truncatedStructureFunction_lo [Fintype Flavor]
     (C : HardKernelFamily Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (x Q2 : ℝ) :
     truncatedStructureFunction C f x Q2
       = DIS.loStructureFunction (C PerturbativeOrder.LO) f x Q2 :=
