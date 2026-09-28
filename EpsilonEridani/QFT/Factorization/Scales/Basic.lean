@@ -101,7 +101,7 @@ namespace QFT
 namespace Factorization
 namespace Scales
 
-open Physlib.Particles.Parton
+open EpsilonEridani.Particles.Parton
 
 variable {Flavor : Type}
 
