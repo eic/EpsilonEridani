@@ -8,6 +8,7 @@ import Mathlib.LinearAlgebra.Matrix.Trace
 import Physlib.Relativity.MinkowskiMatrix
 import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 import Physlib.Mathematics.LeviCivita.Basic
+import Physlib.Mathematics.KroneckerDelta.Basic
 
 /-!
 # Gamma matrix anticommutator and Dirac slash extensions
@@ -39,6 +40,9 @@ open Complex
 noncomputable section diracRepresentation
 
 /-- The lowered gamma matrices in the Dirac representation. -/
+@[simp]
+def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
+
 @[simp]
 def γDown (μ : Fin 4) : Matrix (Fin 4) (Fin 4) ℂ :=
   ((minkowskiMatrix ((@finSumFinEquiv 1 3).symm μ)
