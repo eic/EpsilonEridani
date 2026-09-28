@@ -28,7 +28,7 @@ strictly less than well-posedness of the physical equation; see `## iii. Convent
 the four places where the gap is real.
 
 The point of interest is that the linear and non-linear cases separate differently from how
-one might expect by analogy with `Physlib.QFT.Factorization.Evolution.MomentSpace`, where
+one might expect by analogy with `EpsilonEridani.QFT.Factorization.Evolution.MomentSpace`, where
 DGLAP in moment space is a *linear* system with a unique *global* solution:
 
 - **Uniqueness is still global for BK** (`bkSolution_unique`). The quadratic term does not
@@ -199,7 +199,7 @@ lemma bkRhs_sub (S : SmallXSystem E) (X Y : E) :
 closed ball of radius `R`.
 
 The constant depends on `R`: unlike the DGLAP moment system of
-`Physlib.QFT.Factorization.Evolution.MomentSpace`, whose vector field is Lipschitz with a
+`EpsilonEridani.QFT.Factorization.Evolution.MomentSpace`, whose vector field is Lipschitz with a
 constant depending only on the rapidity interval, here there is no single constant valid on
 all of `E`. -/
 lemma bkRhs_lipschitzOnWith (S : SmallXSystem E) {R : ℝ} (hR : 0 ≤ R) :
@@ -332,7 +332,7 @@ lemma bk_exists_local [CompleteSpace E] (S : SmallXSystem E) (N₀ : E) (Y₀ : 
 For the linear system the solution can be written down: the coefficient operator is
 independent of rapidity, so the solution is the operator exponential of `Y - Y₀` times the
 kernel. This is the statement whose DGLAP analogue is left open in
-`Physlib.QFT.Factorization.Evolution.MomentSpace` (`momentSolution_exists`); it is available
+`EpsilonEridani.QFT.Factorization.Evolution.MomentSpace` (`momentSolution_exists`); it is available
 here because the kernel is a single bounded operator rather than a rapidity-dependent
 multiple of a matrix. -/
 

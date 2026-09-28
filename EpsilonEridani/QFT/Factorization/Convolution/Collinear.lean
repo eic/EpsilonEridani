@@ -11,7 +11,7 @@ public import EpsilonEridani.QFT.Factorization.Convolution.Properties
 # Collinear convolution kernels
 
 The general integral operator `convolveAt K f x = ∫_{[0,1]} K x z * f z dz` of
-`Physlib.QFT.Factorization.Convolution.Basic` becomes the *collinear* (Mellin) convolution of
+`EpsilonEridani.QFT.Factorization.Convolution.Basic` becomes the *collinear* (Mellin) convolution of
 collinear factorization,
 ```
 (C ⊗ f) (x) = ∫_x^1 (dz / z) * C (x / z) * f z,
@@ -27,7 +27,7 @@ proved for `convolveAt` applies verbatim to the collinear specialization.
 
 - The support condition is `x ≤ z` together with `0 < z`; the `z⁻¹` Jacobian is part of the
   kernel, not of the measure. This is the convention in which the Mellin transform factorizes
-  (see `Physlib.QFT.Factorization.Convolution.Mellin`): the substitution `x = z * u` in the
+  (see `EpsilonEridani.QFT.Factorization.Convolution.Mellin`): the substitution `x = z * u` in the
   transform consumes exactly this `z⁻¹`.
 - The kernel is an honest function `ℝ → ℝ → ℝ`, so only *integrable* coefficient functions are
   described. Physical splitting kernels carry `1 / (1 - z)` endpoint singularities regulated by

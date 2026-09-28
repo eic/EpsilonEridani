@@ -13,7 +13,7 @@ public import EpsilonEridani.QFT.Factorization.Evolution.Basic
 ## i. Overview
 
 This module contains restricted solved examples of the DGLAP evolution equation
-`Physlib.QFT.Factorization.Evolution.IsDGLAPLogScaleEquation`, and of the scale-local
+`EpsilonEridani.QFT.Factorization.Evolution.IsDGLAPLogScaleEquation`, and of the scale-local
 fixed-point condition `IsDGLAPFixedPoint` that the equation predicate used to assert.
 
 ## ii. Key results

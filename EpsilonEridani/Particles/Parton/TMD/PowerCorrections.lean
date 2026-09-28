@@ -57,9 +57,9 @@ named a correction term without bounding anything would carry none of this conte
 * The observation of arXiv:2603.19833 that once kinematic power corrections are included
   the TMD evolution factor enters as a convolution with the nonperturbative distribution
   rather than multiplicatively. The Collins-Soper system in
-  `Physlib.Particles.Parton.TMD.CollinsSoper` is multiplicative and is in that respect a
+  `EpsilonEridani.Particles.Parton.TMD.CollinsSoper` is multiplicative and is in that respect a
   leading-power statement.
-* Any link to the transverse-momentum integrals of `Physlib.Particles.Parton.TMD.Basic`:
+* Any link to the transverse-momentum integrals of `EpsilonEridani.Particles.Parton.TMD.Basic`:
   the structure function here is an abstract function of `λ`, not one built from a `Tmd`.
 
 ## C. References

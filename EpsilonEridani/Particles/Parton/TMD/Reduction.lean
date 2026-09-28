@@ -30,7 +30,7 @@ variable {Flavor : Type}
 /-- Collinear proxy obtained from truncated integration over the transverse measure.
 
 The reduction integrates `d²k_T`, i.e. carries the Jacobian `2π k_T`; see
-`Physlib.Particles.Parton.TMD.integrateTransverse`. An earlier version of this definition
+`EpsilonEridani.Particles.Parton.TMD.integrateTransverse`. An earlier version of this definition
 used the plain `k_T` integral `integrateKT`, which is off by that weight and so did not
 produce the collinear density its name claims. -/
 def collinearFromTmd

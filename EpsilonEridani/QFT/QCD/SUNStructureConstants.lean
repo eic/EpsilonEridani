@@ -10,7 +10,7 @@ public import EpsilonEridani.QFT.QCD.SUNGenerators
 
 # Structure constants and the adjoint Casimir for `su(N)`
 
-`Physlib.QFT.QCD.SUNGenerators` builds the generalized Gell-Mann basis `Tᵃ` of `su(N)`
+`EpsilonEridani.QFT.QCD.SUNGenerators` builds the generalized Gell-Mann basis `Tᵃ` of `su(N)`
 for every `N` and proves the trace identity `Tr(TᵃTᵇ) = δᵃᵇ/2`, the completeness (Fierz)
 relation and the fundamental Casimir `C_F = (N²-1)/(2N)`.  What it does not have is the
 structure constants: `su(2)` and `su(3)` carry them as finite tables, and no table

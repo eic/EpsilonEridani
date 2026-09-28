@@ -32,7 +32,7 @@ abbrev Kernel : Type := ℝ → ℝ → ℝ → ℝ
 /-- Convolution of an exclusive kernel with the `H` component of a GPD model.
 
 The integral runs over the full GPD support `x ∈ [-1, 1]` (see
-`Physlib.Particles.Parton.GPD.Basic`). Restricting to `[0, 1]` would discard the
+`EpsilonEridani.Particles.Parton.GPD.Basic`). Restricting to `[0, 1]` would discard the
 antiquark region and the negative-`x` half of the ERBL region, both of which
 contribute to exclusive amplitudes. -/
 def convolveHAt

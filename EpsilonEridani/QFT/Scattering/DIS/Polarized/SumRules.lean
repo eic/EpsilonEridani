@@ -16,7 +16,7 @@ This module states the polarized DIS sum rules as what they are: identities for 
 moments `Γ₁(Q²) = ∫₀¹ dx g₁(x, Q²)` and `Γ₂(Q²) = ∫₀¹ dx g₂(x, Q²)`.
 
 **Moment convention.** `firstMomentG1` and `firstMomentG2` carry weight `x⁰`: they are
-plain integrals over `[0, 1]`. In terms of `Physlib.Particles.Parton.PDF.mellinMoment`,
+plain integrals over `[0, 1]`. In terms of `EpsilonEridani.Particles.Parton.PDF.mellinMoment`,
 where `mellinMoment f n = ∫₀¹ dx xⁿ f`, that is `n = 0`. In terms of the literature's
 `n`-th moment `∫₀¹ dx xⁿ⁻¹ g`, it is `n = 1`. Every statement below uses the weight-`x⁰`
 convention and no other.

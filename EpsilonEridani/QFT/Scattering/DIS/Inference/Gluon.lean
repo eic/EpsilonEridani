@@ -65,7 +65,7 @@ lemma deltaG_identity_scheme_stability
     [Fintype Flavor]
     (S : Factorization.HigherOrder.Scheme)
     (C : Factorization.HigherOrder.HardKernelFamily Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (x Q2 : ℝ)
     (ord : Factorization.HigherOrder.PerturbativeOrder) :
     Factorization.HigherOrder.truncatedStructureFunction

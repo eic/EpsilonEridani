@@ -17,7 +17,7 @@ distribution, instead of assuming it.
 
 ## Statement
 
-With the moment convention of `Physlib.Particles.Parton.GPD.Moments` (integrand `x ^ n`,
+With the moment convention of `EpsilonEridani.Particles.Parton.GPD.Moments` (integrand `x ^ n`,
 integration over the full support `[-1, 1]`, literature index `n + 1`):
 
 ```text
