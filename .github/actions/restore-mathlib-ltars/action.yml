@@ -42,7 +42,7 @@ runs:
     # namespace here so publishers and restore-only consumers cannot silently drift apart.
     - name: Restore compressed download cache
       id: restore
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v6
       with:
         # Cache only content-addressed artifacts, never cache-tool scratch files or executables.
         path: ${{ steps.cache_dir.outputs.path }}/*.ltar
