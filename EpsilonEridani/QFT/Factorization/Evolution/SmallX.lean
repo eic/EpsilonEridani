@@ -192,7 +192,7 @@ lemma bkRhs_sub (S : SmallXSystem E) (X Y : E) :
     bkRhs S X - bkRhs S Y
       = S.bfklKernel (X - Y)
         - (S.dipolePairing (X - Y) X + S.dipolePairing Y (X - Y)) := by
-  simp only [bkRhs, map_sub, ContinuousLinearMap.sub_apply]
+  simp only [bkRhs, map_sub, sub_apply]
   abel
 
 /-- **The BK vector field is Lipschitz on balls**, with constant `‖K‖ + 2 R ‖B‖` on the
@@ -369,10 +369,10 @@ lemma hasDerivAt_bfklFlow [CompleteSpace E] (S : SmallXSystem E) (N₀ : E) (Y�
     (((Commute.refl S.bfklKernel).smul_right (Y - Y₀)).exp_right).eq.symm
   have happ := hcomp.clm_apply (hasDerivAt_const Y N₀)
   simp only [map_zero, add_zero, hcomm] at happ
-  -- `show` forces the goal to be elaborated at default transparency, which is what unfolds
+  -- `change` forces the goal to be elaborated at default transparency, which is what unfolds
   -- `bfklFlow` and identifies multiplication in `E →L[ℝ] E` with composition; `simpa`
   -- matches only at reducible transparency and fails on both counts.
-  show HasDerivAt (fun Z : ℝ => NormedSpace.exp ((Z - Y₀) • S.bfklKernel) N₀)
+  change HasDerivAt (fun Z : ℝ => NormedSpace.exp ((Z - Y₀) • S.bfklKernel) N₀)
     (S.bfklKernel (NormedSpace.exp ((Y - Y₀) • S.bfklKernel) N₀)) Y
   exact happ
 
