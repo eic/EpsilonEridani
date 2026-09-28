@@ -136,8 +136,8 @@ theorem finiteDimensional_of_finiteDimensional_ker {M N : Type*}
       ⟨LinearMap.mem_ker.mpr hzero, q.sub_mem y.2 z.2⟩
     rw [hq.inf_eq_bot, Submodule.mem_bot] at hmem
     exact Subtype.ext (eq_of_sub_eq_zero hmem)
-  haveI : FiniteDimensional ℝ q := FiniteDimensional.of_injective (f.domRestrict q) hinj
-  haveI := hker
+  have : FiniteDimensional ℝ q := FiniteDimensional.of_injective (f.domRestrict q) hinj
+  have := hker
   exact FiniteDimensional.of_surjective
     (Submodule.prodEquivOfIsCompl (LinearMap.ker f) q hq).toLinearMap
     (Submodule.prodEquivOfIsCompl (LinearMap.ker f) q hq).surjective
@@ -323,7 +323,7 @@ def totalChiSq (X : Experiment E m) (data sigma : Fin m → ℝ) (f : E) : ℝ :
 /-- The total chi-square is nonnegative. -/
 lemma totalChiSq_nonneg (X : Experiment E m) (data sigma : Fin m → ℝ) (f : E) :
     0 ≤ totalChiSq X data sigma f :=
-  Finset.sum_nonneg fun a _ => chiSq_nonneg _ _ _
+  Finset.sum_nonneg fun _ _ => chiSq_nonneg _ _ _
 
 /-- The chi-square cannot separate densities differing by an element of the blind subspace:
 the objective of the unregularized fit is constant along every blind direction, so it has no
