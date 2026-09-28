@@ -335,7 +335,7 @@ lemma isBigO_inv_pow_atTop {W Wapp : ℝ → ℝ} {n : ℕ} (h : ApproximatesToO
   have hconv : (fun Q : ℝ => powerRatio qT Q ^ n) =O[atTop] fun Q : ℝ => (Q ^ n)⁻¹ := by
     refine ((isBigO_refl (fun Q : ℝ => (Q ^ n)⁻¹) atTop).const_mul_left (qT ^ n)).congr_left ?_
     intro Q
-    show qT ^ n * (Q ^ n)⁻¹ = (qT / Q) ^ n
+    change qT ^ n * (Q ^ n)⁻¹ = (qT / Q) ^ n
     rw [div_pow, div_eq_mul_inv]
   exact hcomp.trans hconv
 
