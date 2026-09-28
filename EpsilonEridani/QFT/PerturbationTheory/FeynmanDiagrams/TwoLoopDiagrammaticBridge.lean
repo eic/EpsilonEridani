@@ -7,6 +7,7 @@ module
 
 public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.Basic.Real.Basic
 /-!
 
 # Two-Loop Diagrammatic Bridge
