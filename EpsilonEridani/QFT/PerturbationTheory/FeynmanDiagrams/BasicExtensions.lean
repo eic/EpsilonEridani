@@ -3,13 +3,15 @@ Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wouter Deconinck
 -/
-import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
-import EpsilonEridani.QFT.QCD.Basic
-import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
-import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
-import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
-import Mathlib.Data.Complex.Basic
-import Mathlib.Topology.Instances.Complex
+module
+
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import EpsilonEridani.QFT.QCD.Basic
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
+public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Topology.Instances.Complex
 
 /-!
 # Feynman diagram extensions
@@ -31,6 +33,8 @@ This module extends `Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic`, whic
 currently a near-empty work in progress; none of the declarations below are ported
 from that module.
 -/
+
+@[expose] public section
 
 noncomputable section
 

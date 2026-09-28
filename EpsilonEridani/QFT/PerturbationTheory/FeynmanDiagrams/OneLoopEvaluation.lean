@@ -30,8 +30,8 @@ namespace QFT
 namespace PerturbationTheory
 namespace FeynmanDiagrams
 
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
 
 /-- Concrete loop-integral data attached to a gauge-boson self-energy diagram. -/
 structure GaugeBosonSelfEnergyLoopIntegralData
