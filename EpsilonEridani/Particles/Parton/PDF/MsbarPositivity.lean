@@ -211,7 +211,7 @@ lemma uniform_bound_insufficient (ε : ℝ) (hε : 0 < ε) (hε1 : ε < 1) :
     exact hy0
   · intro _ _ _
     exact (abs_of_pos hε).le
-  · show ε / 2 - ε < 0
+  · change ε / 2 - ε < 0
     linarith
 
 /-!
@@ -256,7 +256,7 @@ lemma coupling_bound_degenerate_at_zero {a Cmax fmin : ℝ} (hCmax : 0 < Cmax)
     (hfmin : fmin ≤ 0) (hsmall : a * Cmax ≤ fmin) :
     a ≤ 0 := by
   by_contra hpos
-  push_neg at hpos
+  push Not at hpos
   nlinarith [mul_pos hpos hCmax]
 
 end PDF

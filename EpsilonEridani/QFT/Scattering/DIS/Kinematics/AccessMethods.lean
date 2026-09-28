@@ -106,7 +106,7 @@ namespace SigmaMethodData
 /-- Sigma method: Q² reconstruction from t-channel momentum transfer.
     Q² is reconstructed from the hadronic invariants and energy-momentum conservation. -/
 def Q2_sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
-  - g_met d.k_out d.k_out
+  -g_met d.k_out d.k_out
 
 /-- Sigma method y reconstruction from hadronic energy fraction. -/
 def y_sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
@@ -116,7 +116,7 @@ def y_sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
 
 /-- Appropriateness theorem: Sigma method Q² is non-negative. -/
 lemma Q2_sigma_nonneg (d : SigmaMethodData V) (g_met : Bilin V)
-    (hTimelike : ∀ v, g_met v v ≤ 0 → 0 ≤ - g_met v v)
+    (hTimelike : ∀ v, g_met v v ≤ 0 → 0 ≤ -g_met v v)
     (hKOut : g_met d.k_out d.k_out ≤ 0) :
     0 ≤ SigmaMethodData.Q2_sigma (V := V) d g_met := by
   simpa [SigmaMethodData.Q2_sigma] using hTimelike d.k_out hKOut
@@ -174,7 +174,7 @@ namespace JBMethodData
 /-- JB method: Q² reconstruction using scattered lepton information and hadronic recoil.
     Requires scattered lepton momentum which is implicit in hadronic recoil. -/
 def Q2_JB (_d : JBMethodData V) (g_met : Bilin V) (k_out : V) : ℝ :=
-  - g_met k_out k_out
+  -g_met k_out k_out
 
 /-- JB method: W² reconstruction from hadronic invariant mass. -/
 def W2_JB (d : JBMethodData V) (g_met : Bilin V) (p_hadron : V) : ℝ :=
@@ -192,7 +192,7 @@ lemma W2_JB_physical_region (d : JBMethodData V) (g_met : Bilin V) (p : V)
 
 /-- Appropriateness theorem: JB method Q² is consistent with Q² definition. -/
 lemma Q2_JB_def_consistent (d : JBMethodData V) (g_met : Bilin V) (k_out : V) :
-    JBMethodData.Q2_JB (V := V) d g_met k_out = - g_met k_out k_out := by
+    JBMethodData.Q2_JB (V := V) d g_met k_out = -g_met k_out k_out := by
   rfl
 
 end JBMethodData

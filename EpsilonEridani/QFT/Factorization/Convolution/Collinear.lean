@@ -88,19 +88,19 @@ lemma collinearKernel_apply (C : ℝ → ℝ) (x z : ℝ) :
 /-- Inside the physical region `0 < z`, `x ≤ z` the collinear kernel is `z⁻¹ * C (x / z)`. -/
 lemma collinearKernel_of_mem (C : ℝ → ℝ) {x z : ℝ} (hz : 0 < z) (hxz : x ≤ z) :
     collinearKernel C x z = z⁻¹ * C (x / z) := by
-  rw [collinearKernel_apply, if_pos ⟨hxz, hz⟩]
+  rw [collinearKernel_apply, ite_eq_left ⟨hxz, hz⟩]
 
 /-- The collinear kernel vanishes above the diagonal: no momentum fraction larger than `z` can
 be reached from a parton of fraction `z`. -/
 lemma collinearKernel_of_lt (C : ℝ → ℝ) {x z : ℝ} (hzx : z < x) :
     collinearKernel C x z = 0 := by
-  refine (collinearKernel_apply C x z).trans (if_neg ?_)
+  refine (collinearKernel_apply C x z).trans (ite_eq_right ?_)
   exact fun h => absurd h.1 (not_le.mpr hzx)
 
 /-- The collinear kernel vanishes for non-positive `z`. -/
 lemma collinearKernel_of_nonpos (C : ℝ → ℝ) {x z : ℝ} (hz : z ≤ 0) :
     collinearKernel C x z = 0 := by
-  refine (collinearKernel_apply C x z).trans (if_neg ?_)
+  refine (collinearKernel_apply C x z).trans (ite_eq_right ?_)
   exact fun h => absurd h.2 (not_lt.mpr hz)
 
 /-!
