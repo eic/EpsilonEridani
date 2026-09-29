@@ -60,9 +60,9 @@ env:
 
 jobs:
   # Runs once a night, so `github.token` has ample API budget and the App's secrets stay out of
-  # this workflow entirely.
+  # this workflow entirely. Skipped when `NAMESPACE_RUNNERS` is `off`; see pick-runner.yml.
   pick-runner:
-    if: github.repository == 'eic/EpsilonEridani'
+    if: github.repository == 'eic/EpsilonEridani' && vars.NAMESPACE_RUNNERS != 'off'
     uses: ./.github/workflows/pick-runner.yml
     permissions:
       actions: read
@@ -85,8 +85,10 @@ jobs:
     #
     # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
     # an explicit `true` from it, including a picker that failed or never ran, means Namespace.
+    # `NAMESPACE_RUNNERS` set to `off` overrides this: the job queues for a GitHub-hosted slot.
     runs-on: >-
-      ${{ needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
+      ${{ (vars.NAMESPACE_RUNNERS == 'off' || needs.pick-runner.outputs.github == 'true')
+          && 'ubuntu-24.04' || fromJSON('[
         "nscloud-ubuntu-24.04-amd64-8x16-with-features",
         "namespace-features:container.privileged=true"
       ]') }}
