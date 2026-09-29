@@ -82,9 +82,13 @@ inductive TaggedChannel where
 
 /-- Channel metadata for DeltaG-sensitive measurements. -/
 structure TaggedChannelDataPoint where
+  /-- Tagged channel the measurement belongs to. -/
   channel : TaggedChannel
+  /-- Bjorken `x`. -/
   xBj : ℝ
+  /-- Hard scale `Q²`. -/
   Q2 : ℝ
+  /-- Measured value of the observable. -/
   observed : ℝ
 
 /-- Regularized channel asymmetry interface. -/

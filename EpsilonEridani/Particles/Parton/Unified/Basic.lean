@@ -29,10 +29,15 @@ variable {Flavor : Type}
 
 /-- Unified container for collinear, TMD, and GPD objects. -/
 structure Model (Flavor : Type) : Type where
+  /-- Collinear parton distribution functions. -/
   pdf : PDF.Pdf Flavor
+  /-- Transverse-momentum-dependent distributions. -/
   tmd : TMD.Tmd Flavor
+  /-- Generalized parton distributions. -/
   gpd : GPD.Model Flavor
+  /-- Upper `k_T` cutoff used when reducing the TMDs to collinear PDFs. -/
   ktMax : ℝ
+  /-- Rapidity scale `ζ` at which the TMDs are reduced to collinear PDFs. -/
   ζ : ℝ
 
 /-- Structural assumptions and bridge assumptions for a unified model. -/
@@ -70,6 +75,7 @@ def tmdCollinear (U : Model Flavor) : PDF.Pdf Flavor :=
 /-- Sum-rule API shape reusing the PDF moment interface. -/
 structure SumRuleInterface [Fintype Flavor] (U : Model Flavor) : Type where
   momentum : ∀ Q2, (∑ i, moment U 1 i Q2) = 1
+  /-- Target value of the zeroth Mellin moment of each flavor. -/
   valenceTarget : Flavor → ℝ
   valence : ∀ i Q2, moment U 0 i Q2 = valenceTarget i
 

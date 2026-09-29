@@ -76,8 +76,11 @@ structure FermionSelfEnergyLoopIntegralData
 structure OneLoopSelfEnergyLoopIntegralDataBundle
     {rules : GaugeFeynmanRules}
     (bundle : OneLoopSelfEnergyDiagramBundle rules) : Type where
+  /-- Loop-integral data for the gauge-boson self-energy diagram. -/
   gaugeBoson : GaugeBosonSelfEnergyLoopIntegralData bundle.gaugeBoson
+  /-- Loop-integral data for the ghost self-energy diagram. -/
   ghost : GhostSelfEnergyLoopIntegralData bundle.ghost
+  /-- Loop-integral data for the fermion self-energy diagram. -/
   fermion : FermionSelfEnergyLoopIntegralData bundle.fermion
 
 /-- Canonical evaluation data for a gauge-boson self-energy diagram. -/

@@ -26,14 +26,17 @@ namespace Amplitudes
 
 /-- Helicity-amplitude interface indexed by incoming/outgoing helicities. -/
 structure HelicityAmplitude where
+  /-- Amplitude for incoming and outgoing helicities, as a function of `(ξ, t)`. -/
   amp : ℤ → ℤ → ℝ → ℝ → ℝ
 
 /-- Scalar DVCS amplitude interface over `(xi, t, Q2)`. -/
 structure DVCSAmplitude where
+  /-- Amplitude as a function of `(ξ, t, Q²)`. -/
   scalar : ℝ → ℝ → ℝ → ℝ
 
 /-- Scalar DVMP amplitude interface over meson channel and `(xi, t, Q2)`. -/
 structure DVMPAmplitude (Meson : Type) where
+  /-- Amplitude for a meson channel as a function of `(ξ, t, Q²)`. -/
   scalar : Meson → ℝ → ℝ → ℝ → ℝ
 
 -- A `GaugeAssumptions` bundle used to sit here, with fields `conserved : Prop` and

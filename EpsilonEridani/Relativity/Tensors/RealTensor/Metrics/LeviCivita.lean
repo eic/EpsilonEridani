@@ -37,17 +37,13 @@ generalized Kronecker delta are equivalent abstractions for capturing permutatio
 abbrev leviCivita4Int (μ ν ρ σ : Fin 4) : ℤ :=
   generalizedKroneckerDelta ![μ, ν, ρ, σ] id
 
-/-- The rank-4 contravariant Levi-Civita symbol in 3+1 dimensions.
-With signature `(+, -, -, -)`, each index raise contributes a diagonal metric factor,
-so raising all four indices contributes the product
-`η μ μ * η ν ν * η ρ ρ * η σ σ`.
-
-This is the negative of the covariant Levi-Civita symbol, also a generalized Kronecker delta
-up to sign. -/
+/-- The Minkowski index corresponding to `i : Fin 4`: `0` is the time index and
+`1, 2, 3` are the spatial indices. -/
 def fin4ToMinkowskiIdx : Fin 4 → Fin 1 ⊕ Fin 3
   | ⟨0, _⟩ => Sum.inl 0
   | ⟨n + 1, hn⟩ => Sum.inr ⟨n, by omega⟩
 
+/-- The diagonal Minkowski metric entry `η i i` as an integer (`1` for `i = 0`, else `-1`). -/
 def metricDiagSignInt (i : Fin 4) : ℤ :=
   if minkowskiMatrix (fin4ToMinkowskiIdx i) (fin4ToMinkowskiIdx i) = (1 : ℝ) then 1 else -1
 
@@ -55,6 +51,13 @@ lemma metricDiagSignInt_eq_if_zero (i : Fin 4) :
     metricDiagSignInt i = if i.1 = 0 then 1 else -1 := by
   fin_cases i <;> simp [metricDiagSignInt, fin4ToMinkowskiIdx] <;> norm_num
 
+/-- The rank-4 contravariant Levi-Civita symbol in 3+1 dimensions.
+With signature `(+, -, -, -)`, each index raise contributes a diagonal metric factor,
+so raising all four indices contributes the product
+`η μ μ * η ν ν * η ρ ρ * η σ σ`.
+
+This is the negative of the covariant Levi-Civita symbol, also a generalized Kronecker delta
+up to sign. -/
 def leviCivita4UpInt (μ ν ρ σ : Fin 4) : ℤ :=
   - leviCivita4Int μ ν ρ σ
 

@@ -298,10 +298,15 @@ abbrev mollerTopologyCandidateEnumeration := mollerQGRAFCandidateEnumeration
 
 /-- Signature used by the Møller two-loop topology classifier. -/
 structure MollerTwoLoopTopologySignature where
+  /-- Whether a ghost line appears in the diagram. -/
   hasGhostLine : Bool
+  /-- Whether a two-loop counterterm insertion appears. -/
   hasCountertermInsertion : Bool
+  /-- Whether the graph is a vertex-corrected box-interference pattern. -/
   isVertexBoxInterference : Bool
+  /-- Number of fermion self-energy insertions on external electron legs. -/
   fermionSelfEnergyInsertions : ℕ
+  /-- Whether the graph contains a nested gauge-boson self-energy subgraph. -/
   hasNestedGaugeSelfEnergy : Bool
 
 /-- Extract two-loop classifier signature from a Møller QGRAF candidate. -/
@@ -989,7 +994,7 @@ def mollerMSbarPlaceholderWeights : MollerTwoLoopDiagramLabel → ℝ
 
 This profile upweights vertex-corrected box-interference topologies relative to
 other classes to model a vertex-emphasis regime at the interface level. -/
-def mollerVertex1508_07853PlaceholderWeights : MollerTwoLoopDiagramLabel → ℝ
+def mollerVertexArXiv150807853PlaceholderWeights : MollerTwoLoopDiagramLabel → ℝ
   | .nestedGaugeBosonSelfEnergy => 0.4
   | .gaugeGhostMixed => 0.2
   | .vertexCorrectedBoxInterference => 1.6
@@ -1015,10 +1020,10 @@ def mollerMSbarPlaceholderScheme : MollerTwoLoopWeightScheme where
 The referenced study reports a relative correction estimate around `-0.0034` for
 an 11 GeV beam on a fixed electron target, for the considered two-loop electroweak
 vertex subset. We store this only as metadata for future calibrated instantiations. -/
-def mollerVertex1508_07853PlaceholderScheme : MollerTwoLoopWeightScheme where
+def mollerVertexArXiv150807853PlaceholderScheme : MollerTwoLoopWeightScheme where
   schemeName := "MOLLER-vertex-1508.07853-placeholder"
   schemeKind := "vertex-subset"
-  diagramWeight := mollerVertex1508_07853PlaceholderWeights
+  diagramWeight := mollerVertexArXiv150807853PlaceholderWeights
   benchmarkDeltaAOverA := some (-0.0034)
 
 /-- Registry-style selector for initial placeholder renormalization schemes.
@@ -1033,7 +1038,7 @@ def mollerPlaceholderSchemeOfKey (key : String) : MollerTwoLoopWeightScheme :=
   else if key = "msbar" then
     mollerMSbarPlaceholderScheme
   else if key = "vertex-1508.07853" then
-    mollerVertex1508_07853PlaceholderScheme
+    mollerVertexArXiv150807853PlaceholderScheme
   else
     mollerOnShellPlaceholderScheme
 
@@ -1078,8 +1083,8 @@ lemma mollerRelativeCorrectionAtBenchmark_eq_schemeTarget_of_calibration
 
 /-- The arXiv:1508.07853-inspired placeholder scheme stores benchmark target
 `δA/A = -0.0034`. -/
-lemma mollerVertex1508_07853_schemeBenchmarkTarget :
-    mollerSchemeBenchmarkTarget mollerVertex1508_07853PlaceholderScheme
+lemma mollerVertexArXiv150807853_schemeBenchmarkTarget :
+    mollerSchemeBenchmarkTarget mollerVertexArXiv150807853PlaceholderScheme
       = -0.0034 := by
   rfl
 

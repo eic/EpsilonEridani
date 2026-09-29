@@ -346,9 +346,13 @@ lemma chiSq_suN_dglapRhs_representation_eq
 /-- Bundled assumptions for pointwise SU(N) rhs consistency checks in
 inference-facing analyses. -/
 structure SURhsConsistencyInputs : Type where
+  /-- Target value for the DGLAP right-hand side. -/
   target : ℝ
+  /-- Tolerance on the residual between the DGLAP right-hand side and `target`. -/
   eps : ℝ
+  /-- Observed value entering the chi-square comparison. -/
   observed : ℝ
+  /-- Uncertainty entering the chi-square comparison. -/
   sigma : ℝ
 
 /-- Packaged SU(N) bridge: from one input bundle, derive both the residual-bound

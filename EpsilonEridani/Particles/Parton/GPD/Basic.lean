@@ -43,7 +43,9 @@ abbrev Gpd (Flavor : Type) : Type := Flavor → ℝ → ℝ → ℝ → ℝ
 
 /-- Minimal GPD model carrying the standard pair `(H, E)`. -/
 structure Model (Flavor : Type) : Type where
+  /-- The GPD `H`. -/
   H : Gpd Flavor
+  /-- The GPD `E`. -/
   E : Gpd Flavor
 
 /-- Structural assumptions for a GPD model. -/

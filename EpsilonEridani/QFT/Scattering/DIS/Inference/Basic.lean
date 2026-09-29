@@ -26,8 +26,11 @@ namespace Inference
 
 /-- Abstract data point for inference interfaces. -/
 structure DataPoint : Type where
+  /-- Bjorken `x`. -/
   xBj : ℝ
+  /-- Hard scale `Q²`. -/
   Q2 : ℝ
+  /-- Measured value of the observable. -/
   observed : ℝ
 
 -- A `CovarianceModel` record used to sit here, with the single field

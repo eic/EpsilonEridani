@@ -49,7 +49,7 @@ into the basis, so that no statement in this module needs `g K.p K.q ≠ 0`.
 `IsF1F2Decomposition` is still a definition rather than a consequence of covariance: the
 exhaustion statement `exists_isF1F2Decomposition` is stated over concrete hypotheses but is
 not proved here (one `sorry`). What *is* proved is that the transverse basis satisfies all of
-`Assumptions` (`fromF1F2Assumptions`), that covariance in the sense of
+`Assumptions` (`assumptions_fromF1F2`), that covariance in the sense of
 `IsLorentzCovariant` has teeth (`covariant_spectator_offDiagonal_zero`), and that the
 coefficients are unique (`decomposition_unique`).
 
@@ -80,6 +80,7 @@ namespace Tensors
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
+/-- A bilinear form used to evaluate Lorentz-invariant scalar products. -/
 abbrev Bilin := LinearMap.BilinForm ℝ V
 
 namespace Bilin
@@ -395,7 +396,7 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
 /-- Assumptions on an abstract hadronic tensor: Lorentz covariance in the concrete sense of
 `IsLorentzCovariant`, current conservation in both slots, and symmetry (the parity-even,
 electromagnetic case). -/
-structure Assumptions (g : Bilin V) (K : DisKinematics V) (W : Bilin V) : Type where
+structure Assumptions (g : Bilin V) (K : DisKinematics V) (W : Bilin V) : Prop where
   /-- Invariance under every `g`-isometry fixing `p` and `q`. -/
   covariant : IsLorentzCovariant g K W
   /-- Current conservation in the first tensor slot. -/
@@ -468,13 +469,13 @@ lemma fromF1F2_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) (F1 F2 : �
 functions.** This is the statement that fails in the non-transverse basis
 `F1 • g + F2 • rankOne g p p`, where `conserved_left` forces `F1 = 0` and `F2 * g p q = 0`.
 The only hypotheses are symmetry of `g` and `Q² ≠ 0`. -/
-def fromF1F2Assumptions (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
+theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (hQ2 : g K.q K.q ≠ 0) (F1 F2 : ℝ) :
-    Assumptions g K (fromF1F2 g K F1 F2) where
-  covariant := fromF1F2_isLorentzCovariant g K F1 F2
-  conserved_left := fromF1F2_conserved_left g K hQ2 F1 F2
-  conserved_right := fromF1F2_conserved_right g K hSymm hQ2 F1 F2
-  symm := fromF1F2_isSymm g K hSymm F1 F2
+    Assumptions g K (fromF1F2 g K F1 F2) :=
+  { covariant := fromF1F2_isLorentzCovariant g K F1 F2
+    conserved_left := fromF1F2_conserved_left g K hQ2 F1 F2
+    conserved_right := fromF1F2_conserved_right g K hSymm hQ2 F1 F2
+    symm := fromF1F2_isSymm g K hSymm F1 F2 }
 
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one
@@ -498,7 +499,7 @@ structure UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
   pT_outer_nonzero : g (pTransverse g K) vF2 * g (pTransverse g K) wF2 ≠ 0
 
 /-- With probe vectors separating the two basis structures, a decomposition with
-`(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `fromF1F2Assumptions` this is the
+`(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this is the
 non-triviality statement that the old, non-transverse basis could not support. -/
 lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
     (hU : UniquenessAssumptions g K) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
@@ -591,7 +592,7 @@ timelike and `q` spacelike, and none of them is the conclusion.
 /-- Linear-algebra inputs about the spectator subspace `{p, q}^⊥` needed to turn covariance
 plus conservation into the two-structure decomposition. These are facts about `g`, `p`, `q`
 and the isometry group — not about the hadronic tensor. -/
-structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
+structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Prop where
   /-- Every vector splits into a transverse-hadron part, a longitudinal `q` part, and a
   spectator part orthogonal to both. -/
   span : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
@@ -622,7 +623,7 @@ pointwise identity. -/
 -- identity and a scaling argument that we could not write down with confidence without a
 -- toolchain; the `transitive` and `definite` hypotheses may also need strengthening (for
 -- instance to a statement about reflections generating the spectator isometry group) once
--- the proof is attempted. Nothing downstream depends on this lemma: `fromF1F2Assumptions`
+-- the proof is attempted. Nothing downstream depends on this lemma: `assumptions_fromF1F2`
 -- and `decomposition_unique` are the load-bearing results.
 -- @[sorryful]
 -- theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
@@ -733,15 +734,8 @@ lemma not_isLorentzCovariant_wWit : ¬ IsLorentzCovariant gWit kWit wWit := by
   norm_num at h
 
 /-- Corollary: `Hadronic.Assumptions` is not satisfied by every symmetric conserved tensor,
-because its `covariant` field alone already rules `wWit` out.
-
-Stated as an arrow into `False` rather than with `¬` because `Assumptions` is declared
-`: Type`, not `: Prop`, so it is not negatable. That is worth recording on its own: a bundle
-of physics hypotheses living in `Type` is *data*, two proofs of the same hypotheses are not
-definitionally equal, and it cannot be used where a `Prop` is expected. The same applies to
-`UniquenessAssumptions` and `SpectatorAssumptions`. Moving them to `Prop` is a signature
-change with downstream reach, so it is left for review rather than done here. -/
-lemma not_assumptions_wWit : Assumptions gWit kWit wWit → False := fun hA =>
+because its `covariant` field alone already rules `wWit` out. -/
+lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
   not_isLorentzCovariant_wWit hA.covariant
 
 /-- **`UniquenessAssumptions` is satisfiable.** The `F1` probe is the spectator pair

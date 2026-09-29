@@ -26,17 +26,26 @@ namespace Kinematics
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
+/-- A bilinear form used to evaluate Lorentz-invariant scalar products. -/
 abbrev Bilin := LinearMap.BilinForm ℝ V
 
 /-- Minimal off-forward exclusive kinematics container. -/
 structure ExclKinematics where
+  /-- Incoming hadron momentum. -/
   p : V
+  /-- Outgoing hadron momentum. -/
   pPrime : V
+  /-- Incoming lepton momentum. -/
   k : V
+  /-- Outgoing lepton momentum. -/
   kPrime : V
+  /-- Exchanged momentum, tied to both momentum pairs by `hqLepton` and `hqHadron`. -/
   q : V
+  /-- Momentum of the produced photon or meson. -/
   qPrime : V
+  /-- Azimuthal angle of the lepton plane. -/
   phiL : ℝ
+  /-- Azimuthal angle of the hadron plane. -/
   phiH : ℝ
   hqLepton : q = k - kPrime
   hqHadron : q = pPrime - p

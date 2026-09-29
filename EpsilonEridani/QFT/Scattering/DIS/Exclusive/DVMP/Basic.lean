@@ -42,13 +42,18 @@ inductive PolarizationTag where
 
 /-- Channel metadata record for DVMP interfaces. -/
 structure Channel (Meson : Type) where
+  /-- Produced meson. -/
   meson : Meson
+  /-- Vector or pseudoscalar meson. -/
   kind : MesonKind
+  /-- Longitudinal or transverse polarization of the channel. -/
   polarization : PolarizationTag
 
 /-- Transition form-factor placeholder container. -/
 structure TFF where
+  /-- Longitudinal transition form factor as a function of `(ξ, t)`. -/
   longitudinal : ℝ → ℝ → ℝ
+  /-- Transverse transition form factor as a function of `(ξ, t)`. -/
   transverse : ℝ → ℝ → ℝ
 
 /-- Observable template combining longitudinal/transverse channel parts. -/
