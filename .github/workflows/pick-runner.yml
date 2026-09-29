@@ -26,6 +26,12 @@ name: pick-runner
 #
 # The picker itself needs a GitHub slot. When all 20 are taken it waits for one, and then answers
 # Namespace; the budget's headroom and the churn of short jobs keep that wait short.
+#
+# Namespace can be switched off entirely by setting the repository variable `NAMESPACE_RUNNERS`
+# to `off` (for example while Namespace is not provisioning runners). Callers then skip this job
+# and run every build, merge-queue and nightly builds included, on GitHub-hosted runners; a build
+# that finds all 20 slots taken waits in GitHub's queue instead of moving to Namespace. Any other
+# value, or none, leaves the choice to this job.
 
 on:
   workflow_call:
