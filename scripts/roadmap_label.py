@@ -395,7 +395,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Assign roadmap labels to PRs.")
     ap.add_argument("--repo", default="eic/EpsilonEridani")
     ap.add_argument("--roadmap-dir", required=True,
-                    help="path to a EpsilonEridaniRoadmap checkout (for the canonical area set)")
+                    help="path to an EpsilonEridaniRoadmaps checkout (for the canonical area set)")
     ap.add_argument("--pr", type=int, help="classify a single PR")
     ap.add_argument("--backfill", action="store_true", help="classify every PR")
     ap.add_argument("--limit", type=int, default=5000, help="max PRs for --backfill")
