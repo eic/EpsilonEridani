@@ -68,9 +68,13 @@ def delta (K : ExclKinematics V) : V :=
 def tMom (g : Bilin V) (K : ExclKinematics V) : ℝ :=
   g K.delta K.delta
 
-/-- Skewness-style variable with a regularized denominator interface. -/
+/-- Skewness `ξ = -Δ·qbar / (2 Pbar·qbar)` with `Pbar = (p + p') / 2` and `qbar = (q + q') / 2`
+(Belitsky-Müller-Kirchner's `η`). The halves cancel, so this is
+`-Δ·(q + q') / ((p + p')·(q + q'))`. For DVCS (`q'² = 0`, `p² = p'²`) it equals
+`x_B / (2 - x_B + x_B t / Q²)` with `x_B = Q² / (2 p·q)`, i.e. `x_B / (2 - x_B)` as `t → 0`.
+Like any real division in Lean, it is `0` when the denominator vanishes. -/
 noncomputable def xiSkew (g : Bilin V) (K : ExclKinematics V) : ℝ :=
-  K.Q2 g / (2 * g K.p K.q + 1)
+  -g K.delta (K.q + K.qPrime) / g (K.p + K.pPrime) (K.q + K.qPrime)
 
 /-- Relative azimuthal angle between hadron and lepton planes. -/
 def phiDiff (K : ExclKinematics V) : ℝ :=
@@ -99,6 +103,16 @@ lemma tMom_eq_photon_transfer_sq
     (g : Bilin V) (K : ExclKinematics V) :
     K.tMom g = g (K.q - K.qPrime) (K.q - K.qPrime) := by
   rw [tMom, delta_eq_q_sub_qPrime]
+
+/-- For a symmetric `g`, the numerator of `xiSkew` is `-Δ·(q + q') = q'² - q²`, which is
+`Q²` for DVCS (`q'² = 0`). -/
+lemma neg_delta_apply_q_add_qPrime
+    (g : Bilin V) (hg : g.IsSymm) (K : ExclKinematics V) :
+    -g K.delta (K.q + K.qPrime) = g K.qPrime K.qPrime - g K.q K.q := by
+  rw [K.delta_eq_q_sub_qPrime]
+  simp only [map_sub, map_add, LinearMap.sub_apply]
+  rw [hg.eq K.qPrime K.q]
+  ring
 
 end ExclKinematics
 
