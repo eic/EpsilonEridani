@@ -49,7 +49,7 @@ into the basis, so that no statement in this module needs `g K.p K.q ≠ 0`.
 `IsF1F2Decomposition` is still a definition rather than a consequence of covariance: the
 exhaustion statement `exists_isF1F2Decomposition` is stated over concrete hypotheses but is
 not proved here (one `sorry`). What *is* proved is that the transverse basis satisfies all of
-`Assumptions` (`fromF1F2Assumptions`), that covariance in the sense of
+`Assumptions` (`assumptions_fromF1F2`), that covariance in the sense of
 `IsLorentzCovariant` has teeth (`covariant_spectator_offDiagonal_zero`), and that the
 coefficients are unique (`decomposition_unique`).
 
@@ -469,13 +469,13 @@ lemma fromF1F2_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) (F1 F2 : �
 functions.** This is the statement that fails in the non-transverse basis
 `F1 • g + F2 • rankOne g p p`, where `conserved_left` forces `F1 = 0` and `F2 * g p q = 0`.
 The only hypotheses are symmetry of `g` and `Q² ≠ 0`. -/
-def fromF1F2Assumptions (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
+theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (hQ2 : g K.q K.q ≠ 0) (F1 F2 : ℝ) :
-    Assumptions g K (fromF1F2 g K F1 F2) where
-  covariant := fromF1F2_isLorentzCovariant g K F1 F2
-  conserved_left := fromF1F2_conserved_left g K hQ2 F1 F2
-  conserved_right := fromF1F2_conserved_right g K hSymm hQ2 F1 F2
-  symm := fromF1F2_isSymm g K hSymm F1 F2
+    Assumptions g K (fromF1F2 g K F1 F2) :=
+  { covariant := fromF1F2_isLorentzCovariant g K F1 F2
+    conserved_left := fromF1F2_conserved_left g K hQ2 F1 F2
+    conserved_right := fromF1F2_conserved_right g K hSymm hQ2 F1 F2
+    symm := fromF1F2_isSymm g K hSymm F1 F2 }
 
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one
@@ -499,7 +499,7 @@ structure UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
   pT_outer_nonzero : g (pTransverse g K) vF2 * g (pTransverse g K) wF2 ≠ 0
 
 /-- With probe vectors separating the two basis structures, a decomposition with
-`(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `fromF1F2Assumptions` this is the
+`(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this is the
 non-triviality statement that the old, non-transverse basis could not support. -/
 lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
     (hU : UniquenessAssumptions g K) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
@@ -623,7 +623,7 @@ pointwise identity. -/
 -- identity and a scaling argument that we could not write down with confidence without a
 -- toolchain; the `transitive` and `definite` hypotheses may also need strengthening (for
 -- instance to a statement about reflections generating the spectator isometry group) once
--- the proof is attempted. Nothing downstream depends on this lemma: `fromF1F2Assumptions`
+-- the proof is attempted. Nothing downstream depends on this lemma: `assumptions_fromF1F2`
 -- and `decomposition_unique` are the load-bearing results.
 -- @[sorryful]
 -- theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
