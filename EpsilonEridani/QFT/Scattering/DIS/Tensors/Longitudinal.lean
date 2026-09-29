@@ -119,7 +119,7 @@ namespace Tensors
 namespace Longitudinal
 
 open Hadronic
-open Kinematics (DisKinematics)
+open Kinematics (Bilin DisKinematics)
 open EpsilonEridani.QFT.Factorization.DIS (HardKernel loChannel loStructureFunction IsLOFactorized)
 open EpsilonEridani.QFT.Factorization.Convolution
   (convolveAt integrand convolveAt_eq_zero_of_integrand_zero)

@@ -24,8 +24,8 @@ This module introduces tensor objects for inclusive DIS:
 
 ## Conventions
 
-Tensors are real bilinear forms `Bilin V := LinearMap.BilinForm ℝ V` on an abstract real
-vector space `V`; `g` plays the role of the metric and carries no built-in signature. The
+Tensors are real bilinear forms `Kinematics.Bilin V := LinearMap.BilinForm ℝ V` on an abstract
+real vector space `V`; `g` plays the role of the metric and carries no built-in signature. The
 kinematic invariants follow `DIS.Kinematics`: `K.Q2 g = - g K.q K.q`, i.e. the metric
 convention is `+---`, spacelike momentum transfer has `g K.q K.q < 0` and `Q² > 0`. All
 transverse constructions divide by `g K.q K.q`, so they carry `g K.q K.q ≠ 0` as an explicit
@@ -80,8 +80,7 @@ namespace Tensors
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
-/-- A bilinear form used to evaluate Lorentz-invariant scalar products. -/
-abbrev Bilin := LinearMap.BilinForm ℝ V
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
 
 namespace Bilin
 
