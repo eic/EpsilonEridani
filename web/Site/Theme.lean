@@ -87,10 +87,10 @@ def theme : Theme := { Theme.default with
         <section class="band roadmap">
           <h2 class="section-title">"On the roadmap"</h2>
           <div class="cards four">
-            <div class="card"><h3>"Universal covers"</h3></div>
-            <div class="card"><h3>"The Jacobian challenge"</h3></div>
-            <div class="card"><h3>"Reductive algebraic groups"</h3></div>
-            <div class="card"><h3>"Partial differential equations"</h3></div>
+            <div class="card"><h3>"Spin structure of the nucleon"</h3></div>
+            <div class="card"><h3>"The origin of hadron mass"</h3></div>
+            <div class="card"><h3>"Gluon saturation at small x"</h3></div>
+            <div class="card"><h3>"3D imaging with GPDs"</h3></div>
           </div>
         </section>
 
