@@ -110,7 +110,7 @@ lemma neg_delta_apply_q_add_qPrime
     (g : Bilin V) (hg : g.IsSymm) (K : ExclKinematics V) :
     -g K.delta (K.q + K.qPrime) = g K.qPrime K.qPrime - g K.q K.q := by
   rw [K.delta_eq_q_sub_qPrime]
-  simp only [map_sub, map_add, LinearMap.sub_apply, LinearMap.add_apply]
+  simp only [map_sub, map_add, LinearMap.sub_apply]
   rw [hg.eq K.qPrime K.q]
   ring
 
