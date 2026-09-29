@@ -170,6 +170,16 @@ class SeriesTest(unittest.TestCase):
 
         self.assertEqual(data, [("2026-09-15", 2), ("2026-09-16", 2)])
 
+    def test_start_after_the_last_commit_opens_with_the_carried_count(self):
+        # Nothing lands on or after the start, so every sampled day is dropped; the series
+        # still opens on the start day with the count carried from before it.
+        self.commit("2026-09-10T12:00:00+0000", "2026-09-10T12:00:00+0000", 5)
+
+        data = loc_graph.series(str(self.repo), ["Tracked.lean"], "HEAD",
+                                today=dt.date(2026, 9, 14), start=dt.date(2026, 9, 12))
+
+        self.assertEqual(data, [("2026-09-12", 5), ("2026-09-13", 5)])
+
     def test_start_leaves_an_empty_series_empty(self):
         self.commit("2026-09-20T08:00:00+0000", "2026-09-20T08:00:00+0000", 4)
 
