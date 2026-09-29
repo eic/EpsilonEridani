@@ -54,7 +54,7 @@ def extendIndices {α : Type} (k n : ℕ) (_hk : k ≤ n)
   simp [extendIndices, h]
 
 /-- The last index of an `extendIndices` map lands in the tail component. -/
-@[simp] lemma extendIndices_last {α : Type} {m : ℕ} (hm : 1 ≤ m)
+lemma extendIndices_last {α : Type} {m : ℕ} (hm : 1 ≤ m)
     (μ : Fin (m - 1) → α) (lam : Fin (m - (m - 1)) → α) :
     extendIndices (m - 1) m (Nat.sub_le _ _) μ lam ⟨m - 1, by omega⟩ =
       lam ⟨0, by omega⟩ := by simp [extendIndices]
