@@ -85,10 +85,22 @@ def theme : Theme := { Theme.default with
         <section class="band roadmap">
           <h2 class="section-title">"On the roadmap"</h2>
           <div class="cards four">
-            <div class="card"><h3>"Universal covers"</h3></div>
-            <div class="card"><h3>"The Jacobian challenge"</h3></div>
-            <div class="card"><h3>"Reductive algebraic groups"</h3></div>
-            <div class="card"><h3>"Partial differential equations"</h3></div>
+            <a class="card named" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/SpinStructure/README.md">
+              <h3>"SpinStructure"</h3>
+              <p>"Spin structure of the proton and neutron"</p>
+            </a>
+            <a class="card named" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/HadronMassAndEnergyMomentumTensor/README.md">
+              <h3>"HadronMassAndEnergyMomentumTensor"</h3>
+              <p>"The hadron mass, the energy-momentum tensor, and gravitational form factors"</p>
+            </a>
+            <a class="card named" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/SmallXAndSaturation/README.md">
+              <h3>"SmallXAndSaturation"</h3>
+              <p>"Small-x evolution, gluon saturation, and the Color Glass Condensate"</p>
+            </a>
+            <a class="card named" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/GeneralizedPartonDistributions/README.md">
+              <h3>"GeneralizedPartonDistributions"</h3>
+              <p>"Generalized parton distributions and spatial imaging"</p>
+            </a>
           </div>
         </section>
 
