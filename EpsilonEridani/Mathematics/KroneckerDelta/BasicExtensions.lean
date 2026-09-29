@@ -604,10 +604,10 @@ private theorem generalizedKroneckerDeltaReal_contraction_base' (m : ℕ) (hm : 
   | zero => omega
   | succ n =>
     simp only [Nat.succ_sub_one]
-    change (∑ l : ι, Matrix.det (Matrix.of fun i j => 
-      δℤ (extendIndices n (n + 1) (Nat.le_succ n) μ (fun _ => l) i) 
+    change (∑ l : ι, Matrix.det (Matrix.of fun i j =>
+      δℤ (extendIndices n (n + 1) (Nat.le_succ n) μ (fun _ => l) i)
       (extendIndices n (n + 1) (Nat.le_succ n) ν (fun _ => l) j))) = _
-    change _ = ((Fintype.card ι + 1 - (n + 1) : ℕ) : ℤ) * 
+    change _ = ((Fintype.card ι + 1 - (n + 1) : ℕ) : ℤ) *
       Matrix.det (Matrix.of fun i j => δℤ (μ i) (ν j))
     simp_rw [Matrix.det_succ_column _ (Fin.last n)]
     simp only [Matrix.of_apply]
