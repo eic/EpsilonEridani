@@ -87,10 +87,10 @@ def theme : Theme := { Theme.default with
         <section class="band roadmap">
           <h2 class="section-title">"On the roadmap"</h2>
           <div class="cards four">
-            <div class="card"><h3>"Spin structure of the nucleon"</h3></div>
-            <div class="card"><h3>"The origin of hadron mass"</h3></div>
-            <div class="card"><h3>"Gluon saturation at small x"</h3></div>
-            <div class="card"><h3>"3D imaging with GPDs"</h3></div>
+            <a class="card" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/SpinStructure/README.md"><h3>"Spin structure of the nucleon"</h3></a>
+            <a class="card" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/HadronMassAndEnergyMomentumTensor/README.md"><h3>"The origin of hadron mass"</h3></a>
+            <a class="card" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/SmallXAndSaturation/README.md"><h3>"Gluon saturation at small x"</h3></a>
+            <a class="card" href="https://github.com/eic/EpsilonEridaniRoadmaps/blob/main/EpsilonEridaniRoadmaps/GeneralizedPartonDistributions/README.md"><h3>"3D imaging with GPDs"</h3></a>
           </div>
         </section>
 
