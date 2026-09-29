@@ -139,7 +139,7 @@ lemma apply_p_add_pPrime_q_add_qPrime
     simp only [map_sub, LinearMap.sub_apply] at h
     linarith
   rw [tMom, Q2, hp', hq']
-  simp only [map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply]
+  simp only [map_add, map_sub, LinearMap.add_apply]
   linear_combination (-1 : ℝ) * hpΔ + hg.eq K.delta K.p - hqΔ + hg.eq K.delta K.q
 
 /-- For DVCS kinematics (`q'² = 0`, `p'² = p²`) and a symmetric `g`, `xiSkew` takes the
