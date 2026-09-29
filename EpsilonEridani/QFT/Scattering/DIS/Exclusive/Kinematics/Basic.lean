@@ -38,16 +38,18 @@ structure ExclKinematics where
   k : V
   /-- Outgoing lepton momentum. -/
   kPrime : V
-  /-- Exchanged momentum, tied to both momentum pairs by `hqLepton` and `hqHadron`. -/
+  /-- Momentum of the exchanged virtual photon, `q = k - k'` by `hqLepton`. -/
   q : V
-  /-- Momentum of the produced photon or meson. -/
+  /-- Momentum of the produced real photon (DVCS) or meson (DVMP). -/
   qPrime : V
   /-- Azimuthal angle of the lepton plane. -/
   phiL : ℝ
   /-- Azimuthal angle of the hadron plane. -/
   phiH : ℝ
+  /-- The virtual photon carries the lepton momentum transfer. -/
   hqLepton : q = k - kPrime
-  hqHadron : q = pPrime - p
+  /-- Momentum conservation at the hadronic vertex, `p + q = p' + q'`. -/
+  hMomentum : p + q = pPrime + qPrime
 
 namespace ExclKinematics
 
@@ -57,9 +59,14 @@ variable {V}
 def Q2 (g : Bilin V) (K : ExclKinematics V) : ℝ :=
   - g K.q K.q
 
-/-- Momentum-transfer invariant in the exclusive channel. -/
+omit [Module ℝ V] in
+/-- Momentum transfer to the hadron, `Δ = p' - p`. -/
+def delta (K : ExclKinematics V) : V :=
+  K.pPrime - K.p
+
+/-- Momentum-transfer invariant `t = Δ² = (p' - p)²` in the exclusive channel. -/
 def tMom (g : Bilin V) (K : ExclKinematics V) : ℝ :=
-  g K.q K.q
+  g K.delta K.delta
 
 /-- Skewness-style variable with a regularized denominator interface. -/
 noncomputable def xiSkew (g : Bilin V) (K : ExclKinematics V) : ℝ :=
@@ -75,14 +82,23 @@ lemma q_eq_lepton_transfer (K : ExclKinematics V) :
   K.hqLepton
 
 omit [Module ℝ V] in
-lemma q_eq_hadron_transfer (K : ExclKinematics V) :
-    K.q = K.pPrime - K.p :=
-  K.hqHadron
+/-- Momentum conservation expresses the hadron momentum transfer through the photon side,
+`Δ = q - q'`. -/
+lemma delta_eq_q_sub_qPrime (K : ExclKinematics V) :
+    K.delta = K.q - K.qPrime := by
+  rw [delta, sub_eq_sub_iff_add_eq_add, ← K.hMomentum]
+  exact add_comm _ _
 
 lemma tMom_eq_hadronic_transfer_sq
     (g : Bilin V) (K : ExclKinematics V) :
-    K.tMom g = g (K.pPrime - K.p) (K.pPrime - K.p) := by
-  simp [tMom, K.hqHadron]
+    K.tMom g = g (K.pPrime - K.p) (K.pPrime - K.p) :=
+  rfl
+
+/-- `t` evaluated on the photon side of the hadronic vertex, `t = (q - q')²`. -/
+lemma tMom_eq_photon_transfer_sq
+    (g : Bilin V) (K : ExclKinematics V) :
+    K.tMom g = g (K.q - K.qPrime) (K.q - K.qPrime) := by
+  rw [tMom, delta_eq_q_sub_qPrime]
 
 end ExclKinematics
 
