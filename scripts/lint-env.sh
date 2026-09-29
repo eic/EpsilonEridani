@@ -444,7 +444,7 @@ nall_undoc=$(awk '$1 == "DOCSCAN-ALL" && $3 == "undocumented"' "$TMP/docscan.txt
   || fail "docstring scan scanned only $scanned declaration(s) (floor: 500): the scan's coverage collapsed — fix the scan, do not baseline this"
 # Sentinels: known-documented declarations spread across the library must be scanned
 # AND seen as documented; each failure mode is distinct (see the header comment).
-for sentinel in EpsilonEridani.GridDiagram.OSet EpsilonEridani.Isotopy EpsilonEridani.AlgebraicGeometry.WeilDivisor.coeff; do
+for sentinel in TauCetii.GridDiagram.OSet TauCeti.Isotopy TauCeti.AlgebraicGeometry.WeilDivisor.coeff; do
   sentinel_status=$(awk -v d="$sentinel" '$1 == "DOCSCAN-ALL" && $2 == d { print $3 }' "$TMP/docscan.txt")
   case "$sentinel_status" in
     documented) : ;;
