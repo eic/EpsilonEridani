@@ -1,3 +1,5 @@
+module
+
 import EpsilonEridani.Generator.Config
 import EpsilonEridani.Generator.CrossSection
 import EpsilonEridani.Generator.DISEvent

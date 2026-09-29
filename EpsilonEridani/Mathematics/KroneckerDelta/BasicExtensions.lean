@@ -3,15 +3,17 @@ Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wouter Deconinck
 -/
-import Physlib.Mathematics.KroneckerDelta.Basic
-import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Fin.Tuple.Basic
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Int.Cast.Lemmas
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Nat.Factorial.Basic
-import Mathlib.Tactic
+module
+
+public import Physlib.Mathematics.KroneckerDelta.Basic
+public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Int.Cast.Lemmas
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Tactic
 
 /-!
 # Kronecker delta extensions
@@ -20,6 +22,8 @@ Local extensions to `Physlib.Mathematics.KroneckerDelta.Basic`'s generalized Kro
 not yet upstreamed to Physlib: index-splitting (`extendIndices`) and the contraction law
 `∑ μ : Fin k → ι, δ^{(μ,lam)}_{(μ,ω)} = k! · δ^{lam}_{ω}` for an arbitrary finite index type `ι`.
 -/
+
+@[expose] public section
 
 namespace KroneckerDelta
 
