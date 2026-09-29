@@ -68,7 +68,7 @@ def delta (K : ExclKinematics V) : V :=
 def tMom (g : Bilin V) (K : ExclKinematics V) : ℝ :=
   g K.delta K.delta
 
-/-- Skewness `ξ = -Δ·q̄ / (2 P̄·q̄)` with `P̄ = (p + p') / 2` and `q̄ = (q + q') / 2`
+/-- Skewness `ξ = -Δ·qbar / (2 Pbar·qbar)` with `Pbar = (p + p') / 2` and `qbar = (q + q') / 2`
 (Belitsky-Müller-Kirchner's `η`). The halves cancel, so this is
 `-Δ·(q + q') / ((p + p')·(q + q'))`. For DVCS (`q'² = 0`, `p² = p'²`) it equals
 `x_B / (2 - x_B + x_B t / Q²)` with `x_B = Q² / (2 p·q)`, i.e. `x_B / (2 - x_B)` as `t → 0`.
