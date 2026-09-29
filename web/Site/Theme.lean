@@ -16,7 +16,7 @@ def theme : Theme := { Theme.default with
           <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png"/>
           <link rel="preconnect" href="https://fonts.googleapis.com"/>
           <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap"/>
-          <title>{{ (← param (α := String) "title") }} " — Tau Ceti"</title>
+          <title>{{ (← param (α := String) "title") }} " — EpsilonEridani"</title>
           {{← builtinHeader }}
           <link rel="stylesheet" href="static/style.css"/>
           <script src="static/site.js" defer="defer"></script>
@@ -24,7 +24,7 @@ def theme : Theme := { Theme.default with
         <body>
           <header class="site-nav">
             <div class="nav-inner">
-              <a class="brand" href="."><img src="static/header.png" alt="Tau Ceti"/></a>
+              <a class="brand" href="."><img src="static/header.png" alt="EpsilonEridani"/></a>
               <nav class="nav-links">
                 <a href=".">"Home"</a>
                 <a href="statistics">"Statistics"</a>
@@ -39,7 +39,7 @@ def theme : Theme := { Theme.default with
           </main>
           <footer class="site-footer">
             <div class="foot-inner">
-              <p class="foot-tag">"Let’s do lots of maths."</p>
+              <p class="foot-tag">"Let’s formalize lots of physics."</p>
               <ul class="foot-links">
                 <li><a href="https://github.com/eic/EpsilonEridani">"EpsilonEridani"</a></li>
                 <li><a href="https://github.com/eic/EpsilonEridaniRoadmaps">"EpsilonEridaniRoadmaps"</a></li>
@@ -59,9 +59,9 @@ def theme : Theme := { Theme.default with
           <img class="hero-img" src="static/epsiloneridani-collaboration.jpg"
                alt="A hexapus reaching toward an AI across a tide pool, beneath twin suns and a ringed planet."/>
           <div class="hero-copy">
-            <h1 class="hero-title">"Tau Ceti"</h1>
-            <p class="hero-tag">"Let’s do lots of maths."</p>
-            <p class="hero-sub">"AI-authored Lean mathematics, directed by a human-owned roadmap and gated by open, adversarial review."</p>
+            <h1 class="hero-title">"EpsilonEridani"</h1>
+            <p class="hero-tag">"Let’s formalize lots of physics."</p>
+            <p class="hero-sub">"AI-authored Lean physics, built on Tau Ceti, directed by a human-owned roadmap and gated by open, adversarial review."</p>
             <div class="cta-row">
               <a class="cta" href="https://github.com/eic/EpsilonEridani">"Explore the code →"</a>
               <a class="cta secondary" href="docs/">"Read the docs →"</a>
@@ -98,7 +98,7 @@ def theme : Theme := { Theme.default with
           <h2 class="section-title">"Growing fast"</h2>
           <a class="growth-link" href="statistics">
             <img class="growth-img" src="static/loc-epsiloneridani.svg"
-                 alt="Tau Ceti: lines of Lean by date"/>
+                 alt="EpsilonEridani: lines of Lean by date"/>
             <span class="growth-cta">"See the statistics →"</span>
           </a>
         </section>
@@ -108,7 +108,7 @@ def theme : Theme := { Theme.default with
           <div class="cards three">
             <a class="card repo" href="https://github.com/eic/EpsilonEridani">
               <h3>"EpsilonEridani"</h3>
-              <p>"The AI-authored Lean mathematics."</p>
+              <p>"The AI-authored Lean physics."</p>
             </a>
             <a class="card repo" href="https://github.com/eic/EpsilonEridaniRoadmaps">
               <h3>"EpsilonEridaniRoadmaps"</h3>
@@ -122,8 +122,8 @@ def theme : Theme := { Theme.default with
         </section>
 
         <section class="band taste">
-          <h2 class="section-title">"A taste of the maths"</h2>
-          <p class="taste-note">"Each example here is checked against the library when this page is built."</p>
+          <h2 class="section-title">"A taste of the physics"</h2>
+          <p class="taste-note">"One-loop asymptotic freedom, the SU(3) adjoint Casimir, and DVCS momentum transfer — each example is checked against the library when this page is built."</p>
           <div class="carousel">
             <button class="carousel-arrow prev" type="button" aria-label="Previous example">"‹"</button>
             <div class="carousel-track">
