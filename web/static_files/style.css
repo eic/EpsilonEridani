@@ -153,8 +153,10 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
 }
 .card h3 { margin: 0 0 0.3rem; font-size: 1.1rem; }
 a.card { display: block; color: inherit; }
-.card.repo h3 { color: var(--teal); }
-.card.repo p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; }
+.card.repo h3, .card.named h3 { color: var(--teal); }
+/* Roadmap names are single CamelCase words, wider than a quarter-width card. */
+.card.named h3 { overflow-wrap: anywhere; }
+.card.repo p, .card.named p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; }
 a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-decoration: none; }
 
 /* ---- "a taste of the maths" ---- */
