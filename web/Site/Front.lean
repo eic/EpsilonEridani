@@ -1,6 +1,12 @@
 import VersoBlog
 open Verso Genre Blog
 
-#doc (Page) "Tau Ceti" =>
+#doc (Page) "EpsilonEridani" =>
 
-The worked examples are being rebuilt against the EpsilonEridani library.
+{leanExampleProject frontExamples "examples"}
+
+{leanCommand frontExamples asymptotic_freedom}
+
+{leanCommand frontExamples su3_adjoint_casimir}
+
+{leanCommand frontExamples dvcs_momentum_transfer}

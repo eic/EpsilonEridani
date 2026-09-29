@@ -3,8 +3,11 @@ open Verso Genre Blog
 
 #doc (Page) "About" =>
 
-Tau Ceti is an experiment in AI-authored mathematics. Humans choose the
-mathematical direction via curated [roadmaps](https://github.com/eic/EpsilonEridaniRoadmaps)
+{leanExampleProject aboutExamples "examples"}
+
+EpsilonEridani is an experiment in AI-authored formal physics, built on the open-source
+[Tau Ceti](https://github.com/TauCetiProject/TauCeti) project. Humans choose the
+direction via curated [roadmaps](https://github.com/eic/EpsilonEridaniRoadmaps)
 and AI agents do the formalization: writing Lean proofs, opening pull requests,
 writing adversarial reviews based on open standard rubrics,
 and shepherding pull requests through review.
@@ -22,3 +25,12 @@ naming, documentation, proof quality, and deprecation — and post `approve`,
 they hunt for mis-formalizations, vacuous statements, and proofs that merely push the
 lump under the carpet. When every rubric approves on the current commit,
 the pull request merges automatically.
+
+# Asymptotic freedom
+
+The theorem below is elaborated against the EpsilonEridani library when this site is
+built — extracted directly from a project that imports the library, so it cannot
+drift out of date. The one-loop QCD β-function coefficient is positive, so the strong
+coupling weakens at high energy, for fewer than 16.5 quark flavours:
+
+{leanCommand aboutExamples asymptotic_freedom}
