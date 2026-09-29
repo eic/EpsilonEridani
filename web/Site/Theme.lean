@@ -24,7 +24,7 @@ def theme : Theme := { Theme.default with
         <body>
           <header class="site-nav">
             <div class="nav-inner">
-              <a class="brand" href="."><img src="static/header.png" alt="EpsilonEridani"/></a>
+              <a class="brand" href=".">"EpsilonEridani"</a>
               <nav class="nav-links">
                 <a href=".">"Home"</a>
                 <a href="statistics">"Statistics"</a>
@@ -45,7 +45,7 @@ def theme : Theme := { Theme.default with
                 <li><a href="https://github.com/eic/EpsilonEridaniRoadmaps">"EpsilonEridaniRoadmaps"</a></li>
                 <li><a href="https://github.com/eic/EpsilonEridaniReview">"EpsilonEridaniReview"</a></li>
               </ul>
-              <p class="foot-legal">"AI-authored Lean mathematics · Apache-2.0"</p>
+              <p class="foot-legal">"AI-authored Lean physics · Apache-2.0"</p>
             </div>
           </footer>
         </body>
@@ -56,12 +56,10 @@ def theme : Theme := { Theme.default with
     return {{
       <div class="frontpage">
         <section class="hero">
-          <img class="hero-img" src="static/epsiloneridani-collaboration.jpg"
-               alt="A hexapus reaching toward an AI across a tide pool, beneath twin suns and a ringed planet."/>
           <div class="hero-copy">
             <h1 class="hero-title">"EpsilonEridani"</h1>
             <p class="hero-tag">"Let’s formalize lots of physics."</p>
-            <p class="hero-sub">"AI-authored Lean physics, built on Tau Ceti, directed by a human-owned roadmap and gated by open, adversarial review."</p>
+            <p class="hero-sub">"AI-authored Lean formalizations of the physics of the Electron-Ion Collider — from scattering kinematics to QCD — directed by human-owned roadmaps and gated by open, adversarial review."</p>
             <div class="cta-row">
               <a class="cta" href="https://github.com/eic/EpsilonEridani">"Explore the code →"</a>
               <a class="cta secondary" href="docs/">"Read the docs →"</a>
@@ -72,15 +70,15 @@ def theme : Theme := { Theme.default with
         <section class="pillars">
           <div class="pillar">
             <h3>"Humans own the roadmap"</h3>
-            <p>"Mathematicians set the targets in a separate, human-reviewed roadmap repository. People choose the maths."</p>
+            <p>"Physicists set the targets — nucleon spin, hadron mass, gluon saturation, 3D imaging — in a separate, human-reviewed roadmap repository. People choose the physics."</p>
           </div>
           <div class="pillar">
             <h3>"AIs write the code"</h3>
-            <p>"AI agents author the Lean proofs and open pull requests — every theorem machine-checked, no sorries, no stray axioms."</p>
+            <p>"AI agents formalize kinematics, symmetries and the relations between observables in Lean and open pull requests — every statement machine-checked, no sorries, no stray axioms."</p>
           </div>
           <div class="pillar">
             <h3>"Open review gates everything"</h3>
-            <p>"AI reviewers judge each PR against fixed, open-source rubrics — correctness, reuse, API, naming, generality — before it can merge."</p>
+            <p>"AI reviewers judge each PR against fixed, open-source rubrics — correctness, reuse, API, naming, generality — and hunt for mis-formalized physics before it can merge."</p>
           </div>
         </section>
 
@@ -108,7 +106,7 @@ def theme : Theme := { Theme.default with
           <div class="cards three">
             <a class="card repo" href="https://github.com/eic/EpsilonEridani">
               <h3>"EpsilonEridani"</h3>
-              <p>"The AI-authored Lean physics."</p>
+              <p>"The AI-authored Lean formalization of the physics."</p>
             </a>
             <a class="card repo" href="https://github.com/eic/EpsilonEridaniRoadmaps">
               <h3>"EpsilonEridaniRoadmaps"</h3>
@@ -131,6 +129,11 @@ def theme : Theme := { Theme.default with
             </div>
             <button class="carousel-arrow next" type="button" aria-label="Next example">"›"</button>
           </div>
+        </section>
+
+        <section class="band credit">
+          <h2 class="section-title">"Built on Tau Ceti"</h2>
+          <p class="credit-note">"EpsilonEridani is built on " <a href="https://github.com/TauCetiProject/TauCeti">"Tau Ceti"</a> ", the open-source project whose AI-driven formalization and review machinery it extends from mathematics to phenomenological physics."</p>
         </section>
       </div>
     }}, id⟩
