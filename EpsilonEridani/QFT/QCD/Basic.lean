@@ -74,9 +74,7 @@ def suNColorFactors (nC nF : ℝ) : ColorFactors where
   tF := 1 / 2
 
 /-- Marker type for an `SU(Nc)` gauge-group model. -/
-structure SUN (nC : ℝ) : Type where
-  /-- Placeholder field; the type carries no data. -/
-  unit : Unit
+structure SUN (nC : ℝ) : Type
 
 /-- `SU(Nc)` color invariants packaged as a typeclass instance. -/
 instance instHasColorInvariantsSUN (nC : ℝ) : HasColorInvariants (SUN nC) where
@@ -168,10 +166,6 @@ structure CoefficientProfile : Type where
   order : PerturbativeOrder
   /-- The truncated coefficient function. -/
   value : ℝ → ℝ
-
-/-- Truncation is stable under identical order tags. -/
-lemma coefficientProfile_order_stability (p : CoefficientProfile) :
-    p.order = p.order := rfl
 
 /-- Practical sufficient criterion for asymptotic freedom in a color-factor basis. -/
 lemma asymptoticFreedom_of_beta0_pos

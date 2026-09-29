@@ -30,33 +30,33 @@ structure SpinStructureFunctions where
   /-- Unpolarized structure function `F_UU` of `(x, z_h, Q², P_T)`. -/
   FUU : ℝ → ℝ → ℝ → ℝ → ℝ
   /-- Sivers structure function `F_UT^{sin(φ_h - φ_S)}` of `(x, z_h, Q², P_T)`. -/
-  FUT_sivers : ℝ → ℝ → ℝ → ℝ → ℝ
+  FUTSivers : ℝ → ℝ → ℝ → ℝ → ℝ
   /-- Collins structure function `F_UT^{sin(φ_h + φ_S)}` of `(x, z_h, Q², P_T)`. -/
-  FUT_collins : ℝ → ℝ → ℝ → ℝ → ℝ
+  FUTCollins : ℝ → ℝ → ℝ → ℝ → ℝ
 
 /-- Sivers asymmetry ratio interface with default positive denominator regularization. -/
 def siversAsymmetry
     (F : SpinStructureFunctions)
     (x zHad Q2 pT : ℝ) : ℝ :=
-  F.FUT_sivers x zHad Q2 pT / (|F.FUU x zHad Q2 pT| + 1)
+  F.FUTSivers x zHad Q2 pT / (|F.FUU x zHad Q2 pT| + 1)
 
 /-- Angle-resolved observable whose Sivers coefficient is extracted by `sin(phi_h - phi_S)`. -/
 def siversAngularObservable
     (F : SpinStructureFunctions)
     (x zHad Q2 pT : ℝ) : ℝ → ℝ → ℝ :=
-  fun phiH phiS => 2 * F.FUT_sivers x zHad Q2 pT * Harmonics.sinPhiDiff phiH phiS
+  fun phiH phiS => 2 * F.FUTSivers x zHad Q2 pT * Harmonics.sinPhiDiff phiH phiS
 
 /-- Collins asymmetry ratio interface with default positive denominator regularization. -/
 def collinsAsymmetry
     (F : SpinStructureFunctions)
     (x zHad Q2 pT : ℝ) : ℝ :=
-  F.FUT_collins x zHad Q2 pT / (|F.FUU x zHad Q2 pT| + 1)
+  F.FUTCollins x zHad Q2 pT / (|F.FUU x zHad Q2 pT| + 1)
 
 /-- Angle-resolved observable whose Collins coefficient is extracted by `sin(phi_h + phi_S)`. -/
 def collinsAngularObservable
     (F : SpinStructureFunctions)
     (x zHad Q2 pT : ℝ) : ℝ → ℝ → ℝ :=
-  fun phiH phiS => 2 * F.FUT_collins x zHad Q2 pT * Harmonics.sinPhiSum phiH phiS
+  fun phiH phiS => 2 * F.FUTCollins x zHad Q2 pT * Harmonics.sinPhiSum phiH phiS
 
 /-- Angle-independent unpolarized observable used in asymmetry denominators. -/
 def unpolarizedAngularObservable
@@ -80,7 +80,7 @@ structure SiversProjectionAssumptions
   den_proj : Harmonics.projectedMoment P Harmonics.oneWeight
       (fun _phiH _phiS => F.FUU x zHad Q2 pT) = F.FUU x zHad Q2 pT
   num_proj : Harmonics.projectedMoment P Harmonics.sinPhiDiff
-      (fun _phiH _phiS => F.FUT_sivers x zHad Q2 pT) = F.FUT_sivers x zHad Q2 pT
+      (fun _phiH _phiS => F.FUTSivers x zHad Q2 pT) = F.FUTSivers x zHad Q2 pT
 
 /-- Derive the Sivers projection assumptions from explicit projected equalities. -/
 lemma siversProjectionAssumptions_of_equalities
@@ -90,7 +90,7 @@ lemma siversProjectionAssumptions_of_equalities
     (hDen : Harmonics.projectedMoment P Harmonics.oneWeight
       (fun _phiH _phiS => F.FUU x zHad Q2 pT) = F.FUU x zHad Q2 pT)
     (hNum : Harmonics.projectedMoment P Harmonics.sinPhiDiff
-      (fun _phiH _phiS => F.FUT_sivers x zHad Q2 pT) = F.FUT_sivers x zHad Q2 pT) :
+      (fun _phiH _phiS => F.FUTSivers x zHad Q2 pT) = F.FUTSivers x zHad Q2 pT) :
     SiversProjectionAssumptions P F x zHad Q2 pT := by
   exact ⟨hDen, hNum⟩
 
@@ -110,19 +110,19 @@ lemma siversAsymmetry_eq_projectedRatio_of_harmonicDecomposition
           / (|Harmonics.projectedMoment P Harmonics.oneWeight
               (unpolarizedAngularObservable F x zHad Q2 pT)| + 1) := by
   have hScale := Harmonics.projectedMoment_smul_obs
-      P hLin (2 * F.FUT_sivers x zHad Q2 pT) Harmonics.sinPhiDiff Harmonics.sinPhiDiff
+      P hLin (2 * F.FUTSivers x zHad Q2 pT) Harmonics.sinPhiDiff Harmonics.sinPhiDiff
   have hNum :
       Harmonics.projectedMoment P Harmonics.sinPhiDiff
-        (siversAngularObservable F x zHad Q2 pT) = F.FUT_sivers x zHad Q2 pT := by
+        (siversAngularObservable F x zHad Q2 pT) = F.FUTSivers x zHad Q2 pT := by
     calc
       Harmonics.projectedMoment P Harmonics.sinPhiDiff
           (siversAngularObservable F x zHad Q2 pT)
-        = (2 * F.FUT_sivers x zHad Q2 pT) *
+        = (2 * F.FUTSivers x zHad Q2 pT) *
             Harmonics.projectedMoment P Harmonics.sinPhiDiff Harmonics.sinPhiDiff := by
               -- `simpa` closes at reducible transparency and cannot unfold the `def`;
               -- `exact` elaborates at default transparency and can.
               exact hScale
-      _ = F.FUT_sivers x zHad Q2 pT := by
+      _ = F.FUTSivers x zHad Q2 pT := by
               rw [hOrth.sinPhiDiff_self]
               ring
   have hDen :
@@ -139,7 +139,7 @@ structure CollinsProjectionAssumptions
   den_proj : Harmonics.projectedMoment P Harmonics.oneWeight
       (fun _phiH _phiS => F.FUU x zHad Q2 pT) = F.FUU x zHad Q2 pT
   num_proj : Harmonics.projectedMoment P Harmonics.sinPhiSum
-      (fun _phiH _phiS => F.FUT_collins x zHad Q2 pT) = F.FUT_collins x zHad Q2 pT
+      (fun _phiH _phiS => F.FUTCollins x zHad Q2 pT) = F.FUTCollins x zHad Q2 pT
 
 /-- Derive the Collins projection assumptions from explicit projected equalities. -/
 lemma collinsProjectionAssumptions_of_equalities
@@ -149,7 +149,7 @@ lemma collinsProjectionAssumptions_of_equalities
     (hDen : Harmonics.projectedMoment P Harmonics.oneWeight
       (fun _phiH _phiS => F.FUU x zHad Q2 pT) = F.FUU x zHad Q2 pT)
     (hNum : Harmonics.projectedMoment P Harmonics.sinPhiSum
-      (fun _phiH _phiS => F.FUT_collins x zHad Q2 pT) = F.FUT_collins x zHad Q2 pT) :
+      (fun _phiH _phiS => F.FUTCollins x zHad Q2 pT) = F.FUTCollins x zHad Q2 pT) :
     CollinsProjectionAssumptions P F x zHad Q2 pT := by
   exact ⟨hDen, hNum⟩
 
@@ -169,17 +169,17 @@ lemma collinsAsymmetry_eq_projectedRatio_of_harmonicDecomposition
           / (|Harmonics.projectedMoment P Harmonics.oneWeight
               (unpolarizedAngularObservable F x zHad Q2 pT)| + 1) := by
   have hScale := Harmonics.projectedMoment_smul_obs
-      P hLin (2 * F.FUT_collins x zHad Q2 pT) Harmonics.sinPhiSum Harmonics.sinPhiSum
+      P hLin (2 * F.FUTCollins x zHad Q2 pT) Harmonics.sinPhiSum Harmonics.sinPhiSum
   have hNum :
       Harmonics.projectedMoment P Harmonics.sinPhiSum
-        (collinsAngularObservable F x zHad Q2 pT) = F.FUT_collins x zHad Q2 pT := by
+        (collinsAngularObservable F x zHad Q2 pT) = F.FUTCollins x zHad Q2 pT := by
     calc
       Harmonics.projectedMoment P Harmonics.sinPhiSum
           (collinsAngularObservable F x zHad Q2 pT)
-        = (2 * F.FUT_collins x zHad Q2 pT) *
+        = (2 * F.FUTCollins x zHad Q2 pT) *
             Harmonics.projectedMoment P Harmonics.sinPhiSum Harmonics.sinPhiSum := by
               exact hScale
-      _ = F.FUT_collins x zHad Q2 pT := by
+      _ = F.FUTCollins x zHad Q2 pT := by
               rw [hOrth.sinPhiSum_self]
               ring
   have hDen :
@@ -196,7 +196,7 @@ lemma siversAsymmetry_eq_projectedRatio
     (hProj : SiversProjectionAssumptions P F x zHad Q2 pT) :
     siversAsymmetry F x zHad Q2 pT
       = Harmonics.projectedMoment P Harmonics.sinPhiDiff
-          (fun _phiH _phiS => F.FUT_sivers x zHad Q2 pT)
+          (fun _phiH _phiS => F.FUTSivers x zHad Q2 pT)
           / (|Harmonics.projectedMoment P Harmonics.oneWeight
               (fun _phiH _phiS => F.FUU x zHad Q2 pT)| + 1) := by
   simp [siversAsymmetry, hProj.num_proj, hProj.den_proj]
@@ -209,7 +209,7 @@ lemma collinsAsymmetry_eq_projectedRatio
     (hProj : CollinsProjectionAssumptions P F x zHad Q2 pT) :
     collinsAsymmetry F x zHad Q2 pT
       = Harmonics.projectedMoment P Harmonics.sinPhiSum
-          (fun _phiH _phiS => F.FUT_collins x zHad Q2 pT)
+          (fun _phiH _phiS => F.FUTCollins x zHad Q2 pT)
           / (|Harmonics.projectedMoment P Harmonics.oneWeight
               (fun _phiH _phiS => F.FUU x zHad Q2 pT)| + 1) := by
   simp [collinsAsymmetry, hProj.num_proj, hProj.den_proj]

@@ -396,7 +396,7 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
 /-- Assumptions on an abstract hadronic tensor: Lorentz covariance in the concrete sense of
 `IsLorentzCovariant`, current conservation in both slots, and symmetry (the parity-even,
 electromagnetic case). -/
-structure Assumptions (g : Bilin V) (K : DisKinematics V) (W : Bilin V) : Type where
+structure Assumptions (g : Bilin V) (K : DisKinematics V) (W : Bilin V) : Prop where
   /-- Invariance under every `g`-isometry fixing `p` and `q`. -/
   covariant : IsLorentzCovariant g K W
   /-- Current conservation in the first tensor slot. -/
@@ -592,7 +592,7 @@ timelike and `q` spacelike, and none of them is the conclusion.
 /-- Linear-algebra inputs about the spectator subspace `{p, q}^⊥` needed to turn covariance
 plus conservation into the two-structure decomposition. These are facts about `g`, `p`, `q`
 and the isometry group — not about the hadronic tensor. -/
-structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
+structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Prop where
   /-- Every vector splits into a transverse-hadron part, a longitudinal `q` part, and a
   spectator part orthogonal to both. -/
   span : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
@@ -734,15 +734,8 @@ lemma not_isLorentzCovariant_wWit : ¬ IsLorentzCovariant gWit kWit wWit := by
   norm_num at h
 
 /-- Corollary: `Hadronic.Assumptions` is not satisfied by every symmetric conserved tensor,
-because its `covariant` field alone already rules `wWit` out.
-
-Stated as an arrow into `False` rather than with `¬` because `Assumptions` is declared
-`: Type`, not `: Prop`, so it is not negatable. That is worth recording on its own: a bundle
-of physics hypotheses living in `Type` is *data*, two proofs of the same hypotheses are not
-definitionally equal, and it cannot be used where a `Prop` is expected. The same applies to
-`UniquenessAssumptions` and `SpectatorAssumptions`. Moving them to `Prop` is a signature
-change with downstream reach, so it is left for review rather than done here. -/
-lemma not_assumptions_wWit : Assumptions gWit kWit wWit → False := fun hA =>
+because its `covariant` field alone already rules `wWit` out. -/
+lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
   not_isLorentzCovariant_wWit hA.covariant
 
 /-- **`UniquenessAssumptions` is satisfiable.** The `F1` probe is the spectator pair
