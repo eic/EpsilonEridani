@@ -142,17 +142,26 @@ jobs:
       # two commands. The deployed charts always come from this step, not from the repo.
       - name: Regenerate the lines-of-code charts into static_files
         working-directory: ${{ github.workspace }}
+        env:
+          # The first day of EpsilonEridani as a project; the charts start here.
+          PROJECT_START: "2026-09-25"
         run: |
+          # Both repositories were forked from Tau Ceti, so their histories reach back to
+          # Tau Ceti's first commit. The charts count EpsilonEridani from the project start
+          # instead, and only its own paths: the Tau Ceti library (TauCeti/) and roadmaps
+          # (TauCetiRoadmap/) are not counted at all. The roadmap directory was renamed from
+          # EpsilonEridaniRoadmap to EpsilonEridaniRoadmaps, so both names are listed.
           python3 scripts/loc_graph.py \
-            --repo . --ref HEAD \
-            --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
+            --repo . --ref HEAD --start "$PROJECT_START" \
+            --title "EpsilonEridani — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-epsiloneridani.svg \
-            EpsilonEridani EpsilonEridani.lean TauCeti TauCeti.lean
+            EpsilonEridani EpsilonEridani.lean
           python3 scripts/loc_graph.py \
-            --repo /tmp/roadmap --ref HEAD \
-            --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
+            --repo /tmp/roadmap --ref HEAD --start "$PROJECT_START" \
+            --title "EpsilonEridaniRoadmaps — lines written" --accent "#5eead4" \
             --out web/static_files/loc-roadmap.svg \
-            EpsilonEridaniRoadmap EpsilonEridaniRoadmap.lean TauCetiRoadmap TauCetiRoadmap.lean
+            EpsilonEridaniRoadmap EpsilonEridaniRoadmap.lean \
+            EpsilonEridaniRoadmaps EpsilonEridaniRoadmaps.lean
 
       # The per-roadmap chart is built from the PR labels (roadmap attribution is not in
       # git), so it queries gh rather than walking commits. A gh failure here must not sink
@@ -164,7 +173,7 @@ jobs:
         run: |
           python3 scripts/loc_roadmap_graph.py \
             --repo "${{ github.repository }}" \
-            --title "Tau Ceti — lines of Lean per roadmap" \
+            --title "EpsilonEridani — lines of Lean per roadmap" \
             --out web/static_files/loc-per-roadmap.svg \
           || {
             echo "::warning::per-roadmap chart generation failed; keeping the last published SVG"
