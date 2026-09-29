@@ -144,7 +144,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           # The first day of EpsilonEridani as a project; the charts start here.
-          PROJECT_START: "2026-09-15"
+          PROJECT_START: "2026-09-25"
         run: |
           # Both repositories were forked from Tau Ceti, so their histories reach back to
           # Tau Ceti's first commit. The charts count EpsilonEridani from the project start
