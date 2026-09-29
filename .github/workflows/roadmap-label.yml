@@ -9,7 +9,7 @@ name: Roadmap label
 #                    human override), is a pin-only bump, or explicitly declares none
 #   roadmap/Unknown  missing, invalid, or conflicting association
 #
-# The area label is created on first use, so a roadmap added in EpsilonEridaniRoadmap becomes
+# The area label is created on first use, so a roadmap added in EpsilonEridaniRoadmaps becomes
 # labelable with no change here.
 #
 # Runs on pull_request_target so it can label PRs from forks, but it NEVER checks out or

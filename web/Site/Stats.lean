@@ -152,7 +152,7 @@ when those review-state transitions first appear in project history.
 
 Who has taken part? The snapshot below counts GitHub accounts that have
 opened a pull request or issue, participated in those conversations (including
-reviews), or authored a commit on the default branch of EpsilonEridani, EpsilonEridaniRoadmap,
+reviews), or authored a commit on the default branch of EpsilonEridani, EpsilonEridaniRoadmaps,
 EpsilonEridaniWorker, or EpsilonEridaniReview. Accounts recognised as automation are dropped:
 logins carrying GitHub's `[bot]` suffix, together with the project's own automation
 aliases. Nothing verifies that the accounts left over belong to people, so any

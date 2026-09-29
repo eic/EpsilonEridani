@@ -545,8 +545,8 @@ jobs:
       - name: Import-boundary guard (EpsilonEridani/ and EpsilonEridani.lean ⊬ roadmap/review)
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmap|EpsilonEridaniReview)\b' pr/EpsilonEridani/ pr/EpsilonEridani.lean; then
-            echo "::error::EpsilonEridani/ must not import EpsilonEridaniRoadmap or EpsilonEridaniReview"
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmaps?|EpsilonEridaniReview)\b' pr/EpsilonEridani/ pr/EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ must not import EpsilonEridaniRoadmaps or EpsilonEridaniReview"
             exit 1
           fi
 

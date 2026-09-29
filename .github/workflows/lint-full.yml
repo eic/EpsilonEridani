@@ -93,8 +93,8 @@ jobs:
       # sorried declarations: EpsilonEridani/ may not import the roadmap/review trees.
       - name: Import-boundary guard (EpsilonEridani/ and EpsilonEridani.lean ⊬ roadmap/review)
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmap|EpsilonEridaniReview)\b' EpsilonEridani/ EpsilonEridani.lean; then
-            echo "::error::EpsilonEridani/ and EpsilonEridani.lean must not import EpsilonEridaniRoadmap or EpsilonEridaniReview"
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmaps?|EpsilonEridaniReview)\b' EpsilonEridani/ EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ and EpsilonEridani.lean must not import EpsilonEridaniRoadmaps or EpsilonEridaniReview"
             exit 1
           fi
 
