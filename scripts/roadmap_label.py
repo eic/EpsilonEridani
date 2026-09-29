@@ -151,7 +151,8 @@ def parse_target_areas(body: str, areas: set[str]) -> set[str]:
 def parse_cited_areas(body: str, areas: set[str]) -> set[str]:
     """Roadmap areas cited in the PR body, restricted to canonical ones.
 
-    Recognizes the forms authors actually use: a `EpsilonEridaniRoadmap/<Area>` path, and
+    Recognizes the forms authors actually use: a `EpsilonEridaniRoadmaps/<Area>` path (or the
+    pre-rename `EpsilonEridaniRoadmap/<Area>`, which older PR bodies cite), and
     a bare `<Area>/README.md` or `<Area>/Suggested.lean`. `<Area>` must be an
     existing roadmap directory, so a typo or an unrelated path is ignored rather
     than minting a bogus label.
@@ -159,7 +160,7 @@ def parse_cited_areas(body: str, areas: set[str]) -> set[str]:
     if not body:
         return set()
     found: set[str] = set()
-    for m in re.finditer(r"EpsilonEridaniRoadmap/([A-Za-z0-9]+)", body):
+    for m in re.finditer(r"EpsilonEridaniRoadmaps?/([A-Za-z0-9]+)", body):
         if m.group(1) in areas:
             found.add(m.group(1))
     for m in re.finditer(r"\b([A-Za-z0-9]+)/(?:README\.md|Suggested\.lean)", body):
@@ -198,11 +199,12 @@ def canonical_areas(roadmap_dir: pathlib.Path) -> set[str]:
     """Active and completed roadmap directory names under a checkout.
 
     At the repository root, active areas live under the inner
-    `EpsilonEridaniRoadmap/` package and archived areas live under the sibling
+    `EpsilonEridaniRoadmaps/` package (renamed from `EpsilonEridaniRoadmap/` on 2026-09-28)
+    and archived areas live under the sibling
     `Completed/` directory. Accepting the package directory itself remains
     useful for local one-area tests and older callers.
     """
-    inner = roadmap_dir / "EpsilonEridaniRoadmap"
+    inner = roadmap_dir / "EpsilonEridaniRoadmaps"
     if not inner.is_dir():
         return {
             p.name for p in roadmap_dir.iterdir()
