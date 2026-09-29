@@ -27,8 +27,11 @@ namespace Asymmetries
 
 /-- Spin-dependent SIDIS structure-function placeholders. -/
 structure SpinStructureFunctions where
+  /-- Unpolarized structure function `F_UU` of `(x, z_h, Q², P_T)`. -/
   FUU : ℝ → ℝ → ℝ → ℝ → ℝ
+  /-- Sivers structure function `F_UT^{sin(φ_h - φ_S)}` of `(x, z_h, Q², P_T)`. -/
   FUT_sivers : ℝ → ℝ → ℝ → ℝ → ℝ
+  /-- Collins structure function `F_UT^{sin(φ_h + φ_S)}` of `(x, z_h, Q², P_T)`. -/
   FUT_collins : ℝ → ℝ → ℝ → ℝ → ℝ
 
 /-- Sivers asymmetry ratio interface with default positive denominator regularization. -/

@@ -131,12 +131,15 @@ def jetMultiplicity (ps : List FourMom) (q2 yCut : Float) : Nat :=
 `y₂₃`, the scale where three jets become two, is `(mergeScales ps q2)[n - 3]!` for `n`
 partons; it is the standard probe of the hardest emission. -/
 def mergeScales (ps : List FourMom) (q2 : Float) : Array Float :=
-  let rec go (a : Array FourMom) (acc : Array Float) : Nat → Array Float
-    | 0 => acc
-    | k + 1 =>
-      match mergeClosest a q2 with
-      | none => acc
-      | some (y, next) => go next (acc.push y) k
+  let rec
+    /-- Merge the closest pair up to the given number of times, pushing each merge scale
+    onto `acc`. -/
+    go (a : Array FourMom) (acc : Array Float) : Nat → Array Float
+      | 0 => acc
+      | k + 1 =>
+        match mergeClosest a q2 with
+        | none => acc
+        | some (y, next) => go next (acc.push y) k
   go ps.toArray #[] ps.length
 
 end Generator

@@ -30,8 +30,11 @@ open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScal
 
 /-- Weights used to read primitive pole contributions from scalar master integrals. -/
 structure PrimitivePoleWeights : Type where
+  /-- Weight of the gluon-loop master pole in the gluon contribution. -/
   gluonCoeff : ℝ
+  /-- Weight of the ghost-loop master pole in the ghost contribution. -/
   ghostCoeff : ℝ
+  /-- Weight of the quark-loop master pole in the quark contribution. -/
   quarkCoeff : ℝ
 
 /-- Build primitive one-loop pole contributions from scalar master integrals. -/

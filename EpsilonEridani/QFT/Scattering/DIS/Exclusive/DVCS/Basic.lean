@@ -30,9 +30,13 @@ namespace DVCS
 
 /-- Minimal CFF container used by the DVCS interfaces. -/
 structure CFF where
+  /-- Compton form factor `H` as a function of `(ξ, t)`. -/
   H : ℝ → ℝ → ℝ
+  /-- Compton form factor `E` as a function of `(ξ, t)`. -/
   E : ℝ → ℝ → ℝ
+  /-- Compton form factor `H̃` as a function of `(ξ, t)`. -/
   Htilde : ℝ → ℝ → ℝ
+  /-- Compton form factor `Ẽ` as a function of `(ξ, t)`. -/
   Etilde : ℝ → ℝ → ℝ
 
 /-- A basic CFF combination appearing in observable templates. -/

@@ -28,10 +28,12 @@ def allListsOfLength : Nat → List α → List (List α)
   | 0, _ => [[]]
   | Nat.succ n, alphabet =>
       let tails := allListsOfLength n alphabet
-      let rec go : List (List α) → List (List α)
-        | [] => []
-        | tail :: rest =>
-            (alphabet.map fun head => head :: tail) ++ go rest
+      let rec
+        /-- Prepend each letter of `alphabet` to each list in the argument. -/
+        go : List (List α) → List (List α)
+          | [] => []
+          | tail :: rest =>
+              (alphabet.map fun head => head :: tail) ++ go rest
       go tails
 
 /-- Return the first element of a list that satisfies a predicate. -/

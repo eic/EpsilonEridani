@@ -41,6 +41,7 @@ structure ColorInvariants : Type where
 
 /-- Typeclass exposing color invariants derived from an underlying gauge-group model. -/
 class HasColorInvariants (G : Type) : Type where
+  /-- Color invariants of the gauge group. -/
   invariants : ColorInvariants
 
 /-- QCD color and flavor constants used by perturbative evolution formulas. -/
@@ -74,6 +75,7 @@ def suNColorFactors (nC nF : ℝ) : ColorFactors where
 
 /-- Marker type for an `SU(Nc)` gauge-group model. -/
 structure SUN (nC : ℝ) : Type where
+  /-- Placeholder field; the type carries no data. -/
   unit : Unit
 
 /-- `SU(Nc)` color invariants packaged as a typeclass instance. -/
@@ -162,7 +164,9 @@ inductive PerturbativeOrder where
 
 /-- Coefficient-function truncation order metadata. -/
 structure CoefficientProfile : Type where
+  /-- Perturbative order at which the coefficient function is truncated. -/
   order : PerturbativeOrder
+  /-- The truncated coefficient function. -/
   value : ℝ → ℝ
 
 /-- Truncation is stable under identical order tags. -/

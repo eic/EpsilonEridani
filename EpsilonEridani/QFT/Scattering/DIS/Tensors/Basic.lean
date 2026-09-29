@@ -80,6 +80,7 @@ namespace Tensors
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
+/-- A bilinear form used to evaluate Lorentz-invariant scalar products. -/
 abbrev Bilin := LinearMap.BilinForm ℝ V
 
 namespace Bilin

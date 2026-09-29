@@ -249,7 +249,9 @@ theorem mollerOneLoopTopologyLabels_toFinset_eq_contributingSet :
 
 /-- Bundled one-loop MOLLER contribution data from Feynman self-energy classes. -/
 structure MollerOneLoopContributions (rules : GaugeFeynmanRules) where
+  /-- The one-loop self-energy diagrams. -/
   bundle : OneLoopSelfEnergyDiagramBundle rules
+  /-- Loop-integral evaluation data for those diagrams. -/
   data : OneLoopSelfEnergyLoopIntegralDataBundle bundle
 
 lemma moller_oneLoop_contributors_needRegularization
@@ -397,6 +399,7 @@ lemma mem_mollerContributingTwoLoopDiagrams_iff
 This abstraction separates enumeration and algebraic combination from
 low-level integral evaluation details. -/
 structure MollerTwoLoopContributions where
+  /-- Reduced amplitude of each two-loop topology class. -/
   reducedAmplitude : MollerTwoLoopDiagramLabel → ℝ
 
 /-- Bridge certificate type for the Møller two-loop diagrammatic derivation.

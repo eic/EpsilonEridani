@@ -298,10 +298,15 @@ abbrev mollerTopologyCandidateEnumeration := mollerQGRAFCandidateEnumeration
 
 /-- Signature used by the Møller two-loop topology classifier. -/
 structure MollerTwoLoopTopologySignature where
+  /-- Whether a ghost line appears in the diagram. -/
   hasGhostLine : Bool
+  /-- Whether a two-loop counterterm insertion appears. -/
   hasCountertermInsertion : Bool
+  /-- Whether the graph is a vertex-corrected box-interference pattern. -/
   isVertexBoxInterference : Bool
+  /-- Number of fermion self-energy insertions on external electron legs. -/
   fermionSelfEnergyInsertions : ℕ
+  /-- Whether the graph contains a nested gauge-boson self-energy subgraph. -/
   hasNestedGaugeSelfEnergy : Bool
 
 /-- Extract two-loop classifier signature from a Møller QGRAF candidate. -/

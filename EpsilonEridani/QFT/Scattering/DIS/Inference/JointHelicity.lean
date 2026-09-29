@@ -38,13 +38,18 @@ inductive SourceTag where
 
 /-- Joint data point spanning Stage 23-25 observable families. -/
 structure JointDataPoint where
+  /-- Observable family the point comes from. -/
   source : SourceTag
+  /-- Bjorken `x`. -/
   xBj : ℝ
+  /-- Hard scale `Q²`. -/
   Q2 : ℝ
+  /-- Measured value of the observable. -/
   observed : ℝ
 
 /-- Joint dataset container used by coupled DeltaSigma/DeltaG fits. -/
 structure JointDataset where
+  /-- Data points of the joint helicity dataset. -/
   entries : List JointDataPoint
 
 /-- Stage-26 assumption bundle joining DeltaSigma and DeltaG contracts. -/

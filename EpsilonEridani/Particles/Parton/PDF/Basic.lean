@@ -128,6 +128,7 @@ lemma assumptions_iff {f : Pdf Flavor} :
 /-- Sum-rule assumptions used by the PDF interfaces. -/
 structure SumRuleAssumptions [Fintype Flavor] (f : Pdf Flavor) : Type where
   momentum : ∀ Q2, (∑ i, mellinMoment f 1 i Q2) = 1
+  /-- Target value of the zeroth Mellin moment of each flavor. -/
   valenceTarget : Flavor → ℝ
   valence : ∀ i Q2, mellinMoment f 0 i Q2 = valenceTarget i
 

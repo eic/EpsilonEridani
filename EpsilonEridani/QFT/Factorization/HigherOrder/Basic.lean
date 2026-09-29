@@ -50,6 +50,7 @@ lemma lo_kernel_embedding
 
 /-- Renormalization/factorization scheme interface. -/
 structure Scheme : Type where
+  /-- Name of the scheme. -/
   name : String
 
 /-- Scheme conversion map for hard kernels at fixed perturbative order. -/

@@ -416,8 +416,11 @@ structure FermionSelfEnergyDiagram (rules : GaugeFeynmanRules) : Type where
 /-- A bundled collection of the three one-loop self-energy diagram classes used by the
 beta-function proof: gauge-boson, ghost, and fermion loops. -/
 structure OneLoopSelfEnergyDiagramBundle (rules : GaugeFeynmanRules) : Type where
+  /-- Gauge-boson self-energy diagram. -/
   gaugeBoson : GaugeBosonSelfEnergyDiagram rules
+  /-- Ghost self-energy diagram. -/
   ghost : GhostSelfEnergyDiagram rules
+  /-- Fermion self-energy diagram. -/
   fermion : FermionSelfEnergyDiagram rules
 
 /-- Gauge-boson self-energy diagrams require regularization. -/
