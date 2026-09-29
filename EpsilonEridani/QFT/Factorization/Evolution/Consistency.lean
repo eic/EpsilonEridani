@@ -31,7 +31,7 @@ variable {Flavor : Type}
 
 lemma loStructureFunction_eq_of_pdf_eq [Fintype Flavor]
     (C : DIS.HardKernel Flavor)
-    (f g : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f g : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (hEq : ∀ i z Q2, f i z Q2 = g i z Q2)
     (x Q2 : ℝ) :
     DIS.loStructureFunction C f x Q2 = DIS.loStructureFunction C g x Q2 := by
@@ -40,7 +40,7 @@ lemma loStructureFunction_eq_of_pdf_eq [Fintype Flavor]
 /-- If the evolved PDFs agree pointwise at two scales, the LO observable agrees too. -/
 lemma loStructureFunction_scaleConsistency [Fintype Flavor]
     (C : DIS.HardKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (Q2a Q2b x : ℝ)
     (hKernelEq : ∀ i x' z, C i x' z Q2a = C i x' z Q2b)
     (hEq : ∀ i z, f i z Q2a = f i z Q2b) :

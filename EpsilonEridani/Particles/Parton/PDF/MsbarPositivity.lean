@@ -52,7 +52,7 @@ Nothing here computes the scheme-change correction, and nothing here decides the
 question. `scheme_change` records that the MS-bar distribution differs from a physical
 one by a subtraction; which physical scheme, and what the subtraction is at a given order,
 are inputs. The Soffer bound and the leading-order positivity statements live elsewhere
-(see `Physlib.Particles.Parton.PDF.Basic` for the `nonneg` field these results are about).
+(see `EpsilonEridani.Particles.Parton.PDF.Basic` for the `nonneg` field these results are about).
 
 Note also that `PDF.Assumptions.nonneg` quantifies over the whole interval `0 ≤ x ≤ 1`.
 Nothing below discharges it: every statement here is restricted to a

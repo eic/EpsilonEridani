@@ -19,11 +19,11 @@ parton densities are defined, and the renormalization scale `μ_R` of the coupli
 the coefficient function is expanded.
 
 The factorization development in `Physlib/QFT/Factorization` carries **one** scale argument.
-`Physlib.Particles.Parton.PDF.Pdf` is `Flavor → ℝ → ℝ → ℝ` with the last argument `Q2`;
-`Physlib.QFT.Factorization.DIS.HardKernel` has a single `Q2` slot; and
-`Physlib.QFT.Factorization.DIS.loStructureFunction` passes *the same* `Q2` to the
+`EpsilonEridani.Particles.Parton.PDF.Pdf` is `Flavor → ℝ → ℝ → ℝ` with the last argument `Q2`;
+`EpsilonEridani.QFT.Factorization.DIS.HardKernel` has a single `Q2` slot; and
+`EpsilonEridani.QFT.Factorization.DIS.loStructureFunction` passes *the same* `Q2` to the
 coefficient function and to the density. The same holds in evolution:
-`Physlib.QFT.Factorization.Evolution.dglapRhsLogScale` evaluates the coupling and the
+`EpsilonEridani.QFT.Factorization.Evolution.dglapRhsLogScale` evaluates the coupling and the
 densities at one and the same `exp τ`. So `μ_F` and `μ_R` are not separately represented
 anywhere; there is a single scale slot playing all three roles.
 
@@ -75,7 +75,7 @@ Bochner integral over the momentum fraction under the integral sign, which is no
 for arbitrary coefficient functions and densities. They are hypotheses, not theorems, and
 are named for what they say. And the compensation here is exact, not order by order: a
 statement of `μ_F` independence "to the order at which the pieces are known" needs a notion
-of truncation error that `Physlib.QFT.Factorization.HigherOrder.PerturbativeOrder` does not
+of truncation error that `EpsilonEridani.QFT.Factorization.HigherOrder.PerturbativeOrder` does not
 carry.
 
 ## iv. Table of contents
@@ -101,7 +101,7 @@ namespace QFT
 namespace Factorization
 namespace Scales
 
-open Physlib.Particles.Parton
+open EpsilonEridani.Particles.Parton
 
 variable {Flavor : Type}
 
@@ -111,7 +111,7 @@ variable {Flavor : Type}
 renormalization scale as three independent arguments, `C i x z Q2 μF2 μR2`.
 
 The name records that the two *unphysical* scales are separated; the hard scale `Q2` was
-already present in `Physlib.QFT.Factorization.DIS.HardKernel`. -/
+already present in `EpsilonEridani.QFT.Factorization.DIS.HardKernel`. -/
 abbrev TwoScaleHardKernel (Flavor : Type) : Type :=
   Flavor → ℝ → ℝ → ℝ → ℝ → ℝ → ℝ
 
@@ -148,7 +148,7 @@ lemma twoScaleChannel_ofSingleScale_diagonal
 
 /-- **The existing LO structure function is the diagonal of the two-scale one.**
 
-`Physlib.QFT.Factorization.DIS.loStructureFunction C f x Q2` is
+`EpsilonEridani.QFT.Factorization.DIS.loStructureFunction C f x Q2` is
 `twoScaleStructureFunction (ofSingleScale C) f x Q2 Q2 Q2`: the factorization and
 renormalization scales are both set to the hard scale. -/
 lemma twoScaleStructureFunction_ofSingleScale_diagonal [Fintype Flavor]
@@ -346,7 +346,7 @@ lemma isFactorizationScaleIndependent_iff_compensation [Fintype Flavor]
 /-- The DGLAP operator with the splitting kernels at the renormalization scale and the parton
 densities at the factorization scale.
 
-`Physlib.QFT.Factorization.Evolution.dglapOperator` passes one scale to both. That is the
+`EpsilonEridani.QFT.Factorization.Evolution.dglapOperator` passes one scale to both. That is the
 second place the two scales are identified in the existing development, and
 `dglapOperatorTwoScale_diagonal` is the precise statement of it. -/
 def dglapOperatorTwoScale [Fintype Flavor]

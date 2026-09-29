@@ -54,7 +54,7 @@ it is corrected rather than deleted because a status line that outlives its trut
 failure mode this file's own framing note was written to warn about.
 
 A further leading-power caveat, recorded when
-`Physlib.Particles.Parton.TMD.PowerCorrections` was added: the multiplicative two-scale
+`EpsilonEridani.Particles.Parton.TMD.PowerCorrections` was added: the multiplicative two-scale
 structure stated here is the leading-power structure. arXiv:2603.19833 finds that once
 kinematic power corrections are included the TMD evolution factor enters as a convolution
 with the nonperturbative distribution rather than multiplicatively, so `SatisfiesZetaRg`

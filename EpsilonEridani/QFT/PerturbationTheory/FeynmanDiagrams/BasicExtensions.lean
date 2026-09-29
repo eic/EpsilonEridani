@@ -3,13 +3,15 @@ Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wouter Deconinck
 -/
-import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
-import EpsilonEridani.QFT.QCD.Basic
-import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
-import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
-import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
-import Mathlib.Data.Complex.Basic
-import Mathlib.Topology.Instances.Complex
+module
+
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import EpsilonEridani.QFT.QCD.Basic
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
+public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Topology.Instances.Complex
 
 /-!
 # Feynman diagram extensions
@@ -31,6 +33,8 @@ This module extends `Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic`, whic
 currently a near-empty work in progress; none of the declarations below are ported
 from that module.
 -/
+
+@[expose] public section
 
 noncomputable section
 
@@ -361,7 +365,7 @@ def su2GaugeRules (g_w : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_w
 
 `needsRegularization` is a bare `Prop` parameter: instantiating it with `True` satisfies
 the contract, so the structure asserts nothing about the diagram on its own.  It is
-retained because `QFT.Scattering.DIS.PVES.Examples.Moller` projects it; stating it
+retained because `QFT.Scattering.DIS.PVES.Examples.Moller.Basic` projects it; stating it
 properly needs a representation of the loop integrand, which this module does not have. -/
 structure OneLoopGaugeDiagramAssumptions (rules : GaugeFeynmanRules)
   (k_in k_out : Momentum) : Type where

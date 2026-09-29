@@ -79,11 +79,11 @@ discharged and what cannot.
   "parton density" mean, and there is no formulation in which it becomes a theorem about an
   arbitrary function `Flavor → ℝ → ℝ → ℝ`; a concrete model either has the property or is
   not a parton density. (For a density built from a spin-density matrix the `nonneg` clause
-  *is* a theorem — `Physlib.Particles.Parton.PDF.pdfOfSpinDensity_nonneg` — but that is a
+  *is* a theorem — `EpsilonEridani.Particles.Parton.PDF.pdfOfSpinDensity_nonneg` — but that is a
   statement about that construction, not about `Pdf` in general.)
 * `Regularity` is the **analytic** half: measurability in the momentum fraction and
   integrability of the Mellin-moment integrands. These are genuine obligations, and
-  `Physlib.Particles.Parton.PDF.Model` discharges them for an explicit model.
+  `EpsilonEridani.Particles.Parton.PDF.Model` discharges them for an explicit model.
 
 `assumptions_iff` records that the split is exact: the bundle is the conjunction of the two
 halves and nothing else. `Assumptions` itself is left in place with its field set unchanged,

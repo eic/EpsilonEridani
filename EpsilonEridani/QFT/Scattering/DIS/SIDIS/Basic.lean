@@ -34,8 +34,8 @@ variable {Flavor Hadron : Type}
 /-- A single SIDIS flavor-channel contribution. -/
 def sidisChannel
     (C : Factorization.DIS.HardKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
-    (D : Physlib.Particles.Fragmentation.Frag Hadron Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
+    (D : EpsilonEridani.Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron)
     (i : Flavor)
     (x zHad Q2 : ℝ) : ℝ :=
@@ -44,8 +44,8 @@ def sidisChannel
 /-- SIDIS structure-function interface as a flavor sum. -/
 def sidisStructureFunction [Fintype Flavor]
     (C : Factorization.DIS.HardKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
-    (D : Physlib.Particles.Fragmentation.Frag Hadron Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
+    (D : EpsilonEridani.Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron)
     (x zHad Q2 : ℝ) : ℝ :=
   ∑ i, sidisChannel C f D h i x zHad Q2
@@ -53,8 +53,8 @@ def sidisStructureFunction [Fintype Flavor]
 /-- Inclusive-limit theorem when fragmentation factors are identically one. -/
 lemma inclusive_limit_of_unit_fragmentation [Fintype Flavor]
     (C : Factorization.DIS.HardKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
-    (D : Physlib.Particles.Fragmentation.Frag Hadron Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
+    (D : EpsilonEridani.Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron)
     (x zHad Q2 : ℝ)
     (hUnit : ∀ h' i z Q2', D h' i z Q2' = 1) :

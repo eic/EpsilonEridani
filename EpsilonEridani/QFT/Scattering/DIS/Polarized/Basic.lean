@@ -13,7 +13,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 This module introduces polarized DIS interfaces: a structure-function container for
 `g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, a decomposition
 schema, and endpoint conditions at `x = 1`. The moment identities usually called sum rules
-live in `Physlib.QFT.Scattering.DIS.Polarized.SumRules`.
+live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
 
 -/
 
@@ -41,7 +41,7 @@ structure StructureFunctions where
   g2 : ℝ → ℝ → ℝ
 
 /-- Structural assumptions on a polarized structure-function pair, mirroring
-`Physlib.Particles.Parton.PDF.Assumptions`.
+`EpsilonEridani.Particles.Parton.PDF.Assumptions`.
 
 These are what makes any *moment* statement about `G` meaningful: without support and
 integrability there is no reason for `∫₀¹ dx g₁(x, Q²)` to be anything but the junk value
@@ -73,7 +73,7 @@ The bundle mixes a definition with an obligation, as its collinear counterpart d
 process for `g₁` and `g₂` to describe, so their vanishing there is part of what a polarized
 structure-function pair is, not a theorem waiting to be proved. `Regularity` is the analytic
 half — measurability and integrability on the physical support — and is discharged for an
-explicit pair in `Physlib.QFT.Scattering.DIS.Polarized.SumRules`.
+explicit pair in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
 
 The field set of `Assumptions` is unchanged. It had no dependent declaration anywhere in the
 repository when this was written, so the split is additive rather than a migration.
@@ -129,7 +129,7 @@ lemma assumptions_iff {G : StructureFunctions} :
 
 Convention: this is the moment with weight `x⁰`, i.e. the plain integral of `g₁` over the
 physical support. It is what the Bjorken and Ellis-Jaffe sum rules constrain. Note the
-index offset relative to `Physlib.Particles.Parton.PDF.mellinMoment`, where
+index offset relative to `EpsilonEridani.Particles.Parton.PDF.mellinMoment`, where
 `mellinMoment f n` is `∫₀¹ dx xⁿ f`, and relative to the literature, which usually writes
 the `n`-th moment as `∫₀¹ dx xⁿ⁻¹ g`; on both of those scales `firstMomentG1` is `n = 0`
 and `n = 1` respectively. -/
@@ -185,7 +185,7 @@ def IsPolarizedDecomposition
 These are *not* sum rules: a sum rule is an identity for a moment `∫₀¹ dx xⁿ g(x, Q²)`,
 whereas the fields below are pointwise statements at the single point `x = 1`. The real
 moment identities (Bjorken, Ellis-Jaffe, Burkhardt-Cottingham) are stated in
-`Physlib.QFT.Scattering.DIS.Polarized.SumRules`. -/
+`EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`. -/
 structure EndpointAssumptions (G : StructureFunctions) : Prop where
   /-- `g₁` vanishes at the elastic endpoint `x = 1`, at every scale. -/
   g1_vanishes_at_one : ∀ Q2, G.g1 1 Q2 = 0

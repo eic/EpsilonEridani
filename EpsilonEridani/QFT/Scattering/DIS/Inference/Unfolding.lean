@@ -48,7 +48,8 @@ namespace DIS
 namespace Inference
 namespace Unfolding
 
-open Physlib.QFT.Factorization.Evolution
+open EpsilonEridani.QFT.Factorization.Evolution
+open EpsilonEridani.QFT.QCD (SUN suNColorFactors)
 
 /-! ## Response matrix and fold-forward -/
 
@@ -72,7 +73,8 @@ lemma foldForward_linear {m n : ℕ} (R : ResponseMatrix m n)
       = fun i => a * (foldForward R σ₁ 0) i + b * (foldForward R σ₂ 0) i
                   + background i := by
   funext i
-  simp [foldForward, mul_add, Finset.sum_add_distrib, Finset.mul_sum]
+  simp only [foldForward, mul_add, Finset.sum_add_distrib, Finset.mul_sum, Pi.zero_apply,
+    add_zero]
   have h1 :
       (∑ x : Fin n, R i x * (a * σ₁ x)) = (∑ x : Fin n, a * (R i x * σ₁ x)) := by
     refine Finset.sum_congr rfl ?_
@@ -107,14 +109,14 @@ lemma foldForward_identity {n : ℕ} (R : ResponseMatrix n n)
     (hId : IdentityResponseAssumptions R) :
     foldForward R σTrue 0 = σTrue := by
   funext i
-  simp [foldForward]
+  simp only [foldForward, Pi.zero_apply, add_zero]
   calc ∑ j : Fin n, R i j * σTrue j
       = ∑ j : Fin n, if i = j then σTrue j else 0 := by
         congr 1; funext j
         by_cases hij : i = j
         · simp [hij, hId.diagonal_one]
         · have hR : R i j = 0 := hId.offdiag_zero i j hij
-          rw [hR, if_neg hij]
+          rw [hR, ite_eq_right hij]
           simp
     _ = σTrue i := by
       classical
@@ -169,7 +171,7 @@ lemma applyBinByBin_recovers {n : ℕ}
     (hFoldNonzero : ∀ i, (∑ j : Fin n, R i j * σTrue j) ≠ 0) :
     applyBinByBin C (foldForward R σTrue 0) = σTrue := by
   funext i
-  simp [applyBinByBin, foldForward]
+  simp only [applyBinByBin, foldForward, Pi.zero_apply, add_zero]
   exact hCons.factor_eq i (hFoldNonzero i)
 
 /-! ## Unfolding bias control -/
@@ -254,12 +256,12 @@ lemma dglapRhs_suN_representation_bridge
     {Flavor : Type} [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ) :
     dglapRhsLogScale P
-        (qcdRunningCouplingFromRepresentation (Physlib.QFT.QCD.SUN nC) nF lambdaQCD2) f i x τ
+        (qcdRunningCouplingFromRepresentation (SUN nC) nF lambdaQCD2) f i x τ
       = dglapRhsLogScale P
-          (qcdRunningCoupling (Physlib.QFT.QCD.suNColorFactors nC nF) lambdaQCD2) f i x τ := by
+          (qcdRunningCoupling (suNColorFactors nC nF) lambdaQCD2) f i x τ := by
   simpa using qcdDglap_rhs_suN_fromRepresentation_eq
     (Flavor := Flavor) nC nF lambdaQCD2 P f i x τ
 
@@ -270,14 +272,14 @@ lemma dglapRhs_suN_representation_eq_target_iff
     {Flavor : Type} [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ target : ℝ) :
     dglapRhsLogScale P
-        (qcdRunningCouplingFromRepresentation (Physlib.QFT.QCD.SUN nC) nF lambdaQCD2) f i x τ
+        (qcdRunningCouplingFromRepresentation (SUN nC) nF lambdaQCD2) f i x τ
       = target
       ↔
       dglapRhsLogScale P
-        (qcdRunningCoupling (Physlib.QFT.QCD.suNColorFactors nC nF) lambdaQCD2) f i x τ
+        (qcdRunningCoupling (suNColorFactors nC nF) lambdaQCD2) f i x τ
       = target := by
   constructor
   · intro h
@@ -298,14 +300,14 @@ lemma dglapRhs_suN_representation_residual_iff
     {Flavor : Type} [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ target eps : ℝ) :
     |dglapRhsLogScale P
-        (qcdRunningCouplingFromRepresentation (Physlib.QFT.QCD.SUN nC) nF lambdaQCD2) f i x τ
+        (qcdRunningCouplingFromRepresentation (SUN nC) nF lambdaQCD2) f i x τ
       - target| ≤ eps
       ↔
       |dglapRhsLogScale P
-        (qcdRunningCoupling (Physlib.QFT.QCD.suNColorFactors nC nF) lambdaQCD2) f i x τ
+        (qcdRunningCoupling (suNColorFactors nC nF) lambdaQCD2) f i x τ
       - target| ≤ eps := by
   constructor
   · intro h
@@ -326,16 +328,16 @@ lemma chiSq_suN_dglapRhs_representation_eq
     {Flavor : Type} [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ observed sigma : ℝ) :
     chiSq
       (dglapRhsLogScale P
-        (qcdRunningCouplingFromRepresentation (Physlib.QFT.QCD.SUN nC) nF lambdaQCD2) f i x τ)
+        (qcdRunningCouplingFromRepresentation (SUN nC) nF lambdaQCD2) f i x τ)
       observed sigma
       =
       chiSq
         (dglapRhsLogScale P
-          (qcdRunningCoupling (Physlib.QFT.QCD.suNColorFactors nC nF) lambdaQCD2) f i x τ)
+          (qcdRunningCoupling (suNColorFactors nC nF) lambdaQCD2) f i x τ)
         observed sigma := by
   rw [dglapRhs_suN_representation_bridge
     (Flavor := Flavor) (nC := nC) (nF := nF) (lambdaQCD2 := lambdaQCD2)
@@ -356,25 +358,25 @@ lemma suRhsConsistencyBridgeBundle
     {Flavor : Type} [Fintype Flavor]
     (nC nF lambdaQCD2 : ℝ)
     (P : SplittingKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (i : Flavor) (x τ : ℝ)
     (inp : SURhsConsistencyInputs) :
     (|dglapRhsLogScale P
-        (qcdRunningCouplingFromRepresentation (Physlib.QFT.QCD.SUN nC) nF lambdaQCD2) f i x τ
+        (qcdRunningCouplingFromRepresentation (SUN nC) nF lambdaQCD2) f i x τ
       - inp.target| ≤ inp.eps
       ↔
       |dglapRhsLogScale P
-        (qcdRunningCoupling (Physlib.QFT.QCD.suNColorFactors nC nF) lambdaQCD2) f i x τ
+        (qcdRunningCoupling (suNColorFactors nC nF) lambdaQCD2) f i x τ
       - inp.target| ≤ inp.eps)
     ∧
     (chiSq
       (dglapRhsLogScale P
-        (qcdRunningCouplingFromRepresentation (Physlib.QFT.QCD.SUN nC) nF lambdaQCD2) f i x τ)
+        (qcdRunningCouplingFromRepresentation (SUN nC) nF lambdaQCD2) f i x τ)
       inp.observed inp.sigma
       =
       chiSq
         (dglapRhsLogScale P
-          (qcdRunningCoupling (Physlib.QFT.QCD.suNColorFactors nC nF) lambdaQCD2) f i x τ)
+          (qcdRunningCoupling (suNColorFactors nC nF) lambdaQCD2) f i x τ)
         inp.observed inp.sigma) := by
   refine ⟨?_, ?_⟩
   · simpa using dglapRhs_suN_representation_residual_iff

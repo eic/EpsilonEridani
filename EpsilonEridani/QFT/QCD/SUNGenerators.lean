@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Real.Sqrt
 
 # Generalized Gell-Mann generators for `su(N)`
 
-`Physlib.QFT.QCD.SU2Generators` and `Physlib.QFT.QCD.SU3Generators` supply explicit
+`EpsilonEridani.QFT.QCD.SU2Generators` and `EpsilonEridani.QFT.QCD.SU3Generators` supply explicit
 generator matrices for the two smallest colour algebras by writing out finite tables.
 That route does not generalize: the tables grow like `N²`, and the proofs are case
 sweeps.  This module gives the construction for *every* `N` at once.
@@ -60,7 +60,7 @@ Schur's lemma is not used anywhere.
 `sum_suNGenEntry_diag` and `conj_suNGenEntry` — the generators are traceless and
 Hermitian.  Neither is needed above; both are needed to define the general-`N` structure
 constants, and hence for the adjoint Casimir `C_A = N`, which is proved in
-`Physlib.QFT.QCD.SUNStructureConstants`.  See the closing note.
+`EpsilonEridani.QFT.QCD.SUNStructureConstants`.  See the closing note.
 
 -/
 
@@ -904,7 +904,7 @@ lemma suNFundamentalStatement (N : ℕ) : SUNFundamentalStatement N := by
 Two further properties of the generalized Gell-Mann basis.  Neither is needed for the
 trace identity or for completeness, but both are needed to define the general-`N`
 structure constants `f^{abc} = -2i Tr([Tᵃ,Tᵇ]Tᶜ)` and to see that they are real; see
-`Physlib.QFT.QCD.SUNStructureConstants`. -/
+`EpsilonEridani.QFT.QCD.SUNStructureConstants`. -/
 
 /-- The diagonal entries of a general off-diagonal generator sum to `(c₁ + c₂) δ_{jk}`.
 On an ordered pair `j < k` the delta vanishes, so both off-diagonal families are
@@ -996,7 +996,7 @@ lemma conj_suNGenEntry (a : SUNIndex N) (i j : Fin N) :
 /-! ### Status: the adjoint Casimir
 
 `T_F`, `C_F` and completeness are proved above.  `C_A = N` is proved in
-`Physlib.QFT.QCD.SUNStructureConstants`, which is where the general-`N` structure
+`EpsilonEridani.QFT.QCD.SUNStructureConstants`, which is where the general-`N` structure
 constants live: no finite table generalizes from `su(2)` and `su(3)`, so `f^{abc}` is
 defined there through the trace,
 

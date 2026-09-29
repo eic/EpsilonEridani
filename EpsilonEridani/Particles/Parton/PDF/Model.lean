@@ -12,7 +12,7 @@ public import EpsilonEridani.Particles.Parton.PDF.Positivity
 
 ## i. Overview
 
-`Physlib.Particles.Parton.PDF.Assumptions` had no instance anywhere in the repository: every
+`EpsilonEridani.Particles.Parton.PDF.Assumptions` had no instance anywhere in the repository: every
 result stated against it was conditional, and a hypothesis bundle with no model is not known
 to be satisfiable at all. This module supplies one. `modelPdf Flavor a b` is the valence-like
 shape `x^a (1-x)^b` on `[0, 1]`, zero outside, independent of flavour and of scale.
@@ -25,15 +25,15 @@ holds because the shape is continuous and the support is compact. The analytic h
 part that was a genuine obligation; the physical half is what "parton density" means.
 
 The same shape carried by a diagonal spin-density matrix discharges
-`Physlib.Particles.Parton.PDF.SpinDensityAssumptions`
+`EpsilonEridani.Particles.Parton.PDF.SpinDensityAssumptions`
 (`spinDensityAssumptions_modelSpinDensity`), which likewise had no instance.
 
 ## ii. Key results
 
-- `Physlib.Particles.Parton.PDF.assumptions_modelPdf`
-- `Physlib.Particles.Parton.PDF.regularity_modelPdf`
-- `Physlib.Particles.Parton.PDF.isPartonDensity_modelPdf`
-- `Physlib.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
+- `EpsilonEridani.Particles.Parton.PDF.assumptions_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
 
 ## iii. Table of contents
 

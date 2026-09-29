@@ -3,14 +3,16 @@ Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wouter Deconinck
 -/
-import Physlib.Relativity.CliffordAlgebra
-import Mathlib.LinearAlgebra.Matrix.Trace
-import Mathlib.NumberTheory.Zsqrtd.GaussianInt
-import Physlib.Relativity.MinkowskiMatrix
-import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
-import Physlib.Mathematics.LeviCivita.Basic
-import Physlib.Mathematics.KroneckerDelta.Basic
-import EpsilonEridani.Mathematics.KroneckerDelta.BasicExtensions
+module
+
+public import Physlib.Relativity.CliffordAlgebra
+public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.NumberTheory.Zsqrtd.GaussianInt
+public import Physlib.Relativity.MinkowskiMatrix
+public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import Physlib.Mathematics.LeviCivita.Basic
+public import Physlib.Mathematics.KroneckerDelta.Basic
+public import EpsilonEridani.Mathematics.KroneckerDelta.BasicExtensions
 
 /-!
 # Gamma matrix anticommutator and Dirac slash extensions
@@ -45,6 +47,8 @@ alone, which have Gaussian-integer entries; those are checked exactly over
 `GaussianInt` by kernel evaluation (`decide +kernel`, no additional axioms) and
 transported to `ℂ` through `GaussianInt.toComplex`.
 -/
+
+@[expose] public section
 
 namespace spaceTime
 open Complex

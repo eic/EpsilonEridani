@@ -80,7 +80,8 @@ spacelike one.
 ## iv. Conventions
 
 Spin and dimension are complex throughout: the trajectory is the analytic continuation in spin,
-and the Mellin index of `Physlib.QFT.Factorization.Evolution` is likewise complex. `N` names a
+and the Mellin index of `EpsilonEridani.QFT.Factorization.Evolution` is likewise complex.
+`N` names a
 spin argument, `J` a spin at which the trajectory is being evaluated. Both anomalous dimensions
 are taken with the sign convention in which `Δ = J + τ + γ_S J`, i.e. a positive `γ_S` raises
 the dimension.

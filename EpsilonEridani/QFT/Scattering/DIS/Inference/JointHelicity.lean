@@ -165,7 +165,7 @@ lemma joint_identity_scheme_consistency
     (Q2 : ℝ)
     (S : Factorization.HigherOrder.Scheme)
     (C : Factorization.HigherOrder.HardKernelFamily Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (x : ℝ)
     (ord : Factorization.HigherOrder.PerturbativeOrder) :
     Helicity.g1FirstMoment G Q2 = wilsonSinglet Q2 * deltaSigma Q2 + nonSingletShift Q2
