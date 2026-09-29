@@ -408,7 +408,7 @@
     }
 
     // ---- assemble ----
-    var head = typeof data.roadmap_head === "string" ? "EpsilonEridaniRoadmap@" + esc(data.roadmap_head.slice(0, 7)) : "EpsilonEridaniRoadmap";
+    var head = typeof data.roadmap_head === "string" ? "EpsilonEridaniRoadmaps@" + esc(data.roadmap_head.slice(0, 7)) : "EpsilonEridaniRoadmaps";
     var age = daysBetween(cutoff, new Date().toISOString());
     var when = "Pull requests count up to <b>" + esc(cutoff.replace("T", " ").replace("Z", " UTC")) + "</b>" +
       (data.collected_at ? " (fetched " + esc(data.collected_at.replace("T", " ").replace("Z", " UTC")) + ")" : " (when they were fetched is not recorded)") +
@@ -508,6 +508,6 @@
     })
     .catch(function (err) {
       root.innerHTML = '<p class="pb-error">The progress board could not be shown (' + esc(err.message) + "). The roadmaps themselves, with each one’s STATUS.md report, are at " +
-        '<a href="' + ROADMAP_REPO + '">EpsilonEridaniRoadmap</a>; the board’s data is <a href="static/progress.json">progress.json</a>.</p>';
+        '<a href="' + ROADMAP_REPO + '">EpsilonEridaniRoadmaps</a>; the board’s data is <a href="static/progress.json">progress.json</a>.</p>';
     });
 })();

@@ -10,7 +10,7 @@ git each run, so there is no state file to keep up to date. Counting the lines
 that exist (rather than summing diffs) needs no special handling for merges,
 renames, or binary files.
 
-Styled to sit on the dark navy Tau Ceti site (see web/static_files/style.css).
+Styled to sit on the dark navy EpsilonEridani site (see web/static_files/style.css).
 """
 
 import subprocess, sys, argparse, datetime as dt, html, math
@@ -67,7 +67,7 @@ def carry_to(points, last_day):
     return carry_quiet_days(points + [(last_day.isoformat(), points[-1][1])])
 
 
-def series(repo, pathspecs, ref, today=None):
+def series(repo, pathspecs, ref, today=None, start=None):
     # The last commit to land on each day that touched the files, keyed by
     # committer timestamp: that records when the code actually entered the repo,
     # whereas author dates can predate their parents. Convert the timestamp to a
@@ -96,7 +96,32 @@ def series(repo, pathspecs, ref, today=None):
     kept = completed_days(sorted(day_commit.items()), today)
     points = carry_quiet_days([(date, count_lines(repo, commit, pathspecs))
                                for date, commit in kept])
+    if start is not None:
+        points = start_at(points, start)
     return carry_to(points, today - dt.timedelta(days=1))
+
+
+def start_at(points, start):
+    """Begin the series on `start`, dropping every earlier day.
+
+    The repositories were forked from Tau Ceti, so their history runs back to Tau Ceti's first
+    commit, and the project counts itself from `start` instead. The first point is the count
+    on `start` itself: the last count before it carried forward (0 when the pathspecs matched
+    nothing yet), exactly what `wc -l` would have reported that day. The chart therefore starts
+    at the project start whether or not anything landed on that day. Quiet days between the
+    new first point and the next commit are filled in as everywhere else.
+
+    Returns just that one point when `start` is after the last sampled day; `carry_to` then
+    extends it like any other series. An empty series stays empty: with no finished day there
+    is nothing to draw yet, whatever the start.
+    """
+    if not points:
+        return points
+    before = [value for day, value in points if dt.date.fromisoformat(day) < start]
+    kept = [(day, value) for day, value in points if dt.date.fromisoformat(day) >= start]
+    if not kept or kept[0][0] != start.isoformat():
+        kept = [(start.isoformat(), before[-1] if before else 0)] + kept
+    return carry_quiet_days(kept)
 
 
 def carry_quiet_days(points):
@@ -107,8 +132,8 @@ def carry_quiet_days(points):
     day's number. Sampling only commit days left those stretches as a single
     long segment with no points on it -- the line was right, but the chart said
     "no data here" where it should have said "nothing changed here", and the
-    two look quite different when one of them is a three-day pause. Tau Ceti has
-    two such stretches so far (2026-06-05..08 and 2026-07-12..14).
+    two look quite different when one of them is a three-day pause. Tau Ceti's
+    history, before the fork, had two such stretches (2026-06-05..08 and 2026-07-12..14).
 
     Every date between the first and the last therefore gets a point. The ends
     are left alone: there is nothing to carry forward from before the first
@@ -218,9 +243,11 @@ if __name__ == "__main__":
     ap.add_argument("--title", required=True)
     ap.add_argument("--accent", default="#ff9d4d")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--start", type=dt.date.fromisoformat,
+                    help="first day of the chart (YYYY-MM-DD); earlier history is dropped")
     ap.add_argument("pathspecs", nargs="+")
     a = ap.parse_args()
-    data = series(a.repo, a.pathspecs, a.ref)
+    data = series(a.repo, a.pathspecs, a.ref, start=a.start)
     if not data:
         sys.exit("no commits matched pathspecs on a day that has finished")
     render(data, a.title, a.accent, a.out)
