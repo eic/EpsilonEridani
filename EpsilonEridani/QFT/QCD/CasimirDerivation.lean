@@ -199,7 +199,7 @@ lemma u1NormalizedData_adjointIdentity (Y : ℝ) :
 
 /-- The U(1) sector carries a full derivation package: all three representation-level
 identities are proved, not assumed. -/
-lemma u1CasimirDerivationAssumptions (Y : ℝ) :
+lemma u1NormalizedData_casimirDerivationAssumptions (Y : ℝ) :
     CasimirDerivationAssumptions (u1NormalizedData Y) where
   hTraceIdentity := u1NormalizedData_traceIdentity Y
   hFundamentalIdentity := u1NormalizedData_fundamentalIdentity Y

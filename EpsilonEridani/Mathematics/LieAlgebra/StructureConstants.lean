@@ -75,6 +75,11 @@ variable (b : Basis ι R L)
 lemma coord_lie_basis (i j k : ι) : b.coord k ⁅b i, b j⁆ = structureConstants b i j k := by
   simp [structureConstants]
 
+/-- The structure constants are the coordinates of the brackets of basis vectors. This is the
+simp-normal form of `LieAlgebra.coord_lie_basis`, stated using `Module.Basis.repr`. -/
+@[simp]
+lemma repr_lie_basis (i j k : ι) : b.repr ⁅b i, b j⁆ k = structureConstants b i j k := rfl
+
 /-- The structure constants vanish when their first two indices agree, since `⁅x, x⁆ = 0`. -/
 @[simp]
 lemma structureConstants_self (i k : ι) : structureConstants b i i k = 0 := by

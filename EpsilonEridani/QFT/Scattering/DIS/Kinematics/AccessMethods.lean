@@ -117,10 +117,9 @@ def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
 
 /-- Appropriateness theorem: Sigma method Q² is non-negative. -/
 lemma q2Sigma_nonneg (d : SigmaMethodData V) (g_met : Bilin V)
-    (hTimelike : ∀ v, g_met v v ≤ 0 → 0 ≤ -g_met v v)
     (hKOut : g_met d.kOut d.kOut ≤ 0) :
-    0 ≤ SigmaMethodData.q2Sigma (V := V) d g_met := by
-  simpa [SigmaMethodData.q2Sigma] using hTimelike d.kOut hKOut
+    0 ≤ SigmaMethodData.q2Sigma (V := V) d g_met :=
+  neg_nonneg.mpr hKOut
 
 end SigmaMethodData
 

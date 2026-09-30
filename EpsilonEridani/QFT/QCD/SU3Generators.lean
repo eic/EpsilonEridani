@@ -25,8 +25,9 @@ All three identities are proved here: trace normalization (`su3TraceStatement`,
 `T_F = 1/2`), the fundamental Casimir (`su3FundamentalStatement`, `C_F = 4/3`) and the
 adjoint Casimir (`su3AdjointStatement`, `C_A = 3`).  `su3NormalizedData` therefore
 instantiates every contract field of `NormalizedGeneratorData` with the corresponding
-identity rather than with a placeholder, and `su3CasimirDerivationAssumptions` carries
-the full derivation package with identity bridges.
+identity rather than with a placeholder, and
+`su3NormalizedData_casimirDerivationAssumptions` carries the full derivation package with
+identity bridges.
 
 The adjoint Casimir is a sum of 4096 products of table entries, and `simp` cannot
 evaluate `structConst3` at that scale: the fallback arm of its match carries one side
@@ -377,7 +378,7 @@ lemma su3NormalizedData_adjointIdentity : su3NormalizedData.AdjointCasimirIdenti
 /-- The `su(3)` sector carries a full derivation package: all three
 representation-level identities are proved, not assumed, and the contract bridges are
 the identity map because the contracts *are* the identities. -/
-lemma su3CasimirDerivationAssumptions :
+lemma su3NormalizedData_casimirDerivationAssumptions :
     CasimirDerivationAssumptions su3NormalizedData where
   hTraceIdentity := su3NormalizedData_traceIdentity
   hFundamentalIdentity := su3NormalizedData_fundamentalIdentity
