@@ -31,8 +31,8 @@ object.
 ## Main results
 
 * `EpsilonEridani.intervalIntegrable_plusFunctional`: the integral defining `⟨[K]₊, φ⟩`
-  converges when `K z * (1 - z)` is integrable on `(0, 1]` and `φ z - φ 1 = O(1 - z)`
-  uniformly on `(0, 1]`.
+  converges when `K z * (1 - z)` is integrable on `(0, 1]`, `φ` is a.e.-strongly-measurable
+  there, and `φ z - φ 1 = O(1 - z)` uniformly on `(0, 1]`.
 * `EpsilonEridani.plusFunctional_const`: a plus functional annihilates constants.
 * `EpsilonEridani.plusFunctional_mul`: the multiplication identity
   `⟨[K]₊, g φ⟩ = g 1 ⟨[K]₊, φ⟩ + ∫₀¹ K z (g z - g 1) φ z dz`, which for `K z = 1 / (1 - z)`
@@ -48,7 +48,7 @@ The convergence hypothesis on `K` is integrability of `K z * (1 - z)`, which cov
 `K z * (1 - z)` is integrable but unbounded. Continuity of `φ` on `[0, 1]` alone does not
 suffice for convergence even for `K z = 1 / (1 - z)`: the function `φ z = 1 / log (e / (1 - z))`,
 extended by `φ 1 = 0`, is continuous on `[0, 1]`, but `(φ z - φ 1) / (1 - z)` is not integrable
-near `1`. The test functions are therefore required to satisfy the one-sided Lipschitz bound
+near `1`. The test functions are therefore required to be a.e.-strongly-measurable and satisfy the one-sided Lipschitz bound
 `|φ z - φ 1| ≤ L * (1 - z)`, which holds for every function continuous on `[0, 1]` and
 differentiable on `(0, 1)` with bounded derivative, in particular for the polynomials `z ^ n`
 used for moments.
@@ -89,11 +89,11 @@ theorem plusOneMinus_def (φ : ℝ → ℝ) :
     plusOneMinus φ = plusFunctional (fun z => (1 - z)⁻¹) φ :=
   (rfl)
 
-/-- **Convergence of the plus functional.** If `K z * (1 - z)` is integrable on `(0, 1]` and the
-test function satisfies `|φ z - φ 1| ≤ L * (1 - z)` there, then the integrand
-`K z * (φ z - φ 1)` of `⟨[K]₊, φ⟩` is integrable on `[0, 1]`, even though `K` itself need not
-be. -/
-theorem intervalIntegrable_plusFunctional {K φ : ℝ → ℝ} {L : ℝ}
+/-- **Convergence of the plus functional.** If `K z * (1 - z)` is integrable on `(0, 1]`,
+`φ` is a.e.-strongly-measurable there, and the test function satisfies `|φ z - φ 1| ≤ L * (1 - z)`
+there, then the integrand `K z * (φ z - φ 1)` of `⟨[K]₊, φ⟩` is integrable on `[0, 1]`,
+even though `K` itself need not be. -/
+theorem intervalIntegrable_plusFunctional_integrand {K φ : ℝ → ℝ} {L : ℝ}
     (hK : IntervalIntegrable (fun z => K z * (1 - z)) volume 0 1)
     (hφm : AEStronglyMeasurable φ (volume.restrict (Ioc 0 1)))
     (hφ : ∀ z ∈ Ioc (0 : ℝ) 1, |φ z - φ 1| ≤ L * (1 - z)) :
@@ -116,12 +116,12 @@ theorem intervalIntegrable_plusFunctional {K φ : ℝ → ℝ} {L : ℝ}
     nlinarith [mul_le_mul_of_nonneg_left (hφ z hz) (abs_nonneg (K z))]
 
 /-- The integrand of the plus distribution `[1 / (1 - z)]₊` is integrable on `[0, 1]` for every
-test function with `|φ z - φ 1| ≤ L * (1 - z)` on `(0, 1]`. -/
-theorem intervalIntegrable_plusOneMinus {φ : ℝ → ℝ} {L : ℝ}
+a.e.-strongly-measurable test function with `|φ z - φ 1| ≤ L * (1 - z)` on `(0, 1]`. -/
+theorem intervalIntegrable_plusOneMinus_integrand {φ : ℝ → ℝ} {L : ℝ}
     (hφm : AEStronglyMeasurable φ (volume.restrict (Ioc 0 1)))
     (hφ : ∀ z ∈ Ioc (0 : ℝ) 1, |φ z - φ 1| ≤ L * (1 - z)) :
     IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1 := by
-  refine intervalIntegrable_plusFunctional ?_ hφm hφ
+  refine intervalIntegrable_plusFunctional_integrand ?_ hφm hφ
   refine (intervalIntegrable_const (c := (1 : ℝ))).congr_ae ?_
   filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (1 : ℝ))] with z hz
   rw [inv_mul_cancel₀ (sub_ne_zero.2 (Ne.symm hz))]
@@ -178,21 +178,32 @@ theorem plusOneMinus_add {φ ψ : ℝ → ℝ}
     plusOneMinus (φ + ψ) = plusOneMinus φ + plusOneMinus ψ :=
   plusFunctional_add_right hφ hψ
 
-/-- For a kernel `K` which is itself integrable on `[0, 1]`, the plus functional splits as the
+/-- For a kernel `K` integrable on `[0, 1]` with `K φ` also integrable, the plus functional splits as the
 ordinary pairing with `K` minus `(∫₀¹ K) δ(1 - z)`: `⟨[K]₊, φ⟩ = ∫₀¹ K φ - φ 1 ∫₀¹ K`. -/
-theorem plusFunctional_eq_integral_sub {K φ : ℝ → ℝ} (hK : IntervalIntegrable K volume 0 1)
+theorem plusFunctional_eq_integral_sub_mul_integral {K φ : ℝ → ℝ} (hK : IntervalIntegrable K volume 0 1)
     (hKφ : IntervalIntegrable (fun z => K z * φ z) volume 0 1) :
     plusFunctional K φ = (∫ z in (0 : ℝ)..1, K z * φ z) - φ 1 * ∫ z in (0 : ℝ)..1, K z := by
   simp only [plusFunctional, mul_sub]
   rw [intervalIntegral.integral_sub hKφ (hK.mul_const _), intervalIntegral.integral_mul_const,
     mul_comm]
 
+theorem plusFunctional_mul_left {K g φ : ℝ → ℝ}
+    (hK : IntervalIntegrable (fun z => K z * (φ z - φ 1)) volume 0 1)
+    (hg : IntervalIntegrable (fun z => K z * (g z - g 1) * (φ z - φ 1)) volume 0 1) :
+    plusFunctional (g * K) φ =
+      g 1 * plusFunctional K φ + ∫ z in (0 : ℝ)..1, K z * (g z - g 1) * (φ z - φ 1) := by
+  simp only [plusFunctional, Pi.mul_apply]
+  rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_add (hK.const_mul _) hg]
+  congr 1
+  ext z
+  ring
+
 /-- **The multiplication identity.** Multiplying the test function by `g` moves the plus
 prescription onto `g 1` and leaves an ordinary integral:
 `⟨[K]₊, g φ⟩ = g 1 ⟨[K]₊, φ⟩ + ∫₀¹ K z (g z - g 1) φ z dz`. For `K z = 1 / (1 - z)` this is the
 identity `g z [1 / (1 - z)]₊ = g 1 [1 / (1 - z)]₊ + (g z - g 1) / (1 - z)` of distributions,
 whose last term is an ordinary function when `g z - g 1 = O(1 - z)`. -/
-theorem plusFunctional_mul {K g φ : ℝ → ℝ}
+theorem plusFunctional_mul_right {K g φ : ℝ → ℝ}
     (hφ : IntervalIntegrable (fun z => K z * (φ z - φ 1)) volume 0 1)
     (hg : IntervalIntegrable (fun z => K z * (g z - g 1) * φ z) volume 0 1) :
     plusFunctional K (g * φ) =
@@ -203,9 +214,33 @@ theorem plusFunctional_mul {K g φ : ℝ → ℝ}
   ext z
   ring
 
+theorem abs_pow_sub_one_le (n : ℕ) {z : ℝ} (hz : z ∈ Ioc (0 : ℝ) 1) :
+    |z ^ n - 1| ≤ n * (1 - z) := by
+  have h1 : 1 - z ^ n = (1 - z) * ∑ i ∈ Finset.range n, z ^ i := geom_sum_mul z n
+  have h2 : |1 - z ^ n| = |(1 - z) * ∑ i ∈ Finset.range n, z ^ i| := by rw [h1]
+  rw [abs_sub_comm, abs_mul, abs_of_nonneg (sub_nonneg.2 hz.2)] at h2
+  rw [h2]
+  have hz_nonneg : 0 ≤ z := hz.1.le
+  have hsum_nonneg : 0 ≤ ∑ i ∈ Finset.range n, z ^ i :=
+    Finset.sum_nonneg (fun i _ => pow_nonneg hz_nonneg i)
+  rw [abs_of_nonneg hsum_nonneg]
+  refine mul_le_mul_of_nonneg_left ?_ (sub_nonneg.2 hz.2)
+  have h_le_one : ∀ i ∈ Finset.range n, z ^ i ≤ 1 := fun i _ => pow_le_one i hz_nonneg hz.2
+  have h_sum_le : ∑ i ∈ Finset.range n, z ^ i ≤ ∑ i ∈ Finset.range n, (1 : ℝ) :=
+    Finset.sum_le_sum h_le_one
+  rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one] at h_sum_le
+  exact h_sum_le
+
+theorem intervalIntegrable_plusOneMinus_pow (n : ℕ) :
+    IntervalIntegrable (fun z => (1 - z)⁻¹ * (z ^ n - 1)) volume 0 1 := by
+  refine intervalIntegrable_plusOneMinus_integrand (L := n)
+    (continuous_pow n).aestronglyMeasurable.restrict
+    (fun z hz => by simpa using abs_pow_sub_one_le n hz)
+
 /-- **The moments of `[1 / (1 - z)]₊` are harmonic numbers**:
 `⟨[1 / (1 - z)]₊, z ^ n⟩ = ∫₀¹ (z ^ n - 1) / (1 - z) dz = -H_n`. In the Mellin indexing
 `M[f](N) = ∫₀¹ z ^ (N - 1) f z dz` this reads `M[[1 / (1 - z)]₊](N) = -S₁(N - 1)`. -/
+@[simp]
 theorem plusOneMinus_pow (n : ℕ) : plusOneMinus (fun z => z ^ n) = -(harmonic n : ℝ) := by
   rw [plusOneMinus_def, plusFunctional_def]
   have hgeom : ∫ z in (0 : ℝ)..1, (1 - z)⁻¹ * (z ^ n - 1 ^ n) =
