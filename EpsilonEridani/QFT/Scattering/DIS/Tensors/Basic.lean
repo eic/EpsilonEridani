@@ -46,11 +46,11 @@ into the basis, so that no statement in this module needs `g K.p K.q ≠ 0`.
 
 ## Status
 
-`IsF1F2Decomposition` is still a definition rather than a consequence of covariance: the
-exhaustion statement `exists_isF1F2Decomposition` is stated over concrete hypotheses but is
-not proved here (one `sorry`). What *is* proved is that the transverse basis satisfies all of
-`Assumptions` (`assumptions_fromF1F2`), that covariance in the sense of
-`IsLorentzCovariant` has teeth (`covariant_spectator_offDiagonal_zero`), and that the
+`IsF1F2Decomposition` is a consequence of covariance, conservation and symmetry: under the
+linear-algebra hypotheses `SpectatorAssumptions` on the kinematics, every tensor satisfying
+`Assumptions` decomposes in the transverse basis (`exists_isF1F2Decomposition`). Conversely
+the transverse basis satisfies all of `Assumptions` (`assumptions_fromF1F2`), covariance in
+the sense of `IsLorentzCovariant` has teeth (`covariant_spectator_offDiagonal_zero`), and the
 coefficients are unique (`decomposition_unique`).
 
 The `Hadronic.Witness` section audits `IsLorentzCovariant` itself, since
@@ -59,8 +59,9 @@ named. Verdict: the predicate is **not vacuous** — `not_isLorentzCovariant_wWi
 tensor that fails it — but it is **not a predicate of `W` alone**: on the one-dimensional
 kinematics of `isLorentzCovariant_line` it holds for every bilinear form, because the
 kinematic stabilizer is trivial there. Its strength is the size of that stabilizer, a
-property of `(V, g, p, q)`. The same section supplies `uniquenessWit`, the first
-instantiation of `UniquenessAssumptions`, which had never been shown inhabited.
+property of `(V, g, p, q)`. The same section supplies `uniquenessWit` and
+`spectatorAssumptions_kWit`, instantiating `UniquenessAssumptions` and `SpectatorAssumptions`
+on one set of kinematics.
 
 The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is *not* included: on an abstract
 `V` with only a bilinear form there is no orientation or volume form, and physlib's
@@ -577,8 +578,8 @@ lemma decomposition_unique
 
 ## Exhaustion: covariance and conservation leave exactly two structures
 
-The statement below is the honest version of K1: it asserts that `IsF1F2Decomposition` is a
-*consequence* of `Assumptions`, not a definition users must posit. It is not proved here.
+The theorem below shows that `IsF1F2Decomposition` is a *consequence* of `Assumptions`, not
+a definition users must posit.
 
 Note that exhaustion is false for an arbitrary abstract `V` and `g`: if the stabilizer of the
 kinematics is trivial then `IsLorentzCovariant` is vacuous and any conserved symmetric `W`
@@ -606,30 +607,114 @@ structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Prop where
     g K.q u' = 0 → g (pTransverse g K) u' = 0 → g u u = g u' u' →
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ f u = u'
 
-/- **Open target (K1).** Lorentz covariance, current conservation and symmetry leave exactly
-the two transverse structures, so the `F1`/`F2` decomposition is a theorem rather than an
-interface.
+/-- A spectator vector — one `g`-orthogonal to `q` and to `p_T` — is `g`-orthogonal to `p`. -/
+private lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
+    (hSymm : g.IsSymm) {u : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) :
+    g u K.p = 0 := by
+  rw [pTransverse_pairing, huq, mul_zero, sub_zero] at huT
+  rw [hSymm.eq u K.p, huT]
 
-The intended proof: `conserved_left`/`conserved_right` kill the `q` component, so `W` is
-determined by its restriction to `span {p_T} ⊕ {p,q}^⊥`;
-`covariant_spectator_offDiagonal_zero` (with `definite` supplying non-null spectator
-directions) kills the mixed `p_T`-spectator and off-diagonal spectator components;
-`transitive` plus homogeneity of degree two forces `W u u = F1 * (- g u u)` with a single
-constant `F1` on the spectator subspace, which is `F1 * transverseMetric` there since
-`g K.q u = 0`; the remaining `p_T ⊗ p_T` component defines `F2`; `span` assembles the
-pointwise identity. -/
--- TODO(task/k1-hadronic-tensor): the four steps above are each short but need a polarization
--- identity and a scaling argument that we could not write down with confidence without a
--- toolchain; the `transitive` and `definite` hypotheses may also need strengthening (for
--- instance to a statement about reflections generating the spectator isometry group) once
--- the proof is attempted. Nothing downstream depends on this lemma: `assumptions_fromF1F2`
--- and `decomposition_unique` are the load-bearing results.
--- @[sorryful]
--- theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
---     (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hS : SpectatorAssumptions g K)
---     (hA : Assumptions g K W) :
---     ∃ F1 F2 : ℝ, IsF1F2Decomposition g K W F1 F2 := by
---   sorry
+/-- On the spectator subspace a covariant tensor has the same diagonal ratio to `g` in every
+direction. -/
+private lemma covariant_spectator_apply_self (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+    (hS : SpectatorAssumptions g K) (hW : IsLorentzCovariant g K W) {e u : V}
+    (heq : g K.q e = 0) (heT : g (pTransverse g K) e = 0) (he : e ≠ 0)
+    (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) :
+    W u u * g e e = W e e * g u u := by
+  by_cases hu : u = 0
+  · simp [hu]
+  have hee := hS.definite e heq heT he
+  have huu := hS.definite u huq huT hu
+  set s := √(g e e / g u u)
+  have hs : s ^ 2 * g u u = g e e := by
+    rw [Real.sq_sqrt (div_nonneg_of_nonpos hee.le huu.le), div_mul_cancel₀ _ huu.ne]
+  have hsu : g e e = g (s • u) (s • u) := by
+    rw [← hs, map_smul, map_smul]
+    simp only [LinearMap.smul_apply, smul_eq_mul]
+    ring
+  obtain ⟨f, hf, hfe⟩ := hS.transitive e (s • u) heq heT
+    (by rw [map_smul, huq, smul_zero]) (by rw [map_smul, huT, smul_zero]) hsu
+  have h := hW f hf e e
+  rw [hfe, map_smul, map_smul] at h
+  simp only [LinearMap.smul_apply, smul_eq_mul] at h
+  rw [← h, ← hs]
+  ring
+
+/-- On the spectator subspace a symmetric covariant tensor is proportional to `g`, with the
+ratio read off from any non-zero spectator `e`. -/
+private lemma covariant_spectator_apply (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+    (hSymm : g.IsSymm) (hWSymm : W.IsSymm) (hS : SpectatorAssumptions g K)
+    (hW : IsLorentzCovariant g K W) {e u u' : V}
+    (heq : g K.q e = 0) (heT : g (pTransverse g K) e = 0) (he : e ≠ 0)
+    (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0)
+    (hu'q : g K.q u' = 0) (hu'T : g (pTransverse g K) u' = 0) :
+    W u u' * g e e = W e e * g u u' := by
+  have hp := covariant_spectator_apply_self g K W hS hW heq heT he (u := u + u')
+    (by rw [map_add, huq, hu'q, add_zero]) (by rw [map_add, huT, hu'T, add_zero])
+  have hm := covariant_spectator_apply_self g K W hS hW heq heT he (u := u - u')
+    (by rw [map_sub, huq, hu'q, sub_zero]) (by rw [map_sub, huT, hu'T, sub_zero])
+  simp only [map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply,
+    hWSymm.eq u' u, hSymm.eq u' u] at hp hm
+  linear_combination (hp - hm) / 4
+
+/-- **Exhaustion of the transverse basis.** Lorentz covariance, current conservation and
+symmetry leave exactly the two transverse structures: under `SpectatorAssumptions` every
+hadronic tensor satisfying `Assumptions` has an `F1`/`F2` decomposition, so
+`IsF1F2Decomposition` is a consequence of the physical hypotheses rather than an interface.
+Together with `decomposition_unique` the coefficients are then determined by `W`. -/
+theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+    (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hS : SpectatorAssumptions g K)
+    (hA : Assumptions g K W) :
+    ∃ F1 F2 : ℝ, IsF1F2Decomposition g K W F1 F2 := by
+  set t := pTransverse g K with ht
+  have htq : g t K.q = 0 := pTransverse_orthogonal_q g K hQ2
+  have hqt : g K.q t = 0 := by rw [hSymm.eq, htq]
+  -- Conservation removes every `q` component. Reflections in spectator directions remove the
+  -- mixed components between a spectator and `p_T`.
+  have hWut : ∀ u, g K.q u = 0 → g t u = 0 → W u t = 0 := by
+    intro u huq huT
+    by_cases hu : u = 0
+    · simp [hu]
+    exact covariant_spectator_offDiagonal_zero g K W hSymm hA.covariant u t
+      (hS.definite u huq huT hu).ne (apply_p_eq_zero_of_spectator g K hSymm huq huT)
+      (by rw [hSymm.eq, huq]) (by rw [hSymm.eq, huT])
+  -- By `transitive` and polarization, `W = F1 • (-g)` on the spectator subspace.
+  obtain ⟨F1, hF1⟩ : ∃ F1 : ℝ, ∀ u u' : V, g K.q u = 0 → g t u = 0 → g K.q u' = 0 →
+      g t u' = 0 → W u u' = F1 * -g u u' := by
+    by_cases hne : ∃ e, g K.q e = 0 ∧ g t e = 0 ∧ e ≠ 0
+    · obtain ⟨e, heq, heT, he⟩ := hne
+      have hee := (hS.definite e heq heT he).ne
+      refine ⟨-(W e e / g e e), fun u u' huq huT hu'q hu'T => ?_⟩
+      have h := covariant_spectator_apply g K W hSymm hA.symm hS hA.covariant heq heT he
+        huq huT hu'q hu'T
+      field_simp
+      linear_combination h
+    · push Not at hne
+      exact ⟨0, fun u u' huq huT _ _ => by simp [hne u huq huT]⟩
+  -- The `p_T ⊗ p_T` component. If `p_T` is null it is a spectator, hence zero by `definite`.
+  set F2 := (W t t + F1 * g t t) / g t t ^ 2
+  have hWtt : W t t = F1 * -g t t + F2 * (g t t * g t t) := by
+    by_cases htt : g t t = 0
+    · have ht0 : t = 0 := by
+        by_contra ht0
+        exact (hS.definite t hqt htt ht0).ne htt
+      simp [ht0]
+    · simp only [F2]
+      field_simp
+      ring
+  refine ⟨F1, F2, fun v w => ?_⟩
+  obtain ⟨a, b, u, huq, huT, rfl⟩ := hS.span v
+  obtain ⟨a', b', u', hu'q, hu'T, rfl⟩ := hS.span w
+  rw [← ht] at huT hu'T ⊢
+  have huq' : g u K.q = 0 := by rw [hSymm.eq, huq]
+  have huT' : g u t = 0 := by rw [hSymm.eq, huT]
+  have hWtu' : W t u' = 0 := by rw [hA.symm.eq, hWut u' hu'q hu'T]
+  rw [transverseMetric_apply]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    hA.conserved_left, hA.conserved_right, hWut u huq huT, hWtu', hF1 u u' huq huT hu'q hu'T,
+    hWtt, htq, hqt, huq, huT, hu'q, hu'T, huq', huT']
+  field_simp
+  ring
 
 /-!
 
@@ -651,7 +736,7 @@ property of `(V, g, p, q)` and not of `W`.** Concretely:
 * `isLorentzCovariant_line` exhibits kinematics on which the predicate holds for **every**
   bilinear form, because the stabilizer there is the identity alone
   (`stabilizer_line_eq_id`). So the predicate is *conditionally* uninformative, exactly as
-  the `exists_isF1F2Decomposition` docstring claims in prose — now as a theorem.
+  the prose caveat before `SpectatorAssumptions` states — now as a theorem.
 
 Both witnesses use the same `+---`-signature construction restricted to one time and two
 space directions, `ℝ × ℝ × ℝ` with `g (v₀,v₁,v₂) (w₀,w₁,w₂) = v₀w₀ - v₁w₁ - v₂w₂`, which is
@@ -662,7 +747,8 @@ The same construction settles a second open question at no extra cost: `uniquene
 instantiates `UniquenessAssumptions`, which nothing in the repository previously did. Until
 now `decomposition_unique` and `fromF1F2_ne_zero` were conditioned on a hypothesis not known
 to be satisfiable; had it been empty, both would have been vacuously true statements about
-nothing.
+nothing. `spectatorAssumptions_kWit` does the same for `SpectatorAssumptions`, the hypothesis
+of `exists_isF1F2Decomposition`.
 
 -/
 
@@ -754,6 +840,38 @@ def uniquenessWit : UniquenessAssumptions gWit kWit where
   transverse_zero := by rw [transverseMetric_apply]; norm_num
   pT_outer_nonzero := by simp only [pTransverse_pairing]; norm_num
 
+/-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
+already `gWit`-orthogonal to `q`. -/
+@[simp] lemma pTransverse_kWit : pTransverse gWit kWit = ((1, 0, 0) : ℝ × ℝ × ℝ) := by
+  simp [pTransverse]
+
+/-- **`SpectatorAssumptions` is satisfiable.** On the witness kinematics the spectator
+subspace is the spacelike line through `u = (0,0,1)`. Two spectator vectors of equal norm are
+equal or opposite, so the identity or the reflection in `u` carries one onto the other.
+
+Hence `exists_isF1F2Decomposition` is not conditioned on an empty hypothesis: on these
+kinematics every tensor satisfying `Assumptions` has an `F1`/`F2` decomposition, which
+`uniquenessWit` then pins down. -/
+lemma spectatorAssumptions_kWit : SpectatorAssumptions gWit kWit where
+  span v := ⟨v.1, v.2.1, (0, 0, v.2.2), by simp, by simp, by ext <;> simp⟩
+  definite u hq hT hu := by
+    simp only [kWit_q, gWit_apply, pTransverse_kWit] at hq hT ⊢
+    have h : u.2.2 ≠ 0 := by
+      rintro h
+      apply hu
+      ext <;> simp <;> linarith
+    nlinarith [mul_self_pos.mpr h]
+  transitive u u' hq hT hq' hT' huu := by
+    simp only [kWit_q, gWit_apply, pTransverse_kWit] at hq hT hq' hT' huu
+    rcases mul_self_eq_mul_self_iff.mp (by nlinarith : u.2.2 * u.2.2 = u'.2.2 * u'.2.2) with
+      h | h
+    · refine ⟨LinearMap.id, ⟨Bilin.isIsometry_id gWit, rfl, rfl⟩, ?_⟩
+      ext <;> simp <;> linarith
+    · refine ⟨Bilin.reflect gWit (0, 0, 1),
+        reflect_isKinematicStabilizer gWit kWit gWit_isSymm (0, 0, 1)
+          (by norm_num) (by norm_num) (by norm_num), ?_⟩
+      ext <;> simp <;> linarith
+
 /-!
 
 ### The other side: covariance is only as strong as the stabilizer
@@ -762,7 +880,7 @@ def uniquenessWit : UniquenessAssumptions gWit kWit where
 
 /-- If the identity is the only element of the kinematic stabilizer, then every bilinear form
 is Lorentz covariant, so the predicate carries no information about `W`. This is the precise
-form of the caveat recorded in prose on `exists_isF1F2Decomposition`. -/
+form of the caveat recorded in prose before `SpectatorAssumptions`. -/
 lemma isLorentzCovariant_of_stabilizer_eq_id (g : Bilin V) (K : DisKinematics V)
     (hTriv : ∀ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f → f = LinearMap.id)
     (W : Bilin V) :
