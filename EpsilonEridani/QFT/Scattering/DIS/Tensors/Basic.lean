@@ -186,6 +186,17 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
   rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
+/-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`:
+it is the transvection `v ↦ v + f v • u` with `f = -2 (g u u)⁻¹ g u`, and `f u = -2`. -/
+lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u ≠ 0) :
+    LinearMap.det (reflect g u) = -1 := by
+  have h : reflect g u = LinearMap.transvection (-(2 * (g u u)⁻¹) • g u) u := by
+    ext v
+    simp [LinearMap.transvection.apply, sub_eq_add_neg, neg_smul, mul_assoc]
+  rw [h, LinearMap.transvection.det, LinearMap.smul_apply, smul_eq_mul, neg_mul, mul_assoc,
+    inv_mul_cancel₀ hu]
+  norm_num
+
 end Bilin
 
 namespace Leptonic
@@ -608,7 +619,7 @@ structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Prop where
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ f u = u'
 
 /-- A spectator vector — one `g`-orthogonal to `q` and to `p_T` — is `g`-orthogonal to `p`. -/
-private lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
+lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
     (hSymm : g.IsSymm) {u : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) :
     g u K.p = 0 := by
   rw [pTransverse_pairing, huq, mul_zero, sub_zero] at huT
