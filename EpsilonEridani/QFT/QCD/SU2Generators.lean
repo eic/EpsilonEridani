@@ -159,7 +159,7 @@ lemma su2NormalizedData_adjointIdentity : su2NormalizedData.AdjointCasimirIdenti
 /-- The `su(2)` sector carries a full derivation package: all three
 representation-level identities are proved, not assumed, and the contract bridges are
 the identity map because the contracts *are* the identities. -/
-def su2CasimirDerivationAssumptions :
+lemma su2CasimirDerivationAssumptions :
     CasimirDerivationAssumptions su2NormalizedData where
   hTraceIdentity := su2NormalizedData_traceIdentity
   hFundamentalIdentity := su2NormalizedData_fundamentalIdentity

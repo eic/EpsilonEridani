@@ -72,7 +72,6 @@ noncomputable def structureConstants (b : Basis ι R L) (i j k : ι) : R := b.re
 variable (b : Basis ι R L)
 
 /-- The structure constants are the coordinate functionals of the brackets of basis vectors. -/
-@[simp]
 lemma coord_lie_basis (i j k : ι) : b.coord k ⁅b i, b j⁆ = structureConstants b i j k := by
   simp [structureConstants]
 

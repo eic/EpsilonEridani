@@ -338,15 +338,15 @@ multiple of a matrix. -/
 
 /-- The BFKL evolution operator from rapidity `Y₀` to rapidity `Y`: the exponential of the
 kernel. -/
-def bfklEvolution [CompleteSpace E] (S : SmallXSystem E) (Y₀ Y : ℝ) : E →L[ℝ] E :=
+def bfklEvolution (S : SmallXSystem E) (Y₀ Y : ℝ) : E →L[ℝ] E :=
   NormedSpace.exp ((Y - Y₀) • S.bfklKernel)
 
 /-- The BFKL solution with initial amplitude `N₀` at rapidity `Y₀`. -/
-def bfklFlow [CompleteSpace E] (S : SmallXSystem E) (N₀ : E) (Y₀ : ℝ) : ℝ → E :=
+def bfklFlow (S : SmallXSystem E) (N₀ : E) (Y₀ : ℝ) : ℝ → E :=
   fun Y => bfklEvolution S Y₀ Y N₀
 
 @[simp]
-lemma bfklFlow_self [CompleteSpace E] (S : SmallXSystem E) (N₀ : E) (Y₀ : ℝ) :
+lemma bfklFlow_self (S : SmallXSystem E) (N₀ : E) (Y₀ : ℝ) :
     bfklFlow S N₀ Y₀ Y₀ = N₀ := by
   simp only [bfklFlow, bfklEvolution, sub_self, zero_smul, NormedSpace.exp_zero]
   rfl

@@ -56,7 +56,6 @@ open Complex
 noncomputable section diracRepresentation
 
 /-- The gamma matrices in the Dirac representation, indexed as `γ0, γ1, γ2, γ3`. -/
-@[simp]
 def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
 
 /-- The lowered gamma matrices in the Dirac representation. -/
@@ -299,7 +298,7 @@ lemma slash_trace (k : Lorentz.Vector 3) : Matrix.trace (Slash.slash k) = 0 := b
 theorem slash_mul_slash_trace (a b : Lorentz.Vector 3) :
     Matrix.trace (Slash.slash a * Slash.slash b) =
       (4 * (Lorentz.Vector.minkowskiProduct a b : ℝ) : ℂ) := by
-  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, Fin.sum_univ_three,
+  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, Fin.sum_univ_three, γ,
     γ0_eq, γ1_eq, γ2_eq, γ3_eq, Lorentz.Vector.minkowskiProduct_toCoord]
   ring_nf
   simp only [Complex.I_sq]
@@ -308,14 +307,14 @@ theorem slash_mul_slash_trace (a b : Lorentz.Vector 3) :
 /-- `γ5` with two slashes has vanishing trace. -/
 theorem gamma5_slash_mul_slash_trace (a b : Lorentz.Vector 3) :
     Matrix.trace (γ5 * Slash.slash a * Slash.slash b) = 0 := by
-  simp [γ5, Slash.slash, Matrix.trace, Fin.sum_univ_four, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  simp [γ5, Slash.slash, Matrix.trace, Fin.sum_univ_four, γ, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
   ring_nf
 
 /-- Cubic odd slash trace identity. -/
 theorem slash_mul_slash_mul_slash_trace
     (k l m : Lorentz.Vector 3) :
     Matrix.trace (Slash.slash k * Slash.slash l * Slash.slash m) = 0 := by
-  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, γ, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
   ring_nf
 
 /-- `γDown` over the Gaussian integers. -/

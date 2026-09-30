@@ -42,35 +42,35 @@ variable (g : Bilin V)
     E_e' is final electron energy, and θ is the scattering angle. -/
 structure ElectronMethodData where
   /-- Initial electron energy. -/
-  E_initial : ℝ
+  initialEnergy : ℝ
   /-- Final electron energy after scattering. -/
-  E_final : ℝ
+  finalEnergy : ℝ
   /-- Scattering angle (between incident and scattered electron). -/
   theta : ℝ
   /-- Constraint: final energy is less than initial (energy loss). -/
-  energy_loss : 0 < E_final ∧ E_final < E_initial
+  energy_loss : 0 < finalEnergy ∧ finalEnergy < initialEnergy
   /-- Constraint: scattering angle in physical range. -/
   theta_bounds : 0 < theta ∧ theta < Real.pi
 
 namespace ElectronMethodData
 
 /-- Electron method Q² reconstruction. -/
-def Q2_electron (d : ElectronMethodData) : ℝ :=
-  4 * d.E_initial * d.E_final * (Real.sin (d.theta / 2)) ^ 2
+def q2Electron (d : ElectronMethodData) : ℝ :=
+  4 * d.initialEnergy * d.finalEnergy * (Real.sin (d.theta / 2)) ^ 2
 
 /-- Electron method y reconstruction from energy ratio. -/
-def y_electron (d : ElectronMethodData) : ℝ :=
-  1 - d.E_final / d.E_initial
+def yElectron (d : ElectronMethodData) : ℝ :=
+  1 - d.finalEnergy / d.initialEnergy
 
 /-- Electron method xBj reconstruction (requires hadronic invariant mass input). -/
-def xBj_electron (d : ElectronMethodData) (M_p : ℝ) : ℝ :=
-  (Q2_electron d) / (2 * M_p * d.E_initial * (y_electron d))
+def xBjElectron (d : ElectronMethodData) (M_p : ℝ) : ℝ :=
+  (q2Electron d) / (2 * M_p * d.initialEnergy * (yElectron d))
 
 /-- Appropriateness theorem: electron method Q² reconstruction is positive. -/
-lemma Q2_electron_pos (d : ElectronMethodData) : 0 < Q2_electron d := by
-  unfold Q2_electron
-  have hEi : 0 < d.E_initial := lt_trans d.energy_loss.1 d.energy_loss.2
-  have hEf : 0 < d.E_final := d.energy_loss.1
+lemma q2Electron_pos (d : ElectronMethodData) : 0 < q2Electron d := by
+  unfold q2Electron
+  have hEi : 0 < d.initialEnergy := lt_trans d.energy_loss.1 d.energy_loss.2
+  have hEf : 0 < d.finalEnergy := d.energy_loss.1
   have hHalfPos : 0 < d.theta / 2 := by linarith [d.theta_bounds.1]
   have hHalfLtPi : d.theta / 2 < Real.pi := by linarith [d.theta_bounds.2, Real.pi_pos]
   have hSinPos : 0 < Real.sin (d.theta / 2) :=
@@ -79,11 +79,11 @@ lemma Q2_electron_pos (d : ElectronMethodData) : 0 < Q2_electron d := by
   positivity
 
 /-- Appropriateness theorem: electron method y is in valid range (0, 1). -/
-lemma y_electron_bounds (d : ElectronMethodData) : 0 < y_electron d ∧ y_electron d < 1 := by
-  unfold y_electron
-  have hEi : 0 < d.E_initial := lt_trans d.energy_loss.1 d.energy_loss.2
-  have hRatioPos : 0 < d.E_final / d.E_initial := div_pos d.energy_loss.1 hEi
-  have hRatioLtOne : d.E_final / d.E_initial < 1 := by
+lemma yElectron_bounds (d : ElectronMethodData) : 0 < yElectron d ∧ yElectron d < 1 := by
+  unfold yElectron
+  have hEi : 0 < d.initialEnergy := lt_trans d.energy_loss.1 d.energy_loss.2
+  have hRatioPos : 0 < d.finalEnergy / d.initialEnergy := div_pos d.energy_loss.1 hEi
+  have hRatioLtOne : d.finalEnergy / d.initialEnergy < 1 := by
     refine (div_lt_iff₀ hEi).2 ?_
     simpa using d.energy_loss.2
   constructor
@@ -95,64 +95,65 @@ end ElectronMethodData
 /-- Sigma method data: hadronic final state information. -/
 structure SigmaMethodData where
   /-- Sum of hadronic final state momenta (Jacquet-Blondel observable). -/
-  P_h : V
+  hadronicMomentum : V
   /-- Outgoing lepton momentum (required for energy-momentum conservation). -/
-  k_out : V
+  kOut : V
   /-- Initial state total 4-momentum. -/
-  P_initial : V
+  initialMomentum : V
 
 namespace SigmaMethodData
 
 /-- Sigma method: Q² reconstruction from t-channel momentum transfer.
     Q² is reconstructed from the hadronic invariants and energy-momentum conservation. -/
-def Q2_sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
-  -g_met d.k_out d.k_out
+def q2Sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
+  -g_met d.kOut d.kOut
 
 /-- Sigma method y reconstruction from hadronic energy fraction. -/
-def y_sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
-  (g_met d.P_initial d.P_initial -
-    g_met (d.P_initial - d.P_h - d.k_out) (d.P_initial - d.P_h - d.k_out)) /
-    g_met d.P_initial d.P_initial
+def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
+  (g_met d.initialMomentum d.initialMomentum -
+    g_met (d.initialMomentum - d.hadronicMomentum - d.kOut)
+      (d.initialMomentum - d.hadronicMomentum - d.kOut)) /
+    g_met d.initialMomentum d.initialMomentum
 
 /-- Appropriateness theorem: Sigma method Q² is non-negative. -/
-lemma Q2_sigma_nonneg (d : SigmaMethodData V) (g_met : Bilin V)
+lemma q2Sigma_nonneg (d : SigmaMethodData V) (g_met : Bilin V)
     (hTimelike : ∀ v, g_met v v ≤ 0 → 0 ≤ -g_met v v)
-    (hKOut : g_met d.k_out d.k_out ≤ 0) :
-    0 ≤ SigmaMethodData.Q2_sigma (V := V) d g_met := by
-  simpa [SigmaMethodData.Q2_sigma] using hTimelike d.k_out hKOut
+    (hKOut : g_met d.kOut d.kOut ≤ 0) :
+    0 ≤ SigmaMethodData.q2Sigma (V := V) d g_met := by
+  simpa [SigmaMethodData.q2Sigma] using hTimelike d.kOut hKOut
 
 end SigmaMethodData
 
 /-- eSigma method: uses both electron and hadronic information. -/
 structure ESigmaMethodData (g_met : Bilin V) where
   /-- Electron method component. -/
-  electron_data : ElectronMethodData
+  electronData : ElectronMethodData
   /-- Hadronic method component. -/
-  sigma_data : SigmaMethodData V
+  sigmaData : SigmaMethodData V
   /-- Agreement condition: both methods must give consistent Q² within experimental resolution. -/
-  Q2_agreement : ∃ ε > 0, |ElectronMethodData.Q2_electron electron_data -
-    SigmaMethodData.Q2_sigma (V := V) sigma_data g_met| < ε
+  Q2_agreement : ∃ ε > 0, |ElectronMethodData.q2Electron electronData -
+    SigmaMethodData.q2Sigma (V := V) sigmaData g_met| < ε
 
 namespace ESigmaMethodData
 
 /-- eSigma method Q² reconstruction: average of electron and Sigma methods. -/
-def Q2_eSigma (d : ESigmaMethodData V g) : ℝ :=
-  (ElectronMethodData.Q2_electron d.electron_data +
-    SigmaMethodData.Q2_sigma (V := V) d.sigma_data g) / 2
+def q2ESigma (d : ESigmaMethodData V g) : ℝ :=
+  (ElectronMethodData.q2Electron d.electronData +
+    SigmaMethodData.q2Sigma (V := V) d.sigmaData g) / 2
 
 /-- eSigma method y reconstruction: average of both methods. -/
-def y_eSigma (d : ESigmaMethodData V g) : ℝ :=
-  (ElectronMethodData.y_electron d.electron_data +
-    SigmaMethodData.y_sigma (V := V) d.sigma_data g) / 2
+def yESigma (d : ESigmaMethodData V g) : ℝ :=
+  (ElectronMethodData.yElectron d.electronData +
+    SigmaMethodData.ySigma (V := V) d.sigmaData g) / 2
 
 /-- Appropriateness theorem: eSigma Q² reconstruction is consistent with both methods. -/
-lemma Q2_eSigma_consistency (d : ESigmaMethodData V g) :
-    |Q2_eSigma (V := V) (g := g) d - ElectronMethodData.Q2_electron d.electron_data| ≤
-      |ElectronMethodData.Q2_electron d.electron_data -
-        SigmaMethodData.Q2_sigma (V := V) d.sigma_data g| / 2 := by
-  let A : ℝ := ElectronMethodData.Q2_electron d.electron_data
-  let B : ℝ := SigmaMethodData.Q2_sigma (V := V) d.sigma_data g
-  unfold Q2_eSigma
+lemma q2ESigma_consistency (d : ESigmaMethodData V g) :
+    |q2ESigma (V := V) (g := g) d - ElectronMethodData.q2Electron d.electronData| ≤
+      |ElectronMethodData.q2Electron d.electronData -
+        SigmaMethodData.q2Sigma (V := V) d.sigmaData g| / 2 := by
+  let A : ℝ := ElectronMethodData.q2Electron d.electronData
+  let B : ℝ := SigmaMethodData.q2Sigma (V := V) d.sigmaData g
+  unfold q2ESigma
   have hcalc : (A + B) / 2 - A = (B - A) / 2 := by ring
   rw [hcalc]
   rw [abs_div, abs_sub_comm]
@@ -163,36 +164,36 @@ end ESigmaMethodData
 /-- Jacquet-Blondel (JB) method: reconstruction from hadronic side only. -/
 structure JBMethodData where
   /-- Sum of final state hadron momenta. -/
-  P_h : V
+  hadronicMomentum : V
   /-- Beam energy (from accelerator specs). -/
-  E_beam : ℝ
+  beamEnergy : ℝ
   /-- Initial target nucleus mass. -/
-  M_target : ℝ
+  targetMass : ℝ
 
 namespace JBMethodData
 
 /-- JB method: Q² reconstruction using scattered lepton information and hadronic recoil.
     Requires scattered lepton momentum which is implicit in hadronic recoil. -/
-def Q2_JB (_d : JBMethodData V) (g_met : Bilin V) (k_out : V) : ℝ :=
+def q2JB (_d : JBMethodData V) (g_met : Bilin V) (k_out : V) : ℝ :=
   -g_met k_out k_out
 
 /-- JB method: W² reconstruction from hadronic invariant mass. -/
-def W2_JB (d : JBMethodData V) (g_met : Bilin V) (p_hadron : V) : ℝ :=
-  g_met (p_hadron + d.P_h) (p_hadron + d.P_h)
+def w2JB (d : JBMethodData V) (g_met : Bilin V) (p_hadron : V) : ℝ :=
+  g_met (p_hadron + d.hadronicMomentum) (p_hadron + d.hadronicMomentum)
 
 /-- JB method: xBj reconstruction from kinematic relations. -/
-def xBj_JB (d : JBMethodData V) (g_met : Bilin V) (p_target : V) (k_out : V) : ℝ :=
-  (Q2_JB (V := V) d g_met k_out) / (2 * g_met p_target k_out)
+def xBjJB (d : JBMethodData V) (g_met : Bilin V) (p_target : V) (k_out : V) : ℝ :=
+  (q2JB (V := V) d g_met k_out) / (2 * g_met p_target k_out)
 
 /-- Appropriateness theorem: JB method respects experimental constraints on W². -/
-lemma W2_JB_physical_region (d : JBMethodData V) (g_met : Bilin V) (p : V)
-    (hLower : (d.M_target) ^ 2 ≤ W2_JB (V := V) d g_met p) :
-    W2_JB (V := V) d g_met p ≥ (d.M_target) ^ 2 := by
+lemma w2JB_physical_region (d : JBMethodData V) (g_met : Bilin V) (p : V)
+    (hLower : (d.targetMass) ^ 2 ≤ w2JB (V := V) d g_met p) :
+    w2JB (V := V) d g_met p ≥ (d.targetMass) ^ 2 := by
   exact hLower
 
 /-- Appropriateness theorem: JB method Q² is consistent with Q² definition. -/
-lemma Q2_JB_def_consistent (d : JBMethodData V) (g_met : Bilin V) (k_out : V) :
-    JBMethodData.Q2_JB (V := V) d g_met k_out = -g_met k_out k_out := by
+lemma q2JB_def_consistent (d : JBMethodData V) (g_met : Bilin V) (k_out : V) :
+    JBMethodData.q2JB (V := V) d g_met k_out = -g_met k_out k_out := by
   rfl
 
 end JBMethodData
@@ -201,13 +202,13 @@ end JBMethodData
 lemma all_methods_agree_ideal
     (K : DisKinematics V)
     (e_data : ElectronMethodData)
-    (sigma_data : SigmaMethodData V)
+    (sigmaData : SigmaMethodData V)
     (jb_data : JBMethodData V)
     (g_met : Bilin V) :
-    (ElectronMethodData.Q2_electron e_data = SigmaMethodData.Q2_sigma (V := V) sigma_data g_met) ∧
-    (SigmaMethodData.Q2_sigma (V := V) sigma_data g_met =
-      JBMethodData.Q2_JB (V := V) jb_data g_met K.kPrime) →
-    ElectronMethodData.Q2_electron e_data = JBMethodData.Q2_JB (V := V) jb_data g_met K.kPrime := by
+    (ElectronMethodData.q2Electron e_data = SigmaMethodData.q2Sigma (V := V) sigmaData g_met) ∧
+    (SigmaMethodData.q2Sigma (V := V) sigmaData g_met =
+      JBMethodData.q2JB (V := V) jb_data g_met K.kPrime) →
+    ElectronMethodData.q2Electron e_data = JBMethodData.q2JB (V := V) jb_data g_met K.kPrime := by
   intro ⟨h1, h2⟩
   exact Eq.trans h1 h2
 
