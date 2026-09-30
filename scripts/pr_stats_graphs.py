@@ -1346,8 +1346,8 @@ def render_cumulative_contributors(
     left, right, top, bottom = 90, 1030, 120, 680
     label_x = 1070
     plotted_totals = {name: values[-1] for name, values in series.items()}
-    maximum = max(plotted_totals.values(), default=1)
-    logmax = math.log10(maximum + 1)
+    maximum = max(plotted_totals.values(), default=0)
+    logmax = math.log10(max(maximum, 1) + 1)
 
     def y_for(value):
         return bottom - math.log10(value + 1) / logmax * (bottom - top)
