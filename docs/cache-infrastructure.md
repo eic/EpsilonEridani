@@ -49,6 +49,35 @@ default endpoint that leanprover-community/mathlib4@03616a12 introduced, and ups
 plans to retire it together with direct reads from the storage account. Remove this
 wiring when the pinned cache tool drops the flag.
 
+## Dependency build cache (GitHub Actions)
+
+Mathlib's cache tool restores Mathlib and the packages Mathlib itself depends on, nothing else.
+Every other dependency in `lake-manifest.json` (Physlib, TauCeti, and any added later) used to be
+compiled from source on every build; Physlib alone was about 1,500 CPU-seconds of each PR build.
+
+`ci.yml` on main therefore saves those packages' `.lake/build` trees after its build, and
+`pr-build.yml` (PRs and the merge queue) restores them before the sandboxed build:
+
+- `scripts/dependency_builds.py` decides the packages (the manifest minus `mathlib` and minus
+  Mathlib's own manifest, so new dependencies are covered automatically), packs them into one
+  archive, and validates the archive before unpacking: every member must be a regular file or
+  directory under `<package>/.lake/build/`, or nothing is extracted. Members of a package no
+  longer in the manifest are skipped.
+- `.github/actions/restore-dependency-builds` restores the archive and unpacks it with the
+  script next to it (`gate/scripts/` in `pr-build.yml`).
+- The archive sits at `$RUNNER_TEMP/dependency-builds.tar`, a path identical in both workflows,
+  because `actions/cache` hashes the `path` input into the entry's version and the two workflows
+  build in different directories (`.` and `pr/`).
+
+Keys have the shape
+`dependency-builds-v1-<os>-<arch>-<lean-toolchain hash>-<lake-manifest hash>`, with the same
+toolchain-prefix fallback as the Mathlib snapshot. Only main writes: `pr-build.yml` never saves,
+so a PR cannot plant outputs a later build reuses. Lake still compares every module's trace, so
+after a pin bump the stale outputs a prefix restore brings in are rebuilt, not trusted. Every
+step is best-effort (`continue-on-error`): a miss or a refused archive means compiling the
+dependencies from source, as before. To abandon a poisoned or incompatible entry, bump
+`dependency-builds-v1` in the action and in nothing else.
+
 ## Cloudflare account
 
 The 2026 account migration is complete. The live bucket, zone, custom domain,

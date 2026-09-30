@@ -151,6 +151,7 @@ jobs:
           python3 scripts/test_lint_dot_notation.py
           python3 scripts/test_check_expired_mathlib_shims.py
           python3 scripts/test_toolchain_tags.py
+          python3 scripts/test_dependency_builds.py
 
       # The two-library split is build convenience, not a trust boundary.
       # This guard is what actually stops the AI-owned library from inheriting
@@ -218,6 +219,17 @@ jobs:
             lake exe cache get! Mathlib Physlib TauCeti
           fi
 
+      # Mathlib's cache tool restores only Mathlib and its own dependencies. Restore the compiled
+      # outputs of every other dependency (Physlib, TauCeti, ...) from the snapshot this job saves
+      # after its build; see .github/actions/restore-dependency-builds. Best-effort: on a miss or
+      # a refused archive the build compiles them from source, as before.
+      - name: Restore dependency builds
+        id: dependency_builds_restore
+        continue-on-error: true
+        uses: ./.github/actions/restore-dependency-builds
+        with:
+          project-dir: .
+
       # --- Lake artifact-cache restore (dormant until configured) --------------------
       # Restore EpsilonEridani's OWN oleans before building, exactly as pr-build.yml does. Without
       # this, the post-merge run recompiled the whole library from scratch on every push,
@@ -283,6 +295,26 @@ jobs:
           # sandboxed build in pr-build.yml and as the publish step below.
           LAKE_NO_CACHE: "true"
         run: lake build
+
+      # The only writer of the dependency-build cache: main's own build, after it succeeded.
+      # pr-build and the merge queue restore it read-only. An exact hit is immutable and already
+      # holds this pin's builds; otherwise (a pin bump, or a prefix restore) save the builds this
+      # run produced under the exact key. Never fails the job.
+      - name: Save dependency builds
+        if: ${{ steps.dependency_builds_restore.outputs.cache-hit != 'true' }}
+        id: dependency_builds_pack
+        continue-on-error: true
+        env:
+          ARCHIVE: ${{ steps.dependency_builds_restore.outputs.archive || format('{0}/dependency-builds.tar', runner.temp) }}
+        run: python3 scripts/dependency_builds.py pack . "$ARCHIVE"
+
+      - name: Upload dependency builds to the Actions cache
+        if: ${{ steps.dependency_builds_restore.outputs.cache-hit != 'true' && steps.dependency_builds_pack.outcome == 'success' && steps.dependency_builds_restore.outputs.cache-primary-key != '' }}
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ steps.dependency_builds_restore.outputs.archive }}
+          key: ${{ steps.dependency_builds_restore.outputs.cache-primary-key }}
 
       # Main and already-audited merge-group commits publish EpsilonEridani's Lake artifacts through the
       # same secret-isolated workflow. Ordinary PR heads remain restore-only and cannot populate

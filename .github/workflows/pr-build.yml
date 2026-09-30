@@ -821,6 +821,21 @@ jobs:
           fi
           echo "Dependencies cache is complete at the bump target."
 
+      # Restore the compiled outputs of every non-Mathlib dependency (Physlib, TauCeti, ...) that
+      # main's ci.yml saved after its trusted build; Mathlib's cache tool above covers only Mathlib
+      # and its own dependencies. Restore-only: this workflow never writes that cache, so a PR
+      # cannot plant outputs a later build would reuse. The workflow-pinned gate/ action and its
+      # gate/scripts/dependency_builds.py validate the archive before extracting anything, into
+      # pr/.lake/packages/<pkg>/.lake/build only, and Lake still re-checks every module's trace
+      # inside the sandbox. Best-effort: a miss or a refused archive means compiling them from
+      # source, as before.
+      - name: Restore dependency builds from main (no PR code)
+        if: ${{ env.INFRA != '1' }}
+        continue-on-error: true
+        uses: ./gate/.github/actions/restore-dependency-builds
+        with:
+          project-dir: pr
+
       # Text-only trusted lint: inspect the exact candidate sources after Mathlib's source tree is
       # available. The workflow-pinned Python does not elaborate or execute candidate code.
       - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
