@@ -20,6 +20,7 @@ env:
 
 jobs:
   bump:
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -68,6 +69,7 @@ jobs:
           git-user-email: 290224625+epsiloneridani-review-bot[bot]@users.noreply.github.com
 
   open-issue:
+    if: false
     runs-on: ubuntu-latest
     needs: bump
     permissions:
