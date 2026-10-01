@@ -56,7 +56,8 @@ amount by which the longitudinal direction is longer than its massless value, an
 `p_T · p_T > 0` in the physical region, `F_L^{exact}` has the sign and the zeros of the
 longitudinal absorption (`FLExact_nonneg_iff_apply_pTransverse_nonneg`,
 `FLExact_eq_zero_iff_apply_pTransverse_eq_zero`), whereas `F_L` has them in general only at
-`M = 0`.
+`M = 0`: under Callan-Gross, `F_L^{exact}` is the target-mass term `4 M² x² F₂ / Q²`
+(`FLExact_of_isCallanGross`).
 
 ## Where the factor `2 x` comes from
 
@@ -167,16 +168,12 @@ lemma isCallanGross_iff (x F1 F2 : ℝ) : IsCallanGross x F1 F2 ↔ F2 = 2 * x *
 `F_L^{exact} := (1 + 4 M² x² / Q²) F₂ - 2 x F₁`, as a function of the target mass `M`, the Bjorken
 variable `x`, the hard scale `Q²` and the two transverse structure functions. This, and not
 the massless `FL`, is the combination that measures longitudinal absorption at finite target
-mass (`two_xBj_mul_apply_pTransverse`); the two agree at `M = 0` (`FLExact_zero`). -/
+mass (`two_xBj_mul_apply_pTransverse`); the two agree at `M = 0` (`FLExact_zero_mass`). -/
 def FLExact (M x Q2 F1 F2 : ℝ) : ℝ := (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1
-
-/-- The defining formula of the target-mass-exact longitudinal structure function. -/
-lemma FLExact_def (M x Q2 F1 F2 : ℝ) :
-    FLExact M x Q2 F1 F2 = (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1 := rfl
 
 /-- At zero target mass the target-mass-exact longitudinal structure function is the massless
 one. -/
-@[simp] lemma FLExact_zero (x Q2 F1 F2 : ℝ) : FLExact 0 x Q2 F1 F2 = FL x F1 F2 := by
+@[simp] lemma FLExact_zero_mass (x Q2 F1 F2 : ℝ) : FLExact 0 x Q2 F1 F2 = FL x F1 F2 := by
   unfold FLExact FL
   ring
 
@@ -191,9 +188,15 @@ lemma FLExact_eq_FL_add (M x Q2 F1 F2 : ℝ) :
 `Q² F_L^{exact} = Q² F_L + 4 x² M² F₂`. -/
 lemma Q2_mul_FLExact (M x F1 F2 : ℝ) {Q2 : ℝ} (hQ2 : Q2 ≠ 0) :
     Q2 * FLExact M x Q2 F1 F2 = Q2 * FL x F1 F2 + 4 * x ^ 2 * M ^ 2 * F2 := by
-  unfold FLExact FL
+  rw [FLExact_eq_FL_add]
   field_simp
-  ring
+
+/-- Under the Callan-Gross relation the target-mass-exact longitudinal structure function does
+not vanish at finite target mass: only the target-mass term `4 M² x² F₂ / Q²` is left. -/
+lemma FLExact_of_isCallanGross (M x Q2 F1 F2 : ℝ) (h : IsCallanGross x F1 F2) :
+    FLExact M x Q2 F1 F2 = 4 * M ^ 2 * x ^ 2 / Q2 * F2 := by
+  unfold IsCallanGross at h
+  rw [FLExact_eq_FL_add, h, zero_add]
 
 /-- The physical second structure function. `Tensors.Hadronic.IsF1F2Decomposition` carries
 `F₂/(p·q)` in its last slot, so the physical `F₂` is that coefficient times `p·q`. -/
@@ -261,6 +264,20 @@ lemma two_xBj_mul_pq (g : Bilin V) (K : DisKinematics V) (hpq : g K.p K.q ≠ 0)
   unfold Kinematics.DisKinematics.xBj
   linear_combination hcancel
 
+/-- A non-zero Bjorken variable forces `p·q ≠ 0`, since `x = Q² / (2 p·q)`. -/
+lemma pq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj g ≠ 0) :
+    g K.p K.q ≠ 0 := by
+  intro h
+  apply hx
+  simp [Kinematics.DisKinematics.xBj, h]
+
+/-- A non-zero Bjorken variable forces `q² ≠ 0`, since `x = Q² / (2 p·q)` and `Q² = -q²`. -/
+lemma q_sq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj g ≠ 0) :
+    g K.q K.q ≠ 0 := by
+  intro h
+  apply hx
+  simp [Kinematics.DisKinematics.xBj, Kinematics.DisKinematics.Q2, h]
+
 /-- Value of a decomposed hadronic tensor on the longitudinal direction. -/
 lemma apply_pTransverse_self (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (F1 F2c : ℝ)
@@ -279,8 +296,9 @@ together with its exact target-mass term:
   `2 x Q² W(p_T, p_T) = (p_T · p_T) (Q² F_L + 4 x² M² F₂)`.
 
 No leading-twist approximation has been made; `M² = g p p` is the exact target mass squared.
-This is the identity that makes `FL` a physical quantity rather than a name for a
-combination. -/
+The identity exhibits the target-mass remainder `4 x² M² F₂` of `FL`; absorbing that remainder
+gives `FLExact`, the combination that measures longitudinal absorption at finite target mass
+(`two_xBj_mul_apply_pTransverse`). -/
 theorem two_xBj_mul_Q2_mul_apply_pTransverse (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hpq : g K.p K.q ≠ 0) (F1 F2c : ℝ)
     (hW : IsF1F2Decomposition g K W F1 F2c) :
@@ -318,8 +336,8 @@ theorem pTransverse_self_eq (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSym
   field_simp
   linear_combination K.Q2 g * h1 - g K.p K.p * (2 * K.xBj g * g K.p K.q + K.Q2 g) * h2
 
-/-- For a spacelike probe and a target of non-negative mass squared the longitudinal direction
-has positive `g`-norm. -/
+/-- For a spacelike probe that is not orthogonal to the target momentum (`p·q ≠ 0`) and a
+target of non-negative mass squared the longitudinal direction has positive `g`-norm. -/
 lemma pTransverse_self_pos (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (hQ2 : 0 < K.Q2 g) (hpq : g K.p K.q ≠ 0) (hM : 0 ≤ g K.p K.p) :
     0 < g (pTransverse g K) (pTransverse g K) := by
@@ -359,14 +377,8 @@ theorem FLExact_eq_zero_iff_apply_pTransverse_eq_zero (g : Bilin V) (K : DisKine
     (hW : IsF1F2Decomposition g K W F1 F2c) :
     FLExact M (K.xBj g) (K.Q2 g) F1 (structureF2 g K F2c) = 0
       ↔ W (pTransverse g K) (pTransverse g K) = 0 := by
-  have hpq : g K.p K.q ≠ 0 := by
-    intro h
-    apply hx
-    simp [Kinematics.DisKinematics.xBj, h]
-  have hQ2 : g K.q K.q ≠ 0 := by
-    intro h
-    apply hx
-    simp [Kinematics.DisKinematics.xBj, Kinematics.DisKinematics.Q2, h]
+  have hpq := pq_ne_zero_of_xBj_ne_zero g K hx
+  have hQ2 := q_sq_ne_zero_of_xBj_ne_zero g K hx
   have key := two_xBj_mul_apply_pTransverse g K W hSymm hQ2 hpq hM F1 F2c hW
   constructor
   · intro h
@@ -384,14 +396,13 @@ theorem FLExact_nonneg_iff_apply_pTransverse_nonneg (g : Bilin V) (K : DisKinema
     (hx : 0 < K.xBj g) (F1 F2c : ℝ) (hW : IsF1F2Decomposition g K W F1 F2c) :
     0 ≤ FLExact M (K.xBj g) (K.Q2 g) F1 (structureF2 g K F2c)
       ↔ 0 ≤ W (pTransverse g K) (pTransverse g K) := by
-  have hpq : g K.p K.q ≠ 0 := by
-    intro h
-    apply hx.ne'
-    simp [Kinematics.DisKinematics.xBj, h]
+  have hpq := pq_ne_zero_of_xBj_ne_zero g K hx.ne'
   have key := two_xBj_mul_apply_pTransverse g K W hSymm
     ((q_sq_ne_zero_iff g K).mpr hQ2.ne') hpq hM F1 F2c hW
   have hT := pTransverse_self_pos g K hSymm hQ2 hpq (hM ▸ sq_nonneg M)
-  rw [← mul_nonneg_iff_of_pos_left hT, ← key, mul_nonneg_iff_of_pos_left (by positivity)]
+  rw [← mul_nonneg_iff_of_pos_left
+      (b := FLExact M (K.xBj g) (K.Q2 g) F1 (structureF2 g K F2c)) hT, ← key,
+    mul_nonneg_iff_of_pos_left (show (0 : ℝ) < 2 * K.xBj g by positivity)]
 
 /-- **Leading twist: `F_L = 0` is exactly the vanishing of longitudinal absorption.** With the
 target-mass term dropped (`g p p = 0`), the Callan-Gross relation holds if and only if the
@@ -403,21 +414,18 @@ theorem isCallanGross_iff_apply_pTransverse_eq_zero (g : Bilin V) (K : DisKinema
     (hW : IsF1F2Decomposition g K W F1 F2c) :
     IsCallanGross (K.xBj g) F1 (structureF2 g K F2c)
       ↔ W (pTransverse g K) (pTransverse g K) = 0 := by
-  have hpq : g K.p K.q ≠ 0 := by
-    intro h
-    apply hx
-    simp [Kinematics.DisKinematics.xBj, h]
-  have hQ2 : g K.q K.q ≠ 0 := by
-    intro h
-    apply hx
-    simp [Kinematics.DisKinematics.xBj, Kinematics.DisKinematics.Q2, h]
+  have hpq := pq_ne_zero_of_xBj_ne_zero g K hx
+  have hQ2 := q_sq_ne_zero_of_xBj_ne_zero g K hx
   have hT : g (pTransverse g K) (pTransverse g K) ≠ 0 := by
     have h1 := Q2_mul_pTransverse_self g K hSymm hQ2
     rw [hTwist, mul_zero, zero_add] at h1
-    exact right_ne_zero_of_mul (h1 ▸ pow_ne_zero 2 hpq)
+    have h2 : K.Q2 g * g (pTransverse g K) (pTransverse g K) ≠ 0 := by
+      rw [h1]
+      exact pow_ne_zero 2 hpq
+    exact right_ne_zero_of_mul h2
   have h := FLExact_eq_zero_iff_apply_pTransverse_eq_zero g K W hSymm
     (M := 0) (by rw [hTwist]; ring) hx hT F1 F2c hW
-  rw [FLExact_zero] at h
+  rw [FLExact_zero_mass] at h
   unfold IsCallanGross
   exact h
 
