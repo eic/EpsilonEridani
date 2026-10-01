@@ -64,8 +64,9 @@ property of `(V, g, p, q)`. The same section supplies `uniquenessWit` and
 on one set of kinematics.
 
 The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is not part of this module. The
-sector it inhabits is characterised in `Tensors.ParityOdd`: every antisymmetric, conserved,
-properly covariant tensor is a multiple of one `ε(·, ·, p, q)`. On an abstract `V` with only a
+sector it inhabits is characterised in `Tensors.ParityOdd`: in the adapted four-dimensional
+frame of a `SpectatorPlane`, every antisymmetric, conserved, properly covariant tensor is a
+multiple of one non-zero `ε(·, ·, p, q)`. On an abstract `V` with only a
 bilinear form there is no orientation or volume form, so that module takes the role of
 `ε(·, ·, p, q)` as data; no `F₃` coefficient is defined yet.
 
