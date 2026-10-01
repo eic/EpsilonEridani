@@ -223,9 +223,9 @@ def toSMCharges : (SMCharges 1).Charges :=
 
 /-- The species components of `toSMCharges`. -/
 @[simp]
-theorem toSpecies_toSMCharges (i : Fin 5) (j : Fin (SMSpecies 1).numberCharges) :
-    SMCharges.toSpecies i a.toSMCharges j = ![a.YQ, -a.Yu, -a.Yd, a.YL, -a.Ye] i := by
-  exact congrFun (SMCharges.toSMSpecies_toSpecies_inv i _) j
+theorem toSpecies_toSMCharges (i : Fin 5) :
+    SMCharges.toSpecies i a.toSMCharges = fun _ => ![a.YQ, -a.Yu, -a.Yd, a.YL, -a.Ye] i :=
+  SMCharges.toSMSpecies_toSpecies_inv i _
 
 /-- Physlib's gravitational anomaly condition on `toSMCharges` is `gravitationalAnomaly`. -/
 theorem accGrav_toSMCharges : SMACCs.accGrav a.toSMCharges = a.gravitationalAnomaly := by
