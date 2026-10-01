@@ -12,16 +12,16 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 This module implements reconstruction methods for DIS invariants from experimental measurements.
 Each method represents a different experimental technique for accessing the standard DIS variables
-(xBj, Q2, y, W2). The electron, Sigma and eSigma methods carry appropriateness lemmas (positivity,
-range and the eSigma agreement identity); the JB section provides definitions only.
+(xBj, Q2, y). The electron, Sigma and eSigma methods carry appropriateness lemmas (positivity,
+range and the eSigma agreement identity).
 
 ## Access Methods
 
 - **Electron Method**: Reconstructs invariants from electron scattering
   kinematics (angle, energy loss)
-- **Sigma Method**: Reconstructs invariants from hadronic final state only
+- **Sigma Method**: Reconstructs Q² from the lepton momentum transfer and y from the hadronic
+  final state
 - **eSigma Method**: Reconstructs invariants from both electron and hadronic final states
-- **JB Method (Jacquet-Blondel)**: Reconstructs invariants from hadronic momenta sum
 
 -/
 
@@ -97,6 +97,8 @@ end ElectronMethodData
 structure SigmaMethodData where
   /-- Sum of hadronic final state momenta (Jacquet-Blondel observable). -/
   hadronicMomentum : V
+  /-- Incoming lepton momentum. -/
+  kIn : V
   /-- Outgoing lepton momentum (required for energy-momentum conservation). -/
   kOut : V
   /-- Initial state total 4-momentum. -/
@@ -104,10 +106,10 @@ structure SigmaMethodData where
 
 namespace SigmaMethodData
 
-/-- Sigma method: Q² reconstruction from t-channel momentum transfer.
-    Q² is reconstructed from the hadronic invariants and energy-momentum conservation. -/
+/-- Sigma method Q² reconstruction from the t-channel momentum transfer: minus the Minkowski square
+of the lepton momentum transfer `kIn - kOut`. -/
 def q2Sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
-  -g_met d.kOut d.kOut
+  -g_met (d.kIn - d.kOut) (d.kIn - d.kOut)
 
 /-- Sigma method y reconstruction from hadronic energy fraction. -/
 def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
@@ -118,10 +120,10 @@ def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
 
 /-- Appropriateness theorem: Sigma method Q² is non-negative. -/
 lemma q2Sigma_nonneg (d : SigmaMethodData V) (g_met : Bilin V)
-    (hKOut : g_met d.kOut d.kOut ≤ 0) :
+    (hTransfer : g_met (d.kIn - d.kOut) (d.kIn - d.kOut) ≤ 0) :
     0 ≤ SigmaMethodData.q2Sigma (V := V) d g_met := by
   simp only [q2Sigma]
-  exact neg_nonneg.mpr hKOut
+  exact neg_nonneg.mpr hTransfer
 
 end SigmaMethodData
 
@@ -160,24 +162,6 @@ lemma abs_q2ESigma_sub_q2Electron_eq (d : ESigmaMethodData V) :
   simp [A, B]
 
 end ESigmaMethodData
-
-/-- Jacquet-Blondel (JB) method: reconstruction from hadronic side only. -/
-structure JBMethodData where
-  /-- Sum of final state hadron momenta. -/
-  hadronicMomentum : V
-
-namespace JBMethodData
-
-/-- JB method: W² reconstruction from hadronic invariant mass. -/
-def w2JB (d : JBMethodData V) (g_met : Bilin V) (p_hadron : V) : ℝ :=
-  g_met (p_hadron + d.hadronicMomentum) (p_hadron + d.hadronicMomentum)
-
-/-- JB method: xBj reconstruction from kinematic relations, as minus the Minkowski square of the
-outgoing lepton momentum `k_out` divided by `2 p_target · k_out`. -/
-def xBjJB (g_met : Bilin V) (p_target : V) (k_out : V) : ℝ :=
-  -g_met k_out k_out / (2 * g_met p_target k_out)
-
-end JBMethodData
 
 end Kinematics
 end DIS
