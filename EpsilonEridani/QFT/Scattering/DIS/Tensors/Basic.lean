@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.Dimension
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 /-!
 
@@ -268,7 +269,7 @@ lemma lMuNuOdd_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKine
   ε.bilinMap_apply _ v w
 
 /-- The parity-odd leptonic structure is alternating. -/
-lemma lMuNuOdd_isAlt (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V) :
+lemma isAlt_lMuNuOdd (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V) :
     (lMuNuOdd ε K).IsAlt :=
   ε.isAlt_bilinMap _
 
@@ -280,34 +281,34 @@ lemma lMuNuOdd_flip (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinem
   exact ε.bilinMap_swap _ v w
 
 /-- The parity-odd leptonic structure annihilates `k` in its first slot. -/
-@[simp] lemma lMuNuOdd_apply_k_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
-    (w : V) : lMuNuOdd ε K K.k w = 0 :=
+@[simp] lemma lMuNuOdd_apply_k_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (w : V) : lMuNuOdd ε K K.k w = 0 :=
   ε.bilinMap_apply_left_eq_zero ![K.k, K.kPrime] 0 w
 
 /-- The parity-odd leptonic structure annihilates `k'` in its first slot. -/
-@[simp] lemma lMuNuOdd_apply_kPrime_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+@[simp] lemma lMuNuOdd_apply_kPrime_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (w : V) : lMuNuOdd ε K K.kPrime w = 0 :=
   ε.bilinMap_apply_left_eq_zero ![K.k, K.kPrime] 1 w
 
 /-- The parity-odd leptonic structure annihilates `k` in its second slot. -/
-@[simp] lemma lMuNuOdd_apply_k_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
-    (v : V) : lMuNuOdd ε K v K.k = 0 :=
+@[simp] lemma lMuNuOdd_apply_k_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (v : V) : lMuNuOdd ε K v K.k = 0 :=
   ε.bilinMap_apply_right_eq_zero ![K.k, K.kPrime] 0 v
 
 /-- The parity-odd leptonic structure annihilates `k'` in its second slot. -/
-@[simp] lemma lMuNuOdd_apply_kPrime_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+@[simp] lemma lMuNuOdd_apply_kPrime_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (v : V) : lMuNuOdd ε K v K.kPrime = 0 :=
   ε.bilinMap_apply_right_eq_zero ![K.k, K.kPrime] 1 v
 
 /-- The parity-odd leptonic structure is conserved in its first slot, for any lepton masses. -/
-@[simp] lemma lMuNuOdd_apply_q_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
-    (w : V) : lMuNuOdd ε K K.q w = 0 := by
+@[simp] lemma lMuNuOdd_apply_q_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (w : V) : lMuNuOdd ε K K.q w = 0 := by
   simp [K.q_eq_sub]
 
 /-- The parity-odd leptonic structure is conserved in its second slot, for any lepton
 masses. -/
-@[simp] lemma lMuNuOdd_apply_q_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
-    (v : V) : lMuNuOdd ε K v K.q = 0 := by
+@[simp] lemma lMuNuOdd_apply_q_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (v : V) : lMuNuOdd ε K v K.q = 0 := by
   simp [K.q_eq_sub]
 
 /-- On a space of dimension less than four there is no parity-odd leptonic structure. -/
@@ -315,8 +316,8 @@ lemma lMuNuOdd_eq_zero_of_finrank_lt [FiniteDimensional ℝ V] (ε : V [⋀^Fin 
     (K : Kinematics.DisKinematics V) (h : Module.finrank ℝ V < 4) : lMuNuOdd ε K = 0 := by
   rw [lMuNuOdd, ε.eq_zero_of_finrank_lt_card (by simpa using h), AlternatingMap.bilinMap_zero]
 
-/-- The determinant form on `ℝ⁴` gives a nonzero parity-odd leptonic structure, so the
-dimension bound in `lMuNuOdd_eq_zero_of_finrank_lt` is sharp. -/
+/-- The dimension bound in `lMuNuOdd_eq_zero_of_finrank_lt` is sharp: some alternating four-form
+on `ℝ⁴` gives a nonzero parity-odd leptonic structure. -/
 lemma exists_lMuNuOdd_ne_zero :
     ∃ (ε : (Fin 4 → ℝ) [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics (Fin 4 → ℝ)),
       lMuNuOdd ε K ≠ 0 := by
@@ -359,7 +360,7 @@ lemma lMuNuVA_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinema
   module
 
 /-- The symmetric part of the vector/axial-vector leptonic tensor is `(c_V² + c_A²) lMuNu`. -/
-theorem lMuNuVA_symmetricPart (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem inv_two_smul_lMuNuVA_add_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
     (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA + (lMuNuVA g ε K cV cA).flip)
       = (cV ^ 2 + cA ^ 2) • lMuNu g K := by
@@ -368,44 +369,28 @@ theorem lMuNuVA_symmetricPart (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
 
 /-- The antisymmetric part of the vector/axial-vector leptonic tensor is `2 c_V c_A` times the
 parity-odd structure `ε(·, ·, k, k')`. -/
-theorem lMuNuVA_antisymmetricPart (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem inv_two_smul_lMuNuVA_sub_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
     (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA - (lMuNuVA g ε K cV cA).flip)
       = (2 * cV * cA) • lMuNuOdd ε K := by
   rw [lMuNuVA_flip g ε K hSymm, lMuNuVA]
   module
 
-/-- Contracting the vector/axial-vector leptonic tensor with `q` in the first slot leaves only
-lepton-mass terms, from its symmetric part. -/
-lemma lMuNuVA_apply_q_left (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
-    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) (w : V) :
-    lMuNuVA g ε K cV cA K.q w
-      = (cV ^ 2 + cA ^ 2) * (g K.k K.k * g K.kPrime w - g K.kPrime K.kPrime * g K.k w) := by
-  simp [lMuNu_apply_q_left g K hSymm]
-
-/-- Contracting the vector/axial-vector leptonic tensor with `q` in the second slot leaves only
-lepton-mass terms, from its symmetric part. -/
-lemma lMuNuVA_apply_q_right (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
-    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) (v : V) :
-    lMuNuVA g ε K cV cA v K.q
-      = (cV ^ 2 + cA ^ 2) * (g K.k K.k * g K.kPrime v - g K.kPrime K.kPrime * g K.k v) := by
-  simp [lMuNu_apply_q_right g K hSymm]
-
 /-- For massless leptons the vector/axial-vector leptonic tensor is conserved in its first
 slot: `q^μ L_{μν} = 0`. -/
-theorem lMuNuVA_conserved_left (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem lMuNuVA_apply_q_left_eq_zero (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
     (hk' : g K.kPrime K.kPrime = 0) (cV cA : ℝ) (w : V) :
     lMuNuVA g ε K cV cA K.q w = 0 := by
-  simp [lMuNuVA_apply_q_left g ε K hSymm, hk, hk']
+  simp [lMuNu_apply_q_left g K hSymm, hk, hk']
 
 /-- For massless leptons the vector/axial-vector leptonic tensor is conserved in its second
 slot: `L_{μν} q^ν = 0`. -/
-theorem lMuNuVA_conserved_right (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem lMuNuVA_apply_q_right_eq_zero (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
     (hk' : g K.kPrime K.kPrime = 0) (cV cA : ℝ) (v : V) :
     lMuNuVA g ε K cV cA v K.q = 0 := by
-  simp [lMuNuVA_apply_q_right g ε K hSymm, hk, hk']
+  simp [lMuNu_apply_q_right g K hSymm, hk, hk']
 
 /-- On a space of dimension less than four the axial coupling only rescales the
 vector-exchange tensor. -/

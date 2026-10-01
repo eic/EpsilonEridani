@@ -5,9 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Field
 public import Mathlib.LinearAlgebra.Alternating.Curry
-public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
@@ -19,9 +17,7 @@ vanishes as soon as either argument is one of the fixed vectors.
 
 For `n = 2` and `f` a volume form `ε` on a four-dimensional space this is the contraction
 `ε_{μναβ} a^α b^β` of the Levi-Civita tensor with two momenta, the tensor structure of the
-parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scattering. On a space
-of dimension less than four every alternating map in four variables vanishes, so that structure
-needs four dimensions.
+parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scattering.
 
 ## Main definitions
 
@@ -33,11 +29,9 @@ needs four dimensions.
 - `AlternatingMap.bilinMap_swap`: consequently it is antisymmetric.
 - `AlternatingMap.bilinMap_apply_left_eq_zero`, `AlternatingMap.bilinMap_apply_right_eq_zero`:
   it vanishes when either argument is one of the fixed vectors `m i`.
-- `AlternatingMap.eq_zero_of_finrank_lt_card`: an alternating map in more variables than the
-  dimension of its domain is zero.
 -/
 
-public section
+@[expose] public section
 
 namespace AlternatingMap
 
@@ -104,9 +98,9 @@ theorem bilinMap_smul (c : R) (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n �
 
 end CommSemiring
 
-section CommRing
+section AddCommGroup
 
-variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [AddCommGroup N] [Module R N] {n : ℕ}
 
 /-- `f.bilinMap m` is antisymmetric. -/
@@ -114,20 +108,6 @@ theorem bilinMap_swap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v 
     f.bilinMap m w v = -f.bilinMap m v w :=
   ((f.isAlt_bilinMap m).neg v w).symm
 
-end CommRing
-
-section DivisionRing
-
-variable {K M N ι : Type*} [DivisionRing K] [AddCommGroup M] [Module K M]
-  [AddCommGroup N] [Module K N] [Fintype ι]
-
-/-- An alternating map in more variables than the dimension of its domain is zero: its
-arguments are always linearly dependent. -/
-theorem eq_zero_of_finrank_lt_card [Module.Finite K M] (f : M [⋀^ι]→ₗ[K] N)
-    (h : Module.finrank K M < Fintype.card ι) : f = 0 := by
-  ext v
-  exact f.map_linearDependent v fun hv => (hv.fintype_card_le_finrank.trans_lt h).false
-
-end DivisionRing
+end AddCommGroup
 
 end AlternatingMap
