@@ -48,10 +48,10 @@ The convergence hypothesis on `K` is integrability of `K z * (1 - z)`, which cov
 `K z * (1 - z)` is integrable but unbounded. Continuity of `φ` on `[0, 1]` alone does not
 suffice for convergence even for `K z = 1 / (1 - z)`: the function `φ z = 1 / log (e / (1 - z))`,
 extended by `φ 1 = 0`, is continuous on `[0, 1]`, but `(φ z - φ 1) / (1 - z)` is not integrable
-near `1`. The test functions are therefore required to be a.e.-strongly-measurable and satisfy the one-sided Lipschitz bound
-`|φ z - φ 1| ≤ L * (1 - z)`, which holds for every function continuous on `[0, 1]` and
-differentiable on `(0, 1)` with bounded derivative, in particular for the polynomials `z ^ n`
-used for moments.
+near `1`. The test functions are therefore required to be a.e.-strongly-measurable and to
+satisfy the one-sided Lipschitz bound `|φ z - φ 1| ≤ L * (1 - z)`, which holds for every
+function continuous on `[0, 1]` and differentiable on `(0, 1)` with bounded derivative, in
+particular for the polynomials `z ^ n` used for moments.
 
 ## References
 
@@ -178,9 +178,11 @@ theorem plusOneMinus_add {φ ψ : ℝ → ℝ}
     plusOneMinus (φ + ψ) = plusOneMinus φ + plusOneMinus ψ :=
   plusFunctional_add_right hφ hψ
 
-/-- For a kernel `K` integrable on `[0, 1]` with `K φ` also integrable, the plus functional splits as the
-ordinary pairing with `K` minus `(∫₀¹ K) δ(1 - z)`: `⟨[K]₊, φ⟩ = ∫₀¹ K φ - φ 1 ∫₀¹ K`. -/
-theorem plusFunctional_eq_integral_sub_mul_integral {K φ : ℝ → ℝ} (hK : IntervalIntegrable K volume 0 1)
+/-- For a kernel `K` integrable on `[0, 1]` with `K φ` also integrable, the plus functional
+splits as the ordinary pairing with `K` minus `(∫₀¹ K) δ(1 - z)`:
+`⟨[K]₊, φ⟩ = ∫₀¹ K φ - φ 1 ∫₀¹ K`. -/
+theorem plusFunctional_eq_integral_sub_mul_integral {K φ : ℝ → ℝ}
+    (hK : IntervalIntegrable K volume 0 1)
     (hKφ : IntervalIntegrable (fun z => K z * φ z) volume 0 1) :
     plusFunctional K φ = (∫ z in (0 : ℝ)..1, K z * φ z) - φ 1 * ∫ z in (0 : ℝ)..1, K z := by
   simp only [plusFunctional, mul_sub]
@@ -216,16 +218,16 @@ theorem plusFunctional_mul_right {K g φ : ℝ → ℝ}
 
 theorem abs_pow_sub_one_le (n : ℕ) {z : ℝ} (hz : z ∈ Ioc (0 : ℝ) 1) :
     |z ^ n - 1| ≤ n * (1 - z) := by
-  have h1 : 1 - z ^ n = (1 - z) * ∑ i ∈ Finset.range n, z ^ i := geom_sum_mul z n
+  have h1 : 1 - z ^ n = (1 - z) * ∑ i ∈ Finset.range n, z ^ i := (mul_neg_geom_sum z n).symm
   have h2 : |1 - z ^ n| = |(1 - z) * ∑ i ∈ Finset.range n, z ^ i| := by rw [h1]
   rw [abs_sub_comm, abs_mul, abs_of_nonneg (sub_nonneg.2 hz.2)] at h2
   rw [h2]
   have hz_nonneg : 0 ≤ z := hz.1.le
   have hsum_nonneg : 0 ≤ ∑ i ∈ Finset.range n, z ^ i :=
     Finset.sum_nonneg (fun i _ => pow_nonneg hz_nonneg i)
-  rw [abs_of_nonneg hsum_nonneg]
+  rw [abs_of_nonneg hsum_nonneg, mul_comm (n : ℝ)]
   refine mul_le_mul_of_nonneg_left ?_ (sub_nonneg.2 hz.2)
-  have h_le_one : ∀ i ∈ Finset.range n, z ^ i ≤ 1 := fun i _ => pow_le_one i hz_nonneg hz.2
+  have h_le_one : ∀ i ∈ Finset.range n, z ^ i ≤ 1 := fun i _ => pow_le_one₀ hz_nonneg hz.2
   have h_sum_le : ∑ i ∈ Finset.range n, z ^ i ≤ ∑ i ∈ Finset.range n, (1 : ℝ) :=
     Finset.sum_le_sum h_le_one
   rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one] at h_sum_le
@@ -233,8 +235,8 @@ theorem abs_pow_sub_one_le (n : ℕ) {z : ℝ} (hz : z ∈ Ioc (0 : ℝ) 1) :
 
 theorem intervalIntegrable_plusOneMinus_pow (n : ℕ) :
     IntervalIntegrable (fun z => (1 - z)⁻¹ * (z ^ n - 1)) volume 0 1 := by
-  refine intervalIntegrable_plusOneMinus_integrand (L := n)
-    (continuous_pow n).aestronglyMeasurable.restrict
+  simpa only [one_pow] using intervalIntegrable_plusOneMinus_integrand (φ := fun z : ℝ => z ^ n)
+    (L := n) (continuous_pow n).aestronglyMeasurable.restrict
     (fun z hz => by simpa using abs_pow_sub_one_le n hz)
 
 /-- **The moments of `[1 / (1 - z)]₊` are harmonic numbers**:
