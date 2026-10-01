@@ -155,9 +155,8 @@ theorem quasiShuffle_comm (m m' : List ℤ) : quasiShuffle m m' = quasiShuffle m
 
 /-- For multi-indices whose entries are all non-zero, every multi-index occurring in the
 quasi-shuffle product of `m` and `m'` has weight `weight m + weight m'` and again has non-zero
-entries. The two conclusions are proved together because the induction for the weight needs the
-non-vanishing of the entries; they are stated separately as
-`weight_of_mem_support_quasiShuffle` and `forall_ne_zero_of_mem_support_quasiShuffle`. -/
+entries. The public forms are `weight_of_mem_support_quasiShuffle` and
+`forall_ne_zero_of_mem_support_quasiShuffle`. -/
 private theorem weight_and_forall_ne_zero_of_mem_support_quasiShuffle {m m' : List ℤ}
     (hm : ∀ a ∈ m, a ≠ 0) (hm' : ∀ b ∈ m', b ≠ 0) {w : List ℤ}
     (hw : w ∈ (quasiShuffle m m').support) :
@@ -254,7 +253,7 @@ theorem harmonicSum_singleton_mul_singleton (a b : ℤ) (n : ℕ) :
 /-- The simplest quasi-shuffle relation, `S₁(N) S₁(N) = 2 S_{1,1}(N) - S₂(N)`. -/
 theorem harmonicSum_singleton_one_mul_self (n : ℕ) :
     harmonicSum [1] n * harmonicSum [1] n = 2 * harmonicSum [1, 1] n - harmonicSum [2] n := by
-  rw [harmonicSum_singleton_mul_singleton, show indexMul 1 1 = 2 by decide]
+  rw [harmonicSum_singleton_mul_singleton, (by decide : indexMul 1 1 = 2)]
   ring
 
 end EpsilonEridani
