@@ -46,10 +46,15 @@ The fields correspond to the left-handed quark doublet (`YQ`), the two right-han
 quark singlets (`Yu`, `Yd`), the left-handed lepton doublet (`YL`), and the
 right-handed charged-lepton singlet (`Ye`). -/
 structure GenerationAssignments where
+  /-- Hypercharge of the left-handed quark doublet. -/
   YQ : ℚ
+  /-- Hypercharge of the right-handed up-type quark singlet. -/
   Yu : ℚ
+  /-- Hypercharge of the right-handed down-type quark singlet. -/
   Yd : ℚ
+  /-- Hypercharge of the left-handed lepton doublet. -/
   YL : ℚ
+  /-- Hypercharge of the right-handed charged-lepton singlet. -/
   Ye : ℚ
 
 /-- The linear anomaly cancellation condition for the assignments.
