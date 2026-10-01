@@ -23,9 +23,9 @@ pure photon exchange) and
   `Y₊ := 1 + (1 - y)²`,  `Y₋ := 1 - (1 - y)²`.
 
 This file defines the bracket (`crossSectionBracket`), the cross section built from it
-(`dSigma`) and the reduced cross section `σ_r := bracket / Y₊` (`reducedCrossSection`), and
-proves the algebraic facts about the inelasticity dependence on which the extraction of structure
-functions from measured cross sections rests.
+(`dSigmaDxDQ2`) and the reduced cross section `σ_r := bracket / Y₊` (`reducedCrossSection`),
+and proves the algebraic facts about the inelasticity dependence on which the extraction of
+structure functions from measured cross sections rests.
 
 ## Main results
 
@@ -33,21 +33,25 @@ functions from measured cross sections rests.
   `F_L = F₂ - 2 x F₁`, `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L - (2 M² x² y² / Q²) F₂`, exactly; at `M = 0`
   this is the familiar `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L` (`crossSectionBracket_zero_mass`). The target
   mass enters only through the last term.
-* `Yplus_eq_two_mul_yFactor` and `dSigma_eq_loNCdSigma`: for photon exchange, no parity-odd
-  term, zero target mass and the Callan-Gross relation, `dSigma` is the leading-order
+* `Yplus_eq_two_mul_yFactor` and `dSigmaDxDQ2_eq_loNCdSigma`: for photon exchange, no parity-odd
+  term, zero target mass and the Callan-Gross relation, `dSigmaDxDQ2` is the leading-order
   cross section `loNCdSigma`.
 * `Yminus_le_Yplus`, `one_le_Yplus`, `Yminus_le_two_mul`: the inelasticity inequalities. They
   are sharp: `Y₊ - Y₋ = 2 (1 - y)²` (`Yplus_sub_Yminus`), so the parity-odd coefficient reaches
   the parity-even one at `y = 1`.
+* `reducedCrossSection_eq_FL`: `σ_r` in terms of `F_L`, exactly in the target mass; at `M = 0`
+  it is `F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L` (`reducedCrossSection_zero_mass`).
 * `reducedCrossSection_eq_F2_iff`, `reducedCrossSection_zero_mass_eq_F2_iff`: `σ_r = F₂`
   exactly when the parity-odd, longitudinal and target-mass contributions sum to zero; at `M = 0`,
   exactly when `±Y₋ x F₃ + y² F_L = 0`. In particular `σ_r = F₂` at `y = 0`
-  (`reducedCrossSection_at_zero_inelasticity`, `tendsto_reducedCrossSection_nhds_zero`).
-* `existsUnique_reducedCrossSection_eq`: **separation of the structure functions.** At fixed
-  `(x, Q²)`, with `x ≠ 0` and a non-zero beam-charge sign, the reduced cross sections at three
-  distinct inelasticities determine `F₁`, `F₂` and `F₃`, and every triple of values is attained:
-  the `3 × 3` matrix of inelasticity coefficients (`separationMatrix`) has determinant
-  `-8 s x² (y₁ - y₀)(y₂ - y₀)(y₂ - y₁)` (`det_separationMatrix`).
+  (`reducedCrossSection_zero_inelasticity`, `tendsto_reducedCrossSection_nhds_zero_nhds_F2`).
+* `F2_eq_and_mul_F3_eq_and_FL_eq_of_forall_reducedCrossSection_eq`: **separation of the
+  structure functions.** At fixed `(x, Q²)`, with a non-zero beam-charge sign, the reduced cross
+  sections at three distinct inelasticities determine `F₂`, `x F₃` and `F_L`: the `3 × 3` matrix
+  of their inelasticity coefficients (`separationMatrix`) has determinant
+  `4 s (y₁ - y₀)(y₂ - y₀)(y₂ - y₁)` (`det_separationMatrix`), independent of `x` and `M`.
+  With also `x ≠ 0`, they determine `F₁`, `F₂` and `F₃`, and every triple of values is attained
+  (`existsUnique_reducedCrossSection_eq`).
 
 ## Conventions
 
@@ -128,6 +132,14 @@ lemma Yplus_pos (y : ℝ) : 0 < Yplus y := lt_of_lt_of_le one_pos (one_le_Yplus 
 
 lemma Yplus_ne_zero (y : ℝ) : Yplus y ≠ 0 := (Yplus_pos y).ne'
 
+@[fun_prop] lemma continuous_Yplus : Continuous Yplus := by
+  simp only [funext Yplus_def]
+  fun_prop
+
+@[fun_prop] lemma continuous_Yminus : Continuous Yminus := by
+  simp only [funext Yminus_def]
+  fun_prop
+
 /-- The parity-odd inelasticity factor never exceeds the parity-even one, for every real `y`;
 equality holds only at `y = 1` (`Yplus_sub_Yminus`). -/
 lemma Yminus_le_Yplus (y : ℝ) : Yminus y ≤ Yplus y := by
@@ -183,20 +195,20 @@ theorem crossSectionBracket_eq_FL (M s x Q2 y F1 F2 F3 : ℝ) :
 
 /-- The inclusive cross section `d²σ/dx dQ² = (K / (x Q²)) · bracket` for an exchange with flux
 factor `K`; for pure photon exchange `K = 2π α² / Q²`. -/
-def dSigma (K M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
+def dSigmaDxDQ2 (K M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
   K / (x * Q2) * crossSectionBracket M s x Q2 y F1 F2 F3
 
-lemma dSigma_def (K M s x Q2 y F1 F2 F3 : ℝ) :
-    dSigma K M s x Q2 y F1 F2 F3 = K / (x * Q2) * crossSectionBracket M s x Q2 y F1 F2 F3 :=
+lemma dSigmaDxDQ2_def (K M s x Q2 y F1 F2 F3 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 = K / (x * Q2) * crossSectionBracket M s x Q2 y F1 F2 F3 :=
   (rfl)
 
 /-- **Compatibility with the leading-order cross section.** For photon exchange
 (`K = 2π α² / Q²`), with no parity-odd term, zero target mass and the Callan-Gross relation,
 the inclusive cross section is `loNCdSigma`. -/
-theorem dSigma_eq_loNCdSigma (α s x Q2 y F1 F2 : ℝ) (h : IsCallanGross x F1 F2) :
-    dSigma (2 * Real.pi * α ^ 2 / Q2) 0 s x Q2 y F1 F2 0 = loNCdSigma α x Q2 y F2 := by
+theorem dSigmaDxDQ2_eq_loNCdSigma (α s x Q2 y F1 F2 : ℝ) (h : IsCallanGross x F1 F2) :
+    dSigmaDxDQ2 (2 * Real.pi * α ^ 2 / Q2) 0 s x Q2 y F1 F2 0 = loNCdSigma α x Q2 y F2 := by
   unfold IsCallanGross at h
-  rw [dSigma_def, crossSectionBracket_zero_mass, h, Yplus_eq_two_mul_yFactor, loNCdSigma]
+  rw [dSigmaDxDQ2_def, crossSectionBracket_zero_mass, h, Yplus_eq_two_mul_yFactor, loNCdSigma]
   ring
 
 /-!
@@ -204,8 +216,9 @@ theorem dSigma_eq_loNCdSigma (α s x Q2 y F1 F2 : ℝ) (h : IsCallanGross x F1 F
 -/
 
 /-- The reduced cross section `σ_r := bracket / Y₊`, so that `d²σ/dx dQ² = (K / (x Q²)) Y₊ σ_r`
-(`dSigma_eq_mul_reducedCrossSection`). At zero target mass it is
-`F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L` (`reducedCrossSection_zero_mass`). -/
+(`dSigmaDxDQ2_eq_mul_reducedCrossSection`). In terms of `F_L` see `reducedCrossSection_eq_FL`;
+at zero target mass it is `F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L`
+(`reducedCrossSection_zero_mass`). -/
 def reducedCrossSection (M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
   crossSectionBracket M s x Q2 y F1 F2 F3 / Yplus y
 
@@ -220,17 +233,26 @@ lemma Yplus_mul_reducedCrossSection (M s x Q2 y F1 F2 F3 : ℝ) :
       crossSectionBracket M s x Q2 y F1 F2 F3 := by
   rw [reducedCrossSection_def, mul_div_cancel₀ _ (Yplus_ne_zero y)]
 
-lemma dSigma_eq_mul_reducedCrossSection (K M s x Q2 y F1 F2 F3 : ℝ) :
-    dSigma K M s x Q2 y F1 F2 F3 =
+lemma dSigmaDxDQ2_eq_mul_reducedCrossSection (K M s x Q2 y F1 F2 F3 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 =
       K / (x * Q2) * Yplus y * reducedCrossSection M s x Q2 y F1 F2 F3 := by
-  rw [mul_assoc, Yplus_mul_reducedCrossSection, dSigma_def]
+  rw [mul_assoc, Yplus_mul_reducedCrossSection, dSigmaDxDQ2_def]
+
+/-- **The reduced cross section in terms of `F_L`**, exactly in the target mass:
+`σ_r = F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L - (2 M² x² y² / (Q² Y₊)) F₂`. -/
+theorem reducedCrossSection_eq_FL (M s x Q2 y F1 F2 F3 : ℝ) :
+    reducedCrossSection M s x Q2 y F1 F2 F3 =
+      F2 - s * (Yminus y / Yplus y) * (x * F3) - y ^ 2 / Yplus y * FL x F1 F2
+        - 2 * M ^ 2 * x ^ 2 * y ^ 2 / (Q2 * Yplus y) * F2 := by
+  rw [reducedCrossSection_def, crossSectionBracket_eq_FL]
+  field_simp [Yplus_ne_zero y]
 
 /-- At zero target mass, `σ_r = F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L`. -/
 theorem reducedCrossSection_zero_mass (s x Q2 y F1 F2 F3 : ℝ) :
     reducedCrossSection 0 s x Q2 y F1 F2 F3 =
       F2 - s * (Yminus y / Yplus y) * (x * F3) - y ^ 2 / Yplus y * FL x F1 F2 := by
-  rw [reducedCrossSection_def, crossSectionBracket_zero_mass]
-  field_simp [Yplus_ne_zero y]
+  rw [reducedCrossSection_eq_FL]
+  ring
 
 /-- `σ_r = F₂` exactly when the parity-odd, longitudinal and target-mass contributions sum to
 zero. -/
@@ -249,81 +271,85 @@ theorem reducedCrossSection_zero_mass_eq_F2_iff (s x Q2 y F1 F2 F3 : ℝ) :
   simp
 
 /-- At vanishing inelasticity the reduced cross section is `F₂`. -/
-@[simp] theorem reducedCrossSection_at_zero_inelasticity (M s x Q2 F1 F2 F3 : ℝ) :
+@[simp] theorem reducedCrossSection_zero_inelasticity (M s x Q2 F1 F2 F3 : ℝ) :
     reducedCrossSection M s x Q2 0 F1 F2 F3 = F2 := by
   rw [reducedCrossSection_eq_F2_iff]
   simp
 
 theorem continuous_reducedCrossSection (M s x Q2 F1 F2 F3 : ℝ) :
     Continuous fun y => reducedCrossSection M s x Q2 y F1 F2 F3 := by
-  simp only [reducedCrossSection_def, crossSectionBracket_def, Yplus_def, Yminus_def]
-  exact Continuous.div (by fun_prop) (by fun_prop) fun y => Yplus_ne_zero y
+  have h : Continuous fun y => crossSectionBracket M s x Q2 y F1 F2 F3 := by
+    simp only [crossSectionBracket_def]
+    fun_prop
+  simp only [reducedCrossSection_def]
+  exact h.div continuous_Yplus Yplus_ne_zero
 
 /-- As `y → 0` the reduced cross section tends to `F₂`. -/
-theorem tendsto_reducedCrossSection_nhds_zero (M s x Q2 F1 F2 F3 : ℝ) :
+theorem tendsto_reducedCrossSection_nhds_zero_nhds_F2 (M s x Q2 F1 F2 F3 : ℝ) :
     Tendsto (fun y => reducedCrossSection M s x Q2 y F1 F2 F3) (𝓝 0) (𝓝 F2) := by
   simpa using (continuous_reducedCrossSection M s x Q2 F1 F2 F3).tendsto 0
 
 /-!
-## Separation of `F₁`, `F₂`, `F₃` from three inelasticities
+## Separation of `F₂`, `x F₃`, `F_L` from three inelasticities
 -/
 
 /-- The matrix of inelasticity coefficients of the bracket at three inelasticities `y i`: row
-`i` holds the coefficients of `(F₁, F₂, F₃)` in `crossSectionBracket M s x Q2 (y i)`
+`i` holds the coefficients of `(F₂, x F₃, F_L)` in `crossSectionBracket M s x Q2 (y i)`
 (`separationMatrix_mulVec`). -/
 def separationMatrix (M s x Q2 : ℝ) (y : Fin 3 → ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
   Matrix.of fun i =>
-    ![2 * x * y i ^ 2, 2 * (1 - y i - M ^ 2 * x ^ 2 * y i ^ 2 / Q2), -(s * Yminus (y i) * x)]
+    ![Yplus (y i) - 2 * M ^ 2 * x ^ 2 * y i ^ 2 / Q2, -(s * Yminus (y i)), -y i ^ 2]
 
-lemma separationMatrix_apply (M s x Q2 : ℝ) (y : Fin 3 → ℝ) (i j : Fin 3) :
+@[simp] lemma separationMatrix_apply (M s x Q2 : ℝ) (y : Fin 3 → ℝ) (i j : Fin 3) :
     separationMatrix M s x Q2 y i j =
-      ![2 * x * y i ^ 2, 2 * (1 - y i - M ^ 2 * x ^ 2 * y i ^ 2 / Q2),
-        -(s * Yminus (y i) * x)] j := (rfl)
+      ![Yplus (y i) - 2 * M ^ 2 * x ^ 2 * y i ^ 2 / Q2, -(s * Yminus (y i)), -y i ^ 2] j :=
+  (rfl)
 
-theorem separationMatrix_mulVec (M s x Q2 : ℝ) (y F : Fin 3 → ℝ) (i : Fin 3) :
-    (separationMatrix M s x Q2 y).mulVec F i =
-      crossSectionBracket M s x Q2 (y i) (F 0) (F 1) (F 2) := by
+theorem separationMatrix_mulVec (M s x Q2 : ℝ) (y : Fin 3 → ℝ) (F1 F2 F3 : ℝ) (i : Fin 3) :
+    (separationMatrix M s x Q2 y).mulVec ![F2, x * F3, FL x F1 F2] i =
+      crossSectionBracket M s x Q2 (y i) F1 F2 F3 := by
+  rw [crossSectionBracket_eq_FL]
   simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_three, separationMatrix_apply,
-    crossSectionBracket_def]
-  simp
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
+    Matrix.tail_cons]
   ring
 
-/-- The determinant of the separation matrix: the mass-independent constant `-8 s x²` times the
-Vandermonde determinant of the three inelasticities. -/
+/-- The determinant of the separation matrix: `4 s` times the Vandermonde determinant of the
+three inelasticities, independent of the target mass and of `x`. -/
 theorem det_separationMatrix (M s x Q2 : ℝ) (y : Fin 3 → ℝ) :
     (separationMatrix M s x Q2 y).det =
-      -8 * s * x ^ 2 * ((y 1 - y 0) * (y 2 - y 0) * (y 2 - y 1)) := by
+      4 * s * ((y 1 - y 0) * (y 2 - y 0) * (y 2 - y 1)) := by
   rw [Matrix.det_fin_three]
-  simp only [separationMatrix_apply, Yminus_def]
-  simp
+  simp only [separationMatrix_apply, Yplus_def, Yminus_def, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
   ring
 
-theorem det_separationMatrix_ne_zero {M s x Q2 : ℝ} {y : Fin 3 → ℝ} (hs : s ≠ 0) (hx : x ≠ 0)
+theorem det_separationMatrix_ne_zero {M s x Q2 : ℝ} {y : Fin 3 → ℝ} (hs : s ≠ 0)
     (hy : Function.Injective y) : (separationMatrix M s x Q2 y).det ≠ 0 := by
   have h10 : y 1 - y 0 ≠ 0 := sub_ne_zero.2 (hy.ne (by decide))
   have h20 : y 2 - y 0 ≠ 0 := sub_ne_zero.2 (hy.ne (by decide))
   have h21 : y 2 - y 1 ≠ 0 := sub_ne_zero.2 (hy.ne (by decide))
   rw [det_separationMatrix]
-  exact mul_ne_zero (mul_ne_zero (mul_ne_zero (by norm_num) hs) (pow_ne_zero 2 hx))
-    (mul_ne_zero (mul_ne_zero h10 h20) h21)
+  exact mul_ne_zero (mul_ne_zero (by norm_num) hs) (mul_ne_zero (mul_ne_zero h10 h20) h21)
 
-/-- **Separation of the structure functions.** At fixed `(x, Q²)` with `x ≠ 0` and `s ≠ 0`, for
-three distinct inelasticities `y i` and any three values `σ i`, there is exactly one triple
-`(F₁, F₂, F₃)` whose reduced cross sections at the `y i` are the `σ i`. -/
-theorem existsUnique_reducedCrossSection_eq {M s x Q2 : ℝ} {y : Fin 3 → ℝ} (hs : s ≠ 0) (hx : x ≠ 0)
-    (hy : Function.Injective y) (σ : Fin 3 → ℝ) :
-    ∃! F : Fin 3 → ℝ, ∀ i, reducedCrossSection M s x Q2 (y i) (F 0) (F 1) (F 2) = σ i := by
-  have hA : IsUnit (separationMatrix M s x Q2 y) :=
-    (Matrix.isUnit_iff_isUnit_det _).2
-      (isUnit_iff_ne_zero.2 (det_separationMatrix_ne_zero hs hx hy))
-  have key : ∀ F : Fin 3 → ℝ, (∀ i, reducedCrossSection M s x Q2 (y i) (F 0) (F 1) (F 2) = σ i) ↔
-      (separationMatrix M s x Q2 y).mulVec F = fun i => Yplus (y i) * σ i := by
-    intro F
-    simp only [funext_iff, separationMatrix_mulVec, reducedCrossSection_def,
-      div_eq_iff (Yplus_ne_zero _), mul_comm (σ _)]
-  simp only [key]
-  obtain ⟨F, hF⟩ := Matrix.mulVec_surjective_iff_isUnit.2 hA fun i => Yplus (y i) * σ i
-  exact ⟨F, hF, fun F' hF' => Matrix.mulVec_injective_iff_isUnit.2 hA (hF'.trans hF.symm)⟩
+lemma isUnit_separationMatrix {M s x Q2 : ℝ} {y : Fin 3 → ℝ} (hs : s ≠ 0)
+    (hy : Function.Injective y) : IsUnit (separationMatrix M s x Q2 y) :=
+  (Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 (det_separationMatrix_ne_zero hs hy))
+
+/-- **Separation of the structure functions.** At fixed `(x, Q²)` with `s ≠ 0`, the reduced
+cross sections at three distinct inelasticities determine `F₂`, `x F₃` and `F_L`. No condition
+on `x` or on the target mass is needed. -/
+theorem F2_eq_and_mul_F3_eq_and_FL_eq_of_forall_reducedCrossSection_eq {M s x Q2 : ℝ}
+    {y : Fin 3 → ℝ} (hs : s ≠ 0) (hy : Function.Injective y) {F1 F2 F3 F1' F2' F3' : ℝ}
+    (h : ∀ i, reducedCrossSection M s x Q2 (y i) F1 F2 F3 =
+      reducedCrossSection M s x Q2 (y i) F1' F2' F3') :
+    F2 = F2' ∧ x * F3 = x * F3' ∧ FL x F1 F2 = FL x F1' F2' := by
+  have := Matrix.mulVec_injective_iff_isUnit.2 (isUnit_separationMatrix (M := M) (x := x)
+    (Q2 := Q2) hs hy) (a₁ := ![F2, x * F3, FL x F1 F2]) (a₂ := ![F2', x * F3', FL x F1' F2'])
+    (funext fun i => by
+      rw [separationMatrix_mulVec, separationMatrix_mulVec, ← Yplus_mul_reducedCrossSection,
+        ← Yplus_mul_reducedCrossSection, h])
+  exact ⟨congrFun this 0, congrFun this 1, congrFun this 2⟩
 
 /-- The reduced cross sections at three distinct inelasticities determine `F₁`, `F₂` and `F₃`,
 given `x ≠ 0` and `s ≠ 0`. -/
@@ -332,10 +358,38 @@ theorem eq_of_forall_reducedCrossSection_eq {M s x Q2 : ℝ} {y : Fin 3 → ℝ}
     (h : ∀ i, reducedCrossSection M s x Q2 (y i) F1 F2 F3 =
       reducedCrossSection M s x Q2 (y i) F1' F2' F3') :
     F1 = F1' ∧ F2 = F2' ∧ F3 = F3' := by
-  have := (existsUnique_reducedCrossSection_eq (M := M) (Q2 := Q2) hs hx hy
-    fun i => reducedCrossSection M s x Q2 (y i) F1' F2' F3').unique (y₁ := ![F1, F2, F3])
-    (y₂ := ![F1', F2', F3']) (by simpa using h) (by simp)
-  exact ⟨congrFun this 0, congrFun this 1, congrFun this 2⟩
+  obtain ⟨h2, h3, hL⟩ := F2_eq_and_mul_F3_eq_and_FL_eq_of_forall_reducedCrossSection_eq hs hy h
+  refine ⟨mul_left_cancel₀ (mul_ne_zero two_ne_zero hx) ?_, h2, mul_left_cancel₀ hx h3⟩
+  unfold FL at hL
+  linarith
+
+/-- **Separation of `F₁`, `F₂`, `F₃`.** At fixed `(x, Q²)` with `x ≠ 0` and `s ≠ 0`, for three
+distinct inelasticities `y i` and any three values `σ i`, there is exactly one triple
+`(F₁, F₂, F₃)` whose reduced cross sections at the `y i` are the `σ i`. -/
+theorem existsUnique_reducedCrossSection_eq {M s x Q2 : ℝ} {y : Fin 3 → ℝ} (hs : s ≠ 0) (hx : x ≠ 0)
+    (hy : Function.Injective y) (σ : Fin 3 → ℝ) :
+    ∃! F : Fin 3 → ℝ, ∀ i, reducedCrossSection M s x Q2 (y i) (F 0) (F 1) (F 2) = σ i := by
+  obtain ⟨G, hG⟩ := Matrix.mulVec_surjective_iff_isUnit.2
+    (isUnit_separationMatrix (M := M) (x := x) (Q2 := Q2) hs hy) fun i => Yplus (y i) * σ i
+  have hG' : ![G 0, x * (G 1 / x), FL x ((G 0 - G 2) / (2 * x)) (G 0)] = G := by
+    ext j
+    fin_cases j
+    · rfl
+    · exact mul_div_cancel₀ (G 1) hx
+    · change FL x ((G 0 - G 2) / (2 * x)) (G 0) = G 2
+      unfold FL
+      field_simp
+      ring
+  have hex : ∀ i, reducedCrossSection M s x Q2 (y i) ((G 0 - G 2) / (2 * x)) (G 0) (G 1 / x)
+      = σ i := fun i => by
+    rw [reducedCrossSection_def, ← separationMatrix_mulVec, hG', hG,
+      mul_div_cancel_left₀ _ (Yplus_ne_zero _)]
+  refine ⟨![(G 0 - G 2) / (2 * x), G 0, G 1 / x], hex, fun F hF => ?_⟩
+  obtain ⟨h1, h2, h3⟩ := eq_of_forall_reducedCrossSection_eq hs hx hy fun i => (hF i).trans
+    (hex i).symm
+  ext j
+  fin_cases j
+  exacts [h1, h2, h3]
 
 end Inclusive
 end DIS
