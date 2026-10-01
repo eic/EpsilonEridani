@@ -63,9 +63,11 @@ property of `(V, g, p, q)`. The same section supplies `uniquenessWit` and
 `spectatorAssumptions_kWit`, instantiating `UniquenessAssumptions` and `SpectatorAssumptions`
 on one set of kinematics.
 
-The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is not part of this module; it is
-treated in `Tensors.ParityOdd`. On an abstract `V` with only a bilinear form there is no
-orientation or volume form, so that module takes the role of `ε(·, ·, p, q)` as data.
+The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is not part of this module. The
+sector it inhabits is characterised in `Tensors.ParityOdd`: every antisymmetric, conserved,
+properly covariant tensor is a multiple of one `ε(·, ·, p, q)`. On an abstract `V` with only a
+bilinear form there is no orientation or volume form, so that module takes the role of
+`ε(·, ·, p, q)` as data; no `F₃` coefficient is defined yet.
 
 -/
 
@@ -190,9 +192,9 @@ lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u �
   have h : reflect g u = LinearMap.transvection (-(2 * (g u u)⁻¹) • g u) u := by
     ext v
     simp [LinearMap.transvection.apply, sub_eq_add_neg, neg_smul, mul_assoc]
-  rw [h, LinearMap.transvection.det]
-  simp [hu]
-  norm_num
+  rw [h, LinearMap.transvection.det, LinearMap.smul_apply, smul_eq_mul]
+  field_simp
+  ring
 
 end Bilin
 
