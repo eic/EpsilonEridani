@@ -11,20 +11,24 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 # DIS Kinematics Access Methods
 
 This module implements reconstruction methods for DIS invariants from experimental measurements.
-Each method represents a different experimental technique for reconstructing Q² and y; xBj is
-reconstructed only by the electron method (`xBjElectron`). The electron method carries positivity
-and range lemmas, the Sigma Q² is the canonical `DisKinematics.Q2`, the Sigma y is
-`DisKinematics.yInel` under energy-momentum conservation, and the eSigma Q² carries its positivity
-lemma.
+The electron method reconstructs Q², y and xBj and carries positivity and range lemmas. The Sigma
+method reconstructs y, which is `DisKinematics.yInel` under energy-momentum conservation; the
+Sigma method needs no Q² of its own, since the lepton momentum transfer gives the canonical
+`DisKinematics.Q2` directly.
 
 ## Access Methods
 
 - **Electron Method**: Reconstructs invariants from electron scattering
   kinematics (angle, energy loss)
-- **Sigma Method**: Reconstructs Q² from the lepton momentum transfer and y from the target
-  momentum `P`, the hadronic final state `p_X` and the scattered lepton `k'`, as
-  `y_Σ = P·(p_X - P) / (P·(p_X - P) + P·k')`; this y does not involve the incident lepton momentum
-- **eSigma Method**: Takes Q² from the electron method and y from the Sigma method
+- **Sigma Method**: Reconstructs y from the target momentum `P`, the hadronic final state `p_X`
+  and the scattered lepton `k'`, as `y_Σ = P·(p_X - P) / (P·(p_X - P) + P·k')`; this y does not
+  involve the incident lepton momentum
+
+## References
+
+- U. Bassler and G. Bernardi, *On the kinematic reconstruction of deep inelastic scattering at
+  HERA: the Σ method*, Nucl. Instrum. Meth. A **361** (1995) 197, arXiv:hep-ex/9412004. In the
+  HERA frame with a massless target, `ySigma` reduces to their `y_Σ = Σ / (Σ + E'(1 - cos θ))`.
 
 -/
 
@@ -39,7 +43,6 @@ namespace DIS
 namespace Kinematics
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
-variable (g : Bilin V)
 
 /-- Electron method: Q² reconstruction from electron scattering angle and energy.
     Q² = 4 * E_e * E_e' * sin²(θ/2), where E_e is initial electron energy,
@@ -96,13 +99,11 @@ lemma yElectron_bounds (d : ElectronMethodData) : 0 < yElectron d ∧ yElectron 
 
 end ElectronMethodData
 
-/-- Sigma method input data: the hadronic final state momentum sum, the incoming and outgoing
-lepton momenta, and the incoming target momentum. -/
+/-- Sigma method input data: the hadronic final state momentum sum, the outgoing lepton momentum,
+and the incoming target momentum. -/
 structure SigmaMethodData where
   /-- Sum of hadronic final state momenta `p_X`. -/
   hadronicMomentum : V
-  /-- Incoming lepton momentum. -/
-  kIn : V
   /-- Outgoing lepton momentum. -/
   kOut : V
   /-- Incoming target hadron momentum. -/
@@ -112,11 +113,6 @@ namespace SigmaMethodData
 
 variable {V}
 
-/-- Sigma method Q² reconstruction from the t-channel momentum transfer: minus the Minkowski square
-of the lepton momentum transfer `kIn - kOut`. -/
-def q2Sigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
-  -g_met (d.kIn - d.kOut) (d.kIn - d.kOut)
-
 /-- Sigma method y reconstruction `P·q_h / (P·q_h + P·k')`, built from the target momentum `P`,
 the hadronic transfer `q_h = hadronicMomentum - P` and the outgoing lepton momentum `k'`. The
 incoming lepton momentum does not enter. -/
@@ -125,50 +121,18 @@ def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
     (g_met d.targetMomentum (d.hadronicMomentum - d.targetMomentum) +
       g_met d.targetMomentum d.kOut)
 
-/-- The Sigma method Q² is the canonical `DisKinematics.Q2` of any kinematic record with the same
-incoming and outgoing lepton momenta. -/
-lemma q2Sigma_eq_Q2 (d : SigmaMethodData V) (g_met : Bilin V) (K : DisKinematics V)
-    (hk : K.k = d.kIn) (hk' : K.kPrime = d.kOut) : d.q2Sigma g_met = K.Q2 g_met := by
-  rw [q2Sigma, DisKinematics.Q2, K.hq, hk, hk']
-
 /-- Under energy-momentum conservation `P + k = p_X + k'`, the Sigma method y is the canonical
-`DisKinematics.yInel` of any kinematic record with the same target and lepton momenta. -/
+`DisKinematics.yInel` of any kinematic record with the same target and outgoing lepton
+momenta. -/
 lemma ySigma_eq_yInel (d : SigmaMethodData V) (g_met : Bilin V) (K : DisKinematics V)
-    (hp : K.p = d.targetMomentum) (hk : K.k = d.kIn) (hk' : K.kPrime = d.kOut)
-    (hCons : d.targetMomentum + d.kIn = d.hadronicMomentum + d.kOut) :
+    (hp : K.p = d.targetMomentum) (hk' : K.kPrime = d.kOut)
+    (hCons : d.targetMomentum + K.k = d.hadronicMomentum + d.kOut) :
     d.ySigma g_met = K.yInel g_met := by
   have hq : d.hadronicMomentum - d.targetMomentum = K.q := by
-    rw [K.hq, hk, hk', sub_eq_sub_iff_add_eq_add, ← hCons, add_comm]
-  rw [ySigma, DisKinematics.yInel, hq, ← map_add, hp, K.hq, hk, hk', sub_add_cancel]
+    rw [K.hq, hk', sub_eq_sub_iff_add_eq_add, ← hCons, add_comm]
+  rw [ySigma, DisKinematics.yInel, hq, ← map_add, hp, K.hq, hk', sub_add_cancel]
 
 end SigmaMethodData
-
-/-- eSigma method: combines the electron method Q² with the Sigma method y. -/
-structure ESigmaMethodData where
-  /-- Electron method component. -/
-  electronData : ElectronMethodData
-  /-- Sigma method component. -/
-  sigmaData : SigmaMethodData V
-
-namespace ESigmaMethodData
-
-variable {V}
-
-/-- eSigma method Q² reconstruction, taken from the electron method. -/
-def q2ESigma (d : ESigmaMethodData V) : ℝ :=
-  ElectronMethodData.q2Electron d.electronData
-
-/-- eSigma method y reconstruction, taken from the Sigma method. -/
-def yESigma (d : ESigmaMethodData V) : ℝ :=
-  d.sigmaData.ySigma g
-
-omit [AddCommGroup V] [Module ℝ V] in
-/-- Appropriateness theorem: eSigma method Q² reconstruction is positive. -/
-lemma q2ESigma_pos (d : ESigmaMethodData V) : 0 < d.q2ESigma := by
-  rw [q2ESigma]
-  exact ElectronMethodData.q2Electron_pos d.electronData
-
-end ESigmaMethodData
 
 end Kinematics
 end DIS
