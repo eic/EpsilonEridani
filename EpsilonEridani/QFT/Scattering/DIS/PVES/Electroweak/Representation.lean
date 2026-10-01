@@ -30,10 +30,11 @@ corresponding one-family anomaly cancellation condition of Physlib's Standard Mo
 
 * `GenerationAssignments.isAnomalyFree_standardModel`: the Standard Model assignment cancels all
   four anomalies.
-* `GenerationAssignments.exists_hypercharges_eq_of_isAnomalyFree`: every anomaly-free assignment
-  with `YQ ≠ 0` is a rescaling of the Standard Model assignment, up to swapping the two
-  right-handed quark singlets. The hypothesis `YQ ≠ 0` is needed: the assignments
-  `(0, t, -t, 0, 0)` are anomaly-free for every `t` and are not of this form.
+* `GenerationAssignments.isAnomalyFree_iff_exists_eq_smul_standardModel`: an assignment with
+  `YQ ≠ 0` is anomaly-free if and only if it is a rescaling of the Standard Model assignment, up
+  to swapping the two right-handed quark singlets. The hypothesis `YQ ≠ 0` is needed:
+  `GenerationAssignments.isAnomalyFree_mk_zero_neg` shows that the assignments
+  `(0, t, -t, 0, 0)` are anomaly-free for every `t`, and they are not of this form.
 
 ## References
 
@@ -70,7 +71,7 @@ structure Multiplet where
   singlet). -/
   isospinDim : ℕ
   /-- Dimension of the colour `SU(3)` representation (`3` for quarks, `1` for leptons). -/
-  colourDim : ℕ
+  colorDim : ℕ
   /-- Hypercharge, normalised so that `Q = T³ + Y/2`. -/
   Y : ℚ
   /-- Chirality. -/
@@ -79,6 +80,7 @@ structure Multiplet where
 
 /-- A hypercharge assignment for the five multiplets of one generation, normalised so that
 `Q = T³ + Y/2`. -/
+@[ext]
 structure GenerationAssignments where
   /-- Hypercharge of the left-handed quark doublet. -/
   YQ : ℚ
@@ -94,6 +96,29 @@ structure GenerationAssignments where
 namespace GenerationAssignments
 
 variable (a : GenerationAssignments)
+
+/-- Rescaling all five hypercharges of an assignment by a common factor. -/
+instance : SMul ℚ GenerationAssignments where
+  smul q a := ⟨q * a.YQ, q * a.Yu, q * a.Yd, q * a.YL, q * a.Ye⟩
+
+/-- The quark-doublet hypercharge of a rescaled assignment. -/
+@[simp] theorem smul_YQ (q : ℚ) : (q • a).YQ = q * a.YQ := rfl
+
+/-- The up-type singlet hypercharge of a rescaled assignment. -/
+@[simp] theorem smul_Yu (q : ℚ) : (q • a).Yu = q * a.Yu := rfl
+
+/-- The down-type singlet hypercharge of a rescaled assignment. -/
+@[simp] theorem smul_Yd (q : ℚ) : (q • a).Yd = q * a.Yd := rfl
+
+/-- The lepton-doublet hypercharge of a rescaled assignment. -/
+@[simp] theorem smul_YL (q : ℚ) : (q • a).YL = q * a.YL := rfl
+
+/-- The charged-lepton singlet hypercharge of a rescaled assignment. -/
+@[simp] theorem smul_Ye (q : ℚ) : (q • a).Ye = q * a.Ye := rfl
+
+/-- The assignment with the hypercharges of the two right-handed quark singlets exchanged. -/
+@[simps]
+def swapQuarkSinglets : GenerationAssignments := ⟨a.YQ, a.Yd, a.Yu, a.YL, a.Ye⟩
 
 /-- The left-handed quark doublet with hypercharge `a.YQ`. -/
 def quarkDoublet : Multiplet := ⟨2, 3, a.YQ, .left⟩
@@ -118,27 +143,27 @@ def multiplets : List Multiplet :=
 over all states of the generation. -/
 def gravitationalAnomaly : ℚ :=
   (a.multiplets.map fun m : Multiplet =>
-    m.chirality.sign * (m.isospinDim : ℚ) * (m.colourDim : ℚ) * m.Y).sum
+    m.chirality.sign * (m.isospinDim : ℚ) * (m.colorDim : ℚ) * m.Y).sum
 
 /-- The `SU(2)² × U(1)` anomaly coefficient: the chirality-signed, colour-weighted sum of the
 hypercharges over the weak-isospin doublets, with the common Dynkin index `1/2` of the doublet
 factored out. -/
 def su2Anomaly : ℚ :=
   ((a.multiplets.filter (·.isospinDim = 2)).map fun m : Multiplet =>
-    m.chirality.sign * (m.colourDim : ℚ) * m.Y).sum
+    m.chirality.sign * (m.colorDim : ℚ) * m.Y).sum
 
 /-- The `SU(3)² × U(1)` anomaly coefficient: the chirality-signed, isospin-weighted sum of the
 hypercharges over the colour triplets, with the common Dynkin index `1/2` of the triplet
 factored out. -/
 def su3Anomaly : ℚ :=
-  ((a.multiplets.filter (·.colourDim = 3)).map fun m : Multiplet =>
+  ((a.multiplets.filter (·.colorDim = 3)).map fun m : Multiplet =>
     m.chirality.sign * (m.isospinDim : ℚ) * m.Y).sum
 
 /-- The `U(1)³` anomaly coefficient: the chirality-signed sum of the cubed hypercharges over all
 states of the generation. -/
 def cubicAnomaly : ℚ :=
   (a.multiplets.map fun m : Multiplet =>
-    m.chirality.sign * (m.isospinDim : ℚ) * (m.colourDim : ℚ) * m.Y ^ 3).sum
+    m.chirality.sign * (m.isospinDim : ℚ) * (m.colorDim : ℚ) * m.Y ^ 3).sum
 
 /-- An assignment is anomaly-free if all four anomaly coefficients of the generation vanish. -/
 def IsAnomalyFree : Prop :=
@@ -148,8 +173,9 @@ def IsAnomalyFree : Prop :=
 @[simp]
 theorem gravitationalAnomaly_eq :
     a.gravitationalAnomaly = 6 * a.YQ - 3 * a.Yu - 3 * a.Yd + 2 * a.YL - a.Ye := by
-  simp [gravitationalAnomaly, multiplets, quarkDoublet, upSinglet, downSinglet, leptonDoublet,
-    electronSinglet, Chirality.sign]
+  simp only [gravitationalAnomaly, Chirality.sign, multiplets, quarkDoublet, upSinglet,
+    downSinglet, leptonDoublet, electronSinglet, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, Nat.cast_ofNat, Nat.cast_one]
   ring
 
 /-- The `SU(2)² × U(1)` anomaly coefficient of a generation, written out in the hypercharges. -/
@@ -161,16 +187,20 @@ theorem su2Anomaly_eq : a.su2Anomaly = 3 * a.YQ + a.YL := by
 /-- The `SU(3)² × U(1)` anomaly coefficient of a generation, written out in the hypercharges. -/
 @[simp]
 theorem su3Anomaly_eq : a.su3Anomaly = 2 * a.YQ - a.Yu - a.Yd := by
-  simp [su3Anomaly, multiplets, quarkDoublet, upSinglet, downSinglet, leptonDoublet,
-    electronSinglet, Chirality.sign]
+  simp only [su3Anomaly, Chirality.sign, multiplets, quarkDoublet, upSinglet, downSinglet,
+    leptonDoublet, electronSinglet, decide_true, decide_false, Bool.false_eq_true,
+    List.filter_cons_of_pos, List.filter_cons_of_neg, OfNat.one_ne_ofNat, not_false_eq_true,
+    List.filter_nil, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.cast_ofNat,
+    Nat.cast_one]
   ring
 
 /-- The `U(1)³` anomaly coefficient of a generation, written out in the hypercharges. -/
 @[simp]
 theorem cubicAnomaly_eq :
     a.cubicAnomaly = 6 * a.YQ ^ 3 - 3 * a.Yu ^ 3 - 3 * a.Yd ^ 3 + 2 * a.YL ^ 3 - a.Ye ^ 3 := by
-  simp [cubicAnomaly, multiplets, quarkDoublet, upSinglet, downSinglet, leptonDoublet,
-    electronSinglet, Chirality.sign]
+  simp only [cubicAnomaly, Chirality.sign, multiplets, quarkDoublet, upSinglet, downSinglet,
+    leptonDoublet, electronSinglet, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+    Nat.cast_ofNat, Nat.cast_one]
   ring
 
 /-- Anomaly freedom as three linear equations and one cubic equation in the hypercharges. -/
@@ -189,31 +219,64 @@ theorem isAnomalyFree_standardModel : standardModel.IsAnomalyFree := by
   rw [isAnomalyFree_iff]
   norm_num [standardModel]
 
-/-- Every anomaly-free assignment with `YQ ≠ 0` is a rescaling of the Standard Model assignment
-`(1/3, 4/3, -2/3, -1, -2)`, up to swapping the two right-handed quark singlets. The hypothesis
-`YQ ≠ 0` excludes the anomaly-free family `(0, t, -t, 0, 0)`, which is not of this form. -/
-theorem exists_hypercharges_eq_of_isAnomalyFree (hYQ : a.YQ ≠ 0) (h : a.IsAnomalyFree) :
-    ∃ q : ℚ,
-      a.YQ = (1/3) * q ∧
-      a.YL = -1 * q ∧
-      a.Ye = -2 * q ∧
-      ((a.Yu = (4/3) * q ∧ a.Yd = -(2/3) * q) ∨
-       (a.Yu = -(2/3) * q ∧ a.Yd = (4/3) * q)) := by
+variable {a} in
+/-- Rescaling an anomaly-free assignment gives an anomaly-free assignment. -/
+theorem IsAnomalyFree.smul (h : a.IsAnomalyFree) (q : ℚ) : (q • a).IsAnomalyFree := by
   obtain ⟨hgrav, hsu2, hsu3, hcub⟩ := (isAnomalyFree_iff a).mp h
-  -- The three linear conditions fix `YL`, `Yd` and `Ye` in terms of `YQ` and `Yu`.
-  have hYL : a.YL = -3 * a.YQ := by linear_combination hsu2
-  have hYd : a.Yd = 2 * a.YQ - a.Yu := by linear_combination -hsu3
-  have hYe : a.Ye = -6 * a.YQ := by linear_combination -hgrav + 2 * hsu2 + 3 * hsu3
-  -- Substituting into the cubic condition leaves a quadratic in `Yu` with roots `4YQ`, `-2YQ`.
-  have hquad : (a.Yu - 4 * a.YQ) * (a.Yu + 2 * a.YQ) = 0 := by
-    have h18 : (18 * a.YQ) * ((a.Yu - 4 * a.YQ) * (a.Yu + 2 * a.YQ)) = 0 := by
-      rw [hYL, hYd, hYe] at hcub
-      linear_combination -hcub
-    exact (mul_eq_zero.mp h18).resolve_left (mul_ne_zero (by norm_num) hYQ)
-  refine ⟨3 * a.YQ, by ring, by linear_combination hYL, by linear_combination hYe, ?_⟩
-  rcases mul_eq_zero.mp hquad with hu | hu
-  · exact Or.inl ⟨by linear_combination hu, by linear_combination hYd - hu⟩
-  · exact Or.inr ⟨by linear_combination hu, by linear_combination hYd - hu⟩
+  rw [isAnomalyFree_iff]
+  simp only [smul_YQ, smul_Yu, smul_Yd, smul_YL, smul_Ye]
+  exact ⟨by linear_combination q * hgrav, by linear_combination q * hsu2,
+    by linear_combination q * hsu3, by linear_combination q ^ 3 * hcub⟩
+
+variable {a} in
+/-- Swapping the two right-handed quark singlets of an anomaly-free assignment gives an
+anomaly-free assignment. -/
+theorem IsAnomalyFree.swapQuarkSinglets (h : a.IsAnomalyFree) :
+    a.swapQuarkSinglets.IsAnomalyFree := by
+  obtain ⟨hgrav, hsu2, hsu3, hcub⟩ := (isAnomalyFree_iff a).mp h
+  rw [isAnomalyFree_iff]
+  simp only [swapQuarkSinglets_YQ, swapQuarkSinglets_Yu, swapQuarkSinglets_Yd,
+    swapQuarkSinglets_YL, swapQuarkSinglets_Ye]
+  exact ⟨by linear_combination hgrav, hsu2, by linear_combination hsu3,
+    by linear_combination hcub⟩
+
+/-- The assignments `(0, t, -t, 0, 0)` are anomaly-free for every `t`. -/
+theorem isAnomalyFree_mk_zero_neg (t : ℚ) :
+    (⟨0, t, -t, 0, 0⟩ : GenerationAssignments).IsAnomalyFree := by
+  rw [isAnomalyFree_iff]
+  exact ⟨by ring, by ring, by ring, by ring⟩
+
+/-- An assignment with `YQ ≠ 0` is anomaly-free if and only if it is a rescaling of
+`standardModel`, possibly with the two right-handed quark singlets swapped. The hypothesis
+`YQ ≠ 0` excludes the anomaly-free family `isAnomalyFree_mk_zero_neg`, which is not of this
+form. -/
+theorem isAnomalyFree_iff_exists_eq_smul_standardModel (hYQ : a.YQ ≠ 0) :
+    a.IsAnomalyFree ↔
+      ∃ q : ℚ, a = q • standardModel ∨ a = q • standardModel.swapQuarkSinglets := by
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain ⟨hgrav, hsu2, hsu3, hcub⟩ := (isAnomalyFree_iff a).mp h
+    -- The three linear conditions fix `YL`, `Yd` and `Ye` in terms of `YQ` and `Yu`.
+    have hYL : a.YL = -3 * a.YQ := by linear_combination hsu2
+    have hYd : a.Yd = 2 * a.YQ - a.Yu := by linear_combination -hsu3
+    have hYe : a.Ye = -6 * a.YQ := by linear_combination -hgrav + 2 * hsu2 + 3 * hsu3
+    -- Substituting into the cubic condition leaves a quadratic in `Yu` with roots `4YQ`, `-2YQ`.
+    have hquad : (a.Yu - 4 * a.YQ) * (a.Yu + 2 * a.YQ) = 0 := by
+      have h18 : (18 * a.YQ) * ((a.Yu - 4 * a.YQ) * (a.Yu + 2 * a.YQ)) = 0 := by
+        rw [hYL, hYd, hYe] at hcub
+        linear_combination -hcub
+      exact (mul_eq_zero.mp h18).resolve_left (mul_ne_zero (by norm_num) hYQ)
+    refine ⟨3 * a.YQ, ?_⟩
+    rcases mul_eq_zero.mp hquad with hu | hu
+    · left
+      ext <;> simp only [smul_YQ, smul_Yu, smul_Yd, smul_YL, smul_Ye, standardModel] <;>
+        linarith
+    · right
+      ext <;> simp only [smul_YQ, smul_Yu, smul_Yd, smul_YL, smul_Ye, swapQuarkSinglets_YQ,
+        swapQuarkSinglets_Yu, swapQuarkSinglets_Yd, swapQuarkSinglets_YL, swapQuarkSinglets_Ye,
+        standardModel] <;> linarith
+  · rintro ⟨q, rfl | rfl⟩
+    · exact isAnomalyFree_standardModel.smul q
+    · exact isAnomalyFree_standardModel.swapQuarkSinglets.smul q
 
 /-- The one-family Standard Model charge vector in Physlib's anomaly cancellation system
 `SMCharges 1`, which records the charges of left-handed Weyl fermions: the right-handed singlets
@@ -228,33 +291,48 @@ theorem toSpecies_toSMCharges (i : Fin 5) :
   SMCharges.toSMSpecies_toSpecies_inv i _
 
 /-- Physlib's gravitational anomaly condition on `toSMCharges` is `gravitationalAnomaly`. -/
+@[simp]
 theorem accGrav_toSMCharges : SMACCs.accGrav a.toSMCharges = a.gravitationalAnomaly := by
   simp only [SMACCs.accGrav, LinearMap.coe_mk, AddHom.coe_mk, toSpecies_toSMCharges,
-    SMCharges.sum_SMSpecies_numberCharges_one, gravitationalAnomaly_eq]
-  simp
+    SMCharges.sum_SMSpecies_numberCharges_one, gravitationalAnomaly_eq, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, mul_neg]
   ring
 
 /-- Physlib's `SU(2)` anomaly condition on `toSMCharges` is `su2Anomaly`. -/
+@[simp]
 theorem accSU2_toSMCharges : SMACCs.accSU2 a.toSMCharges = a.su2Anomaly := by
   simp only [SMACCs.accSU2, LinearMap.coe_mk, AddHom.coe_mk, toSpecies_toSMCharges,
-    SMCharges.sum_SMSpecies_numberCharges_one, su2Anomaly_eq]
-  simp
+    SMCharges.sum_SMSpecies_numberCharges_one, su2Anomaly_eq, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val]
 
 /-- Physlib's `SU(3)` anomaly condition on `toSMCharges` is `su3Anomaly`. -/
+@[simp]
 theorem accSU3_toSMCharges : SMACCs.accSU3 a.toSMCharges = a.su3Anomaly := by
   simp only [SMACCs.accSU3, LinearMap.coe_mk, AddHom.coe_mk, toSpecies_toSMCharges,
-    SMCharges.sum_SMSpecies_numberCharges_one, su3Anomaly_eq]
-  simp
+    SMCharges.sum_SMSpecies_numberCharges_one, su3Anomaly_eq, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
   ring
 
 /-- Physlib's cubic anomaly condition on `toSMCharges` is `cubicAnomaly`. -/
 theorem accCube_toSMCharges : SMACCs.accCube a.toSMCharges = a.cubicAnomaly := by
+  -- `TriLinearSymm.toCubic_apply` does not rewrite `accCube a.toSMCharges`: the function
+  -- coercion of `HomogeneousCubic` in the goal does not match the lemma's syntactically. The
+  -- two agree by unfolding `accCube` and `TriLinearSymm.toCubic`, so `change` exposes the
+  -- trilinear form directly.
   change SMACCs.cubeTriLin a.toSMCharges a.toSMCharges a.toSMCharges = _
   rw [SMACCs.cubeTriLin, TriLinearSymm.mk₃_toFun_apply_apply,
     SMCharges.sum_SMSpecies_numberCharges_one]
-  simp only [toSpecies_toSMCharges, cubicAnomaly_eq]
-  simp
+  simp only [toSpecies_toSMCharges, cubicAnomaly_eq, Fin.isValue, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val]
   ring
+
+/-- Anomaly freedom is the vanishing of Physlib's four one-family anomaly cancellation
+conditions on `toSMCharges`. -/
+theorem isAnomalyFree_iff_smaccs :
+    a.IsAnomalyFree ↔ SMACCs.accGrav a.toSMCharges = 0 ∧ SMACCs.accSU2 a.toSMCharges = 0 ∧
+      SMACCs.accSU3 a.toSMCharges = 0 ∧ SMACCs.accCube a.toSMCharges = 0 := by
+  rw [accGrav_toSMCharges, accSU2_toSMCharges, accSU3_toSMCharges, accCube_toSMCharges,
+    IsAnomalyFree]
 
 end GenerationAssignments
 
