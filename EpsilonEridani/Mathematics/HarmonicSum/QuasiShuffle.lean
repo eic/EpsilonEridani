@@ -25,10 +25,11 @@ sums `S` is non-strict.
 
 The formal linear combinations are finitely supported functions `List ℤ →₀ ℤ`, and a
 combination `c` is evaluated at the argument `N` by `Finsupp.linearCombination ℤ
-(harmonicSum · N) c`. This product makes the free abelian group on multi-indices a
-commutative algebra (the quasi-shuffle algebra of Hoffman), and the evaluation at `N` is
-multiplicative for it; that is what reduces every polynomial expression in harmonic sums of one
-argument to a linear one.
+(harmonicSum · N) c`. This is the quasi-shuffle product of Hoffman on generators (multi-indices):
+it is commutative and has the empty multi-index as unit, and its evaluation at `N` is the product
+of the two sums, which is what reduces every product of harmonic sums of one argument to a linear
+combination of them. Its bilinear extension to formal combinations, its associativity and the
+resulting algebra structure are not formalised here.
 
 ## Main definitions
 
@@ -42,7 +43,8 @@ argument to a linear one.
   `quasiShuffle m m'`.
 * `EpsilonEridani.HarmonicSum.quasiShuffle_comm`: the product is commutative.
 * `EpsilonEridani.HarmonicSum.weight_of_mem_support_quasiShuffle`: for indices that are all
-  non-zero, the product is homogeneous of weight `weight m + weight m'`.
+  non-zero, the product is homogeneous of weight `weight m + weight m'`, and its multi-indices
+  again have non-zero entries (`ne_zero_of_mem_support_quasiShuffle`).
 * `EpsilonEridani.harmonicSum_singleton_mul_singleton`: `S_a S_b = S_{a,b} + S_{b,a} - S_{a ⋄ b}`,
   and its special case `S₁ S₁ = 2 S_{1,1} - S₂` (`harmonicSum_singleton_one_mul_self`).
 
@@ -77,16 +79,22 @@ theorem indexMul_zero_left (b : ℤ) : indexMul 0 b = 0 := by
 theorem indexMul_zero_right (a : ℤ) : indexMul a 0 = 0 := by
   simp [indexMul]
 
-theorem sign_indexMul {a b : ℤ} (ha : a ≠ 0) :
-    (indexMul a b).sign = a.sign * b.sign := by
+theorem sign_indexMul (a b : ℤ) : (indexMul a b).sign = a.sign * b.sign := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
   have h : a.natAbs + b.natAbs ≠ 0 := by simp [ha]
-  rw [indexMul, Int.sign_mul, Int.sign_mul, Int.sign_sign, Int.sign_sign,
-    Int.sign_natCast_of_ne_zero h, mul_one]
+  rw [indexMul, Int.sign_mul, Int.sign_natCast_of_ne_zero h]
+  simp
 
 theorem natAbs_indexMul {a b : ℤ} (ha : a ≠ 0) (hb : b ≠ 0) :
     (indexMul a b).natAbs = a.natAbs + b.natAbs := by
-  rw [indexMul, Int.natAbs_mul, Int.natAbs_mul, Int.natAbs_sign_of_ne_zero ha,
-    Int.natAbs_sign_of_ne_zero hb, Int.natAbs_natCast, one_mul, one_mul]
+  rw [indexMul, Int.natAbs_mul, Int.natAbs_natCast]
+  simp [Int.natAbs_mul, Int.natAbs_sign_of_ne_zero ha, Int.natAbs_sign_of_ne_zero hb]
+
+/-- For positive indices, `a ⋄ b = a + b`. -/
+theorem indexMul_of_pos {a b : ℤ} (ha : 0 < a) (hb : 0 < b) : indexMul a b = a + b := by
+  rw [indexMul, Int.sign_eq_one_of_pos ha, Int.sign_eq_one_of_pos hb]
+  omega
 
 theorem indexMul_ne_zero {a b : ℤ} (ha : a ≠ 0) (hb : b ≠ 0) : indexMul a b ≠ 0 := by
   rw [← Int.natAbs_ne_zero, natAbs_indexMul ha hb]
@@ -100,8 +108,9 @@ theorem term_indexMul (a b : ℤ) {i : ℕ} (hi : i ≠ 0) :
   · simp [hi]
   rcases eq_or_ne b 0 with rfl | hb
   · simp [hi]
-  rw [term_def, term_def, term_def, sign_indexMul ha, natAbs_indexMul ha hb, Int.cast_mul,
-    mul_pow, pow_add, mul_div_mul_comm]
+  rw [term_def, term_def, term_def, sign_indexMul, natAbs_indexMul ha hb]
+  push_cast
+  ring
 
 /-- The quasi-shuffle product of two multi-indices, as a formal integer linear combination of
 multi-indices, defined by the recursion
@@ -175,6 +184,44 @@ theorem weight_of_mem_support_quasiShuffle {m m' : List ℤ} (hm : ∀ a ∈ m, 
       simp only [weight_cons, ih₃ hmt hmt' hv, natAbs_indexMul ha hb]
       omega
 
+/-- For multi-indices whose entries are all non-zero, every multi-index occurring in the
+quasi-shuffle product of `m` and `m'` again has non-zero entries. Together with
+`weight_of_mem_support_quasiShuffle` this lets the weight grading be applied to iterated
+products. -/
+theorem ne_zero_of_mem_support_quasiShuffle {m m' : List ℤ} (hm : ∀ a ∈ m, a ≠ 0)
+    (hm' : ∀ b ∈ m', b ≠ 0) {w : List ℤ} (hw : w ∈ (quasiShuffle m m').support) :
+    ∀ c ∈ w, c ≠ 0 := by
+  classical
+  induction m, m' using quasiShuffle.induct generalizing w with
+  | case1 m' =>
+    simp only [quasiShuffle_nil_left] at hw
+    rwa [Finset.mem_singleton.1 (Finsupp.support_single_subset hw)]
+  | case2 m hm'' =>
+    simp only [quasiShuffle_nil_right] at hw
+    rwa [Finset.mem_singleton.1 (Finsupp.support_single_subset hw)]
+  | case3 a m b m' ih₁ ih₂ ih₃ =>
+    have ha := hm a List.mem_cons_self
+    have hb := hm' b List.mem_cons_self
+    have hmt : ∀ c ∈ m, c ≠ 0 := fun c hc => hm c (List.mem_cons_of_mem a hc)
+    have hmt' : ∀ c ∈ m', c ≠ 0 := fun c hc => hm' c (List.mem_cons_of_mem b hc)
+    rw [quasiShuffle_cons_cons] at hw
+    have hw' := Finsupp.support_sub hw
+    rw [Finset.mem_union] at hw'
+    rcases hw' with hw' | hw'
+    · rcases Finset.mem_union.1 (Finsupp.support_add hw') with hw' | hw'
+      · obtain ⟨v, hv, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support hw')
+        exact List.forall_mem_cons.2 ⟨ha, ih₁ hmt hm' hv⟩
+      · obtain ⟨v, hv, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support hw')
+        exact List.forall_mem_cons.2 ⟨hb, ih₂ hm hmt' hv⟩
+    · obtain ⟨v, hv, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support hw')
+      exact List.forall_mem_cons.2 ⟨indexMul_ne_zero ha hb, ih₃ hmt hmt' hv⟩
+
+/-- Evaluating a formal combination prefixed by an index at `0` gives `0`. -/
+private theorem linearCombination_mapDomain_cons_zero (a : ℤ) (c : List ℤ →₀ ℤ) :
+    Finsupp.linearCombination ℤ (harmonicSum · 0) (c.mapDomain (a :: ·)) = 0 := by
+  rw [Finsupp.linearCombination_mapDomain]
+  simp [Finsupp.linearCombination_apply, Function.comp_def]
+
 /-- Evaluating a formal combination prefixed by the index `a` at `N + 1`: the recursion
 `harmonicSum_cons_succ`, extended linearly. -/
 private theorem linearCombination_mapDomain_cons_succ (a : ℤ) (c : List ℤ →₀ ℤ) (n : ℕ) :
@@ -203,9 +250,9 @@ theorem harmonicSum_mul_harmonicSum (m m' : List ℤ) (n : ℕ) :
     -- shorter products and `term_indexMul`.
     induction n with
     | zero =>
-      rw [quasiShuffle_cons_cons, map_sub, map_add, Finsupp.linearCombination_mapDomain,
-        Finsupp.linearCombination_mapDomain, Finsupp.linearCombination_mapDomain]
-      simp [Function.comp_def, Finsupp.linearCombination_apply]
+      rw [quasiShuffle_cons_cons, map_sub, map_add, linearCombination_mapDomain_cons_zero,
+        linearCombination_mapDomain_cons_zero, linearCombination_mapDomain_cons_zero]
+      simp
     | succ n ihn =>
       rw [quasiShuffle_cons_cons, map_sub, map_add, linearCombination_mapDomain_cons_succ,
         linearCombination_mapDomain_cons_succ, linearCombination_mapDomain_cons_succ,

@@ -31,10 +31,10 @@ factor `0^i = 0` for `i ≥ 1`, so any multi-index containing `0` gives the zero
 value, and every statement below holds without excluding it.
 
 The sums take values in `ℚ`, like Mathlib's `harmonic`, which is the depth-one sum
-`S₁` (`harmonicSum_singleton_one`). Real and complex versions are obtained by casting.
+`S₁` (`harmonicSum_singleton_one_eq_harmonic`). Real and complex versions are obtained by casting.
 
-These sums are the values of the Mellin moments of the splitting kernels and coefficient
-functions of perturbative QCD; the product of two sums of the same argument is again a linear
+The Mellin moments of the splitting kernels and coefficient functions of perturbative QCD are
+expressed in terms of these sums; the product of two sums of the same argument is again a linear
 combination of such sums, which is the quasi-shuffle product of
 `EpsilonEridani.Mathematics.HarmonicSum.QuasiShuffle`.
 
@@ -46,9 +46,9 @@ combination of such sums, which is the quasi-shuffle product of
 
 ## Main statements
 
-* `EpsilonEridani.harmonicSum_cons_succ`: the recursion `S_{a,m}(N+1) = S_{a,m}(N) + t_a(N+1)
-  S_m(N+1)` in the upper argument, which is how every identity between the sums is proved.
-* `EpsilonEridani.harmonicSum_singleton_one`: `S₁ = harmonic`.
+* `EpsilonEridani.harmonicSum_cons_succ`: the recursion
+  `S_{a,m}(N+1) = S_{a,m}(N) + term a (N+1) · S_m(N+1)` in the upper argument.
+* `EpsilonEridani.harmonicSum_singleton_one_eq_harmonic`: `S₁ = harmonic`.
 * `EpsilonEridani.harmonicSum_pos`: sums with positive indices are positive.
 
 ## References
@@ -85,7 +85,7 @@ theorem term_of_neg {m : ℤ} (hm : m < 0) (i : ℕ) :
   simp [term, Int.sign_eq_neg_one_of_neg hm]
 
 @[simp]
-theorem term_one (i : ℕ) : term 1 i = (i : ℚ)⁻¹ := by
+theorem term_one_left (i : ℕ) : term 1 i = (i : ℚ)⁻¹ := by
   simp [term]
 
 theorem term_pos {m : ℤ} (hm : 0 < m) {i : ℕ} (hi : i ≠ 0) : 0 < term m i := by
@@ -106,6 +106,7 @@ theorem weight_nil : weight [] = 0 :=
 theorem weight_cons (a : ℤ) (m : List ℤ) : weight (a :: m) = a.natAbs + weight m := by
   simp [weight]
 
+@[simp]
 theorem weight_append (m m' : List ℤ) : weight (m ++ m') = weight m + weight m' := by
   simp [weight]
 
@@ -152,7 +153,7 @@ theorem harmonicSum_singleton (a : ℤ) (n : ℕ) :
   simp [harmonicSum_cons]
 
 /-- The first harmonic sum `S₁` is Mathlib's `harmonic`. -/
-theorem harmonicSum_singleton_one (n : ℕ) : harmonicSum [1] n = harmonic n := by
+theorem harmonicSum_singleton_one_eq_harmonic (n : ℕ) : harmonicSum [1] n = harmonic n := by
   simp [harmonicSum_singleton, harmonic]
 
 /-- A multi-index containing `0` gives the zero sum at every argument. -/
