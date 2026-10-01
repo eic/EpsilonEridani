@@ -14,14 +14,20 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 ## Provenance
 
 Mirror of the mathlib contribution on branch `m3-lie-structure-constants`, commit `e14396d8`
-(`Mathlib/Algebra/Lie/StructureConstants.lean`). Namespaced under `Physlib` to avoid a collision
-when that PR lands. When it does: delete this file, drop its import from `Physlib.lean`,
-and replace `Physlib.LieAlgebra.structureConstants` with `LieAlgebra.structureConstants`.
+(`Mathlib/Algebra/Lie/StructureConstants.lean`). Namespaced under `EpsilonEridani` to avoid a
+collision when that PR lands. When it does: delete this file and replace
+`EpsilonEridani.LieAlgebra.structureConstants` with `LieAlgebra.structureConstants`.
 
 Content is otherwise kept as close to the upstream file as possible so the two stay
-diffable; the only edits are the `Physlib` namespace wrapper, the `theorem` -> `lemma`
-conversion required by `AGENTS.md`, and the `open` needed to keep upstream names
-reachable from inside the wrapper.
+diffable; the only edits are the `EpsilonEridani` namespace wrapper, the `theorem` -> `lemma`
+conversion required by `AGENTS.md`, the `open` needed to keep upstream names
+reachable from inside the wrapper, and one local deviation: upstream's `@[simp]` lemma
+`coord_lie_basis : b.coord k ⁅b i, b j⁆ = structureConstants b i j k` is not in simp-normal
+form (`Basis.coord_apply` rewrites its left-hand side), so it is replaced here by
+`repr_lie_basis : b.repr ⁅b i, b j⁆ k = structureConstants b i j k`, and the proofs of
+`structureConstants_swap`, `coord_lie_eq_sum` and `coord_lie_lie_basis` rewrite with
+`Basis.coord_apply` and `repr_lie_basis` instead. When migrating, replace each rewrite with
+`repr_lie_basis` by `← Basis.coord_apply` followed by upstream's `coord_lie_basis`.
 
 Let `L` be a Lie algebra over a commutative ring `R` and let `b : Basis ι R L` be a basis of `L`
 as an `R`-module. Since the Lie bracket is `R`-bilinear it is determined by its values on pairs of

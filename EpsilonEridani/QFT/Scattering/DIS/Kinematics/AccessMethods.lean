@@ -12,7 +12,8 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 This module implements reconstruction methods for DIS invariants from experimental measurements.
 Each method represents a different experimental technique for accessing the standard DIS variables
-(xBj, Q2, y, W2) and includes appropriateness theorems showing consistency.
+(xBj, Q2, y, W2). The electron, Sigma and eSigma methods carry appropriateness lemmas (positivity,
+range and the eSigma agreement identity); the JB section provides definitions only.
 
 ## Access Methods
 
@@ -118,35 +119,35 @@ def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
 /-- Appropriateness theorem: Sigma method Q² is non-negative. -/
 lemma q2Sigma_nonneg (d : SigmaMethodData V) (g_met : Bilin V)
     (hKOut : g_met d.kOut d.kOut ≤ 0) :
-    0 ≤ SigmaMethodData.q2Sigma (V := V) d g_met :=
-  neg_nonneg.mpr hKOut
+    0 ≤ SigmaMethodData.q2Sigma (V := V) d g_met := by
+  simp only [q2Sigma]
+  exact neg_nonneg.mpr hKOut
 
 end SigmaMethodData
 
 /-- eSigma method: uses both electron and hadronic information. -/
-structure ESigmaMethodData (g_met : Bilin V) where
+structure ESigmaMethodData where
   /-- Electron method component. -/
   electronData : ElectronMethodData
   /-- Hadronic method component. -/
   sigmaData : SigmaMethodData V
-  /-- Agreement condition: both methods must give consistent Q² within experimental resolution. -/
-  Q2_agreement : ∃ ε > 0, |ElectronMethodData.q2Electron electronData -
-    SigmaMethodData.q2Sigma (V := V) sigmaData g_met| < ε
 
 namespace ESigmaMethodData
 
 /-- eSigma method Q² reconstruction: average of electron and Sigma methods. -/
-def q2ESigma (d : ESigmaMethodData V g) : ℝ :=
+def q2ESigma (d : ESigmaMethodData V) : ℝ :=
   (ElectronMethodData.q2Electron d.electronData +
     SigmaMethodData.q2Sigma (V := V) d.sigmaData g) / 2
 
 /-- eSigma method y reconstruction: average of both methods. -/
-def yESigma (d : ESigmaMethodData V g) : ℝ :=
+def yESigma (d : ESigmaMethodData V) : ℝ :=
   (ElectronMethodData.yElectron d.electronData +
     SigmaMethodData.ySigma (V := V) d.sigmaData g) / 2
 
-/-- Appropriateness theorem: eSigma Q² reconstruction is consistent with both methods. -/
-lemma q2ESigma_consistency (d : ESigmaMethodData V g) :
+/-- Appropriateness theorem: the eSigma Q² lies exactly halfway between the electron and Sigma
+reconstructions, so its deviation from the electron Q² is exactly half the electron-Sigma
+discrepancy. -/
+lemma abs_q2ESigma_sub_q2Electron_eq (d : ESigmaMethodData V) :
     |q2ESigma (V := V) (g := g) d - ElectronMethodData.q2Electron d.electronData| =
       |ElectronMethodData.q2Electron d.electronData -
         SigmaMethodData.q2Sigma (V := V) d.sigmaData g| / 2 := by
@@ -164,25 +165,17 @@ end ESigmaMethodData
 structure JBMethodData where
   /-- Sum of final state hadron momenta. -/
   hadronicMomentum : V
-  /-- Beam energy (from accelerator specs). -/
-  beamEnergy : ℝ
-  /-- Initial target nucleus mass. -/
-  targetMass : ℝ
 
 namespace JBMethodData
-
-/-- JB method: Q² reconstruction using scattered lepton information and hadronic recoil.
-    Requires scattered lepton momentum which is implicit in hadronic recoil. -/
-def q2JB (_d : JBMethodData V) (g_met : Bilin V) (k_out : V) : ℝ :=
-  -g_met k_out k_out
 
 /-- JB method: W² reconstruction from hadronic invariant mass. -/
 def w2JB (d : JBMethodData V) (g_met : Bilin V) (p_hadron : V) : ℝ :=
   g_met (p_hadron + d.hadronicMomentum) (p_hadron + d.hadronicMomentum)
 
-/-- JB method: xBj reconstruction from kinematic relations. -/
-def xBjJB (d : JBMethodData V) (g_met : Bilin V) (p_target : V) (k_out : V) : ℝ :=
-  (q2JB (V := V) d g_met k_out) / (2 * g_met p_target k_out)
+/-- JB method: xBj reconstruction from kinematic relations, as minus the Minkowski square of the
+outgoing lepton momentum `k_out` divided by `2 p_target · k_out`. -/
+def xBjJB (g_met : Bilin V) (p_target : V) (k_out : V) : ℝ :=
+  -g_met k_out k_out / (2 * g_met p_target k_out)
 
 end JBMethodData
 

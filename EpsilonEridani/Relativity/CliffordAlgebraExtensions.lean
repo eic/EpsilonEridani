@@ -58,6 +58,18 @@ noncomputable section diracRepresentation
 /-- The gamma matrices in the Dirac representation, indexed as `γ0, γ1, γ2, γ3`. -/
 def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
 
+/-- The zeroth Dirac-representation gamma matrix is `γ0`. -/
+@[simp] lemma γ_zero : γ 0 = γ0 := rfl
+
+/-- The first Dirac-representation gamma matrix is `γ1`. -/
+@[simp] lemma γ_one : γ 1 = γ1 := rfl
+
+/-- The second Dirac-representation gamma matrix is `γ2`. -/
+@[simp] lemma γ_two : γ 2 = γ2 := rfl
+
+/-- The third Dirac-representation gamma matrix is `γ3`. -/
+@[simp] lemma γ_three : γ 3 = γ3 := rfl
+
 /-- The lowered gamma matrices in the Dirac representation. -/
 @[simp]
 def γDown (μ : Fin 4) : Matrix (Fin 4) (Fin 4) ℂ :=
@@ -287,7 +299,7 @@ theorem trace_γ5_mul_γ_mul_γ_mul_γ_mul_γ (μ ν ρ σ : Fin 4) :
 
 @[simp]
 lemma trace_γ (μ : Fin 4) : Matrix.trace (γ μ) = 0 := by
-  fin_cases μ <;> simp [Matrix.trace, Fin.sum_univ_four, γ, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  fin_cases μ <;> simp [Matrix.trace, Fin.sum_univ_four, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
 
 @[simp]
 lemma slash_trace (k : Lorentz.Vector 3) : Matrix.trace (Slash.slash k) = 0 := by
@@ -298,7 +310,7 @@ lemma slash_trace (k : Lorentz.Vector 3) : Matrix.trace (Slash.slash k) = 0 := b
 theorem slash_mul_slash_trace (a b : Lorentz.Vector 3) :
     Matrix.trace (Slash.slash a * Slash.slash b) =
       (4 * (Lorentz.Vector.minkowskiProduct a b : ℝ) : ℂ) := by
-  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, Fin.sum_univ_three, γ,
+  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, Fin.sum_univ_three,
     γ0_eq, γ1_eq, γ2_eq, γ3_eq, Lorentz.Vector.minkowskiProduct_toCoord]
   ring_nf
   simp only [Complex.I_sq]
@@ -307,14 +319,14 @@ theorem slash_mul_slash_trace (a b : Lorentz.Vector 3) :
 /-- `γ5` with two slashes has vanishing trace. -/
 theorem gamma5_slash_mul_slash_trace (a b : Lorentz.Vector 3) :
     Matrix.trace (γ5 * Slash.slash a * Slash.slash b) = 0 := by
-  simp [γ5, Slash.slash, Matrix.trace, Fin.sum_univ_four, γ, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  simp [γ5, Slash.slash, Matrix.trace, Fin.sum_univ_four, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
   ring_nf
 
 /-- Cubic odd slash trace identity. -/
 theorem slash_mul_slash_mul_slash_trace
     (k l m : Lorentz.Vector 3) :
     Matrix.trace (Slash.slash k * Slash.slash l * Slash.slash m) = 0 := by
-  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, γ, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  simp [Slash.slash, Slash.coord, Matrix.trace, Fin.sum_univ_four, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
   ring_nf
 
 /-- `γDown` over the Gaussian integers. -/
@@ -463,9 +475,7 @@ private def reverseConjInv : Matrix (Fin 4) (Fin 4) ℂ := γ3 * γ1
     reverseConj * Matrix.transpose (γ μ) * reverseConjInv = γ μ := by
   have key : ∀ μ, γZ 1 * γZ 3 * Matrix.transpose (γZ μ) * (γZ 3 * γZ 1) = γZ μ := by
     decide +kernel
-  have h1 : γ1 = γ 1 := rfl
-  have h3 : γ3 = γ 3 := rfl
-  rw [reverseConj, reverseConjInv, h1, h3]
+  rw [reverseConj, reverseConjInv, ← γ_one, ← γ_three]
   simp only [γ_eq_map, ← Matrix.transpose_map, ← Matrix.map_mul, key]
 
 @[simp] private lemma reverseConj_mul_slash_transpose_mul_reverseConjInv (k : Lorentz.Vector 3) :
