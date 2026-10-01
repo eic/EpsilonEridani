@@ -30,10 +30,19 @@ object.
 
 ## Main results
 
-* `EpsilonEridani.intervalIntegrable_mul_sub`: the integral defining `⟨[K]₊, φ⟩`
-  converges when `K z * (1 - z)` is integrable on `(0, 1]`, `φ` is a.e.-strongly-measurable
-  there, and `φ z - φ 1 = O(1 - z)` uniformly for almost every `z ∈ (0, 1]`.
-* `EpsilonEridani.plusFunctional_const`: a plus functional annihilates constants.
+* `EpsilonEridani.intervalIntegrable_plusFunctional_integrand`: the integral defining
+  `⟨[K]₊, φ⟩` converges when `K z * (1 - z)` is integrable on `(0, 1]`, `φ` is
+  a.e.-strongly-measurable there, and `φ z - φ 1 = O(1 - z)` uniformly for almost every
+  `z ∈ (0, 1]`.
+* `EpsilonEridani.plusFunctional_congr_ae_left`, `EpsilonEridani.plusFunctional_congr_ae_right`:
+  `⟨[K]₊, φ⟩` depends only on the a.e. class of `K` on `(0, 1]`, and on the a.e. class of `φ`
+  there together with the value `φ 1`.
+* `EpsilonEridani.plusFunctional_const_right`: a plus functional annihilates constants.
+* `EpsilonEridani.plusFunctional_const_mul_left`, `EpsilonEridani.plusFunctional_const_mul_right`,
+  `EpsilonEridani.plusFunctional_add_left`, `EpsilonEridani.plusFunctional_add_right`: the plus
+  functional is linear in each slot, additivity holding when the integrands converge.
+* `EpsilonEridani.plusFunctional_eq_integral_sub_mul_integral`: for integrable `K`,
+  `[K]₊ = K - (∫₀¹ K) δ(1 - z)`.
 * `EpsilonEridani.plusFunctional_mul_right`: the multiplication identity
   `⟨[K]₊, g φ⟩ = g 1 ⟨[K]₊, φ⟩ + ∫₀¹ K z (g z - g 1) φ z dz`, which for `K z = 1 / (1 - z)`
   (`EpsilonEridani.plusOneMinus_mul`) is the distributional identity
@@ -71,7 +80,8 @@ open scoped Interval
 /-- The plus functional `[K]₊` attached to a function `K` which may be singular at `1`, paired
 with a test function `φ`: `⟨[K]₊, φ⟩ = ∫₀¹ K z * (φ z - φ 1) dz`.
 
-The integral converges under the hypotheses of `intervalIntegrable_mul_sub`; outside
+The integral converges under the hypotheses of `intervalIntegrable_plusFunctional_integrand`;
+outside
 them it takes the junk value of the Bochner integral. -/
 noncomputable def plusFunctional (K φ : ℝ → ℝ) : ℝ :=
   ∫ z in (0 : ℝ)..1, K z * (φ z - φ 1)
@@ -81,10 +91,12 @@ noncomputable def plusFunctional (K φ : ℝ → ℝ) : ℝ :=
 noncomputable def plusOneMinus (φ : ℝ → ℝ) : ℝ :=
   plusFunctional (fun z => (1 - z)⁻¹) φ
 
+/-- Unfolding lemma for `plusFunctional`, whose body is not exposed. -/
 theorem plusFunctional_def (K φ : ℝ → ℝ) :
     plusFunctional K φ = ∫ z in (0 : ℝ)..1, K z * (φ z - φ 1) :=
   (rfl)
 
+/-- Unfolding lemma for `plusOneMinus`, whose body is not exposed. -/
 theorem plusOneMinus_def (φ : ℝ → ℝ) :
     plusOneMinus φ = plusFunctional (fun z => (1 - z)⁻¹) φ :=
   (rfl)
@@ -93,7 +105,7 @@ theorem plusOneMinus_def (φ : ℝ → ℝ) :
 `φ` is a.e.-strongly-measurable there, and the test function satisfies `|φ z - φ 1| ≤ L * (1 - z)`
 for almost every `z` there, then the integrand `K z * (φ z - φ 1)` of `⟨[K]₊, φ⟩` is integrable
 on `[0, 1]`, even though `K` itself need not be. -/
-theorem intervalIntegrable_mul_sub {K φ : ℝ → ℝ} {L : ℝ}
+theorem intervalIntegrable_plusFunctional_integrand {K φ : ℝ → ℝ} {L : ℝ}
     (hK : IntervalIntegrable (fun z => K z * (1 - z)) volume 0 1)
     (hφm : AEStronglyMeasurable φ (volume.restrict (Ioc 0 1)))
     (hφ : ∀ᵐ z ∂volume.restrict (Ioc 0 1), |φ z - φ 1| ≤ L * (1 - z)) :
@@ -118,63 +130,99 @@ theorem intervalIntegrable_mul_sub {K φ : ℝ → ℝ} {L : ℝ}
 /-- The integrand of the plus distribution `[1 / (1 - z)]₊` is integrable on `[0, 1]` for every
 a.e.-strongly-measurable test function with `|φ z - φ 1| ≤ L * (1 - z)` for almost every
 `z ∈ (0, 1]`. -/
-theorem intervalIntegrable_inv_one_sub_mul_sub {φ : ℝ → ℝ} {L : ℝ}
+theorem intervalIntegrable_plusOneMinus_integrand {φ : ℝ → ℝ} {L : ℝ}
     (hφm : AEStronglyMeasurable φ (volume.restrict (Ioc 0 1)))
     (hφ : ∀ᵐ z ∂volume.restrict (Ioc 0 1), |φ z - φ 1| ≤ L * (1 - z)) :
     IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1 := by
-  refine intervalIntegrable_mul_sub ?_ hφm hφ
+  refine intervalIntegrable_plusFunctional_integrand ?_ hφm hφ
   refine (intervalIntegrable_const (c := (1 : ℝ))).congr_ae ?_
   filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (1 : ℝ))] with z hz
   rw [inv_mul_cancel₀ (sub_ne_zero.2 (Ne.symm hz))]
 
+/-- A plus functional depends only on the almost-everywhere class of its kernel on `(0, 1]`. -/
+theorem plusFunctional_congr_ae_left {K K' : ℝ → ℝ} (φ : ℝ → ℝ)
+    (h : K =ᵐ[volume.restrict (Ioc 0 1)] K') : plusFunctional K φ = plusFunctional K' φ := by
+  simp only [plusFunctional, intervalIntegral.integral_of_le zero_le_one]
+  exact integral_congr_ae (h.mono fun z hz => by simp [hz])
+
+/-- A plus functional depends only on the almost-everywhere class of the test function on
+`(0, 1]` together with its value at `1`. -/
+theorem plusFunctional_congr_ae_right (K : ℝ → ℝ) {φ ψ : ℝ → ℝ}
+    (h : φ =ᵐ[volume.restrict (Ioc 0 1)] ψ) (h1 : φ 1 = ψ 1) :
+    plusFunctional K φ = plusFunctional K ψ := by
+  simp only [plusFunctional, intervalIntegral.integral_of_le zero_le_one]
+  exact integral_congr_ae (h.mono fun z hz => by simp [hz, h1])
+
+/-- The plus distribution `[1 / (1 - z)]₊` depends only on the almost-everywhere class of the
+test function on `(0, 1]` together with its value at `1`. -/
+theorem plusOneMinus_congr_ae {φ ψ : ℝ → ℝ}
+    (h : φ =ᵐ[volume.restrict (Ioc 0 1)] ψ) (h1 : φ 1 = ψ 1) :
+    plusOneMinus φ = plusOneMinus ψ :=
+  plusFunctional_congr_ae_right _ h h1
+
 /-- A plus functional annihilates constant test functions. -/
 @[simp]
-theorem plusFunctional_const (K : ℝ → ℝ) (c : ℝ) : plusFunctional K (fun _ => c) = 0 := by
+theorem plusFunctional_const_right (K : ℝ → ℝ) (c : ℝ) :
+    plusFunctional K (fun _ => c) = 0 := by
   simp [plusFunctional]
 
 /-- The plus distribution `[1 / (1 - z)]₊` annihilates constant test functions. -/
 @[simp]
 theorem plusOneMinus_const (c : ℝ) : plusOneMinus (fun _ => c) = 0 :=
-  plusFunctional_const _ c
+  plusFunctional_const_right _ c
 
+/-- Scaling the kernel scales the plus functional. Unlike additivity, this needs no
+integrability hypothesis: the interval integral commutes with scalar multiplication even when
+the integrand is not integrable, both sides then taking the junk value `0`. -/
 @[simp]
-theorem plusFunctional_smul_left (c : ℝ) (K φ : ℝ → ℝ) :
-    plusFunctional (c • K) φ = c * plusFunctional K φ := by
-  simp only [plusFunctional, Pi.smul_apply, smul_eq_mul, mul_assoc]
+theorem plusFunctional_const_mul_left (c : ℝ) (K φ : ℝ → ℝ) :
+    plusFunctional (fun z => c * K z) φ = c * plusFunctional K φ := by
+  simp only [plusFunctional, mul_assoc]
   exact intervalIntegral.integral_const_mul c _
 
+/-- Scaling the test function scales the plus functional, with no integrability hypothesis
+(see `plusFunctional_const_mul_left`). -/
 @[simp]
-theorem plusFunctional_smul_right (K : ℝ → ℝ) (c : ℝ) (φ : ℝ → ℝ) :
-    plusFunctional K (c • φ) = c * plusFunctional K φ := by
-  simp only [plusFunctional, Pi.smul_apply, smul_eq_mul, ← intervalIntegral.integral_const_mul]
+theorem plusFunctional_const_mul_right (K : ℝ → ℝ) (c : ℝ) (φ : ℝ → ℝ) :
+    plusFunctional K (fun z => c * φ z) = c * plusFunctional K φ := by
+  simp only [plusFunctional, ← intervalIntegral.integral_const_mul]
   congr 1 with z
   ring
 
+/-- Scaling the test function scales the pairing with `[1 / (1 - z)]₊`. -/
 @[simp]
-theorem plusOneMinus_smul (c : ℝ) (φ : ℝ → ℝ) : plusOneMinus (c • φ) = c * plusOneMinus φ :=
-  plusFunctional_smul_right _ c φ
+theorem plusOneMinus_const_mul (c : ℝ) (φ : ℝ → ℝ) :
+    plusOneMinus (fun z => c * φ z) = c * plusOneMinus φ :=
+  plusFunctional_const_mul_right _ c φ
 
+/-- A plus functional is additive in the kernel. The integrability hypotheses are needed
+because the interval integral is additive only on integrable functions: if one integrand
+diverges, its integral takes the junk value `0` while the integral of the sum need not. -/
 theorem plusFunctional_add_left {K K' φ : ℝ → ℝ}
     (hK : IntervalIntegrable (fun z => K z * (φ z - φ 1)) volume 0 1)
     (hK' : IntervalIntegrable (fun z => K' z * (φ z - φ 1)) volume 0 1) :
-    plusFunctional (K + K') φ = plusFunctional K φ + plusFunctional K' φ := by
-  simp only [plusFunctional, Pi.add_apply, add_mul]
+    plusFunctional (fun z => K z + K' z) φ = plusFunctional K φ + plusFunctional K' φ := by
+  simp only [plusFunctional, add_mul]
   exact intervalIntegral.integral_add hK hK'
 
+/-- A plus functional is additive in the test function, provided both integrands converge
+(see `plusFunctional_add_left` for why this is needed). -/
 theorem plusFunctional_add_right {K φ ψ : ℝ → ℝ}
     (hφ : IntervalIntegrable (fun z => K z * (φ z - φ 1)) volume 0 1)
     (hψ : IntervalIntegrable (fun z => K z * (ψ z - ψ 1)) volume 0 1) :
-    plusFunctional K (φ + ψ) = plusFunctional K φ + plusFunctional K ψ := by
-  simp only [plusFunctional, Pi.add_apply]
+    plusFunctional K (fun z => φ z + ψ z) = plusFunctional K φ + plusFunctional K ψ := by
+  simp only [plusFunctional]
   rw [← intervalIntegral.integral_add hφ hψ]
   congr 1
   ext z
   ring
 
+/-- The pairing with `[1 / (1 - z)]₊` is additive in the test function, provided both
+integrands converge (for instance under `intervalIntegrable_plusOneMinus_integrand`). -/
 theorem plusOneMinus_add {φ ψ : ℝ → ℝ}
     (hφ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1)
     (hψ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (ψ z - ψ 1)) volume 0 1) :
-    plusOneMinus (φ + ψ) = plusOneMinus φ + plusOneMinus ψ :=
+    plusOneMinus (fun z => φ z + ψ z) = plusOneMinus φ + plusOneMinus ψ :=
   plusFunctional_add_right hφ hψ
 
 /-- For a kernel `K` integrable on `[0, 1]` with `K φ` also integrable, the plus functional
@@ -196,9 +244,9 @@ whose last term is an ordinary function when `g z - g 1 = O(1 - z)`. -/
 theorem plusFunctional_mul_right {K g φ : ℝ → ℝ}
     (hφ : IntervalIntegrable (fun z => K z * (φ z - φ 1)) volume 0 1)
     (hg : IntervalIntegrable (fun z => K z * (g z - g 1) * φ z) volume 0 1) :
-    plusFunctional K (g * φ) =
+    plusFunctional K (fun z => g z * φ z) =
       g 1 * plusFunctional K φ + ∫ z in (0 : ℝ)..1, K z * (g z - g 1) * φ z := by
-  simp only [plusFunctional, Pi.mul_apply, ← intervalIntegral.integral_const_mul,
+  simp only [plusFunctional, ← intervalIntegral.integral_const_mul,
     ← intervalIntegral.integral_add (hφ.const_mul (g 1)) hg]
   congr 1 with z
   ring
@@ -208,7 +256,7 @@ theorem plusFunctional_mul_right {K g φ : ℝ → ℝ}
 theorem plusOneMinus_mul {g φ : ℝ → ℝ}
     (hφ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1)
     (hg : IntervalIntegrable (fun z => (1 - z)⁻¹ * (g z - g 1) * φ z) volume 0 1) :
-    plusOneMinus (g * φ) =
+    plusOneMinus (fun z => g z * φ z) =
       g 1 * plusOneMinus φ + ∫ z in (0 : ℝ)..1, (1 - z)⁻¹ * (g z - g 1) * φ z :=
   plusFunctional_mul_right hφ hg
 
