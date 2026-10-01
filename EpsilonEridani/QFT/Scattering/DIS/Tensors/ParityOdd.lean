@@ -52,7 +52,7 @@ stabilizer elements of determinant one.
   parity-odd sector there is exactly one-dimensional.
 -/
 
-@[expose] public section
+public section
 
 namespace EpsilonEridani
 namespace QFT
@@ -78,6 +78,12 @@ interaction, which need not respect the reflections allowed by `IsLorentzCovaria
 def IsProperLorentzCovariant (g : Bilin V) (K : DisKinematics V) (W : Bilin V) : Prop :=
   ∀ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f → LinearMap.det f = 1 →
     ∀ v w : V, W (f v) (f w) = W v w
+
+/-- The defining property of `IsProperLorentzCovariant`. -/
+lemma isProperLorentzCovariant_iff {g : Bilin V} {K : DisKinematics V} {W : Bilin V} :
+    IsProperLorentzCovariant g K W ↔ ∀ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f →
+      LinearMap.det f = 1 → ∀ v w : V, W (f v) (f w) = W v w :=
+  Iff.rfl
 
 /-- Full covariance implies proper covariance. -/
 lemma IsLorentzCovariant.isProperLorentzCovariant {g : Bilin V} {K : DisKinematics V}
@@ -226,8 +232,7 @@ namespace ParityOddAssumptions
 
 variable {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
 
-/-- A parity-odd tensor has no component mixing `p_T` with a spectator direction: the rotation
-by `π` in the spectator plane fixes `p_T` and reverses `e₁`. -/
+/-- A parity-odd tensor has no component mixing `p_T` with the spectator direction `e₁`. -/
 lemma apply_pTransverse_e₁_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     (hW : ParityOddAssumptions g K W) : W (pTransverse g K) hP.e₁ = 0 := by
   obtain ⟨f, hf, hdet, hf₁, -⟩ := hP.exists_halfTurn hSymm
@@ -235,8 +240,7 @@ lemma apply_pTransverse_e₁_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K
   rw [stabilizer_fixes_pTransverse g K hf, hf₁, map_neg] at h
   linarith
 
-/-- A parity-odd tensor has no component mixing `p_T` with a spectator direction: the rotation
-by `π` in the spectator plane fixes `p_T` and reverses `e₂`. -/
+/-- A parity-odd tensor has no component mixing `p_T` with the spectator direction `e₂`. -/
 lemma apply_pTransverse_e₂_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     (hW : ParityOddAssumptions g K W) : W (pTransverse g K) hP.e₂ = 0 := by
   obtain ⟨f, hf, hdet, -, hf₂⟩ := hP.exists_halfTurn hSymm
@@ -293,7 +297,7 @@ theorem existsUnique_eq_smul (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
 
 /-- **Parity conservation removes the parity-odd sector.** Under a `SpectatorPlane`, a
 parity-odd tensor that is covariant under every stabilizer element, reflections included,
-vanishes: the reflection in `e₁` fixes `e₂` and reverses `e₁`. -/
+vanishes. -/
 theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     (hW : ParityOddAssumptions g K W) (hcov : IsLorentzCovariant g K W) : W = 0 :=
   (hW.eq_zero_iff hSymm hP).mpr <|
@@ -335,7 +339,7 @@ def gFour : Bilin (Fin 4 → ℝ) :=
     (fun _ _ _ => by simp only [Pi.smul_apply, smul_eq_mul]; ring)
 
 @[simp] lemma gFour_apply (v w : Fin 4 → ℝ) :
-    gFour v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := rfl
+    gFour v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := (rfl)
 
 /-- `gFour` is symmetric. -/
 lemma gFour_isSymm : gFour.IsSymm := by
@@ -354,12 +358,17 @@ def kFour : DisKinematics (Fin 4 → ℝ) where
   q := ![0, 0, 0, 1]
   hq := by simp
 
-@[simp] lemma kFour_p : kFour.p = ![1, 0, 0, 0] := rfl
+@[simp] lemma kFour_p : kFour.p = ![1, 0, 0, 0] := (rfl)
 
-@[simp] lemma kFour_q : kFour.q = ![0, 0, 0, 1] := rfl
+@[simp] lemma kFour_pPrime : kFour.pPrime = 0 := (rfl)
 
-/-- The transverse hadron momentum of the witness kinematics is `p`, since `p` is already
-orthogonal to `q`. -/
+@[simp] lemma kFour_k : kFour.k = ![0, 0, 0, 1] := (rfl)
+
+@[simp] lemma kFour_kPrime : kFour.kPrime = 0 := (rfl)
+
+@[simp] lemma kFour_q : kFour.q = ![0, 0, 0, 1] := (rfl)
+
+/-- The transverse hadron momentum of the witness kinematics is `p` itself. -/
 @[simp] lemma pTransverse_kFour : pTransverse gFour kFour = ![1, 0, 0, 0] := by
   simp [pTransverse]
 
@@ -372,20 +381,20 @@ noncomputable def aFour : Bilin (Fin 4 → ℝ) :=
     (fun v _ _ => ((Pi.basisFun ℝ (Fin 4)).det.curryLeft v).map_vecCons_add _ _ _)
     (fun _ v _ => ((Pi.basisFun ℝ (Fin 4)).det.curryLeft v).map_vecCons_smul _ _ _)
 
-lemma aFour_apply (v w : Fin 4 → ℝ) :
-    aFour v w = (Pi.basisFun ℝ (Fin 4)).det ![v, w, kFour.p, kFour.q] := rfl
+@[simp] lemma aFour_apply (v w : Fin 4 → ℝ) :
+    aFour v w = (Pi.basisFun ℝ (Fin 4)).det ![v, w, kFour.p, kFour.q] := (rfl)
 
-/-- **`ParityOddAssumptions` is satisfiable.** `aFour` is alternating and annihilates `q`
-because the determinant is alternating, and it is properly covariant because the determinant
-is multiplied by `det f = 1` under a stabilizer element `f`, which fixes `p` and `q`. -/
+/-- **`ParityOddAssumptions` is satisfiable.** The witness tensor `aFour` is alternating,
+conserved and properly covariant. -/
 lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour where
   covariant f hf hdet v w := by
     have hp : f ![1, 0, 0, 0] = ![1, 0, 0, 0] := hf.fixes_p
     have hq : f ![0, 0, 0, 1] = ![0, 0, 0, 1] := hf.fixes_q
-    have h : ![f v, f w, kFour.p, kFour.q] = f ∘ ![v, w, kFour.p, kFour.q] := by
+    have h : ![f v, f w, ![1, 0, 0, 0], ![0, 0, 0, 1]] =
+        f ∘ ![v, w, ![1, 0, 0, 0], ![0, 0, 0, 1]] := by
       ext1 i
       fin_cases i <;> simp [hp, hq]
-    rw [aFour_apply, aFour_apply, h, Module.Basis.det_comp, hdet, one_mul]
+    simp only [aFour_apply, kFour_p, kFour_q, h, Module.Basis.det_comp, hdet, one_mul]
   conserved_left v := by
     rw [aFour_apply]
     exact AlternatingMap.map_eq_zero_of_eq _ _ (i := 0) (j := 3) rfl (by decide)
@@ -407,10 +416,14 @@ def spectatorPlaneFour : SpectatorPlane gFour kFour where
   e₂_e₂ := by simp
   span v := ⟨v 0, v 3, v 1, v 2, by ext i; fin_cases i <;> simp⟩
 
-/-- The witness parity-odd tensor is non-zero: `ε(e₁, e₂, p, q) = 1`. -/
+@[simp] lemma spectatorPlaneFour_e₁ : spectatorPlaneFour.e₁ = ![0, 1, 0, 0] := (rfl)
+
+@[simp] lemma spectatorPlaneFour_e₂ : spectatorPlaneFour.e₂ = ![0, 0, 1, 0] := (rfl)
+
+/-- The witness parity-odd tensor is non-zero. -/
 lemma aFour_ne_zero : aFour ≠ 0 := by
   intro h
-  have h₀ : aFour ![0, 1, 0, 0] ![0, 0, 1, 0] = 0 := by rw [h]; rfl
+  have h₀ : aFour ![0, 1, 0, 0] ![0, 0, 1, 0] = 0 := by simp [h]
   rw [aFour_apply, Module.Basis.det_apply] at h₀
   simp [Matrix.det_succ_row_zero, Fin.sum_univ_succ, Module.Basis.toMatrix_apply,
     Fin.succAbove] at h₀
