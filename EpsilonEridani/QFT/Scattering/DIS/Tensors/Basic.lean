@@ -63,11 +63,9 @@ property of `(V, g, p, q)`. The same section supplies `uniquenessWit` and
 `spectatorAssumptions_kWit`, instantiating `UniquenessAssumptions` and `SpectatorAssumptions`
 on one set of kinematics.
 
-The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is *not* included: on an abstract
-`V` with only a bilinear form there is no orientation or volume form, and physlib's
-`Relativity.Tensors.RealTensor.Metrics.LeviCivita` supplies `leviCivita4Int` only as a
-component symbol on `Fin 4` indices of `realLorentzTensor`. Adding `F₃` honestly requires
-first specializing this module to `Lorentz.Vector 3`.
+The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is not part of this module; it is
+treated in `Tensors.ParityOdd`. On an abstract `V` with only a bilinear form there is no
+orientation or volume form, so that module takes the role of `ε(·, ·, p, q)` as data.
 
 -/
 
@@ -186,15 +184,14 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
   rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
-/-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`:
-it is the transvection `v ↦ v + f v • u` with `f = -2 (g u u)⁻¹ g u`, and `f u = -2`. -/
+/-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`. -/
 lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u ≠ 0) :
     LinearMap.det (reflect g u) = -1 := by
   have h : reflect g u = LinearMap.transvection (-(2 * (g u u)⁻¹) • g u) u := by
     ext v
     simp [LinearMap.transvection.apply, sub_eq_add_neg, neg_smul, mul_assoc]
-  rw [h, LinearMap.transvection.det, LinearMap.smul_apply, smul_eq_mul, neg_mul, mul_assoc,
-    inv_mul_cancel₀ hu]
+  rw [h, LinearMap.transvection.det]
+  simp [hu]
   norm_num
 
 end Bilin
