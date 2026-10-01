@@ -241,9 +241,12 @@ For a lepton-side vertex `γ^μ (c_V - c_A γ₅)` the spin trace over massless 
 up to the overall factor `4` of the trace. The symmetric part is the vector-exchange tensor
 `lMuNu` rescaled by `c_V² + c_A²`; the antisymmetric part is proportional to the parity-odd
 structure `ε(·, ·, k, k')`. As for the hadronic tensor, the tensor is represented by a real
-bilinear form whose antisymmetric part carries the parity-odd piece: the factor `i`, the sign
-convention for `ε^{0123}` and for `γ₅` are absorbed into the choice of the alternating
-four-form `ε`, which is supplied as data. Lepton-mass terms of the trace are not included.
+bilinear form. Its antisymmetric part models `i ε^{μναβ} k_α k'_β` with the factor `i`
+*dropped*, not absorbed: the alternating four-form `ε`, supplied as data, is real-valued, and
+only the real sign conventions for `ε^{0123}` and for `γ₅` sit in the choice of `ε`.
+Contracting this parity-odd part with another real parity-odd structure modelled the same way
+must therefore restore the compensating factor `i² = -1`. Lepton-mass terms of the trace are
+not included.
 The formula follows from the four-slash trace identities
 `spaceTime.γ.Trace.slash_mul_slash_mul_slash_mul_slash_trace` and
 `spaceTime.γ.Trace.gamma5_slash_mul_slash_mul_slash_mul_slash_trace` on `Lorentz.Vector 3`;
@@ -317,8 +320,10 @@ lemma exists_lMuNuOdd_ne_zero :
   simp only [← he, Module.Basis.det_self] at h0
   exact one_ne_zero h0
 
-/-- The spin-summed leptonic tensor of a massless lepton coupling through the vertex
-`γ^μ (c_V - c_A γ₅)`. For symmetric `g` its symmetric part is `(c_V² + c_A²) lMuNu` and its
+/-- A model of the spin-summed leptonic tensor of a massless lepton coupling through the vertex
+`γ^μ (c_V - c_A γ₅)`, up to the trace's overall factor `4` and with the parity-odd part given
+by the supplied alternating form `ε` (see the section docstring for the normalization and the
+dropped factor `i`). For symmetric `g` its symmetric part is `(c_V² + c_A²) lMuNu` and its
 antisymmetric part is `2 c_V c_A` times the parity-odd structure `lMuNuOdd ε K`
 (`inv_two_smul_lMuNuVA_add_flip`, `inv_two_smul_lMuNuVA_sub_flip`). -/
 def lMuNuVA (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
