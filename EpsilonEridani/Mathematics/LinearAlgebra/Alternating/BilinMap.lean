@@ -26,12 +26,11 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
 ## Main results
 
 - `AlternatingMap.isAlt_bilinMap`: `f.bilinMap m` is alternating.
-- `AlternatingMap.bilinMap_swap`: consequently it is antisymmetric.
 - `AlternatingMap.bilinMap_apply_left_eq_zero`, `AlternatingMap.bilinMap_apply_right_eq_zero`:
   it vanishes when either argument is one of the fixed vectors `m i`.
 -/
 
-@[expose] public section
+public section
 
 namespace AlternatingMap
 
@@ -97,17 +96,5 @@ theorem bilinMap_smul (c : R) (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n �
   rfl
 
 end CommSemiring
-
-section AddCommGroup
-
-variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-  [AddCommGroup N] [Module R N] {n : ℕ}
-
-/-- `f.bilinMap m` is antisymmetric. -/
-theorem bilinMap_swap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v w : M) :
-    f.bilinMap m w v = -f.bilinMap m v w :=
-  ((f.isAlt_bilinMap m).neg v w).symm
-
-end AddCommGroup
 
 end AlternatingMap
