@@ -281,6 +281,18 @@ lemma apply_p_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
   rw [hp, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
     hW.apply_pTransverse_eq_zero hSymm hP, hW.conserved_left, smul_zero, add_zero]
 
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p_T` in the second slot as
+well. -/
+lemma apply_pTransverse_eq_zero_right (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (v : V) : W v (pTransverse g K) = 0 := by
+  rw [← hW.isAlt.neg_eq, hW.apply_pTransverse_eq_zero hSymm hP, neg_zero]
+
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p` in the second slot as
+well. -/
+lemma apply_p_eq_zero_right (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (v : V) : W v K.p = 0 := by
+  rw [← hW.isAlt.neg_eq, hW.apply_p_eq_zero hSymm hP, neg_zero]
+
 /-- Two parity-odd tensors agreeing on the spectator pair `(e₁, e₂)` are equal. -/
 lemma eq_of_apply_e₁_e₂_eq (hSymm : g.IsSymm) (hP : SpectatorPlane g K) {W' : Bilin V}
     (hW : ParityOddAssumptions g K W) (hW' : ParityOddAssumptions g K W')
@@ -374,21 +386,16 @@ namespace Witness
 
 /-- The `+---` Minkowski form on `ℝ⁴`: `g v w = v₀w₀ - v₁w₁ - v₂w₂ - v₃w₃`. -/
 def gFour : Bilin (Fin 4 → ℝ) :=
-  LinearMap.mk₂ ℝ (fun v w => v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3)
-    (fun _ _ _ => by simp only [Pi.add_apply]; ring)
-    (fun _ _ _ => by simp only [Pi.smul_apply, smul_eq_mul]; ring)
-    (fun _ _ _ => by simp only [Pi.add_apply]; ring)
-    (fun _ _ _ => by simp only [Pi.smul_apply, smul_eq_mul]; ring)
+  Matrix.toBilin' (Matrix.diagonal ![1, -1, -1, -1])
 
 @[simp] lemma gFour_apply (v w : Fin 4 → ℝ) :
-    gFour v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := (rfl)
+    gFour v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := by
+  simp [gFour, Matrix.toBilin'_apply, Fin.sum_univ_four, Matrix.diagonal]
+  ring
 
 /-- `gFour` is symmetric. -/
-lemma gFour_isSymm : gFour.IsSymm := by
-  refine { eq := ?_ }
-  intro v w
-  simp only [gFour_apply]
-  ring
+lemma gFour_isSymm : gFour.IsSymm :=
+  Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal _)
 
 /-- Witness kinematics on `ℝ⁴`: timelike `p = (1, 0, 0, 0)` and spacelike
 `q = (0, 0, 0, 1)`, with `Q² = 1`. -/
@@ -423,8 +430,17 @@ noncomputable def aFour : Bilin (Fin 4 → ℝ) :=
     (fun v _ _ => ((Pi.basisFun ℝ (Fin 4)).det.curryLeft v).map_vecCons_add _ _ _)
     (fun _ v _ => ((Pi.basisFun ℝ (Fin 4)).det.curryLeft v).map_vecCons_smul _ _ _)
 
-@[simp] lemma aFour_apply (v w : Fin 4 → ℝ) :
+/-- `aFour` as the determinant of its two arguments together with `p` and `q`. -/
+lemma aFour_eq_det (v w : Fin 4 → ℝ) :
     aFour v w = (Pi.basisFun ℝ (Fin 4)).det ![v, w, kFour.p, kFour.q] := (rfl)
+
+/-- The closed form of `aFour`: with `p` and `q` along the `0` and `3` axes, `ε(v, w, p, q)` is
+the `2 × 2` determinant of the spectator components `1`, `2` of `v` and `w`. -/
+@[simp] lemma aFour_apply (v w : Fin 4 → ℝ) : aFour v w = v 1 * w 2 - v 2 * w 1 := by
+  rw [aFour_eq_det, Module.Basis.det_apply]
+  simp [Matrix.det_succ_row_zero, Fin.sum_univ_succ, Module.Basis.toMatrix_apply,
+    Fin.succAbove_of_castSucc_lt, Fin.succAbove_of_le_castSucc]
+  ring
 
 /-- **`ParityOddAssumptions` is satisfiable.** The witness tensor `aFour` is alternating,
 conserved and properly covariant. -/
@@ -436,12 +452,12 @@ lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour where
         f ∘ ![v, w, ![1, 0, 0, 0], ![0, 0, 0, 1]] := by
       ext1 i
       fin_cases i <;> simp [hp, hq]
-    simp only [aFour_apply, kFour_p, kFour_q, h, Module.Basis.det_comp, hdet, one_mul]
+    simp only [aFour_eq_det, kFour_p, kFour_q, h, Module.Basis.det_comp, hdet, one_mul]
   conserved_left v := by
-    rw [aFour_apply]
+    rw [aFour_eq_det]
     exact AlternatingMap.map_eq_zero_of_eq _ _ (i := 0) (j := 3) rfl (by decide)
   isAlt v := by
-    rw [aFour_apply]
+    rw [aFour_eq_det]
     exact AlternatingMap.map_eq_zero_of_eq _ _ (i := 0) (j := 1) rfl (by decide)
 
 /-- The spectator plane of the witness kinematics, spanned by the coordinate directions
@@ -462,13 +478,14 @@ def spectatorPlaneFour : SpectatorPlane gFour kFour where
 
 @[simp] lemma spectatorPlaneFour_e₂ : spectatorPlaneFour.e₂ = ![0, 0, 1, 0] := (rfl)
 
+/-- The spectator component of the witness parity-odd tensor: `aFour e₁ e₂ = 1` for the
+spectator directions `e₁ = (0, 1, 0, 0)` and `e₂ = (0, 0, 1, 0)` of `spectatorPlaneFour`. -/
+lemma aFour_e₁_e₂ : aFour ![0, 1, 0, 0] ![0, 0, 1, 0] = 1 := by
+  simp
+
 /-- The witness parity-odd tensor is non-zero. -/
-lemma aFour_ne_zero : aFour ≠ 0 := by
-  intro h
-  have h₀ : aFour ![0, 1, 0, 0] ![0, 0, 1, 0] = 0 := by simp [h]
-  rw [aFour_apply, Module.Basis.det_apply] at h₀
-  simp [Matrix.det_succ_row_zero, Fin.sum_univ_succ, Module.Basis.toMatrix_apply,
-    Fin.succAbove] at h₀
+lemma aFour_ne_zero : aFour ≠ 0 := fun h => by
+  simpa [h] using aFour_e₁_e₂
 
 /-- **Proper covariance is strictly weaker than full covariance.** The properly covariant,
 non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
