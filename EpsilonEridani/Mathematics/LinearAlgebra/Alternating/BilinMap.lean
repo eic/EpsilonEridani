@@ -56,8 +56,9 @@ theorem bilinMap_apply (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v
 /-- `f.bilinMap m` vanishes on the diagonal. -/
 @[simp]
 theorem bilinMap_apply_self (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v : M) :
-    f.bilinMap m v v = 0 :=
-  DFunLike.congr_fun (f.curryLeft_same v) m
+    f.bilinMap m v v = 0 := by
+  rw [bilinMap_apply, ← curryLeft_apply_apply, ← curryLeft_apply_apply, curryLeft_same,
+    zero_apply]
 
 /-- `f.bilinMap m` is alternating. -/
 theorem isAlt_bilinMap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
@@ -73,7 +74,7 @@ theorem bilinMap_apply_left_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fi
 theorem bilinMap_apply_right_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M)
     (i : Fin n) (v : M) : f.bilinMap m v (m i) = 0 :=
   f.map_eq_zero_of_eq _ (i := 1) (j := i.succ.succ) (by simp)
-    (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _).symm)
+    (Fin.succ_zero_eq_one ▸ (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _).symm))
 
 end CommSemiring
 
