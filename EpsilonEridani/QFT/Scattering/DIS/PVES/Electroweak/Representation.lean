@@ -159,6 +159,13 @@ def electronSinglet : Multiplet := ⟨1, 1, a.Ye, .right⟩
 def multiplets : List Multiplet :=
   [a.quarkDoublet, a.upSinglet, a.downSinglet, a.leptonDoublet, a.electronSinglet]
 
+/-- The five multiplets of one generation, listed explicitly. -/
+@[simp]
+theorem multiplets_eq :
+    a.multiplets =
+      [a.quarkDoublet, a.upSinglet, a.downSinglet, a.leptonDoublet, a.electronSinglet] :=
+  rfl
+
 /-- The mixed gravitational anomaly coefficient: the chirality-signed sum of the hypercharges
 over all states of the generation. -/
 def gravitationalAnomaly : ℚ :=
@@ -189,11 +196,17 @@ def cubicAnomaly : ℚ :=
 def IsAnomalyFree : Prop :=
   a.gravitationalAnomaly = 0 ∧ a.su2Anomaly = 0 ∧ a.su3Anomaly = 0 ∧ a.cubicAnomaly = 0
 
+/-- Anomaly freedom is the vanishing of the four anomaly coefficients. -/
+theorem isAnomalyFree_def :
+    a.IsAnomalyFree ↔
+      a.gravitationalAnomaly = 0 ∧ a.su2Anomaly = 0 ∧ a.su3Anomaly = 0 ∧ a.cubicAnomaly = 0 :=
+  Iff.rfl
+
 /-- The gravitational anomaly coefficient of a generation, written out in the hypercharges. -/
 @[simp]
 theorem gravitationalAnomaly_eq :
     a.gravitationalAnomaly = 6 * a.YQ - 3 * a.Yu - 3 * a.Yd + 2 * a.YL - a.Ye := by
-  simp only [gravitationalAnomaly, multiplets, List.map_cons, List.map_nil, List.sum_cons,
+  simp only [gravitationalAnomaly, multiplets_eq, List.map_cons, List.map_nil, List.sum_cons,
     List.sum_nil, quarkDoublet_isospinDim, quarkDoublet_colorDim, quarkDoublet_Y,
     quarkDoublet_chirality, upSinglet_isospinDim, upSinglet_colorDim, upSinglet_Y,
     upSinglet_chirality, downSinglet_isospinDim, downSinglet_colorDim, downSinglet_Y,
@@ -206,12 +219,12 @@ theorem gravitationalAnomaly_eq :
 /-- The `SU(2)² × U(1)` anomaly coefficient of a generation, written out in the hypercharges. -/
 @[simp]
 theorem su2Anomaly_eq : a.su2Anomaly = 3 * a.YQ + a.YL := by
-  simp [su2Anomaly, multiplets]
+  simp [su2Anomaly]
 
 /-- The `SU(3)² × U(1)` anomaly coefficient of a generation, written out in the hypercharges. -/
 @[simp]
 theorem su3Anomaly_eq : a.su3Anomaly = 2 * a.YQ - a.Yu - a.Yd := by
-  simp only [su3Anomaly, multiplets, quarkDoublet_colorDim, upSinglet_colorDim,
+  simp only [su3Anomaly, multiplets_eq, quarkDoublet_colorDim, upSinglet_colorDim,
     downSinglet_colorDim, leptonDoublet_colorDim, electronSinglet_colorDim, decide_true,
     decide_false, Bool.false_eq_true, List.filter_cons_of_pos, List.filter_cons_of_neg,
     OfNat.one_ne_ofNat, not_false_eq_true, List.filter_nil, List.map_cons, List.map_nil,
@@ -225,7 +238,7 @@ theorem su3Anomaly_eq : a.su3Anomaly = 2 * a.YQ - a.Yu - a.Yd := by
 @[simp]
 theorem cubicAnomaly_eq :
     a.cubicAnomaly = 6 * a.YQ ^ 3 - 3 * a.Yu ^ 3 - 3 * a.Yd ^ 3 + 2 * a.YL ^ 3 - a.Ye ^ 3 := by
-  simp only [cubicAnomaly, multiplets, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+  simp only [cubicAnomaly, multiplets_eq, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
     quarkDoublet_isospinDim, quarkDoublet_colorDim, quarkDoublet_Y, quarkDoublet_chirality,
     upSinglet_isospinDim, upSinglet_colorDim, upSinglet_Y, upSinglet_chirality,
     downSinglet_isospinDim, downSinglet_colorDim, downSinglet_Y, downSinglet_chirality,
@@ -240,7 +253,7 @@ theorem isAnomalyFree_iff :
     a.IsAnomalyFree ↔ 6 * a.YQ - 3 * a.Yu - 3 * a.Yd + 2 * a.YL - a.Ye = 0 ∧
       3 * a.YQ + a.YL = 0 ∧ 2 * a.YQ - a.Yu - a.Yd = 0 ∧
       6 * a.YQ ^ 3 - 3 * a.Yu ^ 3 - 3 * a.Yd ^ 3 + 2 * a.YL ^ 3 - a.Ye ^ 3 = 0 := by
-  simp [IsAnomalyFree]
+  simp [isAnomalyFree_def]
 
 /-- The Standard Model hypercharge assignment `(1/3, 4/3, -2/3, -1, -2)` of one generation, in
 the normalisation `Q = T³ + Y/2`. -/
@@ -392,7 +405,7 @@ theorem isAnomalyFree_iff_smaccs :
     a.IsAnomalyFree ↔ SMACCs.accGrav a.toSMCharges = 0 ∧ SMACCs.accSU2 a.toSMCharges = 0 ∧
       SMACCs.accSU3 a.toSMCharges = 0 ∧ SMACCs.accCube a.toSMCharges = 0 := by
   rw [accGrav_toSMCharges, accSU2_toSMCharges, accSU3_toSMCharges, accCube_toSMCharges,
-    IsAnomalyFree]
+    isAnomalyFree_def]
 
 end GenerationAssignments
 
