@@ -202,9 +202,8 @@ namespace SpectatorPlane
 
 variable {g : Bilin V} {K : DisKinematics V}
 
-/-- The rotation by `π` in the spectator plane, the composite of the reflections in `e₁` and
-`e₂`, is a kinematic stabilizer element of determinant one reversing both spectator
-directions. -/
+/-- There is a kinematic stabilizer element of determinant one reversing both spectator
+directions `e₁` and `e₂`. -/
 private lemma exists_halfTurn (hSymm : g.IsSymm) (hP : SpectatorPlane g K) :
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
       f hP.e₁ = -hP.e₁ ∧ f hP.e₂ = -hP.e₂ := by
