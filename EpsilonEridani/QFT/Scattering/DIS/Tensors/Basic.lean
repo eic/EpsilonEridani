@@ -223,6 +223,13 @@ lemma lMuNu_apply_q_left (g : Bilin V) (K : Kinematics.DisKinematics V) (hSymm :
   simp only [lMuNu_apply, K.q_eq_sub, map_sub, LinearMap.sub_apply, hSymm.eq K.kPrime K.k]
   ring
 
+/-- Contracting `lMuNu` with `q = k - k'` in the second slot leaves only lepton-mass terms:
+`L_{μν} q^ν = k² k'_μ - k'² k_μ`. -/
+lemma lMuNu_apply_q_right (g : Bilin V) (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm)
+    (v : V) :
+    lMuNu g K v K.q = g K.k K.k * g K.kPrime v - g K.kPrime K.kPrime * g K.k v := by
+  rw [(lMuNu_isSymm g K hSymm).eq v K.q, lMuNu_apply_q_left g K hSymm]
+
 /-!
 
 ### The vector/axial-vector leptonic tensor
@@ -287,13 +294,13 @@ lemma isAlt_lMuNuOdd (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKine
   ε.bilinMap_apply_right_eq_zero ![K.k, K.kPrime] 1 v
 
 /-- The parity-odd leptonic structure is conserved in its first slot, for any lepton masses. -/
-@[simp] lemma lMuNuOdd_apply_q_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+@[simp] lemma lMuNuOdd_conserved_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (w : V) : lMuNuOdd ε K K.q w = 0 := by
   simp [K.q_eq_sub]
 
 /-- The parity-odd leptonic structure is conserved in its second slot, for any lepton
 masses. -/
-@[simp] lemma lMuNuOdd_apply_q_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+@[simp] lemma lMuNuOdd_conserved_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (v : V) : lMuNuOdd ε K v K.q = 0 := by
   simp [K.q_eq_sub]
 
@@ -305,16 +312,15 @@ lemma exists_lMuNuOdd_ne_zero :
   let e := Pi.basisFun ℝ (Fin 4)
   refine ⟨e.det, ⟨0, 0, e 2, e 3, e 2 - e 3, rfl⟩, fun h => ?_⟩
   have h0 := LinearMap.congr_fun₂ h (e 0) (e 1)
-  have he : ![e 0, e 1, e 2, e 3] = ⇑e := by
-    ext1 i
-    fin_cases i <;> rfl
+  have he : ⇑e = ![e 0, e 1, e 2, e 3] := (FinVec.etaExpand_eq _).symm
   rw [lMuNuOdd_apply, LinearMap.zero_apply, LinearMap.zero_apply] at h0
-  simp only [he, Module.Basis.det_self] at h0
+  simp only [← he, Module.Basis.det_self] at h0
   exact one_ne_zero h0
 
 /-- The spin-summed leptonic tensor of a massless lepton coupling through the vertex
-`γ^μ (c_V - c_A γ₅)`, normalised so that its symmetric part is `(c_V² + c_A²) lMuNu`. Its
-antisymmetric part is `2 c_V c_A` times the parity-odd structure `lMuNuOdd ε K`. -/
+`γ^μ (c_V - c_A γ₅)`. For symmetric `g` its symmetric part is `(c_V² + c_A²) lMuNu` and its
+antisymmetric part is `2 c_V c_A` times the parity-odd structure `lMuNuOdd ε K`
+(`inv_two_smul_lMuNuVA_add_flip`, `inv_two_smul_lMuNuVA_sub_flip`). -/
 def lMuNuVA (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
     (cV cA : ℝ) : Bilin V :=
   (cV ^ 2 + cA ^ 2) • lMuNu g K + (2 * cV * cA) • lMuNuOdd ε K
@@ -339,8 +345,7 @@ lemma lMuNuVA_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinema
       = (cV ^ 2 + cA ^ 2) • lMuNu g K - (2 * cV * cA) • lMuNuOdd ε K := by
   have hOdd : (lMuNuOdd ε K).flip = -lMuNuOdd ε K := by
     ext v w
-    rw [LinearMap.BilinForm.flip_apply, LinearMap.neg_apply]
-    exact (LinearMap.IsAlt.neg (isAlt_lMuNuOdd ε K) v w).symm
+    simp [(isAlt_lMuNuOdd ε K).neg_eq]
   simp only [lMuNuVA, map_add, map_smul,
     LinearMap.BilinForm.isSymm_iff_flip.mp (lMuNu_isSymm g K hSymm), hOdd]
   module
@@ -368,7 +373,7 @@ theorem lMuNuVA_apply_q_left (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) (w : V) :
     lMuNuVA g ε K cV cA K.q w
       = (cV ^ 2 + cA ^ 2) * (g K.k K.k * g K.kPrime w - g K.kPrime K.kPrime * g K.k w) := by
-  rw [lMuNuVA_apply, lMuNu_apply_q_left g K hSymm, lMuNuOdd_apply_q_left_eq_zero, mul_zero,
+  rw [lMuNuVA_apply, lMuNu_apply_q_left g K hSymm, lMuNuOdd_conserved_left, mul_zero,
     add_zero]
 
 /-- Contracting the vector/axial-vector leptonic tensor with `q = k - k'` in the second slot
@@ -377,12 +382,12 @@ theorem lMuNuVA_apply_q_right (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) (v : V) :
     lMuNuVA g ε K cV cA v K.q
       = (cV ^ 2 + cA ^ 2) * (g K.k K.k * g K.kPrime v - g K.kPrime K.kPrime * g K.k v) := by
-  rw [lMuNuVA_apply, (lMuNu_isSymm g K hSymm).eq v K.q, lMuNu_apply_q_left g K hSymm,
-    lMuNuOdd_apply_q_right_eq_zero, mul_zero, add_zero]
+  rw [lMuNuVA_apply, lMuNu_apply_q_right g K hSymm, lMuNuOdd_conserved_right, mul_zero,
+    add_zero]
 
 /-- For massless leptons the vector/axial-vector leptonic tensor is conserved in its first
 slot: `q^μ L_{μν} = 0`. -/
-theorem lMuNuVA_apply_q_left_eq_zero (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem lMuNuVA_conserved_left (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
     (hk' : g K.kPrime K.kPrime = 0) (cV cA : ℝ) (w : V) :
     lMuNuVA g ε K cV cA K.q w = 0 := by
@@ -390,7 +395,7 @@ theorem lMuNuVA_apply_q_left_eq_zero (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ
 
 /-- For massless leptons the vector/axial-vector leptonic tensor is conserved in its second
 slot: `L_{μν} q^ν = 0`. -/
-theorem lMuNuVA_apply_q_right_eq_zero (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem lMuNuVA_conserved_right (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
     (hk' : g K.kPrime K.kPrime = 0) (cV cA : ℝ) (v : V) :
     lMuNuVA g ε K cV cA v K.q = 0 := by

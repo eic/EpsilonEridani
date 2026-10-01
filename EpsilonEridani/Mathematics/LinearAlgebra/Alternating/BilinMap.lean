@@ -57,7 +57,7 @@ theorem bilinMap_apply (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v
 @[simp]
 theorem bilinMap_apply_self (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v : M) :
     f.bilinMap m v v = 0 :=
-  f.map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp) Fin.zero_ne_one
+  DFunLike.congr_fun (f.curryLeft_same v) m
 
 /-- `f.bilinMap m` is alternating. -/
 theorem isAlt_bilinMap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
@@ -74,26 +74,6 @@ theorem bilinMap_apply_right_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : F
     (i : Fin n) (v : M) : f.bilinMap m v (m i) = 0 :=
   f.map_eq_zero_of_eq _ (i := 1) (j := i.succ.succ) (by simp)
     (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _).symm)
-
-/-- The zero alternating map gives the zero bilinear map. -/
-@[simp]
-theorem bilinMap_zero (m : Fin n → M) : (0 : M [⋀^Fin (n + 2)]→ₗ[R] N).bilinMap m = 0 := by
-  ext
-  rfl
-
-/-- `AlternatingMap.bilinMap` is additive in the alternating map. -/
-@[simp]
-theorem bilinMap_add (f g : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
-    (f + g).bilinMap m = f.bilinMap m + g.bilinMap m := by
-  ext
-  rfl
-
-/-- `AlternatingMap.bilinMap` commutes with scalar multiplication of the alternating map. -/
-@[simp]
-theorem bilinMap_smul (c : R) (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
-    (c • f).bilinMap m = c • f.bilinMap m := by
-  ext
-  rfl
 
 end CommSemiring
 
