@@ -265,20 +265,6 @@ lemma two_xBj_mul_pq (g : Bilin V) (K : DisKinematics V) (hpq : g K.p K.q ≠ 0)
   unfold Kinematics.DisKinematics.xBj
   linear_combination hcancel
 
-/-- A non-zero Bjorken variable forces `p·q ≠ 0`, since `x = Q² / (2 p·q)`. -/
-lemma pq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj g ≠ 0) :
-    g K.p K.q ≠ 0 := by
-  intro h
-  apply hx
-  simp [Kinematics.DisKinematics.xBj, h]
-
-/-- A non-zero Bjorken variable forces `q² ≠ 0`, since `x = Q² / (2 p·q)` and `Q² = -q²`. -/
-lemma q_sq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj g ≠ 0) :
-    g K.q K.q ≠ 0 := by
-  intro h
-  apply hx
-  simp [Kinematics.DisKinematics.xBj, Kinematics.DisKinematics.Q2, h]
-
 /-- Value of a decomposed hadronic tensor on the longitudinal direction. -/
 lemma apply_pTransverse_self (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (F1 F2c : ℝ)
@@ -378,8 +364,8 @@ theorem FLExact_eq_zero_iff_apply_pTransverse_eq_zero (g : Bilin V) (K : DisKine
     (hW : IsF1F2Decomposition g K W F1 F2c) :
     FLExact M (K.xBj g) (K.Q2 g) F1 (structureF2 g K F2c) = 0
       ↔ W (pTransverse g K) (pTransverse g K) = 0 := by
-  have hpq := pq_ne_zero_of_xBj_ne_zero g K hx
-  have hQ2 := q_sq_ne_zero_of_xBj_ne_zero g K hx
+  have hpq := K.pq_ne_zero_of_xBj_ne_zero g hx
+  have hQ2 := K.q_sq_ne_zero_of_xBj_ne_zero g hx
   have key := two_xBj_mul_apply_pTransverse g K W hSymm hQ2 hpq hM F1 F2c hW
   constructor
   · intro h
@@ -397,7 +383,7 @@ theorem FLExact_nonneg_iff_apply_pTransverse_nonneg (g : Bilin V) (K : DisKinema
     (hx : 0 < K.xBj g) (F1 F2c : ℝ) (hW : IsF1F2Decomposition g K W F1 F2c) :
     0 ≤ FLExact M (K.xBj g) (K.Q2 g) F1 (structureF2 g K F2c)
       ↔ 0 ≤ W (pTransverse g K) (pTransverse g K) := by
-  have hpq := pq_ne_zero_of_xBj_ne_zero g K hx.ne'
+  have hpq := K.pq_ne_zero_of_xBj_ne_zero g hx.ne'
   have key := two_xBj_mul_apply_pTransverse g K W hSymm
     ((q_sq_ne_zero_iff g K).mpr hQ2.ne') hpq hM F1 F2c hW
   have hT := pTransverse_self_pos g K hSymm hQ2 hpq (hM ▸ sq_nonneg M)
@@ -415,8 +401,8 @@ theorem isCallanGross_iff_apply_pTransverse_eq_zero (g : Bilin V) (K : DisKinema
     (hW : IsF1F2Decomposition g K W F1 F2c) :
     IsCallanGross (K.xBj g) F1 (structureF2 g K F2c)
       ↔ W (pTransverse g K) (pTransverse g K) = 0 := by
-  have hpq := pq_ne_zero_of_xBj_ne_zero g K hx
-  have hQ2 := q_sq_ne_zero_of_xBj_ne_zero g K hx
+  have hpq := K.pq_ne_zero_of_xBj_ne_zero g hx
+  have hQ2 := K.q_sq_ne_zero_of_xBj_ne_zero g hx
   have hT : g (pTransverse g K) (pTransverse g K) ≠ 0 := by
     have h1 := Q2_mul_pTransverse_self g K hSymm hQ2
     rw [hTwist, mul_zero, zero_add] at h1
