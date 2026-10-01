@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Field.Rat
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -152,27 +151,6 @@ theorem harmonicSum_cons_eq_sum_Icc (a : ℤ) (m : List ℤ) (n : ℕ) :
     Finset.sum_Ico_add' (fun i => term a i * harmonicSum m i) 0 n (c := 1)]
   simp only [zero_add, Finset.Ico_add_one_right_eq_Icc]
 
-namespace HarmonicSum
-
-/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `0`
-gives `0`. -/
-theorem linearCombination_mapDomain_cons_zero (a : ℤ) (c : List ℤ →₀ ℤ) :
-    Finsupp.linearCombination ℤ (harmonicSum · 0) (c.mapDomain (a :: ·)) = 0 := by
-  rw [Finsupp.linearCombination_mapDomain]
-  simp [Finsupp.linearCombination_apply, Function.comp_def]
-
-/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `N + 1`:
-the recursion `harmonicSum_cons_succ`, extended linearly. -/
-theorem linearCombination_mapDomain_cons_succ (a : ℤ) (c : List ℤ →₀ ℤ) (n : ℕ) :
-    Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) (c.mapDomain (a :: ·)) =
-      Finsupp.linearCombination ℤ (harmonicSum · n) (c.mapDomain (a :: ·)) +
-        term a (n + 1) * Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) c := by
-  rw [Finsupp.linearCombination_mapDomain, Finsupp.linearCombination_mapDomain]
-  simp only [Finsupp.linearCombination_apply, Function.comp_def, harmonicSum_cons_succ, smul_add,
-    Finsupp.sum_add, Finsupp.mul_sum, mul_smul_comm]
-
-end HarmonicSum
-
 /-- The first harmonic sum `S₁` is Mathlib's `harmonic`. -/
 theorem harmonicSum_singleton_one_eq_harmonic (n : ℕ) : harmonicSum [1] n = harmonic n := by
   simp [harmonicSum_cons, harmonic]
@@ -204,13 +182,16 @@ theorem harmonicSum_pos {m : List ℤ} (hm : ∀ a ∈ m, 0 < a) {n : ℕ} (hn :
 
 /-! ### Small values -/
 
-example : harmonicSum [1] 1 = 1 := by
+/-- `S₁(1) = 1`. -/
+theorem harmonicSum_singleton_one_one : harmonicSum [1] 1 = 1 := by
   norm_num [harmonicSum_cons]
 
-example : harmonicSum [1] 2 = 3 / 2 := by
+/-- `S₁(2) = 3/2`. -/
+theorem harmonicSum_singleton_one_two : harmonicSum [1] 2 = 3 / 2 := by
   norm_num [harmonicSum_cons, Finset.sum_range_succ]
 
-example : harmonicSum [2] 2 = 5 / 4 := by
+/-- `S₂(2) = 5/4`. -/
+theorem harmonicSum_singleton_two_two : harmonicSum [2] 2 = 5 / 4 := by
   norm_num [harmonicSum_cons, Finset.sum_range_succ, term_of_pos]
 
 example : harmonicSum [-1] 2 = -1 / 2 := by

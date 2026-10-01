@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.HarmonicSum.Basic
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -43,10 +44,9 @@ resulting algebra structure are not formalised here.
 * `EpsilonEridani.HarmonicSum.quasiShuffle_comm`: the product is commutative.
 * `EpsilonEridani.HarmonicSum.weight_of_mem_support_quasiShuffle`: for indices that are all
   non-zero, the product is homogeneous of weight `weight m + weight m'`, and its multi-indices
-  again have non-zero entries (`ne_zero_of_mem_support_quasiShuffle`).
-
-The depth-one relation `S_a S_b = S_{a,b} + S_{b,a} - S_{a ⋄ b}` and its special case
-`S₁ S₁ = 2 S_{1,1} - S₂` are worked out as examples at the end of the file.
+  again have non-zero entries (`forall_ne_zero_of_mem_support_quasiShuffle`).
+* `EpsilonEridani.harmonicSum_singleton_mul_singleton`: `S_a S_b = S_{a,b} + S_{b,a} - S_{a ⋄ b}`,
+  and its special case `S₁ S₁ = 2 S_{1,1} - S₂` (`harmonicSum_singleton_one_mul_self`).
 
 ## References
 
@@ -158,9 +158,10 @@ theorem quasiShuffle_comm (m m' : List ℤ) : quasiShuffle m m' = quasiShuffle m
 quasi-shuffle product of `m` and `m'` has weight `weight m + weight m'` and again has non-zero
 entries. The two conclusions are proved together because the induction for the weight needs the
 non-vanishing of the entries; they are stated separately as
-`weight_of_mem_support_quasiShuffle` and `ne_zero_of_mem_support_quasiShuffle`. -/
-theorem weight_and_ne_zero_of_mem_support_quasiShuffle {m m' : List ℤ} (hm : ∀ a ∈ m, a ≠ 0)
-    (hm' : ∀ b ∈ m', b ≠ 0) {w : List ℤ} (hw : w ∈ (quasiShuffle m m').support) :
+`weight_of_mem_support_quasiShuffle` and `forall_ne_zero_of_mem_support_quasiShuffle`. -/
+private theorem weight_and_forall_ne_zero_of_mem_support_quasiShuffle {m m' : List ℤ}
+    (hm : ∀ a ∈ m, a ≠ 0) (hm' : ∀ b ∈ m', b ≠ 0) {w : List ℤ}
+    (hw : w ∈ (quasiShuffle m m').support) :
     weight w = weight m + weight m' ∧ ∀ c ∈ w, c ≠ 0 := by
   classical
   induction m, m' using quasiShuffle.induct generalizing w with
@@ -204,20 +205,38 @@ homogeneous for the weight grading. -/
 theorem weight_of_mem_support_quasiShuffle {m m' : List ℤ} (hm : ∀ a ∈ m, a ≠ 0)
     (hm' : ∀ b ∈ m', b ≠ 0) {w : List ℤ} (hw : w ∈ (quasiShuffle m m').support) :
     weight w = weight m + weight m' :=
-  (weight_and_ne_zero_of_mem_support_quasiShuffle hm hm' hw).1
+  (weight_and_forall_ne_zero_of_mem_support_quasiShuffle hm hm' hw).1
 
 /-- For multi-indices whose entries are all non-zero, every multi-index occurring in the
 quasi-shuffle product of `m` and `m'` again has non-zero entries. Together with
 `weight_of_mem_support_quasiShuffle` this lets the weight grading be applied to iterated
 products. -/
-theorem ne_zero_of_mem_support_quasiShuffle {m m' : List ℤ} (hm : ∀ a ∈ m, a ≠ 0)
-    (hm' : ∀ b ∈ m', b ≠ 0) {w : List ℤ} (hw : w ∈ (quasiShuffle m m').support) :
+theorem forall_ne_zero_of_mem_support_quasiShuffle {m m' : List ℤ}
+    (hm : ∀ a ∈ m, a ≠ 0) (hm' : ∀ b ∈ m', b ≠ 0) {w : List ℤ}
+    (hw : w ∈ (quasiShuffle m m').support) :
     ∀ c ∈ w, c ≠ 0 :=
-  (weight_and_ne_zero_of_mem_support_quasiShuffle hm hm' hw).2
+  (weight_and_forall_ne_zero_of_mem_support_quasiShuffle hm hm' hw).2
 
 end HarmonicSum
 
 open HarmonicSum
+
+/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `0`
+gives `0`. -/
+theorem harmonicSum_linearCombination_mapDomain_cons_zero (a : ℤ) (c : List ℤ →₀ ℤ) :
+    Finsupp.linearCombination ℤ (harmonicSum · 0) (c.mapDomain (a :: ·)) = 0 := by
+  rw [Finsupp.linearCombination_mapDomain]
+  simp [Finsupp.linearCombination_apply, Function.comp_def]
+
+/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `N + 1`:
+the recursion `harmonicSum_cons_succ`, extended linearly. -/
+theorem harmonicSum_linearCombination_mapDomain_cons_succ (a : ℤ) (c : List ℤ →₀ ℤ) (n : ℕ) :
+    Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) (c.mapDomain (a :: ·)) =
+      Finsupp.linearCombination ℤ (harmonicSum · n) (c.mapDomain (a :: ·)) +
+        term a (n + 1) * Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) c := by
+  rw [Finsupp.linearCombination_mapDomain, Finsupp.linearCombination_mapDomain]
+  simp only [Finsupp.linearCombination_apply, Function.comp_def, harmonicSum_cons_succ, smul_add,
+    Finsupp.sum_add, Finsupp.mul_sum, mul_smul_comm]
 
 /-- **The quasi-shuffle relation.** The product of two nested harmonic sums of the same argument
 is the evaluation at that argument of the quasi-shuffle product of their multi-indices. -/
@@ -233,29 +252,27 @@ theorem harmonicSum_mul_harmonicSum (m m' : List ℤ) (n : ℕ) :
     -- shorter products and `term_indexMul`.
     induction n with
     | zero =>
-      simp only [quasiShuffle_cons_cons, map_sub, map_add, linearCombination_mapDomain_cons_zero]
+      simp only [quasiShuffle_cons_cons, map_sub, map_add,
+        harmonicSum_linearCombination_mapDomain_cons_zero]
       simp
     | succ n ihn =>
-      simp only [quasiShuffle_cons_cons, map_sub, map_add, linearCombination_mapDomain_cons_succ,
-        ← ih₁, ← ih₂, ← ih₃, term_indexMul a b n.add_one_ne_zero] at ihn ⊢
+      simp only [quasiShuffle_cons_cons, map_sub, map_add,
+        harmonicSum_linearCombination_mapDomain_cons_succ, ← ih₁, ← ih₂, ← ih₃,
+        term_indexMul a b n.add_one_ne_zero] at ihn ⊢
       rw [harmonicSum_cons_succ a m n, harmonicSum_cons_succ b m' n]
       linear_combination ihn
 
-/-! ### Examples -/
-
 /-- The quasi-shuffle relation in depth one: `S_a S_b = S_{a,b} + S_{b,a} - S_{a ⋄ b}`. -/
-example (a b : ℤ) (n : ℕ) :
+theorem harmonicSum_singleton_mul_singleton (a b : ℤ) (n : ℕ) :
     harmonicSum [a] n * harmonicSum [b] n =
       harmonicSum [a, b] n + harmonicSum [b, a] n - harmonicSum [indexMul a b] n := by
   rw [harmonicSum_mul_harmonicSum, quasiShuffle_cons_cons]
   simp [Finsupp.mapDomain_single]
 
 /-- The simplest quasi-shuffle relation, `S₁(N) S₁(N) = 2 S_{1,1}(N) - S₂(N)`. -/
-example (n : ℕ) :
+theorem harmonicSum_singleton_one_mul_self (n : ℕ) :
     harmonicSum [1] n * harmonicSum [1] n = 2 * harmonicSum [1, 1] n - harmonicSum [2] n := by
-  rw [harmonicSum_mul_harmonicSum, quasiShuffle_cons_cons]
-  have : indexMul 1 1 = 2 := by decide
-  simp [Finsupp.mapDomain_single, this]
+  rw [harmonicSum_singleton_mul_singleton, show indexMul 1 1 = 2 by decide]
   ring
 
 end EpsilonEridani
