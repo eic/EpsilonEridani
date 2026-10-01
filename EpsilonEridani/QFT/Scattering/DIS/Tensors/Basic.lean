@@ -73,8 +73,7 @@ structure needs an alternating four-form supplied as data; the leptonic side doe
 `IsLorentzCovariant` is not the covariance notion it needs: for a volume form `ε` on a
 four-dimensional space, a reflection in the kinematic stabilizer reverses the sign of
 `ε(·, ·, p, q)`, so that term satisfies `IsLorentzCovariant` only if it vanishes. The
-parity-odd hadronic sector is treated in `Tensors.ParityOdd`, which takes the role of
-`ε(·, ·, p, q)` as data.
+parity-odd hadronic sector is treated in `Tensors.ParityOdd`, under `IsProperLorentzCovariant`.
 
 -/
 
@@ -199,9 +198,9 @@ lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u �
   have h : reflect g u = LinearMap.transvection (-(2 * (g u u)⁻¹) • g u) u := by
     ext v
     simp [LinearMap.transvection.apply, sub_eq_add_neg, neg_smul, mul_assoc]
-  rw [h, LinearMap.transvection.det]
-  simp [hu]
-  norm_num
+  rw [h, LinearMap.transvection.det, LinearMap.smul_apply, smul_eq_mul]
+  field_simp
+  ring
 
 end Bilin
 

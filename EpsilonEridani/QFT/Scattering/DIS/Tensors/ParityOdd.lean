@@ -15,16 +15,17 @@ unpolarized target acquires the parity-odd structure `F₃ ε^{μναβ} p_α q_
 (Devenish & Cooper-Sarkar, *Deep Inelastic Scattering* (2004), ch. 3; Halzen & Martin,
 *Quarks and Leptons* (1984), ch. 8). Hermiticity makes that term the imaginary, antisymmetric
 part of the tensor; in the real bilinear forms of `Tensors.Basic` it is represented by an
-antisymmetric form. This module proves that the antisymmetric, conserved, covariant tensors are
-exactly the multiples of a single structure `A`, the role played by `ε(·, ·, p, q)`, which on an
-abstract real vector space is supplied as data.
+antisymmetric form. This module proves that, under a `SpectatorPlane`, the antisymmetric,
+conserved, covariant tensors are exactly the multiples of a single non-zero structure `A`, the
+role played by `ε(·, ·, p, q)`, which on an abstract real vector space is supplied as data.
 
 ## Proper covariance
 
 `IsLorentzCovariant` asks for invariance under *every* `g`-isometry fixing `p` and `q`. Such
 isometries include reflections in spectator directions, and a reflection reverses the sign of
-`ε(·, ·, p, q)`. Full covariance is therefore the statement of parity conservation, and it
-kills every antisymmetric conserved tensor (`ParityOddAssumptions.eq_zero_of_isLorentzCovariant`).
+`ε(·, ·, p, q)`. Full covariance is therefore the statement of parity conservation, and once
+every non-zero spectator direction is non-null it kills every antisymmetric conserved tensor
+(`ParityOddAssumptions.eq_zero_of_isLorentzCovariant`).
 The parity-odd sector is governed instead by `IsProperLorentzCovariant`: invariance under the
 stabilizer elements of determinant one.
 
@@ -41,12 +42,13 @@ stabilizer elements of determinant one.
 
 - `ParityOddAssumptions.apply_eq_mul_apply_e₁_e₂`: under a `SpectatorPlane`, a parity-odd
   tensor is determined by its single component `W e₁ e₂`.
-- `ParityOddAssumptions.existsUnique_eq_smul`: any two parity-odd tensors are proportional, so
-  a non-zero one `A` spans them all, with a unique coefficient.
-- `existsUnique_sub_flip_eq_smul`: the antisymmetric part `W - Wᵀ` of any conserved, properly
-  covariant tensor is a unique multiple of `A`.
-- `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under full covariance the parity-odd
-  part vanishes.
+- `ParityOddAssumptions.existsUnique_eq_smul`: under a `SpectatorPlane`, any two parity-odd
+  tensors are proportional, so a non-zero one `A` spans them all, with a unique coefficient.
+- `existsUnique_sub_flip_eq_smul`: under a `SpectatorPlane`, the antisymmetric part `W - Wᵀ` of
+  any conserved, properly covariant tensor is a unique multiple of a non-zero parity-odd `A`.
+- `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: when every vector splits into `p_T`, `q`
+  and spectator parts, and non-zero spectators are non-null, the parity-odd part vanishes under
+  full covariance. No four-dimensionality enters.
 - `Witness.parityOddAssumptions_aFour` and `Witness.aFour_ne_zero`: on Minkowski space `ℝ⁴`
   the contraction `ε(·, ·, p, q)` of the determinant is a non-zero parity-odd tensor, so the
   parity-odd sector there is exactly one-dimensional.
@@ -80,7 +82,7 @@ def IsProperLorentzCovariant (g : Bilin V) (K : DisKinematics V) (W : Bilin V) :
     ∀ v w : V, W (f v) (f w) = W v w
 
 /-- The defining property of `IsProperLorentzCovariant`. -/
-lemma isProperLorentzCovariant_iff {g : Bilin V} {K : DisKinematics V} {W : Bilin V} :
+lemma isProperLorentzCovariant_def {g : Bilin V} {K : DisKinematics V} {W : Bilin V} :
     IsProperLorentzCovariant g K W ↔ ∀ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f →
       LinearMap.det f = 1 → ∀ v w : V, W (f v) (f w) = W v w :=
   Iff.rfl
@@ -95,13 +97,6 @@ lemma IsProperLorentzCovariant.smul {g : Bilin V} {K : DisKinematics V} {W : Bil
     (hW : IsProperLorentzCovariant g K W) (c : ℝ) : IsProperLorentzCovariant g K (c • W) := by
   intro f hf hdet v w
   simp only [LinearMap.smul_apply, hW f hf hdet v w]
-
-/-- Proper covariance is preserved by sums. -/
-lemma IsProperLorentzCovariant.add {g : Bilin V} {K : DisKinematics V} {W W' : Bilin V}
-    (hW : IsProperLorentzCovariant g K W) (hW' : IsProperLorentzCovariant g K W') :
-    IsProperLorentzCovariant g K (W + W') := by
-  intro f hf hdet v w
-  simp only [LinearMap.add_apply, hW f hf hdet v w, hW' f hf hdet v w]
 
 /-- Proper covariance is preserved by differences. -/
 lemma IsProperLorentzCovariant.sub {g : Bilin V} {K : DisKinematics V} {W W' : Bilin V}
@@ -182,19 +177,19 @@ structure SpectatorPlane (g : Bilin V) (K : DisKinematics V) : Type where
   /-- The second spectator direction. -/
   e₂ : V
   /-- `e₁` is orthogonal to the momentum transfer. -/
-  q_e₁ : g K.q e₁ = 0
+  e₁_orthogonal_q : g K.q e₁ = 0
   /-- `e₂` is orthogonal to the momentum transfer. -/
-  q_e₂ : g K.q e₂ = 0
+  e₂_orthogonal_q : g K.q e₂ = 0
   /-- `e₁` is orthogonal to the transverse hadron momentum. -/
-  pT_e₁ : g (pTransverse g K) e₁ = 0
+  e₁_orthogonal_pT : g (pTransverse g K) e₁ = 0
   /-- `e₂` is orthogonal to the transverse hadron momentum. -/
-  pT_e₂ : g (pTransverse g K) e₂ = 0
+  e₂_orthogonal_pT : g (pTransverse g K) e₂ = 0
   /-- The two spectator directions are orthogonal. -/
-  e₁_e₂ : g e₁ e₂ = 0
+  e₁_orthogonal_e₂ : g e₁ e₂ = 0
   /-- `e₁` is not null. -/
-  e₁_e₁ : g e₁ e₁ ≠ 0
+  e₁_self_ne_zero : g e₁ e₁ ≠ 0
   /-- `e₂` is not null. -/
-  e₂_e₂ : g e₂ e₂ ≠ 0
+  e₂_self_ne_zero : g e₂ e₂ ≠ 0
   /-- The frame spans `V`. -/
   span : ∀ v : V, ∃ a b c₁ c₂ : ℝ, v = a • pTransverse g K + b • K.q + c₁ • e₁ + c₂ • e₂
 
@@ -202,28 +197,40 @@ namespace SpectatorPlane
 
 variable {g : Bilin V} {K : DisKinematics V}
 
+/-- A space carrying a `SpectatorPlane` is finite-dimensional: the four frame vectors span
+it. -/
+lemma finite (hP : SpectatorPlane g K) : Module.Finite ℝ V := by
+  classical
+  refine Module.finite_def.mpr ⟨{pTransverse g K, K.q, hP.e₁, hP.e₂}, eq_top_iff.mpr ?_⟩
+  intro v _
+  obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
+  refine add_mem (add_mem (add_mem ?_ ?_) ?_) ?_ <;>
+    exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp))
+
 /-- There is a kinematic stabilizer element of determinant one reversing both spectator
 directions `e₁` and `e₂`. -/
 private lemma exists_halfTurn (hSymm : g.IsSymm) (hP : SpectatorPlane g K) :
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
       f hP.e₁ = -hP.e₁ ∧ f hP.e₂ = -hP.e₂ := by
-  have h₁ := reflect_isKinematicStabilizer g K hSymm _ hP.e₁_e₁
-    (apply_p_eq_zero_of_spectator g K hSymm hP.q_e₁ hP.pT_e₁) (by rw [hSymm.eq, hP.q_e₁])
-  have h₂ := reflect_isKinematicStabilizer g K hSymm _ hP.e₂_e₂
-    (apply_p_eq_zero_of_spectator g K hSymm hP.q_e₂ hP.pT_e₂) (by rw [hSymm.eq, hP.q_e₂])
-  have h₂₁ : g hP.e₂ hP.e₁ = 0 := by rw [hSymm.eq, hP.e₁_e₂]
+  have h₁ := reflect_isKinematicStabilizer g K hSymm _ hP.e₁_self_ne_zero
+    (apply_p_eq_zero_of_spectator g K hSymm hP.e₁_orthogonal_q hP.e₁_orthogonal_pT)
+    (by rw [hSymm.eq, hP.e₁_orthogonal_q])
+  have h₂ := reflect_isKinematicStabilizer g K hSymm _ hP.e₂_self_ne_zero
+    (apply_p_eq_zero_of_spectator g K hSymm hP.e₂_orthogonal_q hP.e₂_orthogonal_pT)
+    (by rw [hSymm.eq, hP.e₂_orthogonal_q])
+  have h₂₁ : g hP.e₂ hP.e₁ = 0 := by rw [hSymm.eq, hP.e₁_orthogonal_e₂]
   refine ⟨Bilin.reflect g hP.e₁ ∘ₗ Bilin.reflect g hP.e₂,
     ⟨fun v w => by simp only [LinearMap.comp_apply, h₁.isometry _ _, h₂.isometry _ _],
       by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
       by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩, ?_, ?_, ?_⟩
-  · by_cases hfin : Module.Finite ℝ V
-    · rw [LinearMap.det_comp, Bilin.det_reflect g hP.e₁_e₁, Bilin.det_reflect g hP.e₂_e₂]
-      norm_num
-    · exact LinearMap.det_eq_one_of_not_module_finite hfin _
+  · have := hP.finite
+    rw [LinearMap.det_comp, Bilin.det_reflect g hP.e₁_self_ne_zero,
+      Bilin.det_reflect g hP.e₂_self_ne_zero]
+    norm_num
   · rw [LinearMap.comp_apply, Bilin.reflect_apply_of_orthogonal g _ _ h₂₁,
-      Bilin.reflect_apply_self g _ hP.e₁_e₁]
-  · rw [LinearMap.comp_apply, Bilin.reflect_apply_self g _ hP.e₂_e₂, map_neg,
-      Bilin.reflect_apply_of_orthogonal g _ _ hP.e₁_e₂]
+      Bilin.reflect_apply_self g _ hP.e₁_self_ne_zero]
+  · rw [LinearMap.comp_apply, Bilin.reflect_apply_self g _ hP.e₂_self_ne_zero, map_neg,
+      Bilin.reflect_apply_of_orthogonal g _ _ hP.e₁_orthogonal_e₂]
 
 end SpectatorPlane
 
@@ -231,20 +238,13 @@ namespace ParityOddAssumptions
 
 variable {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
 
-/-- A parity-odd tensor has no component mixing `p_T` with the spectator direction `e₁`. -/
-lemma apply_pTransverse_e₁_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
-    (hW : ParityOddAssumptions g K W) : W (pTransverse g K) hP.e₁ = 0 := by
-  obtain ⟨f, hf, hdet, hf₁, -⟩ := hP.exists_halfTurn hSymm
-  have h := hW.covariant f hf hdet (pTransverse g K) hP.e₁
-  rw [stabilizer_fixes_pTransverse g K hf, hf₁, map_neg] at h
-  linarith
-
-/-- A parity-odd tensor has no component mixing `p_T` with the spectator direction `e₂`. -/
-lemma apply_pTransverse_e₂_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
-    (hW : ParityOddAssumptions g K W) : W (pTransverse g K) hP.e₂ = 0 := by
-  obtain ⟨f, hf, hdet, -, hf₂⟩ := hP.exists_halfTurn hSymm
-  have h := hW.covariant f hf hdet (pTransverse g K) hP.e₂
-  rw [stabilizer_fixes_pTransverse g K hf, hf₂, map_neg] at h
+/-- A parity-odd tensor has no component mixing `p_T` with a vector `u` reversed by some
+kinematic stabilizer element of determinant one. -/
+lemma apply_pTransverse_eq_zero_of_apply_eq_neg (hW : ParityOddAssumptions g K W)
+    {f : V →ₗ[ℝ] V} {u : V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
+    (hfu : f u = -u) : W (pTransverse g K) u = 0 := by
+  have h := hW.covariant f hf hdet (pTransverse g K) u
+  rw [stabilizer_fixes_pTransverse g K hf, hfu, map_neg] at h
   linarith
 
 /-- **A parity-odd tensor has a single component.** In the adapted frame of a
@@ -255,14 +255,31 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     W (a • pTransverse g K + b • K.q + c₁ • hP.e₁ + c₂ • hP.e₂)
         (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
       (c₁ * d₂ - c₂ * d₁) * W hP.e₁ hP.e₂ := by
-  have h₁ := hW.apply_pTransverse_e₁_eq_zero hSymm hP
-  have h₂ := hW.apply_pTransverse_e₂_eq_zero hSymm hP
+  obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_halfTurn hSymm
+  have h₁ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
+  have h₂ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
   have h₁' : W hP.e₁ (pTransverse g K) = 0 := by rw [← hW.isAlt.neg_eq, h₁, neg_zero]
   have h₂' : W hP.e₂ (pTransverse g K) = 0 := by rw [← hW.isAlt.neg_eq, h₂, neg_zero]
   have h₂₁ : W hP.e₂ hP.e₁ = -W hP.e₁ hP.e₂ := (hW.isAlt.neg_eq _ _).symm
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
     hW.conserved_left, hW.conserved_right, hW.isAlt.self_eq_zero, h₁, h₂, h₁', h₂', h₂₁]
   ring
+
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates the transverse hadron momentum
+`p_T`. -/
+lemma apply_pTransverse_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (v : V) : W (pTransverse g K) v = 0 := by
+  obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
+  have h := hW.apply_eq_mul_apply_e₁_e₂ hSymm hP 1 0 0 0 a b c₁ c₂
+  simpa only [one_smul, zero_smul, add_zero, zero_mul, sub_zero] using h
+
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates the hadron momentum `p`. -/
+lemma apply_p_eq_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (v : V) : W K.p v = 0 := by
+  have hp : K.p = pTransverse g K + (g K.p K.q / g K.q K.q) • K.q := by
+    rw [pTransverse, sub_add_cancel]
+  rw [hp, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
+    hW.apply_pTransverse_eq_zero hSymm hP, hW.conserved_left, smul_zero, add_zero]
 
 /-- Two parity-odd tensors agreeing on the spectator pair `(e₁, e₂)` are equal. -/
 lemma eq_of_apply_e₁_e₂_eq (hSymm : g.IsSymm) (hP : SpectatorPlane g K) {W' : Bilin V}
@@ -294,15 +311,41 @@ theorem existsUnique_eq_smul (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     simp only [LinearMap.smul_apply, smul_eq_mul]
     field_simp
 
-/-- **Parity conservation removes the parity-odd sector.** Under a `SpectatorPlane`, a
-parity-odd tensor that is covariant under every stabilizer element, reflections included,
-vanishes. -/
-theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
-    (hW : ParityOddAssumptions g K W) (hcov : IsLorentzCovariant g K W) : W = 0 :=
-  (hW.eq_zero_iff hSymm hP).mpr <|
-    covariant_spectator_offDiagonal_zero g K W hSymm hcov hP.e₁ hP.e₂ hP.e₁_e₁
-      (apply_p_eq_zero_of_spectator g K hSymm hP.q_e₁ hP.pT_e₁) (by rw [hSymm.eq, hP.q_e₁])
-      hP.e₁_e₂
+/-- **Parity conservation removes the parity-odd sector.** If every vector splits into a
+`p_T` part, a `q` part and a spectator part orthogonal to both (as in
+`SpectatorAssumptions.span`), and every non-zero spectator is non-null, then a parity-odd tensor
+that is covariant under every stabilizer element, reflections included, vanishes. No
+dimension hypothesis is needed. -/
+theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm)
+    (hspan : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
+      v = a • pTransverse g K + b • K.q + u)
+    (hnull : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u ≠ 0)
+    (hW : ParityOddAssumptions g K W) (hcov : IsLorentzCovariant g K W) : W = 0 := by
+  -- The reflection in a spectator `u` kills every component of `W` between `u` and `u^⊥`.
+  have hperp : ∀ u v : V, g K.q u = 0 → g (pTransverse g K) u = 0 → g u v = 0 →
+      W u v = 0 := by
+    intro u v huq huT huv
+    by_cases hu : u = 0
+    · simp [hu]
+    exact covariant_spectator_offDiagonal_zero g K W hSymm hcov u v (hnull u huq huT hu)
+      (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq]) huv
+  -- Two spectators: split `u'` along `u` and its orthogonal complement.
+  have hspec : ∀ u u' : V, g K.q u = 0 → g (pTransverse g K) u = 0 → W u u' = 0 := by
+    intro u u' huq huT
+    by_cases hu : u = 0
+    · simp [hu]
+    have huu := hnull u huq huT hu
+    have h := hperp u (u' - (g u u' / g u u) • u) huq huT (by
+      rw [map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ huu, sub_self])
+    rwa [map_sub, map_smul, hW.isAlt.self_eq_zero, smul_zero, sub_zero] at h
+  refine LinearMap.ext₂ fun v w => ?_
+  obtain ⟨a, b, u, huq, huT, rfl⟩ := hspan v
+  obtain ⟨a', b', u', hu'q, hu'T, rfl⟩ := hspan w
+  have hTu' : W (pTransverse g K) u' = 0 := by
+    rw [← hW.isAlt.neg_eq, hspec u' _ hu'q hu'T, neg_zero]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    hW.conserved_left, hW.conserved_right, hW.isAlt.self_eq_zero, hTu', hspec u _ huq huT,
+    LinearMap.zero_apply]
 
 end ParityOddAssumptions
 
@@ -406,13 +449,13 @@ lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour where
 def spectatorPlaneFour : SpectatorPlane gFour kFour where
   e₁ := ![0, 1, 0, 0]
   e₂ := ![0, 0, 1, 0]
-  q_e₁ := by simp
-  q_e₂ := by simp
-  pT_e₁ := by simp
-  pT_e₂ := by simp
-  e₁_e₂ := by simp
-  e₁_e₁ := by simp
-  e₂_e₂ := by simp
+  e₁_orthogonal_q := by simp
+  e₂_orthogonal_q := by simp
+  e₁_orthogonal_pT := by simp
+  e₂_orthogonal_pT := by simp
+  e₁_orthogonal_e₂ := by simp
+  e₁_self_ne_zero := by simp
+  e₂_self_ne_zero := by simp
   span v := ⟨v 0, v 3, v 1, v 2, by ext i; fin_cases i <;> simp⟩
 
 @[simp] lemma spectatorPlaneFour_e₁ : spectatorPlaneFour.e₁ = ![0, 1, 0, 0] := (rfl)
@@ -431,7 +474,18 @@ lemma aFour_ne_zero : aFour ≠ 0 := by
 non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
 lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour aFour := fun h =>
   aFour_ne_zero (parityOddAssumptions_aFour.eq_zero_of_isLorentzCovariant gFour_isSymm
-    spectatorPlaneFour h)
+    (fun v => ⟨v 0, v 3, ![0, v 1, v 2, 0], by simp, by simp,
+      by ext i; fin_cases i <;> simp⟩)
+    (fun u hq hT hu => by
+      simp only [kFour_q, pTransverse_kFour, gFour_apply] at hq hT ⊢
+      have h₀ : u 0 = 0 := by simpa using hT
+      have h₃ : u 3 = 0 := by simpa using hq
+      have h₁₂ : u 1 ≠ 0 ∨ u 2 ≠ 0 := by
+        by_contra! h
+        exact hu (funext fun i => by fin_cases i <;> simp [h₀, h₃, h.1, h.2])
+      rcases h₁₂ with h | h <;> nlinarith [mul_self_pos.mpr h, mul_self_nonneg (u 1),
+        mul_self_nonneg (u 2)])
+    h)
 
 end Witness
 
