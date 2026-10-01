@@ -325,17 +325,23 @@ def lMuNuVA (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.Di
     (cV cA : ℝ) : Bilin V :=
   (cV ^ 2 + cA ^ 2) • lMuNu g K + (2 * cV * cA) • lMuNuOdd ε K
 
+/-- The vector/axial-vector leptonic tensor as a combination of bilinear forms. -/
+lemma lMuNuVA_def (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
+    (cV cA : ℝ) :
+    lMuNuVA g ε K cV cA = (cV ^ 2 + cA ^ 2) • lMuNu g K + (2 * cV * cA) • lMuNuOdd ε K :=
+  (rfl)
+
 /-- Pointwise value of the vector/axial-vector leptonic tensor. -/
 @[simp] lemma lMuNuVA_apply (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) (cV cA : ℝ) (v w : V) :
     lMuNuVA g ε K cV cA v w
       = (cV ^ 2 + cA ^ 2) * lMuNu g K v w + 2 * cV * cA * lMuNuOdd ε K v w := by
-  simp [lMuNuVA]
+  simp [lMuNuVA_def]
 
 /-- A pure vector coupling of unit strength gives back the vector-exchange tensor `lMuNu`. -/
 @[simp] lemma lMuNuVA_one_zero (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : Kinematics.DisKinematics V) : lMuNuVA g ε K 1 0 = lMuNu g K := by
-  simp [lMuNuVA]
+  simp [lMuNuVA_def]
 
 /-- Exchanging the arguments of the vector/axial-vector leptonic tensor reverses the sign of its
 parity-odd part. -/
@@ -346,7 +352,7 @@ lemma lMuNuVA_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinema
   have hOdd : (lMuNuOdd ε K).flip = -lMuNuOdd ε K := by
     ext v w
     simp [(isAlt_lMuNuOdd ε K).neg_eq]
-  simp only [lMuNuVA, map_add, map_smul,
+  simp only [lMuNuVA_def, map_add, map_smul,
     LinearMap.BilinForm.isSymm_iff_flip.mp (lMuNu_isSymm g K hSymm), hOdd]
   module
 
@@ -355,7 +361,7 @@ theorem inv_two_smul_lMuNuVA_add_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[�
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
     (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA + (lMuNuVA g ε K cV cA).flip)
       = (cV ^ 2 + cA ^ 2) • lMuNu g K := by
-  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA]
+  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA_def]
   module
 
 /-- The antisymmetric part of the vector/axial-vector leptonic tensor is `2 c_V c_A` times the
@@ -364,7 +370,7 @@ theorem inv_two_smul_lMuNuVA_sub_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[�
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
     (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA - (lMuNuVA g ε K cV cA).flip)
       = (2 * cV * cA) • lMuNuOdd ε K := by
-  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA]
+  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA_def]
   module
 
 /-- Contracting the vector/axial-vector leptonic tensor with `q = k - k'` in the first slot

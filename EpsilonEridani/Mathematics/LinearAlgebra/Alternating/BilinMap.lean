@@ -66,11 +66,13 @@ theorem isAlt_bilinMap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
   f.bilinMap_apply_self m
 
 /-- `f.bilinMap m` vanishes when its first argument is one of the fixed vectors. -/
+@[simp]
 theorem bilinMap_apply_left_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M)
     (i : Fin n) (w : M) : f.bilinMap m (m i) w = 0 :=
   f.map_eq_zero_of_eq _ (i := 0) (j := i.succ.succ) (by simp) (Fin.succ_ne_zero _).symm
 
 /-- `f.bilinMap m` vanishes when its second argument is one of the fixed vectors. -/
+@[simp]
 theorem bilinMap_apply_right_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M)
     (i : Fin n) (v : M) : f.bilinMap m v (m i) = 0 :=
   f.map_eq_zero_of_eq _ (i := 1) (j := i.succ.succ) (by simp)
