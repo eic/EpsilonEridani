@@ -113,6 +113,8 @@ kernel — `Measure.dirac x` is then the physical choice — which is a change t
   e⁺e⁻ annihilation by perturbation theory in quantum chromodynamics*,
   Sov. Phys. JETP **46** (1977) 641.
 * J. Collins, *Foundations of Perturbative QCD*, Cambridge University Press (2011).
+* R. Devenish and A. Cooper-Sarkar, *Deep Inelastic Scattering*, Oxford University Press
+  (2004).
 
 -/
 
@@ -162,11 +164,15 @@ lemma isCallanGross_iff (x F1 F2 : ℝ) : IsCallanGross x F1 F2 ↔ F2 = 2 * x *
     linarith
 
 /-- The target-mass-exact longitudinal structure function
-`F_L := (1 + 4 M² x² / Q²) F₂ - 2 x F₁`, as a function of the target mass `M`, the Bjorken
+`F_L^{exact} := (1 + 4 M² x² / Q²) F₂ - 2 x F₁`, as a function of the target mass `M`, the Bjorken
 variable `x`, the hard scale `Q²` and the two transverse structure functions. This, and not
 the massless `FL`, is the combination that measures longitudinal absorption at finite target
 mass (`two_xBj_mul_apply_pTransverse`); the two agree at `M = 0` (`FLExact_zero`). -/
 def FLExact (M x Q2 F1 F2 : ℝ) : ℝ := (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1
+
+/-- The defining formula of the target-mass-exact longitudinal structure function. -/
+lemma FLExact_def (M x Q2 F1 F2 : ℝ) :
+    FLExact M x Q2 F1 F2 = (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1 := rfl
 
 /-- At zero target mass the target-mass-exact longitudinal structure function is the massless
 one. -/
@@ -348,12 +354,19 @@ theorem two_xBj_mul_apply_pTransverse (g : Bilin V) (K : DisKinematics V) (W : B
 mass. This is the massive form of `isCallanGross_iff_apply_pTransverse_eq_zero`, which is its
 `M = 0` case. -/
 theorem FLExact_eq_zero_iff_apply_pTransverse_eq_zero (g : Bilin V) (K : DisKinematics V)
-    (W : Bilin V) (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hpq : g K.p K.q ≠ 0) {M : ℝ}
-    (hM : g K.p K.p = M ^ 2) (hx : K.xBj g ≠ 0)
+    (W : Bilin V) (hSymm : g.IsSymm) {M : ℝ} (hM : g K.p K.p = M ^ 2) (hx : K.xBj g ≠ 0)
     (hT : g (pTransverse g K) (pTransverse g K) ≠ 0) (F1 F2c : ℝ)
     (hW : IsF1F2Decomposition g K W F1 F2c) :
     FLExact M (K.xBj g) (K.Q2 g) F1 (structureF2 g K F2c) = 0
       ↔ W (pTransverse g K) (pTransverse g K) = 0 := by
+  have hpq : g K.p K.q ≠ 0 := by
+    intro h
+    apply hx
+    simp [Kinematics.DisKinematics.xBj, h]
+  have hQ2 : g K.q K.q ≠ 0 := by
+    intro h
+    apply hx
+    simp [Kinematics.DisKinematics.xBj, Kinematics.DisKinematics.Q2, h]
   have key := two_xBj_mul_apply_pTransverse g K W hSymm hQ2 hpq hM F1 F2c hW
   constructor
   · intro h
@@ -367,11 +380,14 @@ theorem FLExact_eq_zero_iff_apply_pTransverse_eq_zero (g : Bilin V) (K : DisKine
 region (`Q² > 0`, `x > 0`, real target mass) the target-mass-exact longitudinal structure
 function has the sign of the hadronic tensor on the longitudinal direction. -/
 theorem FLExact_nonneg_iff_apply_pTransverse_nonneg (g : Bilin V) (K : DisKinematics V)
-    (W : Bilin V) (hSymm : g.IsSymm) (hQ2 : 0 < K.Q2 g) (hpq : g K.p K.q ≠ 0) {M : ℝ}
-    (hM : g K.p K.p = M ^ 2) (hx : 0 < K.xBj g) (F1 F2c : ℝ)
-    (hW : IsF1F2Decomposition g K W F1 F2c) :
+    (W : Bilin V) (hSymm : g.IsSymm) (hQ2 : 0 < K.Q2 g) {M : ℝ} (hM : g K.p K.p = M ^ 2)
+    (hx : 0 < K.xBj g) (F1 F2c : ℝ) (hW : IsF1F2Decomposition g K W F1 F2c) :
     0 ≤ FLExact M (K.xBj g) (K.Q2 g) F1 (structureF2 g K F2c)
       ↔ 0 ≤ W (pTransverse g K) (pTransverse g K) := by
+  have hpq : g K.p K.q ≠ 0 := by
+    intro h
+    apply hx.ne'
+    simp [Kinematics.DisKinematics.xBj, h]
   have key := two_xBj_mul_apply_pTransverse g K W hSymm
     ((q_sq_ne_zero_iff g K).mpr hQ2.ne') hpq hM F1 F2c hW
   have hT := pTransverse_self_pos g K hSymm hQ2 hpq (hM ▸ sq_nonneg M)
@@ -383,15 +399,27 @@ hadronic tensor annihilates the longitudinal polarization direction. The hypothe
 `g p p = 0` is the leading-twist idealization; it is the `M = 0` case of
 `FLExact_eq_zero_iff_apply_pTransverse_eq_zero`. -/
 theorem isCallanGross_iff_apply_pTransverse_eq_zero (g : Bilin V) (K : DisKinematics V)
-    (W : Bilin V) (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hpq : g K.p K.q ≠ 0)
-    (hTwist : g K.p K.p = 0) (hx : K.xBj g ≠ 0)
-    (hT : g (pTransverse g K) (pTransverse g K) ≠ 0) (F1 F2c : ℝ)
+    (W : Bilin V) (hSymm : g.IsSymm) (hTwist : g K.p K.p = 0) (hx : K.xBj g ≠ 0) (F1 F2c : ℝ)
     (hW : IsF1F2Decomposition g K W F1 F2c) :
     IsCallanGross (K.xBj g) F1 (structureF2 g K F2c)
       ↔ W (pTransverse g K) (pTransverse g K) = 0 := by
-  have h := FLExact_eq_zero_iff_apply_pTransverse_eq_zero g K W hSymm hQ2 hpq
+  have hpq : g K.p K.q ≠ 0 := by
+    intro h
+    apply hx
+    simp [Kinematics.DisKinematics.xBj, h]
+  have hQ2 : g K.q K.q ≠ 0 := by
+    intro h
+    apply hx
+    simp [Kinematics.DisKinematics.xBj, Kinematics.DisKinematics.Q2, h]
+  have hT : g (pTransverse g K) (pTransverse g K) ≠ 0 := by
+    have h1 := Q2_mul_pTransverse_self g K hSymm hQ2
+    rw [hTwist, mul_zero, zero_add] at h1
+    exact right_ne_zero_of_mul (h1 ▸ pow_ne_zero 2 hpq)
+  have h := FLExact_eq_zero_iff_apply_pTransverse_eq_zero g K W hSymm
     (M := 0) (by rw [hTwist]; ring) hx hT F1 F2c hW
-  rwa [FLExact_zero] at h
+  rw [FLExact_zero] at h
+  unfold IsCallanGross
+  exact h
 
 /-!
 
