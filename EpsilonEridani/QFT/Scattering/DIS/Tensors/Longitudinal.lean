@@ -191,8 +191,9 @@ lemma Q2_mul_FLExact (M x F1 F2 : ℝ) {Q2 : ℝ} (hQ2 : Q2 ≠ 0) :
   rw [FLExact_eq_FL_add]
   field_simp
 
-/-- Under the Callan-Gross relation the target-mass-exact longitudinal structure function does
-not vanish at finite target mass: only the target-mass term `4 M² x² F₂ / Q²` is left. -/
+/-- Under the Callan-Gross relation the target-mass-exact longitudinal structure function
+reduces to the target-mass term `4 M² x² F₂ / Q²`; it is the massless `F_L` that is forced to
+zero. -/
 lemma FLExact_of_isCallanGross (M x Q2 F1 F2 : ℝ) (h : IsCallanGross x F1 F2) :
     FLExact M x Q2 F1 F2 = 4 * M ^ 2 * x ^ 2 / Q2 * F2 := by
   unfold IsCallanGross at h
