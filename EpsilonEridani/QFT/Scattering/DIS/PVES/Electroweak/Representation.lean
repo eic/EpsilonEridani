@@ -28,13 +28,17 @@ corresponding one-family anomaly cancellation condition of Physlib's Standard Mo
 
 ## Main results
 
-* `GenerationAssignments.isAnomalyFree_standardModel`: the Standard Model assignment cancels all
-  four anomalies.
-* `GenerationAssignments.isAnomalyFree_iff_exists_eq_smul_standardModel`: an assignment with
-  `YQ ≠ 0` is anomaly-free if and only if it is a rescaling of the Standard Model assignment, up
-  to swapping the two right-handed quark singlets. The hypothesis `YQ ≠ 0` is needed:
-  `GenerationAssignments.isAnomalyFree_mk_zero_neg` shows that the assignments
-  `(0, t, -t, 0, 0)` are anomaly-free for every `t`, and they are not of this form.
+All in the namespace `GenerationAssignments`:
+
+* `isAnomalyFree_standardModel`: the Standard Model assignment cancels all four anomalies.
+* `isAnomalyFree_iff_exists_eq_smul_standardModel_or_swapQuarkSinglets`:
+  an assignment with `YQ ≠ 0` is anomaly-free if and only if it is a rescaling of the Standard
+  Model assignment, up to swapping the two right-handed quark singlets. The hypothesis `YQ ≠ 0`
+  is needed: `isAnomalyFree_mk_zero_neg` shows that the assignments `(0, t, -t, 0, 0)` are
+  anomaly-free for every `t`, and they are not of this form.
+* `isAnomalyFree_iff_exists_eq_smul_standardModel_or_swapQuarkSinglets_or_mk_zero_neg`:
+  the anomaly-free assignments are exactly these rescalings together with the family
+  `(0, t, -t, 0, 0)`.
 
 ## References
 
@@ -63,6 +67,12 @@ coefficient: `1` for left-handed and `-1` for right-handed fields. -/
 def Chirality.sign : Chirality → ℚ
   | .left => 1
   | .right => -1
+
+/-- Left-handed multiplets contribute with sign `1`. -/
+@[simp] theorem Chirality.sign_left : Chirality.left.sign = 1 := rfl
+
+/-- Right-handed multiplets contribute with sign `-1`. -/
+@[simp] theorem Chirality.sign_right : Chirality.right.sign = -1 := rfl
 
 /-- An electroweak fermion multiplet, presented by its representation labels. It is the unit
 from which the anomaly coefficients of a generation are summed. -/
@@ -116,23 +126,33 @@ instance : SMul ℚ GenerationAssignments where
 /-- The charged-lepton singlet hypercharge of a rescaled assignment. -/
 @[simp] theorem smul_Ye (q : ℚ) : (q • a).Ye = q * a.Ye := rfl
 
+/-- Rescaling of hypercharge assignments is an action of the multiplicative monoid `ℚ`. -/
+instance : MulAction ℚ GenerationAssignments where
+  one_smul a := by ext <;> simp
+  mul_smul q r a := by ext <;> simp [mul_assoc]
+
 /-- The assignment with the hypercharges of the two right-handed quark singlets exchanged. -/
 @[simps]
 def swapQuarkSinglets : GenerationAssignments := ⟨a.YQ, a.Yd, a.Yu, a.YL, a.Ye⟩
 
 /-- The left-handed quark doublet with hypercharge `a.YQ`. -/
+@[simps]
 def quarkDoublet : Multiplet := ⟨2, 3, a.YQ, .left⟩
 
 /-- The right-handed up-type quark singlet with hypercharge `a.Yu`. -/
+@[simps]
 def upSinglet : Multiplet := ⟨1, 3, a.Yu, .right⟩
 
 /-- The right-handed down-type quark singlet with hypercharge `a.Yd`. -/
+@[simps]
 def downSinglet : Multiplet := ⟨1, 3, a.Yd, .right⟩
 
 /-- The left-handed lepton doublet with hypercharge `a.YL`. -/
+@[simps]
 def leptonDoublet : Multiplet := ⟨2, 1, a.YL, .left⟩
 
 /-- The right-handed charged-lepton singlet with hypercharge `a.Ye`. -/
+@[simps]
 def electronSinglet : Multiplet := ⟨1, 1, a.Ye, .right⟩
 
 /-- The five multiplets of one generation carrying the hypercharges `a`. -/
@@ -173,24 +193,31 @@ def IsAnomalyFree : Prop :=
 @[simp]
 theorem gravitationalAnomaly_eq :
     a.gravitationalAnomaly = 6 * a.YQ - 3 * a.Yu - 3 * a.Yd + 2 * a.YL - a.Ye := by
-  simp only [gravitationalAnomaly, Chirality.sign, multiplets, quarkDoublet, upSinglet,
-    downSinglet, leptonDoublet, electronSinglet, List.map_cons, List.map_nil, List.sum_cons,
-    List.sum_nil, Nat.cast_ofNat, Nat.cast_one]
+  simp only [gravitationalAnomaly, multiplets, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, quarkDoublet_isospinDim, quarkDoublet_colorDim, quarkDoublet_Y,
+    quarkDoublet_chirality, upSinglet_isospinDim, upSinglet_colorDim, upSinglet_Y,
+    upSinglet_chirality, downSinglet_isospinDim, downSinglet_colorDim, downSinglet_Y,
+    downSinglet_chirality, leptonDoublet_isospinDim, leptonDoublet_colorDim, leptonDoublet_Y,
+    leptonDoublet_chirality, electronSinglet_isospinDim, electronSinglet_colorDim,
+    electronSinglet_Y, electronSinglet_chirality, Chirality.sign_left, Chirality.sign_right,
+    Nat.cast_ofNat, Nat.cast_one]
   ring
 
 /-- The `SU(2)² × U(1)` anomaly coefficient of a generation, written out in the hypercharges. -/
 @[simp]
 theorem su2Anomaly_eq : a.su2Anomaly = 3 * a.YQ + a.YL := by
-  simp [su2Anomaly, multiplets, quarkDoublet, upSinglet, downSinglet, leptonDoublet,
-    electronSinglet, Chirality.sign]
+  simp [su2Anomaly, multiplets]
 
 /-- The `SU(3)² × U(1)` anomaly coefficient of a generation, written out in the hypercharges. -/
 @[simp]
 theorem su3Anomaly_eq : a.su3Anomaly = 2 * a.YQ - a.Yu - a.Yd := by
-  simp only [su3Anomaly, Chirality.sign, multiplets, quarkDoublet, upSinglet, downSinglet,
-    leptonDoublet, electronSinglet, decide_true, decide_false, Bool.false_eq_true,
-    List.filter_cons_of_pos, List.filter_cons_of_neg, OfNat.one_ne_ofNat, not_false_eq_true,
-    List.filter_nil, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.cast_ofNat,
+  simp only [su3Anomaly, multiplets, quarkDoublet_colorDim, upSinglet_colorDim,
+    downSinglet_colorDim, leptonDoublet_colorDim, electronSinglet_colorDim, decide_true,
+    decide_false, Bool.false_eq_true, List.filter_cons_of_pos, List.filter_cons_of_neg,
+    OfNat.one_ne_ofNat, not_false_eq_true, List.filter_nil, List.map_cons, List.map_nil,
+    List.sum_cons, List.sum_nil, quarkDoublet_isospinDim, quarkDoublet_Y, quarkDoublet_chirality,
+    upSinglet_isospinDim, upSinglet_Y, upSinglet_chirality, downSinglet_isospinDim, downSinglet_Y,
+    downSinglet_chirality, Chirality.sign_left, Chirality.sign_right, Nat.cast_ofNat,
     Nat.cast_one]
   ring
 
@@ -198,9 +225,14 @@ theorem su3Anomaly_eq : a.su3Anomaly = 2 * a.YQ - a.Yu - a.Yd := by
 @[simp]
 theorem cubicAnomaly_eq :
     a.cubicAnomaly = 6 * a.YQ ^ 3 - 3 * a.Yu ^ 3 - 3 * a.Yd ^ 3 + 2 * a.YL ^ 3 - a.Ye ^ 3 := by
-  simp only [cubicAnomaly, Chirality.sign, multiplets, quarkDoublet, upSinglet, downSinglet,
-    leptonDoublet, electronSinglet, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
-    Nat.cast_ofNat, Nat.cast_one]
+  simp only [cubicAnomaly, multiplets, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+    quarkDoublet_isospinDim, quarkDoublet_colorDim, quarkDoublet_Y, quarkDoublet_chirality,
+    upSinglet_isospinDim, upSinglet_colorDim, upSinglet_Y, upSinglet_chirality,
+    downSinglet_isospinDim, downSinglet_colorDim, downSinglet_Y, downSinglet_chirality,
+    leptonDoublet_isospinDim, leptonDoublet_colorDim, leptonDoublet_Y, leptonDoublet_chirality,
+    electronSinglet_isospinDim, electronSinglet_colorDim, electronSinglet_Y,
+    electronSinglet_chirality, Chirality.sign_left, Chirality.sign_right, Nat.cast_ofNat,
+    Nat.cast_one]
   ring
 
 /-- Anomaly freedom as three linear equations and one cubic equation in the hypercharges. -/
@@ -212,12 +244,13 @@ theorem isAnomalyFree_iff :
 
 /-- The Standard Model hypercharge assignment `(1/3, 4/3, -2/3, -1, -2)` of one generation, in
 the normalisation `Q = T³ + Y/2`. -/
+@[simps]
 def standardModel : GenerationAssignments := ⟨1 / 3, 4 / 3, -2 / 3, -1, -2⟩
 
 /-- The Standard Model hypercharges cancel all four anomalies of a generation. -/
 theorem isAnomalyFree_standardModel : standardModel.IsAnomalyFree := by
   rw [isAnomalyFree_iff]
-  norm_num [standardModel]
+  norm_num
 
 variable {a} in
 /-- Rescaling an anomaly-free assignment gives an anomaly-free assignment. -/
@@ -249,8 +282,9 @@ theorem isAnomalyFree_mk_zero_neg (t : ℚ) :
 /-- An assignment with `YQ ≠ 0` is anomaly-free if and only if it is a rescaling of
 `standardModel`, possibly with the two right-handed quark singlets swapped. The hypothesis
 `YQ ≠ 0` excludes the anomaly-free family `isAnomalyFree_mk_zero_neg`, which is not of this
-form. -/
-theorem isAnomalyFree_iff_exists_eq_smul_standardModel (hYQ : a.YQ ≠ 0) :
+form; `isAnomalyFree_iff_exists_eq_smul_standardModel_or_swapQuarkSinglets_or_mk_zero_neg`
+classifies all anomaly-free assignments. -/
+theorem isAnomalyFree_iff_exists_eq_smul_standardModel_or_swapQuarkSinglets (hYQ : a.YQ ≠ 0) :
     a.IsAnomalyFree ↔
       ∃ q : ℚ, a = q • standardModel ∨ a = q • standardModel.swapQuarkSinglets := by
   refine ⟨fun h => ?_, ?_⟩
@@ -268,15 +302,41 @@ theorem isAnomalyFree_iff_exists_eq_smul_standardModel (hYQ : a.YQ ≠ 0) :
     refine ⟨3 * a.YQ, ?_⟩
     rcases mul_eq_zero.mp hquad with hu | hu
     · left
-      ext <;> simp only [smul_YQ, smul_Yu, smul_Yd, smul_YL, smul_Ye, standardModel] <;>
-        linarith
+      ext <;> simp only [smul_YQ, smul_Yu, smul_Yd, smul_YL, smul_Ye, standardModel_YQ,
+        standardModel_Yu, standardModel_Yd, standardModel_YL, standardModel_Ye] <;> linarith
     · right
       ext <;> simp only [smul_YQ, smul_Yu, smul_Yd, smul_YL, smul_Ye, swapQuarkSinglets_YQ,
         swapQuarkSinglets_Yu, swapQuarkSinglets_Yd, swapQuarkSinglets_YL, swapQuarkSinglets_Ye,
-        standardModel] <;> linarith
+        standardModel_YQ, standardModel_Yu, standardModel_Yd, standardModel_YL,
+        standardModel_Ye] <;> linarith
   · rintro ⟨q, rfl | rfl⟩
     · exact isAnomalyFree_standardModel.smul q
     · exact isAnomalyFree_standardModel.swapQuarkSinglets.smul q
+
+/-- The classification of anomaly-free assignments: an assignment is anomaly-free if and only if
+it is a rescaling of `standardModel`, possibly with the two right-handed quark singlets swapped,
+or it is of the form `(0, t, -t, 0, 0)`. -/
+theorem isAnomalyFree_iff_exists_eq_smul_standardModel_or_swapQuarkSinglets_or_mk_zero_neg :
+    a.IsAnomalyFree ↔
+      (∃ q : ℚ, a = q • standardModel ∨ a = q • standardModel.swapQuarkSinglets) ∨
+        ∃ t : ℚ, a = ⟨0, t, -t, 0, 0⟩ := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rcases ne_or_eq a.YQ 0 with hYQ | hYQ
+    · exact Or.inl
+        ((isAnomalyFree_iff_exists_eq_smul_standardModel_or_swapQuarkSinglets a hYQ).mp h)
+    -- At `YQ = 0` the three linear conditions force `YL = Ye = 0` and `Yd = -Yu`.
+    obtain ⟨hgrav, hsu2, hsu3, -⟩ := (isAnomalyFree_iff a).mp h
+    refine Or.inr ⟨a.Yu, ?_⟩
+    ext
+    · exact hYQ
+    · rfl
+    · linear_combination -hsu3 + 2 * hYQ
+    · linear_combination hsu2 - 3 * hYQ
+    · linear_combination -hgrav + 2 * hsu2 + 3 * hsu3 - 6 * hYQ
+  · rintro (⟨q, rfl | rfl⟩ | ⟨t, rfl⟩)
+    · exact isAnomalyFree_standardModel.smul q
+    · exact isAnomalyFree_standardModel.swapQuarkSinglets.smul q
+    · exact isAnomalyFree_mk_zero_neg t
 
 /-- The one-family Standard Model charge vector in Physlib's anomaly cancellation system
 `SMCharges 1`, which records the charges of left-handed Weyl fermions: the right-handed singlets
