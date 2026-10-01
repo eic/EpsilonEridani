@@ -13,8 +13,9 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 This module implements reconstruction methods for DIS invariants from experimental measurements.
 Each method represents a different experimental technique for reconstructing Q² and y; xBj is
 reconstructed only by the electron method (`xBjElectron`). The electron method carries positivity
-and range lemmas, the Sigma Q² and y are identified with the canonical `DisKinematics.Q2` and
-`DisKinematics.yInel`, and the eSigma Q² carries its positivity lemma.
+and range lemmas, the Sigma Q² is the canonical `DisKinematics.Q2`, the Sigma y is
+`DisKinematics.yInel` under energy-momentum conservation, and the eSigma Q² carries its positivity
+lemma.
 
 ## Access Methods
 
@@ -98,7 +99,7 @@ end ElectronMethodData
 /-- Sigma method input data: the hadronic final state momentum sum, the incoming and outgoing
 lepton momenta, and the incoming target momentum. -/
 structure SigmaMethodData where
-  /-- Sum of hadronic final state momenta (Jacquet-Blondel observable). -/
+  /-- Sum of hadronic final state momenta `p_X`. -/
   hadronicMomentum : V
   /-- Incoming lepton momentum. -/
   kIn : V
