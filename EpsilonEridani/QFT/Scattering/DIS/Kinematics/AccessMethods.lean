@@ -147,7 +147,7 @@ def yESigma (d : ESigmaMethodData V g) : ℝ :=
 
 /-- Appropriateness theorem: eSigma Q² reconstruction is consistent with both methods. -/
 lemma q2ESigma_consistency (d : ESigmaMethodData V g) :
-    |q2ESigma (V := V) (g := g) d - ElectronMethodData.q2Electron d.electronData| ≤
+    |q2ESigma (V := V) (g := g) d - ElectronMethodData.q2Electron d.electronData| =
       |ElectronMethodData.q2Electron d.electronData -
         SigmaMethodData.q2Sigma (V := V) d.sigmaData g| / 2 := by
   let A : ℝ := ElectronMethodData.q2Electron d.electronData
@@ -184,32 +184,7 @@ def w2JB (d : JBMethodData V) (g_met : Bilin V) (p_hadron : V) : ℝ :=
 def xBjJB (d : JBMethodData V) (g_met : Bilin V) (p_target : V) (k_out : V) : ℝ :=
   (q2JB (V := V) d g_met k_out) / (2 * g_met p_target k_out)
 
-/-- Appropriateness theorem: JB method respects experimental constraints on W². -/
-lemma w2JB_physical_region (d : JBMethodData V) (g_met : Bilin V) (p : V)
-    (hLower : (d.targetMass) ^ 2 ≤ w2JB (V := V) d g_met p) :
-    w2JB (V := V) d g_met p ≥ (d.targetMass) ^ 2 := by
-  exact hLower
-
-/-- Appropriateness theorem: JB method Q² is consistent with Q² definition. -/
-lemma q2JB_def_consistent (d : JBMethodData V) (g_met : Bilin V) (k_out : V) :
-    JBMethodData.q2JB (V := V) d g_met k_out = -g_met k_out k_out := by
-  rfl
-
 end JBMethodData
-
-/-- Reconstruction agreement theorem: under ideal conditions, all three methods converge. -/
-lemma all_methods_agree_ideal
-    (K : DisKinematics V)
-    (e_data : ElectronMethodData)
-    (sigmaData : SigmaMethodData V)
-    (jb_data : JBMethodData V)
-    (g_met : Bilin V) :
-    (ElectronMethodData.q2Electron e_data = SigmaMethodData.q2Sigma (V := V) sigmaData g_met) ∧
-    (SigmaMethodData.q2Sigma (V := V) sigmaData g_met =
-      JBMethodData.q2JB (V := V) jb_data g_met K.kPrime) →
-    ElectronMethodData.q2Electron e_data = JBMethodData.q2JB (V := V) jb_data g_met K.kPrime := by
-  intro ⟨h1, h2⟩
-  exact Eq.trans h1 h2
 
 end Kinematics
 end DIS

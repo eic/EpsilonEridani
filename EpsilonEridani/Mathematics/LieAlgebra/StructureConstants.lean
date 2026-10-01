@@ -71,12 +71,7 @@ noncomputable def structureConstants (b : Basis ι R L) (i j k : ι) : R := b.re
 
 variable (b : Basis ι R L)
 
-/-- The structure constants are the coordinate functionals of the brackets of basis vectors. -/
-lemma coord_lie_basis (i j k : ι) : b.coord k ⁅b i, b j⁆ = structureConstants b i j k := by
-  simp [structureConstants]
-
-/-- The structure constants are the coordinates of the brackets of basis vectors. This is the
-simp-normal form of `LieAlgebra.coord_lie_basis`, stated using `Module.Basis.repr`. -/
+/-- The structure constants are the coordinates of the brackets of basis vectors. -/
 @[simp]
 lemma repr_lie_basis (i j k : ι) : b.repr ⁅b i, b j⁆ k = structureConstants b i j k := rfl
 
@@ -89,7 +84,7 @@ lemma structureConstants_self (i k : ι) : structureConstants b i i k = 0 := by
 lemma structureConstants_swap (i j k : ι) :
     structureConstants b j i k = -structureConstants b i j k := by
   have h : ⁅b j, b i⁆ = -⁅b i, b j⁆ := by rw [← lie_skew]
-  rw [← coord_lie_basis b j i k, ← coord_lie_basis b i j k, h, map_neg]
+  rw [← repr_lie_basis b j i k, ← repr_lie_basis b i j k, h, map_neg, Finsupp.neg_apply]
 
 /-- The Jacobi identity, written with all brackets nested to the left. This is the form in which
 the identity yields the quadratic relation among the structure constants. -/
@@ -116,7 +111,7 @@ lemma coord_lie_eq_sum (x : L) (j k : ι) :
   conv_lhs => rw [← b.sum_repr x]
   rw [sum_lie, map_sum]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [smul_lie, map_smul, smul_eq_mul, coord_lie_basis, Basis.coord_apply]
+  rw [smul_lie, map_smul, smul_eq_mul, Basis.coord_apply, Basis.coord_apply, repr_lie_basis]
 
 /-- The coordinates of `⁅x, b j⁆`, expressed via the coordinates of `x` and the structure
 constants. -/
@@ -130,7 +125,7 @@ lemma coord_lie_lie_basis (i j k l : ι) :
     b.coord l ⁅⁅b i, b j⁆, b k⁆ =
       ∑ d, structureConstants b i j d * structureConstants b d k l := by
   rw [coord_lie_eq_sum]
-  exact Finset.sum_congr rfl fun d _ => by rw [coord_lie_basis]
+  exact Finset.sum_congr rfl fun d _ => by rw [Basis.coord_apply, repr_lie_basis]
 
 /-- The quadratic relation among the structure constants of a Lie algebra, expressing the Jacobi
 identity. -/
