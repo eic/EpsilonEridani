@@ -26,8 +26,11 @@ reachable from inside the wrapper, and one local deviation: upstream's `@[simp]`
 form (`Basis.coord_apply` rewrites its left-hand side), so it is replaced here by
 `repr_lie_basis : b.repr ⁅b i, b j⁆ k = structureConstants b i j k`, and the proofs of
 `structureConstants_swap`, `coord_lie_eq_sum` and `coord_lie_lie_basis` rewrite with
-`Basis.coord_apply` and `repr_lie_basis` instead. When migrating, replace each rewrite with
-`repr_lie_basis` by `← Basis.coord_apply` followed by upstream's `coord_lie_basis`.
+`Basis.coord_apply` and `repr_lie_basis` instead. Since `Module.Basis.repr` is therefore the
+simp-normal form, `repr_lie_lie_basis` is added as the `repr` companion of
+`coord_lie_lie_basis`. When migrating, replace each rewrite with `repr_lie_basis` by
+`← Basis.coord_apply` followed by upstream's `coord_lie_basis`, and keep `repr_lie_lie_basis`
+(or upstream it alongside the file).
 
 Let `L` be a Lie algebra over a commutative ring `R` and let `b : Basis ι R L` be a basis of `L`
 as an `R`-module. Since the Lie bracket is `R`-bilinear it is determined by its values on pairs of
@@ -126,12 +129,21 @@ lemma repr_lie_eq_sum (x : L) (j k : ι) :
   simpa using coord_lie_eq_sum b x j k
 
 /-- The coordinates of a left-nested double bracket of basis vectors, as a contraction of two
-structure constants. -/
+structure constants. Stated using `Module.Basis.coord`; see `LieAlgebra.repr_lie_lie_basis` for
+the same statement in terms of `Module.Basis.repr`. -/
 lemma coord_lie_lie_basis (i j k l : ι) :
     b.coord l ⁅⁅b i, b j⁆, b k⁆ =
       ∑ d, structureConstants b i j d * structureConstants b d k l := by
   rw [coord_lie_eq_sum]
   exact Finset.sum_congr rfl fun d _ => by rw [Basis.coord_apply, repr_lie_basis]
+
+/-- The coordinates of a left-nested double bracket of basis vectors, as a contraction of two
+structure constants. -/
+lemma repr_lie_lie_basis (i j k l : ι) :
+    b.repr ⁅⁅b i, b j⁆, b k⁆ l =
+      ∑ d, structureConstants b i j d * structureConstants b d k l := by
+  rw [← Basis.coord_apply]
+  exact coord_lie_lie_basis b i j k l
 
 /-- The quadratic relation among the structure constants of a Lie algebra, expressing the Jacobi
 identity. -/

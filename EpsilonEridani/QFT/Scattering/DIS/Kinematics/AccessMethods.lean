@@ -11,9 +11,10 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 # DIS Kinematics Access Methods
 
 This module implements reconstruction methods for DIS invariants from experimental measurements.
-Each method represents a different experimental technique for accessing the standard DIS variables
-(xBj, Q2, y). The electron, Sigma and eSigma methods carry appropriateness lemmas (positivity,
-range and the eSigma agreement identity).
+Each method represents a different experimental technique for reconstructing Q² and y; xBj is
+reconstructed only by the electron method (`xBjElectron`). The electron method carries positivity
+and range lemmas, the Sigma Q² is identified with the canonical `DisKinematics.Q2`, and the eSigma
+method carries its agreement identity with the electron method.
 
 ## Access Methods
 
@@ -21,7 +22,7 @@ range and the eSigma agreement identity).
   kinematics (angle, energy loss)
 - **Sigma Method**: Reconstructs Q² from the lepton momentum transfer and y from the hadronic
   final state
-- **eSigma Method**: Reconstructs invariants from both electron and hadronic final states
+- **eSigma Method**: Reconstructs Q² and y by averaging the electron and Sigma reconstructions
 
 -/
 
@@ -63,7 +64,7 @@ def q2Electron (d : ElectronMethodData) : ℝ :=
 def yElectron (d : ElectronMethodData) : ℝ :=
   1 - d.finalEnergy / d.initialEnergy
 
-/-- Electron method xBj reconstruction (requires hadronic invariant mass input). -/
+/-- Electron method xBj reconstruction; `M_p` is the target (proton) mass. -/
 def xBjElectron (d : ElectronMethodData) (M_p : ℝ) : ℝ :=
   (q2Electron d) / (2 * M_p * d.initialEnergy * (yElectron d))
 
@@ -93,7 +94,8 @@ lemma yElectron_bounds (d : ElectronMethodData) : 0 < yElectron d ∧ yElectron 
 
 end ElectronMethodData
 
-/-- Sigma method data: hadronic final state information. -/
+/-- Sigma method input data: the hadronic final state momentum sum, the incoming and outgoing
+lepton momenta, and the initial state total 4-momentum. -/
 structure SigmaMethodData where
   /-- Sum of hadronic final state momenta (Jacquet-Blondel observable). -/
   hadronicMomentum : V
@@ -105,6 +107,8 @@ structure SigmaMethodData where
   initialMomentum : V
 
 namespace SigmaMethodData
+
+variable {V}
 
 /-- Sigma method Q² reconstruction from the t-channel momentum transfer: minus the Minkowski square
 of the lepton momentum transfer `kIn - kOut`. -/
@@ -118,12 +122,11 @@ def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
       (d.initialMomentum - d.hadronicMomentum - d.kOut)) /
     g_met d.initialMomentum d.initialMomentum
 
-/-- Appropriateness theorem: Sigma method Q² is non-negative. -/
-lemma q2Sigma_nonneg (d : SigmaMethodData V) (g_met : Bilin V)
-    (hTransfer : g_met (d.kIn - d.kOut) (d.kIn - d.kOut) ≤ 0) :
-    0 ≤ SigmaMethodData.q2Sigma (V := V) d g_met := by
-  simp only [q2Sigma]
-  exact neg_nonneg.mpr hTransfer
+/-- The Sigma method Q² is the canonical `DisKinematics.Q2` of any kinematic record with the same
+incoming and outgoing lepton momenta. -/
+lemma q2Sigma_eq_Q2 (d : SigmaMethodData V) (g_met : Bilin V) (K : DisKinematics V)
+    (hk : K.k = d.kIn) (hk' : K.kPrime = d.kOut) : d.q2Sigma g_met = K.Q2 g_met := by
+  rw [q2Sigma, DisKinematics.Q2, K.hq, hk, hk']
 
 end SigmaMethodData
 
@@ -136,25 +139,24 @@ structure ESigmaMethodData where
 
 namespace ESigmaMethodData
 
+variable {V}
+
 /-- eSigma method Q² reconstruction: average of electron and Sigma methods. -/
 def q2ESigma (d : ESigmaMethodData V) : ℝ :=
-  (ElectronMethodData.q2Electron d.electronData +
-    SigmaMethodData.q2Sigma (V := V) d.sigmaData g) / 2
+  (ElectronMethodData.q2Electron d.electronData + d.sigmaData.q2Sigma g) / 2
 
 /-- eSigma method y reconstruction: average of both methods. -/
 def yESigma (d : ESigmaMethodData V) : ℝ :=
-  (ElectronMethodData.yElectron d.electronData +
-    SigmaMethodData.ySigma (V := V) d.sigmaData g) / 2
+  (ElectronMethodData.yElectron d.electronData + d.sigmaData.ySigma g) / 2
 
 /-- Appropriateness theorem: the eSigma Q² lies exactly halfway between the electron and Sigma
 reconstructions, so its deviation from the electron Q² is exactly half the electron-Sigma
 discrepancy. -/
 lemma abs_q2ESigma_sub_q2Electron_eq (d : ESigmaMethodData V) :
-    |q2ESigma (V := V) (g := g) d - ElectronMethodData.q2Electron d.electronData| =
-      |ElectronMethodData.q2Electron d.electronData -
-        SigmaMethodData.q2Sigma (V := V) d.sigmaData g| / 2 := by
+    |d.q2ESigma g - ElectronMethodData.q2Electron d.electronData| =
+      |ElectronMethodData.q2Electron d.electronData - d.sigmaData.q2Sigma g| / 2 := by
   let A : ℝ := ElectronMethodData.q2Electron d.electronData
-  let B : ℝ := SigmaMethodData.q2Sigma (V := V) d.sigmaData g
+  let B : ℝ := d.sigmaData.q2Sigma g
   unfold q2ESigma
   have hcalc : (A + B) / 2 - A = (B - A) / 2 := by ring
   rw [hcalc]
