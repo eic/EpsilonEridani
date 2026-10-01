@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.HarmonicSum.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -220,23 +219,6 @@ theorem forall_ne_zero_of_mem_support_quasiShuffle {m m' : List ℤ}
 end HarmonicSum
 
 open HarmonicSum
-
-/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `0`
-gives `0`. -/
-theorem harmonicSum_linearCombination_mapDomain_cons_zero (a : ℤ) (c : List ℤ →₀ ℤ) :
-    Finsupp.linearCombination ℤ (harmonicSum · 0) (c.mapDomain (a :: ·)) = 0 := by
-  rw [Finsupp.linearCombination_mapDomain]
-  simp [Finsupp.linearCombination_apply, Function.comp_def]
-
-/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `N + 1`:
-the recursion `harmonicSum_cons_succ`, extended linearly. -/
-theorem harmonicSum_linearCombination_mapDomain_cons_succ (a : ℤ) (c : List ℤ →₀ ℤ) (n : ℕ) :
-    Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) (c.mapDomain (a :: ·)) =
-      Finsupp.linearCombination ℤ (harmonicSum · n) (c.mapDomain (a :: ·)) +
-        term a (n + 1) * Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) c := by
-  rw [Finsupp.linearCombination_mapDomain, Finsupp.linearCombination_mapDomain]
-  simp only [Finsupp.linearCombination_apply, Function.comp_def, harmonicSum_cons_succ, smul_add,
-    Finsupp.sum_add, Finsupp.mul_sum, mul_smul_comm]
 
 /-- **The quasi-shuffle relation.** The product of two nested harmonic sums of the same argument
 is the evaluation at that argument of the quasi-shuffle product of their multi-indices. -/
