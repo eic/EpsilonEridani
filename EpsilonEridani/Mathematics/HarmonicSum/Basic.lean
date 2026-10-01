@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Field.Rat
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -98,6 +99,9 @@ nested harmonic sums. -/
 def weight (m : List ℤ) : ℕ :=
   (m.map Int.natAbs).sum
 
+theorem weight_def (m : List ℤ) : weight m = (m.map Int.natAbs).sum :=
+  (rfl)
+
 @[simp]
 theorem weight_nil : weight [] = 0 :=
   (rfl)
@@ -133,7 +137,8 @@ theorem harmonicSum_cons (a : ℤ) (m : List ℤ) (n : ℕ) :
 theorem harmonicSum_cons_zero (a : ℤ) (m : List ℤ) : harmonicSum (a :: m) 0 = 0 := by
   simp [harmonicSum_cons]
 
-/-- The recursion in the upper argument: `S_{a,m}(N+1) = S_{a,m}(N) + t_a(N+1) S_m(N+1)`. -/
+/-- The recursion in the upper argument:
+`S_{a,m}(N+1) = S_{a,m}(N) + term a (N+1) · S_m(N+1)`. -/
 @[simp]
 theorem harmonicSum_cons_succ (a : ℤ) (m : List ℤ) (n : ℕ) :
     harmonicSum (a :: m) (n + 1) =
@@ -147,14 +152,30 @@ theorem harmonicSum_cons_eq_sum_Icc (a : ℤ) (m : List ℤ) (n : ℕ) :
     Finset.sum_Ico_add' (fun i => term a i * harmonicSum m i) 0 n (c := 1)]
   simp only [zero_add, Finset.Ico_add_one_right_eq_Icc]
 
-/-- A depth-one sum is a single sum, `S_a(N) = ∑_{i=1}^{N} sign(a)^i / i^{|a|}`. -/
-theorem harmonicSum_singleton (a : ℤ) (n : ℕ) :
-    harmonicSum [a] n = ∑ i ∈ Finset.range n, term a (i + 1) := by
-  simp [harmonicSum_cons]
+namespace HarmonicSum
+
+/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `0`
+gives `0`. -/
+theorem linearCombination_mapDomain_cons_zero (a : ℤ) (c : List ℤ →₀ ℤ) :
+    Finsupp.linearCombination ℤ (harmonicSum · 0) (c.mapDomain (a :: ·)) = 0 := by
+  rw [Finsupp.linearCombination_mapDomain]
+  simp [Finsupp.linearCombination_apply, Function.comp_def]
+
+/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `N + 1`:
+the recursion `harmonicSum_cons_succ`, extended linearly. -/
+theorem linearCombination_mapDomain_cons_succ (a : ℤ) (c : List ℤ →₀ ℤ) (n : ℕ) :
+    Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) (c.mapDomain (a :: ·)) =
+      Finsupp.linearCombination ℤ (harmonicSum · n) (c.mapDomain (a :: ·)) +
+        term a (n + 1) * Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) c := by
+  rw [Finsupp.linearCombination_mapDomain, Finsupp.linearCombination_mapDomain]
+  simp only [Finsupp.linearCombination_apply, Function.comp_def, harmonicSum_cons_succ, smul_add,
+    Finsupp.sum_add, Finsupp.mul_sum, mul_smul_comm]
+
+end HarmonicSum
 
 /-- The first harmonic sum `S₁` is Mathlib's `harmonic`. -/
 theorem harmonicSum_singleton_one_eq_harmonic (n : ℕ) : harmonicSum [1] n = harmonic n := by
-  simp [harmonicSum_singleton, harmonic]
+  simp [harmonicSum_cons, harmonic]
 
 /-- A multi-index containing `0` gives the zero sum at every argument. -/
 theorem harmonicSum_eq_zero_of_zero_mem {m : List ℤ} (hm : 0 ∈ m) (n : ℕ) :
@@ -184,16 +205,16 @@ theorem harmonicSum_pos {m : List ℤ} (hm : ∀ a ∈ m, 0 < a) {n : ℕ} (hn :
 /-! ### Small values -/
 
 example : harmonicSum [1] 1 = 1 := by
-  norm_num [harmonicSum_singleton]
+  norm_num [harmonicSum_cons]
 
 example : harmonicSum [1] 2 = 3 / 2 := by
-  norm_num [harmonicSum_singleton, Finset.sum_range_succ]
+  norm_num [harmonicSum_cons, Finset.sum_range_succ]
 
 example : harmonicSum [2] 2 = 5 / 4 := by
-  norm_num [harmonicSum_singleton, Finset.sum_range_succ, term_of_pos]
+  norm_num [harmonicSum_cons, Finset.sum_range_succ, term_of_pos]
 
 example : harmonicSum [-1] 2 = -1 / 2 := by
-  norm_num [harmonicSum_singleton, Finset.sum_range_succ, term_of_neg]
+  norm_num [harmonicSum_cons, Finset.sum_range_succ, term_of_neg]
 
 example : harmonicSum [1, 1] 2 = 7 / 4 := by
   norm_num [harmonicSum_cons, Finset.sum_range_succ]
