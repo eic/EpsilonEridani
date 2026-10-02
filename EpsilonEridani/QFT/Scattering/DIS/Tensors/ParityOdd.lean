@@ -112,6 +112,16 @@ lemma IsProperLorentzCovariant.flip {g : Bilin V} {K : DisKinematics V} {W : Bil
   intro f hf hdet v w
   exact hW f hf hdet w v
 
+/-- A properly covariant tensor has no component mixing `p_T` with a vector `u` reversed by
+some kinematic stabilizer element of determinant one. -/
+lemma IsProperLorentzCovariant.apply_pTransverse_eq_zero_of_apply_eq_neg {g : Bilin V}
+    {K : DisKinematics V} {W : Bilin V} (hW : IsProperLorentzCovariant g K W)
+    {f : V →ₗ[ℝ] V} {u : V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
+    (hfu : f u = -u) : W (pTransverse g K) u = 0 := by
+  have h := hW f hf hdet (pTransverse g K) u
+  rw [stabilizer_fixes_pTransverse g K hf, hfu, map_neg] at h
+  linarith
+
 /-!
 ## The parity-odd hadronic tensor
 -/
@@ -239,15 +249,6 @@ namespace ParityOddAssumptions
 
 variable {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
 
-/-- A parity-odd tensor has no component mixing `p_T` with a vector `u` reversed by some
-kinematic stabilizer element of determinant one. -/
-lemma apply_pTransverse_eq_zero_of_apply_eq_neg (hW : ParityOddAssumptions g K W)
-    {f : V →ₗ[ℝ] V} {u : V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
-    (hfu : f u = -u) : W (pTransverse g K) u = 0 := by
-  have h := hW.covariant f hf hdet (pTransverse g K) u
-  rw [stabilizer_fixes_pTransverse g K hf, hfu, map_neg] at h
-  linarith
-
 /-- **A parity-odd tensor has a single component.** In the adapted frame of a
 `SpectatorPlane`, `W` is `W e₁ e₂` times the `2 × 2` determinant of the spectator
 coordinates of its arguments. -/
@@ -257,8 +258,8 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
         (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
       (c₁ * d₂ - c₂ * d₁) * W hP.e₁ hP.e₂ := by
   obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_halfTurn hSymm
-  have h₁ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
-  have h₂ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
+  have h₁ := hW.covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
+  have h₂ := hW.covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
   have h₁' : W hP.e₁ (pTransverse g K) = 0 := by rw [← hW.isAlt.neg_eq, h₁, neg_zero]
   have h₂' : W hP.e₂ (pTransverse g K) = 0 := by rw [← hW.isAlt.neg_eq, h₂, neg_zero]
   have h₂₁ : W hP.e₂ hP.e₁ = -W hP.e₁ hP.e₂ := (hW.isAlt.neg_eq _ _).symm
