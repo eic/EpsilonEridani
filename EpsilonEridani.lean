@@ -16,6 +16,7 @@ import EpsilonEridani.Mathematics.KroneckerDelta.BasicExtensions
 import EpsilonEridani.Mathematics.LieAlgebra.Casimir
 import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary
 import EpsilonEridani.Mathematics.LieAlgebra.StructureConstants
+import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
 import EpsilonEridani.Numerics.FourMom
 import EpsilonEridani.Numerics.Random
 import EpsilonEridani.Particles.Fragmentation.Basic
