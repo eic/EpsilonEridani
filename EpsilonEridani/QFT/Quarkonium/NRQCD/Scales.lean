@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.Defs
+import Mathlib.Order.Interval.Set.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -27,8 +28,8 @@ hypothesis fields, and derives the velocity `v = p / m`, which satisfies `0 < v 
 The familiar estimate `E ~ m v²` does *not* follow from the ordering. Writing
 `κ = E m / p²` (`HeavyQuarkScales.coulombRatio`), one has the identity `E = m v² κ`, so the
 estimate is the statement that `κ` is of order one. That is the additional assumption
-`HeavyQuarkScales.CoulombicScaling`, which fixes a constant `K` and asks `K⁻¹ ≤ κ ≤ K`. It is
-consistent with every choice of `m`, `p` and `Λ` (`exists_coulombicScaling_one`), and implied by
+`HeavyQuarkScales.CoulombicScaling`, which fixes a constant `K` and asks `κ ∈ [K⁻¹, K]`. It is
+consistent with every choice of `0 < p < m` and `Λ` (`exists_coulombicScaling_one`), and implied by
 none (`exists_not_coulombicScaling`), so a statement that needs it must carry it as a hypothesis.
 
 The position of `Λ` relative to the binding energy separates two regimes: the weakly coupled
@@ -45,13 +46,14 @@ is an empirical input, not a consequence of the ordering of `m`, `p` and `E`
 * `HeavyQuarkScales.velocity`: the relative velocity `v = p / m`.
 * `HeavyQuarkScales.coulombRatio`: the ratio `κ = E / (m v²) = E m / p²`.
 * `HeavyQuarkScales.CoulombicScaling`: the assumption `E ~ m v²`, with an explicit constant.
+* `HeavyQuarkScales.ofCoulombRatio`: the scales with prescribed `m`, `p`, `Λ` and ratio `κ`.
 * `HeavyQuarkScales.WeaklyCoupled`, `HeavyQuarkScales.StronglyCoupled`: the two regimes.
 
 ## Main results
 
 * `HeavyQuarkScales.velocity_mem_Ioo`: `0 < v < 1`.
 * `HeavyQuarkScales.binding_div_mass_eq`: `E / m = v² · (E / p²) · m`.
-* `HeavyQuarkScales.mass_mul_velocity_sq_lt_momentum`: `m v² < m v = p < m`.
+* `HeavyQuarkScales.mass_mul_velocity_sq_lt_momentum`: `m v² < m v = p`.
 * `HeavyQuarkScales.coulombicScaling_one_iff`: `κ` lies in `[1, 1]` exactly when `E = m v²`.
 * `HeavyQuarkScales.exists_not_coulombicScaling`: the ordering never forces Coulombic scaling.
 * `HeavyQuarkScales.WeaklyCoupled.not_stronglyCoupled` and
@@ -117,11 +119,11 @@ theorem velocity_pos : 0 < s.velocity := div_pos s.momentum_pos s.mass_pos
 
 theorem velocity_lt_one : s.velocity < 1 := (div_lt_one s.mass_pos).2 s.momentum_lt_mass
 
-/-- The relative velocity is a genuine small parameter: `0 < v < 1`. -/
+/-- The relative velocity lies in `(0, 1)`; the strict ordering `p < m` gives no stronger
+bound. -/
 theorem velocity_mem_Ioo : s.velocity ∈ Set.Ioo (0 : ℝ) 1 := ⟨s.velocity_pos, s.velocity_lt_one⟩
 
-/-- The scale `m v²` lies strictly below the relative momentum `m v = p`, so that
-`m v² < m v < m`. -/
+/-- The scale `m v²` lies strictly below the relative momentum `m v = p`. -/
 theorem mass_mul_velocity_sq_lt_momentum : s.mass * s.velocity ^ 2 < s.momentum := by
   calc s.mass * s.velocity ^ 2 = s.momentum * s.velocity := by
         rw [← s.mass_mul_velocity]; ring
@@ -140,33 +142,39 @@ theorem coulombRatio_pos : 0 < s.coulombRatio :=
   div_pos (mul_pos s.binding_pos s.mass_pos) (pow_pos s.momentum_pos 2)
 
 /-- The binding energy is the Coulombic estimate `m v²` times the ratio `κ`. -/
+@[simp]
 theorem mass_mul_velocity_sq_mul_coulombRatio :
     s.mass * s.velocity ^ 2 * s.coulombRatio = s.binding := by
   rw [coulombRatio_def, velocity_def]
   field_simp [s.mass_pos.ne', s.momentum_pos.ne']
 
+/-- `E / m = v² κ`: the ratio of the binding energy to the mass is `v²` times `κ`. -/
+theorem binding_div_mass_eq_coulombRatio :
+    s.binding / s.mass = s.velocity ^ 2 * s.coulombRatio := by
+  rw [← s.mass_mul_velocity_sq_mul_coulombRatio, mul_assoc, mul_div_cancel_left₀ _ s.mass_pos.ne']
+
+/-- `κ = E / (m v²)`: the Coulombic ratio is the binding energy over the Coulombic estimate. -/
+theorem coulombRatio_eq_div : s.coulombRatio = s.binding / (s.mass * s.velocity ^ 2) := by
+  rw [div_mul_eq_div_div, binding_div_mass_eq_coulombRatio,
+    mul_div_cancel_left₀ _ (pow_pos s.velocity_pos 2).ne']
+
 /-- `E / m = v² · (E / p²) · m`: the ratio of the binding energy to the mass is `v²` times the
 dimensionless factor `E m / p²`, which the ordering of the scales does not fix. -/
 theorem binding_div_mass_eq :
     s.binding / s.mass = s.velocity ^ 2 * (s.binding / s.momentum ^ 2) * s.mass := by
-  rw [velocity_def]
-  field_simp [s.mass_pos.ne', s.momentum_pos.ne']
-
-/-- `E / p = v κ`: the second ratio in the hierarchy is the velocity times `κ`. -/
-theorem binding_div_momentum_eq : s.binding / s.momentum = s.velocity * s.coulombRatio := by
-  rw [coulombRatio_def, velocity_def]
-  field_simp [s.mass_pos.ne', s.momentum_pos.ne']
+  rw [binding_div_mass_eq_coulombRatio, coulombRatio_def, mul_assoc, div_mul_eq_mul_div,
+    mul_div_right_comm]
 
 /-- Coulombic scaling `E ~ m v²` with constant `K`: the ratio `κ = E / (m v²)` lies in
 `[K⁻¹, K]`. This is an assumption about the scales, not a consequence of their ordering
 (`exists_not_coulombicScaling`). -/
 def CoulombicScaling (K : ℝ) : Prop :=
-  K⁻¹ ≤ s.coulombRatio ∧ s.coulombRatio ≤ K
+  s.coulombRatio ∈ Set.Icc K⁻¹ K
 
 variable {s}
 
 theorem coulombicScaling_iff {K : ℝ} :
-    s.CoulombicScaling K ↔ K⁻¹ ≤ s.coulombRatio ∧ s.coulombRatio ≤ K := Iff.rfl
+    s.CoulombicScaling K ↔ s.coulombRatio ∈ Set.Icc K⁻¹ K := Iff.rfl
 
 /-- Coulombic scaling with constant `K` bounds the binding energy between `K⁻¹ m v²` and
 `K m v²`. -/
@@ -174,59 +182,89 @@ theorem coulombicScaling_iff_binding {K : ℝ} :
     s.CoulombicScaling K ↔
       K⁻¹ * (s.mass * s.velocity ^ 2) ≤ s.binding ∧ s.binding ≤ K * (s.mass * s.velocity ^ 2) := by
   have h : 0 < s.mass * s.velocity ^ 2 := mul_pos s.mass_pos (pow_pos s.velocity_pos 2)
-  rw [coulombicScaling_iff, ← s.mass_mul_velocity_sq_mul_coulombRatio, mul_comm _ s.coulombRatio,
+  rw [coulombicScaling_iff, Set.mem_Icc, ← s.mass_mul_velocity_sq_mul_coulombRatio,
+    mul_comm _ s.coulombRatio,
     mul_le_mul_iff_of_pos_right h, mul_le_mul_iff_of_pos_right h]
 
 /-- The constant in a Coulombic-scaling bound is at least one. -/
 theorem CoulombicScaling.one_le {K : ℝ} (h : s.CoulombicScaling K) : 1 ≤ K := by
-  have hK : 0 < K := s.coulombRatio_pos.trans_le h.2
-  have := h.1.trans h.2
+  obtain ⟨h₁, h₂⟩ := Set.mem_Icc.1 (coulombicScaling_iff.1 h)
+  have hK : 0 < K := s.coulombRatio_pos.trans_le h₂
+  have := h₁.trans h₂
   rwa [inv_le_iff_one_le_mul₀ hK, ← sq, one_le_sq_iff₀ hK.le] at this
 
 /-- Coulombic scaling is preserved by enlarging the constant. -/
 theorem CoulombicScaling.mono {K K' : ℝ} (h : s.CoulombicScaling K) (hKK' : K ≤ K') :
     s.CoulombicScaling K' :=
-  ⟨(inv_anti₀ (zero_lt_one.trans_le h.one_le) hKK').trans h.1, h.2.trans hKK'⟩
+  coulombicScaling_iff.2 <| Set.Icc_subset_Icc (inv_anti₀ (zero_lt_one.trans_le h.one_le) hKK')
+    hKK' (coulombicScaling_iff.1 h)
 
 /-- Coulombic scaling with constant one is the exact relation `E = m v²`. -/
 theorem coulombicScaling_one_iff : s.CoulombicScaling 1 ↔ s.binding = s.mass * s.velocity ^ 2 := by
   rw [coulombicScaling_iff_binding, inv_one, one_mul, ← le_antisymm_iff, eq_comm]
 
+/-- The scales with mass `m`, relative momentum `p`, hadronic scale `Λ`, and binding energy
+`κ p² / m`, whose Coulombic ratio is therefore `κ`. -/
+noncomputable def ofCoulombRatio {m p : ℝ} (hp : 0 < p) (hpm : p < m) (Λ : ℝ) {κ : ℝ}
+    (hκ : 0 < κ) (hκ₁ : κ ≤ 1) : HeavyQuarkScales where
+  mass := m
+  momentum := p
+  binding := κ * p ^ 2 / m
+  hadronic := Λ
+  binding_pos := by have := hp.trans hpm; positivity
+  binding_lt_momentum := by
+    rw [div_lt_iff₀ (hp.trans hpm), sq, ← mul_assoc, mul_comm p m]
+    exact mul_lt_mul_of_pos_right ((mul_le_of_le_one_left hp.le hκ₁).trans_lt hpm) hp
+  momentum_lt_mass := hpm
+
+section ofCoulombRatio
+
+variable {m p : ℝ} (hp : 0 < p) (hpm : p < m) (Λ : ℝ) {κ : ℝ} (hκ : 0 < κ) (hκ₁ : κ ≤ 1)
+
+@[simp]
+theorem mass_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hκ hκ₁).mass = m := (rfl)
+
+@[simp]
+theorem momentum_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hκ hκ₁).momentum = p := (rfl)
+
+@[simp]
+theorem binding_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hκ hκ₁).binding = κ * p ^ 2 / m := (rfl)
+
+@[simp]
+theorem hadronic_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hκ hκ₁).hadronic = Λ := (rfl)
+
+@[simp]
+theorem coulombRatio_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hκ hκ₁).coulombRatio = κ := by
+  have := (hp.trans hpm).ne'
+  rw [coulombRatio_def, binding_ofCoulombRatio, mass_ofCoulombRatio, momentum_ofCoulombRatio]
+  field_simp
+
+end ofCoulombRatio
+
+instance : Nonempty HeavyQuarkScales :=
+  ⟨ofCoulombRatio one_pos one_lt_two 0 one_pos le_rfl⟩
+
 /-- Coulombic scaling is consistent with every mass, relative momentum and hadronic scale: the
 binding energy `p² / m` satisfies it exactly. -/
-theorem exists_coulombicScaling_one (s : HeavyQuarkScales) :
-    ∃ s' : HeavyQuarkScales, s'.mass = s.mass ∧ s'.momentum = s.momentum ∧
-      s'.hadronic = s.hadronic ∧ s'.CoulombicScaling 1 := by
-  have hm := s.mass_pos
-  have hp := s.momentum_pos
-  refine ⟨⟨s.mass, s.momentum, s.momentum ^ 2 / s.mass, s.hadronic, by positivity, ?_,
-    s.momentum_lt_mass⟩, rfl, rfl, rfl, ?_⟩
-  · rw [div_lt_iff₀ hm, sq]
-    exact mul_lt_mul_of_pos_left s.momentum_lt_mass hp
-  · rw [coulombicScaling_one_iff, velocity_def]
-    field_simp
+theorem exists_coulombicScaling_one {m p : ℝ} (hp : 0 < p) (hpm : p < m) (Λ : ℝ) :
+    ∃ s : HeavyQuarkScales, s.mass = m ∧ s.momentum = p ∧ s.hadronic = Λ ∧
+      s.CoulombicScaling 1 :=
+  ⟨ofCoulombRatio hp hpm Λ one_pos le_rfl, mass_ofCoulombRatio .., momentum_ofCoulombRatio ..,
+    hadronic_ofCoulombRatio .., coulombicScaling_iff.2 <| by
+      rw [coulombRatio_ofCoulombRatio, inv_one]; exact Set.left_mem_Icc.2 le_rfl⟩
 
 /-- Coulombic scaling is not a consequence of the ordering `0 < E < p < m`: for every mass,
 relative momentum and hadronic scale, and every constant `K`, some binding energy violates it. -/
-theorem exists_not_coulombicScaling (s : HeavyQuarkScales) (K : ℝ) :
-    ∃ s' : HeavyQuarkScales, s'.mass = s.mass ∧ s'.momentum = s.momentum ∧
-      s'.hadronic = s.hadronic ∧ ¬ s'.CoulombicScaling K := by
-  have hm := s.mass_pos
-  have hp := s.momentum_pos
-  have hK : 0 < 2 * (|K| + 1) := by positivity
-  refine ⟨⟨s.mass, s.momentum, s.momentum ^ 2 / (s.mass * (2 * (|K| + 1))), s.hadronic,
-    by positivity, ?_, s.momentum_lt_mass⟩, rfl, rfl, rfl, fun h ↦ ?_⟩
-  · rw [div_lt_iff₀ (by positivity), sq]
-    refine mul_lt_mul_of_pos_left ?_ hp
-    calc s.momentum < s.mass := s.momentum_lt_mass
-      _ ≤ s.mass * (2 * (|K| + 1)) := le_mul_of_one_le_right hm.le (by linarith [abs_nonneg K])
-  · have h2 := h.1
-    simp only [coulombRatio_def] at h2
-    have hratio : s.momentum ^ 2 / (s.mass * (2 * (|K| + 1))) * s.mass / s.momentum ^ 2 =
-        (2 * (|K| + 1))⁻¹ := by
-      field_simp
-    rw [hratio, inv_le_inv₀ (zero_lt_one.trans_le h.one_le) hK] at h2
-    linarith [le_abs_self K]
+theorem exists_not_coulombicScaling {m p : ℝ} (hp : 0 < p) (hpm : p < m) (Λ K : ℝ) :
+    ∃ s : HeavyQuarkScales, s.mass = m ∧ s.momentum = p ∧ s.hadronic = Λ ∧
+      ¬ s.CoulombicScaling K := by
+  have hc : 0 < 2 * (|K| + 1) := by positivity
+  have hc₁ : (2 * (|K| + 1))⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith [abs_nonneg K])
+  refine ⟨ofCoulombRatio hp hpm Λ (inv_pos.2 hc) hc₁, mass_ofCoulombRatio ..,
+    momentum_ofCoulombRatio .., hadronic_ofCoulombRatio .., fun h ↦ ?_⟩
+  have h₁ := (Set.mem_Icc.1 (coulombicScaling_iff.1 h)).1
+  rw [coulombRatio_ofCoulombRatio, inv_le_inv₀ (zero_lt_one.trans_le h.one_le) hc] at h₁
+  linarith [le_abs_self K]
 
 /-! ### The weakly and strongly coupled regimes -/
 
@@ -244,14 +282,22 @@ theorem weaklyCoupled_iff : s.WeaklyCoupled ↔ s.hadronic < s.binding := Iff.rf
 theorem stronglyCoupled_iff :
     s.StronglyCoupled ↔ s.binding < s.hadronic ∧ s.hadronic < s.momentum := Iff.rfl
 
+/-- In the strongly coupled regime the binding energy lies below the hadronic scale. -/
+theorem StronglyCoupled.binding_lt_hadronic (h : s.StronglyCoupled) : s.binding < s.hadronic :=
+  (stronglyCoupled_iff.1 h).1
+
+/-- In the strongly coupled regime the hadronic scale lies below the relative momentum. -/
+theorem StronglyCoupled.hadronic_lt_momentum (h : s.StronglyCoupled) : s.hadronic < s.momentum :=
+  (stronglyCoupled_iff.1 h).2
+
 /-- In the weakly coupled regime the hadronic scale lies below the relative momentum, as it does
 by definition in the strongly coupled one. -/
 theorem WeaklyCoupled.hadronic_lt_momentum (h : s.WeaklyCoupled) : s.hadronic < s.momentum :=
-  h.trans s.binding_lt_momentum
+  (weaklyCoupled_iff.1 h).trans s.binding_lt_momentum
 
 /-- The weakly coupled regime excludes the strongly coupled one. -/
 theorem WeaklyCoupled.not_stronglyCoupled (h : s.WeaklyCoupled) : ¬ s.StronglyCoupled :=
-  fun h' ↦ lt_asymm h h'.1
+  fun h' ↦ lt_asymm (weaklyCoupled_iff.1 h) h'.binding_lt_hadronic
 
 /-- The strongly coupled regime excludes the weakly coupled one. -/
 theorem StronglyCoupled.not_weaklyCoupled (h : s.StronglyCoupled) : ¬ s.WeaklyCoupled :=
@@ -262,7 +308,7 @@ energy, the pair is in one of the two regimes, and by `WeaklyCoupled.not_strongl
 only one. -/
 theorem weaklyCoupled_or_stronglyCoupled (hE : s.hadronic ≠ s.binding)
     (hp : s.hadronic < s.momentum) : s.WeaklyCoupled ∨ s.StronglyCoupled :=
-  hE.lt_or_gt.imp id (⟨·, hp⟩)
+  hE.lt_or_gt.imp weaklyCoupled_iff.2 fun h ↦ stronglyCoupled_iff.2 ⟨h, hp⟩
 
 /-- The weakly coupled regime is compatible with every mass, relative momentum and binding
 energy. -/
