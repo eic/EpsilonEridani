@@ -139,6 +139,7 @@ theorem quasiShuffle_nil_right (m : List ℤ) : quasiShuffle m [] = Finsupp.sing
   | nil => rw [quasiShuffle]
   | cons a m => rw [quasiShuffle]; exact List.cons_ne_nil a m
 
+@[simp]
 theorem quasiShuffle_cons_cons (a b : ℤ) (m m' : List ℤ) :
     quasiShuffle (a :: m) (b :: m') =
       (quasiShuffle m (b :: m')).mapDomain (a :: ·) +
