@@ -15,7 +15,9 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProdu
 A charged source of mass `m` and energy `E` that emits a photon and leaves with energy `E'` at
 scattering angle `θ` hands the photon the four-momentum `q = p - p'`, whose virtuality is
 
-  `Q² = -q² = 2 (E E' - |p⃗| |p⃗'| cos θ - m²)`,  `|p⃗| = √(E² - m²)`,  `|p⃗'| = √(E'² - m²)`.
+  `Q² = -q² = 2 (E E' - |p| |p'| cos θ - m²)`,  `|p| = √(E² - m²)`,  `|p'| = √(E'² - m²)`,
+
+where `|p|` and `|p'|` are the magnitudes of the spatial parts (the three-momenta) of `p` and `p'`.
 
 This module develops that formula and the region it carves out.
 
@@ -65,9 +67,9 @@ open scoped InnerProductSpace Lorentz.Vector
 
 /-! ### The emission virtuality as a function of the scattering angle -/
 
-/-- The virtuality `Q² = 2 (E E' - |p⃗| |p⃗'| cos θ - m²)` of the photon emitted when a source of
+/-- The virtuality `Q² = 2 (E E' - |p| |p'| cos θ - m²)` of the photon emitted when a source of
 mass `m` goes from energy `E` to energy `E'` and is scattered by the angle `θ`, with the
-magnitudes of the three-momenta `|p⃗| = √(E² - m²)` and `|p⃗'| = √(E'² - m²)` fixed by the mass
+magnitudes of the three-momenta `|p| = √(E² - m²)` and `|p'| = √(E'² - m²)` fixed by the mass
 shell. -/
 def emissionVirtuality (m E E' θ : ℝ) : ℝ :=
   2 * (E * E' - √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) * cos θ - m ^ 2)
