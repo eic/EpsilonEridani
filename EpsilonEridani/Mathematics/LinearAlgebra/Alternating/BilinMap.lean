@@ -57,8 +57,8 @@ theorem bilinMap_apply (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v
 @[simp]
 theorem bilinMap_apply_self (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (v : M) :
     f.bilinMap m v v = 0 := by
-  rw [bilinMap_apply, ← curryLeft_apply_apply, ← curryLeft_apply_apply, curryLeft_same,
-    zero_apply]
+  rw [bilinMap_apply, ← curryLeft_apply_apply, ← curryLeft_apply_apply]
+  exact DFunLike.congr_fun (f.curryLeft_same v) m
 
 /-- `f.bilinMap m` is alternating. -/
 theorem isAlt_bilinMap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
