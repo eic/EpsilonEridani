@@ -625,6 +625,19 @@ lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
   rw [pTransverse_pairing, huq, mul_zero, sub_zero] at huT
   rw [hSymm.eq u K.p, huT]
 
+/-- A covariant tensor has no mixed component between a spectator `u` and any vector
+`g`-orthogonal to `u`, provided `u` is non-null whenever it is non-zero. This is
+`covariant_spectator_offDiagonal_zero` with the orthogonality to `p` supplied by
+`apply_p_eq_zero_of_spectator`. -/
+theorem covariant_spectator_apply_eq_zero (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+    (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) {u v : V} (hu : u ≠ 0 → g u u ≠ 0)
+    (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (huv : g u v = 0) :
+    W u v = 0 := by
+  by_cases hu0 : u = 0
+  · simp [hu0]
+  exact covariant_spectator_offDiagonal_zero g K W hSymm hW u v (hu hu0)
+    (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq]) huv
+
 /-- On the spectator subspace a covariant tensor has the same diagonal ratio to `g` in every
 direction. -/
 private lemma covariant_spectator_apply_self (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
@@ -682,13 +695,9 @@ theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bili
   have hqt : g K.q t = 0 := by rw [hSymm.eq, htq]
   -- Conservation removes every `q` component. Reflections in spectator directions remove the
   -- mixed components between a spectator and `p_T`.
-  have hWut : ∀ u, g K.q u = 0 → g t u = 0 → W u t = 0 := by
-    intro u huq huT
-    by_cases hu : u = 0
-    · simp [hu]
-    exact covariant_spectator_offDiagonal_zero g K W hSymm hA.covariant u t
-      (hS.definite u huq huT hu).ne (apply_p_eq_zero_of_spectator g K hSymm huq huT)
-      (by rw [hSymm.eq, huq]) (by rw [hSymm.eq, huT])
+  have hWut : ∀ u, g K.q u = 0 → g t u = 0 → W u t = 0 := fun u huq huT =>
+    covariant_spectator_apply_eq_zero g K W hSymm hA.covariant
+      (fun hu => (hS.definite u huq huT hu).ne) huq huT (by rw [hSymm.eq, huT])
   -- By `transitive` and polarization, `W = F1 • (-g)` on the spectator subspace.
   obtain ⟨F1, hF1⟩ : ∃ F1 : ℝ, ∀ u u' : V, g K.q u = 0 → g t u = 0 → g K.q u' = 0 →
       g t u' = 0 → W u u' = F1 * -g u u' := by

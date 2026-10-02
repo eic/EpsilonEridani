@@ -16,8 +16,9 @@ unpolarized target acquires the parity-odd structure `F₃ ε^{μναβ} p_α q_
 *Quarks and Leptons* (1984), ch. 8). Hermiticity makes that term the imaginary, antisymmetric
 part of the tensor; in the real bilinear forms of `Tensors.Basic` it is represented by an
 antisymmetric form. This module proves that, under a `SpectatorPlane`, the antisymmetric,
-conserved, covariant tensors are exactly the multiples of a single non-zero structure `A`, the
-role played by `ε(·, ·, p, q)`, which on an abstract real vector space is supplied as data.
+conserved, properly covariant tensors are exactly the multiples of a single non-zero structure
+`A`, the role played by `ε(·, ·, p, q)`, which on an abstract real vector space is supplied as
+data.
 
 ## Proper covariance
 
@@ -335,12 +336,8 @@ theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm)
     (hW : ParityOddAssumptions g K W) (hcov : IsLorentzCovariant g K W) : W = 0 := by
   -- The reflection in a spectator `u` kills every component of `W` between `u` and `u^⊥`.
   have hperp : ∀ u v : V, g K.q u = 0 → g (pTransverse g K) u = 0 → g u v = 0 →
-      W u v = 0 := by
-    intro u v huq huT huv
-    by_cases hu : u = 0
-    · simp [hu]
-    exact covariant_spectator_offDiagonal_zero g K W hSymm hcov u v (hnull u huq huT hu)
-      (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq]) huv
+      W u v = 0 := fun u _ huq huT huv =>
+    covariant_spectator_apply_eq_zero g K W hSymm hcov (hnull u huq huT) huq huT huv
   -- Two spectators: split `u'` along `u` and its orthogonal complement.
   have hspec : ∀ u u' : V, g K.q u = 0 → g (pTransverse g K) u = 0 → W u u' = 0 := by
     intro u u' huq huT
