@@ -10,7 +10,6 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Order.Interval.Finset.Nat
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # Nested harmonic sums
@@ -144,23 +143,6 @@ theorem harmonicSum_cons_succ (a : ℤ) (m : List ℤ) (n : ℕ) :
     harmonicSum (a :: m) (n + 1) =
       harmonicSum (a :: m) n + term a (n + 1) * harmonicSum m (n + 1) := by
   simp only [harmonicSum_cons, Finset.sum_range_succ]
-
-/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `0`
-gives `0`. -/
-theorem harmonicSum_linearCombination_mapDomain_cons_zero (a : ℤ) (c : List ℤ →₀ ℤ) :
-    Finsupp.linearCombination ℤ (harmonicSum · 0) (c.mapDomain (a :: ·)) = 0 := by
-  rw [Finsupp.linearCombination_mapDomain]
-  simp [Finsupp.linearCombination_apply, Function.comp_def]
-
-/-- Evaluating a formal combination of multi-indices prefixed by the index `a` at `N + 1`:
-the recursion `harmonicSum_cons_succ`, extended linearly. -/
-theorem harmonicSum_linearCombination_mapDomain_cons_succ (a : ℤ) (c : List ℤ →₀ ℤ) (n : ℕ) :
-    Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) (c.mapDomain (a :: ·)) =
-      Finsupp.linearCombination ℤ (harmonicSum · n) (c.mapDomain (a :: ·)) +
-        term a (n + 1) * Finsupp.linearCombination ℤ (harmonicSum · (n + 1)) c := by
-  rw [Finsupp.linearCombination_mapDomain, Finsupp.linearCombination_mapDomain]
-  simp only [Finsupp.linearCombination_apply, Function.comp_def, harmonicSum_cons_succ, smul_add,
-    Finsupp.sum_add, Finsupp.mul_sum, mul_smul_comm]
 
 /-- The sum over the summation range `1 ≤ i ≤ N`, as it is usually written. -/
 theorem harmonicSum_cons_eq_sum_Icc (a : ℤ) (m : List ℤ) (n : ℕ) :
