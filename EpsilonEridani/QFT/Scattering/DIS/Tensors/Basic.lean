@@ -626,9 +626,7 @@ lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
   rw [hSymm.eq u K.p, huT]
 
 /-- A covariant tensor has no mixed component between a spectator `u` and any vector
-`g`-orthogonal to `u`, provided `u` is non-null whenever it is non-zero. This is
-`covariant_spectator_offDiagonal_zero` with the orthogonality to `p` supplied by
-`apply_p_eq_zero_of_spectator`. -/
+`g`-orthogonal to `u`, provided `u` is non-null whenever it is non-zero. -/
 theorem covariant_spectator_apply_eq_zero (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) {u v : V} (hu : u ≠ 0 → g u u ≠ 0)
     (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (huv : g u v = 0) :
