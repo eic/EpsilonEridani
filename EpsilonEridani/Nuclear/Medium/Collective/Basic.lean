@@ -98,6 +98,7 @@ theorem qVector_zero (φ : ι → AddCircle T) : qVector 0 φ = Fintype.card ι 
   simp [qVector]
 
 /-- The `Q`-vector of harmonic `-n` is the complex conjugate of that of harmonic `n`. -/
+@[simp]
 theorem qVector_neg (n : ℤ) (φ : ι → AddCircle T) : qVector (-n) φ = conj (qVector n φ) := by
   simp [qVector]
 
@@ -110,7 +111,7 @@ theorem qVector_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T)
 @[simp]
 theorem norm_qVector_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T) :
     ‖qVector n (fun j => φ j + ψ)‖ = ‖qVector n φ‖ := by
-  rw [qVector_add_const, norm_mul, fourier_apply, Circle.norm_coe, one_mul]
+  simp [qVector_add_const]
 
 /-- The `Q`-vector depends continuously on the angles. -/
 @[fun_prop]
@@ -127,11 +128,8 @@ pairs of distinct particles of `e^{i n φⱼ} conj (e^{i n φₖ}) = e^{i n (φ�
 theorem norm_qVector_sq [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle T) :
     (‖qVector n φ‖ : ℂ) ^ 2 =
       Fintype.card ι + ∑ j, ∑ k ∈ univ.erase j, fourier n (φ j) * conj (fourier n (φ k)) := by
-  rw [← Complex.mul_conj', qVector, map_sum, Finset.sum_mul_sum,
-    Finset.sum_congr rfl fun j _ => (Finset.add_sum_erase univ
-      (fun k => fourier n (φ j) * conj (fourier n (φ k))) (mem_univ j)).symm,
-    Finset.sum_add_distrib]
-  congr 1
+  simp only [← Complex.mul_conj', qVector, map_sum, Finset.sum_mul_sum]
+  refine (Finset.sum_congr rfl fun j _ => (Finset.add_sum_erase _ _ (mem_univ j)).symm).trans ?_
   simp [Complex.mul_conj', Finset.card_univ]
 
 /-- The single-event two-particle correlation `⟨2⟩ = (|Q_n|² - M) / (M (M - 1))`: the squared
@@ -155,6 +153,12 @@ theorem twoParticleCorrelation_eq_sum [DecidableEq ι] (n : ℤ) (φ : ι → Ad
   push_cast
   rw [norm_qVector_sq]
   ring
+
+/-- The two-particle correlations of harmonics `n` and `-n` coincide. -/
+@[simp]
+theorem twoParticleCorrelation_neg (n : ℤ) (φ : ι → AddCircle T) :
+    twoParticleCorrelation (-n) φ = twoParticleCorrelation n φ := by
+  simp [twoParticleCorrelation]
 
 /-- The two-particle correlation is invariant under a common rotation of all angles. -/
 @[simp]
@@ -181,6 +185,7 @@ theorem anisotropyCoeff_zero (μ : Measure (AddCircle T)) [IsProbabilityMeasure 
   simp [anisotropyCoeff]
 
 /-- The coefficient of harmonic `-n` is the complex conjugate of that of harmonic `n`. -/
+@[simp]
 theorem anisotropyCoeff_neg (μ : Measure (AddCircle T)) (n : ℤ) :
     anisotropyCoeff μ (-n) = conj (anisotropyCoeff μ n) := by
   simp_rw [anisotropyCoeff, fourier_neg, integral_conj]
@@ -199,15 +204,15 @@ theorem anisotropyCoeff_withDensity [Fact (0 < T)] {f : AddCircle T → NNReal}
     (hf : Measurable f) (n : ℤ) :
     anisotropyCoeff (haarAddCircle.withDensity fun x => f x) n =
       fourierCoeff (fun x => (f x : ℂ)) (-n) := by
-  rw [anisotropyCoeff, integral_withDensity_eq_integral_smul hf, fourierCoeff, neg_neg]
-  congr 1 with x
-  rw [NNReal.smul_def, Complex.real_smul, smul_eq_mul, mul_comm]
+  simp [anisotropyCoeff, integral_withDensity_eq_integral_smul hf, fourierCoeff, NNReal.smul_def,
+    mul_comm]
 
 /-- Rotating a distribution by `ψ` multiplies its anisotropy coefficient by `e^{i n ψ}`. -/
 theorem anisotropyCoeff_map_add (μ : Measure (AddCircle T)) (n : ℤ) (ψ : AddCircle T) :
     anisotropyCoeff (μ.map (· + ψ)) n = fourier n ψ * anisotropyCoeff μ n := by
-  rw [anisotropyCoeff, integral_map (measurable_add_const ψ).aemeasurable
-    (fourier n).continuous.aestronglyMeasurable, anisotropyCoeff, ← integral_const_mul]
+  simp only [anisotropyCoeff, ← integral_const_mul]
+  rw [integral_map (measurable_add_const ψ).aemeasurable
+    (fourier n).continuous.aestronglyMeasurable]
   congr 1 with x
   simp [smul_add, toCircle_add, mul_comm]
 
@@ -215,7 +220,7 @@ theorem anisotropyCoeff_map_add (μ : Measure (AddCircle T)) (n : ℤ) (ψ : Add
 @[simp]
 theorem norm_anisotropyCoeff_map_add (μ : Measure (AddCircle T)) (n : ℤ) (ψ : AddCircle T) :
     ‖anisotropyCoeff (μ.map (· + ψ)) n‖ = ‖anisotropyCoeff μ n‖ := by
-  rw [anisotropyCoeff_map_add, norm_mul, fourier_apply, Circle.norm_coe, one_mul]
+  simp [anisotropyCoeff_map_add]
 
 /-- The anisotropy coefficient itself is not rotation invariant: rotating by `ψ` leaves it
 unchanged exactly when it vanishes or `e^{i n ψ} = 1`. -/
@@ -223,7 +228,7 @@ theorem anisotropyCoeff_map_add_eq_self_iff (μ : Measure (AddCircle T)) (n : �
     (ψ : AddCircle T) :
     anisotropyCoeff (μ.map (· + ψ)) n = anisotropyCoeff μ n ↔
       anisotropyCoeff μ n = 0 ∨ fourier n ψ = 1 := by
-  rw [anisotropyCoeff_map_add, mul_left_eq_self₀, or_comm]
+  simp [anisotropyCoeff_map_add, mul_left_eq_self₀, or_comm]
 
 /-! ### Expectations for independent draws -/
 
@@ -236,7 +241,8 @@ omit [IsProbabilityMeasure P] in
 /-- The expectation of `e^{i n φ}` for a particle with distribution `μ` is `V_n`. -/
 theorem integral_fourier_comp {X : Ω → AddCircle T} (hX : AEMeasurable X P) (hμ : P.map X = μ)
     (n : ℤ) : ∫ ω, fourier n (X ω) ∂P = anisotropyCoeff μ n := by
-  rw [anisotropyCoeff, ← hμ, integral_map hX (fourier n).continuous.aestronglyMeasurable]
+  subst hμ
+  exact (integral_map hX (fourier n).continuous.aestronglyMeasurable).symm
 
 omit [IsProbabilityMeasure P] in
 /-- For two independent particles with distribution `μ`, the expectation of
@@ -248,8 +254,8 @@ theorem integral_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hXY : Inde
   rw [hXY.integral_fun_comp_mul_comp (f := fun x => fourier n x)
       (g := fun y => conj (fourier n y)) hX hY
       (fourier n).continuous.aestronglyMeasurable
-      (Complex.continuous_conj.comp (fourier n).continuous).aestronglyMeasurable,
-    integral_conj, integral_fourier_comp hX hμX, integral_fourier_comp hY hμY,
+      (Complex.continuous_conj.comp (fourier n).continuous).aestronglyMeasurable]
+  simp only [integral_conj, integral_fourier_comp hX hμX, integral_fourier_comp hY hμY,
     Complex.mul_conj']
 
 variable (hφ : ∀ j, AEMeasurable (φ j) P) (hμ : ∀ j, P.map (φ j) = μ)
@@ -262,9 +268,8 @@ theorem integral_qVector (n : ℤ) :
   simp_rw [qVector]
   rw [integral_finsetSum _ fun j _ => Integrable.of_bound (f := fun ω => fourier n (φ j ω))
       ((fourier n).continuous.measurable.comp_aemeasurable (hφ j)).aestronglyMeasurable 1
-      (Filter.Eventually.of_forall fun ω => by simp),
-    Finset.sum_congr rfl fun j _ => integral_fourier_comp (hφ j) (hμ j) n]
-  simp
+      (Filter.Eventually.of_forall fun ω => by simp)]
+  simp only [integral_fourier_comp (hφ _) (hμ _), sum_const, card_univ, nsmul_eq_mul]
 
 include hind
 
@@ -289,7 +294,7 @@ theorem integral_norm_qVector_sq (n : ℤ) :
   rw [← integral_complex_ofReal]
   push_cast
   simp_rw [norm_qVector_sq]
-  rw [integral_add (integrable_const _) (integrable_finsetSum _ fun j _ =>
+  simp only [integral_add (integrable_const _) (integrable_finsetSum _ fun j _ =>
       integrable_finsetSum _ (hpair j)), integral_finsetSum _ fun j _ =>
       integrable_finsetSum _ (hpair j)]
   simp_rw [fun j => integral_finsetSum _ (hpair j)]
@@ -298,7 +303,7 @@ theorem integral_norm_qVector_sq (n : ℤ) :
         (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := fun j k hk =>
     integral_fourier_mul_conj_fourier (hind (Finset.ne_of_mem_erase hk).symm) (hφ j) (hφ k)
       (hμ j) (hμ k) n
-  rw [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j), hcount]
+  simp only [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j), hcount]
   simp
 
 /-- **The naive estimator is biased.** For `M ≥ 1` pairwise independent particles with
@@ -308,7 +313,7 @@ theorem integral_norm_qVector_sq_div_card_sq [Nonempty ι] (n : ℤ) :
     ∫ ω, ‖qVector n (fun j => φ j ω)‖ ^ 2 / (Fintype.card ι : ℝ) ^ 2 ∂P =
       ‖anisotropyCoeff μ n‖ ^ 2 + (1 - ‖anisotropyCoeff μ n‖ ^ 2) / Fintype.card ι := by
   have hM : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-  rw [integral_div, integral_norm_qVector_sq hφ hμ hind]
+  simp only [integral_div, integral_norm_qVector_sq hφ hμ hind]
   field_simp
   ring
 
@@ -323,13 +328,11 @@ theorem integral_twoParticleCorrelation (hM : 1 < Fintype.card ι) (n : ℤ) :
     .of_bound ((((continuous_qVector n).norm.pow 2).measurable.comp_aemeasurable
       (AEMeasurable.of_eval hφ))).aestronglyMeasurable
       ((Fintype.card ι : ℝ) ^ 2) (Filter.Eventually.of_forall fun ω => by
-        rw [Real.norm_eq_abs, abs_pow, abs_norm]
+        simp only [norm_pow, norm_norm]
         exact pow_le_pow_left₀ (norm_nonneg _) (norm_qVector_le n _) 2)
   simp_rw [twoParticleCorrelation]
-  rw [integral_div, integral_sub hint (integrable_const _), integral_norm_qVector_sq hφ hμ hind,
-    integral_const, probReal_univ, one_smul]
+  simp [integral_div, integral_sub hint (integrable_const _), integral_norm_qVector_sq hφ hμ hind]
   field_simp
-  ring
 
 end Expectation
 
