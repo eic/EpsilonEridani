@@ -17,6 +17,11 @@ rule states that, summed over all hadron species, this fraction is one:
 
 `∑_h ∫₀¹ dz z D_h^i(z, Q²) = 1` for every flavour `i` and every scale `Q²`.
 
+The Bochner integral `zMoment` assigns `0` to a non-integrable integrand, so a species whose
+momentum fraction diverges would contribute `0` to the sum. `MomentumSumRule` therefore also
+requires each first-moment integrand `z D_h^i(z, Q²)` to be integrable on `[0, 1]`, which is what
+makes the sum of the displayed identity a sum of finite momentum fractions.
+
 The species sum is a `Finset.univ` sum over a `Fintype` species type. The identity is physically
 justified only when that type is complete for the final-state sum, and this file does not assume
 completeness: `MomentumSumRule` is the identity itself.
@@ -48,7 +53,7 @@ completeness: `MomentumSumRule` is the identity itself.
   `arXiv:1607.02521`, §2.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -62,27 +67,32 @@ variable {Hadron Flavor : Type}
 
 /-! ### The momentum sum rule -/
 
-/-- The momentum sum rule: for every parton flavour `i` and scale `Q2`, the first moments of the
+/-- The momentum sum rule: for every parton flavour `i` and scale `Q2`, the first-moment integrand
+of every hadron species is integrable on the unit interval, and the first moments of the
 fragmentation functions into all hadron species sum to one. -/
 def MomentumSumRule [Fintype Hadron] (D : Frag Hadron Flavor) : Prop :=
-  ∀ (i : Flavor) (Q2 : ℝ), ∑ h, zMoment D 1 h i Q2 = 1
+  ∀ (i : Flavor) (Q2 : ℝ),
+    (∀ h, IntegrableOn (fun z => z * D h i z Q2) (Icc 0 1)) ∧ ∑ h, zMoment D 1 h i Q2 = 1
 
 /-- Unfolding lemma for `MomentumSumRule`. -/
 lemma momentumSumRule_iff [Fintype Hadron] (D : Frag Hadron Flavor) :
-    MomentumSumRule D ↔ ∀ (i : Flavor) (Q2 : ℝ), ∑ h, zMoment D 1 h i Q2 = 1 :=
+    MomentumSumRule D ↔ ∀ (i : Flavor) (Q2 : ℝ),
+      (∀ h, IntegrableOn (fun z => z * D h i z Q2) (Icc 0 1)) ∧ ∑ h, zMoment D 1 h i Q2 = 1 :=
   Iff.rfl
 
-/-- For a single species, the momentum sum rule says that its first moment is one. -/
+/-- For a single species, the momentum sum rule says that its first moment is the integral of an
+integrable function and equals one. -/
 lemma momentumSumRule_iff_of_unique [Unique Hadron] (D : Frag Hadron Flavor) :
-    MomentumSumRule D ↔ ∀ (i : Flavor) (Q2 : ℝ), zMoment D 1 default i Q2 = 1 := by
-  simp [momentumSumRule_iff]
+    MomentumSumRule D ↔ ∀ (i : Flavor) (Q2 : ℝ),
+      IntegrableOn (fun z => z * D default i z Q2) (Icc 0 1) ∧ zMoment D 1 default i Q2 = 1 := by
+  simp [momentumSumRule_iff, Unique.forall_iff]
 
 /-- Under the momentum sum rule, each species carries at most the whole momentum of the
 fragmenting parton. Only non-negativity of the other species is used. -/
 theorem MomentumSumRule.zMoment_one_le_one [Fintype Hadron] {D : Frag Hadron Flavor}
     (hsum : MomentumSumRule D) (hD : Assumptions D) (h : Hadron) (i : Flavor) (Q2 : ℝ) :
     zMoment D 1 h i Q2 ≤ 1 :=
-  (momentumSumRule_iff D).1 hsum i Q2 ▸
+  ((momentumSumRule_iff D).1 hsum i Q2).2 ▸
     Finset.single_le_sum (fun h' _ => zMoment_nonneg hD 1 h' i Q2) (Finset.mem_univ h)
 
 /-! ### The sum rule is not a per-species statement -/
@@ -118,9 +128,14 @@ lemma zMoment_one_twoSpeciesFrag_one (Q2 : ℝ) : zMoment twoSpeciesFrag 1 1 () 
 
 /-- The two-species family satisfies the momentum sum rule: `2/3 + 1/3 = 1`. -/
 theorem momentumSumRule_twoSpeciesFrag : MomentumSumRule twoSpeciesFrag := by
-  refine (momentumSumRule_iff _).2 fun _ Q2 => ?_
-  rw [Fin.sum_univ_two, zMoment_one_twoSpeciesFrag_zero, zMoment_one_twoSpeciesFrag_one]
-  norm_num
+  refine (momentumSumRule_iff _).2 fun _ Q2 => ⟨fun h => ?_, ?_⟩
+  · rw [twoSpeciesFrag, integrableOn_mul_extendByZero_iff]
+    fin_cases h <;>
+      simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_fin_one] <;>
+      exact Continuous.integrableOn_Icc (by fun_prop)
+  · rw [Fin.sum_univ_two, zMoment_one_twoSpeciesFrag_zero, zMoment_one_twoSpeciesFrag_one]
+    norm_num
 
 /-- Neither member of the two-species family satisfies the momentum sum rule on its own. -/
 theorem not_momentumSumRule_single_twoSpeciesFrag (h : Fin 2) :
@@ -129,7 +144,7 @@ theorem not_momentumSumRule_single_twoSpeciesFrag (h : Fin 2) :
     rw [Fin.forall_fin_two, zMoment_one_twoSpeciesFrag_zero, zMoment_one_twoSpeciesFrag_one]
     norm_num
   rw [momentumSumRule_iff_of_unique]
-  exact fun hsum => key h (hsum () 0)
+  exact fun hsum => key h (hsum () 0).2
 
 /-! ### No multiplicity sum rule -/
 
@@ -145,7 +160,11 @@ lemma assumptions_invFrag : Assumptions invFrag :=
 /-- `invFrag` satisfies the momentum sum rule: `∫₀¹ dz z · z⁻¹ = 1`. -/
 theorem momentumSumRule_invFrag : MomentumSumRule invFrag := by
   rw [momentumSumRule_iff_of_unique]
-  intro _ Q2
+  refine fun _ Q2 => ⟨?_, ?_⟩
+  · rw [invFrag, integrableOn_mul_extendByZero_iff, integrableOn_Icc_iff_integrableOn_Ioc,
+      integrableOn_congr_fun (g := fun _ => (1 : ℝ)) (fun z hz => mul_inv_cancel₀ hz.1.ne')
+        measurableSet_Ioc]
+    exact integrableOn_const measure_Ioc_lt_top.ne
   rw [invFrag, zMoment_extendByZero, zMoment_eq_intervalIntegral]
   calc ∫ z in (0 : ℝ)..1, z ^ 1 * z⁻¹ = ∫ _ in (0 : ℝ)..1, (1 : ℝ) :=
         intervalIntegral.integral_congr_ae <| Filter.Eventually.of_forall fun z hz => by
@@ -193,7 +212,9 @@ lemma zMoment_powerFrag (n k : ℕ) (Q2 : ℝ) :
 /-- Every `powerFrag n` satisfies the momentum sum rule. -/
 theorem momentumSumRule_powerFrag (n : ℕ) : MomentumSumRule (powerFrag n) := by
   rw [momentumSumRule_iff_of_unique]
-  intro _ Q2
+  refine fun _ Q2 => ⟨?_, ?_⟩
+  · rw [powerFrag, integrableOn_mul_extendByZero_iff]
+    exact Continuous.integrableOn_Icc (by fun_prop)
   rw [zMoment_powerFrag]
   have : (n : ℝ) + 2 ≠ 0 := by positivity
   push_cast

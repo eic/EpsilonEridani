@@ -89,6 +89,13 @@ lemma zMoment_extendByZero (f : Frag Hadron Flavor) : zMoment (extendByZero f) =
   exact setIntegral_congr_fun measurableSet_Icc fun z hz => by
     rw [extendByZero_of_mem f hz]
 
+/-- Extending by zero does not change integrability of a weighted family on the unit interval. -/
+lemma integrableOn_mul_extendByZero_iff (f : Frag Hadron Flavor) (g : ℝ → ℝ) (h : Hadron)
+    (i : Flavor) (Q2 : ℝ) :
+    IntegrableOn (fun z => g z * extendByZero f h i z Q2) (Icc 0 1) ↔
+      IntegrableOn (fun z => g z * f h i z Q2) (Icc 0 1) :=
+  integrableOn_congr_fun (fun z hz => by rw [extendByZero_of_mem f hz]) measurableSet_Icc
+
 /-- The extension by zero of a family that is non-negative on the unit interval satisfies
 `Assumptions`. -/
 lemma assumptions_extendByZero {f : Frag Hadron Flavor}
