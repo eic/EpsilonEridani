@@ -5,9 +5,9 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
+public import EpsilonEridani.Mathematics.DataStructures.Matrix.Rotation
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
-public import Mathlib.LinearAlgebra.Matrix.Notation
 
 /-!
 # Neutral-Gauge-Field Mixing and the Weak Mixing Angle
@@ -18,9 +18,9 @@ which in the basis `(W³, B)` is `(v²/4) u uᵀ` with `u = (g, -g')`. Here the 
 hypercharge `1` in the normalisation `Q = T³ + Y/2`, its vacuum expectation value is
 `⟨φ⟩ = (0, v/√2)`, in the `T³ = -1/2` component, and the mass term is `½ Vᵀ M V`.
 
-This module defines the rotation `mixingRotation θ` taking `(W³, B)` to `(Z, A)` with
-`Z = cos θ W³ - sin θ B` and `A = sin θ W³ + cos θ B`, and the weak mixing angle
-`weakMixingAngle g g' = arctan (g'/g)`. It proves that the two standard definitions of the
+The plane rotation `Matrix.rotation θ` takes `(W³, B)` to `(Z, A)` with
+`Z = cos θ W³ - sin θ B` and `A = sin θ W³ + cos θ B`. This module defines the weak mixing angle
+`weakMixingAngle g g' = arctan (g'/g)` and proves that the two standard definitions of the
 mixing angle agree: as the angle of the rotation that diagonalises the neutral mass matrix with
 a massless photon, and as the angle whose tangent is the ratio `g'/g` of the gauge couplings.
 
@@ -28,16 +28,17 @@ a massless photon, and as the angle whose tangent is the ratio `g'/g` of the gau
 
 * `neutralMassMatrix_mulVec_eq_zero_iff`: for `v ≠ 0` and couplings not both zero there is
   exactly one massless combination of `W³` and `B`, the multiples of `g' W³ + g B`.
-* `mixingRotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq`: the rotation by `θ`
-  diagonalises the neutral mass matrix to `diag(v²(g² + g'²)/4, 0)`, with a massless photon, if
-  and only if `g sin θ = g' cos θ`.
-* `mul_sin_eq_mul_cos_iff_eq_weakMixingAngle`: for `g > 0` and `θ ∈ (-π/2, π/2)`,
+* `rotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq_mul_cos`: for `v ≠ 0`, the
+  rotation by `θ` diagonalises the neutral mass matrix to `diag(v²(g² + g'²)/4, 0)`, with a
+  massless photon, if and only if `g sin θ = g' cos θ`.
+* `mul_sin_eq_mul_cos_iff_eq_weakMixingAngle`: for `g ≠ 0` and `θ ∈ (-π/2, π/2)`,
   `g sin θ = g' cos θ` if and only if `θ = arctan (g'/g)`.
-* `mixingRotation_conj_neutralMassMatrix_eq_diagonal_iff`: the two characterisations combined.
-* `sin_weakMixingAngle`, `cos_weakMixingAngle`, `tan_weakMixingAngle`: the angle through the
-  couplings, `sin θ_W = g'/√(g² + g'²)`, `cos θ_W = g/√(g² + g'²)`, `tan θ_W = g'/g`.
-* `weakMixingConsistency_iff_sin2ThetaW_eq_sin_sq`: the tree-level weak-mixing contract
-  `weakMixingConsistency` of `Parameters` says exactly that `sin2ThetaW` is `sin² θ_W`.
+* `rotation_conj_neutralMassMatrix_eq_diagonal_iff`: the two characterisations combined.
+* `tan_weakMixingAngle`: `tan θ_W = g'/g`; `sin_weakMixingAngle`, `cos_weakMixingAngle`: for
+  `g > 0`, `sin θ_W = g'/√(g² + g'²)` and `cos θ_W = g/√(g² + g'²)`.
+* `weakMixingConsistency_iff_sin2ThetaW_eq_sin_sq_weakMixingAngle`: for `gSU2 ≠ 0`, the
+  tree-level weak-mixing contract `weakMixingConsistency` of `Parameters` says exactly that
+  `sin2ThetaW` is `sin² θ_W`.
 
 ## References
 
@@ -49,9 +50,15 @@ public section
 
 noncomputable section
 
-namespace EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak
+namespace EpsilonEridani
+namespace QFT
+namespace Scattering
+namespace DIS
+namespace PVES
+namespace Electroweak
 
-open Matrix Real
+open _root_.Matrix Real
+open EpsilonEridani.Matrix (rotation rotation_mulVec)
 
 /-!
 ## The neutral mass matrix
@@ -60,8 +67,13 @@ open Matrix Real
 /-- The mass-squared matrix `(v²/4) u uᵀ`, `u = (g, -g')`, of the neutral gauge fields in the
 basis `(W³, B)`, for `SU(2)` coupling `g`, hypercharge coupling `g'` and Higgs vacuum expectation
 value `v`. -/
-def neutralMassMatrix (g g' v : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+def neutralMassMatrix (g g' v : ℝ) : _root_.Matrix (Fin 2) (Fin 2) ℝ :=
   (v ^ 2 / 4) • vecMulVec ![g, -g'] ![g, -g']
+
+/-- The neutral mass matrix is the rank-one matrix `(v²/4) u uᵀ` with `u = (g, -g')`. -/
+theorem neutralMassMatrix_def (g g' v : ℝ) :
+    neutralMassMatrix g g' v = (v ^ 2 / 4) • vecMulVec ![g, -g'] ![g, -g'] := by
+  rw [neutralMassMatrix]
 
 /-- The neutral mass matrix, entry by entry. -/
 theorem neutralMassMatrix_eq (g g' v : ℝ) :
@@ -73,8 +85,9 @@ theorem neutralMassMatrix_eq (g g' v : ℝ) :
 `(W³, B)`. -/
 theorem neutralMassMatrix_mulVec (g g' v : ℝ) (w : Fin 2 → ℝ) :
     neutralMassMatrix g g' v *ᵥ w = ((v ^ 2 / 4) * (g * w 0 - g' * w 1)) • ![g, -g'] := by
-  ext i
-  fin_cases i <;> simp [neutralMassMatrix, mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+  rw [neutralMassMatrix_def, smul_mulVec, vecMulVec_mulVec, op_smul_eq_smul,
+    smul_smul, vec2_dotProduct, cons_val_zero, cons_val_one, cons_val_zero, neg_mul,
+    ← sub_eq_add_neg]
 
 /-- **Exactly one massless neutral combination.** For a nonzero vacuum expectation value and
 couplings not both zero, a combination of `W³` and `B` is massless if and only if it is a
@@ -83,12 +96,8 @@ theorem neutralMassMatrix_mulVec_eq_zero_iff {g g' v : ℝ} (hv : v ≠ 0) (hg :
     (w : Fin 2 → ℝ) :
     neutralMassMatrix g g' v *ᵥ w = 0 ↔ ∃ c : ℝ, w = c • ![g', g] := by
   have hu : ![g, -g'] ≠ 0 := by
-    intro h
-    have h0 := congrFun h 0
-    have h1 := congrFun h 1
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Pi.zero_apply,
-      neg_eq_zero] at h0 h1
-    tauto
+    rw [cons_nonzero_iff, cons_nonzero_iff, neg_ne_zero]
+    exact hg.imp_right Or.inl
   have hsq : g ^ 2 + g' ^ 2 ≠ 0 := by
     rcases hg with hg | hg <;> positivity
   rw [neutralMassMatrix_mulVec, smul_eq_zero, or_iff_left hu,
@@ -98,68 +107,52 @@ theorem neutralMassMatrix_mulVec_eq_zero_iff {g g' v : ℝ} (hv : v ≠ 0) (hg :
     refine ⟨(g' * w 0 + g * w 1) / (g ^ 2 + g' ^ 2), ?_⟩
     ext i
     fin_cases i
-    · simp
+    · simp only [Fin.zero_eta, Pi.smul_apply, cons_val_zero, smul_eq_mul]
       field_simp
       linear_combination g * h
-    · simp
+    · simp only [Fin.mk_one, Pi.smul_apply, cons_val_one, cons_val_zero, smul_eq_mul]
       field_simp
       linear_combination -g' * h
   · rintro ⟨c, rfl⟩
-    simp
+    simp only [Pi.smul_apply, cons_val_zero, cons_val_one, smul_eq_mul]
     ring
 
 /-!
 ## The mixing rotation
 -/
 
-/-- The rotation by `θ` from the gauge basis `(W³, B)` to the mass basis `(Z, A)`, with
-`Z = cos θ W³ - sin θ B` and `A = sin θ W³ + cos θ B`. -/
-def mixingRotation (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  !![cos θ, -sin θ; sin θ, cos θ]
-
-/-- The mixing rotation, entry by entry. -/
-theorem mixingRotation_eq (θ : ℝ) : mixingRotation θ = !![cos θ, -sin θ; sin θ, cos θ] := by
-  rw [mixingRotation]
-
-/-- The mixing rotation is a rotation: it is orthogonal and has determinant `1`. -/
-theorem mixingRotation_mem_specialOrthogonalGroup (θ : ℝ) :
-    mixingRotation θ ∈ specialOrthogonalGroup (Fin 2) ℝ := by
-  rw [mem_specialOrthogonalGroup_iff, mem_orthogonalGroup_iff, mixingRotation_eq]
-  refine ⟨?_, ?_⟩
-  · ext i j
-    fin_cases i <;> fin_cases j <;> simp [mul_apply, Fin.sum_univ_two] <;>
-      nlinarith [sin_sq_add_cos_sq θ]
-  · simp [det_fin_two]
-    nlinarith [sin_sq_add_cos_sq θ]
-
 /-- The neutral mass matrix in the basis rotated by `θ` is `(v²/4) w wᵀ`, where
 `w = (g cos θ + g' sin θ, g sin θ - g' cos θ)` lists the couplings of the two rotated fields to
 the Higgs vacuum. -/
-theorem mixingRotation_conj_neutralMassMatrix (g g' v θ : ℝ) :
-    mixingRotation θ * neutralMassMatrix g g' v * (mixingRotation θ)ᵀ =
+theorem rotation_conj_neutralMassMatrix (g g' v θ : ℝ) :
+    rotation θ * neutralMassMatrix g g' v * (rotation θ)ᵀ =
       (v ^ 2 / 4) • vecMulVec ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ]
         ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ] := by
-  rw [neutralMassMatrix_eq, mixingRotation_eq]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [mul_apply, Fin.sum_univ_two] <;> ring
+  have hR : rotation θ *ᵥ ![g, -g'] = ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ] := by
+    rw [rotation_mulVec, cons_val_zero, cons_val_one, cons_val_zero]
+    exact vec2_eq (by ring) (by ring)
+  rw [neutralMassMatrix_def, Matrix.mul_smul, Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul,
+    vecMul_transpose, hR]
 
-/-- The photon mass-squared in the basis rotated by `θ`. -/
-theorem mixingRotation_conj_neutralMassMatrix_one_one (g g' v θ : ℝ) :
-    (mixingRotation θ * neutralMassMatrix g g' v * (mixingRotation θ)ᵀ) 1 1 =
+/-- The diagonal `(1,1)` entry of the neutral mass matrix in the basis rotated by `θ`, the
+mass-squared coefficient of the second rotated field. It is the photon mass-squared exactly when
+`g sin θ = g' cos θ`, where it vanishes. -/
+theorem rotation_conj_neutralMassMatrix_one_one (g g' v θ : ℝ) :
+    (rotation θ * neutralMassMatrix g g' v * (rotation θ)ᵀ) 1 1 =
       v ^ 2 / 4 * (g * sin θ - g' * cos θ) ^ 2 := by
-  simp [mixingRotation_conj_neutralMassMatrix, sq]
+  simp [rotation_conj_neutralMassMatrix, sq]
 
 /-- **The rotation that leaves the photon massless diagonalises the neutral mass matrix.** For a
 nonzero vacuum expectation value, the rotation by `θ` brings the neutral mass matrix to
 `diag(v²(g² + g'²)/4, 0)` if and only if `g sin θ = g' cos θ`. -/
-theorem mixingRotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq {g g' v θ : ℝ}
+theorem rotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq_mul_cos {g g' v θ : ℝ}
     (hv : v ≠ 0) :
-    mixingRotation θ * neutralMassMatrix g g' v * (mixingRotation θ)ᵀ =
+    rotation θ * neutralMassMatrix g g' v * (rotation θ)ᵀ =
         diagonal ![v ^ 2 * (g ^ 2 + g' ^ 2) / 4, 0] ↔
       g * sin θ = g' * cos θ := by
   constructor
   · intro h
-    have h11 := mixingRotation_conj_neutralMassMatrix_one_one g g' v θ
+    have h11 := rotation_conj_neutralMassMatrix_one_one g g' v θ
     rw [h] at h11
     simp only [diagonal_apply_eq, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h11
     have : (g * sin θ - g' * cos θ) ^ 2 = 0 := by
@@ -167,19 +160,20 @@ theorem mixingRotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq {g g' v
       exact (mul_eq_zero.mp h11.symm).resolve_left hv4
     linarith [pow_eq_zero_iff (n := 2) two_ne_zero |>.mp this]
   · intro h
-    have hZ : (g * cos θ + g' * sin θ) ^ 2 = g ^ 2 + g' ^ 2 := by
+    have hZ : (g * cos θ + g' * sin θ) * (g * cos θ + g' * sin θ) = g ^ 2 + g' ^ 2 := by
       linear_combination (g ^ 2 + g' ^ 2) * sin_sq_add_cos_sq θ - (g * sin θ - g' * cos θ) * h
-    rw [mixingRotation_conj_neutralMassMatrix]
+    rw [rotation_conj_neutralMassMatrix, sub_eq_zero.mpr h]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [h, ← sq, hZ]
-    ring
+    fin_cases i <;> fin_cases j <;> simp [hZ, mul_div_right_comm]
 
 /-!
 ## The weak mixing angle
 -/
 
 /-- The weak mixing angle `θ_W = arctan (g'/g)`, determined at tree level by the ratio of the
-hypercharge coupling `g'` to the `SU(2)` coupling `g`. -/
+hypercharge coupling `g'` to the `SU(2)` coupling `g`. The characterisation through the
+diagonalising rotation holds for `g ≠ 0`, and the expressions `sin θ_W = g'/√(g² + g'²)`,
+`cos θ_W = g/√(g² + g'²)` for `g > 0`; at `g = 0` the definition takes the junk value `0`. -/
 def weakMixingAngle (g g' : ℝ) : ℝ := arctan (g' / g)
 
 /-- The weak mixing angle is `arctan (g'/g)`. -/
@@ -190,88 +184,97 @@ theorem weakMixingAngle_eq (g g' : ℝ) : weakMixingAngle g g' = arctan (g' / g)
 theorem weakMixingAngle_mem_Ioo (g g' : ℝ) :
     weakMixingAngle g g' ∈ Set.Ioo (-(π / 2)) (π / 2) := by
   rw [weakMixingAngle_eq]
-  exact ⟨neg_pi_div_two_lt_arctan _, arctan_lt_pi_div_two _⟩
+  exact arctan_mem_Ioo _
 
 /-- `tan θ_W = g'/g`. -/
+@[simp]
 theorem tan_weakMixingAngle (g g' : ℝ) : tan (weakMixingAngle g g') = g' / g := by
   rw [weakMixingAngle_eq, tan_arctan]
+
+/-- The radicand of `sin (arctan (g'/g))` and `cos (arctan (g'/g))` through the couplings. -/
+private theorem sqrt_one_add_div_sq {g : ℝ} (hg : 0 < g) (g' : ℝ) :
+    √(1 + (g' / g) ^ 2) = √(g ^ 2 + g' ^ 2) / g := by
+  rw [show (1 : ℝ) + (g' / g) ^ 2 = (g ^ 2 + g' ^ 2) / g ^ 2 by field_simp,
+    sqrt_div (by positivity), sqrt_sq hg.le]
 
 /-- `cos θ_W = g/√(g² + g'²)` for a positive `SU(2)` coupling. -/
 theorem cos_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
     cos (weakMixingAngle g g') = g / √(g ^ 2 + g' ^ 2) := by
-  have hsqrt : √(1 + (g' / g) ^ 2) = √(g ^ 2 + g' ^ 2) / g := by
-    rw [eq_div_iff hg.ne', ← sqrt_sq hg.le, ← sqrt_mul (by positivity), sqrt_sq hg.le]
-    congr 1
-    field_simp
-  rw [weakMixingAngle_eq, cos_arctan, hsqrt, one_div_div]
+  rw [weakMixingAngle_eq, cos_arctan, sqrt_one_add_div_sq hg, one_div_div]
 
 /-- `sin θ_W = g'/√(g² + g'²)` for a positive `SU(2)` coupling. -/
 theorem sin_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
     sin (weakMixingAngle g g') = g' / √(g ^ 2 + g' ^ 2) := by
-  have hcos : cos (weakMixingAngle g g') ≠ 0 :=
-    (cos_pos_of_mem_Ioo (weakMixingAngle_mem_Ioo g g')).ne'
-  rw [← div_mul_cancel₀ (sin _) hcos, ← tan_eq_sin_div_cos, tan_weakMixingAngle,
-    cos_weakMixingAngle hg]
+  rw [weakMixingAngle_eq, sin_arctan, sqrt_one_add_div_sq hg, div_div_div_cancel_right₀ hg.ne']
+
+/-- `cos² θ_W = g²/(g² + g'²)` for a nonzero `SU(2)` coupling. -/
+theorem cos_sq_weakMixingAngle {g : ℝ} (hg : g ≠ 0) (g' : ℝ) :
+    cos (weakMixingAngle g g') ^ 2 = g ^ 2 / (g ^ 2 + g' ^ 2) := by
+  rw [weakMixingAngle_eq, cos_arctan, div_pow, one_pow, sq_sqrt (by positivity)]
   field_simp
 
-/-- `cos² θ_W = g²/(g² + g'²)` for a positive `SU(2)` coupling. -/
-theorem cos_sq_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
-    cos (weakMixingAngle g g') ^ 2 = g ^ 2 / (g ^ 2 + g' ^ 2) := by
-  rw [cos_weakMixingAngle hg, div_pow, sq_sqrt (by positivity)]
-
-/-- `sin² θ_W = g'²/(g² + g'²)` for a positive `SU(2)` coupling. -/
-theorem sin_sq_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
+/-- `sin² θ_W = g'²/(g² + g'²)` for a nonzero `SU(2)` coupling. -/
+theorem sin_sq_weakMixingAngle {g : ℝ} (hg : g ≠ 0) (g' : ℝ) :
     sin (weakMixingAngle g g') ^ 2 = g' ^ 2 / (g ^ 2 + g' ^ 2) := by
-  rw [sin_weakMixingAngle hg, div_pow, sq_sqrt (by positivity)]
+  rw [weakMixingAngle_eq, sin_arctan, div_pow, sq_sqrt (by positivity)]
+  field_simp
 
-/-- **From the couplings to the angle.** For `g > 0` and `θ ∈ (-π/2, π/2)`, the relation
+/-- **From the couplings to the angle.** For `g ≠ 0` and `θ ∈ (-π/2, π/2)`, the relation
 `g sin θ = g' cos θ` holds exactly at `θ = θ_W = arctan (g'/g)`. -/
-theorem mul_sin_eq_mul_cos_iff_eq_weakMixingAngle {g g' θ : ℝ} (hg : 0 < g)
+theorem mul_sin_eq_mul_cos_iff_eq_weakMixingAngle {g g' θ : ℝ} (hg : g ≠ 0)
     (hθ : θ ∈ Set.Ioo (-(π / 2)) (π / 2)) :
     g * sin θ = g' * cos θ ↔ θ = weakMixingAngle g g' := by
-  have hcos : 0 < cos θ := cos_pos_of_mem_Ioo hθ
   constructor
   · intro h
-    rw [weakMixingAngle_eq, ← arctan_tan hθ.1 hθ.2, tan_eq_sin_div_cos]
-    congr 1
-    field_simp
-    linarith
+    rw [weakMixingAngle_eq]
+    refine (arctan_eq_of_tan_eq ?_ hθ).symm
+    rw [tan_eq_sin_div_cos, div_eq_div_iff (cos_pos_of_mem_Ioo hθ).ne' hg]
+    linear_combination h
   · rintro rfl
-    rw [sin_weakMixingAngle hg, cos_weakMixingAngle hg]
-    ring
+    have ht := tan_weakMixingAngle g g'
+    rw [tan_eq_sin_div_cos,
+      div_eq_div_iff (cos_pos_of_mem_Ioo (weakMixingAngle_mem_Ioo g g')).ne' hg] at ht
+    linear_combination ht
 
 /-- **The two definitions of the weak mixing angle agree.** For a nonzero vacuum expectation
-value, a positive `SU(2)` coupling and `θ ∈ (-π/2, π/2)`, the rotation by `θ` diagonalises the
+value, a nonzero `SU(2)` coupling and `θ ∈ (-π/2, π/2)`, the rotation by `θ` diagonalises the
 neutral mass matrix to `diag(v²(g² + g'²)/4, 0)`, with a massless photon, if and only if
 `θ = arctan (g'/g)`. -/
-theorem mixingRotation_conj_neutralMassMatrix_eq_diagonal_iff {g g' v θ : ℝ} (hv : v ≠ 0)
-    (hg : 0 < g) (hθ : θ ∈ Set.Ioo (-(π / 2)) (π / 2)) :
-    mixingRotation θ * neutralMassMatrix g g' v * (mixingRotation θ)ᵀ =
+theorem rotation_conj_neutralMassMatrix_eq_diagonal_iff {g g' v θ : ℝ} (hv : v ≠ 0)
+    (hg : g ≠ 0) (hθ : θ ∈ Set.Ioo (-(π / 2)) (π / 2)) :
+    rotation θ * neutralMassMatrix g g' v * (rotation θ)ᵀ =
         diagonal ![v ^ 2 * (g ^ 2 + g' ^ 2) / 4, 0] ↔
       θ = weakMixingAngle g g' := by
-  rw [mixingRotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq hv,
+  rw [rotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq_mul_cos hv,
     mul_sin_eq_mul_cos_iff_eq_weakMixingAngle hg hθ]
 
 /-- The rotation by the weak mixing angle diagonalises the neutral mass matrix, leaving the
 `Z` with mass-squared `v²(g² + g'²)/4` and the photon massless. -/
-theorem mixingRotation_weakMixingAngle_conj_neutralMassMatrix {g : ℝ} (hg : 0 < g) (g' v : ℝ) :
-    mixingRotation (weakMixingAngle g g') * neutralMassMatrix g g' v *
-        (mixingRotation (weakMixingAngle g g'))ᵀ =
+theorem rotation_weakMixingAngle_conj_neutralMassMatrix_eq_diagonal {g : ℝ} (hg : g ≠ 0)
+    (g' v : ℝ) :
+    rotation (weakMixingAngle g g') * neutralMassMatrix g g' v *
+        (rotation (weakMixingAngle g g'))ᵀ =
       diagonal ![v ^ 2 * (g ^ 2 + g' ^ 2) / 4, 0] := by
   rcases eq_or_ne v 0 with rfl | hv
   · ext i j
     fin_cases i <;> fin_cases j <;> simp [neutralMassMatrix]
-  · exact (mixingRotation_conj_neutralMassMatrix_eq_diagonal_iff hv hg
+  · exact (rotation_conj_neutralMassMatrix_eq_diagonal_iff hv hg
       (weakMixingAngle_mem_Ioo g g')).mpr rfl
 
 /-- **The tree-level weak-mixing contract is `sin2ThetaW = sin² θ_W`.** For a parameter record
-with positive `SU(2)` coupling, `weakMixingConsistency` holds if and only if its `sin2ThetaW` is
+with nonzero `SU(2)` coupling, `weakMixingConsistency` holds if and only if its `sin2ThetaW` is
 the squared sine of the weak mixing angle of its couplings. -/
-theorem weakMixingConsistency_iff_sin2ThetaW_eq_sin_sq (P : Parameters) (hg : 0 < P.gSU2) :
+theorem weakMixingConsistency_iff_sin2ThetaW_eq_sin_sq_weakMixingAngle (P : Parameters)
+    (hg : P.gSU2 ≠ 0) :
     weakMixingConsistency P ↔ P.sin2ThetaW = sin (weakMixingAngle P.gSU2 P.gU1) ^ 2 := by
   rw [weakMixingConsistency, sin_sq_weakMixingAngle hg, eq_div_iff (by positivity)]
 
-end EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak
+end Electroweak
+end PVES
+end DIS
+end Scattering
+end QFT
+end EpsilonEridani
 
 end
 
