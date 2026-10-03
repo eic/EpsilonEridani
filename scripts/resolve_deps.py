@@ -20,10 +20,12 @@ No dependency is special. Every candidate mathlib commit M comes from somewhere 
     published; the same signal scripts/check-bump.sh step 2b requires);
   * every mathlib commit that a candidate commit of a dependency pins.
 
-M must be a forward move from the current pin: a descendant of it, or a mathlib release tag
-whose toolchain is newer (`v4.34.1` lives on mathlib's `stable` branch, not on master). A release
-move may diverge from the pin: master commits after the tag's branch point are left out, and
-the report counts them (`dropped_commits`). The toolchain is always mathlib's own at M.
+M must be a forward move from the current pin: a descendant of it (`descendant`), or, with a
+strictly newer toolchain, a mathlib release tag (`release`; `v4.34.1` lives on mathlib's `stable`
+branch, not on master) or a commit on mathlib's nominated branch (`toolchain`; the way back to
+master from a patch release). The last two may diverge from the pin; the commits the pin has
+and M lacks are counted (`dropped_commits`). The
+toolchain is always mathlib's own at M.
 
 A new M is only offered once its cache is published, or every downstream build would recompile
 mathlib. A master commit needs a successful master-push `build.yml` run (step 2b of
@@ -324,8 +326,12 @@ class Resolver:
         status = self.src.compare(self.mathlib_repo, current, m)[0]
         if status == "ahead":
             return "descendant"
-        if m in self.tags and parse_toolchain(self.mathlib_toolchain(m)) > parse_toolchain(self.toolchain):
+        if parse_toolchain(self.mathlib_toolchain(m)) <= parse_toolchain(self.toolchain):
+            return None
+        if m in self.tags:
             return "release"
+        if self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0] in ("ahead", "identical"):
+            return "toolchain"
         return None
 
     def fit(self, commit, m):
@@ -355,7 +361,7 @@ class Resolver:
             if how is None:
                 continue
             tc_m = self.mathlib_toolchain(m)
-            dropped = self.src.compare(self.mathlib_repo, self.pins[MATHLIB], m)[2] if how == "release" else 0
+            dropped = self.src.compare(self.mathlib_repo, self.pins[MATHLIB], m)[2] if how != "current" else 0
             pins = {MATHLIB: {"rev": m, "fit": how, "toolchain": tc_m, "tag": self.tags.get(m),
                               "dropped_commits": dropped}}
             blockers = []
@@ -480,8 +486,9 @@ def summary(result):
         lines.append(f"| {name} | {short(p['previous'])} | {short(p['rev'])}{tag} | {p['fit']} | {behind} |")
     ml = result["pins"][MATHLIB]
     if ml["dropped_commits"]:
-        lines += ["", f"Moving to mathlib {short(ml['rev'])} ({ml['tag']}) leaves out {ml['dropped_commits']} "
-                      f"master commit(s) that {short(ml['previous'])} has, made after the tag branched."]
+        tag = f" ({ml['tag']})" if ml.get("tag") else ""
+        lines += ["", f"Moving to mathlib {short(ml['rev'])}{tag} leaves out {ml['dropped_commits']} "
+                      f"commit(s) that {short(ml['previous'])} has: the two diverged."]
     if result["holds"]:
         lines += ["", "Held back (expected while upstreams move at different speeds; not an error):", ""]
         lines += [f"- {h['text']}" for h in result["holds"]]

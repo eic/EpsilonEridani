@@ -24,11 +24,12 @@ special; whichever is most conservative ends up setting the pace.
 
 **Candidate mathlib commits** are the current pin, mathlib master's newest commit with a
 published cache, and every mathlib commit that a candidate commit of a dependency pins. A
-candidate must move forward: a descendant of the current pin, or a mathlib release tag with a
-newer toolchain (patch releases such as `v4.34.1` live on mathlib's `stable` branch, not on
-master). A release move may diverge from the pin and leave out master commits made after the
-tag's branch point; on 2026-10-03 that was one commit. The report counts them
-(`dropped_commits`) and the summary says so.
+candidate must move forward: a descendant of the current pin, or, with a strictly newer
+toolchain, a mathlib release tag (patch releases such as `v4.34.1` live on mathlib's `stable`
+branch, not on master) or a commit on master (the way back from a patch release). Those two
+may diverge from the pin and leave out commits it has; on 2026-10-03 the move to `v4.34.1`
+left out one. The report counts them (`dropped_commits`) and the summary says so.
+The generalized `check-bump.sh` is to accept exactly these moves.
 
 A new candidate is only offered once mathlib's **cache is published** for it: a successful
 master-push `build.yml` run (as `check-bump.sh` step 2b requires), or, for a release tag off

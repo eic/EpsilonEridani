@@ -73,6 +73,8 @@ class Graph:
         return self.repos[repo]["commits"][sha]["files"][path]
 
     def compare(self, repo, base, head):
+        branches = self.repos[repo]["branches"]  # like GitHub, a branch name stands for its tip
+        base, head = branches.get(base, base), branches.get(head, head)
         a, b = set(self.ancestors(repo, head)), set(self.ancestors(repo, base))
         ahead, behind = len(a - b), len(b - a)
         status = ("identical" if not ahead and not behind else "ahead" if not behind
@@ -284,7 +286,29 @@ class Resolution(unittest.TestCase):
         g.commit(TC, "t1", branch="main", manifest=manifest("s1"), lean_toolchain=lean("v4.34.1"))
         r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
         self.assertEqual((r["pins"]["mathlib"]["rev"], r["pins"]["mathlib"]["dropped_commits"]), ("s1", 1))
-        self.assertIn("leaves out 1 master commit(s)", rd.summary(r))
+        self.assertIn("leaves out 1 commit(s)", rd.summary(r))
+
+    def test_from_a_patch_release_back_to_master(self):
+        # Pinned at the v4.34.1 tag (stable): master's m3 is no descendant, but its toolchain is
+        # newer and it is on master, so it is forward; s1's own commit is left out.
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", branch="master", manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        r = resolve(g, {"mathlib": "s1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.1"))
+        ml = r["pins"]["mathlib"]
+        self.assertEqual((ml["rev"], ml["fit"], ml["dropped_commits"]), ("m3", "toolchain", 1))
+
+    def test_an_older_master_commit_is_not_forward_from_a_patch_release(self):
+        # m1 is on master too, but on v4.34.0: going there from v4.34.1 would be backward.
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", branch="master", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.cached = None
+        r = resolve(g, {"mathlib": "s1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.1"))
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "s1")
+        self.assertNotIn("m1", [f["mathlib"] for f in r["feasible"]])
 
     def test_unrecognised_root_toolchain_fails_cleanly(self):
         g = Graph()
