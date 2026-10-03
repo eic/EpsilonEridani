@@ -27,7 +27,13 @@ published cache, and every mathlib commit that a candidate commit of a dependenc
 candidate must move forward: a descendant of the current pin, or a mathlib release tag with a
 newer toolchain (patch releases such as `v4.34.1` live on mathlib's `stable` branch, not on
 master). A release move may diverge from the pin and leave out master commits made after the
-tag's branch point; on 2026-10-03 that was one commit. The toolchain is always mathlib's own at the chosen commit.
+tag's branch point; on 2026-10-03 that was one commit. The report counts them
+(`dropped_commits`) and the summary says so.
+
+A new candidate is only offered once mathlib's **cache is published** for it: a successful
+master-push `build.yml` run (as `check-bump.sh` step 2b requires), or, for a release tag off
+master, a successful `release_cache.yml` run, which mathlib uses to publish patch releases to
+the same cache. Without one, the candidate is blocked by `cache` and the next one is offered. The toolchain is always mathlib's own at the chosen commit.
 
 **Candidate dependency commits** are the branch tip, the last commit before each change to
 the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. All are at or
@@ -93,7 +99,7 @@ expected and are reported informationally, never as stuck automation. Alerts are
 | step | state |
 |---|---|
 | resolver (`scripts/resolve_deps.py`) and its tests | done |
-| bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib release tags pinned by a dependency, and the inherited packages Lake derives from all three | planned |
+| bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib release tags pinned by a dependency (cache signal: `release_cache.yml`, not the master-push build), and the inherited packages Lake derives from all three | planned |
 | `update.yml` runs the resolver (dry run first), opens one rolling `bump-mathlib/` PR, records failed sets | planned |
 | `scripts/pr_status/stuck_alerts.py`: `stale-pin` replaced by "a feasible set is not landing"; holds reported as information | planned |
 | EpsilonEridaniWorker's `bump` stage hands back a PR whose build fails inside a dependency | planned |

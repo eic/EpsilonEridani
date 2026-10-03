@@ -22,8 +22,14 @@ No dependency is special. Every candidate mathlib commit M comes from somewhere 
 
 M must be a forward move from the current pin: a descendant of it, or a mathlib release tag
 whose toolchain is newer (`v4.34.1` lives on mathlib's `stable` branch, not on master). A release
-move may diverge from the pin: master commits after the tag's branch point are left out. The
-toolchain is always mathlib's own at M.
+move may diverge from the pin: master commits after the tag's branch point are left out, and
+the report counts them (`dropped_commits`). The toolchain is always mathlib's own at M.
+
+A new M is only offered once its cache is published, or every downstream build would recompile
+mathlib. A master commit needs a successful master-push `build.yml` run (step 2b of
+scripts/check-bump.sh); a release tag off master needs a successful `release_cache.yml` run,
+which mathlib uses to publish exactly those tags to the same cache. An M that is otherwise
+feasible but has no cache yet is blocked by `cache`.
 
 A dependency's candidate commits are its branch tip, the last commit before each change to its
 `lean-toolchain` or `lake-manifest.json`, and its current pin: commits after the pin, so a
@@ -148,6 +154,19 @@ class GitHub:
         return self._once(("cached", repo), lambda: gh(
             f"repos/{repo}/actions/workflows/build.yml/runs?branch=master&event=push&status=success&per_page=1",
             jq=".workflow_runs[0].head_sha // empty"))
+
+    def cache_published(self, repo, sha, tag):
+        """Whether mathlib's cache for `sha` is published: a successful master-push build, or for
+        a release tag off master, a successful release_cache.yml run on it."""
+        def runs(workflow):
+            return json.loads(gh(f"repos/{repo}/actions/workflows/{workflow}/runs?head_sha={sha}&per_page=20",
+                                 jq='[.workflow_runs[] | select(.status == "completed" and .conclusion == "success")'
+                                    ' | {event, head_branch}]'))
+        def fetch():
+            if any(r["event"] == "push" and r["head_branch"] == "master" for r in runs("build.yml")):
+                return True
+            return bool(tag) and any(r["head_branch"] == tag for r in runs("release_cache.yml"))
+        return self._once(("cache_published", repo, sha), fetch)
 
     def release_tags(self, repo):
         """{commit sha: tag} for the repository's vX.Y.Z[-rcN] tags."""
@@ -336,7 +355,9 @@ class Resolver:
             if how is None:
                 continue
             tc_m = self.mathlib_toolchain(m)
-            pins = {MATHLIB: {"rev": m, "fit": how, "toolchain": tc_m, "tag": self.tags.get(m)}}
+            dropped = self.src.compare(self.mathlib_repo, self.pins[MATHLIB], m)[2] if how == "release" else 0
+            pins = {MATHLIB: {"rev": m, "fit": how, "toolchain": tc_m, "tag": self.tags.get(m),
+                              "dropped_commits": dropped}}
             blockers = []
             for name, _, _ in self.deps:
                 for index, commit in enumerate(cands[name]):
@@ -357,6 +378,10 @@ class Resolver:
                                        f"and mathlib {short(newest['mathlib'])}")})
             entry = {"mathlib": m, "toolchain": tc_m, "tag": self.tags.get(m),
                      "date": self.src.date(self.mathlib_repo, m)}
+            if not blockers and how != "current" and m != cached \
+                    and not self.src.cache_published(self.mathlib_repo, m, self.tags.get(m)):
+                blockers.append({"dependency": "cache",
+                                 "reason": f"mathlib {short(m)} has no published cache yet"})
             if blockers:
                 blocked.append(dict(entry, blockers=blockers))
                 continue
@@ -398,6 +423,8 @@ class Resolver:
                           "tip": tip, "commits_behind_tip": lag, "days_behind_tip": days,
                           "fit": pin["fit"], "toolchain": pin.get("toolchain"),
                           "mathlib": pin.get("mathlib"), "tag": pin.get("tag")}
+            if name == MATHLIB:
+                pins[name]["dropped_commits"] = pin["dropped_commits"]
             if rev == tip:
                 continue
             if name == MATHLIB:
@@ -451,6 +478,10 @@ def summary(result):
         behind = "at tip" if p["commits_behind_tip"] == 0 else \
             f"{p['commits_behind_tip']} commits, {p['days_behind_tip']} days"
         lines.append(f"| {name} | {short(p['previous'])} | {short(p['rev'])}{tag} | {p['fit']} | {behind} |")
+    ml = result["pins"][MATHLIB]
+    if ml["dropped_commits"]:
+        lines += ["", f"Moving to mathlib {short(ml['rev'])} ({ml['tag']}) leaves out {ml['dropped_commits']} "
+                      f"master commit(s) that {short(ml['previous'])} has, made after the tag branched."]
     if result["holds"]:
         lines += ["", "Held back (expected while upstreams move at different speeds; not an error):", ""]
         lines += [f"- {h['text']}" for h in result["holds"]]

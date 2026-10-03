@@ -36,6 +36,7 @@ class Graph:
         self.repos = {}
         self.tags = {}
         self.cached = None
+        self.uncached = set()  # mathlib commits whose cache is not published
         self.clock = 0
 
     def commit(self, repo, sha, parent=None, branch=None, **files):
@@ -90,6 +91,9 @@ class Graph:
 
     def cached_master_tip(self, repo):
         return self.cached
+
+    def cache_published(self, repo, sha, tag):
+        return sha not in self.uncached
 
     def release_tags(self, repo):
         return dict(self.tags)
@@ -258,6 +262,30 @@ class Resolution(unittest.TestCase):
         held = {h["pin"]: h["text"] for h in r["holds"]}
         self.assertIn("newer commits pin Lean v4.35.0-rc2 and mathlib m4", held["TauCeti"])
 
+    def test_an_uncached_mathlib_is_not_offered(self):
+        # Both dependencies pin m2, which fits; but m2's oleans were never published.
+        g = Graph()
+        mathlib_line(g)
+        g.uncached = {"m2"}
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m2"))
+        g.commit(TC, "t1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(TC, "t2", "t1", branch="main", lake_manifest=manifest("m2"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertNotEqual(r["pins"]["mathlib"]["rev"], "m2")
+        blocked = {b["mathlib"]: [x["dependency"] for x in b["blockers"]] for b in r["blocked"]}
+        self.assertEqual(blocked["m2"], ["cache"])
+
+    def test_a_release_move_counts_the_master_commits_it_leaves_out(self):
+        # s1 branches off m0; moving there from m1 leaves m1 out.
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", branch="master", manifest=manifest("s1"), lean_toolchain=lean("v4.34.1"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("s1"), lean_toolchain=lean("v4.34.1"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual((r["pins"]["mathlib"]["rev"], r["pins"]["mathlib"]["dropped_commits"]), ("s1", 1))
+        self.assertIn("leaves out 1 master commit(s)", rd.summary(r))
+
     def test_unrecognised_root_toolchain_fails_cleanly(self):
         g = Graph()
         mathlib_line(g)
@@ -289,6 +317,10 @@ class RealRecording(unittest.TestCase):
     def test_physlib_is_what_holds_mathlib(self):
         held = {h["pin"]: h["held_by"] for h in self.r["holds"]}
         self.assertEqual(held, {"mathlib": ["Physlib"], "TauCeti": ["mathlib"]})
+
+    def test_the_release_move_leaves_out_one_master_commit(self):
+        # db1c574 is v4.34.0 plus #43805; the v4.34.1 tag is v4.34.0 plus the toolchain bump.
+        self.assertEqual(self.r["pins"]["mathlib"]["dropped_commits"], 1)
 
     def test_tauceti_hold_names_a_real_change(self):
         # c60a71f, just before the first boundary, pins mathlib 5e0c4e5 like a1fff14 itself;
