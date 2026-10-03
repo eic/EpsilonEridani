@@ -31,7 +31,7 @@ on `EuclideanSpace ℝ (Fin 2)` the area form is the cross product `u₀ v₁ - 
   orientation is `u 0 * v 1 - u 1 * v 0`.
 -/
 
-public section
+@[expose] public section
 
 namespace EuclideanSpace
 
