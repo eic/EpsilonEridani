@@ -35,19 +35,27 @@ lemma minkowskiProduct_sub_self {d : ℕ} (u v : Vector d) :
   ring
 
 /-- On the mass shell `⟪p, p⟫ₘ = m²`, the spatial part of `p` has length `√((p⁰)² - m²)`. -/
-lemma norm_spatialPart_eq_sqrt {d : ℕ} {p : Vector d} {m : ℝ} (hp : ⟪p, p⟫ₘ = m ^ 2) :
+lemma norm_spatialPart_eq_sqrt {d : ℕ} (p : Vector d) {m : ℝ} (hp : ⟪p, p⟫ₘ = m ^ 2) :
     ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - m ^ 2) := by
   rw [minkowskiProduct_self_eq_sq_sub] at hp
   rw [← Real.sqrt_sq (norm_nonneg p.spatialPart)]
   congr 1
   linarith
 
+end Vector
+end Lorentz
+
+namespace EpsilonEridani
+
+open Real InnerProductGeometry Lorentz.Vector
+open scoped InnerProductSpace Lorentz.Vector
+
 /-- In at least two spatial dimensions, for energies `E`, `E'` above `|m|` and an angle
 `θ ∈ [0, π]`, there are two vectors on the mass shell `⟪p, p⟫ₘ = m²` with time components `E` and
 `E'` whose spatial parts make the angle `θ`. -/
 lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} (hE : |m| < E)
     (hE' : |m| < E') (h0 : 0 ≤ θ) (hπ : θ ≤ π) :
-    ∃ p p' : Vector d, ⟪p, p⟫ₘ = m ^ 2 ∧ ⟪p', p'⟫ₘ = m ^ 2 ∧ p.timeComponent = E ∧
+    ∃ p p' : Lorentz.Vector d, ⟪p, p⟫ₘ = m ^ 2 ∧ ⟪p', p'⟫ₘ = m ^ 2 ∧ p.timeComponent = E ∧
       p'.timeComponent = E' ∧ angle p.spatialPart p'.spatialPart = θ := by
   -- the spatial parts are `P e₀` and `P' (cos θ e₀ + sin θ e₁)`, with `e₀ ⊥ e₁` unit vectors
   set P := √(E ^ 2 - m ^ 2)
@@ -73,8 +81,8 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
       simp only [u]
       nlinarith [sq_abs (cos θ), sq_abs (sin θ), sin_sq_add_cos_sq θ]
     nlinarith [norm_nonneg u]
-  let p : Vector d := fun μ => Sum.elim (fun _ => E) (fun i => (P • e₀) i) μ
-  let p' : Vector d := fun μ => Sum.elim (fun _ => E') (fun i => (P' • u) i) μ
+  let p : Lorentz.Vector d := fun μ => Sum.elim (fun _ => E) (fun i => (P • e₀) i) μ
+  let p' : Lorentz.Vector d := fun μ => Sum.elim (fun _ => E') (fun i => (P' • u) i) μ
   have hps : p.spatialPart = P • e₀ := rfl
   have hp's : p'.spatialPart = P' • u := rfl
   have hpt : p.timeComponent = E := rfl
@@ -89,5 +97,4 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
   · rw [hps, hp's, angle_smul_left_of_pos _ _ hP, angle_smul_right_of_pos _ _ hP', angle, hu₀,
       he₀, hu, mul_one, div_one, Real.arccos_cos h0 hπ]
 
-end Vector
-end Lorentz
+end EpsilonEridani
