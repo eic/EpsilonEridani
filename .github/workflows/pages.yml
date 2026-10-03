@@ -797,7 +797,7 @@ jobs:
       # failed. Sharing the default `github-pages` name would make the fallback collide with a
       # half-finished artifact instead of publishing.
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-primary
           path: web/_out
@@ -896,7 +896,7 @@ jobs:
           printf 'republishing the site built from %s with this run data\n' "$sha"
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-fallback
           path: web/_out
