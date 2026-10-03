@@ -51,8 +51,8 @@ splitting `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T` of the scalar product us
   `v = v⁺ n₊ + v⁻ n₋ + v_T`.
 * `LightConeBasis.bilinForm_eq_plus_mul_minus_add`: `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
 * `LightConeBasis.finrank_transverse_add_two`: the transverse subspace has codimension two.
-* `LightConeBasis.finrank_transverse_minkowskiAxis`: in `d + 1`-dimensional Minkowski space the
-  transverse projector has rank `d - 1`.
+* `LightConeBasis.finrank_transverse_minkowskiProduct`: in `d + 1`-dimensional Minkowski space
+  the transverse projector of any light-cone basis has rank `d - 1`.
 
 ## References
 
@@ -188,22 +188,17 @@ theorem plus_transverseProj (v : V) : L.plus (L.transverseProj v) = 0 := by
 theorem minus_transverseProj (v : V) : L.minus (L.transverseProj v) = 0 := by
   simp [transverseProj_apply]
 
-theorem transverseProj_mem_transverse (v : V) : L.transverseProj v ∈ L.transverse :=
-  L.mem_transverse_iff.2 ⟨L.plus_transverseProj v, L.minus_transverseProj v⟩
-
-theorem transverseProj_eq_self_iff {v : V} : L.transverseProj v = v ↔ v ∈ L.transverse := by
-  refine ⟨fun h => h ▸ L.transverseProj_mem_transverse v, fun h => ?_⟩
-  obtain ⟨hp, hm⟩ := L.mem_transverse_iff.1 h
-  simp [transverseProj_apply, hp, hm]
-
 /-- The transverse projector is a projection onto the transverse subspace. -/
-theorem isProj_transverseProj : LinearMap.IsProj L.transverse L.transverseProj :=
-  ⟨L.transverseProj_mem_transverse, fun _ => L.transverseProj_eq_self_iff.2⟩
+theorem isProj_transverseProj : LinearMap.IsProj L.transverse L.transverseProj where
+  map_mem v := L.mem_transverse_iff.2 ⟨L.plus_transverseProj v, L.minus_transverseProj v⟩
+  map_id v h := by
+    obtain ⟨hp, hm⟩ := L.mem_transverse_iff.1 h
+    simp [transverseProj_apply, hp, hm]
 
 @[simp]
 theorem transverseProj_transverseProj (v : V) :
     L.transverseProj (L.transverseProj v) = L.transverseProj v :=
-  L.transverseProj_eq_self_iff.2 (L.transverseProj_mem_transverse v)
+  L.isProj_transverseProj.map_id _ (L.isProj_transverseProj.map_mem v)
 
 @[simp]
 theorem transverseProj_nPlus : L.transverseProj L.nPlus = 0 := by
@@ -234,7 +229,7 @@ theorem smul_add_smul_add_eq_iff {a b : R} {w v : V} (hw : w ∈ L.transverse) :
   · rintro rfl
     obtain ⟨hp, hm⟩ := L.mem_transverse_iff.1 hw
     refine ⟨by simp [hp], by simp [hm], ?_⟩
-    simp [L.transverseProj_eq_self_iff.2 hw]
+    simp [L.isProj_transverseProj.map_id w hw]
   · rintro ⟨rfl, rfl, rfl⟩
     exact L.plus_smul_add_minus_smul_add_transverseProj v
 
@@ -266,8 +261,8 @@ theorem bilinForm_eq_plus_mul_minus_add (u v : V) :
   conv_lhs =>
     rw [← L.plus_smul_add_minus_smul_add_transverseProj u,
       ← L.plus_smul_add_minus_smul_add_transverseProj v]
-  simp [L.bilinForm_nPlus_eq_zero_of_mem_transverse hB (L.transverseProj_mem_transverse _),
-    L.bilinForm_nMinus_eq_zero_of_mem_transverse hB (L.transverseProj_mem_transverse _),
+  simp [L.bilinForm_nPlus_eq_zero_of_mem_transverse hB (L.isProj_transverseProj.map_mem _),
+    L.bilinForm_nMinus_eq_zero_of_mem_transverse hB (L.isProj_transverseProj.map_mem _),
     ← plus_apply, ← minus_apply]
 
 /-- The transverse projector is self-adjoint. -/
@@ -350,11 +345,13 @@ theorem minkowskiAxis_minus (i : Fin d) (v : Vector d) :
   simp [minus_apply, minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
   ring
 
-/-- In `d + 1`-dimensional Minkowski space the transverse subspace, the range of the transverse
-projector, has dimension `d - 1`; in four dimensions it is two-dimensional. -/
-theorem finrank_transverse_minkowskiAxis (i : Fin d) :
-    finrank ℝ (minkowskiAxis i).transverse = d - 1 := by
-  have h := (minkowskiAxis i).finrank_transverse_add_two
+/-- For any light-cone basis of `d + 1`-dimensional Minkowski space the transverse subspace, the
+range of the transverse projector, has dimension `d - 1`; in four dimensions it is
+two-dimensional. -/
+theorem finrank_transverse_minkowskiProduct
+    (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm) :
+    finrank ℝ L.transverse = d - 1 := by
+  have h := L.finrank_transverse_add_two
   rw [finrank_eq_card_basis basis, Fintype.card_sum, Fintype.card_fin, Fintype.card_fin] at h
   omega
 
