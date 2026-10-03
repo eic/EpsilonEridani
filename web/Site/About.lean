@@ -28,8 +28,9 @@ the pull request merges automatically.
 
 # Dependencies
 
-EpsilonEridani builds on three libraries: Mathlib, Physlib, and Tau Ceti. Lean compiles all
-three against a single Mathlib and toolchain, but each library follows Mathlib at its own pace:
+EpsilonEridani builds on three libraries: Mathlib, Physlib, and Tau Ceti. Lean compiles
+EpsilonEridani, Physlib, and Tau Ceti against one shared Mathlib and toolchain, but Physlib and
+Tau Ceti each follow Mathlib at their own pace:
 Physlib follows Mathlib's releases, while Tau Ceti tracks Mathlib's development branch daily.
 Dependency bumps therefore move to the newest set of commits that fit together, not to the
 newest commit of each library. Mathlib can stay on one release for weeks while the slowest

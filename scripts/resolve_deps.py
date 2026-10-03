@@ -21,7 +21,8 @@ No dependency is special. Every candidate mathlib commit M comes from somewhere 
   * every mathlib commit that a candidate commit of a dependency pins.
 
 M must be a forward move from the current pin: a descendant of it, or a mathlib release tag
-whose toolchain is newer (`v4.34.1` lives on mathlib's `stable` branch, not on master). The
+whose toolchain is newer (`v4.34.1` lives on mathlib's `stable` branch, not on master). A release
+move may diverge from the pin: master commits after the tag's branch point are left out. The
 toolchain is always mathlib's own at M.
 
 A dependency's candidate commits are its branch tip, the last commit before each change to its
@@ -37,8 +38,12 @@ its current pin (`carried`) only while M stays on the Lean line main is already 
 that pin now, and a patch release does not change the line. Otherwise M is blocked by that
 dependency.
 
-The chosen set is the feasible one with the newest M (by toolchain, then commit date); ties
-prefer fewer carried dependencies. In practice the most conservative dependency ends up
+A carried pin is not checked against M: it may already pin a newer toolchain or mathlib than M,
+as long as main builds it today.
+
+The chosen set is the feasible one with the newest M (by toolchain, then commit date). The
+number of carried dependencies only breaks exact ties, which are rare; ranking it higher would
+let one dependency that fits nothing stall mathlib on an older commit. In practice the most conservative dependency ends up
 setting mathlib's pace, without the script having to be told which one that is.
 
 ## Output
@@ -216,6 +221,12 @@ def short(sha):
     return (sha or "?")[:7]
 
 
+def newness(entry):
+    """How new a candidate mathlib commit is: its toolchain, then its date. An unrecognised
+    toolchain (only possible for the current pin) sorts below every recognised one."""
+    return (parse_toolchain(entry["toolchain"]) or (-1, -1, -1, -1), entry["date"])
+
+
 # --- the project's own configuration --------------------------------------------------------------
 
 def slug(url):
@@ -250,8 +261,12 @@ class Resolver:
         self.requires = requires
         self.pins = pins
         self.toolchain = toolchain
-        self.mathlib_repo = next(repo for name, repo, _ in requires if name == MATHLIB)
-        self.mathlib_branch = next(branch for name, _, branch in requires if name == MATHLIB)
+        mathlib = [(repo, branch) for name, repo, branch in requires if name == MATHLIB]
+        if not mathlib:
+            raise RuntimeError("lakefile.toml does not require mathlib")
+        if parse_toolchain(toolchain) is None:
+            raise RuntimeError(f"unrecognised lean-toolchain {toolchain!r}")
+        self.mathlib_repo, self.mathlib_branch = mathlib[0]
         self.deps = [(name, repo, branch) for name, repo, branch in requires if name != MATHLIB]
         self.tags = src.release_tags(self.mathlib_repo)
 
@@ -354,7 +369,7 @@ class Resolver:
         def rank(entry):
             carried = sum(1 for p in entry["pins"].values() if p["fit"] == "carried")
             behind = sum(p.get("index", 0) for p in entry["pins"].values())
-            return (parse_toolchain(entry["toolchain"]), entry["date"], -carried, -behind)
+            return newness(entry) + (-carried, -behind)
         feasible.sort(key=rank, reverse=True)
         if not feasible:
             raise RuntimeError("no feasible pin set, not even the current one; see `blocked`")
@@ -369,8 +384,7 @@ class Resolver:
         for name, repo, branch in self.deps:
             tips[name], repos[name], branches[name] = cands[name][0]["rev"], repo, branch
 
-        newer = [b for b in blocked if (parse_toolchain(b["toolchain"]), b["date"])
-                 > (parse_toolchain(chosen["toolchain"]), chosen["date"])]
+        newer = sorted((b for b in blocked if newness(b) > newness(chosen)), key=newness, reverse=True)
         pins, holds = {}, []
         for name, pin in chosen["pins"].items():
             rev, tip = pin["rev"], tips[name]
@@ -395,8 +409,11 @@ class Resolver:
                                        f"{lag} commits behind its newest cached {branches[name]} commit"
                                        + (f": {'; '.join(reasons)}" if reasons else ""))})
             else:
-                index = pin["index"]
-                nxt = cands[name][index - 1] if index > 0 else None
+                # the oldest newer candidate that pins something else: the commit just before a
+                # boundary still pins what the held commit does, so it explains nothing
+                pinned = (pin.get("toolchain"), pin.get("mathlib"))
+                nxt = next((c for c in reversed(cands[name][:pin["index"]])
+                            if (c["toolchain"], c["mathlib"]) != pinned), None)
                 text = f"{name} held at {short(rev)}, {lag} commits behind {branches[name]}"
                 if pin["fit"] == "carried":
                     text += f" and kept on its current pin, which pins Lean {show_toolchain(pin['toolchain'])}"

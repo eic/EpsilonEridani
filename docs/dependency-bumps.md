@@ -8,7 +8,7 @@ pins its own mathlib and toolchain, and the three move at different speeds:
 | library | follows | updates |
 |---|---|---|
 | mathlib | `master` (and release tags on `stable`) | continuously |
-| Physlib | mathlib **release tags** (`inputRev = v4.34.1`) | weekly, with `lean-update` |
+| Physlib | mathlib **release tags** (`inputRev` is the latest tag) | weekly, with `lean-update` |
 | TauCeti | mathlib **master** | daily |
 
 So the newest commit of everything is usually not a set that builds together, and the
@@ -26,7 +26,8 @@ special; whichever is most conservative ends up setting the pace.
 published cache, and every mathlib commit that a candidate commit of a dependency pins. A
 candidate must move forward: a descendant of the current pin, or a mathlib release tag with a
 newer toolchain (patch releases such as `v4.34.1` live on mathlib's `stable` branch, not on
-master). The toolchain is always mathlib's own at the chosen commit.
+master). A release move may diverge from the pin and leave out master commits made after the
+tag's branch point; on 2026-10-03 that was one commit. The toolchain is always mathlib's own at the chosen commit.
 
 **Candidate dependency commits** are the branch tip, the last commit before each change to
 the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. All are at or
@@ -36,12 +37,17 @@ A dependency commit **fits** a mathlib commit M when
 
 - `exact`: it pins mathlib at M itself, so its own CI built that pairing; or
 - `near`: its toolchain is on M's Lean line (same major.minor) and no newer than M's, and
-  its mathlib is an ancestor of M or M is a release tag on that line.
+  its mathlib is an ancestor of M or M is a release tag on that line. The release-tag case is
+  the weakest: a dependency built on master after the release branched may use API the tag
+  lacks, and only the build will tell.
 
 For each M every dependency takes its newest fitting commit. A dependency with none may stay
 on its current pin (`carried`) only while M stays on the Lean line main is already on: main
-builds that pin today. Otherwise M is **blocked** by that dependency. The chosen set is the
-feasible one with the newest M (toolchain, then date); ties prefer fewer carried pins.
+builds that pin today. A carried pin is not checked against M; it may already pin a newer
+toolchain or mathlib. Otherwise M is **blocked** by that dependency. The chosen set is the
+feasible one with the newest M (toolchain, then date). Carried pins only break exact ties:
+ranking them higher would let one dependency that fits nothing stall mathlib on an older
+commit.
 
 These rules only predict. The bump PR's build is the arbiter, and a set whose build fails
 inside a dependency (not something EpsilonEridani can fix) is passed back with `--exclude`
@@ -57,8 +63,9 @@ so the next feasible set is tried.
 | TauCeti | `a1fff14` | `a1fff14` | carried |
 
 Mathlib master was already on Lean v4.35.0-rc3, and no Physlib commit was on that line, so
-Physlib held mathlib at its `v4.34.1` tag. TauCeti's newer commits all need v4.35.0-rc3, so it
-waits on its current pin. This run is the regression fixture
+Physlib held mathlib at its `v4.34.1` tag. TauCeti's pin `a1fff14` already pins v4.35.0-rc3
+and its newer commits move further along that line, so none fits; it stays on the pin main
+builds today. This run is the regression fixture
 `scripts/resolve_deps_fixtures/2026-10-03.json`.
 
 ### Running it

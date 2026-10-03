@@ -172,7 +172,9 @@ class Resolution(unittest.TestCase):
         self.assertEqual({h["pin"]: h["held_by"] for h in r["holds"]}["mathlib"], ["TauCeti"])
 
     def test_dependencies_never_move_backward(self):
-        # TauCeti's pin is already past the 4.34 line, as on 2026-10-03: it stays, carried.
+        # TauCeti's pin is already past the 4.34 line, as on 2026-10-03: it stays, carried. A
+        # carried pin is deliberately not checked against M (main builds it today), so a 4.35
+        # pin rides along with mathlib's 4.34.1 tag.
         g = Graph()
         mathlib_line(g)
         g.commit(PL, "p1", branch="master", manifest=manifest("s1"), lean_toolchain=lean("v4.34.1"))
@@ -227,6 +229,41 @@ class Resolution(unittest.TestCase):
         second = resolve(g, pins, lean("v4.34.0"), exclude=[bad])
         self.assertNotEqual({n: p["rev"] for n, p in second["pins"].items()}, bad)
 
+    def test_mathlib_hold_quotes_the_newest_blocked_commit(self):
+        # Blocked commits are collected cached-tip first, then dependency pins: here the newer
+        # m4 comes second, and its reason is the one to report.
+        g = Graph()
+        mathlib_line(g)
+        g.commit(ML, "m4", "m3", branch="master", lean_toolchain=lean("v4.36.0-rc1"))
+        g.commit(PL, "p1", branch="master", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(TC, "t1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(TC, "t2", "t1", branch="main", lake_manifest=manifest("m4"), lean_toolchain=lean("v4.36.0-rc1"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual([b["mathlib"] for b in r["blocked"]], ["m3", "m4"])
+        held = {h["pin"]: h["text"] for h in r["holds"]}
+        self.assertIn("v4.36.0-rc1's line", held["mathlib"])
+        self.assertNotIn("v4.35.0-rc1's line", held["mathlib"])
+
+    def test_hold_names_the_next_commit_that_pins_something_else(self):
+        # t2 is the commit just before t3's boundary, so it pins what t1 does: it explains nothing.
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", branch="master", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(TC, "t1", manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(TC, "t2", "t1")
+        g.commit(ML, "m4", "m3", lean_toolchain=lean("v4.35.0-rc2"))
+        g.commit(TC, "t3", "t2", branch="main", lake_manifest=manifest("m4"), lean_toolchain=lean("v4.35.0-rc2"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual(r["pins"]["TauCeti"]["fit"], "carried")
+        held = {h["pin"]: h["text"] for h in r["holds"]}
+        self.assertIn("newer commits pin Lean v4.35.0-rc2 and mathlib m4", held["TauCeti"])
+
+    def test_unrecognised_root_toolchain_fails_cleanly(self):
+        g = Graph()
+        mathlib_line(g)
+        with self.assertRaises(RuntimeError):
+            rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, "leanprover/lean4:nightly-2026-09-01")
+
 
 class RealRecording(unittest.TestCase):
     """The upstream state of 2026-10-03, replayed against main's pins of that day."""
@@ -252,6 +289,12 @@ class RealRecording(unittest.TestCase):
     def test_physlib_is_what_holds_mathlib(self):
         held = {h["pin"]: h["held_by"] for h in self.r["holds"]}
         self.assertEqual(held, {"mathlib": ["Physlib"], "TauCeti": ["mathlib"]})
+
+    def test_tauceti_hold_names_a_real_change(self):
+        # c60a71f, just before the first boundary, pins mathlib 5e0c4e5 like a1fff14 itself;
+        # the next commit that pins something else is 81acd31, on mathlib d870b90.
+        text = {h["pin"]: h["text"] for h in self.r["holds"]}["TauCeti"]
+        self.assertIn("newer commits pin Lean v4.35.0-rc3 and mathlib d870b90", text)
 
 
 class Project(unittest.TestCase):
