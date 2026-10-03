@@ -19,12 +19,15 @@ configuration is bounded.
 
 ## Main results
 
-- `Matrix.norm_trace_le_card_of_mem_unitaryGroup`: `‖Tr U‖ ≤ n` for unitary `U`.
+- `EpsilonEridani.Matrix.norm_trace_le_card_of_mem_unitaryGroup`: `‖Tr U‖ ≤ n` for unitary `U`.
 -/
 
 public section
 
+namespace EpsilonEridani
 namespace Matrix
+
+open _root_.Matrix
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 
@@ -36,3 +39,4 @@ theorem norm_trace_le_card_of_mem_unitaryGroup {U : Matrix n n 𝕜}
     _ = Fintype.card n := by simp
 
 end Matrix
+end EpsilonEridani

@@ -33,9 +33,6 @@ already real, because the generators are Hermitian, so taking the real part lose
   adjoint matrix is real orthogonal.
 - `SUNGen.adjointMatrix_one` and `SUNGen.adjointMatrix_mul`: `U ↦ Ad U` is multiplicative.
 - `SUNGen.adjointHom`: the adjoint representation `U(N) →* O(N² - 1)`.
-
-The proofs use only the trace identity, tracelessness, Hermiticity and the projection form of
-the completeness relation, all from `EpsilonEridani.QFT.QCD.SUNStructureConstants`.
 -/
 
 public section
@@ -118,8 +115,7 @@ lemma adjointMatrix_mul_transpose (U : unitaryGroup (Fin N) ℂ) :
       (2 * trace (star U.1 * genM N b * U.1 * genM N c)) =
       4 * (trace (star U.1 * genM N a * U.1 * genM N c) *
         trace (star U.1 * genM N b * U.1 * genM N c)) := fun c => by ring
-  rw [Finset.sum_congr rfl fun c _ => h4 c, ← Finset.mul_sum, sum_trace_pair, hpair, htr, htr,
-    one_apply]
+  simp only [h4, ← Finset.mul_sum, sum_trace_pair, hpair, htr, one_apply]
   by_cases h : a = b
   · subst h
     norm_num [kdA]
@@ -148,11 +144,10 @@ lemma adjointMatrix_mul (U V : unitaryGroup (Fin N) ℂ) :
   have h : genM N a * (U * V).1 * genM N b * star (U * V).1 =
       genM N a * U.1 * (V.1 * genM N b * star V.1) * star U.1 := by
     simp only [Submonoid.coe_mul, star_mul, Matrix.mul_assoc]
-  rw [h, ← sum_adjointMatrix_smul_genM, Matrix.mul_sum, Finset.sum_mul, trace_sum,
-    Finset.mul_sum]
+  rw [h, ← sum_adjointMatrix_smul_genM]
+  simp only [Finset.sum_mul, trace_sum, Finset.mul_sum, Complex.ofReal_mul,
+    ofReal_adjointMatrix_apply U a, Matrix.mul_smul, Matrix.smul_mul, trace_smul, smul_eq_mul]
   refine Finset.sum_congr rfl fun c _ => ?_
-  rw [Complex.ofReal_mul, ofReal_adjointMatrix_apply U a c, Matrix.mul_smul, Matrix.smul_mul,
-    trace_smul, smul_eq_mul]
   ring
 
 /-- The adjoint representation `U(N) → O(N² - 1)`, `U ↦ Ad U`, as a monoid homomorphism into

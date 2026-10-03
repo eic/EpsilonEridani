@@ -53,7 +53,7 @@ namespace EpsilonEridani
 namespace QFT
 namespace SmallX
 
-open Matrix
+open _root_.Matrix
 
 variable {Nc : ℕ}
 
@@ -90,7 +90,7 @@ theorem abs_dipoleS_le_one (U : WilsonConfiguration Nc) (x y : EuclideanSpace �
     |dipoleS U x y| ≤ 1 := by
   have hmem : (U x : Matrix (Fin Nc) (Fin Nc) ℂ) * star (U y).1 ∈ unitaryGroup (Fin Nc) ℂ :=
     mul_mem (U x).2 (Unitary.star_mem (U y).2)
-  have htr := (Complex.abs_re_le_norm _).trans (norm_trace_le_card_of_mem_unitaryGroup hmem)
+  have htr := (Complex.abs_re_le_norm _).trans (Matrix.norm_trace_le_card_of_mem_unitaryGroup hmem)
   rw [Fintype.card_fin] at htr
   rw [dipoleS_def, abs_mul, abs_inv, Nat.abs_cast]
   rcases Nat.eq_zero_or_pos Nc with h | h
@@ -119,8 +119,7 @@ theorem dipoleS_gaugeTransform (Ωp Ωm : EuclideanSpace ℝ (Fin 2) → unitary
     rw [hp, hm]
     simp only [Submonoid.coe_mul, Unitary.coe_star, star_mul, star_star, mul_assoc]
     rw [← mul_assoc (star (Ωm y).1), Unitary.star_mul_self_of_mem (Ωm y).2, one_mul]
-  rw [dipoleS_def, dipoleS_def, WilsonConfiguration.gaugeTransform_apply,
-    WilsonConfiguration.gaugeTransform_apply, key, trace_unitary_conj]
+  simp only [dipoleS_def, WilsonConfiguration.gaugeTransform_apply, key, trace_unitary_conj]
 
 end SmallX
 end QFT

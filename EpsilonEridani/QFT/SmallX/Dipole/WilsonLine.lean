@@ -89,6 +89,7 @@ lemma gaugeTransform_one (U : WilsonConfiguration Nc) : gaugeTransform 1 1 U = U
 
 /-- Gauge transformations compose: performing `(Ω₊, Ω₋)` and then `(Ω₊', Ω₋')` is the gauge
 transformation `(Ω₊' Ω₊, Ω₋' Ω₋)`. -/
+@[simp]
 lemma gaugeTransform_gaugeTransform
     (Ωp Ωm Ωp' Ωm' : EuclideanSpace ℝ (Fin 2) → unitaryGroup (Fin Nc) ℂ)
     (U : WilsonConfiguration Nc) :
@@ -106,6 +107,14 @@ def adjointLine (U : WilsonConfiguration Nc) (x : EuclideanSpace ℝ (Fin 2)) :
 lemma adjointLine_apply (U : WilsonConfiguration Nc) (x : EuclideanSpace ℝ (Fin 2)) :
     U.adjointLine x = SUNGen.adjointHom (U x) :=
   (rfl)
+
+/-- The adjoint Wilson line of a gauge-transformed configuration,
+`U_adj(x) ↦ Ω₊_adj(x) U_adj(x) Ω₋_adj(x)ᵀ`. -/
+lemma adjointLine_gaugeTransform (Ωp Ωm : EuclideanSpace ℝ (Fin 2) → unitaryGroup (Fin Nc) ℂ)
+    (U : WilsonConfiguration Nc) (x : EuclideanSpace ℝ (Fin 2)) :
+    (gaugeTransform Ωp Ωm U).adjointLine x =
+      SUNGen.adjointHom (Ωp x) * U.adjointLine x * star (SUNGen.adjointHom (Ωm x)) := by
+  simp only [adjointLine_apply, gaugeTransform_apply, map_mul, Unitary.star_eq_inv, map_inv]
 
 end WilsonConfiguration
 
