@@ -43,13 +43,13 @@ splitting `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T` of the scalar product us
 ## Main statements
 
 * `LightConeBasis.isProj_transverseProj`: the transverse projector is a projection onto the
-  transverse subspace; in particular it is idempotent (`isIdempotentElem_transverseProj`).
+  transverse subspace.
 * `LightConeBasis.ker_transverseProj`: its kernel is the longitudinal subspace.
 * `LightConeBasis.isCompl_longitudinal_transverse`: `V` is the direct sum of the longitudinal and
   transverse subspaces.
 * `LightConeBasis.smul_add_smul_add_eq_iff`: uniqueness of the decomposition
   `v = v⁺ n₊ + v⁻ n₋ + v_T`.
-* `LightConeBasis.apply_eq_plus_mul_minus_add`: `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
+* `LightConeBasis.bilinForm_eq_plus_mul_minus_add`: `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
 * `LightConeBasis.finrank_transverse_add_two`: the transverse subspace has codimension two.
 * `LightConeBasis.finrank_transverse_minkowskiAxis`: in `d + 1`-dimensional Minkowski space the
   transverse projector has rank `d - 1`.
@@ -200,17 +200,10 @@ theorem transverseProj_eq_self_iff {v : V} : L.transverseProj v = v ↔ v ∈ L.
 theorem isProj_transverseProj : LinearMap.IsProj L.transverse L.transverseProj :=
   ⟨L.transverseProj_mem_transverse, fun _ => L.transverseProj_eq_self_iff.2⟩
 
-/-- The transverse projector is idempotent. -/
-theorem isIdempotentElem_transverseProj : IsIdempotentElem L.transverseProj :=
-  L.isProj_transverseProj.isIdempotentElem
-
 @[simp]
 theorem transverseProj_transverseProj (v : V) :
     L.transverseProj (L.transverseProj v) = L.transverseProj v :=
   L.transverseProj_eq_self_iff.2 (L.transverseProj_mem_transverse v)
-
-theorem range_transverseProj : LinearMap.range L.transverseProj = L.transverse :=
-  L.isProj_transverseProj.range
 
 @[simp]
 theorem transverseProj_nPlus : L.transverseProj L.nPlus = 0 := by
@@ -258,27 +251,30 @@ section IsRefl
 variable (hB : B.IsRefl)
 include hB
 
-theorem apply_transverseProj_nPlus (v : V) : B (L.transverseProj v) L.nPlus = 0 :=
-  hB _ _ (L.minus_transverseProj v)
+theorem bilinForm_nPlus_eq_zero_of_mem_transverse {w : V} (hw : w ∈ L.transverse) :
+    B w L.nPlus = 0 :=
+  hB _ _ (L.mem_transverse_iff.1 hw).2
 
-theorem apply_transverseProj_nMinus (v : V) : B (L.transverseProj v) L.nMinus = 0 :=
-  hB _ _ (L.plus_transverseProj v)
+theorem bilinForm_nMinus_eq_zero_of_mem_transverse {w : V} (hw : w ∈ L.transverse) :
+    B w L.nMinus = 0 :=
+  hB _ _ (L.mem_transverse_iff.1 hw).1
 
 /-- The scalar product in light-cone components, `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`. -/
-theorem apply_eq_plus_mul_minus_add (u v : V) :
+theorem bilinForm_eq_plus_mul_minus_add (u v : V) :
     B u v = L.plus u * L.minus v + L.minus u * L.plus v +
       B (L.transverseProj u) (L.transverseProj v) := by
   conv_lhs =>
     rw [← L.plus_smul_add_minus_smul_add_transverseProj u,
       ← L.plus_smul_add_minus_smul_add_transverseProj v]
-  simp [L.apply_transverseProj_nPlus hB, L.apply_transverseProj_nMinus hB, ← plus_apply,
-    ← minus_apply]
+  simp [L.bilinForm_nPlus_eq_zero_of_mem_transverse hB (L.transverseProj_mem_transverse _),
+    L.bilinForm_nMinus_eq_zero_of_mem_transverse hB (L.transverseProj_mem_transverse _),
+    ← plus_apply, ← minus_apply]
 
 /-- The transverse projector is self-adjoint. -/
 theorem isAdjointPair_transverseProj :
     B.IsAdjointPair B L.transverseProj L.transverseProj := by
   intro u v
-  rw [L.apply_eq_plus_mul_minus_add hB, L.apply_eq_plus_mul_minus_add hB u]
+  rw [L.bilinForm_eq_plus_mul_minus_add hB, L.bilinForm_eq_plus_mul_minus_add hB u]
   simp
 
 end IsRefl
@@ -330,24 +326,28 @@ noncomputable def minkowskiAxis (i : Fin d) :
     field_simp
     norm_num
 
+@[simp]
 theorem minkowskiAxis_nPlus (i : Fin d) :
     (minkowskiAxis i).nPlus = (√2)⁻¹ • (basis (Sum.inl 0) + basis (Sum.inr i)) :=
   (rfl)
 
+@[simp]
 theorem minkowskiAxis_nMinus (i : Fin d) :
     (minkowskiAxis i).nMinus = (√2)⁻¹ • (basis (Sum.inl 0) - basis (Sum.inr i)) :=
   (rfl)
 
 /-- The plus component in the standard basis, `v⁺ = (v⁰ + vⁱ)/√2`. -/
+@[simp]
 theorem minkowskiAxis_plus (i : Fin d) (v : Vector d) :
     (minkowskiAxis i).plus v = (v (Sum.inl 0) + v (Sum.inr i)) / √2 := by
-  simp [plus_apply, minkowskiAxis_nMinus, minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
+  simp [plus_apply, minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
   ring
 
 /-- The minus component in the standard basis, `v⁻ = (v⁰ - vⁱ)/√2`. -/
+@[simp]
 theorem minkowskiAxis_minus (i : Fin d) (v : Vector d) :
     (minkowskiAxis i).minus v = (v (Sum.inl 0) - v (Sum.inr i)) / √2 := by
-  simp [minus_apply, minkowskiAxis_nPlus, minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
+  simp [minus_apply, minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
   ring
 
 /-- In `d + 1`-dimensional Minkowski space the transverse subspace, the range of the transverse
