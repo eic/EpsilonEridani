@@ -63,12 +63,13 @@ property of `(V, g, p, q)`. The same section supplies `uniquenessWit` and
 `spectatorAssumptions_kWit`, instantiating `UniquenessAssumptions` and `SpectatorAssumptions`
 on one set of kinematics.
 
-The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is not part of this module. The
-sector it inhabits is characterised in `Tensors.ParityOdd`: in the adapted four-dimensional
-frame of a `SpectatorPlane`, every antisymmetric, conserved, properly covariant tensor is a
-multiple of one non-zero `ε(·, ·, p, q)`. On an abstract `V` with only a
-bilinear form there is no orientation or volume form, so that module takes the role of
-`ε(·, ·, p, q)` as data; no `F₃` coefficient is defined yet.
+The parity-violating hadronic term `F₃ ε^{μναβ} p_α q_β / (2 p·q)` is *not* included. On an
+abstract `V` with only a bilinear form there is no orientation or volume form, so a parity-odd
+structure needs an alternating four-form supplied as data; the leptonic side does this in
+`Leptonic.lMuNuOdd`. The hadronic decomposition does not use such a form yet, and
+`IsLorentzCovariant` is not the covariance notion it needs: for a volume form `ε` on a
+four-dimensional space, a reflection in the kinematic stabilizer reverses the sign of
+`ε(·, ·, p, q)`, so that term satisfies `IsLorentzCovariant` only if it vanishes.
 
 -/
 
@@ -141,6 +142,15 @@ def IsIsometry (g : Bilin V) (f : V →ₗ[ℝ] V) : Prop :=
 lemma isIsometry_id (g : Bilin V) : IsIsometry g (LinearMap.id) := by
   intro v w
   simp
+
+/-- A bilinear form invariant under a linear map `f` has no component between a vector `v`
+fixed by `f` and a vector `u` reversed by `f`: invariance forces `W v u = - W v u`. -/
+lemma apply_eq_zero_of_apply_eq_self_of_apply_eq_neg {W : Bilin V} {f : V →ₗ[ℝ] V}
+    (hf : ∀ v w : V, W (f v) (f w) = W v w) {v u : V} (hfv : f v = v) (hfu : f u = -u) :
+    W v u = 0 := by
+  have h := hf v u
+  rw [hfv, hfu, map_neg] at h
+  linarith
 
 /-- Reflection of `V` in the `g`-orthogonal hyperplane to `u`, `v ↦ v - 2 (g u v / g u u) u`.
 The definition is unconditional; it is a `g`-isometry when `g` is symmetric and
@@ -323,7 +333,9 @@ lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q 
 Covariance of the hadronic tensor is the statement that `W` is built only out of `g`, `p` and
 `q`: it is invariant under every `g`-isometry that fixes `p` and `q`. This replaces the
 `lorentzCovariant : Prop` placeholder that previously stood in `Assumptions` and carried no
-information (any such field is satisfiable by `True`).
+information (any such field is satisfiable by `True`). `IsProperLorentzCovariant` asks only
+for invariance under the stabilizer elements of determinant one; it is the covariance of the
+parity-odd sector, treated in `Tensors.ParityOdd`.
 
 -/
 
@@ -342,6 +354,37 @@ structure IsKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (f : V →�
 `g`-isometry fixing `p` and `q`. -/
 def IsLorentzCovariant (g : Bilin V) (K : DisKinematics V) (W : Bilin V) : Prop :=
   ∀ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f → ∀ v w : V, W (f v) (f w) = W v w
+
+/-- Proper Lorentz covariance of a hadronic tensor: `W` is invariant under every `g`-isometry
+of determinant one fixing `p` and `q`. This is the covariance of a parity-violating
+interaction, which need not respect the reflections allowed by `IsLorentzCovariant`. -/
+def IsProperLorentzCovariant (g : Bilin V) (K : DisKinematics V) (W : Bilin V) : Prop :=
+  ∀ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f → LinearMap.det f = 1 →
+    ∀ v w : V, W (f v) (f w) = W v w
+
+/-- Full covariance implies proper covariance. -/
+lemma IsLorentzCovariant.isProperLorentzCovariant {g : Bilin V} {K : DisKinematics V}
+    {W : Bilin V} (hW : IsLorentzCovariant g K W) : IsProperLorentzCovariant g K W :=
+  fun f hf _ => hW f hf
+
+/-- Proper covariance is preserved by scalar multiples. -/
+lemma IsProperLorentzCovariant.smul {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
+    (hW : IsProperLorentzCovariant g K W) (c : ℝ) : IsProperLorentzCovariant g K (c • W) := by
+  intro f hf hdet v w
+  simp only [LinearMap.smul_apply, hW f hf hdet v w]
+
+/-- Proper covariance is preserved by differences. -/
+lemma IsProperLorentzCovariant.sub {g : Bilin V} {K : DisKinematics V} {W W' : Bilin V}
+    (hW : IsProperLorentzCovariant g K W) (hW' : IsProperLorentzCovariant g K W') :
+    IsProperLorentzCovariant g K (W - W') := by
+  intro f hf hdet v w
+  simp only [LinearMap.sub_apply, hW f hf hdet v w, hW' f hf hdet v w]
+
+/-- Proper covariance is preserved by exchanging the two slots. -/
+lemma IsProperLorentzCovariant.flip {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
+    (hW : IsProperLorentzCovariant g K W) : IsProperLorentzCovariant g K W.flip := by
+  intro f hf hdet v w
+  exact hW f hf hdet w v
 
 /-- Pairing against a vector fixed by a stabilizer element is invariant. -/
 lemma pairing_invariant_of_fixed (g : Bilin V) (K : DisKinematics V) {f : V →ₗ[ℝ] V}
@@ -392,11 +435,9 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
     (hup : g u K.p = 0) (huq : g u K.q = 0) (huv : g u v = 0) :
     W u v = 0 := by
   have hf := reflect_isKinematicStabilizer g K hSymm u hu hup huq
-  have h := hW (Bilin.reflect g u) hf u v
-  rw [Bilin.reflect_apply_self g u hu, Bilin.reflect_apply_of_orthogonal g u v huv] at h
-  have hneg : W (-u) v = -W u v := by simp
-  rw [hneg] at h
-  linarith
+  exact Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (W := W.flip)
+    (fun v w => hW _ hf w v) (Bilin.reflect_apply_of_orthogonal g u v huv)
+    (Bilin.reflect_apply_self g u hu)
 
 /-!
 
@@ -627,7 +668,7 @@ lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
 
 /-- A covariant tensor has no mixed component between a spectator `u` and any vector
 `g`-orthogonal to `u`, provided `u` is non-null whenever it is non-zero. -/
-theorem covariant_spectator_apply_eq_zero (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+theorem covariant_offDiagonal_zero_of_spectator (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) {u v : V} (hu : u ≠ 0 → g u u ≠ 0)
     (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (huv : g u v = 0) :
     W u v = 0 := by
@@ -694,7 +735,7 @@ theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bili
   -- Conservation removes every `q` component. Reflections in spectator directions remove the
   -- mixed components between a spectator and `p_T`.
   have hWut : ∀ u, g K.q u = 0 → g t u = 0 → W u t = 0 := fun u huq huT =>
-    covariant_spectator_apply_eq_zero g K W hSymm hA.covariant
+    covariant_offDiagonal_zero_of_spectator g K W hSymm hA.covariant
       (fun hu => (hS.definite u huq huT hu).ne) huq huT (by rw [hSymm.eq, huT])
   -- By `transitive` and polarization, `W = F1 • (-g)` on the spectator subspace.
   obtain ⟨F1, hF1⟩ : ∃ F1 : ℝ, ∀ u u' : V, g K.q u = 0 → g t u = 0 → g K.q u' = 0 →
