@@ -152,6 +152,7 @@ jobs:
           python3 scripts/test_check_expired_mathlib_shims.py
           python3 scripts/test_toolchain_tags.py
           python3 scripts/test_dependency_builds.py
+          python3 scripts/test_resolve_deps.py
 
       # The two-library split is build convenience, not a trust boundary.
       # This guard is what actually stops the AI-owned library from inheriting
