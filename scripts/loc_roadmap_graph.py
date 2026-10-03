@@ -20,7 +20,7 @@ Data comes from `gh` by default (needs auth: GH_TOKEN with pull-requests:read), 
 from a `--data` JSON file (the output of
 `gh pr list --state merged --json number,title,labels,mergedAt,additions,deletions`) for
 offline rendering and tests. Pure stdlib otherwise, matching loc_graph.py so CI needs
-no pip install. Styled for the navy Tau Ceti site (see web/static_files/style.css).
+no pip install. Styled for the navy Epsilon Eridani site (see web/static_files/style.css).
 """
 
 import argparse
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default="eic/EpsilonEridani")
     ap.add_argument("--data", help="JSON file of merged PRs (offline); else query gh")
-    ap.add_argument("--title", default="Tau Ceti — lines of Lean per roadmap")
+    ap.add_argument("--title", default="Epsilon Eridani — lines of Lean per roadmap")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     prs = json.load(open(a.data)) if a.data else fetch_gh(a.repo)
