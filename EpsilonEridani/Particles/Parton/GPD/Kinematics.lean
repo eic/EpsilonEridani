@@ -5,7 +5,8 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.Causality.LightLikeExtensions
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.Causality.BasicExtensions
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 
 /-!
 # Off-forward kinematics and the minimal momentum transfer
@@ -100,12 +101,8 @@ def physicalRegion (M : ℝ) : Set (ℝ × ℝ) := {q | |q.1| < 1 ∧ q.2 ≤ tM
 lemma mem_physicalRegion_iff (M : ℝ) (q : ℝ × ℝ) :
     q ∈ physicalRegion M ↔ |q.1| < 1 ∧ q.2 ≤ tMin M q.1 := Iff.rfl
 
-/-- The forward point `(ξ, t) = (0, 0)` lies in the physical region. -/
-lemma zero_mem_physicalRegion (M : ℝ) : (0 : ℝ × ℝ) ∈ physicalRegion M := by
-  simp
-
 lemma physicalRegion_nonempty (M : ℝ) : (physicalRegion M).Nonempty :=
-  ⟨0, zero_mem_physicalRegion M⟩
+  ⟨0, by simp⟩
 
 /-- Off-forward kinematics of the elastic transition `h(p) → h(p')` of a hadron of mass `M` in
 `d + 1`-dimensional Minkowski space, together with the light-like direction `n` that defines
@@ -176,14 +173,13 @@ lemma minkowskiProduct_n_avgMomentum_pos : 0 < ⟪K.n, K.avgMomentum⟫ₘ := by
 lemma n_ne_zero : K.n ≠ 0 := by
   intro hn
   have h := K.minkowskiProduct_n_p_pos
-  rw [hn, map_zero, _root_.zero_apply] at h
-  exact lt_irrefl 0 h
+  simp [hn] at h
 
 /-- The skewness in terms of the two plus-momenta, `ξ = (p⁺ - p'⁺) / (p⁺ + p'⁺)`. -/
 lemma skewness_eq_div :
     K.skewness = (⟪K.n, K.p⟫ₘ - ⟪K.n, K.p'⟫ₘ) / (⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ) := by
-  rw [skewness_def, minkowskiProduct_n_avgMomentum, delta_def, map_sub,
-    mul_div_cancel₀ _ two_ne_zero, neg_sub]
+  simp only [skewness_def, minkowskiProduct_n_avgMomentum, delta_def, map_sub, neg_sub,
+    mul_div_cancel₀ _ (two_ne_zero (α := ℝ))]
 
 /-- The incoming plus-momentum is `p⁺ = (1 + ξ) P⁺`. -/
 lemma minkowskiProduct_n_p_eq : ⟪K.n, K.p⟫ₘ = (1 + K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
@@ -205,18 +201,17 @@ lemma minkowskiProduct_n_p'_eq : ⟪K.n, K.p'⟫ₘ = (1 - K.skewness) * ⟪K.n,
 lemma abs_skewness_lt_one : |K.skewness| < 1 := by
   have hp := K.minkowskiProduct_n_p_pos
   have hp' := K.minkowskiProduct_n_p'_pos
-  rw [skewness_eq_div, abs_div, abs_of_pos (add_pos hp hp'), div_lt_one (add_pos hp hp'),
-    abs_sub_lt_iff]
+  rw [skewness_eq_div, abs_lt, lt_div_iff₀ (add_pos hp hp'), div_lt_one (add_pos hp hp')]
   constructor <;> linarith
 
 /-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
-lemma minkowskiProduct_avgMomentum_delta : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
+lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
   have h : ⟪K.avgMomentum, K.delta⟫ₘ = (⟪K.p', K.p'⟫ₘ - ⟪K.p, K.p⟫ₘ) / 2 := by
     simp only [avgMomentum_def, delta_def, map_smul, map_add, map_sub, _root_.smul_apply,
       _root_.add_apply, smul_eq_mul]
     rw [minkowskiProduct_symm K.p' K.p]
     ring
-  rw [h, K.minkowskiProduct_p_self, K.minkowskiProduct_p'_self, sub_self, zero_div]
+  simp [h, K.minkowskiProduct_p_self, K.minkowskiProduct_p'_self]
 
 /-- The invariant mass of the average momentum, `P² = M² - t / 4`. -/
 lemma minkowskiProduct_avgMomentum_self : ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.t / 4 := by
@@ -224,12 +219,13 @@ lemma minkowskiProduct_avgMomentum_self : ⟪K.avgMomentum, K.avgMomentum⟫ₘ 
   rw [p_eq_avgMomentum_sub] at h
   simp only [map_sub, map_smul, _root_.sub_apply, _root_.smul_apply,
     smul_eq_mul] at h
-  rw [minkowskiProduct_symm K.delta K.avgMomentum, K.minkowskiProduct_avgMomentum_delta] at h
+  rw [minkowskiProduct_symm K.delta K.avgMomentum,
+    K.minkowskiProduct_avgMomentum_delta_eq_zero] at h
   rw [t_def]
   linarith
 
 /-- The vector `w = Δ + 2 ξ P` has vanishing plus-component. -/
-lemma minkowskiProduct_n_delta_add :
+lemma minkowskiProduct_n_delta_add_eq_zero :
     ⟪K.n, K.delta + (2 * K.skewness) • K.avgMomentum⟫ₘ = 0 := by
   have h := K.minkowskiProduct_n_avgMomentum_pos
   rw [map_add, map_smul, smul_eq_mul, skewness_def]
@@ -242,42 +238,23 @@ lemma one_sub_sq_mul_t_add :
     (1 - K.skewness ^ 2) * K.t + 4 * K.skewness ^ 2 * M ^ 2 =
       ⟪K.delta + (2 * K.skewness) • K.avgMomentum,
         K.delta + (2 * K.skewness) • K.avgMomentum⟫ₘ := by
-  rw [minkowskiProduct_add_self, minkowskiProduct_smul_self, map_smul, smul_eq_mul,
-    minkowskiProduct_symm K.delta K.avgMomentum, K.minkowskiProduct_avgMomentum_delta,
-    K.minkowskiProduct_avgMomentum_self, ← t_def]
+  simp only [minkowskiProduct_add_self, minkowskiProduct_smul_self,
+    K.minkowskiProduct_avgMomentum_self]
+  simp only [map_smul, smul_eq_mul, minkowskiProduct_symm K.delta K.avgMomentum,
+    K.minkowskiProduct_avgMomentum_delta_eq_zero, t_def]
   ring
 
 /-- The momentum transfer is bounded by the minimal momentum transfer, `t ≤ t₀(ξ)`. -/
 theorem t_le_tMin : K.t ≤ tMin M K.skewness := by
   rw [le_tMin_iff M K.abs_skewness_lt_one, one_sub_sq_mul_t_add]
-  exact minkowskiProduct_self_nonpos_of_orthogonal_lightLike K.minkowskiProduct_n_self
-    K.n_ne_zero K.minkowskiProduct_n_delta_add
+  exact K.n.minkowskiProduct_self_nonpos_of_orthogonal_causal K.minkowskiProduct_n_self.ge
+    K.n_ne_zero K.minkowskiProduct_n_delta_add_eq_zero
 
 /-- The momentum transfer of an elastic transition is non-positive, `t ≤ 0`. -/
 lemma t_nonpos : K.t ≤ 0 :=
   K.t_le_tMin.trans (tMin_nonpos M K.abs_skewness_lt_one)
 
-/-- Every off-forward configuration lies in the physical region. -/
-lemma skewness_t_mem_physicalRegion : (K.skewness, K.t) ∈ physicalRegion M :=
-  ⟨K.abs_skewness_lt_one, K.t_le_tMin⟩
-
 /-! ### Attainability of the physical region -/
-
-/-- The vector `x e₀ + y eᵢ + z eⱼ` built from the time direction and two spatial directions. -/
-private def frameVector (i j : Fin d) (x y z : ℝ) : Vector d :=
-  x • basis (Sum.inl 0) + y • basis (Sum.inr i) + z • basis (Sum.inr j)
-
-private lemma minkowskiProduct_frameVector {i j : Fin d} (hij : i ≠ j) (x y z x' y' z' : ℝ) :
-    ⟪frameVector i j x y z, frameVector i j x' y' z'⟫ₘ = x * x' - y * y' - z * z' := by
-  simp [frameVector, minkowskiProduct_basis_left, hij, hij.symm, minkowskiMatrix.inl_0_inl_0,
-    minkowskiMatrix.inr_i_inr_i]
-  ring
-
-private lemma frameVector_sub_frameVector (i j : Fin d) (x y z x' y' z' : ℝ) :
-    frameVector i j x' y' z' - frameVector i j x y z =
-      frameVector i j (x' - x) (y' - y) (z' - z) := by
-  simp only [frameVector, sub_smul]
-  abel
 
 /-- In at least two spatial dimensions every point of the physical region is attained by an
 off-forward configuration. -/
@@ -335,7 +312,7 @@ theorem range_skewness_t (hd : 2 ≤ d) :
   ext q
   constructor
   · rintro ⟨K, rfl⟩
-    exact K.skewness_t_mem_physicalRegion
+    exact ⟨K.abs_skewness_lt_one, K.t_le_tMin⟩
   · intro hq
     obtain ⟨K, h1, h2⟩ := exists_of_mem_physicalRegion hd hq
     exact ⟨K, Prod.ext h1 h2⟩
