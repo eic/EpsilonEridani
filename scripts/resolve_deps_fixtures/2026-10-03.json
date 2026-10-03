@@ -1,0 +1,299 @@
+{
+ "[\"boundaries\", \"TauCetiProject/TauCeti\", \"main\", \"a1fff14d3219e392c7e25b0114bf5a24ba1e37bc\"]": [
+  "32637d0082340a724c2e0485f0211ae8489b863f",
+  "f94ba46743be3ddabb759c6161fdbe41f5b0c659",
+  "7a2d3f694b247a7a0fb0a67c9a1845722d974832",
+  "2f239f64e0d6635b687b1136e5e4b1f33c465769",
+  "14ad5bfc45600bb61382454152092c48cdb5e050"
+ ],
+ "[\"boundaries\", \"leanprover-community/physlib\", \"master\", \"35d1bb4313be7127a39cd6cf29f02b758b9461b9\"]": [],
+ "[\"cached_master_tip\", \"leanprover-community/mathlib4\"]": "302343bb9a029d4edab4f736703f0736896c1b64",
+ "[\"compare\", \"TauCetiProject/TauCeti\", \"a1fff14d3219e392c7e25b0114bf5a24ba1e37bc\", \"bba0a4a52bd1da743ce80d0ae5d57c13fd69fe81\"]": [
+  "ahead",
+  2013,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"159df8fb17773d80f548b65a74fecbe90283eb19\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\"]": [
+  "behind",
+  0,
+  26
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"159df8fb17773d80f548b65a74fecbe90283eb19\", \"b2bf051988bf69448bce88722cc09a05fea31662\"]": [
+  "behind",
+  0,
+  2
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"159df8fb17773d80f548b65a74fecbe90283eb19\", \"d870b9068518a0870842d15a0cd42637ec30b587\"]": [
+  "behind",
+  0,
+  12
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\", \"159df8fb17773d80f548b65a74fecbe90283eb19\"]": [
+  "behind",
+  0,
+  7
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\"]": [
+  "behind",
+  0,
+  33
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\", \"b2bf051988bf69448bce88722cc09a05fea31662\"]": [
+  "behind",
+  0,
+  9
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\", \"d870b9068518a0870842d15a0cd42637ec30b587\"]": [
+  "behind",
+  0,
+  19
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b2bf051988bf69448bce88722cc09a05fea31662\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\"]": [
+  "behind",
+  0,
+  24
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b2bf051988bf69448bce88722cc09a05fea31662\", \"d870b9068518a0870842d15a0cd42637ec30b587\"]": [
+  "behind",
+  0,
+  10
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\", \"159df8fb17773d80f548b65a74fecbe90283eb19\"]": [
+  "behind",
+  0,
+  10
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\", \"302343bb9a029d4edab4f736703f0736896c1b64\"]": [
+  "ahead",
+  168,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\"]": [
+  "behind",
+  0,
+  3
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\"]": [
+  "behind",
+  0,
+  36
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\", \"b2bf051988bf69448bce88722cc09a05fea31662\"]": [
+  "behind",
+  0,
+  12
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\", \"d870b9068518a0870842d15a0cd42637ec30b587\"]": [
+  "behind",
+  0,
+  22
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"d13f23b723b8a846827a245b89c10fc7d3f11612\", \"302343bb9a029d4edab4f736703f0736896c1b64\"]": [
+  "diverged",
+  417,
+  1
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"d870b9068518a0870842d15a0cd42637ec30b587\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\"]": [
+  "behind",
+  0,
+  14
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"159df8fb17773d80f548b65a74fecbe90283eb19\"]": [
+  "ahead",
+  238,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"302343bb9a029d4edab4f736703f0736896c1b64\"]": [
+  "ahead",
+  416,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\"]": [
+  "ahead",
+  245,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\"]": [
+  "ahead",
+  212,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"b2bf051988bf69448bce88722cc09a05fea31662\"]": [
+  "ahead",
+  236,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\"]": [
+  "ahead",
+  248,
+  0
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"d13f23b723b8a846827a245b89c10fc7d3f11612\"]": [
+  "diverged",
+  1,
+  1
+ ],
+ "[\"compare\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"d870b9068518a0870842d15a0cd42637ec30b587\"]": [
+  "ahead",
+  226,
+  0
+ ],
+ "[\"date\", \"TauCetiProject/TauCeti\", \"a1fff14d3219e392c7e25b0114bf5a24ba1e37bc\"]": "2026-09-26T23:11:21Z",
+ "[\"date\", \"TauCetiProject/TauCeti\", \"bba0a4a52bd1da743ce80d0ae5d57c13fd69fe81\"]": "2026-10-03T13:26:58Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"159df8fb17773d80f548b65a74fecbe90283eb19\"]": "2026-09-26T08:23:11Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"302343bb9a029d4edab4f736703f0736896c1b64\"]": "2026-10-03T12:20:24Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\"]": "2026-09-26T18:40:18Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\"]": "2026-09-25T02:33:15Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"b2bf051988bf69448bce88722cc09a05fea31662\"]": "2026-09-25T23:29:00Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\"]": "2026-09-27T10:06:36Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"d13f23b723b8a846827a245b89c10fc7d3f11612\"]": "2026-09-24T20:34:32Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"d870b9068518a0870842d15a0cd42637ec30b587\"]": "2026-09-25T14:20:42Z",
+ "[\"date\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\"]": "2026-09-15T00:29:43Z",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"2143f1181279e77a68e9d404c7dbaf65af54f7b6\", \"lake-manifest.json\"]": "{\"version\": \"1.3.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"159df8fb17773d80f548b65a74fecbe90283eb19\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"fb13df72ecefd8ddbf9291021d7f33a8673eb57b\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"29ff470276c725ae01505d55b17148c18fc7dfd3\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"10a2cfff285e1c7c2ebc49c0ba22cab0f3c58ee5\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"c643bbb3c24f8a25f9c14e3a6b1ceb13d01f3de1\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a90fbf7b02ff06a0deebf74088dff9e5fe02c9ea\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"37b0ba0b26109cf9f9c541f0f9557e50cfa1a3b9\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"33131f4fb10067cb3009bf4db615d9680c1ccd6b\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"843844fa601dd56767b1eb22b7ada5b64d5e567a\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.35.0-rc3\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"}],\n \"name\": \"TauCeti\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"2143f1181279e77a68e9d404c7dbaf65af54f7b6\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"4d01a34e1280a2c566cb46cefe7796d31636f59f\", \"lake-manifest.json\"]": "{\"version\": \"1.3.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"fb13df72ecefd8ddbf9291021d7f33a8673eb57b\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"29ff470276c725ae01505d55b17148c18fc7dfd3\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"10a2cfff285e1c7c2ebc49c0ba22cab0f3c58ee5\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"c643bbb3c24f8a25f9c14e3a6b1ceb13d01f3de1\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a90fbf7b02ff06a0deebf74088dff9e5fe02c9ea\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"37b0ba0b26109cf9f9c541f0f9557e50cfa1a3b9\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"33131f4fb10067cb3009bf4db615d9680c1ccd6b\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"843844fa601dd56767b1eb22b7ada5b64d5e567a\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.35.0-rc3\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"}],\n \"name\": \"TauCeti\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"4d01a34e1280a2c566cb46cefe7796d31636f59f\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"81acd313303cb54feef46f06e6f2bab0158ee3d2\", \"lake-manifest.json\"]": "{\"version\": \"1.3.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"d870b9068518a0870842d15a0cd42637ec30b587\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"fb13df72ecefd8ddbf9291021d7f33a8673eb57b\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"29ff470276c725ae01505d55b17148c18fc7dfd3\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a6d31147557d4b044a3ce226768572919acc1def\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"c643bbb3c24f8a25f9c14e3a6b1ceb13d01f3de1\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a90fbf7b02ff06a0deebf74088dff9e5fe02c9ea\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"37b0ba0b26109cf9f9c541f0f9557e50cfa1a3b9\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"33131f4fb10067cb3009bf4db615d9680c1ccd6b\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"843844fa601dd56767b1eb22b7ada5b64d5e567a\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.35.0-rc3\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"}],\n \"name\": \"TauCeti\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"81acd313303cb54feef46f06e6f2bab0158ee3d2\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"a1fff14d3219e392c7e25b0114bf5a24ba1e37bc\", \"lake-manifest.json\"]": "{\"version\": \"1.3.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"fb13df72ecefd8ddbf9291021d7f33a8673eb57b\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"29ff470276c725ae01505d55b17148c18fc7dfd3\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"7e81a29bda33a6b257bd37557a6aa6aebe175d96\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"c643bbb3c24f8a25f9c14e3a6b1ceb13d01f3de1\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a90fbf7b02ff06a0deebf74088dff9e5fe02c9ea\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"37b0ba0b26109cf9f9c541f0f9557e50cfa1a3b9\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"33131f4fb10067cb3009bf4db615d9680c1ccd6b\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"843844fa601dd56767b1eb22b7ada5b64d5e567a\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.35.0-rc3\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"}],\n \"name\": \"TauCeti\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"a1fff14d3219e392c7e25b0114bf5a24ba1e37bc\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"bba0a4a52bd1da743ce80d0ae5d57c13fd69fe81\", \"lake-manifest.json\"]": "{\"version\": \"1.3.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"fb13df72ecefd8ddbf9291021d7f33a8673eb57b\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"29ff470276c725ae01505d55b17148c18fc7dfd3\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"10a2cfff285e1c7c2ebc49c0ba22cab0f3c58ee5\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"c643bbb3c24f8a25f9c14e3a6b1ceb13d01f3de1\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a90fbf7b02ff06a0deebf74088dff9e5fe02c9ea\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"37b0ba0b26109cf9f9c541f0f9557e50cfa1a3b9\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"33131f4fb10067cb3009bf4db615d9680c1ccd6b\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"843844fa601dd56767b1eb22b7ada5b64d5e567a\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.35.0-rc3\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"}],\n \"name\": \"TauCeti\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"bba0a4a52bd1da743ce80d0ae5d57c13fd69fe81\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"c60a71fae0547ff3497a28546360d5eeadf0089e\", \"lake-manifest.json\"]": "{\"version\": \"1.3.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"fb13df72ecefd8ddbf9291021d7f33a8673eb57b\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"29ff470276c725ae01505d55b17148c18fc7dfd3\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"7e81a29bda33a6b257bd37557a6aa6aebe175d96\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"c643bbb3c24f8a25f9c14e3a6b1ceb13d01f3de1\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a90fbf7b02ff06a0deebf74088dff9e5fe02c9ea\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"37b0ba0b26109cf9f9c541f0f9557e50cfa1a3b9\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"33131f4fb10067cb3009bf4db615d9680c1ccd6b\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"843844fa601dd56767b1eb22b7ada5b64d5e567a\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.35.0-rc3\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"}],\n \"name\": \"TauCeti\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"c60a71fae0547ff3497a28546360d5eeadf0089e\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"dec7a5857c7d85f2ce63e7890c26b1e99a537057\", \"lake-manifest.json\"]": "{\"version\": \"1.3.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"b2bf051988bf69448bce88722cc09a05fea31662\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"fb13df72ecefd8ddbf9291021d7f33a8673eb57b\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"29ff470276c725ae01505d55b17148c18fc7dfd3\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a6d31147557d4b044a3ce226768572919acc1def\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"c643bbb3c24f8a25f9c14e3a6b1ceb13d01f3de1\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"a90fbf7b02ff06a0deebf74088dff9e5fe02c9ea\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"37b0ba0b26109cf9f9c541f0f9557e50cfa1a3b9\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"33131f4fb10067cb3009bf4db615d9680c1ccd6b\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"843844fa601dd56767b1eb22b7ada5b64d5e567a\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.35.0-rc3\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"}],\n \"name\": \"TauCeti\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"TauCetiProject/TauCeti\", \"dec7a5857c7d85f2ce63e7890c26b1e99a537057\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"159df8fb17773d80f548b65a74fecbe90283eb19\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"302343bb9a029d4edab4f736703f0736896c1b64\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"516d31250e96c4e8e76888c3d8e2e43a9642b9ee\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"5e0c4e5239cb0a2d86d68a884bf52cfd963fce22\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"b2bf051988bf69448bce88722cc09a05fea31662\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"b63f6e8a68d220e3b3bc4f3792bb53650d375f24\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"d13f23b723b8a846827a245b89c10fc7d3f11612\", \"lean-toolchain\"]": "leanprover/lean4:v4.34.1\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"d870b9068518a0870842d15a0cd42637ec30b587\", \"lean-toolchain\"]": "leanprover/lean4:v4.35.0-rc3\n",
+ "[\"file\", \"leanprover-community/mathlib4\", \"db1c5741da0acf96c97584de6ccf0e3bfbc0ae99\", \"lean-toolchain\"]": "leanprover/lean4:v4.34.0\n",
+ "[\"file\", \"leanprover-community/physlib\", \"35d1bb4313be7127a39cd6cf29f02b758b9461b9\", \"lake-manifest.json\"]": "{\"version\": \"1.2.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4.git\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"d13f23b723b8a846827a245b89c10fc7d3f11612\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.34.1\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover/doc-gen4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"953c8992d174b4e56955e01e101d46668c68f2bb\",\n   \"name\": \"\u00abdoc-gen4\u00bb\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.34.1\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"118aa17ee84656b8bd727fef7c458ee8c833385c\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"ddf04cf3949fa556442341e87d47f9f6e6074707\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"e928b72544873815af278d38681b31c0293588e3\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"106ff4fafc74ef4ac99d81dbf3ab399118f497a5\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"355695d523e41d0554926416cba2a2b3544fbbc9\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"6a489d9af5d0c47e5b259e2e8bcdfc1811b5a259\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"f2effa3d803fda822b1f97b806c47cf2adfbcbc2\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/leansqlite\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"f9cdb9eacb5c8b8ecc02ee9fd9e568d7d28c1416\",\n   \"name\": \"leansqlite\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"e92c9f15fdfacc8536f31cfb3b7ad26c3c8cd204\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.34.0\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/fgdorais/lean4-unicode-basic\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"0e569d08b6443ce0908d356884c765397253e2f0\",\n   \"name\": \"UnicodeBasic\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/dupuisf/BibtexQuery\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"4d8616fd4870d0a3453d845770833eac7951fe1c\",\n   \"name\": \"BibtexQuery\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/acmepjz/md4lean\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"31907cc18f48a95384f99cee5582c00fb39e0f67\",\n   \"name\": \"MD4Lean\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"}],\n \"name\": \"Physlib\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"leanprover-community/physlib\", \"35d1bb4313be7127a39cd6cf29f02b758b9461b9\", \"lean-toolchain\"]": "leanprover/lean4:v4.34.1\n",
+ "[\"file\", \"leanprover-community/physlib\", \"d86d07ddc82c59e7fe12ee3bd4771a97f7330066\", \"lake-manifest.json\"]": "{\"version\": \"1.2.0\",\n \"packagesDir\": \".lake/packages\",\n \"packages\":\n [{\"url\": \"https://github.com/leanprover-community/mathlib4.git\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"d13f23b723b8a846827a245b89c10fc7d3f11612\",\n   \"name\": \"mathlib\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.34.1\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover/doc-gen4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"953c8992d174b4e56955e01e101d46668c68f2bb\",\n   \"name\": \"\u00abdoc-gen4\u00bb\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.34.1\",\n   \"inherited\": false,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/plausible\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"118aa17ee84656b8bd727fef7c458ee8c833385c\",\n   \"name\": \"plausible\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/LeanSearchClient\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"ddf04cf3949fa556442341e87d47f9f6e6074707\",\n   \"name\": \"LeanSearchClient\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/import-graph\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"e928b72544873815af278d38681b31c0293588e3\",\n   \"name\": \"importGraph\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/ProofWidgets4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"106ff4fafc74ef4ac99d81dbf3ab399118f497a5\",\n   \"name\": \"proofwidgets\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover-community/aesop\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"355695d523e41d0554926416cba2a2b3544fbbc9\",\n   \"name\": \"aesop\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/quote4\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"6a489d9af5d0c47e5b259e2e8bcdfc1811b5a259\",\n   \"name\": \"Qq\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover-community/batteries\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover-community\",\n   \"rev\": \"f2effa3d803fda822b1f97b806c47cf2adfbcbc2\",\n   \"name\": \"batteries\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/leanprover/leansqlite\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"f9cdb9eacb5c8b8ecc02ee9fd9e568d7d28c1416\",\n   \"name\": \"leansqlite\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/leanprover/lean4-cli\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"leanprover\",\n   \"rev\": \"e92c9f15fdfacc8536f31cfb3b7ad26c3c8cd204\",\n   \"name\": \"Cli\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"v4.34.0\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/fgdorais/lean4-unicode-basic\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"0e569d08b6443ce0908d356884c765397253e2f0\",\n   \"name\": \"UnicodeBasic\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"},\n  {\"url\": \"https://github.com/dupuisf/BibtexQuery\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"4d8616fd4870d0a3453d845770833eac7951fe1c\",\n   \"name\": \"BibtexQuery\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"master\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.toml\"},\n  {\"url\": \"https://github.com/acmepjz/md4lean\",\n   \"type\": \"git\",\n   \"subDir\": null,\n   \"scope\": \"\",\n   \"rev\": \"31907cc18f48a95384f99cee5582c00fb39e0f67\",\n   \"name\": \"MD4Lean\",\n   \"manifestFile\": \"lake-manifest.json\",\n   \"inputRev\": \"main\",\n   \"inherited\": true,\n   \"configFile\": \"lakefile.lean\"}],\n \"name\": \"Physlib\",\n \"lakeDir\": \".lake\",\n \"fixedToolchain\": false}\n",
+ "[\"file\", \"leanprover-community/physlib\", \"d86d07ddc82c59e7fe12ee3bd4771a97f7330066\", \"lean-toolchain\"]": "leanprover/lean4:v4.34.1\n",
+ "[\"parent\", \"TauCetiProject/TauCeti\", \"14ad5bfc45600bb61382454152092c48cdb5e050\"]": "c60a71fae0547ff3497a28546360d5eeadf0089e",
+ "[\"parent\", \"TauCetiProject/TauCeti\", \"2f239f64e0d6635b687b1136e5e4b1f33c465769\"]": "81acd313303cb54feef46f06e6f2bab0158ee3d2",
+ "[\"parent\", \"TauCetiProject/TauCeti\", \"32637d0082340a724c2e0485f0211ae8489b863f\"]": "4d01a34e1280a2c566cb46cefe7796d31636f59f",
+ "[\"parent\", \"TauCetiProject/TauCeti\", \"7a2d3f694b247a7a0fb0a67c9a1845722d974832\"]": "dec7a5857c7d85f2ce63e7890c26b1e99a537057",
+ "[\"parent\", \"TauCetiProject/TauCeti\", \"f94ba46743be3ddabb759c6161fdbe41f5b0c659\"]": "2143f1181279e77a68e9d404c7dbaf65af54f7b6",
+ "[\"release_tags\", \"leanprover-community/mathlib4\"]": {
+  "065356127b1dc0016f66b7283ce0ce2c4055aa55": "v4.35.0-rc2",
+  "09d33efc68d3ad52db77b731d7253675395a14aa": "v4.9.1",
+  "0c154d67103f74be3a0f2c509f72ccbf5be9f2a7": "v4.30.0-rc1",
+  "0df444a360eaa60ab8c11dca51a86af692955474": "v4.33.1",
+  "15f16b1ec50f425147926be1aede7b4baa725380": "v4.16.0-rc2",
+  "19f4ef2c52b278bd96626e02d594751e6e12ac98": "v4.22.0-rc3",
+  "1a5c8fe51b870f5c4ffd6fe44936e09a776d8f3e": "v4.22.0-rc2",
+  "1ccd71f89cbbd82ae7d097723ce1722ca7b01c33": "v4.25.0",
+  "1f9fffd5ff0b854b8a1f1f69adc11c61f05f2515": "v4.28.1",
+  "1ff3bf341c6a14611bd2f7f689853d12f06c1694": "v4.3.0-rc1",
+  "20c73142afa995ac9c8fb80a9bb585a55ca38308": "v4.11.0",
+  "26eb2b0ade1d7e252d07b13ea9253f9c8652facd": "v4.2.0-rc2",
+  "2d4a7e079332b99e4f147f75c35a9eab971ec1af": "v4.0.0-rc4",
+  "2df2f0150c275ad53cb3c90f7c98ec15a56a1a67": "v4.26.0",
+  "308445d7985027f538e281e18df29ca16ede2ba3": "v4.21.0",
+  "32d24245c7a12ded17325299fd41d412022cd3fe": "v4.27.0-rc1",
+  "33a7291a345d718bca41f8ae8a9bae365d8f2a3e": "v4.29.0-rc1",
+  "360da6fa66c1273b76b6b2d8c5666fd5ac2e3b56": "v4.32.0-rc1",
+  "36198c194d03692f2869b7ec6c272372e12a73be": "v4.19.0-rc2",
+  "37df177aaa770670452312393d4e84aaad56e7b6": "v4.23.0",
+  "41ff1f7899c971f91362710d4444e338b8acd644": "v4.15.0-rc1",
+  "490d2d4820d3ed2dea34f47f3cdfe9d72b8fbc80": "v4.6.0-rc1",
+  "4bbdccd9c5f862bf90ff12f0a9e2c8be032b9a84": "v4.14.0",
+  "4de9b983b6933d0fac3dacd97efd1744a3d5badb": "v4.2.0-rc3",
+  "4e57d17bdc121dc17f25f2d8240a584c76a3a66e": "v4.21.0-rc1",
+  "4e685d14db58b1ab29024bb0761902a3615f3f14": "v4.20.0-rc5",
+  "5025874dc5f9f8dd1598190e60ef20dda7b42566": "v4.11.0-rc1",
+  "51e6992efd06126df61a496bebf8f49482a4e129": "v4.33.0-rc2",
+  "520045ab14e26149ee970e2e617ca04b09bde5d6": "v4.32.1",
+  "5269898d6a51d047931107c8d72d934d8d5d3753": "v4.17.0",
+  "5352afccd6866369be9de43f5b7ec47203555f44": "v4.28.0-rc1",
+  "5450b53e5ddc75d46418fabb605edbf36bd0beb6": "v4.30.0-rc2",
+  "58eef79b1520d17ff085f58b599690c112a47e6b": "v4.5.0-rc1",
+  "59fdb6b04d7d16825a54483d550d9572ff473abf": "v4.7.0-rc2",
+  "5bb630b0e53879b30dc48637d83822677a64065b": "v4.6.1",
+  "5c0c94b3f563ed756b48b9439788c53b0d56a897": "v4.20.1",
+  "5c8398df528176d9c87ccd9226ba8f7c8852d59c": "v4.29.0-rc6",
+  "5e932f97dd25535344f80f9dd8da3aab83df0fe6": "v4.29.1",
+  "5ed2965256430c3649e86755f9576b54eca72435": "v4.34.0",
+  "5ef3a830c97744118453efe44e7ddde3d4632385": "v4.9.0-rc2",
+  "6455ba8ab6d25ef9f661dc663a524375d3984164": "v4.21.0-rc3",
+  "698d2b68b870f1712040ab0c233d34372d4b56df": "v4.29.0-rc8",
+  "6a54a80825b060ab20dc31751ebdce78b3a3b518": "v4.26.0-rc1",
+  "6cecf71a82a22ea7c01598800e12f3e8eb66894b": "v4.18.0-rc1",
+  "753159252c585df6b6aa7c48d2b8828d58388b79": "v4.2.0",
+  "75641abe702d35c946b6e59b8dc672c7e6d80b13": "v4.4.0-rc1",
+  "766e19e781a0992344fd4f24d2662858b6b87250": "v4.25.0-rc2",
+  "77b45269e0888a839059d6678a32631c8066da21": "v4.25.1",
+  "79d0395a1825a6264ad5d269e35e60537518955e": "v4.33.0-rc1",
+  "79e94a093aff4a60fb1b1f92d9681e407124c2ca": "v4.22.0",
+  "7ca43cbd6aa34058a1afad8e47190af3ec1f9bdb": "v4.6.0",
+  "809c3fb3b5c8f5d7dace56e200b426187516535a": "v4.12.0",
+  "81a5d257c8e410db227a6665ed08f64fea08e997": "v4.32.0",
+  "83d4f222771f491b351d70b070406481f5d2b2ba": "v4.3.0-rc2",
+  "85e3a25e006c35636f0e53b0e9296caca2685bc0": "v4.34.0-rc2",
+  "891dd961017425184bf9499bdcf6c88a68076667": "v4.29.0-rc4",
+  "8a178386ffc0f5fef0b77738bb5449d50efeea95": "v4.29.0",
+  "8f07524533b483cffcf3c5a50b9633c6af0defdc": "v4.29.0-rc2",
+  "8f9d9cff6bd728b17a24e163c9402775d9e6a365": "v4.28.0",
+  "905b95818eb32af7874a58b427f50c1711a5e96c": "v4.32.2",
+  "90c0e186fd333cbdddbe0e5148aa3cd2d24dcf9a": "v4.23.0-rc2",
+  "928758ac3743dc7f171fc66f450506723896f1c5": "v4.22.0-rc4",
+  "96a5ba5ce504f8b8e6acd659015e46e641d7af10": "v4.17.0-rc1",
+  "9837ca9d65d9de6fad1ef4381750ca688774e608": "v4.15.0",
+  "984c68d7773ac133c74543b99b82c33e53baea6b": "v4.10.0-rc2",
+  "9b1001cbdbfe51cbc92398637317609eb7bbf139": "v4.29.0-rc3",
+  "a3a10db0e9d66acbebf76c5e6a135066525ac900": "v4.27.0",
+  "a45ae63747140c1b2cbad9d46f518015c047047a": "v4.7.0",
+  "a57f31753dde989bc415cb64277a1688866e443c": "v4.16.0-rc1",
+  "a6276f4c6097675b1cf5ebd49b1146b735f38c02": "v4.16.0",
+  "a719ba5c3115d47b68bf0497a9dd1bcbb21ea663": "v4.10.0",
+  "a7fc949f1b05c2a01e01c027fd9f480496a1253e": "v4.14.0-rc1",
+  "a80d330cac8f1d82b69767e1412893ac36ca6c00": "v4.0.0-rc2",
+  "aa936c36e8484abd300577139faf8e945850831a": "v4.18.0",
+  "ab095590e53bf2860a344299368acf5cb3ae1b2b": "v4.24.1",
+  "abf6080fb1010e286a97e369935f0963b494f322": "v4.20.0-rc2",
+  "b2f9c24b60fadee88f6172e2e0685850f323e1c7": "v4.2.0-rc1",
+  "b3c38642e52a78f11043e0417eea4501a8907a41": "v4.21.0-rc2",
+  "b5eba595428809e96f3ed113bc7ba776c5f801ac": "v4.8.0",
+  "bbf0d1e39b5faac9276413942ac15bd64de65c1e": "v4.9.0-rc1",
+  "bfaffcf10e6d088ae7c1c22462cbd7ae46f6c358": "v4.1.0-rc1",
+  "c211948581bde9846a99e32d97a03f0d5307c31e": "v4.20.0",
+  "c32e1ec0d1eb5237ba344eee50162f45d5b0fc76": "v4.35.0-rc1",
+  "c44e0c8ee63ca166450922a373c7409c5d26b00b": "v4.19.0",
+  "c55e6e786f49471c72fbddbec5415808896aec1e": "v4.35.0-rc3",
+  "c5ea00351c28e24afc9f0f84379aa41082b1188f": "v4.30.0",
+  "c5edb8d3738a5abd7da7f34d5bcb27f632a1ecca": "v4.29.0-rc7",
+  "c98ae54af00eaefe79c51b2b278361ca94e59bfb": "v4.25.2",
+  "cf8e23a62939ed7cc530fbb68e83539730f32f86": "v4.4.0",
+  "d13f23b723b8a846827a245b89c10fc7d3f11612": "v4.34.1",
+  "d56176f12b78a0cf8454d9c2a6e9e8d4954dc58a": "v4.0.0",
+  "d568c8c09630de097a046763c17b9ea99f95f950": "v4.31.0-rc1",
+  "d5c9558e75342a10d6321e6a8c798a14f68ae23c": "v4.26.0-rc2",
+  "d7317655e2826dc1f1de9a0c138db2775c4bb841": "v4.13.0",
+  "d90090f647cae4f4ad4da99c0ac8bab2ca8c34ab": "v4.31.0-rc2",
+  "db584cd6d46c92f209a44c0f1c829460d327499d": "v4.33.0",
+  "db651742f2c631e5b8525e9aabcf3d61ed094a4a": "v4.8.0-rc1",
+  "de5ce8a9a66a4aa68a9bdbb35b63a06d34d9ca11": "v4.34.0-rc1",
+  "e091c88348ddd5acceddd4320811a926d4cf19d0": "v4.8.0-rc2",
+  "e6a0a9ce05f538af9fdd86c12fbed45078202a81": "v4.20.1-rc1",
+  "eed770a434957369c6262aa3fb1d6426419016d4": "v4.24.0-rc1",
+  "f04afed5ac9fea0e1355bc6f6bee2bd01f4a888d": "v4.3.0",
+  "f0957a7575317490107578ebaee9efaf8e62a4ab": "v4.9.0",
+  "f203f2e0caf1d9ea25b7f2e4b8c2afebd2c6967b": "v4.1.0",
+  "f5c3f06aa7f6d6c221786d2890c345a00e6341f8": "v4.10.0-rc1",
+  "f897ebcf72cd16f89ab4577d0c826cd14afaafc7": "v4.24.0",
+  "f9caf98dbed0eb3bb593396501ffebe61bda333b": "v4.9.0-rc3",
+  "fa48894a5d2780c6593a224003a660ca039e3e8f": "v4.7.0-rc1",
+  "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f": "v4.31.0",
+  "feec58a7ee9185f92abddcf7631643b53181a7d3": "v4.5.0",
+  "ff99cdaecce8cab2fcc3d3828ab7f79717fbf77a": "v4.19.0-rc3"
+ },
+ "[\"tip\", \"TauCetiProject/TauCeti\", \"main\"]": "bba0a4a52bd1da743ce80d0ae5d57c13fd69fe81",
+ "[\"tip\", \"leanprover-community/physlib\", \"master\"]": "d86d07ddc82c59e7fe12ee3bd4771a97f7330066"
+}
