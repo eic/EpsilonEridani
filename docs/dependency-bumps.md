@@ -29,12 +29,13 @@ toolchain, a mathlib release tag (patch releases such as `v4.34.1` live on mathl
 branch, not on master) or a commit on master (the way back from a patch release). Those two
 may diverge from the pin and leave out commits it has; on 2026-10-03 the move to `v4.34.1`
 left out one. The report counts them (`dropped_commits`) and the summary says so.
-The generalized `check-bump.sh` is to accept exactly these moves.
+`check-bump.sh` accepts exactly these moves (see below).
 
 A new candidate is only offered once mathlib's **cache is published** for it: a successful
-master-push `build.yml` run (as `check-bump.sh` step 2b requires), or, for a release tag off
-master, a successful `release_cache.yml` run, which mathlib uses to publish patch releases to
-the same cache. Without one, the candidate is blocked by `cache` and the next one is offered. The toolchain is always mathlib's own at the chosen commit.
+master-push `build.yml` run, or, for a release tag off master, a successful
+`release_cache.yml` run, which mathlib uses to publish patch releases to the same cache.
+Without one, the candidate is blocked by `cache` and the next one is offered. The toolchain
+is always mathlib's own at the chosen commit.
 
 **Candidate dependency commits** are the branch tip, the last commit before each change to
 the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. All are at or
@@ -83,6 +84,30 @@ builds today. This run is the regression fixture
 
 It needs Python 3.11+ (`tomllib`) and an authenticated `gh`.
 
+## Validating a bump: `scripts/check-bump.sh`
+
+The resolver only proposes. What lets a bump PR build and merge without a human is the bump
+guard, which reads the PR's `lake-manifest.json` and `lean-toolchain`, queries the upstreams
+through `gh api`, and runs nothing from the PR. It accepts a pin change only when:
+
+1. `lakefile.toml` is unchanged; the direct dependencies are base's non-inherited packages,
+   each keeping its url and nominated branch (`inputRev`).
+2. Each direct dependency's rev stays put or moves forward: a descendant on its nominated
+   branch. Mathlib alone may also diverge onto a strictly newer toolchain, at a release tag
+   (`v4.*` tags are release-manager-only and immutable upstream) or on master. A new mathlib
+   rev must have a published cache: a master-push build, or for a tag a `release_cache.yml`
+   run.
+3. Every other entry is derived from the direct dependencies' own manifests at their new revs
+   (`scripts/bump_manifest.py`): the package set is their union; a package mathlib pins is
+   mathlib's entry (the lakefile orders its requires so mathlib's pins win, and its cache was
+   built against them); one only Physlib or TauCeti pins is that dependency's entry.
+4. `lean-toolchain` moves forward and equals mathlib's at its new rev.
+
+Moving Physlib or TauCeti forward on its branch can therefore merge without a human, as
+moving mathlib forward on master always could. That extends the trust the project already
+places in those branches (main builds them today) to their future commits; every build still
+runs sandboxed. `scripts/test_check_bump.py` runs the guard end to end against a fake `gh`.
+
 ## Reporting: held back is not stuck
 
 The resolver reports, for every pin, how far it is behind its branch tip and what holds it
@@ -100,10 +125,7 @@ expected and are reported informationally, never as stuck automation. Alerts are
 | step | state |
 |---|---|
 | resolver (`scripts/resolve_deps.py`) and its tests | done |
-| bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib release tags pinned by a dependency (cache signal: `release_cache.yml`, not the master-push build), and the inherited packages Lake derives from all three | planned |
+| bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib's newer-toolchain release tags and master commits (cache signal for a tag: `release_cache.yml`), and the inherited packages Lake derives from all three | done |
 | `update.yml` runs the resolver (dry run first), opens one rolling `bump-mathlib/` PR, records failed sets | planned |
 | `scripts/pr_status/stuck_alerts.py`: `stale-pin` replaced by "a feasible set is not landing"; holds reported as information | planned |
 | EpsilonEridaniWorker's `bump` stage hands back a PR whose build fails inside a dependency | planned |
-
-Until the bump-guard step lands, `check-bump.sh` still accepts only a mathlib move on master
-with every other manifest entry equal to mathlib's, which no three-dependency bump satisfies.
