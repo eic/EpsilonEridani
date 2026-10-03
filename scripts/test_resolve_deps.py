@@ -123,15 +123,9 @@ def mathlib_line(g):
 
 
 class Toolchains(unittest.TestCase):
-    def test_release_sorts_above_its_rcs(self):
-        self.assertGreater(rd.parse_toolchain(lean("v4.35.0")), rd.parse_toolchain(lean("v4.35.0-rc3")))
-        self.assertGreater(rd.parse_toolchain(lean("v4.35.0-rc1")), rd.parse_toolchain(lean("v4.34.1")))
-
+    # parsing and ordering are lean_versions', tested through test_toolchain_tags.py
     def test_rcs_share_the_line(self):
         self.assertEqual(rd.line_of(rd.parse_toolchain(lean("v4.35.0-rc3"))), (4, 35))
-
-    def test_unrecognised(self):
-        self.assertIsNone(rd.parse_toolchain("leanprover/lean4:nightly-2026-09-01"))
 
 
 class Resolution(unittest.TestCase):
@@ -315,6 +309,14 @@ class Resolution(unittest.TestCase):
         mathlib_line(g)
         with self.assertRaises(RuntimeError):
             rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, "leanprover/lean4:nightly-2026-09-01")
+
+    def test_mathlib_off_master_fails_cleanly(self):
+        # the cache signals are master's, so another branch would not mean what it says
+        g = Graph()
+        mathlib_line(g)
+        requires = [r if r[0] != "mathlib" else ("mathlib", ML, "stable") for r in REQUIRES]
+        with self.assertRaises(RuntimeError):
+            rd.Resolver(g, requires, {"mathlib": "m1"}, lean("v4.34.0"))
 
 
 class RealRecording(unittest.TestCase):

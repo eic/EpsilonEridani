@@ -44,9 +44,10 @@ A dependency commit **fits** a mathlib commit M when
 
 - `exact`: it pins mathlib at M itself, so its own CI built that pairing; or
 - `near`: its toolchain is on M's Lean line (same major.minor) and no newer than M's, and
-  its mathlib is an ancestor of M or M is a release tag on that line. The release-tag case is
-  the weakest: a dependency built on master after the release branched may use API the tag
-  lacks, and only the build will tell.
+  its mathlib is an ancestor of M, or has diverged from M and M is a release tag on that
+  line. The release-tag case is the weakest: a dependency built on master after the release
+  branched may use API the tag lacks, and only the build will tell. A dependency commit whose
+  manifest pins no mathlib fits on the toolchain line alone.
 
 For each M every dependency takes its newest fitting commit. A dependency with none may stay
 on its current pin (`carried`) only while M stays on the Lean line main is already on: main

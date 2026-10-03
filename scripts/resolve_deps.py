@@ -39,7 +39,9 @@ dependency never moves backward. A candidate FITS M when
 
   * `exact`: it pins mathlib at M itself (its own CI built exactly this pairing); or
   * `near`:  its toolchain is on M's Lean line (same major.minor) and no newer than M's, and
-             its mathlib is an ancestor of M, or M is a release tag on that line.
+             its mathlib is an ancestor of M, or has diverged from M and M is a release tag
+             on that line. A candidate whose manifest pins no mathlib fits on the toolchain
+             line alone.
 
 For each M, each dependency takes its newest fitting candidate. When none fits, it may stay on
 its current pin (`carried`) only while M stays on the Lean line main is already on: main builds
@@ -85,9 +87,10 @@ import tomllib
 from datetime import datetime
 from pathlib import Path
 
+import lean_versions
+from lean_versions import parse_toolchain, show_toolchain
+
 MATHLIB = "mathlib"
-TOOLCHAIN_RE = re.compile(r"leanprover/lean4:v(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?")
-RELEASE_TAG_RE = re.compile(r"v\d+\.\d+\.\d+(?:-rc\d+)?")
 
 
 # --- upstream facts -----------------------------------------------------------------------------
@@ -173,18 +176,7 @@ class GitHub:
     def release_tags(self, repo):
         """{commit sha: tag} for the repository's vX.Y.Z[-rcN] tags."""
         def fetch():
-            out = gh(f"repos/{repo}/git/matching-refs/tags/v",
-                     jq='.[] | .ref + " " + .object.type + " " + .object.sha', paginate=True)
-            tags = {}
-            for line in out.splitlines():
-                ref, kind, sha = line.split()
-                name = ref.removeprefix("refs/tags/")
-                if not RELEASE_TAG_RE.fullmatch(name):
-                    continue
-                if kind == "tag":  # annotated: the ref names the tag object, not the commit
-                    sha = gh(f"repos/{repo}/git/tags/{sha}", jq=".object.sha")
-                tags[sha] = name
-            return tags
+            return {sha: name for name, sha in lean_versions.release_tags(gh, repo).items()}
         return self._once(("tags", repo), fetch)
 
 
@@ -221,21 +213,8 @@ class Replay:
 
 # --- toolchains -----------------------------------------------------------------------------------
 
-def parse_toolchain(text):
-    """(major, minor, patch, rc) with a release above its own rcs; None when unrecognised."""
-    m = TOOLCHAIN_RE.fullmatch((text or "").strip())
-    if not m:
-        return None
-    x, y, z, rc = m.groups()
-    return (int(x), int(y), int(z), int(rc) if rc is not None else float("inf"))
-
-
 def line_of(tc):
     return tc[:2] if tc else None
-
-
-def show_toolchain(text):
-    return (text or "?").strip().removeprefix("leanprover/lean4:")
 
 
 def short(sha):
@@ -288,6 +267,10 @@ class Resolver:
         if parse_toolchain(toolchain) is None:
             raise RuntimeError(f"unrecognised lean-toolchain {toolchain!r}")
         self.mathlib_repo, self.mathlib_branch = mathlib[0]
+        if self.mathlib_branch != "master":
+            # mathlib publishes its cache only from master pushes (and release tags), which is
+            # what cached_master_tip and cache_published ask; another branch would mean two things
+            raise RuntimeError(f"mathlib must be required at rev master, not {self.mathlib_branch!r}")
         self.deps = [(name, repo, branch) for name, repo, branch in requires if name != MATHLIB]
         self.tags = src.release_tags(self.mathlib_repo)
 
