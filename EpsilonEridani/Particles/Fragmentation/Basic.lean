@@ -49,11 +49,10 @@ lemma zMoment_eq_intervalIntegral (D : Frag Hadron Flavor) (n : ℕ) (h : Hadron
     (Q2 : ℝ) : zMoment D n h i Q2 = ∫ z in (0 : ℝ)..1, z ^ n * D h i z Q2 := by
   rw [zMoment, integral_Icc_eq_integral_Ioc, intervalIntegral.integral_of_le zero_le_one]
 
-/-- Every `z`-moment of a family satisfying `Assumptions` is non-negative. -/
-lemma zMoment_nonneg {D : Frag Hadron Flavor} (hD : Assumptions D) (n : ℕ) (h : Hadron)
-    (i : Flavor) (Q2 : ℝ) : 0 ≤ zMoment D n h i Q2 :=
-  setIntegral_nonneg measurableSet_Icc fun z hz =>
-    mul_nonneg (pow_nonneg hz.1 n) (hD.nonneg h i z Q2 hz.1 hz.2)
+/-- Every `z`-moment of a family that is non-negative on the unit interval is non-negative. -/
+lemma zMoment_nonneg {D : Frag Hadron Flavor} {h : Hadron} {i : Flavor} {Q2 : ℝ}
+    (hD : ∀ z ∈ Icc (0 : ℝ) 1, 0 ≤ D h i z Q2) (n : ℕ) : 0 ≤ zMoment D n h i Q2 :=
+  setIntegral_nonneg measurableSet_Icc fun z hz => mul_nonneg (pow_nonneg hz.1 n) (hD z hz)
 
 /-- Support consequence outside the physical z-interval. -/
 lemma eq_zero_of_not_mem_unitInterval

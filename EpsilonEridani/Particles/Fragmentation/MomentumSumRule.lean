@@ -53,7 +53,7 @@ completeness: `MomentumSumRule` is the identity itself.
   `arXiv:1607.02521`, §2.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -78,7 +78,7 @@ def MomentumSumRule [Fintype Hadron] (D : Frag Hadron Flavor) : Prop :=
 lemma momentumSumRule_iff [Fintype Hadron] (D : Frag Hadron Flavor) :
     MomentumSumRule D ↔ ∀ (i : Flavor) (Q2 : ℝ),
       (∀ h, IntegrableOn (fun z => z * D h i z Q2) (Icc 0 1)) ∧ ∑ h, zMoment D 1 h i Q2 = 1 :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- For a single species, the momentum sum rule says that its first moment is the integral of an
 integrable function and equals one. -/
@@ -87,13 +87,13 @@ lemma momentumSumRule_iff_of_unique [Unique Hadron] (D : Frag Hadron Flavor) :
       IntegrableOn (fun z => z * D default i z Q2) (Icc 0 1) ∧ zMoment D 1 default i Q2 = 1 := by
   simp [momentumSumRule_iff, Unique.forall_iff]
 
-/-- Under the momentum sum rule, each species carries at most the whole momentum of the
-fragmenting parton. Only non-negativity of the other species is used. -/
+/-- Under the momentum sum rule, for a family that is non-negative on the unit interval, each
+species carries at most the whole momentum of the fragmenting parton. -/
 theorem MomentumSumRule.zMoment_one_le_one [Fintype Hadron] {D : Frag Hadron Flavor}
-    (hsum : MomentumSumRule D) (hD : Assumptions D) (h : Hadron) (i : Flavor) (Q2 : ℝ) :
-    zMoment D 1 h i Q2 ≤ 1 :=
-  ((momentumSumRule_iff D).1 hsum i Q2).2 ▸
-    Finset.single_le_sum (fun h' _ => zMoment_nonneg hD 1 h' i Q2) (Finset.mem_univ h)
+    (hsum : MomentumSumRule D) (hD : ∀ h i z Q2, 0 ≤ z → z ≤ 1 → 0 ≤ D h i z Q2) (h : Hadron)
+    (i : Flavor) (Q2 : ℝ) : zMoment D 1 h i Q2 ≤ 1 :=
+  ((momentumSumRule_iff D).1 hsum i Q2).2 ▸ Finset.single_le_sum
+    (fun h' _ => zMoment_nonneg (fun z hz => hD h' i z Q2 hz.1 hz.2) 1) (Finset.mem_univ h)
 
 /-! ### The sum rule is not a per-species statement -/
 
