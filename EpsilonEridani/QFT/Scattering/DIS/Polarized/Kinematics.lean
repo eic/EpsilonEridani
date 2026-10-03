@@ -44,7 +44,7 @@ the two are mutually orthogonal (`apply_longitudinalSpin_transverseSpin_eq_zero`
   arXiv:hep-ph/9204208, §2.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -246,7 +246,8 @@ def longitudinal (K : DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
   spin_normalized := apply_longitudinalSpin_self_eq_neg_one hSymm hk hpk hM
 
 /-- The transversely polarised configuration with reference direction `n`: the kinematics `K`
-of a massless lepton, with the transverse spin vector `transverseSpin g K n`. -/
+with the transverse spin vector `transverseSpin g K n`. For a massless lepton (`k·k = 0`) this
+spin vector is transverse to the beam (`apply_transverseSpin_k_eq_zero`). -/
 def transverse (K : DisKinematics V) (n : V) (hSymm : g.IsSymm) (hpk : g K.p K.k ≠ 0)
     (hn : g (transverseComponent g K n) (transverseComponent g K n) < 0) :
     PolarizedKinematics g where
@@ -272,12 +273,6 @@ lemma transverse_toDisKinematics : (transverse K n hSymm hpk hn).toDisKinematics
 @[simp]
 lemma transverse_S : (transverse K n hSymm hpk hn).S = transverseSpin g K n := (rfl)
 
-/-- The longitudinal and a transverse configuration of the same kinematics have orthogonal
-spin vectors. -/
-theorem apply_longitudinal_S_transverse_S_eq_zero :
-    g (longitudinal K hSymm hk hpk hM).S (transverse K n hSymm hpk hn).S = 0 :=
-  apply_longitudinalSpin_transverseSpin_eq_zero hSymm hk hpk n
-
 end PolarizedKinematics
 
 /-! ### A witness in three-dimensional Minkowski space -/
@@ -288,20 +283,35 @@ open Tensors.Hadronic.Witness (gWit gWit_apply gWit_isSymm)
 
 /-- Witness kinematics in `ℝ¹'²` with the metric `gWit`: a target of unit mass at rest,
 `p = (1, 0, 0)`, struck by a massless lepton moving along the first spatial axis,
-`k = (1, 1, 0)`. -/
+`k = (1, 1, 0)`, which scatters to the massless `k' = (1/4, 0, 1/4)`. The momentum transfer
+`q = (3/4, 1, -1/4)` gives `Q² = 1/2`, `p·q = 3/4` and `x = 1/3`. -/
 def kPol : DisKinematics (ℝ × ℝ × ℝ) where
   p := (1, 0, 0)
   pPrime := 0
   k := (1, 1, 0)
-  kPrime := 0
-  q := (1, 1, 0)
-  hq := by simp
+  kPrime := (1 / 4, 0, 1 / 4)
+  q := (3 / 4, 1, -1 / 4)
+  hq := by ext <;> norm_num
 
 lemma kPol_k_self : gWit kPol.k kPol.k = 0 := by simp [kPol]
 
 lemma kPol_p_k : gWit kPol.p kPol.k = 1 := by simp [kPol]
 
 lemma kPol_M2 : kPol.M2 gWit = 1 := by simp [DisKinematics.M2_def, kPol]
+
+/-- The witness is a genuine DIS event: it lies in the physical region of
+`BasicAssumptions`. -/
+lemma basicAssumptions_kPol : DisKinematics.BasicAssumptions gWit kPol where
+  q2_pos := by norm_num [DisKinematics.Q2, kPol]
+  p_dot_q_pos := by norm_num [kPol]
+  p_dot_k_pos := by norm_num [kPol]
+  q2_le_two_p_dot_q := by norm_num [DisKinematics.Q2, kPol]
+  p_dot_q_le_p_dot_k := by norm_num [kPol]
+
+/-- The witness target mass factor is `γ² = 4 · 1 · (1/3)² / (1/2) = 8/9`. -/
+lemma kPol_gammaSq : kPol.gammaSq gWit = 8 / 9 := by
+  rw [DisKinematics.gammaSq_def, kPol_M2]
+  norm_num [DisKinematics.xBj, DisKinematics.Q2, kPol]
 
 /-- In the rest frame the longitudinal spin vector is the unit vector along the beam. -/
 lemma longitudinalSpin_kPol : longitudinalSpin gWit kPol = (0, 1, 0) := by

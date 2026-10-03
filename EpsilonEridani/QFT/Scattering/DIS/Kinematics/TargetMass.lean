@@ -12,16 +12,17 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Bounds
 
 `DisKinematics` carries no mass field, so the squared target mass is recovered from the hadron
 momentum as the invariant `M² := p·p` (`DisKinematics.M2`). It is the mass that enters the
-hadronic invariant mass, `W² = M² + 2 p·q - Q²` (`W2_eq_M2_add`).
+hadronic invariant mass, `W² = M² + 2 p·q - Q²` (`DisKinematics.W2_eq_with_Q2`).
 
 The kinematic factor
 
   `γ² := 4 M² x² / Q²`
 
-measures the target mass against the hard scale. In polarised deep-inelastic scattering `γ` is
-the coefficient with which `g₂` enters the longitudinal asymmetry and `g₁ + g₂` the transverse
-one, so it decides how well each asymmetry constrains each structure function; in unpolarised
-scattering `1 + γ²` is the target-mass factor of the longitudinal structure function.
+measures the target mass against the hard scale. In polarised deep-inelastic scattering `γ²` is
+the coefficient with which `g₂` enters the longitudinal asymmetry, and `γ` the coefficient of
+`g₁ + g₂` in the transverse one, so it decides how well each asymmetry constrains each structure
+function; in unpolarised scattering `1 + γ²` is the target-mass factor of the longitudinal
+structure function.
 
 ## Main results
 
@@ -40,7 +41,7 @@ scattering `1 + γ²` is the target-mass factor of the longitudinal structure fu
   (2000) 1; arXiv:hep-ph/9810270, §2.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -62,12 +63,6 @@ def M2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g K.p K.p
 
 lemma M2_def (g : Bilin V) (K : DisKinematics V) : K.M2 g = g K.p K.p := (rfl)
-
-/-- The squared target mass is the invariant appearing in the hadronic invariant mass:
-`W² = M² + 2 p·q - Q²`. -/
-lemma W2_eq_M2_add (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
-    K.W2 g = K.M2 g + 2 * g K.p K.q - K.Q2 g :=
-  W2_eq_with_Q2 g K hSymm
 
 /-- The kinematic factor `γ² := 4 M² x² / Q²`. -/
 def gammaSq (g : Bilin V) (K : DisKinematics V) : ℝ :=
