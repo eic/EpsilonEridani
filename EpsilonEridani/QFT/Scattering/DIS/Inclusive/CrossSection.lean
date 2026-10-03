@@ -73,7 +73,7 @@ depends on the exchanged boson.
   580, for the reduced cross section.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -105,6 +105,10 @@ lemma Yminus_def (y : ℝ) : Yminus y = 1 - (1 - y) ^ 2 := (rfl)
 @[simp] lemma Yplus_zero : Yplus 0 = 2 := by norm_num [Yplus_def]
 
 @[simp] lemma Yminus_zero : Yminus 0 = 0 := by norm_num [Yminus_def]
+
+@[simp] lemma Yplus_one : Yplus 1 = 1 := by norm_num [Yplus_def]
+
+@[simp] lemma Yminus_one : Yminus 1 = 1 := by norm_num [Yminus_def]
 
 /-- `Y₊` is twice the leading-order inelasticity factor `yFactor`. -/
 lemma Yplus_eq_two_mul_yFactor (y : ℝ) : Yplus y = 2 * yFactor y := by
@@ -174,6 +178,11 @@ lemma crossSectionBracket_def (M s x Q2 y F1 F2 F3 : ℝ) :
     crossSectionBracket M s x Q2 y F1 F2 F3 =
       2 * x * y ^ 2 * F1 + 2 * (1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) * F2
         - s * Yminus y * (x * F3) := (rfl)
+
+/-- At vanishing inelasticity the bracket is `2 F₂`. -/
+@[simp] lemma crossSectionBracket_zero_inelasticity (M s x Q2 F1 F2 F3 : ℝ) :
+    crossSectionBracket M s x Q2 0 F1 F2 F3 = 2 * F2 := by
+  simp [crossSectionBracket_def]
 
 /-- **The bracket in terms of `F_L`.** Trading `F₁` for the longitudinal structure function
 `F_L = F₂ - 2 x F₁` gives the familiar `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L` plus the target-mass term
@@ -248,7 +257,7 @@ theorem reducedCrossSection_eq_FL (M s x Q2 y F1 F2 F3 : ℝ) :
   field_simp [Yplus_ne_zero y]
 
 /-- At zero target mass, `σ_r = F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L`. -/
-theorem reducedCrossSection_zero_mass (s x Q2 y F1 F2 F3 : ℝ) :
+@[simp] theorem reducedCrossSection_zero_mass (s x Q2 y F1 F2 F3 : ℝ) :
     reducedCrossSection 0 s x Q2 y F1 F2 F3 =
       F2 - s * (Yminus y / Yplus y) * (x * F3) - y ^ 2 / Yplus y * FL x F1 F2 := by
   rw [reducedCrossSection_eq_FL]
@@ -376,8 +385,7 @@ theorem existsUnique_reducedCrossSection_eq {M s x Q2 : ℝ} {y : Fin 3 → ℝ}
     fin_cases j
     · rfl
     · exact mul_div_cancel₀ (G 1) hx
-    · change FL x ((G 0 - G 2) / (2 * x)) (G 0) = G 2
-      unfold FL
+    · simp only [Fin.reduceFinMk, Matrix.cons_val, FL]
       field_simp
       ring
   have hex : ∀ i, reducedCrossSection M s x Q2 (y i) ((G 0 - G 2) / (2 * x)) (G 0) (G 1 / x)
