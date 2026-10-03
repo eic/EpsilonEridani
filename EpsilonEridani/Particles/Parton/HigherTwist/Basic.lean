@@ -13,15 +13,15 @@ public import Mathlib.Tactic.Ring
 /-!
 # Collinear twist of light-cone operators
 
-Fix light-like vectors `n`, `n̄` with `n·n̄ = 1` and write `v^+ = n·v`, `v^- = n̄·v` for the
-light-cone components of a vector (so `γ^+ = n̸` and `γ^- = n̸̄`), the remaining two components
+Fix light-like vectors `n`, `nbar` with `n·nbar = 1` and write `v^+ = n·v`, `v^- = nbar·v` for the
+light-cone components of a vector (so `γ^+ = n·γ` and `γ^- = nbar·γ`), the remaining two components
 being transverse. A boost along
 the light-cone axis with rapidity `η` rescales `v^± ↦ e^{±η} v^±`. The quark field splits into its
 good and bad projections `ψ_± = P_± ψ`, `P_± = ½ γ^∓ γ^±`, which rescale by `e^{±η/2}`; the
-antiquark field `ψ̄_± = \overline{ψ_±}` rescales in the same way. The gluon field strength `F^{μν}`
-splits into the components `F^{+i}`, `F^{+-}`, `F^{ij}` and `F^{-i}` (`i, j` transverse), which
-rescale by `e^{η}`, `1`, `1` and `e^{-η}`. The exponent of `e^{η}` is the *light-cone spin* `s` of
-the field component.
+antiquark field `ψbar_± = \overline{ψ_±}` rescales in the same way. The gluon field strength
+`F^{μν}` splits into the components `F^{+i}`, `F^{+-}`, `F^{ij}` and `F^{-i}` (`i, j`
+transverse), which rescale by `e^{η}`, `1`, `1` and `e^{-η}`. The exponent of `e^{η}` is the
+*light-cone spin* `s` of the field component.
 
 The *collinear twist* of a field component is `t = d - s`, its canonical mass dimension (`3/2`
 for a quark field, `2` for the field strength) minus its light-cone spin. It is a positive integer:
@@ -31,8 +31,8 @@ content, as its mass dimension minus its light-cone spin, both of which are addi
 insertions. The light-cone positions of the insertions and the Dirac and colour structure
 contracting them do not enter the grading, so the field content is recorded as a multiset of
 field components and nothing else. A Dirac structure selects which projections appear: the
-scalar `ψ̄ ψ = ψ̄_+ ψ_- + ψ̄_- ψ_+` is a sum of two twist-three monomials, while `ψ̄ γ^+ ψ` only
-involves `ψ̄_+ ψ_+` and has twist two.
+scalar `ψbar ψ = ψbar_+ ψ_- + ψbar_- ψ_+` is a sum of two twist-three monomials, while
+`ψbar γ^+ ψ` only involves `ψbar_+ ψ_+` and has twist two.
 
 Twist is the grading by which forward nucleon matrix elements of light-cone operators are
 organised: the twist-two operators give the leading-power parton densities, the twist-three
@@ -99,11 +99,11 @@ inductive FieldStrengthComponent
   deriving DecidableEq
 
 /-- A field insertion in a light-cone operator: a projection of the quark field `ψ` or of the
-antiquark field `ψ̄`, or a light-cone component of the gluon field strength. -/
+antiquark field `ψbar`, or a light-cone component of the gluon field strength. -/
 inductive LightConeField
   /-- A projection `ψ_±` of the quark field. -/
   | quark (p : QuarkProjection)
-  /-- A projection `ψ̄_±` of the antiquark field. -/
+  /-- A projection `ψbar_±` of the antiquark field. -/
   | antiquark (p : QuarkProjection)
   /-- A light-cone component of the gluon field strength. -/
   | fieldStrength (c : FieldStrengthComponent)
@@ -203,12 +203,12 @@ theorem twist_eq_massDimension_sub_lightConeSpin (f : LightConeField) :
 theorem one_le_twist (f : LightConeField) : 1 ≤ f.twist := by
   rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp
 
-/-- The field components of twist one are the good ones: `ψ_+`, `ψ̄_+` and `F^{+i}`. -/
+/-- The field components of twist one are the good ones: `ψ_+`, `ψbar_+` and `F^{+i}`. -/
 theorem twist_eq_one_iff {f : LightConeField} :
     f.twist = 1 ↔ f = quark .good ∨ f = antiquark .good ∨ f = fieldStrength .plusTransverse := by
   rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp
 
-/-- The field components of twist two: `ψ_-`, `ψ̄_-`, `F^{+-}` and `F^{ij}`. -/
+/-- The field components of twist two: `ψ_-`, `ψbar_-`, `F^{+-}` and `F^{ij}`. -/
 theorem twist_eq_two_iff {f : LightConeField} :
     f.twist = 2 ↔ f = quark .bad ∨ f = antiquark .bad ∨ f = fieldStrength .plusMinus ∨
       f = fieldStrength .transverse := by
@@ -330,7 +330,7 @@ theorem twist_eq_card_iff {O : FieldContent} :
     · rintro ⟨hf, hO⟩
       rw [hf, ih.2 hO, add_comm]
 
-/-- A quark-number-neutral operator of twist two is a bilinear `ψ̄_+ ψ_+` in good quark fields or
+/-- A quark-number-neutral operator of twist two is a bilinear `ψbar_+ ψ_+` in good quark fields or
 `F^{+i} F^{+j}` in transverse field strengths, or a single `F^{+-}` or `F^{ij}`. -/
 theorem twist_eq_two_iff {O : FieldContent} (hO : quarkNumber O = 0) :
     twist O = 2 ↔ O = {antiquark .good, quark .good} ∨
@@ -352,8 +352,8 @@ theorem twist_eq_two_iff {O : FieldContent} (hO : quarkNumber O = 0) :
       first | decide | simp_all
 
 /-- A quark-number-neutral operator of twist three is either a bilinear with one twist-one and
-one twist-two field — `ψ̄_+ ψ_-` or `ψ̄_- ψ_+` with one bad quark field, or `F^{+i} F^{+-}` or
-`F^{+i} F^{jk}` — or a trilinear `ψ̄_+ F^{+i} ψ_+` in good quark fields and a transverse field
+one twist-two field — `ψbar_+ ψ_-` or `ψbar_- ψ_+` with one bad quark field, or `F^{+i} F^{+-}` or
+`F^{+i} F^{jk}` — or a trilinear `ψbar_+ F^{+i} ψ_+` in good quark fields and a transverse field
 strength or `F^{+i} F^{+j} F^{+k}` in transverse field strengths, or a single `F^{-i}`. -/
 theorem twist_eq_three_iff {O : FieldContent} (hO : quarkNumber O = 0) :
     twist O = 3 ↔ O = {antiquark .good, quark .bad} ∨ O = {antiquark .bad, quark .good} ∨
