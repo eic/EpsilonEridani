@@ -19,7 +19,7 @@ Relative to such a pair every vector has light-cone components
   `v⁺ = n₋ · v`,  `v⁻ = n₊ · v`,
 
 and a transverse part `v_T = v - v⁺ n₊ - v⁻ n₋`, so that `v = v⁺ n₊ + v⁻ n₋ + v_T` with
-`v_T` orthogonal to both `n₊` and `n₋`. The map `v ↦ v_T` is the transverse projector
+`n₊ · v_T = n₋ · v_T = 0`. The map `v ↦ v_T` is the transverse projector
 `g_T^{μν} = g^{μν} - n₊^μ n₋^ν - n₋^μ n₊^ν`.
 
 This is the kinematic frame of transverse-momentum-dependent and higher-twist factorisation:
@@ -30,13 +30,18 @@ respect to a light-cone basis aligned with the collision axis. In Minkowski spac
 The material is stated for an arbitrary bilinear form over a commutative ring. The pairing is
 required in both orders, so no symmetry of `B` is needed for the decomposition itself; the
 splitting `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T` of the scalar product uses only reflexivity.
+The transverse subspace is Mathlib's `LinearMap.BilinForm.orthogonal`, which puts the basis
+vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. The other order
+`B v n₊ = B v n₋ = 0` characterises it only when `B` is reflexive
+(`LightConeBasis.mem_transverse_iff_bilinForm_eq_zero`).
 
 ## Main definitions
 
 * `EpsilonEridani.LightConeBasis B`: a light-cone basis `(n₊, n₋)` for `B`.
 * `LightConeBasis.plus`, `LightConeBasis.minus`: the light-cone components `v⁺`, `v⁻`.
 * `LightConeBasis.longitudinal`: the span of `n₊` and `n₋`.
-* `LightConeBasis.transverse`: its orthogonal complement, the transverse subspace.
+* `LightConeBasis.transverse`: the transverse subspace `{v | n₊ · v = n₋ · v = 0}`, the
+  (right) orthogonal complement of the longitudinal subspace.
 * `LightConeBasis.transverseProj`: the transverse projector `v ↦ v_T`.
 * `LightConeBasis.minkowskiAxis i`: the standard basis `n± = (e₀ ± eᵢ)/√2` of Minkowski space.
 
@@ -51,8 +56,10 @@ splitting `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T` of the scalar product us
   `v = v⁺ n₊ + v⁻ n₋ + v_T`.
 * `LightConeBasis.bilinForm_eq_plus_mul_minus_add`: `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
 * `LightConeBasis.finrank_transverse_add_two`: the transverse subspace has codimension two.
-* `LightConeBasis.finrank_transverse_minkowskiProduct`: in `d + 1`-dimensional Minkowski space
-  the transverse projector of any light-cone basis has rank `d - 1`.
+* `LightConeBasis.finrank_transverse_minkowskiProduct_add_one`: in `d + 1`-dimensional
+  Minkowski space the transverse projector of any light-cone basis has rank `d - 1`.
+* `LightConeBasis.finrank_transverse_minkowskiProduct_eq_two`: in four-dimensional Minkowski space
+  the transverse projector has rank two.
 
 ## References
 
@@ -78,17 +85,17 @@ structure LightConeBasis {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V
   /-- The light-like vector `n₋`. -/
   nMinus : V
   /-- `n₊` is light-like. -/
-  nPlus_nPlus : B nPlus nPlus = 0
+  nPlus_nPlus_eq_zero : B nPlus nPlus = 0
   /-- `n₋` is light-like. -/
-  nMinus_nMinus : B nMinus nMinus = 0
+  nMinus_nMinus_eq_zero : B nMinus nMinus = 0
   /-- The normalisation `n₊ · n₋ = 1`. -/
-  nPlus_nMinus : B nPlus nMinus = 1
+  nPlus_nMinus_eq_one : B nPlus nMinus = 1
   /-- The normalisation `n₋ · n₊ = 1`. -/
-  nMinus_nPlus : B nMinus nPlus = 1
+  nMinus_nPlus_eq_one : B nMinus nPlus = 1
 
 namespace LightConeBasis
 
-attribute [simp] nPlus_nPlus nMinus_nMinus nPlus_nMinus nMinus_nPlus
+attribute [simp] nPlus_nPlus_eq_zero nMinus_nMinus_eq_zero nPlus_nMinus_eq_one nMinus_nPlus_eq_one
 
 section CommRing
 
@@ -133,7 +140,8 @@ theorem minus_nMinus : L.minus L.nMinus = 1 := by
 def longitudinal : Submodule R V :=
   Submodule.span R {L.nPlus, L.nMinus}
 
-/-- The transverse subspace, the orthogonal complement of `n₊` and `n₋`. -/
+/-- The transverse subspace `{v | n₊ · v = 0 ∧ n₋ · v = 0}`, the orthogonal complement
+`B.orthogonal` of the longitudinal subspace (with `n₊`, `n₋` in the left argument of `B`). -/
 def transverse : Submodule R V :=
   B.orthogonal L.longitudinal
 
@@ -246,13 +254,24 @@ section IsRefl
 variable (hB : B.IsRefl)
 include hB
 
+/-- For a reflexive form, transversality can be tested with `n₊`, `n₋` in the right argument:
+`w` is transverse iff `w · n₊ = w · n₋ = 0`. -/
+theorem mem_transverse_iff_bilinForm_eq_zero {w : V} :
+    w ∈ L.transverse ↔ B w L.nPlus = 0 ∧ B w L.nMinus = 0 := by
+  rw [mem_transverse_iff, plus_apply, minus_apply]
+  exact ⟨fun ⟨hp, hm⟩ => ⟨hB _ _ hm, hB _ _ hp⟩, fun ⟨hp, hm⟩ => ⟨hB _ _ hm, hB _ _ hp⟩⟩
+
+/-- For a reflexive form, a transverse vector is orthogonal to `n₊` from the left,
+`w · n₊ = 0`. -/
 theorem bilinForm_nPlus_eq_zero_of_mem_transverse {w : V} (hw : w ∈ L.transverse) :
     B w L.nPlus = 0 :=
-  hB _ _ (L.mem_transverse_iff.1 hw).2
+  ((L.mem_transverse_iff_bilinForm_eq_zero hB).1 hw).1
 
+/-- For a reflexive form, a transverse vector is orthogonal to `n₋` from the left,
+`w · n₋ = 0`. -/
 theorem bilinForm_nMinus_eq_zero_of_mem_transverse {w : V} (hw : w ∈ L.transverse) :
     B w L.nMinus = 0 :=
-  hB _ _ (L.mem_transverse_iff.1 hw).1
+  ((L.mem_transverse_iff_bilinForm_eq_zero hB).1 hw).2
 
 /-- The scalar product in light-cone components, `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`. -/
 theorem bilinForm_eq_plus_mul_minus_add (u v : V) :
@@ -266,8 +285,7 @@ theorem bilinForm_eq_plus_mul_minus_add (u v : V) :
     ← plus_apply, ← minus_apply]
 
 /-- The transverse projector is self-adjoint. -/
-theorem isAdjointPair_transverseProj :
-    B.IsAdjointPair B L.transverseProj L.transverseProj := by
+theorem isSelfAdjoint_transverseProj : B.IsSelfAdjoint L.transverseProj := by
   intro u v
   rw [L.bilinForm_eq_plus_mul_minus_add hB, L.bilinForm_eq_plus_mul_minus_add hB u]
   simp
@@ -304,55 +322,101 @@ open Lorentz Vector
 
 variable {d : ℕ}
 
+/-- The vector `(e₀ + s eᵢ)/√2`; both standard light-cone vectors are of this form. -/
+private noncomputable def axisVector (i : Fin d) (s : ℝ) : Vector d :=
+  (√2)⁻¹ • (basis (Sum.inl 0) + s • basis (Sum.inr i))
+
+private theorem minkowskiProduct_axisVector_left (i : Fin d) (s : ℝ) (v : Vector d) :
+    ⟪axisVector i s, v⟫ₘ = (v (Sum.inl 0) - s * v (Sum.inr i)) / √2 := by
+  simp only [axisVector, map_smul, map_add, add_apply,
+    FunLike.coe_smul, Pi.smul_apply, minkowskiProduct_basis_left,
+    minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i, smul_eq_mul]
+  ring
+
+private theorem minkowskiProduct_axisVector (i : Fin d) (s t : ℝ) :
+    ⟪axisVector i s, axisVector i t⟫ₘ = (1 - s * t) / 2 := by
+  rw [minkowskiProduct_axisVector_left]
+  simp only [axisVector, apply_smul, apply_add, basis_apply, reduceIte, reduceCtorEq,
+    MulZeroClass.mul_zero, _root_.add_zero, mul_one, _root_.zero_add]
+  calc _ = (1 - s * t) / (√2 * √2) := by field_simp
+    _ = _ := by rw [Real.mul_self_sqrt zero_le_two]
+
 /-- The standard light-cone basis `n± = (e₀ ± eᵢ)/√2` of `d + 1`-dimensional Minkowski space,
 along the spatial axis `i`. -/
 noncomputable def minkowskiAxis (i : Fin d) :
     LightConeBasis (minkowskiProduct (d := d)).toBilinForm where
-  nPlus := (√2)⁻¹ • (basis (Sum.inl 0) + basis (Sum.inr i))
-  nMinus := (√2)⁻¹ • (basis (Sum.inl 0) - basis (Sum.inr i))
-  nPlus_nPlus := by simp [minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
-  nMinus_nMinus := by simp [minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
-  nPlus_nMinus := by
-    simp [minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
-    field_simp
+  nPlus := axisVector i 1
+  nMinus := axisVector i (-1)
+  nPlus_nPlus_eq_zero := by
+    rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_axisVector]
     norm_num
-  nMinus_nPlus := by
-    simp [minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
-    field_simp
+  nMinus_nMinus_eq_zero := by
+    rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_axisVector]
+    norm_num
+  nPlus_nMinus_eq_one := by
+    rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_axisVector]
+    norm_num
+  nMinus_nPlus_eq_one := by
+    rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_axisVector]
     norm_num
 
 @[simp]
 theorem minkowskiAxis_nPlus (i : Fin d) :
-    (minkowskiAxis i).nPlus = (√2)⁻¹ • (basis (Sum.inl 0) + basis (Sum.inr i)) :=
-  (rfl)
+    (minkowskiAxis i).nPlus = (√2)⁻¹ • (basis (Sum.inl 0) + basis (Sum.inr i)) := by
+  change axisVector i 1 = _
+  rw [axisVector, one_smul]
 
 @[simp]
 theorem minkowskiAxis_nMinus (i : Fin d) :
-    (minkowskiAxis i).nMinus = (√2)⁻¹ • (basis (Sum.inl 0) - basis (Sum.inr i)) :=
-  (rfl)
+    (minkowskiAxis i).nMinus = (√2)⁻¹ • (basis (Sum.inl 0) - basis (Sum.inr i)) := by
+  change axisVector i (-1) = _
+  rw [axisVector, neg_one_smul, _root_.sub_eq_add_neg]
 
 /-- The plus component in the standard basis, `v⁺ = (v⁰ + vⁱ)/√2`. -/
 @[simp]
 theorem minkowskiAxis_plus (i : Fin d) (v : Vector d) :
     (minkowskiAxis i).plus v = (v (Sum.inl 0) + v (Sum.inr i)) / √2 := by
-  simp [plus_apply, minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
-  ring
+  rw [plus_apply, ContinuousLinearMap.toBilinForm_apply,
+    show (minkowskiAxis i).nMinus = axisVector i (-1) from rfl,
+    minkowskiProduct_axisVector_left, neg_one_mul, sub_neg_eq_add]
 
 /-- The minus component in the standard basis, `v⁻ = (v⁰ - vⁱ)/√2`. -/
 @[simp]
 theorem minkowskiAxis_minus (i : Fin d) (v : Vector d) :
     (minkowskiAxis i).minus v = (v (Sum.inl 0) - v (Sum.inr i)) / √2 := by
-  simp [minus_apply, minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i]
-  ring
+  rw [minus_apply, ContinuousLinearMap.toBilinForm_apply,
+    show (minkowskiAxis i).nPlus = axisVector i 1 from rfl,
+    minkowskiProduct_axisVector_left, one_mul]
+
+/-- A vector is transverse to the standard light-cone basis along axis `i` iff its time and
+`i`-th spatial components vanish. -/
+@[simp high]
+theorem mem_transverse_minkowskiAxis_iff (i : Fin d) (v : Vector d) :
+    v ∈ (minkowskiAxis i).transverse ↔ v (Sum.inl 0) = 0 ∧ v (Sum.inr i) = 0 := by
+  have h : √2 ≠ 0 := by positivity
+  rw [mem_transverse_iff, minkowskiAxis_plus, minkowskiAxis_minus, div_eq_zero_iff,
+    div_eq_zero_iff, or_iff_left h, or_iff_left h]
+  constructor
+  · rintro ⟨h₁, h₂⟩
+    exact ⟨by linarith, by linarith⟩
+  · rintro ⟨h₁, h₂⟩
+    exact ⟨by rw [h₁, h₂, _root_.add_zero], by rw [h₁, h₂, sub_zero]⟩
 
 /-- For any light-cone basis of `d + 1`-dimensional Minkowski space the transverse subspace, the
-range of the transverse projector, has dimension `d - 1`; in four dimensions it is
-two-dimensional. -/
-theorem finrank_transverse_minkowskiProduct
+range of the transverse projector (`L.isProj_transverseProj.range`), has dimension `d - 1`. -/
+theorem finrank_transverse_minkowskiProduct_add_one
     (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm) :
-    finrank ℝ L.transverse = d - 1 := by
+    finrank ℝ L.transverse + 1 = d := by
   have h := L.finrank_transverse_add_two
   rw [finrank_eq_card_basis basis, Fintype.card_sum, Fintype.card_fin, Fintype.card_fin] at h
+  omega
+
+/-- In four-dimensional Minkowski space the transverse projector of any light-cone basis has
+rank two. -/
+theorem finrank_transverse_minkowskiProduct_eq_two
+    (L : LightConeBasis (minkowskiProduct (d := 3)).toBilinForm) :
+    finrank ℝ L.transverse = 2 := by
+  have h := L.finrank_transverse_minkowskiProduct_add_one
   omega
 
 end Minkowski
