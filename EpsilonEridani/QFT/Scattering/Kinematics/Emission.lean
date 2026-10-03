@@ -90,19 +90,16 @@ theorem image_emissionVirtuality_Icc (m E E' : ℝ) {θmax : ℝ} (h0 : 0 ≤ θ
     ((monotoneOn_emissionVirtuality m E E').mono (Icc_subset_Icc_right hπ))
 
 /-- A massless source emits at zero minimum virtuality. -/
-theorem emissionVirtuality_zero_eq_zero_of_mass_eq_zero {m E E' : ℝ} (hm : m = 0) (hE : 0 ≤ E)
-    (hE' : 0 ≤ E') : emissionVirtuality m E E' 0 = 0 := by
-  subst hm
+theorem emissionVirtuality_zero_eq_zero_of_mass_eq_zero {E E' : ℝ} (hE : 0 ≤ E) (hE' : 0 ≤ E') :
+    emissionVirtuality 0 E E' 0 = 0 := by
   simp [emissionVirtuality, Real.sqrt_sq hE, Real.sqrt_sq hE']
 
 /-- The algebraic identity behind the kinematic minimum: with `A = E E' - m²` and the momenta
 `P = √(E² - m²)`, `P' = √(E'² - m²)`, one has `A² - (P P')² = m² (E - E')²`. -/
-theorem sq_sub_sq_sqrt_mul_sqrt {m E E' : ℝ} (hE : |m| ≤ E) (hE' : |m| ≤ E') :
+theorem sq_sub_sq_sqrt_mul_sqrt {m E E' : ℝ} (hE : m ^ 2 ≤ E ^ 2) (hE' : m ^ 2 ≤ E' ^ 2) :
     (E * E' - m ^ 2) ^ 2 - (√(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2)) ^ 2 =
       m ^ 2 * (E - E') ^ 2 := by
-  have h1 : 0 ≤ E ^ 2 - m ^ 2 := by nlinarith [sq_abs m, abs_nonneg m]
-  have h2 : 0 ≤ E' ^ 2 - m ^ 2 := by nlinarith [sq_abs m, abs_nonneg m]
-  rw [mul_pow, Real.sq_sqrt h1, Real.sq_sqrt h2]
+  rw [mul_pow, Real.sq_sqrt (sub_nonneg.2 hE), Real.sq_sqrt (sub_nonneg.2 hE')]
   ring
 
 /-- For a massive source and an emitted particle carrying energy, the momentum product
@@ -115,7 +112,8 @@ theorem sqrt_mul_sqrt_lt_mul_sub_sq {m E E' : ℝ} (hm : m ≠ 0) (hE : |m| ≤ 
   have hB : 0 < m ^ 2 * (E - E') ^ 2 := by
     have := sub_ne_zero.2 hne
     positivity
-  have hid := sq_sub_sq_sqrt_mul_sqrt hE hE'
+  have hid := sq_sub_sq_sqrt_mul_sqrt (sq_le_sq.2 (hE.trans (le_abs_self E)))
+    (sq_le_sq.2 (hE'.trans (le_abs_self E')))
   have hP : 0 ≤ √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) := by positivity
   nlinarith
 
@@ -125,7 +123,8 @@ theorem emissionVirtuality_zero_nonneg {m E E' : ℝ} (hE : |m| ≤ E) (hE' : |m
     0 ≤ emissionVirtuality m E E' 0 := by
   have hA : 0 ≤ E * E' - m ^ 2 := by
     nlinarith [sq_abs m, mul_le_mul hE hE' (abs_nonneg m) (le_trans (abs_nonneg m) hE)]
-  have hid := sq_sub_sq_sqrt_mul_sqrt hE hE'
+  have hid := sq_sub_sq_sqrt_mul_sqrt (sq_le_sq.2 (hE.trans (le_abs_self E)))
+    (sq_le_sq.2 (hE'.trans (le_abs_self E')))
   have hP : 0 ≤ √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) := by positivity
   have hle : √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) ≤ E * E' - m ^ 2 := by
     nlinarith [sq_nonneg m, sq_nonneg (E - E')]
@@ -139,7 +138,8 @@ theorem emissionVirtuality_zero_pos_iff {m E E' : ℝ} (hE : |m| ≤ E) (hE' : |
   constructor
   · intro h
     refine ⟨fun hm => ?_, fun hEE => ?_⟩
-    · rw [emissionVirtuality_zero_eq_zero_of_mass_eq_zero hm (le_trans (abs_nonneg _) hE)
+    · subst hm
+      rw [emissionVirtuality_zero_eq_zero_of_mass_eq_zero (le_trans (abs_nonneg _) hE)
         (le_trans (abs_nonneg _) hE')] at h
       exact lt_irrefl _ h
     · subst hEE
@@ -163,7 +163,8 @@ theorem div_sub_lt_emissionVirtuality_zero {m E E' : ℝ} (hm : m ≠ 0) (hE : |
   have hlt := sqrt_mul_sqrt_lt_mul_sub_sq hm hE hE' hne
   have hP : 0 ≤ √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) := by positivity
   have hA : 0 < E * E' - m ^ 2 := hP.trans_lt hlt
-  have hid := sq_sub_sq_sqrt_mul_sqrt hE hE'
+  have hid := sq_sub_sq_sqrt_mul_sqrt (sq_le_sq.2 (hE.trans (le_abs_self E)))
+    (sq_le_sq.2 (hE'.trans (le_abs_self E')))
   rw [div_lt_iff₀ hA]
   simp only [emissionVirtuality, cos_zero, mul_one]
   nlinarith
