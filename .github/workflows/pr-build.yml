@@ -235,8 +235,9 @@ jobs:
           # lake-manifest.json and lean-toolchain are also permitted, but ONLY as a
           # machine-validated forward bump: the "Validate the Lake-pin bump" step below
           # runs the workflow-pinned scripts/check-bump.sh and routes to a human if it is
-          # anything other than a forward move (mathlib forward on its nominated branch,
-          # transitive pins derived from mathlib, toolchain monotonic).
+          # anything other than a forward move (each direct dependency forward on its
+          # nominated branch, or mathlib onto a newer-toolchain release tag; transitive pins
+          # derived from their manifests; toolchain monotonic and mathlib's).
           # docbuild/docs/references.bib is permitted too. It is the bibliography doc-gen4
           # resolves docstring citations against, so a docstring that cites a work no one has
           # entered renders as a bare bracketed key. Filling that in is the same kind of work as
