@@ -5,16 +5,16 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
-public import Mathlib.Analysis.Asymptotics.Defs
+public import EpsilonEridani.Mathematics.HarmonicSum.Asymptotics
 
 /-!
-# The analytic continuation of the first harmonic sum
+# The meromorphic continuation of the first harmonic sum
 
-The first harmonic sum `S₁(N) = ∑_{i=1}^{N} 1/i` (`EpsilonEridani.harmonicSum [1]`, which is
-Mathlib's `harmonic`) is defined for natural `N` only. Through the digamma function
-`ψ = Γ'/Γ` (`Complex.digamma`) it continues to the meromorphic function
+The first harmonic sum `S₁(N) = ∑_{i=1}^{N} 1/i` (Mathlib's `harmonic`) is defined for natural `N`
+only. Through the digamma function `ψ = Γ'/Γ` (`Complex.digamma`) it continues to the meromorphic
+function
 
   `S₁(s) = ψ(s + 1) + γ`,
 
@@ -32,16 +32,9 @@ functions of the moment variable `N` and harmonic sums of `N`; the inversion con
 Mellin transform runs through complex `N`, and the pole structure of the moments in the complex
 plane is what controls the behaviour of the densities in momentum-fraction space.
 
-The file also proves the large-`N` asymptotics of `S₁` along the positive integers, from the
-explicit two-sided bound
-
-  `log N + γ + 1/(2N) - 1/(8N²) ≤ S₁(N) ≤ log N + γ + 1/(2N)`,  `N ≥ 1`,
-
-which gives `S₁(N) = log N + γ + O(1/N)`, its refinement `S₁(N) = log N + γ + 1/(2N) + O(1/N²)`,
-and the corresponding expansion `ψ(N) = log N - 1/(2N) + O(1/N²)` of the digamma function. The
-bound comes from comparing `log(1 + 1/N)` with its trapezoidal approximation through the series
-`log(1 + 1/a) = ∑_k 2/(2k+1) (2a+1)^(-(2k+1))`. These asymptotics are what relate the large-`N`
-growth of the anomalous dimensions to the `z → 1` singularities of the kernels.
+From the large-`N` bounds on `harmonic` in `EpsilonEridani.Mathematics.HarmonicSum.Asymptotics`,
+the file also derives the expansion `ψ(N) = log N - 1/(2N) + O(1/N²)` of the digamma function
+along the positive integers.
 
 ## Main definitions
 
@@ -52,17 +45,13 @@ growth of the anomalous dimensions to the `z → 1` singularities of the kernels
 * `EpsilonEridani.complexHarmonic_natCast`: `complexHarmonic n = harmonic n`.
 * `EpsilonEridani.complexHarmonic_add_one`: the recurrence `S₁(s + 1) = S₁(s) + 1/(s + 1)`.
 * `EpsilonEridani.complexHarmonic_neg`: the reflection formula.
+* `EpsilonEridani.analyticAt_Gamma` and `EpsilonEridani.analyticAt_digamma`: analyticity of `Γ`
+  and `ψ` away from the non-positive integers.
 * `EpsilonEridani.analyticAt_complexHarmonic`: analyticity away from the negative integers.
 * `EpsilonEridani.meromorphicOrderAt_complexHarmonic_neg_nat_sub_one` and
   `EpsilonEridani.tendsto_mul_complexHarmonic_neg_nat_sub_one`: a simple pole with residue `-1`
   at each negative integer.
-* `EpsilonEridani.harmonic_le_log_add_eulerMascheroniConstant_add_inv_two_mul` and
-  `EpsilonEridani.log_add_eulerMascheroniConstant_add_inv_two_mul_sub_le_harmonic`: the
-  two-sided bound above.
-* `EpsilonEridani.isBigO_harmonic_sub_log_sub_eulerMascheroniConstant`:
-  `S₁(N) = log N + γ + O(1/N)`, and its second-order refinement
-  `EpsilonEridani.isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_sub_inv_two_mul`.
-* `EpsilonEridani.isBigO_digamma_natCast_sub_log_add_inv_two_mul`:
+* `EpsilonEridani.isBigO_digamma_natCast_sub_log_add_inv_two_mul_inv_sq`:
   `ψ(N) = log N - 1/(2N) + O(1/N²)`.
 
 ## References
@@ -73,22 +62,45 @@ growth of the anomalous dimensions to the `z → 1` singularities of the kernels
   Comput. Phys. Commun. 133 (2000) 76, arXiv:hep-ph/0003100.
 -/
 
-public section
+@[expose] public section
 
 open Complex Filter Topology Asymptotics
 open scoped Real
 
 namespace EpsilonEridani
 
-/-- The analytic continuation of the first harmonic sum `S₁(N) = harmonic N` to complex
-argument, `S₁(s) = ψ(s + 1) + γ`, with `ψ` the digamma function and `γ` the Euler–Mascheroni
-constant. It is meromorphic, with simple poles at the negative integers. -/
+/-- `Γ` is analytic away from its poles `0, -1, -2, …`. -/
+@[fun_prop]
+theorem analyticAt_Gamma {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) : AnalyticAt ℂ Gamma s := by
+  -- `Γ` is the reciprocal of the entire function `1/Γ`, which does not vanish at `s`.
+  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
+  simpa only [Pi.inv_def, inv_inv] using h
+
+/-- The digamma function `ψ = Γ'/Γ` is analytic away from its poles `0, -1, -2, …`. -/
+@[fun_prop]
+theorem analyticAt_digamma {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) : AnalyticAt ℂ digamma s := by
+  have hΓ := analyticAt_Gamma hs
+  rw [digamma_def, logDeriv]
+  exact hΓ.deriv.div hΓ (Gamma_ne_zero hs)
+
+/-- The meromorphic continuation of the first harmonic sum `S₁(N) = harmonic N` to complex
+argument via the digamma function, `S₁(s) = ψ(s + 1) + γ`, with `γ` the Euler–Mascheroni
+constant. It is meromorphic, with simple poles at the negative integers.
+
+This is the standard continuation used in the literature, not the unique one: the naturals have
+no accumulation point in `ℂ`, so the values `harmonic n` alone do not determine an analytic
+extension. It agrees with `harmonic` on `ℕ` (`complexHarmonic_natCast`) and inherits the
+recurrence of `ψ` (`complexHarmonic_add_one`). -/
 noncomputable def complexHarmonic (s : ℂ) : ℂ :=
   digamma (s + 1) + Real.eulerMascheroniConstant
 
 theorem complexHarmonic_def (s : ℂ) :
     complexHarmonic s = digamma (s + 1) + Real.eulerMascheroniConstant :=
   (rfl)
+
+theorem complexHarmonic_eq :
+    complexHarmonic = fun s => digamma (s + 1) + Real.eulerMascheroniConstant :=
+  funext complexHarmonic_def
 
 /-- The continuation restricts to the harmonic numbers on the natural numbers. -/
 @[simp]
@@ -118,7 +130,7 @@ theorem complexHarmonic_add_one {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) :
 negative integers. -/
 theorem complexHarmonic_add_nat {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) (n : ℕ) :
     complexHarmonic (s + n) = complexHarmonic s + ∑ k ∈ Finset.range n, (s + k + 1)⁻¹ := by
-  rw [complexHarmonic_def, complexHarmonic_def, add_right_comm,
+  rw [complexHarmonic_def, complexHarmonic_def, add_right_comm s (n : ℂ) 1,
     digamma_apply_add_nat (add_one_ne_neg_natCast hs)]
   simp_rw [add_right_comm s 1]
   ring
@@ -134,59 +146,41 @@ theorem complexHarmonic_neg {s : ℂ} (hs : ∀ n : ℤ, s ≠ n) :
 theorem meromorphic_complexHarmonic : Meromorphic complexHarmonic := by
   have h : Meromorphic fun s => digamma (s + 1) :=
     Meromorphic.meromorphic_fun_comp_add_const_iff_meromorphic.2 meromorphic_digamma
-  rw [show complexHarmonic = fun s => digamma (s + 1) + Real.eulerMascheroniConstant from
-    funext complexHarmonic_def]
+  rw [complexHarmonic_eq]
   fun_prop
 
 /-- The continuation is analytic away from the negative integers. -/
+@[fun_prop]
 theorem analyticAt_complexHarmonic {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) :
     AnalyticAt ℂ complexHarmonic s := by
-  have hs' := add_one_ne_neg_natCast hs
-  -- `Γ` is the reciprocal of the entire function `1/Γ`, which does not vanish at `s + 1`.
-  have hΓ : AnalyticAt ℂ Gamma (s + 1) := by
-    have h := (differentiable_one_div_Gamma.analyticAt (s + 1)).inv
-      (inv_ne_zero (Gamma_ne_zero hs'))
-    rwa [show (fun z => (Gamma z)⁻¹)⁻¹ = Gamma from funext fun z => inv_inv (Gamma z)] at h
-  have hψ : AnalyticAt ℂ digamma (s + 1) := by
-    rw [digamma_def]
-    exact hΓ.deriv.div hΓ (Gamma_ne_zero hs')
-  rw [show complexHarmonic = fun z => digamma (z + 1) + Real.eulerMascheroniConstant from
-    funext complexHarmonic_def]
-  exact (hψ.comp_of_eq (f := fun z => z + 1) (by fun_prop) rfl).add analyticAt_const
+  rw [complexHarmonic_eq]
+  exact ((analyticAt_digamma (add_one_ne_neg_natCast hs)).comp_of_eq
+    (f := fun z => z + 1) (by fun_prop) rfl).add analyticAt_const
 
+@[fun_prop]
 theorem continuousAt_complexHarmonic {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) :
     ContinuousAt complexHarmonic s :=
   (analyticAt_complexHarmonic hs).continuousAt
 
 /-- Near a negative integer `-(m + 1)`, every other point avoids the negative integers. -/
-private theorem eventually_ne_neg_nat_sub_one (m : ℕ) :
+theorem eventually_ne_neg_nat_sub_one (m : ℕ) :
     ∀ᶠ s in 𝓝[≠] (-(m + 1 : ℂ)), ∀ j : ℕ, s ≠ -(j + 1 : ℂ) := by
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (-(m + 1 : ℂ)) one_pos)] with s hne hball j hj
+  -- the integers other than `-(m + 1)` form a closed subset of `ℂ`
+  have hc := isClosedEmbedding_intCast.isClosedMap _ (isClosed_discrete {n : ℤ | n ≠ -(m + 1)})
+  have hm : -(m + 1 : ℂ) ∈ (((↑) : ℤ → ℂ) '' {n : ℤ | n ≠ -(m + 1)})ᶜ := by
+    rintro ⟨n, hn, hn'⟩
+    exact hn (by exact_mod_cast hn')
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hc.isOpen_compl.mem_nhds hm)]
+    with s hne hs j hj
   subst hj
-  rw [Metric.mem_ball, dist_eq_norm] at hball
-  have hre := (abs_re_le_norm _).trans_lt hball
-  simp only [sub_re, neg_re, add_re, natCast_re, one_re] at hre
-  have h₁ : (m : ℝ) < j + 1 := by linarith [(abs_lt.1 hre).2]
-  have h₂ : (j : ℝ) < m + 1 := by linarith [(abs_lt.1 hre).1]
-  have : j = m := by
-    have h₁' : m < j + 1 := by exact_mod_cast h₁
-    have h₂' : j < m + 1 := by exact_mod_cast h₂
-    omega
-  exact hne (by simp [this])
+  refine hs ⟨-(j + 1), fun h => hne ?_, by push_cast; rfl⟩
+  simp [show j = m by omega]
 
 /-- The regular part at the negative integer `-(m + 1)`: the function
 `s ↦ S₁(s + m + 1) - ∑_{k<m} 1/(s + k + 1)`, which differs from `S₁` by the polar term
 `1/(s + m + 1)` and is analytic at `-(m + 1)`. -/
 private noncomputable def regularPart (m : ℕ) (s : ℂ) : ℂ :=
   complexHarmonic (s + (m + 1 : ℕ)) - ∑ k ∈ Finset.range m, (s + k + 1)⁻¹
-
-private theorem eventually_complexHarmonic_eq_regularPart (m : ℕ) :
-    ∀ᶠ s in 𝓝[≠] (-(m + 1 : ℂ)),
-      complexHarmonic s = regularPart m s - (s + (m + 1))⁻¹ := by
-  filter_upwards [eventually_ne_neg_nat_sub_one m] with s hs
-  rw [regularPart, complexHarmonic_add_nat hs, Finset.sum_range_succ]
-  ring
 
 private theorem analyticAt_regularPart (m : ℕ) :
     AnalyticAt ℂ (regularPart m) (-(m + 1 : ℂ)) := by
@@ -199,181 +193,56 @@ private theorem analyticAt_regularPart (m : ℕ) :
     rw [show -(m + 1 : ℂ) + k + 1 = k - m by ring, sub_ne_zero]
     exact_mod_cast (Finset.mem_range.1 hk).ne
 
+/-- The Laurent presentation of the continuation at the negative integer `-(m + 1)`:
+`S₁(s) = (s + m + 1)⁻¹ g(s)` with `g` analytic and `g(-(m + 1)) = -1`. -/
+private theorem complexHarmonic_presentation (m : ℕ) :
+    ∃ g : ℂ → ℂ, AnalyticAt ℂ g (-(m + 1 : ℂ)) ∧ g (-(m + 1 : ℂ)) = -1 ∧
+      complexHarmonic =ᶠ[𝓝[≠] (-(m + 1 : ℂ))]
+        fun s => (s - -(m + 1 : ℂ)) ^ (-1 : ℤ) • g s := by
+  refine ⟨fun s => (s + (m + 1)) * regularPart m s - 1, ?_, by simp, ?_⟩
+  · exact ((analyticAt_id.add analyticAt_const).mul (analyticAt_regularPart m)).sub
+      analyticAt_const
+  · filter_upwards [eventually_ne_neg_nat_sub_one m, self_mem_nhdsWithin] with s hs hne
+    have hne' : s + (m + 1) ≠ 0 := by
+      rwa [← sub_neg_eq_add, sub_ne_zero]
+    have hr : complexHarmonic s = regularPart m s - (s + (m + 1))⁻¹ := by
+      rw [regularPart, complexHarmonic_add_nat hs, Finset.sum_range_succ]
+      ring
+    rw [hr, sub_neg_eq_add, zpow_neg_one, smul_eq_mul]
+    field_simp
+
 /-- **The pole structure**: the continuation has a simple pole at every negative integer. -/
 theorem meromorphicOrderAt_complexHarmonic_neg_nat_sub_one (m : ℕ) :
     meromorphicOrderAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
+  obtain ⟨g, hg, hg₁, h⟩ := complexHarmonic_presentation m
   rw [← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg,
     meromorphicOrderAt_eq_int_iff (meromorphic_complexHarmonic _)]
-  refine ⟨fun s => (s + (m + 1)) * regularPart m s - 1, ?_, ?_, ?_⟩
-  · exact ((analyticAt_id.add analyticAt_const).mul (analyticAt_regularPart m)).sub
-      analyticAt_const
-  · simp
-  · filter_upwards [eventually_complexHarmonic_eq_regularPart m, self_mem_nhdsWithin]
-      with s hs hne
-    have hne' : s + (m + 1) ≠ 0 := by
-      rwa [← sub_neg_eq_add, sub_ne_zero]
-    rw [hs, sub_neg_eq_add, zpow_neg_one, smul_eq_mul]
-    field_simp
+  exact ⟨g, hg, by rw [hg₁]; exact neg_ne_zero.2 one_ne_zero, h⟩
 
 /-- **The residue** of the continuation at every negative integer is `-1`:
 `(s + m + 1) S₁(s) → -1` as `s → -(m + 1)`. -/
 theorem tendsto_mul_complexHarmonic_neg_nat_sub_one (m : ℕ) :
     Tendsto (fun s => (s + (m + 1)) * complexHarmonic s) (𝓝[≠] (-(m + 1 : ℂ))) (𝓝 (-1)) := by
-  have hcont : ContinuousAt (fun s => (s + (m + 1)) * regularPart m s - 1) (-(m + 1 : ℂ)) :=
-    ((continuousAt_id.add continuousAt_const).mul
-      (analyticAt_regularPart m).continuousAt).sub continuousAt_const
-  have h := hcont.tendsto.mono_left (nhdsWithin_le_nhds (s := {-(m + 1 : ℂ)}ᶜ))
-  simp only [neg_add_cancel, zero_mul, zero_sub] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_complexHarmonic_eq_regularPart m, self_mem_nhdsWithin]
-    with s hs hne
-  have hne' : s + (m + 1) ≠ 0 := by
-    rwa [← sub_neg_eq_add, sub_ne_zero]
-  rw [hs, mul_sub, mul_inv_cancel₀ hne']
-
-/-! ### Large-`N` asymptotics -/
-
-/-- The trapezoidal estimate for `∫_a^{a+1} dx/x`: the trapezoidal value
-`1/(2a) + 1/(2(a+1))` exceeds `log(1 + 1/a)` by at most `1/(8a²) - 1/(8(a+1)²)`. Proved from the
-series `log(1 + 1/a) = ∑_k 2/(2k+1) u^(2k+1)` with `u = 1/(2a+1)`, whose trapezoidal counterpart
-is the geometric series `∑_k 2 u^(2k+1)`. -/
-private theorem trapezoid_sub_log_one_add_inv_mem {a : ℝ} (ha : 0 < a) :
-    0 ≤ (2 * a)⁻¹ + (2 * (a + 1))⁻¹ - Real.log (1 + a⁻¹) ∧
-      (2 * a)⁻¹ + (2 * (a + 1))⁻¹ - Real.log (1 + a⁻¹) ≤
-        (8 * a ^ 2)⁻¹ - (8 * (a + 1) ^ 2)⁻¹ := by
-  set u : ℝ := 1 / (2 * a + 1) with hu
-  have hu0 : 0 < u := by positivity
-  have hu1 : u < 1 := by rw [hu, div_lt_one (by positivity)]; linarith
-  have hL := Real.hasSum_log_one_add_inv ha
-  rw [← hu] at hL
-  have hT : HasSum (fun k : ℕ => 2 * u ^ (2 * k + 1)) ((2 * a)⁻¹ + (2 * (a + 1))⁻¹) := by
-    have hg := (hasSum_geometric_of_lt_one (sq_nonneg u) (by nlinarith)).mul_left (2 * u)
-    have h1u : 1 - u ^ 2 = 4 * a * (a + 1) / (2 * a + 1) ^ 2 := by
-      rw [hu]
-      field_simp
-      ring
-    convert hg using 1
-    · funext k
-      ring
-    · rw [h1u, hu]
-      field_simp
-      ring
-  refine ⟨sub_nonneg.2 (hasSum_le (fun k => ?_) hL hT), ?_⟩
-  · have hk : 1 / (2 * (k : ℝ) + 1) ≤ 1 := by
-      rw [div_le_one (by positivity)]
-      linarith [k.cast_nonneg (α := ℝ)]
-    have := pow_pos hu0 (2 * k + 1)
-    nlinarith
-  · have h0 := le_hasSum hL 0 fun j _ => by positivity
-    have key : (8 * a ^ 2)⁻¹ - (8 * (a + 1) ^ 2)⁻¹ - ((2 * a)⁻¹ + (2 * (a + 1))⁻¹ - 2 * u) =
-        (8 * a ^ 2 * (a + 1) ^ 2 * (2 * a + 1))⁻¹ := by
-      rw [hu]
-      field_simp
-      ring
-    have : 0 < (8 * a ^ 2 * (a + 1) ^ 2 * (2 * a + 1))⁻¹ := by positivity
-    norm_num at h0
-    linarith
-
-/-- The error of the second-order expansion `S₁(N) ≈ log N + γ + 1/(2N)`. -/
-private noncomputable def secondOrderError (n : ℕ) : ℝ :=
-  (harmonic n : ℝ) - Real.log n - Real.eulerMascheroniConstant - (2 * (n : ℝ))⁻¹
-
-private theorem secondOrderError_succ_sub {n : ℕ} (hn : n ≠ 0) :
-    secondOrderError (n + 1) - secondOrderError n =
-      (2 * (n : ℝ))⁻¹ + (2 * ((n : ℝ) + 1))⁻¹ - Real.log (1 + (n : ℝ)⁻¹) := by
-  have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-  rw [show 1 + (n : ℝ)⁻¹ = (n + 1) / n by field_simp,
-    Real.log_div (by positivity) hn'.ne', secondOrderError, secondOrderError, harmonic_succ]
-  push_cast
-  field_simp
-  ring
-
-private theorem tendsto_secondOrderError : Tendsto secondOrderError atTop (𝓝 0) := by
-  have h := (Real.tendsto_harmonic_sub_log.sub_const Real.eulerMascheroniConstant).sub
-    ((tendsto_inv_atTop_zero.comp (tendsto_natCast_atTop_atTop (R := ℝ))).const_mul (2⁻¹ : ℝ))
-  simp only [sub_self, mul_zero] at h
-  refine h.congr fun n => ?_
-  simp [secondOrderError, mul_comm]
-
-/-- Along the telescoping sum, the error increases, by at most the telescoping bound. -/
-private theorem secondOrderError_add_mem {n : ℕ} (hn : n ≠ 0) (j : ℕ) :
-    secondOrderError n ≤ secondOrderError (n + j) ∧
-      secondOrderError (n + j) - secondOrderError n ≤
-        (8 * (n : ℝ) ^ 2)⁻¹ - (8 * ((n + j : ℕ) : ℝ) ^ 2)⁻¹ := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    have hnj : n + j ≠ 0 := by omega
-    have hpos : (0 : ℝ) < (n + j : ℕ) := by exact_mod_cast Nat.pos_of_ne_zero hnj
-    have hd := trapezoid_sub_log_one_add_inv_mem hpos
-    rw [← secondOrderError_succ_sub hnj] at hd
-    rw [← add_assoc]
-    push_cast at hd ih ⊢
-    constructor <;> linarith [ih.1, ih.2, hd.1, hd.2]
-
-/-- **The second-order upper bound** `S₁(N) ≤ log N + γ + 1/(2N)` for `N ≥ 1`. -/
-theorem harmonic_le_log_add_eulerMascheroniConstant_add_inv_two_mul {n : ℕ} (hn : n ≠ 0) :
-    (harmonic n : ℝ) ≤ Real.log n + Real.eulerMascheroniConstant + (2 * (n : ℝ))⁻¹ := by
-  have : secondOrderError n ≤ 0 := by
-    refine ge_of_tendsto tendsto_secondOrderError ?_
-    filter_upwards [eventually_ge_atTop n] with m hm
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hm
-    exact (secondOrderError_add_mem hn j).1
-  rw [secondOrderError] at this
-  linarith
-
-/-- **The second-order lower bound** `log N + γ + 1/(2N) - 1/(8N²) ≤ S₁(N)` for `N ≥ 1`. -/
-theorem log_add_eulerMascheroniConstant_add_inv_two_mul_sub_le_harmonic {n : ℕ} (hn : n ≠ 0) :
-    Real.log n + Real.eulerMascheroniConstant + (2 * (n : ℝ))⁻¹ - (8 * (n : ℝ) ^ 2)⁻¹ ≤
-      (harmonic n : ℝ) := by
-  have : 0 - secondOrderError n ≤ (8 * (n : ℝ) ^ 2)⁻¹ := by
-    refine le_of_tendsto (tendsto_secondOrderError.sub_const _) ?_
-    filter_upwards [eventually_ge_atTop n] with m hm
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hm
-    have := (secondOrderError_add_mem hn j).2
-    have : (0 : ℝ) ≤ (8 * ((n + j : ℕ) : ℝ) ^ 2)⁻¹ := by positivity
-    linarith
-  rw [secondOrderError] at this
-  linarith
-
-/-- **The second-order large-`N` asymptotics of the first harmonic sum**,
-`S₁(N) = log N + γ + 1/(2N) + O(1/N²)`. -/
-theorem isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_sub_inv_two_mul :
-    (fun n : ℕ => (harmonic n : ℝ) - Real.log n - Real.eulerMascheroniConstant - (2 * (n : ℝ))⁻¹)
-      =O[atTop] (fun n : ℕ => ((n : ℝ) ^ 2)⁻¹) := by
-  refine IsBigO.of_bound 8⁻¹ ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
-  have h₁ := harmonic_le_log_add_eulerMascheroniConstant_add_inv_two_mul hn
-  have h₂ := log_add_eulerMascheroniConstant_add_inv_two_mul_sub_le_harmonic hn
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (a := ((n : ℝ) ^ 2)⁻¹) (by positivity),
-    abs_le, ← mul_inv]
-  constructor <;> linarith
-
-/-- **The large-`N` asymptotics of the first harmonic sum**, `S₁(N) = log N + γ + O(1/N)`. -/
-theorem isBigO_harmonic_sub_log_sub_eulerMascheroniConstant :
-    (fun n : ℕ => (harmonic n : ℝ) - Real.log n - Real.eulerMascheroniConstant) =O[atTop]
-      (fun n : ℕ => (n : ℝ)⁻¹) := by
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
-  have h₁ := harmonic_le_log_add_eulerMascheroniConstant_add_inv_two_mul hn
-  have h₂ := log_add_eulerMascheroniConstant_add_inv_two_mul_sub_le_harmonic hn
-  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn
-  -- both `1/(2N)` and `1/(8N²)` are at most `1/N`
-  have h₃ : (2 * (n : ℝ))⁻¹ ≤ (n : ℝ)⁻¹ := inv_anti₀ (by positivity) (by linarith)
-  have h₄ : (8 * (n : ℝ) ^ 2)⁻¹ ≤ (n : ℝ)⁻¹ := inv_anti₀ (by positivity) (by nlinarith)
-  have h₅ : (0 : ℝ) ≤ (2 * (n : ℝ))⁻¹ := by positivity
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (a := (n : ℝ)⁻¹) (by positivity), one_mul,
-    abs_le]
-  constructor <;> linarith
+  obtain ⟨g, hg, hg₁, h⟩ := complexHarmonic_presentation m
+  have ht := MeromorphicAt.tendsto_nhds_meromorphicTrailingCoeffAt
+    (meromorphic_complexHarmonic (-(m + 1 : ℂ)))
+  rw [meromorphicOrderAt_complexHarmonic_neg_nat_sub_one,
+    hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE
+      (by rw [hg₁]; exact neg_ne_zero.2 one_ne_zero) h, hg₁] at ht
+  -- the order `-1` turns `(· + (m + 1)) ^ (-order) • S₁` into `(· + (m + 1)) * S₁`
+  refine ht.congr fun s => ?_
+  simp only [Pi.smul_apply', Pi.pow_apply, smul_eq_mul]
+  rw [← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg, WithTop.untop₀_coe,
+    neg_neg, zpow_one, sub_neg_eq_add]
 
 /-- **The large-`N` asymptotics of the digamma function**, `ψ(N) = log N - 1/(2N) + O(1/N²)`
 along the positive integers. -/
-theorem isBigO_digamma_natCast_sub_log_add_inv_two_mul :
+theorem isBigO_digamma_natCast_sub_log_add_inv_two_mul_inv_sq :
     (fun n : ℕ => digamma n - Real.log n + (2 * (n : ℂ))⁻¹) =O[atTop]
       (fun n : ℕ => ((n : ℝ) ^ 2)⁻¹) := by
   refine IsBigO.of_norm_left
-    (isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_sub_inv_two_mul.norm_left.congr' ?_
-      EventuallyEq.rfl)
+    (isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_sub_inv_two_mul_inv_sq.norm_left.congr'
+      ?_ EventuallyEq.rfl)
   filter_upwards [eventually_ne_atTop 0] with n hn
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
   rw [← Complex.norm_real]
