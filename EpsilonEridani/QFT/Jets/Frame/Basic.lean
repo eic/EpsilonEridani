@@ -16,14 +16,14 @@ relative to a frame, and the frame is always an explicit argument. Over the abst
 `0 < g n n` (timelike in the signature `(+,-,-,-)`), and
 
 * the **energy** of `p` is `E(p) = g p n / √(g n n)`, a linear functional;
-* the **spatial part** of `p` is `p⃗ = p - (g p n / g n n) • n`, the projection along `ℝ ∙ n` onto
+* the **spatial part** of `p` is `p_s = p - (g p n / g n n) • n`, the projection along `ℝ ∙ n` onto
   the `g`-orthogonal complement of `n`;
-* the **spatial norm** of `p` is `|p⃗| = √(-g p⃗ p⃗)`, and the **cosine of the opening angle** of
-  `a` and `b` is `cos θ_ab = -g a⃗ b⃗ / (|a⃗| |b⃗|)`.
+* the **spatial norm** of `p` is `|p_s| = √(-g p_s p_s)`, and the **cosine of the opening angle** of
+  `a` and `b` is `cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`.
 
-For a symmetric `g` the spatial parts satisfy `g a⃗ b⃗ = g a b - E(a) E(b)`, which is the
-mass-shell relation `E² = m² + |p⃗|²` when `a = b`. Consequently a massless momentum (`g p p = 0`)
-of nonnegative energy has `|p⃗| = E(p)`, and for two massless momenta of positive energy
+For a symmetric `g` the spatial parts satisfy `g a_s b_s = g a b - E(a) E(b)`, which is the
+mass-shell relation `E² = m² + |p_s|²` when `a = b`. Consequently a massless momentum (`g p p = 0`)
+of nonnegative energy has `|p_s| = E(p)`, and for two massless momenta of positive energy
 
   `1 - cos θ_ab = g a b / (E(a) E(b))`,
 
@@ -44,8 +44,8 @@ satisfy it, which is why the massless hypotheses are stated.
   vector and carries no energy.
 * `Frame.ker_spatial`, `Frame.range_spatial`: the spatial projection has kernel `ℝ ∙ n` and range
   `g.orthogonal (ℝ ∙ n)`.
-* `Frame.apply_spatial_spatial`: `g a⃗ b⃗ = g a b - E(a) E(b)`.
-* `Frame.spatialNorm_of_massless`: a massless momentum of nonnegative energy has `|p⃗| = E(p)`.
+* `Frame.apply_spatial_spatial`: `g a_s b_s = g a b - E(a) E(b)`.
+* `Frame.spatialNorm_of_massless`: a massless momentum of nonnegative energy has `|p_s| = E(p)`.
 * `Frame.one_sub_cosAngle_of_massless`: `1 - cos θ_ab = g a b / (E(a) E(b))` for massless `a`, `b`
   of positive energy.
 
@@ -169,8 +169,8 @@ theorem range_spatial (hg : g.IsSymm) :
       simpa [F.timelike.ne'] using hp 1
     exact ⟨p, F.spatial_eq_self_iff.mpr hp'⟩
 
-/-- The `g`-product of two spatial parts, `g a⃗ b⃗ = g a b - E(a) E(b)`. For `a = b` this is the
-mass-shell relation `g p⃗ p⃗ = m² - E(p)²`. -/
+/-- The `g`-product of two spatial parts, `g a_s b_s = g a b - E(a) E(b)`. For `a = b` this is the
+mass-shell relation `g p_s p_s = m² - E(p)²`. -/
 theorem apply_spatial_spatial (hg : g.IsSymm) (a b : V) :
     g (F.spatial a) (F.spatial b) = g a b - F.energy a * F.energy b := by
   have hN : g F.n F.n ≠ 0 := F.timelike.ne'
@@ -183,7 +183,7 @@ theorem apply_spatial_spatial (hg : g.IsSymm) (a b : V) :
 
 /-! ### The spatial norm and the opening angle -/
 
-/-- The magnitude `|p⃗| = √(-g p⃗ p⃗)` of the spatial part of a momentum. -/
+/-- The magnitude `|p_s| = √(-g p_s p_s)` of the spatial part of a momentum. -/
 def spatialNorm (p : V) : ℝ :=
   Real.sqrt (-g (F.spatial p) (F.spatial p))
 
@@ -202,7 +202,7 @@ theorem spatialNorm_of_massless (hg : g.IsSymm) {p : V} (hp : g p p = 0)
     Real.sqrt_mul_self hE]
 
 /-- The cosine of the opening angle between two momenta in the frame,
-`cos θ_ab = -g a⃗ b⃗ / (|a⃗| |b⃗|)`. -/
+`cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`. -/
 def cosAngle (a b : V) : ℝ :=
   -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b)
 
