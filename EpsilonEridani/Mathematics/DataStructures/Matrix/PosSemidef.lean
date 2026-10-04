@@ -7,15 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Tactic.Linarith
+public import TauCeti.Analysis.Matrix.PosSemidef
 
 
 /-!
-# Entrywise bounds for real positive-semidefinite matrices
+# Entrywise bounds for positive-semidefinite matrices
 
-Evaluating the quadratic form of a real positive-semidefinite matrix `M` on the test vector
-`e i + ε • e j` gives a nonnegative quadratic polynomial in `ε` for every pair of indices
-`i, j`. Specialising `ε` to `0` and to `±1` yields the two entrywise bounds carried by the
-principal `2 × 2` minors:
+The principal `2 × 2` minors of a real positive-semidefinite matrix `M` carry two entrywise
+bounds:
 
 * `Matrix.PosSemidef.apply_self_nonneg`: `0 ≤ M i i`;
 * `Matrix.PosSemidef.two_mul_abs_apply_le`: `2 * |M i j| ≤ M i i + M j j`.
@@ -24,25 +23,34 @@ The second is the arithmetic-mean form of the Cauchy-Schwarz inequality
 `(M i j) ^ 2 ≤ M i i * M j j` for a positive-semidefinite matrix. It is stated multiplied out,
 with no division, so that it applies without field side conditions. This is the form in which
 positivity constraints are used in hadronic physics; see
-`Physlib/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark transversity
-distribution, which is exactly this inequality applied to the parton spin-density matrix.
+`EpsilonEridani/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark
+transversity distribution, which is exactly this inequality applied to the parton spin-density
+matrix.
+
+Evaluating the quadratic form of `M` on the test vector `e i + ε • e j` gives a nonnegative
+quadratic polynomial in `ε` for every pair of indices `i, j`; at `ε = 0` it is the first bound.
+
+Over `RCLike 𝕜` the same bounds hold with `‖·‖` in place of `|·|` and the real part of the
+(real) diagonal entries in place of the entries themselves. The arithmetic-mean bound follows
+from the Cauchy-Schwarz bound `Matrix.PosSemidef.normSq_le` of
+`TauCeti.Analysis.Matrix.PosSemidef`, and the real statement above is its specialisation to
+`𝕜 = ℝ`. A real matrix is positive semidefinite exactly when its image under the coercion
+`ℝ → 𝕜` is, which is what lets a complex positive-semidefinite matrix with real entries descend
+to a real one.
 
 ## Main results
 
 - `Matrix.PosSemidef.quadraticForm_nonneg`: the quadratic form written as an iterated sum.
 - `Matrix.PosSemidef.quadraticForm_psdTestVector`: nonnegativity on `e i + ε • e j`.
 - `Matrix.PosSemidef.apply_self_nonneg`: nonnegativity of the diagonal.
-- `Matrix.PosSemidef.two_mul_abs_apply_le`: the entrywise arithmetic-mean bound.
+- `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound over `RCLike`.
+- `Matrix.PosSemidef.two_mul_abs_apply_le`: its real specialisation.
+- `Matrix.posSemidef_map_ofReal_iff`: positive semidefiniteness is unchanged by `ℝ → 𝕜`.
 
 ## Implementation notes
 
-Everything here is stated over `ℝ`. `Matrix.PosSemidef` is available over more general
-star-ordered rings, and the corresponding statements over `RCLike 𝕜` replace `|·|` by `‖·‖`;
-that generalisation is not needed for the leading-twist positivity bounds (whose relevant
-block is real) and is left to whoever first needs the T-odd, genuinely complex entries.
-
 These lemmas are stated for a general index type rather than for `Fin n`, and are candidates
-for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
+for upstreaming to `Mathlib/Analysis/Matrix/PosDef.lean`.
 -/
 
 @[expose] public section
@@ -122,24 +130,72 @@ lemma PosSemidef.apply_self_nonneg [Finite n] {M : Matrix n n ℝ} (hM : M.PosSe
   classical
   linarith [hM.quadraticForm_psdTestVector i i 0]
 
+section RCLike
+
+open RCLike
+open scoped ComplexOrder
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- **Entrywise arithmetic-mean bound for a positive-semidefinite matrix.**
+Twice the norm of an entry is bounded by the sum of the (real) diagonal entries of its row and
+column. This is the arithmetic-mean form of the Cauchy-Schwarz bound
+`Matrix.PosSemidef.normSq_le`. Stated multiplied out, without a division, so that it applies with
+no field side conditions. -/
+lemma PosSemidef.two_mul_norm_apply_le {M : Matrix n n 𝕜} (hM : M.PosSemidef)
+    (i j : n) : 2 * ‖M i j‖ ≤ re (M i i) + re (M j j) := by
+  have hi := (RCLike.nonneg_iff.mp (hM.diag_nonneg (i := i))).1
+  have hj := (RCLike.nonneg_iff.mp (hM.diag_nonneg (i := j))).1
+  have hcs := hM.normSq_le i j
+  rw [RCLike.normSq_eq_def'] at hcs
+  nlinarith [sq_nonneg (re (M i i) - re (M j j)), norm_nonneg (M i j)]
+
+/-- A real matrix is positive semidefinite if and only if its image under the coercion
+`ℝ → 𝕜` is. The forward direction tests the complex form on real vectors; the reverse direction
+splits a vector into its real and imaginary parts, whose cross terms cancel because a real
+hermitian matrix is symmetric. -/
+lemma posSemidef_map_ofReal_iff [Finite n] {M : Matrix n n ℝ} :
+    (M.map ((↑) : ℝ → 𝕜)).PosSemidef ↔ M.PosSemidef := by
+  have := Fintype.ofFinite n
+  have hstar : Function.Semiconj ((↑) : ℝ → 𝕜) star star := fun x => by simp
+  simp only [posSemidef_iff_dotProduct_mulVec, isHermitian_map_iff hstar RCLike.ofReal_injective]
+  refine and_congr_right fun hM => ⟨fun h x => ?_, fun h x => ?_⟩
+  · have hx := h (fun i => (x i : 𝕜))
+    simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, RCLike.conj_ofReal,
+      star_trivial] at hx ⊢
+    exact_mod_cast hx
+  · have hsym : ∀ i j, M j i = M i j := fun i j => by simpa using hM.apply i j
+    have hq := h (fun i => re (x i))
+    have hq' := h (fun i => im (x i))
+    rw [RCLike.nonneg_iff]
+    simp only [dotProduct, mulVec, map_apply, Pi.star_apply, star_trivial, RCLike.star_def,
+      map_sum, Finset.mul_sum, mul_re, mul_im, conj_re, conj_im, ofReal_re, ofReal_im, zero_mul,
+      sub_zero, add_zero] at hq hq' ⊢
+    constructor
+    · convert add_nonneg hq hq' using 1
+      rw [← Finset.sum_add_distrib]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun j _ => by ring
+    · -- The imaginary part is the antisymmetric cross term, which vanishes since `M` is symmetric.
+      have hswap : ∑ i, ∑ j, im (x i) * (M i j * re (x j)) =
+          ∑ i, ∑ j, re (x i) * (M i j * im (x j)) := by
+        rw [Finset.sum_comm]
+        exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hsym]; ring
+      simp only [neg_mul, ← sub_eq_add_neg, Finset.sum_sub_distrib]
+      rw [hswap, sub_self]
+
+end RCLike
+
 /-- **Entrywise arithmetic-mean bound for a real positive-semidefinite matrix.**
 Twice the absolute value of an entry is bounded by the sum of the two diagonal entries of its
 row and column. Equivalently: the principal `2 × 2` minor on `{i, j}` is nonnegative, in the
-arithmetic-mean rather than the geometric-mean form.
+arithmetic-mean rather than the geometric-mean form. This is the case `𝕜 = ℝ` of
+`Matrix.PosSemidef.two_mul_norm_apply_le`.
 
 Stated multiplied out, without a division, so that it applies with no field side conditions. -/
-lemma PosSemidef.two_mul_abs_apply_le [Finite n] {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
+lemma PosSemidef.two_mul_abs_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
     2 * |M i j| ≤ M i i + M j j := by
-  have := Fintype.ofFinite n
-  classical
-  have hsymm : M j i = M i j := by
-    -- `Matrix.IsHermitian.apply (h) (i j) : star (A j i) = A i j` — confirmed against the
-    -- pinned mathlib source (`Mathlib/LinearAlgebra/Matrix/Hermitian.lean`); over `ℝ` the
-    -- star is trivial, so `hM.1.apply i j` is exactly `M j i = M i j`, the stated goal.
-    simpa using hM.1.apply i j
-  have hplus := hM.quadraticForm_psdTestVector i j 1
-  have hminus := hM.quadraticForm_psdTestVector i j (-1)
-  rw [hsymm] at hplus hminus
-  rcases abs_cases (M i j) with ⟨habs, _⟩ | ⟨habs, _⟩ <;> rw [habs] <;> linarith
+  simpa using hM.two_mul_norm_apply_le i j
 
 end Matrix
