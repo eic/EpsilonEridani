@@ -155,16 +155,16 @@ class GitHub:
         return self._once(("compare", repo, base, head), fetch)
 
     def cached_master_tip(self, repo):
-        return self._once(("cached", repo), lambda: gh(
-            f"repos/{repo}/actions/workflows/build.yml/runs?branch=master&event=push&status=success&per_page=1",
-            jq=".workflow_runs[0].head_sha // empty"))
+        return self._once(("cached", repo), lambda: mathlib_cache.newest_master_build(gh, repo))
 
     def cache_published(self, repo, sha, tag):
         """Whether mathlib's cache for `sha` is published (scripts/mathlib_cache.py, which
         check-bump.sh asks too): a successful master-push build, or for a release tag off master,
         a successful release_cache.yml run on it."""
+        def on_master():  # the memoised compare, shared with `forward`
+            return mathlib_cache.is_on_master(self.compare(repo, sha, mathlib_cache.BRANCH)[0])
         return self._once(("cache_published", repo, sha),
-                          lambda: mathlib_cache.cache_published(gh, repo, sha, tag))
+                          lambda: mathlib_cache.cache_published(gh, repo, sha, tag, on_master))
 
     def release_tags(self, repo):
         """{commit sha: tag} for the repository's vX.Y.Z[-rcN] tags."""
@@ -306,7 +306,7 @@ class Resolver:
             return None
         if m in self.tags:
             return "release"
-        if self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0] in ("ahead", "identical"):
+        if mathlib_cache.is_on_master(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0]):
             return "toolchain"
         return None
 

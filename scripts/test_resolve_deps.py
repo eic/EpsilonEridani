@@ -319,6 +319,35 @@ class Resolution(unittest.TestCase):
             rd.Resolver(g, requires, {"mathlib": "m1"}, lean("v4.34.0"))
 
 
+class GitHubCacheQuestion(unittest.TestCase):
+    """The real GitHub class, over a fake `gh api`: the release-tag cache check shares the resolver's
+    memoised compare instead of asking the same question again."""
+
+    def test_forward_and_cache_published_ask_master_membership_once(self):
+        calls = []
+
+        def fake_gh(path, jq=None, paginate=False):
+            calls.append(path)
+            if "/compare/" in path:
+                return json.dumps(["diverged", 1, 1]) if jq and "@json" in jq else "diverged"
+            return "[]"
+        saved, rd.gh = rd.gh, fake_gh
+        try:
+            src = rd.GitHub()
+            src.compare(ML, "tag-sha", "master")        # what Resolver.forward asks
+            self.assertFalse(src.cache_published(ML, "tag-sha", "v4.34.1"))
+        finally:
+            rd.gh = saved
+        self.assertEqual(sum("/compare/" in c for c in calls), 1, calls)
+
+    def test_cached_master_tip_is_the_shared_listing(self):
+        saved, rd.gh = rd.gh, lambda path, jq=None, paginate=False: "abc\n" if "branch=master" in path else ""
+        try:
+            self.assertEqual(rd.GitHub().cached_master_tip(ML), "abc")
+        finally:
+            rd.gh = saved
+
+
 class RealRecording(unittest.TestCase):
     """The upstream state of 2026-10-03, replayed against main's pins of that day."""
 

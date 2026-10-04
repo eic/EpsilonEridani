@@ -69,11 +69,44 @@ class CachePublished(unittest.TestCase):
         fake = Fake(build_runs=[PUSH], release_runs=[{"event": "push", "head_branch": "v4.35.0"}], compare="ahead")
         self.assertTrue(mc.cache_published(fake, "m/m", "sha", "v4.35.0"))
 
+    def test_a_caller_holding_the_compare_answer_spares_the_api_call(self):
+        fake = Fake(release_runs=[{"event": "push", "head_branch": "v4.34.1"}])
+        self.assertTrue(mc.cache_published(fake, "m/m", "sha", "v4.34.1", known_on_master=lambda: False))
+        self.assertFalse(any("/compare/" in call for call in fake.calls))
+        self.assertFalse(mc.cache_published(fake, "m/m", "sha", "v4.34.1", known_on_master=lambda: True))
+
     def test_a_failed_lookup_is_an_error_not_an_answer(self):
         def failing(path, jq=None):
             raise RuntimeError("gh api failed")
         with self.assertRaises(RuntimeError):
             mc.cache_published(failing, "m/m", "sha")
+
+
+class Listing(unittest.TestCase):
+    def gh_answering(self, out):
+        self.paths = []
+
+        def gh(path, jq=None):
+            self.paths.append(path)
+            return out
+        return gh
+
+    def test_newest_master_build_names_the_commit(self):
+        self.assertEqual(mc.newest_master_build(self.gh_answering("abc123\n"), "m/m"), "abc123")
+        self.assertIn("build.yml/runs?branch=master&event=push&status=success", self.paths[0])
+
+    def test_none_before_there_is_a_build(self):
+        self.assertIsNone(mc.newest_master_build(self.gh_answering("\n"), "m/m"))
+
+    def test_a_missing_workflow_is_an_error_not_no_build(self):
+        def missing(path, jq=None):
+            raise RuntimeError("gh api failed: HTTP 404")
+        with self.assertRaises(RuntimeError):
+            mc.newest_master_build(missing, "m/m")
+
+    def test_master_membership_by_compare_status(self):
+        self.assertEqual([mc.is_on_master(s) for s in ("ahead", "identical", "behind", "diverged")],
+                         [True, True, False, False])
 
 
 if __name__ == "__main__":

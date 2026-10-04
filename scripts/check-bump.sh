@@ -146,9 +146,10 @@ else
   # --- 2b. the new rev is one whose cache was actually published ---------------
   # Being on master is not enough. Mathlib lands in batches: bors tests a batch and
   # fast-forwards master over all of its commits, but only the resulting master tip is
-  # built by the push-triggered CI run, and that run is the only one that publishes to
-  # the `mathlib4-master` cache container (mathlib's build.yml gates `publish_cache` on
-  # `event_name == 'push' && ref == 'refs/heads/master'`). A batch's intermediate commits
+  # built by the push-triggered CI run, and that run is the one that publishes to the
+  # `mathlib4-master` cache container (its `upload_cache` job gets the master writer when
+  # `ref_name == 'master'`; asking for `event=push` is this check's own narrowing, to the
+  # build of the batch's final commit). A batch's intermediate commits
   # are ordinary ancestors whose oleans were never uploaded, so pinning to one costs every
   # downstream build a full recompile of whatever that commit invalidated: a rename in a
   # core algebra file is ~1400 modules and about an hour, on every CI run and every
