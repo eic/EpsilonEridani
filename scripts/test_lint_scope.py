@@ -3,6 +3,7 @@
 import os
 import pathlib
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,7 @@ def f(status, filename):
     return {"status": status, "filename": filename}
 
 
+@unittest.skipUnless(shutil.which("jq"), "needs jq")
 class LintScopeTest(unittest.TestCase):
     def run_scope(self, env, responses):
         with tempfile.TemporaryDirectory() as d:

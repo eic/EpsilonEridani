@@ -6,7 +6,7 @@
 # `lean-toolchain` be built and auto-merged without a human.
 # the worry is a PR that re-points a dependency at a malicious fork/commit or a
 # malicious toolchain and then gets auto-built. We reduce the whole manifest to a
-# deterministic function of validated facts — "each direct dependency stayed put or
+# function of validated facts — "each direct dependency stayed put or
 # moved forward on the branch it nominates" — and require the toolchain to move
 # forward and match mathlib's:
 #
@@ -22,20 +22,24 @@
 #          *on the nominated branch's history*;
 #        * mathlib only, when the new rev diverged from the old one: mathlib's
 #          toolchain at the new rev is strictly newer than base's lean-toolchain, AND
-#          the new rev is either a mathlib release tag `vX.Y.Z[-rcN]` (patch releases
+#          the new rev is either a mathlib release tag `v4.X.Y[-rcN]` (patch releases
 #          live on mathlib's `stable` branch; `v4.*` tags are restricted to release
-#          managers and immutable by mathlib's tag ruleset) or on the nominated branch
-#          (the way back to master from a patch release).
+#          managers and immutable by mathlib's tag ruleset, so only those count) or on
+#          the nominated branch (the way back to master from a patch release).
 #      2b. A new mathlib rev is one whose oleans are in the cache: a successful
-#      master-push build on it, or for a release tag, a successful release_cache.yml
-#      run on that tag. scripts/resolve_deps.py offers exactly these moves.
+#      master-push build on it, or for a release tag off master, a successful
+#      release_cache.yml run on that tag (scripts/mathlib_cache.py, which
+#      scripts/resolve_deps.py asks too, so it offers exactly these moves).
 #   3. Everything else in the PR manifest is DERIVED from the direct dependencies'
 #      own manifests at their new revs, comparing WHOLE entries (only `inherited` may
 #      differ, and must be true): the package set is exactly their union, a package
-#      mathlib pins is mathlib's entry, and one only another dependency pins is that
-#      dependency's — no package added, removed, renamed, retyped (e.g. a `path`
-#      dep), duplicated, re-pointed, or re-configured (`subDir`, `configFile`,
-#      `manifestFile`, `scope`) independently of them. Each direct entry differs from
+#      mathlib pins is mathlib's entry (Lake takes the pins of the LAST require, and
+#      lakefile.toml declares mathlib last), and one only other dependencies pin is
+#      the entry of one of them (which of two such dependencies Lake takes is not
+#      settled by any real manifest, so either is accepted) — no package added,
+#      removed, renamed, retyped (e.g. a `path` dep), duplicated, re-pointed, or
+#      re-configured (`subDir`, `configFile`, `manifestFile`, `scope`) independently
+#      of them. Each direct entry differs from
 #      base only in `rev`, and every top-level field (`packagesDir`, `lakeDir`, ...)
 #      equals base. See scripts/bump_manifest.py.
 #   4. lean-toolchain moves monotonically forward on the leanprover/lean4 channel
@@ -178,7 +182,7 @@ while IFS=$'\t' read -r -u 3 NAME URL REV_B REV_P BRANCH MPATH; do
     newer="$(toolchain_newer "$TC_B" "$ML_TC_NEW")" \
       || fail "mathlib rev is not a forward move from base: it diverged from $REV_B and its toolchain is not newer than base's ($newer)"
     TAG="$(gh api "repos/$SLUG/tags?per_page=100" --paginate --jq ".[] | select(.commit.sha == \"$REV_P\") | .name" 2>/dev/null \
-      | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$' | head -n1)"
+      | grep -E '^v4\.[0-9]+\.[0-9]+(-rc[0-9]+)?$' | head -n1)"
     if [ -n "$TAG" ]; then
       echo "bump-guard: mathlib $REV_B -> $REV_P is release $TAG, on newer toolchain $ML_TC_NEW."
     elif [ "$on_branch" = 1 ]; then
@@ -217,22 +221,24 @@ while IFS=$'\t' read -r -u 3 NAME URL REV_B REV_P BRANCH MPATH; do
   # the same container. For a release tag off master we accept that run, on that tag,
   # instead. For a tag ON master it proves nothing (the workflow skips the build and
   # still succeeds), so only the master-push build counts there.
+  # `on_branch` is already the answer to "is REV_P on master's history" when the nominated branch is
+  # master, so hand it over rather than asking GitHub the same compare again.
+  known_on_master=""; [ "$BRANCH" = master ] && known_on_master="$on_branch"
   pub_rc=0
-  pub_msg="$(python3 - "$(dirname "$0")" "$SLUG" "$REV_P" "$TAG" <<'PY' 2>&1
+  pub_msg="$(python3 - "$(dirname "$0")" "$SLUG" "$REV_P" "$TAG" "$known_on_master" <<'PY' 2>&1
 import sys
 sys.path.insert(0, sys.argv.pop(1))
-from mathlib_cache import master_build_published, release_cache_published
+from mathlib_cache import cache_source
 from pr_status.core import gh_api
-slug, rev, tag = sys.argv[1:4]
+slug, rev, tag, known = sys.argv[1:5]
+known = {"1": True, "0": False}.get(known)
 try:
-    if master_build_published(gh_api, slug, rev):
-        print("master"); sys.exit(0)
-    if tag and release_cache_published(gh_api, slug, rev, tag):
-        print("release"); sys.exit(0)
+    source = cache_source(gh_api, slug, rev, tag, None if known is None else (lambda: known))
 except Exception as exc:
     print(f"workflow-runs API failed for {slug} {rev}: {exc}")
     sys.exit(2)
-sys.exit(1)
+print(source or "")
+sys.exit(0 if source else 1)
 PY
   )" || pub_rc=$?
   [ "$pub_rc" -ne 2 ] || fail "$pub_msg"

@@ -29,7 +29,7 @@ THREE = HERE / "bump_manifest_fixtures" / "three_deps"
 ML, PL, TC = "leanprover-community/mathlib4", "leanprover-community/physlib", "TauCetiProject/TauCeti"
 ML_REV = "db1c5741da0acf96c97584de6ccf0e3bfbc0ae99"
 PL_REV = "35d1bb4313be7127a39cd6cf29f02b758b9461b9"
-TC_OLD, TC_NEW = "cd742d8" + "0" * 33, "a1fff14d3219e392c7e25b0114bf5a24ba1e37bc"
+TC_OLD, TC_NEW = "cd742d8cecad86d7433e37cbd60579008c567a7e", "a1fff14d3219e392c7e25b0114bf5a24ba1e37bc"
 ML_TAG_REV, ML_MASTER_REV = "d13f23b723b8a846827a245b89c10fc7d3f11612", "5e0c4e5239cb0a2d86d68a884bf52cfd963fce22"
 LEAN = "leanprover/lean4:"
 
@@ -56,7 +56,6 @@ class Scenario:
     def __init__(self):
         self.base = load("base")
         self.pr = load("pr")
-        entry(self.base, "TauCeti")["rev"] = TC_OLD  # the fixture's base, with a full-length sha
         self.base_toolchain = self.pr_toolchain = LEAN + "v4.34.0"
         self.lakefile = 'name = "EpsilonEridani"\n'
         self.pr_lakefile = self.lakefile
@@ -204,6 +203,7 @@ class Guard(unittest.TestCase):
         """Base on v4.34.1 (stable) moving to master's v4.35.0-rc1, a tag ON master. mathlib's
         release_cache.yml skips such tags yet concludes success, so only the master build counts."""
         s = Scenario()
+        s.base_toolchain = LEAN + "v4.34.1"
         s.move_mathlib(ML_MASTER_REV, "v4.35.0-rc1", "diverged", "ahead")
         s.gh[f"repos/{ML}/tags?per_page=100"] = [{"name": "v4.35.0-rc1", "commit": {"sha": ML_MASTER_REV}}]
         s.gh[f"repos/{ML}/actions/workflows/build.yml/runs?head_sha={ML_MASTER_REV}&event=push&per_page=20"] = \
@@ -214,6 +214,19 @@ class Guard(unittest.TestCase):
 
     def test_a_release_tag_on_master_is_not_cached_by_a_skipped_release_cache_run(self):
         self.assertFail(self.on_master_release(master_build_ok=False), "has no published cache")
+
+    def test_the_guard_asks_master_membership_once(self):
+        # step 2 already asked whether the new rev is on master; step 2b reuses the answer
+        s = self.on_master_release(master_build_ok=False)
+        self.assertFail(s, "has no published cache")
+        asked = [c for c in s.calls if c == f"repos/{ML}/compare/{ML_MASTER_REV}...master"]
+        self.assertEqual(len(asked), 1, s.calls)
+
+    def test_only_v4_tags_count_as_releases(self):
+        # the trust basis is mathlib's `v4.*` tag ruleset; a v5 tag is not covered by it
+        s = self.release()
+        s.gh[f"repos/{ML}/tags?per_page=100"] = [{"name": "v5.0.0", "commit": {"sha": ML_TAG_REV}}]
+        self.assertFail(s, "neither a release tag nor on branch 'master'")
 
     def test_a_release_tag_on_master_is_cached_by_its_master_build(self):
         self.assertPass(self.on_master_release(master_build_ok=True), "has a successful master-push build")
@@ -229,6 +242,7 @@ class Guard(unittest.TestCase):
     def test_mathlib_back_to_master_from_a_patch_release(self):
         # Base on v4.34.1 (stable); master's v4.35.0-rc3 commit diverged from it but is newer.
         s = Scenario()
+        s.base_toolchain = LEAN + "v4.34.1"
         s.move_mathlib(ML_MASTER_REV, "v4.35.0-rc3", "diverged", "ahead")
         s.gh[f"repos/{ML}/actions/workflows/build.yml/runs?head_sha={ML_MASTER_REV}&event=push&per_page=20"] = master_build()
         self.assertPass(s, "is on 'master', on newer toolchain")

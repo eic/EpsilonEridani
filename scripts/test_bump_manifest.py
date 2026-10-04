@@ -194,6 +194,57 @@ def entry(m, name):
     return next(p for p in m["packages"] if p["name"] == name)
 
 
+MATHLIB_FIRST = FIXTURES / "mathlib_first"
+TAUCETI_ONLY_DIFFERS = ["Cli", "LeanSearchClient", "Qq", "aesop", "batteries", "importGraph", "plausible",
+                        "proofwidgets"]
+
+
+class LastRequireWins(unittest.TestCase):
+    """Why "a package mathlib pins is mathlib's entry": Lake takes the pins of the LAST require, and
+    lakefile.toml declares mathlib last. Two real `lake update` outputs that differ only in the order of
+    the requires (mathlib_first/README.md) show it, and rule out "first wins"."""
+
+    def load(self, directory, name):
+        return json.loads((directory / f"{name}.json").read_text())
+
+    def pins(self, manifest, packages):
+        by = {p["name"]: p["rev"] for p in manifest["packages"]}
+        return {n: by[n] for n in packages}
+
+    def disagreeing(self, deps):
+        """The packages all three dependencies pin, with TauCeti's rev unlike mathlib's."""
+        shared = [p["name"] for p in deps["mathlib"]["packages"]
+                  if all(any(q["name"] == p["name"] for q in d["packages"]) for d in deps.values())]
+        return sorted(n for n in shared if self.pins(deps["TauCeti"], [n]) != self.pins(deps["mathlib"], [n]))
+
+    def mathlib_first(self):
+        deps = {"mathlib": self.load(THREE, "mathlib"), "Physlib": self.load(THREE, "Physlib"),
+                "TauCeti": self.load(MATHLIB_FIRST, "TauCeti")}
+        return self.load(MATHLIB_FIRST, "root"), deps
+
+    def test_the_two_orders_disagree_on_the_same_eight_packages(self):
+        _, deps = self.mathlib_first()
+        self.assertEqual(self.disagreeing(deps), TAUCETI_ONLY_DIFFERS)
+
+    def test_mathlib_declared_first_lake_wrote_taucetis_pins(self):
+        root, deps = self.mathlib_first()
+        self.assertEqual(self.pins(root, TAUCETI_ONLY_DIFFERS), self.pins(deps["TauCeti"], TAUCETI_ONLY_DIFFERS))
+        self.assertNotEqual(self.pins(root, TAUCETI_ONLY_DIFFERS), self.pins(deps["mathlib"], TAUCETI_ONLY_DIFFERS))
+
+    def test_mathlib_declared_last_lake_wrote_mathlibs_pins(self):
+        pr, _, deps = three()
+        self.assertEqual(self.pins(pr, TAUCETI_ONLY_DIFFERS), self.pins(deps["mathlib"], TAUCETI_ONLY_DIFFERS))
+        self.assertNotEqual(self.pins(pr, TAUCETI_ONLY_DIFFERS), self.pins(deps["TauCeti"], TAUCETI_ONLY_DIFFERS))
+
+    def test_the_rule_is_for_the_mathlib_last_lakefile_only(self):
+        # The mathlib-first manifest is genuine Lake output, and the guard rejects it: its rule holds
+        # for the lakefile it keeps byte-identical to base, which declares mathlib last.
+        root, deps = self.mathlib_first()
+        found = problems(root, root, deps)
+        for name in TAUCETI_ONLY_DIFFERS:
+            self.assertTrue(any(f"dep {name!r} does not match mathlib@new's" in f for f in found), name)
+
+
 class ThreeDependencies(unittest.TestCase):
     def assertRejected(self, pr, base, deps, fragment):
         found = problems(pr, base, deps)

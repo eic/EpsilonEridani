@@ -14,9 +14,14 @@ lake-manifest.json differs from what those facts determine:
   dependencies' own manifests at their new revs, minus the direct dependencies themselves, and
   each entry equals the same-named entry of one of those manifests in every field, except that
   `inherited` is `true` (Lake marks a dependency's dependencies as inherited when it writes a
-  downstream manifest). A package mathlib@new pins must be mathlib@new's entry: the lakefile
-  orders its requires so that mathlib's pins win, and mathlib's cache was built against them. A
-  package only another dependency pins (Physlib's doc-gen4, say) must be that dependency's entry.
+  downstream manifest). A package mathlib@new pins must be mathlib@new's entry: lakefile.toml
+  declares mathlib LAST, Lake takes the pins of the last require that pins a package, and mathlib's
+  cache was built against them. (Evidence, both real `lake update` outputs: with the requires in
+  the order mathlib, Physlib, TauCeti, the 8 packages TauCeti pins differently were TauCeti's
+  (749caa977); after "Reorder dependencies to prioritize Mathlib versions" moved mathlib to the
+  bottom (2a2b8dc), they were mathlib's. See bump_manifest_fixtures/mathlib_first.) A package only
+  other dependencies pin (Physlib's doc-gen4, say) must be one of those dependencies' entries; when
+  two do, either is accepted, because no real manifest shows which of them Lake takes.
 
 Comparing whole entries matters: Lake also reads `subDir`, `configFile`, `manifestFile` and
 `scope` from these entries, and `packagesDir`/`lakeDir` from the top level, before any sandbox
@@ -51,6 +56,8 @@ def differing(a: dict, b: dict, skip=()) -> list[str]:
 
 
 def shape(name: str, m) -> list[str]:
+    """Problems with `m`'s shape as a manifest (an object with a `packages` list of uniquely named
+    objects), empty when it is well formed; `name` says whose manifest it is."""
     if not isinstance(m, dict) or not isinstance(m.get("packages"), list):
         return [f"{name} manifest is not an object with a `packages` list"]
     if not all(isinstance(p, dict) for p in m["packages"]):

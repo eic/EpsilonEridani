@@ -51,17 +51,25 @@ def show_toolchain(toolchain):
     return (toolchain or "?").strip().removeprefix(TOOLCHAIN_PREFIX)
 
 
+def toolchain_order(old, new):
+    """How toolchain `new` compares with `old`: "older", "same" or "newer"; None when either is
+    not a release toolchain. The one comparison the guard and the resolver both read."""
+    parsed_old, parsed_new = parse_toolchain(old), parse_toolchain(new)
+    if parsed_old is None or parsed_new is None:
+        return None
+    return "older" if parsed_new < parsed_old else "same" if parsed_new == parsed_old else "newer"
+
+
 def why_not_newer(old, new):
     """None when toolchain `new` is a strictly newer release than `old`; otherwise why not, in the
     words check-bump.sh reports."""
-    for toolchain in (old, new):
-        if parse_toolchain(toolchain) is None:
-            return f"toolchain '{toolchain}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"
-    if parse_toolchain(new) < parse_toolchain(old):
-        return f"toolchain moved backward ({old} -> {new})"
-    if parse_toolchain(new) == parse_toolchain(old):
-        return f"{new} is not newer than {old}"
-    return None
+    order = toolchain_order(old, new)
+    if order == "newer":
+        return None
+    if order is None:
+        bad = old if parse_toolchain(old) is None else new
+        return f"toolchain '{bad}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"
+    return f"toolchain moved backward ({old} -> {new})" if order == "older" else f"{new} is not newer than {old}"
 
 
 def release_refs(gh, repo):

@@ -295,14 +295,13 @@ class Resolver:
         current = self.pins[MATHLIB]
         if m == current:
             return "current"
-        if parse_toolchain(self.mathlib_toolchain(m)) is None:
-            return None
-        if parse_toolchain(self.mathlib_toolchain(m)) < parse_toolchain(self.toolchain):
+        order = lean_versions.toolchain_order(self.toolchain, self.mathlib_toolchain(m))
+        if order in (None, "older"):
             return None
         status = self.src.compare(self.mathlib_repo, current, m)[0]
         if status == "ahead":
             return "descendant"
-        if parse_toolchain(self.mathlib_toolchain(m)) <= parse_toolchain(self.toolchain):
+        if order == "same":
             return None
         if m in self.tags:
             return "release"

@@ -1,7 +1,7 @@
 """Whether mathlib's olean cache is published for a commit: the one definition for every script.
 
 scripts/check-bump.sh (step 2b) and scripts/resolve_deps.py must ask this question the same way, or
-the resolver proposes a pin the guard then rejects. Both call these functions.
+the resolver proposes a pin the guard then rejects. Both call `cache_source` / `cache_published`.
 
 Mathlib publishes its cache from two places, and only these:
 
@@ -66,7 +66,17 @@ def release_cache_published(gh, repo, sha, tag, known_on_master=None):
     return any(run["head_branch"] == tag for run in _runs(gh, repo, "release_cache.yml", sha))
 
 
+def cache_source(gh, repo, sha, tag=None, known_on_master=None):
+    """What publishes the cache for `sha`, `tag` being the release tag it carries, if any: "master"
+    (a master-push build), "release" (release_cache.yml, for a tag off master), or None. The one
+    composition of the two signals: callers that report which one applied read it here."""
+    if master_build_published(gh, repo, sha):
+        return "master"
+    if tag and release_cache_published(gh, repo, sha, tag, known_on_master):
+        return "release"
+    return None
+
+
 def cache_published(gh, repo, sha, tag=None, known_on_master=None):
-    """Whether the cache for `sha` is published, `tag` being the release tag it carries, if any."""
-    return master_build_published(gh, repo, sha) or (
-        bool(tag) and release_cache_published(gh, repo, sha, tag, known_on_master))
+    """Whether the cache for `sha` is published; see `cache_source`."""
+    return cache_source(gh, repo, sha, tag, known_on_master) is not None

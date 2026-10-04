@@ -7,7 +7,7 @@ query string matches exactly first, then without the query. `--jq` is applied by
 path with no response answers 404 on stderr and exits 1, like `gh`. Each requested path is appended to
 the log, which `calls(directory)` reads back.
 
-Used by test_check_bump.py and test_lint_scope.py. Needs `jq` on PATH, which the tests skip without.
+Used by test_check_bump.py and test_lint_scope.py, both of which skip without `jq` on PATH.
 """
 
 import json

@@ -75,6 +75,16 @@ class CachePublished(unittest.TestCase):
         self.assertFalse(any("/compare/" in call for call in fake.calls))
         self.assertFalse(mc.cache_published(fake, "m/m", "sha", "v4.34.1", known_on_master=lambda: True))
 
+    def test_cache_source_names_what_published_it(self):
+        self.assertEqual(mc.cache_source(Fake(build_runs=[PUSH]), "m/m", "sha"), "master")
+        off_master = Fake(release_runs=[{"event": "push", "head_branch": "v4.34.1"}], compare="diverged")
+        self.assertEqual(mc.cache_source(off_master, "m/m", "sha", "v4.34.1"), "release")
+        self.assertIsNone(mc.cache_source(Fake(), "m/m", "sha", "v4.34.1"))
+
+    def test_the_master_build_is_named_first_when_both_published(self):
+        both = Fake(build_runs=[PUSH], release_runs=[{"event": "push", "head_branch": "v4.34.1"}], compare="diverged")
+        self.assertEqual(mc.cache_source(both, "m/m", "sha", "v4.34.1"), "master")
+
     def test_a_failed_lookup_is_an_error_not_an_answer(self):
         def failing(path, jq=None):
             raise RuntimeError("gh api failed")

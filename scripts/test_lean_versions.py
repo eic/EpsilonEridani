@@ -57,6 +57,19 @@ class Toolchains(unittest.TestCase):
         self.assertEqual(lv.show_toolchain(None), "?")
 
 
+class ToolchainOrder(unittest.TestCase):
+    def test_older_same_newer(self):
+        t = lambda v: lv.TOOLCHAIN_PREFIX + v  # noqa: E731
+        self.assertEqual(lv.toolchain_order(t("v4.34.1"), t("v4.34.0")), "older")
+        self.assertEqual(lv.toolchain_order(t("v4.34.1"), t("v4.34.1")), "same")
+        self.assertEqual(lv.toolchain_order(t("v4.35.0-rc3"), t("v4.35.0")), "newer")
+
+    def test_anything_but_a_release_has_no_order(self):
+        t = lambda v: lv.TOOLCHAIN_PREFIX + v  # noqa: E731
+        self.assertIsNone(lv.toolchain_order(t("v4.34.0"), t("nightly-2026-01-01")))
+        self.assertIsNone(lv.toolchain_order(None, t("v4.34.0")))
+
+
 class WhyNotNewer(unittest.TestCase):
     def test_a_newer_release_is_newer(self):
         for old, new in (("v4.34.0", "v4.34.1"), ("v4.35.0-rc3", "v4.35.0"), ("v4.34.1", "v4.35.0-rc1")):
