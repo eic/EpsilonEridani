@@ -33,6 +33,16 @@ TC_OLD, TC_NEW = "cd742d8cecad86d7433e37cbd60579008c567a7e", "a1fff14d3219e392c7
 ML_TAG_REV, ML_MASTER_REV = "d13f23b723b8a846827a245b89c10fc7d3f11612", "5e0c4e5239cb0a2d86d68a884bf52cfd963fce22"
 LEAN = "leanprover/lean4:"
 
+def lakefile(*requires, tail=""):
+    """A lakefile.toml with these requires in this order, as the real one declares them."""
+    blocks = "".join(f'\n[[require]]\nname = "{n}"\ngit = "https://github.com/x/{n}"\nrev = "master"\n'
+                     for n in requires)
+    return 'name = "EpsilonEridani"\n' + blocks + tail
+
+
+LAKEFILE = lakefile("Physlib", "TauCeti", "mathlib", tail='\n[[lean_lib]]\nname = "EpsilonEridani"\n')
+
+
 def load(name):
     return json.loads((THREE / f"{name}.json").read_text())
 
@@ -57,7 +67,7 @@ class Scenario:
         self.base = load("base")
         self.pr = load("pr")
         self.base_toolchain = self.pr_toolchain = LEAN + "v4.34.0"
-        self.lakefile = 'name = "EpsilonEridani"\n'
+        self.lakefile = LAKEFILE
         self.pr_lakefile = self.lakefile
         self.gh = {}
         deps = {n: load(n) for n in ("mathlib", "Physlib", "TauCeti")}
@@ -96,7 +106,8 @@ class Scenario:
                 (d / side).mkdir()
                 (d / side / "lake-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
                 (d / side / "lean-toolchain").write_text(tc + "\n")
-                (d / side / "lakefile.toml").write_text(lakefile)
+                if lakefile is not None:
+                    (d / side / "lakefile.toml").write_text(lakefile)
             env = fake_gh.install(d, self.gh)
             out = subprocess.run(["bash", str(GUARD), str(d / "base"), str(d / "mergebase"), str(d / "pr")],
                                  capture_output=True, text=True, env=env)
@@ -154,6 +165,21 @@ class Guard(unittest.TestCase):
         s = Scenario()
         entry(s.pr, "MD4Lean")["inherited"] = False
         self.assertFail(s, "direct dependencies differ from base")
+
+    def test_mathlib_must_be_the_last_require(self):
+        # Lake takes the pins of the LAST require; step 3 relies on that being mathlib
+        s = Scenario()
+        s.lakefile = s.pr_lakefile = lakefile("mathlib", "Physlib", "TauCeti")
+        self.assertFail(s, "mathlib is not the last require")
+
+    def test_a_later_table_with_a_name_is_not_a_require(self):
+        s = Scenario()  # the default lakefile ends with a [[lean_lib]] that has its own `name`
+        self.assertPass(s, "TauCeti")
+
+    def test_without_a_lakefile_toml_the_order_cannot_be_checked(self):
+        s = Scenario()
+        s.lakefile = s.pr_lakefile = None
+        self.assertFail(s, "cannot check that mathlib is the last require")
 
     def test_lakefile_edits_are_human_owned(self):
         s = Scenario()

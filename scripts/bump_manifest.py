@@ -19,7 +19,8 @@ lake-manifest.json differs from what those facts determine:
   cache was built against them. (Evidence, both real `lake update` outputs: with the requires in
   the order mathlib, Physlib, TauCeti, the 8 packages TauCeti pins differently were TauCeti's
   (749caa977); after "Reorder dependencies to prioritize Mathlib versions" moved mathlib to the
-  bottom (2a2b8dc), they were mathlib's. See bump_manifest_fixtures/mathlib_first.) A package only
+  bottom (2a2b8dc), they were mathlib's. See bump_manifest_fixtures/mathlib_first.) check-bump.sh
+  checks the premise, that mathlib is the last require, before it calls this. A package only
   other dependencies pin (Physlib's doc-gen4, say) must be one of those dependencies' entries; when
   two do, either is accepted, because no real manifest shows which of them Lake takes.
 

@@ -94,8 +94,9 @@ The resolver only proposes. What lets a bump PR build and merge without a human 
 guard, which reads the PR's `lake-manifest.json` and `lean-toolchain`, queries the upstreams
 through `gh api`, and runs nothing from the PR. It accepts a pin change only when:
 
-1. `lakefile.toml` is unchanged; the direct dependencies are base's non-inherited packages,
-   each keeping its url and nominated branch (`inputRev`).
+1. `lakefile.toml` is unchanged and declares mathlib as its last `require` (the premise of
+   rule 3: Lake takes the pins of the last require); the direct dependencies are base's
+   non-inherited packages, each keeping its url and nominated branch (`inputRev`).
 2. Each direct dependency's rev stays put or moves forward: a descendant on its nominated
    branch. Mathlib alone may also diverge onto a strictly newer toolchain, at a release tag
    (only `v4.*` tags: they are release-manager-only and immutable upstream) or on master. A new

@@ -10,7 +10,9 @@
 # moved forward on the branch it nominates" — and require the toolchain to move
 # forward and match mathlib's:
 #
-#   1. lakefile.toml / lakefile.lean are byte-identical to base.
+#   1. lakefile.toml / lakefile.lean are byte-identical to base, and mathlib is the
+#      LAST `require` in lakefile.toml (Lake takes the pins of the last require, which is
+#      what step 3's "a package mathlib pins is mathlib's entry" relies on).
 #   2. The direct dependencies are the packages base's manifest does not mark
 #      `inherited` (mathlib, Physlib, TauCeti); mathlib must be one of them. Each is
 #      the ONLY package of its name in the PR manifest, a `git` package pinned to a
@@ -93,6 +95,21 @@ for f in lakefile.toml lakefile.lean; do
     fail "$f differs from base — lakefile edits are human-owned and never auto-merge"
   fi
 done
+
+# --- 1b. mathlib is the LAST require ------------------------------------------
+# Step 3 takes a package mathlib pins to be mathlib's entry. That is what Lake writes because it
+# takes the pins of the LAST require that pins a package, and lakefile.toml declares mathlib last
+# (EpsilonEridani 749caa977 vs 2a2b8dc: scripts/bump_manifest_fixtures/mathlib_first). The rule is
+# only true for that order, so check the premise instead of assuming it. The lakefile is the same on
+# both sides (step 1), so base's is read. Fail closed when it cannot be read.
+[ -f "$BASE/lakefile.toml" ] \
+  || fail "cannot check that mathlib is the last require: base has no lakefile.toml"
+last_require="$(awk '/^\[\[require\]\]/ { r = 1; n = ""; next }
+                     /^\[/ { r = 0 }
+                     r && /^[[:space:]]*name[[:space:]]*=/ { split($0, q, "\""); n = q[2]; r = 0 }
+                     END { print n }' "$BASE/lakefile.toml")"
+[ "$last_require" = mathlib ] \
+  || fail "mathlib is not the last require in lakefile.toml (the last is '${last_require:-none}'): Lake takes the pins of the last require, so the derived manifest (step 3) would not be what Lake writes"
 
 # --- helpers ------------------------------------------------------------------
 # owner/repo slug from a github url
