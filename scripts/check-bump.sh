@@ -138,20 +138,18 @@ toolchain_newer() { python3 "$(dirname "$0")/lean_versions.py" newer "$1" "$2"; 
 # Url, inputRev and manifest path are base's, the trusted side. Any violation prints
 # "ERROR: ..." and exits 1 (so the caller can `|| fail`).
 direct_deps() {
-  python3 - "$1" "$2" <<'PY'
+  python3 - "$(dirname "$0")" "$1" "$2" <<'PY'
 import json,sys,re
+sys.path.insert(0, sys.argv.pop(1))
+from bump_manifest import shape  # the one manifest-shape check (step 3 reads it too)
 def load(path, which):
     try:
         m=json.load(open(path))
     except Exception as e:
         print(f"ERROR: cannot parse {which} manifest: {e}"); sys.exit(1)
-    pkgs=m.get("packages") if isinstance(m, dict) else None
-    if not isinstance(pkgs, list) or not all(isinstance(p, dict) for p in pkgs):
-        print(f"ERROR: {which} manifest has no list of package objects"); sys.exit(1)
-    names=[p.get("name") for p in pkgs]
-    dups=sorted({str(n) for n in names if names.count(n)>1})
-    if dups: print(f"ERROR: duplicate package names in {which} manifest: {dups}"); sys.exit(1)
-    return {p.get("name"): p for p in pkgs}
+    found=shape(which, m)
+    if found: print(f"ERROR: {found[0]}"); sys.exit(1)
+    return {p["name"]: p for p in m["packages"]}
 def norm(url): return (url or "").rstrip("/").removesuffix(".git")
 base, pr = load(sys.argv[1], "base"), load(sys.argv[2], "PR")
 direct=[n for n, p in base.items() if p.get("inherited") is False]

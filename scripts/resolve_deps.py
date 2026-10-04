@@ -20,12 +20,13 @@ No dependency is special. Every candidate mathlib commit M comes from somewhere 
     published; the same signal scripts/check-bump.sh step 2b requires);
   * every mathlib commit that a candidate commit of a dependency pins.
 
-M must be a forward move from the current pin: a descendant of it (`descendant`), or, with a
-strictly newer toolchain, a mathlib release tag (`release`; `v4.34.1` lives on mathlib's `stable`
-branch, not on master) or a commit on mathlib's nominated branch (`toolchain`; the way back to
-master from a patch release). The last two may diverge from the pin; the commits the pin has
-and M lacks are counted (`dropped_commits`). The
-toolchain is always mathlib's own at M.
+M must be a forward move from the current pin: a descendant of it on mathlib's nominated branch
+(`descendant`), or, with a strictly newer toolchain, a mathlib `v4.*` release tag (`release`;
+`v4.34.1` lives on mathlib's `stable` branch, not on master, and a tag cut after the pin descends
+from it while off master, so an off-master descendant qualifies only as a release) or, for a rev
+that diverged from the pin, a commit on the nominated branch (`toolchain`; the way back to master
+from a patch release). A diverged rev leaves out commits the pin has; they are counted
+(`dropped_commits`). The toolchain is always mathlib's own at M.
 
 A new M is only offered once its cache is published, or every downstream build would recompile
 mathlib. A master commit needs a successful master-push `build.yml` run (step 2b of
@@ -167,10 +168,9 @@ class GitHub:
                           lambda: mathlib_cache.cache_published(gh, repo, sha, tag, on_master))
 
     def release_tags(self, repo):
-        """{commit sha: tag} for the repository's vX.Y.Z[-rcN] tags."""
-        def fetch():
-            return {sha: name for name, sha in lean_versions.release_tags(gh, repo).items()}
-        return self._once(("tags", repo), fetch)
+        """{commit sha: tag} for the repository's trusted release tags: the same mapping the guard
+        reads (lean_versions.release_tags_by_commit), so both look for a cache under the same tag."""
+        return self._once(("tags", repo), lambda: lean_versions.release_tags_by_commit(gh, repo))
 
 
 class Recorder:
@@ -264,9 +264,7 @@ class Resolver:
             # what cached_master_tip and cache_published ask; another branch would mean two things
             raise RuntimeError(f"mathlib must be required at rev master, not {self.mathlib_branch!r}")
         self.deps = [(name, repo, branch) for name, repo, branch in requires if name != MATHLIB]
-        # only the tags the guard trusts: a move to any other tag is one it would refuse
-        self.tags = {sha: name for sha, name in src.release_tags(self.mathlib_repo).items()
-                     if lean_versions.is_trusted_release_tag(name)}
+        self.tags = src.release_tags(self.mathlib_repo)
 
     # facts about one commit
     def dep_commit(self, repo, sha):

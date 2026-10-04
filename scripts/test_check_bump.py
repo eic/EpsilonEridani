@@ -191,6 +191,15 @@ class Guard(unittest.TestCase):
         self.assertFail(self.two_pin_md4lean(entry(load("Physlib"), "MD4Lean")["rev"]),
                         "'MD4Lean' does not match TauCeti@new's, the last require")
 
+    def test_a_manifest_that_is_not_well_formed_is_refused_through_the_shared_shape_check(self):
+        # the guard validates manifests with bump_manifest.shape, which also rejects a nameless package
+        s = Scenario()
+        s.pr["packages"].append({"type": "git"})
+        self.assertFail(s, "PR manifest has a package without a string name")
+        s = Scenario()
+        s.pr["packages"].append(dict(s.pr["packages"][0]))
+        self.assertFail(s, "duplicate package names in PR manifest")
+
     def test_mathlib_must_be_the_last_require(self):
         # Lake takes the pins of the LAST require; step 3 relies on that being mathlib
         s = Scenario()

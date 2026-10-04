@@ -101,11 +101,20 @@ def tag_commit(gh, repo, sha, kind):
     return gh(f"repos/{repo}/git/tags/{sha}", jq=".object.sha") if kind == "tag" else sha
 
 
+def release_tags_by_commit(gh, repo):
+    """{commit sha: its newest trusted release tag}. A commit that carries two (`v4.35.0-rc1` and
+    `v4.35.0`) maps to the later release, so the guard and the resolver, which both read this, look
+    for its cache under the same tag."""
+    best = {}
+    for name, commit in release_tags(gh, repo).items():
+        if is_trusted_release_tag(name) and (commit not in best or release_key(name) > release_key(best[commit])):
+            best[commit] = name
+    return best
+
+
 def release_tag_of(gh, repo, sha):
     """The newest trusted release tag (`is_trusted_release_tag`) naming commit `sha`, or None."""
-    names = [name for name, commit in release_tags(gh, repo).items()
-             if commit == sha and is_trusted_release_tag(name)]
-    return max(names, key=release_key) if names else None
+    return release_tags_by_commit(gh, repo).get(sha)
 
 
 def release_tags(gh, repo, resolve=None):

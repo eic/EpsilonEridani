@@ -78,6 +78,12 @@ class TrustedReleaseTags(unittest.TestCase):
         gh = self.refs(("v4.35.0-rc1", "a"), ("v4.35.0", "a"))
         self.assertEqual(lv.release_tag_of(gh, "o/r", "a"), "v4.35.0")
 
+    def test_the_mapping_by_commit_is_what_both_callers_read(self):
+        # listed in either order, with an untrusted tag and a commit of its own
+        for listing in ((("v4.35.0-rc1", "a"), ("v4.35.0", "a")), (("v4.35.0", "a"), ("v4.35.0-rc1", "a"))):
+            gh = self.refs(*listing, ("v5.0.0", "b"), ("v4.34.1", "c"))
+            self.assertEqual(lv.release_tags_by_commit(gh, "o/r"), {"a": "v4.35.0", "c": "v4.34.1"})
+
 
 class ToolchainOrder(unittest.TestCase):
     def test_older_same_newer(self):

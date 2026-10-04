@@ -335,7 +335,6 @@ class ForwardMoves(unittest.TestCase):
 
     def test_a_descendant_off_master_that_is_not_a_release_is_not_offered(self):
         self.assertIsNone(self.forward(None))
-        self.assertIsNone(self.forward("v5.34.1"))  # not a tag the guard trusts
 
     def test_a_descendant_on_master_is_still_a_descendant(self):
         g = Graph()
@@ -344,18 +343,27 @@ class ForwardMoves(unittest.TestCase):
 
 
 class TrustedTags(unittest.TestCase):
-    def tags_of(self, named):
-        g = Graph()
-        mathlib_line(g)
-        g.tags = named
-        return rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, lean("v4.34.0")).tags
+    """The tags the resolver offers are the ones the guard trusts, read through the same function."""
+
+    def tags_of(self, listing):
+        refs = "\n".join(f"refs/tags/{name}\t{sha}\tcommit" for name, sha in listing)
+        saved, rd.gh = rd.gh, lambda path, jq=None, paginate=False: refs
+        try:
+            return rd.GitHub().release_tags(ML)
+        finally:
+            rd.gh = saved
 
     def test_a_v4_release_tag_is_offered(self):
-        self.assertEqual(self.tags_of({"s1": "v4.34.1"}), {"s1": "v4.34.1"})
+        self.assertEqual(self.tags_of([("v4.34.1", "s1")]), {"s1": "v4.34.1"})
 
     def test_a_tag_the_guard_would_refuse_is_not(self):
         # check-bump.sh accepts only mathlib's `v4.*` tags, so the resolver must not propose another
-        self.assertEqual(self.tags_of({"s1": "v5.0.1", "m2": "v4.34.0"}), {"m2": "v4.34.0"})
+        self.assertEqual(self.tags_of([("v5.0.1", "s1"), ("v4.34.0", "m2")]), {"m2": "v4.34.0"})
+
+    def test_a_commit_with_two_tags_is_offered_under_the_final_release(self):
+        # the guard looks a cache up under this tag too, and the listing is lexicographic (rc1 < 4.35.0)
+        self.assertEqual(self.tags_of([("v4.35.0", "x"), ("v4.35.0-rc1", "x")]), {"x": "v4.35.0"})
+        self.assertEqual(self.tags_of([("v4.35.0-rc1", "x"), ("v4.35.0", "x")]), {"x": "v4.35.0"})
 
 
 class GitHubCacheQuestion(unittest.TestCase):
