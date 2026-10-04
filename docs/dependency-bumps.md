@@ -98,8 +98,10 @@ through `gh api`, and runs nothing from the PR. It accepts a pin change only whe
    rule 3: Lake takes the pins of the last require); the direct dependencies are base's
    non-inherited packages, each keeping its url and nominated branch (`inputRev`).
 2. Each direct dependency's rev stays put or moves forward: a descendant on its nominated
-   branch. Mathlib alone may also diverge onto a strictly newer toolchain, at a release tag
-   (only `v4.*` tags: they are release-manager-only and immutable upstream) or on master. A new
+   branch. Mathlib alone may also move off it onto a strictly newer toolchain, whether the new
+   rev descends from the pin or diverged from it (a patch release cut off master): at a release
+   tag (only `v4.*` tags: they are release-manager-only and immutable upstream), or, if it
+   diverged, on master (the way back from a patch release). A new
    mathlib rev must have a published cache: a master-push build, or for a tag off master a
    `release_cache.yml` run.
 3. Every other entry is derived from the direct dependencies' own manifests at their new revs

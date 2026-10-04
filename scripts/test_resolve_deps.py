@@ -319,6 +319,30 @@ class Resolution(unittest.TestCase):
             rd.Resolver(g, requires, {"mathlib": "m1"}, lean("v4.34.0"))
 
 
+class ForwardMoves(unittest.TestCase):
+    """What Resolver.forward offers must be what check-bump.sh accepts (test_check_bump.py)."""
+
+    def forward(self, tag):
+        g = Graph()
+        mathlib_line(g)
+        # r1 is a patch release cut after the pin m1, off master: it descends from m1 but m3 does not
+        g.commit(ML, "r1", "m2", branch="stable", lean_toolchain=lean("v4.34.1"))
+        g.tags = {"r1": tag} if tag else {}
+        return rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, lean("v4.34.0")).forward("r1")
+
+    def test_a_release_descending_from_the_pin_off_master_is_a_release(self):
+        self.assertEqual(self.forward("v4.34.1"), "release")
+
+    def test_a_descendant_off_master_that_is_not_a_release_is_not_offered(self):
+        self.assertIsNone(self.forward(None))
+        self.assertIsNone(self.forward("v5.34.1"))  # not a tag the guard trusts
+
+    def test_a_descendant_on_master_is_still_a_descendant(self):
+        g = Graph()
+        mathlib_line(g)
+        self.assertEqual(rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, lean("v4.34.0")).forward("m2"), "descendant")
+
+
 class TrustedTags(unittest.TestCase):
     def tags_of(self, named):
         g = Graph()

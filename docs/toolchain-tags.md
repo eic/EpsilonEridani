@@ -28,8 +28,10 @@ reached yet is reported `ahead`: nothing is wrong, the bump has not got there, a
 be tagged like any other release when it does. A release `main` went past without stopping
 is reported `unreachable`. Two things cause that, and they differ in what can be done about them: the
 daily bump stepped over the release's window on Mathlib master, which a later bump could
-avoid, or Mathlib cut the release on its `stable` branch while `check-bump.sh` could not yet
-pin release tags. It now can, so a patch release a dependency follows can be reached.
+avoid, or Mathlib cut the release on its `stable` branch and no bump moved to that tag.
+`check-bump.sh` accepts a `v4.*` release tag on a newer toolchain, so a bump reaches a stable
+patch release when a dependency pins it; otherwise `main` goes past it, and it can only be
+tagged by hand.
 
 Such a release can still be tagged by hand off a `main` commit. `v4.33.0` is one: a commit
 off `afb1aacb` changing only the two pin files, built from source, with its cache uploaded

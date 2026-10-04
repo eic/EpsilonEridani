@@ -197,6 +197,16 @@ class Guard(unittest.TestCase):
         s.lakefile = s.pr_lakefile = lakefile("mathlib", "Physlib", "TauCeti")
         self.assertFail(s, "mathlib is not the last require")
 
+    def test_requires_are_read_as_toml_not_by_pattern(self):
+        s = Scenario()
+        s.lakefile = s.pr_lakefile = LAKEFILE.replace('name = "mathlib"', "name = 'mathlib'")
+        self.assertPass(s, "TauCeti")
+
+    def test_an_unreadable_lakefile_fails_closed(self):
+        s = Scenario()
+        s.lakefile = s.pr_lakefile = "[[require\nname = "
+        self.assertFail(s, "cannot read the requires of lakefile.toml")
+
     def test_a_later_table_with_a_name_is_not_a_require(self):
         s = Scenario()  # the default lakefile ends with a [[lean_lib]] that has its own `name`
         self.assertPass(s, "TauCeti")
@@ -231,9 +241,9 @@ class Guard(unittest.TestCase):
         s.gh[f"repos/{ML}/actions/workflows/build.yml/runs?head_sha={ML_MASTER_REV}&event=push&per_page=20"] = master_build(False)
         self.assertFail(s, "no completed, successful master-push build")
 
-    def release(self, cached=True, version="v4.34.1"):
+    def release(self, cached=True, version="v4.34.1", fwd="diverged"):
         s = Scenario()
-        s.move_mathlib(ML_TAG_REV, version, "diverged")
+        s.move_mathlib(ML_TAG_REV, version, fwd)
         s.gh[TAGS] = tags(("v4.34.0", "0" * 40), ("v4.34.1", ML_TAG_REV))
         s.gh[f"repos/{ML}/actions/workflows/build.yml/runs?head_sha={ML_TAG_REV}&event=push&per_page=20"] = \
             {"workflow_runs": [{"head_branch": "stable", "status": "completed", "conclusion": "success"}]}
@@ -245,6 +255,23 @@ class Guard(unittest.TestCase):
     def test_mathlib_patch_release_off_master(self):
         # 2026-10-03: db1c574 (master) -> d13f23b (v4.34.1 on stable), cached by release_cache.yml.
         self.assertPass(self.release(), "is release v4.34.1")
+
+    def test_a_release_cut_after_the_pin_is_accepted_too(self):
+        # the pin lags the commit `stable` branched from, so the patch release DESCENDS from it
+        # (ahead) yet is off master; the resolver offers it, so the guard must accept it
+        self.assertPass(self.release(fwd="ahead"), "is release v4.34.1")
+
+    def test_a_descendant_off_master_must_still_be_a_release_on_a_newer_toolchain(self):
+        self.assertFail(self.release(fwd="ahead", version="v4.34.0"), "toolchain is not newer than base's")
+        s = self.release(fwd="ahead")
+        s.gh[TAGS] = tags(("v4.34.1-patch1", ML_TAG_REV))
+        self.assertFail(s, "neither a release tag nor on branch 'master'")
+
+    def test_a_dependency_other_than_mathlib_off_the_branch_is_still_refused(self):
+        s = Scenario()
+        s.compare(TC, TC_OLD, TC_NEW, "ahead")
+        s.compare(TC, TC_NEW, "main", "diverged")
+        self.assertFail(s, "TauCeti new rev")
 
     def test_mathlib_patch_release_needs_its_release_cache(self):
         self.assertFail(self.release(cached=False), "has no published cache")

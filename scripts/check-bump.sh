@@ -22,12 +22,14 @@
 #      what Lake will resolve and build):
 #        * any direct dependency: the new rev is a *descendant of the old rev* AND
 #          *on the nominated branch's history*;
-#        * mathlib only, when the new rev diverged from the old one: mathlib's
-#          toolchain at the new rev is strictly newer than base's lean-toolchain, AND
-#          the new rev is either a mathlib release tag `v4.X.Y[-rcN]` (patch releases
-#          live on mathlib's `stable` branch; `v4.*` tags are restricted to release
-#          managers and immutable by mathlib's tag ruleset, so only those count) or on
-#          the nominated branch (the way back to master from a patch release).
+#        * mathlib only, when the new rev is not on the branch's history or diverged
+#          from the old one (a patch release cut off master, whether after the pin or
+#          before it): mathlib's toolchain at the new rev is strictly newer than base's
+#          lean-toolchain, AND the new rev is a mathlib release tag `v4.X.Y[-rcN]`
+#          (patch releases live on mathlib's `stable` branch; `v4.*` tags are restricted
+#          to release managers and immutable by mathlib's tag ruleset, so only those
+#          count) or, when it diverged, on the nominated branch (the way back to master
+#          from a patch release).
 #      2b. A new mathlib rev is one whose oleans are in the cache: a successful
 #      master-push build on it, or for a release tag off master, a successful
 #      release_cache.yml run on that tag (scripts/mathlib_cache.py, which
@@ -102,10 +104,17 @@ done
 # read. Fail closed when it cannot be read.
 [ -f "$BASE/lakefile.toml" ] \
   || fail "cannot check the order of the requires: base has no lakefile.toml"
-require_order="$(awk '/^\[\[require\]\]/ { r = 1; next }
-                      /^\[/ { r = 0 }
-                      r && /^[[:space:]]*name[[:space:]]*=/ { split($0, q, "\""); printf "%s%s", sep, q[2]; sep = ","; r = 0 }' \
-                 "$BASE/lakefile.toml")"
+require_order="$(python3 - "$(dirname "$0")" "$BASE/lakefile.toml" <<'PY' 2>&1
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+import lake_requires
+try:
+    print(",".join(lake_requires.names(open(sys.argv[1]).read())))
+except Exception as exc:
+    print(f"ERROR: cannot read the requires of lakefile.toml: {exc}")
+    sys.exit(2)
+PY
+)" || fail "${require_order#ERROR: }"
 [ "${require_order##*,}" = mathlib ] \
   || fail "mathlib is not the last require in lakefile.toml (the order is '${require_order:-none}'): Lake takes the pins of the last require, so the derived manifest (step 3) would not be what Lake writes"
 
@@ -186,16 +195,16 @@ while IFS=$'\t' read -r -u 3 NAME URL REV_B REV_P BRANCH MPATH; do
   on_branch=0
   case "$st_branch" in ahead|identical) on_branch=1 ;; esac  # the branch tip is at-or-ahead of new
   TAG=""
-  if [ "$st_fwd" = ahead ]; then
-    [ "$on_branch" = 1 ] \
-      || fail "$NAME new rev $REV_P is not on branch '$BRANCH' (compare status: ${st_branch:-unknown})"
+  if [ "$st_fwd" = ahead ] && [ "$on_branch" = 1 ]; then
     echo "bump-guard: $NAME $REV_B -> $REV_P is a forward move on '$BRANCH'."
-  elif [ "$NAME" = mathlib ] && [ "$st_fwd" = diverged ]; then
-    # Diverged: forward only onto a strictly newer toolchain, at a release tag or on the branch.
+  elif [ "$NAME" = mathlib ] && { [ "$st_fwd" = ahead ] || [ "$st_fwd" = diverged ]; }; then
+    # Not a plain move along the branch: a descendant off the branch (a patch release cut after the
+    # pin) or a diverged rev. Either is forward only onto a strictly newer toolchain, at a release
+    # tag or, for a diverged rev, on the branch.
     ML_TC_NEW="$(gh api "repos/$SLUG/contents/lean-toolchain?ref=$REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')" \
       || fail "cannot fetch mathlib lean-toolchain at $REV_P"
     newer="$(toolchain_newer "$TC_B" "$ML_TC_NEW")" \
-      || fail "mathlib rev is not a forward move from base: it diverged from $REV_B and its toolchain is not newer than base's ($newer)"
+      || fail "mathlib rev is not a forward move from base: it is $st_fwd of $REV_B, not a move along '$BRANCH', and its toolchain is not newer than base's ($newer)"
     # The tag is lean_versions.release_tag_of: the newest `v4.*` release tag on this commit (the
     # tags mathlib's ruleset makes release-manager-only and immutable), as the resolver reads them.
     TAG="$(python3 - "$(dirname "$0")" "$SLUG" "$REV_P" <<'PY' 2>&1
@@ -216,8 +225,10 @@ PY
     elif [ "$on_branch" = 1 ]; then
       echo "bump-guard: mathlib $REV_B -> $REV_P is on '$BRANCH', on newer toolchain $ML_TC_NEW."
     else
-      fail "mathlib new rev $REV_P diverged from $REV_B and is neither a release tag nor on branch '$BRANCH' (compare status: ${st_branch:-unknown})"
+      fail "mathlib new rev $REV_P is $st_fwd of $REV_B and is neither a release tag nor on branch '$BRANCH' (compare status: ${st_branch:-unknown})"
     fi
+  elif [ "$st_fwd" = ahead ]; then
+    fail "$NAME new rev $REV_P is not on branch '$BRANCH' (compare status: ${st_branch:-unknown})"
   else
     fail "$NAME rev is not a forward move from base (compare status: ${st_fwd:-unknown}); old=$REV_B new=$REV_P"
   fi

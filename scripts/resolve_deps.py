@@ -83,10 +83,10 @@ import base64
 import json
 import re
 import sys
-import tomllib
 from datetime import datetime
 from pathlib import Path
 
+import lake_requires
 import lean_versions
 import mathlib_cache
 from lean_versions import parse_toolchain, show_toolchain
@@ -228,9 +228,8 @@ def slug(url):
 
 def read_project(root):
     """[(name, repo, branch)] for the git requires, plus {name: rev} and the toolchain pinned now."""
-    lakefile = tomllib.loads((root / "lakefile.toml").read_text())
     requires = [(r["name"], slug(r["git"]), r.get("rev", "main"))
-                for r in lakefile.get("require", []) if r.get("git")]
+                for r in lake_requires.parse((root / "lakefile.toml").read_text()) if r.get("git")]
     manifest = json.loads((root / "lake-manifest.json").read_text())
     pins = {p["name"]: p["rev"] for p in manifest["packages"] if not p.get("inherited")}
     missing = [name for name, _, _ in requires if name not in pins]
@@ -301,15 +300,14 @@ class Resolver:
         if order in (None, "older"):
             return None
         status = self.src.compare(self.mathlib_repo, current, m)[0]
-        if status == "ahead":
+        on_branch = mathlib_cache.is_on_master(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0])
+        if status == "ahead" and on_branch:
             return "descendant"
-        if order == "same":
+        if status not in ("ahead", "diverged") or order == "same":
             return None
-        if m in self.tags:
+        if m in self.tags:  # a release tag, whether it descends from the pin or diverged from it
             return "release"
-        if mathlib_cache.is_on_master(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0]):
-            return "toolchain"
-        return None
+        return "toolchain" if status == "diverged" and on_branch else None
 
     def fit(self, commit, m):
         if commit["mathlib"] == m:
