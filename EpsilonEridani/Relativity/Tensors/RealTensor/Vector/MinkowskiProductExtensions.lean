@@ -14,9 +14,9 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
 companion to `Lorentz.Vector.minkowskiProduct_add_self`; the length of the spatial part of a
-vector on the mass shell `⟪p, p⟫ₘ = m²`, which is `√((p⁰)² - m²)`; and, in at least two spatial
-dimensions, the existence of two vectors on the mass shell with prescribed energies above the mass
-and a prescribed angle between their spatial parts.
+vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
+in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
+energies above the mass and a prescribed angle between their spatial parts.
 -/
 
 public section
@@ -34,13 +34,11 @@ lemma minkowskiProduct_sub_self {d : ℕ} (u v : Vector d) :
   rw [minkowskiProduct_symm v u]
   ring
 
-/-- On the mass shell `⟪p, p⟫ₘ = m²`, the spatial part of `p` has length `√((p⁰)² - m²)`. -/
-lemma norm_spatialPart_eq_sqrt {d : ℕ} (p : Vector d) {m : ℝ} (hp : ⟪p, p⟫ₘ = m ^ 2) :
-    ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - m ^ 2) := by
-  rw [minkowskiProduct_self_eq_sq_sub] at hp
-  rw [← Real.sqrt_sq (norm_nonneg p.spatialPart)]
-  congr 1
-  linarith
+/-- The spatial part of `p` has length `√((p⁰)² - ⟪p, p⟫ₘ)`; on the mass shell `⟪p, p⟫ₘ = m²`
+this is `√((p⁰)² - m²)`. -/
+lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vector d) :
+    ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - ⟪p, p⟫ₘ) := by
+  rw [minkowskiProduct_self_eq_sq_sub, sub_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
 
 end Vector
 end Lorentz
@@ -81,6 +79,10 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
       simp only [u]
       nlinarith [sq_abs (cos θ), sq_abs (sin θ), sin_sq_add_cos_sq θ]
     nlinarith [norm_nonneg u]
+  -- `Physlib` has no constructor from a time component and a spatial part with
+  -- `timeComponent`/`spatialPart` lemmas, so `p` and `p'` are built as raw functions on
+  -- `Fin 1 ⊕ Fin d`; `timeComponent` and `spatialPart` are the `abbrev`s `v (Sum.inl 0)` and
+  -- `toLp (fun i => v (Sum.inr i))`, so the four component equations below hold by `rfl`.
   let p : Lorentz.Vector d := fun μ => Sum.elim (fun _ => E) (fun i => (P • e₀) i) μ
   let p' : Lorentz.Vector d := fun μ => Sum.elim (fun _ => E') (fun i => (P' • u) i) μ
   have hps : p.spatialPart = P • e₀ := rfl
