@@ -11,9 +11,7 @@ dependencies' own manifests at the revs af23eb2 pins.
 """
 
 import base64
-import copy
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -22,6 +20,9 @@ import unittest
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+
+import fake_gh  # noqa: E402
 GUARD = HERE / "check-bump.sh"
 THREE = HERE / "bump_manifest_fixtures" / "three_deps"
 
@@ -31,29 +32,6 @@ PL_REV = "35d1bb4313be7127a39cd6cf29f02b758b9461b9"
 TC_OLD, TC_NEW = "cd742d8" + "0" * 33, "a1fff14d3219e392c7e25b0114bf5a24ba1e37bc"
 ML_TAG_REV, ML_MASTER_REV = "d13f23b723b8a846827a245b89c10fc7d3f11612", "5e0c4e5239cb0a2d86d68a884bf52cfd963fce22"
 LEAN = "leanprover/lean4:"
-
-FAKE_GH = r'''#!/usr/bin/env python3
-import json, os, subprocess, sys
-args = sys.argv[1:]
-assert args[0] == "api", args
-path, jq = args[1], None
-if "--jq" in args:
-    jq = args[args.index("--jq") + 1]
-db = json.load(open(os.environ["FAKE_GH_DB"]))
-with open(os.environ["FAKE_GH_LOG"], "a") as log:
-    log.write(path + "\n")
-if path not in db:
-    sys.stderr.write(f"gh: Not Found (HTTP 404) {path}\n")
-    sys.exit(1)
-body = json.dumps(db[path])
-if jq is None:
-    print(body)
-    sys.exit(0)
-out = subprocess.run(["jq", "-r", jq], input=body, capture_output=True, text=True)
-sys.stdout.write(out.stdout)
-sys.exit(out.returncode)
-'''
-
 
 def load(name):
     return json.loads((THREE / f"{name}.json").read_text())
@@ -120,15 +98,10 @@ class Scenario:
                 (d / side / "lake-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
                 (d / side / "lean-toolchain").write_text(tc + "\n")
                 (d / side / "lakefile.toml").write_text(lakefile)
-            (d / "bin").mkdir()
-            (d / "bin" / "gh").write_text(FAKE_GH)
-            (d / "bin" / "gh").chmod(0o755)
-            (d / "db.json").write_text(json.dumps(self.gh))
-            env = dict(os.environ, PATH=f"{d / 'bin'}:{os.environ['PATH']}",
-                       FAKE_GH_DB=str(d / "db.json"), FAKE_GH_LOG=str(d / "log"))
+            env = fake_gh.install(d, self.gh)
             out = subprocess.run(["bash", str(GUARD), str(d / "base"), str(d / "mergebase"), str(d / "pr")],
                                  capture_output=True, text=True, env=env)
-            self.calls = (d / "log").read_text().splitlines() if (d / "log").exists() else []
+            self.calls = fake_gh.calls(d)
             return out.returncode, out.stdout + out.stderr
 
 
@@ -225,7 +198,25 @@ class Guard(unittest.TestCase):
         self.assertPass(self.release(), "is release v4.34.1")
 
     def test_mathlib_patch_release_needs_its_release_cache(self):
-        self.assertFail(self.release(cached=False), "has no completed, successful release_cache.yml run")
+        self.assertFail(self.release(cached=False), "has no published cache")
+
+    def on_master_release(self, master_build_ok):
+        """Base on v4.34.1 (stable) moving to master's v4.35.0-rc1, a tag ON master. mathlib's
+        release_cache.yml skips such tags yet concludes success, so only the master build counts."""
+        s = Scenario()
+        s.move_mathlib(ML_MASTER_REV, "v4.35.0-rc1", "diverged", "ahead")
+        s.gh[f"repos/{ML}/tags?per_page=100"] = [{"name": "v4.35.0-rc1", "commit": {"sha": ML_MASTER_REV}}]
+        s.gh[f"repos/{ML}/actions/workflows/build.yml/runs?head_sha={ML_MASTER_REV}&event=push&per_page=20"] = \
+            master_build(master_build_ok)
+        s.gh[f"repos/{ML}/actions/workflows/release_cache.yml/runs?head_sha={ML_MASTER_REV}&per_page=20"] = \
+            {"workflow_runs": [{"head_branch": "v4.35.0-rc1", "status": "completed", "conclusion": "success"}]}
+        return s
+
+    def test_a_release_tag_on_master_is_not_cached_by_a_skipped_release_cache_run(self):
+        self.assertFail(self.on_master_release(master_build_ok=False), "has no published cache")
+
+    def test_a_release_tag_on_master_is_cached_by_its_master_build(self):
+        self.assertPass(self.on_master_release(master_build_ok=True), "has a successful master-push build")
 
     def test_mathlib_diverged_onto_the_same_toolchain_is_not_forward(self):
         self.assertFail(self.release(version="v4.34.0"), "toolchain is not newer than base's")

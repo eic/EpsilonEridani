@@ -8,6 +8,7 @@ once, so a drift in it fails here rather than as a resolver proposal the guard r
 """
 
 import os
+import subprocess
 import sys
 import unittest
 
@@ -54,6 +55,30 @@ class Toolchains(unittest.TestCase):
     def test_show_drops_the_prefix_and_marks_a_missing_pin(self):
         self.assertEqual(lv.show_toolchain(" leanprover/lean4:v4.34.0\n"), "v4.34.0")
         self.assertEqual(lv.show_toolchain(None), "?")
+
+
+class WhyNotNewer(unittest.TestCase):
+    def test_a_newer_release_is_newer(self):
+        for old, new in (("v4.34.0", "v4.34.1"), ("v4.35.0-rc3", "v4.35.0"), ("v4.34.1", "v4.35.0-rc1")):
+            self.assertIsNone(lv.why_not_newer(lv.TOOLCHAIN_PREFIX + old, lv.TOOLCHAIN_PREFIX + new), (old, new))
+
+    def test_older_and_equal_say_why(self):
+        old, new = lv.TOOLCHAIN_PREFIX + "v4.35.0", lv.TOOLCHAIN_PREFIX + "v4.35.0-rc3"
+        self.assertIn("moved backward", lv.why_not_newer(old, new))
+        self.assertIn("is not newer", lv.why_not_newer(old, old))
+
+    def test_anything_but_a_release_is_refused_whichever_side_it_is_on(self):
+        release, nightly = lv.TOOLCHAIN_PREFIX + "v4.34.0", lv.TOOLCHAIN_PREFIX + "nightly-2026-01-01"
+        for old, new in ((release, nightly), (nightly, release)):
+            self.assertIn("is not a leanprover/lean4 vX.Y.Z[-rcN] release", lv.why_not_newer(old, new))
+
+    def test_the_command_line_is_the_same_answer(self):
+        run = lambda *a: subprocess.run([sys.executable, lv.__file__, "newer", *a], capture_output=True, text=True)  # noqa: E731
+        ok = run(lv.TOOLCHAIN_PREFIX + "v4.34.0", lv.TOOLCHAIN_PREFIX + "v4.34.1")
+        self.assertEqual((ok.returncode, ok.stdout), (0, ""))
+        bad = run(lv.TOOLCHAIN_PREFIX + "v4.34.1", lv.TOOLCHAIN_PREFIX + "v4.34.0")
+        self.assertEqual(bad.returncode, 1)
+        self.assertIn("moved backward", bad.stdout)
 
 
 class ReleaseTags(unittest.TestCase):

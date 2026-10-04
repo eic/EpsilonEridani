@@ -100,17 +100,8 @@ TC_P="$(tr -d '[:space:]' <"$PR/lean-toolchain" 2>/dev/null)"
 [ -n "$TC_P" ] || fail "cannot read PR lean-toolchain"
 
 # Exit 0 when toolchain $2 is a strictly newer leanprover/lean4 release than $1; print why not.
-toolchain_newer() {
-  python3 - "$1" "$2" <<'PY'
-import re,sys
-def parse(t):
-    m=re.fullmatch(r"leanprover/lean4:v(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?", t)
-    if not m: print(f"toolchain '{t}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"); sys.exit(1)
-    x,y,z,rc=m.groups()
-    return (int(x),int(y),int(z), int(rc) if rc is not None else float("inf"))  # release > any rc of same X.Y.Z
-if not parse(sys.argv[2]) > parse(sys.argv[1]): print(f"{sys.argv[2]} is not newer than {sys.argv[1]}"); sys.exit(1)
-PY
-}
+# The order is lean_versions.py's, the one resolve_deps.py proposes moves by.
+toolchain_newer() { python3 "$(dirname "$0")/lean_versions.py" newer "$1" "$2"; }
 
 # Print one line per direct dependency (a package base's manifest does not mark
 # `inherited`): "name<TAB>url<TAB>base rev<TAB>PR rev<TAB>inputRev<TAB>manifest path", after
@@ -281,18 +272,7 @@ echo "bump-guard: the manifest is derived from ${DEP_NAMES[*]} at their new revs
 
 # --- 4. toolchain: monotonic forward AND consistent with mathlib --------------
 if [ "$TC_B" != "$TC_P" ]; then
-  tc_msg="$(python3 - "$(dirname "$0")" "$TC_B" "$TC_P" <<'PY'
-import sys
-sys.path.insert(0, sys.argv.pop(1))
-from lean_versions import parse_toolchain  # the order resolve_deps.py proposes moves by
-def parse(t):
-    v=parse_toolchain(t)
-    if v is None: print(f"toolchain '{t}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"); sys.exit(1)
-    return v  # release > any rc of same X.Y.Z
-b,p=parse(sys.argv[1]),parse(sys.argv[2])
-if p < b: print(f"toolchain moved backward ({sys.argv[1]} -> {sys.argv[2]})"); sys.exit(1)
-PY
-  )" || fail "${tc_msg:-toolchain is not a monotonic forward release}"
+  tc_msg="$(toolchain_newer "$TC_B" "$TC_P")" || fail "${tc_msg:-toolchain is not a monotonic forward release}"
 fi
 
 ML_TC="$(gh api "repos/$ML_SLUG/contents/lean-toolchain?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')" \

@@ -4,7 +4,8 @@ The bump guard (scripts/check-bump.sh), the toolchain tags (scripts/toolchain_ta
 dependency resolver (scripts/resolve_deps.py) must agree on which toolchain move is forward, or
 the resolver would propose pins the guard rejects. So the rule lives here once.
 
-Only python3's standard library.
+Only python3's standard library. Run as a script, `lean_versions.py newer OLD NEW` is the guard's
+toolchain check: exit 0 when NEW is a strictly newer release than OLD, else say why and exit 1.
 """
 
 import math
@@ -50,6 +51,19 @@ def show_toolchain(toolchain):
     return (toolchain or "?").strip().removeprefix(TOOLCHAIN_PREFIX)
 
 
+def why_not_newer(old, new):
+    """None when toolchain `new` is a strictly newer release than `old`; otherwise why not, in the
+    words check-bump.sh reports."""
+    for toolchain in (old, new):
+        if parse_toolchain(toolchain) is None:
+            return f"toolchain '{toolchain}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"
+    if parse_toolchain(new) < parse_toolchain(old):
+        return f"toolchain moved backward ({old} -> {new})"
+    if parse_toolchain(new) == parse_toolchain(old):
+        return f"{new} is not newer than {old}"
+    return None
+
+
 def release_refs(gh, repo):
     """{release name: (object sha, object type)} for a repository's vX.Y.Z[-rcN] tags, in one
     request. `gh(path, jq=...)` is the caller's `gh api` wrapper; it may answer None."""
@@ -74,3 +88,14 @@ def release_tags(gh, repo, resolve=None):
     dereferences annotated tags, when the listing's `gh` is a lenient one that may answer None."""
     resolve = resolve or gh
     return {name: tag_commit(resolve, repo, sha, kind) for name, (sha, kind) in release_refs(gh, repo).items()}
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 4 or sys.argv[1] != "newer":
+        sys.exit("usage: lean_versions.py newer OLD NEW")
+    reason = why_not_newer(sys.argv[2], sys.argv[3])
+    if reason:
+        print(reason)
+        sys.exit(1)
