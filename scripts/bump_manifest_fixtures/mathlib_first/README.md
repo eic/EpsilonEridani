@@ -12,6 +12,9 @@ The eight packages that TauCeti pins differently from mathlib and Physlib (Cli, 
 Qq, aesop, batteries, importGraph, plausible, proofwidgets) are TauCeti's in `root.json` and mathlib's
 (= Physlib's) in `../three_deps/base.json`. Only the order of the requires differs.
 
+`root.json` and `TauCeti.json` are stored compact (one line, same content as the files Lake and TauCeti
+write; `python3 -m json.tool FILE` reads them), to keep the PR under the repository's diff-size cap.
+
 Used by test_bump_manifest.py (`LastRequireWins`). bump_manifest.py derives each shared package from the
 dependency the lakefile requires last, and reproduces both manifests: `root.json` with the order
 mathlib, Physlib, TauCeti, and `../three_deps/pr.json` with Physlib, TauCeti, mathlib. In `root.json`
