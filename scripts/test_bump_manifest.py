@@ -219,7 +219,7 @@ class LastRequireWins(unittest.TestCase):
 
     def mathlib_first(self):
         deps = {"mathlib": self.load(THREE, "mathlib"), "Physlib": self.load(THREE, "Physlib"),
-                "TauCeti": self.load(MATHLIB_FIRST, "TauCeti")}
+                "TauCeti": self.load(THREE, "TauCeti")}  # unchanged between 85e8005e and a1fff14
         return self.load(MATHLIB_FIRST, "root"), deps
 
     def test_the_two_orders_disagree_on_the_same_eight_packages(self):
@@ -259,7 +259,7 @@ class LastRequireWins(unittest.TestCase):
         root, _ = self.mathlib_first()
         args = [str(MATHLIB_FIRST / "root.json"), str(MATHLIB_FIRST / "root.json"),
                 f"mathlib={THREE / 'mathlib.json'}", f"Physlib={THREE / 'Physlib.json'}",
-                f"TauCeti={MATHLIB_FIRST / 'TauCeti.json'}"]
+                f"TauCeti={THREE / 'TauCeti.json'}"]
         script = pathlib.Path(__file__).with_name("bump_manifest.py")
         run = lambda *a: subprocess.run([sys.executable, str(script), *a], capture_output=True, text=True)  # noqa: E731
         self.assertEqual(run("--order", "mathlib,Physlib,TauCeti", *args).stdout.strip(), "OK")
@@ -267,8 +267,8 @@ class LastRequireWins(unittest.TestCase):
 
 
 class ThreeDependencies(unittest.TestCase):
-    def assertRejected(self, pr, base, deps, fragment):
-        found = problems(pr, base, deps)
+    def assertRejected(self, pr, base, deps, fragment, order=None):
+        found = problems(pr, base, deps, order)
         self.assertTrue(found, "expected a problem, got none")
         self.assertIn(fragment, " ".join(found))
 
@@ -313,17 +313,12 @@ class ThreeDependencies(unittest.TestCase):
         self.assertEqual(about(tauceti_last), [])
         self.assertIn("does not match Physlib@new's", " ".join(about(physlib_last)))
 
-    def assertRejected_with_order(self, pr, base, deps, order, fragment):
-        found = problems(pr, base, deps, order)
-        self.assertTrue(found, "expected a problem, got none")
-        self.assertIn(fragment, " ".join(found))
-
     def test_the_order_must_name_exactly_the_direct_dependencies(self):
         pr, base, deps = three()
         for order in (["Physlib", "mathlib"], ["Physlib", "TauCeti", "mathlib", "Extra"],
                       ["Physlib", "Physlib", "mathlib"]):
             with self.subTest(order=order):
-                self.assertRejected_with_order(pr, base, deps, order, "is not exactly the direct dependencies")
+                self.assertRejected(pr, base, deps, "is not exactly the direct dependencies", order)
 
     def test_a_package_nobody_pins_is_rejected(self):
         pr, base, deps = three()

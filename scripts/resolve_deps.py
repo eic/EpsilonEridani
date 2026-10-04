@@ -20,7 +20,8 @@ No dependency is special. Every candidate mathlib commit M comes from somewhere 
     published; the same signal scripts/check-bump.sh step 2b requires);
   * every mathlib commit that a candidate commit of a dependency pins.
 
-M must be a forward move from the current pin: a descendant of it on mathlib's nominated branch
+M must be a forward move from the current pin (the rule is scripts/bump_moves.py, which
+scripts/check-bump.sh calls too): a descendant of it on mathlib's nominated branch
 (`descendant`), or, with a strictly newer toolchain, a mathlib `v4.*` release tag (`release`;
 `v4.34.1` lives on mathlib's `stable` branch, not on master, and a tag cut after the pin descends
 from it while off master, so an off-master descendant qualifies only as a release) or, for a rev
@@ -82,11 +83,11 @@ build already failed inside a dependency, so the next feasible set is offered in
 import argparse
 import base64
 import json
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
 
+import bump_moves
 import lake_requires
 import lean_versions
 import mathlib_cache
@@ -222,13 +223,9 @@ def newness(entry):
 
 # --- the project's own configuration --------------------------------------------------------------
 
-def slug(url):
-    return re.sub(r"(^https?://github\.com/|\.git$|/$)", "", url)
-
-
 def read_project(root):
     """[(name, repo, branch)] for the git requires, plus {name: rev} and the toolchain pinned now."""
-    requires = [(r["name"], slug(r["git"]), r.get("rev", "main"))
+    requires = [(r["name"], lake_requires.repo_slug(r["git"]), r.get("rev", "main"))
                 for r in lake_requires.parse((root / "lakefile.toml").read_text()) if r.get("git")]
     manifest = json.loads((root / "lake-manifest.json").read_text())
     pins = {p["name"]: p["rev"] for p in manifest["packages"] if not p.get("inherited")}
@@ -299,13 +296,8 @@ class Resolver:
             return None
         status = self.src.compare(self.mathlib_repo, current, m)[0]
         on_branch = mathlib_cache.is_on_master(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0])
-        if status == "ahead" and on_branch:
-            return "descendant"
-        if status not in ("ahead", "diverged") or order == "same":
-            return None
-        if m in self.tags:  # a release tag, whether it descends from the pin or diverged from it
-            return "release"
-        return "toolchain" if status == "diverged" and on_branch else None
+        kind, _ = bump_moves.mathlib_move(status, on_branch, lambda: order, lambda: m in self.tags)
+        return kind
 
     def fit(self, commit, m):
         if commit["mathlib"] == m:

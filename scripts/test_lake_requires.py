@@ -49,5 +49,20 @@ class Requires(unittest.TestCase):
             lr.names("[[require\nname = ")
 
 
+class RepoSlug(unittest.TestCase):
+    def test_every_spelling_of_a_github_url_gives_owner_repo(self):
+        for url in ("https://github.com/leanprover-community/mathlib4", "https://github.com/leanprover-community/mathlib4/",
+                    "https://github.com/leanprover-community/mathlib4.git", "http://github.com/leanprover-community/mathlib4.git/",
+                    " https://github.com/leanprover-community/mathlib4 \n", "leanprover-community/mathlib4"):
+            self.assertEqual(lr.repo_slug(url), "leanprover-community/mathlib4", url)
+
+    def test_another_host_is_left_whole_so_a_repo_swap_still_differs(self):
+        self.assertNotEqual(lr.repo_slug("https://evil.example/leanprover-community/mathlib4"),
+                            lr.repo_slug("https://github.com/leanprover-community/mathlib4"))
+
+    def test_nothing(self):
+        self.assertEqual(lr.repo_slug(None), "")
+
+
 if __name__ == "__main__":
     unittest.main()

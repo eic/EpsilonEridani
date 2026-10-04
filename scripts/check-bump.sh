@@ -19,7 +19,8 @@
 #      40-hex commit SHA, and keeps base's url and inputRev (its nominated branch).
 #      A rev that changed must move forward (via the GitHub compare API; the SHA
 #      requirement makes the compared revs immutable, so what we validate is exactly
-#      what Lake will resolve and build):
+#      what Lake will resolve and build). The rule is scripts/bump_moves.py, which
+#      scripts/resolve_deps.py reads too, so the resolver offers exactly what is accepted:
 #        * any direct dependency: the new rev is a *descendant of the old rev* AND
 #          *on the nominated branch's history*;
 #        * mathlib only, when the new rev is not on the branch's history or diverged
@@ -119,8 +120,6 @@ PY
   || fail "mathlib is not the last require in lakefile.toml (the order is '${require_order:-none}'): Lake takes the pins of the last require, so the derived manifest (step 3) would not be what Lake writes"
 
 # --- helpers ------------------------------------------------------------------
-# owner/repo slug from a github url
-slug() { sed -E 's#^https?://github.com/##; s#/$##; s#\.git$##' <<<"$1"; }
 
 TC_B="$(tr -d '[:space:]' <"$BASE/lean-toolchain" 2>/dev/null)"
 TC_P="$(tr -d '[:space:]' <"$PR/lean-toolchain" 2>/dev/null)"
@@ -132,7 +131,7 @@ TC_P="$(tr -d '[:space:]' <"$PR/lean-toolchain" 2>/dev/null)"
 toolchain_newer() { python3 "$(dirname "$0")/lean_versions.py" newer "$1" "$2"; }
 
 # Print one line per direct dependency (a package base's manifest does not mark
-# `inherited`): "name<TAB>url<TAB>base rev<TAB>PR rev<TAB>inputRev<TAB>manifest path", after
+# `inherited`): "name<TAB>owner/repo<TAB>base rev<TAB>PR rev<TAB>inputRev<TAB>manifest path", after
 # asserting: no duplicate names in either manifest, mathlib among them, and each one exactly
 # once in the PR, of type git, with a 40-hex commit-SHA rev, base's url and base's inputRev.
 # Url, inputRev and manifest path are base's, the trusted side. Any violation prints
@@ -142,6 +141,7 @@ direct_deps() {
 import json,sys,re
 sys.path.insert(0, sys.argv.pop(1))
 from bump_manifest import shape  # the one manifest-shape check (step 3 reads it too)
+from lake_requires import repo_slug as norm  # the one url normalisation (the resolver reads it too)
 def load(path, which):
     try:
         m=json.load(open(path))
@@ -150,7 +150,6 @@ def load(path, which):
     found=shape(which, m)
     if found: print(f"ERROR: {found[0]}"); sys.exit(1)
     return {p["name"]: p for p in m["packages"]}
-def norm(url): return (url or "").rstrip("/").removesuffix(".git")
 base, pr = load(sys.argv[1], "base"), load(sys.argv[2], "PR")
 direct=[n for n, p in base.items() if p.get("inherited") is False]
 if "mathlib" not in direct: print("ERROR: base manifest has no direct 'mathlib' package"); sys.exit(1)
@@ -177,7 +176,7 @@ directs="$(direct_deps "$BASE/lake-manifest.json" "$PR/lake-manifest.json")" || 
 DEP_NAMES=(); DEP_SLUGS=(); DEP_REVS=(); DEP_MANIFESTS=()
 moved=0
 while IFS=$'\t' read -r -u 3 NAME URL REV_B REV_P BRANCH MPATH; do
-  SLUG="$(slug "$URL")"
+  SLUG="$URL"  # direct_deps prints lake_requires.repo_slug(url)
   DEP_NAMES+=("$NAME"); DEP_SLUGS+=("$SLUG"); DEP_REVS+=("$REV_P"); DEP_MANIFESTS+=("$MPATH")
   if [ "$NAME" = mathlib ]; then ML_SLUG="$SLUG"; ML_REV_P="$REV_P"; fi
   if [ "$REV_B" = "$REV_P" ]; then
@@ -190,46 +189,16 @@ while IFS=$'\t' read -r -u 3 NAME URL REV_B REV_P BRANCH MPATH; do
   # Membership is checked against the trusted branch nominated by base's manifest.
   st_branch="$(gh api "repos/$SLUG/compare/$REV_P...$BRANCH" --jq '.status' 2>/dev/null)" \
     || fail "compare API failed for $SLUG $REV_P...$BRANCH"
-  on_branch=0
-  case "$st_branch" in ahead|identical) on_branch=1 ;; esac  # the branch tip is at-or-ahead of new
-  TAG=""
-  if [ "$st_fwd" = ahead ] && [ "$on_branch" = 1 ]; then
-    echo "bump-guard: $NAME $REV_B -> $REV_P is a forward move on '$BRANCH'."
-  elif [ "$NAME" = mathlib ] && { [ "$st_fwd" = ahead ] || [ "$st_fwd" = diverged ]; }; then
-    # Not a plain move along the branch: a descendant off the branch (a patch release cut after the
-    # pin) or a diverged rev. Either is forward only onto a strictly newer toolchain, at a release
-    # tag or, for a diverged rev, on the branch.
-    ML_TC_NEW="$(gh api "repos/$SLUG/contents/lean-toolchain?ref=$REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')" \
-      || fail "cannot fetch mathlib lean-toolchain at $REV_P"
-    newer="$(toolchain_newer "$TC_B" "$ML_TC_NEW")" \
-      || fail "mathlib rev is not a forward move from base: it is $st_fwd of $REV_B, not a move along '$BRANCH', and its toolchain is not newer than base's ($newer)"
-    # The tag is lean_versions.release_tag_of: the newest `v4.*` release tag on this commit (the
-    # tags mathlib's ruleset makes release-manager-only and immutable), as the resolver reads them.
-    TAG="$(python3 - "$(dirname "$0")" "$SLUG" "$REV_P" <<'PY' 2>&1
-import sys
-sys.path.insert(0, sys.argv.pop(1))
-from lean_versions import release_tag_of
-from pr_status.core import gh_api
-slug, rev = sys.argv[1:3]
-try:
-    print(release_tag_of(lambda path, jq=None: gh_api(path, jq).strip(), slug, rev) or "")
-except Exception as exc:
-    print(f"ERROR: cannot list the release tags of {slug}: {exc}")
-    sys.exit(2)
-PY
-    )" || fail "${TAG#ERROR: }"
-    if [ -n "$TAG" ]; then
-      echo "bump-guard: mathlib $REV_B -> $REV_P is release $TAG, on newer toolchain $ML_TC_NEW."
-    elif [ "$on_branch" = 1 ]; then
-      echo "bump-guard: mathlib $REV_B -> $REV_P is on '$BRANCH', on newer toolchain $ML_TC_NEW."
-    else
-      fail "mathlib new rev $REV_P is $st_fwd of $REV_B and is neither a release tag nor on branch '$BRANCH' (compare status: ${st_branch:-unknown})"
-    fi
-  elif [ "$st_fwd" = ahead ]; then
-    fail "$NAME new rev $REV_P is not on branch '$BRANCH' (compare status: ${st_branch:-unknown})"
-  else
-    fail "$NAME rev is not a forward move from base (compare status: ${st_fwd:-unknown}); old=$REV_B new=$REV_P"
-  fi
+  # What to make of the move is bump_moves.py's rule, the one resolve_deps.py's `forward` reads too.
+  # Beyond the two compares it needs mathlib's new toolchain and release tag, which it fetches only
+  # if the rule reaches them. It prints the verdict, then the toolchain, the tag and "1"/"0" for
+  # "on the branch", which step 2b and step 4 reuse.
+  move_rc=0
+  move_out="$(python3 "$(dirname "$0")/bump_moves.py" move "$NAME" "$st_fwd" "$st_branch" "$BRANCH" "$TC_B" "$REV_B" "$REV_P" "$SLUG" 2>&1)" || move_rc=$?
+  { IFS= read -r move_msg; IFS= read -r move_toolchain; IFS= read -r TAG; IFS= read -r on_branch; } <<<"$move_out"
+  [ "$move_rc" = 0 ] || fail "${move_msg#ERROR: }"
+  echo "bump-guard: $move_msg"
+  [ "$NAME" = mathlib ] && ML_TC_NEW="$move_toolchain"
   [ "$NAME" = mathlib ] || continue
 
   # --- 2b. the new mathlib rev is one whose cache was actually published --------

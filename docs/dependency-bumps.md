@@ -30,7 +30,8 @@ mathlib's `stable` branch, not on master, and one cut after the pin descends fro
 master) or, if it diverged from the pin, a commit on master (the way back from a patch release).
 A diverged rev leaves out commits the pin has; on 2026-10-03 the move to `v4.34.1` left out
 one. The report counts them (`dropped_commits`) and the summary says so.
-`check-bump.sh` accepts exactly these moves (see below).
+`check-bump.sh` accepts exactly these moves (see below): both call the one rule in
+`scripts/bump_moves.py`.
 
 A new candidate is only offered once mathlib's **cache is published** for it: a successful
 master-push `build.yml` run (as `check-bump.sh` step 2b requires), or, for a release tag off
