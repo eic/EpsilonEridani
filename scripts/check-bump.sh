@@ -146,9 +146,10 @@ else
   # --- 2b. the new rev is one whose cache was actually published ---------------
   # Being on master is not enough. Mathlib lands in batches: bors tests a batch and
   # fast-forwards master over all of its commits, but only the resulting master tip is
-  # built by the push-triggered CI run, and that run is the only one that publishes to
-  # the `mathlib4-master` cache container (mathlib's build.yml gates `publish_cache` on
-  # `event_name == 'push' && ref == 'refs/heads/master'`). A batch's intermediate commits
+  # built by the push-triggered CI run, and that run is the one that publishes to the
+  # `mathlib4-master` cache container (its `upload_cache` job gets the master writer when
+  # `ref_name == 'master'`; asking for `event=push` is this check's own narrowing, to the
+  # build of the batch's final commit). A batch's intermediate commits
   # are ordinary ancestors whose oleans were never uploaded, so pinning to one costs every
   # downstream build a full recompile of whatever that commit invalidated: a rename in a
   # core algebra file is ~1400 modules and about an hour, on every CI run and every
@@ -160,10 +161,25 @@ else
   # green bors status while its cache is still hours away. Coupling to upstream's workflow
   # file name is deliberate. If it is renamed this check fails closed and the bump routes
   # to a human, which is the safe direction for a trust anchor.
-  pub="$(gh api "repos/$ML_SLUG/actions/workflows/build.yml/runs?head_sha=$ML_REV_P&event=push&per_page=20" \
-    --jq '[.workflow_runs[] | select(.head_branch == "master" and .status == "completed" and .conclusion == "success")] | length' 2>&1)" \
-    || fail "workflow-runs API failed for $ML_SLUG $ML_REV_P: $pub"
-  [ "${pub:-0}" -gt 0 ] 2>/dev/null \
+  # The question itself lives in mathlib_cache.py, which resolve_deps.py asks too: the resolver must
+  # not propose a rev this step would refuse.
+  pub_rc=0
+  pub_msg="$(python3 - "$(dirname "$0")" "$ML_SLUG" "$ML_REV_P" <<'PY' 2>&1
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+from mathlib_cache import master_build_published
+from pr_status.core import gh_api
+slug, rev = sys.argv[1:3]
+try:
+    published = master_build_published(gh_api, slug, rev)
+except Exception as exc:
+    print(f"workflow-runs API failed for {slug} {rev}: {exc}")
+    sys.exit(2)
+sys.exit(0 if published else 1)
+PY
+  )" || pub_rc=$?
+  [ "$pub_rc" -ne 2 ] || fail "$pub_msg"
+  [ "$pub_rc" -eq 0 ] \
     || fail "mathlib rev $ML_REV_P has no completed, successful master-push build, so its oleans were never published to the cache; bump to the built tip of that batch, or wait for its build to finish"
   echo "bump-guard: mathlib $ML_REV_P has a successful master-push build, so its cache is published."
 fi
@@ -184,13 +200,14 @@ TC_P="$(tr -d '[:space:]' <"$PR/lean-toolchain" 2>/dev/null)"
 [ -n "$TC_P" ] || fail "cannot read PR lean-toolchain"
 
 if [ "$TC_B" != "$TC_P" ]; then
-  tc_msg="$(python3 - "$TC_B" "$TC_P" <<'PY'
-import re,sys
+  tc_msg="$(python3 - "$(dirname "$0")" "$TC_B" "$TC_P" <<'PY'
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+from lean_versions import parse_toolchain  # the order resolve_deps.py proposes moves by
 def parse(t):
-    m=re.fullmatch(r"leanprover/lean4:v(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?", t)
-    if not m: print(f"toolchain '{t}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"); sys.exit(1)
-    x,y,z,rc=m.groups()
-    return (int(x),int(y),int(z), int(rc) if rc is not None else float("inf"))  # release > any rc of same X.Y.Z
+    v=parse_toolchain(t)
+    if v is None: print(f"toolchain '{t}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"); sys.exit(1)
+    return v  # release > any rc of same X.Y.Z
 b,p=parse(sys.argv[1]),parse(sys.argv[2])
 if p < b: print(f"toolchain moved backward ({sys.argv[1]} -> {sys.argv[2]})"); sys.exit(1)
 PY

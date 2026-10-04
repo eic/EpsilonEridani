@@ -22,26 +22,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toolchain_tags as tt  # noqa: E402
 
 
-class VersionNames(unittest.TestCase):
-    def test_releases_and_rcs_parse(self):
-        self.assertEqual(tt.parse_release("v4.33.0")[:3], (4, 33, 0))
-        self.assertEqual(tt.parse_release("v4.33.0-rc2")[3], 2)
-
-    def test_non_releases_do_not(self):
-        for name in ("v2024", "v4.32.0-rc1-patch1", "nightly-2026-01-01", "", None):
-            self.assertIsNone(tt.parse_release(name), name)
-
-    def test_a_final_release_sorts_after_its_own_rcs(self):
-        order = ["v4.32.1", "v4.33.0-rc1", "v4.33.0-rc2", "v4.33.0", "v4.34.0-rc1"]
-        self.assertEqual(sorted(order, key=tt.release_key), order)
-
-    def test_only_release_toolchains_name_a_release(self):
-        self.assertEqual(tt.release_of_toolchain("leanprover/lean4:v4.33.0"), "v4.33.0")
-        self.assertIsNone(tt.release_of_toolchain("leanprover/lean4:nightly-2026-01-01"))
-        self.assertIsNone(tt.release_of_toolchain("leanprover/lean4-pr-releases:pr-1"))
-        self.assertIsNone(tt.release_of_toolchain(""))
-
-
 class TagMessage(unittest.TestCase):
     ROW = {"release": "v4.33.0-rc2", "toolchain": "leanprover/lean4:v4.33.0-rc2",
            "commit": "f" * 40, "mathlib_rev": "9" * 40, "status": "ready", "reason": None}
