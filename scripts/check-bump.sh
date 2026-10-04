@@ -11,8 +11,8 @@
 # forward and match mathlib's:
 #
 #   1. lakefile.toml / lakefile.lean are byte-identical to base, and mathlib is the
-#      LAST `require` in lakefile.toml (Lake takes the pins of the last require, which is
-#      what step 3's "a package mathlib pins is mathlib's entry" relies on).
+#      LAST `require` in lakefile.toml (Lake takes the pins of the last require that pins
+#      a package; step 3 derives shared packages from the dependency declared last).
 #   2. The direct dependencies are the packages base's manifest does not mark
 #      `inherited` (mathlib, Physlib, TauCeti); mathlib must be one of them. Each is
 #      the ONLY package of its name in the PR manifest, a `git` package pinned to a
@@ -35,13 +35,11 @@
 #   3. Everything else in the PR manifest is DERIVED from the direct dependencies'
 #      own manifests at their new revs, comparing WHOLE entries (only `inherited` may
 #      differ, and must be true): the package set is exactly their union, a package
-#      mathlib pins is mathlib's entry (Lake takes the pins of the LAST require, and
-#      lakefile.toml declares mathlib last), and one only other dependencies pin is
-#      the entry of one of them (which of two such dependencies Lake takes is not
-#      settled by any real manifest, so either is accepted) — no package added,
-#      removed, renamed, retyped (e.g. a `path` dep), duplicated, re-pointed, or
-#      re-configured (`subDir`, `configFile`, `manifestFile`, `scope`) independently
-#      of them. Each direct entry differs from
+#      pinned by several of them is the entry of the one lakefile.toml requires LAST
+#      (Lake takes the pins of the last require: mathlib's, then TauCeti's, then
+#      Physlib's) — no package added, removed, renamed, retyped (e.g. a `path` dep),
+#      duplicated, re-pointed, or re-configured (`subDir`, `configFile`,
+#      `manifestFile`, `scope`) independently of them. Each direct entry differs from
 #      base only in `rev`, and every top-level field (`packagesDir`, `lakeDir`, ...)
 #      equals base. See scripts/bump_manifest.py.
 #   4. lean-toolchain moves monotonically forward on the leanprover/lean4 channel
@@ -96,20 +94,20 @@ for f in lakefile.toml lakefile.lean; do
   fi
 done
 
-# --- 1b. mathlib is the LAST require ------------------------------------------
-# Step 3 takes a package mathlib pins to be mathlib's entry. That is what Lake writes because it
-# takes the pins of the LAST require that pins a package, and lakefile.toml declares mathlib last
-# (EpsilonEridani 749caa977 vs 2a2b8dc: scripts/bump_manifest_fixtures/mathlib_first). The rule is
-# only true for that order, so check the premise instead of assuming it. The lakefile is the same on
-# both sides (step 1), so base's is read. Fail closed when it cannot be read.
+# --- 1b. the order of the requires -------------------------------------------
+# Lake takes the pins of the LAST require that pins a package (EpsilonEridani 749caa977 vs 2a2b8dc:
+# scripts/bump_manifest_fixtures/mathlib_first), so step 3 derives each shared package from the
+# last-declared dependency that pins it, and needs this order to do so. mathlib must be last: its
+# cache was built against its own pins. The lakefile is the same on both sides (step 1), so base's is
+# read. Fail closed when it cannot be read.
 [ -f "$BASE/lakefile.toml" ] \
-  || fail "cannot check that mathlib is the last require: base has no lakefile.toml"
-last_require="$(awk '/^\[\[require\]\]/ { r = 1; n = ""; next }
-                     /^\[/ { r = 0 }
-                     r && /^[[:space:]]*name[[:space:]]*=/ { split($0, q, "\""); n = q[2]; r = 0 }
-                     END { print n }' "$BASE/lakefile.toml")"
-[ "$last_require" = mathlib ] \
-  || fail "mathlib is not the last require in lakefile.toml (the last is '${last_require:-none}'): Lake takes the pins of the last require, so the derived manifest (step 3) would not be what Lake writes"
+  || fail "cannot check the order of the requires: base has no lakefile.toml"
+require_order="$(awk '/^\[\[require\]\]/ { r = 1; next }
+                      /^\[/ { r = 0 }
+                      r && /^[[:space:]]*name[[:space:]]*=/ { split($0, q, "\""); printf "%s%s", sep, q[2]; sep = ","; r = 0 }' \
+                 "$BASE/lakefile.toml")"
+[ "${require_order##*,}" = mathlib ] \
+  || fail "mathlib is not the last require in lakefile.toml (the order is '${require_order:-none}'): Lake takes the pins of the last require, so the derived manifest (step 3) would not be what Lake writes"
 
 # --- helpers ------------------------------------------------------------------
 # owner/repo slug from a github url
@@ -198,8 +196,21 @@ while IFS=$'\t' read -r -u 3 NAME URL REV_B REV_P BRANCH MPATH; do
       || fail "cannot fetch mathlib lean-toolchain at $REV_P"
     newer="$(toolchain_newer "$TC_B" "$ML_TC_NEW")" \
       || fail "mathlib rev is not a forward move from base: it diverged from $REV_B and its toolchain is not newer than base's ($newer)"
-    TAG="$(gh api "repos/$SLUG/tags?per_page=100" --paginate --jq ".[] | select(.commit.sha == \"$REV_P\") | .name" 2>/dev/null \
-      | grep -E '^v4\.[0-9]+\.[0-9]+(-rc[0-9]+)?$' | head -n1)"
+    # The tag is lean_versions.release_tag_of: the newest `v4.*` release tag on this commit (the
+    # tags mathlib's ruleset makes release-manager-only and immutable), as the resolver reads them.
+    TAG="$(python3 - "$(dirname "$0")" "$SLUG" "$REV_P" <<'PY' 2>&1
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+from lean_versions import release_tag_of
+from pr_status.core import gh_api
+slug, rev = sys.argv[1:3]
+try:
+    print(release_tag_of(lambda path, jq=None: gh_api(path, jq).strip(), slug, rev) or "")
+except Exception as exc:
+    print(f"ERROR: cannot list the release tags of {slug}: {exc}")
+    sys.exit(2)
+PY
+    )" || fail "${TAG#ERROR: }"
     if [ -n "$TAG" ]; then
       echo "bump-guard: mathlib $REV_B -> $REV_P is release $TAG, on newer toolchain $ML_TC_NEW."
     elif [ "$on_branch" = 1 ]; then
@@ -289,7 +300,7 @@ for i in "${!DEP_NAMES[@]}"; do
   DEP_ARGS+=("$n=$f")
 done
 
-derived_msg="$(python3 "$(dirname "$0")/bump_manifest.py" "$PR/lake-manifest.json" "$BASE/lake-manifest.json" "${DEP_ARGS[@]}")" \
+derived_msg="$(python3 "$(dirname "$0")/bump_manifest.py" --order "$require_order" "$PR/lake-manifest.json" "$BASE/lake-manifest.json" "${DEP_ARGS[@]}")" \
   || fail "${derived_msg:-transitive pins do not match the direct dependencies at their new revs}"
 echo "bump-guard: the manifest is derived from ${DEP_NAMES[*]} at their new revs and matches base in every other field."
 
@@ -298,7 +309,8 @@ if [ "$TC_B" != "$TC_P" ]; then
   tc_msg="$(toolchain_newer "$TC_B" "$TC_P")" || fail "${tc_msg:-toolchain is not a monotonic forward release}"
 fi
 
-ML_TC="$(gh api "repos/$ML_SLUG/contents/lean-toolchain?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')" \
+# mathlib's toolchain at its new rev is already in hand when step 2 fetched it for a diverged move
+ML_TC="${ML_TC_NEW:-$(gh api "repos/$ML_SLUG/contents/lean-toolchain?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')}" \
   || fail "cannot fetch mathlib lean-toolchain at $ML_REV_P"
 [ "$TC_P" = "$ML_TC" ] || fail "PR lean-toolchain ($TC_P) != mathlib@$ML_REV_P's ($ML_TC)"
 echo "bump-guard: toolchain $TC_B -> $TC_P is forward and matches mathlib@$ML_REV_P."

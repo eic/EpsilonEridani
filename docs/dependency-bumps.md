@@ -103,13 +103,14 @@ through `gh api`, and runs nothing from the PR. It accepts a pin change only whe
    mathlib rev must have a published cache: a master-push build, or for a tag off master a
    `release_cache.yml` run.
 3. Every other entry is derived from the direct dependencies' own manifests at their new revs
-   (`scripts/bump_manifest.py`): the package set is their union; a package mathlib pins is
-   mathlib's entry (`lakefile.toml` declares mathlib last and Lake takes the pins of the last
-   require, so mathlib's are the ones it writes, and its cache was built against them); one only
-   Physlib or TauCeti pins is the entry of one of them. When both do, either is accepted: no
-   real manifest shows which Lake takes. The last-require-wins rule is established by the real
-   `lake update` outputs before and after commit 2a2b8dc moved mathlib to the bottom (see
-   `scripts/bump_manifest_fixtures/mathlib_first/README.md`).
+   (`scripts/bump_manifest.py`): the package set is their union, and a package several of them
+   pin is the entry of the one `lakefile.toml` requires **last**, because Lake takes the pins of
+   the last require that pins a package. The lakefile requires Physlib, TauCeti, mathlib, so a
+   package mathlib pins is mathlib's (its cache was built against it) and one only Physlib and
+   TauCeti pin is TauCeti's. The rule is established by the real `lake update` outputs before and
+   after commit 2a2b8dc moved mathlib to the bottom (see
+   `scripts/bump_manifest_fixtures/mathlib_first/README.md`), and the guard reads the order from
+   base's lakefile rather than assuming it (and requires mathlib to be last).
 4. `lean-toolchain` moves forward and equals mathlib's at its new rev.
 
 Moving Physlib or TauCeti forward on its branch can therefore merge without a human, as

@@ -236,13 +236,34 @@ class LastRequireWins(unittest.TestCase):
         self.assertEqual(self.pins(pr, TAUCETI_ONLY_DIFFERS), self.pins(deps["mathlib"], TAUCETI_ONLY_DIFFERS))
         self.assertNotEqual(self.pins(pr, TAUCETI_ONLY_DIFFERS), self.pins(deps["TauCeti"], TAUCETI_ONLY_DIFFERS))
 
-    def test_the_rule_is_for_the_mathlib_last_lakefile_only(self):
-        # The mathlib-first manifest is genuine Lake output, and the guard rejects it: its rule holds
-        # for the lakefile it keeps byte-identical to base, which declares mathlib last.
+    def test_the_derivation_reproduces_the_mathlib_first_manifest_given_its_order(self):
         root, deps = self.mathlib_first()
-        found = problems(root, root, deps)
+        self.assertEqual(problems(root, root, deps, ["mathlib", "Physlib", "TauCeti"]), [])
+
+    def test_the_derivation_reproduces_the_mathlib_last_manifest_given_its_order(self):
+        pr, base, deps = three()
+        self.assertEqual(problems(pr, base, deps, ["Physlib", "TauCeti", "mathlib"]), [])
+
+    def test_the_wrong_order_for_a_manifest_is_rejected(self):
+        # the same genuine manifests, judged under the other order, are not what Lake would write
+        root, deps = self.mathlib_first()
+        found = problems(root, root, deps, ["Physlib", "TauCeti", "mathlib"])
         for name in TAUCETI_ONLY_DIFFERS:
             self.assertTrue(any(f"dep {name!r} does not match mathlib@new's" in f for f in found), name)
+        pr, base, deps = three()
+        found = problems(pr, base, deps, ["mathlib", "Physlib", "TauCeti"])
+        for name in TAUCETI_ONLY_DIFFERS:
+            self.assertTrue(any(f"dep {name!r} does not match TauCeti@new's" in f for f in found), name)
+
+    def test_the_command_line_takes_the_order(self):
+        root, _ = self.mathlib_first()
+        args = [str(MATHLIB_FIRST / "root.json"), str(MATHLIB_FIRST / "root.json"),
+                f"mathlib={THREE / 'mathlib.json'}", f"Physlib={THREE / 'Physlib.json'}",
+                f"TauCeti={MATHLIB_FIRST / 'TauCeti.json'}"]
+        script = pathlib.Path(__file__).with_name("bump_manifest.py")
+        run = lambda *a: subprocess.run([sys.executable, str(script), *a], capture_output=True, text=True)  # noqa: E731
+        self.assertEqual(run("--order", "mathlib,Physlib,TauCeti", *args).stdout.strip(), "OK")
+        self.assertNotEqual(run(*args).stdout.strip(), "OK")  # the default order puts mathlib last
 
 
 class ThreeDependencies(unittest.TestCase):
@@ -260,20 +281,49 @@ class ThreeDependencies(unittest.TestCase):
         tc = entry(deps["TauCeti"], "batteries")
         self.assertNotEqual(tc["rev"], entry(deps["mathlib"], "batteries")["rev"])
         pr["packages"][pr["packages"].index(entry(pr, "batteries"))] = dict(tc, inherited=True)
-        self.assertRejected(pr, base, deps, "'batteries' does not match mathlib@new's")
+        self.assertRejected(pr, base, deps, "'batteries' does not match mathlib@new's, the last require that pins it")
 
     def test_a_package_only_physlib_pins_must_be_physlibs(self):
         pr, base, deps = three()
         entry(pr, "MD4Lean")["rev"] = "0" * 40
-        self.assertRejected(pr, base, deps, "'MD4Lean' does not match the entry of Physlib@new")
+        self.assertRejected(pr, base, deps, "'MD4Lean' does not match Physlib@new's, the last require that pins it")
 
-    def test_a_package_two_dependencies_pin_may_be_either(self):
+    def two_pin_md4lean(self):
+        """MD4Lean is pinned by Physlib and, differently, by TauCeti (neither is mathlib)."""
         pr, base, deps = three()
         md = entry(deps["Physlib"], "MD4Lean")
         deps["TauCeti"]["packages"].append(dict(md, rev="1" * 40))
-        self.assertEqual(problems(pr, base, deps), [])
+        return pr, base, deps, md["rev"]
+
+    def test_a_package_two_dependencies_pin_is_the_one_required_last(self):
+        # the default order is Physlib, TauCeti, mathlib, like lakefile.toml: TauCeti is later
+        pr, base, deps, physlib_rev = self.two_pin_md4lean()
+        self.assertRejected(pr, base, deps, "'MD4Lean' does not match TauCeti@new's, the last require")
         entry(pr, "MD4Lean")["rev"] = "1" * 40
         self.assertEqual(problems(pr, base, deps), [])
+
+    def test_the_order_of_the_requires_decides_it(self):
+        # Only MD4Lean is under test: reordering also flips the packages shared with mathlib.
+        pr, base, deps, physlib_rev = self.two_pin_md4lean()  # the PR carries Physlib's MD4Lean
+        physlib_last, tauceti_last = ["mathlib", "TauCeti", "Physlib"], ["mathlib", "Physlib", "TauCeti"]
+        about = lambda order: [f for f in problems(pr, base, deps, order) if "'MD4Lean'" in f]  # noqa: E731
+        self.assertEqual(about(physlib_last), [])
+        self.assertIn("does not match TauCeti@new's", " ".join(about(tauceti_last)))
+        entry(pr, "MD4Lean")["rev"] = "1" * 40  # TauCeti's
+        self.assertEqual(about(tauceti_last), [])
+        self.assertIn("does not match Physlib@new's", " ".join(about(physlib_last)))
+
+    def assertRejected_with_order(self, pr, base, deps, order, fragment):
+        found = problems(pr, base, deps, order)
+        self.assertTrue(found, "expected a problem, got none")
+        self.assertIn(fragment, " ".join(found))
+
+    def test_the_order_must_name_exactly_the_direct_dependencies(self):
+        pr, base, deps = three()
+        for order in (["Physlib", "mathlib"], ["Physlib", "TauCeti", "mathlib", "Extra"],
+                      ["Physlib", "Physlib", "mathlib"]):
+            with self.subTest(order=order):
+                self.assertRejected_with_order(pr, base, deps, order, "is not exactly the direct dependencies")
 
     def test_a_package_nobody_pins_is_rejected(self):
         pr, base, deps = three()

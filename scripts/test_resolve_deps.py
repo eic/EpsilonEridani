@@ -319,6 +319,21 @@ class Resolution(unittest.TestCase):
             rd.Resolver(g, requires, {"mathlib": "m1"}, lean("v4.34.0"))
 
 
+class TrustedTags(unittest.TestCase):
+    def tags_of(self, named):
+        g = Graph()
+        mathlib_line(g)
+        g.tags = named
+        return rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, lean("v4.34.0")).tags
+
+    def test_a_v4_release_tag_is_offered(self):
+        self.assertEqual(self.tags_of({"s1": "v4.34.1"}), {"s1": "v4.34.1"})
+
+    def test_a_tag_the_guard_would_refuse_is_not(self):
+        # check-bump.sh accepts only mathlib's `v4.*` tags, so the resolver must not propose another
+        self.assertEqual(self.tags_of({"s1": "v5.0.1", "m2": "v4.34.0"}), {"m2": "v4.34.0"})
+
+
 class GitHubCacheQuestion(unittest.TestCase):
     """The real GitHub class, over a fake `gh api`: the release-tag cache check shares the resolver's
     memoised compare instead of asking the same question again."""

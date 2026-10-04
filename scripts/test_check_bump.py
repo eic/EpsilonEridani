@@ -55,6 +55,14 @@ def entry(manifest, name):
     return next(p for p in manifest["packages"] if p["name"] == name)
 
 
+TAGS = f"repos/{ML}/git/matching-refs/tags/v"
+
+
+def tags(*named):
+    """What the tag listing answers for (name, commit sha) pairs: lightweight tags, as mathlib's are."""
+    return [{"ref": f"refs/tags/{name}", "object": {"sha": sha, "type": "commit"}} for name, sha in named]
+
+
 def master_build(success=True):
     return {"workflow_runs": [{"head_branch": "master", "status": "completed",
                                "conclusion": "success" if success else "failure"}]}
@@ -95,7 +103,7 @@ class Scenario:
         self.toolchain(ML, rev, version)
         self.compare(ML, ML_REV, rev, st_fwd)
         self.compare(ML, rev, "master", st_branch)
-        self.gh[f"repos/{ML}/tags?per_page=100"] = []
+        self.gh[TAGS] = []
 
     def run(self):
         with tempfile.TemporaryDirectory() as d:
@@ -166,6 +174,23 @@ class Guard(unittest.TestCase):
         entry(s.pr, "MD4Lean")["inherited"] = False
         self.assertFail(s, "direct dependencies differ from base")
 
+    def two_pin_md4lean(self, revs):
+        """Physlib and TauCeti both pin MD4Lean, differently; the PR takes the rev `revs`."""
+        s = Scenario()
+        taucet = load("TauCeti")
+        taucet["packages"].append(dict(entry(load("Physlib"), "MD4Lean"), rev="1" * 40))
+        s.manifest(TC, TC_NEW, taucet)
+        entry(s.pr, "MD4Lean")["rev"] = revs
+        return s
+
+    def test_a_package_two_dependencies_pin_follows_the_lakefiles_order(self):
+        # lakefile.toml requires Physlib then TauCeti, so TauCeti's pin is what Lake writes. This also
+        # shows the guard hands that order to step 3: base.json lists TauCeti before Physlib, which
+        # is the opposite of what step 3 would assume without it.
+        self.assertPass(self.two_pin_md4lean("1" * 40), "TauCeti")
+        self.assertFail(self.two_pin_md4lean(entry(load("Physlib"), "MD4Lean")["rev"]),
+                        "'MD4Lean' does not match TauCeti@new's, the last require")
+
     def test_mathlib_must_be_the_last_require(self):
         # Lake takes the pins of the LAST require; step 3 relies on that being mathlib
         s = Scenario()
@@ -179,7 +204,7 @@ class Guard(unittest.TestCase):
     def test_without_a_lakefile_toml_the_order_cannot_be_checked(self):
         s = Scenario()
         s.lakefile = s.pr_lakefile = None
-        self.assertFail(s, "cannot check that mathlib is the last require")
+        self.assertFail(s, "cannot check the order of the requires")
 
     def test_lakefile_edits_are_human_owned(self):
         s = Scenario()
@@ -209,8 +234,7 @@ class Guard(unittest.TestCase):
     def release(self, cached=True, version="v4.34.1"):
         s = Scenario()
         s.move_mathlib(ML_TAG_REV, version, "diverged")
-        s.gh[f"repos/{ML}/tags?per_page=100"] = [{"name": "v4.34.0", "commit": {"sha": "0" * 40}},
-                                                {"name": "v4.34.1", "commit": {"sha": ML_TAG_REV}}]
+        s.gh[TAGS] = tags(("v4.34.0", "0" * 40), ("v4.34.1", ML_TAG_REV))
         s.gh[f"repos/{ML}/actions/workflows/build.yml/runs?head_sha={ML_TAG_REV}&event=push&per_page=20"] = \
             {"workflow_runs": [{"head_branch": "stable", "status": "completed", "conclusion": "success"}]}
         s.gh[f"repos/{ML}/actions/workflows/release_cache.yml/runs?head_sha={ML_TAG_REV}&per_page=20"] = \
@@ -231,7 +255,7 @@ class Guard(unittest.TestCase):
         s = Scenario()
         s.base_toolchain = LEAN + "v4.34.1"
         s.move_mathlib(ML_MASTER_REV, "v4.35.0-rc1", "diverged", "ahead")
-        s.gh[f"repos/{ML}/tags?per_page=100"] = [{"name": "v4.35.0-rc1", "commit": {"sha": ML_MASTER_REV}}]
+        s.gh[TAGS] = tags(("v4.35.0-rc1", ML_MASTER_REV))
         s.gh[f"repos/{ML}/actions/workflows/build.yml/runs?head_sha={ML_MASTER_REV}&event=push&per_page=20"] = \
             master_build(master_build_ok)
         s.gh[f"repos/{ML}/actions/workflows/release_cache.yml/runs?head_sha={ML_MASTER_REV}&per_page=20"] = \
@@ -248,10 +272,21 @@ class Guard(unittest.TestCase):
         asked = [c for c in s.calls if c == f"repos/{ML}/compare/{ML_MASTER_REV}...master"]
         self.assertEqual(len(asked), 1, s.calls)
 
+    def test_the_guard_fetches_mathlibs_toolchain_once(self):
+        s = self.on_master_release(master_build_ok=True)
+        self.assertPass(s, "has a successful master-push build")
+        asked = [c for c in s.calls if c == f"repos/{ML}/contents/lean-toolchain?ref={ML_MASTER_REV}"]
+        self.assertEqual(len(asked), 1, s.calls)
+
+    def test_a_failed_tag_listing_is_not_read_as_no_tag(self):
+        s = self.release()
+        del s.gh[TAGS]
+        self.assertFail(s, "cannot list the release tags")
+
     def test_only_v4_tags_count_as_releases(self):
         # the trust basis is mathlib's `v4.*` tag ruleset; a v5 tag is not covered by it
         s = self.release()
-        s.gh[f"repos/{ML}/tags?per_page=100"] = [{"name": "v5.0.0", "commit": {"sha": ML_TAG_REV}}]
+        s.gh[TAGS] = tags(("v5.0.0", ML_TAG_REV))
         self.assertFail(s, "neither a release tag nor on branch 'master'")
 
     def test_a_release_tag_on_master_is_cached_by_its_master_build(self):
@@ -262,7 +297,7 @@ class Guard(unittest.TestCase):
 
     def test_a_tag_that_is_not_a_release_does_not_count(self):
         s = self.release()
-        s.gh[f"repos/{ML}/tags?per_page=100"] = [{"name": "nightly-v4.34.1", "commit": {"sha": ML_TAG_REV}}]
+        s.gh[TAGS] = tags(("v4.34.1-patch1", ML_TAG_REV))
         self.assertFail(s, "neither a release tag nor on branch 'master'")
 
     def test_mathlib_back_to_master_from_a_patch_release(self):

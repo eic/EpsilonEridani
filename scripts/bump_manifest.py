@@ -14,22 +14,22 @@ lake-manifest.json differs from what those facts determine:
   dependencies' own manifests at their new revs, minus the direct dependencies themselves, and
   each entry equals the same-named entry of one of those manifests in every field, except that
   `inherited` is `true` (Lake marks a dependency's dependencies as inherited when it writes a
-  downstream manifest). A package mathlib@new pins must be mathlib@new's entry: lakefile.toml
-  declares mathlib LAST, Lake takes the pins of the last require that pins a package, and mathlib's
-  cache was built against them. (Evidence, both real `lake update` outputs: with the requires in
-  the order mathlib, Physlib, TauCeti, the 8 packages TauCeti pins differently were TauCeti's
-  (749caa977); after "Reorder dependencies to prioritize Mathlib versions" moved mathlib to the
-  bottom (2a2b8dc), they were mathlib's. See bump_manifest_fixtures/mathlib_first.) check-bump.sh
-  checks the premise, that mathlib is the last require, before it calls this. A package only
-  other dependencies pin (Physlib's doc-gen4, say) must be one of those dependencies' entries; when
-  two do, either is accepted, because no real manifest shows which of them Lake takes.
+  downstream manifest). A package pinned by several direct dependencies must be the entry of the
+  one the lakefile requires LAST: Lake takes the pins of the last require that pins a package.
+  lakefile.toml declares mathlib last, so a package mathlib pins is mathlib's entry (and mathlib's
+  cache was built against it); TauCeti, declared after Physlib, beats it. Evidence, both real
+  `lake update` outputs: with the requires in the order mathlib, Physlib, TauCeti the 8 packages
+  that TauCeti pins differently, from Physlib as well as from mathlib, were TauCeti's (749caa977);
+  after "Reorder dependencies to prioritize Mathlib versions" moved mathlib to the bottom (2a2b8dc)
+  they were mathlib's. See bump_manifest_fixtures/mathlib_first: this derivation reproduces both.
 
 Comparing whole entries matters: Lake also reads `subDir`, `configFile`, `manifestFile` and
 `scope` from these entries, and `packagesDir`/`lakeDir` from the top level, before any sandbox
 runs. A four-field comparison would let a bump that passes every other check change them.
 
-Usage: bump_manifest.py <pr-manifest> <base-manifest> <name>=<its-manifest-at-new-rev> ...
-with one <name>= argument per direct dependency, mathlib included.
+Usage: bump_manifest.py [--order A,B,C] <pr-manifest> <base-manifest> <name>=<its-manifest-at-new-rev> ...
+with one <name>= argument per direct dependency, mathlib included. --order is the direct
+dependencies in the order lakefile.toml requires them (default: mathlib last).
 Prints OK and exits 0, or prints the first problem and exits 1.
 """
 
@@ -72,10 +72,16 @@ def shape(name: str, m) -> list[str]:
     return []
 
 
-def problems(pr: dict, base: dict, deps: dict) -> list[str]:
-    """`deps` maps each direct dependency's name to its own manifest at the PR's rev."""
+def problems(pr: dict, base: dict, deps: dict, order: list[str] | None = None) -> list[str]:
+    """`deps` maps each direct dependency's name to its own manifest at the PR's rev. `order` is the
+    direct dependencies in the order lakefile.toml requires them; Lake takes the pins of the LAST
+    require that pins a package. Without it, mathlib is last and the rest keep `deps`' order."""
     if not isinstance(deps, dict) or MATHLIB not in deps:
         return ["no manifest given for mathlib@new"]
+    if order is None:
+        order = [n for n in deps if n != MATHLIB] + [MATHLIB]
+    if sorted(order) != sorted(deps):
+        return [f"the require order {list(order)} is not exactly the direct dependencies {sorted(deps)}"]
     for name, m in (("PR", pr), ("base", base), *((f"{n}@new", d) for n, d in deps.items())):
         found = shape(name, m)
         if found:
@@ -117,11 +123,11 @@ def problems(pr: dict, base: dict, deps: dict) -> list[str]:
             out.append(f"the {n} entry changes fields other than `rev`: {changed}")
 
     # Everything else is inherited from the direct dependencies at their new revs.
-    owners: dict[str, list[tuple[str, dict]]] = {}
-    for d in sorted(deps, key=lambda n: n != MATHLIB):  # mathlib first
+    owners: dict[str, dict[str, dict]] = {}  # package -> {direct dependency that pins it: its entry}
+    for d in order:
         for q in deps[d]["packages"]:
             if q["name"] not in base_direct:
-                owners.setdefault(q["name"], []).append((d, q))
+                owners.setdefault(q["name"], {})[d] = q
     inherited = {n: p for n, p in pr_by.items() if n not in base_direct}
     only_pr, only_deps = sorted(set(inherited) - set(owners)), sorted(set(owners) - set(inherited))
     if only_pr:
@@ -129,19 +135,25 @@ def problems(pr: dict, base: dict, deps: dict) -> list[str]:
     if only_deps:
         out.append(f"PR is missing deps that a direct dependency at its new rev depends on: {only_deps}")
     for n in sorted(set(inherited) & set(owners)):
-        ml_entry = [q for d, q in owners[n] if d == MATHLIB]
-        candidates = ml_entry or [q for _, q in owners[n]]  # mathlib's pin wins where it has one
-        if not any(same(inherited[n], dict(q, inherited=True)) for q in candidates):
-            whose = "mathlib@new's" if ml_entry else \
-                "the entry of " + " or ".join(f"{d}@new" for d, _ in owners[n])
-            changed = differing(inherited[n], dict(candidates[0], inherited=True))
-            out.append(f"dep {n!r} does not match {whose} (fields {changed})")
+        winner = next(d for d in reversed(order) if d in owners[n])  # the last require that pins it
+        want = dict(owners[n][winner], inherited=True)
+        if not same(inherited[n], want):
+            out.append(f"dep {n!r} does not match {winner}@new's, the last require that pins it "
+                       f"(fields {differing(inherited[n], want)})")
     return out
 
 
 def main(argv: list[str]) -> int:
+    order = None
+    if "--order" in argv:
+        i = argv.index("--order")
+        if i + 1 >= len(argv):
+            print(__doc__.strip().splitlines()[-4])
+            return 2
+        order = [n for n in argv[i + 1].split(",") if n]
+        argv = argv[:i] + argv[i + 2:]
     if len(argv) < 4 or not all("=" in a for a in argv[3:]):
-        print(__doc__.strip().splitlines()[-3])
+        print(__doc__.strip().splitlines()[-4])
         return 2
     try:
         pr, base = (json.load(open(path)) for path in argv[1:3])
@@ -153,7 +165,7 @@ def main(argv: list[str]) -> int:
         print(f"cannot parse manifest: {e}")
         return 1
     try:
-        found = problems(pr, base, deps)
+        found = problems(pr, base, deps, order)
     except Exception as e:  # malformed input must fail closed with a message, not a traceback
         print(f"cannot validate manifest: {type(e).__name__}: {e}")
         return 1

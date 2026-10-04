@@ -236,8 +236,9 @@ jobs:
           # machine-validated forward bump: the "Validate the Lake-pin bump" step below
           # runs the workflow-pinned scripts/check-bump.sh and routes to a human if it is
           # anything other than a forward move (each direct dependency forward on its
-          # nominated branch, or mathlib onto a newer-toolchain release tag; transitive pins
-          # derived from their manifests; toolchain monotonic and mathlib's).
+          # nominated branch, or mathlib onto a strictly newer toolchain at a `v4.*` release
+          # tag or on master, the way back from a patch release; transitive pins derived from
+          # their manifests; toolchain monotonic and mathlib's).
           # docbuild/docs/references.bib is permitted too. It is the bibliography doc-gen4
           # resolves docstring citations against, so a docstring that cites a work no one has
           # entered renders as a bare bracketed key. Filling that in is the same kind of work as
@@ -775,9 +776,12 @@ jobs:
       # `lake exe cache get Mathlib Physlib TauCeti` runs the `cache` exe built from the pinned Mathlib, unsandboxed,
       # with network (to download oleans) but deliberately NO token in env. For a normal PR that
       # pin is inherited from its trusted merge base. For a validated bump it is the new pin — which
-      # bump-guard proved is a *forward commit on Mathlib's own master* (same repo, never a fork),
-      # so the code run here is still trusted Mathlib master under the project's "track master"
-      # policy; only the PR's EpsilonEridani/ code stays untrusted and runs solely under bwrap below.
+      # bump-guard proved is mathlib at a forward commit on its nominated branch, or at a `v4.*`
+      # release tag on a newer toolchain, and in every case the same repository as base (url
+      # unchanged, never a fork). Physlib and TauCeti, fetched here too, are likewise forward commits on
+      # their own nominated branches. So the code run here is still trusted upstream under the
+      # project's "track master" policy; only the PR's EpsilonEridani/ code stays untrusted and
+      # runs solely under bwrap below.
       - name: Fetch Dependencies with the (bump-validated) config (network, no token; no PR code)
         if: ${{ env.INFRA != '1' }}
         # `set -o pipefail` is not optional here. A `run:` step with no explicit `shell:`

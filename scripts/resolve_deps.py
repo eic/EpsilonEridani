@@ -265,7 +265,9 @@ class Resolver:
             # what cached_master_tip and cache_published ask; another branch would mean two things
             raise RuntimeError(f"mathlib must be required at rev master, not {self.mathlib_branch!r}")
         self.deps = [(name, repo, branch) for name, repo, branch in requires if name != MATHLIB]
-        self.tags = src.release_tags(self.mathlib_repo)
+        # only the tags the guard trusts: a move to any other tag is one it would refuse
+        self.tags = {sha: name for sha, name in src.release_tags(self.mathlib_repo).items()
+                     if lean_versions.is_trusted_release_tag(name)}
 
     # facts about one commit
     def dep_commit(self, repo, sha):

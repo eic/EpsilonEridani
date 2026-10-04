@@ -51,6 +51,16 @@ def show_toolchain(toolchain):
     return (toolchain or "?").strip().removeprefix(TOOLCHAIN_PREFIX)
 
 
+TRUSTED_MAJOR = 4  # mathlib restricts `v4.*` tags to release managers and makes them immutable
+
+
+def is_trusted_release_tag(name):
+    """Whether `name` is a release tag trusted as the bump guard does: a Lean release name of the
+    `v4.*` series, the tags mathlib's tag ruleset restricts to release managers and makes immutable."""
+    parsed = parse_release(name)
+    return parsed is not None and parsed[0] == TRUSTED_MAJOR
+
+
 def toolchain_order(old, new):
     """How toolchain `new` compares with `old`: "older", "same" or "newer"; None when either is
     not a release toolchain. The one comparison the guard and the resolver both read."""
@@ -89,6 +99,13 @@ def release_refs(gh, repo):
 def tag_commit(gh, repo, sha, kind):
     """The commit a tag ref names: an annotated tag's ref names the tag object, not the commit."""
     return gh(f"repos/{repo}/git/tags/{sha}", jq=".object.sha") if kind == "tag" else sha
+
+
+def release_tag_of(gh, repo, sha):
+    """The newest trusted release tag (`is_trusted_release_tag`) naming commit `sha`, or None."""
+    names = [name for name, commit in release_tags(gh, repo).items()
+             if commit == sha and is_trusted_release_tag(name)]
+    return max(names, key=release_key) if names else None
 
 
 def release_tags(gh, repo, resolve=None):

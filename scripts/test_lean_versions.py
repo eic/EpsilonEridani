@@ -57,6 +57,28 @@ class Toolchains(unittest.TestCase):
         self.assertEqual(lv.show_toolchain(None), "?")
 
 
+class TrustedReleaseTags(unittest.TestCase):
+    def test_only_the_v4_series_is_trusted(self):
+        for name in ("v4.34.0", "v4.34.1", "v4.35.0-rc1"):
+            self.assertTrue(lv.is_trusted_release_tag(name), name)
+        for name in ("v5.0.0", "v3.9.0", "v4.34.1-patch1", "nightly-2026-01-01", "", None):
+            self.assertFalse(lv.is_trusted_release_tag(name), name)
+
+    def refs(self, *named):
+        lines = [f"refs/tags/{n}\t{sha}\tcommit" for n, sha in named]
+        return lambda path, jq=None: "\n".join(lines)
+
+    def test_release_tag_of_names_the_trusted_tag_on_a_commit(self):
+        gh = self.refs(("v4.34.0", "a"), ("v4.34.1", "b"), ("v5.0.0", "c"))
+        self.assertEqual(lv.release_tag_of(gh, "o/r", "b"), "v4.34.1")
+        self.assertIsNone(lv.release_tag_of(gh, "o/r", "c"))  # a v5 tag is not trusted
+        self.assertIsNone(lv.release_tag_of(gh, "o/r", "zzz"))
+
+    def test_release_tag_of_prefers_the_final_release_over_its_rc(self):
+        gh = self.refs(("v4.35.0-rc1", "a"), ("v4.35.0", "a"))
+        self.assertEqual(lv.release_tag_of(gh, "o/r", "a"), "v4.35.0")
+
+
 class ToolchainOrder(unittest.TestCase):
     def test_older_same_newer(self):
         t = lambda v: lv.TOOLCHAIN_PREFIX + v  # noqa: E731
