@@ -160,10 +160,25 @@ else
   # green bors status while its cache is still hours away. Coupling to upstream's workflow
   # file name is deliberate. If it is renamed this check fails closed and the bump routes
   # to a human, which is the safe direction for a trust anchor.
-  pub="$(gh api "repos/$ML_SLUG/actions/workflows/build.yml/runs?head_sha=$ML_REV_P&event=push&per_page=20" \
-    --jq '[.workflow_runs[] | select(.head_branch == "master" and .status == "completed" and .conclusion == "success")] | length' 2>&1)" \
-    || fail "workflow-runs API failed for $ML_SLUG $ML_REV_P: $pub"
-  [ "${pub:-0}" -gt 0 ] 2>/dev/null \
+  # The question itself lives in mathlib_cache.py, which resolve_deps.py asks too: the resolver must
+  # not propose a rev this step would refuse.
+  pub_rc=0
+  pub_msg="$(python3 - "$(dirname "$0")" "$ML_SLUG" "$ML_REV_P" <<'PY' 2>&1
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+from mathlib_cache import master_build_published
+from pr_status.core import gh_api
+slug, rev = sys.argv[1:3]
+try:
+    published = master_build_published(gh_api, slug, rev)
+except Exception as exc:
+    print(f"workflow-runs API failed for {slug} {rev}: {exc}")
+    sys.exit(2)
+sys.exit(0 if published else 1)
+PY
+  )" || pub_rc=$?
+  [ "$pub_rc" -ne 2 ] || fail "$pub_msg"
+  [ "$pub_rc" -eq 0 ] \
     || fail "mathlib rev $ML_REV_P has no completed, successful master-push build, so its oleans were never published to the cache; bump to the built tip of that batch, or wait for its build to finish"
   echo "bump-guard: mathlib $ML_REV_P has a successful master-push build, so its cache is published."
 fi

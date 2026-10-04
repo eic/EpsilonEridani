@@ -30,8 +30,9 @@ toolchain is always mathlib's own at M.
 A new M is only offered once its cache is published, or every downstream build would recompile
 mathlib. A master commit needs a successful master-push `build.yml` run (step 2b of
 scripts/check-bump.sh); a release tag off master needs a successful `release_cache.yml` run,
-which mathlib uses to publish exactly those tags to the same cache. An M that is otherwise
-feasible but has no cache yet is blocked by `cache`.
+which mathlib uses to publish exactly those tags to the same cache (a tag on master gets none from
+it: the run skips the build and still succeeds). scripts/mathlib_cache.py answers this for both this
+script and check-bump.sh. An M that is otherwise feasible but has no cache yet is blocked by `cache`.
 
 A dependency's candidate commits are its branch tip, the last commit before each change to its
 `lean-toolchain` or `lake-manifest.json`, and its current pin: commits after the pin, so a
@@ -81,14 +82,15 @@ import argparse
 import base64
 import json
 import re
-import subprocess
 import sys
 import tomllib
 from datetime import datetime
 from pathlib import Path
 
 import lean_versions
+import mathlib_cache
 from lean_versions import parse_toolchain, show_toolchain
+from pr_status.core import gh_api
 
 MATHLIB = "mathlib"
 
@@ -96,11 +98,8 @@ MATHLIB = "mathlib"
 # --- upstream facts -----------------------------------------------------------------------------
 
 def gh(path, jq=None, paginate=False):
-    cmd = ["gh", "api", path] + (["--paginate"] if paginate else []) + (["--jq", jq] if jq else [])
-    out = subprocess.run(cmd, capture_output=True, text=True)
-    if out.returncode != 0:
-        raise RuntimeError(f"gh api {path} failed: {out.stderr.strip()}")
-    return out.stdout.strip()
+    """`gh api`, waiting out a rate limit like every other reader here (pr_status.core.gh_api)."""
+    return gh_api(path, jq, paginate).strip()
 
 
 class GitHub:
@@ -161,17 +160,11 @@ class GitHub:
             jq=".workflow_runs[0].head_sha // empty"))
 
     def cache_published(self, repo, sha, tag):
-        """Whether mathlib's cache for `sha` is published: a successful master-push build, or for
-        a release tag off master, a successful release_cache.yml run on it."""
-        def runs(workflow):
-            return json.loads(gh(f"repos/{repo}/actions/workflows/{workflow}/runs?head_sha={sha}&per_page=20",
-                                 jq='[.workflow_runs[] | select(.status == "completed" and .conclusion == "success")'
-                                    ' | {event, head_branch}]'))
-        def fetch():
-            if any(r["event"] == "push" and r["head_branch"] == "master" for r in runs("build.yml")):
-                return True
-            return bool(tag) and any(r["head_branch"] == tag for r in runs("release_cache.yml"))
-        return self._once(("cache_published", repo, sha), fetch)
+        """Whether mathlib's cache for `sha` is published (scripts/mathlib_cache.py, which
+        check-bump.sh asks too): a successful master-push build, or for a release tag off master,
+        a successful release_cache.yml run on it."""
+        return self._once(("cache_published", repo, sha),
+                          lambda: mathlib_cache.cache_published(gh, repo, sha, tag))
 
     def release_tags(self, repo):
         """{commit sha: tag} for the repository's vX.Y.Z[-rcN] tags."""

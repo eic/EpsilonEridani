@@ -34,7 +34,10 @@ The generalized `check-bump.sh` is to accept exactly these moves.
 A new candidate is only offered once mathlib's **cache is published** for it: a successful
 master-push `build.yml` run (as `check-bump.sh` step 2b requires), or, for a release tag off
 master, a successful `release_cache.yml` run, which mathlib uses to publish patch releases to
-the same cache. Without one, the candidate is blocked by `cache` and the next one is offered. The toolchain is always mathlib's own at the chosen commit.
+the same cache. A tag on master gets no cache from that run (its `gate` job skips the build but the
+run still succeeds), so only the master-push build counts for it. `scripts/mathlib_cache.py` holds
+this question for both the resolver and `check-bump.sh`. Without one, the candidate is blocked by
+`cache` and the next one is offered. The toolchain is always mathlib's own at the chosen commit.
 
 **Candidate dependency commits** are the branch tip, the last commit before each change to
 the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. All are at or
@@ -57,9 +60,10 @@ feasible one with the newest M (toolchain, then date). Carried pins only break e
 ranking them higher would let one dependency that fits nothing stall mathlib on an older
 commit.
 
-These rules only predict. The bump PR's build is the arbiter, and a set whose build fails
-inside a dependency (not something EpsilonEridani can fix) is passed back with `--exclude`
-so the next feasible set is tried.
+These rules only predict. The bump PR's build is the arbiter. A set whose build fails inside
+a dependency (not something EpsilonEridani can fix) is meant to be passed back with
+`--exclude` so the next feasible set is tried; today only the flag exists, and the worker
+`bump` stage and `update.yml` job that would use it are in the Status table below.
 
 ### Example: 2026-10-03
 

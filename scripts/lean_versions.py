@@ -26,6 +26,7 @@ def parse_release(name):
 
 
 def release_key(name):
+    """Sort key for release names; a name that is not a release sorts after every release."""
     return parse_release(name) or (math.inf,) * 4
 
 
@@ -45,6 +46,7 @@ def parse_toolchain(toolchain):
 
 
 def show_toolchain(toolchain):
+    """A toolchain pin for display, without its `leanprover/lean4:` prefix; `?` when there is no pin."""
     return (toolchain or "?").strip().removeprefix(TOOLCHAIN_PREFIX)
 
 
@@ -67,6 +69,8 @@ def tag_commit(gh, repo, sha, kind):
     return gh(f"repos/{repo}/git/tags/{sha}", jq=".object.sha") if kind == "tag" else sha
 
 
-def release_tags(gh, repo):
-    """{release name: commit sha} for a repository's vX.Y.Z[-rcN] tags."""
-    return {name: tag_commit(gh, repo, sha, kind) for name, (sha, kind) in release_refs(gh, repo).items()}
+def release_tags(gh, repo, resolve=None):
+    """{release name: commit sha} for a repository's vX.Y.Z[-rcN] tags. `resolve` is the `gh` that
+    dereferences annotated tags, when the listing's `gh` is a lenient one that may answer None."""
+    resolve = resolve or gh
+    return {name: tag_commit(resolve, repo, sha, kind) for name, (sha, kind) in release_refs(gh, repo).items()}

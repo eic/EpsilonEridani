@@ -74,8 +74,7 @@ import sys
 import time
 
 from lake_cache_probe import exact_map_url
-from lean_versions import (TOOLCHAIN_PREFIX, parse_release, release_key,  # noqa: F401
-                           release_of_toolchain, release_refs, tag_commit)
+from lean_versions import TOOLCHAIN_PREFIX, release_key, release_of_toolchain, release_refs, release_tags
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "pr_status"))
 import zulip as zp  # noqa: E402
@@ -219,8 +218,7 @@ def mathlib_releases():
 
 def existing_tags():
     """{release: commit} for the release tags this repository already has."""
-    return {name: tag_commit(gh, REPO, sha, kind)
-            for name, (sha, kind) in release_refs(gh_optional, REPO).items()}
+    return release_tags(gh_optional, REPO, resolve=gh)
 
 
 # --- the report --------------------------------------------------------------

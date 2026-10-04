@@ -123,7 +123,7 @@ def mathlib_line(g):
 
 
 class Toolchains(unittest.TestCase):
-    # parsing and ordering are lean_versions', tested through test_toolchain_tags.py
+    # parsing and ordering are lean_versions', tested in test_lean_versions.py
     def test_rcs_share_the_line(self):
         self.assertEqual(rd.line_of(rd.parse_toolchain(lean("v4.35.0-rc3"))), (4, 35))
 
