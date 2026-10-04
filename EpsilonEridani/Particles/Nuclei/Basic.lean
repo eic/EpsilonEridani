@@ -38,7 +38,7 @@ development.
 * EIC Yellow Report, `arXiv:2103.05419`, Vol. II, §7.3.3.
 -/
 
-public section
+@[expose] public section
 
 namespace EpsilonEridani
 
@@ -61,8 +61,6 @@ variable (nuc : Nucleus)
 /-- The neutron number `N = A - Z`. -/
 def neutronNumber : ℕ := nuc.massNumber - nuc.protonNumber
 
-lemma neutronNumber_def : nuc.neutronNumber = nuc.massNumber - nuc.protonNumber := (rfl)
-
 /-- The proton and neutron numbers add up to the mass number. -/
 @[simp]
 theorem protonNumber_add_neutronNumber : nuc.protonNumber + nuc.neutronNumber = nuc.massNumber :=
@@ -79,16 +77,14 @@ lemma neutronNumber_le_massNumber : nuc.neutronNumber ≤ nuc.massNumber :=
 /-- A nucleus is *isoscalar* when it has equally many protons and neutrons, `2 Z = A`. -/
 def IsIsoscalar : Prop := 2 * nuc.protonNumber = nuc.massNumber
 
-lemma isIsoscalar_iff : nuc.IsIsoscalar ↔ 2 * nuc.protonNumber = nuc.massNumber := Iff.rfl
-
 instance : DecidablePred IsIsoscalar := fun nuc =>
-  decidable_of_iff _ (isIsoscalar_iff nuc).symm
+  decidable_of_iff (2 * nuc.protonNumber = nuc.massNumber) Iff.rfl
 
 /-- A nucleus is isoscalar exactly when its proton and neutron numbers agree. -/
 theorem isIsoscalar_iff_protonNumber_eq_neutronNumber :
     nuc.IsIsoscalar ↔ nuc.protonNumber = nuc.neutronNumber := by
   have := nuc.protonNumber_add_neutronNumber
-  rw [isIsoscalar_iff]
+  unfold IsIsoscalar
   omega
 
 /-! ### Worked instances -/
@@ -126,18 +122,23 @@ def lead208 : Nucleus := ⟨208, 82, by decide, by decide⟩
 @[simp] lemma neutronNumber_lead208 : lead208.neutronNumber = 126 := (rfl)
 
 /-- The deuteron is isoscalar. -/
+@[simp]
 theorem isIsoscalar_deuteron : deuteron.IsIsoscalar := (rfl)
 
 /-- Carbon-12 is isoscalar. -/
+@[simp]
 theorem isIsoscalar_carbon12 : carbon12.IsIsoscalar := (rfl)
 
 /-- The free proton is not isoscalar. -/
+@[simp]
 theorem not_isIsoscalar_proton : ¬proton.IsIsoscalar := by decide
 
 /-- The free neutron is not isoscalar. -/
+@[simp]
 theorem not_isIsoscalar_neutron : ¬neutron.IsIsoscalar := by decide
 
 /-- Lead-208 is not isoscalar. -/
+@[simp]
 theorem not_isIsoscalar_lead208 : ¬lead208.IsIsoscalar := by decide
 
 end Nucleus
