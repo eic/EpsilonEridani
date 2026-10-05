@@ -26,6 +26,19 @@ class VersionNames(unittest.TestCase):
         for name in ("v2024", "v4.32.0-rc1-patch1", "nightly-2026-01-01", "", None):
             self.assertIsNone(lv.parse_release(name), name)
 
+    def test_a_name_must_be_spelled_as_a_release_not_merely_equal_in_value(self):
+        # the guard trusts a tag by its NAME (mathlib's ruleset covers the literal `v4.*`): none of
+        # these may read as v4.34.1 — leading zeros, a non-ASCII digit, a zero-padded rc
+        for name in ("v04.34.1", "v4.034.1", "v4.34.01", "v4.34.1-rc01", "v\u0664.34.1", "v4.34.1 ", "\nv4.34.1"):
+            self.assertIsNone(lv.parse_release(name), repr(name))
+            self.assertFalse(lv.is_trusted_release_tag(name), repr(name))
+        for name in ("v4.0.0", "v4.10.0", "v4.34.1-rc0", "v4.34.1-rc10"):
+            self.assertIsNotNone(lv.parse_release(name), name)
+
+    def test_the_same_goes_for_a_toolchain_pin(self):
+        self.assertIsNone(lv.parse_toolchain(lv.TOOLCHAIN_PREFIX + "v04.35.0"))
+        self.assertIsNone(lv.toolchain_order(lv.TOOLCHAIN_PREFIX + "v4.34.0", lv.TOOLCHAIN_PREFIX + "v04.35.0"))
+
     def test_a_final_release_sorts_after_its_own_rcs(self):
         order = ["v4.32.1", "v4.33.0-rc1", "v4.33.0-rc2", "v4.33.0", "v4.34.0-rc1"]
         self.assertEqual(sorted(order, key=lv.release_key), order)

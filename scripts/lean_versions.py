@@ -11,7 +11,10 @@ toolchain check: exit 0 when NEW is a strictly newer release than OLD, else say 
 import math
 import re
 
-RELEASE_RE = re.compile(r"\Av(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?\Z")
+# ASCII digits, no leading zeros: `v04.34.1` or `v٤.34.1` must not read as `v4.34.1`, because the
+# guard trusts a tag by its name (mathlib's tag ruleset covers the literal `v4.*`), not by its value
+_NUMBER = r"(0|[1-9][0-9]*)"
+RELEASE_RE = re.compile(rf"\Av{_NUMBER}\.{_NUMBER}\.{_NUMBER}(?:-rc{_NUMBER})?\Z")
 TOOLCHAIN_PREFIX = "leanprover/lean4:"
 
 

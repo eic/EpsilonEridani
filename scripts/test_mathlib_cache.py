@@ -114,9 +114,10 @@ class Listing(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             mc.newest_master_build(missing, "m/m")
 
-    def test_master_membership_by_compare_status(self):
-        self.assertEqual([mc.is_on_master(s) for s in ("ahead", "identical", "behind", "diverged")],
-                         [True, True, False, False])
+    def test_master_membership_asks_the_compare_against_master(self):
+        for status, expected in (("ahead", True), ("identical", True), ("behind", False), ("diverged", False)):
+            self.assertEqual(mc.on_master(self.gh_answering(status + "\n"), "m/m", "abc"), expected, status)
+            self.assertEqual(self.paths, ["repos/m/m/compare/abc...master"])
 
 
 if __name__ == "__main__":

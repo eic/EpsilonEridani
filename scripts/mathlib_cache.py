@@ -22,6 +22,8 @@ standard library.
 
 import json
 
+import bump_moves
+
 BRANCH = "master"
 
 
@@ -47,14 +49,9 @@ def newest_master_build(gh, repo):
     return out.strip() or None
 
 
-def is_on_master(status):
-    """Whether a `compare/<sha>...master` status says `sha` is on master's history."""
-    return status in ("ahead", "identical")
-
-
 def on_master(gh, repo, sha):
     """Whether `sha` is on master's history, so the master-push build covers its cache."""
-    return is_on_master(gh(f"repos/{repo}/compare/{sha}...{BRANCH}", jq=".status").strip())
+    return bump_moves.is_on_branch(gh(f"repos/{repo}/compare/{sha}...{BRANCH}", jq=".status").strip())
 
 
 def release_cache_published(gh, repo, sha, tag, known_on_master=None):

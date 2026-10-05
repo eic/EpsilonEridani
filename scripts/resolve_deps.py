@@ -87,6 +87,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import bump_manifest
 import bump_moves
 import lake_requires
 import lean_versions
@@ -164,7 +165,7 @@ class GitHub:
         check-bump.sh asks too): a successful master-push build, or for a release tag off master,
         a successful release_cache.yml run on it."""
         def on_master():  # the memoised compare, shared with `forward`
-            return mathlib_cache.is_on_master(self.compare(repo, sha, mathlib_cache.BRANCH)[0])
+            return bump_moves.is_on_branch(self.compare(repo, sha, mathlib_cache.BRANCH)[0])
         return self._once(("cache_published", repo, sha),
                           lambda: mathlib_cache.cache_published(gh, repo, sha, tag, on_master))
 
@@ -228,7 +229,7 @@ def read_project(root):
     requires = [(r["name"], lake_requires.repo_slug(r["git"]), r.get("rev", "main"))
                 for r in lake_requires.parse((root / "lakefile.toml").read_text()) if r.get("git")]
     manifest = json.loads((root / "lake-manifest.json").read_text())
-    pins = {p["name"]: p["rev"] for p in manifest["packages"] if not p.get("inherited")}
+    pins = {name: p["rev"] for name, p in bump_manifest.direct_packages(manifest).items()}
     missing = [name for name, _, _ in requires if name not in pins]
     if missing:
         raise RuntimeError(f"lake-manifest.json has no top-level pin for {missing}")
@@ -295,7 +296,7 @@ class Resolver:
         if order in (None, "older"):
             return None
         status = self.src.compare(self.mathlib_repo, current, m)[0]
-        on_branch = mathlib_cache.is_on_master(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0])
+        on_branch = bump_moves.is_on_branch(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0])
         kind, _ = bump_moves.mathlib_move(status, on_branch, lambda: order, lambda: m in self.tags)
         return kind
 

@@ -7,6 +7,7 @@ through the resolver and through the guard, so the two cannot drift apart.
 
 import base64
 import os
+import subprocess
 import sys
 import unittest
 
@@ -19,6 +20,21 @@ TC = "leanprover/lean4:"
 
 def move(status, on_branch, order, tag):
     return bm.mathlib_move(status, on_branch, lambda: order, lambda: tag)
+
+
+class Layering(unittest.TestCase):
+    def test_the_move_rule_does_not_depend_on_the_cache_module(self):
+        # mathlib_cache reads is_on_branch from here (not the other way round), so the dependency stays acyclic
+        code = "import sys, bump_moves; print('mathlib_cache' in sys.modules)"
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                             cwd=os.path.dirname(os.path.abspath(__file__)))
+        self.assertEqual(out.stdout.strip(), "False", out.stderr)
+
+
+class OnBranch(unittest.TestCase):
+    def test_the_branch_tip_is_at_or_ahead_of_a_rev_on_it(self):
+        self.assertEqual([bm.is_on_branch(s) for s in ("ahead", "identical", "behind", "diverged", "", None)],
+                         [True, True, False, False, False, False])
 
 
 class MathlibMove(unittest.TestCase):

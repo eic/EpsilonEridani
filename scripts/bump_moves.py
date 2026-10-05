@@ -24,9 +24,15 @@ import base64
 import sys
 
 import lean_versions
-import mathlib_cache
 
 MATHLIB = "mathlib"
+
+
+def is_on_branch(status):
+    """Whether a `compare/<rev>...<branch>` status says `rev` is on the branch's history, for any
+    dependency's nominated branch (`main`, `master`, ...): the branch tip is at or ahead of it."""
+    return status in ("ahead", "identical")
+
 
 
 def dependency_move(status, on_branch):
@@ -73,7 +79,7 @@ def decide(name, status, st_branch, branch, old_toolchain, rev_old, rev_new, slu
     """Judge one moved dependency as check-bump.sh reports it. Returns (ok, message, details): on
     success the guard's one-line verdict and (new toolchain, tag, on_branch) for later steps; on
     refusal the reason. `gh(path, jq=None)` is a `gh api` wrapper; it raises when the call fails."""
-    on_branch = mathlib_cache.is_on_master(st_branch)
+    on_branch = is_on_branch(st_branch)
     fetched = {"toolchain": "", "tag": ""}
 
     def order():

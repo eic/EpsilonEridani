@@ -450,6 +450,19 @@ class Project(unittest.TestCase):
         self.assertEqual(pins, {"mathlib": "a" * 40, "Physlib": "b" * 40})
         self.assertEqual(tc, lean("v4.34.0"))
 
+    def test_a_package_without_the_inherited_key_is_not_a_direct_pin_here_either(self):
+        # the guard's meaning of "direct" (bump_manifest.direct_packages): a PR the resolver proposes
+        # from such a manifest would be refused, so the resolver does not count it
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "lakefile.toml").write_text(
+                'name = "X"\n[[require]]\nname = "mathlib"\n'
+                'git = "https://github.com/leanprover-community/mathlib4"\nrev = "master"\n')
+            (root / "lake-manifest.json").write_text(json.dumps({"packages": [{"name": "mathlib", "rev": "a" * 40}]}))
+            (root / "lean-toolchain").write_text(lean("v4.34.0") + "\n")
+            with self.assertRaises(RuntimeError):
+                rd.read_project(root)
+
     def test_main_replays_the_repository_itself(self):
         # The checked-in manifest must be one the resolver can read, or the job fails closed.
         requires, pins, _ = rd.read_project(Path(__file__).resolve().parents[1])

@@ -315,9 +315,11 @@ class Guard(unittest.TestCase):
 
     def test_only_v4_tags_count_as_releases(self):
         # the trust basis is mathlib's `v4.*` tag ruleset; a v5 tag is not covered by it
-        s = self.release()
-        s.gh[TAGS] = tags(("v5.0.0", ML_TAG_REV))
-        self.assertFail(s, "neither a release tag nor on branch 'master'")
+        for name in ("v5.0.0", "v04.34.1", "v\u0664.34.1", "v4.034.1"):  # nor a lookalike of v4.*
+            with self.subTest(tag=name):
+                s = self.release()
+                s.gh[TAGS] = tags((name, ML_TAG_REV))
+                self.assertFail(s, "neither a release tag nor on branch 'master'")
 
     def test_a_release_tag_on_master_is_cached_by_its_master_build(self):
         self.assertPass(self.on_master_release(master_build_ok=True), "has a successful master-push build")

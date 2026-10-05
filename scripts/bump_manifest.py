@@ -72,6 +72,13 @@ def shape(name: str, m) -> list[str]:
     return []
 
 
+def direct_packages(m: dict) -> dict[str, dict]:
+    """{name: entry} of a manifest's direct dependencies: the packages marked `inherited: false`.
+    The one definition: an entry without the key is neither direct nor inherited, so it is not here
+    (and a bump that carries one is rejected). check-bump.sh and resolve_deps.py read it too."""
+    return {p["name"]: p for p in m["packages"] if p.get("inherited") is False}
+
+
 def problems(pr: dict, base: dict, deps: dict, order: list[str] | None = None) -> list[str]:
     """`deps` maps each direct dependency's name to its own manifest at the PR's rev. `order` is the
     direct dependencies in the order lakefile.toml requires them; Lake takes the pins of the LAST
@@ -107,14 +114,14 @@ def problems(pr: dict, base: dict, deps: dict, order: list[str] | None = None) -
         return out
 
     # The direct dependencies: base's, and only their `rev` may move.
-    base_direct = {p["name"]: p for p in base["packages"] if p.get("inherited") is False}
+    base_direct = direct_packages(base)
     if MATHLIB not in base_direct:
         return ["base manifest has no direct `mathlib` package"]
     if set(deps) != set(base_direct):
         return [f"manifests given for {sorted(deps)}, but base's direct dependencies are "
                 f"{sorted(base_direct)}"]
     pr_by = {p["name"]: p for p in pr["packages"]}
-    pr_direct = {n for n, p in pr_by.items() if p.get("inherited") is False}
+    pr_direct = set(direct_packages(pr))
     if pr_direct != set(base_direct):
         return [f"direct dependencies differ from base: {sorted(pr_direct)} != {sorted(base_direct)}"]
     for n in sorted(base_direct):

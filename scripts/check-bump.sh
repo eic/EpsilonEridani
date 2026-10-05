@@ -140,7 +140,7 @@ direct_deps() {
   python3 - "$(dirname "$0")" "$1" "$2" <<'PY'
 import json,sys,re
 sys.path.insert(0, sys.argv.pop(1))
-from bump_manifest import shape  # the one manifest-shape check (step 3 reads it too)
+from bump_manifest import shape, direct_packages  # the one manifest-shape check and the one meaning of "direct"
 from lake_requires import repo_slug as norm  # the one url normalisation (the resolver reads it too)
 def load(path, which):
     try:
@@ -149,9 +149,10 @@ def load(path, which):
         print(f"ERROR: cannot parse {which} manifest: {e}"); sys.exit(1)
     found=shape(which, m)
     if found: print(f"ERROR: {found[0]}"); sys.exit(1)
-    return {p["name"]: p for p in m["packages"]}
-base, pr = load(sys.argv[1], "base"), load(sys.argv[2], "PR")
-direct=[n for n, p in base.items() if p.get("inherited") is False]
+    return m
+base_m, pr_m = load(sys.argv[1], "base"), load(sys.argv[2], "PR")
+base, pr = ({p["name"]: p for p in m["packages"]} for m in (base_m, pr_m))
+direct=list(direct_packages(base_m))
 if "mathlib" not in direct: print("ERROR: base manifest has no direct 'mathlib' package"); sys.exit(1)
 for n in direct:
     b, p = base[n], pr.get(n)

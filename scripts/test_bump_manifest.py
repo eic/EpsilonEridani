@@ -7,7 +7,7 @@ import subprocess
 import sys
 import unittest
 
-from bump_manifest import problems
+from bump_manifest import direct_packages, problems
 
 FIXTURES = pathlib.Path(__file__).resolve().parent / "bump_manifest_fixtures"
 
@@ -197,6 +197,27 @@ def entry(m, name):
 MATHLIB_FIRST = FIXTURES / "mathlib_first"
 TAUCETI_ONLY_DIFFERS = ["Cli", "LeanSearchClient", "Qq", "aesop", "batteries", "importGraph", "plausible",
                         "proofwidgets"]
+
+
+class DirectPackages(unittest.TestCase):
+    def test_only_entries_marked_not_inherited_are_direct(self):
+        m = {"packages": [{"name": "a", "inherited": False}, {"name": "b", "inherited": True},
+                          {"name": "c"}, {"name": "d", "inherited": None}, {"name": "e", "inherited": 0}]}
+        # `is False`, not falsiness: an entry without the key (or with 0/null) is not a direct pin
+        self.assertEqual(list(direct_packages(m)), ["a"])
+
+    def test_it_is_keyed_by_name_with_the_whole_entry(self):
+        pr, base, deps = three()
+        direct = direct_packages(base)
+        self.assertEqual(sorted(direct), ["Physlib", "TauCeti", "mathlib"])
+        self.assertEqual(direct["mathlib"], entry(base, "mathlib"))
+
+    def test_a_bump_that_carries_an_entry_without_the_key_is_not_a_bump_of_direct_dependencies(self):
+        pr, base, deps = three()
+        del entry(pr, "TauCeti")["inherited"]
+        found = problems(pr, base, deps)
+        self.assertTrue(found)
+        self.assertIn("direct dependencies differ from base", " ".join(found))
 
 
 class LastRequireWins(unittest.TestCase):
