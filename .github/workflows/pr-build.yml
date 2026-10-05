@@ -796,10 +796,20 @@ jobs:
             echo "::warning::lake exe cache get Mathlib Physlib TauCeti failed; forcing a full refetch"
             ( cd pr && lake exe cache get! Mathlib Physlib TauCeti ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"
           fi
+          # The completeness gate below judges Mathlib alone, so it reads its own log. The command
+          # above also names Physlib and TauCeti, whose modules Mathlib's cache never holds: two
+          # files are reported missing on every build, bump or not. A bump is not held to a cache
+          # for those two (tracked in the issue linked from the gate). Everything is already
+          # downloaded here, so this second run only re-checks.
+          if [ "${BUMP:-0}" = "1" ]; then
+            ( cd pr && lake exe cache get Mathlib ) 2>&1 | tee "$GITHUB_WORKSPACE/mathlib-cache-get.log"
+          fi
           mkdir -p pr/.lake/tmp
 
       # Backstop to bump-guard's step 2b, measuring the thing itself rather than a proxy.
-      # `lake exe cache get Mathlib Physlib TauCeti` exits 0 on a PARTIAL hit: it prints one warning and the build
+      # It judges Mathlib's cache only: Physlib's and TauCeti's compiled outputs are not in
+      # Mathlib's cache, so a bump may recompile them. See https://github.com/eic/EpsilonEridani/issues/110
+      # `lake exe cache get Mathlib` exits 0 on a PARTIAL hit: it prints one warning and the build
       # then quietly recompiles every module whose oleans never arrived. That is invisible
       # in a green build and costs about an hour on every downstream build until the pin
       # moves again, so catch it here (roughly 90 seconds in) rather than after the build.
@@ -807,12 +817,12 @@ jobs:
       # Only a bump is judged. A normal PR builds against its inherited pin, which it did not
       # choose and cannot fix; failing those would take every PR in the repo down for as
       # long as a bad pin sat on main, which is precisely backwards.
-      - name: Require a complete Dependencies cache for a bump
+      - name: Require a complete Mathlib cache for a bump
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         shell: bash
         run: |
           set -euo pipefail
-          log="$GITHUB_WORKSPACE/cache-get.log"
+          log="$GITHUB_WORKSPACE/mathlib-cache-get.log"
           # Fail closed. An absent or unreadable log is not evidence of a complete cache,
           # and `grep` on a missing file exits 2, which as an `if` condition would read the
           # same as "phrase not found" and wave the bump through.
@@ -821,10 +831,10 @@ jobs:
             exit 1
           fi
           if grep -qF 'some files were not found in the cache' "$log"; then
-            echo "::error::the bump target's Dependencies cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
+            echo "::error::the bump target's Mathlib cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
             exit 1
           fi
-          echo "Dependencies cache is complete at the bump target."
+          echo "Mathlib cache is complete at the bump target."
 
       # Restore the compiled outputs of every non-Mathlib dependency (Physlib, TauCeti, ...) that
       # main's ci.yml saved after its trusted build; Mathlib's cache tool above covers only Mathlib
