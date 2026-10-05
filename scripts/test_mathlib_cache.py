@@ -92,6 +92,15 @@ class CachePublished(unittest.TestCase):
             mc.cache_published(failing, "m/m", "sha")
 
 
+class Surface(unittest.TestCase):
+    def test_the_public_functions_are_the_whole_question_and_nothing_less(self):
+        # the parts (master build, release_cache run, master membership) are private: a caller that
+        # asks one of them alone asks the cache question differently from the guard
+        public = sorted(n for n, f in vars(mc).items()
+                        if callable(f) and not n.startswith("_") and getattr(f, "__module__", None) == mc.__name__)
+        self.assertEqual(public, ["cache_published", "cache_source", "newest_master_build"])
+
+
 class Listing(unittest.TestCase):
     def gh_answering(self, out):
         self.paths = []
@@ -114,10 +123,13 @@ class Listing(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             mc.newest_master_build(missing, "m/m")
 
-    def test_master_membership_asks_the_compare_against_master(self):
-        for status, expected in (("ahead", True), ("identical", True), ("behind", False), ("diverged", False)):
-            self.assertEqual(mc.on_master(self.gh_answering(status + "\n"), "m/m", "abc"), expected, status)
-            self.assertEqual(self.paths, ["repos/m/m/compare/abc...master"])
+    def test_a_tag_on_master_is_decided_by_one_compare_against_master(self):
+        # through the public question: a tag's release_cache run counts only off master
+        runs = [{"event": "push", "head_branch": "v4.34.1"}]
+        for status, published in (("ahead", False), ("identical", False), ("behind", True), ("diverged", True)):
+            fake = Fake(release_runs=runs, compare=status)
+            self.assertEqual(mc.cache_published(fake, "m/m", "abc", "v4.34.1"), published, status)
+            self.assertEqual([c for c in fake.calls if "/compare/" in c], ["repos/m/m/compare/abc...master"], status)
 
 
 if __name__ == "__main__":
