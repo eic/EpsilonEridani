@@ -6,8 +6,10 @@ it forward on its nominated branch. This module checks that nothing ELSE in the 
 lake-manifest.json differs from what those facts determine:
 
 * every top-level field (`name`, `packagesDir`, `lakeDir`, `fixedToolchain`, ...) equals the base
-  manifest's, with the same set of keys, and the format `version` equals mathlib@new's (Lake decodes
-  entries according to `version`, and the shared entries are mathlib@new's);
+  manifest's, with the same set of keys, and the format `version` equals mathlib@new's (the root
+  manifest is written by the root's Lake, and the guard requires the root's toolchain to be
+  mathlib@new's, so that is the format to require; an inherited entry may be copied from a
+  dependency manifest at ANOTHER version, and is compared whole all the same);
 * the direct dependencies are exactly base's, and each entry equals base's in every field except
   `rev` (so `inherited` stays `false`, and the url, `inputRev`, `subDir`, ... cannot move);
 * every other entry is inherited: the package set is exactly the union of the direct
@@ -96,8 +98,10 @@ def problems(pr: dict, base: dict, deps: dict, order: list[str] | None = None) -
     ml = deps[MATHLIB]
     out: list[str] = []
 
-    # `version` is the manifest format. Lake decodes every entry according to it, and the shared
-    # entries are mathlib@new's, so it must be mathlib@new's. Every other top-level field equals base.
+    # `version` is the ROOT manifest's format: the one the root's Lake writes, and the guard requires
+    # the root's toolchain to be mathlib@new's, so it must be mathlib@new's. It says nothing about the
+    # manifests the inherited entries come from, which may be at another version.
+    # Every other top-level field equals base.
     changed = differing(pr, base, skip=("packages", "version"))
     if changed:
         out.append(f"top-level manifest fields differ from base: {changed}")
