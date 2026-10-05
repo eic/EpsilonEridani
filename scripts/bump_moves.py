@@ -58,6 +58,17 @@ def mathlib_move(status, on_branch, order, is_release_tag):
 
 # --- the guard's command line -----------------------------------------------------------------
 
+def fetch_toolchain(gh, slug, rev):
+    """The `lean-toolchain` of `slug` at `rev`, whitespace stripped: the one fetch-and-decode, used for
+    the move rule (`decide`) and by step 4 of the guard (`toolchain` below), so both compare the same
+    string. `gh(path, jq=None)` is a `gh api` wrapper; it raises when the call fails."""
+    try:
+        content = gh(f"repos/{slug}/contents/lean-toolchain?ref={rev}", jq=".content")
+        return "".join(base64.b64decode(content).decode().split())
+    except Exception as exc:
+        raise RuntimeError(f"cannot fetch mathlib lean-toolchain at {rev}: {exc}") from exc
+
+
 def decide(name, status, st_branch, branch, old_toolchain, rev_old, rev_new, slug, gh):
     """Judge one moved dependency as check-bump.sh reports it. Returns (ok, message, details): on
     success the guard's one-line verdict and (new toolchain, tag, on_branch) for later steps; on
@@ -66,11 +77,7 @@ def decide(name, status, st_branch, branch, old_toolchain, rev_old, rev_new, slu
     fetched = {"toolchain": "", "tag": ""}
 
     def order():
-        try:
-            content = gh(f"repos/{slug}/contents/lean-toolchain?ref={rev_new}", jq=".content")
-            fetched["toolchain"] = "".join(base64.b64decode(content).decode().split())
-        except Exception as exc:
-            raise RuntimeError(f"cannot fetch mathlib lean-toolchain at {rev_new}: {exc}") from exc
+        fetched["toolchain"] = fetch_toolchain(gh, slug, rev_new)
         return lean_versions.toolchain_order(old_toolchain, fetched["toolchain"])
 
     def is_release_tag():
@@ -106,9 +113,21 @@ def decide(name, status, st_branch, branch, old_toolchain, rev_old, rev_new, slu
     return kind is not None, message, (toolchain, tag, on_branch)
 
 
+USAGE = ("usage: bump_moves.py move NAME STATUS ST_BRANCH BRANCH OLD_TOOLCHAIN REV_OLD REV_NEW SLUG\n"
+         "       bump_moves.py toolchain SLUG REV")
+
+
 def main(argv):
-    if len(argv) != 10 or argv[1] != "move":
-        print("usage: bump_moves.py move NAME STATUS ST_BRANCH BRANCH OLD_TOOLCHAIN REV_OLD REV_NEW SLUG")
+    if argv[1:2] == ["toolchain"] and len(argv) == 4:
+        from pr_status.core import gh_api
+        try:
+            print(fetch_toolchain(lambda path, jq=None: gh_api(path, jq).strip(), argv[2], argv[3]))
+        except Exception as exc:
+            print(f"ERROR: {exc}")
+            return 2
+        return 0
+    if argv[1:2] != ["move"] or len(argv) != 10:
+        print(USAGE)
         return 2
     from pr_status.core import gh_api
     name, status, st_branch, branch, old_toolchain, rev_old, rev_new, slug = argv[2:]

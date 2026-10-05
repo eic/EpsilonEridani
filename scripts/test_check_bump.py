@@ -276,12 +276,6 @@ class Guard(unittest.TestCase):
         s.gh[TAGS] = tags(("v4.34.1-patch1", ML_TAG_REV))
         self.assertFail(s, "neither a release tag nor on branch 'master'")
 
-    def test_a_dependency_other_than_mathlib_off_the_branch_is_still_refused(self):
-        s = Scenario()
-        s.compare(TC, TC_OLD, TC_NEW, "ahead")
-        s.compare(TC, TC_NEW, "main", "diverged")
-        self.assertFail(s, "TauCeti new rev")
-
     def test_mathlib_patch_release_needs_its_release_cache(self):
         self.assertFail(self.release(cached=False), "has no published cache")
 

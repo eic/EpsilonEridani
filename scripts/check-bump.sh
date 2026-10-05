@@ -287,9 +287,10 @@ if [ "$TC_B" != "$TC_P" ]; then
   tc_msg="$(toolchain_newer "$TC_B" "$TC_P")" || fail "${tc_msg:-toolchain is not a monotonic forward release}"
 fi
 
-# mathlib's toolchain at its new rev is already in hand when step 2 fetched it for a diverged move
-ML_TC="${ML_TC_NEW:-$(gh api "repos/$ML_SLUG/contents/lean-toolchain?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')}" \
-  || fail "cannot fetch mathlib lean-toolchain at $ML_REV_P"
+# mathlib's toolchain at its new rev is already in hand when step 2 fetched it for the move; else
+# bump_moves.py fetches it the same way, so step 2's comparison and this equality read one string
+ML_TC="${ML_TC_NEW:-$(python3 "$(dirname "$0")/bump_moves.py" toolchain "$ML_SLUG" "$ML_REV_P" 2>&1)}" \
+  || fail "${ML_TC#ERROR: }"
 [ "$TC_P" = "$ML_TC" ] || fail "PR lean-toolchain ($TC_P) != mathlib@$ML_REV_P's ($ML_TC)"
 echo "bump-guard: toolchain $TC_B -> $TC_P is forward and matches mathlib@$ML_REV_P."
 

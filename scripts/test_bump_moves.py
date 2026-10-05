@@ -119,6 +119,13 @@ class Decide(unittest.TestCase):
             self.assertFalse(ok, args)
             self.assertIn(fragment, message, args)
 
+    def test_the_toolchain_is_decoded_and_stripped_one_way(self):
+        gh = self.gh(toolchain="v4.35.0")
+        self.assertEqual(bm.fetch_toolchain(gh, "o/r", "abc"), TC + "v4.35.0")
+        self.assertEqual(self.paths, ["repos/o/r/contents/lean-toolchain?ref=abc"])
+        padded = lambda path, jq=None: base64.b64encode(f"  {TC}v4.35.0 \n\n".encode()).decode()  # noqa: E731
+        self.assertEqual(bm.fetch_toolchain(padded, "o/r", "abc"), TC + "v4.35.0")
+
     def test_a_failed_fetch_is_an_error_naming_what_failed(self):
         with self.assertRaisesRegex(RuntimeError, "cannot fetch mathlib lean-toolchain at new"):
             bm.decide("mathlib", "diverged", "diverged", "master", TC + "v4.34.0", "old", "new", "o/r",

@@ -218,9 +218,8 @@ class LastRequireWins(unittest.TestCase):
         return sorted(n for n in shared if self.pins(deps["TauCeti"], [n]) != self.pins(deps["mathlib"], [n]))
 
     def mathlib_first(self):
-        deps = {"mathlib": self.load(THREE, "mathlib"), "Physlib": self.load(THREE, "Physlib"),
-                "TauCeti": self.load(THREE, "TauCeti")}  # unchanged between 85e8005e and a1fff14
-        return self.load(MATHLIB_FIRST, "root"), deps
+        # the upstream manifests are three()'s; TauCeti's is unchanged between 85e8005e and a1fff14
+        return self.load(MATHLIB_FIRST, "root"), three()[2]
 
     def test_the_two_orders_disagree_on_the_same_eight_packages(self):
         _, deps = self.mathlib_first()
