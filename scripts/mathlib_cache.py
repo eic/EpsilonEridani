@@ -1,7 +1,9 @@
 """Whether mathlib's olean cache is published for a commit: the one definition for every script.
 
 scripts/check-bump.sh (step 2b) and scripts/resolve_deps.py must ask this question the same way, or
-the resolver proposes a pin the guard then rejects. Both call these functions.
+the resolver proposes a pin the guard then rejects. Both call `cache_source` / `cache_published`,
+which with `newest_master_build` are this module's whole surface: the underscored functions are the
+parts they are made of, not other ways to ask the question.
 
 Mathlib publishes its cache from two places, and only these:
 
@@ -22,6 +24,8 @@ standard library.
 
 import json
 
+import bump_moves
+
 BRANCH = "master"
 
 
@@ -33,40 +37,45 @@ def _runs(gh, repo, workflow, sha, query=""):
     return json.loads(out)
 
 
-def master_build_published(gh, repo, sha):
+def _master_build_published(gh, repo, sha):
     """Whether a master-push build of `sha` completed successfully, so its oleans were uploaded."""
     return any(run["head_branch"] == BRANCH for run in _runs(gh, repo, "build.yml", sha, "&event=push"))
 
 
 def newest_master_build(gh, repo):
     """The commit of master's newest completed, successful master-push build (its cache is
-    published), or None before there is one. The listing form of `master_build_published`: a renamed
+    published), or None before there is one. The listing form of `_master_build_published`: a renamed
     `build.yml` answers 404 and `gh` raises, as for the per-commit question."""
     out = gh(f"repos/{repo}/actions/workflows/build.yml/runs?branch={BRANCH}&event=push&status=success&per_page=1",
              jq=".workflow_runs[0].head_sha // empty")
     return out.strip() or None
 
 
-def is_on_master(status):
-    """Whether a `compare/<sha>...master` status says `sha` is on master's history."""
-    return status in ("ahead", "identical")
-
-
-def on_master(gh, repo, sha):
+def _on_master(gh, repo, sha):
     """Whether `sha` is on master's history, so the master-push build covers its cache."""
-    return is_on_master(gh(f"repos/{repo}/compare/{sha}...{BRANCH}", jq=".status").strip())
+    return bump_moves.is_on_branch(gh(f"repos/{repo}/compare/{sha}...{BRANCH}", jq=".status").strip())
 
 
-def release_cache_published(gh, repo, sha, tag, known_on_master=None):
+def _release_cache_published(gh, repo, sha, tag, known_on_master=None):
     """Whether `release_cache.yml` published `tag`'s cache: a successful run on the tag, for a tag
     whose commit is off master. On master it publishes nothing, whatever the run concluded.
     `known_on_master` is a no-argument callable for a caller that already holds the compare answer."""
-    if (known_on_master or (lambda: on_master(gh, repo, sha)))():
+    if (known_on_master or (lambda: _on_master(gh, repo, sha)))():
         return False
     return any(run["head_branch"] == tag for run in _runs(gh, repo, "release_cache.yml", sha))
 
 
+def cache_source(gh, repo, sha, tag=None, known_on_master=None):
+    """What publishes the cache for `sha`, `tag` being the release tag it carries, if any: "master"
+    (a master-push build), "release" (release_cache.yml, for a tag off master), or None. The one
+    composition of the two signals: callers that report which one applied read it here."""
+    if _master_build_published(gh, repo, sha):
+        return "master"
+    if tag and _release_cache_published(gh, repo, sha, tag, known_on_master):
+        return "release"
+    return None
+
+
 def cache_published(gh, repo, sha, tag=None, known_on_master=None):
-    """Whether the cache for `sha` is published, `tag` being the release tag it carries, if any."""
-    return master_build_published(gh, repo, sha) or (
-        bool(tag) and release_cache_published(gh, repo, sha, tag, known_on_master))
+    """Whether the cache for `sha` is published; see `cache_source`."""
+    return cache_source(gh, repo, sha, tag, known_on_master) is not None

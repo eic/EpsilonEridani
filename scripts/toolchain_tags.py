@@ -20,7 +20,8 @@ pins. The first `main` commit on toolchain X therefore pins mathlib at or after 
 The tool tags only commits on `main`, and reports a release `main` never ran on as
 `unreachable`. Two things cause that: the daily bump stepped over the release's window on
 mathlib master, which for a stable release has been fifteen hours, or mathlib cut the
-release on its `stable` branch, which `check-bump.sh` will not let this repository pin.
+release on its `stable` branch and no bump moved to that tag: `check-bump.sh` accepts a
+`v4.*` release tag on a newer toolchain, but a bump only goes there when a dependency pins it.
 
 Tagging one anyway takes four steps. `v4.33.0` was done this way:
 
@@ -239,7 +240,8 @@ from what is already recorded, without rebuilding.
 
 The tool tags only commits on main, and reports a release main never ran on as
 `unreachable`: either the daily bump stepped over its window on mathlib master, or mathlib
-cut it on its `stable` branch, which check-bump.sh will not let this repository pin. Tagging
+cut it on its `stable` branch and no bump moved to that tag (check-bump.sh accepts a `v4.*`
+release tag on a newer toolchain, but a bump only goes there when a dependency pins it). Tagging
 one anyway takes four manual steps, including a build. v4.33.0 was done that way; the steps
 are in this script's module docstring.
 
@@ -422,8 +424,9 @@ def render(rows, include_policy=True, collapse_old=False):
         lines += ["",
                   "    Either the daily bump stepped over the release's window on mathlib",
                   "    master, which for a stable release has been as short as fifteen hours,",
-                  "    or mathlib cut it on its `stable` branch, which check-bump.sh could",
-                  "    never have let this repository pin at all."]
+                  "    or mathlib cut it on its `stable` branch and no bump moved to that",
+                  "    tag: check-bump.sh accepts a `v4.*` release tag on a newer toolchain,",
+                  "    but a bump only goes there when a dependency pins it."]
     return "\n".join(lines) + "\n"
 
 

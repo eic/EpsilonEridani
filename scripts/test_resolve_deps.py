@@ -319,6 +319,105 @@ class Resolution(unittest.TestCase):
             rd.Resolver(g, requires, {"mathlib": "m1"}, lean("v4.34.0"))
 
 
+class RewrittenBranch(unittest.TestCase):
+    """A dependency whose branch no longer contains its pin: nothing on it is a forward move, which the
+    bump guard would refuse (bump_moves.dependency_move), so the resolver offers none and says why."""
+
+    def graph(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p0", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))  # the pin
+        # the branch was rewritten: its history (p3 <- p2 <- p1) no longer contains p0
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(PL, "p3", "p2", branch="master", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        return g
+
+    def test_candidates_that_do_not_descend_from_the_pin_are_left_out_and_noted(self):
+        g = self.graph()
+        r = rd.Resolver(g, REQUIRES, {"mathlib": "m1", "Physlib": "p0", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual([c["rev"] for c in r.candidates("Physlib", PL, "master")], ["p0"])  # only the pin
+        self.assertEqual(r.not_forward["Physlib"], ["p3", "p1"])  # the tip, then the parent of the boundary p2
+
+    def test_an_ordinary_history_drops_nothing(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        r = rd.Resolver(g, REQUIRES, {"mathlib": "m1", "Physlib": "p1"}, lean("v4.34.0"))
+        self.assertEqual([c["rev"] for c in r.candidates("Physlib", PL, "master")], ["p2", "p1"])
+        self.assertEqual(r.not_forward["Physlib"], [])
+
+    def test_the_report_names_the_rewritten_branch_and_keeps_the_true_tip(self):
+        r = resolve(self.graph(), {"mathlib": "m1", "Physlib": "p0", "TauCeti": "t1"}, lean("v4.34.0"))
+        physlib = r["pins"]["Physlib"]
+        self.assertEqual((physlib["rev"], physlib["tip"]), ("p0", "p3"))  # held at the pin, not "at tip"
+        self.assertEqual(physlib["not_forward"], ["p3", "p1"])
+        held = [h for h in r["holds"] if h["pin"] == "Physlib"]
+        self.assertEqual(len(held), 1)  # nothing newer is on offer, so no second, misleading "held by mathlib"
+        self.assertEqual(held[0]["held_by"], ["Physlib"])
+        for words in ("2 commit(s) on master do not descend from its pin p0", "rewritten", "not offered"):
+            self.assertIn(words, held[0]["text"])
+
+    def test_an_ordinary_run_reports_no_such_hold(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertFalse(any("not_forward" in p for p in r["pins"].values()))
+        self.assertFalse(any("rewritten" in h["text"] for h in r["holds"]))
+
+
+class ForwardMoves(unittest.TestCase):
+    """What Resolver.forward offers must be what check-bump.sh accepts (test_check_bump.py)."""
+
+    def forward(self, tag):
+        g = Graph()
+        mathlib_line(g)
+        # r1 is a patch release cut after the pin m1, off master: it descends from m1 but m3 does not
+        g.commit(ML, "r1", "m2", branch="stable", lean_toolchain=lean("v4.34.1"))
+        g.tags = {"r1": tag} if tag else {}
+        return rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, lean("v4.34.0")).forward("r1")
+
+    def test_a_release_descending_from_the_pin_off_master_is_a_release(self):
+        self.assertEqual(self.forward("v4.34.1"), "release")
+
+    def test_a_descendant_off_master_that_is_not_a_release_is_not_offered(self):
+        self.assertIsNone(self.forward(None))
+
+    def test_a_descendant_on_master_is_still_a_descendant(self):
+        g = Graph()
+        mathlib_line(g)
+        self.assertEqual(rd.Resolver(g, REQUIRES, {"mathlib": "m1"}, lean("v4.34.0")).forward("m2"), "descendant")
+
+
+class TrustedTags(unittest.TestCase):
+    """The tags the resolver offers are the ones the guard trusts, read through the same function."""
+
+    def tags_of(self, listing):
+        refs = "\n".join(f"refs/tags/{name}\t{sha}\tcommit" for name, sha in listing)
+        saved, rd.gh = rd.gh, lambda path, jq=None, paginate=False: refs
+        try:
+            return rd.GitHub().release_tags(ML)
+        finally:
+            rd.gh = saved
+
+    def test_a_v4_release_tag_is_offered(self):
+        self.assertEqual(self.tags_of([("v4.34.1", "s1")]), {"s1": "v4.34.1"})
+
+    def test_a_tag_the_guard_would_refuse_is_not(self):
+        # check-bump.sh accepts only mathlib's `v4.*` tags, so the resolver must not propose another
+        self.assertEqual(self.tags_of([("v5.0.1", "s1"), ("v4.34.0", "m2")]), {"m2": "v4.34.0"})
+
+    def test_a_commit_with_two_tags_is_offered_under_the_final_release(self):
+        # the guard looks a cache up under this tag too, and the listing is lexicographic (rc1 < 4.35.0)
+        self.assertEqual(self.tags_of([("v4.35.0", "x"), ("v4.35.0-rc1", "x")]), {"x": "v4.35.0"})
+        self.assertEqual(self.tags_of([("v4.35.0-rc1", "x"), ("v4.35.0", "x")]), {"x": "v4.35.0"})
+
+
 class GitHubCacheQuestion(unittest.TestCase):
     """The real GitHub class, over a fake `gh api`: the release-tag cache check shares the resolver's
     memoised compare instead of asking the same question again."""
@@ -369,6 +468,10 @@ class RealRecording(unittest.TestCase):
                           "TauCeti": ("a1fff14", "carried")})
         self.assertEqual(self.r["toolchain"]["chosen"], lean("v4.34.1"))
 
+    def test_nothing_in_the_real_history_is_left_out(self):
+        self.assertFalse(any("not_forward" in p for p in self.r["pins"].values()))
+        self.assertFalse(any("rewritten" in h["text"] for h in self.r["holds"]))
+
     def test_physlib_is_what_holds_mathlib(self):
         held = {h["pin"]: h["held_by"] for h in self.r["holds"]}
         self.assertEqual(held, {"mathlib": ["Physlib"], "TauCeti": ["mathlib"]})
@@ -402,6 +505,19 @@ class Project(unittest.TestCase):
                                     ("mathlib", "leanprover-community/mathlib4", "master")])
         self.assertEqual(pins, {"mathlib": "a" * 40, "Physlib": "b" * 40})
         self.assertEqual(tc, lean("v4.34.0"))
+
+    def test_a_package_without_the_inherited_key_is_not_a_direct_pin_here_either(self):
+        # the guard's meaning of "direct" (bump_manifest.direct_packages): a PR the resolver proposes
+        # from such a manifest would be refused, so the resolver does not count it
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "lakefile.toml").write_text(
+                'name = "X"\n[[require]]\nname = "mathlib"\n'
+                'git = "https://github.com/leanprover-community/mathlib4"\nrev = "master"\n')
+            (root / "lake-manifest.json").write_text(json.dumps({"packages": [{"name": "mathlib", "rev": "a" * 40}]}))
+            (root / "lean-toolchain").write_text(lean("v4.34.0") + "\n")
+            with self.assertRaises(RuntimeError):
+                rd.read_project(root)
 
     def test_main_replays_the_repository_itself(self):
         # The checked-in manifest must be one the resolver can read, or the job fails closed.

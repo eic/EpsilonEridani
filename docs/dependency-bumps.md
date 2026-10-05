@@ -24,12 +24,14 @@ special; whichever is most conservative ends up setting the pace.
 
 **Candidate mathlib commits** are the current pin, mathlib master's newest commit with a
 published cache, and every mathlib commit that a candidate commit of a dependency pins. A
-candidate must move forward: a descendant of the current pin, or, with a strictly newer
-toolchain, a mathlib release tag (patch releases such as `v4.34.1` live on mathlib's `stable`
-branch, not on master) or a commit on master (the way back from a patch release). Those two
-may diverge from the pin and leave out commits it has; on 2026-10-03 the move to `v4.34.1`
-left out one. The report counts them (`dropped_commits`) and the summary says so.
-The generalized `check-bump.sh` is to accept exactly these moves.
+candidate must move forward: a descendant of the current pin on master, or, with a strictly
+newer toolchain, a mathlib `v4.*` release tag (patch releases such as `v4.34.1` live on
+mathlib's `stable` branch, not on master, and one cut after the pin descends from it while off
+master) or, if it diverged from the pin, a commit on master (the way back from a patch release).
+A diverged rev leaves out commits the pin has; on 2026-10-03 the move to `v4.34.1` left out
+one. The report counts them (`dropped_commits`) and the summary says so.
+`check-bump.sh` accepts exactly these moves (see below): both call the one rule in
+`scripts/bump_moves.py`.
 
 A new candidate is only offered once mathlib's **cache is published** for it: a successful
 master-push `build.yml` run (as `check-bump.sh` step 2b requires), or, for a release tag off
@@ -40,8 +42,11 @@ this question for both the resolver and `check-bump.sh`. Without one, the candid
 `cache` and the next one is offered. The toolchain is always mathlib's own at the chosen commit.
 
 **Candidate dependency commits** are the branch tip, the last commit before each change to
-the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. All are at or
-after the pin: a dependency never moves backward.
+the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. Each must be a
+forward move the guard accepts (`scripts/bump_moves.py`): a descendant of the pin, so a dependency
+never moves backward. A commit that is not (the dependency's branch was rewritten, or the pin is
+no longer on it) is left out, and the report says so as a hold, naming those commits, rather than
+dropping them silently.
 
 A dependency commit **fits** a mathlib commit M when
 
@@ -88,6 +93,38 @@ builds today. This run is the regression fixture
 
 It needs Python 3.11+ (`tomllib`) and an authenticated `gh`.
 
+## Validating a bump: `scripts/check-bump.sh`
+
+The resolver only proposes. What lets a bump PR build and merge without a human is the bump
+guard, which reads the PR's `lake-manifest.json` and `lean-toolchain`, queries the upstreams
+through `gh api`, and runs nothing from the PR. It accepts a pin change only when:
+
+1. `lakefile.toml` is unchanged and declares mathlib as its last `require` (the premise of
+   rule 3: Lake takes the pins of the last require); the direct dependencies are base's
+   non-inherited packages, each keeping its url and nominated branch (`inputRev`).
+2. Each direct dependency's rev stays put or moves forward: a descendant on its nominated
+   branch. Mathlib alone may also move off it onto a strictly newer toolchain, whether the new
+   rev descends from the pin or diverged from it (a patch release cut off master): at a release
+   tag (only `v4.*` tags: they are release-manager-only and immutable upstream), or, if it
+   diverged, on master (the way back from a patch release). A new
+   mathlib rev must have a published cache: a master-push build, or for a tag off master a
+   `release_cache.yml` run.
+3. Every other entry is derived from the direct dependencies' own manifests at their new revs
+   (`scripts/bump_manifest.py`): the package set is their union, and a package several of them
+   pin is the entry of the one `lakefile.toml` requires **last**, because Lake takes the pins of
+   the last require that pins a package. The lakefile requires Physlib, TauCeti, mathlib, so a
+   package mathlib pins is mathlib's (its cache was built against it) and one only Physlib and
+   TauCeti pin is TauCeti's. The rule is established by the real `lake update` outputs before and
+   after commit 2a2b8dc moved mathlib to the bottom (see
+   `scripts/bump_manifest_fixtures/mathlib_first/README.md`), and the guard reads the order from
+   base's lakefile rather than assuming it (and requires mathlib to be last).
+4. `lean-toolchain` moves forward and equals mathlib's at its new rev.
+
+Moving Physlib or TauCeti forward on its branch can therefore merge without a human, as
+moving mathlib forward on master always could. That extends the trust the project already
+places in those branches (main builds them today) to their future commits; every build still
+runs sandboxed. `scripts/test_check_bump.py` runs the guard end to end against a fake `gh`.
+
 ## Reporting: held back is not stuck
 
 The resolver reports, for every pin, how far it is behind its branch tip and what holds it
@@ -105,10 +142,7 @@ expected and are reported informationally, never as stuck automation. Alerts are
 | step | state |
 |---|---|
 | resolver (`scripts/resolve_deps.py`) and its tests | done |
-| bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib release tags pinned by a dependency (cache signal: `release_cache.yml`, not the master-push build), and the inherited packages Lake derives from all three | planned |
+| bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib's newer-toolchain release tags and master commits (cache signal for a tag: `release_cache.yml`), and the inherited packages Lake derives from all three | done |
 | `update.yml` runs the resolver (dry run first), opens one rolling `bump-mathlib/` PR, records failed sets | planned |
 | `scripts/pr_status/stuck_alerts.py`: `stale-pin` replaced by "a feasible set is not landing"; holds reported as information | planned |
 | EpsilonEridaniWorker's `bump` stage hands back a PR whose build fails inside a dependency | planned |
-
-Until the bump-guard step lands, `check-bump.sh` still accepts only a mathlib move on master
-with every other manifest entry equal to mathlib's, which no three-dependency bump satisfies.

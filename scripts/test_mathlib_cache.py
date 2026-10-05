@@ -75,11 +75,30 @@ class CachePublished(unittest.TestCase):
         self.assertFalse(any("/compare/" in call for call in fake.calls))
         self.assertFalse(mc.cache_published(fake, "m/m", "sha", "v4.34.1", known_on_master=lambda: True))
 
+    def test_cache_source_names_what_published_it(self):
+        self.assertEqual(mc.cache_source(Fake(build_runs=[PUSH]), "m/m", "sha"), "master")
+        off_master = Fake(release_runs=[{"event": "push", "head_branch": "v4.34.1"}], compare="diverged")
+        self.assertEqual(mc.cache_source(off_master, "m/m", "sha", "v4.34.1"), "release")
+        self.assertIsNone(mc.cache_source(Fake(), "m/m", "sha", "v4.34.1"))
+
+    def test_the_master_build_is_named_first_when_both_published(self):
+        both = Fake(build_runs=[PUSH], release_runs=[{"event": "push", "head_branch": "v4.34.1"}], compare="diverged")
+        self.assertEqual(mc.cache_source(both, "m/m", "sha", "v4.34.1"), "master")
+
     def test_a_failed_lookup_is_an_error_not_an_answer(self):
         def failing(path, jq=None):
             raise RuntimeError("gh api failed")
         with self.assertRaises(RuntimeError):
             mc.cache_published(failing, "m/m", "sha")
+
+
+class Surface(unittest.TestCase):
+    def test_the_public_functions_are_the_whole_question_and_nothing_less(self):
+        # the parts (master build, release_cache run, master membership) are private: a caller that
+        # asks one of them alone asks the cache question differently from the guard
+        public = sorted(n for n, f in vars(mc).items()
+                        if callable(f) and not n.startswith("_") and getattr(f, "__module__", None) == mc.__name__)
+        self.assertEqual(public, ["cache_published", "cache_source", "newest_master_build"])
 
 
 class Listing(unittest.TestCase):
@@ -104,9 +123,13 @@ class Listing(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             mc.newest_master_build(missing, "m/m")
 
-    def test_master_membership_by_compare_status(self):
-        self.assertEqual([mc.is_on_master(s) for s in ("ahead", "identical", "behind", "diverged")],
-                         [True, True, False, False])
+    def test_a_tag_on_master_is_decided_by_one_compare_against_master(self):
+        # through the public question: a tag's release_cache run counts only off master
+        runs = [{"event": "push", "head_branch": "v4.34.1"}]
+        for status, published in (("ahead", False), ("identical", False), ("behind", True), ("diverged", True)):
+            fake = Fake(release_runs=runs, compare=status)
+            self.assertEqual(mc.cache_published(fake, "m/m", "abc", "v4.34.1"), published, status)
+            self.assertEqual([c for c in fake.calls if "/compare/" in c], ["repos/m/m/compare/abc...master"], status)
 
 
 if __name__ == "__main__":

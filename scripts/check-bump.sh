@@ -6,32 +6,50 @@
 # `lean-toolchain` be built and auto-merged without a human.
 # the worry is a PR that re-points a dependency at a malicious fork/commit or a
 # malicious toolchain and then gets auto-built. We reduce the whole manifest to a
-# deterministic function of one validated fact — "mathlib moved forward on the
-# branch nominated in lakefile.toml" — and require the toolchain to move forward
-# and match mathlib's:
+# function of validated facts — "each direct dependency stayed put or
+# moved forward on the branch it nominates" — and require the toolchain to move
+# forward and match mathlib's:
 #
-#   1. lakefile.toml / lakefile.lean are byte-identical to base.
-#   2. The nominated require (mathlib) is the ONLY package named "mathlib", is a
-#      `git` package pinned to a 40-hex commit SHA, keeps its url, and normally keeps
-#      inputRev at `master`.
-#      Its new rev is a *descendant of the old rev* AND *on the trusted base
-#      inputRev's history* — a genuine forward move on the nominated branch (via
-#      the GitHub compare API; the SHA requirement makes the compared revs
-#      immutable, so what we validate is exactly what Lake will resolve and build).
-#      Its new rev is also one whose master-push build completed, so its oleans are in the
-#      cache (see step 2b).
-#   3. The PR manifest's package set, MINUS mathlib, is EXACTLY mathlib's own
-#      lake-manifest at the new rev, comparing WHOLE entries (only `inherited` may differ,
-#      and must be true) — no package added, removed, renamed, retyped (e.g. a `path`
-#      dep), duplicated, re-pointed, or re-configured (`subDir`, `configFile`,
-#      `manifestFile`, `scope`) independently of the trusted mathlib. The mathlib entry
-#      differs from base only in `rev`, and every top-level field (`packagesDir`,
-#      `lakeDir`, ...) equals base. See scripts/bump_manifest.py.
+#   1. lakefile.toml / lakefile.lean are byte-identical to base, and mathlib is the
+#      LAST `require` in lakefile.toml (Lake takes the pins of the last require that pins
+#      a package; step 3 derives shared packages from the dependency declared last).
+#   2. The direct dependencies are the packages base's manifest does not mark
+#      `inherited` (mathlib, Physlib, TauCeti); mathlib must be one of them. Each is
+#      the ONLY package of its name in the PR manifest, a `git` package pinned to a
+#      40-hex commit SHA, and keeps base's url and inputRev (its nominated branch).
+#      A rev that changed must move forward (via the GitHub compare API; the SHA
+#      requirement makes the compared revs immutable, so what we validate is exactly
+#      what Lake will resolve and build). The rule is scripts/bump_moves.py, which
+#      scripts/resolve_deps.py reads too, so the resolver offers exactly what is accepted:
+#        * any direct dependency: the new rev is a *descendant of the old rev* AND
+#          *on the nominated branch's history*;
+#        * mathlib only, when the new rev is not on the branch's history or diverged
+#          from the old one (a patch release cut off master, whether after the pin or
+#          before it): mathlib's toolchain at the new rev is strictly newer than base's
+#          lean-toolchain, AND the new rev is a mathlib release tag `v4.X.Y[-rcN]`
+#          (patch releases live on mathlib's `stable` branch; `v4.*` tags are restricted
+#          to release managers and immutable by mathlib's tag ruleset, so only those
+#          count) or, when it diverged, on the nominated branch (the way back to master
+#          from a patch release).
+#      2b. A new mathlib rev is one whose oleans are in the cache: a successful
+#      master-push build on it, or for a release tag off master, a successful
+#      release_cache.yml run on that tag (scripts/mathlib_cache.py, which
+#      scripts/resolve_deps.py asks too, so it offers exactly these moves).
+#   3. Everything else in the PR manifest is DERIVED from the direct dependencies'
+#      own manifests at their new revs, comparing WHOLE entries (only `inherited` may
+#      differ, and must be true): the package set is exactly their union, a package
+#      pinned by several of them is the entry of the one lakefile.toml requires LAST
+#      (Lake takes the pins of the last require: mathlib's, then TauCeti's, then
+#      Physlib's) — no package added, removed, renamed, retyped (e.g. a `path` dep),
+#      duplicated, re-pointed, or re-configured (`subDir`, `configFile`,
+#      `manifestFile`, `scope`) independently of them. Each direct entry differs from
+#      base only in `rev`, and every top-level field (`packagesDir`, `lakeDir`, ...)
+#      equals base. See scripts/bump_manifest.py.
 #   4. lean-toolchain moves monotonically forward on the leanprover/lean4 channel
 #      AND equals mathlib's lean-toolchain at the new rev.
 #
-# It does NO build and runs NONE of the PR's code — only reads/parses two text
-# files and queries the trusted upstream via `gh api`. Usage:
+# It does NO build and runs NONE of the PR's code — only reads/parses text files and
+# queries the trusted upstreams via `gh api`. Usage:
 #
 #   check-bump.sh <base_dir> <merge_base_dir> <pr_dir>
 #
@@ -79,71 +97,112 @@ for f in lakefile.toml lakefile.lean; do
   fi
 done
 
-# --- helpers ------------------------------------------------------------------
-# owner/repo slug from a github url
-slug() { sed -E 's#^https?://github.com/##; s#/$##; s#\.git$##' <<<"$1"; }
-
-# Print "url<TAB>rev<TAB>inputRev" for THE mathlib package in <file>, after asserting:
-# exactly one package named mathlib, of type git, with a 40-hex commit-SHA rev. Any
-# violation prints "ERROR: ..." and exits 1 (so the caller can `|| fail`).
-mathlib_of() {
-  python3 - "$1" <<'PY'
-import json,sys,re
+# --- 1b. the order of the requires -------------------------------------------
+# Lake takes the pins of the LAST require that pins a package (EpsilonEridani 749caa977 vs 2a2b8dc:
+# scripts/bump_manifest_fixtures/mathlib_first), so step 3 derives each shared package from the
+# last-declared dependency that pins it, and needs this order to do so. mathlib must be last: its
+# cache was built against its own pins. The lakefile is the same on both sides (step 1), so base's is
+# read. Fail closed when it cannot be read.
+[ -f "$BASE/lakefile.toml" ] \
+  || fail "cannot check the order of the requires: base has no lakefile.toml"
+require_order="$(python3 - "$(dirname "$0")" "$BASE/lakefile.toml" <<'PY' 2>&1
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+import lake_requires
 try:
-    m=json.load(open(sys.argv[1]))
-except Exception as e:
-    print(f"ERROR: cannot parse manifest: {e}"); sys.exit(1)
-pkgs=m.get("packages",[])
-names=[p.get("name") for p in pkgs]
-dups=sorted({n for n in names if names.count(n)>1})
-if dups: print(f"ERROR: duplicate package names in manifest: {dups}"); sys.exit(1)
-ml=[p for p in pkgs if p.get("name")=="mathlib"]
-if len(ml)!=1: print(f"ERROR: expected exactly one 'mathlib' package, found {len(ml)}"); sys.exit(1)
-p=ml[0]
-if p.get("type")!="git": print(f"ERROR: mathlib package is not type git (got {p.get('type')!r})"); sys.exit(1)
-rev=p.get("rev") or ""
-if not re.fullmatch(r"[0-9a-f]{40}", rev): print(f"ERROR: mathlib rev {rev!r} is not a 40-hex commit SHA"); sys.exit(1)
-url=(p.get("url") or "").rstrip("/")
-if url.endswith(".git"): url=url[:-4]
-print("\t".join([url, rev, p.get("inputRev") or ""]))
+    print(",".join(lake_requires.names(open(sys.argv[1]).read())))
+except Exception as exc:
+    print(f"ERROR: cannot read the requires of lakefile.toml: {exc}")
+    sys.exit(2)
+PY
+)" || fail "${require_order#ERROR: }"
+[ "${require_order##*,}" = mathlib ] \
+  || fail "mathlib is not the last require in lakefile.toml (the order is '${require_order:-none}'): Lake takes the pins of the last require, so the derived manifest (step 3) would not be what Lake writes"
+
+# --- helpers ------------------------------------------------------------------
+
+TC_B="$(tr -d '[:space:]' <"$BASE/lean-toolchain" 2>/dev/null)"
+TC_P="$(tr -d '[:space:]' <"$PR/lean-toolchain" 2>/dev/null)"
+[ -n "$TC_B" ] || fail "cannot read base lean-toolchain"
+[ -n "$TC_P" ] || fail "cannot read PR lean-toolchain"
+
+# Exit 0 when toolchain $2 is a strictly newer leanprover/lean4 release than $1; print why not.
+# The order is lean_versions.py's, the one resolve_deps.py proposes moves by.
+toolchain_newer() { python3 "$(dirname "$0")/lean_versions.py" newer "$1" "$2"; }
+
+# Print one line per direct dependency (a package base's manifest does not mark
+# `inherited`): "name<TAB>owner/repo<TAB>base rev<TAB>PR rev<TAB>inputRev<TAB>manifest path", after
+# asserting: no duplicate names in either manifest, mathlib among them, and each one exactly
+# once in the PR, of type git, with a 40-hex commit-SHA rev, base's url and base's inputRev.
+# Url, inputRev and manifest path are base's, the trusted side. Any violation prints
+# "ERROR: ..." and exits 1 (so the caller can `|| fail`).
+direct_deps() {
+  python3 - "$(dirname "$0")" "$1" "$2" <<'PY'
+import json,sys,re
+sys.path.insert(0, sys.argv.pop(1))
+from bump_manifest import shape, direct_packages  # the one manifest-shape check and the one meaning of "direct"
+from lake_requires import repo_slug as norm  # the one url normalisation (the resolver reads it too)
+def load(path, which):
+    try:
+        m=json.load(open(path))
+    except Exception as e:
+        print(f"ERROR: cannot parse {which} manifest: {e}"); sys.exit(1)
+    found=shape(which, m)
+    if found: print(f"ERROR: {found[0]}"); sys.exit(1)
+    return m
+base_m, pr_m = load(sys.argv[1], "base"), load(sys.argv[2], "PR")
+base, pr = ({p["name"]: p for p in m["packages"]} for m in (base_m, pr_m))
+direct=list(direct_packages(base_m))
+if "mathlib" not in direct: print("ERROR: base manifest has no direct 'mathlib' package"); sys.exit(1)
+for n in direct:
+    b, p = base[n], pr.get(n)
+    if b.get("type")!="git": print(f"ERROR: base {n} package is not type git"); sys.exit(1)
+    if p is None: print(f"ERROR: PR manifest has no {n!r} package"); sys.exit(1)
+    if p.get("type")!="git": print(f"ERROR: {n} package is not type git (got {p.get('type')!r})"); sys.exit(1)
+    for side, e in (("base", b), ("PR", p)):
+        if not re.fullmatch(r"[0-9a-f]{40}", str(e.get("rev") or "")):
+            print(f"ERROR: {side} {n} rev {e.get('rev')!r} is not a 40-hex commit SHA"); sys.exit(1)
+    if norm(p.get("url"))!=norm(b.get("url")):
+        print(f"ERROR: {n} url changed ({b.get('url')} -> {p.get('url')}) — repo swap is human-owned"); sys.exit(1)
+    if p.get("inputRev")!=b.get("inputRev") or not b.get("inputRev"):
+        print(f"ERROR: {n} inputRev (nominated branch) changed ({b.get('inputRev')} -> {p.get('inputRev')}) — human-owned"); sys.exit(1)
+    path="/".join(x for x in (b.get("subDir"), b.get("manifestFile") or "lake-manifest.json") if x)
+    print("\t".join([n, norm(b["url"]), b["rev"], p["rev"], b["inputRev"], path]))
 PY
 }
 
-ml_base="$(mathlib_of "$BASE/lake-manifest.json")" || fail "base manifest: ${ml_base#ERROR: }"
-ml_pr="$(mathlib_of   "$PR/lake-manifest.json")"   || fail "PR manifest: ${ml_pr#ERROR: }"
-IFS=$'\t' read -r ML_URL_B ML_REV_B ML_IR_B <<<"$ml_base"
-IFS=$'\t' read -r ML_URL_P ML_REV_P ML_IR_P <<<"$ml_pr"
+directs="$(direct_deps "$BASE/lake-manifest.json" "$PR/lake-manifest.json")" || fail "${directs#ERROR: }"
 
-[ "$ML_URL_B" = "$ML_URL_P" ] || fail "mathlib url changed ($ML_URL_B -> $ML_URL_P) — repo swap is human-owned"
-[ "$ML_IR_B" = "$ML_IR_P" ] \
-  || fail "mathlib inputRev (nominated branch) changed ($ML_IR_B -> $ML_IR_P) — human-owned"
-NOMINATED_BRANCH="$ML_IR_B"
-ML_SLUG="$(slug "$ML_URL_P")"
-
-# --- 2. mathlib moved forward on the nominated branch -------------------------
-if [ "$ML_REV_B" = "$ML_REV_P" ]; then
-  # mathlib pin unchanged: then NOTHING in the manifest may change (the rest is derived from it).
-  if ! diff -q "$BASE/lake-manifest.json" "$PR/lake-manifest.json" >/dev/null 2>&1; then
-    fail "mathlib rev unchanged but the manifest changed — not a derived bump"
+# --- 2. each direct dependency stayed put or moved forward --------------------
+DEP_NAMES=(); DEP_SLUGS=(); DEP_REVS=(); DEP_MANIFESTS=()
+moved=0
+while IFS=$'\t' read -r -u 3 NAME URL REV_B REV_P BRANCH MPATH; do
+  SLUG="$URL"  # direct_deps prints lake_requires.repo_slug(url)
+  DEP_NAMES+=("$NAME"); DEP_SLUGS+=("$SLUG"); DEP_REVS+=("$REV_P"); DEP_MANIFESTS+=("$MPATH")
+  if [ "$NAME" = mathlib ]; then ML_SLUG="$SLUG"; ML_REV_P="$REV_P"; fi
+  if [ "$REV_B" = "$REV_P" ]; then
+    echo "bump-guard: $NAME pin unchanged."
+    continue
   fi
-  echo "bump-guard: mathlib pin unchanged."
-else
-  st_fwd="$(gh api "repos/$ML_SLUG/compare/$ML_REV_B...$ML_REV_P" --jq '.status' 2>/dev/null)" \
-    || fail "compare API failed for $ML_SLUG $ML_REV_B...$ML_REV_P"
-  case "$st_fwd" in
-    ahead) : ;;  # new strictly descends from old — forward
-    *) fail "mathlib rev is not a forward move from base (compare status: ${st_fwd:-unknown}); old=$ML_REV_B new=$ML_REV_P" ;;
-  esac
-  # Membership is checked against the trusted branch nominated by the unchanged lakefile.
-  st_branch="$(gh api "repos/$ML_SLUG/compare/$ML_REV_P...$NOMINATED_BRANCH" --jq '.status' 2>/dev/null)" \
-    || fail "compare API failed for $ML_SLUG $ML_REV_P...$NOMINATED_BRANCH"
-  case "$st_branch" in
-    ahead|identical) : ;;  # the nominated branch tip is at-or-ahead of new — new is on its history
-    *) fail "mathlib new rev $ML_REV_P is not on branch '$NOMINATED_BRANCH' (compare status: ${st_branch:-unknown})" ;;
-  esac
-  echo "bump-guard: mathlib $ML_REV_B -> $ML_REV_P is a forward move on '$NOMINATED_BRANCH'."
+  moved=1
+  st_fwd="$(gh api "repos/$SLUG/compare/$REV_B...$REV_P" --jq '.status' 2>/dev/null)" \
+    || fail "compare API failed for $SLUG $REV_B...$REV_P"
+  # Membership is checked against the trusted branch nominated by base's manifest.
+  st_branch="$(gh api "repos/$SLUG/compare/$REV_P...$BRANCH" --jq '.status' 2>/dev/null)" \
+    || fail "compare API failed for $SLUG $REV_P...$BRANCH"
+  # What to make of the move is bump_moves.py's rule, the one resolve_deps.py's `forward` reads too.
+  # Beyond the two compares it needs mathlib's new toolchain and release tag, which it fetches only
+  # if the rule reaches them. It prints the verdict, then the toolchain, the tag and "1"/"0" for
+  # "on the branch", which step 2b and step 4 reuse.
+  move_rc=0
+  move_out="$(python3 "$(dirname "$0")/bump_moves.py" move "$NAME" "$st_fwd" "$st_branch" "$BRANCH" "$TC_B" "$REV_B" "$REV_P" "$SLUG" 2>&1)" || move_rc=$?
+  { IFS= read -r move_msg; IFS= read -r move_toolchain; IFS= read -r TAG; IFS= read -r on_branch; } <<<"$move_out"
+  [ "$move_rc" = 0 ] || fail "${move_msg#ERROR: }"
+  echo "bump-guard: $move_msg"
+  [ "$NAME" = mathlib ] && ML_TC_NEW="$move_toolchain"
+  [ "$NAME" = mathlib ] || continue
 
-  # --- 2b. the new rev is one whose cache was actually published ---------------
+  # --- 2b. the new mathlib rev is one whose cache was actually published --------
   # Being on master is not enough. Mathlib lands in batches: bors tests a batch and
   # fast-forwards master over all of its commits, but only the resulting master tip is
   # built by the push-triggered CI run, and that run is the one that publishes to the
@@ -163,60 +222,77 @@ else
   # to a human, which is the safe direction for a trust anchor.
   # The question itself lives in mathlib_cache.py, which resolve_deps.py asks too: the resolver must
   # not propose a rev this step would refuse.
+  #
+  # A patch release is committed off master, so no master-push build ever covers it;
+  # mathlib's release_cache.yml rebuilds each `v4.*` tag off master and publishes it to
+  # the same container. For a release tag off master we accept that run, on that tag,
+  # instead. For a tag ON master it proves nothing (the workflow skips the build and
+  # still succeeds), so only the master-push build counts there.
+  # `on_branch` is already the answer to "is REV_P on master's history" when the nominated branch is
+  # master, so hand it over rather than asking GitHub the same compare again.
+  known_on_master=""; [ "$BRANCH" = master ] && known_on_master="$on_branch"
   pub_rc=0
-  pub_msg="$(python3 - "$(dirname "$0")" "$ML_SLUG" "$ML_REV_P" <<'PY' 2>&1
+  pub_msg="$(python3 - "$(dirname "$0")" "$SLUG" "$REV_P" "$TAG" "$known_on_master" <<'PY' 2>&1
 import sys
 sys.path.insert(0, sys.argv.pop(1))
-from mathlib_cache import master_build_published
+from mathlib_cache import cache_source
 from pr_status.core import gh_api
-slug, rev = sys.argv[1:3]
+slug, rev, tag, known = sys.argv[1:5]
+known = {"1": True, "0": False}.get(known)
 try:
-    published = master_build_published(gh_api, slug, rev)
+    source = cache_source(gh_api, slug, rev, tag, None if known is None else (lambda: known))
 except Exception as exc:
     print(f"workflow-runs API failed for {slug} {rev}: {exc}")
     sys.exit(2)
-sys.exit(0 if published else 1)
+print(source or "")
+sys.exit(0 if source else 1)
 PY
   )" || pub_rc=$?
   [ "$pub_rc" -ne 2 ] || fail "$pub_msg"
-  [ "$pub_rc" -eq 0 ] \
-    || fail "mathlib rev $ML_REV_P has no completed, successful master-push build, so its oleans were never published to the cache; bump to the built tip of that batch, or wait for its build to finish"
-  echo "bump-guard: mathlib $ML_REV_P has a successful master-push build, so its cache is published."
+  if [ "$pub_rc" -eq 0 ]; then
+    if [ "$pub_msg" = release ]; then
+      echo "bump-guard: mathlib $TAG has a successful release_cache.yml run, so its cache is published."
+    else
+      echo "bump-guard: mathlib $REV_P has a successful master-push build, so its cache is published."
+    fi
+    continue
+  fi
+  if [ -n "$TAG" ]; then
+    fail "mathlib release $TAG ($REV_P) has no published cache: no completed, successful master-push build and, for a tag off master, no completed, successful release_cache.yml run on it; wait for it"
+  fi
+  fail "mathlib rev $REV_P has no completed, successful master-push build, so its oleans were never published to the cache; bump to the built tip of that batch, or wait for its build to finish"
+done 3<<<"$directs"
+
+if [ "$moved" = 0 ]; then
+  # No direct dependency moved: then NOTHING in the manifest may change (the rest is derived).
+  diff -q "$BASE/lake-manifest.json" "$PR/lake-manifest.json" >/dev/null 2>&1 \
+    || fail "no direct dependency rev changed but the manifest changed — not a derived bump"
 fi
 
-# --- 3. the rest of the manifest is EXACTLY mathlib's own manifest at the new rev
-ML_MANIFEST="$(gh api "repos/$ML_SLUG/contents/lake-manifest.json?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d)" \
-  || fail "cannot fetch mathlib lake-manifest.json at $ML_REV_P"
-ML_TMP="$(mktemp)"; trap 'rm -f "$ML_TMP"' EXIT
-printf '%s' "$ML_MANIFEST" > "$ML_TMP"
+# --- 3. the rest of the manifest is EXACTLY derived from the direct dependencies
+DEP_TMP="$(mktemp -d)"; trap 'rm -rf "$DEP_TMP"' EXIT
+DEP_ARGS=()
+for i in "${!DEP_NAMES[@]}"; do
+  n="${DEP_NAMES[$i]}"; f="$DEP_TMP/$i.json"
+  gh api "repos/${DEP_SLUGS[$i]}/contents/${DEP_MANIFESTS[$i]}?ref=${DEP_REVS[$i]}" --jq '.content' 2>/dev/null | base64 -d >"$f" \
+    && [ -s "$f" ] || fail "cannot fetch $n ${DEP_MANIFESTS[$i]} at ${DEP_REVS[$i]}"
+  DEP_ARGS+=("$n=$f")
+done
 
-derived_msg="$(python3 "$(dirname "$0")/bump_manifest.py" "$PR/lake-manifest.json" "$ML_TMP" "$BASE/lake-manifest.json")" || fail "${derived_msg:-transitive pins do not match mathlib@$ML_REV_P}"
-echo "bump-guard: the manifest matches mathlib@$ML_REV_P and base in every field but mathlib's rev."
+derived_msg="$(python3 "$(dirname "$0")/bump_manifest.py" --order "$require_order" "$PR/lake-manifest.json" "$BASE/lake-manifest.json" "${DEP_ARGS[@]}")" \
+  || fail "${derived_msg:-transitive pins do not match the direct dependencies at their new revs}"
+echo "bump-guard: the manifest is derived from ${DEP_NAMES[*]} at their new revs and matches base in every other field."
 
 # --- 4. toolchain: monotonic forward AND consistent with mathlib --------------
-TC_B="$(tr -d '[:space:]' <"$BASE/lean-toolchain" 2>/dev/null)"
-TC_P="$(tr -d '[:space:]' <"$PR/lean-toolchain" 2>/dev/null)"
-[ -n "$TC_B" ] || fail "cannot read base lean-toolchain"
-[ -n "$TC_P" ] || fail "cannot read PR lean-toolchain"
-
 if [ "$TC_B" != "$TC_P" ]; then
-  tc_msg="$(python3 - "$(dirname "$0")" "$TC_B" "$TC_P" <<'PY'
-import sys
-sys.path.insert(0, sys.argv.pop(1))
-from lean_versions import parse_toolchain  # the order resolve_deps.py proposes moves by
-def parse(t):
-    v=parse_toolchain(t)
-    if v is None: print(f"toolchain '{t}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"); sys.exit(1)
-    return v  # release > any rc of same X.Y.Z
-b,p=parse(sys.argv[1]),parse(sys.argv[2])
-if p < b: print(f"toolchain moved backward ({sys.argv[1]} -> {sys.argv[2]})"); sys.exit(1)
-PY
-  )" || fail "${tc_msg:-toolchain is not a monotonic forward release}"
+  tc_msg="$(toolchain_newer "$TC_B" "$TC_P")" || fail "${tc_msg:-toolchain is not a monotonic forward release}"
 fi
 
-ML_TC="$(gh api "repos/$ML_SLUG/contents/lean-toolchain?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')" \
-  || fail "cannot fetch mathlib lean-toolchain at $ML_REV_P"
+# mathlib's toolchain at its new rev is already in hand when step 2 fetched it for the move; else
+# bump_moves.py fetches it the same way, so step 2's comparison and this equality read one string
+ML_TC="${ML_TC_NEW:-$(python3 "$(dirname "$0")/bump_moves.py" toolchain "$ML_SLUG" "$ML_REV_P" 2>&1)}" \
+  || fail "${ML_TC#ERROR: }"
 [ "$TC_P" = "$ML_TC" ] || fail "PR lean-toolchain ($TC_P) != mathlib@$ML_REV_P's ($ML_TC)"
 echo "bump-guard: toolchain $TC_B -> $TC_P is forward and matches mathlib@$ML_REV_P."
 
-ok "forward-only bump validated (mathlib on '$NOMINATED_BRANCH', derived transitive pins, toolchain consistent)"
+ok "forward-only bump validated (${DEP_NAMES[*]} forward on their branches, derived transitive pins, toolchain consistent)"

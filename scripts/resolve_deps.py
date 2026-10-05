@@ -20,12 +20,14 @@ No dependency is special. Every candidate mathlib commit M comes from somewhere 
     published; the same signal scripts/check-bump.sh step 2b requires);
   * every mathlib commit that a candidate commit of a dependency pins.
 
-M must be a forward move from the current pin: a descendant of it (`descendant`), or, with a
-strictly newer toolchain, a mathlib release tag (`release`; `v4.34.1` lives on mathlib's `stable`
-branch, not on master) or a commit on mathlib's nominated branch (`toolchain`; the way back to
-master from a patch release). The last two may diverge from the pin; the commits the pin has
-and M lacks are counted (`dropped_commits`). The
-toolchain is always mathlib's own at M.
+M must be a forward move from the current pin (the rule is scripts/bump_moves.py, which
+scripts/check-bump.sh calls too): a descendant of it on mathlib's nominated branch
+(`descendant`), or, with a strictly newer toolchain, a mathlib `v4.*` release tag (`release`;
+`v4.34.1` lives on mathlib's `stable` branch, not on master, and a tag cut after the pin descends
+from it while off master, so an off-master descendant qualifies only as a release) or, for a rev
+that diverged from the pin, a commit on the nominated branch (`toolchain`; the way back to master
+from a patch release). A diverged rev leaves out commits the pin has; they are counted
+(`dropped_commits`). The toolchain is always mathlib's own at M.
 
 A new M is only offered once its cache is published, or every downstream build would recompile
 mathlib. A master commit needs a successful master-push `build.yml` run (step 2b of
@@ -35,8 +37,10 @@ it: the run skips the build and still succeeds). scripts/mathlib_cache.py answer
 script and check-bump.sh. An M that is otherwise feasible but has no cache yet is blocked by `cache`.
 
 A dependency's candidate commits are its branch tip, the last commit before each change to its
-`lean-toolchain` or `lake-manifest.json`, and its current pin: commits after the pin, so a
-dependency never moves backward. A candidate FITS M when
+`lean-toolchain` or `lake-manifest.json`, and its current pin. A candidate must be a forward move
+the bump guard accepts (bump_moves.dependency_move): a descendant of the pin, so a dependency never
+moves backward. One that is not, which means the branch was rewritten, is left out and reported as a
+hold rather than silently dropped. A candidate FITS M when
 
   * `exact`: it pins mathlib at M itself (its own CI built exactly this pairing); or
   * `near`:  its toolchain is on M's Lean line (same major.minor) and no newer than M's, and
@@ -81,12 +85,13 @@ build already failed inside a dependency, so the next feasible set is offered in
 import argparse
 import base64
 import json
-import re
 import sys
-import tomllib
 from datetime import datetime
 from pathlib import Path
 
+import bump_manifest
+import bump_moves
+import lake_requires
 import lean_versions
 import mathlib_cache
 from lean_versions import parse_toolchain, show_toolchain
@@ -162,15 +167,14 @@ class GitHub:
         check-bump.sh asks too): a successful master-push build, or for a release tag off master,
         a successful release_cache.yml run on it."""
         def on_master():  # the memoised compare, shared with `forward`
-            return mathlib_cache.is_on_master(self.compare(repo, sha, mathlib_cache.BRANCH)[0])
+            return bump_moves.is_on_branch(self.compare(repo, sha, mathlib_cache.BRANCH)[0])
         return self._once(("cache_published", repo, sha),
                           lambda: mathlib_cache.cache_published(gh, repo, sha, tag, on_master))
 
     def release_tags(self, repo):
-        """{commit sha: tag} for the repository's vX.Y.Z[-rcN] tags."""
-        def fetch():
-            return {sha: name for name, sha in lean_versions.release_tags(gh, repo).items()}
-        return self._once(("tags", repo), fetch)
+        """{commit sha: tag} for the repository's trusted release tags: the same mapping the guard
+        reads (lean_versions.release_tags_by_commit), so both look for a cache under the same tag."""
+        return self._once(("tags", repo), lambda: lean_versions.release_tags_by_commit(gh, repo))
 
 
 class Recorder:
@@ -222,17 +226,12 @@ def newness(entry):
 
 # --- the project's own configuration --------------------------------------------------------------
 
-def slug(url):
-    return re.sub(r"(^https?://github\.com/|\.git$|/$)", "", url)
-
-
 def read_project(root):
     """[(name, repo, branch)] for the git requires, plus {name: rev} and the toolchain pinned now."""
-    lakefile = tomllib.loads((root / "lakefile.toml").read_text())
-    requires = [(r["name"], slug(r["git"]), r.get("rev", "main"))
-                for r in lakefile.get("require", []) if r.get("git")]
+    requires = [(r["name"], lake_requires.repo_slug(r["git"]), r.get("rev", "main"))
+                for r in lake_requires.parse((root / "lakefile.toml").read_text()) if r.get("git")]
     manifest = json.loads((root / "lake-manifest.json").read_text())
-    pins = {p["name"]: p["rev"] for p in manifest["packages"] if not p.get("inherited")}
+    pins = {name: p["rev"] for name, p in bump_manifest.direct_packages(manifest).items()}
     missing = [name for name, _, _ in requires if name not in pins]
     if missing:
         raise RuntimeError(f"lake-manifest.json has no top-level pin for {missing}")
@@ -266,6 +265,7 @@ class Resolver:
             raise RuntimeError(f"mathlib must be required at rev master, not {self.mathlib_branch!r}")
         self.deps = [(name, repo, branch) for name, repo, branch in requires if name != MATHLIB]
         self.tags = src.release_tags(self.mathlib_repo)
+        self.not_forward = {}  # dependency -> candidate commits left out because they do not descend from its pin
 
     # facts about one commit
     def dep_commit(self, repo, sha):
@@ -276,18 +276,30 @@ class Resolver:
     def mathlib_toolchain(self, sha):
         return self.src.file(self.mathlib_repo, sha, "lean-toolchain").strip()
 
+    def moves_forward(self, repo, pin, sha):
+        """Whether the bump guard accepts moving a dependency from `pin` to `sha`: the one rule for a
+        dependency other than mathlib (bump_moves.dependency_move). A candidate comes from the
+        dependency's own branch listing, so it is on the branch by construction; what can fail is
+        that it is not a descendant of the pin (a rewritten branch, an odd merge)."""
+        kind, _ = bump_moves.dependency_move(self.src.compare(repo, pin, sha)[0], True)
+        return kind is not None
+
     def candidates(self, name, repo, branch):
-        """A dependency's candidate commits, newest first, ending with its current pin."""
+        """A dependency's candidate commits, newest first, ending with its current pin. A commit that
+        does not descend from the pin is left out, since the guard would refuse the move, and is
+        noted in `not_forward` so the report can say so."""
         pin = self.pins[name]
         shas = [self.src.tip(repo, branch)]
         for boundary in self.src.boundaries(repo, branch, pin):
             shas.append(self.src.parent(repo, boundary))
         shas.append(pin)
-        seen, out = set(), []
-        for sha in shas:
-            if sha not in seen:
-                seen.add(sha)
+        out, dropped = [], []
+        for sha in dict.fromkeys(shas):
+            if sha != pin and not self.moves_forward(repo, pin, sha):
+                dropped.append(sha)
+            else:
                 out.append(self.dep_commit(repo, sha))
+        self.not_forward[name] = dropped
         return out
 
     def forward(self, m):
@@ -295,20 +307,13 @@ class Resolver:
         current = self.pins[MATHLIB]
         if m == current:
             return "current"
-        if parse_toolchain(self.mathlib_toolchain(m)) is None:
-            return None
-        if parse_toolchain(self.mathlib_toolchain(m)) < parse_toolchain(self.toolchain):
+        order = lean_versions.toolchain_order(self.toolchain, self.mathlib_toolchain(m))
+        if order in (None, "older"):
             return None
         status = self.src.compare(self.mathlib_repo, current, m)[0]
-        if status == "ahead":
-            return "descendant"
-        if parse_toolchain(self.mathlib_toolchain(m)) <= parse_toolchain(self.toolchain):
-            return None
-        if m in self.tags:
-            return "release"
-        if mathlib_cache.is_on_master(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0]):
-            return "toolchain"
-        return None
+        on_branch = bump_moves.is_on_branch(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0])
+        kind, _ = bump_moves.mathlib_move(status, on_branch, lambda: order, lambda: m in self.tags)
+        return kind
 
     def fit(self, commit, m):
         if commit["mathlib"] == m:
@@ -389,7 +394,8 @@ class Resolver:
         repos = {MATHLIB: self.mathlib_repo}
         branches = {MATHLIB: self.mathlib_branch}
         for name, repo, branch in self.deps:
-            tips[name], repos[name], branches[name] = cands[name][0]["rev"], repo, branch
+            # the branch's own tip: the newest candidate is not it when the tip was left out
+            tips[name], repos[name], branches[name] = self.src.tip(repo, branch), repo, branch
 
         newer = sorted((b for b in blocked if newness(b) > newness(chosen)), key=newness, reverse=True)
         pins, holds = {}, []
@@ -409,6 +415,16 @@ class Resolver:
                 pins[name]["dropped_commits"] = pin["dropped_commits"]
             if rev == tip:
                 continue
+            dropped = self.not_forward.get(name, [])
+            if dropped:
+                pins[name]["not_forward"] = dropped
+                shown = ", ".join(short(s) for s in dropped[:3]) + (", ..." if len(dropped) > 3 else "")
+                holds.append({"pin": name, "held_by": [name],
+                              "text": (f"{name}: {len(dropped)} commit(s) on {branches[name]} do not descend from its pin "
+                                       f"{short(self.pins[name])} ({shown}), so the branch looks rewritten; "
+                                       f"the bump guard would refuse them, so they are not offered")})
+                if not cands[name][:pin["index"]]:
+                    continue  # nothing newer is on offer: the rewritten branch is the whole reason
             if name == MATHLIB:
                 why = sorted({b["dependency"] for entry in newer for b in entry["blockers"]})
                 reasons = [b["reason"] for entry in newer[:1] for b in entry["blockers"]]
