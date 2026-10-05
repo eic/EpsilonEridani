@@ -42,8 +42,11 @@ this question for both the resolver and `check-bump.sh`. Without one, the candid
 `cache` and the next one is offered. The toolchain is always mathlib's own at the chosen commit.
 
 **Candidate dependency commits** are the branch tip, the last commit before each change to
-the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. All are at or
-after the pin: a dependency never moves backward.
+the dependency's `lean-toolchain` or `lake-manifest.json`, and the current pin. Each must be a
+forward move the guard accepts (`scripts/bump_moves.py`): a descendant of the pin, so a dependency
+never moves backward. A commit that is not (the dependency's branch was rewritten, or the pin is
+no longer on it) is left out, and the report says so as a hold, naming those commits, rather than
+dropping them silently.
 
 A dependency commit **fits** a mathlib commit M when
 

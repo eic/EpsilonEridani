@@ -37,8 +37,10 @@ it: the run skips the build and still succeeds). scripts/mathlib_cache.py answer
 script and check-bump.sh. An M that is otherwise feasible but has no cache yet is blocked by `cache`.
 
 A dependency's candidate commits are its branch tip, the last commit before each change to its
-`lean-toolchain` or `lake-manifest.json`, and its current pin: commits after the pin, so a
-dependency never moves backward. A candidate FITS M when
+`lean-toolchain` or `lake-manifest.json`, and its current pin. A candidate must be a forward move
+the bump guard accepts (bump_moves.dependency_move): a descendant of the pin, so a dependency never
+moves backward. One that is not, which means the branch was rewritten, is left out and reported as a
+hold rather than silently dropped. A candidate FITS M when
 
   * `exact`: it pins mathlib at M itself (its own CI built exactly this pairing); or
   * `near`:  its toolchain is on M's Lean line (same major.minor) and no newer than M's, and
@@ -263,6 +265,7 @@ class Resolver:
             raise RuntimeError(f"mathlib must be required at rev master, not {self.mathlib_branch!r}")
         self.deps = [(name, repo, branch) for name, repo, branch in requires if name != MATHLIB]
         self.tags = src.release_tags(self.mathlib_repo)
+        self.not_forward = {}  # dependency -> candidate commits left out because they do not descend from its pin
 
     # facts about one commit
     def dep_commit(self, repo, sha):
@@ -273,18 +276,30 @@ class Resolver:
     def mathlib_toolchain(self, sha):
         return self.src.file(self.mathlib_repo, sha, "lean-toolchain").strip()
 
+    def moves_forward(self, repo, pin, sha):
+        """Whether the bump guard accepts moving a dependency from `pin` to `sha`: the one rule for a
+        dependency other than mathlib (bump_moves.dependency_move). A candidate comes from the
+        dependency's own branch listing, so it is on the branch by construction; what can fail is
+        that it is not a descendant of the pin (a rewritten branch, an odd merge)."""
+        kind, _ = bump_moves.dependency_move(self.src.compare(repo, pin, sha)[0], True)
+        return kind is not None
+
     def candidates(self, name, repo, branch):
-        """A dependency's candidate commits, newest first, ending with its current pin."""
+        """A dependency's candidate commits, newest first, ending with its current pin. A commit that
+        does not descend from the pin is left out, since the guard would refuse the move, and is
+        noted in `not_forward` so the report can say so."""
         pin = self.pins[name]
         shas = [self.src.tip(repo, branch)]
         for boundary in self.src.boundaries(repo, branch, pin):
             shas.append(self.src.parent(repo, boundary))
         shas.append(pin)
-        seen, out = set(), []
-        for sha in shas:
-            if sha not in seen:
-                seen.add(sha)
+        out, dropped = [], []
+        for sha in dict.fromkeys(shas):
+            if sha != pin and not self.moves_forward(repo, pin, sha):
+                dropped.append(sha)
+            else:
                 out.append(self.dep_commit(repo, sha))
+        self.not_forward[name] = dropped
         return out
 
     def forward(self, m):
@@ -379,7 +394,8 @@ class Resolver:
         repos = {MATHLIB: self.mathlib_repo}
         branches = {MATHLIB: self.mathlib_branch}
         for name, repo, branch in self.deps:
-            tips[name], repos[name], branches[name] = cands[name][0]["rev"], repo, branch
+            # the branch's own tip: the newest candidate is not it when the tip was left out
+            tips[name], repos[name], branches[name] = self.src.tip(repo, branch), repo, branch
 
         newer = sorted((b for b in blocked if newness(b) > newness(chosen)), key=newness, reverse=True)
         pins, holds = {}, []
@@ -399,6 +415,16 @@ class Resolver:
                 pins[name]["dropped_commits"] = pin["dropped_commits"]
             if rev == tip:
                 continue
+            dropped = self.not_forward.get(name, [])
+            if dropped:
+                pins[name]["not_forward"] = dropped
+                shown = ", ".join(short(s) for s in dropped[:3]) + (", ..." if len(dropped) > 3 else "")
+                holds.append({"pin": name, "held_by": [name],
+                              "text": (f"{name}: {len(dropped)} commit(s) on {branches[name]} do not descend from its pin "
+                                       f"{short(self.pins[name])} ({shown}), so the branch looks rewritten; "
+                                       f"the bump guard would refuse them, so they are not offered")})
+                if not cands[name][:pin["index"]]:
+                    continue  # nothing newer is on offer: the rewritten branch is the whole reason
             if name == MATHLIB:
                 why = sorted({b["dependency"] for entry in newer for b in entry["blockers"]})
                 reasons = [b["reason"] for entry in newer[:1] for b in entry["blockers"]]

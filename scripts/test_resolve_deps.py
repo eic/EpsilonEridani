@@ -319,6 +319,58 @@ class Resolution(unittest.TestCase):
             rd.Resolver(g, requires, {"mathlib": "m1"}, lean("v4.34.0"))
 
 
+class RewrittenBranch(unittest.TestCase):
+    """A dependency whose branch no longer contains its pin: nothing on it is a forward move, which the
+    bump guard would refuse (bump_moves.dependency_move), so the resolver offers none and says why."""
+
+    def graph(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p0", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))  # the pin
+        # the branch was rewritten: its history (p3 <- p2 <- p1) no longer contains p0
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(PL, "p3", "p2", branch="master", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        return g
+
+    def test_candidates_that_do_not_descend_from_the_pin_are_left_out_and_noted(self):
+        g = self.graph()
+        r = rd.Resolver(g, REQUIRES, {"mathlib": "m1", "Physlib": "p0", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual([c["rev"] for c in r.candidates("Physlib", PL, "master")], ["p0"])  # only the pin
+        self.assertEqual(r.not_forward["Physlib"], ["p3", "p1"])  # the tip, then the parent of the boundary p2
+
+    def test_an_ordinary_history_drops_nothing(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        r = rd.Resolver(g, REQUIRES, {"mathlib": "m1", "Physlib": "p1"}, lean("v4.34.0"))
+        self.assertEqual([c["rev"] for c in r.candidates("Physlib", PL, "master")], ["p2", "p1"])
+        self.assertEqual(r.not_forward["Physlib"], [])
+
+    def test_the_report_names_the_rewritten_branch_and_keeps_the_true_tip(self):
+        r = resolve(self.graph(), {"mathlib": "m1", "Physlib": "p0", "TauCeti": "t1"}, lean("v4.34.0"))
+        physlib = r["pins"]["Physlib"]
+        self.assertEqual((physlib["rev"], physlib["tip"]), ("p0", "p3"))  # held at the pin, not "at tip"
+        self.assertEqual(physlib["not_forward"], ["p3", "p1"])
+        held = [h for h in r["holds"] if h["pin"] == "Physlib"]
+        self.assertEqual(len(held), 1)  # nothing newer is on offer, so no second, misleading "held by mathlib"
+        self.assertEqual(held[0]["held_by"], ["Physlib"])
+        for words in ("2 commit(s) on master do not descend from its pin p0", "rewritten", "not offered"):
+            self.assertIn(words, held[0]["text"])
+
+    def test_an_ordinary_run_reports_no_such_hold(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertFalse(any("not_forward" in p for p in r["pins"].values()))
+        self.assertFalse(any("rewritten" in h["text"] for h in r["holds"]))
+
+
 class ForwardMoves(unittest.TestCase):
     """What Resolver.forward offers must be what check-bump.sh accepts (test_check_bump.py)."""
 
@@ -415,6 +467,10 @@ class RealRecording(unittest.TestCase):
                           "Physlib": ("d86d07d", "exact"),
                           "TauCeti": ("a1fff14", "carried")})
         self.assertEqual(self.r["toolchain"]["chosen"], lean("v4.34.1"))
+
+    def test_nothing_in_the_real_history_is_left_out(self):
+        self.assertFalse(any("not_forward" in p for p in self.r["pins"].values()))
+        self.assertFalse(any("rewritten" in h["text"] for h in self.r["holds"]))
 
     def test_physlib_is_what_holds_mathlib(self):
         held = {h["pin"]: h["held_by"] for h in self.r["holds"]}
