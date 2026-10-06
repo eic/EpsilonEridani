@@ -78,35 +78,30 @@ lemma pX_def (K : DisKinematics V) : pX K = K.q + delta K := rfl
 def tMom (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (delta K) (delta K)
 
-omit [Module ℝ V] in
 lemma tMom_def (g : Bilin V) (K : DisKinematics V) : tMom g K = g (delta K) (delta K) := rfl
 
 /-- The fraction of the target momentum carried by the exchange, `ξ = Δ·q / P·q`. -/
 noncomputable def xi (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (delta K) K.q / g K.p K.q
 
-omit [Module ℝ V] in
 lemma xi_def (g : Bilin V) (K : DisKinematics V) : xi g K = g (delta K) K.q / g K.p K.q := rfl
 
 /-- The fraction of the exchange momentum carried by the struck parton, `β = Q² / (2 Δ·q)`. -/
 noncomputable def beta (g : Bilin V) (K : DisKinematics V) : ℝ :=
   K.Q2 g / (2 * g (delta K) K.q)
 
-omit [Module ℝ V] in
 lemma beta_def (g : Bilin V) (K : DisKinematics V) : beta g K = K.Q2 g / (2 * g (delta K) K.q) := rfl
 
 /-- The invariant mass squared of the diffractive system, `M_X² = (q + Δ)²`. -/
 def MX2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (pX K) (pX K)
 
-omit [Module ℝ V] in
 lemma MX2_def (g : Bilin V) (K : DisKinematics V) : MX2 g K = g (pX K) (pX K) := rfl
 
 /-- The invariant mass squared of the target-side system, `M_Y² = P'²`. -/
 def MY2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g K.pPrime K.pPrime
 
-omit [Module ℝ V] in
 lemma MY2_def (g : Bilin V) (K : DisKinematics V) : MY2 g K = g K.pPrime K.pPrime := rfl
 
 omit [Module ℝ V] in
