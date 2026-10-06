@@ -41,7 +41,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
 namespace EpsilonEridani
 
 /-- A function is analytic wherever its slope function `dslope f a` is. -/
-theorem AnalyticAt.of_dslope (h : AnalyticAt 𝕜 (dslope f a) b) : AnalyticAt 𝕜 f b := by
+theorem analyticAt_of_dslope (h : AnalyticAt 𝕜 (dslope f a) b) : AnalyticAt 𝕜 f b := by
   have hf : (fun x => f a + (x - a) • dslope f a x) = f := by
     funext x
     rw [sub_smul_dslope, add_sub_cancel]
@@ -50,12 +50,12 @@ theorem AnalyticAt.of_dslope (h : AnalyticAt 𝕜 (dslope f a) b) : AnalyticAt �
 
 /-- The slope function `dslope f a` is analytic at `a` if and only if `f` is. -/
 theorem analyticAt_dslope_same : AnalyticAt 𝕜 (dslope f a) a ↔ AnalyticAt 𝕜 f a := by
-  refine ⟨AnalyticAt.of_dslope, fun ⟨p, hp⟩ => ⟨_, hp.has_fpower_series_dslope_fslope⟩⟩
+  refine ⟨analyticAt_of_dslope, fun ⟨p, hp⟩ => ⟨_, hp.has_fpower_series_dslope_fslope⟩⟩
 
 /-- Away from `a`, the slope function `dslope f a` is analytic at `b` if and only if `f` is. -/
 theorem analyticAt_dslope_of_ne (h : b ≠ a) :
     AnalyticAt 𝕜 (dslope f a) b ↔ AnalyticAt 𝕜 f b := by
-  refine ⟨AnalyticAt.of_dslope, fun hf => ?_⟩
+  refine ⟨analyticAt_of_dslope, fun hf => ?_⟩
   refine AnalyticAt.congr ?_ (dslope_eventuallyEq_slope_of_ne f h).symm
   have hslope : slope f a = fun x => (x - a)⁻¹ • (f x - f a) := by
     funext x
