@@ -68,7 +68,7 @@ theorem analyticAt_dslope_of_ne (h : b ≠ a) :
 only if `f` is. -/
 theorem analyticOnNhd_dslope :
     AnalyticOnNhd 𝕜 (dslope f a) s ↔ AnalyticOnNhd 𝕜 f s := by
-  refine ⟨fun h b hb => (h b hb).of_dslope, fun h b hb => ?_⟩
+  refine ⟨fun h b hb => analyticAt_of_dslope (h b hb), fun h b hb => ?_⟩
   rcases eq_or_ne b a with rfl | hba
   · exact analyticAt_dslope_same.mpr (h b hb)
   · exact (analyticAt_dslope_of_ne hba).mpr (h b hb)
