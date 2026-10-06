@@ -56,11 +56,12 @@ so that the sign of the invariant square is never lost by rereading one as the o
   Rev. Mod. Phys. 93 (2021) 035005, Sections II and III.
 -/
 
-public section
+@[expose] public section
 
 namespace EpsilonEridani
 namespace QFT
 namespace Lattice
+namespace Continuation
 
 open Complex Lorentz Lorentz.Vector
 
@@ -222,17 +223,17 @@ theorem complexMinkowskiProduct_continuation_self_eq_zero_iff {x : EuclideanSepa
     norm_eq_zero]
 
 /-- The Euclidean section contains no nonzero null vector. -/
-theorem eq_zero_of_mem_euclideanSection {z : ComplexSeparation d} (hz : z ∈ euclideanSection d)
-    (hnull : complexMinkowskiProduct z z = 0) : z = 0 := by
+theorem eq_zero_of_mem_euclideanSection_of_null {z : ComplexSeparation d}
+    (hz : z ∈ euclideanSection d) (hnull : complexMinkowskiProduct z z = 0) : z = 0 := by
   obtain ⟨x, rfl⟩ := hz
   rw [complexMinkowskiProduct_continuation_self_eq_zero_iff.mp hnull, map_zero]
 
 /-- The only null vector in the closure of the Euclidean section is the origin. -/
-theorem eq_zero_of_mem_closure_euclideanSection {z : ComplexSeparation d}
+theorem eq_zero_of_mem_closure_euclideanSection_of_null {z : ComplexSeparation d}
     (hz : z ∈ closure (euclideanSection d : Set (ComplexSeparation d)))
     (hnull : complexMinkowskiProduct z z = 0) : z = 0 := by
   rw [isClosed_euclideanSection.closure_eq] at hz
-  exact eq_zero_of_mem_euclideanSection hz hnull
+  exact eq_zero_of_mem_euclideanSection_of_null hz hnull
 
 /-- A nonzero real Minkowski vector that lies on the Euclidean section is spacelike. -/
 theorem causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection {v : Vector d}
@@ -254,6 +255,7 @@ theorem ofMinkowski_not_mem_euclideanSection {v : Vector d}
   rw [causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection h hne] at hv
   cases hv
 
+end Continuation
 end Lattice
 end QFT
 end EpsilonEridani
