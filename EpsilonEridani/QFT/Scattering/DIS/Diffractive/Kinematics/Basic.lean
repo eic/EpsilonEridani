@@ -90,7 +90,8 @@ lemma xi_def (g : Bilin V) (K : DisKinematics V) : xi g K = g (delta K) K.q / g 
 noncomputable def beta (g : Bilin V) (K : DisKinematics V) : ℝ :=
   K.Q2 g / (2 * g (delta K) K.q)
 
-lemma beta_def (g : Bilin V) (K : DisKinematics V) : beta g K = K.Q2 g / (2 * g (delta K) K.q) := rfl
+lemma beta_def (g : Bilin V) (K : DisKinematics V) :
+    beta g K = K.Q2 g / (2 * g (delta K) K.q) := rfl
 
 /-- The invariant mass squared of the diffractive system, `M_X² = (q + Δ)²`. -/
 def MX2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
