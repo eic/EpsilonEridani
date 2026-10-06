@@ -627,14 +627,14 @@ jobs:
       # to be rebuilt anyway, so a prefix fallback restores nothing useful and risks exactly the
       # mismatch above. The `v2` discards the entries poisoned before this fix.
       - name: Cache Lake builds (site)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: web/.lake
           key: web-lake-v2-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain') }}
           restore-keys: web-lake-v2-${{ runner.os }}-
 
       - name: Cache Lake builds (examples)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: web/examples/.lake
           key: web-examples-lake-v2-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
@@ -797,7 +797,7 @@ jobs:
       # failed. Sharing the default `github-pages` name would make the fallback collide with a
       # half-finished artifact instead of publishing.
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-primary
           path: web/_out
@@ -896,7 +896,7 @@ jobs:
           printf 'republishing the site built from %s with this run data\n' "$sha"
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-fallback
           path: web/_out

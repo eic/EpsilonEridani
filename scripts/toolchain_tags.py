@@ -20,7 +20,8 @@ pins. The first `main` commit on toolchain X therefore pins mathlib at or after 
 The tool tags only commits on `main`, and reports a release `main` never ran on as
 `unreachable`. Two things cause that: the daily bump stepped over the release's window on
 mathlib master, which for a stable release has been fifteen hours, or mathlib cut the
-release on its `stable` branch, which `check-bump.sh` will not let this repository pin.
+release on its `stable` branch and no bump moved to that tag: `check-bump.sh` accepts a
+`v4.*` release tag on a newer toolchain, but a bump only goes there when a dependency pins it.
 
 Tagging one anyway takes four steps. `v4.33.0` was done this way:
 
@@ -67,7 +68,6 @@ import argparse
 import datetime
 import hashlib
 import json
-import math
 import os
 import re
 import subprocess
@@ -75,6 +75,7 @@ import sys
 import time
 
 from lake_cache_probe import exact_map_url
+from lean_versions import TOOLCHAIN_PREFIX, release_key, release_of_toolchain, release_refs, release_tags
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "pr_status"))
 import zulip as zp  # noqa: E402
@@ -86,36 +87,6 @@ REVISIONS = os.environ.get("LAKE_CACHE_REVISION_ENDPOINT_PUBLIC",
 # Releases older than this are out of scope: the Lake artifact cache does not reach back
 # past them, so a tag could not promise a usable cache. Raise it, never lower it.
 EARLIEST_RELEASE = "v4.33.0-rc1"
-
-RELEASE_RE = re.compile(r"\Av(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?\Z")
-TOOLCHAIN_PREFIX = "leanprover/lean4:"
-
-
-# --- version names -----------------------------------------------------------
-
-def parse_release(name):
-    """(major, minor, patch, rc) for a Lean release name, else None.
-
-    A final release sorts after every rc of the same version, so rc-lessness is `inf`."""
-    match = RELEASE_RE.match(name or "")
-    if not match:
-        return None
-    major, minor, patch, rc = match.groups()
-    return (int(major), int(minor), int(patch), int(rc) if rc is not None else math.inf)
-
-
-def release_key(name):
-    return parse_release(name) or (math.inf,) * 4
-
-
-def release_of_toolchain(toolchain):
-    """The release a `leanprover/lean4:vX` pin names, or None for anything else: a
-    nightly, a fork channel, a local build. Only releases get tags."""
-    text = (toolchain or "").strip()
-    if not text.startswith(TOOLCHAIN_PREFIX):
-        return None
-    name = text[len(TOOLCHAIN_PREFIX):]
-    return name if parse_release(name) else None
 
 
 # --- this repository ---------------------------------------------------------
@@ -243,23 +214,12 @@ def mathlib_releases():
     toolchains `main` ran on is not the set of releases: a release main stepped over, or
     could never have pinned, has no era here and would otherwise be missing from a report
     whose entire job is to say which releases have no tag."""
-    raw = gh("repos/leanprover-community/mathlib4/git/matching-refs/tags/v", jq=".[].ref")
-    names = {ref.rsplit("/", 1)[-1] for ref in raw.splitlines()}
-    return sorted((n for n in names if parse_release(n)), key=release_key)
+    return sorted(release_refs(gh, "leanprover-community/mathlib4"), key=release_key)
 
 
 def existing_tags():
     """{release: commit} for the release tags this repository already has."""
-    raw = gh_optional(f"repos/{REPO}/git/matching-refs/tags/",
-                      jq='.[] | [.ref, .object.sha, .object.type] | @tsv') or ""
-    out = {}
-    for line in raw.splitlines():
-        ref, sha, kind = line.split("\t")
-        name = ref[len("refs/tags/"):]
-        if not parse_release(name):
-            continue
-        out[name] = gh(f"repos/{REPO}/git/tags/{sha}", jq=".object.sha") if kind == "tag" else sha
-    return out
+    return release_tags(gh_optional, REPO, resolve=gh)
 
 
 # --- the report --------------------------------------------------------------
@@ -280,7 +240,8 @@ from what is already recorded, without rebuilding.
 
 The tool tags only commits on main, and reports a release main never ran on as
 `unreachable`: either the daily bump stepped over its window on mathlib master, or mathlib
-cut it on its `stable` branch, which check-bump.sh will not let this repository pin. Tagging
+cut it on its `stable` branch and no bump moved to that tag (check-bump.sh accepts a `v4.*`
+release tag on a newer toolchain, but a bump only goes there when a dependency pins it). Tagging
 one anyway takes four manual steps, including a build. v4.33.0 was done that way; the steps
 are in this script's module docstring.
 
@@ -463,8 +424,9 @@ def render(rows, include_policy=True, collapse_old=False):
         lines += ["",
                   "    Either the daily bump stepped over the release's window on mathlib",
                   "    master, which for a stable release has been as short as fifteen hours,",
-                  "    or mathlib cut it on its `stable` branch, which check-bump.sh could",
-                  "    never have let this repository pin at all."]
+                  "    or mathlib cut it on its `stable` branch and no bump moved to that",
+                  "    tag: check-bump.sh accepts a `v4.*` release tag on a newer toolchain,",
+                  "    but a bump only goes there when a dependency pins it."]
     return "\n".join(lines) + "\n"
 
 

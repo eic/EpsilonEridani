@@ -26,6 +26,17 @@ they hunt for mis-formalizations, vacuous statements, and proofs that merely pus
 lump under the carpet. When every rubric approves on the current commit,
 the pull request merges automatically.
 
+# Dependencies
+
+EpsilonEridani builds on three libraries: Mathlib, Physlib, and Tau Ceti. Lean compiles
+EpsilonEridani, Physlib, and Tau Ceti against one shared Mathlib and toolchain, but Physlib and
+Tau Ceti each follow Mathlib at their own pace:
+Physlib follows Mathlib's releases, while Tau Ceti tracks Mathlib's development branch daily.
+A Mathlib bump therefore has to wait for a commit that all three libraries build against, so
+Mathlib can stay on one release for weeks while the slowest library catches up, and that is
+expected. Like any other change, a bump merges only once CI
+builds the whole library on the new pins.
+
 # Asymptotic freedom
 
 The theorem below is elaborated against the EpsilonEridani library when this site is
