@@ -44,7 +44,7 @@ bilinear form `g`, assumed symmetric where needed, and real division follows Lea
 
 -/
 
-@[expose] public section
+public section
 
 namespace EpsilonEridani
 namespace QFT
@@ -63,30 +63,44 @@ region, so that `ξ` and `β` are positive. -/
 def delta (K : DisKinematics V) : V :=
   K.p - K.pPrime
 
+lemma delta_def (K : DisKinematics V) : delta K = K.p - K.pPrime := rfl
+
 omit [Module ℝ V] in
 /-- The momentum of the diffractive system `X`, `p_X = q + Δ = P + q - P'`. -/
 def pX (K : DisKinematics V) : V :=
   K.q + delta K
 
+lemma pX_def (K : DisKinematics V) : pX K = K.q + delta K := rfl
+
 /-- The invariant momentum transfer to the target, `t = Δ² = (P - P')²`. -/
 def tMom (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (delta K) (delta K)
+
+lemma tMom_def (g : Bilin V) (K : DisKinematics V) : tMom g K = g (delta K) (delta K) := rfl
 
 /-- The fraction of the target momentum carried by the exchange, `ξ = Δ·q / P·q`. -/
 noncomputable def xi (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (delta K) K.q / g K.p K.q
 
+lemma xi_def (g : Bilin V) (K : DisKinematics V) : xi g K = g (delta K) K.q / g K.p K.q := rfl
+
 /-- The fraction of the exchange momentum carried by the struck parton, `β = Q² / (2 Δ·q)`. -/
 noncomputable def beta (g : Bilin V) (K : DisKinematics V) : ℝ :=
   K.Q2 g / (2 * g (delta K) K.q)
+
+lemma beta_def (g : Bilin V) (K : DisKinematics V) : beta g K = K.Q2 g / (2 * g (delta K) K.q) := rfl
 
 /-- The invariant mass squared of the diffractive system, `M_X² = (q + Δ)²`. -/
 def MX2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (pX K) (pX K)
 
+lemma MX2_def (g : Bilin V) (K : DisKinematics V) : MX2 g K = g (pX K) (pX K) := rfl
+
 /-- The invariant mass squared of the target-side system, `M_Y² = P'²`. -/
 def MY2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g K.pPrime K.pPrime
+
+lemma MY2_def (g : Bilin V) (K : DisKinematics V) : MY2 g K = g K.pPrime K.pPrime := rfl
 
 omit [Module ℝ V] in
 /-- Momentum conservation at the hadronic vertex, `P + q = P' + p_X`. -/
@@ -108,7 +122,7 @@ lemma MX2_eq (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V) :
   ring
 
 /-- The denominator of `β` in terms of the event invariants: `2 Δ·q = Q² + M_X² - t`. -/
-lemma two_mul_apply_delta_q (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V) :
+lemma two_mul_delta_q_eq (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V) :
     2 * g (delta K) K.q = K.Q2 g + MX2 g K - tMom g K := by
   rw [MX2_eq g hg K]
   ring
@@ -136,7 +150,7 @@ theorem xBj_eq_xi_mul_beta (g : Bilin V) (K : DisKinematics V) (hΔq : g (delta 
 diffractive system and the momentum transfer. -/
 theorem beta_eq_Q2_div (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V) :
     beta g K = K.Q2 g / (K.Q2 g + MX2 g K - tMom g K) := by
-  rw [beta, two_mul_apply_delta_q g hg K]
+  rw [beta, two_mul_delta_q_eq g hg K]
 
 /-- The inverse of `beta_eq_Q2_div`: `M_X² = Q² (1/β - 1) + t` whenever `β ≠ 0`. -/
 theorem MX2_eq_Q2_mul_inv_beta_sub_one_add_tMom (g : Bilin V) (hg : g.IsSymm)
@@ -155,7 +169,7 @@ theorem xi_eq_div (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V) :
   have hden : K.Q2 g + K.W2 g - g K.p K.p = 2 * g K.p K.q := by
     rw [DisKinematics.W2_eq_with_Q2 g K hg]
     ring
-  rw [← two_mul_apply_delta_q g hg K, hden, mul_div_mul_left _ _ two_ne_zero, xi]
+  rw [← two_mul_delta_q_eq g hg K, hden, mul_div_mul_left _ _ two_ne_zero, xi]
 
 /-! ### Independence of the lepton momenta
 
