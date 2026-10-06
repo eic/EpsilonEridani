@@ -63,46 +63,29 @@ region, so that `ξ` and `β` are positive. -/
 def delta (K : DisKinematics V) : V :=
   K.p - K.pPrime
 
-omit [Module ℝ V] in
-lemma delta_def (K : DisKinematics V) : delta K = K.p - K.pPrime := rfl
-
-omit [Module ℝ V] in
 /-- The momentum of the diffractive system `X`, `p_X = q + Δ = P + q - P'`. -/
 def pX (K : DisKinematics V) : V :=
   K.q + delta K
-
-omit [Module ℝ V] in
-lemma pX_def (K : DisKinematics V) : pX K = K.q + delta K := rfl
 
 /-- The invariant momentum transfer to the target, `t = Δ² = (P - P')²`. -/
 def tMom (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (delta K) (delta K)
 
-lemma tMom_def (g : Bilin V) (K : DisKinematics V) : tMom g K = g (delta K) (delta K) := rfl
-
 /-- The fraction of the target momentum carried by the exchange, `ξ = Δ·q / P·q`. -/
 noncomputable def xi (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (delta K) K.q / g K.p K.q
-
-lemma xi_def (g : Bilin V) (K : DisKinematics V) : xi g K = g (delta K) K.q / g K.p K.q := rfl
 
 /-- The fraction of the exchange momentum carried by the struck parton, `β = Q² / (2 Δ·q)`. -/
 noncomputable def beta (g : Bilin V) (K : DisKinematics V) : ℝ :=
   K.Q2 g / (2 * g (delta K) K.q)
 
-lemma beta_def (g : Bilin V) (K : DisKinematics V) : beta g K = K.Q2 g / (2 * g (delta K) K.q) := rfl
-
 /-- The invariant mass squared of the diffractive system, `M_X² = (q + Δ)²`. -/
 def MX2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (pX K) (pX K)
 
-lemma MX2_def (g : Bilin V) (K : DisKinematics V) : MX2 g K = g (pX K) (pX K) := rfl
-
 /-- The invariant mass squared of the target-side system, `M_Y² = P'²`. -/
 def MY2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g K.pPrime K.pPrime
-
-lemma MY2_def (g : Bilin V) (K : DisKinematics V) : MY2 g K = g K.pPrime K.pPrime := rfl
 
 omit [Module ℝ V] in
 /-- Momentum conservation at the hadronic vertex, `P + q = P' + p_X`. -/
