@@ -44,7 +44,7 @@ bilinear form `g`, assumed symmetric where needed, and real division follows Lea
 
 -/
 
-public section
+@[expose] public section
 
 namespace EpsilonEridani
 namespace QFT
