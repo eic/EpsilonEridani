@@ -160,8 +160,8 @@ theorem coulombRatio_eq_div : s.coulombRatio = s.binding / (s.mass * s.velocity 
 dimensionless factor `E m / p²`. -/
 theorem binding_div_mass_eq :
     s.binding / s.mass = s.velocity ^ 2 * (s.binding / s.momentum ^ 2) * s.mass := by
-  rw [binding_div_mass_eq_velocity_sq_mul_coulombRatio, coulombRatio_def, mul_assoc, div_mul_eq_mul_div,
-    mul_div_right_comm]
+  rw [binding_div_mass_eq_velocity_sq_mul_coulombRatio, coulombRatio_def, mul_assoc,
+    div_mul_eq_mul_div, mul_div_right_comm]
 
 /-- Coulombic scaling `E ~ m v²` with constant `K`: the ratio `κ = E / (m v²)` lies in
 `[K⁻¹, K]`. This is an assumption about the scales, not a consequence of their ordering
