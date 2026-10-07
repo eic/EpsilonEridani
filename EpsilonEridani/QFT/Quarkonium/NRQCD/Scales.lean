@@ -152,9 +152,8 @@ theorem coulombRatio_pos : 0 < s.coulombRatio :=
 @[simp]
 theorem mass_mul_velocity_sq_mul_coulombRatio_eq_binding :
     s.mass * s.velocity ^ 2 * s.coulombRatio = s.binding := by
-  rw [coulombRatio_def, velocity_def, div_pow, mul_div_assoc', mul_div_assoc', div_mul_eq_mul_div,
-    div_div, div_eq_iff (mul_pos (pow_pos s.mass_pos 2) (pow_pos s.momentum_pos 2)).ne']
-  ring
+  rw [coulombRatio_def, velocity_def]
+  field_simp [s.mass_pos.ne', s.momentum_pos.ne']
 
 /-- `κ = E / (m v²)`: the Coulombic ratio is the binding energy over the Coulombic estimate. -/
 theorem coulombRatio_eq_div : s.coulombRatio = s.binding / (s.mass * s.velocity ^ 2) :=
@@ -165,9 +164,8 @@ theorem coulombRatio_eq_div : s.coulombRatio = s.binding / (s.mass * s.velocity 
 dimensionless factor `κ = E m / p²`. -/
 theorem binding_div_mass_eq_velocity_sq_mul_binding_div_momentum_sq_mul_mass :
     s.binding / s.mass = s.velocity ^ 2 * (s.binding / s.momentum ^ 2) * s.mass := by
-  rw [mul_assoc, div_mul_eq_mul_div, ← coulombRatio_def, div_eq_iff s.mass_pos.ne',
-    ← s.mass_mul_velocity_sq_mul_coulombRatio_eq_binding]
-  ring
+  rw [velocity_def]
+  field_simp [s.mass_pos.ne', s.momentum_pos.ne']
 
 /-- Coulombic scaling `E ~ m v²` with constant `K`: the ratio `κ = E / (m v²)` lies in
 `[K⁻¹, K]`. This is an assumption about the scales, not a consequence of their ordering
@@ -246,8 +244,8 @@ theorem hadronic_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hΛ hκ hκ₁).hadr
 
 @[simp]
 theorem coulombRatio_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hΛ hκ hκ₁).coulombRatio = κ := by
-  rw [coulombRatio_def, binding_ofCoulombRatio, mass_ofCoulombRatio, momentum_ofCoulombRatio,
-    div_mul_cancel₀ _ (hp.trans hpm).ne', mul_div_cancel_right₀ _ (pow_ne_zero 2 hp.ne')]
+  rw [coulombRatio_def, binding_ofCoulombRatio, mass_ofCoulombRatio, momentum_ofCoulombRatio]
+  field_simp [(hp.trans hpm).ne', hp.ne']
 
 end ofCoulombRatio
 
