@@ -31,7 +31,7 @@ structure functions from measured cross sections rests.
 
 * `crossSectionBracket_eq_FL`: the bracket in terms of the longitudinal structure function
   `F_L = F₂ - 2 x F₁`, `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L - (2 M² x² y² / Q²) F₂`, exactly; at `M = 0`
-  this is the familiar `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L` (`crossSectionBracket_zero_mass`). The target
+  the last term vanishes and this is the familiar `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L`. The target
   mass enters only through the last term.
 * `Yplus_eq_two_mul_yFactor` and `dSigmaDxDQ2_eq_loNCdSigma`: for photon exchange, no parity-odd
   term, zero target mass and the Callan-Gross relation, `dSigmaDxDQ2` is the leading-order
@@ -40,11 +40,11 @@ structure functions from measured cross sections rests.
   are sharp: `Y₊ - Y₋ = 2 (1 - y)²` (`Yplus_sub_Yminus`), so the parity-odd coefficient reaches
   the parity-even one at `y = 1`.
 * `reducedCrossSection_eq_FL`: `σ_r` in terms of `F_L`, exactly in the target mass; at `M = 0`
-  it is `F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L` (`reducedCrossSection_zero_mass`).
-* `reducedCrossSection_eq_F2_iff`, `reducedCrossSection_zero_mass_eq_F2_iff`: `σ_r = F₂`
-  exactly when the parity-odd, longitudinal and target-mass contributions sum to zero; at `M = 0`,
-  exactly when `±Y₋ x F₃ + y² F_L = 0`. In particular `σ_r = F₂` at `y = 0`
-  (`reducedCrossSection_zero_inelasticity`, `tendsto_reducedCrossSection_nhds_zero_nhds_F2`).
+  the target-mass term vanishes and it is `F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L`.
+* `reducedCrossSection_eq_F2_iff`: `σ_r = F₂` exactly when the parity-odd, longitudinal and
+  target-mass contributions sum to zero; at `M = 0`, exactly when `±Y₋ x F₃ + y² F_L = 0`. In
+  particular `σ_r = F₂` at `y = 0` (`reducedCrossSection_zero_inelasticity`,
+  `tendsto_reducedCrossSection_nhds_zero_nhds_F2`).
 * `F2_eq_and_mul_F3_eq_and_FL_eq_of_forall_reducedCrossSection_eq`: **separation of the
   structure functions.** At fixed `(x, Q²)`, with a non-zero beam-charge sign, the reduced cross
   sections at three distinct inelasticities determine `F₂`, `x F₃` and `F_L`: the `3 × 3` matrix
@@ -73,7 +73,7 @@ depends on the exchanged boson.
   580, for the reduced cross section.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -195,15 +195,9 @@ theorem crossSectionBracket_eq_FL (M s x Q2 y F1 F2 F3 : ℝ) :
   unfold FL
   ring
 
-/-- At zero target mass the bracket is `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L`. -/
-@[simp] theorem crossSectionBracket_zero_mass (s x Q2 y F1 F2 F3 : ℝ) :
-    crossSectionBracket 0 s x Q2 y F1 F2 F3 =
-      Yplus y * F2 - s * Yminus y * (x * F3) - y ^ 2 * FL x F1 F2 := by
-  rw [crossSectionBracket_eq_FL]
-  ring
-
 /-- The inclusive cross section `d²σ/dx dQ² = (K / (x Q²)) · bracket` for an exchange with flux
-factor `K`; for pure photon exchange `K = 2π α² / Q²`. -/
+factor `K`; for pure photon exchange `K = 2π α² / Q²`. In terms of `F_L` see
+`dSigmaDxDQ2_eq_FL`. -/
 def dSigmaDxDQ2 (K M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
   K / (x * Q2) * crossSectionBracket M s x Q2 y F1 F2 F3
 
@@ -211,13 +205,26 @@ lemma dSigmaDxDQ2_def (K M s x Q2 y F1 F2 F3 : ℝ) :
     dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 = K / (x * Q2) * crossSectionBracket M s x Q2 y F1 F2 F3 :=
   (rfl)
 
+/-- **The inclusive cross section in terms of `F_L`.** The bracket's `F_L` form
+(`crossSectionBracket_eq_FL`) scaled by the flux factor, exactly in the target mass. -/
+theorem dSigmaDxDQ2_eq_FL (K M s x Q2 y F1 F2 F3 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 =
+      K / (x * Q2) * (Yplus y * F2 - s * Yminus y * (x * F3) - y ^ 2 * FL x F1 F2
+        - 2 * M ^ 2 * x ^ 2 * y ^ 2 / Q2 * F2) := by
+  rw [dSigmaDxDQ2_def, crossSectionBracket_eq_FL]
+
+/-- At vanishing inelasticity the inclusive cross section is `(K / (x Q²)) · 2 F₂`. -/
+@[simp] lemma dSigmaDxDQ2_zero_inelasticity (K M s x Q2 F1 F2 F3 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 0 F1 F2 F3 = K / (x * Q2) * (2 * F2) := by
+  rw [dSigmaDxDQ2_def, crossSectionBracket_zero_inelasticity]
+
 /-- **Compatibility with the leading-order cross section.** For photon exchange
 (`K = 2π α² / Q²`), with no parity-odd term, zero target mass and the Callan-Gross relation,
 the inclusive cross section is `loNCdSigma`. -/
 theorem dSigmaDxDQ2_eq_loNCdSigma (α s x Q2 y F1 F2 : ℝ) (h : IsCallanGross x F1 F2) :
     dSigmaDxDQ2 (2 * Real.pi * α ^ 2 / Q2) 0 s x Q2 y F1 F2 0 = loNCdSigma α x Q2 y F2 := by
   unfold IsCallanGross at h
-  rw [dSigmaDxDQ2_def, crossSectionBracket_zero_mass, h, Yplus_eq_two_mul_yFactor, loNCdSigma]
+  rw [dSigmaDxDQ2_eq_FL, h, Yplus_eq_two_mul_yFactor, loNCdSigma]
   ring
 
 /-!
@@ -226,8 +233,7 @@ theorem dSigmaDxDQ2_eq_loNCdSigma (α s x Q2 y F1 F2 : ℝ) (h : IsCallanGross x
 
 /-- The reduced cross section `σ_r := bracket / Y₊`, so that `d²σ/dx dQ² = (K / (x Q²)) Y₊ σ_r`
 (`dSigmaDxDQ2_eq_mul_reducedCrossSection`). In terms of `F_L` see `reducedCrossSection_eq_FL`;
-at zero target mass it is `F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L`
-(`reducedCrossSection_zero_mass`). -/
+at zero target mass its target-mass term vanishes. -/
 def reducedCrossSection (M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
   crossSectionBracket M s x Q2 y F1 F2 F3 / Yplus y
 
@@ -256,13 +262,6 @@ theorem reducedCrossSection_eq_FL (M s x Q2 y F1 F2 F3 : ℝ) :
   rw [reducedCrossSection_def, crossSectionBracket_eq_FL]
   field_simp [Yplus_ne_zero y]
 
-/-- At zero target mass, `σ_r = F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L`. -/
-@[simp] theorem reducedCrossSection_zero_mass (s x Q2 y F1 F2 F3 : ℝ) :
-    reducedCrossSection 0 s x Q2 y F1 F2 F3 =
-      F2 - s * (Yminus y / Yplus y) * (x * F3) - y ^ 2 / Yplus y * FL x F1 F2 := by
-  rw [reducedCrossSection_eq_FL]
-  ring
-
 /-- `σ_r = F₂` exactly when the parity-odd, longitudinal and target-mass contributions sum to
 zero. -/
 theorem reducedCrossSection_eq_F2_iff (M s x Q2 y F1 F2 F3 : ℝ) :
@@ -271,13 +270,6 @@ theorem reducedCrossSection_eq_F2_iff (M s x Q2 y F1 F2 F3 : ℝ) :
         = 0 := by
   rw [reducedCrossSection_def, div_eq_iff (Yplus_ne_zero y), crossSectionBracket_eq_FL]
   constructor <;> intro h <;> linarith
-
-/-- At zero target mass, `σ_r = F₂` exactly when `±Y₋ x F₃ + y² F_L = 0`. -/
-theorem reducedCrossSection_zero_mass_eq_F2_iff (s x Q2 y F1 F2 F3 : ℝ) :
-    reducedCrossSection 0 s x Q2 y F1 F2 F3 = F2 ↔
-      s * Yminus y * (x * F3) + y ^ 2 * FL x F1 F2 = 0 := by
-  rw [reducedCrossSection_eq_F2_iff]
-  simp
 
 /-- At vanishing inelasticity the reduced cross section is `F₂`. -/
 @[simp] theorem reducedCrossSection_zero_inelasticity (M s x Q2 F1 F2 F3 : ℝ) :
