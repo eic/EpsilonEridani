@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
+public import EpsilonEridani.Mathematics.Analysis.Fourier.AddCircle
 public import Mathlib.Probability.Independence.Integration
 public import Mathlib.Probability.HasLaw
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -84,11 +84,6 @@ namespace EpsilonEridani.Nuclear.Medium.Collective
 variable {T : ℝ} {ι : Type*} [Fintype ι]
 
 /-! ### The `Q`-vector and the two-particle correlation of one event -/
-
-/-- The Fourier monomial is a character of the circle: `e^{i n (x + y)} = e^{i n x} e^{i n y}`. -/
-theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
-    fourier n (x + y) = fourier n x * fourier n y := by
-  simp only [fourier_apply, smul_add, toCircle_add, Circle.coe_mul]
 
 /-- The `Q`-vector of harmonic `n` of an event `φ`, `Q_n = ∑ⱼ e^{i n φⱼ}`, with the Fourier
 monomial `fourier n` of Mathlib as the harmonic. -/
@@ -170,7 +165,7 @@ theorem abs_twoParticleCorrelation_le_one (n : ℤ) (φ : ι → AddCircle T) :
   have h2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast h
   have hq := pow_le_pow_left₀ (norm_nonneg _) (norm_qVector_le_card n φ) 2
   have hD : (0 : ℝ) < Fintype.card ι * (Fintype.card ι - 1) := by nlinarith
-  rw [abs_div, abs_of_pos hD, div_le_one hD, abs_sub_le_iff]
+  simp only [abs_div, abs_of_pos hD, div_le_one hD, abs_sub_le_iff]
   constructor <;> nlinarith [sq_nonneg ‖qVector n φ‖]
 
 /-- The two-particle correlations of harmonics `n` and `-n` coincide. -/
@@ -265,21 +260,6 @@ theorem aemeasurable_qVector (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
 section Integrable
 
 variable [IsFiniteMeasure P]
-
-/-- The harmonic `e^{i n X}` of an almost everywhere measurable angle `X` is integrable. -/
-theorem integrable_fourier_comp {X : Ω → AddCircle T} (hX : AEMeasurable X P) (n : ℤ) :
-    Integrable (fun ω => fourier n (X ω)) P :=
-  .of_bound ((fourier n).continuous.measurable.comp_aemeasurable hX).aestronglyMeasurable 1
-    (Filter.Eventually.of_forall fun ω => by simp)
-
-/-- The pair harmonic `e^{i n X} conj (e^{i n Y})` of two almost everywhere measurable angles is
-integrable. -/
-theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEMeasurable X P)
-    (hY : AEMeasurable Y P) (n : ℤ) :
-    Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P :=
-  .of_bound (((fourier n).continuous.measurable.comp_aemeasurable hX).mul
-    ((Complex.continuous_conj.comp (fourier n).continuous).measurable.comp_aemeasurable
-      hY)).aestronglyMeasurable 1 (Filter.Eventually.of_forall fun ω => by simp)
 
 /-- The `Q`-vector of an event whose angles are almost everywhere measurable is integrable. -/
 theorem integrable_qVector (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
@@ -386,9 +366,10 @@ theorem integral_twoParticleCorrelation (hM : 1 < Fintype.card ι) (n : ℤ) :
   have hM0 : (Fintype.card ι : ℝ) ≠ 0 := by positivity
   have hM1 : (Fintype.card ι : ℝ) - 1 ≠ 0 := by linarith
   simp_rw [twoParticleCorrelation]
-  rw [integral_div, integral_sub (integrable_norm_qVector_sq (fun j => (hφ j).aemeasurable) n)
-    (integrable_const _), integral_norm_qVector_sq hφ hind, integral_const, probReal_univ,
-    one_smul, div_eq_iff (mul_ne_zero hM0 hM1)]
+  simp only [integral_div,
+    integral_sub (integrable_norm_qVector_sq (fun j => (hφ j).aemeasurable) n) (integrable_const _),
+    integral_norm_qVector_sq hφ hind, integral_const, probReal_univ, one_smul,
+    div_eq_iff (mul_ne_zero hM0 hM1)]
   ring
 
 end Expectation
