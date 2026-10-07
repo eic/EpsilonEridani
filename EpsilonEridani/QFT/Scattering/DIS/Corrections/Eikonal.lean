@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.ChargedLegs
 
 /-!
 # The eikonal current of soft-photon emission
@@ -29,26 +29,22 @@ Scalar products are taken with an arbitrary bilinear form `g` in the sense of
 orthogonal to `ℓ` contributes `0` (division by zero), so the results that depend on the
 denominators assume each `pᵢ·ℓ` to be non-zero.
 
+The charged legs `L`, their net charge `netCharge L = ∑ᵢ ηᵢ Qᵢ`, the charged lines and the legs
+`Kinematics.DisKinematics.chargedLegs` of lepton–hadron scattering are defined in
+`EpsilonEridani.QFT.Scattering.DIS.Kinematics.ChargedLegs`.
+
 ## Main definitions
 
-* `LegDirection`, `LegDirection.sign`: incoming or outgoing, with the sign `η = ∓1`.
-* `ChargedLeg`: the momentum, charge and direction of an external charged leg, and
-  `ChargedLeg.signedCharge`, the product `η Q`.
-* `netCharge L`: the net outgoing charge `∑ᵢ ηᵢ Qᵢ` of a family of legs.
 * `eikonalCurrent g L ℓ`: the eikonal current `J(ℓ)`.
-* `chargedLine p p' Q`: a charged particle entering the hard scattering with momentum `p` and
-  leaving it with momentum `p'`.
-* `Kinematics.DisKinematics.chargedLegs`: the lepton line and the hadron line of lepton–hadron
-  scattering.
 
 ## Main statements
 
-* `eikonalCurrent_apply`: `J(ℓ)·ℓ = ∑ᵢ ηᵢ Qᵢ`.
+* `apply_eikonalCurrent`: `J(ℓ)·ℓ = ∑ᵢ ηᵢ Qᵢ`.
 * `eikonalCurrent_conserved_of_netCharge_eq_zero`: charge conservation gives `J(ℓ)·ℓ = 0`.
 * `eikonalCurrent_smul`: `J(c ℓ) = c⁻¹ J(ℓ)`, the homogeneity behind the logarithmic infrared
   divergence of `∫ dω/ω`.
-* `apply_eikonalCurrent_eikonalCurrent`: `J·J` as a double sum over pairs of legs (generalised to
-  two families).
+* `apply_eikonalCurrent_eikonalCurrent`: the contraction `J_L·J_M` of the currents of two
+  families of legs as a double sum over pairs of legs; for `M = L` this is `J·J`.
 * `eikonalCurrent_sumElim`: the current of a union of legs is the sum of the currents, so the
   current of a scattering process splits into a lepton current and a hadron current.
 * `eikonalCurrent_chargedLegs_conserved`: the eikonal current of lepton–hadron scattering
@@ -62,7 +58,7 @@ denominators assume each `pᵢ·ℓ` to be non-zero.
 * S. Weinberg, *The Quantum Theory of Fields*, Vol. I, §13.1.
 -/
 
-public section
+@[expose] public section
 
 namespace EpsilonEridani
 namespace QFT
@@ -72,97 +68,16 @@ namespace Corrections
 
 open Kinematics
 
-/-- Whether an external leg of a scattering process is incoming or outgoing. -/
-inductive LegDirection
-  /-- The leg enters the process. -/
-  | incoming
-  /-- The leg leaves the process. -/
-  | outgoing
-  deriving DecidableEq
-
-namespace LegDirection
-
-/-- The sign `η` of a leg in the eikonal current: `-1` for incoming and `+1` for outgoing. -/
-noncomputable def sign : LegDirection → ℝ
-  | incoming => -1
-  | outgoing => 1
-
-@[simp] theorem sign_incoming : incoming.sign = -1 := (rfl)
-
-@[simp] theorem sign_outgoing : outgoing.sign = 1 := (rfl)
-
-@[simp] theorem sign_mul_self (d : LegDirection) : d.sign * d.sign = 1 := by
-  cases d <;> norm_num
-
-end LegDirection
-
-variable {V : Type}
-
-/-- An external charged leg of a scattering process: its four-momentum, its electric charge in
-units of the positron charge, and whether it is incoming or outgoing. -/
-@[ext] structure ChargedLeg (V : Type) where
-  /-- The four-momentum of the leg. -/
-  momentum : V
-  /-- The electric charge of the leg, in units of the positron charge. -/
-  charge : ℝ
-  /-- Whether the leg is incoming or outgoing. -/
-  direction : LegDirection
-
-namespace ChargedLeg
-
-/-- The signed charge `η Q` of a leg: the charge it carries out of the process. -/
-noncomputable def signedCharge (L : ChargedLeg V) : ℝ := L.direction.sign * L.charge
-
-theorem signedCharge_def (L : ChargedLeg V) : L.signedCharge = L.direction.sign * L.charge :=
-  (rfl)
-
-@[simp] theorem signedCharge_mk (p : V) (Q : ℝ) (d : LegDirection) :
-    (ChargedLeg.mk p Q d).signedCharge = d.sign * Q := (rfl)
-
-end ChargedLeg
-
-variable {ι κ : Type*} [Fintype ι] [Fintype κ]
-
-/-- The net charge `∑ᵢ ηᵢ Qᵢ` flowing out of a process with charged legs `L`: the outgoing charge
-minus the incoming charge. Charge conservation is the statement that it vanishes. -/
-noncomputable def netCharge (L : ι → ChargedLeg V) : ℝ := ∑ i, (L i).signedCharge
-
-theorem netCharge_def (L : ι → ChargedLeg V) : netCharge L = ∑ i, (L i).signedCharge := (rfl)
-
-/-- The net charge of a union of two families of legs is the sum of their net charges. -/
-@[simp] theorem netCharge_sumElim (L₁ : ι → ChargedLeg V) (L₂ : κ → ChargedLeg V) :
-    netCharge (Sum.elim L₁ L₂) = netCharge L₁ + netCharge L₂ := by
-  simp [netCharge, Fintype.sum_sum_type]
-
-/-- A charged particle passing through the hard scattering: it enters with momentum `p` and
-charge `Q`, and leaves with momentum `p'` and the same charge. -/
-def chargedLine (p p' : V) (Q : ℝ) : Fin 2 → ChargedLeg V :=
-  ![⟨p, Q, .incoming⟩, ⟨p', Q, .outgoing⟩]
-
-@[simp] theorem chargedLine_zero (p p' : V) (Q : ℝ) :
-    chargedLine p p' Q 0 = ⟨p, Q, .incoming⟩ := (rfl)
-
-@[simp] theorem chargedLine_one (p p' : V) (Q : ℝ) :
-    chargedLine p p' Q 1 = ⟨p', Q, .outgoing⟩ := (rfl)
-
-/-- A charged line carries no net charge out of the process. -/
-@[simp] theorem netCharge_chargedLine (p p' : V) (Q : ℝ) : netCharge (chargedLine p p' Q) = 0 := by
-  simp [netCharge, chargedLine]
-
-variable [AddCommGroup V] [Module ℝ V]
+variable {V : Type} {ι κ : Type*} [Fintype ι] [Fintype κ] [AddCommGroup V] [Module ℝ V]
 
 /-- The **eikonal current** `J(ℓ) = ∑ᵢ ηᵢ Qᵢ pᵢ / (pᵢ·ℓ)` of the charged legs `L` for a soft
 photon of momentum `ℓ`, with scalar products taken with `g`. -/
 noncomputable def eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg V) (ℓ : V) : V :=
   ∑ i, ((L i).signedCharge / g (L i).momentum ℓ) • (L i).momentum
 
-theorem eikonalCurrent_def (g : Bilin V) (L : ι → ChargedLeg V) (ℓ : V) :
-    eikonalCurrent g L ℓ = ∑ i, ((L i).signedCharge / g (L i).momentum ℓ) • (L i).momentum :=
-  (rfl)
-
 /-- The eikonal current contracted with the photon momentum equals the net charge, provided no leg
 is orthogonal to `ℓ`. -/
-theorem eikonalCurrent_apply (g : Bilin V) (L : ι → ChargedLeg V) (ℓ : V)
+theorem apply_eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg V) (ℓ : V)
     (hL : ∀ i, g (L i).momentum ℓ ≠ 0) :
     g (eikonalCurrent g L ℓ) ℓ = netCharge L := by
   simp only [eikonalCurrent, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
@@ -174,7 +89,7 @@ momentum, `J(ℓ)·ℓ = 0`. This is the gauge invariance of the soft-photon fac
 theorem eikonalCurrent_conserved_of_netCharge_eq_zero (g : Bilin V) (L : ι → ChargedLeg V)
     (ℓ : V) (hL : ∀ i, g (L i).momentum ℓ ≠ 0) (hQ : netCharge L = 0) :
     g (eikonalCurrent g L ℓ) ℓ = 0 := by
-  rw [eikonalCurrent_apply g L ℓ hL, hQ]
+  rw [apply_eikonalCurrent g L ℓ hL, hQ]
 
 /-- The eikonal current is homogeneous of degree `-1` in the photon momentum:
 `J(c ℓ) = c⁻¹ J(ℓ)`. Integrated over the photon energy this is the origin of the logarithmic
@@ -183,23 +98,12 @@ theorem eikonalCurrent_smul (g : Bilin V) (L : ι → ChargedLeg V) (c : ℝ) (�
     eikonalCurrent g L (c • ℓ) = c⁻¹ • eikonalCurrent g L ℓ := by
   simp only [eikonalCurrent, map_smul, smul_eq_mul, Finset.smul_sum, smul_smul]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [div_mul_eq_div_div_swap, div_eq_mul_inv _ c, mul_comm _ c⁻¹]
-
-/-- The square of the eikonal current as a sum over ordered pairs of legs:
-`J·J = ∑ᵢ ∑ⱼ ηᵢ Qᵢ ηⱼ Qⱼ (pᵢ·pⱼ) / ((pᵢ·ℓ)(pⱼ·ℓ))`.  Stated for a single family; for two
-families see `apply_eikonalCurrent_eikonalCurrent` below. -/
-theorem apply_eikonalCurrent_eikonalCurrent_self (g : Bilin V) (L : ι → ChargedLeg V) (ℓ : V) :
-    g (eikonalCurrent g L ℓ) (eikonalCurrent g L ℓ) =
-      ∑ i, ∑ j, (L i).signedCharge * (L j).signedCharge * g (L i).momentum (L j).momentum /
-        (g (L i).momentum ℓ * g (L j).momentum ℓ) := by
-  simp only [eikonalCurrent, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
-    smul_eq_mul, Finset.mul_sum]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  congr 1
   ring
 
-/-- The square of the eikonal current as a double sum over pairs of legs from possibly different
-families: `J_L·J_M = ∑ᵢ ∑ⱼ ηᵢ Qᵢ ηⱼ Qⱼ (pᵢ·pⱼ) / ((pᵢ·ℓ)(pⱼ·ℓ))`. -/
+/-- The contraction of the eikonal currents of two families of legs as a double sum over pairs of
+legs: `J_L·J_M = ∑ᵢ ∑ⱼ ηᵢ Qᵢ ηⱼ Qⱼ (pᵢ·pⱼ) / ((pᵢ·ℓ)(pⱼ·ℓ))`. For `M = L` this is the square
+`J·J`. -/
 theorem apply_eikonalCurrent_eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg V)
     (M : κ → ChargedLeg V) (ℓ : V) :
     g (eikonalCurrent g L ℓ) (eikonalCurrent g M ℓ) =
@@ -242,28 +146,10 @@ open Corrections
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
-/-- The charged legs of lepton–hadron scattering with the kinematics `K`: the lepton line
-from `K.k` to `K.kPrime` with charge `eLepton`, and the hadron line from `K.p` to `K.pPrime`
-with charge `eHadron`. -/
-def chargedLegs (K : DisKinematics V) (eLepton eHadron : ℝ) : Fin 2 ⊕ Fin 2 → ChargedLeg V :=
-  Sum.elim (chargedLine K.k K.kPrime eLepton) (chargedLine K.p K.pPrime eHadron)
-
-omit [Module ℝ V] in
-theorem chargedLegs_def (K : DisKinematics V) (eLepton eHadron : ℝ) :
-    K.chargedLegs eLepton eHadron =
-      Sum.elim (chargedLine K.k K.kPrime eLepton) (chargedLine K.p K.pPrime eHadron) :=
-  (rfl)
-
-omit [Module ℝ V] in
-/-- The lepton–hadron scattering process conserves charge. -/
-@[simp] theorem netCharge_chargedLegs (K : DisKinematics V) (eLepton eHadron : ℝ) :
-    netCharge (K.chargedLegs eLepton eHadron) = 0 := by
-  simp [chargedLegs]
-
 /-- The eikonal current of lepton–hadron scattering is the sum of the lepton current and
 the hadron current. -/
-theorem eikonalCurrent_chargedLegs (g : Bilin V) (K : DisKinematics V) (eLepton eHadron : ℝ)
-    (ℓ : V) :
+@[simp] theorem eikonalCurrent_chargedLegs (g : Bilin V) (K : DisKinematics V)
+    (eLepton eHadron : ℝ) (ℓ : V) :
     eikonalCurrent g (K.chargedLegs eLepton eHadron) ℓ =
       eikonalCurrent g (chargedLine K.k K.kPrime eLepton) ℓ +
         eikonalCurrent g (chargedLine K.p K.pPrime eHadron) ℓ :=
