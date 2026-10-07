@@ -54,8 +54,9 @@ is an empirical input, not a consequence of the ordering of `m`, `p` and `E`
 ## Main results
 
 * `HeavyQuarkScales.velocity_pos` and `HeavyQuarkScales.velocity_lt_one`: `0 < v < 1`.
-* `HeavyQuarkScales.binding_div_mass_eq_velocity_sq_mul_coulombRatio`: `E / m = v² * κ`.
-* `HeavyQuarkScales.binding_div_mass_eq`: `E / m = v² · (E / p²) · m`.
+* `HeavyQuarkScales.mass_mul_velocity_sq_mul_coulombRatio_eq_binding`: `m v² κ = E`.
+* `HeavyQuarkScales.binding_div_mass_eq_velocity_sq_mul_binding_div_momentum_sq_mul_mass`:
+  `E / m = v² · (E / p²) · m`.
 * `HeavyQuarkScales.mass_mul_velocity_sq_lt_momentum`: `m v² < m v = p`.
 * `HeavyQuarkScales.coulombicScaling_one_iff`: `κ` lies in `[1, 1]` exactly when `E = m v²`.
 * `HeavyQuarkScales.exists_not_coulombicScaling`: the ordering never forces Coulombic scaling.
@@ -118,7 +119,7 @@ noncomputable def velocity : ℝ := s.momentum / s.mass
 theorem velocity_def : s.velocity = s.momentum / s.mass := (rfl)
 
 @[simp]
-theorem mass_mul_velocity : s.mass * s.velocity = s.momentum := by
+theorem mass_mul_velocity_eq_momentum : s.mass * s.velocity = s.momentum := by
   rw [velocity_def, mul_div_cancel₀ _ s.mass_pos.ne']
 
 /-- The relative velocity is positive. -/
@@ -133,7 +134,7 @@ theorem velocity_lt_one : s.velocity < 1 := (div_lt_one s.mass_pos).2 s.momentum
 /-- The scale `m v²` lies strictly below the relative momentum `m v = p`. -/
 theorem mass_mul_velocity_sq_lt_momentum : s.mass * s.velocity ^ 2 < s.momentum := by
   calc s.mass * s.velocity ^ 2 = s.momentum * s.velocity := by
-        rw [← s.mass_mul_velocity]; ring
+        rw [← s.mass_mul_velocity_eq_momentum]; ring
     _ < s.momentum := mul_lt_of_lt_one_right s.momentum_pos s.velocity_lt_one
 
 /-! ### The Coulombic ratio -/
@@ -149,27 +150,23 @@ theorem coulombRatio_pos : 0 < s.coulombRatio :=
 
 /-- The binding energy is the Coulombic estimate `m v²` times the ratio `κ`. -/
 @[simp]
-theorem mass_mul_velocity_sq_mul_coulombRatio :
+theorem mass_mul_velocity_sq_mul_coulombRatio_eq_binding :
     s.mass * s.velocity ^ 2 * s.coulombRatio = s.binding := by
-  rw [coulombRatio_def, velocity_def]
-  field_simp [s.mass_pos.ne', s.momentum_pos.ne']
-
-/-- `E / m = v² κ`: the ratio of the binding energy to the mass is `v²` times `κ`. -/
-theorem binding_div_mass_eq_velocity_sq_mul_coulombRatio :
-    s.binding / s.mass = s.velocity ^ 2 * s.coulombRatio := by
-  rw [coulombRatio_def, velocity_def]
-  field_simp [s.mass_pos.ne', s.momentum_pos.ne']
+  rw [coulombRatio_def, velocity_def, div_pow, mul_div_assoc', mul_div_assoc', div_mul_eq_mul_div,
+    div_div, div_eq_iff (mul_pos (pow_pos s.mass_pos 2) (pow_pos s.momentum_pos 2)).ne']
+  ring
 
 /-- `κ = E / (m v²)`: the Coulombic ratio is the binding energy over the Coulombic estimate. -/
-theorem coulombRatio_eq_div : s.coulombRatio = s.binding / (s.mass * s.velocity ^ 2) := by
-  rw [coulombRatio_def, velocity_def]
-  field_simp [s.mass_pos.ne', s.momentum_pos.ne']
+theorem coulombRatio_eq_div : s.coulombRatio = s.binding / (s.mass * s.velocity ^ 2) :=
+  (eq_div_iff (mul_pos s.mass_pos (pow_pos s.velocity_pos 2)).ne').2 <| by
+    rw [mul_comm]; exact s.mass_mul_velocity_sq_mul_coulombRatio_eq_binding
 
 /-- `E / m = v² · (E / p²) · m`: the ratio of the binding energy to the mass is `v²` times the
-dimensionless factor `E m / p²`. -/
-theorem binding_div_mass_eq :
+dimensionless factor `κ = E m / p²`. -/
+theorem binding_div_mass_eq_velocity_sq_mul_binding_div_momentum_sq_mul_mass :
     s.binding / s.mass = s.velocity ^ 2 * (s.binding / s.momentum ^ 2) * s.mass := by
-  rw [binding_div_mass_eq_velocity_sq_mul_coulombRatio, coulombRatio_def]
+  rw [mul_assoc, div_mul_eq_mul_div, ← coulombRatio_def, div_eq_iff s.mass_pos.ne',
+    ← s.mass_mul_velocity_sq_mul_coulombRatio_eq_binding]
   ring
 
 /-- Coulombic scaling `E ~ m v²` with constant `K`: the ratio `κ = E / (m v²)` lies in
@@ -180,7 +177,6 @@ def CoulombicScaling (K : ℝ) : Prop :=
 
 variable {s}
 
-@[simp]
 theorem coulombicScaling_iff {K : ℝ} :
     s.CoulombicScaling K ↔ s.coulombRatio ∈ Set.Icc K⁻¹ K := Iff.rfl
 
@@ -250,9 +246,8 @@ theorem hadronic_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hΛ hκ hκ₁).hadr
 
 @[simp]
 theorem coulombRatio_ofCoulombRatio : (ofCoulombRatio hp hpm Λ hΛ hκ hκ₁).coulombRatio = κ := by
-  have := (hp.trans hpm).ne'
-  rw [coulombRatio_def, binding_ofCoulombRatio, mass_ofCoulombRatio, momentum_ofCoulombRatio]
-  field_simp
+  rw [coulombRatio_def, binding_ofCoulombRatio, mass_ofCoulombRatio, momentum_ofCoulombRatio,
+    div_mul_cancel₀ _ (hp.trans hpm).ne', mul_div_cancel_right₀ _ (pow_ne_zero 2 hp.ne')]
 
 end ofCoulombRatio
 
@@ -296,10 +291,8 @@ variable (s) in
 relative momentum, `E < Λ < p`. -/
 def StronglyCoupled : Prop := s.binding < s.hadronic ∧ s.hadronic < s.momentum
 
-@[simp]
 theorem weaklyCoupled_iff : s.WeaklyCoupled ↔ s.hadronic < s.binding := Iff.rfl
 
-@[simp]
 theorem stronglyCoupled_iff :
     s.StronglyCoupled ↔ s.binding < s.hadronic ∧ s.hadronic < s.momentum := Iff.rfl
 
