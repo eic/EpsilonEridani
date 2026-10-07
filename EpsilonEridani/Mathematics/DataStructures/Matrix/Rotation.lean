@@ -18,6 +18,7 @@ counterclockwise rotation of `ℝ²` by the angle `θ`.
 ## Main results
 
 * `Matrix.rotation_mulVec`: the rotation applied to a vector `w`, componentwise.
+* `Matrix.rotation_transpose`: the transpose of the rotation by `θ` is the rotation by `-θ`.
 * `Matrix.rotation_mem_specialOrthogonalGroup`: the rotation is orthogonal with determinant `1`.
 -/
 
@@ -33,25 +34,27 @@ noncomputable def rotation (θ : ℝ) : _root_.Matrix (Fin 2) (Fin 2) ℝ :=
   !![cos θ, -sin θ; sin θ, cos θ]
 
 /-- The rotation matrix, entry by entry. -/
-theorem rotation_eq (θ : ℝ) : rotation θ = !![cos θ, -sin θ; sin θ, cos θ] := by
+theorem rotation_def (θ : ℝ) : rotation θ = !![cos θ, -sin θ; sin θ, cos θ] := by
   rw [rotation]
 
 /-- The rotation by `θ` applied to a vector `w = (w₀, w₁)`. -/
 theorem rotation_mulVec (θ : ℝ) (w : Fin 2 → ℝ) :
     rotation θ *ᵥ w = ![cos θ * w 0 - sin θ * w 1, sin θ * w 0 + cos θ * w 1] := by
-  rw [rotation_eq]
+  rw [rotation_def]
   ext i
   fin_cases i <;> simp [mulVec, vecHead, vecTail, sub_eq_add_neg]
+
+/-- The transpose of the rotation by `θ` is the rotation by `-θ`, its inverse. -/
+theorem rotation_transpose (θ : ℝ) : (rotation θ)ᵀ = rotation (-θ) := by
+  rw [rotation_def, rotation_def, cos_neg, sin_neg, neg_neg]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
 
 /-- The rotation matrix is orthogonal and has determinant `1`. -/
 theorem rotation_mem_specialOrthogonalGroup (θ : ℝ) :
     rotation θ ∈ specialOrthogonalGroup (Fin 2) ℝ := by
-  rw [mem_specialOrthogonalGroup_iff, mem_orthogonalGroup_iff, rotation_eq]
-  refine ⟨?_, ?_⟩
-  · ext i j
-    fin_cases i <;> fin_cases j <;> simp [mul_apply, Fin.sum_univ_two, ← sq, mul_comm]
-  · rw [det_fin_two_of]
-    linear_combination cos_sq_add_sin_sq θ
+  rw [rotation_def, of_mem_specialOrthogonalGroup_fin_two_iff, neg_sq]
+  exact ⟨rfl, rfl, cos_sq_add_sin_sq θ⟩
 
 end Matrix
 end EpsilonEridani
