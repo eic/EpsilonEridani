@@ -224,10 +224,14 @@ theorem stabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
       · ring
     · simp [chargeGenerator]
   · rintro ⟨c, rfl⟩
-    -- The vacuum has `T³ = -1/2` and `Y = 1`, so `T³ + Y / 2` annihilates it.
+    -- The vacuum is `v` times the lower basis vector, whose `T³ + y / 2` eigenvalue at `Y = 1`
+    -- is `-1 / 2 + 1 / 2 = 0`, so the charge annihilates it.
+    have hvac : ![0, v] = v • (Pi.single (1 : Fin 2) 1 : Fin 2 → ℂ) := by
+      funext i
+      fin_cases i <;> simp
     have h : (isospinT3 + ((1 / 2 : ℝ) : ℂ) • 1) *ᵥ ![0, v] = 0 := by
-      ext i
-      fin_cases i <;> norm_num [isospinT3_eq, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+      rw [hvac, Matrix.mulVec_smul, isospinT3_add_mulVec_single]
+      norm_num
     rw [map_smul, doubletAction_chargeGenerator, Matrix.smul_mulVec, Matrix.smul_mulVec, h,
       smul_zero, smul_zero]
 
