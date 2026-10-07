@@ -32,8 +32,9 @@ hypercharge `Y` is `Q = T³ + Y / 2`.
 * `stabilizer_higgsVacuum`: the generators annihilating the Higgs vacuum are the real multiples
   of `chargeGenerator`. `finrank_stabilizer_higgsVacuum` says there is exactly one.
 * `doubletAction_chargeGenerator`: on a doublet of hypercharge `y` the unbroken generator acts as
-  `i (T³ + y / 2)`. `isospinT3_add_mulVec_single` gives its eigenvalues `±1/2 + y / 2` on the two
-  components, and `singletAction_chargeGenerator` is the singlet version.
+  `i (T³ + y / 2)`. `isospinT3_mulVec_single` gives the weights `±1/2` of `T³` on the two
+  components, `isospinT3_add_mulVec_single` the eigenvalues `±1/2 + y / 2` of `T³ + y / 2`, and
+  `singletAction_chargeGenerator` is the singlet version.
 
 ## References
 
@@ -42,7 +43,7 @@ hypercharge `Y` is `Q = T³ + Y / 2`.
   `Q = T³ + Y/2`.
 -/
 
-@[expose] public section
+public section
 
 namespace EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak
 
@@ -60,8 +61,8 @@ theorem isospinT3_eq : isospinT3 = !![1 / 2, 0; 0, -1 / 2] := by
 
 /-- The action of `(A, β) ∈ 𝔰𝔲(2) ⊕ 𝔲(1)` on a weak-isospin doublet of hypercharge `y`:
 the matrix `A + i β (y / 2)`. -/
-noncomputable def doubletAction (y : ℚ) : su (Fin 2) × ℝ →ₗ[ℝ] Matrix (Fin 2) (Fin 2) ℂ where
-  toFun x := (x.1 : Matrix (Fin 2) (Fin 2) ℂ) + (I * (x.2 * (y / 2 : ℚ) : ℂ)) • 1
+noncomputable def doubletAction (y : ℝ) : su (Fin 2) × ℝ →ₗ[ℝ] Matrix (Fin 2) (Fin 2) ℂ where
+  toFun x := (x.1 : Matrix (Fin 2) (Fin 2) ℂ) + (I * (x.2 * (y / 2 : ℝ) : ℂ)) • 1
   map_add' x x' := by
     simp only [Prod.fst_add, Prod.snd_add, AddMemClass.coe_add, ofReal_add, add_mul, mul_add,
       add_smul]
@@ -72,28 +73,28 @@ noncomputable def doubletAction (y : ℚ) : su (Fin 2) × ℝ →ₗ[ℝ] Matrix
     ring_nf
 
 /-- The doublet action unfolded. -/
-theorem doubletAction_apply (y : ℚ) (x : su (Fin 2) × ℝ) :
-    doubletAction y x = (x.1 : Matrix (Fin 2) (Fin 2) ℂ) + (I * (x.2 * (y / 2 : ℚ) : ℂ)) • 1 :=
-  rfl
+theorem doubletAction_apply (y : ℝ) (x : su (Fin 2) × ℝ) :
+    doubletAction y x = (x.1 : Matrix (Fin 2) (Fin 2) ℂ) + (I * (x.2 * (y / 2 : ℝ) : ℂ)) • 1 :=
+  (rfl)
 
 /-- The action of `(A, β) ∈ 𝔰𝔲(2) ⊕ 𝔲(1)` on a weak-isospin singlet of hypercharge `y`: the
 `𝔰𝔲(2)` component acts trivially and the hypercharge acts by `i β (y / 2)`. -/
-noncomputable def singletAction (y : ℚ) : su (Fin 2) × ℝ →ₗ[ℝ] ℂ where
-  toFun x := I * (x.2 * (y / 2 : ℚ) : ℂ)
+noncomputable def singletAction (y : ℝ) : su (Fin 2) × ℝ →ₗ[ℝ] ℂ where
+  toFun x := I * (x.2 * (y / 2 : ℝ) : ℂ)
   map_add' x x' := by simp only [Prod.snd_add, ofReal_add, add_mul, mul_add]
   map_smul' c x := by
     simp only [Prod.smul_snd, smul_eq_mul, ofReal_mul, RingHom.id_apply, Complex.real_smul]
     ring
 
 /-- The singlet action unfolded. -/
-theorem singletAction_apply (y : ℚ) (x : su (Fin 2) × ℝ) :
-    singletAction y x = I * (x.2 * (y / 2 : ℚ) : ℂ) :=
-  rfl
+theorem singletAction_apply (y : ℝ) (x : su (Fin 2) × ℝ) :
+    singletAction y x = I * (x.2 * (y / 2 : ℝ) : ℂ) :=
+  (rfl)
 
 /-- The stabilizer of a vector `φ` in a doublet of hypercharge `y`: the generators of
 `𝔰𝔲(2) ⊕ 𝔲(1)` that annihilate `φ`. These are the directions of the gauge algebra left unbroken
 when `φ` is the vacuum. -/
-def stabilizer (y : ℚ) (φ : Fin 2 → ℂ) : Submodule ℝ (su (Fin 2) × ℝ) where
+def stabilizer (y : ℝ) (φ : Fin 2 → ℂ) : Submodule ℝ (su (Fin 2) × ℝ) where
   carrier := {x | doubletAction y x *ᵥ φ = 0}
   add_mem' {x x'} hx hx' := by
     simp only [Set.mem_ofPred_eq, map_add, add_mulVec] at hx hx' ⊢
@@ -104,9 +105,9 @@ def stabilizer (y : ℚ) (φ : Fin 2 → ℂ) : Submodule ℝ (su (Fin 2) × ℝ
     rw [← Complex.coe_smul, smul_mulVec, hx, smul_zero]
 
 /-- Membership in the stabilizer is the vanishing of the action on `φ`. -/
-theorem mem_stabilizer_iff (y : ℚ) (φ : Fin 2 → ℂ) (x : su (Fin 2) × ℝ) :
+theorem mem_stabilizer_iff (y : ℝ) (φ : Fin 2 → ℂ) (x : su (Fin 2) × ℝ) :
     x ∈ stabilizer y φ ↔ doubletAction y x *ᵥ φ = 0 :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- `i T³` is skew-Hermitian and traceless, so it lies in `𝔰𝔲(2)`. -/
 theorem I_smul_isospinT3_mem_su : I • isospinT3 ∈ su (Fin 2) := by
@@ -125,12 +126,12 @@ noncomputable def chargeGenerator : su (Fin 2) × ℝ := (⟨I • isospinT3, I_
 @[simp]
 theorem coe_chargeGenerator_fst :
     (chargeGenerator.1 : Matrix (Fin 2) (Fin 2) ℂ) = I • isospinT3 :=
-  rfl
+  (rfl)
 
 /-- The hypercharge component of the charge generator is `1`. -/
 @[simp]
 theorem chargeGenerator_snd : chargeGenerator.2 = 1 :=
-  rfl
+  (rfl)
 
 /-- The charge generator lies in the Cartan subalgebra: its `𝔰𝔲(2)` component is diagonal. -/
 theorem isDiag_chargeGenerator_fst :
@@ -147,8 +148,8 @@ theorem chargeGenerator_ne_zero : chargeGenerator ≠ 0 := by
 /-- **The charge is `T³ + Y/2`.** On a doublet of hypercharge `y` the unbroken generator acts as
 `i (T³ + y / 2)`. -/
 @[simp]
-theorem doubletAction_chargeGenerator (y : ℚ) :
-    doubletAction y chargeGenerator = I • (isospinT3 + ((y / 2 : ℚ) : ℂ) • 1) := by
+theorem doubletAction_chargeGenerator (y : ℝ) :
+    doubletAction y chargeGenerator = I • (isospinT3 + ((y / 2 : ℝ) : ℂ) • 1) := by
   rw [doubletAction_apply, coe_chargeGenerator_fst, chargeGenerator_snd, smul_add, smul_smul]
   push_cast
   ring_nf
@@ -156,18 +157,25 @@ theorem doubletAction_chargeGenerator (y : ℚ) :
 /-- On a singlet of hypercharge `y` the unbroken generator acts as `i (y / 2)`: the charge of a
 weak-isospin singlet is `Y / 2`. -/
 @[simp]
-theorem singletAction_chargeGenerator (y : ℚ) :
-    singletAction y chargeGenerator = I * ((y / 2 : ℚ) : ℂ) := by
+theorem singletAction_chargeGenerator (y : ℝ) :
+    singletAction y chargeGenerator = I * ((y / 2 : ℝ) : ℂ) := by
   simp [singletAction_apply]
 
-/-- The weak-isospin weights of a doublet: the Hermitian charge operator `T³ + y / 2` scales the
-`k`-th basis vector by `T³ₖ + y / 2`, with `T³₀ = 1/2` and `T³₁ = -1/2`. -/
-theorem isospinT3_add_mulVec_single (y : ℚ) (k : Fin 2) :
-    (isospinT3 + ((y / 2 : ℚ) : ℂ) • 1) *ᵥ (Pi.single k 1 : Fin 2 → ℂ) =
-      (((![1 / 2, -1 / 2] k + y / 2 : ℚ)) : ℂ) • (Pi.single k 1 : Fin 2 → ℂ) := by
+/-- The weak-isospin weights of a doublet: `T³` scales the `k`-th basis vector by `T³ₖ`, with
+`T³₀ = 1/2` and `T³₁ = -1/2`. -/
+theorem isospinT3_mulVec_single (k : Fin 2) :
+    isospinT3 *ᵥ (Pi.single k 1 : Fin 2 → ℂ) =
+      ((![1 / 2, -1 / 2] k : ℝ) : ℂ) • (Pi.single k 1 : Fin 2 → ℂ) := by
   rw [isospinT3_eq]
   ext i
   fin_cases k <;> fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+
+/-- The charges of a doublet: the Hermitian charge operator `T³ + y / 2` scales the `k`-th basis
+vector by `T³ₖ + y / 2`. -/
+theorem isospinT3_add_mulVec_single (y : ℝ) (k : Fin 2) :
+    (isospinT3 + ((y / 2 : ℝ) : ℂ) • 1) *ᵥ (Pi.single k 1 : Fin 2 → ℂ) =
+      (((![1 / 2, -1 / 2] k + y / 2 : ℝ)) : ℂ) • (Pi.single k 1 : Fin 2 → ℂ) := by
+  rw [add_mulVec, smul_mulVec, one_mulVec, isospinT3_mulVec_single, ofReal_add, add_smul]
 
 /-- The Higgs vacuum `(0, v)`, in the lower (`T³ = -1/2`) component of the hypercharge-`1` Higgs
 doublet. With `Q = T³ + Y / 2` this is the neutral component; Physlib's `HiggsVec.ofReal` uses
@@ -177,7 +185,7 @@ def higgsVacuum (v : ℂ) : HiggsVec := !₂[0, v]
 /-- The Higgs vacuum in components. -/
 @[simp]
 theorem higgsVacuum_ofLp (v : ℂ) : (higgsVacuum v).ofLp = ![0, v] :=
-  rfl
+  (rfl)
 
 /-- **Electric charge is the unbroken generator.** For `v ≠ 0` the generators of
 `𝔰𝔲(2) ⊕ 𝔲(1)` annihilating the Higgs vacuum `(0, v)` are exactly the real multiples of
@@ -197,13 +205,17 @@ theorem stabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
       linear_combination this
     -- The upper row of `(A + i β / 2) (0, v) = 0` kills `A 0 1`; the lower row fixes
     -- `A 1 1 = -i β / 2`. Skew-Hermiticity and tracelessness then fix the other two entries.
-    have h0 : A 0 1 = 0 ∨ v = 0 := by
-      simpa [doubletAction_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_two] using congrFun h 0
-    have h1 : A 1 1 + I * (β * 2⁻¹) = 0 ∨ v = 0 := by
-      simpa [doubletAction_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_two] using congrFun h 1
-    have hA01 : A 0 1 = 0 := h0.resolve_right hv
+    have hrows : doubletAction 1 (⟨A, hA⟩, β) *ᵥ ![0, v] =
+        ![A 0 1 * v, (A 1 1 + I * (β / 2)) * v] := by
+      ext i
+      fin_cases i <;>
+        simp [doubletAction_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_two, div_eq_mul_inv]
+    rw [hrows] at h
+    have h0 : A 0 1 * v = 0 := congrFun h 0
+    have h1 : (A 1 1 + I * (β / 2)) * v = 0 := congrFun h 1
+    have hA01 : A 0 1 = 0 := (mul_eq_zero.mp h0).resolve_right hv
     have hA11 : A 1 1 = -(I * (β / 2)) := by
-      linear_combination h1.resolve_right hv
+      linear_combination (mul_eq_zero.mp h1).resolve_right hv
     refine ⟨β, Prod.ext (Subtype.ext ?_) ?_⟩
     · ext i j
       fin_cases i <;> fin_cases j <;> simp [chargeGenerator, isospinT3_eq, hA01, h10, hA11]
@@ -212,7 +224,7 @@ theorem stabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
     · simp [chargeGenerator]
   · rintro ⟨c, rfl⟩
     -- The vacuum has `T³ = -1/2` and `Y = 1`, so `T³ + Y / 2` annihilates it.
-    have h : (isospinT3 + ((1 / 2 : ℚ) : ℂ) • 1) *ᵥ ![0, v] = 0 := by
+    have h : (isospinT3 + ((1 / 2 : ℝ) : ℂ) • 1) *ᵥ ![0, v] = 0 := by
       ext i
       fin_cases i <;> norm_num [isospinT3_eq, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
     rw [map_smul, doubletAction_chargeGenerator, Matrix.smul_mulVec, Matrix.smul_mulVec, h,
