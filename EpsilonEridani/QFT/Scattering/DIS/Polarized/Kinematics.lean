@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Bounds
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.TargetMass
 public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 
@@ -44,7 +45,7 @@ the two are mutually orthogonal (`apply_longitudinalSpin_transverseSpin_eq_zero`
   arXiv:hep-ph/9204208, §2.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -121,9 +122,12 @@ section Longitudinal
 
 variable {g : Bilin V} {K : DisKinematics V}
 
-/-- The longitudinal spin vector is orthogonal to the hadron momentum. -/
-theorem apply_longitudinalSpin_p_eq_zero (hSymm : g.IsSymm) (hpk : g K.p K.k ≠ 0)
-    (hM : 0 < K.M2 g) : g (longitudinalSpin g K) K.p = 0 := by
+/-- The longitudinal spin vector is orthogonal to the hadron momentum. For `M² ≤ 0` the
+junk value `√(M²) = 0` makes `S_L = 0`, so no mass hypothesis is needed. -/
+theorem apply_longitudinalSpin_p_eq_zero (hSymm : g.IsSymm) (hpk : g K.p K.k ≠ 0) :
+    g (longitudinalSpin g K) K.p = 0 := by
+  rcases le_or_gt (K.M2 g) 0 with hM | hM
+  · simp [longitudinalSpin, Real.sqrt_eq_zero'.mpr hM]
   have hMs : Real.sqrt (K.M2 g) ^ 2 = g K.p K.p := by rw [Real.sq_sqrt hM.le, K.M2_def]
   have hM0 : Real.sqrt (K.M2 g) ≠ 0 := (Real.sqrt_pos.mpr hM).ne'
   simp only [longitudinalSpin, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
@@ -216,8 +220,8 @@ theorem apply_transverseSpin_self_eq_neg_one (n : V)
   have hs : Real.sqrt (-g u u) ^ 2 = -g u u := Real.sq_sqrt (neg_nonneg.mpr hn.le)
   have hs0 : Real.sqrt (-g u u) ≠ 0 := (Real.sqrt_pos.mpr (neg_pos.mpr hn)).ne'
   set s := Real.sqrt (-g u u)
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
-  rw [show g u u = -s ^ 2 by linarith]
+  have hu : g u u = -s ^ 2 := by linarith
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hu]
   field_simp
 
 /-- **The longitudinal and transverse spin vectors are orthogonal.** -/
@@ -242,7 +246,7 @@ def longitudinal (K : DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
     (hpk : g K.p K.k ≠ 0) (hM : 0 < K.M2 g) : PolarizedKinematics g where
   toDisKinematics := K
   S := longitudinalSpin g K
-  spin_orthogonal := apply_longitudinalSpin_p_eq_zero hSymm hpk hM
+  spin_orthogonal := apply_longitudinalSpin_p_eq_zero hSymm hpk
   spin_normalized := apply_longitudinalSpin_self_eq_neg_one hSymm hk hpk hM
 
 /-- The transversely polarised configuration with reference direction `n`: the kinematics `K`

@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Bounds
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 /-!
 # The target mass and the kinematic factor `γ`
@@ -28,8 +28,9 @@ structure function.
 
 * `DisKinematics.gammaSq_eq_M2_mul_Q2_div`: the equivalent invariant form
   `γ² = M² Q² / (p·q)²`, which needs no hypotheses.
-* `DisKinematics.gammaSq_pos`, `DisKinematics.gamma_pos`: on the physical region of
-  `BasicAssumptions` and for a massive target, `γ² > 0` and `γ > 0`.
+* `DisKinematics.gammaSq_pos`, `DisKinematics.gamma_pos`: for a massive target, a spacelike
+  probe and `x ≠ 0` (in particular on the physical region of `BasicAssumptions`), `γ² > 0` and
+  `γ > 0`.
 * `DisKinematics.tendsto_gammaSq_zero`, `DisKinematics.tendsto_gamma_zero`: in the Bjorken
   limit `Q² → ∞` at fixed `x` and fixed target mass, `γ → 0`.
 
@@ -41,7 +42,7 @@ structure function.
   (2000) 1; arXiv:hep-ph/9810270, §2.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -89,11 +90,9 @@ lemma gammaSq_nonneg (g : Bilin V) (K : DisKinematics V) (hM : 0 ≤ K.M2 g)
   rw [gammaSq]
   positivity
 
-/-- On the physical region of `BasicAssumptions`, `γ² > 0` for a massive target. -/
-theorem gammaSq_pos (g : Bilin V) (K : DisKinematics V) (h : BasicAssumptions g K)
-    (hM : 0 < K.M2 g) : 0 < K.gammaSq g := by
-  have hx := xBj_pos g K h
-  have hQ := h.q2_pos
+/-- `γ² > 0` for a massive target, a spacelike probe and `x ≠ 0`. -/
+theorem gammaSq_pos (g : Bilin V) (K : DisKinematics V) (hM : 0 < K.M2 g)
+    (hx : K.xBj g ≠ 0) (hQ : 0 < K.Q2 g) : 0 < K.gammaSq g := by
   rw [gammaSq]
   positivity
 
@@ -124,10 +123,10 @@ lemma gamma_sq (g : Bilin V) (K : DisKinematics V) (h : 0 ≤ K.gammaSq g) :
     K.gamma g ^ 2 = K.gammaSq g :=
   Real.sq_sqrt h
 
-/-- On the physical region of `BasicAssumptions`, `γ > 0` for a massive target. -/
-theorem gamma_pos (g : Bilin V) (K : DisKinematics V) (h : BasicAssumptions g K)
-    (hM : 0 < K.M2 g) : 0 < K.gamma g :=
-  Real.sqrt_pos.mpr (gammaSq_pos g K h hM)
+/-- `γ > 0` for a massive target, a spacelike probe and `x ≠ 0`. -/
+theorem gamma_pos (g : Bilin V) (K : DisKinematics V) (hM : 0 < K.M2 g)
+    (hx : K.xBj g ≠ 0) (hQ : 0 < K.Q2 g) : 0 < K.gamma g :=
+  Real.sqrt_pos.mpr (gammaSq_pos g K hM hx hQ)
 
 /-- **The Bjorken limit of `γ`.** Along a family of kinematics with fixed target mass and
 fixed Bjorken variable `x` whose hard scale `Q²` tends to infinity, `γ → 0`. -/
