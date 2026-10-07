@@ -23,7 +23,7 @@ relative to a frame, and the frame is always an explicit argument. Over the abst
 
 For a symmetric `g` the spatial parts satisfy `g a_s b_s = g a b - E(a) E(b)`, which is the
 mass-shell relation `E² = m² + |p_s|²` when `a = b`. Consequently a massless momentum (`g p p = 0`)
-of nonnegative energy has `|p_s| = E(p)`, and for two massless momenta of positive energy
+has `|p_s| = |E(p)|`, and for two massless momenta of positive energy
 
   `1 - cos θ_ab = g a b / (E(a) E(b))`,
 
@@ -40,12 +40,12 @@ satisfy it, which is why the massless hypotheses are stated.
 
 ## Main statements
 
-* `Frame.apply_spatial_n`, `Frame.energy_spatial`: the spatial part is orthogonal to the frame
+* `Frame.bilin_spatial_n`, `Frame.energy_spatial`: the spatial part is orthogonal to the frame
   vector and carries no energy.
 * `Frame.ker_spatial`, `Frame.range_spatial`: the spatial projection has kernel `ℝ ∙ n` and range
-  `g.orthogonal (ℝ ∙ n)`.
-* `Frame.apply_spatial_spatial`: `g a_s b_s = g a b - E(a) E(b)`.
-* `Frame.spatialNorm_of_massless`: a massless momentum of nonnegative energy has `|p_s| = E(p)`.
+  the momenta `p` with `g p n = 0`.
+* `Frame.bilin_spatial_spatial`: `g a_s b_s = g a b - E(a) E(b)`.
+* `Frame.spatialNorm_of_massless`: a massless momentum has `|p_s| = |E(p)|`.
 * `Frame.one_sub_cosAngle_of_massless`: `1 - cos θ_ab = g a b / (E(a) E(b))` for massless `a`, `b`
   of positive energy.
 * `Frame.Witness.cosAngle_restFrameWit`: in the rest frame of the `+--` Minkowski form, two
@@ -116,18 +116,17 @@ theorem spatial_apply (p : V) : F.spatial p = p - (g p F.n / g F.n F.n) • F.n 
 /-- A momentum is the sum of its time part, along the frame vector, and its spatial part. -/
 theorem energy_div_smul_add_spatial (p : V) :
     (F.energy p / Real.sqrt (g F.n F.n)) • F.n + F.spatial p = p := by
-  rw [energy_apply, div_div, Real.mul_self_sqrt F.timelike.le, spatial_apply,
-    add_sub_cancel]
+  simp [energy_apply, spatial_apply, div_div, Real.mul_self_sqrt F.timelike.le]
 
 /-- The spatial part is `g`-orthogonal to the frame vector. -/
 @[simp]
-theorem apply_spatial_n (p : V) : g (F.spatial p) F.n = 0 := by
+theorem bilin_spatial_n (p : V) : g (F.spatial p) F.n = 0 := by
   simp [spatial_apply, F.timelike.ne']
 
 /-- The spatial part carries no energy. -/
 @[simp]
 theorem energy_spatial (p : V) : F.energy (F.spatial p) = 0 := by
-  rw [energy_apply, apply_spatial_n, zero_div]
+  rw [energy_apply, bilin_spatial_n, zero_div]
 
 @[simp]
 theorem spatial_n : F.spatial F.n = 0 := by
@@ -141,7 +140,7 @@ theorem spatial_eq_self_iff {p : V} : F.spatial p = p ↔ g p F.n = 0 := by
 /-- The spatial projection is idempotent. -/
 @[simp]
 theorem spatial_spatial (p : V) : F.spatial (F.spatial p) = F.spatial p :=
-  F.spatial_eq_self_iff.mpr (F.apply_spatial_n p)
+  F.spatial_eq_self_iff.mpr (F.bilin_spatial_n p)
 
 /-- The momenta with vanishing spatial part are the multiples of the frame vector. -/
 theorem ker_spatial : LinearMap.ker F.spatial = ℝ ∙ F.n := by
@@ -154,32 +153,28 @@ theorem ker_spatial : LinearMap.ker F.spatial = ℝ ∙ F.n := by
   · rintro ⟨c, rfl⟩
     rw [map_smul, spatial_n, smul_zero]
 
-/-- For a symmetric form, the spatial parts are exactly the momenta `g`-orthogonal to the frame
-vector, in the sense of `LinearMap.BilinForm.orthogonal`. -/
-theorem range_spatial (hg : g.IsSymm) :
-    LinearMap.range F.spatial = g.orthogonal (ℝ ∙ F.n) := by
+/-- The spatial parts are exactly the momenta `p` with `g p n = 0`, that is, the orthogonal
+complement of `ℝ ∙ n` for `g.flip` in the sense of `LinearMap.BilinForm.orthogonal`. For a
+symmetric form this is `g.orthogonal (ℝ ∙ n)`. -/
+theorem range_spatial : LinearMap.range F.spatial = g.flip.orthogonal (ℝ ∙ F.n) := by
   ext p
   simp only [LinearMap.mem_range, LinearMap.BilinForm.mem_orthogonal_iff,
-    Submodule.mem_span_singleton, forall_exists_index, forall_apply_eq_imp_iff, map_smul,
-    LinearMap.smul_apply, smul_eq_mul, mul_eq_zero]
+    Submodule.mem_span_singleton, forall_exists_index, forall_apply_eq_imp_iff,
+    LinearMap.BilinForm.flip_apply, map_smul, smul_eq_mul, mul_eq_zero]
   constructor
   · rintro ⟨q, rfl⟩ c
-    exact Or.inr (by rw [← hg.eq, apply_spatial_n])
+    exact Or.inr (F.bilin_spatial_n q)
   · intro hp
-    have hp' : g p F.n = 0 := by
-      rw [hg.eq]
-      simpa [F.timelike.ne'] using hp 1
+    have hp' : g p F.n = 0 := by simpa [F.timelike.ne'] using hp 1
     exact ⟨p, F.spatial_eq_self_iff.mpr hp'⟩
 
 /-- The `g`-product of two spatial parts, `g a_s b_s = g a b - E(a) E(b)`. For `a = b` this is the
 mass-shell relation `g p_s p_s = m² - E(p)²`. -/
-theorem apply_spatial_spatial (hg : g.IsSymm) (a b : V) :
+theorem bilin_spatial_spatial (hg : g.IsSymm) (a b : V) :
     g (F.spatial a) (F.spatial b) = g a b - F.energy a * F.energy b := by
   have hN : g F.n F.n ≠ 0 := F.timelike.ne'
-  rw [spatial_apply, spatial_apply, energy_apply, energy_apply, div_mul_div_comm,
-    Real.mul_self_sqrt F.timelike.le]
-  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
-  rw [hg.eq F.n b]
+  simp only [spatial_apply, energy_apply, div_mul_div_comm, Real.mul_self_sqrt F.timelike.le,
+    map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, hg.eq F.n b]
   field_simp
   ring
 
@@ -197,11 +192,10 @@ theorem spatialNorm_smul (c : ℝ) (p : V) : F.spatialNorm (c • p) = |c| * F.s
   simp only [spatialNorm, map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← mul_neg, Real.sqrt_mul (mul_self_nonneg c), Real.sqrt_mul_self_eq_abs]
 
-/-- A massless momentum of nonnegative energy has spatial norm equal to its energy. -/
-theorem spatialNorm_of_massless (hg : g.IsSymm) {p : V} (hp : g p p = 0)
-    (hE : 0 ≤ F.energy p) : F.spatialNorm p = F.energy p := by
-  rw [spatialNorm, apply_spatial_spatial F hg, hp, zero_sub, neg_neg,
-    Real.sqrt_mul_self hE]
+/-- A massless momentum has spatial norm equal to the absolute value of its energy. -/
+theorem spatialNorm_of_massless (hg : g.IsSymm) {p : V} (hp : g p p = 0) :
+    F.spatialNorm p = |F.energy p| := by
+  simp [spatialNorm, F.bilin_spatial_spatial hg, hp, Real.sqrt_mul_self_eq_abs]
 
 /-- The cosine of the opening angle between two momenta in the frame,
 `cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`. -/
@@ -220,22 +214,22 @@ theorem cosAngle_self {p : V} (hp : F.spatialNorm p ≠ 0) : F.cosAngle p p = 1 
 /-- Rescaling a momentum by a positive factor does not change its direction. -/
 theorem cosAngle_smul_left {c : ℝ} (hc : 0 < c) (a b : V) :
     F.cosAngle (c • a) b = F.cosAngle a b := by
-  rw [cosAngle, cosAngle, spatialNorm_smul, abs_of_pos hc, map_smul, map_smul,
-    LinearMap.smul_apply, smul_eq_mul, mul_assoc, ← mul_neg, mul_div_mul_left _ _ hc.ne']
+  simp only [cosAngle, spatialNorm_smul, abs_of_pos hc, map_smul, LinearMap.smul_apply,
+    smul_eq_mul, mul_assoc, ← mul_neg, mul_div_mul_left _ _ hc.ne']
 
 /-- Rescaling a momentum by a positive factor does not change its direction. -/
 theorem cosAngle_smul_right {c : ℝ} (hc : 0 < c) (a b : V) :
     F.cosAngle a (c • b) = F.cosAngle a b := by
-  rw [cosAngle, cosAngle, spatialNorm_smul, abs_of_pos hc, map_smul, map_smul, smul_eq_mul,
-    mul_left_comm, ← mul_neg, mul_div_mul_left _ _ hc.ne']
+  simp only [cosAngle, spatialNorm_smul, abs_of_pos hc, map_smul, smul_eq_mul]
+  rw [mul_left_comm, ← mul_neg, mul_div_mul_left _ _ hc.ne']
 
 /-- For two massless momenta of positive energy, `1 - cos θ_ab = g a b / (E(a) E(b))`; that is,
 `2 a·b = 2 E_a E_b (1 - cos θ_ab)`. -/
 theorem one_sub_cosAngle_of_massless (hg : g.IsSymm) {a b : V} (ha : g a a = 0)
     (hb : g b b = 0) (hEa : 0 < F.energy a) (hEb : 0 < F.energy b) :
     1 - F.cosAngle a b = g a b / (F.energy a * F.energy b) := by
-  rw [cosAngle, F.spatialNorm_of_massless hg ha hEa.le, F.spatialNorm_of_massless hg hb hEb.le,
-    apply_spatial_spatial F hg]
+  simp only [cosAngle, F.spatialNorm_of_massless hg ha, F.spatialNorm_of_massless hg hb,
+    abs_of_pos hEa, abs_of_pos hEb, F.bilin_spatial_spatial hg]
   field_simp
   ring
 
@@ -259,7 +253,7 @@ theorem energy_restFrameWit (p : ℝ × ℝ × ℝ) : restFrameWit.energy p = p.
   simp [energy_apply, restFrameWit]
 
 /-- Two back-to-back photons, `(1, 1, 0)` and `(1, -1, 0)`, have `cos θ = -1` in the rest
-frame, by `one_sub_cosAngle_of_massless`. -/
+frame. -/
 theorem cosAngle_restFrameWit :
     restFrameWit.cosAngle ((1, 1, 0) : ℝ × ℝ × ℝ) (1, -1, 0) = -1 := by
   have h := restFrameWit.one_sub_cosAngle_of_massless gWit_isSymm
