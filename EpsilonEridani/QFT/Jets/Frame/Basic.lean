@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 
 /-!
 # Reference frames: energy, spatial part and opening angle
@@ -48,6 +48,8 @@ satisfy it, which is why the massless hypotheses are stated.
 * `Frame.spatialNorm_of_massless`: a massless momentum of nonnegative energy has `|p_s| = E(p)`.
 * `Frame.one_sub_cosAngle_of_massless`: `1 - cos θ_ab = g a b / (E(a) E(b))` for massless `a`, `b`
   of positive energy.
+* `Frame.Witness.cosAngle_restFrameWit`: in the rest frame of the `+--` Minkowski form, two
+  back-to-back photons have `cos θ = -1`.
 
 ## References
 
@@ -55,7 +57,7 @@ satisfy it, which is why the massless hypotheses are stated.
   for multijet cross sections in e⁺e⁻ annihilation*, Phys. Lett. B 269 (1991) 432.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -236,6 +238,38 @@ theorem one_sub_cosAngle_of_massless (hg : g.IsSymm) {a b : V} (ha : g a a = 0)
     apply_spatial_spatial F hg]
   field_simp
   ring
+
+/-! ### A witness
+
+The `+--` Minkowski form `gWit` on `ℝ × ℝ × ℝ`, already used as the DIS tensor witness, carries
+the rest frame `n = (1, 0, 0)`. In it the energy of `p` is its time component, and two
+back-to-back photons have opening angle `π`. -/
+
+namespace Witness
+
+open EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.Witness (gWit gWit_apply gWit_isSymm)
+
+/-- The rest frame `n = (1, 0, 0)` of the Minkowski form `gWit`. -/
+def restFrameWit : Frame gWit where
+  n := (1, 0, 0)
+  timelike := by norm_num
+
+/-- In the rest frame the energy of a momentum is its time component. -/
+theorem energy_restFrameWit (p : ℝ × ℝ × ℝ) : restFrameWit.energy p = p.1 := by
+  simp [energy_apply, restFrameWit]
+
+/-- Two back-to-back photons, `(1, 1, 0)` and `(1, -1, 0)`, have `cos θ = -1` in the rest
+frame, by `one_sub_cosAngle_of_massless`. -/
+theorem cosAngle_restFrameWit :
+    restFrameWit.cosAngle ((1, 1, 0) : ℝ × ℝ × ℝ) (1, -1, 0) = -1 := by
+  have h := restFrameWit.one_sub_cosAngle_of_massless gWit_isSymm
+    (a := ((1, 1, 0) : ℝ × ℝ × ℝ)) (b := (1, -1, 0)) (by norm_num) (by norm_num)
+    (by norm_num [energy_restFrameWit]) (by norm_num [energy_restFrameWit])
+  rw [energy_restFrameWit, energy_restFrameWit] at h
+  norm_num at h
+  linarith
+
+end Witness
 
 end Frame
 
