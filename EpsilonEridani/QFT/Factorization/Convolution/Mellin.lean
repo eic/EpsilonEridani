@@ -37,19 +37,11 @@ DGLAP equation becomes, for each value of the Mellin index, an ordinary differen
 
 ## Which transform
 
-Mathlib's `mellin` (`Mathlib/Analysis/MellinTransform.lean`) integrates over `Set.Ioi 0` and would
-supply convergence and analyticity in the complex index for free, at the cost of extending each
-distribution by zero to `(0, ∞)`. No mathlib source was available in the environment in which this
-module was written, so its exact signature and hypotheses could not be checked; rather than guess
-them, the transform here is defined from scratch on the DIS domain. The intended bridge, to be
-added once the signature can be confirmed, is
-
-```
-mellinDis f N = mellin (fun t => if t ≤ 1 then (f t : ℂ) else 0) N
-```
-
-from which analyticity of `mellinDis` in `N` on the convergence strip would follow. Until then,
-analyticity in `N` is *not* available from this module.
+Mathlib's `mellin` (`Mathlib/Analysis/MellinTransform.lean`) integrates over `Set.Ioi 0`, at the
+cost of extending each distribution by zero to `(0, ∞)`. The transform here is defined directly on
+the DIS domain. The bridge `mellinDis f N = mellin (Set.indicator (Set.Ioc 0 1) f) N`, the
+half-plane of convergence and the holomorphy of `mellinDis` in `N` on it are in
+`EpsilonEridani.QFT.Factorization.Convolution.Strip`.
 
 ## Scope
 
