@@ -13,8 +13,9 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 
 A square matrix `Λ` preserves the bilinear form with Gram matrix `g` when `Λᵀ * g * Λ = g`.
 It then also preserves the inverse form, `Λ * g⁻¹ * Λᵀ = g⁻¹`; for invertible `g` this is the
-statement that raising indices with `g⁻¹` commutes with the action of `Λ`, so that a full
-contraction of tensors with lower indices is invariant.
+statement that raising indices with `g⁻¹` commutes with the action of `Λ`, so that the
+contraction `X * g⁻¹ * Yᵀ` of two tensors with lower indices transforms as a tensor with lower
+indices, and its full contraction `trace (g⁻¹ * X * g⁻¹ * Yᵀ)` is invariant.
 
 The case `g = 1` is the orthogonal group. Rotating a family `x : ι → M` of vectors in a module by
 an orthogonal matrix `A`, `x a ↦ ∑ b, A a b • x b`, leaves every sum `∑ a, B (x a) (y a)` of a
@@ -22,14 +23,19 @@ bilinear map `B` invariant.
 
 ## Main results
 
-- `Matrix.mul_inv_mul_transpose_eq_inv`: `Λᵀ * g * Λ = g` implies `Λ * g⁻¹ * Λᵀ = g⁻¹`.
-- `Matrix.sum_bilin_sum_smul_of_mem_orthogonalGroup`: invariance of `∑ a, B (x a) (y a)` under
+- `mul_inv_mul_transpose_eq_inv`: `Λᵀ * g * Λ = g` implies `Λ * g⁻¹ * Λᵀ = g⁻¹`.
+- `transpose_mul_mul_mul_inv_mul_transpose`: the contraction `X * g⁻¹ * Yᵀ` transforms as a
+  tensor with two lower indices.
+- `trace_inv_mul_transpose_mul_mul`: the trace `trace (g⁻¹ * X)` is invariant.
+- `sum_bilin_sum_smul_of_mem_orthogonalGroup`: invariance of `∑ a, B (x a) (y a)` under
   an orthogonal rotation of the families `x` and `y`.
 -/
 
-@[expose] public section
+public section
 
-namespace Matrix
+namespace EpsilonEridani
+
+open Matrix
 
 variable {n ι R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
@@ -46,6 +52,25 @@ theorem mul_inv_mul_transpose_eq_inv {g Λ : Matrix n n R} (hΛ : Λᵀ * g * Λ
     have h3 : Λ * g⁻¹ * Λᵀ * g = 1 := by simpa only [Matrix.mul_assoc] using h2
     exact (inv_eq_left_inv h3).symm
   · simp [nonsing_inv_apply_not_isUnit g hg]
+
+/-- For `Λ` preserving the form `g`, the contraction `X * g⁻¹ * Yᵀ` of two tensors with lower
+indices transforms as a tensor with two lower indices: transforming `X` and `Y` by
+`X ↦ Λᵀ * X * Λ` transforms the contraction in the same way. -/
+theorem transpose_mul_mul_mul_inv_mul_transpose {g Λ : Matrix n n R} (hΛ : Λᵀ * g * Λ = g)
+    (X Y : Matrix n n R) :
+    Λᵀ * X * Λ * g⁻¹ * (Λᵀ * Y * Λ)ᵀ = Λᵀ * (X * g⁻¹ * Yᵀ) * Λ := by
+  calc Λᵀ * X * Λ * g⁻¹ * (Λᵀ * Y * Λ)ᵀ = Λᵀ * X * (Λ * g⁻¹ * Λᵀ) * Yᵀ * Λ := by
+        simp only [transpose_mul, transpose_transpose, Matrix.mul_assoc]
+    _ = Λᵀ * (X * g⁻¹ * Yᵀ) * Λ := by
+        rw [mul_inv_mul_transpose_eq_inv hΛ]; simp only [Matrix.mul_assoc]
+
+/-- For `Λ` preserving the form `g`, the trace `trace (g⁻¹ * X)` of a tensor with two lower
+indices is unchanged by `X ↦ Λᵀ * X * Λ`. -/
+theorem trace_inv_mul_transpose_mul_mul {g Λ : Matrix n n R} (hΛ : Λᵀ * g * Λ = g)
+    (X : Matrix n n R) :
+    trace (g⁻¹ * (Λᵀ * X * Λ)) = trace (g⁻¹ * X) := by
+  rw [← Matrix.mul_assoc, trace_mul_comm, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
+    mul_inv_mul_transpose_eq_inv hΛ]
 
 /-- Rotating two families of vectors by the same orthogonal matrix leaves the sum of their
 pairings under a bilinear map unchanged. -/
@@ -70,4 +95,4 @@ theorem sum_bilin_sum_smul_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι]
         simp only [Finset.sum_smul]
     _ = ∑ b, B (x b) (y b) := by simp [hδ]
 
-end Matrix
+end EpsilonEridani
