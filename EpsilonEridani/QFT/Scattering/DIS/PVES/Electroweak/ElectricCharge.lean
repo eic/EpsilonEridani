@@ -105,6 +105,7 @@ def stabilizer (y : ℝ) (φ : Fin 2 → ℂ) : Submodule ℝ (su (Fin 2) × ℝ
     rw [← Complex.coe_smul, smul_mulVec, hx, smul_zero]
 
 /-- Membership in the stabilizer is the vanishing of the action on `φ`. -/
+@[simp]
 theorem mem_stabilizer_iff (y : ℝ) (φ : Fin 2 → ℂ) (x : su (Fin 2) × ℝ) :
     x ∈ stabilizer y φ ↔ doubletAction y x *ᵥ φ = 0 :=
   (Iff.rfl)
