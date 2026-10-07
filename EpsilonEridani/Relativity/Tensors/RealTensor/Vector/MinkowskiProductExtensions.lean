@@ -67,6 +67,7 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
   let e₁ := b ⟨1, by omega⟩
   let u := cos θ • e₀ + sin θ • e₁
   have he₀ : ‖e₀‖ = 1 := b.orthonormal.1 _
+  have he₁ : ‖e₁‖ = 1 := b.orthonormal.1 _
   have he₀₁ : ⟪e₀, e₁⟫_ℝ = 0 := b.orthonormal.2 (by simp [Fin.ext_iff])
   have hu₀ : ⟪e₀, u⟫_ℝ = cos θ := by
     simp [u, inner_add_right, inner_smul_right, he₀, he₀₁]
@@ -74,7 +75,7 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
     have horth : ⟪cos θ • e₀, sin θ • e₁⟫_ℝ = 0 := by
       simp [inner_smul_left, inner_smul_right, he₀₁]
     have h := norm_add_sq_eq_norm_sq_add_norm_sq_real horth
-    rw [norm_smul, norm_smul, he₀, b.orthonormal.1, Real.norm_eq_abs, Real.norm_eq_abs] at h
+    simp only [norm_smul, he₀, he₁, Real.norm_eq_abs] at h
     have h1 : ‖u‖ * ‖u‖ = 1 := by
       simp only [u]
       nlinarith [sq_abs (cos θ), sq_abs (sin θ), sin_sq_add_cos_sq θ]

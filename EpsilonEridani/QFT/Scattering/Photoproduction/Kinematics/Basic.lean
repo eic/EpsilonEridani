@@ -106,7 +106,7 @@ theorem energyFraction_def (k : PhotonKinematics) (s : ChargedSource) :
 /-- The source keeps the fraction `1 - x` of its energy. -/
 theorem one_sub_energyFraction_mul_energy (k : PhotonKinematics) {s : ChargedSource}
     (hs : s.energy ≠ 0) : (1 - k.energyFraction s) * s.energy = s.energy - k.energy := by
-  rw [energyFraction, sub_mul, div_mul_cancel₀ _ hs, one_mul]
+  simp only [energyFraction, sub_mul, div_mul_cancel₀ _ hs, one_mul]
 
 /-- The photon `q = p - p'` emitted by a source going from four-momentum `p` to `p'`: its energy
 is the energy lost by the source, and its virtuality is `-q²`. -/
