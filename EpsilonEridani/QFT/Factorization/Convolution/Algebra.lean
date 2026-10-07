@@ -59,7 +59,7 @@ convolution is not a group convolution because `(0,1]` is only a monoid.
 
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -100,11 +100,11 @@ theorem mellinConv_apply_of_mem (f g : ℝ → ℝ) {x : ℝ} (hx : x ∈ Ioc (0
     mellinConv f g x = ∫ y in Icc x 1, f y * g (x / y) / y := by
   have hsub : Icc x 1 = Icc 0 1 ∩ Icc x 1 :=
     (inter_eq_right.mpr (Icc_subset_Icc_left hx.1.le)).symm
-  rw [mellinConv_apply_eq_convolveAt_of_mem f g hx, convolveAt, hsub,
-    ← setIntegral_indicator measurableSet_Icc]
+  rw [mellinConv_apply_eq_convolveAt_of_mem f g hx, convolveAt]
+  rw [hsub, ← setIntegral_indicator measurableSet_Icc]
   refine setIntegral_congr_fun measurableSet_Icc fun z hz => ?_
   by_cases hxz : x ≤ z
-  · rw [indicator_of_mem (mem_Icc.mpr ⟨hxz, hz.2⟩), integrand,
+  · simp only [indicator_of_mem (mem_Icc.mpr ⟨hxz, hz.2⟩), integrand,
       collinearKernel_of_mem g (hx.1.trans_le hxz) hxz]
     ring
   · simp only [indicator_of_notMem fun h : z ∈ Icc x 1 => hxz h.1, integrand,
@@ -114,24 +114,11 @@ theorem mellinConv_apply_of_mem (f g : ℝ → ℝ) {x : ℝ} (hx : x ∈ Ioc (0
 theorem mellinConv_comm (f g : ℝ → ℝ) : mellinConv f g = mellinConv g f := by
   ext x
   by_cases hx : x ∈ Ioc (0 : ℝ) 1
-  · rw [mellinConv_apply_of_mem f g hx, mellinConv_apply_of_mem g f hx,
-      ← setIntegral_Icc_comp_div_div (fun u => g u * f (x / u)) hx.1]
+  · simp only [mellinConv_apply_of_mem _ _ hx]
+    rw [← setIntegral_Icc_comp_div_div (fun u => g u * f (x / u)) hx.1]
     refine setIntegral_congr_fun measurableSet_Icc fun y hy => ?_
     rw [div_div_cancel₀ hx.1.ne', mul_comm]
   · simp only [mellinConv_apply_eq_zero_of_notMem _ _ hx]
-
-/-- The Mellin convolution with the zero density on the left vanishes. -/
-@[simp]
-theorem mellinConv_zero_left (g : ℝ → ℝ) : mellinConv 0 g = 0 := by
-  ext x
-  by_cases hx : x ∈ Ioc (0 : ℝ) 1
-  · simp [mellinConv_apply_of_mem 0 g hx]
-  · simp [mellinConv_apply_eq_zero_of_notMem 0 g hx]
-
-/-- The Mellin convolution with the zero density on the right vanishes. -/
-@[simp]
-theorem mellinConv_zero_right (f : ℝ → ℝ) : mellinConv f 0 = 0 := by
-  rw [mellinConv_comm, mellinConv_zero_left]
 
 /-- The Mellin convolution is homogeneous in its left argument. No integrability hypothesis is
 needed. -/
@@ -149,7 +136,17 @@ theorem mellinConv_smul_left (c : ℝ) (f g : ℝ → ℝ) :
 @[simp]
 theorem mellinConv_smul_right (c : ℝ) (f g : ℝ → ℝ) :
     mellinConv f (c • g) = c • mellinConv f g := by
-  rw [mellinConv_comm, mellinConv_smul_left, mellinConv_comm]
+  simp only [mellinConv_comm f, mellinConv_smul_left]
+
+/-- The Mellin convolution with the zero density on the left vanishes. -/
+@[simp]
+theorem mellinConv_zero_left (g : ℝ → ℝ) : mellinConv 0 g = 0 := by
+  simpa using mellinConv_smul_left 0 0 g
+
+/-- The Mellin convolution with the zero density on the right vanishes. -/
+@[simp]
+theorem mellinConv_zero_right (f : ℝ → ℝ) : mellinConv f 0 = 0 := by
+  rw [mellinConv_comm, mellinConv_zero_left]
 
 /-- The Mellin convolution commutes with negation of its left argument. -/
 @[simp]
@@ -159,7 +156,7 @@ theorem mellinConv_neg_left (f g : ℝ → ℝ) : mellinConv (-f) g = -mellinCon
 /-- The Mellin convolution commutes with negation of its right argument. -/
 @[simp]
 theorem mellinConv_neg_right (f g : ℝ → ℝ) : mellinConv f (-g) = -mellinConv f g := by
-  rw [mellinConv_comm, mellinConv_neg_left, mellinConv_comm]
+  simp only [mellinConv_comm f, mellinConv_neg_left]
 
 /-- The Mellin convolution is additive in its left argument at a point `x`, provided both
 convolution integrands are integrable when `x ∈ (0,1]`. -/
@@ -222,7 +219,7 @@ theorem mellinConv_apply_nonneg {f g : ℝ → ℝ} (hf : ∀ y ∈ Ioc (0 : ℝ
     refine setIntegral_nonneg measurableSet_Icc fun y hy => ?_
     have hy0 : 0 < y := hx.1.trans_le hy.1
     exact div_nonneg (mul_nonneg (hf y ⟨hy0, hy.2⟩)
-      (hg _ (div_mem_Ioc_of_pos_of_le hx.1 hy.1))) hy0.le
+      (hg _ ⟨div_pos hx.1 hy0, (div_le_one hy0).mpr hy.1⟩)) hy0.le
   · rw [mellinConv_apply_eq_zero_of_notMem f g hx]
 
 /-- Against the constant density `1` on `(0,1]`, the Mellin convolution is the tail integral
@@ -231,7 +228,9 @@ theorem mellinConv_indicator_one_apply_of_mem (e : ℝ → ℝ) {x : ℝ} (hx : 
     mellinConv e ((Ioc (0 : ℝ) 1).indicator 1) x = ∫ y in Icc x 1, e y / y := by
   rw [mellinConv_apply_of_mem _ _ hx]
   refine setIntegral_congr_fun measurableSet_Icc fun y hy => ?_
-  simp only [indicator_of_mem (div_mem_Ioc_of_pos_of_le hx.1 hy.1), Pi.one_apply, mul_one]
+  have hy0 : 0 < y := hx.1.trans_le hy.1
+  have hxy : x / y ∈ Ioc (0 : ℝ) 1 := ⟨div_pos hx.1 hy0, (div_le_one hy0).mpr hy.1⟩
+  simp only [indicator_of_mem hxy, Pi.one_apply, mul_one]
 
 /-- **No function is a unit for the Mellin convolution**, not even almost everywhere on `(0,1]`
 and not even against the single density `1` on `(0,1]`: for every `e : ℝ → ℝ`,
@@ -250,7 +249,8 @@ theorem not_mellinConv_indicator_one_ae_eq (e : ℝ → ℝ) :
   have hx01 : x ∈ Ioc (0 : ℝ) 1 := ⟨(le_max_right _ _).trans_lt hx.1, hx.2.le⟩
   simp only [mem_ofPred_eq, not_imp]
   refine ⟨hx01, fun hx' => hsub ⟨(le_max_left _ _).trans_lt hx.1, hx.2⟩ ?_⟩
-  rw [← mellinConv_indicator_one_apply_of_mem e hx01, hx', indicator_of_mem hx01, Pi.one_apply]
+  rw [← mellinConv_indicator_one_apply_of_mem e hx01, hx']
+  simp only [indicator_of_mem hx01, Pi.one_apply]
 
 /-- The integrable densities supported in `[0,1]` have no unit for the Mellin convolution, even
 up to equality almost everywhere on `(0,1]`. -/
@@ -268,7 +268,8 @@ theorem mellinDis_mellinConv (f g : ℝ → ℝ) (N : ℂ) (h : MellinConvolutio
   have hcongr : mellinDis (mellinConv g f) N = mellinDis (convolveAt (collinearKernel f) g) N :=
     setIntegral_congr_fun measurableSet_Ioc fun x hx => by
       rw [mellinConv_apply_eq_convolveAt_of_mem g f hx]
-  rw [mellinConv_comm, hcongr, mellinDis_convolveAt f g N h]
+  rw [mellinConv_comm, hcongr]
+  exact mellinDis_convolveAt f g N h
 
 end Convolution
 end Factorization

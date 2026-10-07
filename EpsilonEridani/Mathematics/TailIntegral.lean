@@ -17,7 +17,6 @@ lower endpoint `x`, as used for densities on the momentum-fraction interval.
 
 ## Main results
 
-- `div_mem_Ioc_of_pos_of_le`: for `0 < x ≤ y`, the ratio `x / y` lies in `(0,1]`.
 - `setIntegral_Icc_comp_div_div`: the measure `dy / y` on `[x,1]` is invariant under
   `y ↦ x / y`, i.e. `∫_x^1 h (x / y) dy / y = ∫_x^1 h y dy / y` for `0 < x`.
 - `tendsto_setIntegral_Icc_nhdsLT`: the tail integral `∫ y in Icc x b, h y` tends to `0` as
@@ -26,16 +25,11 @@ lower endpoint `x`, as used for densities on the momentum-fraction interval.
 Nothing in this file is physics-specific.
 -/
 
-@[expose] public section
+public section
 
 open MeasureTheory Set Filter Topology
 
 namespace EpsilonEridani
-
-/-- For `0 < x ≤ y`, the ratio `x / y` lies in `(0,1]`. -/
-theorem div_mem_Ioc_of_pos_of_le {x y : ℝ} (hx : 0 < x) (hxy : x ≤ y) : x / y ∈ Ioc (0 : ℝ) 1 :=
-  have hy : 0 < y := hx.trans_le hxy
-  ⟨div_pos hx hy, (div_le_one hy).mpr hxy⟩
 
 /-- The measure `dy / y` on `[x,1]` is invariant under `y ↦ x / y`: for `0 < x`,
 `∫_{[x,1]} h (x / y) / y dy = ∫_{[x,1]} h y / y dy`. -/
@@ -45,9 +39,9 @@ theorem setIntegral_Icc_comp_div_div (h : ℝ → ℝ) {x : ℝ} (hx : 0 < x) :
     refine Subset.antisymm ?_ fun v hv => ?_
     · rintro _ ⟨u, hu, rfl⟩
       exact ⟨(le_div_iff₀ (hx.trans_le hu.1)).mpr (by nlinarith [hu.2]),
-        (div_mem_Ioc_of_pos_of_le hx hu.1).2⟩
+        (div_le_one (hx.trans_le hu.1)).mpr hu.1⟩
     · refine ⟨x / v, ⟨(le_div_iff₀ (hx.trans_le hv.1)).mpr (by nlinarith [hv.2]),
-        (div_mem_Ioc_of_pos_of_le hx hv.1).2⟩, div_div_cancel₀ hx.ne'⟩
+        (div_le_one (hx.trans_le hv.1)).mpr hv.1⟩, div_div_cancel₀ hx.ne'⟩
   have hderiv : ∀ u ∈ Icc x 1,
       HasDerivWithinAt (fun u => x / u) (-x / u ^ 2) (Icc x 1) u := fun u hu => by
     convert ((hasDerivAt_inv (hx.trans_le hu.1).ne').const_mul x).hasDerivWithinAt using 1
