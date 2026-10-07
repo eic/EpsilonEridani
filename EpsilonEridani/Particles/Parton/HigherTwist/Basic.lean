@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
 public import Mathlib.Algebra.Ring.Rat
 public import Mathlib.Tactic.NormNum
-public import Mathlib.Tactic.Ring
 
 /-!
 # Collinear twist of light-cone operators
