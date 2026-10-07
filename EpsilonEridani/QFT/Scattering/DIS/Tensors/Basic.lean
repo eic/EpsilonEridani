@@ -384,6 +384,7 @@ lemma IsProperLorentzCovariant.sub {g : Bilin V} {K : DisKinematics V} {W W' : B
 lemma IsProperLorentzCovariant.flip {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
     (hW : IsProperLorentzCovariant g K W) : IsProperLorentzCovariant g K W.flip := by
   intro f hf hdet v w
+  simp only [LinearMap.BilinForm.flip_apply]
   exact hW f hf hdet w v
 
 /-- Pairing against a vector fixed by a stabilizer element is invariant. -/
@@ -435,8 +436,10 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
     (hup : g u K.p = 0) (huq : g u K.q = 0) (huv : g u v = 0) :
     W u v = 0 := by
   have hf := reflect_isKinematicStabilizer g K hSymm u hu hup huq
+  rw [← LinearMap.BilinForm.flip_apply W v u]
   exact Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (W := W.flip)
-    (fun v w => hW _ hf w v) (Bilin.reflect_apply_of_orthogonal g u v huv)
+    (fun v w => by simp only [LinearMap.BilinForm.flip_apply]; exact hW _ hf w v)
+    (Bilin.reflect_apply_of_orthogonal g u v huv)
     (Bilin.reflect_apply_self g u hu)
 
 /-!
