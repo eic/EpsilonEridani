@@ -34,14 +34,18 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
 ## Main definitions
 
 - `ParityOddAssumptions g K W`: `W` is alternating, conserved and properly covariant.
-- `SpectatorPlane g K`: an adapted frame `{p_T, q, e₁, e₂}` of `V` in which the spectator
-  directions `e₁`, `e₂` are non-null and orthogonal to each other and to `p_T` and `q`. This is
-  the four-dimensionality input: the spectator subspace is a plane.
+- `SpectatorPair g K`: two spectator directions `e₁`, `e₂`, non-null and orthogonal to each
+  other and to `p_T` and `q`.
+- `SpectatorPlane g K`: a `SpectatorPair` such that `{p_T, q, e₁, e₂}` spans `V`. This is the
+  four-dimensionality input: the spectator subspace is a plane.
+- `SpectatorSplitting g K`: every vector splits into `p_T`, `q` and spectator parts.
+- `SpectatorPartners g K`: a `SpectatorSplitting` in which every non-zero spectator is non-null
+  with a non-null spectator orthogonal to it.
 
 ## Main results
 
-- `ParityOddAssumptions.apply_eq_mul_apply_e₁_e₂`: under a `SpectatorPlane`, a parity-odd
-  tensor is determined by its single component `W e₁ e₂`.
+- `ParityOddAssumptions.apply_eq_mul_apply_e₁_e₂`: for a `SpectatorPair`, a parity-odd tensor
+  on the span of `p_T`, `q`, `e₁`, `e₂` is determined by its single component `W e₁ e₂`.
 - `ParityOddAssumptions.eq_div_smul`, `ParityOddAssumptions.existsUnique_eq_smul`: under a
   `SpectatorPlane`, any two parity-odd tensors are proportional, so a non-zero one `A` spans
   them all, with the unique coefficient `W e₁ e₂ / A e₁ e₂`.
@@ -49,10 +53,12 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
   (twice the antisymmetric part) of any conserved, properly covariant tensor is a unique
   multiple of a non-zero parity-odd `A`.
 - `ParityOddAssumptions.apply_pTransverse_eq_zero`, `ParityOddAssumptions.apply_p_eq_zero`: a
-  parity-odd tensor annihilates `p_T` and `p` once every non-zero spectator has a non-null
-  spectator orthogonal to it. No four-dimensionality enters.
-- `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: when every vector splits into `p_T`, `q`
-  and spectator parts, and non-zero spectators are non-null, the parity-odd part vanishes under
+  parity-odd tensor annihilates `p_T` and `p` under `SpectatorPartners`, that is, when every
+  vector splits into `p_T`, `q` and spectator parts and every non-zero spectator is non-null
+  with a non-null spectator orthogonal to it. No four-dimensionality enters. The
+  `_of_spectatorPlane` forms give the same under a `SpectatorPlane`.
+- `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under a `SpectatorSplitting` in which
+  non-zero spectators are non-null, the parity-odd part vanishes under
   full covariance. No four-dimensionality enters.
 - `Witness.parityOddAssumptions_aFour`, `Witness.aFour_ne_zero` and
   `Witness.existsUnique_eq_smul_aFour`: on Minkowski space `ℝ⁴` the contraction
@@ -129,7 +135,7 @@ lemma parityOddAssumptions_sub_flip {g : Bilin V} {K : DisKinematics V} {W : Bil
 
 /-- Two orthogonal non-null spectators `u` and `u'` give a kinematic stabilizer element of
 determinant one reversing both: the composite of the reflections in `u` and in `u'`. -/
-private lemma exists_halfTurn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
+lemma exists_halfTurn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     {u u' : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (hu : g u u ≠ 0)
     (hu'q : g K.q u' = 0) (hu'T : g (pTransverse g K) u' = 0) (hu' : g u' u' ≠ 0)
     (huu' : g u u' = 0) :
@@ -157,13 +163,10 @@ private lemma exists_halfTurn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsS
 ## The spectator plane
 -/
 
-/-- An adapted frame for the kinematics: two spectator directions `e₁`, `e₂`, non-null and
-`g`-orthogonal to each other and to `p_T` and `q`, such that `p_T`, `q`, `e₁`, `e₂` span `V`.
-
-For `V` Minkowski space with `p` timelike and `q` spacelike the spectator subspace
-`{p, q}^⊥` is a spacelike plane, and any orthogonal basis of it is such a frame. The frame
-is the only place where four-dimensionality enters. -/
-structure SpectatorPlane (g : Bilin V) (K : DisKinematics V) : Type where
+/-- Two spectator directions `e₁`, `e₂` for the kinematics, non-null and `g`-orthogonal to each
+other and to `p_T` and `q`. They supply the half-turn of `exists_halfTurn` that a parity-odd
+tensor must respect; `SpectatorPlane` adds that they complete `p_T`, `q` to a frame of `V`. -/
+structure SpectatorPair (g : Bilin V) (K : DisKinematics V) : Type where
   /-- The first spectator direction. -/
   e₁ : V
   /-- The second spectator direction. -/
@@ -182,18 +185,56 @@ structure SpectatorPlane (g : Bilin V) (K : DisKinematics V) : Type where
   e₁_self_ne_zero : g e₁ e₁ ≠ 0
   /-- `e₂` is not null. -/
   e₂_self_ne_zero : g e₂ e₂ ≠ 0
+
+/-- An adapted frame for the kinematics: a `SpectatorPair` `e₁`, `e₂` such that `p_T`, `q`,
+`e₁`, `e₂` span `V`.
+
+For `V` Minkowski space with `p` timelike and `q` spacelike the spectator subspace
+`{p, q}^⊥` is a spacelike plane, and any orthogonal basis of it is such a frame. The frame
+is the only place where four-dimensionality enters. -/
+structure SpectatorPlane (g : Bilin V) (K : DisKinematics V) : Type extends SpectatorPair g K where
   /-- The frame spans `V`. -/
   span : ∀ v : V, ∃ a b c₁ c₂ : ℝ, v = a • pTransverse g K + b • K.q + c₁ • e₁ + c₂ • e₂
 
+/-- Every vector splits into a `p_T` part, a `q` part and a spectator part orthogonal to both.
+This is the `span` field of `SpectatorAssumptions`, without its definiteness and transitivity
+inputs. -/
+structure SpectatorSplitting (g : Bilin V) (K : DisKinematics V) : Prop where
+  /-- Every vector splits into a transverse-hadron part, a longitudinal `q` part, and a
+  spectator part orthogonal to both. -/
+  span : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
+    v = a • pTransverse g K + b • K.q + u
+
+/-- A `SpectatorSplitting` in which every non-zero spectator `u` is non-null and has a non-null
+spectator `u'` orthogonal to it, so that `exists_halfTurn` reverses `u`. A definite spectator
+subspace of any dimension at least two qualifies. -/
+structure SpectatorPartners (g : Bilin V) (K : DisKinematics V) : Prop
+    extends SpectatorSplitting g K where
+  /-- Every non-zero spectator is non-null and has a non-null spectator orthogonal to it. -/
+  partner : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 →
+    g u u ≠ 0 ∧ ∃ u' : V, g K.q u' = 0 ∧ g (pTransverse g K) u' = 0 ∧ g u u' = 0 ∧
+      g u' u' ≠ 0
+
+/-- The adapted frame of a `SpectatorPlane` splits every vector: the spectator part of
+`a • p_T + b • q + c₁ • e₁ + c₂ • e₂` is `c₁ • e₁ + c₂ • e₂`. -/
+lemma SpectatorPlane.spectatorSplitting {g : Bilin V} {K : DisKinematics V}
+    (hP : SpectatorPlane g K) : SpectatorSplitting g K where
+  span v := by
+    obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
+    refine ⟨a, b, c₁ • hP.e₁ + c₂ • hP.e₂, ?_, ?_, add_assoc _ _ _⟩
+    · simp only [map_add, map_smul, hP.e₁_orthogonal_q, hP.e₂_orthogonal_q, smul_zero,
+        add_zero]
+    · simp only [map_add, map_smul, hP.e₁_orthogonal_pT, hP.e₂_orthogonal_pT, smul_zero,
+        add_zero]
 
 namespace ParityOddAssumptions
 
 variable {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
 
-/-- **A parity-odd tensor has a single component.** In the adapted frame of a
-`SpectatorPlane`, `W` is `W e₁ e₂` times the `2 × 2` determinant of the spectator
+/-- **A parity-odd tensor has a single component.** On the span of `p_T`, `q` and a
+`SpectatorPair` `e₁`, `e₂`, `W` is `W e₁ e₂` times the `2 × 2` determinant of the spectator
 coordinates of its arguments. -/
-lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPair g K)
     (hW : ParityOddAssumptions g K W) (a b c₁ c₂ a' b' d₁ d₂ : ℝ) :
     W (a • pTransverse g K + b • K.q + c₁ • hP.e₁ + c₂ • hP.e₂)
         (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
@@ -212,69 +253,83 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     hW.conserved_left, hW.conserved_right, hW.isAlt.self_eq_zero, h₁, h₂, h₁', h₂', h₂₁]
   ring
 
-/-- **A parity-odd tensor annihilates the transverse hadron momentum `p_T`.** If every vector
-splits into a `p_T` part, a `q` part and a spectator part orthogonal to both (as in
-`SpectatorAssumptions.span`), and every non-zero spectator `u` is non-null with a non-null
-spectator orthogonal to it, then the half-turn in that plane reverses `u` and fixes `p_T`.
+/-- **A parity-odd tensor annihilates the transverse hadron momentum `p_T`.** Under
+`SpectatorPartners`, every vector splits into a `p_T` part, a `q` part and a spectator part
+`u`, and the half-turn in the plane of `u` and its partner reverses `u` and fixes `p_T`.
 No four-dimensionality enters: a definite spectator subspace of any dimension at least two
 qualifies. -/
 lemma apply_pTransverse_eq_zero (hSymm : g.IsSymm)
-    (hspan : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
-      v = a • pTransverse g K + b • K.q + u)
-    (hpartner : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 →
-      g u u ≠ 0 ∧ ∃ u' : V, g K.q u' = 0 ∧ g (pTransverse g K) u' = 0 ∧ g u u' = 0 ∧
-        g u' u' ≠ 0)
+    (hS : SpectatorPartners g K)
     (hW : ParityOddAssumptions g K W) (v : V) :
     W (pTransverse g K) v = 0 := by
-  obtain ⟨a, b, u, huq, huT, rfl⟩ := hspan v
+  obtain ⟨a, b, u, huq, huT, rfl⟩ := hS.span v
   have hTu : W (pTransverse g K) u = 0 := by
     by_cases hu : u = 0
     · simp [hu]
-    obtain ⟨huu, u', hu'q, hu'T, huu', hu'u'⟩ := hpartner u huq huT hu
+    obtain ⟨huu, u', hu'q, hu'T, huu', hu'u'⟩ := hS.partner u huq huT hu
     obtain ⟨f, hf, hdet, hfu, -⟩ := exists_halfTurn hSymm huq huT huu hu'q hu'T hu'u' huu'
     exact Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hW.properCovariant f hf hdet)
       (stabilizer_fixes_pTransverse g K hf) hfu
   simp only [map_add, map_smul, smul_eq_mul, hW.isAlt.self_eq_zero, hW.conserved_right, hTu,
     mul_zero, add_zero]
 
+/-- By conservation, a parity-odd tensor does not distinguish `p` from `p_T`. -/
+lemma apply_p_eq_apply_pTransverse (hW : ParityOddAssumptions g K W) (v : V) :
+    W K.p v = W (pTransverse g K) v := by
+  have hp : K.p = pTransverse g K + (g K.p K.q / g K.q K.q) • K.q := by
+    rw [pTransverse, sub_add_cancel]
+  rw [hp, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hW.conserved_left,
+    smul_zero, add_zero]
+
 /-- A parity-odd tensor annihilates the hadron momentum `p`, under the hypotheses of
 `apply_pTransverse_eq_zero`. -/
 lemma apply_p_eq_zero (hSymm : g.IsSymm)
-    (hspan : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
-      v = a • pTransverse g K + b • K.q + u)
-    (hpartner : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 →
-      g u u ≠ 0 ∧ ∃ u' : V, g K.q u' = 0 ∧ g (pTransverse g K) u' = 0 ∧ g u u' = 0 ∧
-        g u' u' ≠ 0)
+    (hS : SpectatorPartners g K)
     (hW : ParityOddAssumptions g K W) (v : V) :
     W K.p v = 0 := by
-  have hp : K.p = pTransverse g K + (g K.p K.q / g K.q K.q) • K.q := by
-    rw [pTransverse, sub_add_cancel]
-  rw [hp, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
-    hW.apply_pTransverse_eq_zero hSymm hspan hpartner, hW.conserved_left, smul_zero, add_zero]
+  rw [hW.apply_p_eq_apply_pTransverse, hW.apply_pTransverse_eq_zero hSymm hS]
 
 /-- A parity-odd tensor annihilates `p_T` in the second slot as well, under the hypotheses of
 `apply_pTransverse_eq_zero`. -/
 lemma apply_pTransverse_eq_zero_right (hSymm : g.IsSymm)
-    (hspan : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
-      v = a • pTransverse g K + b • K.q + u)
-    (hpartner : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 →
-      g u u ≠ 0 ∧ ∃ u' : V, g K.q u' = 0 ∧ g (pTransverse g K) u' = 0 ∧ g u u' = 0 ∧
-        g u' u' ≠ 0)
+    (hS : SpectatorPartners g K)
     (hW : ParityOddAssumptions g K W) (v : V) :
     W v (pTransverse g K) = 0 := by
-  rw [← hW.isAlt.neg_eq, hW.apply_pTransverse_eq_zero hSymm hspan hpartner, neg_zero]
+  rw [← hW.isAlt.neg_eq, hW.apply_pTransverse_eq_zero hSymm hS, neg_zero]
 
 /-- A parity-odd tensor annihilates `p` in the second slot as well, under the hypotheses of
 `apply_pTransverse_eq_zero`. -/
 lemma apply_p_eq_zero_right (hSymm : g.IsSymm)
-    (hspan : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
-      v = a • pTransverse g K + b • K.q + u)
-    (hpartner : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 →
-      g u u ≠ 0 ∧ ∃ u' : V, g K.q u' = 0 ∧ g (pTransverse g K) u' = 0 ∧ g u u' = 0 ∧
-        g u' u' ≠ 0)
+    (hS : SpectatorPartners g K)
     (hW : ParityOddAssumptions g K W) (v : V) :
     W v K.p = 0 := by
-  rw [← hW.isAlt.neg_eq, hW.apply_p_eq_zero hSymm hspan hpartner, neg_zero]
+  rw [← hW.isAlt.neg_eq, hW.apply_p_eq_zero hSymm hS, neg_zero]
+
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p_T`: its `p_T` row has no
+spectator coordinates in the adapted frame. -/
+lemma apply_pTransverse_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (v : V) :
+    W (pTransverse g K) v = 0 := by
+  obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
+  simpa using hW.apply_eq_mul_apply_e₁_e₂ hSymm hP.toSpectatorPair 1 0 0 0 a b c₁ c₂
+
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates the hadron momentum `p`. -/
+lemma apply_p_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (v : V) :
+    W K.p v = 0 := by
+  rw [hW.apply_p_eq_apply_pTransverse, hW.apply_pTransverse_eq_zero_of_spectatorPlane hSymm hP]
+
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p_T` in the second slot. -/
+lemma apply_pTransverse_eq_zero_right_of_spectatorPlane (hSymm : g.IsSymm)
+    (hP : SpectatorPlane g K) (hW : ParityOddAssumptions g K W) (v : V) :
+    W v (pTransverse g K) = 0 := by
+  rw [← hW.isAlt.neg_eq, hW.apply_pTransverse_eq_zero_of_spectatorPlane hSymm hP, neg_zero]
+
+/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p` in the second slot. -/
+lemma apply_p_eq_zero_right_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (v : V) :
+    W v K.p = 0 := by
+  rw [← hW.isAlt.neg_eq, hW.apply_p_eq_zero_of_spectatorPlane hSymm hP, neg_zero]
 
 /-- Two parity-odd tensors agreeing on the spectator pair `(e₁, e₂)` are equal. -/
 lemma eq_of_apply_e₁_e₂_eq (hSymm : g.IsSymm) (hP : SpectatorPlane g K) {W' : Bilin V}
@@ -283,7 +338,8 @@ lemma eq_of_apply_e₁_e₂_eq (hSymm : g.IsSymm) (hP : SpectatorPlane g K) {W' 
   refine LinearMap.ext₂ fun v w => ?_
   obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
   obtain ⟨a', b', d₁, d₂, rfl⟩ := hP.span w
-  rw [hW.apply_eq_mul_apply_e₁_e₂ hSymm hP, hW'.apply_eq_mul_apply_e₁_e₂ hSymm hP, h]
+  rw [hW.apply_eq_mul_apply_e₁_e₂ hSymm hP.toSpectatorPair,
+    hW'.apply_eq_mul_apply_e₁_e₂ hSymm hP.toSpectatorPair, h]
 
 /-- A parity-odd tensor vanishes exactly when its spectator component `W e₁ e₂` does. -/
 lemma eq_zero_iff (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
@@ -315,14 +371,11 @@ theorem existsUnique_eq_smul (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
   simp only [LinearMap.smul_apply, smul_eq_mul]
   field_simp
 
-/-- **Parity conservation removes the parity-odd sector.** If every vector splits into a
-`p_T` part, a `q` part and a spectator part orthogonal to both (as in
-`SpectatorAssumptions.span`), and every non-zero spectator is non-null, then a parity-odd tensor
+/-- **Parity conservation removes the parity-odd sector.** Under a `SpectatorSplitting` in
+which every non-zero spectator is non-null, a parity-odd tensor
 that is covariant under every stabilizer element, reflections included, vanishes. No
 dimension hypothesis is needed. -/
-theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm)
-    (hspan : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
-      v = a • pTransverse g K + b • K.q + u)
+theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm) (hS : SpectatorSplitting g K)
     (hnull : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u ≠ 0)
     (hW : ParityOddAssumptions g K W) (hcov : IsLorentzCovariant g K W) : W = 0 := by
   -- The reflection in a spectator `u` kills every component of `W` between `u` and `u^⊥`.
@@ -339,8 +392,8 @@ theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm)
       rw [map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ huu, sub_self])
     rwa [map_sub, map_smul, hW.isAlt.self_eq_zero, smul_zero, sub_zero] at h
   refine LinearMap.ext₂ fun v w => ?_
-  obtain ⟨a, b, u, huq, huT, rfl⟩ := hspan v
-  obtain ⟨a', b', u', hu'q, hu'T, rfl⟩ := hspan w
+  obtain ⟨a, b, u, huq, huT, rfl⟩ := hS.span v
+  obtain ⟨a', b', u', hu'q, hu'T, rfl⟩ := hS.span w
   have hTu' : W (pTransverse g K) u' = 0 := by
     rw [← hW.isAlt.neg_eq, hspec u' _ hu'q hu'T, neg_zero]
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
@@ -491,13 +544,6 @@ theorem existsUnique_eq_smul_aFour {W : Bilin (Fin 4 → ℝ)}
   hW.existsUnique_eq_smul gFour_isSymm spectatorPlaneFour parityOddAssumptions_aFour
     aFour_ne_zero
 
-/-- On the witness kinematics every vector splits into a `p_T` part, a `q` part and a
-spectator part orthogonal to both. -/
-lemma gFour_kFour_span (v : Fin 4 → ℝ) :
-    ∃ (a b : ℝ) (u : Fin 4 → ℝ), gFour kFour.q u = 0 ∧ gFour (pTransverse gFour kFour) u = 0 ∧
-      v = a • pTransverse gFour kFour + b • kFour.q + u :=
-  ⟨v 0, v 3, ![0, v 1, v 2, 0], by simp, by simp, by ext i; fin_cases i <;> simp⟩
-
 /-- On the witness kinematics every non-zero spectator is non-null: the spectator subspace is
 the spacelike plane of the coordinates `1` and `2`. -/
 lemma gFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ} (hq : gFour kFour.q u = 0)
@@ -515,7 +561,7 @@ lemma gFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ} (hq : gFour kFour.q u 
 non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
 lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour aFour := fun h =>
   aFour_ne_zero (parityOddAssumptions_aFour.eq_zero_of_isLorentzCovariant gFour_isSymm
-    gFour_kFour_span (fun _ => gFour_self_ne_zero_of_spectator) h)
+    spectatorPlaneFour.spectatorSplitting (fun _ => gFour_self_ne_zero_of_spectator) h)
 
 end Witness
 
