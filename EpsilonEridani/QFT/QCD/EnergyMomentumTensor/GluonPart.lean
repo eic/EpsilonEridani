@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Field
 public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Isometry
-public import EpsilonEridani.Relativity.MinkowskiMatrixExtensions
 public import Physlib.Relativity.LorentzGroup.Basic
 
 /-!
@@ -68,7 +67,7 @@ signature `(+, -, …, -)` use Physlib's Minkowski matrix `η = diag(1, -1, …,
 * X. Ji, *Phys. Rev. D* **52** (1995) 271, arXiv:hep-ph/9502213, for the quark-gluon split.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -88,21 +87,11 @@ being raised with the inverse metric `g⁻¹`. -/
 def fieldStrengthSq (g F : Matrix n n ℝ) : ℝ :=
   trace (g⁻¹ * F * g⁻¹ * Fᵀ)
 
-lemma fieldStrengthSq_def (g F : Matrix n n ℝ) :
-    fieldStrengthSq g F = trace (g⁻¹ * F * g⁻¹ * Fᵀ) := (rfl)
-
 /-- The energy-momentum tensor `T_{μν} = - F_{μα} g^{αβ} F_{νβ} + (1/4) g_{μν} F_{αβ} F^{αβ}`
 of one field strength `F`, with lower indices. It is the energy-momentum tensor of free Maxwell
 theory and the gluon part of the QCD tensor for a single colour component. -/
 def maxwellTensor (g F : Matrix n n ℝ) : Matrix n n ℝ :=
   -(F * g⁻¹ * Fᵀ) + (fieldStrengthSq g F / 4) • g
-
-lemma maxwellTensor_def (g F : Matrix n n ℝ) :
-    maxwellTensor g F = -(F * g⁻¹ * Fᵀ) + (fieldStrengthSq g F / 4) • g := (rfl)
-
-lemma maxwellTensor_apply (g F : Matrix n n ℝ) (μ ν : n) :
-    maxwellTensor g F μ ν = -(F * g⁻¹ * Fᵀ) μ ν + fieldStrengthSq g F / 4 * g μ ν := by
-  simp [maxwellTensor]
 
 /-- The energy-momentum tensor of one field strength is symmetric for a symmetric metric,
 whatever the field strength. -/
@@ -159,28 +148,11 @@ the renormalized trace is the trace anomaly. -/
 def gluonFieldSq (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) : ℝ :=
   ∑ a, fieldStrengthSq g (F a)
 
-lemma gluonFieldSq_def (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
-    gluonFieldSq g F = ∑ a, fieldStrengthSq g (F a) := (rfl)
-
 /-- The gluon part `T_g{}_{μν} = - F^a_{μα} g^{αβ} F^a_{νβ} + (1/4) g_{μν} F^a_{αβ} F^{a αβ}` of
 the symmetric, gauge-invariant energy-momentum tensor, for a colour multiplet `F` of field
 strengths with lower indices. -/
 def gluonPart (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) : Matrix n n ℝ :=
   ∑ a, maxwellTensor g (F a)
-
-lemma gluonPart_def (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
-    gluonPart g F = ∑ a, maxwellTensor g (F a) := (rfl)
-
-/-- The gluon part in closed form, with the colour sums carried out termwise. -/
-lemma gluonPart_eq (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
-    gluonPart g F = -(∑ a, F a * g⁻¹ * (F a)ᵀ) + (gluonFieldSq g F / 4) • g := by
-  simp only [gluonPart, maxwellTensor, Finset.sum_add_distrib, Finset.sum_neg_distrib,
-    gluonFieldSq, Finset.sum_div, Finset.sum_smul]
-
-@[simp]
-lemma gluonPart_unique [Unique ι] (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
-    gluonPart g F = maxwellTensor g (F default) := by
-  simp [gluonPart]
 
 /-- The gluon part is symmetric for a symmetric metric. This is an identity: it uses neither
 the equations of motion nor the antisymmetry of the field strength. -/
@@ -195,13 +167,6 @@ theorem trace_gluonPart (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
     trace (g⁻¹ * gluonPart g F) = (Fintype.card n / 4 - 1) * gluonFieldSq g F := by
   simp only [gluonPart, trace_sum, trace_maxwellTensor, gluonFieldSq, Finset.mul_sum]
 
-/-- The classical gluon part is traceless in four spacetime dimensions. -/
-theorem trace_gluonPart_eq_zero (g : Matrix n n ℝ) (hn : Fintype.card n = 4)
-    (F : ι → Matrix n n ℝ) :
-    trace (g⁻¹ * gluonPart g F) = 0 := by
-  rw [trace_gluonPart, hn]
-  norm_num
-
 /-- The trace of the gluon part vanishes exactly in four spacetime dimensions or when
 `F^a_{αβ} F^{a αβ} = 0`: tracelessness is special to four dimensions. -/
 theorem trace_gluonPart_eq_zero_iff (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
@@ -213,11 +178,6 @@ theorem trace_gluonPart_eq_zero_iff (g : Matrix n n ℝ) (F : ι → Matrix n n 
 adjoint representation of the gauge group this is a gauge transformation. -/
 def gaugeRotate (R : Matrix ι ι ℝ) (F : ι → Matrix n n ℝ) : ι → Matrix n n ℝ :=
   fun a => ∑ b, R a b • F b
-
-omit [Fintype n] [DecidableEq n] in
-@[simp]
-lemma gaugeRotate_apply (R : Matrix ι ι ℝ) (F : ι → Matrix n n ℝ) (a : ι) :
-    gaugeRotate R F a = ∑ b, R a b • F b := (rfl)
 
 /-- The colour-summed invariant `F^a F^a` is gauge invariant. -/
 theorem gluonFieldSq_gaugeRotate [DecidableEq ι] (g : Matrix n n ℝ) {R : Matrix ι ι ℝ}
@@ -241,7 +201,11 @@ theorem gluonPart_gaugeRotate [DecidableEq ι] (g : Matrix n n ℝ) {R : Matrix 
       (by intros; simp)
       (by intros; simp [Matrix.mul_add])
       (by intros; simp)
-  rw [gluonPart_eq, gluonPart_eq, gluonFieldSq_gaugeRotate g hR F]
+  have hsum (G : ι → Matrix n n ℝ) :
+      gluonPart g G = -(∑ a, G a * g⁻¹ * (G a)ᵀ) + (gluonFieldSq g G / 4) • g := by
+    simp only [gluonPart, maxwellTensor, Finset.sum_add_distrib, Finset.sum_neg_distrib,
+      gluonFieldSq, Finset.sum_div, Finset.sum_smul]
+  rw [hsum, hsum, gluonFieldSq_gaugeRotate g hR F]
   congr 2
   exact sum_bilin_sum_smul_of_mem_orthogonalGroup B hR F F
 
@@ -272,7 +236,7 @@ variable {d : ℕ}
 theorem trace_gluonPart_minkowski (F : ι → Matrix (Fin 1 ⊕ Fin d) (Fin 1 ⊕ Fin d) ℝ) :
     trace (η * gluonPart η F) = (d - 3) / 4 * gluonFieldSq η F := by
   have h := trace_gluonPart (η : Matrix (Fin 1 ⊕ Fin d) (Fin 1 ⊕ Fin d) ℝ) F
-  rw [inv_eq_self] at h
+  rw [Matrix.inv_eq_left_inv sq] at h
   rw [h]
   simp only [Fintype.card_sum, Fintype.card_unique, Fintype.card_fin, Nat.cast_add,
     Nat.cast_one]
@@ -295,7 +259,8 @@ theorem maxwellTensor_minkowski_inl_inl {F : Matrix (Fin 1 ⊕ Fin d) (Fin 1 ⊕
   have h00 : F (Sum.inl 0) (Sum.inl 0) = 0 := by
     have := hanti (Sum.inl 0) (Sum.inl 0)
     linarith
-  rw [maxwellTensor_apply, fieldStrengthSq, inv_eq_self, as_diagonal]
+  rw [maxwellTensor, fieldStrengthSq, Matrix.inv_eq_left_inv sq, as_diagonal]
+  simp only [Matrix.add_apply, Matrix.neg_apply, Matrix.smul_apply, smul_eq_mul]
   simp only [mul_apply, transpose_apply, trace, diag_apply, diagonal_apply, ite_mul, mul_ite,
     zero_mul, mul_zero, Finset.sum_ite_eq, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   simp only [Fintype.sum_sum_type, Finset.univ_unique, Finset.sum_singleton, Sum.elim_inl,
