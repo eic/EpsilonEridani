@@ -20,14 +20,15 @@ frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`), and
 fraction `PhotonKinematics.energyFraction`. The kinematic minimum of the virtuality is strictly
 positive for a massive source (`ChargedSource.photonVirtualityMin_pos`) and strictly exceeds the
 familiar `m² x² / (1 - x)` in terms of the energy fraction `x` carried by the photon
-(`ChargedSource.div_one_sub_lt_photonVirtualityMin`). The set `ChargedSource.photonRegion s θmax`
-of photon variables allowed by the bounds is exactly the set of photons emitted by `s` with
-scattering angle at most `θmax` (`ChargedSource.mem_photonRegion_iff_exists`). Since the kinematic
-minimum is positive, every photon a massive source emits has strictly positive virtuality
-(`ChargedSource.virtuality_pos_of_mem_photonRegion`), so a massive source never emits a real
-photon (`ChargedSource.not_isReal_of_mem_photonRegion`): the virtuality integral of the
-equivalent-photon spectrum has a strictly positive lower limit, and the real-photon point `Q² = 0`
-lies outside the physical region of every massive source.
+(`ChargedSource.sq_mul_sq_div_one_sub_lt_photonVirtualityMin`). The set
+`ChargedSource.photonRegion s θmax` of photon variables allowed by the bounds is exactly the set of
+photons emitted by `s` with scattering angle at most `θmax`
+(`ChargedSource.mem_photonRegion_iff_exists`). Since the kinematic minimum is positive, every photon
+a massive source emits has strictly positive virtuality
+(`ChargedSource.virtuality_pos_of_mem_photonRegion`), so a massive source never emits a real photon
+(`ChargedSource.not_isReal_of_mem_photonRegion`): the virtuality integral of the equivalent-photon
+spectrum has a strictly positive lower limit, and the real-photon point `Q² = 0` lies outside the
+physical region of every massive source.
 
 ## References
 
@@ -149,11 +150,6 @@ def photonVirtualityMin (x : ℝ) : ℝ := s.photonVirtuality x 0
 theorem photonVirtualityMin_def (x : ℝ) : s.photonVirtualityMin x = s.photonVirtuality x 0 :=
   (rfl)
 
-/-- The kinematic minimum is a lower bound for the virtuality at every scattering angle. -/
-theorem photonVirtualityMin_le_photonVirtuality (x θ : ℝ) :
-    s.photonVirtualityMin x ≤ s.photonVirtuality x θ :=
-  emissionVirtuality_zero_le_emissionVirtuality _ _ _ _
-
 variable {s}
 
 /-- If the source energy and the energy `(1 - x) E` it keeps after emitting the fraction `x ≠ 0`
@@ -175,11 +171,11 @@ theorem photonVirtualityMin_pos (hm : 0 < s.mass) (hE : s.mass ≤ s.energy) {x 
 
 /-- **The kinematic minimum strictly exceeds `m² x² / (1 - x)`**, the form in which it is usually
 quoted for a high-energy source. -/
-theorem div_one_sub_lt_photonVirtualityMin (hm : 0 < s.mass) (hE : s.mass ≤ s.energy) {x : ℝ}
-    (hx : x ≠ 0) (hE' : s.mass ≤ (1 - x) * s.energy) :
+theorem sq_mul_sq_div_one_sub_lt_photonVirtualityMin (hm : 0 < s.mass) (hE : s.mass ≤ s.energy)
+    {x : ℝ} (hx : x ≠ 0) (hE' : s.mass ≤ (1 - x) * s.energy) :
     s.mass ^ 2 * x ^ 2 / (1 - x) < s.photonVirtualityMin x := by
   obtain ⟨hE₁, hE₂, hne⟩ := energy_bounds hm hE hx hE'
-  have hlt := div_mul_lt_emissionVirtuality_zero hm.ne' hE₁ hE₂ hne
+  have hlt := sq_mul_sub_sq_div_mul_lt_emissionVirtuality_zero hm.ne' hE₁ hE₂ hne
   have hEpos : s.energy ≠ 0 := (hm.trans_le hE).ne'
   have h1x : 1 - x ≠ 0 := by
     intro h

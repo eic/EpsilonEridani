@@ -31,7 +31,7 @@ This module develops that formula and the range it takes.
 * The value at `θ = 0` is the kinematic minimum. It vanishes for a massless source, and is strictly
   positive as soon as the source is massive and the emitted particle carries energy
   (`emissionVirtuality_zero_pos_iff`). It strictly exceeds the familiar
-  `m² (E - E')² / (E E')` (`div_mul_lt_emissionVirtuality_zero`).
+  `m² (E - E')² / (E E')` (`sq_mul_sub_sq_div_mul_lt_emissionVirtuality_zero`).
 -/
 
 public section
@@ -105,7 +105,7 @@ theorem emissionVirtuality_self_zero_eq_zero {m E : ℝ} (hE : |m| ≤ |E|) :
 
 /-- The algebraic identity behind the kinematic minimum: with `A = E E' - m²` and the momenta
 `P = √(E² - m²)`, `P' = √(E'² - m²)`, one has `A² - (P P')² = m² (E - E')²`. -/
-theorem sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sq_sub {m E E' : ℝ} (hE : |m| ≤ |E|)
+theorem sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sub_sq {m E E' : ℝ} (hE : |m| ≤ |E|)
     (hE' : |m| ≤ |E'|) :
     (E * E' - m ^ 2) ^ 2 - (√(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2)) ^ 2 =
       m ^ 2 * (E - E') ^ 2 := by
@@ -119,7 +119,7 @@ theorem sqrt_mul_sqrt_le_mul_sub_sq {m E E' : ℝ} (hE : |m| ≤ E) (hE' : |m| �
     √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) ≤ E * E' - m ^ 2 := by
   have hA : 0 ≤ E * E' - m ^ 2 := by
     nlinarith [sq_abs m, mul_le_mul hE hE' (abs_nonneg m) (le_trans (abs_nonneg m) hE)]
-  have hid := sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sq_sub (hE.trans (le_abs_self E))
+  have hid := sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sub_sq (hE.trans (le_abs_self E))
     (hE'.trans (le_abs_self E'))
   have hP : 0 ≤ √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) := by positivity
   nlinarith [sq_nonneg m, sq_nonneg (E - E')]
@@ -132,7 +132,7 @@ theorem sqrt_mul_sqrt_lt_mul_sub_sq {m E E' : ℝ} (hm : m ≠ 0) (hE : |m| ≤ 
   have hB : 0 < m ^ 2 * (E - E') ^ 2 := by
     have := sub_ne_zero.2 hne
     positivity
-  have hid := sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sq_sub (hE.trans (le_abs_self E))
+  have hid := sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sub_sq (hE.trans (le_abs_self E))
     (hE'.trans (le_abs_self E'))
   refine (sqrt_mul_sqrt_le_mul_sub_sq hE hE').lt_of_ne fun h => ?_
   rw [h, sub_self] at hid
@@ -167,21 +167,21 @@ theorem emissionVirtuality_zero_pos_iff {m E E' : ℝ} (hE : |m| ≤ E) (hE' : |
 
 /-- **The kinematic minimum strictly exceeds `m² (E - E')² / (E E' - m²)`.** For a high-energy
 source the bound approaches the minimum, and it is itself above the familiar high-energy form
-`m² (E - E')² / (E E')`; see `div_mul_lt_emissionVirtuality_zero`. -/
-theorem div_mul_sub_sq_lt_emissionVirtuality_zero {m E E' : ℝ} (hm : m ≠ 0) (hE : |m| ≤ E)
-    (hE' : |m| ≤ E') (hne : E ≠ E') :
+`m² (E - E')² / (E E')`; see `sq_mul_sub_sq_div_mul_lt_emissionVirtuality_zero`. -/
+theorem sq_mul_sub_sq_div_mul_sub_sq_lt_emissionVirtuality_zero {m E E' : ℝ} (hm : m ≠ 0)
+    (hE : |m| ≤ E) (hE' : |m| ≤ E') (hne : E ≠ E') :
     m ^ 2 * (E - E') ^ 2 / (E * E' - m ^ 2) < emissionVirtuality m E E' 0 := by
   have hlt := sqrt_mul_sqrt_lt_mul_sub_sq hm hE hE' hne
   have hP : 0 ≤ √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) := by positivity
   have hA : 0 < E * E' - m ^ 2 := hP.trans_lt hlt
-  have hid := sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sq_sub (hE.trans (le_abs_self E))
+  have hid := sq_sub_sq_sqrt_mul_sqrt_eq_sq_mul_sub_sq (hE.trans (le_abs_self E))
     (hE'.trans (le_abs_self E'))
   rw [div_lt_iff₀ hA]
   simp only [emissionVirtuality, cos_zero, mul_one]
   nlinarith
 
 /-- **The kinematic minimum strictly exceeds its high-energy form `m² (E - E')² / (E E')`.** -/
-theorem div_mul_lt_emissionVirtuality_zero {m E E' : ℝ} (hm : m ≠ 0) (hE : |m| ≤ E)
+theorem sq_mul_sub_sq_div_mul_lt_emissionVirtuality_zero {m E E' : ℝ} (hm : m ≠ 0) (hE : |m| ≤ E)
     (hE' : |m| ≤ E') (hne : E ≠ E') :
     m ^ 2 * (E - E') ^ 2 / (E * E') < emissionVirtuality m E E' 0 := by
   have hlt := sqrt_mul_sqrt_lt_mul_sub_sq hm hE hE' hne
@@ -191,7 +191,7 @@ theorem div_mul_lt_emissionVirtuality_zero {m E E' : ℝ} (hm : m ≠ 0) (hE : |
   have hB : 0 < m ^ 2 * (E - E') ^ 2 := mul_pos hm2 (by
     have := sub_ne_zero.2 hne
     positivity)
-  refine lt_of_le_of_lt ?_ (div_mul_sub_sq_lt_emissionVirtuality_zero hm hE hE' hne)
+  refine lt_of_le_of_lt ?_ (sq_mul_sub_sq_div_mul_sub_sq_lt_emissionVirtuality_zero hm hE hE' hne)
   exact div_le_div_of_nonneg_left hB.le hA (by linarith)
 
 /-! ### The emission virtuality of on-shell four-momenta -/
