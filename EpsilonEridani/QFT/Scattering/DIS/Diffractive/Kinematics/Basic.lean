@@ -155,13 +155,10 @@ theorem beta_eq_Q2_div (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V) :
     beta g K = K.Q2 g / (K.Q2 g + MX2 g K - tMom g K) := by
   rw [beta, two_mul_delta_q_eq g hg K]
 
-/-- The inverse of `beta_eq_Q2_div`: `M_X² = Q² (1/β - 1) + t` whenever `β ≠ 0`. -/
+/-- The inverse of `beta_eq_Q2_div`: `M_X² = Q² (1/β - 1) + t` whenever `Q² ≠ 0`. -/
 theorem MX2_eq_Q2_mul_inv_beta_sub_one_add_tMom (g : Bilin V) (hg : g.IsSymm)
-    (K : DisKinematics V) (hβ : beta g K ≠ 0) :
+    (K : DisKinematics V) (hQ2 : K.Q2 g ≠ 0) :
     MX2 g K = K.Q2 g * ((beta g K)⁻¹ - 1) + tMom g K := by
-  have hQ2 : K.Q2 g ≠ 0 := by
-    rintro h
-    exact hβ (by rw [beta, h, zero_div])
   rw [beta_eq_Q2_div g hg K, inv_div, mul_sub, mul_div_cancel₀ _ hQ2]
   ring
 
