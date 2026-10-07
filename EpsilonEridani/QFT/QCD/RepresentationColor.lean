@@ -145,6 +145,7 @@ def colorFactorsOfData (D : NormalizedGeneratorData) (nF : ℝ) : ColorFactors :
 
 /-- Typeclass for gauge groups equipped with proof-carrying normalized generators. -/
 class HasNormalizedGeneratorData (G : Type) : Type 3 where
+  /-- Normalized generator data of the gauge group. -/
   data : NormalizedGeneratorData
 
 /-- Color invariants induced from representation-theoretic generator data. -/

@@ -54,13 +54,17 @@ jobs:
   # The merge queue always builds on Namespace: it is the path every PR must pass through to land,
   # so it gets the faster machine and never waits for a GitHub slot. Skipping the picker leaves
   # its answer empty, which `sandboxed-build` reads as Namespace.
+  #
+  # Setting the repository variable `NAMESPACE_RUNNERS` to `off` disables Namespace for every
+  # build, the merge queue included: the picker is skipped and `sandboxed-build` queues for a
+  # GitHub-hosted slot. See pick-runner.yml.
   pick-runner:
-    if: github.event_name != 'merge_group'
+    if: github.event_name != 'merge_group' && vars.NAMESPACE_RUNNERS != 'off'
     uses: ./.github/workflows/pick-runner.yml
     permissions:
       actions: read
     secrets:
-      APP_ID: ${{ secrets.APP_ID }}
+      APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
@@ -81,9 +85,12 @@ jobs:
     # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
     # an explicit `true` from it, including a picker that failed, was skipped or never ran, means
     # Namespace. The event check is redundant with the picker's own `if`, and keeps the merge
-    # queue on Namespace should that ever change.
+    # queue on Namespace should that ever change. `NAMESPACE_RUNNERS` set to `off` overrides all
+    # of this: the job runs on GitHub, waiting in the queue for a slot when all are taken.
     runs-on: >-
-      ${{ github.event_name != 'merge_group' && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
+      ${{ (vars.NAMESPACE_RUNNERS == 'off'
+           || (github.event_name != 'merge_group' && needs.pick-runner.outputs.github == 'true'))
+          && 'ubuntu-24.04' || fromJSON('[
         "nscloud-ubuntu-24.04-amd64-8x16-with-features",
         "namespace-features:container.privileged=true"
       ]') }}
@@ -538,8 +545,8 @@ jobs:
       - name: Import-boundary guard (EpsilonEridani/ and EpsilonEridani.lean ⊬ roadmap/review)
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmap|EpsilonEridaniReview)\b' pr/EpsilonEridani/ pr/EpsilonEridani.lean; then
-            echo "::error::EpsilonEridani/ must not import EpsilonEridaniRoadmap or EpsilonEridaniReview"
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmaps?|EpsilonEridaniReview)\b' pr/EpsilonEridani/ pr/EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ must not import EpsilonEridaniRoadmaps or EpsilonEridaniReview"
             exit 1
           fi
 
@@ -813,6 +820,21 @@ jobs:
             exit 1
           fi
           echo "Dependencies cache is complete at the bump target."
+
+      # Restore the compiled outputs of every non-Mathlib dependency (Physlib, TauCeti, ...) that
+      # main's ci.yml saved after its trusted build; Mathlib's cache tool above covers only Mathlib
+      # and its own dependencies. Restore-only: this workflow never writes that cache, so a PR
+      # cannot plant outputs a later build would reuse. The workflow-pinned gate/ action and its
+      # gate/scripts/dependency_builds.py validate the archive before extracting anything, into
+      # pr/.lake/packages/<pkg>/.lake/build only, and Lake still re-checks every module's trace
+      # inside the sandbox. Best-effort: a miss or a refused archive means compiling them from
+      # source, as before.
+      - name: Restore dependency builds from main (no PR code)
+        if: ${{ env.INFRA != '1' }}
+        continue-on-error: true
+        uses: ./gate/.github/actions/restore-dependency-builds
+        with:
+          project-dir: pr
 
       # Text-only trusted lint: inspect the exact candidate sources after Mathlib's source tree is
       # available. The workflow-pinned Python does not elaborate or execute candidate code.

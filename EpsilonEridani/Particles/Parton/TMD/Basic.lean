@@ -38,7 +38,7 @@ structure Assumptions (f : Tmd Flavor) : Prop where
 
 /-! ### The analytic/physical split of `Assumptions`
 
-As in the collinear case (`Physlib.Particles.Parton.PDF.IsPartonDensity`) the bundle mixes a
+As in the collinear case (`EpsilonEridani.Particles.Parton.PDF.IsPartonDensity`) the bundle mixes a
 definition with an obligation. `IsTmdDensity` is the physical half — support in `x` and in
 `k_T`, nonnegativity on the physical region — and is what "transverse-momentum-dependent
 parton density" means. `Regularity` is the analytic half, the single measurability field,
@@ -46,8 +46,8 @@ which a concrete model discharges. `assumptions_iff` records that the split is e
 
 The `nonneg` field is not dead weight: it is what `integrateTransverse_nonneg` below
 consumes. The field set of `Assumptions` is unchanged, because
-`Physlib.Particles.Parton.TMD.Reduction` and `Physlib.Particles.Parton.Unified.Basic` take
-it as a hypothesis.
+`EpsilonEridani.Particles.Parton.TMD.Reduction` and
+`EpsilonEridani.Particles.Parton.Unified.Basic` take it as a hypothesis.
 -/
 
 /-- **What it means to be a transverse-momentum-dependent parton density**: support in the

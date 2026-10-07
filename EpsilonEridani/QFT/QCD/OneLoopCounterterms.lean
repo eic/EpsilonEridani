@@ -26,16 +26,22 @@ namespace QCD
 namespace OneLoopCounterterms
 
 open Renormalization
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
 
 /-- Weights used to assemble one-loop renormalization constants from a scalar master integral. -/
 structure CountertermWeights : Type where
+  /-- Weight of the master integral in the coupling renormalization constant. -/
   zGCoeff : ℝ
+  /-- Weight of the master integral in the gluon-field renormalization constant. -/
   z3Coeff : ℝ
+  /-- Weight of the master integral in the quark-field renormalization constant. -/
   z2Coeff : ℝ
+  /-- Weight of the master integral in the quark-gluon vertex constant. -/
   z1FCoeff : ℝ
+  /-- Weight of the master integral in the ghost-gluon vertex constant. -/
   z1cCoeff : ℝ
+  /-- Weight of the master integral in the ghost-field renormalization constant. -/
   z3cCoeff : ℝ
 
 /-- Scale a scalar master integral into a Laurent expansion contributing to a counterterm. -/

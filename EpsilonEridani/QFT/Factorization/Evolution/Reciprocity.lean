@@ -80,7 +80,8 @@ spacelike one.
 ## iv. Conventions
 
 Spin and dimension are complex throughout: the trajectory is the analytic continuation in spin,
-and the Mellin index of `Physlib.QFT.Factorization.Evolution` is likewise complex. `N` names a
+and the Mellin index of `EpsilonEridani.QFT.Factorization.Evolution` is likewise complex.
+`N` names a
 spin argument, `J` a spin at which the trajectory is being evaluated. Both anomalous dimensions
 are taken with the sign convention in which `Δ = J + τ + γ_S J`, i.e. a positive `γ_S` raises
 the dimension.
@@ -359,7 +360,7 @@ lemma affineTrajectory_timelikeAnomalousDim (twist a b : ℂ) (ha : ‖a‖₊ <
   refine ((affineTrajectory twist a b ha).eq_timelikeAnomalousDim_of_isTimelikeAnomalousDim
     ?_).symm
   rw [(affineTrajectory twist a b ha).isTimelikeAnomalousDim_iff]
-  show (a * N + b) / (1 + a) = a * (N - (a * N + b) / (1 + a)) + b
+  change (a * N + b) / (1 + a) = a * (N - (a * N + b) / (1 + a)) + b
   field_simp
   ring
 
@@ -371,7 +372,7 @@ lemma affineTrajectory_spacelike_sub_timelike (twist a b : ℂ) (ha : ‖a‖₊
       - (affineTrajectory twist a b ha).timelikeAnomalousDim N = a * (a * N + b) / (1 + a) := by
   have hne := affineTrajectory_one_add_ne_zero ha
   rw [affineTrajectory_timelikeAnomalousDim]
-  show a * N + b - (a * N + b) / (1 + a) = a * (a * N + b) / (1 + a)
+  change a * N + b - (a * N + b) / (1 + a) = a * (a * N + b) / (1 + a)
   field_simp
   ring
 

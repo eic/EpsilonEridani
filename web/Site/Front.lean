@@ -1,12 +1,12 @@
 import VersoBlog
 open Verso Genre Blog
 
-#doc (Page) "Tau Ceti" =>
+#doc (Page) "EpsilonEridani" =>
 
 {leanExampleProject frontExamples "examples"}
 
-{leanCommand frontExamples burnside}
+{leanCommand frontExamples asymptotic_freedom}
 
-{leanCommand frontExamples caratheodory}
+{leanCommand frontExamples su3_adjoint_casimir}
 
-{leanCommand frontExamples schur_weyl}
+{leanCommand frontExamples dvcs_momentum_transfer}

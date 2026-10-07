@@ -29,8 +29,11 @@ namespace DVCS
 
 /-- Decomposition of exclusive observables into BH, DVCS, and interference pieces. -/
 structure Decomposition where
+  /-- Bethe-Heitler contribution as a function of `(ξ, t, Q²)`. -/
   bh : ℝ → ℝ → ℝ → ℝ
+  /-- Pure DVCS contribution as a function of `(ξ, t, Q²)`. -/
   dvcs : ℝ → ℝ → ℝ → ℝ
+  /-- BH-DVCS interference contribution as a function of `(ξ, t, Q²)`. -/
   inter : ℝ → ℝ → ℝ → ℝ
 
 /-- Total observable from decomposition pieces. -/

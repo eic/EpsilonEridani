@@ -10,15 +10,20 @@ name: pick-runner
 # they are all taken. This stops being free if a repository goes private or a job moves to a
 # GitHub "larger runner", which is billed even for public repositories.
 #
-# There is no API for the plan's current usage, so this counts it: every in-progress or queued job
-# in every repository of the organisation that does not carry a Namespace label. That count includes
-# this job, whose slot the build inherits when this job ends. A build goes to GitHub only while the
-# count is at most `vars.HOSTED_RUNNER_BUDGET` (default 16). The budget sits below 20 for two
-# reasons: pickers running at the same moment each see the same count and can all choose GitHub,
-# and a slot held by an hour-long build is a slot the short label, merge and notification jobs
-# cannot use. Set the variable to 20 to use every slot.
+# There is no API for the plan's current usage, so this counts it: every job in every repository
+# of the organisation that holds or waits for a GitHub-hosted runner. An in-progress job counts
+# when its runner is in the "GitHub Actions" group, which only GitHub-hosted runners join; a queued
+# job has no runner yet, so it counts when it asks for a GitHub-hosted image (`ubuntu-*`,
+# `windows-*`, `macos-*`) and for no self-hosted or Namespace label. Jobs on self-hosted or
+# Namespace runners, and jobs queued for labels nothing serves, take no GitHub slot and are not
+# counted. The count includes this job, whose slot the build inherits when this job ends. A build
+# goes to GitHub only while the count is at most `vars.HOSTED_RUNNER_BUDGET` (default 16). The
+# budget sits below 20 for two reasons: pickers running at the same moment each see the same count
+# and can all choose GitHub, and a slot held by an hour-long build is a slot the short label, merge
+# and notification jobs cannot use. Set the variable to 20 to use every slot. The step summary
+# lists the counted jobs by repository, status and labels.
 #
-# Any failure (API error, timeout, rate limit, more results than one page holds) answers Namespace,
+# Any failure (API error, timeout, rate limit, a page that fails to load) answers Namespace,
 # and a caller whose picker did not produce an answer at all also falls back to Namespace. The job is
 # `continue-on-error`, so even a picker that crashes leaves the caller's run green: review.yml and
 # auto-merge key off pr-build's overall conclusion. This job can delay a build by its own runtime
@@ -26,6 +31,12 @@ name: pick-runner
 #
 # The picker itself needs a GitHub slot. When all 20 are taken it waits for one, and then answers
 # Namespace; the budget's headroom and the churn of short jobs keep that wait short.
+#
+# Namespace can be switched off entirely by setting the repository variable `NAMESPACE_RUNNERS`
+# to `off` (for example while Namespace is not provisioning runners). Callers then skip this job
+# and run every build, merge-queue and nightly builds included, on GitHub-hosted runners; a build
+# that finds all 20 slots taken waits in GitHub's queue instead of moving to Namespace. Any other
+# value, or none, leaves the choice to this job.
 
 on:
   workflow_call:
@@ -33,7 +44,7 @@ on:
       # Optional. The App's installation token has a far larger hourly API budget than
       # `github.token`, which pr-build.yml's volume would exhaust. Without it, the picker
       # uses `github.token`.
-      APP_ID: { required: false }
+      APP_CLIENT_ID: { required: false }
       APP_PRIVATE_KEY: { required: false }
     outputs:
       github:
@@ -51,8 +62,8 @@ jobs:
       - name: Check for the App
         id: app
         env:
-          APP_ID: ${{ secrets.APP_ID }}
-        run: echo "present=$([ -n "$APP_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
+        run: echo "present=$([ -n "$APP_CLIENT_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       # Every repository in the organisation is public, so reading its Actions runs needs no
       # permission beyond metadata.
@@ -61,7 +72,7 @@ jobs:
         if: steps.app.outputs.present == 'true'
         continue-on-error: true
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           permission-metadata: read
@@ -88,25 +99,44 @@ jobs:
 
           # The calls are independent, so run them eight at a time: one at a time takes most of a
           # minute when the organisation is busy, and every build waits for this answer.
-          # Both listings stop at one page of 100; a larger total fails the call, and so answers
-          # Namespace, rather than silently undercounting.
+          # Both listings are paginated; `--jq` runs once per page, so the job counts arrive as
+          # one number per page and are summed below. A failed page still fails the call and
+          # answers Namespace, rather than silently undercounting.
           export ORG
           runs=$(printf '%s\n' $repos | xargs -r -P 8 -n 1 bash -c '
                    set -o pipefail
                    for status in in_progress queued; do
-                     timeout 30 gh api "repos/$ORG/$0/actions/runs?status=$status&per_page=100" \
-                       --jq "if .total_count > 100 then error(\"over 100 runs\") else .workflow_runs[].id | \"$0 \(.)\" end" || exit 1
+                     timeout 60 gh api --paginate "repos/$ORG/$0/actions/runs?status=$status&per_page=100" \
+                       --jq ".workflow_runs[].id | \"$0 \(.)\"" || exit 1
                    done' | sort -u) \
             || decide false "Could not list the active runs in $ORG: using Namespace."
           # A run that moves from queued to in progress between the two calls appears in both
           # lists; `sort -u` above counts it once.
-          counts=$(printf '%s\n' "$runs" | xargs -r -P 8 -n 2 bash -c '
-                     timeout 30 gh api "repos/$ORG/$0/actions/runs/$1/jobs?per_page=100" --jq \
-                       "if .total_count > 100 then error(\"over 100 jobs\") else
-                          [.jobs[] | select(.status == \"in_progress\" or .status == \"queued\")
-                                   | select(any(.labels[]; startswith(\"nscloud-\")) | not)] | length end"') \
+          # One line per job that holds or waits for a GitHub-hosted slot (see the header), as
+          # `<repo> <status> <labels>`. `jobs` is the listing's default `filter=latest`, so a
+          # re-run's superseded attempts are not counted.
+          export HOSTED_JOBS='.jobs[]
+            | select(.status == "in_progress" or .status == "queued")
+            | select(if .status == "in_progress" then .runner_group_name == "GitHub Actions"
+                     else (.labels | any(. == "self-hosted" or startswith("nscloud-")
+                                         or startswith("namespace-")) | not)
+                          and (.labels | any(test("^(ubuntu|windows|macos)-")))
+                     end)
+            | "\(.status) \(.labels | join(","))"'
+          hosted=$(printf '%s\n' "$runs" | xargs -r -P 8 -n 2 bash -c '
+                     set -o pipefail
+                     timeout 60 gh api --paginate "repos/$ORG/$0/actions/runs/$1/jobs?per_page=100" \
+                       --jq "$HOSTED_JOBS" | sed "s|^|$0 |"') \
             || decide false "Could not list the jobs of the active runs in $ORG: using Namespace."
-          busy=$(printf '%s\n' "$counts" | awk '{ s += $1 } END { print s + 0 }')
+          # The step shell runs with -e, and grep exits 1 on no match.
+          busy=$(printf '%s\n' "$hosted" | grep -c . || true)
+          # What was counted, so an unexpected answer can be traced to the jobs behind it.
+          {
+            echo "Busy GitHub-hosted jobs by repository, status and labels:"
+            echo '```'
+            printf '%s\n' "$hosted" | grep . | sort | uniq -c | sort -rn || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
           # A drained API budget turns every answer into Namespace, so keep it visible.
           echo "API requests left this hour: $(api rate_limit --jq .resources.core.remaining || echo unknown)" \
             >> "$GITHUB_STEP_SUMMARY"

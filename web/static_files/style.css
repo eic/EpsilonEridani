@@ -63,7 +63,8 @@ h1, h2, h3 {
 }
 /* The links wrap rather than widen the document on a phone (the row used to overflow at 390px). */
 .nav-links { display: flex; flex-wrap: wrap; gap: 0.2rem 1.5rem; }
-.brand img { height: 34px; display: block; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 1.3rem; color: var(--text); }
+.brand:hover { text-decoration: none; }
 .nav-links a {
   margin-left: 0;
   color: var(--muted);
@@ -76,17 +77,8 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
 
 /* ---- hero ---- */
 .hero {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 2.75rem;
-  align-items: center;
+  text-align: center;
   padding: 4.5rem 0 3rem;
-}
-.hero-img {
-  width: 100%;
-  border-radius: 18px;
-  border: 1px solid var(--line);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
 }
 .hero-title {
   font-size: 4.2rem;
@@ -102,7 +94,7 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
   color: var(--teal);
   margin: 0.4rem 0 1rem;
 }
-.hero-sub { color: var(--muted); font-size: 1.12rem; max-width: 38ch; }
+.hero-sub { color: var(--muted); font-size: 1.12rem; max-width: 60ch; margin: 0 auto; }
 .cta {
   display: inline-block;
   margin-top: 1.5rem;
@@ -115,7 +107,7 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
 }
 .cta:hover { text-decoration: none; filter: brightness(1.07); }
 
-.cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: center; }
 .cta-row .cta { margin-top: 0; }
 
 /* Secondary call to action: outlined amber pill sitting beside the filled one. */
@@ -152,9 +144,11 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
 .card h3 { margin: 0 0 0.3rem; font-size: 1.1rem; }
-.card.repo { display: block; color: inherit; }
-.card.repo h3 { color: var(--teal); }
-.card.repo p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; }
+a.card { display: block; color: inherit; }
+.card.repo h3, .card.named h3 { color: var(--teal); }
+/* Roadmap names are single CamelCase words, wider than a quarter-width card. */
+.card.named h3 { overflow-wrap: anywhere; }
+.card.repo p, .card.named p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; }
 a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-decoration: none; }
 
 /* ---- "a taste of the maths" ---- */
@@ -190,6 +184,9 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
 }
 .foot-links a { color: var(--muted); }
 .foot-legal { color: var(--muted); font-size: 0.85rem; margin: 0; }
+
+/* ---- credit ---- */
+.credit-note { text-align: center; color: var(--muted); max-width: 64ch; margin: 0 auto; }
 
 /* About / interior prose pages */
 .frontpage { padding-bottom: 1rem; }
@@ -239,7 +236,7 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
 
 /* ---- responsive ---- */
 @media (max-width: 820px) {
-  .hero { grid-template-columns: 1fr; padding: 2.75rem 0; }
+  .hero { padding: 2.75rem 0; }
   .pillars { grid-template-columns: 1fr; }
   .cards.four, .cards.three { grid-template-columns: 1fr 1fr; }
   .hero-title { font-size: 3.1rem; }

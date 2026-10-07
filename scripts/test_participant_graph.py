@@ -130,7 +130,7 @@ class ParticipantGraphTest(unittest.TestCase):
 
         self.assertEqual(total, 5)
         self.assertIn('class="total" x="50" y="91">5</text>', svg)
-        self.assertIn("EpsilonEridaniRoadmap", svg)
+        self.assertIn("EpsilonEridaniRoadmaps", svg)
         self.assertIn("2026-07-29", svg)
         self.assertIn("Multi-repo participants appear in each bar", svg)
         self.assertIn("<desc ", svg)

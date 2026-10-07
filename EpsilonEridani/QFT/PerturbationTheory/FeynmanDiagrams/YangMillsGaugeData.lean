@@ -67,7 +67,7 @@ namespace QFT
 namespace PerturbationTheory
 namespace FeynmanDiagrams
 
-open Physlib.QFT.QCD
+open EpsilonEridani.QFT.QCD
 open RepresentationColor
 
 /-! ### Generic Yang-Mills Gauge Data -/
@@ -232,7 +232,7 @@ def U1AdjointStatement : Prop :=
 lemma u1TraceStatement (Y : ℝ) : U1TraceStatement Y := by
   intro a b
   simp only [u1GenEntry, u1DeltaAdj, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, one_smul, if_pos (Subsingleton.elim a b)]
+    Fintype.card_fin, one_smul, ite_eq_left (Subsingleton.elim a b)]
   push_cast
   ring
 
@@ -240,7 +240,7 @@ lemma u1TraceStatement (Y : ℝ) : U1TraceStatement Y := by
 lemma u1FundamentalStatement (Y : ℝ) : U1FundamentalStatement Y := by
   intro i j
   simp only [u1GenEntry, u1DeltaFund, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, one_smul, if_pos (Subsingleton.elim i j)]
+    Fintype.card_fin, one_smul, ite_eq_left (Subsingleton.elim i j)]
   push_cast
   ring
 
@@ -302,7 +302,7 @@ algebra of the real Lie group SU(2).  The matter module is the fundamental doubl
 Standard values: `C_F = 3/4`, `C_A = 2`, `T_F = 1/2`.
 
 The generator entries are the genuine ones, `Tᵃ = σᵃ/2` from
-`Physlib.QFT.QCD.SU2Generators`, and the three `Prop`-valued contract fields are
+`EpsilonEridani.QFT.QCD.SU2Generators`, and the three `Prop`-valued contract fields are
 instantiated to the identities those generators actually satisfy rather than to
 `True`.  The same is now true of `suNYangMillsGaugeData`; this instance remains because
 `su(2)`'s tables give the three identities directly, without the generalized Gell-Mann
@@ -315,7 +315,7 @@ def su2YangMillsGaugeData :
   FundBasis := Fin 2
   adjFintype := inferInstance
   fundFintype := inferInstance
-  genEntry := su2GenEntry    -- (σᵃ/2)ᵢⱼ, from Physlib.QFT.QCD.SU2Generators
+  genEntry := su2GenEntry    -- (σᵃ/2)ᵢⱼ, from EpsilonEridani.QFT.QCD.SU2Generators
   tF := 1 / 2
   cF := 3 / 4
   cA := 2
@@ -353,7 +353,7 @@ representation on `Fin n → ℂ`, a complex vector space carrying a real-linear
 Standard values: `C_F = (N²-1)/(2N)`, `C_A = N`, `T_F = 1/2`.
 
 The generator entries are the generalized Gell-Mann basis of
-`Physlib.QFT.QCD.SUNGenerators`, and the trace-normalization contract is instantiated
+`EpsilonEridani.QFT.QCD.SUNGenerators`, and the trace-normalization contract is instantiated
 to the identity those generators actually satisfy, `SUNGen.SUNTraceStatement n`, proved
 for every `n`.  The adjoint index set is therefore `SUNGen.SUNIndex n` — the three
 generator families as a sum type — rather than `Fin (n²-1)`; the two have the same
@@ -365,7 +365,7 @@ the completeness (Fierz) relation `SUNGen.suN_completeness`.
 
 The adjoint Casimir contract is likewise the identity the generators satisfy,
 `SUNGen.SUNAdjointStatement n` with `C_A = n`, proved for every `n` in
-`Physlib.QFT.QCD.SUNStructureConstants` from the structure constants
+`EpsilonEridani.QFT.QCD.SUNStructureConstants` from the structure constants
 `f^{abc} = -2i Tr([Tᵃ,Tᵇ]Tᶜ)` that module defines.  All three contract fields of this
 instance therefore carry concrete identities in the stored coefficients; none is
 `True`. -/

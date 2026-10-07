@@ -71,7 +71,7 @@ import re
 import subprocess
 import sys
 
-AREAS_DIR = "EpsilonEridaniRoadmap"
+AREAS_DIR = "EpsilonEridaniRoadmaps"
 COMPLETED_DIR = "Completed"
 AREA_PREFIX = "roadmap/"
 EXCLUDE = {"roadmap/none", "roadmap/Unknown"}
@@ -656,7 +656,7 @@ def main(argv=None) -> int:
     here = pathlib.Path(__file__).resolve().parent
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--roadmap-dir", type=pathlib.Path, required=True,
-                   help="a checkout of EpsilonEridaniRoadmap")
+                   help="a checkout of EpsilonEridaniRoadmaps")
     p.add_argument("--repo", default="eic/EpsilonEridani",
                    help="repository whose merged PRs carry the roadmap labels")
     p.add_argument("--data", type=pathlib.Path,

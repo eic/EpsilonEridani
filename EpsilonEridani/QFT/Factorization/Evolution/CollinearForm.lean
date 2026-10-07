@@ -11,7 +11,7 @@ public import EpsilonEridani.QFT.Factorization.Evolution.Basic
 
 # The DGLAP operator as a collinear convolution
 
-`Physlib.QFT.Factorization.Evolution.Basic` defines the DGLAP operator through the *general*
+`EpsilonEridani.QFT.Factorization.Evolution.Basic` defines the DGLAP operator through the *general*
 integral operator `convolveAt`, with an unconstrained two-variable splitting kernel
 `P : Flavor → Flavor → ℝ → ℝ → ℝ`. Physically the splitting kernels are collinear: they have the
 scaling form `P i j x z = z⁻¹ * p i j (x / z)` on `x ≤ z`. This module records that condition and
@@ -25,9 +25,10 @@ target and is not addressed here.
 
 ## Scope
 
-As in `Physlib.QFT.Factorization.Convolution.Mellin`, only integrable coefficient functions are
-covered. The real QCD splitting functions have `1 / (1 - z)` endpoint singularities regulated by
-plus-distributions and are therefore *not* of the form assumed here; `IsCollinearSplittingKernel`
+As in `EpsilonEridani.QFT.Factorization.Convolution.Mellin`, only integrable coefficient
+functions are covered. The real QCD splitting functions have `1 / (1 - z)` endpoint
+singularities regulated by plus-distributions and are therefore *not* of the form assumed
+here; `IsCollinearSplittingKernel`
 holds for the regular parts and for toy kernels, and the plus-distribution extension is a separate
 development.
 
@@ -83,7 +84,7 @@ convolutions `(p i j ⊗ f j) (x)`, i.e. `∑_j ∫_x^1 (dz / z) p i j (x / z) f
 lemma dglapOperator_eq_sum_collinear [Fintype Flavor]
     (P : SplittingKernel Flavor) (p : Flavor → Flavor → ℝ → ℝ)
     (h : IsCollinearSplittingKernel P p)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) (i : Flavor) (x Q2 : ℝ) :
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) (i : Flavor) (x Q2 : ℝ) :
     dglapOperator P f i x Q2
       = ∑ j, Convolution.convolveAt (Convolution.collinearKernel (p i j))
           (fun z => f j z Q2) x := by
@@ -114,7 +115,7 @@ directions, so a tag on a sorry-free result is as much a failure as a missing ta
 theorem mellinDis_dglapOperator [Fintype Flavor]
     (P : SplittingKernel Flavor) (p : Flavor → Flavor → ℝ → ℝ)
     (hP : IsCollinearSplittingKernel P p)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor) (i : Flavor) (Q2 : ℝ) (N : ℂ)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor) (i : Flavor) (Q2 : ℝ) (N : ℂ)
     (h : ∀ j, Convolution.MellinConvolutionAssumptions (p i j) (fun z => f j z Q2) N) :
     Convolution.mellinDis (fun x => dglapOperator P f i x Q2) N
       = ∑ j, Convolution.mellinDis (p i j) N

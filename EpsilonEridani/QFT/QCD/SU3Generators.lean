@@ -11,7 +11,7 @@ public import EpsilonEridani.QFT.QCD.SUNStructureConstants
 
 # Genuine `su(3)` normalized generator data
 
-The `su(2)` package of `Physlib.QFT.QCD.SU2Generators` is repeated here for `su(3)`,
+The `su(2)` package of `EpsilonEridani.QFT.QCD.SU2Generators` is repeated here for `su(3)`,
 the colour algebra of QCD: generators `Tᵃ = λᵃ / 2` built from the Gell-Mann matrices,
 structure constants `f^{abc}` given by the standard table, and invariants
 `T_F = 1/2`, `C_F = 4/3`, `C_A = 3`.
@@ -28,9 +28,13 @@ instantiates every contract field of `NormalizedGeneratorData` with the correspo
 identity rather than with a placeholder, and `su3CasimirDerivationAssumptions` carries
 the full derivation package with identity bridges.
 
-The adjoint Casimir is derived from the general `su(N)` proof
-`SUNGen.suNAdjointStatement` in `Physlib.QFT.QCD.SUNStructureConstants`, transported
-through the equivalence `SUNIndex 3 ≃ Fin 8`, rather than by an exhaustive 64-case sweep.
+The adjoint Casimir is a sum of 4096 products of table entries, and `simp` cannot
+evaluate `structConst3` at that scale: the fallback arm of its match carries one side
+condition per explicit arm.  It is therefore checked in integer arithmetic instead.
+Every entry has the form `(p + q √3) / 2` with `p q : ℤ`; `code3` records the entries
+as a computable table, agreeing with `structConst3` definitionally
+(`structConst3_eq_val`), and the two resulting integer sums are checked by kernel
+evaluation (`code3_sum_identity`), which adds no axioms.
 
 -/
 
@@ -174,14 +178,34 @@ def SU3AdjointStatement : Prop :=
 
 /-! ### Proofs of the identities -/
 
-/-- The fundamental `su(3)` generators `λᵃ/2` are trace-normalized with `T_F = 1/2`. -/
+/-- A double index sum of the form appearing in `SU3TraceStatement` is a matrix trace. -/
+private lemma sum_mul_eq_trace (M N : Matrix (Fin 3) (Fin 3) ℂ) :
+    (∑ i : Fin 3, ∑ j : Fin 3, M i j * N j i) = Matrix.trace (M * N) := by
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply]
+
+/-- The fundamental `su(3)` generators `λᵃ/2` are trace-normalized with `T_F = 1/2`.
+
+Routed through `Matrix.trace` and `Matrix.trace_fin_three` rather than a generic
+`Finset.sum` unfolding: the latter no longer finishes within the default heartbeat budget
+over all 64 cases. -/
 lemma su3TraceStatement : SU3TraceStatement := by
   intro a b
+  have h : (∑ i : Fin 3, ∑ j : Fin 3, su3GenEntry a i j * su3GenEntry b j i)
+      = (1 / 4 : ℂ) * Matrix.trace (gellMann3 a * gellMann3 b) := by
+    simp only [su3GenEntry, ← sum_mul_eq_trace]
+    rw [Finset.mul_sum]
+    congr 1
+    ext i
+    rw [Finset.mul_sum]
+    congr 1
+    ext j
+    ring
+  rw [h]
   fin_cases a <;> fin_cases b <;>
-    simp [su3GenEntry, su3DeltaAdj, gellMann3, Fin.sum_univ_three] <;>
-    ring_nf <;>
-    simp [invSqrt3_sq, Complex.I_sq] <;>
-    ring_nf
+    simp [gellMann3, Matrix.trace_fin_three, su3DeltaAdj]
+  all_goals ring_nf
+  all_goals simp [invSqrt3_sq]
+  all_goals ring_nf
 
 /-- The fundamental `su(3)` Casimir: `Σₐ (λᵃ/2)(λᵃ/2) = (4/3) · 1`. -/
 lemma su3FundamentalStatement : SU3FundamentalStatement := by
@@ -192,17 +216,125 @@ lemma su3FundamentalStatement : SU3FundamentalStatement := by
     simp [invSqrt3_sq, Complex.I_sq] <;>
     ring_nf
 
-/-- The `su(3)` adjoint Casimir: `Σ_{cd} f^{acd} f^{bcd} = 3 δᵃᵇ`, so `C_A = 3`.
+/-- The seven values taken by `structConst3`, as a computable code. -/
+private inductive StructConstCode
+  | zero | one | negOne | half | negHalf | rt3Half | negRt3Half
 
-Derived from the general `su(N)` identity `SUNGen.suNAdjointStatement 3` via the
-canonical equivalence `SUNIndex 3 ≃ Fin 8` and the agreement between `structConst3`
-and `SUNGen.suNStructConst 3`. -/
+/-- The real value of a structure-constant code; each arm is the literal used in
+`structConst3`, so that `structConst3_eq_val` holds by `rfl`. -/
+private def StructConstCode.val : StructConstCode → ℝ
+  | .zero => 0
+  | .one => 1
+  | .negOne => -1
+  | .half => 1 / 2
+  | .negHalf => -(1 / 2)
+  | .rt3Half => rt3 / 2
+  | .negRt3Half => -(rt3 / 2)
+
+/-- The rational part `p` of a code whose value is `(p + q √3) / 2`. -/
+private def StructConstCode.p : StructConstCode → ℤ
+  | .one => 2 | .negOne => -2 | .half => 1 | .negHalf => -1 | _ => 0
+
+/-- The irrational part `q` of a code whose value is `(p + q √3) / 2`. -/
+private def StructConstCode.q : StructConstCode → ℤ
+  | .rt3Half => 1 | .negRt3Half => -1 | _ => 0
+
+private lemma StructConstCode.val_eq (k : StructConstCode) :
+    k.val = ((k.p : ℝ) + (k.q : ℝ) * rt3) / 2 := by
+  cases k <;> simp [StructConstCode.val, StructConstCode.p, StructConstCode.q] <;> ring
+
+/-- `structConst3` as a computable table of codes, arm for arm. -/
+private def code3 : Fin 8 → Fin 8 → Fin 8 → StructConstCode
+  | 0, 1, 2 => .one
+  | 0, 2, 1 => .negOne
+  | 0, 3, 6 => .half
+  | 0, 4, 5 => .negHalf
+  | 0, 5, 4 => .half
+  | 0, 6, 3 => .negHalf
+  | 1, 0, 2 => .negOne
+  | 1, 2, 0 => .one
+  | 1, 3, 5 => .half
+  | 1, 4, 6 => .half
+  | 1, 5, 3 => .negHalf
+  | 1, 6, 4 => .negHalf
+  | 2, 0, 1 => .one
+  | 2, 1, 0 => .negOne
+  | 2, 3, 4 => .half
+  | 2, 4, 3 => .negHalf
+  | 2, 5, 6 => .negHalf
+  | 2, 6, 5 => .half
+  | 3, 0, 6 => .negHalf
+  | 3, 1, 5 => .negHalf
+  | 3, 2, 4 => .negHalf
+  | 3, 4, 2 => .half
+  | 3, 4, 7 => .rt3Half
+  | 3, 5, 1 => .half
+  | 3, 6, 0 => .half
+  | 3, 7, 4 => .negRt3Half
+  | 4, 0, 5 => .half
+  | 4, 1, 6 => .negHalf
+  | 4, 2, 3 => .half
+  | 4, 3, 2 => .negHalf
+  | 4, 3, 7 => .negRt3Half
+  | 4, 5, 0 => .negHalf
+  | 4, 6, 1 => .half
+  | 4, 7, 3 => .rt3Half
+  | 5, 0, 4 => .negHalf
+  | 5, 1, 3 => .half
+  | 5, 2, 6 => .half
+  | 5, 3, 1 => .negHalf
+  | 5, 4, 0 => .half
+  | 5, 6, 2 => .negHalf
+  | 5, 6, 7 => .rt3Half
+  | 5, 7, 6 => .negRt3Half
+  | 6, 0, 3 => .half
+  | 6, 1, 4 => .half
+  | 6, 2, 5 => .negHalf
+  | 6, 3, 0 => .negHalf
+  | 6, 4, 1 => .negHalf
+  | 6, 5, 2 => .half
+  | 6, 5, 7 => .negRt3Half
+  | 6, 7, 5 => .rt3Half
+  | 7, 3, 4 => .rt3Half
+  | 7, 4, 3 => .negRt3Half
+  | 7, 5, 6 => .rt3Half
+  | 7, 6, 5 => .negRt3Half
+  | _, _, _ => .zero
+
+private lemma structConst3_eq_val (a b c : Fin 8) :
+    structConst3 a b c = (code3 a b c).val := by
+  fin_cases a <;> fin_cases b <;> fin_cases c <;> rfl
+
+/-- The adjoint Casimir in integer arithmetic: writing each entry as `(p + q √3) / 2`, the
+rational and `√3` parts of `Σ_{cd} f^{acd} f^{bcd}` are `12 δᵃᵇ / 4` and `0`. -/
+private lemma code3_sum_identity (a b : Fin 8) :
+    (∑ c : Fin 8, ∑ d : Fin 8,
+        ((code3 a c d).p * (code3 b c d).p + 3 * ((code3 a c d).q * (code3 b c d).q)))
+      = (if a = b then 12 else 0) ∧
+    (∑ c : Fin 8, ∑ d : Fin 8,
+        ((code3 a c d).p * (code3 b c d).q + (code3 a c d).q * (code3 b c d).p)) = 0 := by
+  revert a b
+  decide +kernel
+
+/-- The `su(3)` adjoint Casimir: `Σ_{cd} f^{acd} f^{bcd} = 3 δᵃᵇ`, so `C_A = 3`. -/
 lemma su3AdjointStatement : SU3AdjointStatement := by
   intro a b
-  -- Transport the general SU(N) adjoint Casimir (N = 3, C_A = N = 3) to Fin 8 indices.
-  -- The index equivalence and the structConst agreement are straightforward;
-  -- we mark the bridge sorry and leave the type-level plumbing to a follow-up.
-  sorry
+  obtain ⟨hP, hQ⟩ := code3_sum_identity a b
+  have hterm : ∀ c d : Fin 8, structConst3 a c d * structConst3 b c d
+      = (((code3 a c d).p * (code3 b c d).p + 3 * ((code3 a c d).q * (code3 b c d).q) : ℤ)
+          + (((code3 a c d).p * (code3 b c d).q + (code3 a c d).q * (code3 b c d).p : ℤ)
+            : ℝ) * rt3) / 4 := by
+    intro c d
+    rw [structConst3_eq_val, structConst3_eq_val, StructConstCode.val_eq,
+      StructConstCode.val_eq]
+    push_cast
+    linear_combination ((code3 a c d).q * (code3 b c d).q / 4 : ℝ) * rt3_mul_self
+  have hP' := congrArg (Int.cast : ℤ → ℝ) hP
+  have hQ' := congrArg (Int.cast : ℤ → ℝ) hQ
+  simp_rw [hterm, ← Finset.sum_div, Finset.sum_add_distrib, ← Finset.sum_mul]
+  push_cast at hP' hQ' ⊢
+  rw [hP', hQ']
+  split_ifs with h <;> norm_num [su3DeltaAdj, h]
 
 /-! ### The genuine `su(3)` package -/
 

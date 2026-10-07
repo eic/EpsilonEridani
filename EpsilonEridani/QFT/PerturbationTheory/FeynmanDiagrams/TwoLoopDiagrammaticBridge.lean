@@ -5,7 +5,9 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Basic.Real.Basic
 /-!
 
 # Two-Loop Diagrammatic Bridge
@@ -29,8 +31,6 @@ namespace EpsilonEridani
 namespace QFT
 namespace PerturbationTheory
 namespace FeynmanDiagrams
-
-open scoped BigOperators
 
 /-- Bridge certificate for a two-loop diagrammatic derivation.
 

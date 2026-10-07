@@ -10,14 +10,14 @@ public import EpsilonEridani.Generator.Kinematics
 /-!
 # The leading-order cross section, in `Float`
 
-An executable transcription of `Physlib.QFT.Scattering.DIS.loNCdSigma`, together with a toy
+An executable transcription of `EpsilonEridani.QFT.Scattering.DIS.loNCdSigma`, together with a toy
 parton density to evaluate it with.
 
 ## What is proved, and where
 
 Nothing here.  The positivity of the cross section, the Callan–Gross reduction and the
 identity with the conventional `1 + (1-y)²` form are theorems, and they live at the `ℝ` level
-in `Physlib.QFT.Scattering.DIS.CrossSection`.  This file repeats those definitions in `Float`
+in `EpsilonEridani.QFT.Scattering.DIS.CrossSection`.  This file repeats those definitions in `Float`
 so they can be evaluated; the correspondence is by inspection.
 
 ## The toy parton density is a toy

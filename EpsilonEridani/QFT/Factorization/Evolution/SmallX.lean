@@ -28,7 +28,7 @@ strictly less than well-posedness of the physical equation; see `## iii. Convent
 the four places where the gap is real.
 
 The point of interest is that the linear and non-linear cases separate differently from how
-one might expect by analogy with `Physlib.QFT.Factorization.Evolution.MomentSpace`, where
+one might expect by analogy with `EpsilonEridani.QFT.Factorization.Evolution.MomentSpace`, where
 DGLAP in moment space is a *linear* system with a unique *global* solution:
 
 - **Uniqueness is still global for BK** (`bkSolution_unique`). The quadratic term does not
@@ -192,14 +192,14 @@ lemma bkRhs_sub (S : SmallXSystem E) (X Y : E) :
     bkRhs S X - bkRhs S Y
       = S.bfklKernel (X - Y)
         - (S.dipolePairing (X - Y) X + S.dipolePairing Y (X - Y)) := by
-  simp only [bkRhs, map_sub, ContinuousLinearMap.sub_apply]
+  simp only [bkRhs, map_sub, sub_apply]
   abel
 
 /-- **The BK vector field is Lipschitz on balls**, with constant `‖K‖ + 2 R ‖B‖` on the
 closed ball of radius `R`.
 
 The constant depends on `R`: unlike the DGLAP moment system of
-`Physlib.QFT.Factorization.Evolution.MomentSpace`, whose vector field is Lipschitz with a
+`EpsilonEridani.QFT.Factorization.Evolution.MomentSpace`, whose vector field is Lipschitz with a
 constant depending only on the rapidity interval, here there is no single constant valid on
 all of `E`. -/
 lemma bkRhs_lipschitzOnWith (S : SmallXSystem E) {R : ℝ} (hR : 0 ≤ R) :
@@ -332,7 +332,7 @@ lemma bk_exists_local [CompleteSpace E] (S : SmallXSystem E) (N₀ : E) (Y₀ : 
 For the linear system the solution can be written down: the coefficient operator is
 independent of rapidity, so the solution is the operator exponential of `Y - Y₀` times the
 kernel. This is the statement whose DGLAP analogue is left open in
-`Physlib.QFT.Factorization.Evolution.MomentSpace` (`momentSolution_exists`); it is available
+`EpsilonEridani.QFT.Factorization.Evolution.MomentSpace` (`momentSolution_exists`); it is available
 here because the kernel is a single bounded operator rather than a rapidity-dependent
 multiple of a matrix. -/
 
@@ -369,10 +369,10 @@ lemma hasDerivAt_bfklFlow [CompleteSpace E] (S : SmallXSystem E) (N₀ : E) (Y�
     (((Commute.refl S.bfklKernel).smul_right (Y - Y₀)).exp_right).eq.symm
   have happ := hcomp.clm_apply (hasDerivAt_const Y N₀)
   simp only [map_zero, add_zero, hcomm] at happ
-  -- `show` forces the goal to be elaborated at default transparency, which is what unfolds
+  -- `change` forces the goal to be elaborated at default transparency, which is what unfolds
   -- `bfklFlow` and identifies multiplication in `E →L[ℝ] E` with composition; `simpa`
   -- matches only at reducible transparency and fails on both counts.
-  show HasDerivAt (fun Z : ℝ => NormedSpace.exp ((Z - Y₀) • S.bfklKernel) N₀)
+  change HasDerivAt (fun Z : ℝ => NormedSpace.exp ((Z - Y₀) • S.bfklKernel) N₀)
     (S.bfklKernel (NormedSpace.exp ((Y - Y₀) • S.bfklKernel) N₀)) Y
   exact happ
 

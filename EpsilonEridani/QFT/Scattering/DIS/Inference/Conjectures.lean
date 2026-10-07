@@ -127,7 +127,7 @@ lemma unified_projection_algebra_designTarget
 structure UnifiedExclusiveConvolutionAssumptions
     {Flavor : Type}
     (Kdvcs Kdvmp : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : Exclusive.DVCS.CFF)
     (T : Exclusive.DVMP.TFF)
@@ -143,7 +143,7 @@ recovers both bridge contracts and a shared integrand image.
 lemma unified_exclusive_convolution_designTarget
     {Flavor : Type}
     (Kdvcs Kdvmp : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : Exclusive.DVCS.CFF)
     (T : Exclusive.DVMP.TFF)

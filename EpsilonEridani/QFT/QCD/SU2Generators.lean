@@ -6,12 +6,12 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.QCD.CasimirDerivation
-public import EpsilonEridani.Relativity.PauliMatrices.Basic
+public import Physlib.Relativity.PauliMatrices.Basic
 /-!
 
 # Genuine `su(2)` normalized generator data
 
-`Physlib.QFT.QCD.RepresentationColor` packages representation-theoretic input for
+`EpsilonEridani.QFT.QCD.RepresentationColor` packages representation-theoretic input for
 colour-factor extraction in `NormalizedGeneratorData`, together with three identities
 that such a package is supposed to satisfy:
 

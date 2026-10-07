@@ -256,15 +256,15 @@ class Tree(unittest.TestCase):
 
     def test_rows_children_completed_and_reasons(self):
         hand = {
-            "EpsilonEridaniRoadmap/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(STATUS)[:12],
+            "EpsilonEridaniRoadmaps/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(STATUS)[:12],
                                            "readme_sha": self.sub_readme, "layers": {"Layer 0": "d", "Layer 1": "p"}},
             "Completed/Done": {"to_sha": SHA[:7], "report_sha": "ffffffffffff", "readme_sha": "ffffffffffff",
                                "layers": {"Part A": "d", "Part B": "p"}},
         }
         rows = rp.read_roadmaps(self.root, hand)
         self.assertEqual([r["id"] for r in rows],
-                         ["EpsilonEridaniRoadmap/Gadgets", "EpsilonEridaniRoadmap/Gadgets/Twin", "EpsilonEridaniRoadmap/Widgets",
-                          "EpsilonEridaniRoadmap/Widgets/Sub", "EpsilonEridaniRoadmap/Widgets/Twin", "Completed/Done"])
+                         ["EpsilonEridaniRoadmaps/Gadgets", "EpsilonEridaniRoadmaps/Gadgets/Twin", "EpsilonEridaniRoadmaps/Widgets",
+                          "EpsilonEridaniRoadmaps/Widgets/Sub", "EpsilonEridaniRoadmaps/Widgets/Twin", "Completed/Done"])
         gadgets, gtwin, widgets, sub, wtwin, done = rows
         self.assertEqual(widgets["title"], "widgets")
         self.assertEqual(widgets["states"], ["unassessed"] * 3)
@@ -274,14 +274,14 @@ class Tree(unittest.TestCase):
         # The sub-roadmap inherits the umbrella report, links to it, and its transcription is
         # bound to that report and keyed by its full path.
         self.assertTrue(sub["status"]["inherited"])
-        self.assertEqual(sub["parent_id"], "EpsilonEridaniRoadmap/Widgets")
-        self.assertEqual(sub["status"]["path"], "EpsilonEridaniRoadmap/Widgets/STATUS.md")
-        self.assertEqual(sub["readme"], "EpsilonEridaniRoadmap/Widgets/Sub/README.md")
+        self.assertEqual(sub["parent_id"], "EpsilonEridaniRoadmaps/Widgets")
+        self.assertEqual(sub["status"]["path"], "EpsilonEridaniRoadmaps/Widgets/STATUS.md")
+        self.assertEqual(sub["readme"], "EpsilonEridaniRoadmaps/Widgets/Sub/README.md")
         self.assertEqual(sub["states"], ["done", "partial"])
         self.assertEqual(sub["assessment"]["source"], "hand-read")
         # Two children called Twin under different parents stay apart.
         self.assertNotEqual(gtwin["id"], wtwin["id"])
-        self.assertEqual(gtwin["parent_id"], "EpsilonEridaniRoadmap/Gadgets")
+        self.assertEqual(gtwin["parent_id"], "EpsilonEridaniRoadmaps/Gadgets")
         self.assertEqual(wtwin["assessment"]["reason"], "not-transcribed")
         # A completed roadmap is a maintainer decision; its layers are not painted done for it.
         self.assertTrue(done["completed"])
@@ -290,8 +290,8 @@ class Tree(unittest.TestCase):
         self.assertEqual(done["retired"], {"to_sha": SHA[:7], "states": ["done", "partial"]})
 
     def test_lines_links_and_remaining_reach_the_row(self):
-        hand = {"EpsilonEridaniRoadmap/Widgets": dict(entry(), remaining={"Layer 1": "the other half", "Layer 7": "x"})}
-        links = {"EpsilonEridaniRoadmap/Widgets": [{"label": "route map", "url": "https://example.org/map"},
+        hand = {"EpsilonEridaniRoadmaps/Widgets": dict(entry(), remaining={"Layer 1": "the other half", "Layer 7": "x"})}
+        links = {"EpsilonEridaniRoadmaps/Widgets": [{"label": "route map", "url": "https://example.org/map"},
                                             {"label": "bad", "url": "javascript:alert(1)"}, "junk"]}
         widgets = rp.read_roadmaps(self.root, hand, links)[2]
         self.assertEqual(widgets["layer_lines"], [7, 9, 10])
@@ -316,7 +316,7 @@ class Tree(unittest.TestCase):
         status.write_text(head + "\n" + MARKER + sub_marker("Widgets/Sub")
                           + sub_marker("Widgets/Twin", readme="f" * 64) + rest)
         # A transcription for Sub is still on file; the marker wins over it.
-        hand = {"EpsilonEridaniRoadmap/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(status.read_text())[:12],
+        hand = {"EpsilonEridaniRoadmaps/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(status.read_text())[:12],
                                                "readme_sha": sub_readme[:12], "layers": {"Layer 0": "p", "Layer 1": "p"}}}
         gadgets, gtwin, widgets, sub, wtwin, done = rp.read_roadmaps(self.root, hand)
         self.assertEqual((sub["states"], sub["assessment"]["source"]), (["done", "untouched"], "marker"))
@@ -347,18 +347,18 @@ class Tree(unittest.TestCase):
         status = self.root / rp.AREAS_DIR / "Widgets" / "STATUS.md"
         head, rest = STATUS.split("\n", 1)
         status.write_text(head + "\n" + twin_marker + rest)
-        hand = {"EpsilonEridaniRoadmap/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(status.read_text())[:12],
+        hand = {"EpsilonEridaniRoadmaps/Widgets/Sub": {"to_sha": SHA[:7], "report_sha": rp.sha256(status.read_text())[:12],
                                                "readme_sha": sub_readme[:12], "layers": {"Layer 0": "d", "Layer 1": "p"},
                                                "remaining": {"Layer 1": "the rest of b"}}}
         rows = {r["id"]: r for r in rp.read_roadmaps(self.root, hand)}
-        sub, twin = rows["EpsilonEridaniRoadmap/Widgets/Sub"], rows["EpsilonEridaniRoadmap/Widgets/Twin"]
+        sub, twin = rows["EpsilonEridaniRoadmaps/Widgets/Sub"], rows["EpsilonEridaniRoadmaps/Widgets/Twin"]
         self.assertEqual((sub["states"], sub["assessment"]["source"], sub["assessment"]["reason"]),
                          (["done", "partial"], "hand-read", "ok"))
         self.assertEqual(sub["assessment"]["remaining"], {"Layer 1": "the rest of b"})
         self.assertEqual((twin["states"], twin["assessment"]["source"]), (["done", "done"], "marker"))
         # A transcription bound to an earlier umbrella report is still retired, marker or not.
-        hand["EpsilonEridaniRoadmap/Widgets/Sub"]["report_sha"] = "ffffffffffff"
-        sub = {r["id"]: r for r in rp.read_roadmaps(self.root, hand)}["EpsilonEridaniRoadmap/Widgets/Sub"]
+        hand["EpsilonEridaniRoadmaps/Widgets/Sub"]["report_sha"] = "ffffffffffff"
+        sub = {r["id"]: r for r in rp.read_roadmaps(self.root, hand)}["EpsilonEridaniRoadmaps/Widgets/Sub"]
         self.assertEqual(sub["assessment"]["reason"], "transcription-retired")
 
     def test_a_malformed_old_transcription_is_dropped_not_fatal(self):
@@ -387,7 +387,7 @@ class Tree(unittest.TestCase):
         # A valid marker over an edited README: unassessed, with the README reason, no fallback.
         status.write_text(MARKER + STATUS)
         (self.root / rp.AREAS_DIR / "Widgets" / "README.md").write_text(README.replace("text\n", "new requirements\n"))
-        widgets = rp.read_roadmaps(self.root, {"EpsilonEridaniRoadmap/Widgets": entry()})[2]
+        widgets = rp.read_roadmaps(self.root, {"EpsilonEridaniRoadmaps/Widgets": entry()})[2]
         self.assertEqual(widgets["assessment"]["reason"], "invalid-marker")
         self.assertIn("different README", widgets["assessment"]["detail"])
         self.assertEqual(widgets["states"], ["unassessed"] * 3)
@@ -451,7 +451,7 @@ class Activity(unittest.TestCase):
             self.assertIsNone(collected)
 
     def test_build_stamps_three_times_and_counts_prs_since_the_report(self):
-        rows = [{"id": "EpsilonEridaniRoadmap/Widgets", "name": "Widgets", "parent": None, "completed": False,
+        rows = [{"id": "EpsilonEridaniRoadmaps/Widgets", "name": "Widgets", "parent": None, "completed": False,
                  "layers": ["Layer 0"], "layer_ids": ["Layer 0"], "states": ["done"],
                  "assessment": {"source": "hand-read", "reason": "ok", "detail": None, "notes": {}},
                  "status": {"to_sha": "x", "ts": "2026-09-01T00:00:00Z", "glance": "", "frontier": []}}]

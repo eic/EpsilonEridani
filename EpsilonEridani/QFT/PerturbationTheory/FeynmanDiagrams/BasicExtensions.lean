@@ -3,13 +3,15 @@ Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wouter Deconinck
 -/
-import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
-import EpsilonEridani.QFT.QCD.Basic
-import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
-import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
-import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
-import Mathlib.Data.Complex.Basic
-import Mathlib.Topology.Instances.Complex
+module
+
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import EpsilonEridani.QFT.QCD.Basic
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.YangMillsGaugeData
+public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Topology.Instances.Complex
 
 /-!
 # Feynman diagram extensions
@@ -31,6 +33,8 @@ This module extends `Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic`, whic
 currently a near-empty work in progress; none of the declarations below are ported
 from that module.
 -/
+
+@[expose] public section
 
 noncomputable section
 
@@ -305,19 +309,19 @@ SU(2) (W bosons), and SU(N) (gluons). The vertex contracts encode which
 interactions are present for a given sector. -/
 structure GaugeFeynmanRules where
   /-- Gauge-boson propagator (massless in covariant gauge). -/
-  gauge_propagator : ∀ (_k : Momentum) (_μ _ν : LorentzIndex) (_ξ ε : ℝ), 0 < ε → ℂ
+  gaugePropagator : ∀ (_k : Momentum) (_μ _ν : LorentzIndex) (_ξ ε : ℝ), 0 < ε → ℂ
   /-- Matter-fermion propagator. -/
-  matter_propagator : ∀ (_k : Momentum) (_mass ε : ℝ), 0 < ε → ℂ
+  matterPropagator : ∀ (_k : Momentum) (_mass ε : ℝ), 0 < ε → ℂ
   /-- Ghost propagator (trivial for U(1), Faddeev-Popov for non-abelian). -/
-  ghost_propagator : ∀ (_k : Momentum) (ε : ℝ), 0 < ε → ℂ
+  ghostPropagator : ∀ (_k : Momentum) (ε : ℝ), 0 < ε → ℂ
   /-- Gauge-fermion vertex contract. -/
-  gf_vertex : GaugeFermionVertexData
+  gaugeFermionVertex : GaugeFermionVertexData
   /-- 3-boson vertex contract (coupling = 0 for abelian sectors). -/
-  three_boson_vertex : ThreeGaugeBosonVertexData
+  threeBosonVertex : ThreeGaugeBosonVertexData
   /-- 4-boson vertex contract (coupling = 0 for abelian sectors). -/
-  four_boson_vertex : FourGaugeBosonVertexData
+  fourBosonVertex : FourGaugeBosonVertexData
   /-- Ghost-boson vertex contract (trivial for abelian sectors). -/
-  ghost_boson_vertex : GhostGaugeBosonVertexData
+  ghostBosonVertex : GhostGaugeBosonVertexData
   /-- Running coupling at scale μ. -/
   runningCoupling : ℝ → ℝ
 
@@ -326,14 +330,14 @@ abbrev QCDFeynmanRules := GaugeFeynmanRules
 
 /-- Standard non-abelian gauge rules with coupling `g` (e.g. SU(3) or SU(2)). -/
 def nonAbelianGaugeRules (g : ℝ) : GaugeFeynmanRules where
-  gauge_propagator  := gluonPropagator
-  matter_propagator := quarkPropagator
-  ghost_propagator  := ghostPropagator
-  gf_vertex         := ⟨g,    true⟩
-  three_boson_vertex := ⟨g⟩
-  four_boson_vertex  := ⟨g^2⟩
-  ghost_boson_vertex := ⟨g,   true, true⟩
-  runningCoupling   := fun _ => g
+  gaugePropagator := gluonPropagator
+  matterPropagator := quarkPropagator
+  ghostPropagator := ghostPropagator
+  gaugeFermionVertex := ⟨g,    true⟩
+  threeBosonVertex := ⟨g⟩
+  fourBosonVertex := ⟨g^2⟩
+  ghostBosonVertex := ⟨g,   true, true⟩
+  runningCoupling := fun _ => g
 
 /-- Standard minimal-subtraction non-abelian rules; alias for SU(3) (QCD). -/
 def qcdStandardRules (g_s : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_s
@@ -343,14 +347,14 @@ def qcdStandardRules (g_s : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_s
 For an abelian gauge sector the 3- and 4-boson self-coupling constants are zero
 and there are no Faddeev-Popov ghost interactions. -/
 def u1AbelianGaugeRules (g : ℝ) : GaugeFeynmanRules where
-  gauge_propagator  := gluonPropagator   -- same denominator form as any massless boson
-  matter_propagator := quarkPropagator
-  ghost_propagator  := ghostPropagator
-  gf_vertex         := ⟨g, true⟩
-  three_boson_vertex := ⟨0⟩            -- no cubic self-coupling
-  four_boson_vertex  := ⟨0⟩            -- no quartic self-coupling
-  ghost_boson_vertex := ⟨0, false, false⟩    -- ghosts decouple
-  runningCoupling   := fun _ => g
+  gaugePropagator := gluonPropagator   -- same denominator form as any massless boson
+  matterPropagator := quarkPropagator
+  ghostPropagator := ghostPropagator
+  gaugeFermionVertex := ⟨g, true⟩
+  threeBosonVertex := ⟨0⟩            -- no cubic self-coupling
+  fourBosonVertex := ⟨0⟩            -- no quartic self-coupling
+  ghostBosonVertex := ⟨0, false, false⟩    -- ghosts decouple
+  runningCoupling := fun _ => g
 
 /-- SU(2) weak-isospin gauge rules with coupling `g_w`. -/
 def su2GaugeRules (g_w : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_w
@@ -361,7 +365,7 @@ def su2GaugeRules (g_w : ℝ) : GaugeFeynmanRules := nonAbelianGaugeRules g_w
 
 `needsRegularization` is a bare `Prop` parameter: instantiating it with `True` satisfies
 the contract, so the structure asserts nothing about the diagram on its own.  It is
-retained because `QFT.Scattering.DIS.PVES.Examples.Moller` projects it; stating it
+retained because `QFT.Scattering.DIS.PVES.Examples.Moller.Basic` projects it; stating it
 properly needs a representation of the loop integrand, which this module does not have. -/
 structure OneLoopGaugeDiagramAssumptions (rules : GaugeFeynmanRules)
   (k_in k_out : Momentum) : Type where
@@ -369,6 +373,10 @@ structure OneLoopGaugeDiagramAssumptions (rules : GaugeFeynmanRules)
   needsRegularization : Prop
   /-- Witness that regularization is required. -/
   hNeedsRegularization : needsRegularization
+
+-- `simpNF` false positive: with the witness fields of both sides in context, `simp [*]` turns
+-- both sides of the generated `mk.injEq` into `True`, so it reports the lemma as provable.
+attribute [nolint simpNF] OneLoopGaugeDiagramAssumptions.mk.injEq
 
 /-- Backward-compatible alias. -/
 abbrev OneLoopBoxDiagramAssumptions := OneLoopGaugeDiagramAssumptions
@@ -412,8 +420,11 @@ structure FermionSelfEnergyDiagram (rules : GaugeFeynmanRules) : Type where
 /-- A bundled collection of the three one-loop self-energy diagram classes used by the
 beta-function proof: gauge-boson, ghost, and fermion loops. -/
 structure OneLoopSelfEnergyDiagramBundle (rules : GaugeFeynmanRules) : Type where
+  /-- Gauge-boson self-energy diagram. -/
   gaugeBoson : GaugeBosonSelfEnergyDiagram rules
+  /-- Ghost self-energy diagram. -/
   ghost : GhostSelfEnergyDiagram rules
+  /-- Fermion self-energy diagram. -/
   fermion : FermionSelfEnergyDiagram rules
 
 /-- Gauge-boson self-energy diagrams require regularization. -/
@@ -457,6 +468,10 @@ structure OneLoopSelfEnergyEvaluationAssumptions
   /-- In the standard one-loop normalization, the fermion diagram evaluates to the
   canonical fermion self-energy master. -/
   hFermionMaster : fermionMaster = fermionSelfEnergyMaster
+
+-- `simpNF` false positive: the equation fields of both sides rewrite every master to the same
+-- canonical one, so `simp [*]` reduces the generated `mk.injEq` to `True`.
+attribute [nolint simpNF] OneLoopSelfEnergyEvaluationAssumptions.mk.injEq
 
 end FeynmanDiagrams
 end PerturbationTheory

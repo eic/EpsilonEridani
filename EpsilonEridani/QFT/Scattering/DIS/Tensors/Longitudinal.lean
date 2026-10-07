@@ -119,11 +119,11 @@ namespace Tensors
 namespace Longitudinal
 
 open Hadronic
-open Kinematics (DisKinematics)
-open Physlib.QFT.Factorization.DIS (HardKernel loChannel loStructureFunction IsLOFactorized)
-open Physlib.QFT.Factorization.Convolution
+open Kinematics (Bilin DisKinematics)
+open EpsilonEridani.QFT.Factorization.DIS (HardKernel loChannel loStructureFunction IsLOFactorized)
+open EpsilonEridani.QFT.Factorization.Convolution
   (convolveAt integrand convolveAt_eq_zero_of_integrand_zero)
-open Physlib.Particles.Parton.PDF (Pdf)
+open EpsilonEridani.Particles.Parton.PDF (Pdf)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 

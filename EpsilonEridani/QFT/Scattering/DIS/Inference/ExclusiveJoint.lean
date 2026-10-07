@@ -36,14 +36,20 @@ inductive ProcessTag where
 
 /-- Abstract exclusive data point for DVCS/DVMP joint fits. -/
 structure ExclusiveDataPoint where
+  /-- Exclusive process (DVCS or DVMP) the point belongs to. -/
   tag : ProcessTag
+  /-- Skewness `ξ`. -/
   xiSkew : ℝ
+  /-- Momentum-transfer invariant `t`. -/
   tMom : ℝ
+  /-- Hard scale `Q²`. -/
   Q2 : ℝ
+  /-- Measured value of the observable. -/
   observed : ℝ
 
 /-- Joint dataset container for exclusive channels. -/
 structure JointDataset where
+  /-- Data points of the joint DVCS/DVMP dataset. -/
   entries : List ExclusiveDataPoint
 
 /-- Prediction residual interface. -/

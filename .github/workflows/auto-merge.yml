@@ -78,11 +78,11 @@ jobs:
     if: ${{ needs.resolve.outputs.pr != '' }}
     # Pinned to a EpsilonEridaniReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: eic/EpsilonEridaniReview/.github/workflows/merge-only.yml@1bcd4bf40636fee510157d7f02c8d58d99a4618f
+    uses: eic/EpsilonEridaniReview/.github/workflows/merge-only.yml@73f61deb51cad9d881cd0f6f6f418afc78302499
     with:
       pr: ${{ needs.resolve.outputs.pr }}
-      review_ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
+      review_ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
     # Pass only the App credentials merge-only needs, not all of EpsilonEridani's secrets.
     secrets:
-      APP_ID: ${{ secrets.APP_ID }}
+      APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}

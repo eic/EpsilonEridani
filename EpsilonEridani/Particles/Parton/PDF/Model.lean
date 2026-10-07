@@ -12,7 +12,7 @@ public import EpsilonEridani.Particles.Parton.PDF.Positivity
 
 ## i. Overview
 
-`Physlib.Particles.Parton.PDF.Assumptions` had no instance anywhere in the repository: every
+`EpsilonEridani.Particles.Parton.PDF.Assumptions` had no instance anywhere in the repository: every
 result stated against it was conditional, and a hypothesis bundle with no model is not known
 to be satisfiable at all. This module supplies one. `modelPdf Flavor a b` is the valence-like
 shape `x^a (1-x)^b` on `[0, 1]`, zero outside, independent of flavour and of scale.
@@ -25,15 +25,15 @@ holds because the shape is continuous and the support is compact. The analytic h
 part that was a genuine obligation; the physical half is what "parton density" means.
 
 The same shape carried by a diagonal spin-density matrix discharges
-`Physlib.Particles.Parton.PDF.SpinDensityAssumptions`
+`EpsilonEridani.Particles.Parton.PDF.SpinDensityAssumptions`
 (`spinDensityAssumptions_modelSpinDensity`), which likewise had no instance.
 
 ## ii. Key results
 
-- `Physlib.Particles.Parton.PDF.assumptions_modelPdf`
-- `Physlib.Particles.Parton.PDF.regularity_modelPdf`
-- `Physlib.Particles.Parton.PDF.isPartonDensity_modelPdf`
-- `Physlib.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
+- `EpsilonEridani.Particles.Parton.PDF.assumptions_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
 
 ## iii. Table of contents
 
@@ -94,7 +94,7 @@ lemma modelPdf_eq_zero_of_notMem (Flavor : Type) {a b : ℕ} {x : ℝ}
     (hx : x ∉ Set.Icc (0 : ℝ) 1) (i : Flavor) (Q2 : ℝ) :
     modelPdf Flavor a b i x Q2 = 0 := by
   rw [modelPdf_apply]
-  simp [Set.indicator_apply, hx]
+  simp [hx]
 
 /-- **The model is a parton density**: supported in `[0, 1]`, and nonnegative there. -/
 lemma isPartonDensity_modelPdf (Flavor : Type) (a b : ℕ) :
@@ -107,7 +107,7 @@ lemma isPartonDensity_modelPdf (Flavor : Type) (a b : ℕ) :
     · exact fun hm => absurd hm.2 (not_le.mpr h)
   · intro i x Q2 hx0 hx1
     have h : Set.indicator (Set.Icc (0 : ℝ) 1) (betaShape a b) x = betaShape a b x := by
-      simp [Set.indicator_apply, Set.mem_Icc, hx0, hx1]
+      simp [Set.mem_Icc, hx0, hx1]
     rw [modelPdf_apply, h]
     exact betaShape_nonneg hx0 hx1
 
@@ -122,8 +122,8 @@ lemma modelPdf_momentIntegrable (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 :
     funext x
     rw [modelPdf_apply]
     by_cases hx : x ∈ Set.Icc (0 : ℝ) 1
-    · simp [Set.indicator_apply, hx]
-    · simp [Set.indicator_apply, hx]
+    · simp [hx]
+    · simp [hx]
   rw [hrw]
   exact (MeasureTheory.integrable_indicator_iff measurableSet_Icc).mpr
     ((continuous_pow n).mul (continuous_betaShape a b)).integrableOn_Icc
@@ -167,10 +167,10 @@ def modelSpinDensity (Flavor : Type) (a b : ℕ) : Flavor → ℝ → ℝ → Sp
           by_cases hx : x ∈ Set.Icc (0 : ℝ) 1
           · have h1 : Set.indicator (Set.Icc (0 : ℝ) 1) (betaShape a b) x
                 = betaShape a b x := by
-              simp [Set.indicator_apply, hx]
+              simp [hx]
             rw [h1]
             exact betaShape_nonneg hx.1 hx.2
-          · simp [Set.indicator_apply, hx]
+          · simp [hx]
         linarith }
 
 /-- The unpolarized density induced by the diagonal model is `modelPdf`. -/

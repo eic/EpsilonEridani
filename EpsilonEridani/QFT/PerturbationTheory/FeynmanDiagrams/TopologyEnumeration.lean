@@ -55,11 +55,17 @@ inductive ExternalLegKind where
 
 /-- Compact graph container for a generated topology. -/
 structure TopologyGraph where
+  /-- Identifier of the diagram row this graph was generated from. -/
   diagramId : ℕ
+  /-- Number of external nodes (external legs). -/
   externalNodeCount : ℕ
+  /-- Ordered external-particle species, one per external node when well formed. -/
   externalLegs : List ExternalLegKind
+  /-- Kinds of the interaction nodes. -/
   interactionNodes : List TopologyNodeKind
+  /-- Kinds of the internal propagators. -/
   internalEdgeKinds : List TopologyEdgeKind
+  /-- Combinatorial symmetry factor. -/
   symmetryFactor : ℕ
 
 /-- Default external-leg payload for process-agnostic graphs. -/
@@ -150,18 +156,31 @@ theorem TopologyGraph.isCrossingEquivalent_trans {graph mid other : TopologyGrap
 
 /-- Exact node/edge incidence constraints for a generated topology. -/
 structure TopologyConstraint where
+  /-- Identifier of the diagram row. -/
   diagramId : ℕ
+  /-- Number of external nodes (external legs). -/
   externalNodeCount : ℕ
+  /-- Combinatorial symmetry factor. -/
   symmetryFactor : ℕ
+  /-- Total number of interaction nodes. -/
   interactionNodeCount : ℕ
+  /-- Number of gauge-interaction nodes. -/
   gaugeInteractionCount : ℕ
+  /-- Number of ghost-interaction nodes. -/
   ghostInteractionCount : ℕ
+  /-- Number of fermion self-energy insertion nodes. -/
   fermionSelfEnergyInsertionCount : ℕ
+  /-- Number of counterterm insertion nodes. -/
   countertermInsertionCount : ℕ
+  /-- Total number of internal propagators. -/
   internalEdgeCount : ℕ
+  /-- Number of gauge-boson propagators. -/
   gaugePropagatorCount : ℕ
+  /-- Number of ghost propagators. -/
   ghostPropagatorCount : ℕ
+  /-- Number of fermion propagators. -/
   fermionPropagatorCount : ℕ
+  /-- Number of counterterm edges. -/
   countertermEdgeCount : ℕ
 
 /-- Coarse perturbative-order budget used to constrain admissible topology rows. -/
@@ -322,14 +341,23 @@ def admissibleConstraintsOfTheory
 
 /-- Topology candidate obtained from a graph record. -/
 structure TopologyCandidate where
+  /-- Identifier of the diagram row. -/
   diagramId : ℕ
+  /-- Number of internal propagators. -/
   propagatorCount : ℕ
+  /-- Number of interaction vertices. -/
   vertexCount : ℕ
+  /-- Combinatorial symmetry factor. -/
   symmetryFactor : ℕ
+  /-- Whether a ghost propagator appears. -/
   hasGhostLine : Bool
+  /-- Whether a counterterm node or counterterm edge appears. -/
   hasCountertermInsertion : Bool
+  /-- Whether the graph is a vertex-corrected box-interference pattern. -/
   isVertexBoxInterference : Bool
+  /-- Number of fermion self-energy insertion nodes. -/
   fermionSelfEnergyInsertions : ℕ
+  /-- Whether the graph contains a nested gauge-boson self-energy. -/
   hasNestedGaugeSelfEnergy : Bool
 
 /-- Canonical node alphabet for the generic topology search. -/
@@ -486,7 +514,9 @@ renames while adapter migrations proceed.
 
 /-- Classifier specification for a signature space and class taxonomy. -/
 structure TopologyClassifierSpec (ClassLabel Signature : Type) where
+  /-- Canonical order in which class labels are enumerated. -/
   classOrder : List ClassLabel
+  /-- Class label of a signature, or `none` if it belongs to no class. -/
   classify : Signature → Option ClassLabel
 
 /-- Enumerate class blocks from a classifier specification. -/

@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.QCD.OneLoopNumeratorContractions
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopEvaluation
 public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.TopologyEnumeration
 /-!
@@ -30,8 +30,8 @@ namespace OneLoopDiagrammaticBridge
 
 open OneLoopBeta
 open OneLoopNumeratorContractions
-open Physlib.QFT.PerturbationTheory.FeynmanDiagrams
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
 
 /-- One-loop topology classes used in the QCD beta-function decomposition. -/
 inductive QCDOneLoopBetaDiagramClass where

@@ -104,7 +104,7 @@ def su : LieSubalgebra ℝ (Matrix n n ℂ) where
   lie_mem' := by
     rintro A B ⟨hA, _⟩ ⟨hB, _⟩
     refine ⟨?_, ?_⟩
-    · show (A * B - B * A)ᴴ = -(A * B - B * A)
+    · change (A * B - B * A)ᴴ = -(A * B - B * A)
       rw [conjTranspose_sub, conjTranspose_mul, conjTranspose_mul, hA, hB,
         neg_mul_neg, neg_mul_neg, neg_sub]
     · exact matrix_trace_commutator_zero n ℂ A B

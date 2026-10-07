@@ -11,7 +11,7 @@ the three repos fit together; this file only adds the contract for agents workin
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
 asked for it or you found the gap yourself — say so and leave it to a human to add, rather than
-building it here. Never open a PR or an issue in EpsilonEridaniRoadmap yourself; reviewing a roadmap
+building it here. Never open a PR or an issue in EpsilonEridaniRoadmaps yourself; reviewing a roadmap
 change needs human attention.
 
 Improving code that already exists is **always in scope** and needs no roadmap entry:
