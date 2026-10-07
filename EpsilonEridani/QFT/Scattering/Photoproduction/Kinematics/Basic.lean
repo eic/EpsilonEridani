@@ -152,31 +152,30 @@ theorem photonVirtualityMin_def (x : ℝ) : s.photonVirtualityMin x = s.photonVi
 
 variable {s}
 
-/-- If the source energy and the energy `(1 - x) E` it keeps after emitting the fraction `x ≠ 0`
-both lie above its positive mass, then both energies lie above `|m|` and they differ. -/
-private theorem energy_bounds (hm : 0 < s.mass) (hE : s.mass ≤ s.energy) {x : ℝ} (hx : x ≠ 0)
-    (hE' : s.mass ≤ (1 - x) * s.energy) :
-    |s.mass| ≤ s.energy ∧ |s.mass| ≤ (1 - x) * s.energy ∧ s.energy ≠ (1 - x) * s.energy := by
-  rw [abs_of_pos hm]
-  refine ⟨hE, hE', fun h => hx ?_⟩
+/-- A source of non-zero energy that emits the fraction `x ≠ 0` of it changes its energy. -/
+private theorem energy_ne_one_sub_mul_energy (hs : s.energy ≠ 0) {x : ℝ} (hx : x ≠ 0) :
+    s.energy ≠ (1 - x) * s.energy := by
+  intro h
   have : x * s.energy = 0 := by linarith
-  exact (mul_eq_zero.1 this).resolve_right (hm.trans_le hE).ne'
+  exact hx ((mul_eq_zero.1 this).resolve_right hs)
 
 /-- **The kinematic minimum of the virtuality is strictly positive for a massive source** whose
 energy before and after emitting the fraction `x ≠ 0` lies above its mass. -/
 theorem photonVirtualityMin_pos (hm : 0 < s.mass) (hE : s.mass ≤ s.energy) {x : ℝ} (hx : x ≠ 0)
     (hE' : s.mass ≤ (1 - x) * s.energy) : 0 < s.photonVirtualityMin x := by
-  obtain ⟨hE₁, hE₂, hne⟩ := energy_bounds hm hE hx hE'
-  exact (emissionVirtuality_zero_pos_iff hE₁ hE₂).2 ⟨hm.ne', hne⟩
+  exact (emissionVirtuality_zero_pos_iff ((abs_of_pos hm).trans_le hE)
+    ((abs_of_pos hm).trans_le hE')).2
+    ⟨hm.ne', energy_ne_one_sub_mul_energy (hm.trans_le hE).ne' hx⟩
 
 /-- **The kinematic minimum strictly exceeds `m² x² / (1 - x)`**, the form in which it is usually
 quoted for a high-energy source. -/
 theorem sq_mul_sq_div_one_sub_lt_photonVirtualityMin (hm : 0 < s.mass) (hE : s.mass ≤ s.energy)
     {x : ℝ} (hx : x ≠ 0) (hE' : s.mass ≤ (1 - x) * s.energy) :
     s.mass ^ 2 * x ^ 2 / (1 - x) < s.photonVirtualityMin x := by
-  obtain ⟨hE₁, hE₂, hne⟩ := energy_bounds hm hE hx hE'
-  have hlt := sq_mul_sub_sq_div_mul_lt_emissionVirtuality_zero hm.ne' hE₁ hE₂ hne
   have hEpos : s.energy ≠ 0 := (hm.trans_le hE).ne'
+  have hlt := sq_mul_sub_sq_div_mul_lt_emissionVirtuality_zero hm.ne'
+    ((abs_of_pos hm).trans_le hE) ((abs_of_pos hm).trans_le hE')
+    (energy_ne_one_sub_mul_energy hEpos hx)
   have h1x : 1 - x ≠ 0 := by
     intro h
     rw [h, zero_mul] at hE'
@@ -236,14 +235,18 @@ theorem ofEmission_mem_photonRegion {d : ℕ} {p p' : Lorentz.Vector d}
       by_contra h
       nlinarith
     linarith
-  refine mem_photonRegion_iff.2 ⟨hk0, hk1, ?_⟩
-  rw [photonVirtualityMin, photonVirtuality_energyFraction _ hs,
-    photonVirtuality_energyFraction _ hs, PhotonKinematics.ofEmission_virtuality,
-    neg_minkowskiProduct_sub_self_eq_emissionVirtuality hp hp', PhotonKinematics.ofEmission_energy,
-    hE, sub_sub_cancel]
-  exact ⟨emissionVirtuality_zero_le_emissionVirtuality _ _ _ _,
-    monotoneOn_emissionVirtuality s.mass s.energy p'.timeComponent
-      ⟨angle_nonneg _ _, angle_le_pi _ _⟩ ⟨(angle_nonneg _ _).trans hθ, hπ⟩ hθ⟩
+  -- the source keeps the energy `p'⁰`, and the photon virtuality is the emission virtuality
+  have hE'k : s.energy - (PhotonKinematics.ofEmission p p').energy = p'.timeComponent := by
+    simp [← hE]
+  have hv := neg_minkowskiProduct_sub_self_eq_emissionVirtuality hp hp'
+  rw [hE] at hv
+  have hmono := monotoneOn_emissionVirtuality s.mass s.energy p'.timeComponent
+  have hang : angle p.spatialPart p'.spatialPart ∈ Icc 0 π := ⟨angle_nonneg _ _, angle_le_pi _ _⟩
+  refine mem_photonRegion_iff.2 ⟨hk0, hk1, ?_, ?_⟩ <;>
+    simp only [photonVirtualityMin, photonVirtuality_energyFraction _ hs, hE'k,
+      PhotonKinematics.ofEmission_virtuality, hv]
+  · exact hmono ⟨le_rfl, pi_pos.le⟩ hang (angle_nonneg _ _)
+  · exact hmono hang ⟨(angle_nonneg _ _).trans hθ, hπ⟩ hθ
 
 /-- **The photon region is exactly the set of photons emitted at scattering angle at most
 `θmax`.** In at least two spatial dimensions, a photon lies in `s.photonRegion θmax` if and only
@@ -275,8 +278,8 @@ theorem mem_photonRegion_iff_exists (hm : 0 ≤ s.mass) {d : ℕ} (hd : 2 ≤ d)
       hang.trans_le hθ, ?_⟩
     ext
     · simp [hpt, hp't, E']
-    · rw [PhotonKinematics.ofEmission_virtuality,
-        neg_minkowskiProduct_sub_self_eq_emissionVirtuality hpm hp'm, hpt, hp't, hang, hθk]
+    · rw [PhotonKinematics.ofEmission_virtuality, ← hθk, ← hang, ← hpt, ← hp't]
+      exact neg_minkowskiProduct_sub_self_eq_emissionVirtuality hpm hp'm
   · rintro ⟨p, p', hp, hp', hE, hE', hk, hθ, rfl⟩
     exact ofEmission_mem_photonRegion hp hp' hE hE' hk hθ hπ
 

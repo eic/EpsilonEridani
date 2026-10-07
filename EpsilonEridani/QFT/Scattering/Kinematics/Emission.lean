@@ -24,10 +24,9 @@ This module develops that formula and the range it takes.
 * `emissionVirtuality m E E' θ` is the right-hand side above, and
   `neg_minkowskiProduct_sub_self_eq_emissionVirtuality` proves that it *is* `-q²` for any pair of
   on-shell four-momenta of `Physlib`, with `θ` the angle between their spatial parts.
-* Its value at `θ = 0` is a lower bound at every angle
-  (`emissionVirtuality_zero_le_emissionVirtuality`), and it is monotone in the angle on `[0, π]`, so
-  the virtualities reachable at scattering angle at most `θmax` form the interval between its value
-  at `θ = 0` and its value at `θmax` (`image_emissionVirtuality_Icc`).
+* It is monotone in the angle on `[0, π]` (`monotoneOn_emissionVirtuality`), so the virtualities
+  reachable at scattering angle at most `θmax` form the interval between its value at `θ = 0` and
+  its value at `θmax` (`image_emissionVirtuality_Icc`).
 * The value at `θ = 0` is the kinematic minimum. It vanishes for a massless source, and is strictly
   positive as soon as the source is massive and the emitted particle carries energy
   (`emissionVirtuality_zero_pos_iff`). It strictly exceeds the familiar
@@ -65,14 +64,6 @@ theorem emissionVirtuality_def (m E E' θ : ℝ) :
 theorem continuous_emissionVirtuality (m E E' : ℝ) : Continuous (emissionVirtuality m E E') := by
   unfold emissionVirtuality
   fun_prop
-
-/-- The value of the emission virtuality at zero scattering angle is a lower bound for its value at
-every angle. -/
-theorem emissionVirtuality_zero_le_emissionVirtuality (m E E' θ : ℝ) :
-    emissionVirtuality m E E' 0 ≤ emissionVirtuality m E E' θ := by
-  have hP : 0 ≤ √(E ^ 2 - m ^ 2) * √(E' ^ 2 - m ^ 2) := by positivity
-  simp only [emissionVirtuality, cos_zero, mul_one]
-  nlinarith [mul_le_mul_of_nonneg_left (cos_le_one θ) hP]
 
 /-- The emission virtuality grows with the scattering angle on `[0, π]`. -/
 theorem monotoneOn_emissionVirtuality (m E E' : ℝ) :
@@ -204,11 +195,15 @@ theorem neg_minkowskiProduct_sub_self_eq_emissionVirtuality {d : ℕ} {p p' : Lo
     {m : ℝ} (hp : ⟪p, p⟫ₘ = m ^ 2) (hp' : ⟪p', p'⟫ₘ = m ^ 2) :
     -⟪p - p', p - p'⟫ₘ = emissionVirtuality m p.timeComponent p'.timeComponent
       (angle p.spatialPart p'.spatialPart) := by
-  rw [Lorentz.Vector.minkowskiProduct_sub_self, hp, hp',
-    Lorentz.Vector.minkowskiProduct_eq_timeComponent_spatialPart, ← cos_angle_mul_norm_mul_norm,
-    p.norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self,
-    p'.norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self, hp, hp', emissionVirtuality]
-  ring
+  -- on the mass shell the spatial momenta have lengths `√(E² - m²)` and `√(E'² - m²)`
+  have hn := p.norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self
+  have hn' := p'.norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self
+  rw [hp] at hn
+  rw [hp'] at hn'
+  rw [emissionVirtuality, ← hn, ← hn']
+  linear_combination -Lorentz.Vector.minkowskiProduct_sub_self p p' - hp - hp' +
+    2 * Lorentz.Vector.minkowskiProduct_eq_timeComponent_spatialPart p p' +
+    2 * cos_angle_mul_norm_mul_norm p.spatialPart p'.spatialPart
 
 end Kinematics
 end Scattering

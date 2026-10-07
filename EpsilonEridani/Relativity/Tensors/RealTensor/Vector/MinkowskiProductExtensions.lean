@@ -90,13 +90,11 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
   have hpt : p.timeComponent = E := rfl
   have hp't : p'.timeComponent = E' := rfl
   refine ⟨p, p', ?_, ?_, hpt, hp't, ?_⟩
-  · rw [minkowskiProduct_self_eq_sq_sub, hps, hpt, norm_smul, he₀, Real.norm_eq_abs,
-      abs_of_pos hP]
-    linarith
-  · rw [minkowskiProduct_self_eq_sq_sub, hp's, hp't, norm_smul, hu, Real.norm_eq_abs,
-      abs_of_pos hP']
-    linarith
-  · rw [hps, hp's, angle_smul_left_of_pos _ _ hP, angle_smul_right_of_pos _ _ hP', angle, hu₀,
-      he₀, hu, mul_one, div_one, Real.arccos_cos h0 hπ]
+  · rw [minkowskiProduct_self_eq_sq_sub, hps, hpt]
+    simp [norm_smul, he₀, abs_of_pos hP, hPsq]
+  · rw [minkowskiProduct_self_eq_sq_sub, hp's, hp't]
+    simp [norm_smul, hu, abs_of_pos hP', hP'sq]
+  · rw [hps, hp's, angle_smul_left_of_pos _ _ hP, angle_smul_right_of_pos _ _ hP']
+    simp [angle, hu₀, he₀, hu, Real.arccos_cos h0 hπ]
 
 end EpsilonEridani
