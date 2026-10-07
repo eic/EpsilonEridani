@@ -117,8 +117,11 @@ theorem velocity_def : s.velocity = s.momentum / s.mass := (rfl)
 theorem mass_mul_velocity : s.mass * s.velocity = s.momentum := by
   rw [velocity_def, mul_div_cancel₀ _ s.mass_pos.ne']
 
+/-- The relative velocity is positive. -/
 theorem velocity_pos : 0 < s.velocity := div_pos s.momentum_pos s.mass_pos
 
+/-- The relative velocity is less than one: the relative momentum lies below the heavy-quark
+mass. -/
 theorem velocity_lt_one : s.velocity < 1 := (div_lt_one s.mass_pos).2 s.momentum_lt_mass
 
 
