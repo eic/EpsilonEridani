@@ -37,8 +37,8 @@ namespace OneLoopNumeratorContractions
 
 open OneLoopBeta
 open OneLoopBetaFromScalars
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
 
 /-- Tensor-reduced gluon-loop numerator contraction. -/
 def gluonLoopReduction (cf : ColorFactors) : RankTwoReductionResult :=

@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.Basic
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.Basic
+public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 
 # One-Loop Scalar Master Integrals
@@ -308,17 +308,17 @@ def fermionSelfEnergyIntegrand : OneLoopScalarIntegrand where
   rfl
 
 /-- Canonical reduction witness for the gauge-boson self-energy scalar integrand. -/
-def reduction_gaugeBosonSelfEnergyIntegrand :
+lemma reduction_gaugeBosonSelfEnergyIntegrand :
     ScalarIntegrandReduction gaugeBosonSelfEnergyIntegrand gaugeBosonSelfEnergyMaster where
   hEvaluate := evaluate_gaugeBosonSelfEnergyIntegrand
 
 /-- Canonical reduction witness for the ghost self-energy scalar integrand. -/
-def reduction_ghostSelfEnergyIntegrand :
+lemma reduction_ghostSelfEnergyIntegrand :
     ScalarIntegrandReduction ghostSelfEnergyIntegrand ghostSelfEnergyMaster where
   hEvaluate := evaluate_ghostSelfEnergyIntegrand
 
 /-- Canonical reduction witness for the fermion self-energy scalar integrand. -/
-def reduction_fermionSelfEnergyIntegrand :
+lemma reduction_fermionSelfEnergyIntegrand :
     ScalarIntegrandReduction fermionSelfEnergyIntegrand fermionSelfEnergyMaster where
   hEvaluate := evaluate_fermionSelfEnergyIntegrand
 

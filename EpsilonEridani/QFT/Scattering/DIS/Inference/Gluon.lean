@@ -65,7 +65,7 @@ lemma deltaG_identity_scheme_stability
     [Fintype Flavor]
     (S : Factorization.HigherOrder.Scheme)
     (C : Factorization.HigherOrder.HardKernelFamily Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (x Q2 : ℝ)
     (ord : Factorization.HigherOrder.PerturbativeOrder) :
     Factorization.HigherOrder.truncatedStructureFunction
@@ -82,9 +82,13 @@ inductive TaggedChannel where
 
 /-- Channel metadata for DeltaG-sensitive measurements. -/
 structure TaggedChannelDataPoint where
+  /-- Tagged channel the measurement belongs to. -/
   channel : TaggedChannel
+  /-- Bjorken `x`. -/
   xBj : ℝ
+  /-- Hard scale `Q²`. -/
   Q2 : ℝ
+  /-- Measured value of the observable. -/
   observed : ℝ
 
 /-- Regularized channel asymmetry interface. -/

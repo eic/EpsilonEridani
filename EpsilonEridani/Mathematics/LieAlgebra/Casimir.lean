@@ -166,7 +166,7 @@ lemma commute_toEnd_casimir {B : LinearMap.BilinForm R L} (hB : B.lieInvariant L
     rw [map_sum, ← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun j _ => ?_
     rw [map_smul, hB' (b j) (b' i), neg_smul, neg_neg]
-  show toEnd R L M x * casimir R L M b b' = casimir R L M b b' * toEnd R L M x
+  change toEnd R L M x * casimir R L M b b' = casimir R L M b b' * toEnd R L M x
   rw [← sub_eq_zero]
   have key : toEnd R L M x * casimir R L M b b' - casimir R L M b b' * toEnd R L M x
       = ∑ i, (toEnd R L M ⁅x, b i⁆ * toEnd R L M (b' i)
@@ -207,7 +207,7 @@ scalar commutes with the action of `L`. -/
 lemma IsCasimirScalar.commute_toEnd {b b' : ι → L} {c : R}
     (h : IsCasimirScalar R L M b b' c) (x : L) :
     Commute (toEnd R L M x) (casimir R L M b b') := by
-  show toEnd R L M x * casimir R L M b b' = casimir R L M b b' * toEnd R L M x
+  change toEnd R L M x * casimir R L M b b' = casimir R L M b b' * toEnd R L M x
   rw [h, mul_smul_comm, smul_mul_assoc, mul_one, one_mul]
 
 end Centrality

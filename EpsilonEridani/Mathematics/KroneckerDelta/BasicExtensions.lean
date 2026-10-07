@@ -3,15 +3,17 @@ Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wouter Deconinck
 -/
-import Physlib.Mathematics.KroneckerDelta.Basic
-import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Fin.Tuple.Basic
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Int.Cast.Lemmas
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Nat.Factorial.Basic
-import Mathlib.Tactic
+module
+
+public import Physlib.Mathematics.KroneckerDelta.Basic
+public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Int.Cast.Lemmas
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Tactic
 
 /-!
 # Kronecker delta extensions
@@ -20,6 +22,8 @@ Local extensions to `Physlib.Mathematics.KroneckerDelta.Basic`'s generalized Kro
 not yet upstreamed to Physlib: index-splitting (`extendIndices`) and the contraction law
 `∑ μ : Fin k → ι, δ^{(μ,lam)}_{(μ,ω)} = k! · δ^{lam}_{ω}` for an arbitrary finite index type `ι`.
 -/
+
+@[expose] public section
 
 namespace KroneckerDelta
 
@@ -50,7 +54,7 @@ def extendIndices {α : Type} (k n : ℕ) (_hk : k ≤ n)
   simp [extendIndices, h]
 
 /-- The last index of an `extendIndices` map lands in the tail component. -/
-@[simp] lemma extendIndices_last {α : Type} {m : ℕ} (hm : 1 ≤ m)
+lemma extendIndices_last {α : Type} {m : ℕ} (hm : 1 ≤ m)
     (μ : Fin (m - 1) → α) (lam : Fin (m - (m - 1)) → α) :
     extendIndices (m - 1) m (Nat.sub_le _ _) μ lam ⟨m - 1, by omega⟩ =
       lam ⟨0, by omega⟩ := by simp [extendIndices]
@@ -96,7 +100,7 @@ private lemma extendIndices_snoc_comp {α : Type} {k m : ℕ} (hk : k + 1 ≤ m)
       congr 1
 
 /-- Reindexes functions on `Fin (k+1)` into head-tail (`Fin.cons`) form under summation. -/
-lemma sum_univ_fin_succ_fun {α β : Type} [Fintype α] [DecidableEq α]
+lemma sum_univ_fin_succ_fun {α β : Type} [Fintype α]
     [AddCommMonoid β] (k : ℕ) (f : (Fin (k + 1) → α) → β) :
     (∑ x, f x) = ∑ a, ∑ v : Fin k → α, f (Fin.cons a v) := by
   simpa [Fintype.sum_prod_type] using
@@ -105,7 +109,7 @@ lemma sum_univ_fin_succ_fun {α β : Type} [Fintype α] [DecidableEq α]
       (fun p : α × (Fin k → α) => f (Fin.cons p.1 p.2)) (by intro p; simp))
 
 /-- Reindexes functions on `Fin (k+1)` into tail-last (`Fin.snoc`) form under summation. -/
-lemma sum_univ_fin_succ_snoc {α β : Type} [Fintype α] [DecidableEq α]
+lemma sum_univ_fin_succ_snoc {α β : Type} [Fintype α]
     [AddCommMonoid β] (k : ℕ) (f : (Fin (k + 1) → α) → β) :
     (∑ x, f x) = ∑ v : Fin k → α, ∑ a, f (Fin.snoc v a) := by
   rw [show (∑ x, f x) = ∑ a, ∑ v : Fin k → α, f (Fin.snoc v a) by
@@ -133,7 +137,7 @@ private lemma extendIndices_last_eq_front_cycleRange {α : Type} {m : ℕ} (hm :
     extendIndices (m - 1) m (Nat.sub_le _ _) μ (fun _ => l) =
       fun i => extendIndices 1 m hm (fun _ : Fin 1 => l) μ
         ((Fin.cycleRange (finLastOfPos m hm)) i) := by
-  haveI : NeZero m := ⟨Nat.ne_of_gt hm⟩
+  have : NeZero m := ⟨Nat.ne_of_gt hm⟩
   funext i
   by_cases hlast : i = finLastOfPos m hm
   · subst i
@@ -194,7 +198,6 @@ private lemma det_updateRow_finsum_smul {n : ℕ} (A : Matrix (Fin n) (Fin n) �
     {β : Type} [Fintype β] (w : β → ℤ) (f : β → Fin n → ℤ) :
     ∑ l, w l * Matrix.det (A.updateRow i (f l)) =
     Matrix.det (A.updateRow i (fun j => ∑ l, w l * f l j)) := by
-  haveI := Classical.decEq β
   have key : ∀ (t : Finset β),
       ∑ l ∈ t, w l * Matrix.det (A.updateRow i (f l)) =
       Matrix.det (A.updateRow i (fun j => ∑ l ∈ t, w l * f l j)) := by
@@ -259,7 +262,7 @@ private lemma extendIndices_succAbove_eq_cycleIcc {n : ℕ} (hn : 0 < n)
     {α : Type} (μ : Fin n → α) (i p : Fin n) :
     extendIndices n (n + 1) (Nat.le_succ n) μ (fun _ => μ i) (i.castSucc.succAbove p) =
       μ ((Fin.cycleIcc i (finLastOfPos n hn)) p) := by
-  haveI : NeZero n := ⟨Nat.ne_of_gt hn⟩
+  have : NeZero n := ⟨Nat.ne_of_gt hn⟩
   by_cases hlast : p = finLastOfPos n hn
   · subst p
     have hrow : i.castSucc.succAbove (finLastOfPos n hn) = Fin.last n := by
@@ -600,7 +603,12 @@ private theorem generalizedKroneckerDeltaReal_contraction_base' (m : ℕ) (hm : 
   cases m with
   | zero => omega
   | succ n =>
-    simp only [Nat.succ_sub_one, generalizedKroneckerDelta]
+    simp only [Nat.succ_sub_one]
+    change (∑ l : ι, Matrix.det (Matrix.of fun i j =>
+      δℤ (extendIndices n (n + 1) (Nat.le_succ n) μ (fun _ => l) i)
+      (extendIndices n (n + 1) (Nat.le_succ n) ν (fun _ => l) j))) = _
+    change _ = ((Fintype.card ι + 1 - (n + 1) : ℕ) : ℤ) *
+      Matrix.det (Matrix.of fun i j => δℤ (μ i) (ν j))
     simp_rw [Matrix.det_succ_column _ (Fin.last n)]
     simp only [Matrix.of_apply]
     rw [Finset.sum_comm, Fin.sum_univ_castSucc]
@@ -692,7 +700,9 @@ private lemma generalizedKroneckerDeltaReal_contraction_zero' (n : ℕ)
         (extendIndices 0 n (Nat.zero_le _) μ lam)
         (extendIndices 0 n (Nat.zero_le _) μ ω)) =
     generalizedKroneckerDelta lam ω := by
-  simp; unfold generalizedKroneckerDelta; congr 1
+  simp only [Finset.univ_unique, Finset.sum_singleton]
+  unfold generalizedKroneckerDelta
+  congr 1
 
 /-- Full-rank `k`-index contraction via Laplace induction.
 

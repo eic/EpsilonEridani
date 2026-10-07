@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
 /-!
 
 # PVES Neutral-Current Contracts
@@ -27,7 +27,7 @@ namespace DIS
 namespace PVES
 namespace Electroweak
 
-open Physlib.QFT.PerturbationTheory
+open EpsilonEridani.QFT.PerturbationTheory
 
 /-- Neutral-current mediator channel used in PVES. -/
 inductive NeutralMediator where

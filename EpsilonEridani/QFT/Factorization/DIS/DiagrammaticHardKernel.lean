@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Factorization.DIS.LO
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 /-!
 
 # Diagrammatic Hard-Kernel Bridge
@@ -34,7 +34,7 @@ namespace Factorization
 namespace DIS
 namespace DiagrammaticHardKernel
 
-open Physlib.QFT.Scattering.DIS
+open EpsilonEridani.QFT.Scattering.DIS
 
 variable {Flavor : Type}
 
@@ -95,7 +95,7 @@ lemma freeQuarkBornStructureFunction_isLOFactorized
     [Fintype Flavor]
     (diag : TreeLevelQuarkDiagram)
     (C : HardKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (h : TreeLevelQuarkAmplitudeAssumptions diag C) :
     HardKernelAssumptions C ∧ IsLOFactorized (loStructureFunction C f) C f :=
   ⟨hardKernelAssumptions_of_treeLevel diag C h, loStructureFunction_isFactorized C f⟩
@@ -107,7 +107,7 @@ lemma freeQuarkBorn_defines_loFactorization
     [Fintype Flavor]
     (diag : TreeLevelQuarkDiagram)
     (C : HardKernel Flavor)
-    (f : Physlib.Particles.Parton.PDF.Pdf Flavor)
+    (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (h : TreeLevelQuarkAmplitudeAssumptions diag C)
     (x Q2 : ℝ) :
     loStructureFunction C f x Q2

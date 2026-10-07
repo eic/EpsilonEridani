@@ -52,7 +52,7 @@ Nothing here computes the scheme-change correction, and nothing here decides the
 question. `scheme_change` records that the MS-bar distribution differs from a physical
 one by a subtraction; which physical scheme, and what the subtraction is at a given order,
 are inputs. The Soffer bound and the leading-order positivity statements live elsewhere
-(see `Physlib.Particles.Parton.PDF.Basic` for the `nonneg` field these results are about).
+(see `EpsilonEridani.Particles.Parton.PDF.Basic` for the `nonneg` field these results are about).
 
 Note also that `PDF.Assumptions.nonneg` quantifies over the whole interval `0 ≤ x ≤ 1`.
 Nothing below discharges it: every statement here is restricted to a
@@ -211,7 +211,7 @@ lemma uniform_bound_insufficient (ε : ℝ) (hε : 0 < ε) (hε1 : ε < 1) :
     exact hy0
   · intro _ _ _
     exact (abs_of_pos hε).le
-  · show ε / 2 - ε < 0
+  · change ε / 2 - ε < 0
     linarith
 
 /-!
@@ -256,7 +256,7 @@ lemma coupling_bound_degenerate_at_zero {a Cmax fmin : ℝ} (hCmax : 0 < Cmax)
     (hfmin : fmin ≤ 0) (hsmall : a * Cmax ≤ fmin) :
     a ≤ 0 := by
   by_contra hpos
-  push_neg at hpos
+  simp only [not_le] at hpos
   nlinarith [mul_pos hpos hCmax]
 
 end PDF

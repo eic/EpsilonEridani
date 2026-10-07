@@ -1,0 +1,2 @@
+simpNF EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopGaugeDiagramAssumptions.mk.injEq
+simpNF EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopSelfEnergyEvaluationAssumptions.mk.injEq

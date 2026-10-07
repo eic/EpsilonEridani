@@ -1,43 +1,35 @@
-import EpsilonEridani.RepresentationTheory.CharacterTable.Solvable
-import EpsilonEridani.Analysis.Complex.Conformal.Jordan.Approach
-import EpsilonEridani.RepresentationTheory.Symmetric.TensorAction.GeneralLinear
+import EpsilonEridani.QFT.QCD.Basic
+import EpsilonEridani.QFT.QCD.SU3Generators
+import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
 import SubVerso.Examples
 open SubVerso.Examples
 
-%example burnside
-open EpsilonEridani in
-/-- Burnside's theorem — every finite group of order pᵃqᵇ, for primes p and q,
-is solvable. -/
-theorem burnside {G : Type*} [Group G] [Finite G] {p q a b : ℕ}
-    (hp : p.Prime) (hq : q.Prime) (h : Nat.card G = p ^ a * q ^ b) :
-    Group.IsSolvable G :=
-  isSolvable_of_card_eq_prime_pow_mul_prime_pow hp hq h
+%example asymptotic_freedom
+open EpsilonEridani.QFT.QCD in
+/-- Asymptotic freedom — the one-loop coefficient of the QCD β-function is
+β₀ = 11 − (2/3) n_f, so QCD is asymptotically free for fewer than 16.5 quark flavours. -/
+theorem asymptotic_freedom (nF : ℝ) (h : 2 * nF < 33) :
+    beta0 (suNColorFactors 3 nF) = 11 - (2 / 3) * nF ∧
+      IsAsymptoticallyFree (suNColorFactors 3 nF) :=
+  ⟨by rw [beta0_suNColorFactors]; ring, isAsymptoticallyFree_qcd nF h⟩
 %end
 
-%example caratheodory
-open EpsilonEridani Set Metric Bornology in
-/-- Carathéodory's boundary extension theorem — a Riemann map onto a Jordan
-domain extends to a homeomorphism of the closures. -/
-theorem caratheodory {Ω : Set ℂ}
-    (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
-    (hΩJ : IsJordanCurve (frontier Ω)) :
-    ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧
-      DifferentiableOn ℂ g (ball 0 1) ∧ BijOn g (ball 0 1) Ω ∧
-      ∃ e : closedBall (0 : ℂ) 1 ≃ₜ closure Ω,
-        ∀ z : closedBall (0 : ℂ) 1, (e z : ℂ) = g z :=
-  exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier hΩo hΩc hΩb hΩJ
+%example su3_adjoint_casimir
+open EpsilonEridani.QFT.QCD.RepresentationColor in
+/-- The adjoint Casimir of SU(3) — the Gell-Mann structure constants satisfy
+Σ_{c,d} f^{acd} f^{bcd} = 3 δ^{ab}, i.e. C_A = 3, checked over every index. -/
+theorem su3_adjoint_casimir (a b : Fin 8) :
+    (∑ c : Fin 8, ∑ d : Fin 8, structConst3 a c d * structConst3 b c d) =
+      3 * su3DeltaAdj a b :=
+  su3AdjointStatement a b
 %end
 
-%example schur_weyl
-open EpsilonEridani in
-/-- Schur–Weyl duality — on the d-th tensor power of kⁿ, the images of the
-general linear and symmetric group algebras are each other's centralizers. -/
-theorem schur_weyl {k : Type*} [Field k] [Infinite k] {n d : ℕ}
-    [NeZero (Nat.factorial d : k)] :
-    Subalgebra.centralizer k (Set.range ⇑(tensorPowerRep k n d).asAlgebraHom) =
-        (permTensorActionAlgHom k n d).range ∧
-      Subalgebra.centralizer k (Set.range ⇑(permTensorActionAlgHom k n d)) =
-        (tensorPowerRep k n d).asAlgebraHom.range :=
-  ⟨centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom,
-    centralizer_range_permTensorActionAlgHom_eq_range_tensorPowerRep_asAlgebraHom⟩
+%example dvcs_momentum_transfer
+open EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics in
+/-- Momentum transfer in deeply virtual Compton scattering — momentum conservation
+p + q = p' + q' makes the hadronic t = (p' − p)² equal to the photon-side (q − q')². -/
+theorem dvcs_momentum_transfer {V : Type} [AddCommGroup V] [Module ℝ V]
+    (g : LinearMap.BilinForm ℝ V) (K : ExclKinematics V) :
+    K.tMom g = g (K.q - K.qPrime) (K.q - K.qPrime) :=
+  K.tMom_eq_photon_transfer_sq g
 %end

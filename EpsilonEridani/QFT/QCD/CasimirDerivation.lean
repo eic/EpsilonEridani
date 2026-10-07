@@ -174,7 +174,7 @@ def u1NormalizedData (Y : ℝ) : NormalizedGeneratorData where
 lemma u1NormalizedData_traceIdentity (Y : ℝ) :
     (u1NormalizedData Y).TraceIdentity := by
   intro a b
-  show (∑ _i : Fin 1, ∑ _j : Fin 1, (Y : ℂ) * (Y : ℂ)) = ((Y ^ 2 : ℝ) : ℂ) * ((1 : ℝ) : ℂ)
+  change (∑ _i : Fin 1, ∑ _j : Fin 1, (Y : ℂ) * (Y : ℂ)) = ((Y ^ 2 : ℝ) : ℂ) * ((1 : ℝ) : ℂ)
   simp only [Fin.sum_univ_one]
   push_cast
   ring
@@ -183,7 +183,7 @@ lemma u1NormalizedData_traceIdentity (Y : ℝ) :
 lemma u1NormalizedData_fundamentalIdentity (Y : ℝ) :
     (u1NormalizedData Y).FundamentalCasimirIdentity := by
   intro i j
-  show (∑ _a : Fin 1, ∑ _k : Fin 1, (Y : ℂ) * (Y : ℂ)) = ((Y ^ 2 : ℝ) : ℂ) * ((1 : ℝ) : ℂ)
+  change (∑ _a : Fin 1, ∑ _k : Fin 1, (Y : ℂ) * (Y : ℂ)) = ((Y ^ 2 : ℝ) : ℂ) * ((1 : ℝ) : ℂ)
   simp only [Fin.sum_univ_one]
   push_cast
   ring
@@ -193,7 +193,7 @@ holds with `C_A = 0`. -/
 lemma u1NormalizedData_adjointIdentity (Y : ℝ) :
     (u1NormalizedData Y).AdjointCasimirIdentity := by
   intro a b
-  show (∑ _c : Fin 1, ∑ _d : Fin 1, (0 : ℝ) * 0) = 0 * 1
+  change (∑ _c : Fin 1, ∑ _d : Fin 1, (0 : ℝ) * 0) = 0 * 1
   simp only [Fin.sum_univ_one]
   ring
 

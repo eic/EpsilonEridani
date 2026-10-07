@@ -142,6 +142,52 @@ class SeriesTest(unittest.TestCase):
         self.assertEqual(data, [])
 
 
+    def test_start_drops_the_history_before_it(self):
+        # Forked history: lines existed long before the project start.
+        self.commit("2026-06-01T12:00:00+0000", "2026-06-01T12:00:00+0000", 5)
+        self.commit("2026-09-16T12:00:00+0000", "2026-09-16T12:00:00+0000", 7)
+
+        data = loc_graph.series(str(self.repo), ["Tracked.lean"], "HEAD",
+                                today=dt.date(2026, 9, 18), start=dt.date(2026, 9, 15))
+
+        # The chart opens on the start day with the count that day, not on June 1st.
+        self.assertEqual(data, [("2026-09-15", 5), ("2026-09-16", 7), ("2026-09-17", 7)])
+
+    def test_start_before_any_matching_file_opens_at_zero(self):
+        self.commit("2026-09-20T12:00:00+0000", "2026-09-20T12:00:00+0000", 3)
+
+        data = loc_graph.series(str(self.repo), ["Tracked.lean"], "HEAD",
+                                today=dt.date(2026, 9, 22), start=dt.date(2026, 9, 18))
+
+        self.assertEqual(data, [("2026-09-18", 0), ("2026-09-19", 0),
+                                ("2026-09-20", 3), ("2026-09-21", 3)])
+
+    def test_start_on_a_commit_day_keeps_that_days_count(self):
+        self.commit("2026-09-15T12:00:00+0000", "2026-09-15T12:00:00+0000", 2)
+
+        data = loc_graph.series(str(self.repo), ["Tracked.lean"], "HEAD",
+                                today=dt.date(2026, 9, 17), start=dt.date(2026, 9, 15))
+
+        self.assertEqual(data, [("2026-09-15", 2), ("2026-09-16", 2)])
+
+    def test_start_after_the_last_commit_opens_with_the_carried_count(self):
+        # Nothing lands on or after the start, so every sampled day is dropped; the series
+        # still opens on the start day with the count carried from before it.
+        self.commit("2026-09-10T12:00:00+0000", "2026-09-10T12:00:00+0000", 5)
+
+        data = loc_graph.series(str(self.repo), ["Tracked.lean"], "HEAD",
+                                today=dt.date(2026, 9, 14), start=dt.date(2026, 9, 12))
+
+        self.assertEqual(data, [("2026-09-12", 5), ("2026-09-13", 5)])
+
+    def test_start_leaves_an_empty_series_empty(self):
+        self.commit("2026-09-20T08:00:00+0000", "2026-09-20T08:00:00+0000", 4)
+
+        data = loc_graph.series(str(self.repo), ["Tracked.lean"], "HEAD",
+                                today=dt.date(2026, 9, 20), start=dt.date(2026, 9, 15))
+
+        self.assertEqual(data, [])
+
 class CarryToTest(unittest.TestCase):
     def test_it_does_not_reach_backwards(self):
         points = [("2026-07-10", 4), ("2026-07-14", 9)]

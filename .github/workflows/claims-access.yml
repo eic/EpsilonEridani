@@ -9,13 +9,13 @@ name: Claims Access
 # because everyone who coordinates through it can push to it, and a repository with both write access
 # and CI is one where anyone can run anything.
 #
-# Setup (once). This uses its OWN GitHub App, not the org's general APP_ID: inviting collaborators
+# Setup (once). This uses its OWN GitHub App, not the org's general APP_CLIENT_ID: inviting collaborators
 # needs `Administration: write`, and that permission on an App installed across the org would be a
 # far bigger hammer than this job needs.
 #   1. Create an org-owned App, e.g. "epsiloneridani-claims-access", with repository permissions
 #      `Administration: write` (invite) and `Contents: write` (delete expired refs).
 #   2. Install it on eic/epsiloneridani-claims, and on nothing else.
-#   3. Add this repository's secrets CLAIMS_APP_ID and CLAIMS_APP_PRIVATE_KEY.
+#   3. Add this repository's secrets CLAIMS_APP_CLIENT_ID and CLAIMS_APP_PRIVATE_KEY.
 # Then run it once from the Actions tab with dry-run to see who it would invite.
 
 on:
@@ -40,10 +40,10 @@ jobs:
     steps:
       - name: Require the claims App
         env:
-          APP_ID: ${{ secrets.CLAIMS_APP_ID }}
+          APP_CLIENT_ID: ${{ secrets.CLAIMS_APP_CLIENT_ID }}
         run: |
-          if [ -z "$APP_ID" ]; then
-            echo "::error::CLAIMS_APP_ID / CLAIMS_APP_PRIVATE_KEY are unset, so nobody can be admitted to the" \
+          if [ -z "$APP_CLIENT_ID" ]; then
+            echo "::error::CLAIMS_APP_CLIENT_ID / CLAIMS_APP_PRIVATE_KEY are unset, so nobody can be admitted to the" \
                  "claim namespace and every fleet is coordinating only with itself. See the setup notes at the" \
                  "top of .github/workflows/claims-access.yml."
             exit 1
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: claims-token
         with:
-          app-id: ${{ secrets.CLAIMS_APP_ID }}
+          client-id: ${{ secrets.CLAIMS_APP_CLIENT_ID }}
           private-key: ${{ secrets.CLAIMS_APP_PRIVATE_KEY }}
           owner: eic
           repositories: epsiloneridani-claims

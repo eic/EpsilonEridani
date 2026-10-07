@@ -19,7 +19,7 @@ is the layering the generator plan asks for — output format changes must not p
 kinematics, and vice versa — and `toFourVector` is the single crossing point.
 
 Everything here is `Float`, so nothing in this file is proved.  The `ℝ`-level statements these
-transcribe live in `Physlib.QFT.Scattering.DIS.Kinematics`, and the correspondence is
+transcribe live in `EpsilonEridani.QFT.Scattering.DIS.Kinematics`, and the correspondence is
 documented, not verified: §6 of the generator plan rules out a proved `Float`↔`ℝ` bridge.
 -/
 

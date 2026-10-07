@@ -5,7 +5,6 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.Meta.Linters.Sorry
 public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Deconvolution.Basic
 /-!
 
@@ -27,7 +26,7 @@ purpose of the module is to make the difference a theorem rather than a remark.
 
 ## The reconciliation, in three proved steps
 
-1. `Physlib.Particles.Parton.GPD.gpdOfDTerm_eq_zero_of_inDglapRegion` — a pure D-term
+1. `EpsilonEridani.Particles.Parton.GPD.gpdOfDTerm_eq_zero_of_inDglapRegion` — a pure D-term
    vanishes identically on the DGLAP region. So the ambiguity left by the uniqueness
    theorem is, by construction, invisible to the data that theorem uses.
 2. `not_isShadow_of_eq_gpdOfDTerm` — a shadow GPD is never a pure D-term, provided the
@@ -108,7 +107,7 @@ namespace DIS
 namespace Exclusive
 namespace Deconvolution
 
-open Physlib.Particles.Parton.GPD
+open EpsilonEridani.Particles.Parton.GPD
 
 variable {Flavor : Type}
 
@@ -133,12 +132,12 @@ def AgreeOnLowSkewnessDglap (M₁ M₂ : Model Flavor) (xi0 : ℝ) : Prop :=
 
 -/
 
-/-- **The analytic core of arXiv:2401.12013.** Agreement in the DGLAP region at low
+/- **The analytic core of arXiv:2401.12013.** Agreement in the DGLAP region at low
 skewness forces the double-distribution parts of two representations to agree.
 
 Everything the uniqueness statement asserts beyond this is algebra, discharged by
-`Physlib.Particles.Parton.GPD.sub_eq_gpdOfDTerm_of_dd_eq`. -/
-@[sorryful]
+`EpsilonEridani.Particles.Parton.GPD.sub_eq_gpdOfDTerm_of_dd_eq`. -/
+/- @[sorryful]
 theorem dd_eq_of_agreeOnLowSkewnessDglap {M₁ M₂ : Model Flavor}
     (R₁ : AdmitsDoubleDistribution M₁) (R₂ : AdmitsDoubleDistribution M₂)
     (xi0 : ℝ) (hxi0 : 0 < xi0)
@@ -169,16 +168,16 @@ theorem dd_eq_of_agreeOnLowSkewnessDglap {M₁ M₂ : Model Flavor}
   -- Mathlib v4.33 has no Radon transform at all, let alone an incomplete-data uniqueness
   -- result for one, so step 3 is not a matter of finding the right lemma name: the
   -- analysis would have to be built. (That much is checked; the attribution above is not.)
-  sorry
+  sorry -/
 
-/-- **Uniqueness up to a D-term (arXiv:2401.12013), in the form quoted in the
+/- **Uniqueness up to a D-term (arXiv:2401.12013), in the form quoted in the
 literature.** Two models that admit double-distribution representations and agree on the
 DGLAP region at low skewness differ exactly by the GPD of a single D-term.
 
 The `∃ dt` is not an accident of the proof: by
-`Physlib.Particles.Parton.GPD.gpdOfDTerm_eq_zero_of_inDglapRegion` a D-term is invisible
+`EpsilonEridani.Particles.Parton.GPD.gpdOfDTerm_eq_zero_of_inDglapRegion` a D-term is invisible
 to the hypothesis `hdata`, so no argument taking this data can do better. -/
-@[sorryful]
+/- @[sorryful]
 theorem exists_dTerm_of_agreeOnLowSkewnessDglap {M₁ M₂ : Model Flavor}
     (R₁ : AdmitsDoubleDistribution M₁) (R₂ : AdmitsDoubleDistribution M₂)
     (xi0 : ℝ) (hxi0 : 0 < xi0)
@@ -187,7 +186,7 @@ theorem exists_dTerm_of_agreeOnLowSkewnessDglap {M₁ M₂ : Model Flavor}
       M₁.H i x xi t = M₂.H i x xi t + gpdOfDTerm dt i x xi t :=
   ⟨DTerm.sub R₁.dtH R₂.dtH, fun i x xi t =>
     sub_eq_gpdOfDTerm_of_dd_eq R₁ R₂
-      (dd_eq_of_agreeOnLowSkewnessDglap R₁ R₂ xi0 hxi0 hdata) i x xi t⟩
+      (dd_eq_of_agreeOnLowSkewnessDglap R₁ R₂ xi0 hxi0 hdata) i x xi t⟩ -/
 
 /-- The ambiguity the uniqueness statement leaves is *exactly* the ambiguity its data
 cannot see: adding a D-term to a model changes nothing in the DGLAP region.
@@ -270,7 +269,7 @@ theorem shadow_visible_in_lowSkewness_dglap (K : ComptonCoefficient)
         M₁.H i x xi t = M₂.H i x xi t + gpdOfDTerm dt i x xi t) :
     ∃ i x xi t, InDglapRegion x xi ∧ |xi| ≤ xi0 ∧ S.H i x xi t ≠ 0 := by
   by_contra hcon
-  push_neg at hcon
+  push Not at hcon
   have hdata : AgreeOnLowSkewnessDglap S (Model.zero Flavor) xi0 := by
     intro i x xi t hdglap hxi
     simpa using hcon i x xi t hdglap hxi
@@ -279,7 +278,7 @@ theorem shadow_visible_in_lowSkewness_dglap (K : ComptonCoefficient)
   intro i x xi t
   simpa using hdt i x xi t
 
-/-- **The two frontier results, stated together with their hypotheses explicit.**
+/- **The two frontier results, stated together with their hypotheses explicit.**
 
 There exists a leading-order shadow GPD — invisible to Compton form factors at that order
 and scale — and it is nonetheless visible in the DGLAP region at low skewness, so the
@@ -287,7 +286,7 @@ uniqueness result applies to it without contradiction.
 
 Depends on both tagged `sorry`s of this development: the shadow construction and the
 incomplete-data Radon inversion. The glue between them is proved. -/
-@[sorryful]
+/- @[sorryful]
 theorem shadow_and_uniqueness_coexist [Nonempty Flavor] (K : ComptonCoefficient)
     (hLO : IsLeadingOrderDvcs K) (hsep : SeparatesDTerms K Flavor)
     (xi0 : ℝ) (hxi0 : 0 < xi0)
@@ -298,7 +297,7 @@ theorem shadow_and_uniqueness_coexist [Nonempty Flavor] (K : ComptonCoefficient)
   refine ⟨S, hS, ?_⟩
   refine shadow_visible_in_lowSkewness_dglap K hsep S hS (hrepr S hS) xi0 ?_
   intro M₁ M₂ R₁ R₂ hdata
-  exact exists_dTerm_of_agreeOnLowSkewnessDglap R₁ R₂ xi0 hxi0 hdata
+  exact exists_dTerm_of_agreeOnLowSkewnessDglap R₁ R₂ xi0 hxi0 hdata -/
 
 end Deconvolution
 end Exclusive

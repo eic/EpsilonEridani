@@ -318,7 +318,8 @@ if __name__ == "__main__":
     prs = json.load(open(a.data)) if a.data else fetch_gh(a.repo)
     dates, order, series, totals = build_series(prs)
     if not dates:
-        sys.exit("no labelled merged PRs found on a completed UTC day")
+        today = dt.datetime.now(dt.timezone.utc).date()
+        dates = [(today - dt.timedelta(days=1)).isoformat(), today.isoformat()]
     order, series, totals, omitted = collapse_tail(order, series, totals)
     grand = render(dates, order, series, totals, a.title, a.out, omitted)
     named = len(order) - 1 if omitted else len(order)

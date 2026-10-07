@@ -5,8 +5,10 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.Basic
+public import Physlib.QFT.PerturbationTheory.FeynmanDiagrams.Basic
 public import EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+public import EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.BasicExtensions
+public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 
 # One-Loop Self-Energy Evaluation
@@ -28,8 +30,8 @@ namespace QFT
 namespace PerturbationTheory
 namespace FeynmanDiagrams
 
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
-open Physlib.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.OneLoopScalars
+open EpsilonEridani.QFT.PerturbationTheory.DimensionalRegularization.TensorReduction
 
 /-- Concrete loop-integral data attached to a gauge-boson self-energy diagram. -/
 structure GaugeBosonSelfEnergyLoopIntegralData
@@ -74,8 +76,11 @@ structure FermionSelfEnergyLoopIntegralData
 structure OneLoopSelfEnergyLoopIntegralDataBundle
     {rules : GaugeFeynmanRules}
     (bundle : OneLoopSelfEnergyDiagramBundle rules) : Type where
+  /-- Loop-integral data for the gauge-boson self-energy diagram. -/
   gaugeBoson : GaugeBosonSelfEnergyLoopIntegralData bundle.gaugeBoson
+  /-- Loop-integral data for the ghost self-energy diagram. -/
   ghost : GhostSelfEnergyLoopIntegralData bundle.ghost
+  /-- Loop-integral data for the fermion self-energy diagram. -/
   fermion : FermionSelfEnergyLoopIntegralData bundle.fermion
 
 /-- Canonical evaluation data for a gauge-boson self-energy diagram. -/

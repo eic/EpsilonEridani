@@ -30,9 +30,13 @@ namespace DVCS
 
 /-- Minimal CFF container used by the DVCS interfaces. -/
 structure CFF where
+  /-- Compton form factor `H` as a function of `(ξ, t)`. -/
   H : ℝ → ℝ → ℝ
+  /-- Compton form factor `E` as a function of `(ξ, t)`. -/
   E : ℝ → ℝ → ℝ
+  /-- Compton form factor H-tilde as a function of `(ξ, t)`. -/
   Htilde : ℝ → ℝ → ℝ
+  /-- Compton form factor E-tilde as a function of `(ξ, t)`. -/
   Etilde : ℝ → ℝ → ℝ
 
 /-- A basic CFF combination appearing in observable templates. -/
@@ -43,7 +47,7 @@ def cffCombination (C : CFF) (xi t : ℝ) : ℝ :=
 def IsCFFKernelRepresentedAtScale
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (_Q2 : ℝ) : Prop :=
@@ -52,7 +56,7 @@ def IsCFFKernelRepresentedAtScale
 /-- Convolution contract at fixed flavor and scale. -/
 def IsCFFConvolutionAtScale
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (_Q2 : ℝ) : Prop :=
@@ -62,7 +66,7 @@ def IsCFFConvolutionAtScale
 lemma cff_kernel_representation_bridge
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (Q2 : ℝ)
@@ -73,7 +77,7 @@ lemma cff_kernel_representation_bridge
 /-- Wrapper theorem exposing the CFF-to-GPD bridge contract. -/
 lemma cff_convolution_bridge
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (C : CFF)
     (Q2 : ℝ)

@@ -139,7 +139,7 @@ class ReuseTests(unittest.TestCase):
         self.assertIn("python3 gate/scripts/test_lake_cache_reuse.py --integration", block)
         position = workflow.index(block)
         self.assertLess(workflow.index("- name: Validate the Lake-pin bump before building"), position)
-        self.assertLess(workflow.index("- name: Fetch Mathlib with the (bump-validated) config"), position)
+        self.assertLess(workflow.index("- name: Fetch Dependencies with the (bump-validated) config"), position)
         self.assertLess(position, workflow.index("- name: Build exact candidate under bwrap"))
 
 

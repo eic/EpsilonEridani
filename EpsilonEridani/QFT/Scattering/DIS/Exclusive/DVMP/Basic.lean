@@ -42,13 +42,18 @@ inductive PolarizationTag where
 
 /-- Channel metadata record for DVMP interfaces. -/
 structure Channel (Meson : Type) where
+  /-- Produced meson. -/
   meson : Meson
+  /-- Vector or pseudoscalar meson. -/
   kind : MesonKind
+  /-- Longitudinal or transverse polarization of the channel. -/
   polarization : PolarizationTag
 
 /-- Transition form-factor placeholder container. -/
 structure TFF where
+  /-- Longitudinal transition form factor as a function of `(ξ, t)`. -/
   longitudinal : ℝ → ℝ → ℝ
+  /-- Transverse transition form factor as a function of `(ξ, t)`. -/
   transverse : ℝ → ℝ → ℝ
 
 /-- Observable template combining longitudinal/transverse channel parts. -/
@@ -59,7 +64,7 @@ def dvmpObservable (T : TFF) (xi t Q2 : ℝ) : ℝ :=
 def IsTFFKernelRepresentedAtScale
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (_Q2 : ℝ) : Prop :=
@@ -68,7 +73,7 @@ def IsTFFKernelRepresentedAtScale
 /-- TFF-to-GPD convolution contract at fixed flavor and scale. -/
 def IsTFFConvolutionAtScale
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (_Q2 : ℝ) : Prop :=
@@ -78,7 +83,7 @@ def IsTFFConvolutionAtScale
 lemma tff_kernel_representation_bridge
     {Flavor : Type}
     (K : Exclusive.Convolution.Kernel)
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (Q2 : ℝ)
@@ -89,7 +94,7 @@ lemma tff_kernel_representation_bridge
 /-- Wrapper theorem exposing the TFF-to-GPD bridge contract. -/
 lemma tff_convolution_bridge
     {Flavor : Type}
-    (M : Physlib.Particles.Parton.GPD.Model Flavor)
+    (M : EpsilonEridani.Particles.Parton.GPD.Model Flavor)
     (i : Flavor)
     (T : TFF)
     (Q2 : ℝ)

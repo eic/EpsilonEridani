@@ -44,7 +44,7 @@ def howToRead : Html := {{
 
 #doc (Page) "Progress" =>
 
-Progress against Tau Ceti's existing roadmaps. Each segment is one layer of a roadmap, as its
+Progress against EpsilonEridani's existing roadmaps. Each segment is one layer of a roadmap, as its
 own `README.md` names them; its appearance shows what the latest report says about that layer,
 not a percentage of the work. Expand a roadmap for its report, its next milestones and its
 sources. Merged pull requests are shown separately, as activity.

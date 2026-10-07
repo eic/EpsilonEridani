@@ -11,7 +11,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EE
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Processes.EP
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller
+public import EpsilonEridani.QFT.Scattering.DIS.PVES.Examples.Moller.Basic
 /-!
 
 # DIS PVES Basic API

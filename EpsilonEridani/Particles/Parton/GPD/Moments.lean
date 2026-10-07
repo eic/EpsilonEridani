@@ -16,7 +16,7 @@ with concrete low-order consequences.
 ## Conventions
 
 * **Integration range.** Moments run over the full GPD support `x ∈ [-1, 1]`
-  (see `Physlib.Particles.Parton.GPD.Basic`). The half-range integral `∫_0^1` is *not*
+  (see `EpsilonEridani.Particles.Parton.GPD.Basic`). The half-range integral `∫_0^1` is *not*
   a polynomial in `ξ`, so polynomiality cannot be stated with it.
 
 * **Moment index.** Following `PDF.mellinMoment`, the integrand carries `x ^ n`, i.e.

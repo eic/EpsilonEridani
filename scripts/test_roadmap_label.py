@@ -6,11 +6,11 @@ Run the fast, hermetic checks:
     python3 scripts/test_roadmap_label.py
 
 Optionally replay the whole PR history against a live GitHub (needs `gh` auth and
-a EpsilonEridaniRoadmap checkout); this is how the classifier was validated and is not
+a EpsilonEridaniRoadmaps checkout); this is how the classifier was validated and is not
 run in CI:
 
     python3 scripts/test_roadmap_label.py --replay-live \
-        --repo eic/EpsilonEridani --roadmap-dir /path/to/EpsilonEridaniRoadmap
+        --repo eic/EpsilonEridani --roadmap-dir /path/to/EpsilonEridaniRoadmaps
 """
 
 from __future__ import annotations
@@ -65,20 +65,20 @@ CASES = [
      '<!--epsiloneridani-target:v1 {"focus":"pde-helper","id":"helper"}-->', TC,
      "roadmap/Unknown"),
     ("full path", "feat: add semigroup exponential shifts",
-     "It advances EpsilonEridaniRoadmap/OneParameterSemigroups/README.md, Part A.", TC,
+     "It advances EpsilonEridaniRoadmaps/OneParameterSemigroups/README.md, Part A.", TC,
      "roadmap/OneParameterSemigroups"),
     ("bare README path", "feat(Analysis/Contour): piecewise C1",
      "toward the roadmap (roadmap `ContourIntegration/README.md`: ...).", TC,
      "roadmap/ContourIntegration"),
     ("suggested.lean path", "feat: add quotient comodules",
-     "See EpsilonEridaniRoadmap/ReductiveGroups/Suggested.lean for the target.", TC,
+     "See EpsilonEridaniRoadmaps/ReductiveGroups/Suggested.lean for the target.", TC,
      "roadmap/ReductiveGroups"),
     ("matching declaration marker and citation", "feat: add theorem",
-     'Roadmap: PDE\nEpsilonEridaniRoadmap/PDE/README.md\n'
+     'Roadmap: PDE\nEpsilonEridaniRoadmaps/PDE/README.md\n'
      '<!--epsiloneridani-target:v1 {"focus":"PDE","id":"target"}-->',
      TC, "roadmap/PDE"),
     ("declaration conflicts with citation", "feat: add theorem",
-     "Roadmap: PDE\nEpsilonEridaniRoadmap/ContourIntegration/README.md",
+     "Roadmap: PDE\nEpsilonEridaniRoadmaps/ContourIntegration/README.md",
      TC, "roadmap/Unknown"),
     ("none conflicts with marker", "refactor: general cleanup",
      'Roadmap: none\n<!--epsiloneridani-target:v1 {"focus":"PDE","id":"target"}-->',
@@ -86,10 +86,10 @@ CASES = [
 
     # 3. infra and pin-only overrides ------------------------------------------
     ("infra beats citation", "feat: add roadmap CI",
-     "advances EpsilonEridaniRoadmap/ContourIntegration/README.md", INFRA, "roadmap/none"),
+     "advances EpsilonEridaniRoadmaps/ContourIntegration/README.md", INFRA, "roadmap/none"),
     ("infra feat (website)", "feat: add site favicon", "", [".github/x", "web/y"],
      "roadmap/none"),
-    ("empty diff", "feat: something", "advances EpsilonEridaniRoadmap/PDE/README.md", [],
+    ("empty diff", "feat: something", "advances EpsilonEridaniRoadmaps/PDE/README.md", [],
      "roadmap/none"),
     ("pin-only bump", "chore: forward bump", "",
      ["lake-manifest.json", "lean-toolchain"], "roadmap/none"),
@@ -111,10 +111,10 @@ CASES = [
 
     # edge: non-canonical area token is ignored (no bogus label) ---------------
     ("unknown area token", "feat: add thing",
-     "advances EpsilonEridaniRoadmap/NotARoadmap/README.md", TC, "roadmap/Unknown"),
+     "advances EpsilonEridaniRoadmaps/NotARoadmap/README.md", TC, "roadmap/Unknown"),
     # edge: two areas cited -> no single roadmap to name, so Unknown -----------
     ("multi-area citation", "feat: add thing",
-     "spans EpsilonEridaniRoadmap/PDE/README.md and EpsilonEridaniRoadmap/Multiquadratic/README.md",
+     "spans EpsilonEridaniRoadmaps/PDE/README.md and EpsilonEridaniRoadmaps/Multiquadratic/README.md",
      TC, "roadmap/Unknown"),
 ]
 
@@ -128,6 +128,8 @@ def run_unit() -> int:
         print(f"  [{'ok' if ok else 'FAIL'}] {name}: {got}"
               + ("" if ok else f"  (expected {expected})"))
     # parse helper spot checks
+    assert rl.parse_cited_areas("EpsilonEridaniRoadmaps/PDE/README.md", AREAS) == {"PDE"}
+    # PR bodies written before the 2026-09-28 rename cite the singular directory.
     assert rl.parse_cited_areas("EpsilonEridaniRoadmap/PDE/README.md", AREAS) == {"PDE"}
     assert rl.parse_cited_areas("nothing here", AREAS) == set()
     assert rl.parse_target_areas(
@@ -144,7 +146,7 @@ def run_unit() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
         for directory in (
-            root / "EpsilonEridaniRoadmap" / "ContourIntegration",
+            root / "EpsilonEridaniRoadmaps" / "ContourIntegration",
             root / "Completed" / "EffectiveBounds",
         ):
             directory.mkdir(parents=True)

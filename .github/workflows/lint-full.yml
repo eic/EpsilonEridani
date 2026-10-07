@@ -93,8 +93,8 @@ jobs:
       # sorried declarations: EpsilonEridani/ may not import the roadmap/review trees.
       - name: Import-boundary guard (EpsilonEridani/ and EpsilonEridani.lean ⊬ roadmap/review)
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmap|EpsilonEridaniReview)\b' EpsilonEridani/ EpsilonEridani.lean; then
-            echo "::error::EpsilonEridani/ and EpsilonEridani.lean must not import EpsilonEridaniRoadmap or EpsilonEridaniReview"
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(EpsilonEridaniRoadmaps?|EpsilonEridaniReview)\b' EpsilonEridani/ EpsilonEridani.lean; then
+            echo "::error::EpsilonEridani/ and EpsilonEridani.lean must not import EpsilonEridaniRoadmaps or EpsilonEridaniReview"
             exit 1
           fi
 
@@ -251,7 +251,7 @@ jobs:
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: eic
           repositories: EpsilonEridani

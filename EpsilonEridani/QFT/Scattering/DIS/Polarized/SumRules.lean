@@ -6,7 +6,6 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
-public import EpsilonEridani.Meta.Linters.Sorry
 /-!
 
 # Polarized Sum Rules
@@ -17,7 +16,7 @@ This module states the polarized DIS sum rules as what they are: identities for 
 moments `Γ₁(Q²) = ∫₀¹ dx g₁(x, Q²)` and `Γ₂(Q²) = ∫₀¹ dx g₂(x, Q²)`.
 
 **Moment convention.** `firstMomentG1` and `firstMomentG2` carry weight `x⁰`: they are
-plain integrals over `[0, 1]`. In terms of `Physlib.Particles.Parton.PDF.mellinMoment`,
+plain integrals over `[0, 1]`. In terms of `EpsilonEridani.Particles.Parton.PDF.mellinMoment`,
 where `mellinMoment f n = ∫₀¹ dx xⁿ f`, that is `n = 0`. In terms of the literature's
 `n`-th moment `∫₀¹ dx xⁿ⁻¹ g`, it is `n = 1`. Every statement below uses the weight-`x⁰`
 convention and no other.
@@ -217,13 +216,13 @@ lemma integral_tail_swap
       measurableSet_lt measurable_const measurable_id
     have hset : Set.Icc (0 : ℝ) 1 ∩ {y : ℝ | x < y} = Set.Ioc x 1 := by
       ext y
-      simp only [Set.mem_inter_iff, Set.mem_Icc, Set.mem_setOf_eq, Set.mem_Ioc]
+      simp only [Set.mem_inter_iff, Set.mem_Icc, Set.mem_ofPred_eq, Set.mem_Ioc]
       exact ⟨fun h => ⟨h.2, h.1.2⟩, fun h => ⟨⟨hx.1.trans h.1.le, h.2⟩, h.1⟩⟩
-    show (∫ y in Set.Ioc x 1, G.g1 y Q2 / y)
+    change (∫ y in Set.Ioc x 1, G.g1 y Q2 / y)
         = ∫ y in Set.Icc (0 : ℝ) 1, (if x < y then G.g1 y Q2 / y else 0)
     rw [← hset, ← MeasureTheory.setIntegral_indicator hmeas]
     exact MeasureTheory.setIntegral_congr_fun hIcc fun y _ => by
-      by_cases h : x < y <;> simp [Set.indicator_apply, h]
+      by_cases h : x < y <;> simp [h]
   rw [MeasureTheory.setIntegral_congr_fun hIcc step1]
   -- (2) Fubini on the product of the two restricted measures.
   rw [MeasureTheory.integral_integral_swap hWW.prod_integrable]
@@ -233,15 +232,15 @@ lemma integral_tail_swap
     measurableSet_lt measurable_id measurable_const
   have hset2 : Set.Icc (0 : ℝ) 1 ∩ {x : ℝ | x < y} = Set.Ico 0 y := by
     ext x
-    simp only [Set.mem_inter_iff, Set.mem_Icc, Set.mem_setOf_eq, Set.mem_Ico]
+    simp only [Set.mem_inter_iff, Set.mem_Icc, Set.mem_ofPred_eq, Set.mem_Ico]
     exact ⟨fun h => ⟨h.1.1, h.2⟩, fun h => ⟨⟨h.1, h.2.le.trans hy.2⟩, h.2⟩⟩
-  show (∫ x in Set.Icc (0 : ℝ) 1, (if x < y then G.g1 y Q2 / y else 0))
+  change (∫ x in Set.Icc (0 : ℝ) 1, (if x < y then G.g1 y Q2 / y else 0))
       = G.g1 y Q2 / y * y
   have hind : (∫ x in Set.Icc (0 : ℝ) 1, (if x < y then G.g1 y Q2 / y else 0))
       = ∫ _x in Set.Icc (0 : ℝ) 1 ∩ {x : ℝ | x < y}, G.g1 y Q2 / y := by
     rw [← MeasureTheory.setIntegral_indicator hmeas2]
     exact MeasureTheory.setIntegral_congr_fun hIcc fun x _ => by
-      by_cases h : x < y <;> simp [Set.indicator_apply, h]
+      by_cases h : x < y <;> simp [h]
   rw [hind, hset2, MeasureTheory.setIntegral_const,
     Real.volume_real_Ico_of_le hy.1, sub_zero, smul_eq_mul, mul_comm]
 
@@ -335,18 +334,18 @@ lemma modelG1_div_eq_indicator (Q2 : ℝ) :
     (fun y : ℝ => modelStructureFunctions.g1 y Q2 / y)
       = Set.indicator (Set.Ioc (0 : ℝ) 1) (fun _ => (1 : ℝ)) := by
   funext y
-  show Set.indicator (Set.Icc (0 : ℝ) 1) id y / y
+  change Set.indicator (Set.Icc (0 : ℝ) 1) id y / y
       = Set.indicator (Set.Ioc (0 : ℝ) 1) (fun _ => (1 : ℝ)) y
   by_cases hy : y ∈ Set.Ioc (0 : ℝ) 1
   · have hmem : y ∈ Set.Icc (0 : ℝ) 1 := ⟨hy.1.le, hy.2⟩
     have hy0 : y ≠ 0 := hy.1.ne'
-    simp [Set.indicator_apply, hy, hmem, div_self hy0]
+    simp [hy, hmem, div_self hy0]
   · rcases lt_trichotomy y 0 with h | h | h
     · have hIcc : y ∉ Set.Icc (0 : ℝ) 1 := fun hm => absurd hm.1 (not_le.mpr h)
-      simp [Set.indicator_apply, hy, hIcc]
-    · simp [Set.indicator_apply, hy, h]
+      simp [hy, hIcc]
+    · simp [h]
     · have hIcc : y ∉ Set.Icc (0 : ℝ) 1 := fun hm => hy ⟨h, hm.2⟩
-      simp [Set.indicator_apply, hy, hIcc]
+      simp [hy, hIcc]
 
 /-- The Wandzura-Wilczek tail of the model in closed form:
 `∫_(x,1] dy g₁(y, Q²)/y = 1 - max x 0` for every `x ≤ 1`. -/
@@ -362,7 +361,7 @@ lemma integral_tail_modelG1 (Q2 : ℝ) {x : ℝ} (hx : x ≤ 1) :
 a continuous function. -/
 lemma integrable_modelG1 (Q2 : ℝ) :
     MeasureTheory.Integrable (fun x : ℝ => modelStructureFunctions.g1 x Q2) := by
-  show MeasureTheory.Integrable (Set.indicator (Set.Icc (0 : ℝ) 1) id)
+  change MeasureTheory.Integrable (Set.indicator (Set.Icc (0 : ℝ) 1) id)
   exact (MeasureTheory.integrable_indicator_iff measurableSet_Icc).mpr
     continuous_id.integrableOn_Icc
 
@@ -371,7 +370,7 @@ lemma integrable_modelG1 (Q2 : ℝ) :
 of the product measure are finite, so Fubini applies with no further hypothesis. -/
 lemma wandzuraWilczekAssumptions_modelStructureFunctions (Q2 : ℝ) :
     WandzuraWilczekAssumptions modelStructureFunctions Q2 := by
-  haveI hfin : MeasureTheory.IsFiniteMeasure
+  have hfin : MeasureTheory.IsFiniteMeasure
       (MeasureTheory.volume.restrict (Set.Icc (0 : ℝ) 1)) :=
     ⟨by rw [MeasureTheory.Measure.restrict_apply_univ]; exact isCompact_Icc.measure_lt_top⟩
   have hmeasF : Measurable (fun y : ℝ => modelStructureFunctions.g1 y Q2 / y) := by
@@ -383,8 +382,8 @@ lemma wandzuraWilczekAssumptions_modelStructureFunctions (Q2 : ℝ) :
           (fun p : ℝ × ℝ => modelStructureFunctions.g1 p.2 Q2 / p.2) := by
     funext p
     by_cases h : p.1 < p.2
-    · simp [Set.indicator_apply, h]
-    · simp [Set.indicator_apply, h]
+    · simp [h]
+    · simp [h]
   have hprodmeas : Measurable (fun p : ℝ × ℝ =>
       if p.1 < p.2 then modelStructureFunctions.g1 p.2 Q2 / p.2 else 0) := by
     rw [hifeq]
@@ -397,11 +396,11 @@ lemma wandzuraWilczekAssumptions_modelStructureFunctions (Q2 : ℝ) :
         = Set.indicator (Set.Ioc (0 : ℝ) 1) (fun _ => (1 : ℝ)) p.2 :=
       congrFun (modelG1_div_eq_indicator Q2) p.2
     by_cases h : p.1 < p.2
-    · rw [if_pos h, hval]
+    · rw [ite_eq_left h, hval]
       by_cases hm : p.2 ∈ Set.Ioc (0 : ℝ) 1
-      · simp [Set.indicator_apply, hm]
-      · simp [Set.indicator_apply, hm]
-    · rw [if_neg h]
+      · simp [hm]
+      · simp [hm]
+    · rw [ite_eq_right h]
       simp
   refine ⟨(integrable_modelG1 Q2).integrableOn, ?_, ?_⟩
   · have hcont : Continuous (fun x : ℝ => 1 - max x 0) :=
@@ -429,8 +428,8 @@ lemma assumptions_modelStructureFunctions : Assumptions modelStructureFunctions 
       rcases hx with h | h
       · exact fun hm => absurd hm.1 (not_le.mpr h)
       · exact fun hm => absurd hm.2 (not_le.mpr h)
-    show Set.indicator (Set.Icc (0 : ℝ) 1) id x = 0
-    simp [Set.indicator_apply, hIcc]
+    change Set.indicator (Set.Icc (0 : ℝ) 1) id x = 0
+    simp [hIcc]
   · intro x Q2 _
     rfl
   · intro Q2
@@ -458,8 +457,8 @@ lemma g2WW_modelStructureFunctions_of_neg {x : ℝ} (hx : x < 0) (Q2 : ℝ) :
   have hx1 : x ≤ 1 := by linarith
   have hg1 : modelStructureFunctions.g1 x Q2 = 0 := by
     have hIcc : x ∉ Set.Icc (0 : ℝ) 1 := fun hm => absurd hm.1 (not_le.mpr hx)
-    show Set.indicator (Set.Icc (0 : ℝ) 1) id x = 0
-    simp [Set.indicator_apply, hIcc]
+    change Set.indicator (Set.Icc (0 : ℝ) 1) id x = 0
+    simp [hIcc]
   simp only [g2WW]
   rw [hg1, integral_tail_modelG1 Q2 hx1, max_eq_right hx.le]
   ring

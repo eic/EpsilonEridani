@@ -124,7 +124,7 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the last published set
       # first makes "keep the previous one" true for the generated data too.
       - name: Restore the last published data assets
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: ${{ github.workspace }}/web/static_files
           # Always a miss, so the save below always writes a fresh entry; the prefix restores
@@ -142,17 +142,26 @@ jobs:
       # two commands. The deployed charts always come from this step, not from the repo.
       - name: Regenerate the lines-of-code charts into static_files
         working-directory: ${{ github.workspace }}
+        env:
+          # The first day of EpsilonEridani as a project; the charts start here.
+          PROJECT_START: "2026-09-25"
         run: |
+          # Both repositories were forked from Tau Ceti, so their histories reach back to
+          # Tau Ceti's first commit. The charts count EpsilonEridani from the project start
+          # instead, and only its own paths: the Tau Ceti library (TauCeti/) and roadmaps
+          # (TauCetiRoadmap/) are not counted at all. The roadmap directory was renamed from
+          # EpsilonEridaniRoadmap to EpsilonEridaniRoadmaps, so both names are listed.
           python3 scripts/loc_graph.py \
-            --repo . --ref HEAD \
-            --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
+            --repo . --ref HEAD --start "$PROJECT_START" \
+            --title "EpsilonEridani — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-epsiloneridani.svg \
-            EpsilonEridani EpsilonEridani.lean TauCeti TauCeti.lean
+            EpsilonEridani EpsilonEridani.lean
           python3 scripts/loc_graph.py \
-            --repo /tmp/roadmap --ref HEAD \
-            --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
+            --repo /tmp/roadmap --ref HEAD --start "$PROJECT_START" \
+            --title "EpsilonEridaniRoadmaps — lines written" --accent "#5eead4" \
             --out web/static_files/loc-roadmap.svg \
-            EpsilonEridaniRoadmap EpsilonEridaniRoadmap.lean TauCetiRoadmap TauCetiRoadmap.lean
+            EpsilonEridaniRoadmap EpsilonEridaniRoadmap.lean \
+            EpsilonEridaniRoadmaps EpsilonEridaniRoadmaps.lean
 
       # The per-roadmap chart is built from the PR labels (roadmap attribution is not in
       # git), so it queries gh rather than walking commits. A gh failure here must not sink
@@ -164,7 +173,7 @@ jobs:
         run: |
           python3 scripts/loc_roadmap_graph.py \
             --repo "${{ github.repository }}" \
-            --title "Tau Ceti — lines of Lean per roadmap" \
+            --title "EpsilonEridani — lines of Lean per roadmap" \
             --out web/static_files/loc-per-roadmap.svg \
           || {
             echo "::warning::per-roadmap chart generation failed; keeping the last published SVG"
@@ -197,7 +206,7 @@ jobs:
       # a depleted budget rather than giving up, so a cold start (first run, or an evicted entry)
       # still completes; it just costs an hour of waiting instead of three minutes.
       - name: Restore the previous pull-request snapshot
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/pr-snapshot.json
           # Always a miss, so the save below always writes a fresh entry; the prefix is what
@@ -243,7 +252,7 @@ jobs:
         # next run most of the walk, and the alternative is that one bad run condemns every later
         # one to a cold start.
         if: always() && steps.snapshot.outputs.present == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ${{ runner.temp }}/pr-snapshot.json
           key: pr-snapshot-${{ github.run_id }}
@@ -259,7 +268,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
-          ref: 1bcd4bf40636fee510157d7f02c8d58d99a4618f
+          ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
           path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
@@ -374,7 +383,7 @@ jobs:
       # optimisation against future outages, not a precondition for this deploy.
       - name: Save the data assets for the next run
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ${{ github.workspace }}/web/static_files
           key: site-data-v1-${{ github.run_id }}
@@ -483,7 +492,7 @@ jobs:
       # on runs that merely reused the docs. The save below runs only after an actual rebuild.
       - name: Restore the generated API docs
         id: docs-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: docbuild/.lake/build/doc
           key: docs-html-v2-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}
@@ -601,7 +610,7 @@ jobs:
 
       - name: Save the generated API docs
         if: steps.docs-plan.outputs.build == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: docbuild/.lake/build/doc
           key: docs-html-v2-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}
@@ -777,7 +786,7 @@ jobs:
         # deploy to the fallback -- publishing an OLDER site because the cache write for the
         # newer one did not go through.
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: web/_out
           key: site-out-v1-${{ github.run_id }}
@@ -821,7 +830,7 @@ jobs:
     steps:
       - name: Restore the last site that built
         id: last-good
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: web/_out
           # Normally a miss -- this run's own entry exists only if build-site got as far as saving

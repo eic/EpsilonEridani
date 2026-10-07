@@ -76,12 +76,12 @@ be restated with `‖·‖` in place of `|·|`. That is deliberately deferred.
 
 ## Main results
 
-- `Physlib.Particles.Parton.PDF.f1_nonneg`
-- `Physlib.Particles.Parton.PDF.abs_g1_le_f1`
-- `Physlib.Particles.Parton.PDF.soffer_bound`
-- `Physlib.Particles.Parton.PDF.pdfOfSpinDensity_nonneg`
-- `Physlib.Particles.Parton.PDF.assumptions_pdfOfSpinDensity`
-- `Physlib.Particles.Parton.PDF.spinDensityAssumptions_iff_assumptions`
+- `EpsilonEridani.Particles.Parton.PDF.f1_nonneg`
+- `EpsilonEridani.Particles.Parton.PDF.abs_g1_le_f1`
+- `EpsilonEridani.Particles.Parton.PDF.soffer_bound`
+- `EpsilonEridani.Particles.Parton.PDF.pdfOfSpinDensity_nonneg`
+- `EpsilonEridani.Particles.Parton.PDF.assumptions_pdfOfSpinDensity`
+- `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_iff_assumptions`
 
 -/
 

@@ -61,13 +61,12 @@
 # and true declaration kinds are visible. Calibration (2026-07, this file's PR):
 # module-style probes (`public import` and `import all`) both returned no docstring
 # for known-documented declarations, the legacy probe found 671/677 documented,
-# flagged a scratch undocumented `def` by name, and did not flag known-documented
-# `EpsilonEridani.GridDiagram.OSet`, `EpsilonEridani.Isotopy`,
-# `EpsilonEridani.AlgebraicGeometry.WeilDivisor.coeff`. Standing fail-closed guards (each
+# flagged a scratch undocumented `def` by name, and did not flag the known-documented
+# sentinel declarations (`DOCSCAN_SENTINELS` below). Standing fail-closed guards (each
 # with a distinct failure message, so a regression is diagnosable):
 #   * the scan echoes every scanned declaration as a `DOCSCAN-ALL <decl> <status>`
 #     line (tallies cross-checked against the nonce-protected summary);
-#   * the three known-documented sentinel declarations above, spread across the
+#   * the known-documented sentinel declarations (`DOCSCAN_SENTINELS`), spread across the
 #     library, must each be scanned AND seen as documented (full blindness sees no
 #     docstrings; PARTIAL blindness would silently narrow coverage);
 #   * every `docString` baseline entry must still appear among the scanned
@@ -444,7 +443,12 @@ nall_undoc=$(awk '$1 == "DOCSCAN-ALL" && $3 == "undocumented"' "$TMP/docscan.txt
   || fail "docstring scan scanned only $scanned declaration(s) (floor: 500): the scan's coverage collapsed — fix the scan, do not baseline this"
 # Sentinels: known-documented declarations spread across the library must be scanned
 # AND seen as documented; each failure mode is distinct (see the header comment).
-for sentinel in EpsilonEridani.GridDiagram.OSet EpsilonEridani.Isotopy EpsilonEridani.AlgebraicGeometry.WeilDivisor.coeff; do
+# The scan only enumerates declarations from `EpsilonEridani` modules, so every sentinel must
+# be a documented, non-instance, non-theorem declaration defined in `EpsilonEridani/`: a
+# dependency's declaration (e.g. from TauCeti or Physlib) is never scanned and always fails.
+# If a sentinel is renamed or removed, replace it with another such declaration.
+DOCSCAN_SENTINELS="EpsilonEridani.QFT.QCD.ColorFactors EpsilonEridani.Numerics.FourMom.dot EpsilonEridani.OrderedSimplex.orderedProdIntegral"
+for sentinel in $DOCSCAN_SENTINELS; do
   sentinel_status=$(awk -v d="$sentinel" '$1 == "DOCSCAN-ALL" && $2 == d { print $3 }' "$TMP/docscan.txt")
   case "$sentinel_status" in
     documented) : ;;

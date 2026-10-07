@@ -15,7 +15,7 @@ data taken in the DGLAP region: the D-term.
 
 ## Why this is a separate module
 
-The double-distribution representation of `Physlib.Particles.Parton.GPD.DoubleDistribution`
+The double-distribution representation of `EpsilonEridani.Particles.Parton.GPD.DoubleDistribution`
 writes a GPD as the sum of a Radon-type transform of a double distribution `F` and a
 D-term piece. The two pieces have *different supports in `x` at fixed `ξ`*: the D-term
 piece is a function of `x / ξ` supported on `|x / ξ| ≤ 1`, hence lives entirely inside the

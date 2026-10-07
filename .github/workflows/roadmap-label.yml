@@ -9,7 +9,7 @@ name: Roadmap label
 #                    human override), is a pin-only bump, or explicitly declares none
 #   roadmap/Unknown  missing, invalid, or conflicting association
 #
-# The area label is created on first use, so a roadmap added in EpsilonEridaniRoadmap becomes
+# The area label is created on first use, so a roadmap added in EpsilonEridaniRoadmaps becomes
 # labelable with no change here.
 #
 # Runs on pull_request_target so it can label PRs from forks, but it NEVER checks out or
@@ -39,7 +39,7 @@ jobs:
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: eic
           repositories: EpsilonEridani

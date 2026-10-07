@@ -10,12 +10,12 @@ def locGraphs : Html := {{
   <div class="loc-graphs">
     <figure class="loc-figure">
       <img class="loc-graph" src="static/loc-epsiloneridani.svg"
-           alt="Tau Ceti: lines of Lean by date"/>
+           alt="EpsilonEridani: lines of Lean by date"/>
       <figcaption>"The Lean library under " <code>"EpsilonEridani/"</code> ", total lines by date."</figcaption>
     </figure>
     <figure class="loc-figure">
       <img class="loc-graph" src="static/loc-roadmap.svg"
-           alt="Tau Ceti Roadmap: lines written by date"/>
+           alt="EpsilonEridaniRoadmaps: lines written by date"/>
       <figcaption>"The human-owned roadmap repository, total lines by date."</figcaption>
     </figure>
   </div>
@@ -28,7 +28,7 @@ so it too needs no committed state. Embedded as a raw HTML blob pointing at the 
 def roadmapGraph : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/loc-per-roadmap.svg"
-         alt="Tau Ceti: cumulative net lines of Lean per roadmap, over time"/>
+         alt="EpsilonEridani: cumulative net lines of Lean per roadmap, over time"/>
     <figcaption>"Net lines added or refactored per roadmap, stacked, by the date each PR merged."</figcaption>
   </figure>
 }}
@@ -41,7 +41,7 @@ default-branch commit contributors. -/
 private def participationGraph : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/participation.svg"
-         alt="Participation across the four Tau Ceti repositories, by repository"/>
+         alt="Participation across the EpsilonEridani repositories, by repository"/>
     <figcaption>"Participating accounts by repository, once recognised automation is excluded; an account active in several repositories appears in several bars."</figcaption>
   </figure>
 }}
@@ -109,7 +109,7 @@ private def roadmapContributorGraphs : Html := {{
 
 #doc (Page) "Statistics" =>
 
-How much mathematics has Tau Ceti formalized, and how fast is the roadmap that
+How much physics has EpsilonEridani formalized, and how fast is the roadmap that
 directs it growing? Each chart plots the total number of lines present at every
 commit, counted straight from the git history and rebuilt from scratch at each
 deploy, so the figures cannot drift.
@@ -152,7 +152,7 @@ when those review-state transitions first appear in project history.
 
 Who has taken part? The snapshot below counts GitHub accounts that have
 opened a pull request or issue, participated in those conversations (including
-reviews), or authored a commit on the default branch of EpsilonEridani, EpsilonEridaniRoadmap,
+reviews), or authored a commit on the default branch of EpsilonEridani, EpsilonEridaniRoadmaps,
 EpsilonEridaniWorker, or EpsilonEridaniReview. Accounts recognised as automation are dropped:
 logins carrying GitHub's `[bot]` suffix, together with the project's own automation
 aliases. Nothing verifies that the accounts left over belong to people, so any

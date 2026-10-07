@@ -1,0 +1,65 @@
+name: Restore dependency builds
+description: >-
+  Restore the trusted GitHub Actions snapshot of the compiled outputs of every non-Mathlib
+  dependency (Physlib, TauCeti, and any package added to the manifest later) and unpack it into
+  the project's fetched package checkouts.
+
+# Mathlib's cache tool restores Mathlib and the packages Mathlib itself depends on; every other
+# dependency used to be compiled from source on every build (Physlib alone was ~1,500 CPU-seconds
+# of each PR build). scripts/dependency_builds.py packs those packages' `.lake/build` trees into
+# one archive and validates it before unpacking; Lake still compares every module's trace, so a
+# stale output after a pin bump is rebuilt, never trusted.
+#
+# The archive lives at a fixed path under RUNNER_TEMP because actions/cache hashes the `path`
+# input into the entry's version: ci.yml builds at the repository root and pr-build under pr/,
+# so caching the package directories themselves would never match across the two.
+#
+# Only ci.yml on main saves this cache (see its "Save dependency builds" step); pr-build and the
+# merge queue restore it read-only. Must run after the dependency checkouts exist, i.e. after
+# `lake exe cache get`, and before the build.
+
+inputs:
+  project-dir:
+    description: Directory containing lean-toolchain, lake-manifest.json and the fetched .lake/packages.
+    required: true
+outputs:
+  cache-hit:
+    description: Whether the exact toolchain and manifest key was restored.
+    value: ${{ steps.restore.outputs.cache-hit }}
+  cache-primary-key:
+    description: Exact key to use when the trusted main workflow saves a new snapshot.
+    value: ${{ steps.restore.outputs.cache-primary-key }}
+  archive:
+    description: Path of the archive the restore reads and the save step writes.
+    value: ${{ steps.archive.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Select the dependency-build archive path
+      id: archive
+      shell: bash
+      run: echo "path=$RUNNER_TEMP/dependency-builds.tar" >> "$GITHUB_OUTPUT"
+
+    - name: Restore dependency builds
+      id: restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ steps.archive.outputs.path }}
+        key: dependency-builds-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/lean-toolchain', inputs.project-dir)) }}-${{ hashFiles(format('{0}/lake-manifest.json', inputs.project-dir)) }}
+        restore-keys: |
+          dependency-builds-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/lean-toolchain', inputs.project-dir)) }}-
+
+    # Best-effort: a refused or unreadable archive leaves the checkouts untouched (the script
+    # validates every member before extracting any) and the build compiles from source as before.
+    - name: Unpack dependency builds
+      if: ${{ steps.restore.outputs.cache-matched-key != '' }}
+      shell: bash
+      env:
+        PROJECT_DIR: ${{ inputs.project-dir }}
+        ARCHIVE: ${{ steps.archive.outputs.path }}
+        SCRIPT: ${{ github.action_path }}/../../../scripts/dependency_builds.py
+      run: |
+        if ! python3 "$SCRIPT" unpack "$PROJECT_DIR" "$ARCHIVE"; then
+          echo "::warning::dependency-build archive refused or unreadable; compiling dependencies from source"
+        fi

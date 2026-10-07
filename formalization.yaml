@@ -18,7 +18,7 @@ project:
 
 # sources - what was formalized.
 # Tau Ceti has no single fixed source. Its specification is its own
-# human-authored, human-reviewed roadmaps in the EpsilonEridaniRoadmap repo, which play the role
+# human-authored, human-reviewed roadmaps in the EpsilonEridaniRoadmaps repo, which play the role
 # of blueprints and themselves cite the mathematical literature.
 sources:                       # [required] list of sources
   - title: "Tau Ceti roadmaps (human-curated)"   # [required]
@@ -41,7 +41,7 @@ automation:
   notes: >
     Open, multi-agent library. AIs own the code under EpsilonEridani/: they initiate pull
     requests and shepherd them through an AI-driven review process. Humans own the
-    roadmaps (the EpsilonEridaniRoadmap repo: markdown plus sorry-allowed Lean target signatures)
+    roadmaps (the EpsilonEridaniRoadmaps repo: markdown plus sorry-allowed Lean target signatures)
     and the review rubrics (the EpsilonEridaniReview repo), and may raise issues against the code.
     The human/AI split is enforced by CODEOWNERS and branch protection; the main
     branch is always green. No single harness or model is mandated.
@@ -85,7 +85,7 @@ review:
 # alignment - how source statements map to formal declarations.
 alignment:
   note: >
-    The human-authored roadmaps in the EpsilonEridaniRoadmap repo are the closest thing to a
+    The human-authored roadmaps in the EpsilonEridaniRoadmaps repo are the closest thing to a
     blueprint. Each roadmap (e.g. UniversalCovers, JacobianChallenge, ReductiveGroups)
     states its goals as sorry-allowed signatures in its Suggested.lean; the matching
     sorry-free development lives (or will live) under EpsilonEridani/.

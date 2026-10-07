@@ -15,7 +15,7 @@ public import EpsilonEridani.Numerics.FourMom
 ## Correspondence with the `ℝ` definitions
 
 Each definition here is a transcription of one in
-`Physlib.QFT.Scattering.DIS.Kinematics.Basic`, which works over an abstract bilinear form
+`EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic`, which works over an abstract bilinear form
 `g : Bilin V`.  Taking `g` to be the Minkowski product, the correspondence is:
 
 | here | there | definition |
