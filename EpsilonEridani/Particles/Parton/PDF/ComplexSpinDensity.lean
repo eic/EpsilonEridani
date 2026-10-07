@@ -15,13 +15,14 @@ amplitudes form a hermitian positive-semidefinite `4 × 4` complex matrix in the
 `idxPP, idxPM, idxMP, idxMM` of `EpsilonEridani.Particles.Parton.PDF.SpinDensity`. This module
 introduces that matrix, `SpinDensityC`, and reads the leading-twist triple off it:
 
-* the unpolarised density `f₁` and the helicity density `Δq` (`SpinDensityC.f1`,
+* the unpolarized density `f₁` and the helicity density `Δq` (`SpinDensityC.f1`,
   `SpinDensityC.deltaQ`) are the same combinations of diagonal entries as in the real case, and
   are real because the diagonal of a hermitian matrix is real (`SpinDensityC.ofReal_f1`,
   `SpinDensityC.ofReal_deltaQ`);
 * transversity `h₁` (`SpinDensityC.transversity`) is the double-helicity-flip entry, which is a
   complex number in general and is real under time-reversal invariance
-  (`SpinDensityC.IsTimeReversalInvariant.im_transversity`).
+  (`SpinDensityC.IsTimeReversalInvariant.im_transversity`) and under parity invariance
+  (`SpinDensityC.IsParityInvariant.im_transversity`).
 
 Time reversal is antiunitary, and in the helicity basis it acts on the forward amplitudes by
 complex conjugation, so `SpinDensityC.IsTimeReversalInvariant` says that the matrix is fixed by
@@ -89,7 +90,7 @@ variable (ρ : SpinDensityC)
 lemma ofReal_re_mat_apply_self (i : Fin 4) : ((ρ.mat i i).re : ℂ) = ρ.mat i i :=
   ρ.posSemidef.1.coe_re_apply_self i
 
-/-- The unpolarised leading-twist density `f₁`, the helicity average of the diagonal number
+/-- The unpolarized leading-twist density `f₁`, the helicity average of the diagonal number
 densities. At fixed `(x, Q²)`. -/
 def f1 : ℝ :=
   ((ρ.mat idxPP idxPP).re + (ρ.mat idxPM idxPM).re + (ρ.mat idxMP idxMP).re
@@ -161,23 +162,46 @@ theorem soffer_bound : 2 * ‖ρ.transversity‖ ≤ ρ.f1 + ρ.deltaQ := by
 
 /-! ### Parity -/
 
-/-- Parity invariance of the helicity-amplitude matrix: reversing both helicities leaves a
-diagonal entry unchanged. As for the real `SpinDensity`, this is a hypothesis to be supplied,
-not a field, because the Soffer bound does not need it. -/
+/-- Parity invariance of the helicity-amplitude matrix: reversing every helicity leaves every
+entry unchanged, `A_{Λλ,Λ'λ'} = A_{-Λ-λ,-Λ'-λ'}`. In the basis order `idxPP, idxPM, idxMP, idxMM`,
+reversing both helicities of a basis index is `Fin.rev`. As for the real `SpinDensity`, this is a
+hypothesis to be supplied, not a field, because the Soffer bound does not need it.
+
+Unlike the real `IsParityInvariant`, which records only its diagonal content, this constrains the
+off-diagonal entries too; with hermiticity it makes transversity real
+(`IsParityInvariant.im_transversity`). -/
 def IsParityInvariant : Prop :=
-  ρ.mat idxMM idxMM = ρ.mat idxPP idxPP ∧ ρ.mat idxMP idxMP = ρ.mat idxPM idxPM
+  ∀ i j, ρ.mat i.rev j.rev = ρ.mat i j
+
+/-- Under parity invariance the two aligned diagonal entries are equal. -/
+lemma IsParityInvariant.mat_idxMM_idxMM {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
+    ρ.mat idxMM idxMM = ρ.mat idxPP idxPP :=
+  h idxPP idxPP
+
+/-- Under parity invariance the two anti-aligned diagonal entries are equal. -/
+lemma IsParityInvariant.mat_idxMP_idxMP {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
+    ρ.mat idxMP idxMP = ρ.mat idxPM idxPM :=
+  h idxPM idxPM
 
 /-- Under parity invariance `f₁` reduces to the single-nucleon-helicity expression
 `q_{+/+} + q_{−/+}`. -/
 lemma f1_eq_of_parityInvariant (h : ρ.IsParityInvariant) :
     ρ.f1 = (ρ.mat idxPP idxPP).re + (ρ.mat idxPM idxPM).re := by
-  rw [f1, h.1, h.2]; ring
+  rw [f1, h.mat_idxMM_idxMM, h.mat_idxMP_idxMP]; ring
 
 /-- Under parity invariance `Δq` reduces to the single-nucleon-helicity expression
 `q_{+/+} - q_{−/+}`. -/
 lemma deltaQ_eq_of_parityInvariant (h : ρ.IsParityInvariant) :
     ρ.deltaQ = (ρ.mat idxPP idxPP).re - (ρ.mat idxPM idxPM).re := by
-  rw [deltaQ, h.1, h.2]; ring
+  rw [deltaQ, h.mat_idxMM_idxMM, h.mat_idxMP_idxMP]; ring
+
+/-- Under parity invariance transversity is real: parity identifies the double-flip entry with
+its transpose, which hermiticity identifies with its conjugate. -/
+lemma IsParityInvariant.im_transversity {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
+    ρ.transversity.im = 0 := by
+  have hconj : conj (ρ.mat idxMM idxPP) = ρ.mat idxPP idxMM := ρ.posSemidef.1.apply idxPP idxMM
+  rw [← h idxMM idxPP] at hconj
+  exact Complex.conj_eq_iff_im.mp hconj
 
 /-! ### Time reversal and the real specialisation -/
 
@@ -316,6 +340,21 @@ theorem exists_not_isTimeReversalInvariant :
   · rw [hI, f1_add_deltaQ]
     simp [ρ, v, idxPP, idxMM, vecMulVec_apply]
     norm_num
+
+/-- **Parity does not imply time reversal.** The rank-one matrix `v vᴴ` with
+`v = (1, i, i, 1)` is parity invariant, because `v` is unchanged by reversing every helicity, but
+its `idxPP, idxPM` entry is `-i`, so it is not time-reversal invariant. Its transversity is `1`,
+real as `IsParityInvariant.im_transversity` requires. -/
+theorem exists_isParityInvariant_not_isTimeReversalInvariant :
+    ∃ ρ : SpinDensityC, ρ.IsParityInvariant ∧ ¬ ρ.IsTimeReversalInvariant ∧
+      ρ.transversity = 1 := by
+  let v : Fin 4 → ℂ := ![1, Complex.I, Complex.I, 1]
+  let ρ : SpinDensityC := ⟨vecMulVec v (star v), posSemidef_vecMulVec_self_star v⟩
+  refine ⟨ρ, fun i j => ?_, fun h => ?_, ?_⟩
+  · fin_cases i <;> fin_cases j <;> simp [ρ, v, vecMulVec_apply]
+  · simpa [ρ, v, idxPP, idxPM, vecMulVec_apply] using
+      (ρ.isTimeReversalInvariant_iff_forall_im_eq_zero.mp h) idxPP idxPM
+  · simp [ρ, v, transversity_def, idxPP, idxMM]
 
 end SpinDensityC
 
