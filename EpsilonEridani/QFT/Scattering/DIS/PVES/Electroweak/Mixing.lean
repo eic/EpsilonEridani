@@ -59,7 +59,7 @@ namespace PVES
 namespace Electroweak
 
 open _root_.Matrix Real
-open EpsilonEridani.Matrix (rotation rotation_mulVec)
+open EpsilonEridani.Matrix (rotation rotation_def)
 
 /-!
 ## The neutral mass matrix
@@ -84,11 +84,11 @@ theorem neutralMassMatrix_eq_smul_fin_two (g g' v : ℝ) :
 
 /-- The neutral mass matrix applied to a field configuration `w = (w₀, w₁)` in the basis
 `(W³, B)`. -/
+@[simp]
 theorem neutralMassMatrix_mulVec (g g' v : ℝ) (w : Fin 2 → ℝ) :
     neutralMassMatrix g g' v *ᵥ w = ((v ^ 2 / 4) * (g * w 0 - g' * w 1)) • ![g, -g'] := by
-  rw [neutralMassMatrix_def, smul_mulVec, vecMulVec_mulVec, op_smul_eq_smul,
-    smul_smul, vec2_dotProduct, cons_val_zero, cons_val_one, cons_val_zero, neg_mul,
-    ← sub_eq_add_neg]
+  ext i
+  fin_cases i <;> simp [neutralMassMatrix_def, mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- **Exactly one massless neutral combination.** For a nonzero vacuum expectation value and
 couplings not both zero, a combination of `W³` and `B` is massless if and only if it is a
@@ -129,11 +129,10 @@ theorem rotation_conj_neutralMassMatrix (g g' v θ : ℝ) :
     rotation θ * neutralMassMatrix g g' v * (rotation θ)ᵀ =
       (v ^ 2 / 4) • vecMulVec ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ]
         ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ] := by
-  have hR : rotation θ *ᵥ ![g, -g'] = ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ] := by
-    rw [rotation_mulVec, cons_val_zero, cons_val_one, cons_val_zero]
-    exact vec2_eq (by ring) (by ring)
-  rw [neutralMassMatrix_def, Matrix.mul_smul, Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul,
-    vecMul_transpose, hR]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [neutralMassMatrix_def, rotation_def, mul_apply, Fin.sum_univ_two, vecHead, vecTail] <;>
+    ring
 
 /-- The diagonal `(1,1)` entry of the neutral mass matrix in the basis rotated by `θ`, the
 mass-squared coefficient of the second rotated field. It is the photon mass-squared exactly when
@@ -141,7 +140,8 @@ mass-squared coefficient of the second rotated field. It is the photon mass-squa
 theorem rotation_conj_neutralMassMatrix_one_one (g g' v θ : ℝ) :
     (rotation θ * neutralMassMatrix g g' v * (rotation θ)ᵀ) 1 1 =
       v ^ 2 / 4 * (g * sin θ - g' * cos θ) ^ 2 := by
-  simp [rotation_conj_neutralMassMatrix, sq]
+  rw [rotation_conj_neutralMassMatrix]
+  simp [sq]
 
 /-- If `g sin θ = g' cos θ`, the rotation by `θ` brings the neutral mass matrix to
 `diag(v²(g² + g'²)/4, 0)`, with the second rotated field massless. -/
@@ -220,9 +220,11 @@ theorem cos_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
 /-- `sin θ_W = g'/√(g² + g'²)` for a positive `SU(2)` coupling. -/
 theorem sin_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
     sin (weakMixingAngle g g') = g' / √(g ^ 2 + g' ^ 2) := by
-  rw [← div_mul_cancel₀ (sin _) (cos_pos_of_mem_Ioo (weakMixingAngle_mem_Ioo g g')).ne',
-    ← tan_eq_sin_div_cos, tan_weakMixingAngle, cos_weakMixingAngle hg,
-    div_mul_div_cancel₀ hg.ne']
+  have hs : 0 < √(g ^ 2 + g' ^ 2) := by positivity
+  have ht := tan_weakMixingAngle g g'
+  rw [tan_eq_sin_div_cos, cos_weakMixingAngle hg] at ht
+  field_simp at ht ⊢
+  linear_combination ht
 
 /-- **From the couplings to the angle.** For `g ≠ 0` and `θ ∈ (-π/2, π/2)`, the relation
 `g sin θ = g' cos θ` holds exactly at `θ = θ_W = arctan (g'/g)`. -/
@@ -253,8 +255,9 @@ theorem rotation_conj_neutralMassMatrix_eq_diagonal_iff {g g' v θ : ℝ} (hv : 
   rw [rotation_conj_neutralMassMatrix_eq_diagonal_iff_mul_sin_eq_mul_cos hv,
     mul_sin_eq_mul_cos_iff_eq_weakMixingAngle hg hθ]
 
-/-- The rotation by the weak mixing angle diagonalises the neutral mass matrix, leaving the
-`Z` with mass-squared `v²(g² + g'²)/4` and the photon massless. -/
+/-- For a nonzero `SU(2)` coupling, the rotation by the weak mixing angle diagonalises the
+neutral mass matrix, leaving the `Z` with mass-squared `v²(g² + g'²)/4` and the photon
+massless. -/
 theorem rotation_weakMixingAngle_conj_neutralMassMatrix_eq_diagonal {g : ℝ} (hg : g ≠ 0)
     (g' v : ℝ) :
     rotation (weakMixingAngle g g') * neutralMassMatrix g g' v *
