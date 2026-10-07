@@ -72,7 +72,7 @@ def extendByZero (f : Frag Hadron Flavor) : Frag Hadron Flavor :=
 /-- Unfolding lemma for `extendByZero`. -/
 lemma extendByZero_def (f : Frag Hadron Flavor) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
     extendByZero f h i z Q2 = (Icc (0 : ℝ) 1).indicator (fun z => f h i z Q2) z :=
-  rfl
+  (rfl)
 
 /-- On the unit interval, `extendByZero f` agrees with `f`. -/
 @[simp]
