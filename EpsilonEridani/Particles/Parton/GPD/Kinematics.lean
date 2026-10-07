@@ -5,7 +5,6 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.Causality.BasicExtensions
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 
 /-!
@@ -22,20 +21,21 @@ momentum `a` is `a⁺ = ⟪n, a⟫ₘ`, and both hadrons carry positive plus-mom
 variables are
 
 * the average momentum `P = (p + p') / 2` and the momentum transfer `Δ = p' - p`,
-* the invariant `t = Δ²`,
+* the invariant `tMom = t = Δ²`,
 * the skewness `ξ = -Δ⁺ / (2 P⁺)`, so that `p⁺ = (1 + ξ) P⁺` and `p'⁺ = (1 - ξ) P⁺`.
 
 The main results are:
 
 * `OffForwardKinematics.abs_skewness_lt_one`: positivity of both plus-momenta gives `|ξ| < 1`.
-* `OffForwardKinematics.one_sub_sq_mul_t_add`: the covariant form of
-  `t = -(4 ξ² M² + Δ⊥²) / (1 - ξ²)`, namely `(1 - ξ²) t + 4 ξ² M² = ⟪w, w⟫ₘ` for the vector
-  `w = Δ + 2 ξ P`, which is orthogonal to `n` and plays the role of the transverse momentum
-  transfer (`⟪w, w⟫ₘ = -Δ⊥²` in a frame where `P` has no transverse component).
-* `OffForwardKinematics.t_le_tMin`: the bound `t ≤ t₀(ξ) = -4 ξ² M² / (1 - ξ²) ≤ 0`.
-* `OffForwardKinematics.range_skewness_t`: in at least two spatial dimensions the set of
+* `OffForwardKinematics.minkowskiProduct_transverseDelta_self`: the covariant form of
+  `t = -(4 ξ² M² + Δ⊥²) / (1 - ξ²)`, namely `⟪w, w⟫ₘ = (1 - ξ²) t + 4 ξ² M²` for the vector
+  `w = transverseDelta = Δ + 2 ξ P`, which is orthogonal to `n` and plays the role of the
+  transverse momentum transfer (`⟪w, w⟫ₘ = -Δ⊥²` in a frame where `P` has no transverse
+  component).
+* `OffForwardKinematics.tMom_le_tZero`: the bound `t ≤ t₀(ξ) = -4 ξ² M² / (1 - ξ²) ≤ 0`.
+* `OffForwardKinematics.range_skewness_tMom`: in at least two spatial dimensions the set of
   attainable pairs `(ξ, t)` is exactly `physicalRegion M = {(ξ, t) | |ξ| < 1 ∧ t ≤ t₀(ξ)}`; in
-  particular `t₀(ξ)` is attained (`isGreatest_tMin`), and the region is non-empty.
+  particular `t₀(ξ)` is attained (`isGreatest_tZero`), and the region is non-empty.
 
 The bound `t ≤ t₀(ξ)` is why `|t|` cannot be taken to zero at non-zero skewness, and hence why
 the impact-parameter interpretation of a generalized parton distribution is clean only at
@@ -65,41 +65,43 @@ namespace GPD
 open Lorentz Lorentz.Vector
 
 /-- The minimal momentum transfer `t₀(ξ) = -4 ξ² M² / (1 - ξ²)` of an elastic transition of a
-hadron of mass `M` at skewness `ξ`. It is the largest value of `t` (the smallest value of `|t|`)
-compatible with the kinematics, see `OffForwardKinematics.isGreatest_tMin`. -/
-def tMin (M ξ : ℝ) : ℝ := -4 * ξ ^ 2 * M ^ 2 / (1 - ξ ^ 2)
+hadron of mass `M` at skewness `ξ`. For `|ξ| < 1` and in at least two spatial dimensions it is
+the largest value of `t` (the smallest value of `|t|`) compatible with the kinematics, see
+`OffForwardKinematics.isGreatest_tZero`. -/
+def tZero (M ξ : ℝ) : ℝ := -4 * ξ ^ 2 * M ^ 2 / (1 - ξ ^ 2)
 
-lemma tMin_def (M ξ : ℝ) : tMin M ξ = -4 * ξ ^ 2 * M ^ 2 / (1 - ξ ^ 2) := (rfl)
-
-@[simp]
-lemma tMin_zero_right (M : ℝ) : tMin M 0 = 0 := by
-  simp [tMin]
+lemma tZero_def (M ξ : ℝ) : tZero M ξ = -4 * ξ ^ 2 * M ^ 2 / (1 - ξ ^ 2) := (rfl)
 
 @[simp]
-lemma tMin_neg (M ξ : ℝ) : tMin M (-ξ) = tMin M ξ := by
-  simp [tMin]
+lemma tZero_zero_right (M : ℝ) : tZero M 0 = 0 := by
+  simp [tZero]
+
+@[simp]
+lemma tZero_neg_right (M ξ : ℝ) : tZero M (-ξ) = tZero M ξ := by
+  simp [tZero]
 
 /-- The minimal momentum transfer is non-positive in the physical range `|ξ| < 1`. -/
-lemma tMin_nonpos (M : ℝ) {ξ : ℝ} (hξ : |ξ| < 1) : tMin M ξ ≤ 0 := by
+lemma tZero_nonpos (M : ℝ) {ξ : ℝ} (hξ : |ξ| < 1) : tZero M ξ ≤ 0 := by
   have h : 0 < 1 - ξ ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one ξ).mpr hξ)
-  rw [tMin]
+  rw [tZero]
   exact div_nonpos_of_nonpos_of_nonneg (by nlinarith [sq_nonneg (ξ * M)]) h.le
 
 /-- For `|ξ| < 1`, `t ≤ t₀(ξ)` is equivalent to `(1 - ξ²) t + 4 ξ² M² ≤ 0`. -/
-lemma le_tMin_iff (M : ℝ) {ξ : ℝ} (hξ : |ξ| < 1) (t : ℝ) :
-    t ≤ tMin M ξ ↔ (1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2 ≤ 0 := by
+lemma le_tZero_iff (M : ℝ) {ξ : ℝ} (hξ : |ξ| < 1) (t : ℝ) :
+    t ≤ tZero M ξ ↔ (1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2 ≤ 0 := by
   have h : 0 < 1 - ξ ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one ξ).mpr hξ)
-  rw [tMin, le_div_iff₀ h]
+  rw [tZero, le_div_iff₀ h]
   constructor <;> intro h' <;> linarith
 
 /-- The physical region of the off-forward variables `(ξ, t)` for a hadron of mass `M`: the
-skewness satisfies `|ξ| < 1` and the momentum transfer satisfies `t ≤ t₀(ξ)`. By
-`OffForwardKinematics.range_skewness_t` it is exactly the set of attainable pairs. -/
-def physicalRegion (M : ℝ) : Set (ℝ × ℝ) := {q | |q.1| < 1 ∧ q.2 ≤ tMin M q.1}
+skewness satisfies `|ξ| < 1` and the momentum transfer satisfies `t ≤ t₀(ξ)`. In at least two
+spatial dimensions it is exactly the set of attainable pairs
+(`OffForwardKinematics.range_skewness_tMom`). -/
+def physicalRegion (M : ℝ) : Set (ℝ × ℝ) := {q | |q.1| < 1 ∧ q.2 ≤ tZero M q.1}
 
 @[simp]
 lemma mem_physicalRegion_iff (M : ℝ) (q : ℝ × ℝ) :
-    q ∈ physicalRegion M ↔ |q.1| < 1 ∧ q.2 ≤ tMin M q.1 := Iff.rfl
+    q ∈ physicalRegion M ↔ |q.1| < 1 ∧ q.2 ≤ tZero M q.1 := Iff.rfl
 
 lemma physicalRegion_nonempty (M : ℝ) : (physicalRegion M).Nonempty :=
   ⟨0, by simp⟩
@@ -142,14 +144,21 @@ def delta : Vector d := K.p' - K.p
 lemma delta_def : K.delta = K.p' - K.p := (rfl)
 
 /-- The invariant momentum transfer `t = Δ²`. -/
-def t : ℝ := ⟪K.delta, K.delta⟫ₘ
+def tMom : ℝ := ⟪K.delta, K.delta⟫ₘ
 
-lemma t_def : K.t = ⟪K.delta, K.delta⟫ₘ := (rfl)
+lemma tMom_def : K.tMom = ⟪K.delta, K.delta⟫ₘ := (rfl)
 
 /-- The skewness `ξ = -Δ⁺ / (2 P⁺)`, with plus-components taken along `n`. -/
 def skewness : ℝ := -⟪K.n, K.delta⟫ₘ / (2 * ⟪K.n, K.avgMomentum⟫ₘ)
 
 lemma skewness_def : K.skewness = -⟪K.n, K.delta⟫ₘ / (2 * ⟪K.n, K.avgMomentum⟫ₘ) := (rfl)
+
+/-- The transverse momentum transfer `w = Δ + 2 ξ P`, the part of `Δ` with vanishing
+plus-component (`minkowskiProduct_n_transverseDelta_eq_zero`). -/
+def transverseDelta : Vector d := K.delta + (2 * K.skewness) • K.avgMomentum
+
+lemma transverseDelta_def : K.transverseDelta = K.delta + (2 * K.skewness) • K.avgMomentum :=
+  (rfl)
 
 lemma p_eq_avgMomentum_sub : K.p = K.avgMomentum - (2⁻¹ : ℝ) • K.delta := by
   rw [avgMomentum_def, delta_def]
@@ -214,59 +223,66 @@ lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫�
   simp [h, K.minkowskiProduct_p_self, K.minkowskiProduct_p'_self]
 
 /-- The invariant mass of the average momentum, `P² = M² - t / 4`. -/
-lemma minkowskiProduct_avgMomentum_self : ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.t / 4 := by
+lemma minkowskiProduct_avgMomentum_self :
+    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 := by
   have h := K.minkowskiProduct_p_self
   rw [p_eq_avgMomentum_sub] at h
   simp only [map_sub, map_smul, _root_.sub_apply, _root_.smul_apply,
     smul_eq_mul] at h
   rw [minkowskiProduct_symm K.delta K.avgMomentum,
     K.minkowskiProduct_avgMomentum_delta_eq_zero] at h
-  rw [t_def]
+  rw [tMom_def]
   linarith
 
-/-- The vector `w = Δ + 2 ξ P` has vanishing plus-component. -/
-lemma minkowskiProduct_n_delta_add_eq_zero :
-    ⟪K.n, K.delta + (2 * K.skewness) • K.avgMomentum⟫ₘ = 0 := by
+/-- The plus-component of the momentum transfer is `Δ⁺ = -2 ξ P⁺`. -/
+lemma minkowskiProduct_n_delta_eq :
+    ⟪K.n, K.delta⟫ₘ = -(2 * K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
   have h := K.minkowskiProduct_n_avgMomentum_pos
-  rw [map_add, map_smul, smul_eq_mul, skewness_def]
+  rw [skewness_def]
   field_simp
+
+/-- The transverse momentum transfer `w = Δ + 2 ξ P` has vanishing plus-component. -/
+lemma minkowskiProduct_n_transverseDelta_eq_zero : ⟪K.n, K.transverseDelta⟫ₘ = 0 := by
+  rw [transverseDelta_def, map_add, map_smul, smul_eq_mul, minkowskiProduct_n_delta_eq]
   ring
 
 /-- The covariant form of `t = -(4 ξ² M² + Δ⊥²) / (1 - ξ²)`: for `w = Δ + 2 ξ P`,
-`(1 - ξ²) t + 4 ξ² M² = ⟪w, w⟫ₘ`. -/
-lemma one_sub_sq_mul_t_add :
-    (1 - K.skewness ^ 2) * K.t + 4 * K.skewness ^ 2 * M ^ 2 =
-      ⟪K.delta + (2 * K.skewness) • K.avgMomentum,
-        K.delta + (2 * K.skewness) • K.avgMomentum⟫ₘ := by
-  simp only [minkowskiProduct_add_self, minkowskiProduct_smul_self,
+`⟪w, w⟫ₘ = (1 - ξ²) t + 4 ξ² M²`. -/
+lemma minkowskiProduct_transverseDelta_self :
+    ⟪K.transverseDelta, K.transverseDelta⟫ₘ =
+      (1 - K.skewness ^ 2) * K.tMom + 4 * K.skewness ^ 2 * M ^ 2 := by
+  simp only [transverseDelta_def, minkowskiProduct_add_self, minkowskiProduct_smul_self,
     K.minkowskiProduct_avgMomentum_self]
   simp only [map_smul, smul_eq_mul, minkowskiProduct_symm K.delta K.avgMomentum,
-    K.minkowskiProduct_avgMomentum_delta_eq_zero, t_def]
+    K.minkowskiProduct_avgMomentum_delta_eq_zero, tMom_def]
   ring
 
 /-- The momentum transfer is bounded by the minimal momentum transfer, `t ≤ t₀(ξ)`. -/
-theorem t_le_tMin : K.t ≤ tMin M K.skewness := by
-  rw [le_tMin_iff M K.abs_skewness_lt_one, one_sub_sq_mul_t_add]
+theorem tMom_le_tZero : K.tMom ≤ tZero M K.skewness := by
+  rw [le_tZero_iff M K.abs_skewness_lt_one, ← minkowskiProduct_transverseDelta_self]
   exact K.n.minkowskiProduct_self_nonpos_of_orthogonal_causal K.minkowskiProduct_n_self.ge
-    K.n_ne_zero K.minkowskiProduct_n_delta_add_eq_zero
+    K.n_ne_zero K.minkowskiProduct_n_transverseDelta_eq_zero
 
 /-- The momentum transfer of an elastic transition is non-positive, `t ≤ 0`. -/
-lemma t_nonpos : K.t ≤ 0 :=
-  K.t_le_tMin.trans (tMin_nonpos M K.abs_skewness_lt_one)
+lemma tMom_nonpos : K.tMom ≤ 0 :=
+  K.tMom_le_tZero.trans (tZero_nonpos M K.abs_skewness_lt_one)
 
 /-! ### Attainability of the physical region -/
 
 /-- In at least two spatial dimensions every point of the physical region is attained by an
 off-forward configuration. -/
 theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈ physicalRegion M) :
-    ∃ K : OffForwardKinematics d M, K.skewness = q.1 ∧ K.t = q.2 := by
+    ∃ K : OffForwardKinematics d M, K.skewness = q.1 ∧ K.tMom = q.2 := by
   obtain ⟨ξ, t⟩ := q
   obtain ⟨hξ, ht⟩ := hq
   dsimp only at hξ ht ⊢
-  rw [le_tMin_iff M hξ] at ht
+  rw [le_tZero_iff M hξ] at ht
   have hξ' : -1 < ξ ∧ ξ < 1 := abs_lt.mp hξ
-  -- Light-cone frame: `n = e₀ + eⱼ`, `P = A e₀ + B eⱼ` with `P⁺ = A - B = 1`, and
-  -- `Δ = C e₀ + D eᵢ + E eⱼ` with transverse component `D`.
+  -- Light-cone frame in the directions `e₀`, `eᵢ`, `eⱼ`: the light-like `n₀ = e₀ + eⱼ`, and
+  -- `p₀`, `p₀'` with average `P = A e₀ + B eⱼ` and transfer `Δ = 2ξB e₀ + D eᵢ + 2ξA eⱼ`.
+  -- `A`, `B` are fixed by `P⁺ = A - B = 1` and `P² = A² - B² = M² - t/4`, which gives
+  -- `Δ⁺ = -2ξ`, so the skewness is `ξ`. The transverse component `D` is fixed by
+  -- `D² = -((1 - ξ²) t + 4 ξ² M²)`, which gives `Δ² = -4ξ²(M² - t/4) - D² = t`.
   let i : Fin d := ⟨0, by omega⟩
   let j : Fin d := ⟨1, by omega⟩
   have hij : i ≠ j := by simp [i, j, Fin.ext_iff]
@@ -275,55 +291,58 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
   set B : ℝ := (m2 - 1) / 2
   set D : ℝ := √(-((1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2))
   have hD : D ^ 2 = -((1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2) := Real.sq_sqrt (by linarith)
-  have hp : ⟪frameVector i j (A - ξ * B) (-D / 2) (B - ξ * A),
-      frameVector i j (A - ξ * B) (-D / 2) (B - ξ * A)⟫ₘ = M ^ 2 := by
-    rw [minkowskiProduct_frameVector hij]
+  set p₀ : Vector d := ofTimeAndTwoSpatial i j (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
+  set p₀' : Vector d := ofTimeAndTwoSpatial i j (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'
+  set n₀ : Vector d := ofTimeAndTwoSpatial i j 1 0 1 with hn₀
+  have hp : ⟪p₀, p₀⟫ₘ = M ^ 2 := by
+    rw [hp₀, minkowskiProduct_ofTimeAndTwoSpatial hij]
     linear_combination (-1 / 4 : ℝ) * hD
-  have hp' : ⟪frameVector i j (A + ξ * B) (D / 2) (B + ξ * A),
-      frameVector i j (A + ξ * B) (D / 2) (B + ξ * A)⟫ₘ = M ^ 2 := by
-    rw [minkowskiProduct_frameVector hij]
+  have hp' : ⟪p₀', p₀'⟫ₘ = M ^ 2 := by
+    rw [hp₀', minkowskiProduct_ofTimeAndTwoSpatial hij]
     linear_combination (-1 / 4 : ℝ) * hD
-  have hnn : ⟪frameVector i j 1 0 1, frameVector i j 1 0 1⟫ₘ = 0 := by
-    rw [minkowskiProduct_frameVector hij]
+  have hnn : ⟪n₀, n₀⟫ₘ = 0 := by
+    rw [hn₀, minkowskiProduct_ofTimeAndTwoSpatial hij]
     ring
-  have hnp : ⟪frameVector i j 1 0 1, frameVector i j (A - ξ * B) (-D / 2) (B - ξ * A)⟫ₘ =
-      1 + ξ := by
-    rw [minkowskiProduct_frameVector hij]
+  have hnp : ⟪n₀, p₀⟫ₘ = 1 + ξ := by
+    rw [hn₀, hp₀, minkowskiProduct_ofTimeAndTwoSpatial hij]
     ring
-  have hnp' : ⟪frameVector i j 1 0 1, frameVector i j (A + ξ * B) (D / 2) (B + ξ * A)⟫ₘ =
-      1 - ξ := by
-    rw [minkowskiProduct_frameVector hij]
+  have hnp' : ⟪n₀, p₀'⟫ₘ = 1 - ξ := by
+    rw [hn₀, hp₀', minkowskiProduct_ofTimeAndTwoSpatial hij]
     ring
-  refine ⟨⟨_, _, _, hp, hp', hnn, by rw [hnp]; linarith, by rw [hnp']; linarith⟩, ?_, ?_⟩
-  · rw [skewness_eq_div]
-    dsimp only
+  have hΔ : ⟪p₀' - p₀, p₀' - p₀⟫ₘ = t := by
+    rw [hp₀, hp₀', ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial,
+      minkowskiProduct_ofTimeAndTwoSpatial hij]
+    linear_combination (-1 : ℝ) * hD
+  let K₀ : OffForwardKinematics d M :=
+    ⟨p₀, p₀', n₀, hp, hp', hnn, by rw [hnp]; linarith, by rw [hnp']; linarith⟩
+  refine ⟨K₀, ?_, ?_⟩
+  · rw [K₀.skewness_eq_div]
+    change (⟪n₀, p₀⟫ₘ - ⟪n₀, p₀'⟫ₘ) / (⟪n₀, p₀⟫ₘ + ⟪n₀, p₀'⟫ₘ) = ξ
     rw [hnp, hnp']
     field_simp
     ring
-  · rw [t_def, delta_def]
-    dsimp only
-    rw [frameVector_sub_frameVector, minkowskiProduct_frameVector hij]
-    linear_combination (-1 : ℝ) * hD
+  · rw [K₀.tMom_def, K₀.delta_def]
+    exact hΔ
 
 /-- In at least two spatial dimensions the attainable pairs `(ξ, t)` form exactly the physical
 region `|ξ| < 1`, `t ≤ t₀(ξ)`. -/
-theorem range_skewness_t (hd : 2 ≤ d) :
-    Set.range (fun K : OffForwardKinematics d M => (K.skewness, K.t)) = physicalRegion M := by
+theorem range_skewness_tMom (hd : 2 ≤ d) :
+    Set.range (fun K : OffForwardKinematics d M => (K.skewness, K.tMom)) = physicalRegion M := by
   ext q
   constructor
   · rintro ⟨K, rfl⟩
-    exact ⟨K.abs_skewness_lt_one, K.t_le_tMin⟩
+    exact ⟨K.abs_skewness_lt_one, K.tMom_le_tZero⟩
   · intro hq
     obtain ⟨K, h1, h2⟩ := exists_of_mem_physicalRegion hd hq
     exact ⟨K, Prod.ext h1 h2⟩
 
 /-- At fixed skewness `|ξ| < 1`, the minimal momentum transfer `t₀(ξ)` is the largest attainable
 value of `t`, in at least two spatial dimensions. -/
-theorem isGreatest_tMin (hd : 2 ≤ d) {ξ : ℝ} (hξ : |ξ| < 1) :
-    IsGreatest {t | ∃ K : OffForwardKinematics d M, K.skewness = ξ ∧ K.t = t} (tMin M ξ) := by
-  refine ⟨exists_of_mem_physicalRegion hd (q := (ξ, tMin M ξ)) ⟨hξ, le_rfl⟩, ?_⟩
+theorem isGreatest_tZero (hd : 2 ≤ d) {ξ : ℝ} (hξ : |ξ| < 1) :
+    IsGreatest {t | ∃ K : OffForwardKinematics d M, K.skewness = ξ ∧ K.tMom = t} (tZero M ξ) := by
+  refine ⟨exists_of_mem_physicalRegion hd (q := (ξ, tZero M ξ)) ⟨hξ, le_rfl⟩, ?_⟩
   rintro t ⟨K, rfl, rfl⟩
-  exact K.t_le_tMin
+  exact K.tMom_le_tZero
 
 end OffForwardKinematics
 
