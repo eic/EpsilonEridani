@@ -10,8 +10,8 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 /-!
 # The trace of a unitary matrix
 
-Every entry of a unitary matrix has norm at most one (`entry_norm_bound_of_unitary`), so the
-trace of a unitary `n × n` matrix has norm at most `n`. The bound is attained by the identity.
+The trace of a unitary `n × n` matrix has norm at most `n`. The bound is attained by the
+identity.
 
 This is the bound behind the statement that a normalised trace `(1 / n) Re Tr U` of a unitary
 matrix lies in `[-1, 1]`, which is how the colour-dipole operator of a Wilson-line

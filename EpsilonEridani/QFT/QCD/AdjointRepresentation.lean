@@ -60,18 +60,18 @@ lemma adjointMatrix_apply (U : unitaryGroup (Fin N) ℂ) (a b : SUNIndex N) :
     adjointMatrix U a b = 2 * (trace (genM N a * U.1 * genM N b * star U.1)).re :=
   (rfl)
 
-/-- The entries of the adjoint matrix are `2 Tr(Tᵃ U Tᵇ U†)`, which is real because the
-generators are Hermitian. -/
+/-- The entries of the adjoint matrix are `2 Tr(Tᵃ U Tᵇ U†)`; in particular this trace is
+real. -/
 lemma ofReal_adjointMatrix_apply (U : unitaryGroup (Fin N) ℂ) (a b : SUNIndex N) :
     (adjointMatrix U a b : ℂ) = 2 * trace (genM N a * U.1 * genM N b * star U.1) := by
   have hconj : (starRingEnd ℂ) (trace (genM N a * U.1 * genM N b * star U.1)) =
       trace (genM N a * U.1 * genM N b * star U.1) := by
-    rw [← Complex.star_def, ← trace_conjTranspose, ← star_eq_conjTranspose]
-    simp only [star_mul, star_eq_conjTranspose, genM_conjTranspose,
-      conjTranspose_conjTranspose, ← Matrix.mul_assoc]
-    rw [trace_mul_comm, ← Matrix.mul_assoc, ← Matrix.mul_assoc]
-  rw [adjointMatrix_apply, Complex.ofReal_mul, Complex.conj_eq_iff_re.mp hconj]
-  norm_num
+    rw [← Complex.star_def, ← trace_conjTranspose]
+    simp only [conjTranspose_mul, star_eq_conjTranspose, genM_conjTranspose,
+      conjTranspose_conjTranspose, Matrix.mul_assoc]
+    rw [trace_mul_comm (genM N a)]
+    simp only [Matrix.mul_assoc]
+  simp [adjointMatrix_apply, Complex.conj_eq_iff_re.mp hconj]
 
 /-- **The defining property of the adjoint matrix**: `Σₐ (Ad U)ᵃᵇ Tᵃ = U Tᵇ U†`, so `Ad U` is
 the matrix of conjugation by `U` on `su(N)` in the basis `Tᵃ`. -/
@@ -80,12 +80,12 @@ lemma sum_adjointMatrix_smul_genM (U : unitaryGroup (Fin N) ℂ) (b : SUNIndex N
   set X : Matrix (Fin N) (Fin N) ℂ := U.1 * genM N b * star U.1 with hX
   have hentry : ∀ a, (adjointMatrix U a b : ℂ) = 2 * trace (X * genM N a) := by
     intro a
-    rw [ofReal_adjointMatrix_apply, trace_mul_comm X, hX]
-    simp only [Matrix.mul_assoc]
+    rw [ofReal_adjointMatrix_apply, trace_mul_comm X]
+    simp only [hX, Matrix.mul_assoc]
   ext i l
   rw [Matrix.sum_apply]
   simp only [Matrix.smul_apply, smul_eq_mul, hentry, mul_assoc, ← Finset.mul_sum]
-  rw [sum_genM_proj_apply, hX, trace_unitary_conj, trace_genM]
+  simp only [sum_genM_proj_apply, hX, trace_unitary_conj, trace_genM]
   ring
 
 /-- **The adjoint matrix is orthogonal**: `Ad U (Ad U)ᵀ = 1`. -/
@@ -102,11 +102,12 @@ lemma adjointMatrix_mul_transpose (U : unitaryGroup (Fin N) ℂ) :
     have : star U.1 * genM N b * U.1 * (star U.1 * genM N a * U.1) =
         star U.1 * (genM N b * genM N a) * U := by
       simp only [Matrix.mul_assoc]
-      rw [← Matrix.mul_assoc U.1 (star U.1), hu, Matrix.one_mul]
-    rw [this, hconj, trace_genM_mul]
+      simp only [← Matrix.mul_assoc U.1 (star U.1), hu, Matrix.one_mul]
+    simp only [this, hconj, trace_genM_mul]
   have hc : ∀ a c : SUNIndex N, trace (genM N a * U.1 * genM N c * star U.1) =
       trace (star U.1 * genM N a * U.1 * genM N c) := fun a c => by
-    rw [trace_mul_comm, ← Matrix.mul_assoc, ← Matrix.mul_assoc]
+    rw [trace_mul_comm]
+    simp only [Matrix.mul_assoc]
   ext a b
   apply Complex.ofReal_injective
   rw [mul_apply, Complex.ofReal_sum]
@@ -136,11 +137,12 @@ lemma adjointMatrix_one : adjointMatrix (1 : unitaryGroup (Fin N) ℂ) = 1 := by
   split_ifs <;> simp
 
 /-- The adjoint matrix is multiplicative, `Ad (U V) = Ad U Ad V`. -/
+@[simp]
 lemma adjointMatrix_mul (U V : unitaryGroup (Fin N) ℂ) :
     adjointMatrix (U * V) = adjointMatrix U * adjointMatrix V := by
   ext a b
   apply Complex.ofReal_injective
-  rw [ofReal_adjointMatrix_apply, mul_apply, Complex.ofReal_sum]
+  simp only [ofReal_adjointMatrix_apply (U * V), mul_apply, Complex.ofReal_sum]
   have h : genM N a * (U * V).1 * genM N b * star (U * V).1 =
       genM N a * U.1 * (V.1 * genM N b * star V.1) * star U.1 := by
     simp only [Submonoid.coe_mul, star_mul, Matrix.mul_assoc]

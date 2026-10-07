@@ -72,27 +72,24 @@ scatter, `S U x x = 1`. -/
 @[simp]
 theorem dipoleS_self [NeZero Nc] (U : WilsonConfiguration Nc) (x : EuclideanSpace ℝ (Fin 2)) :
     dipoleS U x x = 1 := by
-  rw [dipoleS_def, Unitary.mul_star_self_of_mem (U x).2, trace_one, Fintype.card_fin]
-  simp [NeZero.ne Nc]
+  simp [dipoleS_def, Unitary.mul_star_self_of_mem (U x).2, NeZero.ne Nc]
 
-/-- The dipole operator is symmetric under exchange of the quark and antiquark positions:
-`Tr(U(y) U(x)†)` is the complex conjugate of `Tr(U(x) U(y)†)`. -/
+/-- The dipole operator is symmetric under exchange of the quark and antiquark positions. -/
 theorem dipoleS_comm (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
     dipoleS U x y = dipoleS U y x := by
   have h : ((U y).1 * star (U x).1 : Matrix (Fin Nc) (Fin Nc) ℂ) =
       ((U x).1 * star (U y).1)ᴴ := by
-    rw [← star_eq_conjTranspose, star_mul, star_star]
-  rw [dipoleS_def, dipoleS_def, h, trace_conjTranspose, Complex.star_def, Complex.conj_re]
+    simp only [← star_eq_conjTranspose, star_mul, star_star]
+  simp only [dipoleS_def, h, trace_conjTranspose, Complex.star_def, Complex.conj_re]
 
-/-- **Unitarity bound** on the dipole operator of a single configuration: `|S U x y| ≤ 1`,
-since `U(x) U(y)†` is unitary and so its trace has modulus at most `N_c`. -/
+/-- **Unitarity bound** on the dipole operator of a single configuration: `|S U x y| ≤ 1`. -/
 theorem abs_dipoleS_le_one (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
     |dipoleS U x y| ≤ 1 := by
   have hmem : (U x : Matrix (Fin Nc) (Fin Nc) ℂ) * star (U y).1 ∈ unitaryGroup (Fin Nc) ℂ :=
     mul_mem (U x).2 (Unitary.star_mem (U y).2)
   have htr := (Complex.abs_re_le_norm _).trans (Matrix.norm_trace_le_card_of_mem_unitaryGroup hmem)
   rw [Fintype.card_fin] at htr
-  rw [dipoleS_def, abs_mul, abs_inv, Nat.abs_cast]
+  simp only [dipoleS_def, abs_mul, abs_inv, Nat.abs_cast]
   rcases Nat.eq_zero_or_pos Nc with h | h
   · simp [h]
   · rw [inv_mul_le_iff₀ (by exact_mod_cast h), mul_one]
@@ -118,7 +115,7 @@ theorem dipoleS_gaugeTransform (Ωp Ωm : EuclideanSpace ℝ (Fin 2) → unitary
       (Ωp y).1 * ((U x).1 * star (U y).1) * star (Ωp y).1 := by
     rw [hp, hm]
     simp only [Submonoid.coe_mul, Unitary.coe_star, star_mul, star_star, mul_assoc]
-    rw [← mul_assoc (star (Ωm y).1), Unitary.star_mul_self_of_mem (Ωm y).2, one_mul]
+    simp only [← mul_assoc (star (Ωm y).1), Unitary.star_mul_self_of_mem (Ωm y).2, one_mul]
   simp only [dipoleS_def, WilsonConfiguration.gaugeTransform_apply, key, trace_unitary_conj]
 
 end SmallX
