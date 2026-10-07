@@ -140,18 +140,15 @@ theorem complexHarmonic_add_nat {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) (n 
 /-- **The downward recurrence** `S₁(s - 1) = S₁(s) - 1/s`, for non-integer `s`. -/
 theorem complexHarmonic_sub_one {s : ℂ} (hs : ∀ n : ℤ, s ≠ n) :
     complexHarmonic (s - 1) = complexHarmonic s - s⁻¹ := by
-  rw [complexHarmonic_apply, complexHarmonic_apply, sub_add_eq_add_sub,
-    digamma_apply_add_one (s := s - 1) ?_,
-    add_sub_right_comm]
-  · ring
-  · intro m
-    simpa [sub_eq_add_neg, add_comm, add_left_neg] using hs m
+  rw [complexHarmonic_apply, complexHarmonic_apply, sub_add_cancel,
+    digamma_apply_add_one s fun m hm => hs (-m) (by push_cast; exact hm)]
+  ring
 
 /-- **The reflection formula** `S₁(-s) = S₁(s - 1) + π cot(π s)`, for non-integer `s`. -/
 theorem complexHarmonic_neg {s : ℂ} (hs : ∀ n : ℤ, s ≠ n) :
     complexHarmonic (-s) = complexHarmonic (s - 1) + π * cot (π * s) := by
-  rw [complexHarmonic_sub_one hs, complexHarmonic_apply, complexHarmonic_apply, neg_add_eq_sub,
-    digamma_one_sub hs, sub_add_cancel]
+  rw [complexHarmonic_apply, complexHarmonic_apply, sub_add_cancel, neg_add_eq_sub,
+    digamma_one_sub hs]
   ring
 
 /-- The continuation is meromorphic on the whole complex plane. -/
@@ -224,15 +221,15 @@ private theorem complexHarmonic_presentation (m : ℕ) :
     rw [hr, sub_neg_eq_add, zpow_neg_one, smul_eq_mul]
     field_simp
 
-/-- **The pole structure**: the continuation has a simple pole at every negative integer. -/
 /-- The meromorphic trailing coefficient of `complexHarmonic` at the negative integer
 `-(m + 1)` is `-1`. -/
 theorem meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicTrailingCoeffAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
   obtain ⟨g, hg, hg₁, h⟩ := complexHarmonic_presentation m
-  exact hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE
-    (by rw [hg₁]; exact neg_ne_zero.2 one_ne_zero) h
+  exact (hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE
+    (by rw [hg₁]; exact neg_ne_zero.2 one_ne_zero) h).trans hg₁
 
+/-- **The pole structure**: the continuation has a simple pole at every negative integer. -/
 theorem meromorphicOrderAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicOrderAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
   obtain ⟨g, hg, hg₁, h⟩ := complexHarmonic_presentation m
