@@ -69,6 +69,11 @@ lemma eq_zero_of_not_mem_unitInterval
 def extendByZero (f : Frag Hadron Flavor) : Frag Hadron Flavor :=
   fun h i z Q2 => (Icc (0 : ℝ) 1).indicator (fun z => f h i z Q2) z
 
+/-- Unfolding lemma for `extendByZero`. -/
+lemma extendByZero_def (f : Frag Hadron Flavor) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
+    extendByZero f h i z Q2 = (Icc (0 : ℝ) 1).indicator (fun z => f h i z Q2) z :=
+  rfl
+
 /-- On the unit interval, `extendByZero f` agrees with `f`. -/
 @[simp]
 lemma extendByZero_of_mem (f : Frag Hadron Flavor) {z : ℝ} (hz : z ∈ Icc (0 : ℝ) 1)

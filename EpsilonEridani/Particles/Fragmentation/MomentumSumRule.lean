@@ -29,8 +29,8 @@ completeness: `MomentumSumRule` is the identity itself.
 ## Main definitions
 
 * `Fragmentation.MomentumSumRule D`: the momentum sum rule for the family `D`.
-* `Fragmentation.twoSpeciesFrag`, `Fragmentation.invFrag`, `Fragmentation.powerFrag`: explicit
-  fragmentation families, built with `Fragmentation.extendByZero`.
+* `Fragmentation.twoSpeciesFrag`, `Fragmentation.powerFrag`: explicit fragmentation families,
+  built with `Fragmentation.extendByZero`.
 
 ## Main results
 
@@ -75,6 +75,7 @@ def MomentumSumRule [Fintype Hadron] (D : Frag Hadron Flavor) : Prop :=
     (∀ h, IntegrableOn (fun z => z * D h i z Q2) (Icc 0 1)) ∧ ∑ h, zMoment D 1 h i Q2 = 1
 
 /-- Unfolding lemma for `MomentumSumRule`. -/
+@[simp]
 lemma momentumSumRule_iff [Fintype Hadron] (D : Frag Hadron Flavor) :
     MomentumSumRule D ↔ ∀ (i : Flavor) (Q2 : ℝ),
       (∀ h, IntegrableOn (fun z => z * D h i z Q2) (Icc 0 1)) ∧ ∑ h, zMoment D 1 h i Q2 = 1 :=
@@ -90,10 +91,10 @@ lemma momentumSumRule_iff_of_unique [Unique Hadron] (D : Frag Hadron Flavor) :
 /-- Under the momentum sum rule, for a family that is non-negative on the unit interval, each
 species carries at most the whole momentum of the fragmenting parton. -/
 theorem MomentumSumRule.zMoment_one_le_one [Fintype Hadron] {D : Frag Hadron Flavor}
-    (hsum : MomentumSumRule D) (hD : ∀ h i z Q2, 0 ≤ z → z ≤ 1 → 0 ≤ D h i z Q2) (h : Hadron)
-    (i : Flavor) (Q2 : ℝ) : zMoment D 1 h i Q2 ≤ 1 :=
+    (hsum : MomentumSumRule D) {i : Flavor} {Q2 : ℝ}
+    (hD : ∀ h', ∀ z ∈ Icc (0 : ℝ) 1, 0 ≤ D h' i z Q2) (h : Hadron) : zMoment D 1 h i Q2 ≤ 1 :=
   ((momentumSumRule_iff D).1 hsum i Q2).2 ▸ Finset.single_le_sum
-    (fun h' _ => zMoment_nonneg (fun z hz => hD h' i z Q2 hz.1 hz.2) 1) (Finset.mem_univ h)
+    (fun h' _ => zMoment_nonneg (hD h') 1) (Finset.mem_univ h)
 
 /-! ### The sum rule is not a per-species statement -/
 
@@ -102,6 +103,11 @@ zero, for a single parton flavour. -/
 def twoSpeciesFrag : Frag (Fin 2) Unit :=
   extendByZero fun h _ z _ => ![2 * z, 2 * (1 - z)] h
 
+/-- Unfolding lemma for `twoSpeciesFrag`. -/
+lemma twoSpeciesFrag_def :
+    twoSpeciesFrag = extendByZero fun h _ z _ => ![2 * z, 2 * (1 - z)] h :=
+  (rfl)
+
 /-- The two-species family satisfies `Assumptions`. -/
 lemma assumptions_twoSpeciesFrag : Assumptions twoSpeciesFrag :=
   assumptions_extendByZero fun h _ z _ hz₀ hz₁ => by
@@ -109,7 +115,7 @@ lemma assumptions_twoSpeciesFrag : Assumptions twoSpeciesFrag :=
 
 /-- The species `0` of `twoSpeciesFrag` carries two thirds of the momentum. -/
 lemma zMoment_one_twoSpeciesFrag_zero (Q2 : ℝ) : zMoment twoSpeciesFrag 1 0 () Q2 = 2 / 3 := by
-  rw [twoSpeciesFrag, zMoment_extendByZero, zMoment_eq_intervalIntegral]
+  rw [twoSpeciesFrag_def, zMoment_extendByZero, zMoment_eq_intervalIntegral]
   simp only [Matrix.cons_val_zero, pow_one]
   have : ∀ z : ℝ, z * (2 * z) = 2 * z ^ 2 := fun z => by ring
   simp only [this, intervalIntegral.integral_const_mul, integral_pow]
@@ -117,7 +123,7 @@ lemma zMoment_one_twoSpeciesFrag_zero (Q2 : ℝ) : zMoment twoSpeciesFrag 1 0 ()
 
 /-- The species `1` of `twoSpeciesFrag` carries one third of the momentum. -/
 lemma zMoment_one_twoSpeciesFrag_one (Q2 : ℝ) : zMoment twoSpeciesFrag 1 1 () Q2 = 1 / 3 := by
-  rw [twoSpeciesFrag, zMoment_extendByZero, zMoment_eq_intervalIntegral]
+  rw [twoSpeciesFrag_def, zMoment_extendByZero, zMoment_eq_intervalIntegral]
   simp only [Matrix.cons_val_one, Matrix.cons_val_fin_one, pow_one]
   have : ∀ z : ℝ, z * (2 * (1 - z)) = 2 * z ^ 1 - 2 * z ^ 2 := fun z => by ring
   simp only [this]
@@ -129,7 +135,7 @@ lemma zMoment_one_twoSpeciesFrag_one (Q2 : ℝ) : zMoment twoSpeciesFrag 1 1 () 
 /-- The two-species family satisfies the momentum sum rule: `2/3 + 1/3 = 1`. -/
 theorem momentumSumRule_twoSpeciesFrag : MomentumSumRule twoSpeciesFrag := by
   refine (momentumSumRule_iff _).2 fun _ Q2 => ⟨fun h => ?_, ?_⟩
-  · rw [twoSpeciesFrag, integrableOn_mul_extendByZero_iff]
+  · rw [twoSpeciesFrag_def, integrableOn_mul_extendByZero_iff]
     fin_cases h <;>
       simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
         Matrix.cons_val_fin_one] <;>
@@ -150,15 +156,15 @@ theorem not_momentumSumRule_single_twoSpeciesFrag (h : Fin 2) :
 
 /-- The one-species family `D(z) = 1/z` on the unit interval, extended by zero. It carries the
 whole momentum of the parton but has a divergent multiplicity. -/
-def invFrag : Frag Unit Unit :=
+private def invFrag : Frag Unit Unit :=
   extendByZero fun _ _ z _ => z⁻¹
 
 /-- `invFrag` satisfies `Assumptions`. -/
-lemma assumptions_invFrag : Assumptions invFrag :=
+private lemma assumptions_invFrag : Assumptions invFrag :=
   assumptions_extendByZero fun _ _ _ _ hz₀ _ => inv_nonneg.2 hz₀
 
 /-- `invFrag` satisfies the momentum sum rule: `∫₀¹ dz z · z⁻¹ = 1`. -/
-theorem momentumSumRule_invFrag : MomentumSumRule invFrag := by
+private theorem momentumSumRule_invFrag : MomentumSumRule invFrag := by
   rw [momentumSumRule_iff_of_unique]
   refine fun _ Q2 => ⟨?_, ?_⟩
   · rw [invFrag, integrableOn_mul_extendByZero_iff, integrableOn_Icc_iff_integrableOn_Ioc,
@@ -174,7 +180,7 @@ theorem momentumSumRule_invFrag : MomentumSumRule invFrag := by
 
 /-- The zeroth moment of `invFrag` is not the integral of an integrable function: its
 multiplicity `∫₀¹ dz / z` diverges. -/
-theorem not_integrableOn_invFrag (Q2 : ℝ) :
+private theorem not_integrableOn_invFrag (Q2 : ℝ) :
     ¬ IntegrableOn (fun z => invFrag () () z Q2) (Icc 0 1) := by
   rw [invFrag, integrableOn_congr_fun (g := fun z : ℝ => z⁻¹)
     (fun z hz => extendByZero_of_mem _ hz () () Q2) measurableSet_Icc,
@@ -196,6 +202,10 @@ normalisation `n + 2` is the one for which the first moment is one. -/
 def powerFrag (n : ℕ) : Frag Unit Unit :=
   extendByZero fun _ _ z _ => (n + 2) * z ^ n
 
+/-- Unfolding lemma for `powerFrag`. -/
+lemma powerFrag_def (n : ℕ) : powerFrag n = extendByZero fun _ _ z _ => (n + 2) * z ^ n :=
+  (rfl)
+
 /-- `powerFrag n` satisfies `Assumptions`. -/
 lemma assumptions_powerFrag (n : ℕ) : Assumptions (powerFrag n) :=
   assumptions_extendByZero fun _ _ _ _ hz₀ _ => by positivity
@@ -203,7 +213,7 @@ lemma assumptions_powerFrag (n : ℕ) : Assumptions (powerFrag n) :=
 /-- The `k`-th moment of `powerFrag n` is `(n + 2)/(k + n + 1)`. -/
 lemma zMoment_powerFrag (n k : ℕ) (Q2 : ℝ) :
     zMoment (powerFrag n) k () () Q2 = (n + 2) / (k + n + 1) := by
-  rw [powerFrag, zMoment_extendByZero, zMoment_eq_intervalIntegral]
+  rw [powerFrag_def, zMoment_extendByZero, zMoment_eq_intervalIntegral]
   have : ∀ z : ℝ, z ^ k * ((n + 2) * z ^ n) = (n + 2) * z ^ (k + n) := fun z => by ring
   simp only [this, intervalIntegral.integral_const_mul, integral_pow]
   push_cast
@@ -213,7 +223,7 @@ lemma zMoment_powerFrag (n k : ℕ) (Q2 : ℝ) :
 theorem momentumSumRule_powerFrag (n : ℕ) : MomentumSumRule (powerFrag n) := by
   rw [momentumSumRule_iff_of_unique]
   refine fun _ Q2 => ⟨?_, ?_⟩
-  · rw [powerFrag, integrableOn_mul_extendByZero_iff]
+  · rw [powerFrag_def, integrableOn_mul_extendByZero_iff]
     exact Continuous.integrableOn_Icc (by fun_prop)
   rw [zMoment_powerFrag]
   have : (n : ℝ) + 2 ≠ 0 := by positivity
