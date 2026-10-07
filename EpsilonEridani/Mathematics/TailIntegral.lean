@@ -18,7 +18,7 @@ lower endpoint `x`, as used for densities on the momentum-fraction interval.
 ## Main results
 
 - `setIntegral_Icc_comp_div_div`: the measure `dy / y` on `[x,1]` is invariant under
-  `y ↦ x / y`, i.e. `∫_x^1 h (x / y) dy / y = ∫_x^1 h y dy / y` for `0 < x`.
+  `y ↦ x / y`, i.e. `∫_x^1 y⁻¹ • h (x / y) dy = ∫_x^1 y⁻¹ • h y dy` for `0 < x`.
 - `tendsto_setIntegral_Icc_nhdsLT`: the tail integral `∫ y in Icc x b, h y` tends to `0` as
   `x → b⁻`, for every `h`.
 
@@ -32,9 +32,10 @@ open MeasureTheory Set Filter Topology
 namespace EpsilonEridani
 
 /-- The measure `dy / y` on `[x,1]` is invariant under `y ↦ x / y`: for `0 < x`,
-`∫_{[x,1]} h (x / y) / y dy = ∫_{[x,1]} h y / y dy`. -/
-theorem setIntegral_Icc_comp_div_div (h : ℝ → ℝ) {x : ℝ} (hx : 0 < x) :
-    ∫ y in Icc x 1, h (x / y) / y = ∫ y in Icc x 1, h y / y := by
+`∫_{[x,1]} y⁻¹ • h (x / y) dy = ∫_{[x,1]} y⁻¹ • h y dy`. -/
+theorem setIntegral_Icc_comp_div_div {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (h : ℝ → E) {x : ℝ} (hx : 0 < x) :
+    ∫ y in Icc x 1, y⁻¹ • h (x / y) = ∫ y in Icc x 1, y⁻¹ • h y := by
   have himage : (fun u => x / u) '' Icc x 1 = Icc x 1 := by
     refine Subset.antisymm ?_ fun v hv => ?_
     · rintro _ ⟨u, hu, rfl⟩
@@ -54,8 +55,8 @@ theorem setIntegral_Icc_comp_div_div (h : ℝ → ℝ) {x : ℝ} (hx : 0 < x) :
     rw [← himage, integral_image_eq_integral_abs_deriv_smul measurableSet_Icc hderiv hinj]
   refine setIntegral_congr_fun measurableSet_Icc fun u hu => ?_
   have hu0 : 0 < u := hx.trans_le hu.1
-  simp only [smul_eq_mul, neg_div, abs_neg, abs_of_pos (by positivity :
-    0 < x / u ^ 2)]
+  rw [neg_div, abs_neg, abs_of_pos (by positivity : 0 < x / u ^ 2), smul_smul]
+  congr 1
   field_simp
 
 /-- The tail integral `∫ y in Icc x b, h y` tends to `0` as `x` tends to `b` from the left, for

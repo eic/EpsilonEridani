@@ -115,9 +115,10 @@ theorem mellinConv_comm (f g : ℝ → ℝ) : mellinConv f g = mellinConv g f :=
   ext x
   by_cases hx : x ∈ Ioc (0 : ℝ) 1
   · simp only [mellinConv_apply_of_mem _ _ hx]
-    rw [← setIntegral_Icc_comp_div_div (fun u => g u * f (x / u)) hx.1]
-    refine setIntegral_congr_fun measurableSet_Icc fun y hy => ?_
-    rw [div_div_cancel₀ hx.1.ne', mul_comm]
+    refine (setIntegral_congr_fun measurableSet_Icc fun y _ => ?_).trans
+      ((setIntegral_Icc_comp_div_div (fun u => g u * f (x / u)) hx.1).trans
+        (setIntegral_congr_fun measurableSet_Icc fun y _ => ?_)) <;>
+    simp only [smul_eq_mul, div_div_cancel₀ hx.1.ne'] <;> ring
   · simp only [mellinConv_apply_eq_zero_of_notMem _ _ hx]
 
 /-- The Mellin convolution is homogeneous in its left argument. No integrability hypothesis is
