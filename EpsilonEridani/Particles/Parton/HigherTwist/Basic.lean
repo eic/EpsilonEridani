@@ -55,12 +55,17 @@ to the inclusive structure functions.
 * `FieldContent.twist_add`: twist is additive under products of operators.
 * `FieldContent.card_le_twist`: an operator has twist at least its number of fields, with
   equality exactly when every field is a good component (`FieldContent.twist_eq_card_iff`).
-* `FieldContent.twist_eq_two_iff`: a quark-number-neutral operator of twist two is a bilinear in
-  good quark fields or in transverse field strengths, or a single `F^{+-}` or `F^{ij}`.
-* `FieldContent.twist_eq_three_iff`: a quark-number-neutral operator of twist three is a bilinear
-  with one twist-two field (a bad quark field, `F^{+-}` or `F^{ij}`), a trilinear in good quark
-  fields and a transverse field strength or in three transverse field strengths, or a single
-  `F^{-i}`.
+* `FieldContent.twist_eq_two_iff`, `FieldContent.twist_eq_three_iff`: an operator has twist two
+  exactly when it is a single twist-two field or a bilinear in twist-one fields, and twist three
+  exactly when it is a single twist-three field, a bilinear in a twist-one and a twist-two field,
+  or a trilinear in twist-one fields.
+* `FieldContent.twist_eq_two_iff_of_quarkNumber_eq_zero`: a quark-number-neutral operator of twist
+  two is a bilinear in good quark fields or in transverse field strengths, or a single `F^{+-}` or
+  `F^{ij}`.
+* `FieldContent.twist_eq_three_iff_of_quarkNumber_eq_zero`: a quark-number-neutral operator of
+  twist three is a bilinear with one twist-two field (a bad quark field, `F^{+-}` or `F^{ij}`), a
+  trilinear in good quark fields and a transverse field strength or in three transverse field
+  strengths, or a single `F^{-i}`.
 
 The single-field cases are colour octets and drop out of any gauge-invariant operator; they are
 kept in the classifications because colour is not recorded in the field content.
@@ -195,7 +200,7 @@ def quarkNumber : LightConeField → ℤ
     (fieldStrength c).quarkNumber = 0 := (rfl)
 
 /-- The twist of a field component is its mass dimension minus its light-cone spin. -/
-theorem twist_eq_massDimension_sub_lightConeSpin (f : LightConeField) :
+@[grind =] theorem twist_eq_massDimension_sub_lightConeSpin (f : LightConeField) :
     (f.twist : ℚ) = f.massDimension - f.lightConeSpin := by
   rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> norm_num
 
@@ -204,12 +209,12 @@ theorem one_le_twist (f : LightConeField) : 1 ≤ f.twist := by
   rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp
 
 /-- The field components of twist one are the good ones: `ψ_+`, `ψbar_+` and `F^{+i}`. -/
-theorem twist_eq_one_iff {f : LightConeField} :
+@[simp] theorem twist_eq_one_iff {f : LightConeField} :
     f.twist = 1 ↔ f = quark .good ∨ f = antiquark .good ∨ f = fieldStrength .plusTransverse := by
   rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp
 
 /-- The field components of twist two: `ψ_-`, `ψbar_-`, `F^{+-}` and `F^{ij}`. -/
-theorem twist_eq_two_iff {f : LightConeField} :
+@[simp] theorem twist_eq_two_iff {f : LightConeField} :
     f.twist = 2 ↔ f = quark .bad ∨ f = antiquark .bad ∨ f = fieldStrength .plusMinus ∨
       f = fieldStrength .transverse := by
   rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp
@@ -237,6 +242,17 @@ def twist (O : FieldContent) : ℕ := (O.map LightConeField.twist).sum
 /-- The quark number of an operator, the number of quark fields minus the number of antiquark
 fields. -/
 def quarkNumber (O : FieldContent) : ℤ := (O.map LightConeField.quarkNumber).sum
+
+theorem massDimension_def (O : FieldContent) :
+    massDimension O = (O.map LightConeField.massDimension).sum := (rfl)
+
+theorem lightConeSpin_def (O : FieldContent) :
+    lightConeSpin O = (O.map LightConeField.lightConeSpin).sum := (rfl)
+
+theorem twist_def (O : FieldContent) : twist O = (O.map LightConeField.twist).sum := (rfl)
+
+theorem quarkNumber_def (O : FieldContent) :
+    quarkNumber O = (O.map LightConeField.quarkNumber).sum := (rfl)
 
 @[simp] theorem massDimension_zero : massDimension 0 = 0 := (rfl)
 
@@ -296,14 +312,11 @@ def quarkNumber (O : FieldContent) : ℤ := (O.map LightConeField.quarkNumber).s
   simp [quarkNumber]
 
 /-- The twist of an operator is its mass dimension minus its light-cone spin. -/
-theorem twist_eq_massDimension_sub_lightConeSpin (O : FieldContent) :
+@[grind =] theorem twist_eq_massDimension_sub_lightConeSpin (O : FieldContent) :
     (twist O : ℚ) = massDimension O - lightConeSpin O := by
-  induction O using Multiset.induction_on with
-  | empty => simp
-  | cons f O ih =>
-    simp only [twist_cons, Nat.cast_add, massDimension_cons, lightConeSpin_cons, ih,
-      LightConeField.twist_eq_massDimension_sub_lightConeSpin]
-    ring
+  rw [twist, ← Nat.coe_castAddMonoidHom, map_multiset_sum, Multiset.map_map, massDimension,
+    lightConeSpin, ← Multiset.sum_map_sub]
+  exact congrArg _ <| Multiset.map_congr rfl fun f _ ↦ f.twist_eq_massDimension_sub_lightConeSpin
 
 /-- An operator has twist at least its number of fields. -/
 theorem card_le_twist (O : FieldContent) : Multiset.card O ≤ twist O := by
@@ -316,7 +329,7 @@ theorem card_le_twist (O : FieldContent) : Multiset.card O ≤ twist O := by
 
 /-- An operator has twist equal to its number of fields exactly when all its fields are good
 components. -/
-theorem twist_eq_card_iff {O : FieldContent} :
+@[simp] theorem twist_eq_card_iff {O : FieldContent} :
     twist O = Multiset.card O ↔ ∀ f ∈ O, f.twist = 1 := by
   induction O using Multiset.induction_on with
   | empty => simp
@@ -330,32 +343,67 @@ theorem twist_eq_card_iff {O : FieldContent} :
     · rintro ⟨hf, hO⟩
       rw [hf, ih.2 hO, add_comm]
 
-/-- A quark-number-neutral operator of twist two is a bilinear `ψbar_+ ψ_+` in good quark fields or
-`F^{+i} F^{+j}` in transverse field strengths, or a single `F^{+-}` or `F^{ij}`. -/
-theorem twist_eq_two_iff {O : FieldContent} (hO : quarkNumber O = 0) :
-    twist O = 2 ↔ O = {antiquark .good, quark .good} ∨
-      O = {fieldStrength .plusTransverse, fieldStrength .plusTransverse} ∨
-      O = {fieldStrength .plusMinus} ∨ O = {fieldStrength .transverse} := by
-  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl | rfl | rfl) <;> simp⟩
+/-- An operator has twist two exactly when it is a single twist-two field or a bilinear in
+twist-one fields. -/
+theorem twist_eq_two_iff {O : FieldContent} :
+    twist O = 2 ↔ (∃ f, f.twist = 2 ∧ O = {f}) ∨
+      ∃ f g, f.twist = 1 ∧ g.twist = 1 ∧ O = {f, g} := by
+  refine ⟨fun h ↦ ?_, by rintro (⟨f, hf, rfl⟩ | ⟨f, g, hf, hg, rfl⟩) <;> simp [*]⟩
   have hcard := card_le_twist O
   obtain h0 | h1 | h2 : Multiset.card O = 0 ∨ Multiset.card O = 1 ∨ Multiset.card O = 2 := by
     omega
   · simp_all
   · obtain ⟨a, rfl⟩ := Multiset.card_eq_one.1 h1
-    rcases a with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp_all
-  · -- Two fields of total twist two: both are good components.
-    have hgood := twist_eq_card_iff.1 (h.trans h2.symm)
+    exact .inl ⟨a, by simpa using h, rfl⟩
+  · have hgood := twist_eq_card_iff.1 (h.trans h2.symm)
     obtain ⟨a, b, rfl⟩ := Multiset.card_eq_two.1 h2
-    simp only [Multiset.insert_eq_cons, Multiset.mem_cons, Multiset.mem_singleton,
-      forall_eq_or_imp, forall_eq, LightConeField.twist_eq_one_iff] at hgood
-    obtain ⟨ha | ha | ha, hb | hb | hb⟩ := hgood <;> subst ha hb <;>
+    exact .inr ⟨a, b, hgood a (by simp), hgood b (by simp), rfl⟩
+
+/-- An operator has twist three exactly when it is a single twist-three field, a bilinear in a
+twist-one and a twist-two field, or a trilinear in twist-one fields. -/
+theorem twist_eq_three_iff {O : FieldContent} :
+    twist O = 3 ↔ (∃ f, f.twist = 3 ∧ O = {f}) ∨
+      (∃ f g, f.twist = 1 ∧ g.twist = 2 ∧ O = {f, g}) ∨
+      ∃ f g k, f.twist = 1 ∧ g.twist = 1 ∧ k.twist = 1 ∧ O = {f, g, k} := by
+  refine ⟨fun h ↦ ?_, by
+    rintro (⟨f, hf, rfl⟩ | ⟨f, g, hf, hg, rfl⟩ | ⟨f, g, k, hf, hg, hk, rfl⟩) <;> simp [*]⟩
+  have hcard := card_le_twist O
+  obtain h0 | h1 | h2 | h3 : Multiset.card O = 0 ∨ Multiset.card O = 1 ∨
+      Multiset.card O = 2 ∨ Multiset.card O = 3 := by
+    omega
+  · simp_all
+  · obtain ⟨a, rfl⟩ := Multiset.card_eq_one.1 h1
+    exact .inl ⟨a, by simpa using h, rfl⟩
+  · -- Two fields of total twist three: one has twist one and the other twist two.
+    obtain ⟨a, b, rfl⟩ := Multiset.card_eq_two.1 h2
+    have ha := one_le_twist a
+    have hb := one_le_twist b
+    have hab : a.twist + b.twist = 3 := by simpa using h
+    obtain ha' | ha' : a.twist = 1 ∨ a.twist = 2 := by omega
+    · exact .inr <| .inl ⟨a, b, ha', by omega, rfl⟩
+    · exact .inr <| .inl ⟨b, a, by omega, ha', Multiset.pair_comm a b⟩
+  · have hgood := twist_eq_card_iff.1 (h.trans h3.symm)
+    obtain ⟨a, b, c, rfl⟩ := Multiset.card_eq_three.1 h3
+    exact .inr <| .inr ⟨a, b, c, hgood a (by simp), hgood b (by simp), hgood c (by simp), rfl⟩
+
+/-- A quark-number-neutral operator of twist two is a bilinear `ψbar_+ ψ_+` in good quark fields or
+`F^{+i} F^{+j}` in transverse field strengths, or a single `F^{+-}` or `F^{ij}`. -/
+theorem twist_eq_two_iff_of_quarkNumber_eq_zero {O : FieldContent} (hO : quarkNumber O = 0) :
+    twist O = 2 ↔ O = {antiquark .good, quark .good} ∨
+      O = {fieldStrength .plusTransverse, fieldStrength .plusTransverse} ∨
+      O = {fieldStrength .plusMinus} ∨ O = {fieldStrength .transverse} := by
+  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl | rfl | rfl) <;> simp⟩
+  obtain ⟨a, ha, rfl⟩ | ⟨a, b, ha, hb, rfl⟩ := twist_eq_two_iff.1 h
+  · rcases a with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp_all
+  · simp only [LightConeField.twist_eq_one_iff] at ha hb
+    obtain ha | ha | ha := ha <;> obtain hb | hb | hb := hb <;> subst ha hb <;>
       first | decide | simp_all
 
 /-- A quark-number-neutral operator of twist three is either a bilinear with one twist-one and
 one twist-two field — `ψbar_+ ψ_-` or `ψbar_- ψ_+` with one bad quark field, or `F^{+i} F^{+-}` or
 `F^{+i} F^{jk}` — or a trilinear `ψbar_+ F^{+i} ψ_+` in good quark fields and a transverse field
 strength or `F^{+i} F^{+j} F^{+k}` in transverse field strengths, or a single `F^{-i}`. -/
-theorem twist_eq_three_iff {O : FieldContent} (hO : quarkNumber O = 0) :
+theorem twist_eq_three_iff_of_quarkNumber_eq_zero {O : FieldContent} (hO : quarkNumber O = 0) :
     twist O = 3 ↔ O = {antiquark .good, quark .bad} ∨ O = {antiquark .bad, quark .good} ∨
       O = {fieldStrength .plusTransverse, fieldStrength .plusMinus} ∨
       O = {fieldStrength .plusTransverse, fieldStrength .transverse} ∨
@@ -364,26 +412,15 @@ theorem twist_eq_three_iff {O : FieldContent} (hO : quarkNumber O = 0) :
         fieldStrength .plusTransverse} ∨
       O = {fieldStrength .minusTransverse} := by
   refine ⟨fun h ↦ ?_, by rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp⟩
-  have hcard := card_le_twist O
-  obtain h0 | h1 | h2 | h3 : Multiset.card O = 0 ∨ Multiset.card O = 1 ∨
-      Multiset.card O = 2 ∨ Multiset.card O = 3 := by
-    omega
-  · simp_all
-  · obtain ⟨a, rfl⟩ := Multiset.card_eq_one.1 h1
-    rcases a with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp_all
-  · -- Two fields: check every pair; `decide` closes the true cases up to reordering, and the
-    -- remaining pairs have the wrong twist or quark number.
-    obtain ⟨a, b, rfl⟩ := Multiset.card_eq_two.1 h2
-    rcases a with (_ | _) | (_ | _) | (_ | _ | _ | _) <;>
-      rcases b with (_ | _) | (_ | _) | (_ | _ | _ | _) <;>
+  obtain ⟨a, ha, rfl⟩ | ⟨a, b, ha, hb, rfl⟩ | ⟨a, b, c, ha, hb, hc, rfl⟩ :=
+    twist_eq_three_iff.1 h
+  · rcases a with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp_all
+  · simp only [LightConeField.twist_eq_one_iff, LightConeField.twist_eq_two_iff] at ha hb
+    obtain ha | ha | ha := ha <;> obtain hb | hb | hb | hb := hb <;> subst ha hb <;>
       first | decide | simp_all
-  · -- Three fields of total twist three: all are good components.
-    have hgood := twist_eq_card_iff.1 (h.trans h3.symm)
-    obtain ⟨a, b, c, rfl⟩ := Multiset.card_eq_three.1 h3
-    simp only [Multiset.insert_eq_cons, Multiset.mem_cons, Multiset.mem_singleton,
-      forall_eq_or_imp, forall_eq, LightConeField.twist_eq_one_iff] at hgood
-    obtain ⟨ha | ha | ha, hb | hb | hb, hc | hc | hc⟩ := hgood <;> subst ha hb hc <;>
-      first | decide | simp_all
+  · simp only [LightConeField.twist_eq_one_iff] at ha hb hc
+    obtain ha | ha | ha := ha <;> obtain hb | hb | hb := hb <;> obtain hc | hc | hc := hc <;>
+      subst ha hb hc <;> first | decide | simp_all
 
 end FieldContent
 
