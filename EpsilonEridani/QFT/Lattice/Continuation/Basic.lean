@@ -56,7 +56,7 @@ so that the sign of the invariant square is never lost by rereading one as the o
   Rev. Mod. Phys. 93 (2021) 035005, Sections II and III.
 -/
 
-@[expose] public section
+public section
 
 namespace EpsilonEridani
 namespace QFT
@@ -81,6 +81,11 @@ space: the bilinear (not sesquilinear) form of the complexified Minkowski matrix
 noncomputable def complexMinkowskiProduct : LinearMap.BilinForm ℂ (ComplexSeparation d) :=
   Matrix.toBilin' (minkowskiMatrix.map ofRealHom)
 
+/-- The complex Minkowski product is the bilinear form of the complexified Minkowski matrix. -/
+theorem complexMinkowskiProduct_def :
+    complexMinkowskiProduct (d := d) = Matrix.toBilin' (minkowskiMatrix.map ofRealHom) :=
+  (rfl)
+
 /-- The complex Minkowski product in components. -/
 theorem complexMinkowskiProduct_apply (z w : ComplexSeparation d) :
     complexMinkowskiProduct z w =
@@ -98,6 +103,10 @@ theorem complexMinkowskiProduct_symm (z w : ComplexSeparation d) :
 /-- The inclusion of real Minkowski vectors into the complexified separation space. -/
 noncomputable def ofMinkowski : Vector d →ₗ[ℝ] ComplexSeparation d :=
   ofRealCLM.toLinearMap.compLeft _
+
+/-- The inclusion of real Minkowski vectors is postcomposition with `ofRealCLM`. -/
+theorem ofMinkowski_def : ofMinkowski (d := d) = ofRealCLM.toLinearMap.compLeft _ :=
+  (rfl)
 
 /-- The inclusion of real Minkowski vectors is the componentwise inclusion `ℝ → ℂ`. -/
 @[simp]
@@ -119,6 +128,10 @@ theorem complexMinkowskiProduct_ofMinkowski (v w : Vector d) :
 space. -/
 noncomputable def minkowskiSection (d : ℕ) : Submodule ℝ (ComplexSeparation d) :=
   LinearMap.range ofMinkowski
+
+/-- The Minkowski section is the range of `ofMinkowski`. -/
+theorem minkowskiSection_def : minkowskiSection d = LinearMap.range ofMinkowski :=
+  (rfl)
 
 /-- A point lies on the Minkowski section exactly when all its components are real. -/
 @[simp]
@@ -168,6 +181,10 @@ theorem continuation_injective : Function.Injective (continuation (d := d)) := f
 /-- The *Euclidean section*: the continuations of real Euclidean separations. -/
 noncomputable def euclideanSection (d : ℕ) : Submodule ℝ (ComplexSeparation d) :=
   LinearMap.range continuation
+
+/-- The Euclidean section is the range of `continuation`. -/
+theorem euclideanSection_def : euclideanSection d = LinearMap.range continuation :=
+  (rfl)
 
 /-- A point of the complexified separation space lies on the Euclidean section exactly when its
 time component is purely imaginary and its spatial components are real. -/
