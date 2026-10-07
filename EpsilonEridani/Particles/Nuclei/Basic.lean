@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Data.Nat.Notation
+public import Mathlib.Tactic.Simps.Basic
 
 /-!
 # Nuclei as explicit data
@@ -38,7 +39,7 @@ development.
 * EIC Yellow Report, `arXiv:2103.05419`, Vol. II, §7.3.3.
 -/
 
-@[expose] public section
+public section
 
 namespace EpsilonEridani
 
@@ -61,6 +62,8 @@ variable (nuc : Nucleus)
 /-- The neutron number `N = A - Z`. -/
 def neutronNumber : ℕ := nuc.massNumber - nuc.protonNumber
 
+lemma neutronNumber_def : nuc.neutronNumber = nuc.massNumber - nuc.protonNumber := (rfl)
+
 /-- The proton and neutron numbers add up to the mass number. -/
 @[simp]
 theorem protonNumber_add_neutronNumber : nuc.protonNumber + nuc.neutronNumber = nuc.massNumber :=
@@ -77,43 +80,39 @@ lemma neutronNumber_le_massNumber : nuc.neutronNumber ≤ nuc.massNumber :=
 /-- A nucleus is *isoscalar* when it has equally many protons and neutrons, `2 Z = A`. -/
 def IsIsoscalar : Prop := 2 * nuc.protonNumber = nuc.massNumber
 
+lemma isIsoscalar_def : nuc.IsIsoscalar ↔ 2 * nuc.protonNumber = nuc.massNumber := Iff.rfl
+
 instance : DecidablePred IsIsoscalar := fun nuc =>
-  decidable_of_iff (2 * nuc.protonNumber = nuc.massNumber) Iff.rfl
+  decidable_of_iff (2 * nuc.protonNumber = nuc.massNumber) nuc.isIsoscalar_def.symm
 
 /-- A nucleus is isoscalar exactly when its proton and neutron numbers agree. -/
 theorem isIsoscalar_iff_protonNumber_eq_neutronNumber :
     nuc.IsIsoscalar ↔ nuc.protonNumber = nuc.neutronNumber := by
   have := nuc.protonNumber_add_neutronNumber
-  unfold IsIsoscalar
+  rw [isIsoscalar_def]
   omega
 
 /-! ### Worked instances -/
 
 /-- The free proton, `A = Z = 1`. -/
+@[expose, simps]
 def proton : Nucleus := ⟨1, 1, Nat.one_pos, Nat.le_refl 1⟩
 
 /-- The free neutron, `A = 1`, `Z = 0`. -/
+@[expose, simps]
 def neutron : Nucleus := ⟨1, 0, Nat.one_pos, Nat.zero_le _⟩
 
 /-- The deuteron, `A = 2`, `Z = 1`: the lightest isoscalar nucleus. -/
+@[expose, simps]
 def deuteron : Nucleus := ⟨2, 1, Nat.two_pos, by decide⟩
 
 /-- Carbon-12, `A = 12`, `Z = 6`. -/
+@[expose, simps]
 def carbon12 : Nucleus := ⟨12, 6, by decide, by decide⟩
 
 /-- Lead-208, `A = 208`, `Z = 82`: a heavy nucleus with a large neutron excess. -/
+@[expose, simps]
 def lead208 : Nucleus := ⟨208, 82, by decide, by decide⟩
-
-@[simp] lemma massNumber_proton : proton.massNumber = 1 := (rfl)
-@[simp] lemma protonNumber_proton : proton.protonNumber = 1 := (rfl)
-@[simp] lemma massNumber_neutron : neutron.massNumber = 1 := (rfl)
-@[simp] lemma protonNumber_neutron : neutron.protonNumber = 0 := (rfl)
-@[simp] lemma massNumber_deuteron : deuteron.massNumber = 2 := (rfl)
-@[simp] lemma protonNumber_deuteron : deuteron.protonNumber = 1 := (rfl)
-@[simp] lemma massNumber_carbon12 : carbon12.massNumber = 12 := (rfl)
-@[simp] lemma protonNumber_carbon12 : carbon12.protonNumber = 6 := (rfl)
-@[simp] lemma massNumber_lead208 : lead208.massNumber = 208 := (rfl)
-@[simp] lemma protonNumber_lead208 : lead208.protonNumber = 82 := (rfl)
 
 @[simp] lemma neutronNumber_proton : proton.neutronNumber = 0 := (rfl)
 @[simp] lemma neutronNumber_neutron : neutron.neutronNumber = 1 := (rfl)
