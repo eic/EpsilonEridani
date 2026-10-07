@@ -39,13 +39,13 @@ so that the sign of the invariant square is never lost by rereading one as the o
   into minus the Minkowski product, `(continuation x)·(continuation y) = -⟪x, y⟫`. In particular the
   continuation of a nonzero Euclidean vector has strictly negative Minkowski square
   (`complexMinkowskiProduct_continuation_self_re_neg`): it is strictly spacelike.
-* `eq_zero_of_mem_closure_euclideanSection`: the only null vector in the closure of the Euclidean
-  section is the origin.
+* `eq_zero_of_mem_closure_euclideanSection_of_complexMinkowskiProduct_self_eq_zero`: the only
+  null vector in the closure of the Euclidean section is the origin.
 * `causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection`: a nonzero real Minkowski
   vector on the Euclidean section is spacelike.
-* `ofMinkowski_not_mem_euclideanSection`: a nonzero light-like Minkowski vector is not the
-  continuation of any real Euclidean separation. This is the kinematic half of the statement that
-  a matrix element at light-like separation, and so a parton distribution, is not the
+* `ofMinkowski_notMem_euclideanSection_of_lightLike`: a nonzero light-like Minkowski vector is not
+  the continuation of any real Euclidean separation. This is the kinematic half of the statement
+  that a matrix element at light-like separation, and so a parton distribution, is not the
   continuation of a single Euclidean observation.
 
 ## References
@@ -96,10 +96,8 @@ theorem complexMinkowskiProduct_symm (z w : ComplexSeparation d) :
 /-! ### The Minkowski section -/
 
 /-- The inclusion of real Minkowski vectors into the complexified separation space. -/
-noncomputable def ofMinkowski : Vector d →ₗ[ℝ] ComplexSeparation d where
-  toFun v μ := (v μ : ℂ)
-  map_add' v w := by funext μ; simp [apply_add]
-  map_smul' c v := by funext μ; simp [apply_smul]
+noncomputable def ofMinkowski : Vector d →ₗ[ℝ] ComplexSeparation d :=
+  ofRealCLM.toLinearMap.compLeft _
 
 /-- The inclusion of real Minkowski vectors is the componentwise inclusion `ℝ → ℂ`. -/
 @[simp]
@@ -123,6 +121,7 @@ noncomputable def minkowskiSection (d : ℕ) : Submodule ℝ (ComplexSeparation 
   LinearMap.range ofMinkowski
 
 /-- A point lies on the Minkowski section exactly when all its components are real. -/
+@[simp]
 theorem mem_minkowskiSection_iff {z : ComplexSeparation d} :
     z ∈ minkowskiSection d ↔ ∀ μ, (z μ).im = 0 := by
   refine ⟨?_, fun h => ⟨fun μ => (z μ).re, funext fun μ => ?_⟩⟩
@@ -172,6 +171,7 @@ noncomputable def euclideanSection (d : ℕ) : Submodule ℝ (ComplexSeparation 
 
 /-- A point of the complexified separation space lies on the Euclidean section exactly when its
 time component is purely imaginary and its spatial components are real. -/
+@[simp]
 theorem mem_euclideanSection_iff {z : ComplexSeparation d} :
     z ∈ euclideanSection d ↔ (z (Sum.inl 0)).re = 0 ∧ ∀ i, (z (Sum.inr i)).im = 0 := by
   refine ⟨?_, fun ⟨h₀, h⟩ => ?_⟩
@@ -184,7 +184,11 @@ theorem mem_euclideanSection_iff {z : ComplexSeparation d} :
       apply Complex.ext <;> simp [h₀]
     · apply Complex.ext <;> simp [h i]
 
-/-- The Euclidean section is closed, being a finite-dimensional subspace. -/
+/-- The Minkowski section is closed. -/
+theorem isClosed_minkowskiSection : IsClosed (minkowskiSection d : Set (ComplexSeparation d)) :=
+  Submodule.closed_of_finiteDimensional _
+
+/-- The Euclidean section is closed. -/
 theorem isClosed_euclideanSection : IsClosed (euclideanSection d : Set (ComplexSeparation d)) :=
   Submodule.closed_of_finiteDimensional _
 
@@ -213,27 +217,21 @@ Euclidean separation has strictly negative Minkowski square. -/
 theorem complexMinkowskiProduct_continuation_self_re_neg {x : EuclideanSeparation d}
     (hx : x ≠ 0) :
     (complexMinkowskiProduct (continuation x) (continuation x)).re < 0 := by
-  rw [complexMinkowskiProduct_continuation_self, neg_re, ofReal_re, neg_neg_iff_pos]
-  positivity
-
-/-- A continued Euclidean separation is null only if it vanishes. -/
-theorem complexMinkowskiProduct_continuation_self_eq_zero_iff {x : EuclideanSeparation d} :
-    complexMinkowskiProduct (continuation x) (continuation x) = 0 ↔ x = 0 := by
-  rw [complexMinkowskiProduct_continuation_self, neg_eq_zero, ofReal_eq_zero, sq_eq_zero_iff,
-    norm_eq_zero]
-
-/-- The Euclidean section contains no nonzero null vector. -/
-theorem eq_zero_of_mem_euclideanSection_of_null {z : ComplexSeparation d}
-    (hz : z ∈ euclideanSection d) (hnull : complexMinkowskiProduct z z = 0) : z = 0 := by
-  obtain ⟨x, rfl⟩ := hz
-  rw [complexMinkowskiProduct_continuation_self_eq_zero_iff.mp hnull, map_zero]
+  simpa [complexMinkowskiProduct_continuation_self, ← ofReal_pow, sq_pos_iff] using hx
 
 /-- The only null vector in the closure of the Euclidean section is the origin. -/
-theorem eq_zero_of_mem_closure_euclideanSection_of_null {z : ComplexSeparation d}
-    (hz : z ∈ closure (euclideanSection d : Set (ComplexSeparation d)))
+theorem eq_zero_of_mem_closure_euclideanSection_of_complexMinkowskiProduct_self_eq_zero
+    {z : ComplexSeparation d} (hz : z ∈ closure (euclideanSection d : Set (ComplexSeparation d)))
     (hnull : complexMinkowskiProduct z z = 0) : z = 0 := by
-  rw [isClosed_euclideanSection.closure_eq] at hz
-  exact eq_zero_of_mem_euclideanSection_of_null hz hnull
+  obtain ⟨x, rfl⟩ := isClosed_euclideanSection.closure_subset hz
+  simp_all
+
+/-- The Euclidean section contains no nonzero null vector. -/
+theorem eq_zero_of_mem_euclideanSection_of_complexMinkowskiProduct_self_eq_zero
+    {z : ComplexSeparation d} (hz : z ∈ euclideanSection d)
+    (hnull : complexMinkowskiProduct z z = 0) : z = 0 :=
+  eq_zero_of_mem_closure_euclideanSection_of_complexMinkowskiProduct_self_eq_zero
+    (subset_closure hz) hnull
 
 /-- A nonzero real Minkowski vector that lies on the Euclidean section is spacelike. -/
 theorem causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection {v : Vector d}
@@ -249,7 +247,7 @@ theorem causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection {v : Ve
 
 /-- **No Euclidean preimage of a null separation**: a nonzero light-like Minkowski vector is not
 the continuation of any real Euclidean separation. -/
-theorem ofMinkowski_not_mem_euclideanSection {v : Vector d}
+theorem ofMinkowski_notMem_euclideanSection_of_lightLike {v : Vector d}
     (hv : causalCharacter v = .lightLike) (hne : v ≠ 0) :
     ofMinkowski v ∉ euclideanSection d := fun h => by
   rw [causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection h hne] at hv
