@@ -50,17 +50,25 @@ lemma minkowskiProduct_self_nonpos_of_orthogonal_causal {d : ℕ} (n : Vector d)
   have ha2 : 0 < n.timeComponent ^ 2 := by positivity
   nlinarith [mul_le_mul_of_nonneg_right hn hw]
 
+end Vector
+end Lorentz
+
+namespace EpsilonEridani
+
 /-- The vector `x e₀ + y eᵢ + z eⱼ` built from the time direction and the spatial directions
 `i` and `j`. -/
-def ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z : ℝ) : Vector d :=
-  x • basis (Sum.inl 0) + y • basis (Sum.inr i) + z • basis (Sum.inr j)
+def ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z : ℝ) : Lorentz.Vector d :=
+  x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
+  z • Lorentz.Vector.basis (Sum.inr j)
 
 lemma ofTimeAndTwoSpatial_def {d : ℕ} (i j : Fin d) (x y z : ℝ) :
     ofTimeAndTwoSpatial i j x y z =
-      x • basis (Sum.inl 0) + y • basis (Sum.inr i) + z • basis (Sum.inr j) := (rfl)
+      x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
+      z • Lorentz.Vector.basis (Sum.inr j) := (rfl)
 
 /-- For distinct spatial directions the Minkowski product of two vectors
 `x e₀ + y eᵢ + z eⱼ` and `x' e₀ + y' eᵢ + z' eⱼ` is `x x' - y y' - z z'`. -/
+@[simp]
 lemma minkowskiProduct_ofTimeAndTwoSpatial {d : ℕ} {i j : Fin d} (hij : i ≠ j)
     (x y z x' y' z' : ℝ) :
     ⟪ofTimeAndTwoSpatial i j x y z, ofTimeAndTwoSpatial i j x' y' z'⟫ₘ =
@@ -78,5 +86,4 @@ lemma ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z
   simp only [ofTimeAndTwoSpatial_def, sub_smul]
   abel
 
-end Vector
-end Lorentz
+end EpsilonEridani

@@ -168,14 +168,14 @@ lemma p'_eq_avgMomentum_add : K.p' = K.avgMomentum + (2⁻¹ : ℝ) • K.delta 
   rw [avgMomentum_def, delta_def]
   module
 
-lemma minkowskiProduct_n_avgMomentum :
+lemma minkowskiProduct_n_avgMomentum_eq :
     ⟪K.n, K.avgMomentum⟫ₘ = (⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ) / 2 := by
   simp only [avgMomentum_def, map_smul, map_add, smul_eq_mul]
   ring
 
 /-- The average hadron momentum has positive plus-momentum. -/
 lemma minkowskiProduct_n_avgMomentum_pos : 0 < ⟪K.n, K.avgMomentum⟫ₘ := by
-  rw [minkowskiProduct_n_avgMomentum]
+  rw [minkowskiProduct_n_avgMomentum_eq]
   linarith [K.minkowskiProduct_n_p_pos, K.minkowskiProduct_n_p'_pos]
 
 /-- The light-like direction is non-zero, since it gives the hadrons non-zero plus-momentum. -/
@@ -187,14 +187,14 @@ lemma n_ne_zero : K.n ≠ 0 := by
 /-- The skewness in terms of the two plus-momenta, `ξ = (p⁺ - p'⁺) / (p⁺ + p'⁺)`. -/
 lemma skewness_eq_div :
     K.skewness = (⟪K.n, K.p⟫ₘ - ⟪K.n, K.p'⟫ₘ) / (⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ) := by
-  simp only [skewness_def, minkowskiProduct_n_avgMomentum, delta_def, map_sub, neg_sub,
+  simp only [skewness_def, minkowskiProduct_n_avgMomentum_eq, delta_def, map_sub, neg_sub,
     mul_div_cancel₀ _ (two_ne_zero (α := ℝ))]
 
 /-- The incoming plus-momentum is `p⁺ = (1 + ξ) P⁺`. -/
 lemma minkowskiProduct_n_p_eq : ⟪K.n, K.p⟫ₘ = (1 + K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
   have h : ⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ ≠ 0 :=
     (add_pos K.minkowskiProduct_n_p_pos K.minkowskiProduct_n_p'_pos).ne'
-  rw [minkowskiProduct_n_avgMomentum, skewness_eq_div]
+  rw [minkowskiProduct_n_avgMomentum_eq, skewness_eq_div]
   field_simp
   ring
 
@@ -202,7 +202,7 @@ lemma minkowskiProduct_n_p_eq : ⟪K.n, K.p⟫ₘ = (1 + K.skewness) * ⟪K.n, K
 lemma minkowskiProduct_n_p'_eq : ⟪K.n, K.p'⟫ₘ = (1 - K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
   have h : ⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ ≠ 0 :=
     (add_pos K.minkowskiProduct_n_p_pos K.minkowskiProduct_n_p'_pos).ne'
-  rw [minkowskiProduct_n_avgMomentum, skewness_eq_div]
+  rw [minkowskiProduct_n_avgMomentum_eq, skewness_eq_div]
   field_simp
   ring
 
@@ -291,9 +291,9 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
   set B : ℝ := (m2 - 1) / 2
   set D : ℝ := √(-((1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2))
   have hD : D ^ 2 = -((1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2) := Real.sq_sqrt (by linarith)
-  set p₀ : Vector d := ofTimeAndTwoSpatial i j (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
-  set p₀' : Vector d := ofTimeAndTwoSpatial i j (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'
-  set n₀ : Vector d := ofTimeAndTwoSpatial i j 1 0 1 with hn₀
+  set p₀ : Vector d := EpsilonEridani.ofTimeAndTwoSpatial i j (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
+  set p₀' : Vector d := EpsilonEridani.ofTimeAndTwoSpatial i j (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'
+  set n₀ : Vector d := EpsilonEridani.ofTimeAndTwoSpatial i j 1 0 1 with hn₀
   have hp : ⟪p₀, p₀⟫ₘ = M ^ 2 := by
     rw [hp₀, minkowskiProduct_ofTimeAndTwoSpatial hij]
     linear_combination (-1 / 4 : ℝ) * hD
@@ -310,15 +310,13 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
     rw [hn₀, hp₀', minkowskiProduct_ofTimeAndTwoSpatial hij]
     ring
   have hΔ : ⟪p₀' - p₀, p₀' - p₀⟫ₘ = t := by
-    rw [hp₀, hp₀', ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial,
+    rw [hp₀, hp₀', EpsilonEridani.ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial,
       minkowskiProduct_ofTimeAndTwoSpatial hij]
     linear_combination (-1 : ℝ) * hD
   let K₀ : OffForwardKinematics d M :=
     ⟨p₀, p₀', n₀, hp, hp', hnn, by rw [hnp]; linarith, by rw [hnp']; linarith⟩
   refine ⟨K₀, ?_, ?_⟩
-  · rw [K₀.skewness_eq_div]
-    change (⟪n₀, p₀⟫ₘ - ⟪n₀, p₀'⟫ₘ) / (⟪n₀, p₀⟫ₘ + ⟪n₀, p₀'⟫ₘ) = ξ
-    rw [hnp, hnp']
+  · rw [K₀.skewness_eq_div, hnp, hnp']
     field_simp
     ring
   · rw [K₀.tMom_def, K₀.delta_def]
