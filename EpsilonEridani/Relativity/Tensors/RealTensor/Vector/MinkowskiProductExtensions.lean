@@ -12,8 +12,8 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 /-!
 # Minkowski product extensions
 
-Local extensions to `Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct`, not yet
-upstreamed to Physlib: symmetry of the Minkowski product as a bilinear form
+Local extensions to `Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct`:
+symmetry of the Minkowski product as a bilinear form
 (`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
 the reflexive-form results about light-cone bases in
 `EpsilonEridani.Relativity.LightConeBasis`.
