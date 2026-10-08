@@ -16,7 +16,8 @@
 #
 # Anonymous GETs against the bucket's public prefixes (the same S3 host the trusted upload
 # writes to, but with no key: the bucket policy allows anonymous reads and answers a missing
-# revision map with 404, which Lake needs in order to backtrack). Looks up the root-package oleans for the checkout's revision --
+# revision map with 404, which Lake needs in order to backtrack).
+# Looks up the root-package oleans for the checkout's revision --
 # backtracking up to LAKE_CACHE_MAX_REVS revisions from HEAD (default 100; 0 means the complete
 # available history), and unpacks them into $LAKE_CACHE_DIR. This is trusted, publisher-built
 # data: no token is in reach and no PR code runs (the caller attests the declarative lakefile
