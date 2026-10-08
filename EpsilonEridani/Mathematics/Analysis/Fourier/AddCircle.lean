@@ -34,8 +34,7 @@ theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
 theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
     fourier n (x - y) = fourier n x * conj (fourier n y) := by
   rw [fourier_apply, fourier_apply, fourier_apply, smul_sub, sub_eq_add_neg, toCircle_add,
-    toCircle_neg]
-  simpa [Circle.coe_inv_eq_conj] using rfl
+    toCircle_neg, Circle.coe_mul, Circle.coe_inv_eq_conj]
 
 /-- Every Fourier monomial has norm `1`. -/
 @[simp]
@@ -58,7 +57,7 @@ theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEM
   have : (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) =
       (fun ω => fourier n ((X - Y) ω)) := by
     ext ω
-    rw [fourier_apply_sub n (X ω) (Y ω)]
+    simpa [Pi.sub_apply] using (fourier_apply_sub n (X ω) (Y ω)).symm
   rw [this]
   exact integrable_fourier_comp (AEMeasurable.sub hX hY) n
 
