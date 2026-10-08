@@ -104,7 +104,7 @@ theorem eikonalCurrent_smul (g : Bilin V) (L : ι → ChargedLeg V) (c : ℝ) (�
 /-- The contraction of the eikonal currents of two families of legs as a double sum over pairs of
 legs: `J_L·J_M = ∑ᵢ ∑ⱼ ηᵢ Qᵢ ηⱼ Qⱼ (pᵢ·pⱼ) / ((pᵢ·ℓ)(pⱼ·ℓ))`. For `M = L` this is the square
 `J·J`. -/
-theorem apply_eikonalCurrent_eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg V)
+@[simp] theorem apply_eikonalCurrent_eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg V)
     (M : κ → ChargedLeg V) (ℓ : V) :
     g (eikonalCurrent g L ℓ) (eikonalCurrent g M ℓ) =
       ∑ i, ∑ j, (L i).signedCharge * (M j).signedCharge * g (L i).momentum (M j).momentum /
@@ -124,9 +124,9 @@ theorem apply_eikonalCurrent_eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg
 /-- The eikonal current of a charged line: `J(ℓ) = Q (p' / (p'·ℓ) - p / (p·ℓ))`. -/
 @[simp] theorem eikonalCurrent_chargedLine (g : Bilin V) (p p' : V) (Q : ℝ) (ℓ : V) :
     eikonalCurrent g (chargedLine p p' Q) ℓ = Q • ((g p' ℓ)⁻¹ • p' - (g p ℓ)⁻¹ • p) := by
-  simp only [eikonalCurrent, chargedLine, Fin.sum_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one, ChargedLeg.signedCharge_mk, LegDirection.sign_incoming,
-    LegDirection.sign_outgoing, smul_sub, smul_smul]
+  simp only [eikonalCurrent, Fin.sum_univ_two, chargedLine_zero, chargedLine_one,
+    ChargedLeg.signedCharge_mk, LegDirection.sign_incoming, LegDirection.sign_outgoing,
+    smul_sub, smul_smul]
   rw [sub_eq_neg_add, ← neg_smul]
   congr 2 <;> ring
 
@@ -136,7 +136,7 @@ theorem eikonalCurrent_chargedLine_conserved (g : Bilin V) (p p' : V) (Q : ℝ) 
     (hp : g p ℓ ≠ 0) (hp' : g p' ℓ ≠ 0) :
     g (eikonalCurrent g (chargedLine p p' Q) ℓ) ℓ = 0 :=
   eikonalCurrent_conserved_of_netCharge_eq_zero g _ ℓ
-    (fun i => by fin_cases i <;> simpa [chargedLine]) (netCharge_chargedLine p p' Q)
+    (fun i => by fin_cases i <;> simp [chargedLine_zero, chargedLine_one]) (netCharge_chargedLine p p' Q)
 
 end Corrections
 
