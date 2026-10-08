@@ -55,8 +55,7 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
 - `ParityOddAssumptions.apply_pTransverse_eq_zero`, `ParityOddAssumptions.apply_p_eq_zero`: a
   parity-odd tensor annihilates `p_T` and `p` under `SpectatorPartners`, that is, when every
   vector splits into `p_T`, `q` and spectator parts and every non-zero spectator is non-null
-  with a non-null spectator orthogonal to it. The `_of_spectatorPlane` forms give the same
-  under a `SpectatorPlane`.
+  with a non-null spectator orthogonal to it, the same holds under a `SpectatorPlane`.
 - `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under a `SpectatorSplitting` in which
   non-zero spectators are non-null, the parity-odd part vanishes under
   full covariance. No four-dimensionality enters.
@@ -256,8 +255,7 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPair g K)
   ring
 
 /-- **A parity-odd tensor annihilates the transverse hadron momentum `p_T`.** Under
-`SpectatorPartners`, every vector splits into a `p_T` part, a `q` part and a spectator part
-`u`, and the half-turn in the plane of `u` and its partner reverses `u` and fixes `p_T`.
+`SpectatorPartners`, every vector splits into a `p_T` part, a `q` part and a spectator part.
 No four-dimensionality enters: a definite spectator subspace of any dimension at least two
 qualifies. -/
 lemma apply_pTransverse_eq_zero (hSymm : g.IsSymm)
@@ -306,32 +304,6 @@ lemma apply_p_eq_zero_right (hSymm : g.IsSymm)
     (hW : ParityOddAssumptions g K W) (v : V) :
     W v K.p = 0 := by
   rw [← hW.isAlt.neg_eq, hW.apply_p_eq_zero hSymm hS, neg_zero]
-
-/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p_T`: its `p_T` row has no
-spectator coordinates in the adapted frame. -/
-lemma apply_pTransverse_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
-    (hW : ParityOddAssumptions g K W) (v : V) :
-    W (pTransverse g K) v = 0 := by
-  obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
-  simpa using hW.apply_eq_mul_apply_e₁_e₂ hSymm hP.toSpectatorPair 1 0 0 0 a b c₁ c₂
-
-/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates the hadron momentum `p`. -/
-lemma apply_p_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
-    (hW : ParityOddAssumptions g K W) (v : V) :
-    W K.p v = 0 := by
-  rw [hW.apply_p_eq_apply_pTransverse, hW.apply_pTransverse_eq_zero_of_spectatorPlane hSymm hP]
-
-/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p_T` in the second slot. -/
-lemma apply_pTransverse_eq_zero_right_of_spectatorPlane (hSymm : g.IsSymm)
-    (hP : SpectatorPlane g K) (hW : ParityOddAssumptions g K W) (v : V) :
-    W v (pTransverse g K) = 0 := by
-  rw [← hW.isAlt.neg_eq, hW.apply_pTransverse_eq_zero_of_spectatorPlane hSymm hP, neg_zero]
-
-/-- Under a `SpectatorPlane`, a parity-odd tensor annihilates `p` in the second slot. -/
-lemma apply_p_eq_zero_right_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
-    (hW : ParityOddAssumptions g K W) (v : V) :
-    W v K.p = 0 := by
-  rw [← hW.isAlt.neg_eq, hW.apply_p_eq_zero_of_spectatorPlane hSymm hP, neg_zero]
 
 /-- Two parity-odd tensors agreeing on the spectator pair `(e₁, e₂)` are equal. -/
 lemma eq_of_apply_e₁_e₂_eq (hSymm : g.IsSymm) (hP : SpectatorPlane g K) {W' : Bilin V}
@@ -547,7 +519,7 @@ theorem existsUnique_eq_smul_aFour {W : Bilin (Fin 4 → ℝ)}
     aFour_ne_zero
 
 /-- On the witness kinematics every non-zero spectator is non-null: the spectator subspace is
-the spacelike plane of the coordinates `1` and `2`. This follows from `spectatorPlaneFour`. -/
+the spacelike plane of the coordinates `1` and `2`. -/
 lemma spectatorPlaneFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
     (hq : gFour kFour.q u = 0) (hT : gFour (pTransverse gFour kFour) u = 0)
     (hu : u ≠ 0) : gFour u u ≠ 0 := by
