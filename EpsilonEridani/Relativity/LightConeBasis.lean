@@ -37,7 +37,7 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 
 ## Main definitions
 
-* `EpsilonEridani.LightConeBasis B`: a light-cone basis `(n₊, n₋)` for `B`.
+* `LinearMap.BilinForm.LightConeBasis B`: a light-cone basis `(n₊, n₋)` for `B`.
 * `LightConeBasis.plus`, `LightConeBasis.minus`: the light-cone components `v⁺`, `v⁻`.
 * `LightConeBasis.longitudinal`: the span of `n₊` and `n₋`.
 * `LightConeBasis.transverse`: the transverse subspace `{v | n₊ · v = n₋ · v = 0}`, the
@@ -59,11 +59,11 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 * `LightConeBasis.bilinForm_eq_plus_mul_minus_add`: `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
 * `LightConeBasis.isSelfAdjoint_transverseProj`: for a reflexive form the transverse projector is
   self-adjoint.
-* `LightConeBasis.finrank_transverse_add_two`: the transverse subspace has codimension two.
+* `LightConeBasis.finrank_transverse_add_two_eq`: the transverse subspace has codimension two.
 * `EpsilonEridani.isSymm_toBilinForm_minkowskiProduct` (in
   `Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`): the Minkowski product is
   symmetric, so the reflexive-form results above apply to it.
-* `LightConeBasis.finrank_transverse_minkowskiProduct_add_one`: in `d + 1`-dimensional
+* `LightConeBasis.finrank_transverse_minkowskiProduct_add_one_eq`: in `d + 1`-dimensional
   Minkowski space the transverse projector of any light-cone basis has rank `d - 1`.
 * `LightConeBasis.finrank_transverse_minkowskiProduct_eq_two`: in four-dimensional Minkowski space
   the transverse projector has rank two.
@@ -77,7 +77,7 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 
 public section
 
-namespace EpsilonEridani
+namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
 open Module
@@ -189,7 +189,7 @@ theorem transverseProj_apply (v : V) :
 
 /-- Every vector is the sum of its light-cone and transverse parts,
 `v = v⁺ n₊ + v⁻ n₋ + v_T`. -/
-theorem plus_smul_add_minus_smul_add_transverseProj (v : V) :
+theorem plus_smul_add_minus_smul_add_transverseProj_eq (v : V) :
     L.plus v • L.nPlus + L.minus v • L.nMinus + L.transverseProj v = v := by
   rw [transverseProj_apply]
   abel
@@ -230,7 +230,7 @@ theorem ker_transverseProj : LinearMap.ker L.transverseProj = L.longitudinal := 
   rw [LinearMap.mem_ker]
   rw [longitudinal_def, Submodule.mem_span_pair]
   refine ⟨fun h => ⟨L.plus v, L.minus v, ?_⟩, fun ⟨a, b, hv⟩ => ?_⟩
-  · simpa [h] using L.plus_smul_add_minus_smul_add_transverseProj v
+  · simpa [h] using L.plus_smul_add_minus_smul_add_transverseProj_eq v
   · subst hv
     simp
 
@@ -248,7 +248,7 @@ theorem smul_add_smul_add_eq_iff {a b : R} {w v : V} (hw : w ∈ L.transverse) :
     refine ⟨by simp [hp], by simp [hm], ?_⟩
     simp [L.isProj_transverseProj.map_id w hw]
   · rintro ⟨rfl, rfl, rfl⟩
-    exact L.plus_smul_add_minus_smul_add_transverseProj v
+    exact L.plus_smul_add_minus_smul_add_transverseProj_eq v
 
 /-- `n₊` and `n₋` are linearly independent. -/
 theorem linearIndependent : LinearIndependent R ![L.nPlus, L.nMinus] := by
@@ -287,8 +287,8 @@ theorem bilinForm_eq_plus_mul_minus_add (u v : V) :
     B u v = L.plus u * L.minus v + L.minus u * L.plus v +
       B (L.transverseProj u) (L.transverseProj v) := by
   conv_lhs =>
-    rw [← L.plus_smul_add_minus_smul_add_transverseProj u,
-      ← L.plus_smul_add_minus_smul_add_transverseProj v]
+    rw [← L.plus_smul_add_minus_smul_add_transverseProj_eq u,
+      ← L.plus_smul_add_minus_smul_add_transverseProj_eq v]
   simp [L.bilinForm_nPlus_right_eq_zero_of_mem_transverse hB
       (L.isProj_transverseProj.map_mem _),
     L.bilinForm_nMinus_right_eq_zero_of_mem_transverse hB (L.isProj_transverseProj.map_mem _),
@@ -318,7 +318,7 @@ theorem finrank_longitudinal_eq_two : finrank K L.longitudinal = 2 := by
   rwa [Matrix.range_cons_cons_empty, Fintype.card_fin] at h
 
 /-- The transverse subspace has codimension two. -/
-theorem finrank_transverse_add_two [FiniteDimensional K V] :
+theorem finrank_transverse_add_two_eq [FiniteDimensional K V] :
     finrank K L.transverse + 2 = finrank K V := by
   rw [← L.finrank_longitudinal_eq_two, add_comm]
   exact Submodule.finrank_add_eq_of_isCompl L.isCompl_longitudinal_transverse
@@ -343,7 +343,7 @@ private noncomputable def axisVector (i : Fin d) (s : ℝ) : Vector d :=
 
 private theorem minkowskiProduct_axisVector_left (i : Fin d) (s : ℝ) (v : Vector d) :
     ⟪axisVector i s, v⟫ₘ = (v (Sum.inl 0) - s * v (Sum.inr i)) / √2 := by
-  simp only [axisVector, map_smul, map_add, add_apply,
+  simp only [axisVector, map_smul, map_add, _root_.add_apply,
     FunLike.coe_smul, Pi.smul_apply, minkowskiProduct_basis_left,
     minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i, smul_eq_mul]
   ring
@@ -409,10 +409,10 @@ theorem mem_transverse_minkowskiAxis_iff (i : Fin d) (v : Vector d) :
 
 /-- For any light-cone basis of `d + 1`-dimensional Minkowski space the transverse subspace, the
 range of the transverse projector (`L.isProj_transverseProj.range`), has dimension `d - 1`. -/
-theorem finrank_transverse_minkowskiProduct_add_one
+theorem finrank_transverse_minkowskiProduct_add_one_eq
     (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm) :
     finrank ℝ L.transverse + 1 = d := by
-  have h := L.finrank_transverse_add_two
+  have h := L.finrank_transverse_add_two_eq
   rw [finrank_eq_card_basis basis, Fintype.card_sum, Fintype.card_fin, Fintype.card_fin] at h
   omega
 
@@ -421,11 +421,11 @@ rank two. -/
 theorem finrank_transverse_minkowskiProduct_eq_two
     (L : LightConeBasis (minkowskiProduct (d := 3)).toBilinForm) :
     finrank ℝ L.transverse = 2 := by
-  have h := L.finrank_transverse_minkowskiProduct_add_one
+  have h := L.finrank_transverse_minkowskiProduct_add_one_eq
   omega
 
 end LightConeBasis
 
 end Minkowski
 
-end EpsilonEridani
+end LinearMap.BilinForm
