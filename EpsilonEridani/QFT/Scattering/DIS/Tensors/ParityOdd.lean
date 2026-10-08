@@ -497,7 +497,7 @@ the `2 × 2` determinant of the spectator components `1`, `2` of `v` and `w`. -/
 /-- **`ParityOddAssumptions` is satisfiable.** The witness tensor `aFour` is alternating,
 conserved and properly covariant. -/
 lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour where
-  properCovariant f hf hdet v w := by
+  proper_covariant f hf hdet v w := by
     have hp : f ![1, 0, 0, 0] = ![1, 0, 0, 0] := hf.fixes_p
     have hq : f ![0, 0, 0, 1] = ![0, 0, 0, 1] := hf.fixes_q
     have h : ![f v, f w, ![1, 0, 0, 0], ![0, 0, 0, 1]] =
