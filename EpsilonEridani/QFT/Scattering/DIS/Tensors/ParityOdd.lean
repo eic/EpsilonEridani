@@ -566,14 +566,12 @@ lemma spectatorPlaneFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
     rw [h₀, h₃]
     have hpos : c₁ * c₁ + c₂ * c₂ > 0 := by
       nlinarith [mul_self_pos.mpr h, mul_self_nonneg (c₂)]
-    intro hzero
-    nlinarith
+    linarith
   · -- c₂ ≠ 0
     rw [h₀, h₃]
     have hpos : c₁ * c₁ + c₂ * c₂ > 0 := by
       nlinarith [mul_self_nonneg (c₁), mul_self_pos.mpr h]
-    intro hzero
-    nlinarith
+    linarith
 
 /-- **Proper covariance is strictly weaker than full covariance.** The properly covariant,
 non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
