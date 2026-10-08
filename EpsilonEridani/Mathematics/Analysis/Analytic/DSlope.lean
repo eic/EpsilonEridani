@@ -12,13 +12,12 @@ public import Mathlib.Analysis.Calculus.DSlope
 # Analyticity of the slope function `dslope`
 
 `dslope f a` is the difference quotient `(f b - f a) / (b - a)`, extended at `b = a` by the
-derivative of `f`. The continuity and differentiability transfer lemmas from Mathlib
-(`continuousAt_dslope_same`, `continuousAt_dslope_of_ne`, `differentiableAt_dslope_of_ne`) give:
-`dslope f a` is continuous or differentiable away from `a` exactly where `f` is; at `a`, continuity
-of `dslope f a` corresponds to differentiability of `f` at `a`. This file proves the analytic
-analogue, which needs no such case distinction: `dslope f a` is analytic at a point if and only if
-`f` is (`EpsilonEridani.analyticAt_dslope`), and so on any set
-(`EpsilonEridani.analyticOnNhd_dslope`).
+derivative of `f`. Continuity and differentiability transfer away from `a` via Mathlib's
+`continuousAt_dslope_of_ne` and `differentiableAt_dslope_of_ne`. At `a`,
+`continuousAt_dslope_same` equates continuity of `dslope f a` with differentiability of `f` at `a`,
+not continuity of `f`. This file proves the analytic analogue, which needs no such case
+distinction: `dslope f a` is analytic at a point if and only if `f` is
+(`EpsilonEridani.analyticAt_dslope`), and so on any set (`EpsilonEridani.analyticOnNhd_dslope`).
 
 Removing the removable singularity of `f' / x` at the origin in this way keeps the iterates of
 `(1 / x) d/dx` analytic, which is how the Rayleigh formula for the spherical Bessel functions
