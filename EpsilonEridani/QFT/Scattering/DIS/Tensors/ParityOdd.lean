@@ -563,12 +563,12 @@ lemma spectatorPlaneFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
     simp [h₀, h₃, hc₁, hc₂]
   rcases h₁₂ with (h | h)
   · -- c₁ ≠ 0
-    rw [h₀, h₃]
+    simp [h₀, h₃, gFour_apply, spectatorPlaneFour_e₁, spectatorPlaneFour_e₂]
     have hpos : c₁ * c₁ + c₂ * c₂ > 0 := by
       nlinarith [mul_self_pos.mpr h, mul_self_nonneg (c₂)]
     nlinarith
   · -- c₂ ≠ 0
-    rw [h₀, h₃]
+    simp [h₀, h₃, gFour_apply, spectatorPlaneFour_e₁, spectatorPlaneFour_e₂]
     have hpos : c₁ * c₁ + c₂ * c₂ > 0 := by
       nlinarith [mul_self_nonneg (c₁), mul_self_pos.mpr h]
     nlinarith
