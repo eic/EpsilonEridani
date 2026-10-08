@@ -557,9 +557,11 @@ lemma spectatorPlaneFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
   have h₀ : a = 0 := by simpa using hT
   have h₃ : b = 0 := by simpa using hq
   have h₁₂ : c₁ ≠ 0 ∨ c₂ ≠ 0 := by
-    intro h
+    by_contra! h
+    have hc₁ : c₁ = 0 := fun hc => h (Or.inl hc)
+    have hc₂ : c₂ = 0 := fun hc => h (Or.inr hc)
     apply hu
-    simp [h₀, h₃, h.1, h.2]
+    simp [h₀, h₃, hc₁, hc₂]
   rcases h₁₂ with h | h <;> nlinarith [mul_self_pos.mpr h, mul_self_nonneg (c₁),
     mul_self_nonneg (c₂)]
 
@@ -568,7 +570,7 @@ non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
 lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour aFour := fun h =>
   aFour_ne_zero (parityOddAssumptions_aFour.eq_zero_of_isLorentzCovariant gFour_isSymm
     spectatorPlaneFour.spectatorSplitting
-    (fun u hq hT hu => spectatorPlaneFour_self_ne_zero_of_spectator hq hT hu) h)
+    (fun _u hq hT hu => spectatorPlaneFour_self_ne_zero_of_spectator hq hT hu) h)
 
 end Witness
 
