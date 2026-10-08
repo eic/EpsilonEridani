@@ -92,6 +92,7 @@ noncomputable def singletAction (y : ℝ) : su (Fin 2) × ℝ →ₗ[ℝ] ℂ wh
     ring
 
 /-- The singlet action unfolded. -/
+@[simp]
 theorem singletAction_apply (y : ℝ) (x : su (Fin 2) × ℝ) :
     singletAction y x = I * (x.2 * (y / 2 : ℝ) : ℂ) :=
   (rfl)
@@ -107,6 +108,7 @@ noncomputable def doubletAction (y : ℝ) : su (Fin 2) × ℝ →ₗ[ℝ] Matrix
     rw [Prod.smul_fst, SetLike.val_smul, map_smul, RingHom.id_apply, smul_add, smul_assoc]
 
 /-- The doublet action unfolded. -/
+@[simp]
 theorem doubletAction_apply (y : ℝ) (x : su (Fin 2) × ℝ) :
     doubletAction y x = (x.1 : Matrix (Fin 2) (Fin 2) ℂ) + singletAction y x • 1 :=
   (rfl)
@@ -163,6 +165,7 @@ theorem chargeGenerator_ne_zero : chargeGenerator ≠ 0 := by
 noncomputable def doubletCharge (y : ℝ) (k : Fin 2) : ℝ := isospinWeight k + y / 2
 
 /-- The doublet charge unfolded. -/
+@[simp]
 theorem doubletCharge_apply (y : ℝ) (k : Fin 2) : doubletCharge y k = isospinWeight k + y / 2 :=
   (rfl)
 
