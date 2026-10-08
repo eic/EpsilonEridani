@@ -136,7 +136,8 @@ theorem eikonalCurrent_chargedLine_conserved (g : Bilin V) (p p' : V) (Q : ℝ) 
     (hp : g p ℓ ≠ 0) (hp' : g p' ℓ ≠ 0) :
     g (eikonalCurrent g (chargedLine p p' Q) ℓ) ℓ = 0 :=
   eikonalCurrent_conserved_of_netCharge_eq_zero g _ ℓ
-    (fun i => by fin_cases i <;> simpa [chargedLine_zero, chargedLine_one]) (netCharge_chargedLine p p' Q)
+    (fun i => by
+        fin_cases i <;> simpa [chargedLine_zero, chargedLine_one]) (netCharge_chargedLine p p' Q)
 
 end Corrections
 
