@@ -50,8 +50,8 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 
 * `LightConeBasis.isProj_transverseProj`: the transverse projector is a projection onto the
   transverse subspace.
-* `LightConeBasis.transverseProj_transverseProj`: the transverse projector is idempotent.
-* `LightConeBasis.ker_transverseProj`: its kernel is the longitudinal subspace.
+* `LightConeBasis.transverseProj_transverseProj_eq`: the transverse projector is idempotent.
+* `LightConeBasis.ker_transverseProj_eq_longitudinal`: its kernel is the longitudinal subspace.
 * `LightConeBasis.isCompl_longitudinal_transverse`: `V` is the direct sum of the longitudinal and
   transverse subspaces.
 * `LightConeBasis.smul_add_smul_add_eq_iff`: uniqueness of the decomposition
@@ -212,7 +212,7 @@ theorem isProj_transverseProj : LinearMap.IsProj L.transverse L.transverseProj w
 
 /-- The transverse projector is idempotent. -/
 @[simp]
-theorem transverseProj_transverseProj (v : V) :
+theorem transverseProj_transverseProj_eq (v : V) :
     L.transverseProj (L.transverseProj v) = L.transverseProj v :=
   L.isProj_transverseProj.map_id _ (L.isProj_transverseProj.map_mem v)
 
@@ -225,7 +225,7 @@ theorem transverseProj_nMinus_eq_zero : L.transverseProj L.nMinus = 0 := by
   simp [transverseProj_apply]
 
 /-- The kernel of the transverse projector is the longitudinal subspace. -/
-theorem ker_transverseProj : LinearMap.ker L.transverseProj = L.longitudinal := by
+theorem ker_transverseProj_eq_longitudinal : LinearMap.ker L.transverseProj = L.longitudinal := by
   ext v
   rw [LinearMap.mem_ker]
   rw [longitudinal_def, Submodule.mem_span_pair]
@@ -236,7 +236,7 @@ theorem ker_transverseProj : LinearMap.ker L.transverseProj = L.longitudinal := 
 
 /-- `V` is the direct sum of the longitudinal and the transverse subspaces. -/
 theorem isCompl_longitudinal_transverse : IsCompl L.longitudinal L.transverse := by
-  simpa [ker_transverseProj] using L.isProj_transverseProj.isCompl.symm
+  simpa [ker_transverseProj_eq_longitudinal] using L.isProj_transverseProj.isCompl.symm
 
 /-- The decomposition `v = v⁺ n₊ + v⁻ n₋ + v_T` with `v_T` transverse is unique. -/
 theorem smul_add_smul_add_eq_iff {a b : R} {w v : V} (hw : w ∈ L.transverse) :
@@ -375,11 +375,11 @@ private theorem minkowskiAxis_nMinus_eq (i : Fin d) :
     (minkowskiAxis i).nMinus = axisVector i (-1) :=
   rfl
 
-theorem minkowskiAxis_nPlus (i : Fin d) :
+theorem minkowskiAxis_nPlus_eq_smul_add (i : Fin d) :
     (minkowskiAxis i).nPlus = (√2)⁻¹ • (basis (Sum.inl 0) + basis (Sum.inr i)) := by
   rw [minkowskiAxis_nPlus_eq, axisVector, one_smul]
 
-theorem minkowskiAxis_nMinus (i : Fin d) :
+theorem minkowskiAxis_nMinus_eq_smul_sub (i : Fin d) :
     (minkowskiAxis i).nMinus = (√2)⁻¹ • (basis (Sum.inl 0) - basis (Sum.inr i)) := by
   rw [minkowskiAxis_nMinus_eq, axisVector, neg_one_smul, _root_.sub_eq_add_neg]
 
