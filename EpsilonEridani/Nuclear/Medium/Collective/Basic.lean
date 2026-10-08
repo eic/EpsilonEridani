@@ -146,6 +146,13 @@ theorem twoParticleCorrelation_def (n : ℤ) (φ : ι → AddCircle T) :
       (‖qVector n φ‖ ^ 2 - Fintype.card ι) / (Fintype.card ι * (Fintype.card ι - 1)) :=
   (rfl)
 
+/-- At multiplicity `M ≤ 1` there are no ordered pairs of distinct particles, the denominator
+`M (M - 1)` vanishes and the two-particle correlation takes the junk value `0`. -/
+theorem twoParticleCorrelation_eq_zero_of_card_le_one (h : Fintype.card ι ≤ 1) (n : ℤ)
+    (φ : ι → AddCircle T) : twoParticleCorrelation n φ = 0 := by
+  rw [twoParticleCorrelation]
+  interval_cases Fintype.card ι <;> simp
+
 /-- The two-particle correlation is the average of `e^{i n (φⱼ - φₖ)}` over ordered pairs of
 distinct particles. -/
 theorem ofReal_twoParticleCorrelation_eq_sum [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle T) :
@@ -161,10 +168,10 @@ theorem ofReal_twoParticleCorrelation_eq_sum [DecidableEq ι] (n : ℤ) (φ : ι
 At `M ≤ 1` the value is `0` (division by zero) and the bound is trivially true. -/
 theorem abs_twoParticleCorrelation_le_one (n : ℤ) (φ : ι → AddCircle T) :
     |twoParticleCorrelation n φ| ≤ 1 := by
-  rw [twoParticleCorrelation]
   -- for M ≤ 1 the denominator M (M - 1) vanishes and ⟨2⟩ takes the junk value 0
   rcases le_or_gt (Fintype.card ι) 1 with h | h
-  · interval_cases Fintype.card ι <;> simp
+  · simp [twoParticleCorrelation_eq_zero_of_card_le_one h]
+  rw [twoParticleCorrelation]
   have h2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast h
   have hq := pow_le_pow_left₀ (norm_nonneg _) (norm_qVector_le_card n φ) 2
   have hD : (0 : ℝ) < Fintype.card ι * (Fintype.card ι - 1) := by nlinarith
