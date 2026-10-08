@@ -54,6 +54,8 @@ to the inclusive structure functions.
 * `FieldContent.twist_add`: twist is additive under products of operators.
 * `FieldContent.card_le_twist`: an operator has twist at least its number of fields, with
   equality exactly when every field is a good component (`FieldContent.twist_eq_card_iff`).
+* `FieldContent.twist_eq_one_iff`: an operator has twist one exactly when it is a single
+  twist-one field.
 * `FieldContent.twist_eq_two_iff`, `FieldContent.twist_eq_three_iff`: an operator has twist two
   exactly when it is a single twist-two field or a bilinear in twist-one fields, and twist three
   exactly when it is a single twist-three field, a bilinear in a twist-one and a twist-two field,
@@ -218,6 +220,11 @@ theorem one_le_twist (f : LightConeField) : 1 ≤ f.twist := by
       f = fieldStrength .transverse := by
   rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp
 
+/-- The field component of twist three: `F^{-i}`. -/
+@[simp] theorem twist_eq_three_iff {f : LightConeField} :
+    f.twist = 3 ↔ f = fieldStrength .minusTransverse := by
+  rcases f with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp
+
 end LightConeField
 
 open LightConeField
@@ -341,6 +348,16 @@ components. -/
       exact ⟨by omega, ih.1 (by omega)⟩
     · rintro ⟨hf, hO⟩
       rw [hf, ih.2 hO, add_comm]
+
+/-- An operator has twist one exactly when it is a single twist-one field. -/
+theorem twist_eq_one_iff {O : FieldContent} :
+    twist O = 1 ↔ ∃ f, f.twist = 1 ∧ O = {f} := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨f, hf, rfl⟩; simp [*]⟩
+  have hcard := card_le_twist O
+  obtain h0 | h1 : Multiset.card O = 0 ∨ Multiset.card O = 1 := by omega
+  · simp_all
+  · obtain ⟨a, rfl⟩ := Multiset.card_eq_one.1 h1
+    exact ⟨a, by simpa using h, rfl⟩
 
 /-- An operator has twist two exactly when it is a single twist-two field or a bilinear in
 twist-one fields. -/
