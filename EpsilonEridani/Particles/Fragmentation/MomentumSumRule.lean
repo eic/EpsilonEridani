@@ -92,9 +92,9 @@ lemma momentumSumRule_iff_of_unique [Unique Hadron] (D : Frag Hadron Flavor) :
 species carries at most the whole momentum of the fragmenting parton. -/
 theorem MomentumSumRule.zMoment_one_le_one [Fintype Hadron] {D : Frag Hadron Flavor}
     (hsum : MomentumSumRule D) {i : Flavor} {Q2 : ℝ}
-    (hD : ∀ h', ∀ z ∈ Icc (0 : ℝ) 1, 0 ≤ D h' i z Q2) (h : Hadron) : zMoment D 1 h i Q2 ≤ 1 :=
+    (hD : ∀ h', 0 ≤ zMoment D 1 h' i Q2) (h : Hadron) : zMoment D 1 h i Q2 ≤ 1 :=
   ((momentumSumRule_iff D).1 hsum i Q2).2 ▸ Finset.single_le_sum
-    (fun h' _ => zMoment_nonneg (hD h') 1) (Finset.mem_univ h)
+    (fun h' _ => hD h') (Finset.mem_univ h)
 
 /-! ### The sum rule is not a per-species statement -/
 
@@ -113,7 +113,7 @@ lemma assumptions_twoSpeciesFrag : Assumptions twoSpeciesFrag :=
   assumptions_extendByZero fun h _ z _ hz₀ hz₁ => by
     fin_cases h <;> simp <;> linarith
 
-/-- The species `0` of `twoSpeciesFrag` carries two thirds of the momentum. -/
+/-- The first moment of `twoSpeciesFrag` for species `h` is `(2 - h) / 3`. -/
 lemma zMoment_one_twoSpeciesFrag_zero (Q2 : ℝ) : zMoment twoSpeciesFrag 1 0 () Q2 = 2 / 3 := by
   rw [twoSpeciesFrag_def, zMoment_extendByZero, zMoment_eq_intervalIntegral]
   simp only [Matrix.cons_val_zero, pow_one]
@@ -127,15 +127,18 @@ lemma zMoment_one_twoSpeciesFrag_one (Q2 : ℝ) : zMoment twoSpeciesFrag 1 1 () 
   simp only [Matrix.cons_val_one, Matrix.cons_val_fin_one, pow_one]
   have : ∀ z : ℝ, z * (2 * (1 - z)) = 2 * z ^ 1 - 2 * z ^ 2 := fun z => by ring
   simp only [this]
-  rw [intervalIntegral.integral_sub (by apply Continuous.intervalIntegrable; fun_prop)
-    (by apply Continuous.intervalIntegrable; fun_prop)]
+  rw [intervalIntegral.integral_sub (by
+    apply Continuous.intervalIntegrable
+    fun_prop) (by
+    apply Continuous.intervalIntegrable
+    fun_prop)]
   simp only [intervalIntegral.integral_const_mul, integral_pow]
   norm_num
 
 /-- The two-species family satisfies the momentum sum rule: `2/3 + 1/3 = 1`. -/
 theorem momentumSumRule_twoSpeciesFrag : MomentumSumRule twoSpeciesFrag := by
   refine (momentumSumRule_iff _).2 fun _ Q2 => ⟨fun h => ?_, ?_⟩
-  · rw [twoSpeciesFrag_def, integrableOn_mul_extendByZero_iff]
+  · rw [twoSpeciesFrag_def, integrableOn_extendByZero_iff]
     fin_cases h <;>
       simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
         Matrix.cons_val_fin_one] <;>
@@ -147,8 +150,13 @@ theorem momentumSumRule_twoSpeciesFrag : MomentumSumRule twoSpeciesFrag := by
 theorem not_momentumSumRule_single_twoSpeciesFrag (h : Fin 2) :
     ¬ MomentumSumRule (fun _ : Unit => twoSpeciesFrag h) := by
   have key : ∀ h : Fin 2, zMoment twoSpeciesFrag 1 h () 0 ≠ 1 := by
-    rw [Fin.forall_fin_two, zMoment_one_twoSpeciesFrag_zero, zMoment_one_twoSpeciesFrag_one]
-    norm_num
+    intro h
+    -- h is either 0 or 1
+    have h_cases : h = 0 ∨ h = 1 := by
+      fin_cases h <;> simp
+    rcases h_cases with (rfl | rfl)
+    · rw [zMoment_one_twoSpeciesFrag_zero]; norm_num
+    · rw [zMoment_one_twoSpeciesFrag_one]; norm_num
   rw [momentumSumRule_iff_of_unique]
   exact fun hsum => key h (hsum () 0).2
 
@@ -167,7 +175,7 @@ private lemma assumptions_invFrag : Assumptions invFrag :=
 private theorem momentumSumRule_invFrag : MomentumSumRule invFrag := by
   rw [momentumSumRule_iff_of_unique]
   refine fun _ Q2 => ⟨?_, ?_⟩
-  · rw [invFrag, integrableOn_mul_extendByZero_iff, integrableOn_Icc_iff_integrableOn_Ioc,
+  · rw [invFrag, integrableOn_extendByZero_iff, integrableOn_Icc_iff_integrableOn_Ioc,
       integrableOn_congr_fun (g := fun _ => (1 : ℝ)) (fun z hz => mul_inv_cancel₀ hz.1.ne')
         measurableSet_Ioc]
     exact integrableOn_const measure_Ioc_lt_top.ne
@@ -223,7 +231,7 @@ lemma zMoment_powerFrag (n k : ℕ) (Q2 : ℝ) :
 theorem momentumSumRule_powerFrag (n : ℕ) : MomentumSumRule (powerFrag n) := by
   rw [momentumSumRule_iff_of_unique]
   refine fun _ Q2 => ⟨?_, ?_⟩
-  · rw [powerFrag_def, integrableOn_mul_extendByZero_iff]
+  · rw [powerFrag_def, integrableOn_extendByZero_iff]
     exact Continuous.integrableOn_Icc (by fun_prop)
   rw [zMoment_powerFrag]
   have : (n : ℝ) + 2 ≠ 0 := by positivity

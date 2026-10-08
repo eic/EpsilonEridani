@@ -70,7 +70,7 @@ def extendByZero (f : Frag Hadron Flavor) : Frag Hadron Flavor :=
   fun h i z Q2 => (Icc (0 : ℝ) 1).indicator (fun z => f h i z Q2) z
 
 /-- Unfolding lemma for `extendByZero`. -/
-lemma extendByZero_def (f : Frag Hadron Flavor) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
+lemma extendByZero_apply (f : Frag Hadron Flavor) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
     extendByZero f h i z Q2 = (Icc (0 : ℝ) 1).indicator (fun z => f h i z Q2) z :=
   (rfl)
 
@@ -93,11 +93,11 @@ lemma zMoment_extendByZero (f : Frag Hadron Flavor) : zMoment (extendByZero f) =
   exact setIntegral_congr_fun measurableSet_Icc fun z hz => by
     rw [extendByZero_of_mem f hz]
 
-/-- Extending by zero does not change integrability of a weighted family on the unit interval. -/
-lemma integrableOn_mul_extendByZero_iff (f : Frag Hadron Flavor) (g : ℝ → ℝ) (h : Hadron)
+/-- Extending by zero does not change integrability on the unit interval. -/
+lemma integrableOn_extendByZero_iff (f : Frag Hadron Flavor) (F : ℝ → ℝ → ℝ) (h : Hadron)
     (i : Flavor) (Q2 : ℝ) :
-    IntegrableOn (fun z => g z * extendByZero f h i z Q2) (Icc 0 1) ↔
-      IntegrableOn (fun z => g z * f h i z Q2) (Icc 0 1) :=
+    IntegrableOn (fun z => F z (extendByZero f h i z Q2)) (Icc 0 1) ↔
+      IntegrableOn (fun z => F z (f h i z Q2)) (Icc 0 1) :=
   integrableOn_congr_fun (fun z hz => by rw [extendByZero_of_mem f hz]) measurableSet_Icc
 
 /-- The extension by zero of a family that is non-negative on the unit interval satisfies
