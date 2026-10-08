@@ -59,8 +59,9 @@ theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEM
   have : (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) =
       (fun ω => fourier n ((X - Y) ω)) := by
     ext ω
-    rw [← fourier_apply_sub]
+    rw [fourier_apply_sub]
   rw [this]
   exact integrable_fourier_comp (AEMeasurable.sub hX hY) n
 
 end EpsilonEridani
+re-trigger
