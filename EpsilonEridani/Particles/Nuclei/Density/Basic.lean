@@ -8,6 +8,7 @@ module
 public import EpsilonEridani.Particles.Nuclei.Basic
 public import Physlib.SpaceAndTime.Space.Module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Physlib.SpaceAndTime.Space.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
@@ -158,33 +159,36 @@ theorem integral_gaussianDensity (m : ℝ) {R : ℝ} (hR : R ≠ 0) :
 /-! ### The Woods–Saxon profile -/
 
 /-- The two-parameter Fermi, or Woods–Saxon, profile with central density `ρ₀`, half-density
-radius `R` and surface thickness `a`: `ρ₀ / (1 + exp((r - R)/a))`. -/
+radius `R` and surface thickness `a`: `ρ₀ / (1 + exp((r - R)/a))`, written as `ρ₀` times the
+logistic function `Real.sigmoid`. -/
 def woodsSaxonDensity (ρ₀ R a r : ℝ) : ℝ :=
-  ρ₀ / (1 + exp ((r - R) / a))
+  ρ₀ * Real.sigmoid ((R - r) / a)
 
 lemma woodsSaxonDensity_def (ρ₀ R a r : ℝ) :
-    woodsSaxonDensity ρ₀ R a r = ρ₀ / (1 + exp ((r - R) / a)) := (rfl)
+    woodsSaxonDensity ρ₀ R a r = ρ₀ * Real.sigmoid ((R - r) / a) := (rfl)
 
 lemma woodsSaxonDensity_nonneg {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
     0 ≤ woodsSaxonDensity ρ₀ R a r := by
   rw [woodsSaxonDensity_def]
-  positivity
+  exact mul_nonneg hρ₀ (Real.sigmoid_nonneg _)
 
 lemma woodsSaxonDensity_pos {ρ₀ : ℝ} (hρ₀ : 0 < ρ₀) (R a r : ℝ) :
     0 < woodsSaxonDensity ρ₀ R a r := by
   rw [woodsSaxonDensity_def]
-  positivity
+  exact mul_pos hρ₀ (Real.sigmoid_pos _)
 
 lemma woodsSaxonDensity_eq_mul (ρ₀ R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r = ρ₀ * woodsSaxonDensity 1 R a r := by
-  simp [woodsSaxonDensity_def, div_eq_mul_inv]
+  simp [woodsSaxonDensity_def]
 
 /-- The Woods–Saxon profile is bounded by the exponential tail `ρ₀ exp(-(r - R)/a)`. -/
 lemma woodsSaxonDensity_le {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r ≤ ρ₀ * exp (-((r - R) / a)) := by
-  rw [woodsSaxonDensity_def, exp_neg, ← div_eq_mul_inv]
+  rw [woodsSaxonDensity_def, ← neg_div, neg_sub]
   gcongr
-  linarith [exp_pos ((r - R) / a)]
+  rw [Real.sigmoid_def, ← inv_inv (Real.exp ((R - r) / a)),
+    inv_le_inv₀ (by positivity) (by positivity), ← Real.exp_neg]
+  exact le_add_of_nonneg_left zero_le_one
 
 /-- The Woods–Saxon profile is integrable over space whenever the surface thickness is
 positive. -/
@@ -267,14 +271,12 @@ namespace Nucleus.DensityProfile
 variable (nuc : Nucleus)
 
 /-- The hard-sphere density profile of `nuc` with radius `R > 0`. -/
-@[expose, simps density]
 def hardSphere {R : ℝ} (hR : 0 < R) : DensityProfile nuc where
   density x := hardSphereDensity nuc.massNumber R ‖x‖
   density_nonneg _ := hardSphereDensity_nonneg (Nat.cast_nonneg _) hR.le _
   integral_density := integral_hardSphereDensity _ hR
 
 /-- The Gaussian density profile of `nuc` with range `R ≠ 0`. -/
-@[expose, simps density]
 def gaussian {R : ℝ} (hR : R ≠ 0) : DensityProfile nuc where
   density x := gaussianDensity nuc.massNumber R ‖x‖
   density_nonneg _ := gaussianDensity_nonneg (Nat.cast_nonneg _) _ _
@@ -282,12 +284,21 @@ def gaussian {R : ℝ} (hR : R ≠ 0) : DensityProfile nuc where
 
 /-- The Woods–Saxon density profile of `nuc` with half-density radius `R` and surface thickness
 `a > 0`, with its central density fixed by the normalisation. -/
-@[expose, simps density]
 def woodsSaxon (R : ℝ) {a : ℝ} (ha : 0 < a) : DensityProfile nuc where
   density x := woodsSaxonDensity (woodsSaxonCentralDensity nuc.massNumber R a) R a ‖x‖
   density_nonneg x := woodsSaxonDensity_nonneg
     (woodsSaxonCentralDensity_pos (by exact_mod_cast nuc.massNumber_pos) R ha).le _ _ _
   integral_density := (integral_woodsSaxonDensity_eq_iff ha).2 rfl
+
+@[simp] lemma hardSphere_density {R : ℝ} (hR : 0 < R) (x : Space) :
+    (hardSphere nuc hR).density x = hardSphereDensity nuc.massNumber R ‖x‖ := (rfl)
+
+@[simp] lemma gaussian_density {R : ℝ} (hR : R ≠ 0) (x : Space) :
+    (gaussian nuc hR).density x = gaussianDensity nuc.massNumber R ‖x‖ := (rfl)
+
+@[simp] lemma woodsSaxon_density (R : ℝ) {a : ℝ} (ha : 0 < a) (x : Space) :
+    (woodsSaxon nuc R ha).density x =
+      woodsSaxonDensity (woodsSaxonCentralDensity nuc.massNumber R a) R a ‖x‖ := (rfl)
 
 end Nucleus.DensityProfile
 

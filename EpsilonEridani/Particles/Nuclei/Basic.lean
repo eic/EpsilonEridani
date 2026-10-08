@@ -95,24 +95,30 @@ theorem isIsoscalar_iff_protonNumber_eq_neutronNumber :
 /-! ### Worked instances -/
 
 /-- The free proton, `A = Z = 1`. -/
-@[expose, simps]
 def proton : Nucleus := ⟨1, 1, Nat.one_pos, Nat.le_refl 1⟩
 
 /-- The free neutron, `A = 1`, `Z = 0`. -/
-@[expose, simps]
 def neutron : Nucleus := ⟨1, 0, Nat.one_pos, Nat.zero_le _⟩
 
 /-- The deuteron, `A = 2`, `Z = 1`: the lightest isoscalar nucleus. -/
-@[expose, simps]
 def deuteron : Nucleus := ⟨2, 1, Nat.two_pos, by decide⟩
 
 /-- Carbon-12, `A = 12`, `Z = 6`. -/
-@[expose, simps]
 def carbon12 : Nucleus := ⟨12, 6, by decide, by decide⟩
 
 /-- Lead-208, `A = 208`, `Z = 82`: a heavy nucleus with a large neutron excess. -/
-@[expose, simps]
 def lead208 : Nucleus := ⟨208, 82, by decide, by decide⟩
+
+@[simp] lemma proton_massNumber : proton.massNumber = 1 := (rfl)
+@[simp] lemma proton_protonNumber : proton.protonNumber = 1 := (rfl)
+@[simp] lemma neutron_massNumber : neutron.massNumber = 1 := (rfl)
+@[simp] lemma neutron_protonNumber : neutron.protonNumber = 0 := (rfl)
+@[simp] lemma deuteron_massNumber : deuteron.massNumber = 2 := (rfl)
+@[simp] lemma deuteron_protonNumber : deuteron.protonNumber = 1 := (rfl)
+@[simp] lemma carbon12_massNumber : carbon12.massNumber = 12 := (rfl)
+@[simp] lemma carbon12_protonNumber : carbon12.protonNumber = 6 := (rfl)
+@[simp] lemma lead208_massNumber : lead208.massNumber = 208 := (rfl)
+@[simp] lemma lead208_protonNumber : lead208.protonNumber = 82 := (rfl)
 
 @[simp] lemma neutronNumber_proton : proton.neutronNumber = 0 := (rfl)
 @[simp] lemma neutronNumber_neutron : neutron.neutronNumber = 1 := (rfl)
