@@ -214,6 +214,7 @@ lemma abs_skewness_lt_one : |K.skewness| < 1 := by
   constructor <;> linarith
 
 /-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
+@[simp]
 lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
   have h : ⟪K.avgMomentum, K.delta⟫ₘ = (⟪K.p', K.p'⟫ₘ - ⟪K.p, K.p⟫ₘ) / 2 := by
     simp only [avgMomentum_def, delta_def, map_smul, map_add, map_sub, _root_.smul_apply,
@@ -242,6 +243,7 @@ lemma minkowskiProduct_n_delta_eq :
   field_simp
 
 /-- The transverse momentum transfer `w = Δ + 2 ξ P` has vanishing plus-component. -/
+@[simp]
 lemma minkowskiProduct_n_transverseDelta_eq_zero : ⟪K.n, K.transverseDelta⟫ₘ = 0 := by
   rw [transverseDelta_def, map_add, map_smul, smul_eq_mul, minkowskiProduct_n_delta_eq]
   ring
