@@ -179,16 +179,16 @@ jobs:
 
           CFG="$RUNNER_TEMP/lake-cache.toml"
           cat > "$CFG" <<TOML
-          cache.defaultUploadService = "epsiloneridani-r2"
+          cache.defaultUploadService = "epsiloneridani-s3"
           [[cache.service]]
-          name = "epsiloneridani-r2"
+          name = "epsiloneridani-s3"
           kind = "s3"
           artifactEndpoint = "$S3_ARTIFACT_ENDPOINT"
           revisionEndpoint = "$S3_REVISION_ENDPOINT"
           TOML
           export LAKE_CONFIG="$CFG"
 
-          lake cache put-staged "$STAGING" --service epsiloneridani-r2 \
+          lake cache put-staged "$STAGING" --service epsiloneridani-s3 \
             --repo eic/EpsilonEridani --rev "$REVISION" --toolchain "$ELAN_TOOLCHAIN"
 
           echo 'uploaded=true' >> "$GITHUB_OUTPUT"
