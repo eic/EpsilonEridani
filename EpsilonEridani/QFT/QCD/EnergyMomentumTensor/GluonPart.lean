@@ -51,7 +51,7 @@ compact gauge group is orthogonal in a basis orthonormal for its invariant form)
 * X. Ji, *Phys. Rev. D* **52** (1995) 271, arXiv:hep-ph/9502213, for the quark-gluon split.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
