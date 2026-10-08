@@ -23,8 +23,9 @@ The function `sin x / x` is `Real.sinc`. Every iterate of `-(1 / x) d/dx` applie
 even function, so its derivative vanishes at the origin and `f' x / x` has a removable singularity
 there. The iterates are therefore taken with the operator `f ↦ -dslope (deriv f) 0`, which agrees
 with `-(1 / x) f'` away from the origin when `deriv f 0 = 0` (a condition satisfied by all
-functions in the iteration), and fills in the limit at the origin where it equals
-`deriv f 0 = 0`. All functions this operator is applied to are even with vanishing derivative at 0. All
+functions in the iteration. The operator fills in the limit at the origin where it equals
+`deriv f 0 = 0`. All functions this operator is applied to are even with vanishing derivative
+at 0. All
 iterates are then real analytic on the whole line, and so is every `sphericalBesselJ l`.
 
 ## Main definitions
@@ -111,12 +112,13 @@ private lemma reduced_neg (l : ℕ) (x : ℝ) : G l (-x) = G l x := by
     -- the derivative of the even function `G l` is odd
     have hodd : ∀ y, deriv (G l) (-y) = -deriv (G l) y := odd_deriv_of_even ih
     have h0 : deriv (G l) 0 = 0 := (odd_deriv_of_even ih).map_zero
-    rw [reducedSphericalBesselJ, Function.iterate_succ_apply']
     rcases eq_or_ne x 0 with rfl | hx
-    · rw [neg_zero]
-    · simp only [Pi.neg_apply, dslope_of_ne _ hx, dslope_of_ne _ (neg_ne_zero.mpr hx),
-        slope_def_field, hodd x, h0]
-      ring
+    · simp
+    · have hgoal : (-dslope (deriv (G l)) 0) (-x) = (-dslope (deriv (G l)) 0) x := by
+        simp only [Pi.neg_apply, dslope_of_ne _ hx, dslope_of_ne _ (neg_ne_zero.mpr hx),
+          slope_def_field, h0, hodd x]
+        ring
+      simpa [reducedSphericalBesselJ, Function.iterate_succ_apply'] using hgoal
 
 /-- The derivative of `G l` vanishes at the origin, as it is even. -/
 private lemma deriv_reduced_zero (l : ℕ) : deriv (G l) 0 = 0 :=
@@ -127,8 +129,13 @@ private lemma hasDerivAt_reduced (l : ℕ) (x : ℝ) :
     HasDerivAt (G l) (-x * G (l + 1) x) x := by
   have h := sub_smul_dslope (deriv (G l)) 0 x
   rw [deriv_reduced_zero, sub_zero, sub_zero, smul_eq_mul] at h
-  rw [reducedSphericalBesselJ, Function.iterate_succ_apply', Pi.neg_apply, mul_neg, neg_mul,
-    neg_neg, h]
+  -- h: deriv (G l) x = x * dslope (deriv (G l)) 0 x
+  have hG : G (l + 1) x = -dslope (deriv (G l)) 0 x := by
+    rw [reducedSphericalBesselJ, Function.iterate_succ_apply']
+    rfl
+  rw [hG]
+  have : (-x) * (-dslope (deriv (G l)) 0 x) = x * dslope (deriv (G l)) 0 x := by ring
+  rw [this, h]
   exact (differentiable_reduced l x).hasDerivAt
 
 /-- The base case of the recurrence: `x ^ 2 G 2 - 3 G 1 + G 0 = 0`. -/
