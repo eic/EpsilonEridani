@@ -138,10 +138,10 @@ theorem complexHarmonic_add_nat {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) (n 
   ring
 
 /-- **The downward recurrence** `S₁(s - 1) = S₁(s) - 1/s`, for non-integer `s`. -/
-theorem complexHarmonic_sub_one {s : ℂ} (hs : ∀ n : ℤ, s ≠ n) :
+theorem complexHarmonic_sub_one {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) :
     complexHarmonic (s - 1) = complexHarmonic s - s⁻¹ := by
   rw [complexHarmonic_apply, complexHarmonic_apply, sub_add_cancel,
-    digamma_apply_add_one s fun m hm => hs (-m) (by push_cast; exact hm)]
+    digamma_apply_add_one s hs]
   ring
 
 /-- **The reflection formula** `S₁(-s) = S₁(s - 1) + π cot(π s)`, for non-integer `s`. -/

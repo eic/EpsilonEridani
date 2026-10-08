@@ -38,6 +38,8 @@ growth of the anomalous dimensions to the `z → 1` singularities of the splitti
 
 * J. Blümlein and S. Kurth, *Harmonic sums and Mellin transforms up to two-loop order*,
   Phys. Rev. D 60 (1999) 014018, arXiv:hep-ph/9810241.
+* The proof of the auxiliary series bounds uses Mathlib's formalisation of Stirling's
+  approximation, following the approach of de Bruijn, *Asymptotic Methods in Analysis* (1981).
 -/
 
 @[expose] public section
@@ -46,9 +48,7 @@ open Filter Topology Asymptotics
 
 namespace EpsilonEridani
 
-/-- The trapezoidal value `1/(2a) + 1/(2(a+1))` of `∫_a^{a+1} dx/x` exceeds `log(1 + 1/a)`.
-Proved from the series `log(1 + 1/a) = ∑_k 2/(2k+1) u^(2k+1)` with `u = 1/(2a+1)`, whose
-trapezoidal counterpart is the geometric series `∑_k 2 u^(2k+1)`. -/
+/-- The trapezoidal value `1/(2a) + 1/(2(a+1))` of `∫_a^{a+1} dx/x` exceeds `log(1 + 1/a)`. -/
 theorem log_one_add_inv_le_inv_two_mul_add_inv_two_mul_add_one {a : ℝ} (ha : 0 < a) :
     Real.log (1 + a⁻¹) ≤ (2 * a)⁻¹ + (2 * (a + 1))⁻¹ := by
   set u : ℝ := 1 / (2 * a + 1) with hu
@@ -76,9 +76,7 @@ theorem log_one_add_inv_le_inv_two_mul_add_inv_two_mul_add_one {a : ℝ} (ha : 0
   nlinarith
 
 /-- The trapezoidal value `1/(2a) + 1/(2(a+1))` of `∫_a^{a+1} dx/x` exceeds `log(1 + 1/a)` by at
-most `1/(8a²) - 1/(8(a+1)²)`, a bound that telescopes along `a, a + 1, a + 2, …`. Proved by
-keeping only the leading term `2u`, `u = 1/(2a+1)`, of the series
-`log(1 + 1/a) = ∑_k 2/(2k+1) u^(2k+1)`. -/
+most `1/(8a²) - 1/(8(a+1)²)`, a bound that telescopes along `a, a + 1, a + 2, …`. -/
 theorem inv_two_mul_add_inv_two_mul_add_one_sub_log_one_add_inv_le {a : ℝ} (ha : 0 < a) :
     (2 * a)⁻¹ + (2 * (a + 1))⁻¹ - Real.log (1 + a⁻¹) ≤ (8 * a ^ 2)⁻¹ - (8 * (a + 1) ^ 2)⁻¹ := by
   have h0 := le_hasSum (Real.hasSum_log_one_add_inv ha) 0 fun j _ => by positivity
