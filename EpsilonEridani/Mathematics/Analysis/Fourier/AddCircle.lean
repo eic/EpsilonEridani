@@ -30,6 +30,17 @@ theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
     fourier n (x + y) = fourier n x * fourier n y := by
   simp only [fourier_apply, smul_add, toCircle_add, Circle.coe_mul]
 
+/-- The Fourier monomial satisfies `fourier n (x - y) = fourier n x * conj (fourier n y)`. -/
+theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
+    fourier n (x - y) = fourier n x * conj (fourier n y) := by
+  simp only [fourier_apply, smul_sub, sub_eq_add_neg, toCircle_add, toCircle_neg,
+    Circle.coe_add, Circle.coe_neg, Circle.coe_inv_eq_conj, mul_comm, mul_left_comm, mul_assoc]
+
+/-- Every Fourier monomial has norm `1`. -/
+@[simp]
+theorem norm_fourier (n : ℤ) (x : AddCircle T) : ‖fourier n x‖ = 1 :=
+  Circle.norm_coe _
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
 
 /-- The harmonic `e^{i n X}` of an almost everywhere measurable angle `X` is integrable. -/
@@ -42,9 +53,7 @@ theorem integrable_fourier_comp {X : Ω → AddCircle T} (hX : AEMeasurable X P)
 integrable. -/
 theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEMeasurable X P)
     (hY : AEMeasurable Y P) (n : ℤ) :
-    Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P :=
-  .of_bound (((fourier n).continuous.measurable.comp_aemeasurable hX).mul
-    ((Complex.continuous_conj.comp (fourier n).continuous).measurable.comp_aemeasurable
-      hY)).aestronglyMeasurable 1 (Filter.Eventually.of_forall fun ω => by simp)
+    Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P := by
+  simpa [fourier_apply_sub] using integrable_fourier_comp (AEMeasurable.sub hX hY) n
 
 end EpsilonEridani

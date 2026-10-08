@@ -136,7 +136,8 @@ theorem ofReal_norm_qVector_sq [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle
 
 /-- The single-event two-particle correlation `⟨2⟩ = (|Q_n|² - M) / (M (M - 1))`: the squared
 modulus of the `Q`-vector with the self-correlation removed, averaged over the `M (M - 1)` ordered
-pairs of distinct particles. -/
+pairs of distinct particles. When `M ≤ 1` the denominator vanishes and the value is `0` (Lean junk).
+The meaningful values are for `M ≥ 2`. -/
 def twoParticleCorrelation (n : ℤ) (φ : ι → AddCircle T) : ℝ :=
   (‖qVector n φ‖ ^ 2 - Fintype.card ι) / (Fintype.card ι * (Fintype.card ι - 1))
 
@@ -156,10 +157,12 @@ theorem ofReal_twoParticleCorrelation_eq_sum [DecidableEq ι] (n : ℤ) (φ : ι
   rw [ofReal_norm_qVector_sq]
   ring
 
-/-- The two-particle correlation has absolute value at most `1`, at every multiplicity. -/
+/-- The two-particle correlation has absolute value at most `1`, at every multiplicity.
+At `M ≤ 1` the value is `0` (division by zero) and the bound is trivially true. -/
 theorem abs_twoParticleCorrelation_le_one (n : ℤ) (φ : ι → AddCircle T) :
     |twoParticleCorrelation n φ| ≤ 1 := by
   rw [twoParticleCorrelation]
+  -- for M ≤ 1 the denominator M (M - 1) vanishes and ⟨2⟩ takes the junk value 0
   rcases le_or_gt (Fintype.card ι) 1 with h | h
   · interval_cases Fintype.card ι <;> simp
   have h2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast h
@@ -347,9 +350,9 @@ theorem integral_norm_qVector_sq (n : ℤ) :
   simp only [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j), hcount]
   simp
 
-/-- **The naive estimator is biased.** For `M ≥ 1` pairwise independent particles with
-distribution `μ`, the expectation of `|Q_n|² / M²` exceeds `|V_n|²` by the self-correlation term
-`(1 - |V_n|²) / M`. -/
+/-- For `M ≥ 1` pairwise independent particles with distribution `μ`, the expectation of
+`|Q_n|² / M²` exceeds `|V_n|²` by the self-correlation term `(1 - |V_n|²) / M`; it vanishes
+whenever `|V_n| = 1` (e.g. at `n = 0` where `V_0 = 1`). -/
 theorem integral_norm_qVector_sq_div_card_sq [Nonempty ι] (n : ℤ) :
     ∫ ω, ‖qVector n (fun j => φ j ω)‖ ^ 2 / (Fintype.card ι : ℝ) ^ 2 ∂P =
       ‖anisotropyCoeff μ n‖ ^ 2 + (1 - ‖anisotropyCoeff μ n‖ ^ 2) / Fintype.card ι := by
