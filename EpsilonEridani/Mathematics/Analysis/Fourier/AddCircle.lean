@@ -37,9 +37,8 @@ theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
     toCircle_neg, Circle.coe_mul, Circle.coe_inv_eq_conj]
 
 /-- Every Fourier monomial has norm `1`. -/
-@[simp]
 theorem norm_fourier (n : ℤ) (x : AddCircle T) : ‖fourier n x‖ = 1 := by
-  simp only [*, @fourier_apply, Circle.norm_coe]
+  rw [fourier_apply, Circle.norm_coe]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
 
