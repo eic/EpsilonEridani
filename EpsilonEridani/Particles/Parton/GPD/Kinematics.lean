@@ -291,8 +291,10 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
   set B : ℝ := (m2 - 1) / 2
   set D : ℝ := √(-((1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2))
   have hD : D ^ 2 = -((1 - ξ ^ 2) * t + 4 * ξ ^ 2 * M ^ 2) := Real.sq_sqrt (by linarith)
-  set p₀ : Vector d := EpsilonEridani.ofTimeAndTwoSpatial i j (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
-  set p₀' : Vector d := EpsilonEridani.ofTimeAndTwoSpatial i j (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'
+  set p₀ : Vector d :=
+      EpsilonEridani.ofTimeAndTwoSpatial i j (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
+  set p₀' : Vector d :=
+      EpsilonEridani.ofTimeAndTwoSpatial i j (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'
   set n₀ : Vector d := EpsilonEridani.ofTimeAndTwoSpatial i j 1 0 1 with hn₀
   have hp : ⟪p₀, p₀⟫ₘ = M ^ 2 := by
     rw [hp₀, minkowskiProduct_ofTimeAndTwoSpatial hij]
