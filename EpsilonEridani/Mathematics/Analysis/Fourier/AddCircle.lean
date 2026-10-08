@@ -64,3 +64,4 @@ theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEM
   exact integrable_fourier_comp (AEMeasurable.sub hX hY) n
 
 end EpsilonEridani
+re-trigger
