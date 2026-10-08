@@ -13,7 +13,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 Jet distances, hemisphere assignments and event shapes are not Lorentz invariant: each is defined
 relative to a frame, and the frame is always an explicit argument. Over the abstract momentum space
 `V` with bilinear form `g : Bilin V` used by `DisKinematics`, a frame is a vector `n` with
-`0 < g n n` (timelike in the signature `(+,-,-,-)`), and
+`g n n = 1` (unit-normalised timelike in the signature `(+,-,-,-)`), and
 
 * the **energy** of `p` is `E(p) = g p n / √(g n n)`, a linear functional;
 * the **spatial part** of `p` is `p_s = p - (g p n / g n n) • n`, the projection along `ℝ ∙ n` onto
@@ -57,7 +57,7 @@ satisfy it, which is why the massless hypotheses are stated.
   for multijet cross sections in e⁺e⁻ annihilation*, Phys. Lett. B 269 (1991) 432.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -69,14 +69,14 @@ open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
-/-- A frame for the bilinear form `g`: a reference vector `n` that is timelike, `0 < g n n`, in the
-signature `(+,-,-,-)`. Energies, spatial parts and angles are taken relative to it. -/
+/-- A frame for the bilinear form `g`: a reference vector `n` with `g n n = 1` (unit-normalised
+timelike in the signature `(+,-,-,-)`). Energies, spatial parts and angles are taken relative to it. -/
 @[ext]
 structure Frame (g : Bilin V) where
-  /-- The timelike reference vector (the four-velocity of the observer, up to normalisation). -/
+  /-- The unit-normalised timelike reference vector (the four-velocity of the observer). -/
   n : V
-  /-- The reference vector is timelike. -/
-  timelike : 0 < g n n
+  /-- The reference vector is unit-normalised. -/
+  norm : g n n = 1
 
 namespace Frame
 
@@ -98,8 +98,8 @@ theorem energy_n : F.energy F.n = Real.sqrt (g F.n F.n) := by
   rw [energy_apply, Real.div_sqrt]
 
 theorem energy_n_pos : 0 < F.energy F.n := by
-  rw [energy_n]
-  exact Real.sqrt_pos.mpr F.timelike
+  rw [energy_n, F.norm]
+  exact Real.sqrt_pos.mpr (by norm_num : (0 : ℝ) < 1)
 
 /-! ### The spatial part -/
 
@@ -116,12 +116,13 @@ theorem spatial_apply (p : V) : F.spatial p = p - (g p F.n / g F.n F.n) • F.n 
 /-- A momentum is the sum of its time part, along the frame vector, and its spatial part. -/
 theorem energy_div_smul_add_spatial (p : V) :
     (F.energy p / Real.sqrt (g F.n F.n)) • F.n + F.spatial p = p := by
-  simp [energy_apply, spatial_apply, div_div, Real.mul_self_sqrt F.timelike.le]
+  simp [energy_apply, spatial_apply, div_div, F.norm, Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 1)]
 
 /-- The spatial part is `g`-orthogonal to the frame vector. -/
 @[simp]
 theorem bilin_spatial_n (p : V) : g (F.spatial p) F.n = 0 := by
-  simp [spatial_apply, F.timelike.ne']
+  have hn : g F.n F.n = 1 := F.norm
+  simp [spatial_apply, hn.ne']
 
 /-- The spatial part carries no energy. -/
 @[simp]
@@ -130,12 +131,16 @@ theorem energy_spatial (p : V) : F.energy (F.spatial p) = 0 := by
 
 @[simp]
 theorem spatial_n : F.spatial F.n = 0 := by
-  rw [spatial_apply, div_self F.timelike.ne', one_smul, sub_self]
+  have hn : g F.n F.n = 1 := F.norm
+  rw [spatial_apply, div_self hn ▸ (by norm_num : (1 : ℝ) ≠ 0), one_smul, sub_self]
 
 theorem spatial_eq_self_iff {p : V} : F.spatial p = p ↔ g p F.n = 0 := by
   rw [spatial_apply, sub_eq_self, smul_eq_zero, div_eq_zero_iff]
-  have hn : F.n ≠ 0 := fun h => by simpa [h] using F.timelike
-  simp [F.timelike.ne', hn]
+  have hn : F.n ≠ 0 := fun h => by
+    have : g F.n F.n = 1 := F.norm
+    simpa [h] using this
+  have hN : g F.n F.n ≠ 0 := by rw [F.norm]; norm_num
+  simp [hN, hn]
 
 /-- The spatial projection is idempotent. -/
 @[simp]
@@ -165,15 +170,16 @@ theorem range_spatial : LinearMap.range F.spatial = g.flip.orthogonal (ℝ ∙ F
   · rintro ⟨q, rfl⟩ c
     exact Or.inr (F.bilin_spatial_n q)
   · intro hp
-    have hp' : g p F.n = 0 := by simpa [F.timelike.ne'] using hp 1
+    have hn : g F.n F.n = 1 := F.norm
+    have hp' : g p F.n = 0 := by simpa [hn ▸ (by norm_num : (1 : ℝ) ≠ 0)] using hp 1
     exact ⟨p, F.spatial_eq_self_iff.mpr hp'⟩
 
 /-- The `g`-product of two spatial parts, `g a_s b_s = g a b - E(a) E(b)`. For `a = b` this is the
 mass-shell relation `g p_s p_s = m² - E(p)²`. -/
 theorem bilin_spatial_spatial (hg : g.IsSymm) (a b : V) :
     g (F.spatial a) (F.spatial b) = g a b - F.energy a * F.energy b := by
-  have hN : g F.n F.n ≠ 0 := F.timelike.ne'
-  simp only [spatial_apply, energy_apply, div_mul_div_comm, Real.mul_self_sqrt F.timelike.le,
+  have hone : g F.n F.n = 1 := F.norm
+  simp only [spatial_apply, energy_apply, div_mul_div_comm, hone,
     map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, hg.eq F.n b]
   field_simp
   ring
@@ -183,6 +189,9 @@ theorem bilin_spatial_spatial (hg : g.IsSymm) (a b : V) :
 /-- The magnitude `|p_s| = √(-g p_s p_s)` of the spatial part of a momentum. -/
 def spatialNorm (p : V) : ℝ :=
   Real.sqrt (-g (F.spatial p) (F.spatial p))
+
+theorem spatialNorm_def (p : V) : F.spatialNorm p = Real.sqrt (-g (F.spatial p) (F.spatial p)) :=
+  rfl
 
 theorem spatialNorm_nonneg (p : V) : 0 ≤ F.spatialNorm p :=
   Real.sqrt_nonneg _
@@ -201,6 +210,10 @@ theorem spatialNorm_of_massless (hg : g.IsSymm) {p : V} (hp : g p p = 0) :
 `cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`. -/
 def cosAngle (a b : V) : ℝ :=
   -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b)
+
+theorem cosAngle_def (a b : V) :
+    F.cosAngle a b = -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b) :=
+  rfl
 
 theorem cosAngle_comm (hg : g.IsSymm) (a b : V) : F.cosAngle a b = F.cosAngle b a := by
   rw [cosAngle, cosAngle, hg.eq, mul_comm]
@@ -246,7 +259,7 @@ open EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.Witness (gWit gWit_apply
 /-- The rest frame `n = (1, 0, 0)` of the Minkowski form `gWit`. -/
 def restFrameWit : Frame gWit where
   n := (1, 0, 0)
-  timelike := by norm_num
+  norm := by norm_num
 
 /-- In the rest frame the energy of a momentum is its time component. -/
 theorem energy_restFrameWit (p : ℝ × ℝ × ℝ) : restFrameWit.energy p = p.1 := by
