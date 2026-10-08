@@ -59,7 +59,7 @@ namespace PVES
 namespace Electroweak
 
 open _root_.Matrix Real
-open EpsilonEridani.Matrix (rotation rotation_def)
+open EpsilonEridani.Matrix (rotation rotation_mulVec)
 
 /-!
 ## The neutral mass matrix
@@ -84,7 +84,6 @@ theorem neutralMassMatrix_eq_smul_fin_two (g g' v : ℝ) :
 
 /-- The neutral mass matrix applied to a field configuration `w = (w₀, w₁)` in the basis
 `(W³, B)`. -/
-@[simp]
 theorem neutralMassMatrix_mulVec (g g' v : ℝ) (w : Fin 2 → ℝ) :
     neutralMassMatrix g g' v *ᵥ w = ((v ^ 2 / 4) * (g * w 0 - g' * w 1)) • ![g, -g'] := by
   ext i
@@ -129,10 +128,17 @@ theorem rotation_conj_neutralMassMatrix (g g' v θ : ℝ) :
     rotation θ * neutralMassMatrix g g' v * (rotation θ)ᵀ =
       (v ^ 2 / 4) • vecMulVec ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ]
         ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [neutralMassMatrix_def, rotation_def, mul_apply, Fin.sum_univ_two, vecHead, vecTail] <;>
-    ring
+  have hw : rotation θ *ᵥ ![g, -g'] =
+      ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ] := by
+    rw [rotation_mulVec]
+    ext i
+    fin_cases i
+    · simp only [Fin.zero_eta, cons_val_zero, cons_val_one]
+      ring
+    · simp only [Fin.mk_one, cons_val_zero, cons_val_one]
+      ring
+  rw [neutralMassMatrix_def, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_vecMulVec,
+    Matrix.vecMulVec_mul, Matrix.vecMul_transpose, hw]
 
 /-- The diagonal `(1,1)` entry of the neutral mass matrix in the basis rotated by `θ`, the
 mass-squared coefficient of the second rotated field. It is the photon mass-squared exactly when

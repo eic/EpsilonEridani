@@ -25,8 +25,8 @@ membership in the special orthogonal group.
 ## Main results
 
 * `Matrix.rotation_mulVec`: the rotation applied to a vector `w`, componentwise.
-* `Matrix.rotation_zero`, `Matrix.rotation_mul`: the rotation by `0` is the identity, and
-  composing rotations adds their angles.
+* `Matrix.rotation_zero`, `Matrix.rotation_mul_rotation`: the rotation by `0` is the identity,
+  and composing rotations adds their angles.
 * `Matrix.rotation_transpose`: the transpose of the rotation by `θ` is the rotation by `-θ`.
 * `Matrix.det_rotation`: the rotation has determinant `1`.
 * `Matrix.rotation_mem_specialOrthogonalGroup`: the rotation is orthogonal with determinant `1`.
@@ -63,13 +63,12 @@ theorem rotation_zero : rotation 0 = 1 := by
 
 /-- Composing the rotations by `θ` and `φ` gives the rotation by `θ + φ`. -/
 @[simp]
-theorem rotation_mul (θ φ : ℝ) : rotation θ * rotation φ = rotation (θ + φ) := by
+theorem rotation_mul_rotation (θ φ : ℝ) : rotation θ * rotation φ = rotation (θ + φ) := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [rotation_def, mul_apply, Fin.sum_univ_two, cos_add, sin_add] <;> ring
 
 /-- The transpose of the rotation by `θ` is the rotation by `-θ`, its inverse. -/
-@[simp]
 theorem rotation_transpose (θ : ℝ) : (rotation θ)ᵀ = rotation (-θ) := by
   rw [rotation_def, rotation_def, cos_neg, sin_neg, neg_neg]
   ext i j
