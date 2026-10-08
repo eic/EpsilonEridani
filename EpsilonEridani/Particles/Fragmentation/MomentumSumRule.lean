@@ -113,27 +113,26 @@ lemma assumptions_twoSpeciesFrag : Assumptions twoSpeciesFrag :=
   assumptions_extendByZero fun h _ z _ hz₀ hz₁ => by
     fin_cases h <;> simp <;> linarith
 
-/-- The first moment of `twoSpeciesFrag` for species `h` is `(2 - h) / 3`. -/
-lemma zMoment_one_twoSpeciesFrag_zero (Q2 : ℝ) : zMoment twoSpeciesFrag 1 0 () Q2 = 2 / 3 := by
+/-- The first moment of `twoSpeciesFrag` is `2 / 3` for species `0` and `1 / 3` for species `1`.
+-/
+lemma zMoment_one_twoSpeciesFrag (h : Fin 2) (Q2 : ℝ) :
+    zMoment twoSpeciesFrag 1 h () Q2 = if h = 0 then 2 / 3 else 1 / 3 := by
   rw [twoSpeciesFrag_def, zMoment_extendByZero, zMoment_eq_intervalIntegral]
-  simp only [Matrix.cons_val_zero, pow_one]
-  have : ∀ z : ℝ, z * (2 * z) = 2 * z ^ 2 := fun z => by ring
-  simp only [this, intervalIntegral.integral_const_mul, integral_pow]
-  norm_num
-
-/-- The species `1` of `twoSpeciesFrag` carries one third of the momentum. -/
-lemma zMoment_one_twoSpeciesFrag_one (Q2 : ℝ) : zMoment twoSpeciesFrag 1 1 () Q2 = 1 / 3 := by
-  rw [twoSpeciesFrag_def, zMoment_extendByZero, zMoment_eq_intervalIntegral]
-  simp only [Matrix.cons_val_one, Matrix.cons_val_fin_one, pow_one]
-  have : ∀ z : ℝ, z * (2 * (1 - z)) = 2 * z ^ 1 - 2 * z ^ 2 := fun z => by ring
-  simp only [this]
-  rw [intervalIntegral.integral_sub (by
-    apply Continuous.intervalIntegrable
-    fun_prop) (by
-    apply Continuous.intervalIntegrable
-    fun_prop)]
-  simp only [intervalIntegral.integral_const_mul, integral_pow]
-  norm_num
+  fin_cases h
+  · simp only [Fin.zero_eta, Matrix.cons_val_zero, pow_one]
+    have : ∀ z : ℝ, z * (2 * z) = 2 * z ^ 2 := fun z => by ring
+    simp only [this, intervalIntegral.integral_const_mul, integral_pow]
+    norm_num
+  · simp only [Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_fin_one, pow_one]
+    have : ∀ z : ℝ, z * (2 * (1 - z)) = 2 * z ^ 1 - 2 * z ^ 2 := fun z => by ring
+    simp only [this]
+    rw [intervalIntegral.integral_sub (by
+      apply Continuous.intervalIntegrable
+      fun_prop) (by
+      apply Continuous.intervalIntegrable
+      fun_prop)]
+    simp only [intervalIntegral.integral_const_mul, integral_pow]
+    norm_num
 
 /-- The two-species family satisfies the momentum sum rule: `2/3 + 1/3 = 1`. -/
 theorem momentumSumRule_twoSpeciesFrag : MomentumSumRule twoSpeciesFrag := by
@@ -143,7 +142,7 @@ theorem momentumSumRule_twoSpeciesFrag : MomentumSumRule twoSpeciesFrag := by
       simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
         Matrix.cons_val_fin_one] <;>
       exact Continuous.integrableOn_Icc (by fun_prop)
-  · rw [Fin.sum_univ_two, zMoment_one_twoSpeciesFrag_zero, zMoment_one_twoSpeciesFrag_one]
+  · rw [Fin.sum_univ_two, zMoment_one_twoSpeciesFrag, zMoment_one_twoSpeciesFrag]
     norm_num
 
 /-- Neither member of the two-species family satisfies the momentum sum rule on its own. -/
@@ -151,12 +150,8 @@ theorem not_momentumSumRule_single_twoSpeciesFrag (h : Fin 2) :
     ¬ MomentumSumRule (fun _ : Unit => twoSpeciesFrag h) := by
   have key : ∀ h : Fin 2, zMoment twoSpeciesFrag 1 h () 0 ≠ 1 := by
     intro h
-    -- h is either 0 or 1
-    have h_cases : h = 0 ∨ h = 1 := by
-      fin_cases h <;> simp
-    rcases h_cases with (rfl | rfl)
-    · rw [zMoment_one_twoSpeciesFrag_zero]; norm_num
-    · rw [zMoment_one_twoSpeciesFrag_one]; norm_num
+    rw [zMoment_one_twoSpeciesFrag]
+    fin_cases h <;> norm_num
   rw [momentumSumRule_iff_of_unique]
   exact fun hsum => key h (hsum () 0).2
 
@@ -190,8 +185,7 @@ private theorem momentumSumRule_invFrag : MomentumSumRule invFrag := by
 multiplicity `∫₀¹ dz / z` diverges. -/
 private theorem not_integrableOn_invFrag (Q2 : ℝ) :
     ¬ IntegrableOn (fun z => invFrag () () z Q2) (Icc 0 1) := by
-  rw [invFrag, integrableOn_congr_fun (g := fun z : ℝ => z⁻¹)
-    (fun z hz => extendByZero_of_mem _ hz () () Q2) measurableSet_Icc,
+  rw [invFrag, integrableOn_extendByZero_iff (F := fun _ y => y),
     integrableOn_Icc_iff_integrableOn_Ioc, ← intervalIntegrable_iff_integrableOn_Ioc_of_le
       zero_le_one, intervalIntegrable_inv_iff]
   simp
@@ -211,7 +205,7 @@ def powerFrag (n : ℕ) : Frag Unit Unit :=
   extendByZero fun _ _ z _ => (n + 2) * z ^ n
 
 /-- Unfolding lemma for `powerFrag`. -/
-lemma powerFrag_def (n : ℕ) : powerFrag n = extendByZero fun _ _ z _ => (n + 2) * z ^ n :=
+lemma powerFrag_apply (n : ℕ) : powerFrag n = extendByZero fun _ _ z _ => (n + 2) * z ^ n :=
   (rfl)
 
 /-- `powerFrag n` satisfies `Assumptions`. -/
@@ -221,7 +215,7 @@ lemma assumptions_powerFrag (n : ℕ) : Assumptions (powerFrag n) :=
 /-- The `k`-th moment of `powerFrag n` is `(n + 2)/(k + n + 1)`. -/
 lemma zMoment_powerFrag (n k : ℕ) (Q2 : ℝ) :
     zMoment (powerFrag n) k () () Q2 = (n + 2) / (k + n + 1) := by
-  rw [powerFrag_def, zMoment_extendByZero, zMoment_eq_intervalIntegral]
+  rw [powerFrag_apply, zMoment_extendByZero, zMoment_eq_intervalIntegral]
   have : ∀ z : ℝ, z ^ k * ((n + 2) * z ^ n) = (n + 2) * z ^ (k + n) := fun z => by ring
   simp only [this, intervalIntegral.integral_const_mul, integral_pow]
   push_cast
@@ -231,7 +225,7 @@ lemma zMoment_powerFrag (n k : ℕ) (Q2 : ℝ) :
 theorem momentumSumRule_powerFrag (n : ℕ) : MomentumSumRule (powerFrag n) := by
   rw [momentumSumRule_iff_of_unique]
   refine fun _ Q2 => ⟨?_, ?_⟩
-  · rw [powerFrag_def, integrableOn_extendByZero_iff]
+  · rw [powerFrag_apply, integrableOn_extendByZero_iff]
     exact Continuous.integrableOn_Icc (by fun_prop)
   rw [zMoment_powerFrag]
   have : (n : ℝ) + 2 ≠ 0 := by positivity
