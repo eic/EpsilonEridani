@@ -35,7 +35,7 @@ theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
     fourier n (x - y) = fourier n x * conj (fourier n y) := by
   rw [fourier_apply, fourier_apply, fourier_apply]
   rw [smul_sub, sub_eq_add_neg]
-  rw [toCircle_add, toCircle_neg, Circle.coe_mul, Circle.coe_inv]
+  rw [toCircle_add, toCircle_neg, Circle.coe_mul]
   rw [Circle.coe_inv_eq_conj]
 
 /-- Every Fourier monomial has norm `1`. -/
@@ -56,6 +56,11 @@ integrable. -/
 theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEMeasurable X P)
     (hY : AEMeasurable Y P) (n : ℤ) :
     Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P := by
-  simpa [fourier_apply_sub, fourier_apply] using integrable_fourier_comp (AEMeasurable.sub hX hY) n
+  have : (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) =
+      (fun ω => fourier n ((X - Y) ω)) := by
+    ext ω
+    simp [fourier_apply_sub, sub_eq_add_neg]
+  rw [this]
+  exact integrable_fourier_comp (AEMeasurable.sub hX hY) n
 
 end EpsilonEridani
