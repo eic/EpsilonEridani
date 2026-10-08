@@ -69,8 +69,9 @@ open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
-/-- A frame for the bilinear form `g`: a reference vector `n` with `g n n = 1` (unit-normalised
-timelike in the signature `(+,-,-,-)`). Energies, spatial parts and angles are taken relative to it. -/
+/-- A frame for the bilinear form `g`: a reference vector `n` with `g n n = 1`
+(unit-normalised timelike in the signature `(+,-,-,-)`). Energies, spatial
+parts and angles are taken relative to it. -/
 @[ext]
 structure Frame (g : Bilin V) where
   /-- The unit-normalised timelike reference vector (the four-velocity of the observer). -/
@@ -116,13 +117,15 @@ theorem spatial_apply (p : V) : F.spatial p = p - (g p F.n / g F.n F.n) • F.n 
 /-- A momentum is the sum of its time part, along the frame vector, and its spatial part. -/
 theorem energy_div_smul_add_spatial (p : V) :
     (F.energy p / Real.sqrt (g F.n F.n)) • F.n + F.spatial p = p := by
-  simp [energy_apply, spatial_apply, div_div, F.norm, Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 1)]
+  have hnE : g F.n F.n = 1 := F.norm
+  simp [energy_apply, spatial_apply, div_div, hnE, Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 1)]
 
 /-- The spatial part is `g`-orthogonal to the frame vector. -/
 @[simp]
 theorem bilin_spatial_n (p : V) : g (F.spatial p) F.n = 0 := by
   have hn : g F.n F.n = 1 := F.norm
-  simp [spatial_apply, hn.ne']
+  have hn0 : g F.n F.n ≠ 0 := by rw [hn]; norm_num
+  simp [spatial_apply, hn0]
 
 /-- The spatial part carries no energy. -/
 @[simp]
@@ -139,9 +142,12 @@ theorem spatial_eq_self_iff {p : V} : F.spatial p = p ↔ g p F.n = 0 := by
   rw [spatial_apply, sub_eq_self, smul_eq_zero, div_eq_zero_iff]
   have hn : F.n ≠ 0 := by
     intro h
-    rw [h] at F.norm
-    simp at F.norm
-  have hN : g F.n F.n ≠ 0 := by rw [F.norm]; norm_num
+    have hn' : g F.n F.n = 1 := F.norm
+    rw [h] at hn'
+    simp at hn'
+  have hN : g F.n F.n ≠ 0 := by
+    have hn' : g F.n F.n = 1 := F.norm
+    rw [hn']; norm_num
   simp [hN, hn]
 
 /-- The spatial projection is idempotent. -/
