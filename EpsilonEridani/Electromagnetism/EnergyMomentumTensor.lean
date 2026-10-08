@@ -56,7 +56,7 @@ signature `(+, -, …, -)` use Physlib's Minkowski matrix `η = diag(1, -1, …,
 * F. J. Belinfante, *Physica* **7** (1940) 449.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 

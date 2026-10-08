@@ -31,7 +31,7 @@ bilinear map `B` invariant.
   under an orthogonal rotation of the families `x` and `y`.
 -/
 
-public section
+@[expose] public section
 
 namespace EpsilonEridani
 

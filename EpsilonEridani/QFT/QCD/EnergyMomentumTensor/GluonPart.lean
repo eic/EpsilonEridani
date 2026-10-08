@@ -51,7 +51,7 @@ compact gauge group is orthogonal in a basis orthonormal for its invariant form)
 * X. Ji, *Phys. Rev. D* **52** (1995) 271, arXiv:hep-ph/9502213, for the quark-gluon split.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -108,7 +108,6 @@ def gaugeRotate (R : Matrix ι ι ℝ) (F : ι → Matrix n n ℝ) : ι → Matr
   fun a => ∑ b, R a b • F b
 
 omit [Fintype n] [DecidableEq n] in
-@[simp]
 lemma gaugeRotate_apply (R : Matrix ι ι ℝ) (F : ι → Matrix n n ℝ) (a : ι) :
     gaugeRotate R F a = ∑ b, R a b • F b := (rfl)
 
