@@ -33,8 +33,9 @@ theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
 /-- The Fourier monomial satisfies `fourier n (x - y) = fourier n x * conj (fourier n y)`. -/
 theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
     fourier n (x - y) = fourier n x * conj (fourier n y) := by
-  simp only [fourier_apply, smul_sub, sub_eq_add_neg, toCircle_add, toCircle_neg,
-    Circle.coe_mul, Circle.coe_inv_eq_conj]
+  rw [fourier_apply, fourier_apply, fourier_apply]
+  rw [smul_sub, sub_eq_add_neg]
+  simp only [toCircle_add, toCircle_neg, Circle.coe_mul, Circle.coe_inv, Circle.coe_inv_eq_conj]
 
 /-- Every Fourier monomial has norm `1`. -/
 @[simp]
