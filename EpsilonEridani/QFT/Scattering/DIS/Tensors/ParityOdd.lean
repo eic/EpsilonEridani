@@ -558,11 +558,10 @@ lemma spectatorPlaneFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
   have h₃ : b = 0 := by simpa using hq
   have h₁₂ : c₁ ≠ 0 ∨ c₂ ≠ 0 := by
     by_contra! h
-    have hc₁ : c₁ = 0 := fun hc => h (Or.inl hc)
-    have hc₂ : c₂ = 0 := fun hc => h (Or.inr hc)
+    rcases h with ⟨hc₁, hc₂⟩
     apply hu
     simp [h₀, h₃, hc₁, hc₂]
-  rcases h₁₂ with h | h <;> nlinarith [mul_self_pos.mpr h, mul_self_nonneg (c₁),
+  rcases h₁₂ with h | h <;> nlinarith [h₀, h₃, mul_self_pos.mpr h, mul_self_nonneg (c₁),
     mul_self_nonneg (c₂)]
 
 /-- **Proper covariance is strictly weaker than full covariance.** The properly covariant,
