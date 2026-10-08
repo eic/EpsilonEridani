@@ -156,6 +156,7 @@ end Lorentz
 
 namespace EpsilonEridani
 
+open Lorentz.Vector
 open scoped Lorentz.Vector
 
 /-- The vector `x e₀ + y eᵢ + z eⱼ` built from the time direction and the spatial directions
