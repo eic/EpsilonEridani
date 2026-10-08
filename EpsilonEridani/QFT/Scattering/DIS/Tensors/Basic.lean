@@ -144,7 +144,7 @@ lemma isIsometry_id (g : Bilin V) : IsIsometry g (LinearMap.id) := by
   simp
 
 /-- A bilinear form invariant under a linear map `f` has no component between a vector `v`
-fixed by `f` and a vector `u` reversed by `f`: invariance forces `W v u = - W v u`. -/
+fixed by `f` and a vector `u` reversed by `f`. -/
 lemma apply_eq_zero_of_apply_eq_self_of_apply_eq_neg {W : Bilin V} {f : V →ₗ[ℝ] V}
     (hf : ∀ v w : V, W (f v) (f w) = W v w) {v u : V} (hfv : f v = v) (hfu : f u = -u) :
     W v u = 0 := by
