@@ -278,6 +278,7 @@ theorem effectiveCrossSection_le_measureReal {G : T → ℝ} {S : Set T} (hμS :
 
 /-- The uniform profile `|S|⁻¹ 𝟙_S` on a measurable set `S` has effective cross section `|S|`,
 saturating `effectiveCrossSection_le_measureReal`. -/
+@[simp]
 theorem effectiveCrossSection_indicator {S : Set T} (hS : MeasurableSet S) :
     effectiveCrossSection μ (S.indicator fun _ => (μ.real S)⁻¹)
       (S.indicator fun _ => (μ.real S)⁻¹) = μ.real S := by
@@ -305,6 +306,7 @@ theorem gaussianProfile_nonneg (w : ℝ) (y : EuclideanSpace ℝ (Fin 2)) :
   positivity
 
 /-- The Gaussian profile is normalised. -/
+@[simp]
 theorem integral_gaussianProfile_eq_one {w : ℝ} (hw : w ≠ 0) :
     ∫ y, gaussianProfile w y = 1 := by
   have hw2 : 0 < w ^ 2 := by positivity
@@ -321,6 +323,7 @@ theorem integral_gaussianProfile_eq_one {w : ℝ} (hw : w ≠ 0) :
 
 /-- **The effective cross section of two Gaussian profiles.** For widths `w` and `w'`,
 `σ_eff = 2π (w² + w'²)`. -/
+@[simp]
 theorem effectiveCrossSection_gaussianProfile {w w' : ℝ} (hw : w ≠ 0) (hw' : w' ≠ 0) :
     effectiveCrossSection volume (gaussianProfile w) (gaussianProfile w') =
       2 * π * (w ^ 2 + w' ^ 2) := by
@@ -342,6 +345,7 @@ theorem effectiveCrossSection_gaussianProfile {w w' : ℝ} (hw : w ≠ 0) (hw' :
   ring
 
 /-- Two Gaussian profiles of equal width `w` have `σ_eff = 4π w²`. -/
+@[simp]
 theorem effectiveCrossSection_gaussianProfile_self (w : ℝ) :
     effectiveCrossSection volume (gaussianProfile w) (gaussianProfile w) = 4 * π * w ^ 2 := by
   rcases eq_or_ne w 0 with rfl | hw
