@@ -79,8 +79,9 @@ theorem legendre_add_two (n : ℕ) : (n + 2 : ℝ[X]) * legendre (n + 2) =
     (2 * n + 3 : ℝ[X]) * X * legendre (n + 1) - (n + 1 : ℝ[X]) * legendre n := by
   rw [legendre, ← mul_assoc]
   convert one_mul _
-  rw [← (by rw [map_add, C_eq_natCast, C_ofNat] : C (n + 2 : ℝ) = (n + 2 : ℝ[X])), ← C_mul,
-    mul_inv_cancel₀ (by positivity), C_1]
+  have hcoeff : C (n + 2 : ℝ) = (n + 2 : ℝ[X]) := by
+    simp
+  rw [hcoeff, ← C_mul, mul_inv_cancel₀ (by positivity), C_1]
 
 /-- Bonnet's recurrence evaluated at a point. -/
 theorem legendre_eval_add_two (n : ℕ) (x : ℝ) : (n + 2) * (legendre (n + 2)).eval x =
@@ -287,10 +288,9 @@ private theorem integral_legendre_add_two_mul (n : ℕ) (q : ℝ[X]) :
     (n + 2) * ∫ x in (-1 : ℝ)..1, (legendre (n + 2)).eval x * q.eval x =
       (2 * n + 3) * (∫ x in (-1 : ℝ)..1, x * (legendre (n + 1)).eval x * q.eval x) -
         (n + 1) * ∫ x in (-1 : ℝ)..1, (legendre n).eval x * q.eval x := by
-  rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_const_mul,
-    ← intervalIntegral.integral_const_mul,
-    ← integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
-      (Continuous.intervalIntegrable (by fun_prop) _ _)]
+  simp_rw [← intervalIntegral.integral_const_mul]
+  rw [← integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
+    (Continuous.intervalIntegrable (by fun_prop) _ _)]
   exact integral_congr fun x _ => by
     linear_combination q.eval x * legendre_eval_add_two n x
 
