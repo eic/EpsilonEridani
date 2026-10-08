@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
+public import EpsilonEridani.Mathematics.Gaussian
+public import EpsilonEridani.Particles.Parton.CrossSection
 
 /-!
 # The pocket formula for double parton scattering
@@ -26,7 +28,9 @@ If the double parton distributions factorise into single-parton densities times 
 profile, `F(p₁, p₂, y) = f(p₁) f(p₂) G(y)`, the cross section collapses to the *pocket formula*
 `σ_DPS = (m/2) σ_A σ_B / σ_eff`, with `1/σ_eff = ∫ G(y) G'(y) dy`. This file proves that
 statement with the factorisation as an explicit hypothesis: it is a model assumption, not a
-property of QCD.
+property of QCD. The single-scattering cross sections `σ_A` and `σ_B` are
+`Particles.Parton.singleScatteringCrossSection`, and the Gaussian transverse profile of the
+`σ_eff` examples is `Mathematics.Gaussian.gaussianProfile`.
 
 The parton labels form an arbitrary measure space `(P, ν)` and the transverse separation an
 arbitrary measure space `(T, μ)`. For physical applications `P` is `Flavour × ℝ`, with counting
@@ -35,8 +39,6 @@ plane `EuclideanSpace ℝ (Fin 2)`.
 
 ## Main definitions
 
-* `singleScatteringCrossSection ν f f' σ`: the collinear single-scattering cross section
-  `∫ f(p) f'(p') σ(p, p')`.
 * `orderedDPSIntegral ν μ F F' σ₁ σ₂`: the double-scattering integral in which the first parton
   of each hadron enters `σ₁` and the second enters `σ₂`.
 * `dpsCrossSection ν μ F F' σ A B`: the double-parton-scattering cross section, half the sum of
@@ -44,7 +46,6 @@ plane `EuclideanSpace ℝ (Fin 2)`.
   the two labelled parton pairs.
 * `effectiveCrossSection μ G G'`: the effective cross section `(∫ G G')⁻¹` of two transverse
   profiles.
-* `gaussianProfile w`: the normalised Gaussian transverse profile of width `w`.
 
 ## Main results
 
@@ -73,18 +74,13 @@ public section
 
 noncomputable section
 
-open MeasureTheory Real
+open MeasureTheory Real EpsilonEridani.Gaussian
 
 namespace EpsilonEridani.Particles.Parton.DoubleParton
 
 variable {P T Proc : Type*} [MeasurableSpace P] [MeasurableSpace T]
 
 /-! ### The single- and double-scattering cross sections -/
-
-/-- The collinear single-scattering cross section `∫ f(p) f'(p') σ(p, p') dν(p) dν(p')`, for
-parton densities `f` and `f'` of the two hadrons and a partonic cross section `σ`. -/
-def singleScatteringCrossSection (ν : Measure P) (f f' : P → ℝ) (σ : P → P → ℝ) : ℝ :=
-  ∫ q : P × P, f q.1 * f' q.2 * σ q.1 q.2 ∂ν.prod ν
 
 /-- The ordered double-scattering integral. A point of the domain is
 `(((p₁, p₁'), (p₂, p₂')), y)`: the first parton of each hadron, `p₁` and `p₁'`, enter the partonic
@@ -106,10 +102,6 @@ def dpsCrossSection (ν : Measure P) (μ : Measure T) (F F' : P → P → T → 
     (σ : Proc → P → P → ℝ) (A B : Proc) : ℝ :=
   (1 / 2) * ∑ q ∈ ({(A, B), (B, A)} : Finset (Proc × Proc)),
     orderedDPSIntegral ν μ F F' (σ q.1) (σ q.2)
-
-theorem singleScatteringCrossSection_def (ν : Measure P) (f f' : P → ℝ) (σ : P → P → ℝ) :
-    singleScatteringCrossSection ν f f' σ = ∫ q : P × P, f q.1 * f' q.2 * σ q.1 q.2 ∂ν.prod ν :=
-  (rfl)
 
 theorem orderedDPSIntegral_def (ν : Measure P) (μ : Measure T) (F F' : P → P → T → ℝ)
     (σ₁ σ₂ : P → P → ℝ) :
@@ -209,7 +201,7 @@ theorem orderedDPSIntegral_eq_of_factorised {F F' : P → P → T → ℝ} {f f'
     orderedDPSIntegral ν μ F F' σ₁ σ₂ =
       singleScatteringCrossSection ν f f' σ₁ * singleScatteringCrossSection ν f f' σ₂ *
         ∫ y, G y * G' y ∂μ := by
-  rw [orderedDPSIntegral, singleScatteringCrossSection, singleScatteringCrossSection,
+  rw [orderedDPSIntegral, singleScatteringCrossSection_def, singleScatteringCrossSection_def,
     ← integral_prod_mul, ← integral_prod_mul]
   congr 1 with z
   rw [hF, hF']
@@ -300,51 +292,19 @@ end Bound
 
 /-! ### The Gaussian profile -/
 
-/-- The normalised Gaussian transverse profile of width `w`,
-`G(y) = exp(-|y|² / (2w²)) / (2π w²)` on the transverse plane. -/
-def gaussianProfile (w : ℝ) (y : EuclideanSpace ℝ (Fin 2)) : ℝ :=
-  (2 * π * w ^ 2)⁻¹ * exp (-‖y‖ ^ 2 / (2 * w ^ 2))
-
-theorem gaussianProfile_def (w : ℝ) (y : EuclideanSpace ℝ (Fin 2)) :
-    gaussianProfile w y = (2 * π * w ^ 2)⁻¹ * exp (-‖y‖ ^ 2 / (2 * w ^ 2)) :=
-  (rfl)
-
-theorem gaussianProfile_nonneg (w : ℝ) (y : EuclideanSpace ℝ (Fin 2)) :
-    0 ≤ gaussianProfile w y := by
-  unfold gaussianProfile
-  positivity
-
-/-- The Gaussian profile is normalised. -/
-@[simp]
-theorem integral_gaussianProfile_eq_one {w : ℝ} (hw : w ≠ 0) :
-    ∫ y, gaussianProfile w y = 1 := by
-  have hw2 : 0 < w ^ 2 := by positivity
-  have : (fun y => gaussianProfile w y) = fun y : EuclideanSpace ℝ (Fin 2) =>
-      (2 * π * w ^ 2)⁻¹ * exp (-(2 * w ^ 2)⁻¹ * ‖y‖ ^ 2) := by
-    ext y
-    rw [gaussianProfile]
-    congr 2
-    ring
-  rw [this, integral_const_mul, GaussianFourier.integral_rexp_neg_mul_sq_norm (by positivity),
-    finrank_euclideanSpace_fin]
-  norm_num
-  field_simp
-
 /-- **The effective cross section of two Gaussian profiles.** For widths `w` and `w'`,
 `σ_eff = 2π (w² + w'²)`. -/
 @[simp]
 theorem effectiveCrossSection_gaussianProfile {w w' : ℝ} (hw : w ≠ 0) (hw' : w' ≠ 0) :
     effectiveCrossSection volume (gaussianProfile w) (gaussianProfile w') =
       2 * π * (w ^ 2 + w' ^ 2) := by
-  have hw2 : 0 < w ^ 2 := by positivity
-  have hw2' : 0 < w' ^ 2 := by positivity
   set b := (2 * w ^ 2)⁻¹ + (2 * w' ^ 2)⁻¹
   have hb : 0 < b := by positivity
   have : (fun y => gaussianProfile w y * gaussianProfile w' y) =
       fun y : EuclideanSpace ℝ (Fin 2) =>
         ((2 * π * w ^ 2)⁻¹ * (2 * π * w' ^ 2)⁻¹) * exp (-b * ‖y‖ ^ 2) := by
     ext y
-    rw [gaussianProfile, gaussianProfile, mul_mul_mul_comm, ← exp_add]
+    rw [gaussianProfile_def, gaussianProfile_def, mul_mul_mul_comm, ← exp_add]
     congr 2
     ring
   rw [effectiveCrossSection, this, integral_const_mul,
@@ -358,7 +318,7 @@ theorem effectiveCrossSection_gaussianProfile {w w' : ℝ} (hw : w ≠ 0) (hw' :
 theorem effectiveCrossSection_gaussianProfile_self (w : ℝ) :
     effectiveCrossSection volume (gaussianProfile w) (gaussianProfile w) = 4 * π * w ^ 2 := by
   rcases eq_or_ne w 0 with rfl | hw
-  · simp [effectiveCrossSection, gaussianProfile]
+  · simp [effectiveCrossSection, gaussianProfile_def]
   · rw [effectiveCrossSection_gaussianProfile hw hw]
     ring
 
