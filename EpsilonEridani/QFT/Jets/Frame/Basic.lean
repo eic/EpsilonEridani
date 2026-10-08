@@ -118,8 +118,9 @@ theorem spatial_apply (p : V) : F.spatial p = p - (g p F.n / g F.n F.n) • F.n 
 theorem energy_div_smul_add_spatial (p : V) :
     (F.energy p / Real.sqrt (g F.n F.n)) • F.n + F.spatial p = p := by
   have hnE : g F.n F.n = 1 := F.norm
-  simp only [energy_apply, spatial_apply]
-  field_simp [hnE]
+  have hsqrt : Real.sqrt (g F.n F.n) = 1 := by rw [hnE]; exact Real.sqrt_one
+  simp only [energy_apply, spatial_apply, hsqrt, hnE]
+  field_simp
   ring
 
 /-- The spatial part is `g`-orthogonal to the frame vector. -/
