@@ -51,7 +51,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Temporary escape hatch for `lake exe cache get Mathlib Physlib TauCeti`, kept only for an easy rollback
+  # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
   # return reads to the default endpoint on the next run: the cache tool treats unset,
@@ -365,7 +365,7 @@ jobs:
         run: |
           set -euo pipefail
           for dir in fresh reference; do
-            ( cd "$dir" && { lake exe cache get Mathlib Physlib TauCeti || lake exe cache get! Mathlib Physlib TauCeti; } )
+            ( cd "$dir" && { lake exe cache get || lake exe cache get!; } )
           done
 
       # --- The hard signal: everything elaborated from source -------------------------------

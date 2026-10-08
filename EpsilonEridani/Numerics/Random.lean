@@ -101,7 +101,7 @@ def uniform01 {g : Type} [RandomGen g] [Monad m] (fuel : Nat := 64) : RandGT g m
   let k := (hi * blockBound + lo) / 128
   pure (k.toFloat / significandBound.toFloat)
 
-instance [Monad m] : Random m Float where
+instance instRandomFloat [Monad m] : Random m Float where
   random := uniform01
 
 /-- A uniform `Float` in `[lo, hi)`, carrying **no proof** of its bounds — see the module

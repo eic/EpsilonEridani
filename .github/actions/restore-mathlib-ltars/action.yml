@@ -25,7 +25,7 @@ runs:
   using: composite
   steps:
     # Own the cache tool's path as well as the GitHub cache path. Exporting it here prevents a
-    # caller from restoring a valid snapshot somewhere `lake exe cache get Mathlib Physlib TauCeti` does not read.
+    # caller from restoring a valid snapshot somewhere `lake exe cache get` does not read.
     - name: Select Dependencies cache directory
       id: cache_dir
       shell: bash
