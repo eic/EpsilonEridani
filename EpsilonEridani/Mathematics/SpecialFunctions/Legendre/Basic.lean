@@ -5,10 +5,10 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Polynomial
+public import EpsilonEridani.Mathematics.Calculus.Polynomial
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Data.Nat.Choose.Central
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Topology.Algebra.Polynomial
 
 /-!
@@ -41,12 +41,6 @@ unique.
 * `integral_legendre_mul_legendre`: the orthogonality relation
   `∫₋₁¹ Pₘ Pₙ = if m = n then 2 / (2n + 1) else 0`.
 
-Orthogonality of distinct members is proved by the Sturm–Liouville argument: the operator
-`p ↦ ((1 - X²) p')'` is symmetric on `[-1, 1]` because its boundary term carries `1 - X²`
-(`integral_derivative_one_sub_X_sq_mul_derivative_mul`), and `Pₘ`, `Pₙ` are eigenvectors with the
-distinct eigenvalues `-m (m + 1)`, `-n (n + 1)`. The normalisation then follows from the
-recurrence.
-
 Mathlib's `Polynomial.shiftedLegendre` is the integer-coefficient family on `[0, 1]` given by
 explicit coefficients, with its Rodrigues formula. The two are related by
 `Pₙ (x) = shiftedLegendre n ((1 - x) / 2)`; that identification is not formalised here.
@@ -57,7 +51,7 @@ explicit coefficients, with its Rodrigues formula. The two are related by
 * [NIST Digital Library of Mathematical Functions, §18.3, §18.8, §18.9](https://dlmf.nist.gov/18)
 -/
 
-public section
+@[expose] public section
 
 namespace EpsilonEridani
 
@@ -78,9 +72,6 @@ noncomputable def legendre : ℕ → ℝ[X]
 
 /-- `P₁ = X`. -/
 @[simp] theorem legendre_one : legendre 1 = X := by rw [legendre]
-
-private theorem natCast_add_two_ne_zero (n : ℕ) : (n + 2 : ℝ[X]) ≠ 0 := by
-  exact_mod_cast (show n + 2 ≠ 0 by omega)
 
 /-- **Bonnet's recurrence** `(n + 2) Pₙ₊₂ = (2n + 3) X Pₙ₊₁ - (n + 1) Pₙ`, the defining relation
 of the Legendre polynomials. -/
@@ -128,7 +119,8 @@ theorem legendre_comp_neg_X (n : ℕ) : (legendre n).comp (-X) = (-1) ^ n * lege
   | zero => simp
   | one => simp
   | more n h₀ h₁ =>
-    refine mul_left_cancel₀ (natCast_add_two_ne_zero n) ?_
+    have hne : (n + 2 : ℝ[X]) ≠ 0 := by exact_mod_cast (by omega : n + 2 ≠ 0)
+    refine mul_left_cancel₀ hne ?_
     have h := congrArg (·.comp (-X)) (legendre_add_two n)
     simp only [mul_comp, sub_comp, add_comp, natCast_comp, ofNat_comp, one_comp, X_comp, h₀, h₁,
       Nat.cast_ofNat] at h
@@ -210,7 +202,8 @@ private theorem derivative_legendre_add_two_of {n : ℕ}
   have hd := congrArg derivative (legendre_add_two n)
   simp only [derivative_mul, derivative_add, derivative_sub, derivative_natCast, derivative_ofNat,
     derivative_X, derivative_one, mul_zero, add_zero, zero_add, zero_mul, mul_one] at hd
-  refine mul_left_cancel₀ (natCast_add_two_ne_zero n) ?_
+  have hne : (n + 2 : ℝ[X]) ≠ 0 := by exact_mod_cast (by omega : n + 2 ≠ 0)
+  refine mul_left_cancel₀ hne ?_
   linear_combination hd + (n + 1) * h
 
 private theorem derivative_legendre_ladder (n : ℕ) :
@@ -268,23 +261,6 @@ theorem derivative_one_sub_X_sq_mul_derivative_legendre (n : ℕ) :
 section Orthogonality
 
 open MeasureTheory intervalIntegral
-
-/-- The **symmetry of the Legendre operator** `p ↦ ((1 - X²) p')'` on `[-1, 1]`: the boundary
-term of the integration by parts carries the factor `1 - X²` and vanishes at both endpoints. -/
-theorem integral_derivative_one_sub_X_sq_mul_derivative_mul (p q : ℝ[X]) :
-    ∫ x in (-1 : ℝ)..1, (derivative ((1 - X ^ 2) * derivative p) * q).eval x =
-      ∫ x in (-1 : ℝ)..1, (p * derivative ((1 - X ^ 2) * derivative q)).eval x := by
-  have key : derivative ((1 - X ^ 2) * derivative p) * q -
-      p * derivative ((1 - X ^ 2) * derivative q) =
-        derivative ((1 - X ^ 2) * (derivative p * q - p * derivative q)) := by
-    simp only [derivative_mul, derivative_sub]
-    ring
-  rw [← sub_eq_zero, ← integral_sub ((_root_.Polynomial.continuous _).intervalIntegrable _ _)
-    ((_root_.Polynomial.continuous _).intervalIntegrable _ _)]
-  simp_rw [← eval_sub, key]
-  rw [integral_deriv_eq_sub' _ (funext fun x => _root_.Polynomial.deriv _)
-    (fun x _ => _root_.Polynomial.differentiableAt _) (_root_.Polynomial.continuous _).continuousOn]
-  simp
 
 /-- **Orthogonality of the Legendre polynomials** on `[-1, 1]`: distinct members are orthogonal
 with respect to Lebesgue measure. -/
