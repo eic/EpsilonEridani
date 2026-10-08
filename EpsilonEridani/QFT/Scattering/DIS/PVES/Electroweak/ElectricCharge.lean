@@ -197,7 +197,6 @@ theorem isDiag_chargeOperator (y : ℝ) : (chargeOperator y).IsDiag := by
 
 /-- **The charge is `T³ + Y/2`.** On a doublet of hypercharge `y` the unbroken generator acts as
 `i` times the charge operator `T³ + y / 2`. -/
-@[simp]
 theorem doubletAction_chargeGenerator (y : ℝ) :
     doubletAction y chargeGenerator = I • chargeOperator y := by
   rw [doubletAction_apply, singletAction_apply, coe_chargeGenerator_fst, chargeGenerator_snd,
@@ -205,7 +204,6 @@ theorem doubletAction_chargeGenerator (y : ℝ) :
 
 /-- On a singlet of hypercharge `y` the unbroken generator acts as `i (y / 2)`: the charge of a
 weak-isospin singlet is `Y / 2`. -/
-@[simp]
 theorem singletAction_chargeGenerator (y : ℝ) :
     singletAction y chargeGenerator = I * ((y / 2 : ℝ) : ℂ) := by
   simp [singletAction_apply]
