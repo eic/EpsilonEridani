@@ -60,8 +60,9 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 * `LightConeBasis.isSelfAdjoint_transverseProj`: for a reflexive form the transverse projector is
   self-adjoint.
 * `LightConeBasis.finrank_transverse_add_two`: the transverse subspace has codimension two.
-* `EpsilonEridani.isSymm_toBilinForm_minkowskiProduct`: the Minkowski product is symmetric, so
-  the reflexive-form results above apply to it.
+* `EpsilonEridani.isSymm_toBilinForm_minkowskiProduct` (in
+  `Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`): the Minkowski product is
+  symmetric, so the reflexive-form results above apply to it.
 * `LightConeBasis.finrank_transverse_minkowskiProduct_add_one`: in `d + 1`-dimensional
   Minkowski space the transverse projector of any light-cone basis has rank `d - 1`.
 * `LightConeBasis.finrank_transverse_minkowskiProduct_eq_two`: in four-dimensional Minkowski space
@@ -125,19 +126,19 @@ theorem minus_apply (v : V) : L.minus v = B L.nPlus v :=
   (rfl)
 
 @[simp]
-theorem plus_nPlus : L.plus L.nPlus = 1 := by
+theorem plus_nPlus_eq_one : L.plus L.nPlus = 1 := by
   simp [plus_apply]
 
 @[simp]
-theorem plus_nMinus : L.plus L.nMinus = 0 := by
+theorem plus_nMinus_eq_zero : L.plus L.nMinus = 0 := by
   simp [plus_apply]
 
 @[simp]
-theorem minus_nPlus : L.minus L.nPlus = 0 := by
+theorem minus_nPlus_eq_zero : L.minus L.nPlus = 0 := by
   simp [minus_apply]
 
 @[simp]
-theorem minus_nMinus : L.minus L.nMinus = 1 := by
+theorem minus_nMinus_eq_one : L.minus L.nMinus = 1 := by
   simp [minus_apply]
 
 /-! ### The longitudinal and transverse subspaces -/
@@ -157,9 +158,11 @@ theorem longitudinal_def : L.longitudinal = Submodule.span R {L.nPlus, L.nMinus}
 theorem transverse_def : L.transverse = B.orthogonal L.longitudinal :=
   (rfl)
 
+@[simp]
 theorem nPlus_mem_longitudinal : L.nPlus ∈ L.longitudinal :=
   Submodule.subset_span (by simp)
 
+@[simp]
 theorem nMinus_mem_longitudinal : L.nMinus ∈ L.longitudinal :=
   Submodule.subset_span (by simp)
 
@@ -192,16 +195,17 @@ theorem plus_smul_add_minus_smul_add_transverseProj (v : V) :
   abel
 
 @[simp]
-theorem plus_transverseProj (v : V) : L.plus (L.transverseProj v) = 0 := by
+theorem plus_transverseProj_eq_zero (v : V) : L.plus (L.transverseProj v) = 0 := by
   simp [transverseProj_apply]
 
 @[simp]
-theorem minus_transverseProj (v : V) : L.minus (L.transverseProj v) = 0 := by
+theorem minus_transverseProj_eq_zero (v : V) : L.minus (L.transverseProj v) = 0 := by
   simp [transverseProj_apply]
 
 /-- The transverse projector is a projection onto the transverse subspace. -/
 theorem isProj_transverseProj : LinearMap.IsProj L.transverse L.transverseProj where
-  map_mem v := L.mem_transverse_iff.2 ⟨L.plus_transverseProj v, L.minus_transverseProj v⟩
+  map_mem v := L.mem_transverse_iff.2 ⟨L.plus_transverseProj_eq_zero v,
+    L.minus_transverseProj_eq_zero v⟩
   map_id v h := by
     obtain ⟨hp, hm⟩ := L.mem_transverse_iff.1 h
     simp [transverseProj_apply, hp, hm]
@@ -213,11 +217,11 @@ theorem transverseProj_transverseProj (v : V) :
   L.isProj_transverseProj.map_id _ (L.isProj_transverseProj.map_mem v)
 
 @[simp]
-theorem transverseProj_nPlus : L.transverseProj L.nPlus = 0 := by
+theorem transverseProj_nPlus_eq_zero : L.transverseProj L.nPlus = 0 := by
   simp [transverseProj_apply]
 
 @[simp]
-theorem transverseProj_nMinus : L.transverseProj L.nMinus = 0 := by
+theorem transverseProj_nMinus_eq_zero : L.transverseProj L.nMinus = 0 := by
   simp [transverseProj_apply]
 
 /-- The kernel of the transverse projector is the longitudinal subspace. -/
@@ -308,7 +312,7 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {B : BilinForm K 
   (L : LightConeBasis B)
 
 /-- The longitudinal subspace is two-dimensional. -/
-theorem finrank_longitudinal : finrank K L.longitudinal = 2 := by
+theorem finrank_longitudinal_eq_two : finrank K L.longitudinal = 2 := by
   rw [longitudinal_def]
   have h := finrank_span_eq_card L.linearIndependent
   rwa [Matrix.range_cons_cons_empty, Fintype.card_fin] at h
@@ -316,7 +320,7 @@ theorem finrank_longitudinal : finrank K L.longitudinal = 2 := by
 /-- The transverse subspace has codimension two. -/
 theorem finrank_transverse_add_two [FiniteDimensional K V] :
     finrank K L.transverse + 2 = finrank K V := by
-  rw [← L.finrank_longitudinal, add_comm]
+  rw [← L.finrank_longitudinal_eq_two, add_comm]
   exact Submodule.finrank_add_eq_of_isCompl L.isCompl_longitudinal_transverse
 
 end Field
@@ -330,12 +334,6 @@ section Minkowski
 open Lorentz Vector
 
 variable {d : ℕ}
-
-/-- The Minkowski product is a symmetric bilinear form; in particular the reflexivity hypothesis
-of `LightConeBasis.bilinForm_eq_plus_mul_minus_add` and
-`LightConeBasis.isSelfAdjoint_transverseProj` holds for it (via `IsSymm.isRefl`). -/
-theorem isSymm_toBilinForm_minkowskiProduct : (minkowskiProduct (d := d)).toBilinForm.IsSymm :=
-  ⟨minkowskiProduct_symm⟩
 
 namespace LightConeBasis
 
