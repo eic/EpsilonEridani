@@ -132,13 +132,15 @@ theorem energy_spatial (p : V) : F.energy (F.spatial p) = 0 := by
 @[simp]
 theorem spatial_n : F.spatial F.n = 0 := by
   have hn : g F.n F.n = 1 := F.norm
-  rw [spatial_apply, div_self hn ▸ (by norm_num : (1 : ℝ) ≠ 0), one_smul, sub_self]
+  have h1 : g F.n F.n ≠ 0 := by rw [hn]; norm_num
+  rw [spatial_apply, div_self h1, one_smul, sub_self]
 
 theorem spatial_eq_self_iff {p : V} : F.spatial p = p ↔ g p F.n = 0 := by
   rw [spatial_apply, sub_eq_self, smul_eq_zero, div_eq_zero_iff]
-  have hn : F.n ≠ 0 := fun h => by
-    have : g F.n F.n = 1 := F.norm
-    simpa [h] using this
+  have hn : F.n ≠ 0 := by
+    intro h
+    rw [h] at F.norm
+    simp at F.norm
   have hN : g F.n F.n ≠ 0 := by rw [F.norm]; norm_num
   simp [hN, hn]
 
@@ -171,7 +173,8 @@ theorem range_spatial : LinearMap.range F.spatial = g.flip.orthogonal (ℝ ∙ F
     exact Or.inr (F.bilin_spatial_n q)
   · intro hp
     have hn : g F.n F.n = 1 := F.norm
-    have hp' : g p F.n = 0 := by simpa [hn ▸ (by norm_num : (1 : ℝ) ≠ 0)] using hp 1
+    have hp' : g p F.n = 0 := by
+      simpa [F.norm] using hp 1
     exact ⟨p, F.spatial_eq_self_iff.mpr hp'⟩
 
 /-- The `g`-product of two spatial parts, `g a_s b_s = g a b - E(a) E(b)`. For `a = b` this is the
@@ -190,8 +193,8 @@ theorem bilin_spatial_spatial (hg : g.IsSymm) (a b : V) :
 def spatialNorm (p : V) : ℝ :=
   Real.sqrt (-g (F.spatial p) (F.spatial p))
 
-theorem spatialNorm_def (p : V) : F.spatialNorm p = Real.sqrt (-g (F.spatial p) (F.spatial p)) :=
-  rfl
+theorem spatialNorm_def (p : V) : F.spatialNorm p = Real.sqrt (-g (F.spatial p) (F.spatial p)) := by
+  simp [spatialNorm]
 
 theorem spatialNorm_nonneg (p : V) : 0 ≤ F.spatialNorm p :=
   Real.sqrt_nonneg _
@@ -212,8 +215,8 @@ def cosAngle (a b : V) : ℝ :=
   -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b)
 
 theorem cosAngle_def (a b : V) :
-    F.cosAngle a b = -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b) :=
-  rfl
+    F.cosAngle a b = -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b) := by
+  simp [cosAngle]
 
 theorem cosAngle_comm (hg : g.IsSymm) (a b : V) : F.cosAngle a b = F.cosAngle b a := by
   rw [cosAngle, cosAngle, hg.eq, mul_comm]
