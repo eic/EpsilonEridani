@@ -12,7 +12,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Shift
 # Derivatives of even functions
 
 The derivative of an even function is odd (`EpsilonEridani.odd_deriv_of_even`). In particular it
-vanishes at the origin, by Mathlib's `Function.Odd.map_zero`.
+vanishes at the origin, by Mathlib's `Function.Odd.map_zero`. This is used in the spherical
+Bessel construction: each iterate `G l` of `f ↦ -dslope (deriv f) 0` applied to `sinc` is even
+(`reduced_neg`), hence `deriv (G l) 0 = 0`, which makes the iterated operator analytic across the
+origin.
 -/
 
 public section

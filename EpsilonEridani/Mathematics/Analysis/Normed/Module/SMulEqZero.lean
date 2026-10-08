@@ -23,7 +23,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
 
 namespace EpsilonEridani
 
-/-- A continuous function `f` with `x • f x = 0` for every `x` is zero. -/
+/-- A continuous function `f` that vanishes away from the origin is zero everywhere. -/
 theorem eq_zero_of_forall_smul_eq_zero {f : 𝕜 → E} (hf : Continuous f)
     (h : ∀ x, x • f x = 0) : f = 0 :=
   hf.ext_on (dense_compl_singleton 0) continuous_const fun x hx =>

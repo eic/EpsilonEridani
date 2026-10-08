@@ -85,18 +85,17 @@ theorem sphericalBesselJ_def (l : ℕ) (x : ℝ) :
     sphericalBesselJ l x = x ^ l * (fun f : ℝ → ℝ => -dslope (deriv f) 0)^[l] sinc x :=
   (rfl)
 
-private lemma reduced_succ (l : ℕ) : G (l + 1) = -dslope (deriv (G l)) 0 := by
-  rw [reducedSphericalBesselJ, Function.iterate_succ_apply']
-  rfl
-
 private lemma analyticOnNhd_reduced (l : ℕ) : AnalyticOnNhd ℝ (G l) Set.univ := by
   induction l with
   | zero =>
     rw [reducedSphericalBesselJ, Function.iterate_zero_apply, sinc_eq_dslope]
     exact (analyticOnNhd_dslope (s := Set.univ)).mpr fun x _ => analyticAt_sin
   | succ l ih =>
-    rw [reduced_succ]
+    rw [reducedSphericalBesselJ, Function.iterate_succ_apply']
     exact ((analyticOnNhd_dslope (s := Set.univ)).mpr ih.deriv).neg
+
+private lemma reduced_succ (l : ℕ) : G (l + 1) = -dslope (deriv (G l)) 0 := by
+  rw [reducedSphericalBesselJ, Function.iterate_succ_apply']; rfl
 
 @[fun_prop]
 private lemma differentiable_reduced (l : ℕ) : Differentiable ℝ (G l) :=
@@ -118,7 +117,7 @@ private lemma reduced_neg (l : ℕ) (x : ℝ) : G l (-x) = G l x := by
     rcases eq_or_ne x 0 with rfl | hx
     · rw [neg_zero]
     · simp only [Pi.neg_apply, dslope_of_ne _ hx, dslope_of_ne _ (neg_ne_zero.mpr hx),
-        slope_def_field, hodd, h0]
+        slope_def_field, hodd x, h0]
       ring
 
 /-- The derivative of `G l` vanishes at the origin, since `G l` is even. -/
@@ -130,7 +129,9 @@ private lemma hasDerivAt_reduced (l : ℕ) (x : ℝ) :
     HasDerivAt (G l) (-x * G (l + 1) x) x := by
   have h := sub_smul_dslope (deriv (G l)) 0 x
   rw [deriv_reduced_zero, sub_zero, sub_zero, smul_eq_mul] at h
-  rw [reduced_succ, Pi.neg_apply, mul_neg, neg_mul, neg_neg, h]
+  have hsucc : G (l + 1) = -dslope (deriv (G l)) 0 := by
+    rw [reducedSphericalBesselJ, Function.iterate_succ_apply']; rfl
+  rw [hsucc, Pi.neg_apply, mul_neg, neg_mul, neg_neg, h]
   exact (differentiable_reduced l x).hasDerivAt
 
 /-- The base case of the recurrence: `x ^ 2 G 2 - 3 G 1 + G 0 = 0`. It follows by differentiating
@@ -307,6 +308,7 @@ theorem deriv_sphericalBesselJ_apply_zero (l : ℕ) :
   (hasDerivAt_sphericalBesselJ_apply_zero l).deriv
 
 /-- The order-one spherical Bessel function, `j_1(x) = sin x / x ^ 2 - cos x / x`. -/
+@[simp]
 theorem sphericalBesselJ_one (x : ℝ) : sphericalBesselJ 1 x = sin x / x ^ 2 - cos x / x := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
