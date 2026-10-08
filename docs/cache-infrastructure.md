@@ -151,7 +151,7 @@ and uploads with the key. The variables hold only the prefix; Lake appends the s
 
 | Purpose | Value | Used by |
 |---|---|---|
-| `LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/artifacts` | `pr-build.yml`, `ci.yml`, `lint-full.yml`, `nightly-verify.yml` reads |
+| `LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/artifacts` | `pr-build.yml`, `ci.yml`, `lint-full.yml`, `nightly-verify.yml`, `pages.yml`, `pr-profile.yml` reads |
 | `LAKE_CACHE_REVISION_ENDPOINT_PUBLIC` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions` | the same reads |
 | `LAKE_CACHE_ARTIFACT_ENDPOINT` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/artifacts` | `publish-lake-cache` upload |
 | `LAKE_CACHE_REVISION_ENDPOINT` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions` | `publish-lake-cache` upload |
