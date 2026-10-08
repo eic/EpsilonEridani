@@ -122,7 +122,7 @@ private lemma mellinConvergent_and_differentiableAt_indicator
 `f x = O(x ^ (-b))` as `x → 0⁺`, the Mellin transform on the unit interval converges on the
 half-plane `b < Re N`. For a density behaving like `x ^ (-1 - λ)` at small `x` this is the
 half-plane `1 + λ < Re N`. -/
-theorem LocallyIntegrableOn.mellinDisConvergent_of_isBigO_rpow (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
+theorem mellinDisConvergent_of_isBigO_rpow (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
     (hb : f =O[𝓝[>] 0] fun x => x ^ (-b)) {N : ℂ} (hN : b < N.re) :
     MellinDisConvergent f N := by
   have h := (mellinConvergent_and_differentiableAt_indicator hf hb hN).1
@@ -131,7 +131,7 @@ theorem LocallyIntegrableOn.mellinDisConvergent_of_isBigO_rpow (hf : LocallyInte
 
 /-- Holomorphy in the strip: `mellinDis f` is complex differentiable at every `N`
 with `b < Re N`. -/
-theorem LocallyIntegrableOn.differentiableAt_mellinDis (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
+theorem differentiableAt_mellinDis (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
     (hb : f =O[𝓝[>] 0] fun x => x ^ (-b)) {N : ℂ} (hN : b < N.re) :
     DifferentiableAt ℂ (mellinDis f) N := by
   have h : mellinDis f = mellin fun x => (((Ioc 0 1).indicator f x : ℝ) : ℂ) :=
@@ -140,7 +140,7 @@ theorem LocallyIntegrableOn.differentiableAt_mellinDis (hf : LocallyIntegrableOn
   exact (mellinConvergent_and_differentiableAt_indicator hf hb hN).2
 
 /-- Holomorphy on the half-plane: `mellinDis f` is differentiable on `{N | b < N.re}`. -/
-theorem LocallyIntegrableOn.differentiableOn_mellinDis (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
+theorem differentiableOn_mellinDis (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
     (hb : f =O[𝓝[>] 0] fun x => x ^ (-b)) :
     DifferentiableOn ℂ (mellinDis f) {N | b < N.re} := fun _ hN =>
   (differentiableAt_mellinDis hf hb hN).differentiableWithinAt

@@ -68,6 +68,7 @@ transform. Extending the theorem to distributional kernels is a separate develop
 
 noncomputable section
 
+open MeasureTheory Set Filter Asymptotics Topology
 open scoped BigOperators
 
 namespace EpsilonEridani
