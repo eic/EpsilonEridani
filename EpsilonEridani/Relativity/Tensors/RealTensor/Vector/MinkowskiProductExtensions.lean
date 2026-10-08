@@ -55,6 +55,9 @@ end Lorentz
 
 namespace EpsilonEridani
 
+open Real Inner ProductGeometry Lorentz.Vector
+open scoped InnerProductSpace Lorentz.Vector
+
 /-- The vector `x e₀ + y eᵢ + z eⱼ` built from the time direction and the spatial directions
 `i` and `j`. -/
 def ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z : ℝ) : Lorentz.Vector d :=
