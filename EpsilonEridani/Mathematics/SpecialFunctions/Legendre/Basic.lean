@@ -80,7 +80,7 @@ theorem legendre_add_two (n : ℕ) : (n + 2 : ℝ[X]) * legendre (n + 2) =
   rw [legendre, ← mul_assoc]
   convert one_mul _
   have hcoeff : (n + 2 : ℝ[X]) = C (n + 2 : ℝ) := by
-    simpa using (C.map_add (a := (n : ℝ)) (b := (2 : ℝ))).symm
+    rw [C.map_add (a := (n : ℝ)) (b := (2 : ℝ))]
   rw [hcoeff, ← C_mul, mul_inv_cancel₀ (by positivity), C_1]
 
 /-- Bonnet's recurrence evaluated at a point. -/
