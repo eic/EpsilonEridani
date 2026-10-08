@@ -23,7 +23,7 @@ Keys have the shape
 `mathlib-ltar-v1-<os>-<arch>-<lean-toolchain hash>-<lake-manifest hash>`. An exact match reuses the
 current pin. The restore prefix omits the manifest hash, so a Mathlib-only pin bump can start from
 the newest snapshot for the same Lean toolchain and fetch only missing files. A toolchain bump has
-no prefix match. In every case, `lake exe cache get Mathlib Physlib TauCeti` remains authoritative and downloads whatever
+no prefix match. In every case, `lake exe cache get` remains authoritative and downloads whatever
 the snapshot lacks. This design mirrors Mathlib's own cache-snapshot warming in
 `.github/workflows/build_template.yml` and `.github/actions/get-cache`, using `actions/cache`
 instead of per-run artifacts.
@@ -33,10 +33,10 @@ incompatible, bump `mathlib-ltar-v1` once in
 `.github/actions/restore-mathlib-ltars/action.yml`. To discard a single entry instead, find it with
 `gh cache list --repo eic/EpsilonEridani` and delete its exact key with
 `gh cache delete <key> --repo eic/EpsilonEridani`. A failed fetch also retries once with
-`lake exe cache get! Mathlib Physlib TauCeti`, which forces every linked file to be downloaded and unpacked again.
+`lake exe cache get!`, which forces every linked file to be downloaded and unpacked again.
 
 Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
-variable. Every workflow that runs `lake exe cache get Mathlib Physlib TauCeti` (`ci.yml`, `pr-build.yml`,
+variable. Every workflow that runs `lake exe cache get` (`ci.yml`, `pr-build.yml`,
 `pr-profile.yml`, `nightly-verify.yml`, `pages.yml`) exports
 `MATHLIB_CACHE_DEBUG_USE_LEGACY` from `vars.MATHLIB_CACHE_DEBUG_USE_LEGACY`. An operator
 sets the variable to `1` to send reads back to the legacy storage endpoint, and clears it
@@ -78,56 +78,105 @@ step is best-effort (`continue-on-error`): a miss or a refused archive means com
 dependencies from source, as before. To abandon a poisoned or incompatible entry, bump
 `dependency-builds-v1` in the action and in nothing else.
 
-## Cloudflare account
+## Bucket
 
-The 2026 account migration is complete. The live bucket, zone, custom domain,
-repository variables, and publisher credential are all in the dedicated
-EpsilonEridani account. The source bucket in the personal account was deleted after
-anonymous reads and an exact trusted publication succeeded.
+The Lake artifact cache lives in a bucket on the National Research Platform's Nautilus Ceph
+object store, which speaks the S3 API. It holds only this cache; the account that owns it owns
+nothing else.
 
 | | |
 |---|---|
-| Account | `epsiloneridani` (accessible to `kim@lean-fro.org`) |
-| Account ID | `ec2169bdf033f56b009956d4b64ba8ef` |
-| Dashboard | https://dash.cloudflare.com/ec2169bdf033f56b009956d4b64ba8ef |
-| R2 bucket | `epsiloneridani-cache` |
-| Registrar | `epsiloneridaniproject.org`, bought through Cloudflare Registrar in this same account |
+| S3 endpoint | `https://s3-central.nrp-nautilus.io` |
+| Bucket | `epsiloneridani-cache` |
+| Owner | the EIC EpsilonEridani account on Nautilus (`~/.s3cfg` on the operators' machines) |
 
-The account ID is not a secret: it is the subdomain of the S3 endpoint below. If the dashboard
-link 404s, the login you used is not a member of that account.
+The bucket is created and administered with `s3cmd`. The on-disk copy of the bucket policy
+lives with the operator; the effective policy is readable with `s3cmd info s3://epsiloneridani-cache`.
 
-This account is the EpsilonEridani boundary. It should contain no Hex or Palomar resources.
+## Bucket policy
+
+Reads are anonymous. Lake's download path issues plain unauthenticated `curl` GETs and has no
+way to sign them, so the two Lake prefixes must be publicly readable; only uploads use a key.
+The policy grants two things to everyone:
+
+- `s3:GetObject` on `artifacts/*` and `revisions/*`;
+- `s3:ListBucket` on the bucket, unconditionally.
+
+The second grant is not about listing. S3 answers a GET of a missing key with 403 unless the
+caller may list the bucket, and only then with 404. Lake backtracks to an ancestor's revision
+map only on a 404; any other status is a failed lookup, after which `scripts/lake-cache-get.sh`
+discards the cache and the build starts from scratch. A `ListBucket` grant conditioned on
+`s3:prefix` does not help: the 404-or-403 decision is made without a prefix in the request
+context, so the condition never matches. The cost of the unconditional grant is that anyone can
+list the bucket, which exposes nothing beyond the content-hashed artifacts the public GETs
+already serve.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LakeCacheAnonymousRead",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["s3:GetObject"],
+      "Resource": [
+        "arn:aws:s3:::epsiloneridani-cache/artifacts/*",
+        "arn:aws:s3:::epsiloneridani-cache/revisions/*"
+      ]
+    },
+    {
+      "Sid": "LakeCacheMissIs404",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["s3:ListBucket"],
+      "Resource": ["arn:aws:s3:::epsiloneridani-cache"]
+    }
+  ]
+}
+```
+
+Apply it with `s3cmd setpolicy <file> s3://epsiloneridani-cache`. To check it, an anonymous GET
+of an unpublished revision map must answer 404, not 403:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" \
+  https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions/eic/EpsilonEridani/tc/leanprover--lean4---v4.34.1/0000000000000000000000000000000000000000.jsonl
+```
 
 ## Endpoints
 
-Reads are anonymous. Lake's download path issues plain unauthenticated `curl` GETs and has no way
-to sign them, so the read host must be public; only uploads use a key.
+There is no separate public domain: reads and uploads use the same S3 host, reads anonymously
+and uploads with the key. The variables hold only the prefix; Lake appends the scope.
 
 | Purpose | Value | Used by |
 |---|---|---|
-| `LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC` | `https://cache.epsiloneridaniproject.org/artifacts` | `pr-build.yml` read |
-| `LAKE_CACHE_REVISION_ENDPOINT_PUBLIC` | `https://cache.epsiloneridaniproject.org/revisions` | `pr-build.yml` read |
-| `LAKE_CACHE_ARTIFACT_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/epsiloneridani-cache/artifacts` | `ci.yml` upload |
-| `LAKE_CACHE_REVISION_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/epsiloneridani-cache/revisions` | `ci.yml` upload |
-| `LAKE_CACHE_KEY` (secret) | `<ACCESS_KEY_ID>:<SECRET>`, read-write | `ci.yml`, `publish-lake-cache` job only |
+| `LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/artifacts` | `pr-build.yml`, `ci.yml`, `lint-full.yml`, `nightly-verify.yml`, `pages.yml`, `pr-profile.yml` reads |
+| `LAKE_CACHE_REVISION_ENDPOINT_PUBLIC` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions` | the same reads |
+| `LAKE_CACHE_ARTIFACT_ENDPOINT` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/artifacts` | `publish-lake-cache` upload |
+| `LAKE_CACHE_REVISION_ENDPOINT` | `https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions` | `publish-lake-cache` upload |
+| `LAKE_CACHE_KEY` (secret) | `<ACCESS_KEY_ID>:<SECRET>`, read-write | `publish-lake-cache` job only |
 
-Lake service names: `epsiloneridani-public` for reads, `epsiloneridani-r2` for uploads. Object keys are
-`artifacts/eic/EpsilonEridani/<hash>.art`, so the endpoint variables hold only the prefix and
-Lake appends the scope.
+Lake service names: `epsiloneridani-public` for reads, `epsiloneridani-s3` for uploads. Object
+keys are `artifacts/eic/EpsilonEridani/<hash>.art` and
+`revisions/eic/EpsilonEridani/tc/<toolchain>/<revision>.jsonl`, where the toolchain is the elan
+name with `/` written as `--` and `:` as `---`.
+
+Lake signs uploads with curl's `--aws-sigv4 aws:amz:auto:s3`, so the SigV4 region is the
+literal `auto` and cannot be configured. Ceph accepts that; a plain AWS S3 bucket would not, so
+moving this cache to AWS would also mean replacing the `lake cache put-staged` step with a
+copy of the staged tree.
 
 ## Publisher credential
 
-The GitHub Actions secret `LAKE_CACHE_KEY` contains the S3 access-key pair for
-the non-expiring Cloudflare token named **EpsilonEridani Lake cache R2 publisher**.
-The token belongs to the `epsiloneridani` account and is restricted to object
-read/write/list access in `epsiloneridani-cache`; it has no bucket-administration,
-Worker, DNS, Registrar, or billing authority.
+The GitHub Actions secret `LAKE_CACHE_KEY` contains the S3 access-key pair of a dedicated
+Nautilus application key with object read/write access to `epsiloneridani-cache`. It is not an
+operator's personal key.
 
-When rotating it, create the replacement in the `epsiloneridani` account, install the
-new `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` pair as `LAKE_CACHE_KEY`, and let an
-isolated `publish-lake-cache` job publish an exact revision before revoking the
-old token. Do not put the token value in a repository variable or expose it to
-the build job.
+When rotating it, create the replacement key, install the new
+`<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` pair as `LAKE_CACHE_KEY`, and let an isolated
+`publish-lake-cache` job publish an exact revision before revoking the old key. Do not put the
+key value in a repository variable or expose it to the build job.
 
 ## Contributors
 
@@ -143,12 +192,6 @@ does not fail anything; it compiles the whole library from source instead, which
 went unnoticed for as long as it did. CI keeps passing the endpoints explicitly from the
 `LAKE_CACHE_*_PUBLIC` repo variables and reaches the script only when those are set, so the defaults
 never decide what CI does.
-
-Anything else reading this cache, including the worker exemplar in
-[`eic/EpsilonEridaniWorker`](https://github.com/eic/EpsilonEridaniWorker), must use the custom domain rather
-than the bucket's `pub-<id>.r2.dev` development URL. Public access on that development URL is off and
-it answers 401 for every path, which a caller whose cache miss is non-fatal cannot tell from a cold
-revision.
 
 ## Why the upload is its own job
 
@@ -199,104 +242,13 @@ the result stays inside, so an unchecked name like `0.art/../../../proc/self/env
 otherwise have Lake read the publishing job's environment and `PUT` it into a publicly readable
 bucket.
 
-## Why a custom domain
-
-Cloudflare rate-limits `r2.dev` public bucket URLs and documents them as development-only
-(https://developers.cloudflare.com/r2/buckets/public-buckets/); exceeding the limit returns HTTP 429
-with Cloudflare error 1015
-(https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/).
-An R2 custom domain carries no such limit, so reads go through `cache.epsiloneridaniproject.org`. The
-bucket's `r2.dev` URL is disabled, so there is nothing to silently fall back to.
-
-A custom domain requires the zone in the same Cloudflare account as the bucket
-(https://developers.cloudflare.com/r2/buckets/public-buckets/#add-your-domain-to-cloudflare).
-Attaching only a subdomain while keeping DNS elsewhere needs Business (partial CNAME setup,
-https://developers.cloudflare.com/dns/zone-setups/partial-setup/) or Enterprise (subdomain zone,
-https://developers.cloudflare.com/dns/zone-setups/subdomain-setup/), hence a domain registered
-in-account.
-
-## Edge cache
-
-`.art` is not one of the extensions Cloudflare caches by default
-(https://developers.cloudflare.com/cache/concepts/default-cache-behavior/), so artifact reads are
-cached by an explicit Cache Rule. Dashboard: Caching, then Cache Rules, on the
-`epsiloneridaniproject.org` zone.
-
-Rule expression:
-
-```
-(http.host eq "cache.epsiloneridaniproject.org" and starts_with(http.request.uri.path, "/artifacts/"))
-```
-
-Settings: cache eligibility "Eligible for cache"; Edge TTL "Ignore cache-control header and use
-this TTL", one month. Browser TTL left at the default.
-
-The rule is scoped to `/artifacts/` on purpose. Those keys are immutable content hashes, so a long
-TTL is always safe. `/revisions/` is deliberately left uncached: a lookup for a revision that has
-not been published yet returns 404, and a long-cached 404 would hide it from a later build once
-main publishes it. Revision lookups are a handful of requests per build against a thousand or more
-artifact fetches, so nothing is lost by leaving them alone.
-
-Tiered Cache is a separate per-zone toggle and is not part of the rule above: Cloudflare documents
-it as something you enable, under Caching, then Tiered Cache
-(https://developers.cloudflare.com/cache/how-to/tiered-cache/). Smart topology is available on
-every plan and needs no further configuration once Tiered Cache is on. Check the toggle on the
-`epsiloneridaniproject.org` zone rather than assuming it; the Cache Rule above is what does the work
-either way.
-
-To check the rule is live, request the same artifact twice. `curl -I` works as well as a GET:
-Cloudflare converts a cacheable `HEAD` into a `GET`, fetching and caching the full response and
-returning only the headers (https://developers.cloudflare.com/cache/concepts/cache-behavior/), so a
-`HEAD` reports the same `cf-cache-status` a `GET` would.
-
-```bash
-U=https://cache.epsiloneridaniproject.org/artifacts/eic/EpsilonEridani/<hash>.art
-curl -s -o /dev/null -D - "$U" | grep -i cf-cache-status   # MISS on the first request
-curl -s -o /dev/null -D - "$U" | grep -i cf-cache-status   # HIT on the second
-```
-
-`DYNAMIC` means the expression is not matching; `BYPASS` means something overrides it.
-The hit ratio that actually determines the saving is under Caching, then Analytics.
-
 ## Cost
 
-Egress from R2 is free. Reads are Class B operations: 10M per month free, then $0.36 per million
-(https://developers.cloudflare.com/r2/pricing/, standard storage, prices read 2026-08-04).
-
-Measured 2026-08-04:
-
-| | |
-|---|---|
-| Artifacts fetched per build | 1,224 |
-| Mean artifact size | 14 KiB, so about 17 MiB per build across those 1,224 fetches |
-| `pr-build` runs per day | 734 |
-| Class B reads | about 27M per month |
-| Billable after the 10M free tier | about 17M, so roughly **$6 per month** |
-| Egress | about 375 GB per month, free |
-| Storage and Class A writes | a few GB and well inside the 1M free writes, so negligible |
-
-Treat that as a range of roughly $4 to $9. The run count came from one busy day, and the artifact
-count per build varies with how much of the dependency cone a PR invalidates.
-
-To re-estimate, take an artifact count from any `sandboxed-build` job and a day's run count:
-
-```bash
-JOB=$(gh run view --repo eic/EpsilonEridani <run-id> \
-        --json jobs -q '.jobs[]|select(.name=="sandboxed-build")|.databaseId' | head -1)
-gh run view --repo eic/EpsilonEridani --job "$JOB" --log | grep -c 'downloaded artifact'
-gh api -X GET repos/eic/EpsilonEridani/actions/workflows/pr-build.yml/runs \
-  -f created=YYYY-MM-DD -q .total_count
-```
-
-Then reads per month is roughly `artifacts x runs_per_day x 30`, and the bill is
-`max(0, reads - 10e6) / 1e6 x $0.36`.
-
-That arithmetic charges every artifact fetch as a Class B read, so it is the bill without the edge
-cache, and an upper bound on the real one. A custom domain puts Cloudflare Cache in front of the
-bucket (https://developers.cloudflare.com/r2/buckets/public-buckets/#caching), and the Cache Rule
-under [Edge cache](#edge-cache) is what claims that saving: a request answered at the edge never
-reaches R2 and so is never billed as a Class B operation. The hit ratio under Caching, then
-Analytics says how much of the 27M is still reaching the bucket.
+Nautilus object storage is allocated to the project rather than metered per request, so there
+is no per-read bill to estimate. Each build fetches one map plus one artifact per module it
+reuses, a few hundred small objects, and each publication writes about the same. Keep an eye on
+the bucket's size if the allocation is ever tightened; artifacts are immutable and nothing
+prunes them, so the bucket grows with every published revision.
 
 ## Related
 
