@@ -94,7 +94,7 @@ open scoped EuclideanSpace
 namespace Lorentz.Vector
 
 /-- The transverse plane. -/
-scoped notation "E²" => EuclideanSpace ℝ (Fin 2)
+local notation "E²" => EuclideanSpace ℝ (Fin 2)
 
 /-- The plus light-front component `p⁺ = (p⁰ + p³) / √2` of a four-vector. -/
 def plusComponent (p : Vector 3) : ℝ := (p (Sum.inl 0) + p (Sum.inr 2)) / √2
@@ -202,6 +202,9 @@ namespace EpsilonEridani
 
 open Lorentz.Vector
 
+/-- The transverse plane. -/
+local notation "E²" => EuclideanSpace ℝ (Fin 2)
+
 /-- The four-vector with plus component `a`, minus component `b` and transverse part `kT`. -/
 def ofLightFront (a b : ℝ) (kT : E²) : Lorentz.Vector 3 :=
   Sum.elim (fun _ => (a + b) / √2) ![kT 0, kT 1, (a - b) / √2]
@@ -225,20 +228,21 @@ lemma ofLightFront_inr_two (a b : ℝ) (kT : E²) :
 
 /-! ### Light-front components as coordinates -/
 
+private lemma sqrt_two_mul_self_eq_two : √2 * √2 = 2 :=
+  Real.mul_self_sqrt zero_le_two
+
 @[simp]
 lemma plusComponent_ofLightFront (a b : ℝ) (kT : E²) : plusComponent (ofLightFront a b kT) = a := by
-  have : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   simp only [plusComponent_def, ofLightFront_inl, ofLightFront_inr_two]
   field_simp
-  linear_combination (-a) * this
+  linear_combination (-a) * sqrt_two_mul_self_eq_two
 
 @[simp]
 lemma minusComponent_ofLightFront (a b : ℝ) (kT : E²) :
     minusComponent (ofLightFront a b kT) = b := by
-  have : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   simp only [minusComponent_def, ofLightFront_inl, ofLightFront_inr_two]
   field_simp
-  linear_combination (-b) * this
+  linear_combination (-b) * sqrt_two_mul_self_eq_two
 
 @[simp]
 lemma transversePart_ofLightFront (a b : ℝ) (kT : E²) :
@@ -252,21 +256,23 @@ namespace Lorentz.Vector
 
 open EpsilonEridani
 
+/-- The transverse plane. -/
+local notation "E²" => EuclideanSpace ℝ (Fin 2)
+
 @[simp]
 lemma ofLightFront_plusComponent_minusComponent_transversePart (p : Vector 3) :
     ofLightFront (plusComponent p) (minusComponent p) (transversePart p) = p := by
-  have : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   ext μ
   rcases μ with i | i
   · rw [Subsingleton.elim i 0, ofLightFront_inl, plusComponent_def, minusComponent_def]
     field_simp
-    linear_combination (-p (Sum.inl 0)) * this
+    linear_combination (-p (Sum.inl 0)) * sqrt_two_mul_self_eq_two
   · fin_cases i
     · simp
     · simp
     · simp only [Fin.reduceFinMk, ofLightFront_inr_two, plusComponent_def, minusComponent_def]
       field_simp
-      linear_combination (-p (Sum.inr 2)) * this
+      linear_combination (-p (Sum.inr 2)) * sqrt_two_mul_self_eq_two
 
 /-- A four-vector is determined by its light-front components. -/
 lemma ext_lightFront {p q : Vector 3} (hplus : plusComponent p = plusComponent q)
@@ -284,13 +290,13 @@ lemma ext_lightFront_iff {p q : Vector 3} :
 lemma minkowskiProduct_eq_lightFront (p q : Vector 3) :
     ⟪p, q⟫ₘ = plusComponent p * minusComponent q + minusComponent p * plusComponent q -
       inner ℝ (transversePart p) (transversePart q) := by
-  have : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   rw [minkowskiProduct_toCoord, plusComponent_def, plusComponent_def, minusComponent_def,
     minusComponent_def, EuclideanSpace.inner_eq_star_dotProduct]
   simp only [Fin.sum_univ_three, dotProduct, Fin.sum_univ_two, star_trivial]
   field_simp
   simp only [transversePart_apply_zero, transversePart_apply_one]
-  linear_combination (p (Sum.inl 0) * q (Sum.inl 0) - p (Sum.inr 2) * q (Sum.inr 2)) * this
+  linear_combination
+    (p (Sum.inl 0) * q (Sum.inl 0) - p (Sum.inr 2) * q (Sum.inr 2)) * sqrt_two_mul_self_eq_two
 
 /-- The Minkowski square in light-front components: `p · p = 2 p⁺ p⁻ - ‖p_T‖²`. -/
 lemma minkowskiProduct_self_eq_lightFront (p : Vector 3) :
@@ -301,7 +307,9 @@ lemma minkowskiProduct_self_eq_lightFront (p : Vector 3) :
 /-! ### Relative transverse momentum -/
 
 /-- The transverse momentum of `k` relative to `P`, `k_T - (k⁺ / P⁺) P_T`: the transverse part
-of `k` in the light-front frame in which `P` has no transverse momentum. -/
+of `k` in the light-front frame reached by the boost with parameter `-P_T / P⁺`. Requires
+`P⁺ ≠ 0` for the frame interpretation; the definition covers `P⁺ = 0` only through the division
+convention. -/
 def relativeTransverse (k P : Vector 3) : E² :=
   transversePart k - (plusComponent k / plusComponent P) • transversePart P
 
@@ -329,6 +337,9 @@ end Lorentz.Vector
 namespace EpsilonEridani
 
 open Lorentz.Vector
+
+/-- The transverse plane. -/
+local notation "E²" => EuclideanSpace ℝ (Fin 2)
 
 /-! ### Transverse boosts -/
 
@@ -426,25 +437,19 @@ lemma transverseBoost_symm (v : E²) : (transverseBoost v).symm = transverseBoos
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← transverseBoost_add,
     add_neg_cancel, transverseBoost_zero, LinearEquiv.refl_apply]
 
-lemma transverseBoost_sub (u v : E²) :
-    transverseBoost (u - v) = (transverseBoost (-v)).trans (transverseBoost u) := by
-  rw [sub_eq_add_neg, transverseBoost_add]
+lemma transverseBoost_sub (u v : EuclideanSpace ℝ (Fin 2)) :
+    transverseBoost (u - v) =
+      (transverseBoost v).symm.trans (transverseBoost u) := by
+  rw [transverseBoost_symm, sub_eq_add_neg, transverseBoost_add]
 
 /-- For `P⁺ ≠ 0`, exactly one transverse boost removes the transverse part of `P`: the one with
 parameter `-P_T / P⁺`. -/
-lemma transversePart_transverseBoost_eq_zero_iff (v : E²) {P : Lorentz.Vector 3}
-    (hP : plusComponent P ≠ 0) :
-    transversePart (transverseBoost v P) = 0 ↔ v = -((plusComponent P)⁻¹ • transversePart P) := by
-  rw [transversePart_transverseBoost]
-  constructor
-  · intro h
-    have h' : plusComponent P • v = -transversePart P := by
-      rw [eq_neg_iff_add_eq_zero, add_comm]
-      exact h
-    rw [← _root_.smul_neg, ← h', _root_.smul_smul, inv_mul_cancel₀ hP, one_smul]
-  · rintro rfl
-    rw [_root_.smul_neg, _root_.smul_smul, mul_inv_cancel₀ hP, one_smul, add_neg_cancel]
-
+lemma transversePart_transverseBoost_eq_zero_iff (v : EuclideanSpace ℝ (Fin 2))
+    {P : Lorentz.Vector 3} (hP : plusComponent P ≠ 0) :
+    transversePart (transverseBoost v P) = 0 ↔
+      v = -((plusComponent P)⁻¹ • transversePart P) := by
+  rw [transversePart_transverseBoost, ← _root_.smul_neg, eq_inv_smul_iff₀ hP,
+    eq_neg_iff_add_eq_zero, add_comm]
 /-- Relative transverse momenta are invariant under transverse boosts. -/
 @[simp]
 lemma relativeTransverse_transverseBoost (v : E²) (k : Lorentz.Vector 3) {P : Lorentz.Vector 3}
@@ -454,27 +459,17 @@ lemma relativeTransverse_transverseBoost (v : E²) (k : Lorentz.Vector 3) {P : L
     plusComponent_transverseBoost, _root_.smul_add, _root_.smul_smul, div_mul_cancel₀ _ hP]
   abel
 
-/-- The oriented area between two transverse momenta relative to `P` is invariant under
-transverse boosts. -/
-lemma areaForm_relativeTransverse_transverseBoost (v : E²) (b k : Lorentz.Vector 3)
-    {P : Lorentz.Vector 3} (hP : plusComponent P ≠ 0) :
-    (orientation (Fin 2)).areaForm (relativeTransverse (transverseBoost v b) (transverseBoost v P))
-        (relativeTransverse (transverseBoost v k) (transverseBoost v P)) =
-      (orientation (Fin 2)).areaForm (relativeTransverse b P) (relativeTransverse k P) := by
-  rw [relativeTransverse_transverseBoost v b hP, relativeTransverse_transverseBoost v k hP]
-
 /-- The oriented area between the transverse position of a point of the light-front hyperplane
 `x⁺ = 0` and a relative transverse momentum is invariant under transverse boosts. -/
-lemma areaForm_transversePart_relativeTransverse_transverseBoost (v : E²) {b : Lorentz.Vector 3}
-    (hb : plusComponent b = 0) (k : Lorentz.Vector 3) {P : Lorentz.Vector 3}
+lemma areaForm_transversePart_relativeTransverse_transverseBoost (v : EuclideanSpace ℝ (Fin 2))
+    {b : Lorentz.Vector 3} (hb : plusComponent b = 0) (k : Lorentz.Vector 3) {P : Lorentz.Vector 3}
     (hP : plusComponent P ≠ 0) :
     (orientation (Fin 2)).areaForm (transversePart (transverseBoost v b))
         (relativeTransverse (transverseBoost v k) (transverseBoost v P)) =
       (orientation (Fin 2)).areaForm (transversePart b) (relativeTransverse k P) := by
   have hb' : plusComponent (transverseBoost v b) = 0 := by rwa [plusComponent_transverseBoost]
-  rw [← relativeTransverse_of_plusComponent_eq_zero hb' (transverseBoost v P),
-    ← relativeTransverse_of_plusComponent_eq_zero hb P]
-  exact areaForm_relativeTransverse_transverseBoost v b k hP
+  simp [transversePart_transverseBoost v b, hb, add_zero,
+    relativeTransverse_transverseBoost v k hP]
 
 /-! ### Isometries of the transverse plane -/
 
@@ -506,8 +501,10 @@ lemma transversePart_transverseIsometry (R : E² ≃ₗᵢ[ℝ] E²) (p : Lorent
 
 @[simp]
 lemma transverseIsometry_symm (R : E² ≃ₗᵢ[ℝ] E²) :
-    (transverseIsometry R).symm = transverseIsometry R.symm :=
-  (rfl)
+    (transverseIsometry R).symm = transverseIsometry R.symm := by
+  ext1 p
+  rw [LinearEquiv.symm_apply_eq]
+  apply ext_lightFront <;> simp
 
 /-- Isometries of the transverse plane preserve the Minkowski product. -/
 @[simp]
@@ -538,14 +535,30 @@ lemma areaForm_relativeTransverse_transverseIsometry (R : E² ≃ₗᵢ[ℝ] E²
   rw [transversePart_transverseIsometry, relativeTransverse_transverseIsometry,
     Orientation.areaForm_comp_linearIsometryEquiv _ R hR]
 
+/-- The oriented area between two relative transverse momenta is invariant under
+orientation-preserving isometries of the transverse plane. -/
+lemma areaForm_relativeTransverse_transverseIsometry' (R : E² ≃ₗᵢ[ℝ] E²)
+    (hR : 0 < LinearMap.det (R.toLinearEquiv : E² →ₗ[ℝ] E²)) (b k P : Lorentz.Vector 3) :
+    (orientation (Fin 2)).areaForm
+      (relativeTransverse (transverseIsometry R b) (transverseIsometry R P))
+      (relativeTransverse (transverseIsometry R k) (transverseIsometry R P)) =
+      (orientation (Fin 2)).areaForm (relativeTransverse b P) (relativeTransverse k P) := by
+  rw [relativeTransverse_transverseIsometry, relativeTransverse_transverseIsometry,
+    Orientation.areaForm_comp_linearIsometryEquiv _ R hR]
+
 end EpsilonEridani
 
 namespace Lorentz.Vector
 
 open EpsilonEridani
 
+/-- The transverse plane. -/
+local notation "E²" => EuclideanSpace ℝ (Fin 2)
+
 /-- In the light-front frame of `P`, reached by the boost with parameter `-P_T / P⁺`, the
-transverse part of `k` is its transverse momentum relative to `P`. -/
+transverse part of `k` is its transverse momentum relative to `P`. This holds as a
+consequence of the definition for all `P`; the "frame reached by the boost with parameter
+`-P_T / P⁺`" interpretation requires `P⁺ ≠ 0`. -/
 lemma transversePart_transverseBoost_eq_relativeTransverse (k P : Vector 3) :
     transversePart (transverseBoost (-((plusComponent P)⁻¹ • transversePart P)) k) =
       relativeTransverse k P := by
