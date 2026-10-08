@@ -14,8 +14,9 @@
 # On an unclean outcome it discards the cache and appends the LAKE_* disable lines to
 # $GITHUB_ENV, so the caller's build proceeds exactly as if the cache were switched off.
 #
-# Anonymous GETs from the PUBLIC read host (a different host than the S3 API endpoint the
-# trusted upload uses). Looks up the root-package oleans for the checkout's revision --
+# Anonymous GETs against the bucket's public prefixes (the same S3 host the trusted upload
+# writes to, but with no key: the bucket policy allows anonymous reads and answers a missing
+# revision map with 404, which Lake needs in order to backtrack). Looks up the root-package oleans for the checkout's revision --
 # backtracking up to LAKE_CACHE_MAX_REVS revisions from HEAD (default 100; 0 means the complete
 # available history), and unpacks them into $LAKE_CACHE_DIR. This is trusted, publisher-built
 # data: no token is in reach and no PR code runs (the caller attests the declarative lakefile
@@ -38,8 +39,8 @@
 set -euo pipefail
 
 PROJECT_DIR="${1:?usage: lake-cache-get.sh <project-dir>}"
-PUBLIC_ARTIFACT_ENDPOINT="${PUBLIC_ARTIFACT_ENDPOINT:-https://cache.epsiloneridaniproject.org/artifacts}"
-PUBLIC_REVISION_ENDPOINT="${PUBLIC_REVISION_ENDPOINT:-https://cache.epsiloneridaniproject.org/revisions}"
+PUBLIC_ARTIFACT_ENDPOINT="${PUBLIC_ARTIFACT_ENDPOINT:-https://s3-central.nrp-nautilus.io/epsiloneridani-cache/artifacts}"
+PUBLIC_REVISION_ENDPOINT="${PUBLIC_REVISION_ENDPOINT:-https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions}"
 LAKE_CACHE_MAX_REVS="${LAKE_CACHE_MAX_REVS:-100}"
 case "$LAKE_CACHE_MAX_REVS" in
   ''|*[!0-9]*) echo "::error::LAKE_CACHE_MAX_REVS must be a natural number"; exit 1 ;;

@@ -57,7 +57,7 @@ If a tag does not match the rule, the tool reports it and changes nothing.
 
     GH_TOKEN / GITHUB_TOKEN   authenticates the `gh` CLI
     GH_REPO                   this repository (default eic/EpsilonEridani)
-    LAKE_CACHE_REVISION_ENDPOINT_PUBLIC   default https://cache.epsiloneridaniproject.org/revisions
+    LAKE_CACHE_REVISION_ENDPOINT_PUBLIC   default https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions
 
 Only python3's standard library, git, and an authenticated `gh` CLI.
 """
@@ -82,7 +82,7 @@ import zulip as zp  # noqa: E402
 
 REPO = os.environ.get("GH_REPO", "eic/EpsilonEridani")
 REVISIONS = os.environ.get("LAKE_CACHE_REVISION_ENDPOINT_PUBLIC",
-                           "https://cache.epsiloneridaniproject.org/revisions")
+                           "https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions")
 
 # Releases older than this are out of scope: the Lake artifact cache does not reach back
 # past them, so a tag could not promise a usable cache. Raise it, never lower it.
