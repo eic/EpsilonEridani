@@ -153,9 +153,9 @@ jobs:
 
       - name: Fetch Dependencies' oleans, retrying with a forced full refetch
         run: |
-          if ! lake exe cache get Mathlib Physlib TauCeti; then
-            echo "::warning::lake exe cache get Mathlib Physlib TauCeti failed; forcing a full refetch"
-            lake exe cache get! Mathlib Physlib TauCeti
+          if ! lake exe cache get; then
+            echo "::warning::lake exe cache get failed; forcing a full refetch"
+            lake exe cache get!
           fi
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------

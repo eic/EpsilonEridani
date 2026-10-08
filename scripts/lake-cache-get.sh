@@ -19,7 +19,7 @@
 # backtracking up to LAKE_CACHE_MAX_REVS revisions from HEAD (default 100; 0 means the complete
 # available history), and unpacks them into $LAKE_CACHE_DIR. This is trusted, publisher-built
 # data: no token is in reach and no PR code runs (the caller attests the declarative lakefile
-# first). Mathlib's oleans are NOT here; they come from `lake exe cache get Mathlib Physlib TauCeti`.
+# first). Mathlib's oleans are NOT here; they come from `lake exe cache get`.
 #
 # Callers choose the limit, because only they know whether a walk can pay. The search stops as
 # soon as a lookup succeeds, so where a hit is likely it reads only the few revisions between

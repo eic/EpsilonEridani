@@ -23,7 +23,7 @@ Keys have the shape
 `mathlib-ltar-v1-<os>-<arch>-<lean-toolchain hash>-<lake-manifest hash>`. An exact match reuses the
 current pin. The restore prefix omits the manifest hash, so a Mathlib-only pin bump can start from
 the newest snapshot for the same Lean toolchain and fetch only missing files. A toolchain bump has
-no prefix match. In every case, `lake exe cache get Mathlib Physlib TauCeti` remains authoritative and downloads whatever
+no prefix match. In every case, `lake exe cache get` remains authoritative and downloads whatever
 the snapshot lacks. This design mirrors Mathlib's own cache-snapshot warming in
 `.github/workflows/build_template.yml` and `.github/actions/get-cache`, using `actions/cache`
 instead of per-run artifacts.
@@ -33,10 +33,10 @@ incompatible, bump `mathlib-ltar-v1` once in
 `.github/actions/restore-mathlib-ltars/action.yml`. To discard a single entry instead, find it with
 `gh cache list --repo eic/EpsilonEridani` and delete its exact key with
 `gh cache delete <key> --repo eic/EpsilonEridani`. A failed fetch also retries once with
-`lake exe cache get! Mathlib Physlib TauCeti`, which forces every linked file to be downloaded and unpacked again.
+`lake exe cache get!`, which forces every linked file to be downloaded and unpacked again.
 
 Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
-variable. Every workflow that runs `lake exe cache get Mathlib Physlib TauCeti` (`ci.yml`, `pr-build.yml`,
+variable. Every workflow that runs `lake exe cache get` (`ci.yml`, `pr-build.yml`,
 `pr-profile.yml`, `nightly-verify.yml`, `pages.yml`) exports
 `MATHLIB_CACHE_DEBUG_USE_LEGACY` from `vars.MATHLIB_CACHE_DEBUG_USE_LEGACY`. An operator
 sets the variable to `1` to send reads back to the legacy storage endpoint, and clears it

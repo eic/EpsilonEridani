@@ -4,7 +4,7 @@ set -euxo pipefail
 BENCH="scripts/bench"
 
 # Prepare build
-lake exe cache get Mathlib Physlib TauCeti
+lake exe cache get
 
 # Run build
 LAKE_OVERRIDE_LEAN=true LEAN=$(realpath "$BENCH/build/fake-root/bin/lean") \
