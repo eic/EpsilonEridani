@@ -120,8 +120,10 @@ theorem energy_div_smul_add_spatial (p : V) :
   have hnE : g F.n F.n = 1 := F.norm
   have hsqrt : Real.sqrt (g F.n F.n) = 1 := by rw [hnE]; exact Real.sqrt_one
   simp only [energy_apply, spatial_apply, hsqrt, hnE]
-  field_simp
-  ring
+  calc
+    ((g p F.n / 1) / 1) • F.n + (p - (g p F.n / 1) • F.n) = g p F.n • F.n + (p - g p F.n • F.n) := by ring
+    _ = g p F.n • F.n + p - g p F.n • F.n := by ring
+    _ = p := by ring
 
 /-- The spatial part is `g`-orthogonal to the frame vector. -/
 @[simp]
