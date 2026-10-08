@@ -72,6 +72,7 @@ being raised with the inverse metric `g⁻¹`. -/
 def fieldStrengthSq (g F : Matrix n n ℝ) : ℝ :=
   trace (g⁻¹ * F * g⁻¹ * Fᵀ)
 
+@[simp]
 lemma fieldStrengthSq_def (g F : Matrix n n ℝ) :
     fieldStrengthSq g F = trace (g⁻¹ * F * g⁻¹ * Fᵀ) := (rfl)
 
@@ -81,6 +82,7 @@ theory and the gluon part of the QCD tensor for a single colour component. -/
 def maxwellTensor (g F : Matrix n n ℝ) : Matrix n n ℝ :=
   -(F * g⁻¹ * Fᵀ) + (fieldStrengthSq g F / 4) • g
 
+@[simp]
 lemma maxwellTensor_def (g F : Matrix n n ℝ) :
     maxwellTensor g F = -(F * g⁻¹ * Fᵀ) + (fieldStrengthSq g F / 4) • g := (rfl)
 

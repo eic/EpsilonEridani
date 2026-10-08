@@ -71,6 +71,7 @@ gluon operator that appears in the trace of the gluon part (`trace_gluonPart`). 
 def gluonFieldSq (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) : ℝ :=
   ∑ a, fieldStrengthSq g (F a)
 
+@[simp]
 lemma gluonFieldSq_def (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
     gluonFieldSq g F = ∑ a, fieldStrengthSq g (F a) := (rfl)
 
@@ -80,6 +81,7 @@ strengths with lower indices. -/
 def gluonPart (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) : Matrix n n ℝ :=
   ∑ a, maxwellTensor g (F a)
 
+@[simp]
 lemma gluonPart_def (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
     gluonPart g F = ∑ a, maxwellTensor g (F a) := (rfl)
 
@@ -108,6 +110,7 @@ def gaugeRotate (R : Matrix ι ι ℝ) (F : ι → Matrix n n ℝ) : ι → Matr
   fun a => ∑ b, R a b • F b
 
 omit [Fintype n] [DecidableEq n] in
+@[simp]
 lemma gaugeRotate_apply (R : Matrix ι ι ℝ) (F : ι → Matrix n n ℝ) (a : ι) :
     gaugeRotate R F a = ∑ b, R a b • F b := (rfl)
 
