@@ -146,22 +146,14 @@ open Corrections
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
-/-- The eikonal current of lepton–hadron scattering is the sum of the lepton current and
-the hadron current. -/
-@[simp] theorem eikonalCurrent_chargedLegs (g : Bilin V) (K : DisKinematics V)
-    (eLepton eHadron : ℝ) (ℓ : V) :
-    eikonalCurrent g (K.chargedLegs eLepton eHadron) ℓ =
-      eikonalCurrent g (chargedLine K.k K.kPrime eLepton) ℓ +
-        eikonalCurrent g (chargedLine K.p K.pPrime eHadron) ℓ :=
-  eikonalCurrent_sumElim g _ _ ℓ
-
 /-- **Conservation of the eikonal current of lepton–hadron scattering**: `J(ℓ)·ℓ = 0`
 whenever none of the four external momenta is orthogonal to `ℓ`. -/
 theorem eikonalCurrent_chargedLegs_conserved (g : Bilin V) (K : DisKinematics V)
     (eLepton eHadron : ℝ) (ℓ : V) (hk : g K.k ℓ ≠ 0) (hk' : g K.kPrime ℓ ≠ 0)
     (hp : g K.p ℓ ≠ 0) (hp' : g K.pPrime ℓ ≠ 0) :
     g (eikonalCurrent g (K.chargedLegs eLepton eHadron) ℓ) ℓ = 0 := by
-  rw [eikonalCurrent_chargedLegs, map_add, LinearMap.add_apply,
+  rw [chargedLegs, eikonalCurrent_sumElim g (chargedLine K.k K.kPrime eLepton)
+    (chargedLine K.p K.pPrime eHadron) ℓ, map_add, LinearMap.add_apply,
     eikonalCurrent_chargedLine_conserved g _ _ _ ℓ hk hk',
     eikonalCurrent_chargedLine_conserved g _ _ _ ℓ hp hp', add_zero]
 
