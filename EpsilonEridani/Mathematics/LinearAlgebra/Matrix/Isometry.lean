@@ -27,8 +27,8 @@ bilinear map `B` invariant.
 - `transpose_mul_mul_mul_inv_mul_transpose`: the contraction `X * g⁻¹ * Yᵀ` transforms as a
   tensor with two lower indices.
 - `trace_inv_mul_transpose_mul_mul`: the trace `trace (g⁻¹ * X)` is invariant.
-- `sum_bilin_sum_smul_of_mem_orthogonalGroup`: invariance of `∑ a, B (x a) (y a)` under
-  an orthogonal rotation of the families `x` and `y`.
+- `LinearMap.sum_bilin_sum_smul_of_mem_orthogonalGroup`: invariance of `∑ a, B (x a) (y a)`
+  under an orthogonal rotation of the families `x` and `y`.
 -/
 
 public section
@@ -72,6 +72,14 @@ theorem trace_inv_mul_transpose_mul_mul {g Λ : Matrix n n R} (hΛ : Λᵀ * g *
   rw [← Matrix.mul_assoc, trace_mul_comm, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
     mul_inv_mul_transpose_eq_inv hΛ]
 
+end EpsilonEridani
+
+namespace LinearMap
+
+open Matrix
+
+variable {ι R : Type*} [CommRing R]
+
 /-- Rotating two families of vectors by the same orthogonal matrix leaves the sum of their
 pairings under a bilinear map unchanged. -/
 theorem sum_bilin_sum_smul_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι]
@@ -95,4 +103,4 @@ theorem sum_bilin_sum_smul_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι]
         simp only [Finset.sum_smul]
     _ = ∑ b, B (x b) (y b) := by simp [hδ]
 
-end EpsilonEridani
+end LinearMap

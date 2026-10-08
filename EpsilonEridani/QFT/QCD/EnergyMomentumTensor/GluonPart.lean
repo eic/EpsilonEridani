@@ -71,7 +71,6 @@ gluon operator that appears in the trace of the gluon part (`trace_gluonPart`). 
 def gluonFieldSq (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) : ℝ :=
   ∑ a, fieldStrengthSq g (F a)
 
-@[simp]
 lemma gluonFieldSq_def (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
     gluonFieldSq g F = ∑ a, fieldStrengthSq g (F a) := (rfl)
 
@@ -81,7 +80,6 @@ strengths with lower indices. -/
 def gluonPart (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) : Matrix n n ℝ :=
   ∑ a, maxwellTensor g (F a)
 
-@[simp]
 lemma gluonPart_def (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
     gluonPart g F = ∑ a, maxwellTensor g (F a) := (rfl)
 
@@ -125,7 +123,7 @@ theorem sum_mul_inv_mul_transpose_gaugeRotate [DecidableEq ι] (g : Matrix n n �
       (by intros; simp)
       (by intros; simp [Matrix.mul_add])
       (by intros; simp)
-  exact sum_bilin_sum_smul_of_mem_orthogonalGroup B hR F F
+  exact B.sum_bilin_sum_smul_of_mem_orthogonalGroup hR F F
 
 /-- The colour-summed invariant `F^a F^a` is invariant under orthogonal rotations of the
 multiplet. -/
