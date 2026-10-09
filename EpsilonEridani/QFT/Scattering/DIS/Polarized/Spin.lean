@@ -97,7 +97,7 @@ def structureOne (EPS : EPSType) (K : SpinKinematics g) : Bilin V :=
 lemma structureOne_apply (EPS : EPSType) (K : SpinKinematics g) (v w : V) :
     structureOne EPS K v w = EPS (Matrix.vecCons v (Matrix.vecCons w
       ![q K, K.toPolarizedKinematics.S])) :=
-  rfl
+  EPS.bilinMap_apply _ _ _
 
 /-- The second covariant structure `E₂(v, w) = ε(v, w, q, (p·q) S − (S·q) p)`. -/
 def structureTwo (EPS : EPSType) (K : SpinKinematics g) : Bilin V :=
@@ -115,7 +115,7 @@ lemma structureTwo_apply (EPS : EPSType) (K : SpinKinematics g) (v w : V) :
           K.toPolarizedKinematics.S
         - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
           K.toPolarizedKinematics.toDisKinematics.p])) :=
-  rfl
+  EPS.bilinMap_apply _ _ _
 
 /-! ### Alternating and conservation properties -/
 
@@ -132,25 +132,41 @@ theorem structureTwo_isAlt (EPS : EPSType) (K : SpinKinematics g) :
 theorem structureOne_vanishes_on_q_left (EPS : EPSType) (K : SpinKinematics g) :
     structureOne EPS K (q K) = 0 := by
   ext w
-  simp [structureOne_apply, EPS.bilinMap_apply_left_eq_zero]
+  rw [structureOne_apply,
+    EPS.bilinMap_apply_left_eq_zero (m := ![q K, K.toPolarizedKinematics.S])]
+  exact (0 : Bilin V) w
 
 /-- `E₁` vanishes in its second slot when the argument is `q`. -/
 theorem structureOne_vanishes_on_q_right (EPS : EPSType) (K : SpinKinematics g) :
     (fun v => structureOne EPS K v (q K)) = 0 := by
   ext v
-  simp [structureOne_apply, EPS.bilinMap_apply_right_eq_zero]
+  rw [structureOne_apply,
+    EPS.bilinMap_apply_right_eq_zero (m := ![q K, K.toPolarizedKinematics.S])]
+  exact (0 : Bilin V) v
 
 /-- `E₂` vanishes in its first slot when the argument is `q`. -/
 theorem structureTwo_vanishes_on_q_left (EPS : EPSType) (K : SpinKinematics g) :
     structureTwo EPS K (q K) = 0 := by
   ext w
-  simp [structureTwo_apply, EPS.bilinMap_apply_left_eq_zero]
+  rw [structureTwo_apply,
+    EPS.bilinMap_apply_left_eq_zero (m := ![q K,
+      (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) •
+        K.toPolarizedKinematics.S
+      - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
+        K.toPolarizedKinematics.toDisKinematics.p])]
+  exact (0 : Bilin V) w
 
 /-- `E₂` vanishes in its second slot when the argument is `q`. -/
 theorem structureTwo_vanishes_on_q_right (EPS : EPSType) (K : SpinKinematics g) :
     (fun v => structureTwo EPS K v (q K)) = 0 := by
   ext v
-  simp [structureTwo_apply, EPS.bilinMap_apply_right_eq_zero]
+  rw [structureTwo_apply,
+    EPS.bilinMap_apply_right_eq_zero (m := ![q K,
+      (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) •
+        K.toPolarizedKinematics.S
+      - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
+        K.toPolarizedKinematics.toDisKinematics.p])]
+  exact (0 : Bilin V) v
 
 /-! ## Decomposition and coefficient extraction
 
@@ -206,8 +222,6 @@ theorem fromAlternatingCoefficients_isDecomposition
     IsPolarizedAlternatingDecomposition g EPS K G (fromAlternatingCoefficients EPS K c₁ c₂) := by
   intro x Q2
   dsimp [IsPolarizedAlternatingDecomposition, fromAlternatingCoefficients]
-  ext v w
-  dsimp
   ring
 
 /-! ## Uniqueness of the decomposition
