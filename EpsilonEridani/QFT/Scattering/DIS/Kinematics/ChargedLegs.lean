@@ -122,6 +122,16 @@ with charge `eHadron`. -/
 def chargedLegs (K : DisKinematics V) (eLepton eHadron : ℝ) : Fin 2 ⊕ Fin 2 → ChargedLeg V :=
   Sum.elim (chargedLine K.k K.kPrime eLepton) (chargedLine K.p K.pPrime eHadron)
 
+@[simp] theorem chargedLegs_eq_sumElim (K : DisKinematics V) (eLepton eHadron : ℝ) :
+    K.chargedLegs eLepton eHadron =
+      Sum.elim (chargedLine K.k K.kPrime eLepton) (chargedLine K.p K.pPrime eHadron) := (rfl)
+
+/-- Lepton–hadron scattering conserves charge: its charged legs carry no net charge out of the
+process. -/
+theorem netCharge_chargedLegs (K : DisKinematics V) (eLepton eHadron : ℝ) :
+    netCharge (K.chargedLegs eLepton eHadron) = 0 := by
+  simp
+
 end DisKinematics
 
 end Kinematics

@@ -39,6 +39,7 @@ The charged legs `L`, their net charge `netCharge L = ∑ᵢ ηᵢ Qᵢ`, the ch
 
 ## Main statements
 
+* `apply_eikonalCurrent_left`: `J(ℓ)·v = ∑ᵢ ηᵢ Qᵢ (pᵢ·v) / (pᵢ·ℓ)`.
 * `apply_eikonalCurrent`: `J(ℓ)·ℓ = ∑ᵢ ηᵢ Qᵢ`.
 * `eikonalCurrent_conserved_of_netCharge_eq_zero`: charge conservation gives `J(ℓ)·ℓ = 0`.
 * `eikonalCurrent_smul`: `J(c ℓ) = c⁻¹ J(ℓ)`, the homogeneity behind the logarithmic infrared
@@ -47,6 +48,8 @@ The charged legs `L`, their net charge `netCharge L = ∑ᵢ ηᵢ Qᵢ`, the ch
   families of legs as a double sum over pairs of legs; for `M = L` this is `J·J`.
 * `eikonalCurrent_sumElim`: the current of a union of legs is the sum of the currents, so the
   current of a scattering process splits into a lepton current and a hadron current.
+* `eikonalCurrent_chargedLegs`: the eikonal current of lepton–hadron scattering, the lepton
+  current plus the hadron current.
 * `eikonalCurrent_chargedLegs_conserved`: the eikonal current of lepton–hadron scattering
   satisfies `J(ℓ)·ℓ = 0`.
 
@@ -75,13 +78,19 @@ photon of momentum `ℓ`, with scalar products taken with `g`. -/
 noncomputable def eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg V) (ℓ : V) : V :=
   ∑ i, ((L i).signedCharge / g (L i).momentum ℓ) • (L i).momentum
 
+/-- The eikonal current contracted with a vector `v`: `J(ℓ)·v = ∑ᵢ ηᵢ Qᵢ (pᵢ·v) / (pᵢ·ℓ)`. -/
+theorem apply_eikonalCurrent_left (g : Bilin V) (L : ι → ChargedLeg V) (ℓ v : V) :
+    g (eikonalCurrent g L ℓ) v =
+      ∑ i, (L i).signedCharge / g (L i).momentum ℓ * g (L i).momentum v := by
+  simp only [eikonalCurrent, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+    smul_eq_mul]
+
 /-- The eikonal current contracted with the photon momentum equals the net charge, provided no leg
 is orthogonal to `ℓ`. -/
 theorem apply_eikonalCurrent (g : Bilin V) (L : ι → ChargedLeg V) (ℓ : V)
     (hL : ∀ i, g (L i).momentum ℓ ≠ 0) :
     g (eikonalCurrent g L ℓ) ℓ = netCharge L := by
-  simp only [eikonalCurrent, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
-    smul_eq_mul, netCharge]
+  rw [apply_eikonalCurrent_left, netCharge]
   exact Finset.sum_congr rfl fun i _ => div_mul_cancel₀ _ (hL i)
 
 /-- For a process that conserves charge, the eikonal current is orthogonal to the photon
@@ -109,9 +118,8 @@ legs: `J_L·J_M = ∑ᵢ ∑ⱼ ηᵢ Qᵢ ηⱼ Qⱼ (pᵢ·pⱼ) / ((pᵢ·ℓ
     g (eikonalCurrent g L ℓ) (eikonalCurrent g M ℓ) =
       ∑ i, ∑ j, (L i).signedCharge * (M j).signedCharge * g (L i).momentum (M j).momentum /
         (g (L i).momentum ℓ * g (M j).momentum ℓ) := by
-  simp only [eikonalCurrent, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
-    smul_eq_mul, Finset.mul_sum]
-  rw [Finset.sum_comm]
+  rw [apply_eikonalCurrent_left]
+  simp only [eikonalCurrent, map_sum, map_smul, smul_eq_mul, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   ring
 
@@ -125,10 +133,8 @@ legs: `J_L·J_M = ∑ᵢ ∑ⱼ ηᵢ Qᵢ ηⱼ Qⱼ (pᵢ·pⱼ) / ((pᵢ·ℓ
 @[simp] theorem eikonalCurrent_chargedLine (g : Bilin V) (p p' : V) (Q : ℝ) (ℓ : V) :
     eikonalCurrent g (chargedLine p p' Q) ℓ = Q • ((g p' ℓ)⁻¹ • p' - (g p ℓ)⁻¹ • p) := by
   simp only [eikonalCurrent, Fin.sum_univ_two, chargedLine_zero, chargedLine_one,
-    ChargedLeg.signedCharge_mk, LegDirection.sign_incoming, LegDirection.sign_outgoing,
-    smul_sub, smul_smul]
-  rw [sub_eq_neg_add, ← neg_smul]
-  congr 2 <;> ring
+    ChargedLeg.signedCharge_mk, LegDirection.sign_incoming, LegDirection.sign_outgoing]
+  module
 
 /-- The eikonal current of a single charged line is conserved by itself: `J(ℓ)·ℓ = 0` whenever
 neither momentum of the line is orthogonal to `ℓ`. -/
@@ -147,13 +153,22 @@ open Corrections
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
+/-- The eikonal current of lepton–hadron scattering: the lepton current plus the hadron current,
+`J(ℓ) = e_ℓ (k'/(k'·ℓ) - k/(k·ℓ)) + e_h (p'/(p'·ℓ) - p/(p·ℓ))`. -/
+theorem eikonalCurrent_chargedLegs (g : Bilin V) (K : DisKinematics V) (eLepton eHadron : ℝ)
+    (ℓ : V) :
+    eikonalCurrent g (K.chargedLegs eLepton eHadron) ℓ =
+      eLepton • ((g K.kPrime ℓ)⁻¹ • K.kPrime - (g K.k ℓ)⁻¹ • K.k) +
+        eHadron • ((g K.pPrime ℓ)⁻¹ • K.pPrime - (g K.p ℓ)⁻¹ • K.p) := by
+  simp
+
 /-- **Conservation of the eikonal current of lepton–hadron scattering**: `J(ℓ)·ℓ = 0`
 whenever none of the four external momenta is orthogonal to `ℓ`. -/
 theorem eikonalCurrent_chargedLegs_conserved (g : Bilin V) (K : DisKinematics V)
     (eLepton eHadron : ℝ) (ℓ : V) (hk : g K.k ℓ ≠ 0) (hk' : g K.kPrime ℓ ≠ 0)
     (hp : g K.p ℓ ≠ 0) (hp' : g K.pPrime ℓ ≠ 0) :
     g (eikonalCurrent g (K.chargedLegs eLepton eHadron) ℓ) ℓ = 0 := by
-  rw [chargedLegs, eikonalCurrent_sumElim g (chargedLine K.k K.kPrime eLepton)
+  rw [chargedLegs_eq_sumElim, eikonalCurrent_sumElim g (chargedLine K.k K.kPrime eLepton)
     (chargedLine K.p K.pPrime eHadron) ℓ, map_add, LinearMap.add_apply,
     eikonalCurrent_chargedLine_conserved g _ _ _ ℓ hk hk',
     eikonalCurrent_chargedLine_conserved g _ _ _ ℓ hp hp', add_zero]
