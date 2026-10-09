@@ -104,7 +104,7 @@ theorem xi_beta_eq_x (D : DiffractiveKinematics V) (g : Bilin V)
   unfold DisKinematics.xBj xi beta
   dsimp [DisKinematics.Q2]
   field_simp [hPq, hDeltaq]
-  have h := mul_inv_cancel hDeltaq
+  have h := mul_inv_cancel₀ hDeltaq
   rw [← h]
   ring
 
