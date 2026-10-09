@@ -6,9 +6,11 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Algebra.Polynomial.Degree.Lemmas
+public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Data.Nat.Choose.Cast
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -26,9 +28,12 @@ which is the specialisation to `λ = 3/2` of
 
 The index-`3/2` family is the one that diagonalises the evolution kernel of the leading-twist
 light-cone distribution amplitude of a pseudoscalar meson: such an amplitude is expanded as
-`6 u (1 - u) ∑ₙ aₙ C_n^{(3/2)}(2u - 1)` in the light-cone fraction `u`. The basic algebraic
-properties proved here, the degree, the leading coefficient, the parity and the endpoint values,
-are the input of the weighted-`L²` theory of the family.
+`6 u (1 - u) ∑ₙ aₙ C_n^{(3/2)}(2u - 1)` in the light-cone fraction `u`. The algebraic
+properties proved here, the degree, the leading coefficient, the parity, the endpoint values, the
+relations between the derivatives and the Gegenbauer differential equation
+`(1 - X²) y'' - 4 X y' + n (n + 3) y = 0`, are the input of the weighted-`L²` theory of the family;
+the differential equation in Sturm–Liouville form is what makes the family orthogonal for the weight
+`1 - X²`.
 
 The index is fixed at `3/2` rather than carried as a parameter: the weighted-`L²` theory built on
 this family uses the weight `1 - x²` of this index only. The polynomials are defined over any field
@@ -52,12 +57,19 @@ endpoint value assume that `R` has characteristic zero. The real family is
   the parity of `n`.
 * `EpsilonEridani.gegenbauerThreeHalves_eval_one`: the endpoint value
   `C_n^{(3/2)}(1) = (n + 2).choose 2`.
+* `EpsilonEridani.derivative_gegenbauerThreeHalves_succ`,
+  `EpsilonEridani.X_mul_derivative_gegenbauerThreeHalves_succ`: the raising and lowering relations
+  of the derivatives.
+* `EpsilonEridani.one_sub_X_sq_mul_derivative_derivative_gegenbauerThreeHalves`: the Gegenbauer
+  differential equation, and
+  `EpsilonEridani.derivative_one_sub_X_sq_sq_mul_derivative_gegenbauerThreeHalves` its
+  Sturm–Liouville form `((1 - X²)² y')' = -n (n + 3) (1 - X²) y`.
 
 ## References
 
 * G. Szegő, *Orthogonal Polynomials*, AMS Colloquium Publications 23, 4th edition (1975),
   chapter IV, §4.7.
-* NIST Digital Library of Mathematical Functions, §18.3, §18.6 and §18.9.
+* NIST Digital Library of Mathematical Functions, §18.3, §18.6, §18.8 and §18.9.
 -/
 
 public section
@@ -230,5 +242,94 @@ theorem degree_gegenbauerThreeHalves (n : ℕ) : (gegenbauerThreeHalves R n).deg
 theorem leadingCoeff_gegenbauerThreeHalves (n : ℕ) :
     (gegenbauerThreeHalves R n).leadingCoeff = ((2 * n + 1)‼ : ℕ) / (n ! : ℕ) := by
   rw [leadingCoeff, natDegree_gegenbauerThreeHalves, coeff_gegenbauerThreeHalves_self]
+
+/-! ### Derivatives and the differential equation -/
+
+/-- One rung of the derivative ladder: the lowering relation at `n` gives the raising relation at
+`n + 1`, through the derivative of the three-term recurrence. -/
+private theorem derivative_gegenbauerThreeHalves_add_two_of {n : ℕ}
+    (h : X * derivative (gegenbauerThreeHalves R (n + 1)) =
+      derivative (gegenbauerThreeHalves R n) + C ((n : R) + 1) * gegenbauerThreeHalves R (n + 1)) :
+    derivative (gegenbauerThreeHalves R (n + 2)) =
+      X * derivative (gegenbauerThreeHalves R (n + 1)) +
+        C ((n : R) + 4) * gegenbauerThreeHalves R (n + 1) := by
+  have h₂ : (C ((n : R) + 2) : R[X]) ≠ 0 :=
+    C_ne_zero.mpr (by exact_mod_cast (by omega : n + 2 ≠ 0))
+  have hd := congrArg derivative (C_mul_gegenbauerThreeHalves_add_two R n)
+  simp only [derivative_mul, derivative_sub, derivative_C, derivative_X, zero_mul, zero_add,
+    mul_one] at hd
+  refine mul_left_cancel₀ h₂ ?_
+  simp only [C_add, C_mul, C_eq_natCast, C_ofNat, C_1] at hd h ⊢
+  linear_combination hd + ((n : R[X]) + 3) * h
+
+/-- The raising and lowering relations of the derivatives, proved together by induction. -/
+private theorem derivative_gegenbauerThreeHalves_ladder (n : ℕ) :
+    derivative (gegenbauerThreeHalves R (n + 1)) =
+        X * derivative (gegenbauerThreeHalves R n) + C ((n : R) + 3) * gegenbauerThreeHalves R n ∧
+      X * derivative (gegenbauerThreeHalves R (n + 1)) =
+        derivative (gegenbauerThreeHalves R n) +
+          C ((n : R) + 1) * gegenbauerThreeHalves R (n + 1) := by
+  induction n with
+  | zero =>
+    refine ⟨by simp, ?_⟩
+    simp only [gegenbauerThreeHalves_zero, gegenbauerThreeHalves_one, derivative_C_mul_X,
+      derivative_one, Nat.cast_zero, zero_add, C_1]
+    ring
+  | succ n ih =>
+    have hP := derivative_gegenbauerThreeHalves_add_two_of R ih.2
+    have hrec := C_mul_gegenbauerThreeHalves_add_two R n
+    simp only [C_add, C_mul, C_eq_natCast, C_ofNat, C_1, Nat.cast_add, Nat.cast_one]
+      at hP hrec ih ⊢
+    refine ⟨by linear_combination hP, ?_⟩
+    linear_combination X * hP - ih.1 + X * ih.2 - hrec
+
+/-- The raising relation of the derivatives:
+`(C_{n+1}^{(3/2)})' = X (C_n^{(3/2)})' + (n + 3) C_n^{(3/2)}`. -/
+theorem derivative_gegenbauerThreeHalves_succ (n : ℕ) :
+    derivative (gegenbauerThreeHalves R (n + 1)) =
+      X * derivative (gegenbauerThreeHalves R n) + C ((n : R) + 3) * gegenbauerThreeHalves R n :=
+  (derivative_gegenbauerThreeHalves_ladder R n).1
+
+/-- The lowering relation of the derivatives:
+`X (C_{n+1}^{(3/2)})' = (C_n^{(3/2)})' + (n + 1) C_{n+1}^{(3/2)}`. -/
+theorem X_mul_derivative_gegenbauerThreeHalves_succ (n : ℕ) :
+    X * derivative (gegenbauerThreeHalves R (n + 1)) =
+      derivative (gegenbauerThreeHalves R n) +
+        C ((n : R) + 1) * gegenbauerThreeHalves R (n + 1) :=
+  (derivative_gegenbauerThreeHalves_ladder R n).2
+
+/-- The derivative of `C_n^{(3/2)}` through the family itself:
+`(1 - X²) (C_n^{(3/2)})' = (n + 3) X C_n^{(3/2)} - (n + 1) C_{n+1}^{(3/2)}`. -/
+theorem one_sub_X_sq_mul_derivative_gegenbauerThreeHalves (n : ℕ) :
+    (1 - X ^ 2) * derivative (gegenbauerThreeHalves R n) =
+      C ((n : R) + 3) * X * gegenbauerThreeHalves R n -
+        C ((n : R) + 1) * gegenbauerThreeHalves R (n + 1) := by
+  linear_combination X * derivative_gegenbauerThreeHalves_succ R n -
+    X_mul_derivative_gegenbauerThreeHalves_succ R n
+
+/-- **The Gegenbauer differential equation** of index `3/2`:
+`(1 - X²) (C_n^{(3/2)})'' = 4 X (C_n^{(3/2)})' - n (n + 3) C_n^{(3/2)}`. -/
+theorem one_sub_X_sq_mul_derivative_derivative_gegenbauerThreeHalves (n : ℕ) :
+    (1 - X ^ 2) * derivative (derivative (gegenbauerThreeHalves R n)) =
+      4 * X * derivative (gegenbauerThreeHalves R n) -
+        C ((n : R) * (n + 3)) * gegenbauerThreeHalves R n := by
+  have h := congrArg derivative (one_sub_X_sq_mul_derivative_gegenbauerThreeHalves R n)
+  simp only [derivative_mul, derivative_sub, derivative_one, derivative_X_pow, derivative_C,
+    derivative_X, zero_mul, zero_add, zero_sub, mul_one] at h
+  have hP := derivative_gegenbauerThreeHalves_succ R n
+  simp only [C_add, C_mul, C_eq_natCast, C_ofNat, C_1, Nat.cast_ofNat] at h hP ⊢
+  linear_combination h - ((n : R[X]) + 1) * hP
+
+/-- The Gegenbauer differential equation of index `3/2` in Sturm–Liouville form:
+`((1 - X²)² (C_n^{(3/2)})')' = -n (n + 3) (1 - X²) C_n^{(3/2)}`. So `C_n^{(3/2)}` is an
+eigenfunction, with eigenvalue `-n (n + 3)`, of `y ↦ ((1 - X²)² y')' / (1 - X²)`, an operator
+symmetric for the weight `1 - X²` on `[-1, 1]` because `(1 - X²)²` vanishes at both endpoints. -/
+theorem derivative_one_sub_X_sq_sq_mul_derivative_gegenbauerThreeHalves (n : ℕ) :
+    derivative ((1 - X ^ 2) ^ 2 * derivative (gegenbauerThreeHalves R n)) =
+      -C ((n : R) * (n + 3)) * ((1 - X ^ 2) * gegenbauerThreeHalves R n) := by
+  have h := one_sub_X_sq_mul_derivative_derivative_gegenbauerThreeHalves R n
+  simp only [derivative_mul, derivative_pow, derivative_sub, derivative_one, derivative_X, C_ofNat,
+    Nat.cast_ofNat]
+  linear_combination (1 - X ^ 2) * h
 
 end EpsilonEridani
