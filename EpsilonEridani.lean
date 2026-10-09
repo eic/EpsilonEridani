@@ -96,6 +96,7 @@ import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Interference
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Channels
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
+import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics
 import EpsilonEridani.QFT.Scattering.DIS.Inference.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Inference.Conjectures
 import EpsilonEridani.QFT.Scattering.DIS.Inference.ExclusiveJoint
