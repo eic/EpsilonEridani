@@ -34,7 +34,7 @@ theorem I_smul_mem_su {A : Matrix n n ℂ} (hA : A.IsHermitian) (h : trace A = 0
     I • A ∈ su n := by
   rw [mem_su_iff, conjTranspose_smul, hA.eq, trace_smul, h, smul_zero, star_def, conj_I,
     neg_smul]
-  exact ⟨rfl, rfl⟩
+  simp
 
 end EpsilonEridani.LieAlgebra.SpecialUnitary
 
