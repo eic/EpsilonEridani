@@ -63,7 +63,7 @@ open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
 that fixes the orientation.  Layer 0 needs both because the antisymmetric decomposition
 references the four-form explicitly (Convention 4). -/
 
-variable {V : Type} [AddCommGroup V] [Module ℝ V]
+variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
 /-- Polarised inclusive DIS kinematics extended with an alternating four-form
 fixing the orientation.  This is the kinematic record for the antisymmetric
@@ -85,7 +85,7 @@ Both are linear in `S` and alternating, hence satisfy the existing
 
 /-- The first covariant structure `E₁(v, w) = ε(v, w, q, S)`. -/
 def structureOne (EPS : AlternatingMap ℝ V ℝ (Fin 4)) (K : SpinKinematics g) : Bilin V :=
-  EPS.bilinMap (m := ![K.toPolarizedKinematics.toDisKinematics.q, K.toPolarizedKinematics.S])
+  EPS.bilinMap ![K.toPolarizedKinematics.toDisKinematics.q, K.toPolarizedKinematics.S]
 
 lemma structureOne_apply (EPS : AlternatingMap ℝ V ℝ (Fin 4)) (K : SpinKinematics g) (v w : V) :
     structureOne EPS K v w = EPS (Matrix.vecCons v (Matrix.vecCons w
