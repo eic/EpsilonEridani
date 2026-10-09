@@ -125,7 +125,7 @@ theorem integral_hardSphereDensity (m : ℝ) {R : ℝ} (hR : 0 < R) :
   have h : (fun x : Space => hardSphereDensity m R ‖x‖) =
       (closedBall (0 : Space) R).indicator fun _ => 3 * m / (4 * π * R ^ 3) := by
     ext x
-    simp [hardSphereDensity_def, Set.indicator_apply, mem_closedBall_zero_iff, mem_Iic]
+    simp [hardSphereDensity_def, indicator, mem_closedBall_zero_iff, mem_Iic]
   have hV : volume.real (closedBall (0 : Space) R) = R ^ 3 * (4 / 3 * π) := by
     simp [measureReal_def, Measure.addHaar_closedBall _ _ hR.le, Space.finrank_eq_dim,
       Space.volume_metricBall_three, ENNReal.toReal_ofReal, pow_nonneg hR.le, pi_pos.le]
