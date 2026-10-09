@@ -67,7 +67,7 @@ structure DiffractiveKinematics (V : Type) [AddCommGroup V] [Module ℝ V] where
 
 namespace DiffractiveKinematics
 
-variable {V} [AddCommGroup V] [Module ℝ V]
+variable {V}
 
 /-- The momentum transfer to the target: `Δ = P - P'`. -/
 def Delta (D : DiffractiveKinematics V) : V := D.K.p - D.P'
@@ -78,7 +78,6 @@ lemma hDelta (D : DiffractiveKinematics V) : D.Delta = D.K.p - D.P' := rfl
 /-- The invariant momentum transfer `t = Δ²`. -/
 def t (D : DiffractiveKinematics V) (g : Bilin V) : ℝ := g D.Delta D.Delta
 
-omit [AddCommGroup V] [Module ℝ V] in
 @[simp]
 lemma h_t (D : DiffractiveKinematics V) (g : Bilin V) : D.t g = g D.Delta D.Delta := rfl
 
