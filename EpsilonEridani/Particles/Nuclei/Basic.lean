@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Data.Nat.Notation
-public import Mathlib.Tactic.Simps.Basic
 
 /-!
 # Nuclei as explicit data
