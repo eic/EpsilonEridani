@@ -269,6 +269,7 @@ def restFrameWit : Frame gWit where
   timelike := by norm_num
 
 /-- In the rest frame the energy of a momentum is its time component. -/
+@[simp]
 theorem energy_restFrameWit_apply (p : ℝ × ℝ × ℝ) : restFrameWit.energy p = p.1 := by
   simp [energy_apply, restFrameWit]
 
