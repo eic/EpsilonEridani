@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.QCD.SUNStructureConstants
-public import Physlib.Mathematics.DataStructures.Matrix.LieTrace
+public import Physlib.Mathematics.ForMathlib.DataStructures.Matrix.LieTrace
 
 /-!
 # The adjoint matrix of a unitary colour rotation
