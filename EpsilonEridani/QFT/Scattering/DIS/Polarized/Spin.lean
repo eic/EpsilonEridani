@@ -85,120 +85,77 @@ variable {g : Bilin V}
 Both are linear in `S` and alternating, hence satisfy the existing
 `TensorAssumptions` by `tensorAssumptions_iff_isAlt`. -/
 
-private def q (K : SpinKinematics g) : V :=
-  K.toPolarizedKinematics.toDisKinematics.q
-
-private abbrev EPSType := AlternatingMap ℝ V ℝ (Fin 4)
-
 /-- The first covariant structure `E₁(v, w) = ε(v, w, q, S)`. -/
-def structureOne (EPS : EPSType) (K : SpinKinematics g) : Bilin V :=
-  EPS.bilinMap ![q K, K.toPolarizedKinematics.S]
+def structureOne (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) : Bilin V :=
+  EPS.bilinMap ![K.q, K.S]
 
-lemma structureOne_apply (EPS : EPSType) (K : SpinKinematics g) (v w : V) :
-    structureOne EPS K v w = EPS (Matrix.vecCons v (Matrix.vecCons w
-      ![q K, K.toPolarizedKinematics.S])) :=
+lemma structureOne_apply (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) (v w : V) :
+    structureOne EPS K v w = EPS (Matrix.vecCons v (Matrix.vecCons w ![K.q, K.S])) :=
   EPS.bilinMap_apply _ _ _
 
 /-- The second covariant structure `E₂(v, w) = ε(v, w, q, (p·q) S − (S·q) p)`. -/
-def structureTwo (EPS : EPSType) (K : SpinKinematics g) : Bilin V :=
-  EPS.bilinMap (m :=
-    ![q K,
-      (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) •
-        K.toPolarizedKinematics.S
-      - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
-        K.toPolarizedKinematics.toDisKinematics.p])
+def structureTwo (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) : Bilin V :=
+  EPS.bilinMap ![K.q, g K.p K.q • K.S - g K.S K.q • K.p]
 
-lemma structureTwo_apply (EPS : EPSType) (K : SpinKinematics g) (v w : V) :
-    structureTwo EPS K v w = EPS (Matrix.vecCons v (Matrix.vecCons w
-      ![q K,
-        (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) •
-          K.toPolarizedKinematics.S
-        - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
-          K.toPolarizedKinematics.toDisKinematics.p])) :=
+lemma structureTwo_apply (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) (v w : V) :
+    structureTwo EPS K v w =
+      EPS (Matrix.vecCons v (Matrix.vecCons w ![K.q, g K.p K.q • K.S - g K.S K.q • K.p])) :=
   EPS.bilinMap_apply _ _ _
 
 /-! ### Alternating and conservation properties -/
 
-/-- Both covariant structures are alternating. -/
-theorem structureOne_isAlt (EPS : EPSType) (K : SpinKinematics g) :
+/-- The first covariant structure is alternating. -/
+theorem structureOne_isAlt (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) :
     (structureOne EPS K).IsAlt :=
   EPS.isAlt_bilinMap _
 
-theorem structureTwo_isAlt (EPS : EPSType) (K : SpinKinematics g) :
+/-- The second covariant structure is alternating. -/
+theorem structureTwo_isAlt (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) :
     (structureTwo EPS K).IsAlt :=
   EPS.isAlt_bilinMap _
 
-/-- `E₁` vanishes in its first slot when the argument is `q`. -/
-theorem structureOne_vanishes_on_q_left (EPS : EPSType) (K : SpinKinematics g) :
-    structureOne EPS K (q K) = 0 := by
-  ext w
-  rw [structureOne_apply,
-    EPS.bilinMap_apply_left_eq_zero (m := ![q K, K.toPolarizedKinematics.S])]
-  exact (0 : Bilin V) w
+/-- `E₁` vanishes when its first argument is `q`. -/
+theorem structureOne_q_left (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) (w : V) :
+    structureOne EPS K K.q w = 0 :=
+  EPS.bilinMap_apply_left_eq_zero ![K.q, K.S] 0 w
 
-/-- `E₁` vanishes in its second slot when the argument is `q`. -/
-theorem structureOne_vanishes_on_q_right (EPS : EPSType) (K : SpinKinematics g) :
-    (fun v => structureOne EPS K v (q K)) = 0 := by
-  ext v
-  rw [structureOne_apply,
-    EPS.bilinMap_apply_right_eq_zero (m := ![q K, K.toPolarizedKinematics.S])]
-  exact (0 : Bilin V) v
+/-- `E₁` vanishes when its second argument is `q`. -/
+theorem structureOne_q_right (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) (v : V) :
+    structureOne EPS K v K.q = 0 :=
+  EPS.bilinMap_apply_right_eq_zero ![K.q, K.S] 0 v
 
-/-- `E₂` vanishes in its first slot when the argument is `q`. -/
-theorem structureTwo_vanishes_on_q_left (EPS : EPSType) (K : SpinKinematics g) :
-    structureTwo EPS K (q K) = 0 := by
-  ext w
-  rw [structureTwo_apply,
-    EPS.bilinMap_apply_left_eq_zero (m := ![q K,
-      (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) •
-        K.toPolarizedKinematics.S
-      - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
-        K.toPolarizedKinematics.toDisKinematics.p])]
-  exact (0 : Bilin V) w
+/-- `E₂` vanishes when its first argument is `q`. -/
+theorem structureTwo_q_left (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) (w : V) :
+    structureTwo EPS K K.q w = 0 :=
+  EPS.bilinMap_apply_left_eq_zero ![K.q, g K.p K.q • K.S - g K.S K.q • K.p] 0 w
 
-/-- `E₂` vanishes in its second slot when the argument is `q`. -/
-theorem structureTwo_vanishes_on_q_right (EPS : EPSType) (K : SpinKinematics g) :
-    (fun v => structureTwo EPS K v (q K)) = 0 := by
-  ext v
-  rw [structureTwo_apply,
-    EPS.bilinMap_apply_right_eq_zero (m := ![q K,
-      (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) •
-        K.toPolarizedKinematics.S
-      - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
-        K.toPolarizedKinematics.toDisKinematics.p])]
-  exact (0 : Bilin V) v
+/-- `E₂` vanishes when its second argument is `q`. -/
+theorem structureTwo_q_right (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g) (v : V) :
+    structureTwo EPS K v K.q = 0 :=
+  EPS.bilinMap_apply_right_eq_zero ![K.q, g K.p K.q • K.S - g K.S K.q • K.p] 0 v
 
 /-! ## Decomposition and coefficient extraction
 
 ### The decomposition predicate
 
-`IsPolarizedAlternatingDecomposition g EPS K (G : StructureFunctions) A` says that the
-antisymmetric bilinear form `A` can be written as a linear combination of `E₁` and `E₂`,
-with coefficients `(M / (p·q)) · g₁(x, Q²)` and `(1 / (M · (p·q))) · g₂(x, Q²)`, at every
-`(x, Q²)` determined by the kinematics.  This is the antisymmetric analogue of
+`IsPolarizedAlternatingDecomposition EPS K G A` says that the antisymmetric bilinear form `A`
+is the linear combination of `E₁` and `E₂` with coefficients `(M / (p·q)) · g₁(x, Q²)` and
+`(1 / (M · (p·q))) · g₂(x, Q²)`, evaluated at the kinematic point `x = x_B`, `Q² = -q²` of
+`K`.  This is the antisymmetric analogue of
 `EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.IsF1F2Decomposition`. -/
 
-/-- The antisymmetric decomposition predicate: the polarized antisymmetric bilinear form `A` equals
+/-- The antisymmetric decomposition predicate: the polarized antisymmetric bilinear form `A`
+equals
 ```text
 (M / (p·q)) · g₁(x, Q²) · E₁ + (1 / (M · (p·q))) · g₂(x, Q²) · E₂
 ```
-at every `(x, Q²)` determined by the kinematics.  `M = √M²` is the target mass.
+at the kinematic point `(x, Q²) = (x_B, -q²)` of `K`.  `M = √M²` is the target mass.
 This is the antisymmetric analogue of
 `EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.IsF1F2Decomposition`. -/
-def IsPolarizedAlternatingDecomposition
-    (g : Bilin V)
-    (EPS : EPSType)
-    (K : SpinKinematics g)
-    (G : StructureFunctions)
-    (A : Bilin V) : Prop :=
-  ∀ x Q2,
-    A =
-      ((Real.sqrt (K.toPolarizedKinematics.toDisKinematics.M2 g)) /
-        (g K.toPolarizedKinematics.toDisKinematics.p
-          K.toPolarizedKinematics.toDisKinematics.q)) • G.g1 x Q2 • structureOne EPS K
-      + (((Real.sqrt (K.toPolarizedKinematics.toDisKinematics.M2 g))⁻¹) /
-        (g K.toPolarizedKinematics.toDisKinematics.p
-          K.toPolarizedKinematics.toDisKinematics.q)) • G.g2 x Q2 • structureTwo EPS K
+def IsPolarizedAlternatingDecomposition (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g)
+    (G : StructureFunctions) (A : Bilin V) : Prop :=
+  A = (√(K.M2 g) / g K.p K.q * G.g1 (K.xBj g) (K.Q2 g)) • structureOne EPS K
+    + ((√(K.M2 g))⁻¹ / g K.p K.q * G.g2 (K.xBj g) (K.Q2 g)) • structureTwo EPS K
 
 /-! ### The constructor `fromAlternatingCoefficients` -/
 
@@ -207,22 +164,19 @@ def IsPolarizedAlternatingDecomposition
 c₁ · E₁ + c₂ · E₂,
 ```
 where `E₁`, `E₂` are the two covariant structures. -/
-def fromAlternatingCoefficients (EPS : EPSType) (K : SpinKinematics g)
+def fromAlternatingCoefficients (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : SpinKinematics g)
     (c₁ c₂ : ℝ) : Bilin V :=
   c₁ • structureOne EPS K + c₂ • structureTwo EPS K
 
-/-- `fromAlternatingCoefficients` with coefficients derived from `g₁` and `g₂` satisfies
-`IsPolarizedAlternatingDecomposition`. -/
-theorem fromAlternatingCoefficients_isDecomposition
-    (g : Bilin V)
-    (EPS : EPSType)
-    (K : SpinKinematics g)
-    (G : StructureFunctions)
-    (c₁ c₂ : ℝ) :
-    IsPolarizedAlternatingDecomposition g EPS K G (fromAlternatingCoefficients EPS K c₁ c₂) := by
-  intro x Q2
-  dsimp [IsPolarizedAlternatingDecomposition, fromAlternatingCoefficients]
-  ring
+/-- `fromAlternatingCoefficients` with the coefficients derived from `g₁` and `g₂` at the
+kinematic point satisfies `IsPolarizedAlternatingDecomposition`. -/
+theorem fromAlternatingCoefficients_isDecomposition (EPS : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : SpinKinematics g) (G : StructureFunctions) :
+    IsPolarizedAlternatingDecomposition EPS K G
+      (fromAlternatingCoefficients EPS K
+        (√(K.M2 g) / g K.p K.q * G.g1 (K.xBj g) (K.Q2 g))
+        ((√(K.M2 g))⁻¹ / g K.p K.q * G.g2 (K.xBj g) (K.Q2 g))) :=
+  rfl
 
 /-! ## Uniqueness of the decomposition
 
