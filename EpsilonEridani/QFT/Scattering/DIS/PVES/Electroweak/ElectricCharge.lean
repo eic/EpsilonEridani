@@ -283,7 +283,7 @@ theorem doubletStabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
       ext i
       fin_cases i <;>
         simp [doubletAction_apply, singletAction_apply, Matrix.mulVec, dotProduct,
-          Fin.sum_univ_two]
+          Fin.sum_univ_two, div_eq_mul_inv]
     rw [hrows] at h
     have h0 : A 0 1 * v = 0 := congrFun h 0
     have h1 : (A 1 1 + I * (β / 2)) * v = 0 := congrFun h 1
@@ -293,23 +293,9 @@ theorem doubletStabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
     have h00 : A 0 0 = I * (β / 2) := by linear_combination htr - hA11
     have h10' : A 1 0 = 0 := by rw [h10, hA01, star_zero, neg_zero]
     refine ⟨β, Prod.ext (Subtype.ext ?_) ?_⟩
-    · -- Goal: ((β • electricChargeGenerator).1).val = ((⟨A, hA⟩, β).1).val
-      simp [SetLike.val_smul, coe_electricChargeGenerator_fst,
-        isospinT3_eq_diagonal, Matrix.smul_apply]
-      -- Goal: [[β*I*(1/2), 0], [0, β*I*(-1/2)]] = A
-      have hA_eq : A = Matrix.of fun i j =>
-        match i, j with
-        | 0, 0 => I * (β / 2)
-        | 0, 1 => 0
-        | 1, 0 => 0
-        | 1, 1 => -(I * (β / 2)) := by
-        ext i j; fin_cases i <;> fin_cases j
-        · simp [h00]
-        · simp [hA01]
-        · simp [h10']
-        · simp [hA11]
-      rw [hA_eq]
-      ring
+    · ext i j
+      fin_cases i <;> fin_cases j <;>
+        simp [isospinT3_eq_diagonal, h00, hA01, h10', hA11] <;> ring
     · simp [electricChargeGenerator]
   · rintro ⟨c, rfl⟩
     -- The vacuum is `v` times the lower basis vector, whose electric charge at `Y = 1` is
