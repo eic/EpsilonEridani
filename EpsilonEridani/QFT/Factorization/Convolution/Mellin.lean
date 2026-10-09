@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Joseph Tooby-Smith
+Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
@@ -39,13 +39,9 @@ DGLAP equation becomes, for each value of the Mellin index, an ordinary differen
 
 Mathlib's `mellin` (`Mathlib/Analysis/MellinTransform.lean`) integrates over `Set.Ioi 0`, at the
 cost of extending each distribution by zero to `(0, ∞)`. The transform here is defined directly on
-the DIS domain. The bridge `mellinDis f N = mellin (Set.indicator (Set.Ioc 0 1) f) N` is in
-`EpsilonEridani.QFT.Factorization.Convolution.Strip`.
-
-This module provides the definition of `mellinDis` and `MellinDisConvergent`, basic convergence
-criteria, and linearity properties. The convergence analysis (half-plane, abscissa, holomorphy)
-is in
-`EpsilonEridani.QFT.Factorization.Convolution.Strip`.
+the DIS domain. `EpsilonEridani.QFT.Factorization.Convolution.Strip` supplies the bridge
+`mellinDis f N = mellin (Set.indicator (Set.Ioc 0 1) fun x => (f x : ℂ)) N`, and with it the
+domain of convergence of `mellinDis` (a right half-plane) and its holomorphy there.
 
 ## Scope
 
@@ -68,7 +64,6 @@ transform. Extending the theorem to distributional kernels is a separate develop
 
 noncomputable section
 
-open MeasureTheory Set Filter Asymptotics Topology
 open scoped BigOperators
 
 namespace EpsilonEridani
@@ -96,82 +91,11 @@ def MellinDisConvergent (f : ℝ → ℝ) (N : ℂ) : Prop :=
   MeasureTheory.IntegrableOn
     (fun x : ℝ => (x : ℂ) ^ (N - 1) * (f x : ℂ)) (Set.Ioc (0 : ℝ) 1)
 
-/-- Convergence of the Mellin transform on the unit interval forces `f` to be
-a.e.-strongly-measurable on `(0, 1]`. -/
-theorem MellinDisConvergent.aestronglyMeasurable {N : ℂ} (h : MellinDisConvergent f N) :
-    AEStronglyMeasurable f (volume.restrict (Ioc 0 1)) := by
-  have hc : ContinuousOn (fun x : ℝ => (x : ℂ) ^ (1 - N)) (Ioc 0 1) := fun x hx =>
-    (Complex.continuousAt_ofReal_cpow_const _ _ (Or.inr hx.1.ne')).continuousWithinAt
-  refine (Complex.continuous_re.comp_aestronglyMeasurable
-    ((hc.aestronglyMeasurable measurableSet_Ioc).mul (Integrable.aestronglyMeasurable h))).congr ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
-  have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.1.ne'
-  simp only [Pi.mul_apply]
-  rw [← mul_assoc, ← Complex.cpow_add _ _ hx0, sub_add_sub_cancel', sub_self, Complex.cpow_zero,
-    one_mul, Complex.ofReal_re]
-
-/-- The Mellin transform on the unit interval converges at `N` exactly when `f` lies in the
-weighted space `L¹((0, 1], x ^ (Re N - 1) dx)`. In particular convergence depends on `N` only
-through its real part. -/
-theorem mellinDisConvergent_iff_integrableOn_rpow_mul {N : ℂ} :
-    MellinDisConvergent f N ↔ IntegrableOn (fun x => x ^ (N.re - 1) * f x) (Ioc 0 1) := by
-  -- On `(0, 1]` the complex and the real integrand have the same norm.
-  have hnorm : ∀ x ∈ Ioc (0 : ℝ) 1,
-      ‖(x : ℂ) ^ (N - 1) * (f x : ℂ)‖ = ‖x ^ (N.re - 1) * f x‖ := fun x hx => by
-    rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hx.1, Complex.norm_real, norm_mul,
-      Real.norm_of_nonneg (Real.rpow_pos_of_pos hx.1 _).le, Complex.sub_re, Complex.one_re]
-  have hw : ∀ σ : ℝ, ContinuousOn (fun x : ℝ => x ^ σ) (Ioc 0 1) := fun _ x hx =>
-    (Real.continuousAt_rpow_const _ _ (Or.inl hx.1.ne')).continuousWithinAt
-  constructor
-  · intro h
-    refine Integrable.mono' h.norm (((hw _).aestronglyMeasurable measurableSet_Ioc).mul
-      h.aestronglyMeasurable) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
-    exact (hnorm x hx).symm.le
-  · intro h
-    -- `f` is measurable on `(0, 1]`, being `x ^ (1 - Re N)` times the real integrand.
-    have hf : AEStronglyMeasurable f (volume.restrict (Ioc 0 1)) := by
-      refine (((hw (1 - N.re)).aestronglyMeasurable measurableSet_Ioc).mul
-        h.aestronglyMeasurable).congr ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
-      rw [Pi.mul_apply, ← mul_assoc, ← Real.rpow_add hx.1, sub_add_sub_cancel', sub_self,
-        Real.rpow_zero, one_mul]
-    have hc : ContinuousOn (fun x : ℝ => (x : ℂ) ^ (N - 1)) (Ioc 0 1) := fun x hx =>
-      (Complex.continuousAt_ofReal_cpow_const _ _ (Or.inr hx.1.ne')).continuousWithinAt
-    refine Integrable.mono' h.norm ((hc.aestronglyMeasurable measurableSet_Ioc).mul
-      (Complex.continuous_ofReal.comp_aestronglyMeasurable hf)) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
-    exact (hnorm x hx).le
-
-/-- Convergence of the Mellin transform depends only on the real part of the index. -/
-theorem mellinDisConvergent_iff_re {N : ℂ} :
-    MellinDisConvergent f N ↔ MellinDisConvergent f N.re := by
-  rw [mellinDisConvergent_iff_integrableOn_rpow_mul, mellinDisConvergent_iff_integrableOn_rpow_mul,
-    Complex.ofReal_re]
-
-/-!
-## The domain of convergence is a right half-plane
--/
-
-/-- Convergence propagates to larger real parts. -/
-theorem MellinDisConvergent.of_re_le_re {N M : ℂ} (h : MellinDisConvergent f N)
-    (hNM : N.re ≤ M.re) : MellinDisConvergent f M := by
-  have hf := h.aestronglyMeasurable
-  have hw : ContinuousOn (fun x : ℝ => x ^ (M.re - 1)) (Ioc 0 1) := fun x hx =>
-    (Real.continuousAt_rpow_const _ _ (Or.inl hx.1.ne')).continuousWithinAt
-  rw [mellinDisConvergent_iff_integrableOn_rpow_mul] at h ⊢
-  refine Integrable.mono' h.norm ((hw.aestronglyMeasurable measurableSet_Ioc).mul hf) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
-  rw [norm_mul, norm_mul, Real.norm_of_nonneg (Real.rpow_pos_of_pos hx.1 _).le,
-    Real.norm_of_nonneg (Real.rpow_pos_of_pos hx.1 _).le]
-  exact mul_le_mul_of_nonneg_right
-    (Real.rpow_le_rpow_of_exponent_ge hx.1 hx.2 (by linarith)) (norm_nonneg _)
-
-/-- The real indices at which the Mellin transform on the unit interval converges form an upper
-set. -/
-theorem isUpperSet_setOf_mellinDisConvergent (f : ℝ → ℝ) :
-    IsUpperSet {σ : ℝ | MellinDisConvergent f σ} := fun σ τ hστ hσ =>
-  MellinDisConvergent.of_re_le_re hσ (by simpa using hστ)
+/-- `MellinDisConvergent` unfolded: integrability of the complex integrand on `(0, 1]`. -/
+theorem mellinDisConvergent_def {f : ℝ → ℝ} {N : ℂ} :
+    MellinDisConvergent f N ↔
+      MeasureTheory.IntegrableOn (fun x : ℝ => (x : ℂ) ^ (N - 1) * (f x : ℂ)) (Set.Ioc (0 : ℝ) 1) :=
+  Iff.rfl
 
 /-- The Mellin transform of the zero distribution vanishes. -/
 lemma mellinDis_zero (N : ℂ) : mellinDis (fun _ => 0) N = 0 := by
@@ -434,7 +358,7 @@ theorem mellinDis_convolveAt (C f : ℝ → ℝ) (N : ℂ)
 /-- The collinear convolution is commutative in moment space: `M[C ⊗ f] = M[f ⊗ C]`, whenever
 both convolutions satisfy the hypotheses of the convolution theorem at `N`. (Commutativity of
 `⊗` itself is a statement about the convolution before transforming and needs an injectivity
-argument in `N`, which is not available here; see the module docstring on analyticity.) -/
+argument in `N`, which is not available here.) -/
 theorem mellinDis_convolveAt_comm (C f : ℝ → ℝ) (N : ℂ)
     (h₁ : MellinConvolutionAssumptions C f N) (h₂ : MellinConvolutionAssumptions f C N) :
     mellinDis (convolveAt (collinearKernel C) f) N
