@@ -182,7 +182,7 @@ lemma woodsSaxonDensity_pos {ρ₀ : ℝ} (hρ₀ : 0 < ρ₀) (R a r : ℝ) :
   rw [woodsSaxonDensity_def]
   exact mul_pos hρ₀ (Real.sigmoid_pos _)
 
-@[simp, nolint simpNF]
+/-- The Woods–Saxon profile is linear in its central density. -/
 lemma woodsSaxonDensity_eq_mul (ρ₀ R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r = ρ₀ * woodsSaxonDensity 1 R a r := by
   simp [woodsSaxonDensity_def]
