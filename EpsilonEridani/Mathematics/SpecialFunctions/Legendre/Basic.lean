@@ -29,7 +29,8 @@ unique.
 
 ## Main statements
 
-* `legendre_add_two`: the three-term recurrence;
+* `legendre_add_two`, `add_two_mul_legendre_add_two`: the three-term recurrence, solved for
+  `Pₙ₊₂` and in Bonnet's form;
 * `natDegree_legendre`, `leadingCoeff_legendre`: `Pₙ` has degree `n` and leading coefficient
   `(2n choose n) / 2ⁿ`;
 * `legendre_comp_neg_X`: the parity relation `Pₙ (-X) = (-1)ⁿ Pₙ`;
@@ -60,7 +61,8 @@ namespace Polynomial
 open _root_.Polynomial
 
 /-- The **Legendre polynomial** `Pₙ`, defined by `P₀ = 1`, `P₁ = X` and Bonnet's recurrence
-`(n + 2) Pₙ₊₂ = (2n + 3) X Pₙ₊₁ - (n + 1) Pₙ` (see `legendre_add_two`). -/
+`(n + 2) Pₙ₊₂ = (2n + 3) X Pₙ₊₁ - (n + 1) Pₙ` (see `legendre_add_two` and
+`add_two_mul_legendre_add_two`). -/
 noncomputable def legendre : ℕ → ℝ[X]
   | 0 => 1
   | 1 => X
@@ -73,36 +75,48 @@ noncomputable def legendre : ℕ → ℝ[X]
 /-- `P₁ = X`. -/
 @[simp] theorem legendre_one : legendre 1 = X := by rw [legendre]
 
+/-- The three-term recurrence solved for `Pₙ₊₂`:
+`Pₙ₊₂ = ((2n + 3) X Pₙ₊₁ - (n + 1) Pₙ) / (n + 2)`. -/
+theorem legendre_add_two (n : ℕ) : legendre (n + 2) = C ((n + 2 : ℝ)⁻¹) *
+    ((2 * n + 3 : ℝ[X]) * X * legendre (n + 1) - (n + 1 : ℝ[X]) * legendre n) := by
+  rw [legendre]
+
 /-- **Bonnet's recurrence** `(n + 2) Pₙ₊₂ = (2n + 3) X Pₙ₊₁ - (n + 1) Pₙ`, the defining relation
 of the Legendre polynomials. -/
-theorem legendre_add_two (n : ℕ) : (n + 2 : ℝ[X]) * legendre (n + 2) =
+theorem add_two_mul_legendre_add_two (n : ℕ) : (n + 2 : ℝ[X]) * legendre (n + 2) =
     (2 * n + 3 : ℝ[X]) * X * legendre (n + 1) - (n + 1 : ℝ[X]) * legendre n := by
-  rw [legendre, ← mul_assoc]
+  rw [legendre_add_two, ← mul_assoc]
   convert one_mul _
   have hcoeff : (n + 2 : ℝ[X]) = C (n + 2 : ℝ) := by
     rw [map_add, C_eq_natCast, C_ofNat]
   rw [hcoeff, ← C_mul, mul_inv_cancel₀ (by positivity), C_1]
 
 /-- Bonnet's recurrence evaluated at a point. -/
-theorem legendre_eval_add_two (n : ℕ) (x : ℝ) : (n + 2) * (legendre (n + 2)).eval x =
+theorem add_two_mul_legendre_eval_add_two (n : ℕ) (x : ℝ) : (n + 2) * (legendre (n + 2)).eval x =
     (2 * n + 3) * x * (legendre (n + 1)).eval x - (n + 1) * (legendre n).eval x := by
-  simpa using congrArg (eval x) (legendre_add_two n)
+  simpa using congrArg (eval x) (add_two_mul_legendre_add_two n)
+
+/-- The three-term recurrence evaluated at a point and solved for `Pₙ₊₂ (x)`. -/
+theorem legendre_eval_add_two (n : ℕ) (x : ℝ) : (legendre (n + 2)).eval x =
+    ((2 * n + 3) * x * (legendre (n + 1)).eval x - (n + 1) * (legendre n).eval x) / (n + 2) := by
+  rw [eq_div_iff (by positivity), mul_comm]
+  exact add_two_mul_legendre_eval_add_two n x
 
 /-- `P₂ = (3X² - 1) / 2`. -/
 theorem legendre_two : legendre 2 = C 2⁻¹ * (3 * X ^ 2 - 1) := by
-  refine funext fun x => ?_
-  have h := legendre_eval_add_two 0 x
-  norm_num at h
-  simp only [eval_mul, eval_C, eval_sub, eval_pow, eval_X, eval_one, eval_ofNat]
-  linear_combination h / 2
+  rw [legendre_add_two]
+  simp only [Nat.cast_zero, zero_add, mul_zero, legendre_one, legendre_zero]
+  ring
 
 /-- `P₃ = (5X³ - 3X) / 2`. -/
 theorem legendre_three : legendre 3 = C 2⁻¹ * (5 * X ^ 3 - 3 * X) := by
-  refine funext fun x => ?_
-  have h := legendre_eval_add_two 1 x
-  norm_num [legendre_two] at h
-  simp only [eval_mul, eval_C, eval_sub, eval_pow, eval_X, eval_ofNat]
-  linear_combination h / 3
+  have h2 : (C 2⁻¹ : ℝ[X]) * 2 = 1 := by rw [← C_ofNat, ← C_mul, inv_mul_cancel₀ two_ne_zero, C_1]
+  have h3 : (C 3⁻¹ : ℝ[X]) * 3 = 1 := by
+    rw [← C_ofNat, ← C_mul, inv_mul_cancel₀ three_ne_zero, C_1]
+  rw [legendre_add_two, legendre_two]
+  simp only [Nat.cast_one, legendre_one]
+  rw [show (1 + 2 : ℝ) = 3 by norm_num]
+  linear_combination (5 * C 2⁻¹ * X ^ 3 - 3 * C 2⁻¹ * X) * h3 + 2 * C 3⁻¹ * X * h2
 
 /-- Every Legendre polynomial takes the value `1` at `1`. -/
 @[simp] theorem legendre_eval_one (n : ℕ) : (legendre n).eval 1 = 1 := by
@@ -110,7 +124,7 @@ theorem legendre_three : legendre 3 = C 2⁻¹ * (5 * X ^ 3 - 3 * X) := by
   | zero => simp
   | one => simp
   | more n h₀ h₁ =>
-    have h := legendre_eval_add_two n 1
+    have h := add_two_mul_legendre_eval_add_two n 1
     rw [h₀, h₁] at h
     exact mul_left_cancel₀ (by positivity : (n + 2 : ℝ) ≠ 0) (by linear_combination h)
 
@@ -122,10 +136,10 @@ theorem legendre_comp_neg_X (n : ℕ) : (legendre n).comp (-X) = (-1) ^ n * lege
   | more n h₀ h₁ =>
     have hne : (n + 2 : ℝ[X]) ≠ 0 := by exact_mod_cast (by omega : n + 2 ≠ 0)
     refine mul_left_cancel₀ hne ?_
-    have h := congrArg (·.comp (-X)) (legendre_add_two n)
+    have h := congrArg (·.comp (-X)) (add_two_mul_legendre_add_two n)
     simp only [mul_comp, sub_comp, add_comp, natCast_comp, ofNat_comp, one_comp, X_comp, h₀, h₁,
       Nat.cast_ofNat] at h
-    linear_combination h - (-1) ^ n * legendre_add_two n
+    linear_combination h - (-1) ^ n * add_two_mul_legendre_add_two n
 
 /-- Parity of the Legendre polynomials, evaluated at a point. -/
 theorem legendre_eval_neg (n : ℕ) (x : ℝ) :
@@ -137,20 +151,20 @@ theorem legendre_eval_neg (n : ℕ) (x : ℝ) :
   simp [legendre_eval_neg]
 
 /-- Bonnet's recurrence read off on coefficients. -/
-private theorem coeff_legendre_add_two (n k : ℕ) :
+theorem add_two_mul_coeff_legendre_add_two (n k : ℕ) :
     (n + 2) * (legendre (n + 2)).coeff (k + 1) =
       (2 * n + 3) * (legendre (n + 1)).coeff k - (n + 1) * (legendre n).coeff (k + 1) := by
-  have h := congrArg (coeff · (k + 1)) (legendre_add_two n)
+  have h := congrArg (coeff · (k + 1)) (add_two_mul_legendre_add_two n)
   simpa [add_mul, sub_mul, mul_assoc, coeff_X_mul] using h
 
 /-- `Pₙ` has no coefficient above degree `n`. -/
-theorem coeff_legendre_of_lt {n k : ℕ} (h : n < k) : (legendre n).coeff k = 0 := by
+private theorem coeff_legendre_of_lt {n k : ℕ} (h : n < k) : (legendre n).coeff k = 0 := by
   induction n using Nat.twoStepInduction generalizing k with
   | zero => simp [coeff_one, h.ne']
   | one => simp [coeff_X, h.ne]
   | more n h₀ h₁ =>
     obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-    have h' := coeff_legendre_add_two n k
+    have h' := add_two_mul_coeff_legendre_add_two n k
     rw [h₀ (by omega), h₁ (by omega)] at h'
     exact (mul_eq_zero.mp (h'.trans (by ring))).resolve_left (by positivity)
 
@@ -160,7 +174,7 @@ theorem coeff_legendre_self (n : ℕ) : (legendre n).coeff n = n.centralBinom / 
   | zero => simp
   | one => simp [Nat.centralBinom]
   | more n _ h₁ =>
-    have h := coeff_legendre_add_two n (n + 1)
+    have h := add_two_mul_coeff_legendre_add_two n (n + 1)
     rw [h₁, coeff_legendre_of_lt (n := n) (k := n + 1 + 1) (by omega)] at h
     have hc : ((n + 2 : ℕ) : ℝ) * (n + 2).centralBinom = 2 * (2 * (n + 1 : ℕ) + 1) *
         (n + 1).centralBinom := by exact_mod_cast Nat.succ_mul_centralBinom_succ (n + 1)
@@ -200,7 +214,7 @@ private theorem derivative_legendre_add_two_of {n : ℕ}
       derivative (legendre n) + (n + 1 : ℝ[X]) * legendre (n + 1)) :
     derivative (legendre (n + 2)) =
       X * derivative (legendre (n + 1)) + (n + 2 : ℝ[X]) * legendre (n + 1) := by
-  have hd := congrArg derivative (legendre_add_two n)
+  have hd := congrArg derivative (add_two_mul_legendre_add_two n)
   simp only [derivative_mul, derivative_add, derivative_sub, derivative_natCast, derivative_ofNat,
     derivative_X, derivative_one, mul_zero, add_zero, zero_add, zero_mul, mul_one] at hd
   have hne : (n + 2 : ℝ[X]) ≠ 0 := by exact_mod_cast (by omega : n + 2 ≠ 0)
@@ -216,7 +230,7 @@ private theorem derivative_legendre_ladder (n : ℕ) :
   | zero => constructor <;> simp [sq]
   | succ n ih =>
     have hb := derivative_legendre_add_two_of ih.1
-    have hr := legendre_add_two n
+    have hr := add_two_mul_legendre_add_two n
     push_cast
     constructor
     · linear_combination X * hb - ih.2 - hr
@@ -228,9 +242,9 @@ theorem derivative_legendre_succ (n : ℕ) :
   cases n with
   | zero => simp
   | succ n =>
-    convert derivative_legendre_add_two_of (derivative_legendre_ladder n).1 using 3
-    push_cast
-    ring
+    have h := derivative_legendre_add_two_of (derivative_legendre_ladder n).1
+    push_cast at h ⊢
+    linear_combination h
 
 /-- The lowering relation `X P'ₙ₊₁ = P'ₙ + (n + 1) Pₙ₊₁`. -/
 theorem X_mul_derivative_legendre_succ (n : ℕ) :
@@ -267,9 +281,12 @@ open MeasureTheory intervalIntegral
 with respect to Lebesgue measure. -/
 theorem integral_legendre_mul_legendre_of_ne {m n : ℕ} (h : m ≠ n) :
     ∫ x in (-1 : ℝ)..1, (legendre m).eval x * (legendre n).eval x = 0 := by
-  have hs := integral_derivative_one_sub_X_sq_mul_derivative_mul (legendre m) (legendre n)
+  have hs := integral_derivative_mul_derivative_mul (1 - X ^ 2) (legendre m) (legendre n)
+    (a := -1) (b := 1) (by norm_num) (by norm_num)
   have e : ∀ (k : ℕ) (p q : ℝ[X]) (x : ℝ), eval x (-((k : ℝ[X]) * (k + 1)) * p * q) =
-      -((k : ℝ) * (k + 1)) * (eval x p * eval x q) := fun k p q x => by simp; ring
+      -((k : ℝ) * (k + 1)) * (eval x p * eval x q) := fun k p q x => by
+    simp only [eval_mul, eval_neg, eval_natCast, eval_add, eval_one]
+    ring
   rw [derivative_one_sub_X_sq_mul_derivative_legendre,
     derivative_one_sub_X_sq_mul_derivative_legendre, mul_comm (legendre m)] at hs
   simp_rw [e, mul_comm (eval _ (legendre n)), intervalIntegral.integral_const_mul] at hs
@@ -284,7 +301,7 @@ theorem integral_legendre_mul_legendre_of_ne {m n : ℕ} (h : m ≠ n) :
     (sub_ne_zero.mpr hmn.symm)
 
 /-- Bonnet's recurrence for `Pₙ₊₂`, paired with a polynomial `q` on `[-1, 1]`. -/
-private theorem integral_legendre_add_two_mul (n : ℕ) (q : ℝ[X]) :
+private theorem add_two_mul_integral_legendre_add_two_mul (n : ℕ) (q : ℝ[X]) :
     (n + 2) * ∫ x in (-1 : ℝ)..1, (legendre (n + 2)).eval x * q.eval x =
       (2 * n + 3) * (∫ x in (-1 : ℝ)..1, x * (legendre (n + 1)).eval x * q.eval x) -
         (n + 1) * ∫ x in (-1 : ℝ)..1, (legendre n).eval x * q.eval x := by
@@ -292,19 +309,22 @@ private theorem integral_legendre_add_two_mul (n : ℕ) (q : ℝ[X]) :
   rw [← integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
     (Continuous.intervalIntegrable (by fun_prop) _ _)]
   exact integral_congr fun x _ => by
-    linear_combination q.eval x * legendre_eval_add_two n x
+    linear_combination q.eval x * add_two_mul_legendre_eval_add_two n x
 
 /-- **Normalisation of the Legendre polynomials**: `∫₋₁¹ Pₙ² = 2 / (2n + 1)`. -/
 theorem integral_legendre_mul_self (n : ℕ) :
     ∫ x in (-1 : ℝ)..1, (legendre n).eval x * (legendre n).eval x = 2 / (2 * n + 1) := by
   induction n using Nat.twoStepInduction with
   | zero => norm_num
-  | one => simp [← sq, integral_pow]; norm_num
+  | one =>
+    simp only [legendre_one, eval_X, ← sq]
+    rw [integral_pow]
+    norm_num
   | more n _ h₁ =>
     -- pair the recurrence for `Pₙ₊₂` with `Pₙ₊₂`, and the one for `Pₙ₊₃` with `Pₙ₊₁`;
     -- both produce the mixed integral `K = ∫ x Pₙ₊₁ Pₙ₊₂`
-    have hA := integral_legendre_add_two_mul n (legendre (n + 2))
-    have hB := integral_legendre_add_two_mul (n + 1) (legendre (n + 1))
+    have hA := add_two_mul_integral_legendre_add_two_mul n (legendre (n + 2))
+    have hB := add_two_mul_integral_legendre_add_two_mul (n + 1) (legendre (n + 1))
     rw [integral_legendre_mul_legendre_of_ne (by omega : n ≠ n + 2), mul_zero, sub_zero] at hA
     rw [integral_legendre_mul_legendre_of_ne (by omega : n + 1 + 2 ≠ n + 1), h₁, mul_zero] at hB
     have hK : ∫ x in (-1 : ℝ)..1, x * (legendre (n + 1 + 1)).eval x * (legendre (n + 1)).eval x =
