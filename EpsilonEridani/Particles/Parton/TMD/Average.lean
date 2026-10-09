@@ -53,14 +53,14 @@ namespace TMD
 abbrev TransversePlane : Type := EuclideanSpace ℝ (Fin 2)
 
 /-- Standard basis vector `e₁ = (1, 0)`. -/
-noncomputable def e1 : TransversePlane := ![1, 0]
+noncomputable def e1 : TransversePlane := !₂[1, 0]
 
 /-- Standard basis vector `e₂ = (0, 1)`. -/
-noncomputable def e2 : TransversePlane := ![0, 1]
+noncomputable def e2 : TransversePlane := !₂[0, 1]
 
 /-- The unit vector pointing at polar angle `θ` in the transverse plane. -/
 noncomputable def unitVector (θ : ℝ) : TransversePlane :=
-  ![cos θ, sin θ]
+  !₂[cos θ, sin θ]
 
 /-- The radial vector of radius `kT` at polar angle `θ`. -/
 noncomputable def radialVector (kT : ℝ) (θ : ℝ) : TransversePlane :=
@@ -87,10 +87,10 @@ lemma integral_areaForm_radial_over_circle (kT : ℝ) (v : TransversePlane) :
   dsimp [areaForm, radialVector, unitVector]
   have hcos : ∫ θ in (0 : ℝ)..(2 * π), cos θ = 0 := by
     rw [integral_cos]
-    ring
+    simp [Real.sin_two_pi, Real.sin_zero]
   have hsin : ∫ θ in (0 : ℝ)..(2 * π), sin θ = 0 := by
     rw [integral_sin]
-    ring
+    simp [Real.sin_two_pi, Real.sin_zero]
   calc
     ∫ θ in (0 : ℝ)..(2 * π), (kT * cos θ) * (v 1) - (kT * sin θ) * (v 0) = 
       ∫ θ in (0 : ℝ)..(2 * π), (kT * (v 1) * cos θ - kT * (v 0) * sin θ) := by
@@ -198,7 +198,10 @@ lemma azimuthalTmd_isTmdDensity
 /-- The unit vector has norm 1. -/
 lemma unitVector_norm (θ : ℝ) : ‖unitVector θ‖ = 1 := by
   dsimp [unitVector]
-  simp [PiLp.norm_eq, norm_euclideanSpace]
+  have hsq : ‖(!₂[cos θ, sin θ] : EuclideanSpace ℝ (Fin 2))‖ ^ 2 = 1 := by
+    rw [EuclideanSpace.real_norm_sq_eq]
+    simp [Real.cos_sq_add_sin_sq]
+  nlinarith
 
 /-- The radial vector has norm `|kT|`. -/
 lemma radialVector_norm (kT : ℝ) (θ : ℝ) : ‖radialVector kT θ‖ = |kT| := by
