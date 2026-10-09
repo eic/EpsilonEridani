@@ -84,22 +84,10 @@ This is the core angular-momentum counting argument for the absence of gluon
 transversity in a spin-half hadron. -/
 theorem not_gluonTransversityHelicityChange_in_helicityChanges_one
     : gluonTransversityHelicityChange ∉ helicityChanges 1 := by
-  intro h
-  rcases h with ⟨m, m', hm_le, hm'_le, hm_par, hm'_par, h_eq⟩
-  -- From the defining equation: 2 * 2 = m - m', so m - m' = 4.
-  have h_diff : m - m' = 4 := by
-    omega
-  -- From `|m| ≤ 1` we get -1 ≤ m ≤ 1, and similarly for m'.
-  -- The maximum possible difference is 2 (when m = 1, m' = -1).
-  -- But h_diff claims m - m' = 4, which exceeds 2.  Contradiction.
-  have hm_bound : -1 ≤ m ∧ m ≤ 1 := by
-    have : m.natAbs ≤ 1 := hm_le
-    constructor <;> omega
-  have hm'_bound : -1 ≤ m' ∧ m' ≤ 1 := by
-    have : m'.natAbs ≤ 1 := hm'_le
-    constructor <;> omega
-  have h_bound : m - m' ≤ 2 := by
-    omega
+  rintro ⟨m, m', hm_le, hm'_le, -, -, h_eq⟩
+  -- From the defining equation `2 * 2 = m - m'` we get `m - m' = 4`, but `|m| ≤ 1` and
+  -- `|m'| ≤ 1` bound the difference by `2`.
+  simp only [gluonTransversityHelicityChange] at h_eq
   omega
 
 /-! ### Spin-one: gluon transversity is allowed -/
