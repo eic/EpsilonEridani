@@ -146,7 +146,8 @@ theorem I_smul_isospinT3_mem_su : I • isospinT3 ∈ su (Fin 2) :=
 
 /-- The electric-charge generator `(i T³, 1) ∈ 𝔰𝔲(2) ⊕ 𝔲(1)`, whose associated Hermitian
 generator, `-i` times its doublet action, is `T³ + Y / 2`. -/
-noncomputable def electricChargeGenerator : su (Fin 2) × ℝ := (⟨I • isospinT3, I_smul_isospinT3_mem_su⟩, 1)
+noncomputable def electricChargeGenerator : su (Fin 2) × ℝ :=
+  (⟨I • isospinT3, I_smul_isospinT3_mem_su⟩, 1)
 
 /-- The `𝔰𝔲(2)` component of the electric charge generator is `i T³`. -/
 @[simp]
@@ -175,7 +176,8 @@ theorem electricChargeGenerator_ne_zero : electricChargeGenerator ≠ 0 := by
 noncomputable def doubletElectricCharge (y : ℝ) (k : Fin 2) : ℝ := isospinWeight k + y / 2
 
 /-- The doublet electric charge unfolded. -/
-theorem doubletElectricCharge_apply (y : ℝ) (k : Fin 2) : doubletElectricCharge y k = isospinWeight k + y / 2 :=
+theorem doubletElectricCharge_apply (y : ℝ) (k : Fin 2) :
+    doubletElectricCharge y k = isospinWeight k + y / 2 :=
   (rfl)
 
 /-- The electric charge `y / 2` of a weak-isospin singlet of hypercharge `y`. -/
@@ -190,14 +192,16 @@ noncomputable def electricChargeOperator (y : ℝ) : Matrix (Fin 2) (Fin 2) ℂ 
   isospinT3 + ((y / 2 : ℝ) : ℂ) • 1
 
 /-- The electric charge operator unfolded. -/
-theorem electricChargeOperator_def (y : ℝ) : electricChargeOperator y = isospinT3 + ((y / 2 : ℝ) : ℂ) • 1 :=
+theorem electricChargeOperator_def (y : ℝ) :
+    electricChargeOperator y = isospinT3 + ((y / 2 : ℝ) : ℂ) • 1 :=
   (rfl)
 
 /-- The electric charge operator is diagonal, with the charges `doubletElectricCharge y` on the
 diagonal. -/
 theorem electricChargeOperator_eq_diagonal (y : ℝ) :
     electricChargeOperator y = diagonal fun k => (doubletElectricCharge y k : ℂ) := by
-  rw [electricChargeOperator_def, isospinT3_eq_diagonal, ← diagonal_one, ← diagonal_smul, diagonal_add]
+  rw [electricChargeOperator_def, isospinT3_eq_diagonal,
+    ← diagonal_one, ← diagonal_smul, diagonal_add]
   congr 1
   funext k
   simp [doubletElectricCharge_apply]
@@ -216,17 +220,21 @@ theorem isDiag_electricChargeOperator (y : ℝ) : (electricChargeOperator y).IsD
 `i` times the charge operator `T³ + y / 2`. -/
 @[simp]
 theorem doubletAction_electricChargeGenerator (y : ℝ) :
-    doubletAction y electricChargeGenerator = I • electricChargeOperator y := by
-  rw [doubletAction_apply, singletAction_apply, coe_electricChargeGenerator_fst, electricChargeGenerator_snd,
-    electricChargeOperator_def, smul_add, smul_smul, ofReal_one, one_mul]
+    doubletAction y electricChargeGenerator =
+      I • electricChargeOperator y := by
+  rw [doubletAction_apply, singletAction_apply, coe_electricChargeGenerator_fst,
+    electricChargeGenerator_snd, electricChargeOperator_def, smul_add, smul_smul,
+    ofReal_one, one_mul]
 
 /-- On a singlet of hypercharge `y` the unbroken generator acts as `i` times the singlet
 electric charge `singletElectricCharge y = y / 2`: the electric charge of a weak-isospin singlet
 is `Y / 2`. -/
 @[simp]
 theorem singletAction_electricChargeGenerator (y : ℝ) :
-    singletAction y electricChargeGenerator = I * (singletElectricCharge y : ℂ) := by
-  rw [singletAction_apply, electricChargeGenerator_snd, singletElectricCharge_def, ofReal_one, one_mul]
+    singletAction y electricChargeGenerator =
+      I * (singletElectricCharge y : ℂ) := by
+  rw [singletAction_apply, electricChargeGenerator_snd,
+    singletElectricCharge_def, ofReal_one, one_mul]
 
 /-- The weak-isospin weights of a doublet: `T³` scales the `k`-th basis vector by
 `isospinWeight k`. -/
@@ -246,8 +254,10 @@ theorem electricChargeOperator_mulVec_single (y : ℝ) (k : Fin 2) :
 `i` times its electric charge `doubletElectricCharge y k`. -/
 theorem doubletAction_electricChargeGenerator_mulVec_single (y : ℝ) (k : Fin 2) :
     doubletAction y electricChargeGenerator *ᵥ (Pi.single k 1 : Fin 2 → ℂ) =
-      (I * doubletElectricCharge y k) • (Pi.single k 1 : Fin 2 → ℂ) := by
-  rw [doubletAction_electricChargeGenerator, smul_mulVec, electricChargeOperator_mulVec_single, smul_smul]
+      (I * doubletElectricCharge y k) •
+        (Pi.single k 1 : Fin 2 → ℂ) := by
+  rw [doubletAction_electricChargeGenerator, smul_mulVec,
+    electricChargeOperator_mulVec_single, smul_smul]
 
 /-- **Electric charge is the unbroken generator.** For `v ≠ 0` the generators of
 `𝔰𝔲(2) ⊕ 𝔲(1)` annihilating the Higgs vacuum `(0, v)` are exactly the real multiples of
