@@ -1,2 +1,3 @@
+simpNF EpsilonEridani.Particles.Nuclei.Density.Basic.woodsSaxonDensity_eq_mul
 simpNF EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopGaugeDiagramAssumptions.mk.injEq
 simpNF EpsilonEridani.QFT.PerturbationTheory.FeynmanDiagrams.OneLoopSelfEnergyEvaluationAssumptions.mk.injEq
