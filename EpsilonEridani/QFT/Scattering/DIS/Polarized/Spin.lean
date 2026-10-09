@@ -63,7 +63,7 @@ open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
 that fixes the orientation.  Layer 0 needs both because the antisymmetric decomposition
 references the four-form explicitly (Convention 4). -/
 
-variable (V : Type) [AddCommGroup V] [Module ℝ V]
+variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
 /-- Polarised inclusive DIS kinematics extended with an alternating four-form
 fixing the orientation.  This is the kinematic record for the antisymmetric
