@@ -19,7 +19,30 @@ env:
   LKG_BRANCH: hopscotch/lkg-bump
 
 jobs:
+  # Dry run of scripts/resolve_deps.py (docs/dependency-bumps.md): reports the newest mutually
+  # compatible mathlib/Physlib/TauCeti pins and why each is held back, in the job summary. It
+  # changes nothing and opens nothing; the bump-guard validates whatever bump PR a human or a
+  # later job opens from its answer. It replaces the downstream-reports flow below, which stays
+  # disabled until the resolver can open the rolling bump PR itself.
+  resolve:
+    if: github.repository == 'eic/EpsilonEridani'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # about 8 minutes of GitHub API calls
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve the newest compatible pins
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/resolve_deps.py --summary | tee -a "$GITHUB_STEP_SUMMARY"
+
   bump:
+    # Temporarily disabled while physlib is fixed and EpsilonEridani is re-added to downstream tracker
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -68,6 +91,8 @@ jobs:
           git-user-email: 290224625+epsiloneridani-review-bot[bot]@users.noreply.github.com
 
   open-issue:
+    # Temporarily disabled while physlib is fixed and EpsilonEridani is re-added to downstream tracker
+    if: false
     runs-on: ubuntu-latest
     needs: bump
     permissions:

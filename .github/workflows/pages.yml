@@ -70,7 +70,7 @@ concurrency:
 env:
   # Run JavaScript actions on Node 24 (Node 20 is deprecated on GitHub runners).
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # Temporary escape hatch for `lake exe cache get Mathlib Physlib TauCeti`, kept only for an easy rollback
+  # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
   # return reads to the default endpoint on the next run: the cache tool treats unset,
@@ -551,7 +551,7 @@ jobs:
       - name: Fetch Dependencies' oleans (docs project)
         if: steps.docs-plan.outputs.build == 'true'
         working-directory: docbuild
-        run: lake exe cache get Mathlib Physlib TauCeti
+        run: lake exe cache get
 
       # The generated docbuild/lean-toolchain symlink resolves to EpsilonEridani's root toolchain, so
       # there is no second independently pinned copy to drift. The pinned doc-gen4 source still
@@ -627,14 +627,14 @@ jobs:
       # to be rebuilt anyway, so a prefix fallback restores nothing useful and risks exactly the
       # mismatch above. The `v2` discards the entries poisoned before this fix.
       - name: Cache Lake builds (site)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: web/.lake
           key: web-lake-v2-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain') }}
           restore-keys: web-lake-v2-${{ runner.os }}-
 
       - name: Cache Lake builds (examples)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: web/examples/.lake
           key: web-examples-lake-v2-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
@@ -664,7 +664,7 @@ jobs:
 
       - name: Fetch Dependencies' oleans (examples project)
         working-directory: web/examples
-        run: lake exe cache get Mathlib Physlib TauCeti
+        run: lake exe cache get
 
       - name: Build examples project (checks the showcased EpsilonEridani theorems)
         working-directory: web/examples
@@ -797,7 +797,7 @@ jobs:
       # failed. Sharing the default `github-pages` name would make the fallback collide with a
       # half-finished artifact instead of publishing.
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-primary
           path: web/_out
@@ -896,7 +896,7 @@ jobs:
           printf 'republishing the site built from %s with this run data\n' "$sha"
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-fallback
           path: web/_out

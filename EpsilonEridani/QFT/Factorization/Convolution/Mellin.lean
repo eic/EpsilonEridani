@@ -357,8 +357,8 @@ theorem mellinDis_convolveAt (C f : ℝ → ℝ) (N : ℂ)
 
 /-- The collinear convolution is commutative in moment space: `M[C ⊗ f] = M[f ⊗ C]`, whenever
 both convolutions satisfy the hypotheses of the convolution theorem at `N`. (Commutativity of
-`⊗` itself is a statement about the convolution before transforming and needs an injectivity
-argument in `N`, which is not available here.) -/
+`⊗` itself, before transforming, is `mellinConv_comm` in
+`EpsilonEridani.QFT.Factorization.Convolution.Algebra`, which holds without any hypothesis.) -/
 theorem mellinDis_convolveAt_comm (C f : ℝ → ℝ) (N : ℂ)
     (h₁ : MellinConvolutionAssumptions C f N) (h₂ : MellinConvolutionAssumptions f C N) :
     mellinDis (convolveAt (collinearKernel C) f) N
