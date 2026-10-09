@@ -41,9 +41,9 @@ For a hadronic target of spin `J`, the magnetic quantum number `m` satisfies
 states whose magnetic quantum numbers differ by an amount recorded in
 `helicityChanges J`.
 
-A gluon transversity operator changes the gluon helicity by ±2, contributing
-a total helicity change of ±2 to the system.  Hence a gluon transversity
-density can contribute to a spin-`J` target only if `±2 ∈ helicityChanges J`.
+A parton operator that flips the parton helicity by ±2 contributes `±2` to the total
+helicity change.  Hence a gluon transversity operator — which flips a gluon's helicity
+by two units — can contribute to a forward matrix element only if `±2 ∈ helicityChanges J`.
 
 The definition below mirrors the roadmap specification
 `EpsilonEridaniRoadmaps.SpinStructure.Suggested.lean`.
