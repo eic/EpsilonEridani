@@ -85,7 +85,7 @@ Both are linear in `S` and alternating, hence satisfy the existing
 
 /-- The first covariant structure `E₁(v, w) = ε(v, w, q, S)`. -/
 def structureOne (EPS : AlternatingMap ℝ V ℝ (Fin 4)) (K : SpinKinematics g) : Bilin V :=
-  EPS.bilinMap ![K.toPolarizedKinematics.toDisKinematics.q, K.toPolarizedKinematics.S]
+  EPS.bilinMap (m := ![K.toPolarizedKinematics.toDisKinematics.q, K.toPolarizedKinematics.S])
 
 lemma structureOne_apply (EPS : AlternatingMap ℝ V ℝ (Fin 4)) (K : SpinKinematics g) (v w : V) :
     structureOne EPS K v w = EPS (Matrix.vecCons v (Matrix.vecCons w
@@ -93,10 +93,11 @@ lemma structureOne_apply (EPS : AlternatingMap ℝ V ℝ (Fin 4)) (K : SpinKinem
 
 /-- The second covariant structure `E₂(v, w) = ε(v, w, q, (p·q) S − (S·q) p)`. -/
 def structureTwo (EPS : AlternatingMap ℝ V ℝ (Fin 4)) (K : SpinKinematics g) : Bilin V :=
-  EPS.bilinMap ![K.toPolarizedKinematics.toDisKinematics.q,
-    (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) • K.toPolarizedKinematics.S
-      - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
-        K.toPolarizedKinematics.toDisKinematics.p]
+  EPS.bilinMap (m :=
+    ![K.toPolarizedKinematics.toDisKinematics.q,
+      (g K.toPolarizedKinematics.toDisKinematics.p K.toPolarizedKinematics.S) • K.toPolarizedKinematics.S
+        - (g K.toPolarizedKinematics.S K.toPolarizedKinematics.toDisKinematics.q) •
+          K.toPolarizedKinematics.toDisKinematics.p])
 
 lemma structureTwo_apply (EPS : AlternatingMap ℝ V ℝ (Fin 4)) (K : SpinKinematics g) (v w : V) :
     structureTwo EPS K v w = EPS (Matrix.vecCons v (Matrix.vecCons w
