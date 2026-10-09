@@ -158,11 +158,9 @@ theorem longitudinal_def : L.longitudinal = Submodule.span R {L.nPlus, L.nMinus}
 theorem transverse_def : L.transverse = B.orthogonal L.longitudinal :=
   (rfl)
 
-@[simp]
 theorem nPlus_mem_longitudinal : L.nPlus ∈ L.longitudinal :=
   Submodule.subset_span (by simp)
 
-@[simp]
 theorem nMinus_mem_longitudinal : L.nMinus ∈ L.longitudinal :=
   Submodule.subset_span (by simp)
 
@@ -225,6 +223,7 @@ theorem transverseProj_nMinus_eq_zero : L.transverseProj L.nMinus = 0 := by
   simp [transverseProj_apply]
 
 /-- The kernel of the transverse projector is the longitudinal subspace. -/
+@[simp]
 theorem ker_transverseProj_eq_longitudinal : LinearMap.ker L.transverseProj = L.longitudinal := by
   ext v
   rw [LinearMap.mem_ker]
@@ -233,6 +232,11 @@ theorem ker_transverseProj_eq_longitudinal : LinearMap.ker L.transverseProj = L.
   · simpa [h] using L.plus_smul_add_minus_smul_add_transverseProj_eq v
   · subst hv
     simp
+
+/-- A vector is longitudinal iff its transverse part vanishes. -/
+@[simp]
+theorem mem_longitudinal_iff {v : V} : v ∈ L.longitudinal ↔ L.transverseProj v = 0 := by
+  rw [← ker_transverseProj_eq_longitudinal, LinearMap.mem_ker]
 
 /-- `V` is the direct sum of the longitudinal and the transverse subspaces. -/
 theorem isCompl_longitudinal_transverse : IsCompl L.longitudinal L.transverse := by
@@ -312,6 +316,7 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {B : BilinForm K 
   (L : LightConeBasis B)
 
 /-- The longitudinal subspace is two-dimensional. -/
+@[simp]
 theorem finrank_longitudinal_eq_two : finrank K L.longitudinal = 2 := by
   rw [longitudinal_def]
   have h := finrank_span_eq_card L.linearIndependent
@@ -348,13 +353,20 @@ private theorem minkowskiProduct_axisVector_left (i : Fin d) (s : ℝ) (v : Vect
     minkowskiMatrix.inl_0_inl_0, minkowskiMatrix.inr_i_inr_i, smul_eq_mul]
   ring
 
+private theorem axisVector_apply_inl (i : Fin d) (s : ℝ) :
+    axisVector i s (Sum.inl 0) = (√2)⁻¹ := by
+  simp [axisVector, basis_apply]
+
+private theorem axisVector_apply_inr (i : Fin d) (s : ℝ) :
+    axisVector i s (Sum.inr i) = (√2)⁻¹ * s := by
+  simp [axisVector, basis_apply]
+
 private theorem minkowskiProduct_axisVector (i : Fin d) (s t : ℝ) :
     ⟪axisVector i s, axisVector i t⟫ₘ = (1 - s * t) / 2 := by
-  have h2 : √2 ^ 2 = 2 := Real.sq_sqrt zero_le_two
-  rw [minkowskiProduct_axisVector_left]
-  simp [axisVector, basis_apply]
-  field_simp
-  linear_combination (s * t - 1) * h2
+  have h : (√2)⁻¹ * (√2)⁻¹ = 2⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt zero_le_two]
+  rw [minkowskiProduct_axisVector_left, axisVector_apply_inl, axisVector_apply_inr]
+  -- The left-hand side is `(1 - s * t) * ((√2)⁻¹ * (√2)⁻¹)`.
+  linear_combination (1 - s * t) * h
 
 /-- The standard light-cone basis `n± = (e₀ ± eᵢ)/√2` of `d + 1`-dimensional Minkowski space,
 along the spatial axis `i`. -/
