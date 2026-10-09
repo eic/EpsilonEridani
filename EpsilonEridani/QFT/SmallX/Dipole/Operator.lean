@@ -53,7 +53,7 @@ namespace EpsilonEridani
 namespace QFT
 namespace SmallX
 
-open _root_.Matrix
+open Matrix
 
 variable {Nc : ℕ}
 
