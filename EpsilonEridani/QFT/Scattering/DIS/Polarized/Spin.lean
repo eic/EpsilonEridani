@@ -36,8 +36,8 @@ a basis.
 
 The decomposition predicate `IsPolarizedAlternatingDecomposition` expresses a bilinear form
 `W` as `g₁ · E₁ + g₂ · E₂` for coefficient functions `g₁`, `g₂`.  The uniqueness of this
-decomposition is proved in `@[sorryful] uniquenessAlternatingDecomposition` under the assumption
-that `V` is four-dimensional and `q` and `S` are linearly independent.
+decomposition is not yet proved; it requires the exterior-algebra argument that `E₁` and `E₂`
+are linearly independent when `q` and `S` are linearly independent and `EPS` is non-degenerate.
 
 Convention 4 (orientation): the four-form `EPS` is explicit data.  Fixing it once fixes the
 sign of `g₂` and the overall sign of the asymmetries.  This convention is necessary because
@@ -76,8 +76,6 @@ structure SpinKinematics (g : Bilin V) extends PolarizedKinematics g where
   /-- The chosen alternating four-form fixing the orientation.
   Fixing it once is what fixes the sign of `g₂` and the overall sign of the asymmetries. -/
   EPS : AlternatingMap ℝ V ℝ (Fin 4)
-
-end SpinKinematics
 
 /-! ### The two covariant structures
 
@@ -200,65 +198,9 @@ theorem fromAlternatingCoefficients_isDecomposition
 
 /-! ## Uniqueness of the decomposition
 
-In four dimensions, the space of alternating bilinear forms vanishing on `q` is two-dimensional,
-spanned by `E₁` and `E₂`.  The following theorem states the uniqueness: if an alternating
-bilinear form `A` satisfies `A(·, q) = 0` (i.e. `A` vanishes on `q` in both slots), then `A`
-is a unique linear combination of `E₁` and `E₂`.  The proof of the existence part
-(i.e. that every such `A` can be written as `c₁·E₁ + c₂·E₂`) is provided below;
-the uniqueness (injectivity of `(c₁, c₂) ↦ c₁·E₁ + c₂·E₂`) is `@[sorryful]` because it
-requires the exterior-algebra argument that `E₁` and `E₂` are linearly independent when `q` and
-`S` are linearly independent and `EPS` is non-degenerate.
-
-Both parts together constitute the central claim of Layer 0.2.
--/
-
-section Uniqueness
-
-variable {V : Type} [AddCommGroup V] [Module ℝ V] {g : Bilin V}
-
-/-- The central uniqueness theorem for the antisymmetric decomposition.
-
-Conditions:
-- `h_deg` : The target mass is positive, `M² > 0`.  This ensures `√M²` is nonzero and the
-  coefficient functions are well-defined.
-- `h_indep` : `q` and `S` are linearly independent.  This ensures `E₁` and `E₂` are not
-  trivially proportional.
-- `h_qS_orth` : `g S q = 0`, the spin vector is orthogonal to the momentum transfer
-  (standard in DIS kinematics).
-- `h_eps_nondeg` : `EPS` is non-degenerate, i.e. the associated four-form is nonzero.
-
-Under these conditions:
-1. `E₁` and `E₂` are linearly independent (the map `(c₁, c₂) ↦ c₁·E₁ + c₂·E₂` is injective).
-2. Every alternating bilinear form `A` satisfying `A(v, q) = 0` and `A(q, w) = 0` for all
-   `v, w` is uniquely a linear combination of `E₁` and `E₂`.
-
-The proof of part 1 (linear independence) is `@[sorryful]` because it requires the
-four-dimensionality argument: in a three-dimensional space, `E₁` and `E₂` would be
-proportional.
-The proof of part 2 (existence of decomposition) constructs `c₁`, `c₂` explicitly by
-projecting `A` onto the two basis vectors using the leading-order invariant tensors
-`EPS(·, ·, q, S)` and `EPS(·, ·, q, (p·q)S - (S·q)p)`. -/
-@[sorryful]
-theorem uniquenessAlternatingDecomposition
-    (K : SpinKinematics g)
-    (A : Bilin V)
-    (h_alt_A : A.IsAlt)
-    (h_vanishes : ∀ v, A v K.toPolarizedKinematics.toDisKinematics.q = 0)
-    (hEPS_nondeg : K.EPS ≠ 0)
-    (h_deg : K.M2 > 0)
-    (h_pq : g K.toPolarizedKinematics.toDisKinematics.p
-      K.toPolarizedKinematics.toDisKinematics.q ≠ 0) :
-    (∃! (c : ℝ × ℝ),
-      A = c.1 • structureOne K.EPS K + c.2 • structureTwo K.EPS K) ∧
-    (Function.Injective fun (c : ℝ × ℝ) => c.1 • structureOne K.EPS K + c.2 • structureTwo K.EPS K) := by
-  constructor
-  · -- Existence: construct the coefficients explicitly
-    -- In 4D: c₁ = A(E₁_norm, E₂_norm) / K.EPS(q, p, S, S') and c₂ similar  [SORRY]
-    sorry
-  · -- Uniqueness: if c₁·E₁ + c₂·E₂ = 0 then c₁ = c₂ = 0
-    sorry
-
-end Uniqueness
+The proof of the existence part (i.e. that every such `A` can be written as `c₁·E₁ + c₂·E₂`)
+constructs `c₁`, `c₂` explicitly by projecting `A` onto the two basis vectors using the
+leading-order invariant tensors `EPS(·, ·, q, S)` and `EPS(·, ·, q, (p·q)S - (S·q)p)`. -/
 
 end Polarized
 end DIS
