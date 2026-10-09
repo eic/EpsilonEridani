@@ -78,15 +78,16 @@ lemma hDelta (D : DiffractiveKinematics V) : D.Delta = D.K.p - D.P' := rfl
 /-- The invariant momentum transfer `t = Δ²`. -/
 def t (D : DiffractiveKinematics V) (g : Bilin V) : ℝ := g D.Delta D.Delta
 
+omit [AddCommGroup V] [Module ℝ V] in
 @[simp]
 lemma h_t (D : DiffractiveKinematics V) (g : Bilin V) : D.t g = g D.Delta D.Delta := rfl
 
 /-- The variable `ξ = Δ·q / P·q`. -/
-def xi (D : DiffractiveKinematics V) (g : Bilin V) : ℝ :=
+noncomputable def xi (D : DiffractiveKinematics V) (g : Bilin V) : ℝ :=
   g D.Delta D.K.q / g D.K.p D.K.q
 
 /-- The variable `β = Q² / (2 Δ·q)`. -/
-def beta (D : DiffractiveKinematics V) (g : Bilin V) : ℝ :=
+noncomputable def beta (D : DiffractiveKinematics V) (g : Bilin V) : ℝ :=
   D.K.Q2 g / (2 * g D.Delta D.K.q)
 
 /-!
@@ -104,7 +105,7 @@ theorem xi_beta_eq_x (D : DiffractiveKinematics V) (g : Bilin V)
   unfold DisKinematics.xBj xi beta
   dsimp [DisKinematics.Q2]
   field_simp [hPq, hDeltaq]
-  ring
+  ring_nf
 
 end DiffractiveKinematics
 
