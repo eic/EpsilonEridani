@@ -77,6 +77,8 @@ structure SpinKinematics (g : Bilin V) extends PolarizedKinematics g where
   Fixing it once is what fixes the sign of `g₂` and the overall sign of the asymmetries. -/
   EPS : AlternatingMap ℝ V ℝ (Fin 4)
 
+variable {g : Bilin V}
+
 /-! ### The two covariant structures
 
 `E₁(v, w) = ε(v, w, q, S)` and `E₂(v, w) = ε(v, w, q, (p·q) S − (S·q) p)`.
