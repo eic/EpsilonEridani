@@ -294,10 +294,9 @@ theorem doubletStabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
     have h10' : A 1 0 = 0 := by rw [h10, hA01, star_zero, neg_zero]
     refine ⟨β, Prod.ext (Subtype.ext ?_) ?_⟩
     · -- Goal: ((β • electricChargeGenerator).1).val = ((⟨A, hA⟩, β).1).val
-      dsimp
-      rw [SetLike.val_smul, coe_electricChargeGenerator_fst,
-        isospinT3_eq_diagonal]
-      simp [h00, hA01, h10', hA11, isospinWeight_zero, isospinWeight_one]
+      simp [SetLike.val_smul, coe_electricChargeGenerator_fst,
+        isospinT3_eq_diagonal, h00, hA01, h10', hA11,
+        isospinWeight_zero, isospinWeight_one, Matrix.smul_apply]
       ext i j
       fin_cases i <;> fin_cases j <;> ring
     · simp [electricChargeGenerator]
