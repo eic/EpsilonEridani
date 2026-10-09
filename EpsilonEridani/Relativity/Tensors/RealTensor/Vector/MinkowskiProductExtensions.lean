@@ -23,7 +23,7 @@ energies above the mass and a prescribed angle between their spatial parts.
 It also records the symmetry of the Minkowski product as a bilinear form
 (`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
 the reflexive-form results about light-cone bases in
-`EpsilonEridani.Relativity.LightConeBasis`.
+`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
 -/
 
 public section
