@@ -43,7 +43,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Temporary escape hatch for `lake exe cache get Mathlib Physlib TauCeti`, kept only for an easy rollback
+  # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
   # return reads to the default endpoint on the next run: the cache tool treats unset,
@@ -235,8 +235,10 @@ jobs:
           # lake-manifest.json and lean-toolchain are also permitted, but ONLY as a
           # machine-validated forward bump: the "Validate the Lake-pin bump" step below
           # runs the workflow-pinned scripts/check-bump.sh and routes to a human if it is
-          # anything other than a forward move (mathlib forward on its nominated branch,
-          # transitive pins derived from mathlib, toolchain monotonic).
+          # anything other than a forward move (each direct dependency forward on its
+          # nominated branch, or mathlib onto a strictly newer toolchain at a `v4.*` release
+          # tag or on master, the way back from a patch release; transitive pins derived from
+          # their manifests; toolchain monotonic and mathlib's).
           # docbuild/docs/references.bib is permitted too. It is the bibliography doc-gen4
           # resolves docstring citations against, so a docstring that cites a work no one has
           # entered renders as a bare bracketed key. Filling that in is the same kind of work as
@@ -757,7 +759,7 @@ jobs:
       # trusted main publisher. This workflow never writes that GitHub Actions cache. The keys
       # hash the exact candidate pins, so an exact historical or new-pin snapshot is preferred. A
       # Mathlib-only bump can fall back to the newest same-toolchain main snapshot; a toolchain
-      # bump misses both keys and refetches from Mathlib's server. `lake exe cache get Mathlib Physlib TauCeti` below
+      # bump misses both keys and refetches from Mathlib's server. `lake exe cache get` below
       # remains authoritative and downloads every applicable hash that is still absent. The
       # workflow-pinned local action credits the corresponding Mathlib design and owns the key
       # namespace shared with ci.yml. This is separate from the much larger `./.lake` cache.
@@ -771,12 +773,15 @@ jobs:
           # so the sandbox never receives it.
           project-dir: pr
 
-      # `lake exe cache get Mathlib Physlib TauCeti` runs the `cache` exe built from the pinned Mathlib, unsandboxed,
+      # `lake exe cache get` runs the `cache` exe built from the pinned Mathlib, unsandboxed,
       # with network (to download oleans) but deliberately NO token in env. For a normal PR that
       # pin is inherited from its trusted merge base. For a validated bump it is the new pin — which
-      # bump-guard proved is a *forward commit on Mathlib's own master* (same repo, never a fork),
-      # so the code run here is still trusted Mathlib master under the project's "track master"
-      # policy; only the PR's EpsilonEridani/ code stays untrusted and runs solely under bwrap below.
+      # bump-guard proved is mathlib at a forward commit on its nominated branch, or at a `v4.*`
+      # release tag on a newer toolchain, and in every case the same repository as base (url
+      # unchanged, never a fork). Physlib and TauCeti, fetched here too, are likewise forward commits on
+      # their own nominated branches. So the code run here is still trusted upstream under the
+      # project's "track master" policy; only the PR's EpsilonEridani/ code stays untrusted and
+      # runs solely under bwrap below.
       - name: Fetch Dependencies with the (bump-validated) config (network, no token; no PR code)
         if: ${{ env.INFRA != '1' }}
         # `set -o pipefail` is not optional here. A `run:` step with no explicit `shell:`
@@ -787,14 +792,17 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          if ! ( cd pr && lake exe cache get Mathlib Physlib TauCeti ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"; then
-            echo "::warning::lake exe cache get Mathlib Physlib TauCeti failed; forcing a full refetch"
-            ( cd pr && lake exe cache get! Mathlib Physlib TauCeti ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"
+          if ! ( cd pr && lake exe cache get ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"; then
+            echo "::warning::lake exe cache get failed; forcing a full refetch"
+            ( cd pr && lake exe cache get! ) 2>&1 | tee "$GITHUB_WORKSPACE/cache-get.log"
           fi
           mkdir -p pr/.lake/tmp
 
       # Backstop to bump-guard's step 2b, measuring the thing itself rather than a proxy.
-      # `lake exe cache get Mathlib Physlib TauCeti` exits 0 on a PARTIAL hit: it prints one warning and the build
+      # It judges Mathlib's cache only: Physlib's and TauCeti's compiled outputs are not in
+      # Mathlib's cache (nor are they asked of it), so a bump may recompile them. See
+      # https://github.com/eic/EpsilonEridani/issues/110
+      # `lake exe cache get` exits 0 on a PARTIAL hit: it prints one warning and the build
       # then quietly recompiles every module whose oleans never arrived. That is invisible
       # in a green build and costs about an hour on every downstream build until the pin
       # moves again, so catch it here (roughly 90 seconds in) rather than after the build.
@@ -802,7 +810,7 @@ jobs:
       # Only a bump is judged. A normal PR builds against its inherited pin, which it did not
       # choose and cannot fix; failing those would take every PR in the repo down for as
       # long as a bad pin sat on main, which is precisely backwards.
-      - name: Require a complete Dependencies cache for a bump
+      - name: Require a complete Mathlib cache for a bump
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         shell: bash
         run: |
@@ -816,10 +824,10 @@ jobs:
             exit 1
           fi
           if grep -qF 'some files were not found in the cache' "$log"; then
-            echo "::error::the bump target's Dependencies cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
+            echo "::error::the bump target's Mathlib cache is incomplete, so this pin would make every downstream build recompile the missing modules; bump to a commit whose master-push build published its cache"
             exit 1
           fi
-          echo "Dependencies cache is complete at the bump target."
+          echo "Mathlib cache is complete at the bump target."
 
       # Restore the compiled outputs of every non-Mathlib dependency (Physlib, TauCeti, ...) that
       # main's ci.yml saved after its trusted build; Mathlib's cache tool above covers only Mathlib
