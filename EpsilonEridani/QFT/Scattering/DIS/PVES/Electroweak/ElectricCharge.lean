@@ -295,10 +295,21 @@ theorem doubletStabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
     refine ⟨β, Prod.ext (Subtype.ext ?_) ?_⟩
     · -- Goal: ((β • electricChargeGenerator).1).val = ((⟨A, hA⟩, β).1).val
       simp [SetLike.val_smul, coe_electricChargeGenerator_fst,
-        isospinT3_eq_diagonal, h00, hA01, h10', hA11,
-        isospinWeight_zero, isospinWeight_one, Matrix.smul_apply]
-      ext i j
-      fin_cases i <;> fin_cases j <;> ring
+        isospinT3_eq_diagonal, Matrix.smul_apply]
+      -- Goal: [[β*I*(1/2), 0], [0, β*I*(-1/2)]] = A
+      have hA_eq : A = Matrix.of fun i j =>
+        match i, j with
+        | 0, 0 => I * (β / 2)
+        | 0, 1 => 0
+        | 1, 0 => 0
+        | 1, 1 => -(I * (β / 2)) := by
+        ext i j; fin_cases i <;> fin_cases j
+        · simp [h00]
+        · simp [hA01]
+        · simp [h10']
+        · simp [hA11]
+      rw [hA_eq]
+      ring
     · simp [electricChargeGenerator]
   · rintro ⟨c, rfl⟩
     -- The vacuum is `v` times the lower basis vector, whose electric charge at `Y = 1` is
