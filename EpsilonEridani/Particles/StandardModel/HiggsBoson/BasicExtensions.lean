@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wouter Deconinck
+Authors: Wouter Deconinck, The EpsilonEridani contributors
 -/
 module
 
@@ -30,8 +30,7 @@ doublet. With `Q = T³ + Y / 2` this is the neutral component. Physlib's `HiggsV
 def higgsVacuum (v : ℂ) : HiggsVec := !₂[0, v]
 
 /-- The Higgs vacuum in components. -/
-@[simp]
-theorem higgsVacuum_ofLp (v : ℂ) : (higgsVacuum v).ofLp = ![0, v] :=
+theorem ofLp_higgsVacuum (v : ℂ) : (higgsVacuum v).ofLp = ![0, v] :=
   WithLp.ofLp_toLp _ _
 
 end EpsilonEridani.Particles.StandardModel.HiggsBoson

@@ -5,7 +5,7 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
-public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary
+public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitaryExtensions
 public import EpsilonEridani.Particles.StandardModel.HiggsBoson.BasicExtensions
 public import EpsilonEridani.QFT.QCD.SU2Generators
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
@@ -38,7 +38,8 @@ hypercharge `Y` is `Q = T³ + Y / 2`.
   `i` times `chargeOperator y = T³ + y / 2`. `isospinT3_mulVec_single` gives the weights
   `isospinWeight k = ±1/2` of `T³` on the two components, `chargeOperator_mulVec_single` the
   charges `doubletCharge y k = ±1/2 + y / 2`, and `doubletAction_chargeGenerator_mulVec_single`
-  combines the two. `singletAction_chargeGenerator` is the singlet version.
+  combines the two. `singletAction_chargeGenerator` is the singlet version, with charge
+  `singletCharge y = y / 2`.
 
 ## References
 
@@ -73,9 +74,13 @@ theorem isospinWeight_one : isospinWeight 1 = -1 / 2 :=
 `isospinWeight`. -/
 noncomputable def isospinT3 : Matrix (Fin 2) (Fin 2) ℂ := (1 / 2 : ℂ) • σ3
 
-/-- `T³` is the third fundamental `su(2)` generator `σ³ / 2` of `su2GenEntry`. -/
-theorem isospinT3_apply (i j : Fin 2) : isospinT3 i j = su2GenEntry 2 i j :=
+/-- `T³` is `σ³ / 2`. -/
+theorem isospinT3_def : isospinT3 = (1 / 2 : ℂ) • σ3 :=
   (rfl)
+
+/-- `T³` is the third fundamental `su(2)` generator `σ³ / 2` of `su2GenEntry`. -/
+theorem isospinT3_apply_eq_su2GenEntry (i j : Fin 2) : isospinT3 i j = su2GenEntry 2 i j := by
+  rw [isospinT3_def, Matrix.smul_apply, smul_eq_mul, su2GenEntry]
 
 /-- `T³` is diagonal, with the weights `isospinWeight` on the diagonal. -/
 theorem isospinT3_eq_diagonal : isospinT3 = diagonal fun k => (isospinWeight k : ℂ) := by
@@ -92,7 +97,6 @@ noncomputable def singletAction (y : ℝ) : su (Fin 2) × ℝ →ₗ[ℝ] ℂ wh
     ring
 
 /-- The singlet action unfolded. -/
-@[simp]
 theorem singletAction_apply (y : ℝ) (x : su (Fin 2) × ℝ) :
     singletAction y x = I * (x.2 * (y / 2 : ℝ) : ℂ) :=
   (rfl)
@@ -108,7 +112,6 @@ noncomputable def doubletAction (y : ℝ) : su (Fin 2) × ℝ →ₗ[ℝ] Matrix
     rw [Prod.smul_fst, SetLike.val_smul, map_smul, RingHom.id_apply, smul_add, smul_assoc]
 
 /-- The doublet action unfolded. -/
-@[simp]
 theorem doubletAction_apply (y : ℝ) (x : su (Fin 2) × ℝ) :
     doubletAction y x = (x.1 : Matrix (Fin 2) (Fin 2) ℂ) + singletAction y x • 1 :=
   (rfl)
@@ -122,18 +125,22 @@ noncomputable def doubletStabilizer (y : ℝ) (φ : Fin 2 → ℂ) : Submodule �
 /-- Membership in the stabilizer is the vanishing of the doublet action on `φ`. -/
 @[simp]
 theorem mem_doubletStabilizer_iff (y : ℝ) (φ : Fin 2 → ℂ) (x : su (Fin 2) × ℝ) :
-    x ∈ doubletStabilizer y φ ↔ doubletAction y x *ᵥ φ = 0 :=
-  (Iff.rfl)
+    x ∈ doubletStabilizer y φ ↔ doubletAction y x *ᵥ φ = 0 := by
+  rw [doubletStabilizer, LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.flip_apply,
+    mulVecBilin_apply]
+
+/-- `T³` is Hermitian. -/
+theorem isHermitian_isospinT3 : isospinT3.IsHermitian := by
+  rw [isospinT3_eq_diagonal, isHermitian_diagonal_iff]
+  exact fun k => Complex.conj_ofReal _
+
+/-- `T³` is traceless. -/
+theorem trace_isospinT3 : trace isospinT3 = 0 := by
+  rw [isospinT3_def, trace_smul, trace_σ3, smul_zero]
 
 /-- `i T³` is skew-Hermitian and traceless, so it lies in `𝔰𝔲(2)`. -/
-theorem I_smul_isospinT3_mem_su : I • isospinT3 ∈ su (Fin 2) := by
-  rw [mem_su_iff, isospinT3_eq_diagonal, ← diagonal_smul, diagonal_conjTranspose, trace_diagonal]
-  constructor
-  · rw [diagonal_neg]
-    congr 1
-    funext k
-    simp
-  · norm_num [Fin.sum_univ_two]
+theorem I_smul_isospinT3_mem_su : I • isospinT3 ∈ su (Fin 2) :=
+  I_smul_mem_su isHermitian_isospinT3 trace_isospinT3
 
 /-- The electric-charge generator `(i T³, 1) ∈ 𝔰𝔲(2) ⊕ 𝔲(1)`, whose associated Hermitian
 generator, `-i` times its doublet action, is `T³ + Y / 2`. -/
@@ -165,8 +172,14 @@ theorem chargeGenerator_ne_zero : chargeGenerator ≠ 0 := by
 noncomputable def doubletCharge (y : ℝ) (k : Fin 2) : ℝ := isospinWeight k + y / 2
 
 /-- The doublet charge unfolded. -/
-@[simp]
 theorem doubletCharge_apply (y : ℝ) (k : Fin 2) : doubletCharge y k = isospinWeight k + y / 2 :=
+  (rfl)
+
+/-- The electric charge `y / 2` of a weak-isospin singlet of hypercharge `y`. -/
+noncomputable def singletCharge (y : ℝ) : ℝ := y / 2
+
+/-- The singlet charge unfolded. -/
+theorem singletCharge_def (y : ℝ) : singletCharge y = y / 2 :=
   (rfl)
 
 /-- The electric-charge operator `Q = T³ + y / 2` on a weak-isospin doublet of hypercharge `y`. -/
@@ -197,16 +210,18 @@ theorem isDiag_chargeOperator (y : ℝ) : (chargeOperator y).IsDiag := by
 
 /-- **The charge is `T³ + Y/2`.** On a doublet of hypercharge `y` the unbroken generator acts as
 `i` times the charge operator `T³ + y / 2`. -/
+@[simp]
 theorem doubletAction_chargeGenerator (y : ℝ) :
     doubletAction y chargeGenerator = I • chargeOperator y := by
   rw [doubletAction_apply, singletAction_apply, coe_chargeGenerator_fst, chargeGenerator_snd,
     chargeOperator_def, smul_add, smul_smul, ofReal_one, one_mul]
 
-/-- On a singlet of hypercharge `y` the unbroken generator acts as `i (y / 2)`: the charge of a
-weak-isospin singlet is `Y / 2`. -/
+/-- On a singlet of hypercharge `y` the unbroken generator acts as `i` times the singlet charge
+`singletCharge y = y / 2`: the charge of a weak-isospin singlet is `Y / 2`. -/
+@[simp]
 theorem singletAction_chargeGenerator (y : ℝ) :
-    singletAction y chargeGenerator = I * ((y / 2 : ℝ) : ℂ) := by
-  simp [singletAction_apply]
+    singletAction y chargeGenerator = I * (singletCharge y : ℂ) := by
+  rw [singletAction_apply, chargeGenerator_snd, singletCharge_def, ofReal_one, one_mul]
 
 /-- The weak-isospin weights of a doublet: `T³` scales the `k`-th basis vector by
 `isospinWeight k`. -/
@@ -232,10 +247,11 @@ theorem doubletAction_chargeGenerator_mulVec_single (y : ℝ) (k : Fin 2) :
 /-- **Electric charge is the unbroken generator.** For `v ≠ 0` the generators of
 `𝔰𝔲(2) ⊕ 𝔲(1)` annihilating the Higgs vacuum `(0, v)` are exactly the real multiples of
 `chargeGenerator`. -/
+@[simp]
 theorem doubletStabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
     doubletStabilizer 1 (higgsVacuum v).ofLp = ℝ ∙ chargeGenerator := by
   ext x
-  rw [mem_doubletStabilizer_iff, Submodule.mem_span_singleton, higgsVacuum_ofLp]
+  rw [mem_doubletStabilizer_iff, Submodule.mem_span_singleton, ofLp_higgsVacuum]
   constructor
   · obtain ⟨⟨A, hA⟩, β⟩ := x
     intro h
@@ -262,7 +278,8 @@ theorem doubletStabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
     have h00 : A 0 0 = I * (β / 2) := by linear_combination htr - hA11
     have h10' : A 1 0 = 0 := by rw [h10, hA01, star_zero, neg_zero]
     refine ⟨β, Prod.ext (Subtype.ext ?_) ?_⟩
-    · change _ = A
+    · -- `↑⟨A, hA⟩` is `A` only up to defeq; `change` exposes `A` for `eta_fin_two A`.
+      change _ = A
       rw [eta_fin_two A, h00, hA01, h10', hA11, Prod.smul_fst, SetLike.val_smul,
         coe_chargeGenerator_fst, isospinT3_eq_diagonal]
       ext i j
