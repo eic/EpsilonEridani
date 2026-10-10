@@ -12,13 +12,13 @@ public import Mathlib.RingTheory.Idempotents
 /-!
 # The colour singlet and octet channels of a heavy quark-antiquark pair
 
-A quark-antiquark pair carries colour in `N ⊗ N̄`: the quark index transforms in the fundamental
+A quark-antiquark pair carries colour in `N ⊗ N*`: the quark index transforms in the fundamental
 representation of `SU(N)` and the antiquark index in its conjugate. Writing the pair's colour
 wave function as a matrix `ψ_{i j}`, with `i` the quark index and `j` the antiquark index, the
 conjugate generators `-(Tᵃ)ᵀ` act on `j` from the right, and the generator `Tᵃ` of the pair acts by
 the commutator `ψ ↦ Tᵃ ψ - ψ Tᵃ`.
 
-This module decomposes `N ⊗ N̄ = 1 ⊕ (N² - 1)` into the colour-singlet and colour-octet channels
+This module decomposes `N ⊗ N* = 1 ⊕ (N² - 1)` into the colour-singlet and colour-octet channels
 (the octet being the adjoint representation, of dimension `8` at `N = 3`). Both projectors are
 built from the generalized Gell-Mann generators `Tᵃ = SUNGen.genM N a` of `su(N)`, and every
 property below is proved from the trace and completeness identities of
