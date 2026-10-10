@@ -39,7 +39,10 @@ weak-isospin third component `T³` and hypercharge `Y` is `Q = T³ + Y / 2`.
   `isospinT3_mulVec_single` gives the weights `isospinWeight k = ±1/2` of `T³` on the two
   components, `electricChargeOperator_mulVec_single` the charges
   `doubletElectricCharge y k = ±1/2 + y / 2`, and
-  `doubletAction_electricChargeGenerator_mulVec_single` combines the two.
+  `doubletAction_electricChargeGenerator_mulVec_single` combines the two; the parallel
+  `isospinT3_col`, `electricChargeOperator_col` and `doubletAction_electricChargeGenerator_col`
+  are their `simp`-normal forms, since `Matrix.mulVec_single` rewrites `M *ᵥ Pi.single k 1` to
+  `M.col k`.
   `singletAction_electricChargeGenerator` is the singlet version, with charge
   `singletElectricCharge y = y / 2`.
 
@@ -88,6 +91,14 @@ theorem isospinT3_apply_eq_su2GenEntry (i j : Fin 2) : isospinT3 i j = su2GenEnt
 theorem isospinT3_eq_diagonal : isospinT3 = diagonal fun k => (isospinWeight k : ℂ) := by
   ext i j
   fin_cases i <;> fin_cases j <;> norm_num [isospinT3, pauliMatrix, isospinWeight]
+
+/-- The `k`-th column of `T³` is the `k`-th basis vector scaled by the weight
+`isospinWeight k`. This is the `simp`-normal form of `isospinT3_mulVec_single`:
+`Matrix.mulVec_single` rewrites that lemma's left-hand side to `isospinT3.col k`. -/
+@[simp]
+theorem isospinT3_col (k : Fin 2) :
+    isospinT3.col k = Pi.single k (isospinWeight k : ℂ) := by
+  rw [isospinT3_eq_diagonal, col_diagonal]
 
 /-- The action of `(A, β) ∈ 𝔰𝔲(2) ⊕ 𝔲(1)` on a weak-isospin singlet of hypercharge `y`: the
 `𝔰𝔲(2)` component acts trivially and the hypercharge acts by `i β (y / 2)`. -/
@@ -206,6 +217,15 @@ theorem electricChargeOperator_eq_diagonal (y : ℝ) :
   funext k
   simp [doubletElectricCharge_apply]
 
+/-- The `k`-th column of the charge operator `T³ + y / 2` is the `k`-th basis vector scaled by
+the charge `doubletElectricCharge y k`. This is the `simp`-normal form of
+`electricChargeOperator_mulVec_single`: `Matrix.mulVec_single` rewrites that lemma's left-hand
+side to `(electricChargeOperator y).col k`. -/
+@[simp]
+theorem electricChargeOperator_col (y : ℝ) (k : Fin 2) :
+    (electricChargeOperator y).col k = Pi.single k (doubletElectricCharge y k : ℂ) := by
+  rw [electricChargeOperator_eq_diagonal, col_diagonal]
+
 /-- The charge operator is Hermitian. -/
 theorem isHermitian_electricChargeOperator (y : ℝ) : (electricChargeOperator y).IsHermitian := by
   rw [electricChargeOperator_eq_diagonal, isHermitian_diagonal_iff]
@@ -258,6 +278,18 @@ theorem doubletAction_electricChargeGenerator_mulVec_single (y : ℝ) (k : Fin 2
         (Pi.single k 1 : Fin 2 → ℂ) := by
   rw [doubletAction_electricChargeGenerator, smul_mulVec,
     electricChargeOperator_mulVec_single, smul_smul]
+
+/-- The `k`-th column of `I • electricChargeOperator y`, the doublet action of the electric
+charge generator on a doublet of hypercharge `y`, is the `k`-th basis vector scaled by `i` times
+the charge `doubletElectricCharge y k`. This is the `simp`-normal form of
+`doubletAction_electricChargeGenerator_mulVec_single`, which `simp` reaches through
+`doubletAction_electricChargeGenerator` and `Matrix.mulVec_single`. -/
+@[simp]
+theorem doubletAction_electricChargeGenerator_col (y : ℝ) (k : Fin 2) :
+    (I • electricChargeOperator y).col k =
+      Pi.single k (I * (doubletElectricCharge y k : ℂ)) := by
+  rw [← mulVec_single_one, smul_mulVec, electricChargeOperator_mulVec_single, smul_smul,
+    ← Pi.single_smul, smul_eq_mul, mul_one]
 
 /-- **Electric charge is the unbroken generator.** For `v ≠ 0` the generators of
 `𝔰𝔲(2) ⊕ 𝔲(1)` annihilating the Higgs vacuum `(0, v)` are exactly the real multiples of
