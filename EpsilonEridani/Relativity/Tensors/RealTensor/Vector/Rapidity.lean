@@ -12,7 +12,8 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProdu
 # The rapidity of a four-vector along an axis
 
 The rapidity of a four-vector `v` along a spatial direction `n` is `y = artanh (v_∥ / v⁰)`, where
-`v_∥ = ⟪v⃗, n⟫` is the component of the spatial part along `n` (`Lorentz.Vector.rapidity`).
+`v_∥ = ⟪v.spatialPart, n⟫` is the component of the spatial part along `n`
+(`Lorentz.Vector.rapidity`).
 Inside the forward light cone along `n`, that is for `|v_∥| < v⁰`, the rapidity is the logarithm
 of the ratio of the two light-cone components along `n`:
 `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)` (`Lorentz.Vector.exp_two_mul_rapidity`).
@@ -40,7 +41,7 @@ open scoped InnerProductSpace Lorentz.Vector
 variable {d : ℕ}
 
 /-- The rapidity `artanh (v_∥ / v⁰)` of the four-vector `v` along the spatial direction `n`, with
-`v_∥ = ⟪v⃗, n⟫` the component of the spatial part along `n`. -/
+`v_∥ = ⟪v.spatialPart, n⟫` the component of the spatial part along `n`. -/
 def rapidity (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) : ℝ :=
   artanh (⟪v.spatialPart, n⟫_ℝ / v.timeComponent)
 

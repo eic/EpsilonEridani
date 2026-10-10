@@ -69,8 +69,8 @@ variable {d : ℕ} {q P : Lorentz.Vector d} {n : EuclideanSpace ℝ (Fin d)} {M 
 
 /-- **The invariant mass of a photon and a target.** For a target of mass `M` and energy `E`
 travelling against the unit beam axis `n` and any photon four-momentum `q`, the photon–target
-system has `W² = M² + q² + 2 (q⁰ E + p q_∥)`, with `p = √(E² - M²)` and `q_∥ = ⟪q⃗, n⟫`; the
-virtuality `Q² = -q²` of the photon lowers `W²`. -/
+system has `W² = M² + q² + 2 (q⁰ E + p q_∥)`, with `p = √(E² - M²)` and
+`q_∥ = ⟪q.spatialPart, n⟫`; the virtuality `Q² = -q²` of the photon lowers `W²`. -/
 theorem minkowskiProduct_add_self_of_target (hn : ‖n‖ = 1) (hE : |M| ≤ E)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -√(E ^ 2 - M ^ 2) • n) :
     ⟪q + P, q + P⟫ₘ = M ^ 2 + ⟪q, q⟫ₘ +
