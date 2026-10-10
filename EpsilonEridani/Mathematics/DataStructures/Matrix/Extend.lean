@@ -18,18 +18,17 @@ form on the whole family.
 
 ## Main results
 
-* `EpsilonEridani.Matrix.extend_dotProduct`, `EpsilonEridani.Matrix.dotProduct_extend`:
+* `Matrix.extend_dotProduct`, `Matrix.dotProduct_extend`:
   `Function.extend e c 0 ⬝ᵥ f = c ⬝ᵥ (f ∘ e)` and its mirror image.
-* `EpsilonEridani.Matrix.extend_dotProduct_mulVec_extend`: the quadratic form of `M` on
+* `Matrix.extend_dotProduct_mulVec_extend`: the quadratic form of `M` on
   `Function.extend e c 0` is the quadratic form of `M.submatrix e e` on `c`.
 -/
 
 public section
 
-namespace EpsilonEridani
 namespace Matrix
 
-open _root_.Matrix Function
+open Function
 
 variable {ι κ m R : Type*} [Fintype ι] [Fintype κ] [NonUnitalNonAssocSemiring R] {e : κ → ι}
 
@@ -51,7 +50,7 @@ theorem dotProduct_extend (he : Injective e) (f : ι → R) (c : κ → R) :
 
 /-- The quadratic form of a matrix on a vector extended by zero along an injection is the quadratic
 form of the submatrix along the injection on the vector. -/
-theorem extend_dotProduct_mulVec_extend (he : Injective e) (M : _root_.Matrix ι ι R)
+theorem extend_dotProduct_mulVec_extend (he : Injective e) (M : Matrix ι ι R)
     (c : κ → R) : extend e c 0 ⬝ᵥ M *ᵥ extend e c 0 = c ⬝ᵥ M.submatrix e e *ᵥ c := by
   rw [extend_dotProduct he]
   congr 1
@@ -59,4 +58,3 @@ theorem extend_dotProduct_mulVec_extend (he : Injective e) (M : _root_.Matrix ι
   simp [mulVec, dotProduct_extend he, comp_def]
 
 end Matrix
-end EpsilonEridani
