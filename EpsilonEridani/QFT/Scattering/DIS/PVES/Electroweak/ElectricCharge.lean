@@ -40,7 +40,7 @@ weak-isospin third component `T³` and hypercharge `Y` is `Q = T³ + Y / 2`.
   components, `electricChargeOperator_mulVec_single` the charges
   `doubletElectricCharge y k = ±1/2 + y / 2`, and
   `doubletAction_electricChargeGenerator_mulVec_single` combines the two; the parallel
-  `isospinT3_col`, `electricChargeOperator_col` and `doubletAction_electricChargeGenerator_col`
+  `isospinT3_col`, `electricChargeOperator_col` and `I_smul_electricChargeOperator_col`
   are their `simp`-normal forms, since `Matrix.mulVec_single` rewrites `M *ᵥ Pi.single k 1` to
   `M.col k`.
   `singletAction_electricChargeGenerator` is the singlet version, with charge
@@ -90,7 +90,7 @@ theorem isospinT3_apply_eq_su2GenEntry (i j : Fin 2) : isospinT3 i j = su2GenEnt
 /-- `T³` is diagonal, with the weights `isospinWeight` on the diagonal. -/
 theorem isospinT3_eq_diagonal : isospinT3 = diagonal fun k => (isospinWeight k : ℂ) := by
   ext i j
-  fin_cases i <;> fin_cases j <;> norm_num [isospinT3, pauliMatrix, isospinWeight]
+  fin_cases i <;> fin_cases j <;> norm_num [isospinT3_def, pauliMatrix]
 
 /-- The `k`-th column of `T³` is the `k`-th basis vector scaled by the weight
 `isospinWeight k`. This is the `simp`-normal form of `isospinT3_mulVec_single`:
@@ -285,7 +285,7 @@ the charge `doubletElectricCharge y k`. This is the `simp`-normal form of
 `doubletAction_electricChargeGenerator_mulVec_single`, which `simp` reaches through
 `doubletAction_electricChargeGenerator` and `Matrix.mulVec_single`. -/
 @[simp]
-theorem doubletAction_electricChargeGenerator_col (y : ℝ) (k : Fin 2) :
+theorem I_smul_electricChargeOperator_col (y : ℝ) (k : Fin 2) :
     (I • electricChargeOperator y).col k =
       Pi.single k (I * (doubletElectricCharge y k : ℂ)) := by
   rw [← mulVec_single_one, smul_mulVec, electricChargeOperator_mulVec_single, smul_smul,
@@ -312,10 +312,14 @@ theorem doubletStabilizer_higgsVacuum {v : ℂ} (hv : v ≠ 0) :
     -- `A 1 1 = -i β / 2`. Skew-Hermiticity and tracelessness then fix the other two entries.
     have hrows : doubletAction 1 (⟨A, hA⟩, β) *ᵥ ![0, v] =
         ![A 0 1 * v, (A 1 1 + I * (β / 2)) * v] := by
+      rw [doubletAction_apply, singletAction_apply, Matrix.add_mulVec, Matrix.smul_mulVec,
+        Matrix.one_mulVec]
       ext i
       fin_cases i <;>
-        simp [doubletAction_apply, singletAction_apply, Matrix.mulVec, dotProduct,
-          Fin.sum_univ_two, div_eq_mul_inv]
+        simp only [Matrix.mulVec_apply_eq_sum, Fin.sum_univ_two, Pi.add_apply, Pi.smul_apply,
+          Matrix.cons_val_zero, Matrix.cons_val_one, Fin.reduceFinMk, Complex.ofReal_div,
+          Complex.ofReal_one, Complex.ofReal_ofNat] <;>
+        ring
     rw [hrows] at h
     have h0 : A 0 1 * v = 0 := congrFun h 0
     have h1 : (A 1 1 + I * (β / 2)) * v = 0 := congrFun h 1
