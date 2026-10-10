@@ -13,15 +13,16 @@ public import EpsilonEridani.QFT.Jets.Observable.Basic
 The safety conditions of `EpsilonEridani.QFT.Jets.Observable.Basic` are only meaningful together
 with observables that fail them. This file records the two standard ones.
 
-* The particle multiplicity `s ↦ (Multiset.card s : ℝ)` is neither collinear safe
-  (`not_isCollinearSafe_card`) nor infrared safe (`not_isInfraredSafe_card`): a collinear
-  splitting and a soft addition each add exactly one particle.
-* The leading-particle energy `leadingEnergy E`, the largest value of an energy function `E`
-  over the particles of a final state, is infrared safe whenever `E p → 0` as `p → 0`
-  (`isInfraredSafe_leadingEnergy`), but for a nonzero linear energy functional it is not collinear
-  safe (`not_isCollinearSafe_leadingEnergy`): splitting a single particle of energy `E p ≥ 0`
-  with fraction `z` lowers the leading energy to `max z (1 - z) * E p`
-  (`leadingEnergy_splitCollinear_singleton`), so already `z = 1 / 2` witnesses the failure.
+* The particle multiplicity `multiplicity s = (Multiset.card s : ℝ)` is neither collinear safe
+  (`not_isCollinearSafe_multiplicity`) nor infrared safe (`not_isInfraredSafe_multiplicity`): a
+  collinear splitting and a soft addition each add exactly one particle.
+* The leading-particle energy `leadingEnergy E`, the least upper bound of `0` and the values of an
+  energy function `E` on the particles of a final state, is infrared safe whenever `E p → 0` as
+  `p → 0` (`isInfraredSafe_leadingEnergy`), but for a nonzero linear energy functional it is not
+  collinear safe (`not_isCollinearSafe_leadingEnergy`): splitting a single particle of energy
+  `E p ≥ 0` with fraction `z` makes the leading energy equal to `max z (1 - z) * E p`, which is at
+  most `E p` (`leadingEnergy_splitCollinear_singleton`), so already `z = 1 / 2` witnesses the
+  failure.
 
 ## References
 
@@ -40,29 +41,44 @@ variable {V : Type*}
 
 /-! ### Multiplicity -/
 
+/-- The particle multiplicity of a final state: its number of particles, as a real number. -/
+def multiplicity : Observable V :=
+  fun s => (Multiset.card s : ℝ)
+
+theorem multiplicity_def (s : Multiset V) : multiplicity s = (Multiset.card s : ℝ) :=
+  (rfl)
+
+@[simp]
+theorem multiplicity_zero : multiplicity (0 : Multiset V) = 0 := by
+  simp [multiplicity_def]
+
+@[simp]
+theorem multiplicity_cons (p : V) (s : Multiset V) :
+    multiplicity (p ::ₘ s) = multiplicity s + 1 := by
+  simp [multiplicity_def]
+
 /-- The particle multiplicity is not collinear safe: splitting a particle adds one. -/
-theorem not_isCollinearSafe_card [AddCommGroup V] [Module ℝ V] [DecidableEq V] :
-    ¬ IsCollinearSafe (fun s : Multiset V => (Multiset.card s : ℝ)) := by
+theorem not_isCollinearSafe_multiplicity [AddCommGroup V] [Module ℝ V] [DecidableEq V] :
+    ¬ IsCollinearSafe (multiplicity : Observable V) := by
   intro h
   have := h.apply_splitCollinear (Multiset.mem_singleton_self (0 : V))
-    (z := 0) ⟨le_rfl, zero_le_one⟩
-  simp [card_splitCollinear 0 (Multiset.mem_singleton_self (0 : V))] at this
+    (z := 1 / 2) ⟨by norm_num, by norm_num⟩
+  simp [multiplicity_def] at this
 
 /-- The particle multiplicity is not infrared safe: adding a momentum, however soft, adds one
 particle. -/
-theorem not_isInfraredSafe_card [Zero V] [TopologicalSpace V] :
-    ¬ IsInfraredSafe (fun s : Multiset V => (Multiset.card s : ℝ)) := by
+theorem not_isInfraredSafe_multiplicity [Zero V] [TopologicalSpace V] :
+    ¬ IsInfraredSafe (multiplicity : Observable V) := by
   intro h
   have := h.tendsto 0
-  simp only [Multiset.card_cons, Multiset.card_zero, zero_add, Nat.cast_one,
-    Nat.cast_zero] at this
+  simp only [multiplicity_cons, multiplicity_zero, zero_add] at this
   exact one_ne_zero (tendsto_const_nhds_iff.1 this)
 
 /-! ### The leading-particle energy -/
 
-/-- The leading-particle energy of a final state: the largest value of the energy function `E`
-over its particles. The value on the empty final state is `0`, so that for a nonnegative energy
-function this is the energy of the most energetic particle. -/
+/-- The leading-particle energy of a final state: the least upper bound of `0` and the values of
+the energy function `E` on its particles. For a nonnegative `E` on a nonempty final state this is
+the energy of the most energetic particle; on the empty final state it is `0`. -/
 noncomputable def leadingEnergy (E : V → ℝ) : Observable V :=
   fun s => (s.map E).fold max 0
 
@@ -106,14 +122,16 @@ section Linear
 
 variable [AddCommGroup V] [Module ℝ V] [DecidableEq V]
 
-/-- Splitting a single particle of nonnegative energy `E p` with fraction `z ∈ [0, 1]` lowers the
-leading-particle energy from `E p` to `max z (1 - z) * E p`. -/
+/-- Splitting a single particle of nonnegative energy `E p` with fraction `z ∈ [0, 1]` makes the
+leading-particle energy equal to `max z (1 - z) * E p`, which is at most `E p`. -/
 theorem leadingEnergy_splitCollinear_singleton (E : V →ₗ[ℝ] ℝ) {p : V} (hp : 0 ≤ E p) {z : ℝ}
     (hz : z ∈ Set.Icc (0 : ℝ) 1) :
     leadingEnergy E (splitCollinear p z {p}) = max z (1 - z) * E p := by
   rw [← Multiset.cons_zero, splitCollinear_cons_self]
   have h₂ : 0 ≤ (1 - z) * E p := mul_nonneg (sub_nonneg.2 hz.2) hp
-  simp [max_mul_of_nonneg _ _ hp, max_eq_left h₂]
+  have key : max (z * E p) ((1 - z) * E p) = max z (1 - z) * E p :=
+    (max_mul_of_nonneg _ _ hp).symm
+  simp [max_eq_left h₂, key]
 
 /-- The leading-particle energy of a nonzero linear energy functional is not collinear safe:
 splitting a single particle of positive energy into two halves halves the leading energy. -/
