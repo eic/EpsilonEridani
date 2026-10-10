@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.DataStructures.Matrix.Extend
 public import EpsilonEridani.Mathematics.Probability.Moments.CovarianceMatrix
 public import Mathlib.Analysis.Matrix.Order
 /-!
@@ -18,28 +19,32 @@ calculation determines can be made about it without any lattice construction.
 * A `EuclideanDataset ι` is a family of real central values `value : ι → ℝ` indexed by a type `ι`
   labelling the observations, with a positive semidefinite covariance matrix. The label type is
   finite in every statement that forms a variance.
-* A linear functional of the data is a coefficient vector `c : ι → ℝ`. Its variance is the
+* A linear functional of the data is a coefficient vector `c : ι → ℝ`. The covariance of two
+  functionals is the bilinear form `EuclideanDataset.covarianceForm`, the variance of one is the
   quadratic form `EuclideanDataset.variance`, and the functionals of variance zero form the
-  *exact subspace* `EuclideanDataset.exactSubspace`, the kernel of the covariance.
-* `EuclideanDataset.IsNoiseModel` says that a random vector realises the covariance of a dataset.
-  For a noise model the variance of a functional is the variance of the corresponding random
-  variable, and a functional lies in the exact subspace exactly when the random variable is
-  almost surely constant: the exactly determined functionals are those that carry no noise.
+  *determined subspace* `EuclideanDataset.determinedSubspace`, the kernel of the covariance.
+* `EuclideanDataset.IsNoiseModel` says that a random vector has the central values of a dataset
+  as its means and the covariance of the dataset as its covariance matrix. For a noise model the
+  covariance of two functionals is the covariance of the corresponding random variables, and a
+  functional lies in the determined subspace exactly when the random variable is almost surely
+  equal to the functional of the central values: the exactly determined functionals are those
+  that carry no noise.
 * `EuclideanDataset.HasContinuumLimit` says that a family of datasets indexed by the lattice
   spacing `a` converges as `a → 0⁺`. It is a property of a family, never of one dataset.
 
 ## Main results
 
-* `EuclideanDataset.restrict`: the subfamily along any reindexing is a dataset, its covariance
+* `EuclideanDataset.comp`: the reindexing of a dataset along any map is a dataset, its covariance
   being the corresponding submatrix of the original one.
-* `EuclideanDataset.mem_exactSubspace_iff_variance_eq_zero`: the functionals of variance zero are
-  the kernel of the covariance; adding one to a functional does not change its variance
-  (`EuclideanDataset.variance_add_of_mem_exactSubspace`).
-* `EuclideanDataset.IsNoiseModel.ae_eq_integral_iff_mem_exactSubspace`: under a noise model,
-  `c ⬝ᵥ X` is almost surely its mean exactly when `c` is in the exact subspace.
-* `EuclideanDataset.exists_hasContinuumLimit`: if the central values and covariances of a family
-  converge, the limit covariance is again positive semidefinite, so the limit is a dataset; it is
-  unique (`EuclideanDataset.HasContinuumLimit.unique`), and variances converge with it.
+* `EuclideanDataset.mem_determinedSubspace_iff_variance_eq_zero`: the functionals of variance zero
+  are the kernel of the covariance; adding one to a functional does not change its variance
+  (`EuclideanDataset.variance_add_of_mem_determinedSubspace`).
+* `EuclideanDataset.IsNoiseModel.ae_eq_dotProduct_value_iff_mem_determinedSubspace`: under a noise
+  model, `c ⬝ᵥ X` is almost surely `c ⬝ᵥ value` exactly when `c` is in the determined subspace.
+* `EuclideanDataset.hasContinuumLimit_ofTendsto`: if the central values and covariances of a family
+  converge, the limit covariance is again positive semidefinite, so the limits form a dataset
+  `EuclideanDataset.ofTendsto`, the continuum limit of the family; it is unique
+  (`EuclideanDataset.HasContinuumLimit.unique`), and variances converge with it.
 
 ## References
 
@@ -55,7 +60,8 @@ namespace EpsilonEridani
 namespace QFT
 namespace Lattice
 
-open MeasureTheory ProbabilityTheory Matrix Filter Topology
+open MeasureTheory _root_.ProbabilityTheory _root_.Matrix Filter Topology
+open _root_.EpsilonEridani.ProbabilityTheory
 
 /-- A *Euclidean dataset*: renormalised matrix elements `value i`, one for each observation label
 `i : ι`, together with their covariance matrix, which is positive semidefinite. -/
@@ -72,35 +78,35 @@ namespace EuclideanDataset
 
 variable {ι κ ν : Type*}
 
-/-! ### Subfamilies -/
+/-! ### Reindexing -/
 
-/-- The subfamily of a dataset along a reindexing `e : κ → ι`: the central values `value ∘ e` with
-the covariance submatrix along `e`. -/
-def restrict (D : EuclideanDataset ι) (e : κ → ι) : EuclideanDataset κ where
+/-- The reindexing of a dataset along a map `e : κ → ι`: the central values `value ∘ e` with the
+covariance submatrix along `e`. -/
+def comp (D : EuclideanDataset ι) (e : κ → ι) : EuclideanDataset κ where
   value := D.value ∘ e
   covariance := D.covariance.submatrix e e
   posSemidef_covariance := D.posSemidef_covariance.submatrix e
 
-/-- The central values of a subfamily are the central values along the reindexing. -/
+/-- The central values of a reindexed dataset are the central values along the reindexing. -/
 @[simp]
-theorem restrict_value (D : EuclideanDataset ι) (e : κ → ι) : (D.restrict e).value = D.value ∘ e :=
+theorem comp_value (D : EuclideanDataset ι) (e : κ → ι) : (D.comp e).value = D.value ∘ e :=
   (rfl)
 
-/-- The covariance of a subfamily is the covariance submatrix along the reindexing. -/
+/-- The covariance of a reindexed dataset is the covariance submatrix along the reindexing. -/
 @[simp]
-theorem restrict_covariance (D : EuclideanDataset ι) (e : κ → ι) :
-    (D.restrict e).covariance = D.covariance.submatrix e e :=
+theorem comp_covariance (D : EuclideanDataset ι) (e : κ → ι) :
+    (D.comp e).covariance = D.covariance.submatrix e e :=
   (rfl)
 
-/-- Restricting along the identity does nothing. -/
+/-- Reindexing along the identity does nothing. -/
 @[simp]
-theorem restrict_id (D : EuclideanDataset ι) : D.restrict id = D :=
+theorem comp_id (D : EuclideanDataset ι) : D.comp id = D :=
   (rfl)
 
-/-- Restricting twice is restricting along the composite. -/
+/-- Reindexing twice is reindexing along the composite. -/
 @[simp]
-theorem restrict_restrict (D : EuclideanDataset ι) (e : κ → ι) (e' : ν → κ) :
-    (D.restrict e).restrict e' = D.restrict (e ∘ e') :=
+theorem comp_comp (D : EuclideanDataset ι) (e : κ → ι) (e' : ν → κ) :
+    (D.comp e).comp e' = D.comp (e ∘ e') :=
   (rfl)
 
 /-! ### Continuum limits -/
@@ -114,15 +120,43 @@ structure HasContinuumLimit (F : ℝ → EuclideanDataset ι) (D : EuclideanData
   /-- The covariances converge as `a → 0⁺`. -/
   tendsto_covariance : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 D.covariance)
 
+section ofTendsto
+
+variable {F : ℝ → EuclideanDataset ι} {S : Matrix ι ι ℝ}
+
+/-- The dataset with central values `v` whose covariance is the limit `S` of the covariances of a
+family of datasets as `a → 0⁺`; the limit of positive semidefinite matrices is again positive
+semidefinite. When the central values of the family converge to `v`, this is the continuum limit
+of the family (`hasContinuumLimit_ofTendsto`). -/
+def ofTendsto (v : ι → ℝ) (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
+    EuclideanDataset ι where
+  value := v
+  covariance := S
+  posSemidef_covariance :=
+    posSemidef_is_closed.mem_of_tendsto hS (.of_forall fun a => (F a).posSemidef_covariance)
+
+/-- The central values of `ofTendsto v hS` are `v`. -/
+@[simp]
+theorem ofTendsto_value (v : ι → ℝ) (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
+    (ofTendsto v hS).value = v :=
+  (rfl)
+
+/-- The covariance of `ofTendsto v hS` is the limit `S` of the covariances. -/
+@[simp]
+theorem ofTendsto_covariance (v : ι → ℝ)
+    (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
+    (ofTendsto v hS).covariance = S :=
+  (rfl)
+
 /-- If the central values and the covariances of a family of datasets converge as `a → 0⁺`, then
-the limit covariance is positive semidefinite, so the limits form a dataset, the continuum limit
-of the family. -/
-theorem exists_hasContinuumLimit {F : ℝ → EuclideanDataset ι} {v : ι → ℝ} {S : Matrix ι ι ℝ}
+the limits form the continuum limit of the family. -/
+theorem hasContinuumLimit_ofTendsto {v : ι → ℝ}
     (hv : Tendsto (fun a => (F a).value) (𝓝[>] 0) (𝓝 v))
     (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
-    ∃ D : EuclideanDataset ι, D.value = v ∧ D.covariance = S ∧ HasContinuumLimit F D :=
-  ⟨⟨v, S, posSemidef_is_closed.mem_of_tendsto hS
-    (.of_forall fun a => (F a).posSemidef_covariance)⟩, rfl, rfl, ⟨hv, hS⟩⟩
+    HasContinuumLimit F (ofTendsto v hS) :=
+  ⟨hv, hS⟩
+
+end ofTendsto
 
 namespace HasContinuumLimit
 
@@ -133,14 +167,14 @@ theorem unique (h : HasContinuumLimit F D) (h' : HasContinuumLimit F D') : D = D
   EuclideanDataset.ext (tendsto_nhds_unique h.tendsto_value h'.tendsto_value)
     (tendsto_nhds_unique h.tendsto_covariance h'.tendsto_covariance)
 
-/-- Taking a subfamily commutes with the continuum limit. -/
-theorem restrict (h : HasContinuumLimit F D) (e : κ → ι) :
-    HasContinuumLimit (fun a => (F a).restrict e) (D.restrict e) where
+/-- Reindexing commutes with the continuum limit. -/
+theorem comp (h : HasContinuumLimit F D) (e : κ → ι) :
+    HasContinuumLimit (fun a => (F a).comp e) (D.comp e) where
   tendsto_value := by
-    simp only [restrict_value]
+    simp only [comp_value]
     exact ((continuous_pi fun k => continuous_apply (e k)).tendsto _).comp h.tendsto_value
   tendsto_covariance := by
-    simp only [restrict_covariance]
+    simp only [comp_covariance]
     exact ((continuous_id.matrix_submatrix e e).tendsto _).comp h.tendsto_covariance
 
 end HasContinuumLimit
@@ -152,48 +186,52 @@ section NoiseModel
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} (D : EuclideanDataset ι)
 
 /-- A random vector `X` on `(Ω, μ)` is a *noise model* for a dataset when its components are
-square-integrable and their covariance matrix is the covariance of the dataset. -/
+square-integrable with the central values of the dataset as their means, and their covariance
+matrix is the covariance of the dataset. -/
 structure IsNoiseModel (X : ι → Ω → ℝ) (μ : Measure Ω) : Prop where
   /-- The components of the noise model are square-integrable. -/
   memLp : ∀ i, MemLp (X i) 2 μ
+  /-- The means of the components of the noise model are the central values of the dataset. -/
+  integral_eq_value : ∀ i, μ[X i] = D.value i
   /-- The covariance matrix of the noise model is the covariance of the dataset. -/
   covarianceMatrix_eq : covarianceMatrix X μ = D.covariance
 
-/-- The dataset with central values `value` whose covariance is that of a square-integrable
-random vector `X`. -/
-noncomputable def ofRandomVector (value : ι → ℝ) (X : ι → Ω → ℝ) (μ : Measure Ω)
-    [Finite ι] [IsFiniteMeasure μ] (hX : ∀ i, MemLp (X i) 2 μ) : EuclideanDataset ι where
-  value := value
+/-- The dataset of a square-integrable random vector `X`: its central values are the means of the
+components of `X` and its covariance is the covariance matrix of `X`. -/
+noncomputable def ofRandomVector (X : ι → Ω → ℝ) (μ : Measure Ω) [Finite ι] [IsFiniteMeasure μ]
+    (hX : ∀ i, MemLp (X i) 2 μ) : EuclideanDataset ι where
+  value i := μ[X i]
   covariance := covarianceMatrix X μ
   posSemidef_covariance := posSemidef_covarianceMatrix hX
 
-/-- The central values of `ofRandomVector value X μ hX` are `value`. -/
+/-- The central values of `ofRandomVector X μ hX` are the means of the components of `X`. -/
 @[simp]
-theorem ofRandomVector_value (value : ι → ℝ) (X : ι → Ω → ℝ) (μ : Measure Ω)
-    [Finite ι] [IsFiniteMeasure μ] (hX : ∀ i, MemLp (X i) 2 μ) :
-    (ofRandomVector value X μ hX).value = value :=
+theorem ofRandomVector_value (X : ι → Ω → ℝ) (μ : Measure Ω) [Finite ι] [IsFiniteMeasure μ]
+    (hX : ∀ i, MemLp (X i) 2 μ) :
+    (ofRandomVector X μ hX).value = fun i => μ[X i] :=
   (rfl)
 
-/-- The covariance of `ofRandomVector value X μ hX` is the covariance matrix of `X`. -/
+/-- The covariance of `ofRandomVector X μ hX` is the covariance matrix of `X`. -/
 @[simp]
-theorem ofRandomVector_covariance (value : ι → ℝ) (X : ι → Ω → ℝ) (μ : Measure Ω)
-    [Finite ι] [IsFiniteMeasure μ] (hX : ∀ i, MemLp (X i) 2 μ) :
-    (ofRandomVector value X μ hX).covariance = covarianceMatrix X μ :=
+theorem ofRandomVector_covariance (X : ι → Ω → ℝ) (μ : Measure Ω) [Finite ι] [IsFiniteMeasure μ]
+    (hX : ∀ i, MemLp (X i) 2 μ) :
+    (ofRandomVector X μ hX).covariance = covarianceMatrix X μ :=
   (rfl)
 
-/-- A random vector is a noise model for the dataset built from its covariance. -/
-theorem isNoiseModel_ofRandomVector (value : ι → ℝ) (X : ι → Ω → ℝ) (μ : Measure Ω)
-    [Finite ι] [IsFiniteMeasure μ] (hX : ∀ i, MemLp (X i) 2 μ) :
-    (ofRandomVector value X μ hX).IsNoiseModel X μ :=
-  ⟨hX, (ofRandomVector_covariance value X μ hX).symm⟩
+/-- A random vector is a noise model for the dataset built from it. -/
+theorem isNoiseModel_ofRandomVector (X : ι → Ω → ℝ) (μ : Measure Ω) [Finite ι]
+    [IsFiniteMeasure μ] (hX : ∀ i, MemLp (X i) 2 μ) :
+    (ofRandomVector X μ hX).IsNoiseModel X μ :=
+  ⟨hX, fun i => (congrFun (ofRandomVector_value X μ hX) i).symm,
+    (ofRandomVector_covariance X μ hX).symm⟩
 
 variable {D} {X : ι → Ω → ℝ} {μ : Measure Ω}
 
-/-- The restriction of a noise model along a reindexing is a noise model of the subfamily. -/
-theorem IsNoiseModel.restrict (h : D.IsNoiseModel X μ) (e : κ → ι) :
-    (D.restrict e).IsNoiseModel (X ∘ e) μ :=
-  ⟨fun k => h.memLp (e k), by
-    rw [covarianceMatrix_comp, h.covarianceMatrix_eq, restrict_covariance]⟩
+/-- The reindexing of a noise model is a noise model of the reindexed dataset. -/
+theorem IsNoiseModel.comp (h : D.IsNoiseModel X μ) (e : κ → ι) :
+    (D.comp e).IsNoiseModel (X ∘ e) μ :=
+  ⟨fun k => h.memLp (e k), fun k => h.integral_eq_value (e k), by
+    rw [covarianceMatrix_comp, h.covarianceMatrix_eq, comp_covariance]⟩
 
 end NoiseModel
 
@@ -201,14 +239,41 @@ end NoiseModel
 
 variable [Fintype ι] (D : EuclideanDataset ι)
 
+/-- The covariance of the linear functionals `c ⬝ᵥ value` and `c' ⬝ᵥ value` of the data: the
+bilinear form `c ⬝ᵥ covariance *ᵥ c'`. -/
+def covarianceForm (c c' : ι → ℝ) : ℝ :=
+  c ⬝ᵥ D.covariance *ᵥ c'
+
+/-- The covariance of two functionals is the bilinear form of the covariance. -/
+theorem covarianceForm_def (c c' : ι → ℝ) : D.covarianceForm c c' = c ⬝ᵥ D.covariance *ᵥ c' :=
+  (rfl)
+
+/-- The covariance of two functionals is symmetric. -/
+theorem covarianceForm_comm (c c' : ι → ℝ) : D.covarianceForm c c' = D.covarianceForm c' c := by
+  simpa [covarianceForm_def] using
+    D.posSemidef_covariance.isHermitian.star_dotProduct_mulVec_comm c c'
+
 /-- The variance of the linear functional `c ⬝ᵥ value` of the data: the quadratic form
 `c ⬝ᵥ covariance *ᵥ c`. -/
 def variance (c : ι → ℝ) : ℝ :=
-  c ⬝ᵥ D.covariance *ᵥ c
+  D.covarianceForm c c
 
 /-- The variance of a functional is the quadratic form of the covariance. -/
 theorem variance_def (c : ι → ℝ) : D.variance c = c ⬝ᵥ D.covariance *ᵥ c :=
   (rfl)
+
+/-- The covariance of a functional with itself is its variance. -/
+@[simp]
+theorem covarianceForm_self (c : ι → ℝ) : D.covarianceForm c c = D.variance c :=
+  (rfl)
+
+/-- The variance of a sum of functionals. -/
+theorem variance_add (c c' : ι → ℝ) :
+    D.variance (c + c') = D.variance c + 2 * D.covarianceForm c c' + D.variance c' := by
+  have := D.covarianceForm_comm c' c
+  simp only [variance_def, covarianceForm_def] at this ⊢
+  simp only [mulVec_add, dotProduct_add, add_dotProduct, this]
+  ring
 
 /-- Variances are nonnegative. -/
 theorem variance_nonneg (c : ι → ℝ) : 0 ≤ D.variance c := by
@@ -218,44 +283,36 @@ theorem variance_nonneg (c : ι → ℝ) : 0 ≤ D.variance c := by
 theorem variance_eq_zero_iff {c : ι → ℝ} : D.variance c = 0 ↔ D.covariance *ᵥ c = 0 := by
   simpa [variance_def] using D.posSemidef_covariance.dotProduct_mulVec_zero_iff
 
-/-- The variance of a functional of a subfamily along an injective reindexing is the variance of
-the functional extended by zero to the whole family. -/
-theorem variance_restrict [Fintype κ] {e : κ → ι} (he : Function.Injective e) (c : κ → ℝ) :
-    (D.restrict e).variance c = D.variance (Function.extend e c 0) := by
-  -- Pairing with a functional extended by zero only sees the entries on the range of `e`.
-  have key (f : ι → ℝ) : Function.extend e c 0 ⬝ᵥ f = c ⬝ᵥ (f ∘ e) :=
-    (Fintype.sum_of_injective e he _ _
-      (fun i hi => by simp [Function.extend_apply' _ _ _ (by simpa using hi)])
-      (fun k => by simp [he.extend_apply])).symm
-  rw [variance_def, variance_def, key, restrict_covariance]
-  congr 1
-  ext k
-  simp only [Function.comp_apply, mulVec, dotProduct_comm _ (Function.extend e c 0), key]
-  exact dotProduct_comm _ _
+/-- The variance of a functional of a dataset reindexed along an injection is the variance of the
+functional extended by zero to the whole dataset. -/
+theorem comp_variance [Fintype κ] {e : κ → ι} (he : Function.Injective e) (c : κ → ℝ) :
+    (D.comp e).variance c = D.variance (Function.extend e c 0) := by
+  rw [variance_def, variance_def, Matrix.extend_dotProduct_mulVec_extend he, comp_covariance]
 
-/-- The *exact subspace* of a dataset: the linear functionals of the data with zero variance,
-that is the kernel of the covariance. -/
-def exactSubspace : Submodule ℝ (ι → ℝ) :=
+/-- The *determined subspace* of a dataset: the linear functionals of the data with zero variance,
+that is the kernel of the covariance. These are the functionals exactly determined by the data. -/
+def determinedSubspace : Submodule ℝ (ι → ℝ) :=
   LinearMap.ker D.covariance.mulVecLin
 
-/-- A functional is in the exact subspace when the covariance annihilates it. -/
+/-- A functional is in the determined subspace when the covariance annihilates it. -/
 @[simp]
-theorem mem_exactSubspace {c : ι → ℝ} : c ∈ D.exactSubspace ↔ D.covariance *ᵥ c = 0 :=
+theorem mem_determinedSubspace {c : ι → ℝ} : c ∈ D.determinedSubspace ↔ D.covariance *ᵥ c = 0 :=
   LinearMap.mem_ker
 
-/-- The exact subspace consists of the functionals of zero variance. -/
-theorem mem_exactSubspace_iff_variance_eq_zero {c : ι → ℝ} :
-    c ∈ D.exactSubspace ↔ D.variance c = 0 := by
-  rw [mem_exactSubspace, variance_eq_zero_iff]
+/-- The determined subspace consists of the functionals of zero variance. -/
+theorem mem_determinedSubspace_iff_variance_eq_zero {c : ι → ℝ} :
+    c ∈ D.determinedSubspace ↔ D.variance c = 0 := by
+  rw [mem_determinedSubspace, variance_eq_zero_iff]
 
 /-- Adding an exactly determined functional to a functional does not change its variance. -/
-theorem variance_add_of_mem_exactSubspace {c : ι → ℝ} (hc : c ∈ D.exactSubspace)
+theorem variance_add_of_mem_determinedSubspace {c : ι → ℝ} (hc : c ∈ D.determinedSubspace)
     (c' : ι → ℝ) : D.variance (c + c') = D.variance c' := by
-  rw [mem_exactSubspace] at hc
-  have hc' : c ⬝ᵥ D.covariance *ᵥ c' = 0 := by
-    simpa [hc] using (D.posSemidef_covariance.isHermitian.star_dotProduct_mulVec_comm c' c).symm
-  simp [variance_def, mulVec_add, add_dotProduct, hc, hc']
+  have hc' : D.covarianceForm c c' = 0 := by
+    rw [covarianceForm_comm, covarianceForm_def, D.mem_determinedSubspace.1 hc, dotProduct_zero]
+  rw [variance_add, hc', D.mem_determinedSubspace_iff_variance_eq_zero.1 hc]
+  ring
 
+variable {D} in
 /-- Variances converge along a continuum limit. -/
 theorem HasContinuumLimit.tendsto_variance {F : ℝ → EuclideanDataset ι}
     (h : HasContinuumLimit F D) (c : ι → ℝ) :
@@ -273,19 +330,35 @@ namespace IsNoiseModel
 
 variable {D} {X : ι → Ω → ℝ} {μ : Measure Ω} [IsFiniteMeasure μ]
 
+/-- Under a noise model, the mean of a linear combination of the noise is the corresponding
+functional of the central values. -/
+theorem integral_dotProduct (h : D.IsNoiseModel X μ) (c : ι → ℝ) :
+    μ[fun ω => c ⬝ᵥ (X · ω)] = c ⬝ᵥ D.value := by
+  simp only [dotProduct]
+  rw [integral_finsetSum _ fun i _ => ((h.memLp i).integrable one_le_two).const_mul (c i)]
+  simp [integral_const_mul, h.integral_eq_value]
+
+/-- Under a noise model, the covariance of two functionals of the data is the covariance of the
+corresponding linear combinations of the noise. -/
+theorem covariance_dotProduct (h : D.IsNoiseModel X μ) (c c' : ι → ℝ) :
+    cov[fun ω => c ⬝ᵥ (X · ω), fun ω => c' ⬝ᵥ (X · ω); μ] = D.covarianceForm c c' := by
+  rw [covariance_dotProduct_dotProduct h.memLp, h.covarianceMatrix_eq, covarianceForm_def]
+
 /-- Under a noise model, the variance of a functional of the data is the variance of the
 corresponding linear combination of the noise. -/
 theorem variance_dotProduct (h : D.IsNoiseModel X μ) (c : ι → ℝ) :
     Var[fun ω => c ⬝ᵥ (X · ω); μ] = D.variance c := by
-  rw [EpsilonEridani.variance_dotProduct h.memLp, h.covarianceMatrix_eq, variance_def]
+  rw [← covariance_self (memLp_dotProduct h.memLp c).aemeasurable, h.covariance_dotProduct,
+    covarianceForm_self]
 
-/-- Under a noise model, a functional lies in the exact subspace exactly when the corresponding
-linear combination of the noise is almost surely equal to its mean. -/
-theorem ae_eq_integral_iff_mem_exactSubspace (h : D.IsNoiseModel X μ) (c : ι → ℝ) :
-    ((fun ω => c ⬝ᵥ (X · ω)) =ᵐ[μ] fun _ => μ[fun ω => c ⬝ᵥ (X · ω)]) ↔
-      c ∈ D.exactSubspace := by
-  rw [ae_eq_integral_iff_covarianceMatrix_mulVec_eq_zero h.memLp, h.covarianceMatrix_eq,
-    mem_exactSubspace]
+/-- Under a noise model, a functional lies in the determined subspace exactly when the
+corresponding linear combination of the noise is almost surely equal to the functional of the
+central values. -/
+theorem ae_eq_dotProduct_value_iff_mem_determinedSubspace (h : D.IsNoiseModel X μ)
+    (c : ι → ℝ) :
+    ((fun ω => c ⬝ᵥ (X · ω)) =ᵐ[μ] fun _ => c ⬝ᵥ D.value) ↔ c ∈ D.determinedSubspace := by
+  rw [← h.integral_dotProduct, ae_eq_integral_iff_covarianceMatrix_mulVec_eq_zero h.memLp,
+    h.covarianceMatrix_eq, mem_determinedSubspace]
 
 end IsNoiseModel
 

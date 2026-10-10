@@ -22,6 +22,8 @@ Mathlib records the same object coordinate-free, as `ProbabilityTheory.covarianc
 of `X` on `EuclideanSpace ℝ ι` (see `ProbabilityTheory.covarianceBilin_apply_pi`); the matrix form
 here is the one in which a finite covariance enters linear algebra as a `Matrix.PosSemidef`.
 
+All declarations live in the namespace `EpsilonEridani.ProbabilityTheory`.
+
 ## Main results
 
 * `covariance_dotProduct_dotProduct`: `cov[c ⬝ᵥ X, c' ⬝ᵥ X] = c ⬝ᵥ covarianceMatrix X μ *ᵥ c'`,
@@ -35,8 +37,9 @@ here is the one in which a finite covariance enters linear algebra as a `Matrix.
 public section
 
 namespace EpsilonEridani
+namespace ProbabilityTheory
 
-open MeasureTheory ProbabilityTheory Matrix
+open MeasureTheory _root_.ProbabilityTheory Matrix
 
 variable {Ω ι κ : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : ι → Ω → ℝ}
 
@@ -65,9 +68,9 @@ theorem isHermitian_covarianceMatrix (X : ι → Ω → ℝ) (μ : Measure Ω) :
 
 variable [Fintype ι]
 
-/-- A linear combination of square-integrable random variables is square-integrable. -/
-theorem memLp_dotProduct (hX : ∀ i, MemLp (X i) 2 μ) (c : ι → ℝ) :
-    MemLp (fun ω => c ⬝ᵥ (X · ω)) 2 μ := by
+/-- A linear combination of random variables in `Lᵖ` is in `Lᵖ`. -/
+theorem memLp_dotProduct {p : ENNReal} (hX : ∀ i, MemLp (X i) p μ) (c : ι → ℝ) :
+    MemLp (fun ω => c ⬝ᵥ (X · ω)) p μ := by
   simp only [dotProduct]
   exact memLp_finsetSum _ fun i _ => (hX i).const_mul (c i)
 
@@ -113,4 +116,5 @@ theorem ae_eq_integral_iff_covarianceMatrix_mulVec_eq_zero (hX : ∀ i, MemLp (X
   rw [← variance_dotProduct_eq_zero_iff hX, ← evariance_eq_zero_iff hc.aemeasurable]
   simp [variance, ENNReal.toReal_eq_zero_iff, (evariance_lt_top hc).ne]
 
+end ProbabilityTheory
 end EpsilonEridani
