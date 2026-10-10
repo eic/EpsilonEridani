@@ -5,7 +5,7 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
-public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitaryExtensions
+public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary.Extensions
 public import EpsilonEridani.Particles.StandardModel.HiggsBoson.BasicExtensions
 public import EpsilonEridani.QFT.QCD.SU2Generators
 public import Mathlib.LinearAlgebra.Matrix.IsDiag

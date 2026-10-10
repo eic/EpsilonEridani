@@ -5,14 +5,15 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
-public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary
+public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Extensions of the special unitary Lie algebra
 
-This file extends `EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary`, a mirror of a pending
-Mathlib file that is kept diffable against it, with a constructor for membership in `su n`.
+This file extends `EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary.Basic`, a mirror of a
+pending Mathlib file that is kept diffable against it, with a constructor for membership in
+`su n`.
 
 ## Main statements
 
