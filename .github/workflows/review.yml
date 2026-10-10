@@ -79,7 +79,7 @@ jobs:
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
     # Pinned to a EpsilonEridaniReview commit; bump deliberately (an unpinned @main lets an upstream change
     # break every contributor's review at once, and this workflow inherits EpsilonEridani's secrets).
-    uses: eic/EpsilonEridaniReview/.github/workflows/review.yml@73f61deb51cad9d881cd0f6f6f418afc78302499
+    uses: eic/EpsilonEridaniReview/.github/workflows/review.yml@11818532110e43b9029fe628291e786621232900
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
