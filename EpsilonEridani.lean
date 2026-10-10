@@ -86,6 +86,7 @@ import EpsilonEridani.QFT.QCD.SUNStructureConstants
 import EpsilonEridani.QFT.Scattering.DIS.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Corrections.Basic
 import EpsilonEridani.QFT.Scattering.DIS.CrossSection
+import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics
 import EpsilonEridani.QFT.Scattering.DIS.Examples.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Amplitudes.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Convolution.Basic
@@ -96,7 +97,6 @@ import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVCS.Interference
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.DVMP.Channels
 import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
-import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics
 import EpsilonEridani.QFT.Scattering.DIS.Inference.Basic
 import EpsilonEridani.QFT.Scattering.DIS.Inference.Conjectures
 import EpsilonEridani.QFT.Scattering.DIS.Inference.ExclusiveJoint

@@ -39,33 +39,21 @@ noncomputable def tMinElastic (M xi : ℝ) : ℝ := -(xi ^ 2 * M ^ 2) / (1 - xi)
 /-- **Layer 0.2**: `tMinElastic M xi ≤ 0` for all physical `ξ ∈ [0, 1)` and `M ≥ 0`.
 
 The expression `ξ²M²/(1-ξ)` is non-negative in the stated range, so its negative is ≤ 0. -/
-theorem tMinElastic_nonpos (M xi : ℝ) (hM : 0 ≤ M) (hxi1 : xi < 1) (hxi0 : 0 ≤ xi) :
+theorem tMinElastic_nonpos (M xi : ℝ) (hM : 0 ≤ M) (h : xi < 1) (h0 : 0 ≤ xi) :
     tMinElastic M xi ≤ 0 := by
-  dsimp [tMinElastic]
-  have hsqM : 0 ≤ M ^ 2 := pow_two_nonneg M
-  have hsqxi : 0 ≤ xi ^ 2 := pow_two_nonneg xi
-  have hnum : 0 ≤ xi ^ 2 * M ^ 2 := mul_nonneg hsqxi hsqM
-  have hden : 0 ≤ 1 - xi := by linarith
-  have hdiv : 0 ≤ (xi ^ 2 * M ^ 2) / (1 - xi) :=
-    div_nonneg hnum hden
-  linarith
+  rw [tMinElastic, neg_div, neg_nonpos]
+  exact div_nonneg (mul_nonneg (pow_nonneg h0 2) (pow_nonneg hM 2)) (sub_nonneg.mpr h.le)
 
 /-! ## Layer 0.2: the `β` variable -/
 
 /-- The Bjorken-like variable `β` for diffractive scattering:
 `x = ξ β`, so `β = x / ξ` when `ξ ≠ 0`. This captures the momentum fraction
 of the struck parton relative to the Pomeron momentum. -/
-def beta (x xi : ℝ) : ℝ := x / xi
+noncomputable def beta (x xi : ℝ) : ℝ := x / xi
 
-/-- For `ξ ≠ 0`, `β = x/ξ`. -/
-lemma beta_eq_div {x xi : ℝ} (hxi : xi ≠ 0) : beta x xi = x / xi := rfl
-
-/-- **Layer 0.2**: fundamental relation `x = ξ β` holds by definition. -/
-lemma x_eq_xi_beta (x xi : ℝ) : x = xi * beta x xi := by
-  dsimp [beta]
-  by_cases hxi : xi = 0
-  · subst hxi; ring
-  · field_simp [hxi]
+/-- **Layer 0.2**: the fundamental relation `x = ξ β`, valid for `ξ ≠ 0`. -/
+lemma x_eq_xi_beta {x xi : ℝ} (hxi : xi ≠ 0) : x = xi * beta x xi := by
+  rw [beta, mul_div_cancel₀ x hxi]
 
 /-- For `β ∈ [0, 1]` at fixed `ξ ≥ 0`, `x ≤ ξ`.
 
