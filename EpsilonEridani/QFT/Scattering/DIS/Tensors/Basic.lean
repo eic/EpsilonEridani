@@ -679,6 +679,16 @@ theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSy
     conserved_right := fromF1F2_conserved_right g K hSymm hQ2 F1 F2
     symm := fromF1F2_isSymm g K hSymm F1 F2 }
 
+/-- On a spectator direction `e`, `g`-orthogonal to `q` and to `p_T`, a tensor with an
+`F1`/`F2` decomposition takes the value `-(e·e) F1`: only the transverse projector sees `e`.
+On a unit spacelike spectator (`e·e = -1`) this is `F1`, the transverse absorption. -/
+lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinematics V)
+    {W : Bilin V} {F1 F2 : ℝ} (hW : IsF1F2Decomposition g K W F1 F2) {e : V}
+    (hqe : g K.q e = 0) (hTe : g (pTransverse g K) e = 0) :
+    W e e = -g e e * F1 := by
+  rw [hW, transverseMetric_apply, hqe, hTe]
+  ring
+
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one
 pair does the reverse. -/
