@@ -102,11 +102,7 @@ theorem xi_beta_eq_x (D : DiffractiveKinematics V) (g : Bilin V)
     (hPq : g D.K.p D.K.q ≠ 0) (hDeltaq : g D.Delta D.K.q ≠ 0) :
     D.K.xBj g = D.xi g * D.beta g := by
   unfold DisKinematics.xBj xi beta
-  dsimp [DisKinematics.Q2]
-  field_simp [hPq, hDeltaq]
-  have h := mul_inv_cancel₀ hDeltaq
-  rw [← h]
-  ring
+  field_simp
 
 end DiffractiveKinematics
 
