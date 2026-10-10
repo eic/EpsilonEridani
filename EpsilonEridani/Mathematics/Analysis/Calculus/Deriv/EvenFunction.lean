@@ -11,23 +11,21 @@ public import Mathlib.Analysis.Calculus.Deriv.Shift
 /-!
 # Derivatives of even functions
 
-The derivative of an even function is odd (`EpsilonEridani.odd_deriv_of_even`). In particular it
-vanishes at the origin, by Mathlib's `Function.Odd.map_zero`. This is used in the spherical
-Bessel construction: each iterate `G l` of `f ↦ -dslope (deriv f) 0` applied to `sinc` is even
-(`reduced_neg`), hence `deriv (G l) 0 = 0`, which makes the iterated operator analytic across the
-origin.
+The derivative of an even function is odd (`Function.Even.deriv`). In particular it
+vanishes at the origin, by Mathlib's `Function.Odd.map_zero`. This is used in the construction of
+the spherical Bessel functions
+(`EpsilonEridani.Mathematics.SpecialFunctions.SphericalBessel.Basic`): the iterates of
+`f ↦ -dslope (deriv f) 0` applied to `Real.sinc` are even, so their derivatives vanish at the
+origin, which is what identifies that operator with the Rayleigh operator `-(1 / x) d/dx` away from
+the origin.
 -/
 
 public section
 
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-namespace EpsilonEridani
-
 /-- The derivative of an even function is odd. -/
-theorem odd_deriv_of_even {f : 𝕜 → F} (hf : Function.Even f) : Function.Odd (deriv f) := by
+theorem Function.Even.deriv {f : 𝕜 → F} (hf : Function.Even f) : Function.Odd (deriv f) := by
   intro x
   have h : (fun y => f (-y)) = f := funext hf
   rw [← h, deriv_comp_neg, neg_neg, h]
-
-end EpsilonEridani
