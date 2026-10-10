@@ -38,24 +38,25 @@ namespace EuclideanSpace
 variable (ι : Type*) [Fintype ι] [DecidableEq ι]
 
 /-- The standard orientation of `EuclideanSpace ℝ ι`: the orientation of its standard basis. -/
-noncomputable def orientation : Orientation ℝ (EuclideanSpace ℝ ι) ι :=
+protected noncomputable def orientation : Orientation ℝ (EuclideanSpace ℝ ι) ι :=
   (basisFun ι ℝ).toBasis.orientation
 
-theorem orientation_def : orientation ι = (basisFun ι ℝ).toBasis.orientation := (rfl)
+theorem orientation_def : EuclideanSpace.orientation ι = (basisFun ι ℝ).toBasis.orientation := (rfl)
 
 /-- The volume form of the standard orientation is the determinant of the matrix whose `j`-th
 column is the coordinate vector of `v j`. -/
 theorem volumeForm_orientation_apply {n : ℕ} (v : Fin n → EuclideanSpace ℝ (Fin n)) :
-    (orientation (Fin n)).volumeForm v = (Matrix.of fun i j => v j i).det := by
+    (EuclideanSpace.orientation (Fin n)).volumeForm v = (Matrix.of fun i j => v j i).det := by
   rw [Orientation.volumeForm_robust _ (basisFun (Fin n) ℝ) (orientation_def _).symm,
     Module.Basis.det_apply]
-  congr 1
+  refine congrArg Matrix.det (Matrix.ext fun i j => ?_)
+  simp [Module.Basis.toMatrix_apply]
 
 /-- In the plane, the area form of the standard orientation is the cross product
 `u 0 * v 1 - u 1 * v 0`. -/
 @[simp]
 theorem areaForm_orientation_apply (u v : EuclideanSpace ℝ (Fin 2)) :
-    (orientation (Fin 2)).areaForm u v = u 0 * v 1 - u 1 * v 0 := by
+    (EuclideanSpace.orientation (Fin 2)).areaForm u v = u 0 * v 1 - u 1 * v 0 := by
   rw [Orientation.areaForm_to_volumeForm, volumeForm_orientation_apply, Matrix.det_fin_two]
   simp [mul_comm]
 
