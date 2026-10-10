@@ -262,13 +262,19 @@ jobs:
       # requests and the dominant cost of this job. Publishing the result means
       # anything asking "where is the queue stuck" reads a file instead of
       # repeating the fetch.
+      - name: Read the pinned merge policy commit
+        id: review-pin
+        continue-on-error: true
+        uses: ./.github/actions/review-pin
       - name: Checkout the pinned merge policy (read-only)
         id: merge-policy
+        # Never fall back to an unpinned checkout: without a pin, skip and degrade as below.
+        if: steps.review-pin.outcome == 'success'
         continue-on-error: true
         uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
-          ref: 11818532110e43b9029fe628291e786621232900
+          ref: ${{ steps.review-pin.outputs.sha }}
           path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
