@@ -6,7 +6,8 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis
-public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm
 
 /-!
 # The standard light-cone basis of Minkowski space
@@ -31,6 +32,17 @@ four dimensions (`finrank_transverse_minkowskiProduct_eq_two`). This is the kine
 transverse-momentum-dependent and higher-twist factorisation: transverse momenta `k_T` are the
 transverse parts of momenta with respect to such a basis.
 
+The transverse antisymmetric tensor `ε_T^{μν} = ε^{μνρσ} n_{+ρ} n_{-σ}` of a light-cone basis of
+four-dimensional Minkowski space, built from the volume form
+`EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm`, has components
+`(ε_T u)^μ = η^{μμ} ε(u, e_μ, n₊, n₋)` (`transverseEpsLin_volumeForm_apply`) and squares to minus
+the transverse projector, `ε_T^{μν} ε_{Tν}{}^{ρ} = -g_T^{μρ}`
+(`transverseEpsLin_volumeForm_comp_self`): it is a rotation by a right angle of the transverse
+plane. For an alternating four-form with another normalisation `c = ε(e₀, e₁, e₂, e₃)` the square
+is `-c²` times the projector (`transverseEpsLin_comp_self`), so the identity is insensitive to the
+sign convention chosen for the Levi-Civita tensor. This is the tensor in which the T-odd
+structures of transverse-momentum-dependent distributions are written.
+
 ## Main definitions
 
 * `LightConeBasis.minkowskiAxis i`: the standard light-cone basis `(n₊, n₋)`, `n± = (e₀ ± eᵢ)/√2`,
@@ -46,6 +58,12 @@ transverse parts of momenta with respect to such a basis.
   Minkowski space the transverse projector of any light-cone basis has rank `d - 1`.
 * `LightConeBasis.finrank_transverse_minkowskiProduct_eq_two`: in four-dimensional Minkowski
   space the transverse projector has rank two.
+* `LightConeBasis.transverseEpsLin_volumeForm_apply`: the components
+  `(ε_T u)^μ = η^{μμ} ε(u, e_μ, n₊, n₋)` of the raised transverse antisymmetric tensor.
+* `LightConeBasis.transverseEpsLin_volumeForm_comp_self`: the transverse antisymmetric tensor
+  squares to minus the transverse projector.
+* `LightConeBasis.transverseEpsLin_comp_self`: the same for an alternating four-form of any
+  normalisation.
 
 ## References
 
@@ -162,6 +180,129 @@ theorem finrank_transverse_minkowskiProduct_eq_two
     finrank ℝ L.transverse = 2 := by
   have h := L.finrank_transverse_minkowskiProduct_add_one_eq
   omega
+
+/-! ### The transverse antisymmetric tensor -/
+
+section TransverseEps
+
+open EpsilonEridani (nondegenerate_toBilinForm_minkowskiProduct)
+
+/-- The vector `μ ↦ η^{μμ} ε(u, e_μ, a, b)`, the contraction `ε_ν{}^μ{}_{ρσ} u^ν a^ρ b^σ` of the
+volume form with `u`, `a` and `b`; for a light-cone basis `(a, b) = (n₊, n₋)` this is the raised
+transverse antisymmetric tensor applied to `u`. -/
+private noncomputable def epsRaise (a b u : Vector 3) : Vector 3 :=
+  fun μ => minkowskiMatrix μ μ * volumeForm ![u, basis μ, a, b]
+
+/- The components of `epsRaise a b u`: up to the sign `η^{μμ} (-1)^{μ+1}`, the `μ`-th component is
+the `3 × 3` minor of the component matrix of `(u, a, b)` with row `μ` deleted. -/
+private theorem epsRaise_apply_inl (a b u : Vector 3) :
+    epsRaise a b u (Sum.inl 0) =
+      -(u (Sum.inr 0) * (a (Sum.inr 1) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 1))
+        - u (Sum.inr 1) * (a (Sum.inr 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 0))
+        + u (Sum.inr 2) * (a (Sum.inr 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inr 0))) := by
+  simp [epsRaise, volumeForm_eq_det_fin_three, Matrix.det_fin_three, basis_apply]
+  ring
+
+private theorem epsRaise_apply_inr_zero (a b u : Vector 3) :
+    epsRaise a b u (Sum.inr 0) =
+      -(u (Sum.inl 0) * (a (Sum.inr 1) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 1))
+        - u (Sum.inr 1) * (a (Sum.inl 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inl 0))
+        + u (Sum.inr 2) * (a (Sum.inl 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inl 0))) := by
+  simp [epsRaise, volumeForm_eq_det_fin_three, Matrix.det_fin_three, basis_apply]
+  ring
+
+private theorem epsRaise_apply_inr_one (a b u : Vector 3) :
+    epsRaise a b u (Sum.inr 1) =
+      u (Sum.inl 0) * (a (Sum.inr 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 0))
+        - u (Sum.inr 0) * (a (Sum.inl 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inl 0))
+        + u (Sum.inr 2) * (a (Sum.inl 0) * b (Sum.inr 0) - a (Sum.inr 0) * b (Sum.inl 0)) := by
+  simp [epsRaise, volumeForm_eq_det_fin_three, Matrix.det_fin_three, basis_apply]
+  ring
+
+private theorem epsRaise_apply_inr_two (a b u : Vector 3) :
+    epsRaise a b u (Sum.inr 2) =
+      -(u (Sum.inl 0) * (a (Sum.inr 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inr 0))
+        - u (Sum.inr 0) * (a (Sum.inl 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inl 0))
+        + u (Sum.inr 1) * (a (Sum.inl 0) * b (Sum.inr 0) - a (Sum.inr 0) * b (Sum.inl 0))) := by
+  simp [epsRaise, volumeForm_eq_det_fin_three, Matrix.det_fin_three, basis_apply]
+  ring
+
+/-- The square of `epsRaise a b` for arbitrary `a`, `b`: the polynomial identity, coming from the
+contraction of two Levi-Civita tensors over one index, behind the square of the transverse
+antisymmetric tensor. -/
+private theorem epsRaise_epsRaise (a b u : Vector 3) :
+    epsRaise a b (epsRaise a b u) =
+      (⟪a, a⟫ₘ * ⟪b, b⟫ₘ - ⟪a, b⟫ₘ ^ 2) • u - (⟪a, a⟫ₘ * ⟪b, u⟫ₘ) • b
+        + ⟪a, b⟫ₘ • (⟪a, u⟫ₘ • b + ⟪b, u⟫ₘ • a) - (⟪b, b⟫ₘ * ⟪a, u⟫ₘ) • a := by
+  funext μ
+  rcases μ with i | j
+  · fin_cases i
+    simp [epsRaise_apply_inl, epsRaise_apply_inr_zero, epsRaise_apply_inr_one,
+      epsRaise_apply_inr_two, minkowskiProduct_toCoord, Fin.sum_univ_three]
+    ring
+  · fin_cases j <;>
+      simp [epsRaise_apply_inl, epsRaise_apply_inr_zero, epsRaise_apply_inr_one,
+        epsRaise_apply_inr_two, minkowskiProduct_toCoord, Fin.sum_univ_three] <;>
+      ring
+
+variable (L : LightConeBasis (minkowskiProduct (d := 3)).toBilinForm)
+
+/-- The raised transverse antisymmetric tensor of Minkowski space in components:
+`(E u)^μ = η^{μμ} ε(u, e_μ, n₊, n₋)`. -/
+theorem transverseEpsLin_volumeForm_apply (u : Vector 3) (μ : Fin 1 ⊕ Fin 3) :
+    L.transverseEpsLin volumeForm nondegenerate_toBilinForm_minkowskiProduct u μ =
+      minkowskiMatrix μ μ * volumeForm ![u, basis μ, L.nPlus, L.nMinus] := by
+  have h := L.bilinForm_transverseEpsLin_apply volumeForm nondegenerate_toBilinForm_minkowskiProduct
+    u (basis μ)
+  rw [transverseEps_apply, ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_basis_right] at h
+  rw [← h, ← _root_.mul_assoc, minkowskiMatrix.η_apply_mul_η_apply_diag, one_mul]
+
+private theorem transverseEpsLin_volumeForm_eq_epsRaise (u : Vector 3) :
+    L.transverseEpsLin volumeForm nondegenerate_toBilinForm_minkowskiProduct u =
+      epsRaise L.nPlus L.nMinus u :=
+  funext (L.transverseEpsLin_volumeForm_apply u)
+
+/-- The transverse antisymmetric tensor of Minkowski space squares to minus the transverse
+projector, `ε_T^{μν} ε_{Tν}{}^{ρ} = -g_T^{μρ}`. -/
+@[simp]
+theorem transverseEpsLin_volumeForm_transverseEpsLin_volumeForm (u : Vector 3) :
+    L.transverseEpsLin volumeForm nondegenerate_toBilinForm_minkowskiProduct
+      (L.transverseEpsLin volumeForm nondegenerate_toBilinForm_minkowskiProduct u) =
+      -L.transverseProj u := by
+  have hpp : ⟪L.nPlus, L.nPlus⟫ₘ = 0 := L.nPlus_nPlus_eq_zero
+  have hmm : ⟪L.nMinus, L.nMinus⟫ₘ = 0 := L.nMinus_nMinus_eq_zero
+  have hpm : ⟪L.nPlus, L.nMinus⟫ₘ = 1 := L.nPlus_nMinus_eq_one
+  simp only [transverseEpsLin_volumeForm_eq_epsRaise, epsRaise_epsRaise, hpp, hmm, hpm,
+    transverseProj_apply, plus_apply, minus_apply, ContinuousLinearMap.toBilinForm_apply]
+  module
+
+theorem transverseEpsLin_volumeForm_comp_self :
+    L.transverseEpsLin volumeForm nondegenerate_toBilinForm_minkowskiProduct ∘ₗ
+      L.transverseEpsLin volumeForm nondegenerate_toBilinForm_minkowskiProduct =
+      -L.transverseProj :=
+  LinearMap.ext L.transverseEpsLin_volumeForm_transverseEpsLin_volumeForm
+
+/-- For any alternating four-form `ε` on Minkowski space, with normalisation
+`c = ε(e₀, e₁, e₂, e₃)`, the raised transverse antisymmetric tensor squares to `-c²` times the
+transverse projector. In particular the square does not depend on the sign convention for `ε`. -/
+theorem transverseEpsLin_transverseEpsLin (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ) (u : Vector 3) :
+    L.transverseEpsLin ε nondegenerate_toBilinForm_minkowskiProduct
+      (L.transverseEpsLin ε nondegenerate_toBilinForm_minkowskiProduct u) =
+      -(ε basisFin4 ^ 2) • L.transverseProj u := by
+  set c := ε basisFin4 with hc
+  have hε : ε = c • volumeForm := ε.eq_smul_volumeForm
+  rw [hε]
+  simp only [transverseEpsLin_smul, LinearMap.smul_apply, map_smul,
+    transverseEpsLin_volumeForm_transverseEpsLin_volumeForm]
+  module
+
+theorem transverseEpsLin_comp_self (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ) :
+    L.transverseEpsLin ε nondegenerate_toBilinForm_minkowskiProduct ∘ₗ
+      L.transverseEpsLin ε nondegenerate_toBilinForm_minkowskiProduct =
+      -(ε basisFin4 ^ 2) • L.transverseProj :=
+  LinearMap.ext (L.transverseEpsLin_transverseEpsLin ε)
+
+end TransverseEps
 
 end LightConeBasis
 
