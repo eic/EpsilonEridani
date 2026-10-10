@@ -37,7 +37,7 @@ jobs:
     uses: eic/EpsilonEridaniReview/.github/workflows/merge-sweep.yml@11818532110e43b9029fe628291e786621232900
     with:
       dry_run: ${{ inputs.dry-run || false }}
-      review_ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
+      review_ref: 11818532110e43b9029fe628291e786621232900
     secrets:
       APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
