@@ -32,10 +32,10 @@ strengths is as in `EpsilonEridani.QFT.QCD.EnergyMomentumTensor.GluonPart`.
 * `isSymm_total`: `T` is symmetric, as an identity and without equations of motion.
 * `total_mulVec_gaugeRotate`: `T` is gauge invariant.
 * `total_equivariant`: `T` transforms as a tensor under a transformation preserving `g`.
-* `trace_total`: `T^μ{}_μ = Re (ψ̄ i γ^μ D_μ ψ) + (D / 4 - 1) F^a_{αβ} F^{a αβ}` in spacetime
+* `trace_total`: `T^μ{}_μ = Re (ψ‾ i γ^μ D_μ ψ) + (D / 4 - 1) F^a_{αβ} F^{a αβ}` in spacetime
   dimension `D`.
 * `trace_total_of_diracEq`: in four dimensions and on solutions of the Dirac equation
-  `i γ^μ D_μ ψ = M ψ`, the trace is the classical value `Re (ψ̄ M ψ) = Σ_q m_q ψ̄_q ψ_q`:
+  `i γ^μ D_μ ψ = M ψ`, the trace is the classical value `Re (ψ‾ M ψ) = Σ_q m_q ψ‾_q ψ_q`:
   classically only the quark masses break tracelessness.
 
 ## References
@@ -78,7 +78,7 @@ theorem isSymm_total (hg : g.IsSymm) (ψ : m → ℂ) (Dψ : n → m → ℂ) (F
   (isSymm_quarkPart β γ ψ Dψ).add (isSymm_gluonPart hg F)
 
 /-- The total energy-momentum tensor is gauge invariant: it is unchanged when the quark field
-and its covariant derivatives are transformed by a `U` preserving the bilinears `ψ̄ γ_μ χ` and
+and its covariant derivatives are transformed by a `U` preserving the bilinears `ψ‾ γ_μ χ` and
 the gluon multiplet is rotated by an orthogonal `R`. -/
 theorem total_mulVec_gaugeRotate [DecidableEq ι] {U : Matrix m m ℂ}
     (hU : ∀ μ, Uᴴ * (β * γ μ) * U = β * γ μ) {R : Matrix ι ι ℝ} (hR : R ∈ orthogonalGroup ι ℝ)
@@ -88,7 +88,7 @@ theorem total_mulVec_gaugeRotate [DecidableEq ι] {U : Matrix m m ℂ}
 
 /-- The total energy-momentum tensor transforms as a tensor with two lower indices under a
 transformation `Λ` preserving the metric, when the quark field transforms by an `S` under which
-the bilinears `ψ̄ γ_μ χ` transform as a vector. -/
+the bilinears `ψ‾ γ_μ χ` transform as a vector. -/
 theorem total_equivariant {Λ : Matrix n n ℝ} (hΛ : Λᵀ * g * Λ = g) {S : Matrix m m ℂ}
     (hS : ∀ μ, Sᴴ * (β * γ μ) * S = ∑ α, (Λ α μ : ℂ) • (β * γ α)) (ψ : m → ℂ)
     (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
@@ -97,7 +97,7 @@ theorem total_equivariant {Λ : Matrix n n ℝ} (hΛ : Λᵀ * g * Λ = g) {S : 
   rw [total_def, total_def, quarkPart_equivariant hS, gluonPart_equivariant hΛ, Matrix.mul_add,
     Matrix.add_mul]
 
-/-- The trace `T^μ{}_μ = Re (ψ̄ i γ^μ D_μ ψ) + (D / 4 - 1) F^a_{αβ} F^{a αβ}` of the total
+/-- The trace `T^μ{}_μ = Re (ψ‾ i γ^μ D_μ ψ) + (D / 4 - 1) F^a_{αβ} F^{a αβ}` of the total
 energy-momentum tensor in spacetime dimension `D = card n`. -/
 theorem trace_total (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian) (ψ : m → ℂ)
     (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
@@ -106,8 +106,8 @@ theorem trace_total (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian) (ψ
   rw [total_def, Matrix.mul_add, trace_add, trace_quarkPart hg hγ, trace_gluonPart]
 
 /-- In four spacetime dimensions and on solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the
-trace of the total energy-momentum tensor is the classical value `Re (ψ̄ M ψ)`, that is
-`Σ_q m_q ψ̄_q ψ_q` for a mass matrix diagonal in flavour: the gluon part is traceless and the
+trace of the total energy-momentum tensor is the classical value `Re (ψ‾ M ψ)`, that is
+`Σ_q m_q ψ‾_q ψ_q` for a mass matrix diagonal in flavour: the gluon part is traceless and the
 quark part contributes only through the masses. -/
 theorem trace_total_of_diracEq (hn : Fintype.card n = 4) (hg : g.IsSymm)
     (hγ : ∀ μ, (β * γ μ).IsHermitian) {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ}
