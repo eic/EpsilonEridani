@@ -83,7 +83,7 @@ jobs:
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
-      review_ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
+      review_ref: 11818532110e43b9029fe628291e786621232900
       # Merging is handled by auto-merge.yml (the single merge path), so generation never merges.
       enable_automerge: false
     secrets: inherit
