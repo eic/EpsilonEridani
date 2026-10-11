@@ -36,11 +36,14 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Read the pinned merge policy commit
+        id: review-pin
+        uses: ./.github/actions/review-pin
       - name: Checkout the pinned merge policy (read-only)
         uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
-          ref: 11818532110e43b9029fe628291e786621232900
+          ref: ${{ steps.review-pin.outputs.sha }}
           path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
