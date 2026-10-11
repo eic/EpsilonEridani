@@ -180,8 +180,7 @@ def gh_optional(path, jq=None):
 def ci_passed(sha):
     """Whether main's post-merge CI concluded successfully on this commit.
 
-    None when it never ran there, which is normal: ci.yml coalesces bursts, so plenty of
-    main commits have no run of their own."""
+    None when no run there has concluded yet, which is normal while it is still building."""
     raw = gh_optional(f"repos/{REPO}/actions/workflows/ci.yml/runs?head_sha={sha}&per_page=10",
                       jq='[.workflow_runs[] | select(.status == "completed") | .conclusion]'
                          ' | .[0] // ""')
@@ -296,8 +295,7 @@ def audit(ref=None):
         conclusion = ci_passed(sha)
         row["ci"] = conclusion
         if conclusion is None:
-            # Not blocked: nothing is wrong, the run has not finished. ci.yml coalesces
-            # bursts, so a commit can wait an hour for a run of its own.
+            # Not blocked: nothing is wrong, the run has not finished.
             row["status"] = "pending"
             row["reason"] = f"post-merge CI has not concluded on {sha[:8]}"
             rows.append(row)
@@ -488,10 +486,10 @@ def wait_for_ci(sha, timeout_minutes=180, poll_seconds=120, sleep=None):
     """Block until main's post-merge CI concludes on `sha`. Returns its conclusion, or
     None on timeout.
 
-    The push that changes `lean-toolchain` arrives 40 to 70 minutes before the release can
-    be tagged: ci.yml coalesces bursts, so the bump waits for a run of its own, and that run
-    then takes 20 to 30 minutes and publishes the cache at the end of it. Reporting at push
-    time would always say "not yet", so wait for the thing being waited on."""
+    The push that changes `lean-toolchain` arrives 20 to 30 minutes before the release can
+    be tagged: ci.yml's run on that commit takes that long and publishes the cache at the
+    end of it. Reporting at push time would always say "not yet", so wait for the thing
+    being waited on."""
     sleep = sleep or time.sleep
     deadline = time.monotonic() + timeout_minutes * 60
     while True:
