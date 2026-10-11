@@ -13,7 +13,7 @@ alerted" list below for ordinary backlog that does not belong here.
 
 Detectors (each names the infra failure it implies):
 
-  1. stuck-bump      The last-known-good bump PR (branch hopscotch/lkg-bump) has a
+  1. stuck-bump      The rolling bump PR (branch bump-mathlib/resolved) has a
                      RED `build` check that has stayed red past a grace window. The
                      daily bump cannot cross a mathlib breaking change on its own;
                      something needs a fix, e.g. a proof, scripts/lint-env.sh, or a
@@ -126,7 +126,7 @@ import core  # noqa: E402
 import zulip as zp  # noqa: E402
 
 REPO = core.REPO
-LKG_BRANCH = "hopscotch/lkg-bump"  # keep in sync with update.yml's LKG_BRANCH
+BUMP_BRANCH = "bump-mathlib/resolved"  # keep in sync with update.yml's BUMP_BRANCH
 LINT_REPAIR_BRANCH = "lint-repair/main"  # keep in sync with lint-full.yml
 
 # Keys we generate use only this alphabet; the marker is anchored to the final
@@ -247,14 +247,14 @@ newest_status = core.newest_status
 
 def detect_stuck_bump():
     prs = gh_stream(
-        f"/repos/{REPO}/pulls?state=open&head=eic:{LKG_BRANCH}&per_page=5",
+        f"/repos/{REPO}/pulls?state=open&head=eic:{BUMP_BRANCH}&per_page=5",
         jq='.[] | {number, head: .head.sha, created_at}', paginate=False)
     out = []
     for pr in prs:
         state, _ = newest_status(pr["head"], "build")
-        # Clock off the PR's age, not the build-status timestamp. A HEALTHY LKG
-        # bump PR merges within hours and a fresh one is created per advance, so an
-        # open LKG PR older than the window is reliably stuck. The build-status
+        # Clock off the PR's age, not the build-status timestamp. A HEALTHY bump
+        # PR merges within hours and the next advance opens a new one, so an
+        # open bump PR older than the window is reliably stuck. The build-status
         # `updated_at` is the wrong clock here: the daily bump force-pushes this
         # branch, re-running the SAME red build and resetting that timestamp every
         # day -- which would permanently mask a genuine multi-day wedge (observed
@@ -263,9 +263,9 @@ def detect_stuck_bump():
         if state in ("failure", "error") and hours_since(pr["created_at"]) >= BUMP_STUCK_HOURS:
             out.append({
                 "key": f"stuck-bump/{pr['number']}",
-                "title": "Mathlib bump wedged — LKG bump PR build stays red",
+                "title": "Dependency bump wedged — bump PR build stays red",
                 "body": (
-                    f"The last-known-good bump PR "
+                    f"The rolling dependency bump PR "
                     f"https://github.com/{REPO}/pull/{pr['number']} has had a red "
                     f"`build` check and has been open over {BUMP_STUCK_HOURS}h. The daily bump cannot "
                     f"cross a mathlib breaking change on its own.\n\n"
@@ -327,7 +327,7 @@ def detect_stale_pin():
             f"{PIN_STALE_DAYS} days; the daily bump has stalled.\n\n"
             f"**Fix:** find why — a wedged bump PR (see any stuck-bump alert), an "
             f"unresolved first-known-bad freeze, or `update.yml` failing — and clear "
-            f"it so `hopscotch/lkg-bump` can move forward again."),
+            f"it so `bump-mathlib/resolved` can move forward again."),
     }]
 
 

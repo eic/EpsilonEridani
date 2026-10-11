@@ -75,12 +75,14 @@ candidate, a dependency candidate, a fit) is skipped, never offered, and listed 
 
 ## Usage
 
-    resolve_deps.py [--root DIR] [--json | --summary] [--exclude FILE]
+    resolve_deps.py [--root DIR] [--json | --summary] [--exclude FILE] [--out FILE]
     resolve_deps.py --record FILE ...   # also save every upstream answer, for a test fixture
     resolve_deps.py --replay FILE ...   # answer from a saved recording, no network
 
 `--exclude FILE` takes a JSON list of pin sets ({"mathlib": sha, "Physlib": sha, ...}) whose
 build already failed inside a dependency, so the next feasible set is offered instead.
+`--out FILE` also writes the `--json` result to FILE, so one run can print the summary and hand
+the answer to scripts/write_bump.py (`--resolved FILE`).
 
 ## Environment
 
@@ -539,6 +541,7 @@ def main(argv=None):
     out.add_argument("--json", action="store_true")
     out.add_argument("--summary", action="store_true")
     ap.add_argument("--exclude", type=Path)
+    ap.add_argument("--out", type=Path, help="also write the JSON result here (for write_bump.py --resolved)")
     src_group = ap.add_mutually_exclusive_group()
     src_group.add_argument("--record", type=Path)
     src_group.add_argument("--replay", type=Path)
@@ -557,6 +560,8 @@ def main(argv=None):
     finally:
         if args.record:
             args.record.write_text(json.dumps(src.answers, indent=1, sort_keys=True) + "\n")
+    if args.out:
+        args.out.write_text(json.dumps(result, indent=2) + "\n")
     if args.json:
         print(json.dumps(result, indent=2))
     else:

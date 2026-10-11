@@ -67,8 +67,8 @@ commit.
 
 These rules only predict. The bump PR's build is the arbiter. A set whose build fails inside
 a dependency (not something EpsilonEridani can fix) is meant to be passed back with
-`--exclude` so the next feasible set is tried; today only the flag exists, and the worker
-`bump` stage and `update.yml` job that would use it are in the Status table below.
+`--exclude` so the next feasible set is tried; today only the flag exists: `update.yml` opens
+the bump PR but does not yet record a failed set (see the Status table below).
 
 ### Example: 2026-10-03
 
@@ -143,8 +143,8 @@ expected and are reported informationally, never as stuck automation. Alerts are
 |---|---|
 | resolver (`scripts/resolve_deps.py`) and its tests | done |
 | bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib's newer-toolchain release tags and master commits (cache signal for a tag: `release_cache.yml`), and the inherited packages Lake derives from all three | done |
-| `update.yml` runs the resolver as a daily dry run, reporting in the job summary | done |
 | writer (`scripts/write_bump.py`): writes the resolver's answer into `lake-manifest.json` and `lean-toolchain`, deriving the inherited entries as `bump_manifest.py` requires and refusing any result it rejects | done |
-| `update.yml` opens one rolling `bump-mathlib/` PR from the resolver's answer, records failed sets | planned |
+| `update.yml` runs the resolver daily, reporting in the job summary, and opens, refreshes or closes one rolling `bump-mathlib/resolved` PR from its answer | done |
+| failed sets recorded and passed back to the resolver with `--exclude` | planned |
 | `scripts/pr_status/stuck_alerts.py`: `stale-pin` replaced by "a feasible set is not landing"; holds reported as information | planned |
 | EpsilonEridaniWorker's `bump` stage hands back a PR whose build fails inside a dependency | planned |
