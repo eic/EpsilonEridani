@@ -31,8 +31,12 @@ at `N = 1` and the momentum fraction the moment at `N = 2`. At natural indices t
 plus part are harmonic numbers (`EpsilonEridani.plusOneMinus_pow`).
 
 The regular part is a function on `ℝ`. Only its almost-everywhere class on `(0, 1)` enters the
-pairing, as for the densities on which kernels act, whose support in `[0, 1]` is likewise a
-hypothesis and not part of their type.
+pairing (`KernelForm.pair_congr_ae_left`), as for the densities on which kernels act, whose
+support in `[0, 1]` is likewise a hypothesis and not part of their type.
+
+The pairing and the moments are total functions. Where the integral defining them does not
+converge they take the junk value of the Bochner integral, as `EpsilonEridani.plusFunctional`
+does, so a statement about a moment carries the hypothesis on `N` under which it converges.
 
 ## Main definitions
 
@@ -44,9 +48,12 @@ hypothesis and not part of their type.
 
 * `KernelForm.pair_pow`: the pairing with `z ^ n` is
   `∫₀¹ r z * z ^ n dz - p H_n + d`, with `H_n` the `n`-th harmonic number.
-* `KernelForm.moment_natCast_add_one`, `KernelForm.moment_one`, `KernelForm.moment_two`: the
-  moments at natural indices are pairings with natural powers.
-* `KernelForm.pair_smul`, `KernelForm.moment_smul`: the pairing is homogeneous in the kernel.
+* `KernelForm.moment_natCast_add_one`, `KernelForm.moment_natCast`: the moments at natural
+  indices are pairings with natural powers.
+* `KernelForm.pair_congr_ae_left`, `KernelForm.pair_congr_ae_right`, `KernelForm.moment_congr_ae`:
+  the pairing sees only the almost-everywhere class of the regular part and of the test function.
+* `KernelForm.pair_smul`, `KernelForm.moment_smul`: the pairing is homogeneous in the kernel, for
+  the action of `ℝ` on kernels.
 
 ## References
 
@@ -63,7 +70,7 @@ namespace QFT
 namespace Factorization
 namespace Evolution
 
-open MeasureTheory
+open MeasureTheory Set
 
 /-- A splitting kernel in the distributional normal form
 `r(z) + p [1 / (1 - z)]₊ + d δ(1 - z)` on the momentum-fraction interval: a regular part `r`,
@@ -81,7 +88,11 @@ structure KernelForm where
 namespace KernelForm
 
 /-- The action of a kernel in normal form on a test function `φ`:
-`⟨P, φ⟩ = ∫₀¹ r z * φ z dz + p ⟨[1 / (1 - z)]₊, φ⟩ + d φ 1`. -/
+`⟨P, φ⟩ = ∫₀¹ r z * φ z dz + p ⟨[1 / (1 - z)]₊, φ⟩ + d φ 1`.
+
+It converges when `r * φ` is integrable on `[0, 1]` and `φ` satisfies the hypotheses of
+`EpsilonEridani.intervalIntegrable_plusOneMinus_integrand`; outside them it takes the junk value of
+the Bochner integral. -/
 noncomputable def pair (P : KernelForm) (φ : ℝ → ℝ) : ℝ :=
   (∫ z in (0 : ℝ)..1, P.regular z * φ z) + P.plusCoeff * plusOneMinus φ + P.deltaCoeff * φ 1
 
@@ -95,7 +106,8 @@ theorem pair_def (P : KernelForm) (φ : ℝ → ℝ) :
 /-- The Mellin moment `M[P](N) = ⟨P, z ^ (N - 1)⟩` of a kernel, at a real index `N`. Quark
 number is the moment at `N = 1` and the momentum fraction the moment at `N = 2`. The regular
 part contributes `∫₀¹ z ^ (N - 1) r z dz`, which converges only for `N` in a half-line
-determined by the behaviour of `r` at `z = 0`. -/
+determined by the behaviour of `r` at `z = 0`. Outside that half-line the moment takes the junk
+value of the Bochner integral, not a value of the analytic continuation of the moment in `N`. -/
 noncomputable def moment (P : KernelForm) (N : ℝ) : ℝ :=
   P.pair fun z => z ^ (N - 1)
 
@@ -108,13 +120,40 @@ theorem moment_natCast_add_one (P : KernelForm) (n : ℕ) :
     P.moment (n + 1) = P.pair fun z => z ^ n := by
   simp only [moment_def, add_sub_cancel_right, Real.rpow_natCast]
 
-/-- The quark-number moment `M[P](1)` is the pairing with the constant function `1`. -/
-theorem moment_one (P : KernelForm) : P.moment 1 = P.pair fun _ => 1 := by
-  simp only [moment_def, sub_self, Real.rpow_zero]
+/-- At a nonzero natural index `N` the Mellin moment is the pairing with the monomial
+`z ^ (N - 1)`, with natural subtraction. -/
+theorem moment_natCast (P : KernelForm) {N : ℕ} (hN : N ≠ 0) :
+    P.moment N = P.pair fun z => z ^ (N - 1) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
+  simpa using P.moment_natCast_add_one n
 
-/-- The momentum moment `M[P](2)` is the pairing with the identity. -/
-theorem moment_two (P : KernelForm) : P.moment 2 = P.pair fun z => z := by
-  norm_num [moment_def]
+/-- **The pairing sees only the almost-everywhere class of the regular part.** Two kernels with
+the same coefficients whose regular parts agree almost everywhere on `(0, 1]` pair equally with
+every test function. -/
+theorem pair_congr_ae_left {P Q : KernelForm}
+    (hr : P.regular =ᵐ[volume.restrict (Ioc 0 1)] Q.regular) (hp : P.plusCoeff = Q.plusCoeff)
+    (hd : P.deltaCoeff = Q.deltaCoeff) (φ : ℝ → ℝ) : P.pair φ = Q.pair φ := by
+  have hint : (∫ z in (0 : ℝ)..1, P.regular z * φ z) = ∫ z in (0 : ℝ)..1, Q.regular z * φ z := by
+    refine intervalIntegral.integral_congr_ae_restrict ?_
+    rw [uIoc_of_le zero_le_one]
+    exact hr.mono fun z hz => by simp [hz]
+  rw [pair_def, pair_def, hint, hp, hd]
+
+/-- **The pairing sees only the almost-everywhere class of the test function** on `(0, 1]`,
+together with its value at `1`, where the plus and delta parts are concentrated. -/
+theorem pair_congr_ae_right (P : KernelForm) {φ ψ : ℝ → ℝ}
+    (h : φ =ᵐ[volume.restrict (Ioc 0 1)] ψ) (h1 : φ 1 = ψ 1) : P.pair φ = P.pair ψ := by
+  have hint : (∫ z in (0 : ℝ)..1, P.regular z * φ z) = ∫ z in (0 : ℝ)..1, P.regular z * ψ z := by
+    refine intervalIntegral.integral_congr_ae_restrict ?_
+    rw [uIoc_of_le zero_le_one]
+    exact h.mono fun z hz => by simp [hz]
+  rw [pair_def, pair_def, hint, plusOneMinus_congr_ae h h1, h1]
+
+/-- The Mellin moments see only the almost-everywhere class of the regular part on `(0, 1]`. -/
+theorem moment_congr_ae {P Q : KernelForm}
+    (hr : P.regular =ᵐ[volume.restrict (Ioc 0 1)] Q.regular) (hp : P.plusCoeff = Q.plusCoeff)
+    (hd : P.deltaCoeff = Q.deltaCoeff) (N : ℝ) : P.moment N = Q.moment N :=
+  pair_congr_ae_left hr hp hd _
 
 /-- **Natural moments of a kernel.** The pairing with `z ^ n` is
 `∫₀¹ r z * z ^ n dz - p H_n + d`: the plus part contributes the harmonic number `H_n` and the
@@ -140,6 +179,11 @@ theorem smul_plusCoeff (c : ℝ) (P : KernelForm) : (c • P).plusCoeff = c * P.
 @[simp]
 theorem smul_deltaCoeff (c : ℝ) (P : KernelForm) : (c • P).deltaCoeff = c * P.deltaCoeff :=
   (rfl)
+
+/-- Scaling kernels is an action of the multiplicative monoid `ℝ`. -/
+instance : MulAction ℝ KernelForm where
+  one_smul P := by ext <;> simp
+  mul_smul a b P := by ext <;> simp [mul_assoc]
 
 /-- The pairing is homogeneous in the kernel. No integrability hypothesis is needed, since the
 interval integral commutes with scalar multiplication unconditionally. -/
