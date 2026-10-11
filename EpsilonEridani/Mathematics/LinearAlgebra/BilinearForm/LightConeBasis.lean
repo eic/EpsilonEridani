@@ -31,8 +31,9 @@ Minkowski space, `n± = (e₀ ± eᵢ)/√2`, is constructed in `EpsilonEridani.
 Contracting an alternating four-form `ε` with the two basis vectors gives the *transverse
 antisymmetric tensor* `ε_T^{μν} = ε^{μνρσ} n_{+ρ} n_{-σ}`, the bilinear form
 `(u, v) ↦ ε(u, v, n₊, n₋)`. It is alternating, vanishes on the longitudinal subspace and only sees
-the transverse parts of its arguments. When `B` is nondegenerate its first index can be raised,
-giving the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`; it kills `n₊` and `n₋`, takes
+the transverse parts of its arguments. When `B` is nondegenerate its second index can be raised,
+giving the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
+`(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`; it kills `n₊` and `n₋`, takes
 values in the transverse subspace and is skew-adjoint. In four-dimensional Minkowski space, with
 `ε` the volume form, `E` is a rotation by a right angle of the transverse plane: it squares to minus
 the transverse projector (`EpsilonEridani.Relativity.LightConeBasis`).
@@ -54,8 +55,8 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
   (right) orthogonal complement of the longitudinal subspace.
 * `LightConeBasis.transverseProj`: the transverse projector `v ↦ v_T`.
 * `LightConeBasis.transverseEps`: the transverse antisymmetric tensor `(u, v) ↦ ε(u, v, n₊, n₋)`.
-* `LightConeBasis.transverseEpsLin`: the same tensor with its first index raised by a nondegenerate
-  form, the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`.
+* `LightConeBasis.transverseEpsLin`: the same tensor with its second index raised by a
+  nondegenerate form, the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`.
 
 ## Main statements
 
@@ -395,17 +396,17 @@ section Field
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   {B : BilinForm K V} (L : LightConeBasis B) (ε : V [⋀^Fin 4]→ₗ[K] K) (hB : B.Nondegenerate)
 
-/-- The transverse antisymmetric tensor with its first index raised by a nondegenerate form `B`:
+/-- The transverse antisymmetric tensor with its second index raised by a nondegenerate form `B`:
 the endomorphism `E` of `V` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
-`(E u)^μ = ε_T^{μ}{}_{ν} u^ν`. -/
+`(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`. -/
 noncomputable def transverseEpsLin : V →ₗ[K] V :=
-  (B.toDual hB).symm.toLinearMap ∘ₗ L.transverseEps ε
+  (L.transverseEps ε).symmCompOfNondegenerate B hB
 
 /-- The characteristic property of the raised transverse antisymmetric tensor. -/
 @[simp]
 theorem bilinForm_transverseEpsLin_apply (u v : V) :
-    B (L.transverseEpsLin ε hB u) v = L.transverseEps ε u v := by
-  simp [transverseEpsLin]
+    B (L.transverseEpsLin ε hB u) v = L.transverseEps ε u v :=
+  symmCompOfNondegenerate_left_apply _ hB v u
 
 /-- `E u` is the unique vector `w` with `B w v = ε(u, v, n₊, n₋)` for all `v`. -/
 theorem eq_transverseEpsLin_iff {u w : V} :
