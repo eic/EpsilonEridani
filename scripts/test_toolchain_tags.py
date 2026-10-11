@@ -530,5 +530,39 @@ class CommandLine(unittest.TestCase):
         self.assertIn("first commit on `main`", out.getvalue())
 
 
+class MattermostPost(unittest.TestCase):
+    """The Mattermost leg posts without Zulip configured.
+
+    It once called urllib without importing it, so every post died with a NameError that no
+    test reached, because nothing exercised this path."""
+
+    ROWS = [{"release": "v4.34.0", "toolchain": "leanprover/lean4:v4.34.0",
+             "commit": "a" * 40, "mathlib_rev": "9" * 40, "status": "ready", "reason": None}]
+
+    def test_it_posts_to_the_configured_channel(self):
+        sent = []
+        original = tt.urllib.request.urlopen
+        tt.urllib.request.urlopen = sent.append
+        env = {"MATTERMOST_BOT_TOKEN": "token", "MATTERMOST_CHANNEL_ID": "channel",
+               "MATTERMOST_URL": "https://chat.example.org/"}
+        saved = {k: os.environ.get(k) for k in [*env, "ZULIP_EMAIL", "ZULIP_API_KEY"]}
+        os.environ.update(env)
+        os.environ.pop("ZULIP_EMAIL", None)
+        os.environ.pop("ZULIP_API_KEY", None)
+        try:
+            self.assertTrue(tt.post_if_changed(self.ROWS))
+        finally:
+            tt.urllib.request.urlopen = original
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        [req] = sent
+        self.assertEqual(req.full_url, "https://chat.example.org/api/v4/posts")
+        self.assertEqual(req.get_header("Authorization"), "Bearer token")
+        self.assertEqual(json.loads(req.data)["channel_id"], "channel")
+
+
 if __name__ == "__main__":
     unittest.main()
