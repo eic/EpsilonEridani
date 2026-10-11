@@ -184,31 +184,33 @@ def quarkNumber : LightConeField → ℤ
 @[simp] theorem lightConeSpin_fieldStrength_minusTransverse :
     (fieldStrength .minusTransverse).lightConeSpin = -1 := (rfl)
 
-@[simp] theorem twist_quark_good : (quark .good).twist = 1 := (rfl)
+@[simp, grind =] theorem twist_quark_good : (quark .good).twist = 1 := (rfl)
 
-@[simp] theorem twist_quark_bad : (quark .bad).twist = 2 := (rfl)
+@[simp, grind =] theorem twist_quark_bad : (quark .bad).twist = 2 := (rfl)
 
-@[simp] theorem twist_quarkBar_good : (quarkBar .good).twist = 1 := (rfl)
+@[simp, grind =] theorem twist_quarkBar_good : (quarkBar .good).twist = 1 := (rfl)
 
-@[simp] theorem twist_quarkBar_bad : (quarkBar .bad).twist = 2 := (rfl)
+@[simp, grind =] theorem twist_quarkBar_bad : (quarkBar .bad).twist = 2 := (rfl)
 
-@[simp] theorem twist_fieldStrength_plusTransverse :
+@[simp, grind =] theorem twist_fieldStrength_plusTransverse :
     (fieldStrength .plusTransverse).twist = 1 := (rfl)
 
-@[simp] theorem twist_fieldStrength_plusMinus : (fieldStrength .plusMinus).twist = 2 := (rfl)
+@[simp, grind =] theorem twist_fieldStrength_plusMinus :
+    (fieldStrength .plusMinus).twist = 2 := (rfl)
 
-@[simp] theorem twist_fieldStrength_purelyTransverse :
+@[simp, grind =] theorem twist_fieldStrength_purelyTransverse :
     (fieldStrength .purelyTransverse).twist = 2 := (rfl)
 
-@[simp] theorem twist_fieldStrength_minusTransverse :
+@[simp, grind =] theorem twist_fieldStrength_minusTransverse :
     (fieldStrength .minusTransverse).twist = 3 := (rfl)
 
-@[simp] theorem quarkNumber_quark (p : QuarkProjection) : (quark p).quarkNumber = 1 := (rfl)
-
-@[simp] theorem quarkNumber_quarkBar (p : QuarkProjection) : (quarkBar p).quarkNumber = -1 :=
+@[simp, grind =] theorem quarkNumber_quark (p : QuarkProjection) : (quark p).quarkNumber = 1 :=
   (rfl)
 
-@[simp] theorem quarkNumber_fieldStrength (c : FieldStrengthComponent) :
+@[simp, grind =] theorem quarkNumber_quarkBar (p : QuarkProjection) :
+    (quarkBar p).quarkNumber = -1 := (rfl)
+
+@[simp, grind =] theorem quarkNumber_fieldStrength (c : FieldStrengthComponent) :
     (fieldStrength c).quarkNumber = 0 := (rfl)
 
 /-- The twist of a field component is its mass dimension minus its light-cone spin. -/
@@ -275,9 +277,9 @@ theorem quarkNumber_def (O : FieldContent) :
 
 @[simp] theorem lightConeSpin_zero : lightConeSpin 0 = 0 := (rfl)
 
-@[simp] theorem twist_zero : twist 0 = 0 := (rfl)
+@[simp, grind =] theorem twist_zero : twist 0 = 0 := (rfl)
 
-@[simp] theorem quarkNumber_zero : quarkNumber 0 = 0 := (rfl)
+@[simp, grind =] theorem quarkNumber_zero : quarkNumber 0 = 0 := (rfl)
 
 @[simp] theorem massDimension_cons (f : LightConeField) (O : FieldContent) :
     massDimension (f ::ₘ O) = f.massDimension + massDimension O := by
@@ -287,11 +289,17 @@ theorem quarkNumber_def (O : FieldContent) :
     lightConeSpin (f ::ₘ O) = f.lightConeSpin + lightConeSpin O := by
   simp [lightConeSpin_def]
 
+-- `grind` matches patterns in its own rule set, in which the definitional unfolding of the
+-- `insert` of the `{f, g}` multiset notation into `cons` is not available. Registering it lets the
+-- `@[grind =]` lemmas below evaluate the twist and quark number of a concrete field content
+-- written in that notation.
+attribute [grind =] Multiset.insert_eq_cons
+
 @[simp, grind =] theorem twist_cons (f : LightConeField) (O : FieldContent) :
     twist (f ::ₘ O) = f.twist + twist O := by
   simp [twist_def]
 
-@[simp] theorem quarkNumber_cons (f : LightConeField) (O : FieldContent) :
+@[simp, grind =] theorem quarkNumber_cons (f : LightConeField) (O : FieldContent) :
     quarkNumber (f ::ₘ O) = f.quarkNumber + quarkNumber O := by
   simp [quarkNumber_def]
 
@@ -303,10 +311,11 @@ theorem quarkNumber_def (O : FieldContent) :
     lightConeSpin {f} = f.lightConeSpin := by
   simp [lightConeSpin_def]
 
-@[simp] theorem twist_singleton (f : LightConeField) : twist {f} = f.twist := by
+@[simp, grind =] theorem twist_singleton (f : LightConeField) : twist {f} = f.twist := by
   simp [twist_def]
 
-@[simp] theorem quarkNumber_singleton (f : LightConeField) : quarkNumber {f} = f.quarkNumber := by
+@[simp, grind =] theorem quarkNumber_singleton (f : LightConeField) :
+    quarkNumber {f} = f.quarkNumber := by
   simp [quarkNumber_def]
 
 /-- The mass dimension is additive under products of operators. -/
@@ -324,7 +333,7 @@ theorem quarkNumber_def (O : FieldContent) :
   simp [twist_def]
 
 /-- The quark number is additive under products of operators. -/
-@[simp] theorem quarkNumber_add (O O' : FieldContent) :
+@[simp, grind =] theorem quarkNumber_add (O O' : FieldContent) :
     quarkNumber (O + O') = quarkNumber O + quarkNumber O' := by
   simp [quarkNumber_def]
 
@@ -428,8 +437,9 @@ theorem twist_eq_three_iff {O : FieldContent} :
     obtain ⟨a, b, c, rfl⟩ := Multiset.card_eq_three.1 h3
     exact .inr <| .inr ⟨a, b, c, hgood a (by simp), hgood b (by simp), hgood c (by simp), rfl⟩
 
-/-- A derivative-free quark-number-neutral operator of twist two is a bilinear `ψbar_+ γ^+ ψ_+`
-in good quark fields or `F^{+i} F^{+j}`, or a single `F^{+-}` or `F^{ij}`. -/
+/-- A derivative-free quark-number-neutral operator of twist two is a bilinear in good quark
+fields (such as `ψbar_+ γ^+ ψ_+`) or in two `F^{+i}` (such as `F^{+i} F^{+j}`), or a single
+`F^{+-}` or `F^{ij}`. -/
 theorem twist_eq_two_iff_of_quarkNumber_eq_zero {O : FieldContent} (hO : quarkNumber O = 0) :
     twist O = 2 ↔ O = {quarkBar .good, quark .good} ∨
       O = {fieldStrength .plusTransverse, fieldStrength .plusTransverse} ∨
@@ -443,10 +453,11 @@ theorem twist_eq_two_iff_of_quarkNumber_eq_zero {O : FieldContent} (hO : quarkNu
     all_goals simp at hO
     all_goals decide
 
-/-- A derivative-free quark-number-neutral operator of twist three is either a bilinear with one
-twist-one and one twist-two field — `ψbar_+ ψ_-` or `ψbar_- ψ_+` with one bad quark field, or
-`F^{+i} F^{+-}` or `F^{+i} F^{jk}` — or a trilinear `ψbar_+ γ^+ F^{+i} ψ_+` in good quark fields
-and one `F^{+i}` or `F^{+i} F^{+j} F^{+k}`, or a single `F^{-i}`. -/
+/-- A derivative-free quark-number-neutral operator of twist three is a bilinear with one
+twist-one and one twist-two field (such as `ψbar_+ ψ_-` or `ψbar_- ψ_+` in quark fields, or
+`F^{+i} F^{+-}` or `F^{+i} F^{jk}`), a trilinear in good quark fields and one `F^{+i}` (such as
+`ψbar_+ γ^+ F^{+i} ψ_+`) or in three `F^{+i}` (such as `F^{+i} F^{+j} F^{+k}`), or a single
+`F^{-i}`. -/
 theorem twist_eq_three_iff_of_quarkNumber_eq_zero {O : FieldContent} (hO : quarkNumber O = 0) :
     twist O = 3 ↔ O = {quarkBar .good, quark .bad} ∨ O = {quarkBar .bad, quark .good} ∨
       O = {fieldStrength .plusTransverse, fieldStrength .plusMinus} ∨
