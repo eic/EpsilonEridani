@@ -73,12 +73,12 @@ import re
 import subprocess
 import sys
 import time
-import urllib.request
 
 from lake_cache_probe import exact_map_url
 from lean_versions import TOOLCHAIN_PREFIX, release_key, release_of_toolchain, release_refs, release_tags
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "pr_status"))
+import mattermost as mm  # noqa: E402
 import zulip as zp  # noqa: E402
 
 REPO = os.environ.get("GH_REPO", "eic/EpsilonEridani")
@@ -474,12 +474,15 @@ def create_tag(row, dry_run=False):
     return True
 
 
-# --- waiting, and posting to Zulip ------------------------------------------
+# --- waiting, and posting to Zulip and Mattermost ---------------------------
 
 MARKER_RE = re.compile(r"<!--toolchain-tags:v1 ([0-9a-f]{16})-->\s*\Z")
 BRIEF_COMMAND = "python3 scripts/toolchain_tags.py --brief"
 SHELL_FENCE = f"```shell\n{BRIEF_COMMAND}\n```"
 OLD_FENCE = f"```\n{BRIEF_COMMAND}\n```"
+# Mattermost shows an HTML comment as literal text, so there the digest rides in the
+# post's props instead of in a marker.
+MM_DIGEST_PROP = "toolchain_tags_digest"
 
 
 def wait_for_ci(sha, timeout_minutes=180, poll_seconds=120, sleep=None):
@@ -524,6 +527,23 @@ def last_posted_report(z, bot_id):
     return None, None
 
 
+def last_mattermost_digest(bot_id):
+    """The digest on this account's newest report in the channel, or None.
+
+    As on Zulip, the previous state lives in the channel rather than in a file. Reads the
+    newest 200 posts, which reaches back far past the last report on a channel this quiet."""
+    res = mm.api_request("GET", f"/channels/{mm.CHANNEL_ID}/posts?per_page=200") or {}
+    posts = res.get("posts") or {}
+    for post_id in res.get("order") or []:  # newest first
+        post = posts.get(post_id) or {}
+        if post.get("user_id") != bot_id:
+            continue
+        digest = (post.get("props") or {}).get(MM_DIGEST_PROP)
+        if digest:
+            return digest
+    return None
+
+
 def post_content(rows, digest):
     """The command someone would run, and what it printed."""
     body = render(rows, include_policy=False, collapse_old=True).rstrip()
@@ -537,7 +557,8 @@ def post_content(rows, digest):
 def post_if_changed(rows, dry_run=False):
     """Repair a legacy command fence, then post when the state changed.
 
-    Returns True only if a new message was posted."""
+    Zulip and Mattermost each compare against their own last report, so either works
+    without the other. Returns True only if a new message was posted."""
     digest = state_digest(rows)
     content = post_content(rows, digest)
     if dry_run:
@@ -548,7 +569,6 @@ def post_if_changed(rows, dry_run=False):
     api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
     site = (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip()
     posted = False
-    previous = None
 
     if not (email and api_key):
         print("::warning::ZULIP_EMAIL / ZULIP_API_KEY not set; skipping Zulip toolchain tags report", file=sys.stderr)
@@ -567,18 +587,21 @@ def post_if_changed(rows, dry_run=False):
             z.send_message(content)
             posted = True
 
-    if previous != digest:
-        mm_token = (os.environ.get("MATTERMOST_BOT_TOKEN") or "").strip()
-        mm_channel = (os.environ.get("MATTERMOST_CHANNEL_ID") or "").strip()
-        mm_url = (os.environ.get("MATTERMOST_URL") or "").strip().rstrip("/")
-        if not (mm_token and mm_channel and mm_url):
-            print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID not set; skipping Mattermost toolchain tags report", file=sys.stderr)
+    if not (mm.BOT_TOKEN and mm.CHANNEL_ID and mm.URL):
+        print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID / MATTERMOST_URL not set; "
+              "skipping Mattermost toolchain tags report", file=sys.stderr)
+    else:
+        previous = last_mattermost_digest(mm.api_request("GET", "/users/me")["id"])
+        if previous == digest:
+            log(f"state unchanged since the last Mattermost post ({digest}); saying nothing")
         else:
-            log("posting to Mattermost")
-            req = urllib.request.Request(f"{mm_url}/api/v4/posts", method="POST",
-                data=json.dumps({"channel_id": mm_channel, "message": content}).encode("utf-8"),
-                headers={"Authorization": f"Bearer {mm_token}", "Content-Type": "application/json"})
-            urllib.request.urlopen(req)
+            log(f"state changed ({previous or 'nothing posted yet'} -> {digest}); "
+                "posting to Mattermost")
+            mm.api_request("POST", "/posts", {
+                "channel_id": mm.CHANNEL_ID,
+                "message": MARKER_RE.sub("", content).rstrip(),
+                "props": {MM_DIGEST_PROP: digest},
+            })
             posted = True
 
     return posted
