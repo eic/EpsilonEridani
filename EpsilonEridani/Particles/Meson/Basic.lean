@@ -21,7 +21,7 @@ can be compared. The mass and the decay constant are positive; the chiral limit 
 limit of a family of such data, never as an instance.
 
 The decay constant is the one of the axial-current matrix element
-`⟨0| q̄ γ^μ γ₅ q |M(P)⟩ = i f_M P^μ`, in which the charged-pion constant is close to `130 MeV`
+`⟨0| qbar γ^μ γ₅ q |M(P)⟩ = i f_M P^μ`, in which the charged-pion constant is close to `130 MeV`
 rather than `92 MeV`.
 
 The valence content enters the parton densities of a meson only through its *net valence
@@ -34,7 +34,7 @@ Weighted by the quark charges, the net valence numbers sum to the meson's charge
 charge is the one carried by the valence pair (`IsChargeConsistent.sum_mul_valenceNumber`).
 
 The data describe a meson with a single valence quark-antiquark pair. The neutral pion, the
-superposition `(u ū - d d̄) / √2`, has no single valence pair and is not an instance; its net
+superposition `(u ubar - d dbar) / √2`, has no single valence pair and is not an instance; its net
 valence numbers, which are what its parton densities see, all vanish.
 
 Flavour-symmetry breaking is carried as separate data, `FlavorBreaking`: the light-quark mass
@@ -85,7 +85,7 @@ built from quark masses, the limits are exactly the degeneracy of the correspond
 namespace EpsilonEridani.Particles.Meson
 
 /-- A pseudoscalar meson as explicit data over a flavour type: its mass, its decay constant
-`f_M` in the convention `⟨0| q̄ γ^μ γ₅ q |M(P)⟩ = i f_M P^μ`, its electric charge in units of the
+`f_M` in the convention `⟨0| qbar γ^μ γ₅ q |M(P)⟩ = i f_M P^μ`, its electric charge in units of the
 positron charge, and the flavours of its valence quark and valence antiquark. -/
 @[ext]
 structure PseudoscalarMeson (Flavor : Type*) where
@@ -300,7 +300,7 @@ end LightFlavor
 
 open LightFlavor
 
-/-- The positive pion `π⁺ = u d̄`, with the Particle Data Group mass and decay constant in MeV. -/
+/-- The positive pion `π⁺ = u dbar`, with the Particle Data Group mass and decay constant in MeV. -/
 noncomputable def piPlus : PseudoscalarMeson LightFlavor where
   mass := 139.57039
   decayConstant := 130.2
@@ -310,7 +310,7 @@ noncomputable def piPlus : PseudoscalarMeson LightFlavor where
   mass_pos := by norm_num
   decayConstant_pos := by norm_num
 
-/-- The positive kaon `K⁺ = u s̄`, with the Particle Data Group mass and decay constant in MeV. -/
+/-- The positive kaon `K⁺ = u sbar`, with the Particle Data Group mass and decay constant in MeV. -/
 noncomputable def kPlus : PseudoscalarMeson LightFlavor where
   mass := 493.677
   decayConstant := 155.7
@@ -320,10 +320,10 @@ noncomputable def kPlus : PseudoscalarMeson LightFlavor where
   mass_pos := by norm_num
   decayConstant_pos := by norm_num
 
-/-- The negative pion `π⁻ = d ū`, the charge conjugate of the positive pion. -/
+/-- The negative pion `π⁻ = d ubar`, the charge conjugate of the positive pion. -/
 noncomputable def piMinus : PseudoscalarMeson LightFlavor := piPlus.chargeConj
 
-/-- The negative kaon `K⁻ = s ū`, the charge conjugate of the positive kaon. -/
+/-- The negative kaon `K⁻ = s ubar`, the charge conjugate of the positive kaon. -/
 noncomputable def kMinus : PseudoscalarMeson LightFlavor := kPlus.chargeConj
 
 @[simp] theorem piPlus_valenceQuark : piPlus.valenceQuark = u := (rfl)
@@ -362,7 +362,7 @@ theorem isChargeConsistent_kMinus : kMinus.IsChargeConsistent LightFlavor.charge
 theorem kPlus_valenceQuark_eq_piPlus : kPlus.valenceQuark = piPlus.valenceQuark := (rfl)
 
 /-- **Disjoint valence antiquarks.** The positive kaon's valence antiquark is not the positive
-pion's: the two mesons differ exactly in the antiquark, `s̄` against `d̄`. -/
+pion's: the two mesons differ exactly in the antiquark, `sbar` against `dbar`. -/
 theorem kPlus_valenceAntiquark_ne_piPlus :
     kPlus.valenceAntiquark ≠ piPlus.valenceAntiquark := by
   simp
