@@ -33,9 +33,12 @@ subspace, and an analytic function vanishing on an open piece of it vanishes on 
 The local step restricts the function to the complex line `λ ↦ re w + λ • im w` through a point
 `w` near the real slice. That line meets the real slice in a real segment and passes through `w`
 at `λ = I`, so the one-variable identity theorem carries the vanishing from the segment to `w`.
-The two-variable statements then follow from Mathlib's identity theorem. The target space need not
-be complete: as in Mathlib, the statement is first proved for complete targets and then
-transferred through the completion.
+The local statement for two functions follows by applying this vanishing statement to their
+difference, and the global statement then follows from Mathlib's several-variable identity theorem
+`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`. The target space need not be complete: the
+vanishing statement is first proved for complete targets, where Mathlib's
+`AnalyticAt.exists_ball_analyticOnNhd` spreads analyticity from the point to a ball around it, and
+then transferred through the completion, as Mathlib does for its own identity theorem.
 -/
 
 public section
@@ -45,13 +48,14 @@ open Complex Filter Metric Set Topology
 variable {ι F : Type*} [Fintype ι] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
 /-- The vanishing statement of `AnalyticAt.eventuallyEq_zero_of_eventuallyEq_zero_ofReal` for a
-complete target, where an analytic function is analytic on a whole ball around the point. -/
+complete target. Completeness is what Mathlib's `AnalyticAt.exists_ball_analyticOnNhd` asks for to
+make the function analytic on a whole ball around the point. -/
 private theorem eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux [CompleteSpace F]
-    {h : (ι → ℂ) → F} {x₀ : ι → ℝ} (hh : AnalyticAt ℂ h (fun i => (x₀ i : ℂ)))
-    (h₀ : (fun x : ι → ℝ => h fun i => (x i : ℂ)) =ᶠ[𝓝 x₀] 0) :
-    h =ᶠ[𝓝 (fun i => (x₀ i : ℂ))] 0 := by
+    {f : (ι → ℂ) → F} {x₀ : ι → ℝ} (hf : AnalyticAt ℂ f (fun i => (x₀ i : ℂ)))
+    (h₀ : (fun x : ι → ℝ => f fun i => (x i : ℂ)) =ᶠ[𝓝 x₀] 0) :
+    f =ᶠ[𝓝 (fun i => (x₀ i : ℂ))] 0 := by
   set z₀ : ι → ℂ := fun i => (x₀ i : ℂ)
-  obtain ⟨r, hr, hhr⟩ := hh.exists_ball_analyticOnNhd
+  obtain ⟨r, hr, hfr⟩ := hf.exists_ball_analyticOnNhd
   obtain ⟨ρ, hρ, hρ₀⟩ := Metric.eventually_nhds_iff.1 h₀
   set ε := min r ρ
   have hε : 0 < ε := lt_min hr hρ
@@ -83,8 +87,8 @@ private theorem eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux [CompleteSpace
     refine (dist_pi_lt_iff hε).2 fun i => ?_
     simpa [p, z₀, Complex.dist_eq, ← ofReal_sub, Real.dist_eq] using (dist_pi_lt_iff hε).1 hu i
   have hpI : p I = w := funext fun i => by simp [p, u, v, mul_comm I, re_add_im]
-  -- Along the line, `h` vanishes at the real parameters near `0`.
-  have hfreq : ∃ᶠ c in 𝓝[≠] (0 : ℂ), (h ∘ p) c = 0 := by
+  -- Along the line, `f` vanishes at the real parameters near `0`.
+  have hfreq : ∃ᶠ c in 𝓝[≠] (0 : ℂ), (f ∘ p) c = 0 := by
     have hreal : ∀ᶠ s in 𝓝 (0 : ℝ), u + s • v ∈ ball x₀ ρ := by
       have hc : Continuous fun s : ℝ => u + s • v := by fun_prop
       exact hc.continuousAt.preimage_mem_nhds
@@ -97,23 +101,23 @@ private theorem eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux [CompleteSpace
     refine ht.frequently ?_
     refine (eventually_nhdsWithin_of_eventually_nhds (hreal.mono fun s hs => ?_)).frequently
     simpa [hpreal s] using hρ₀ (mem_ball.1 hs)
-  have hS' : AnalyticOnNhd ℂ (h ∘ p) S :=
-    (hhr.mono (ball_subset_ball (min_le_left r ρ))).comp
+  have hS' : AnalyticOnNhd ℂ (f ∘ p) S :=
+    (hfr.mono (ball_subset_ball (min_le_left r ρ))).comp
       (fun _ _ => analyticAt_const.add (analyticAt_id.smul analyticAt_const)) fun _ hc => hc
-  have hI : (h ∘ p) I = 0 := hS'.eqOn_zero_of_preconnected_of_frequently_eq_zero
+  have hI : (f ∘ p) I = 0 := hS'.eqOn_zero_of_preconnected_of_frequently_eq_zero
     hS.isPreconnected hS₀ hfreq (x := I) (by simpa [S, hpI] using hw)
   simpa [hpI] using hI
 
 /-- A function analytic at a real point of `ℂ^ι` that vanishes at the nearby real points vanishes
 on a neighbourhood of that point. -/
-theorem AnalyticAt.eventuallyEq_zero_of_eventuallyEq_zero_ofReal {h : (ι → ℂ) → F}
-    {x₀ : ι → ℝ} (hh : AnalyticAt ℂ h (fun i => (x₀ i : ℂ)))
-    (h₀ : (fun x : ι → ℝ => h fun i => (x i : ℂ)) =ᶠ[𝓝 x₀] 0) :
-    h =ᶠ[𝓝 (fun i => (x₀ i : ℂ))] 0 := by
-  -- Pass to the completion of `F`, where the analytic function is analytic on a ball.
+theorem AnalyticAt.eventuallyEq_zero_of_eventuallyEq_zero_ofReal {f : (ι → ℂ) → F}
+    {x₀ : ι → ℝ} (hf : AnalyticAt ℂ f (fun i => (x₀ i : ℂ)))
+    (h₀ : (fun x : ι → ℝ => f fun i => (x i : ℂ)) =ᶠ[𝓝 x₀] 0) :
+    f =ᶠ[𝓝 (fun i => (x₀ i : ℂ))] 0 := by
+  -- Pass to the completion of `F`, which is complete, and come back along its injective inclusion.
   set e : F →L[ℂ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
-  have he := eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux ((e.analyticAt _).comp hh)
-    (h₀.mono fun x hx => by simp_all)
+  have he := eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux ((e.analyticAt _).comp hf)
+    (h₀.mono fun x hx => by simp only [Pi.zero_apply] at hx ⊢; simp [hx])
   exact he.mono fun w hw => by simpa [e] using hw
 
 /-- **Analytic functions on `ℂ^ι` are determined near a real point by their real values.** Two

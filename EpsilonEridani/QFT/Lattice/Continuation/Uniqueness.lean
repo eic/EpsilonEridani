@@ -35,8 +35,9 @@ the Euclidean section in `U`.
   `continuation x₀ ∈ U` agree on all of `U`.
 * `eqOn_of_eqOn_euclideanSection`: two functions holomorphic on an open preconnected set `U` that
   meets the Euclidean section, and that agree on `U ∩ euclideanSection d`, agree on `U`.
-* `eq_ofMinkowski_of_eqOn_euclideanSection`: if `U` also contains every spacelike Minkowski
-  separation, the two functions agree at every spacelike separation.
+* `eqOn_of_eqOn_euclideanSection_of_spaceLike`: if `U` contains every spacelike Minkowski
+  separation and some spacelike separation exists, then `U` meets the Euclidean section, so the two
+  functions agree on all of `U`, and in particular at every spacelike separation.
 
 ## References
 
@@ -48,8 +49,8 @@ the Euclidean section in `U`.
 
 The Euclidean section is not an open subset of `ComplexSeparation d`, so Mathlib's identity
 theorem does not apply to it directly. It is, however, the image of the real slice `ℝ^{1+d}` under
-the complex-linear automorphism that multiplies the time component by `-i`, which makes it a
-maximal totally real subspace. The uniqueness therefore reduces to
+the time rotation `timeRotation` (`timeRotation_ofReal`), which makes it a maximal totally real
+subspace. The uniqueness therefore reduces to
 `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq_ofReal`, whose hypothesis is agreement at the
 real points near one real point.
 -/
@@ -64,22 +65,6 @@ namespace Continuation
 open Complex Filter Lorentz Lorentz.Vector Set Topology
 
 variable {d : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- The complex-linear automorphism of `ComplexSeparation d` that multiplies the time component by
-`-i` and fixes the spatial components. It maps the real slice onto the Euclidean section. -/
-private noncomputable def timeRotation : ComplexSeparation d ≃L[ℂ] ComplexSeparation d :=
-  ContinuousLinearEquiv.piCongrRight fun μ => Sum.elim
-    (fun _ => ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (-I) (neg_ne_zero.2 I_ne_zero)))
-    (fun _ => ContinuousLinearEquiv.refl ℂ ℂ) μ
-
-/-- The time rotation of the real point `y` is the continuation of `y` read as a Euclidean
-separation. -/
-private theorem timeRotation_ofReal (y : Fin 1 ⊕ Fin d → ℝ) :
-    timeRotation (fun μ => (y μ : ℂ)) = continuation (WithLp.toLp 2 y) := by
-  funext μ
-  rcases μ with a | i
-  · simp [timeRotation, mul_comm]
-  · simp [timeRotation]
 
 /-- **Uniqueness of the continuation, local form.** Two functions holomorphic on a preconnected
 set `U` that agree at the continuations of all Euclidean separations near a point `x₀` with
@@ -125,14 +110,16 @@ theorem eqOn_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
 
 /-- **The Euclidean values determine the spacelike values.** Two functions holomorphic on an
 open preconnected set `U` that contains every spacelike Minkowski separation, and that agree at
-every point of `U` on the Euclidean section, agree at every spacelike Minkowski separation. -/
-theorem eq_ofMinkowski_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
+every point of `U` on the Euclidean section, agree on all of `U`, and so at every spacelike
+Minkowski separation. The spacelike separation `v` only witnesses that one exists: its equal-time
+projection is a point of `U` on the Euclidean section. -/
+theorem eqOn_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → F}
     {U : Set (ComplexSeparation d)} (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hUo : IsOpen U) (hU : IsPreconnected U)
     (hspace : ∀ v : Vector d, causalCharacter v = .spaceLike → ofMinkowski v ∈ U)
     (hfg : EqOn f g (U ∩ (euclideanSection d : Set (ComplexSeparation d))))
     {v : Vector d} (hv : causalCharacter v = .spaceLike) :
-    f (ofMinkowski v) = g (ofMinkowski v) := by
+    EqOn f g U := by
   -- The equal-time projection of `v` is again spacelike, and lies on the Euclidean section.
   let w : Vector d := Sum.elim (fun _ => 0) fun i => v (Sum.inr i)
   have hw : causalCharacter w = .spaceLike := by
@@ -142,7 +129,7 @@ theorem eq_ofMinkowski_of_eqOn_euclideanSection {f g : ComplexSeparation d → F
     nlinarith [mul_self_nonneg (v (Sum.inl 0))]
   have hwE : ofMinkowski w ∈ euclideanSection d :=
     ofMinkowski_mem_euclideanSection_iff.2 rfl
-  exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg (hspace v hv)
+  exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg
 
 end Continuation
 end Lattice

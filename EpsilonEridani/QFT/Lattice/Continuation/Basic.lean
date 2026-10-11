@@ -41,6 +41,8 @@ so that the sign of the invariant square is never lost by rereading one as the o
   (`complexMinkowskiProduct_continuation_self_re_neg`): it is strictly spacelike.
 * `eq_zero_of_mem_closure_euclideanSection_of_complexMinkowskiProduct_self_eq_zero`: the only
   null vector in the closure of the Euclidean section is the origin.
+* `map_timeRotation_minkowskiSection`: the time rotation `timeRotation`, which multiplies the time
+  component by `-i`, carries the Minkowski section onto the Euclidean section.
 * `ofMinkowski_mem_euclideanSection_iff`: the real Minkowski vectors on the Euclidean section are
   exactly those with vanishing time component; in particular a nonzero one is spacelike
   (`causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection`), and a nonzero vector that
@@ -209,6 +211,48 @@ theorem isClosed_minkowskiSection : IsClosed (minkowskiSection d : Set (ComplexS
 /-- The Euclidean section is closed. -/
 theorem isClosed_euclideanSection : IsClosed (euclideanSection d : Set (ComplexSeparation d)) :=
   Submodule.closed_of_finiteDimensional _
+
+/-! ### The time rotation -/
+
+/-- The *time rotation*: the complex-linear automorphism of `ComplexSeparation d` that multiplies
+the time component by `-i` and fixes the spatial components. It carries the Minkowski section onto
+the Euclidean section (`map_timeRotation_minkowskiSection`), which makes the Euclidean section a
+maximal totally real subspace of `ComplexSeparation d`. -/
+noncomputable def timeRotation : ComplexSeparation d ≃L[ℂ] ComplexSeparation d :=
+  ContinuousLinearEquiv.piCongrRight fun μ => Sum.elim
+    (fun _ => ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (-I) (neg_ne_zero.2 I_ne_zero)))
+    (fun _ => ContinuousLinearEquiv.refl ℂ ℂ) μ
+
+/-- The time rotation multiplies the time component by `-i`. -/
+@[simp]
+theorem timeRotation_apply_inl (z : ComplexSeparation d) (a : Fin 1) :
+    timeRotation z (Sum.inl a) = -I * z (Sum.inl a) := by
+  simp [timeRotation, mul_comm]
+
+/-- The time rotation fixes the spatial components. -/
+@[simp]
+theorem timeRotation_apply_inr (z : ComplexSeparation d) (i : Fin d) :
+    timeRotation z (Sum.inr i) = z (Sum.inr i) := by
+  simp [timeRotation]
+
+/-- The time rotation of the real point `y` is the continuation of `y` read as a Euclidean
+separation. -/
+theorem timeRotation_ofReal (y : Fin 1 ⊕ Fin d → ℝ) :
+    timeRotation (fun μ => (y μ : ℂ)) = continuation (WithLp.toLp 2 y) := by
+  funext μ
+  rcases μ with a | i <;> simp
+
+/-- **The time rotation carries the Minkowski section onto the Euclidean section.** -/
+theorem map_timeRotation_minkowskiSection :
+    (minkowskiSection d).map ((timeRotation (d := d)).toLinearEquiv.toLinearMap.restrictScalars ℝ) =
+      euclideanSection d := by
+  ext z
+  simp only [Submodule.mem_map, minkowskiSection_def, euclideanSection_def, LinearMap.mem_range]
+  constructor
+  · rintro ⟨_, ⟨v, rfl⟩, rfl⟩
+    exact ⟨WithLp.toLp 2 v, (timeRotation_ofReal v).symm⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨_, ⟨WithLp.ofLp x, rfl⟩, timeRotation_ofReal (WithLp.ofLp x)⟩
 
 /-! ### The null-separation obstruction -/
 
