@@ -144,6 +144,69 @@ lemma valence_sumRule [Fintype Flavor]
     mellinMoment f 0 i Q2 = h.valenceTarget i :=
   h.valence i Q2
 
+/-! ### Relabelling the species index
+
+A map `σ : κ → ι` of species indices pulls a density over `ι` back to a density over `κ`. The
+density assumptions survive any relabelling; the species-summed moments and the sum-rule bundle
+survive a bijective one. Charge conjugation and flavour symmetries act on densities this way. -/
+
+section Relabel
+
+variable {ι κ : Type}
+
+/-- The density over `κ` whose species `k` carries the density of species `σ k` in `f`. -/
+def relabel (σ : κ → ι) (f : Pdf ι) : Pdf κ := fun k => f (σ k)
+
+@[simp]
+lemma relabel_apply (σ : κ → ι) (f : Pdf ι) (k : κ) (x Q2 : ℝ) :
+    relabel σ f k x Q2 = f (σ k) x Q2 :=
+  rfl
+
+@[simp]
+lemma mellinMoment_relabel (σ : κ → ι) (f : Pdf ι) (n : ℕ) (k : κ) (Q2 : ℝ) :
+    mellinMoment (relabel σ f) n k Q2 = mellinMoment f n (σ k) Q2 := by
+  simp [mellinMoment]
+
+/-- A bijective relabelling preserves every moment summed over all species. -/
+lemma sum_mellinMoment_relabel [Fintype ι] [Fintype κ] {σ : κ → ι} (hσ : σ.Bijective)
+    (f : Pdf ι) (n : ℕ) (Q2 : ℝ) :
+    ∑ k, mellinMoment (relabel σ f) n k Q2 = ∑ i, mellinMoment f n i Q2 := by
+  simp only [mellinMoment_relabel]
+  exact hσ.sum_comp fun i => mellinMoment f n i Q2
+
+/-- Relabelling preserves the physical half of the assumptions. -/
+lemma IsPartonDensity.relabel {f : Pdf ι} (h : IsPartonDensity f) (σ : κ → ι) :
+    IsPartonDensity (relabel σ f) where
+  support k x Q2 hx := by simpa only [relabel_apply] using h.support (σ k) x Q2 hx
+  nonneg k x Q2 hx₀ hx₁ := by simpa only [relabel_apply] using h.nonneg (σ k) x Q2 hx₀ hx₁
+
+/-- Relabelling preserves the analytic half of the assumptions. -/
+lemma Regularity.relabel {f : Pdf ι} (h : Regularity f) (σ : κ → ι) :
+    Regularity (relabel σ f) where
+  measurable k Q2 := by simpa only [relabel_apply] using h.measurable (σ k) Q2
+  momentIntegrable n k Q2 := by simpa only [relabel_apply] using h.momentIntegrable n (σ k) Q2
+
+/-- Relabelling preserves the density assumptions. -/
+lemma Assumptions.relabel {f : Pdf ι} (h : Assumptions f) (σ : κ → ι) :
+    Assumptions (relabel σ f) :=
+  assumptions_iff.2 ⟨h.isPartonDensity.relabel σ, h.regularity.relabel σ⟩
+
+/-- A bijective relabelling preserves the sum-rule bundle, with the target value of each species
+taken from its image. -/
+def SumRuleAssumptions.relabel [Fintype ι] [Fintype κ] {f : Pdf ι} (h : SumRuleAssumptions f)
+    {σ : κ → ι} (hσ : σ.Bijective) : SumRuleAssumptions (relabel σ f) where
+  momentum Q2 := (sum_mellinMoment_relabel hσ f 1 Q2).trans (h.momentum Q2)
+  valenceTarget k := h.valenceTarget (σ k)
+  valence k Q2 := (mellinMoment_relabel σ f 0 k Q2).trans (h.valence (σ k) Q2)
+
+@[simp]
+lemma SumRuleAssumptions.relabel_valenceTarget [Fintype ι] [Fintype κ] {f : Pdf ι}
+    (h : SumRuleAssumptions f) {σ : κ → ι} (hσ : σ.Bijective) (k : κ) :
+    (h.relabel hσ).valenceTarget k = h.valenceTarget (σ k) :=
+  rfl
+
+end Relabel
+
 end PDF
 end Parton
 end Particles

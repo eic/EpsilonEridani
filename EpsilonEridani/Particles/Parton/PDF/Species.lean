@@ -19,13 +19,15 @@ the momentum sum rule `∑ₛ ∫₀¹ x fₛ(x) dx = 1` runs over all of them, 
 Charge conjugation exchanges the quark and the antiquark of each flavour and fixes the gluon
 (`Species.conj`). On densities it acts by relabelling, `PDF.chargeConj f s = f s.conj`: the
 densities of a hadron's antiparticle are the charge conjugates of the hadron's densities. The
-operation is an involution, it preserves `PDF.Assumptions`, the momentum sum and the sum-rule
-bundle `PDF.SumRuleAssumptions`.
+operation is an involution, it preserves `PDF.IsPartonDensity`, `PDF.Regularity` and
+`PDF.Assumptions`, the momentum sum and the sum-rule bundle `PDF.SumRuleAssumptions`; these are
+instances of the general relabelling results `PDF.Assumptions.relabel` and its companions.
 
 On a density over `Species Flavor` the integral `∫₀¹ (q_i(x) - qbar_i(x)) dx` is the net number of
 quarks of flavour `i`, the valence number `PDF.valenceNumber`. The valence sum rules of a hadron
-prescribe it flavour by flavour. Charge conjugation negates every valence number, so a
-charge-conjugation invariant density has no valence number in any flavour.
+prescribe it flavour by flavour. Charge conjugation negates every valence number, and a flavour
+whose quark and antiquark densities agree, as in a charge-conjugation invariant density, has no
+valence number.
 
 ## Main definitions
 
@@ -37,13 +39,18 @@ charge-conjugation invariant density has no valence number in any flavour.
 ## Main statements
 
 * `Species.sum_univ`: a sum over all species is the quark sum, the antiquark sum and the gluon term.
-* `PDF.Assumptions.chargeConj`, `PDF.SumRuleAssumptions.chargeConj`: charge conjugation preserves
-  the density assumptions and the sum-rule bundle.
+* `PDF.IsPartonDensity.chargeConj`, `PDF.Regularity.chargeConj`, `PDF.Assumptions.chargeConj`,
+  `PDF.SumRuleAssumptions.chargeConj`: charge conjugation preserves the density assumptions and
+  the sum-rule bundle.
 * `PDF.sum_mellinMoment_chargeConj`: it preserves every flavour-summed moment, in particular the
   momentum sum.
 * `PDF.valenceNumber_chargeConj`: it negates the valence numbers.
-* `PDF.valenceNumber_eq_zero_of_chargeConj_eq`: a charge-conjugation invariant density has
-  vanishing valence numbers.
+* `PDF.valenceNumber_eq_zero_of_eq`: a flavour with equal quark and antiquark densities has
+  vanishing valence number.
+
+## References
+
+* J. C. Collins, *Foundations of Perturbative QCD*, Cambridge University Press (2011), ch. 6.
 -/
 
 public section
@@ -82,6 +89,24 @@ def equivSum : Species Flavor ≃ (Flavor ⊕ Flavor) ⊕ Unit where
   left_inv s := by cases s <;> rfl
   right_inv s := by rcases s with (i | i) | _ <;> rfl
 
+@[simp]
+theorem equivSum_quark (i : Flavor) : equivSum (quark i) = .inl (.inl i) := (rfl)
+
+@[simp]
+theorem equivSum_antiquark (i : Flavor) : equivSum (antiquark i) = .inl (.inr i) := (rfl)
+
+@[simp]
+theorem equivSum_gluon : equivSum (gluon : Species Flavor) = .inr () := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inl (i : Flavor) : equivSum.symm (.inl (.inl i)) = quark i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inr (i : Flavor) : equivSum.symm (.inl (.inr i)) = antiquark i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (u : Unit) : (equivSum.symm (.inr u) : Species Flavor) = gluon := (rfl)
+
 instance [Fintype Flavor] : Fintype (Species Flavor) := Fintype.ofEquiv _ equivSum.symm
 
 /-- There are two species, a quark and an antiquark, for each flavour, and the gluon. -/
@@ -95,7 +120,7 @@ the gluon term. -/
 theorem sum_univ [Fintype Flavor] {M : Type*} [AddCommMonoid M] (g : Species Flavor → M) :
     ∑ s, g s = ∑ i, g (quark i) + ∑ i, g (antiquark i) + g gluon := by
   rw [← equivSum.symm.sum_comp]
-  simp [Fintype.sum_sum_type, equivSum]
+  simp [Fintype.sum_sum_type]
 
 /-- Charge conjugation of parton species: the quark and the antiquark of each flavour are
 exchanged, and the gluon is its own antiparticle. -/
@@ -131,12 +156,15 @@ variable {Flavor : Type}
 /-- The charge-conjugate density: the density of species `s` is the density of `s.conj` in `f`.
 The densities of a hadron's antiparticle are the charge conjugates of the hadron's densities. -/
 def chargeConj (f : Pdf (Species Flavor)) : Pdf (Species Flavor) :=
-  fun s => f s.conj
+  relabel conj f
+
+theorem chargeConj_eq_relabel (f : Pdf (Species Flavor)) : chargeConj f = relabel conj f :=
+  (rfl)
 
 @[simp]
 theorem chargeConj_apply (f : Pdf (Species Flavor)) (s : Species Flavor) (x Q2 : ℝ) :
-    chargeConj f s x Q2 = f s.conj x Q2 :=
-  (rfl)
+    chargeConj f s x Q2 = f s.conj x Q2 := by
+  rw [chargeConj_eq_relabel, relabel_apply]
 
 @[simp]
 theorem chargeConj_chargeConj (f : Pdf (Species Flavor)) : chargeConj (chargeConj f) = f := by
@@ -149,23 +177,32 @@ theorem chargeConj_involutive :
 
 @[simp]
 theorem mellinMoment_chargeConj (f : Pdf (Species Flavor)) (n : ℕ) (s : Species Flavor)
-    (Q2 : ℝ) : mellinMoment (chargeConj f) n s Q2 = mellinMoment f n s.conj Q2 :=
-  (rfl)
+    (Q2 : ℝ) : mellinMoment (chargeConj f) n s Q2 = mellinMoment f n s.conj Q2 := by
+  rw [chargeConj_eq_relabel, mellinMoment_relabel]
 
 /-- Charge conjugation preserves every moment summed over all species; for `n = 1` this is the
 statement that the momentum sum of the conjugate density is that of the density. -/
 theorem sum_mellinMoment_chargeConj [Fintype Flavor] (f : Pdf (Species Flavor)) (n : ℕ)
     (Q2 : ℝ) : ∑ s, mellinMoment (chargeConj f) n s Q2 = ∑ s, mellinMoment f n s Q2 := by
-  simp only [mellinMoment_chargeConj]
-  exact conj_involutive.bijective.sum_comp fun s => mellinMoment f n s Q2
+  rw [chargeConj_eq_relabel]
+  exact sum_mellinMoment_relabel conj_involutive.bijective f n Q2
+
+/-- Charge conjugation preserves the physical half of the density assumptions. -/
+theorem IsPartonDensity.chargeConj {f : Pdf (Species Flavor)} (h : IsPartonDensity f) :
+    IsPartonDensity (chargeConj f) := by
+  rw [chargeConj_eq_relabel]
+  exact h.relabel conj
+
+/-- Charge conjugation preserves the analytic half of the density assumptions. -/
+theorem Regularity.chargeConj {f : Pdf (Species Flavor)} (h : Regularity f) :
+    Regularity (chargeConj f) := by
+  rw [chargeConj_eq_relabel]
+  exact h.relabel conj
 
 /-- Charge conjugation preserves the density assumptions. -/
 theorem Assumptions.chargeConj {f : Pdf (Species Flavor)} (h : Assumptions f) :
-    Assumptions (chargeConj f) where
-  support s x Q2 hx := h.support s.conj x Q2 hx
-  nonneg s x Q2 hx₀ hx₁ := h.nonneg s.conj x Q2 hx₀ hx₁
-  measurable s Q2 := h.measurable s.conj Q2
-  momentIntegrable n s Q2 := h.momentIntegrable n s.conj Q2
+    Assumptions (chargeConj f) :=
+  assumptions_iff.2 ⟨h.isPartonDensity.chargeConj, h.regularity.chargeConj⟩
 
 /-- Charge conjugation preserves the sum-rule bundle, with the target values of each species
 taken from its conjugate. -/
@@ -173,7 +210,7 @@ def SumRuleAssumptions.chargeConj [Fintype Flavor] {f : Pdf (Species Flavor)}
     (h : SumRuleAssumptions f) : SumRuleAssumptions (chargeConj f) where
   momentum Q2 := (sum_mellinMoment_chargeConj f 1 Q2).trans (h.momentum Q2)
   valenceTarget s := h.valenceTarget s.conj
-  valence s Q2 := h.valence s.conj Q2
+  valence s Q2 := (mellinMoment_chargeConj f 0 s Q2).trans (h.valence s.conj Q2)
 
 @[simp]
 theorem SumRuleAssumptions.chargeConj_valenceTarget [Fintype Flavor] {f : Pdf (Species Flavor)}
@@ -198,13 +235,11 @@ theorem valenceNumber_chargeConj (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : �
     valenceNumber (chargeConj f) i Q2 = -valenceNumber f i Q2 := by
   simp [valenceNumber_def]
 
-/-- A density invariant under charge conjugation has vanishing valence number in every
-flavour. -/
-theorem valenceNumber_eq_zero_of_chargeConj_eq {f : Pdf (Species Flavor)}
-    (hf : chargeConj f = f) (i : Flavor) (Q2 : ℝ) : valenceNumber f i Q2 = 0 := by
-  have h := valenceNumber_chargeConj f i Q2
-  rw [hf] at h
-  linarith
+/-- A flavour whose quark and antiquark densities coincide has vanishing valence number. This
+applies to every flavour of a density invariant under charge conjugation. -/
+theorem valenceNumber_eq_zero_of_eq {f : Pdf (Species Flavor)} {i : Flavor}
+    (h : f (.quark i) = f (.antiquark i)) (Q2 : ℝ) : valenceNumber f i Q2 = 0 := by
+  rw [valenceNumber_def, mellinMoment, mellinMoment, h, sub_self]
 
 end PDF
 
