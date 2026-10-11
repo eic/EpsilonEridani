@@ -73,7 +73,6 @@ import re
 import subprocess
 import sys
 import time
-import urllib.request
 
 from lake_cache_probe import exact_map_url
 from lean_versions import TOOLCHAIN_PREFIX, release_key, release_of_toolchain, release_refs, release_tags
