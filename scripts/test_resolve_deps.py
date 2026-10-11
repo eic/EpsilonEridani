@@ -9,6 +9,7 @@ state on the day the resolver was written: Physlib on mathlib's v4.34.1 tag, Tau
 on Lean v4.35.0-rc3, and main on v4.34.0.
 """
 
+import contextlib
 import json
 import os
 import sys
@@ -550,6 +551,20 @@ class RealRecording(unittest.TestCase):
         # the next commit that pins something else is 81acd31, on mathlib d870b90.
         text = {h["pin"]: h["text"] for h in self.r["holds"]}["TauCeti"]
         self.assertIn("newer commits pin Lean v4.35.0-rc3 and mathlib d870b90", text)
+
+    def test_out_writes_the_json_result_for_the_writer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "lakefile.toml").write_text((Path(__file__).resolve().parents[1] / "lakefile.toml").read_text())
+            (root / "lean-toolchain").write_text(lean("v4.34.0") + "\n")
+            packages = [{"name": n, "rev": rev, "inherited": False} for n, rev in self.PINS.items()]
+            (root / "lake-manifest.json").write_text(json.dumps({"packages": packages}))
+            out = root / "resolved.json"
+            with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
+                code = rd.main(["--root", str(root), "--summary", "--out", str(out),
+                                "--replay", str(FIXTURES / "2026-10-03.json")])
+            self.assertEqual(code, 0)
+            self.assertEqual(json.loads(out.read_text()), json.loads(json.dumps(self.r)))
 
 
 class Project(unittest.TestCase):
