@@ -188,8 +188,24 @@ jobs:
           TOML
           export LAKE_CONFIG="$CFG"
 
-          lake cache put-staged "$STAGING" --service epsiloneridani-s3 \
-            --repo eic/EpsilonEridani --rev "$REVISION" --toolchain "$ELAN_TOOLCHAIN"
+          # The endpoint intermittently fails single requests: an HTTP/2 stream error (curl 92) in
+          # the parallel artifact PUT, which curl's own --retry does not cover, or a bare 302 on
+          # the revision-map PUT, which Lake sends once with no retry. Every PUT is idempotent
+          # (content-addressed artifacts, a map fixed by the revision), and the map goes last, so
+          # rerunning the whole upload is safe and never publishes a map ahead of its artifacts.
+          ATTEMPTS=3
+          for attempt in $(seq 1 "$ATTEMPTS"); do
+            if lake cache put-staged "$STAGING" --service epsiloneridani-s3 \
+                --repo eic/EpsilonEridani --rev "$REVISION" --toolchain "$ELAN_TOOLCHAIN"; then
+              break
+            fi
+            if [ "$attempt" = "$ATTEMPTS" ]; then
+              echo "::error::lake cache put-staged failed $ATTEMPTS times"
+              exit 1
+            fi
+            echo "::warning::lake cache put-staged attempt $attempt of $ATTEMPTS failed; retrying"
+            sleep $((30 * attempt))
+          done
 
           echo 'uploaded=true' >> "$GITHUB_OUTPUT"
           echo "::notice::uploaded the Lake cache for $REVISION"
