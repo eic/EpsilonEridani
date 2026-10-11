@@ -37,6 +37,7 @@ class Graph:
         self.tags = {}
         self.cached = None
         self.uncached = set()  # mathlib commits whose cache is not published
+        self.too_slow = set()  # (repo, base, head) that GitHub refuses to compare (HTTP 422)
         self.clock = 0
 
     def commit(self, repo, sha, parent=None, branch=None, **files):
@@ -73,6 +74,8 @@ class Graph:
         return self.repos[repo]["commits"][sha]["files"][path]
 
     def compare(self, repo, base, head):
+        if (repo, base, head) in self.too_slow:
+            return list(rd.UNKNOWN)
         branches = self.repos[repo]["branches"]  # like GitHub, a branch name stands for its tip
         base, head = branches.get(base, base), branches.get(head, head)
         a, b = set(self.ancestors(repo, head)), set(self.ancestors(repo, base))
@@ -369,6 +372,68 @@ class RewrittenBranch(unittest.TestCase):
         r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
         self.assertFalse(any("not_forward" in p for p in r["pins"].values()))
         self.assertFalse(any("rewritten" in h["text"] for h in r["holds"]))
+
+
+class UnknownComparison(unittest.TestCase):
+    """GitHub sometimes refuses a comparison (HTTP 422, "this diff is taking too long to generate").
+    The resolver skips what needed it, reports it, and still answers."""
+
+    def graph(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m2"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        return g
+
+    def pins(self):
+        return {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}
+
+    def test_a_mathlib_candidate_that_cannot_be_compared_is_skipped_and_reported(self):
+        g = self.graph()
+        g.too_slow.add((ML, "m1", "m2"))
+        r = resolve(g, self.pins(), lean("v4.34.0"))
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "m1")
+        self.assertEqual(r["pins"]["Physlib"]["rev"], "p1")
+        self.assertIn(f"{ML} m1...m2", r["unknown_compares"])
+        self.assertIn("Not compared", rd.summary(r))
+
+    def test_a_dependency_candidate_that_cannot_be_compared_is_not_called_rewritten(self):
+        g = self.graph()
+        g.too_slow.add((PL, "p1", "p2"))
+        r = resolve(g, self.pins(), lean("v4.34.0"))
+        self.assertEqual(r["pins"]["Physlib"]["rev"], "p1")
+        self.assertNotIn("not_forward", r["pins"]["Physlib"])
+        self.assertIn(f"{PL} p1...p2", r["unknown_compares"])
+
+    def test_an_unknown_lag_is_shown_as_unknown(self):
+        g = self.graph()
+        g.too_slow.add((ML, "m1", "m2"))
+        g.too_slow.add((ML, "m1", "m3"))  # the lag behind the cached tip
+        r = resolve(g, self.pins(), lean("v4.34.0"))
+        self.assertIsNone(r["pins"]["mathlib"]["commits_behind_tip"])
+        self.assertIn("? commits", rd.summary(r))
+        self.assertTrue(any("an unknown number of commits" in h["text"] for h in r["holds"]))
+
+    def test_github_answers_unknown_only_for_a_422(self):
+        def failing(message):
+            def fake_gh(path, jq=None, paginate=False):
+                raise RuntimeError(f"gh api {path} failed: {message}")
+            return fake_gh
+        saved = rd.gh
+        try:
+            rd.gh = failing("gh: Server Error: Sorry, this diff is taking too long to generate. (HTTP 422)")
+            self.assertEqual(rd.GitHub().compare(ML, "a", "b"), rd.UNKNOWN)
+            rd.gh = failing("gh: Not Found (HTTP 404)")
+            with self.assertRaises(RuntimeError):
+                rd.GitHub().compare(ML, "a", "b")
+            def limited(path, jq=None, paginate=False):
+                raise rd.RateLimited("rate limited (HTTP 422)")
+            rd.gh = limited
+            with self.assertRaises(rd.RateLimited):
+                rd.GitHub().compare(ML, "a", "b")
+        finally:
+            rd.gh = saved
 
 
 class ForwardMoves(unittest.TestCase):
