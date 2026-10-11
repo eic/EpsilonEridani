@@ -10,15 +10,14 @@ permissions:
   contents: read
   pull-requests: read  # scripts/lint-scope.sh reads the merged PRs' labels and branches
 
-# Keep the cache publisher live under a burst of main pushes. GitHub retains at
-# most one running and one pending run in this group: the running build is never
-# cancelled before it can publish, while superseded pending commits do not each
-# start an expensive cache-miss rebuild. In a burst, this deliberately coalesces
-# intermediate commits' post-merge checks too; the newest pending tip rechecks
-# the entire tree, though localizing a failure may then require bisection. No
-# merge decision consumes this post-merge workflow's per-commit conclusion.
+# One group per commit, so every main push builds and publishes its own Lake cache. A
+# shared group keeps at most one pending run and silently cancels the rest, which dropped
+# the cache for intermediate commits whenever merges landed faster than a build (and also
+# cancelled manual re-runs queued behind another). Concurrent publishes are safe: artifact
+# PUTs are content-addressed, and each revision map is keyed by its own commit. The group
+# still stops a re-run of a commit from racing a run of the same commit.
 concurrency:
-  group: main-ci-cache-publisher
+  group: main-ci-${{ github.sha }}
   cancel-in-progress: false
 
 env:

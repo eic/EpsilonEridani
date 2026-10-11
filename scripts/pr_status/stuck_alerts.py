@@ -789,10 +789,11 @@ def detect_main_red():
     # advances faster than CI finishes, every failed run may stop being "the tip"
     # before this hourly detector observes it. Keep a known-red state active until
     # a newer successful run proves recovery. Cancelled/skipped runs are not
-    # evidence either way (the main-CI concurrency policy may supersede pending
-    # runs deliberately), so scan past every non-conclusive result as well as
-    # queued/in-progress runs. Serialization keeps completed runs in creation
-    # order; do not remove that policy without revisiting this detector.
+    # evidence either way (a manual cancel says nothing about the tree), so scan
+    # past every non-conclusive result as well as queued/in-progress runs. Main
+    # CI runs once per commit and runs may overlap, so a run can conclude before
+    # an older one; ordering by creation (push order) rather than completion is
+    # what makes "newest conclusive" mean "newest commit with a verdict".
     runs = gh_stream(
         f"/repos/{REPO}/actions/workflows/ci.yml/runs?branch=main&event=push"
         f"&per_page={MAIN_CI_WINDOW}",

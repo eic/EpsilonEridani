@@ -53,9 +53,9 @@ message, so it stores nothing, and it never creates a tag. Before comparing that
 the bot repairs the missing `shell` language on its own newest old-style command fence;
 that one-time edit leaves the report body unchanged.
 
-The wait matters: the push lands 40 to 70 minutes before the release is taggable, because
-`ci.yml` coalesces bursts of `main` pushes and then takes 20 to 30 minutes, publishing the
-Lake cache at the end. Reporting at push time would always say "not yet".
+The wait matters: the push lands 20 to 30 minutes before the release is taggable, because
+`ci.yml`'s run on that commit takes that long, publishing the Lake cache at the end.
+Reporting at push time would always say "not yet".
 
 A release waiting on CI shows as `pending` and is left out of the change comparison. It is
 not news, and including it would post one message saying "wait" and another when the
