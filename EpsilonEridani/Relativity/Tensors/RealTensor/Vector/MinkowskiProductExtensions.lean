@@ -20,6 +20,8 @@ declaration order, the file contains:
 
 * the expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`
   (`minkowskiProduct_sub_self`), companion to `Lorentz.Vector.minkowskiProduct_add_self`;
+* the additivity of the spatial part, `(u + v).spatialPart = u.spatialPart + v.spatialPart`
+  (`spatialPart_add`);
 * the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on
   the mass shell `⟪p, p⟫ₘ = m²` (`norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self`);
 * the Minkowski product of the vector `ofTimeAndSpatial x s` with time component `x` and spatial
@@ -59,6 +61,13 @@ lemma minkowskiProduct_sub_self {d : ℕ} (u v : Vector d) :
   simp only [map_sub, _root_.sub_apply]
   rw [minkowskiProduct_symm v u]
   ring
+
+/-- The spatial part of a sum is the sum of the spatial parts. -/
+@[simp]
+lemma spatialPart_add {d : ℕ} (u v : Vector d) :
+    (u + v).spatialPart = u.spatialPart + v.spatialPart := by
+  ext i
+  simp
 
 /-- The spatial part of `p` has length `√((p⁰)² - ⟪p, p⟫ₘ)`; on the mass shell `⟪p, p⟫ₘ = m²`
 this is `√((p⁰)² - m²)`. -/

@@ -27,9 +27,10 @@ quantities rather than by convention. Write `p = √(E² - M²)` for the target 
   `Q² = -q²` enters `W²` explicitly.
 * For a real photon of energy `k` along the beam axis, `W² = M² + 2 k (E + p)`
   (`minkowskiProduct_add_self_of_realPhoton`), so `W² = M² + 2 x E_s (E + p)` in terms of the
-  energy fraction (`minkowskiProduct_add_self_eq_energyFraction`).
+  energy fraction (`minkowskiProduct_add_self_of_realPhoton_energyFraction`).
 * Its rapidity obeys `e^{2y} = (2 k + E - p) / (E + p)`
-  (`exp_two_mul_rapidity_add_of_realPhoton`) and `E + p = W e^{-y}`
+  (`exp_two_mul_rapidity_add_of_realPhoton`), `2 k + E - p = W e^{y}`
+  (`two_mul_add_sub_sqrt_eq_sqrt_mul_exp_rapidity`) and `E + p = W e^{-y}`
   (`add_sqrt_eq_sqrt_mul_exp_neg_rapidity`), so that `W` and `y` determine each other at fixed
   target.
 * Conversely `2 k = e^{y} (W² - M²) / W` (`two_mul_energy_eq_exp_rapidity_mul`), that is
@@ -47,7 +48,8 @@ With a massive target the relations stay exact; only their form changes.
   in very peripheral collisions at relativistic ion colliders*, Phys. Rep. **364** (2002) 359,
   section 2.
 * A. J. Baltz et al., *The physics of ultraperipheral collisions at the LHC*, Phys. Rep. **458**
-  (2008) 1, section 2, where `W² = 4 k E` and `k = (M / 2) e^{y}` are used.
+  (2008) 1, section 2, where `W² = 4 k E` and `k = (W / 2) e^{y}` are used (the reference writes
+  the invariant mass of the produced system, here `W`, as `M`).
 -/
 
 public section
@@ -79,9 +81,8 @@ theorem minkowskiProduct_add_self_of_target (hn : ‖n‖ = 1) (hE : |M| ≤ E)
     Real.sq_sqrt (sub_nonneg.2 (sq_le_sq' (by linarith [neg_abs_le M]) (by
       linarith [le_abs_self M])))
   have hPP : ⟪P, P⟫ₘ = M ^ 2 := by
-    rw [minkowskiProduct_self_eq_sq_sub, hP, hP']
-    simp only [norm_smul, hn, mul_one, Real.norm_eq_abs, sq_abs, neg_sq, hp]
-    ring
+    rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hP', hP]
+    linear_combination -hp
   have hqP : ⟪q, P⟫ₘ = q.timeComponent * E + √(E ^ 2 - M ^ 2) * ⟪q.spatialPart, n⟫_ℝ := by
     rw [minkowskiProduct_eq_timeComponent_spatialPart, hP, hP', real_inner_smul_right]
     ring
@@ -94,19 +95,16 @@ private theorem components_add_target (hq : q.timeComponent = k) (hq' : q.spatia
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -√(E ^ 2 - M ^ 2) • n) :
     (q + P).timeComponent = k + E ∧ (q + P).spatialPart = (k - √(E ^ 2 - M ^ 2)) • n := by
   refine ⟨by simp [hq, hP], ?_⟩
-  have hsum : (q + P).spatialPart = q.spatialPart + P.spatialPart := by ext i; simp
-  rw [hsum, hq', hP', sub_smul, _root_.neg_smul, ← sub_eq_add_neg]
+  rw [spatialPart_add, hq', hP', sub_smul, _root_.neg_smul, ← sub_eq_add_neg]
 
 /-- The system of a photon of energy `k > 0` along the beam axis and a target of energy `E > 0`
 against it lies inside the forward light cone along the beam axis: `|k - p| < k + E`. -/
-private theorem abs_sub_sqrt_lt_timeComponent_add (hq : q.timeComponent = k)
-    (hP : P.timeComponent = E) (hk : 0 < k) (hE0 : 0 < E) :
-    |k - √(E ^ 2 - M ^ 2)| < (q + P).timeComponent := by
+private theorem abs_sub_sqrt_lt_add (hk : 0 < k) (hE0 : 0 < E) :
+    |k - √(E ^ 2 - M ^ 2)| < k + E := by
   have hp : √(E ^ 2 - M ^ 2) ≤ E := by
     rw [Real.sqrt_le_left hE0.le]
     nlinarith [sq_nonneg M]
-  have h0 : (q + P).timeComponent = k + E := by simp [hq, hP]
-  rw [h0, abs_lt]
+  rw [abs_lt]
   constructor <;> linarith [Real.sqrt_nonneg (E ^ 2 - M ^ 2)]
 
 section RealPhoton
@@ -121,10 +119,9 @@ unit beam axis and a target of mass `M` and energy `E` against it form a system 
 theorem minkowskiProduct_add_self_of_realPhoton (hE : |M| ≤ E) :
     ⟪q + P, q + P⟫ₘ = M ^ 2 + 2 * k * (E + √(E ^ 2 - M ^ 2)) := by
   have hqq : ⟪q, q⟫ₘ = 0 := by
-    rw [minkowskiProduct_self_eq_sq_sub, hq, hq']
-    simp only [norm_smul, hn, mul_one, Real.norm_eq_abs, sq_abs, sub_self]
-  rw [minkowskiProduct_add_self_of_target hn hE hP hP', hqq, hq, hq']
-  simp only [real_inner_smul_left, real_inner_self_eq_norm_sq, hn]
+    rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hq', hq, sub_self, mul_zero]
+  rw [minkowskiProduct_add_self_of_target hn hE hP hP', hqq, hq,
+    inner_spatialPart_eq_of_spatialPart_eq_smul hn hq']
   ring
 
 /-- **The rapidity of a real photon and a target.** The photon–target system of a real photon of
@@ -134,11 +131,20 @@ theorem exp_two_mul_rapidity_add_of_realPhoton (hk : 0 < k) (hE0 : 0 < E) :
     exp (2 * (q + P).rapidity n) =
       (2 * k + E - √(E ^ 2 - M ^ 2)) / (E + √(E ^ 2 - M ^ 2)) := by
   obtain ⟨h0, hs⟩ := components_add_target hq hq' hP hP'
-  have hpar : ⟪(q + P).spatialPart, n⟫_ℝ = k - √(E ^ 2 - M ^ 2) := by
-    rw [hs, real_inner_smul_left, real_inner_self_eq_norm_sq, hn, one_pow, mul_one]
-  rw [exp_two_mul_rapidity (by rw [hpar]; exact abs_sub_sqrt_lt_timeComponent_add hq hP hk hE0),
-    hpar, h0]
+  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hs
+  rw [exp_two_mul_rapidity (by rw [hpar, h0]; exact abs_sub_sqrt_lt_add hk hE0), hpar, h0]
   ring_nf
+
+/-- **The forward light-cone component from the invariant mass and the rapidity.** The light-cone
+component `2 k + E - p` of the photon–target system along the photon direction is `W e^{y}`, where
+`W` and `y` are the invariant mass and the rapidity of the system. -/
+theorem two_mul_add_sub_sqrt_eq_sqrt_mul_exp_rapidity (hk : 0 < k) (hE0 : 0 < E) :
+    2 * k + E - √(E ^ 2 - M ^ 2) = √⟪q + P, q + P⟫ₘ * exp ((q + P).rapidity n) := by
+  obtain ⟨h0, hs⟩ := components_add_target hq hq' hP hP'
+  have := timeComponent_add_eq_sqrt_mul_exp_rapidity hn hs
+    (by rw [h0]; exact abs_sub_sqrt_lt_add hk hE0)
+  rw [h0] at this
+  linear_combination this
 
 /-- **The rapidity is fixed by the invariant mass.** At fixed target, the light-cone component
 `E + p` of the target is `W e^{-y}`, where `W` and `y` are the invariant mass and the rapidity of
@@ -147,7 +153,7 @@ theorem add_sqrt_eq_sqrt_mul_exp_neg_rapidity (hk : 0 < k) (hE0 : 0 < E) :
     E + √(E ^ 2 - M ^ 2) = √⟪q + P, q + P⟫ₘ * exp (-(q + P).rapidity n) := by
   obtain ⟨h0, hs⟩ := components_add_target hq hq' hP hP'
   have := timeComponent_sub_eq_sqrt_mul_exp_neg_rapidity hn hs
-    (abs_sub_sqrt_lt_timeComponent_add hq hP hk hE0)
+    (by rw [h0]; exact abs_sub_sqrt_lt_add hk hE0)
   rw [h0] at this
   linear_combination this
 
@@ -162,7 +168,7 @@ theorem two_mul_energy_eq_exp_rapidity_mul (hE : |M| ≤ E) (hk : 0 < k) (hE0 : 
   have hWpos : 0 < √⟪q + P, q + P⟫ₘ :=
     Real.sqrt_pos.2 (by rw [hW]; positivity)
   have hexp : exp ((q + P).rapidity n) * exp (-(q + P).rapidity n) = 1 := by
-    rw [← exp_add, add_neg_cancel, exp_zero]
+    rw [exp_neg, mul_inv_cancel₀ (exp_pos _).ne']
   rw [eq_div_iff hWpos.ne']
   linear_combination (-exp ((q + P).rapidity n)) * hW - 2 * k * exp ((q + P).rapidity n) * hB -
     2 * k * √⟪q + P, q + P⟫ₘ * hexp
@@ -181,7 +187,7 @@ include hn hE hq hq' hP hP'
 /-- **The invariant mass from the energy fraction.** A real photon carrying the fraction `x` of
 the energy `E_s ≠ 0` of its source forms with the target a system of invariant mass
 `W² = M² + 2 x E_s (E + p)`. -/
-theorem minkowskiProduct_add_self_eq_energyFraction (hs : s.energy ≠ 0) :
+theorem minkowskiProduct_add_self_of_realPhoton_energyFraction (hs : s.energy ≠ 0) :
     ⟪q + P, q + P⟫ₘ = M ^ 2 + 2 * γ.energyFraction s * s.energy * (E + √(E ^ 2 - M ^ 2)) := by
   rw [minkowskiProduct_add_self_of_realPhoton hn hq hq' hP hP' hE,
     PhotonKinematics.energyFraction_def]
@@ -193,8 +199,8 @@ fraction `x` of the energy `E_s` of its source forms with the target a system of
 theorem energyFraction_eq_exp_rapidity_mul (hk : 0 < γ.energy) (hE0 : 0 < E) :
     γ.energyFraction s = exp ((q + P).rapidity n) * (⟪q + P, q + P⟫ₘ - M ^ 2) /
       (2 * √⟪q + P, q + P⟫ₘ * s.energy) := by
-  rw [PhotonKinematics.energyFraction_def, mul_comm 2, mul_assoc, ← div_div,
-    ← two_mul_energy_eq_exp_rapidity_mul hn hq hq' hP hP' hE hk hE0]
+  rw [PhotonKinematics.energyFraction_def, ← mul_div_mul_left γ.energy s.energy two_ne_zero,
+    two_mul_energy_eq_exp_rapidity_mul hn hq hq' hP hP' hE hk hE0]
   ring
 
 end EnergyFraction
@@ -223,15 +229,9 @@ theorem minkowskiProduct_add_self_of_masslessTarget (hE0 : 0 ≤ E) :
 /-- **A real photon and a massless target, photon energy.** `k = (W / 2) e^{y}`. -/
 theorem two_mul_energy_eq_sqrt_mul_exp_rapidity_of_masslessTarget (hk : 0 < k) (hE0 : 0 < E) :
     2 * k = √⟪q + P, q + P⟫ₘ * exp ((q + P).rapidity n) := by
-  have h := two_mul_energy_eq_exp_rapidity_mul hn hq hq' hP (spatialPart_eq_of_massless hP' hE0.le)
-    (by rw [abs_zero]; exact hE0.le) hk hE0
-  have hW := minkowskiProduct_add_self_of_masslessTarget hn hq hq' hP hP' hE0.le
-  have hWpos : 0 < √⟪q + P, q + P⟫ₘ := Real.sqrt_pos.2 (by rw [hW]; positivity)
-  have hsq : ⟪q + P, q + P⟫ₘ = √⟪q + P, q + P⟫ₘ ^ 2 :=
-    (Real.sq_sqrt (by rw [hW]; positivity)).symm
-  set w := √⟪q + P, q + P⟫ₘ
-  rw [h, zero_pow two_ne_zero, sub_zero, hsq]
-  field_simp
+  have h := two_mul_add_sub_sqrt_eq_sqrt_mul_exp_rapidity hn hq hq' hP
+    (spatialPart_eq_of_massless hP' hE0.le) hk hE0
+  rwa [zero_pow two_ne_zero, sub_zero, Real.sqrt_sq hE0.le, add_sub_cancel_right] at h
 
 /-- **A real photon and a massless target, target energy.** `E = (W / 2) e^{-y}`. -/
 theorem two_mul_eq_sqrt_mul_exp_neg_rapidity_of_masslessTarget (hk : 0 < k) (hE0 : 0 < E) :

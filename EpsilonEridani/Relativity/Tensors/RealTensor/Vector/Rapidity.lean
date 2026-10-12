@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Artanh
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
+public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 
 /-!
 # The rapidity of a four-vector along an axis
@@ -14,9 +14,11 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProdu
 The rapidity of a four-vector `v` along a spatial direction `n` is `y = artanh (v_∥ / v⁰)`, where
 `v_∥ = ⟪v.spatialPart, n⟫` is the component of the spatial part along `n`
 (`Lorentz.Vector.rapidity`).
-Inside the forward light cone along `n`, that is for `|v_∥| < v⁰`, the rapidity is the logarithm
-of the ratio of the two light-cone components along `n`:
-`e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)` (`Lorentz.Vector.exp_two_mul_rapidity`).
+Inside the forward light cone along `n`, that is for `|v_∥| < v⁰`, it recovers the velocity,
+`tanh y = v_∥ / v⁰` (`Lorentz.Vector.tanh_rapidity`), and it is the logarithm of the ratio of the
+two light-cone components along `n`: `e^{y} = √(v⁰ + v_∥) / √(v⁰ - v_∥)`
+(`Lorentz.Vector.exp_rapidity`), so `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)`
+(`Lorentz.Vector.exp_two_mul_rapidity`).
 
 For a four-vector whose spatial part lies along a unit vector `n`, those two light-cone components
 multiply to the Minkowski square `W² = ⟪v, v⟫ₘ`
@@ -50,12 +52,34 @@ theorem rapidity_def (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) :
     v.rapidity n = artanh (⟪v.spatialPart, n⟫_ℝ / v.timeComponent) :=
   (rfl)
 
-/-- Inside the forward light cone along `n`, the ratio `v_∥ / v⁰` lies in `(-1, 1)`. -/
-private theorem div_timeComponent_mem_Ioo {v : Vector d} {a : ℝ} (h : |a| < v.timeComponent) :
-    a / v.timeComponent ∈ Set.Ioo (-1) 1 := by
-  have ht : 0 < v.timeComponent := (abs_nonneg a).trans_lt h
+/-- Inside the forward light cone along `n`, that is for `|v_∥| < v⁰`, the ratio `v_∥ / v⁰` lies
+in `(-1, 1)`, where `artanh` inverts `tanh`. -/
+theorem inner_div_timeComponent_mem_Ioo {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
+    (h : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent) :
+    ⟪v.spatialPart, n⟫_ℝ / v.timeComponent ∈ Set.Ioo (-1) 1 := by
+  have ht : 0 < v.timeComponent := (abs_nonneg _).trans_lt h
   rw [Set.mem_Ioo, lt_div_iff₀ ht, div_lt_iff₀ ht]
-  constructor <;> linarith [neg_abs_le a, le_abs_self a]
+  constructor <;> linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ, le_abs_self ⟪v.spatialPart, n⟫_ℝ]
+
+/-- Inside the forward light cone along `n`, the rapidity `y` recovers the velocity along `n`:
+`tanh y = v_∥ / v⁰`. -/
+theorem tanh_rapidity {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
+    (h : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent) :
+    tanh (v.rapidity n) = ⟪v.spatialPart, n⟫_ℝ / v.timeComponent := by
+  rw [rapidity_def]
+  exact tanh_artanh (inner_div_timeComponent_mem_Ioo h)
+
+/-- Inside the forward light cone along `n`, `e^{y} = √(v⁰ + v_∥) / √(v⁰ - v_∥)`. -/
+theorem exp_rapidity {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
+    (h : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent) :
+    exp (v.rapidity n) = √(v.timeComponent + ⟪v.spatialPart, n⟫_ℝ) /
+      √(v.timeComponent - ⟪v.spatialPart, n⟫_ℝ) := by
+  have ht : v.timeComponent ≠ 0 := ((abs_nonneg _).trans_lt h).ne'
+  have hA : 0 ≤ v.timeComponent + ⟪v.spatialPart, n⟫_ℝ := by
+    linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ]
+  rw [rapidity_def, exp_artanh (inner_div_timeComponent_mem_Ioo h), ← Real.sqrt_div hA]
+  congr 1
+  field_simp
 
 /-- **The rapidity is the logarithm of the ratio of the light-cone components.** Inside the
 forward light cone along `n`, `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)`. -/
@@ -63,13 +87,15 @@ theorem exp_two_mul_rapidity {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
     (h : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent) :
     exp (2 * v.rapidity n) = (v.timeComponent + ⟪v.spatialPart, n⟫_ℝ) /
       (v.timeComponent - ⟪v.spatialPart, n⟫_ℝ) := by
-  have ht : 0 < v.timeComponent := (abs_nonneg _).trans_lt h
-  have hx := div_timeComponent_mem_Ioo h
-  have hpos : 0 ≤ (1 + ⟪v.spatialPart, n⟫_ℝ / v.timeComponent) /
-      (1 - ⟪v.spatialPart, n⟫_ℝ / v.timeComponent) :=
-    div_nonneg (by linarith [hx.1]) (by linarith [hx.2])
-  rw [two_mul, exp_add, rapidity_def, exp_artanh hx, Real.mul_self_sqrt hpos]
-  field_simp
+  rw [two_mul, exp_add, exp_rapidity h, div_mul_div_comm,
+    Real.mul_self_sqrt (by linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ]),
+    Real.mul_self_sqrt (by linarith [le_abs_self ⟪v.spatialPart, n⟫_ℝ])]
+
+/-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
+theorem inner_spatialPart_eq_of_spatialPart_eq_smul {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v.spatialPart, n⟫_ℝ = a := by
+  rw [hv, real_inner_smul_self_left, hn, mul_one, mul_one]
 
 /-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
 the product `(v⁰ + a) (v⁰ - a)` of its light-cone components along `n`. -/
@@ -87,21 +113,11 @@ theorem timeComponent_add_eq_sqrt_mul_exp_rapidity {v : Vector d}
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
     (h : |a| < v.timeComponent) :
     v.timeComponent + a = √⟪v, v⟫ₘ * exp (v.rapidity n) := by
-  have hpar : ⟪v.spatialPart, n⟫_ℝ = a := by
-    rw [hv, real_inner_smul_left, real_inner_self_eq_norm_sq, hn, one_pow, mul_one]
+  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
   have hA : 0 < v.timeComponent + a := by linarith [neg_abs_le a]
-  have hB : 0 < v.timeComponent - a := by linarith [le_abs_self a]
-  have hx := div_timeComponent_mem_Ioo h
-  have hratio : (1 + a / v.timeComponent) / (1 - a / v.timeComponent) =
-      (v.timeComponent + a) / (v.timeComponent - a) := by
-    have ht : v.timeComponent ≠ 0 := ((abs_nonneg a).trans_lt h).ne'
-    field_simp
-  have hW : √⟪v, v⟫ₘ = √(v.timeComponent + a) * √(v.timeComponent - a) := by
-    rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, Real.sqrt_mul hA.le]
-  have hy : exp (v.rapidity n) = √(v.timeComponent + a) / √(v.timeComponent - a) := by
-    rw [rapidity_def, hpar, exp_artanh hx, hratio, Real.sqrt_div hA.le]
-  have hB' : 0 < √(v.timeComponent - a) := Real.sqrt_pos.2 hB
-  rw [hW, hy]
+  have hB : 0 < √(v.timeComponent - a) := Real.sqrt_pos.2 (by linarith [le_abs_self a])
+  rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, Real.sqrt_mul hA.le,
+    exp_rapidity (by rwa [hpar]), hpar]
   field_simp
   rw [Real.sq_sqrt hA.le]
 
@@ -119,7 +135,7 @@ theorem timeComponent_sub_eq_sqrt_mul_exp_neg_rapidity {v : Vector d}
     exact Real.sq_sqrt (mul_pos hA hB).le
   have hplus := timeComponent_add_eq_sqrt_mul_exp_rapidity hn hv h
   have hexp : exp (v.rapidity n) * exp (-v.rapidity n) = 1 := by
-    rw [← exp_add, add_neg_cancel, exp_zero]
+    rw [exp_neg, mul_inv_cancel₀ (exp_pos _).ne']
   apply mul_left_cancel₀ hA.ne'
   linear_combination -hW - √⟪v, v⟫ₘ * exp (-v.rapidity n) * hplus - (√⟪v, v⟫ₘ) ^ 2 * hexp
 
