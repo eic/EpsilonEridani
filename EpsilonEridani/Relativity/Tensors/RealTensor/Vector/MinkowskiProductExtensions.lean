@@ -13,10 +13,11 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 
 Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
-companion to `Lorentz.Vector.minkowskiProduct_add_self`; the length of the spatial part of a
-vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
-in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
-energies above the mass and a prescribed angle between their spatial parts.
+companion to `Lorentz.Vector.minkowskiProduct_add_self`; the additivity of the spatial part,
+`(u + v).spatialPart = u.spatialPart + v.spatialPart`; the length of the spatial part of a vector,
+`√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and, in at least
+two spatial dimensions, the existence of two vectors on the mass shell with prescribed energies
+above the mass and a prescribed angle between their spatial parts.
 -/
 
 public section
@@ -33,6 +34,13 @@ lemma minkowskiProduct_sub_self {d : ℕ} (u v : Vector d) :
   simp only [map_sub, _root_.sub_apply]
   rw [minkowskiProduct_symm v u]
   ring
+
+/-- The spatial part of a sum is the sum of the spatial parts. -/
+@[simp]
+lemma spatialPart_add {d : ℕ} (u v : Vector d) :
+    (u + v).spatialPart = u.spatialPart + v.spatialPart := by
+  ext i
+  simp
 
 /-- The spatial part of `p` has length `√((p⁰)² - ⟪p, p⟫ₘ)`; on the mass shell `⟪p, p⟫ₘ = m²`
 this is `√((p⁰)² - m²)`. -/
