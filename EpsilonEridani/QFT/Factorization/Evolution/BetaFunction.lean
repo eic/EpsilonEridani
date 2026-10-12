@@ -22,7 +22,7 @@ so that `β₀ > 0` is asymptotic freedom; `betaCoeff β n` is the coefficient `
 
 A redefinition of the coupling is a formal substitution `a' = F(a) = u a + c₁ a² + c₂ a³ + ⋯`
 with `u` a unit, an element of the substitution group
-`EpsilonEridani.PowerSeries.SubstGroup`. A change of renormalisation scheme is one with `u = 1`;
+`EpsilonEridani.SubstGroup`. A change of renormalisation scheme is one with `u = 1`;
 a change with `F = u a` is a change of normalisation of the coupling, such as
 `α_s / (2π) = 2 · α_s / (4π)`.
 
@@ -57,9 +57,10 @@ and the third is not, unless `β₀ = β₁ = 0`.
 * `betaCoeff_transformBeta_two_of_coeff_one_eq_one`: `β₂' = β₂ - c₁ β₁ + (c₂ - c₁²) β₀`.
 * `forall_betaCoeff_transformBeta_two_eq_iff`: `β₂` is invariant under every change of scheme
   exactly when `β₀ = β₁ = 0`.
-* `transformBeta_scale`, `betaCoeff_transformBeta_scale`: under `a ↦ u a` the coefficients
-  scale as `βₙ' = βₙ / u^{n+1}`; for `a = α_s/(2π)` against `a₄ = α_s/(4π)` this is
-  `betaCoeff_transformBeta_scale_two`.
+* `transformBeta_rescale`, `betaCoeff_transformBeta_rescale`,
+  `betaCoeff_transformBeta_rescale_mk0`: under `a ↦ u a` the coefficients scale as
+  `βₙ' = βₙ / u^{n+1}`; for `a = α_s/(2π)` against `a₄ = α_s/(4π)` this is
+  `betaCoeff_transformBeta_rescale_mk0_two`.
 
 ## References
 
@@ -72,7 +73,7 @@ public section
 
 noncomputable section
 
-open PowerSeries EpsilonEridani.PowerSeries
+open PowerSeries
 
 namespace EpsilonEridani
 namespace QFT
@@ -86,7 +87,6 @@ variable {R : Type*} [CommRing R]
 def betaCoeff (β : R⟦X⟧) (n : ℕ) : R :=
   -coeff (n + 2) β
 
-@[simp]
 lemma betaCoeff_def (β : R⟦X⟧) (n : ℕ) : betaCoeff β n = -coeff (n + 2) β := (rfl)
 
 /-! ### The beta function of a redefined coupling -/
@@ -104,14 +104,14 @@ rule for `da'/dt` with `a' = F(a)`. -/
 theorem subst_transformBeta (F : SubstGroup R) (β : R⟦X⟧) :
     (transformBeta F β).subst F.toPowerSeries = d⁄dX F.toPowerSeries * β := by
   rw [transformBeta_def, subst_comp_subst_apply F⁻¹.hasSubst F.hasSubst,
-    SubstGroup.subst_toPowerSeries_inv, X_subst]
+    SubstGroup.subst_toPowerSeries_inv_left, X_subst]
 
 /-- `transformBeta F β` is the unique power series `β'` with `β'(F(a)) = F'(a) β(a)`. -/
 theorem transformBeta_eq_iff {F : SubstGroup R} {β β' : R⟦X⟧} :
     transformBeta F β = β' ↔ β'.subst F.toPowerSeries = d⁄dX F.toPowerSeries * β := by
   refine ⟨fun h => h ▸ subst_transformBeta F β, fun h => ?_⟩
   rw [transformBeta_def, ← h, subst_comp_subst_apply F.hasSubst F⁻¹.hasSubst,
-    SubstGroup.toPowerSeries_subst_inv, X_subst]
+    SubstGroup.subst_toPowerSeries_inv_right, X_subst]
 
 /-- Leaving the coupling unchanged leaves its beta function unchanged. -/
 @[simp]
@@ -229,18 +229,31 @@ theorem betaCoeff_transformBeta_two_of_coeff_one_eq_one {F : SubstGroup R}
 def cubicSchemeChange (c₁ c₂ : R) : SubstGroup R :=
   ⟨X + C c₁ * X ^ 2 + C c₂ * X ^ 3, by simp, by simp [coeff_X]⟩
 
-@[simp]
 lemma toPowerSeries_cubicSchemeChange (c₁ c₂ : R) :
     (cubicSchemeChange c₁ c₂).toPowerSeries = X + C c₁ * X ^ 2 + C c₂ * X ^ 3 := (rfl)
+
+@[simp]
+lemma coeff_one_cubicSchemeChange (c₁ c₂ : R) :
+    coeff 1 (cubicSchemeChange c₁ c₂).toPowerSeries = 1 := by
+  simp [toPowerSeries_cubicSchemeChange, coeff_X]
+
+@[simp]
+lemma coeff_two_cubicSchemeChange (c₁ c₂ : R) :
+    coeff 2 (cubicSchemeChange c₁ c₂).toPowerSeries = c₁ := by
+  simp [toPowerSeries_cubicSchemeChange, coeff_X]
+
+@[simp]
+lemma coeff_three_cubicSchemeChange (c₁ c₂ : R) :
+    coeff 3 (cubicSchemeChange c₁ c₂).toPowerSeries = c₂ := by
+  simp [toPowerSeries_cubicSchemeChange, coeff_X]
 
 /-- Under `a ↦ a + c₁ a² + c₂ a³` the three-loop coefficient becomes
 `β₂ - c₁ β₁ + (c₂ - c₁²) β₀`. -/
 theorem betaCoeff_transformBeta_cubicSchemeChange_two (c₁ c₂ : R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta (cubicSchemeChange c₁ c₂) β) 2 =
       betaCoeff β 2 - c₁ * betaCoeff β 1 + (c₂ - c₁ ^ 2) * betaCoeff β 0 := by
-  simpa [coeff_X, coeff_C_mul_X_pow] using
-    betaCoeff_transformBeta_two_of_coeff_one_eq_one (F := cubicSchemeChange c₁ c₂)
-      (by simp [coeff_X]) hβ
+  simpa using
+    betaCoeff_transformBeta_two_of_coeff_one_eq_one (coeff_one_cubicSchemeChange c₁ c₂) hβ
 
 /-- **`β₂` is scheme dependent**: the three-loop coefficient is invariant under every change of
 renormalisation scheme exactly when the first two coefficients vanish. -/
@@ -249,8 +262,8 @@ theorem forall_betaCoeff_transformBeta_two_eq_iff {β : R⟦X⟧} (hβ : X ^ 2 �
         betaCoeff (transformBeta F β) 2 = betaCoeff β 2) ↔
       betaCoeff β 0 = 0 ∧ betaCoeff β 1 = 0 := by
   refine ⟨fun h => ?_, fun ⟨h₀, h₁⟩ F hF => ?_⟩
-  · have h₀ := h (cubicSchemeChange 0 1) (by simp [coeff_X])
-    have h₁ := h (cubicSchemeChange 1 1) (by simp [coeff_X])
+  · have h₀ := h (cubicSchemeChange 0 1) (coeff_one_cubicSchemeChange 0 1)
+    have h₁ := h (cubicSchemeChange 1 1) (coeff_one_cubicSchemeChange 1 1)
     rw [betaCoeff_transformBeta_cubicSchemeChange_two _ _ hβ] at h₀ h₁
     constructor
     · linear_combination h₀
@@ -262,29 +275,37 @@ theorem forall_betaCoeff_transformBeta_two_eq_iff {β : R⟦X⟧} (hβ : X ^ 2 �
 
 /-- Under the change of normalisation `a' = u a` the beta function becomes
 `β'(a') = u β(a' / u)`. -/
-theorem transformBeta_scale (u : Rˣ) (β : R⟦X⟧) :
-    transformBeta (SubstGroup.scale u) β = C (u : R) * rescale (↑u⁻¹ : R) β := by
-  rw [transformBeta_eq_iff, SubstGroup.toPowerSeries_scale, ← smul_eq_C_mul, ← smul_eq_C_mul,
+theorem transformBeta_rescale (u : Rˣ) (β : R⟦X⟧) :
+    transformBeta (SubstGroup.rescale u) β = C (u : R) * rescale (↑u⁻¹ : R) β := by
+  rw [transformBeta_eq_iff, SubstGroup.toPowerSeries_rescale, ← smul_eq_C_mul, ← smul_eq_C_mul,
     PowerSeries.subst_smul (HasSubst.smul_X' _), ← rescale_eq_subst, rescale_rescale]
   simp
 
 /-- Under the change of normalisation `a' = u a` the coefficients of the beta function scale as
 `βₙ' = βₙ / u^{n+1}`. -/
-theorem betaCoeff_transformBeta_scale (u : Rˣ) (β : R⟦X⟧) (n : ℕ) :
-    (u : R) ^ (n + 1) * betaCoeff (transformBeta (SubstGroup.scale u) β) n = betaCoeff β n := by
-  rw [transformBeta_scale, betaCoeff_def, betaCoeff_def, coeff_C_mul, coeff_rescale]
+theorem betaCoeff_transformBeta_rescale (u : Rˣ) (β : R⟦X⟧) (n : ℕ) :
+    (u : R) ^ (n + 1) * betaCoeff (transformBeta (SubstGroup.rescale u) β) n = betaCoeff β n := by
+  rw [transformBeta_rescale, betaCoeff_def, betaCoeff_def, coeff_C_mul, coeff_rescale]
   have : (u : R) ^ (n + 1) * u * (↑u⁻¹ : R) ^ (n + 2) = 1 := by
     rw [← pow_succ, ← mul_pow, Units.mul_inv, one_pow]
   linear_combination -coeff (n + 2) β * this
 
+/-- Over a field, the change of normalisation `a' = u a` with `u ≠ 0` divides the coefficients of
+the beta function: `βₙ' = βₙ / u^{n+1}`. -/
+theorem betaCoeff_transformBeta_rescale_mk0 {K : Type*} [Field K] {u : K} (hu : u ≠ 0)
+    (β : K⟦X⟧) (n : ℕ) :
+    betaCoeff (transformBeta (SubstGroup.rescale (Units.mk0 u hu)) β) n =
+      betaCoeff β n / u ^ (n + 1) := by
+  rw [eq_div_iff (pow_ne_zero _ hu), mul_comm]
+  simpa using betaCoeff_transformBeta_rescale (Units.mk0 u hu) β n
+
 /-- The coupling `a = α_s / (2π)` against `a₄ = α_s / (4π)`: if `β` is the beta function of `a₄`,
 the beta function of `a = 2 a₄` has the coefficients `βₙ / 2^{n+1}`; in particular `β₀` halves. -/
-theorem betaCoeff_transformBeta_scale_two {K : Type*} [Field K] (h2 : (2 : K) ≠ 0) (β : K⟦X⟧)
-    (n : ℕ) :
-    betaCoeff (transformBeta (SubstGroup.scale (Units.mk0 2 h2)) β) n =
-      betaCoeff β n / 2 ^ (n + 1) := by
-  rw [eq_div_iff (pow_ne_zero _ h2), mul_comm]
-  simpa using betaCoeff_transformBeta_scale (Units.mk0 2 h2) β n
+theorem betaCoeff_transformBeta_rescale_mk0_two {K : Type*} [Field K] (h2 : (2 : K) ≠ 0)
+    (β : K⟦X⟧) (n : ℕ) :
+    betaCoeff (transformBeta (SubstGroup.rescale (Units.mk0 2 h2)) β) n =
+      betaCoeff β n / 2 ^ (n + 1) :=
+  betaCoeff_transformBeta_rescale_mk0 h2 β n
 
 end Evolution
 end Factorization
