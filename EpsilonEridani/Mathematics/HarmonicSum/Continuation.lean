@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import EpsilonEridani.Mathematics.HarmonicSum.Asymptotics
+public import EpsilonEridani.Mathematics.SpecialFunctions.Gamma.DigammaExtensions
 
 /-!
 # The meromorphic continuation of the first harmonic sum
@@ -27,6 +28,10 @@ and develops its basic theory:
 * it is meromorphic on `ℂ`, analytic away from the negative integers, and has a simple pole with
   residue `-1` at each negative integer `-(m + 1)`.
 
+The analyticity of `Γ` and `ψ` away from the non-positive integers, which these regularity
+statements rest on, is proved in
+`EpsilonEridani.Mathematics.SpecialFunctions.Gamma.DigammaExtensions`.
+
 The continuation matters because the Mellin moments of the splitting kernels are rational
 functions of the moment variable `N` and harmonic sums of `N`; the inversion contour of the
 Mellin transform runs through complex `N`, and the pole structure of the moments in the complex
@@ -42,11 +47,11 @@ along the positive integers.
 
 ## Main statements
 
-* `EpsilonEridani.complexHarmonic_natCast`: `complexHarmonic n = harmonic n`.
+* `EpsilonEridani.complexHarmonic_natCast`: `complexHarmonic n = harmonic n`, with
+  `complexHarmonic_zero`, `complexHarmonic_one` and `complexHarmonic_ofNat` evaluating the
+  continuation at the natural number literals.
 * `EpsilonEridani.complexHarmonic_add_one`: the recurrence `S₁(s + 1) = S₁(s) + 1/(s + 1)`.
 * `EpsilonEridani.complexHarmonic_neg`: the reflection formula.
-* `EpsilonEridani.analyticAt_Gamma` and `EpsilonEridani.analyticAt_digamma`: analyticity of `Γ`
-  and `ψ` away from the non-positive integers.
 * `EpsilonEridani.analyticAt_complexHarmonic`: analyticity away from the negative integers.
 * `EpsilonEridani.meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ`:
   the trailing coefficient at each negative integer is `-1`.
@@ -70,20 +75,6 @@ open Complex Filter Topology Asymptotics
 open scoped Real
 
 namespace EpsilonEridani
-
-/-- `Γ` is analytic away from its poles `0, -1, -2, …`. -/
-@[fun_prop]
-theorem analyticAt_Gamma {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) : AnalyticAt ℂ Gamma s := by
-  -- `Γ` is the reciprocal of the entire function `1/Γ`, which does not vanish at `s`.
-  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
-  simpa only [Pi.inv_def, inv_inv] using h
-
-/-- The digamma function `ψ = Γ'/Γ` is analytic away from its poles `0, -1, -2, …`. -/
-@[fun_prop]
-theorem analyticAt_digamma {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) : AnalyticAt ℂ digamma s := by
-  have hΓ := analyticAt_Gamma hs
-  rw [digamma_def, logDeriv]
-  exact hΓ.deriv.div hΓ (Gamma_ne_zero hs)
 
 /-- The meromorphic continuation of the first harmonic sum `S₁(N) = harmonic N` to complex
 argument via the digamma function, `S₁(s) = ψ(s + 1) + γ`, with `γ` the Euler–Mascheroni
@@ -117,6 +108,12 @@ theorem complexHarmonic_zero : complexHarmonic 0 = 0 := by
 theorem complexHarmonic_one : complexHarmonic 1 = 1 := by
   simpa using complexHarmonic_natCast 1
 
+/-- The continuation restricts to the harmonic numbers on the natural number literals. -/
+@[simp]
+theorem complexHarmonic_ofNat (n : ℕ) [n.AtLeastTwo] :
+    complexHarmonic (ofNat(n)) = harmonic (ofNat(n)) :=
+  complexHarmonic_natCast n
+
 /-- Away from the negative integers, `s + 1` avoids the poles `0, -1, -2, …` of `ψ`. -/
 private theorem add_one_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) (m : ℕ) :
     s + 1 ≠ -(m : ℂ) := fun h => hs m (by linear_combination h)
@@ -137,7 +134,8 @@ theorem complexHarmonic_add_nat {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) (n 
   simp_rw [add_right_comm s 1]
   ring
 
-/-- **The downward recurrence** `S₁(s - 1) = S₁(s) - 1/s`, for non-integer `s`. -/
+/-- **The downward recurrence** `S₁(s - 1) = S₁(s) - 1/s`, away from the non-positive integers
+`0, -1, -2, …`. -/
 theorem complexHarmonic_sub_one {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) :
     complexHarmonic (s - 1) = complexHarmonic s - s⁻¹ := by
   rw [complexHarmonic_apply, complexHarmonic_apply, sub_add_cancel,
@@ -157,7 +155,7 @@ theorem meromorphic_complexHarmonic : Meromorphic complexHarmonic := by
   have h : Meromorphic fun s => digamma (s + 1) :=
     Meromorphic.meromorphic_fun_comp_add_const_iff_meromorphic.2 meromorphic_digamma
   rw [complexHarmonic_def]
-  fun_prop
+  exact h.add (by fun_prop)
 
 /-- The continuation is analytic away from the negative integers. -/
 @[fun_prop]
@@ -171,20 +169,6 @@ theorem analyticAt_complexHarmonic {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) 
 theorem continuousAt_complexHarmonic {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) :
     ContinuousAt complexHarmonic s :=
   (analyticAt_complexHarmonic hs).continuousAt
-
-/-- Near a negative integer `-(m + 1)`, every other point avoids the negative integers. -/
-theorem eventually_forall_ne_neg_nat_succ (m : ℕ) :
-    ∀ᶠ s in 𝓝[≠] (-(m + 1 : ℂ)), ∀ j : ℕ, s ≠ -(j + 1 : ℂ) := by
-  -- the integers other than `-(m + 1)` form a closed subset of `ℂ`
-  have hc := isClosedEmbedding_intCast.isClosedMap _ (isClosed_discrete {n : ℤ | n ≠ -(m + 1)})
-  have hm : -(m + 1 : ℂ) ∈ (((↑) : ℤ → ℂ) '' {n : ℤ | n ≠ -(m + 1)})ᶜ := by
-    rintro ⟨n, hn, hn'⟩
-    exact hn (by exact_mod_cast hn')
-  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hc.isOpen_compl.mem_nhds hm)]
-    with s hne hs j hj
-  subst hj
-  refine hs ⟨-(j + 1), fun h => hne ?_, by push_cast; rfl⟩
-  simp [show j = m by omega]
 
 /-- The regular part at the negative integer `-(m + 1)`: the function
 `s ↦ S₁(s + m + 1) - ∑_{k<m} 1/(s + k + 1)`, which differs from `S₁` by the polar term
@@ -204,12 +188,14 @@ private theorem analyticAt_regularPart (m : ℕ) :
     exact_mod_cast (Finset.mem_range.1 hk).ne
 
 /-- The Laurent presentation of the continuation at the negative integer `-(m + 1)`:
-`S₁(s) = (s + m + 1)⁻¹ g(s)` with `g` analytic and `g(-(m + 1)) = -1`. -/
+`S₁(s) = (s + m + 1)⁻¹ g(s)` with `g` analytic, `g(-(m + 1)) = -1`, and
+`g(-(m + 1)) ≠ 0`. -/
 private theorem complexHarmonic_presentation (m : ℕ) :
     ∃ g : ℂ → ℂ, AnalyticAt ℂ g (-(m + 1 : ℂ)) ∧ g (-(m + 1 : ℂ)) = -1 ∧
+      g (-(m + 1 : ℂ)) ≠ 0 ∧
       complexHarmonic =ᶠ[𝓝[≠] (-(m + 1 : ℂ))]
         fun s => (s - -(m + 1 : ℂ)) ^ (-1 : ℤ) • g s := by
-  refine ⟨fun s => (s + (m + 1)) * regularPart m s - 1, ?_, by simp, ?_⟩
+  refine ⟨fun s => (s + (m + 1)) * regularPart m s - 1, ?_, by simp, by simp, ?_⟩
   · exact ((analyticAt_id.add analyticAt_const).mul (analyticAt_regularPart m)).sub
       analyticAt_const
   · filter_upwards [eventually_forall_ne_neg_nat_succ m, self_mem_nhdsWithin] with s hs hne
@@ -225,32 +211,29 @@ private theorem complexHarmonic_presentation (m : ℕ) :
 `-(m + 1)` is `-1`. -/
 theorem meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicTrailingCoeffAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
-  obtain ⟨g, hg, hg₁, h⟩ := complexHarmonic_presentation m
-  exact (hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE
-    (by rw [hg₁]; exact neg_ne_zero.2 one_ne_zero) h).trans hg₁
+  obtain ⟨g, hg, hg₁, hg₂, h⟩ := complexHarmonic_presentation m
+  exact (hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hg₂ h).trans hg₁
 
 /-- **The pole structure**: the continuation has a simple pole at every negative integer. -/
 theorem meromorphicOrderAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicOrderAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
-  obtain ⟨g, hg, hg₁, h⟩ := complexHarmonic_presentation m
-  rw [← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg,
+  obtain ⟨g, hg, -, hg₂, h⟩ := complexHarmonic_presentation m
+  rw [show (-1 : WithTop ℤ) = ((-1 : ℤ) : WithTop ℤ) by norm_cast,
     meromorphicOrderAt_eq_int_iff (meromorphic_complexHarmonic _)]
-  exact ⟨g, hg, by rw [hg₁]; exact neg_ne_zero.2 one_ne_zero, h⟩
+  exact ⟨g, hg, hg₂, h⟩
 
 /-- **The residue** of the continuation at every negative integer is `-1`:
 `(s + m + 1) S₁(s) → -1` as `s → -(m + 1)`. -/
 theorem tendsto_mul_complexHarmonic_neg_nat_succ (m : ℕ) :
     Tendsto (fun s => (s + (m + 1)) * complexHarmonic s) (𝓝[≠] (-(m + 1 : ℂ))) (𝓝 (-1)) := by
-  obtain ⟨g, hg, hg₁, h⟩ := complexHarmonic_presentation m
   have ht := MeromorphicAt.tendsto_nhds_meromorphicTrailingCoeffAt
     (meromorphic_complexHarmonic (-(m + 1 : ℂ)))
   rw [meromorphicOrderAt_complexHarmonic_neg_nat_succ,
-    hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE
-      (by rw [hg₁]; exact neg_ne_zero.2 one_ne_zero) h, hg₁] at ht
+    meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ] at ht
   -- the order `-1` turns `(· + (m + 1)) ^ (-order) • S₁` into `(· + (m + 1)) * S₁`
   refine ht.congr fun s => ?_
   simp only [Pi.smul_apply', Pi.pow_apply, smul_eq_mul]
-  rw [← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg, WithTop.untop₀_coe,
+  rw [show (-1 : WithTop ℤ) = ((-1 : ℤ) : WithTop ℤ) by norm_cast, WithTop.untop₀_coe,
     neg_neg, zpow_one, sub_neg_eq_add]
 
 /-- **The large-`N` asymptotics of the digamma function**, `ψ(N) = log N - 1/(2N) + O(1/N²)`

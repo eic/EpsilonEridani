@@ -19,8 +19,11 @@ two-sided bound
 with `γ` the Euler–Mascheroni constant. This gives `S₁(N) = log N + γ + O(1/N)` and its
 refinement `S₁(N) = log N + γ + 1/(2N) + O(1/N²)`. The bound comes from comparing `log(1 + 1/a)`
 with its trapezoidal approximation `1/(2a) + 1/(2(a + 1))` through the series
-`log(1 + 1/a) = ∑_k 2/(2k+1) (2a+1)^(-(2k+1))`. These asymptotics are what relate the large-`N`
-growth of the anomalous dimensions to the `z → 1` singularities of the splitting kernels.
+`log(1 + 1/a) = ∑_k 2/(2k+1) (2a+1)^(-(2k+1))` (Mathlib's `Real.hasSum_log_one_add_inv`), which
+is summed against a geometric series via `hasSum_geometric_of_lt_one` and `hasSum_le`, following
+the proof plan of Mathlib's Stirling approximation (`Stirling.log_stirlingSeq_sdiff_le`). These
+asymptotics are what relate the large-`N` growth of the anomalous dimensions to the `z → 1`
+singularities of the splitting kernels.
 
 ## Main statements
 
@@ -38,8 +41,6 @@ growth of the anomalous dimensions to the `z → 1` singularities of the splitti
 
 * J. Blümlein and S. Kurth, *Harmonic sums and Mellin transforms up to two-loop order*,
   Phys. Rev. D 60 (1999) 014018, arXiv:hep-ph/9810241.
-* The proof of the auxiliary series bounds uses Mathlib's formalisation of Stirling's
-  approximation, following the approach of de Bruijn, *Asymptotic Methods in Analysis* (1981).
 -/
 
 @[expose] public section
