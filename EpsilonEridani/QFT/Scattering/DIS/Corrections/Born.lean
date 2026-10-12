@@ -130,11 +130,11 @@ every kinematic domain, although it is not integrable up to the boundary `Q² = 
 example (S : ℝ) : BornCrossSection S :=
   ofLocallyIntegrableOn (fun z => (z.1 * z.2 ^ 2)⁻¹)
     (((continuous_fst.mul (continuous_snd.pow 2)).continuousOn.inv₀ fun z hz => by
-      rw [interior_kinematicDomain] at hz
+      rw [mem_interior_kinematicDomain] at hz
       exact mul_ne_zero hz.1.ne' (pow_ne_zero 2 hz.2.2.1.ne')).locallyIntegrableOn
         isOpen_interior.measurableSet)
     fun z hz => by
-      rw [interior_kinematicDomain] at hz
+      rw [mem_interior_kinematicDomain] at hz
       have := hz.1
       have := hz.2.2.1
       positivity
