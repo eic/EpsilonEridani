@@ -35,11 +35,11 @@ bound `y (1 + x M² / S) ≤ 1`; nothing in this file uses that refinement.
 
 ## Main results
 
-* `DisKinematics.invariants_mem_kinematicDomain_iff`: for a spacelike probe with `P·q > 0` and
-  `P·k > 0`, the invariants `(x, Q²)` of a `DisKinematics` lie in `kinematicDomain (2 P·k)`
-  exactly when `W² ≥ M²` and `y ≤ 1`.
+* `DisKinematics.invariants_mem_kinematicDomain_iff`: for a spacelike probe with `P·k > 0`, the
+  invariants `(x, Q²)` of a `DisKinematics` lie in `kinematicDomain (2 P·k)` exactly when
+  `W² ≥ M²` and `y ≤ 1`.
 * `DisKinematics.invariants_mem_kinematicDomain_iff'`: the same membership stated without a
-  symmetry assumption, as `Q² ≤ 2 P·q` and `P·q ≤ P·k`.
+  symmetry assumption, as `Q² ≤ 2 P·q` and `P·q ≤ P·k`; either side already forces `P·q > 0`.
 * `DisKinematics.BasicAssumptions.invariants_mem_kinematicDomain`: every configuration satisfying
   the bounds of `DisKinematics.BasicAssumptions` has its invariants in the domain.
 * `interior_kinematicDomain` and `mem_interior_kinematicDomain`: the interior is given by the
@@ -164,26 +164,37 @@ lemma Q2_le_xBj_mul_two_p_dot_k_iff (g : Bilin V) (K : DisKinematics V)
   rw [xBj, div_mul_eq_mul_div, le_div_iff₀ h2pq]
   constructor <;> intro h <;> nlinarith
 
-/-- For a spacelike probe with `P·q > 0`, the invariants `(x, Q²)` lie in the kinematic domain at
+/-- For a spacelike probe, the invariants `(x, Q²)` lie in the kinematic domain at
 `S = 2 P·k` exactly when `Q² ≤ 2 P·q` and `P·q ≤ P·k`: the raw form of the threshold `W² ≥ M²`
-and of the inelasticity bound `y ≤ 1`, needing no symmetry of the bilinear form. -/
+and of the inelasticity bound `y ≤ 1`, needing no symmetry of the bilinear form. Positivity of
+`P·q` is not assumed: `Q² > 0` together with either side already forces it. -/
 theorem invariants_mem_kinematicDomain_iff' (g : Bilin V) (K : DisKinematics V)
-    (hQ : 0 < K.Q2 g) (hpq : 0 < g K.p K.q) :
+    (hQ : 0 < K.Q2 g) :
     (K.xBj g, K.Q2 g) ∈ kinematicDomain (2 * g K.p K.k) ↔
       K.Q2 g ≤ 2 * g K.p K.q ∧ g K.p K.q ≤ g K.p K.k := by
-  have h2pq : 0 < 2 * g K.p K.q := by linarith
-  have hx : 0 < K.xBj g := by rw [xBj]; exact div_pos hQ h2pq
-  have hx1 : K.xBj g ≤ 1 ↔ K.Q2 g ≤ 2 * g K.p K.q := by rw [xBj]; exact div_le_one h2pq
-  have hy := Q2_le_xBj_mul_two_p_dot_k_iff g K hQ hpq
-  simp only [mem_kinematicDomain, hx, hQ, true_and, hx1, hy]
+  simp only [mem_kinematicDomain]
+  constructor
+  · rintro ⟨hx, hx1, -, hy⟩
+    -- `0 < xBj = Q² / (2 P·q)` together with `Q² > 0` forces `2 P·q > 0`.
+    rw [xBj] at hx hx1
+    rcases div_pos_iff.1 hx with ⟨-, h2pq⟩ | ⟨hqs, -⟩
+    · have hpq : 0 < g K.p K.q := by linarith
+      exact ⟨(div_le_one h2pq).1 hx1, (Q2_le_xBj_mul_two_p_dot_k_iff g K hQ hpq).1 hy⟩
+    · exact absurd hqs.le hQ.not_ge
+  · rintro ⟨h1, h2⟩
+    -- `Q² ≤ 2 P·q` together with `Q² > 0` forces `2 P·q > 0`.
+    have h2pq : 0 < 2 * g K.p K.q := hQ.trans_le h1
+    have hpq : 0 < g K.p K.q := by linarith
+    refine ⟨by rw [xBj]; exact div_pos hQ h2pq, by rw [xBj]; exact (div_le_one h2pq).2 h1, hQ, ?_⟩
+    exact (Q2_le_xBj_mul_two_p_dot_k_iff g K hQ hpq).2 h2
 
-/-- For a spacelike probe with `P·q > 0` and `P·k > 0`, the invariants `(x, Q²)` of a
-`DisKinematics` lie in the kinematic domain at `S = 2 P·k` exactly when the hadronic final state
-is above the elastic threshold, `W² ≥ M²`, and the inelasticity satisfies `y ≤ 1`. -/
+/-- For a spacelike probe with `P·k > 0`, the invariants `(x, Q²)` of a `DisKinematics` lie in
+the kinematic domain at `S = 2 P·k` exactly when the hadronic final state is above the elastic
+threshold, `W² ≥ M²`, and the inelasticity satisfies `y ≤ 1`. -/
 theorem invariants_mem_kinematicDomain_iff (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V)
-    (hQ : 0 < K.Q2 g) (hpq : 0 < g K.p K.q) (hpk : 0 < g K.p K.k) :
+    (hQ : 0 < K.Q2 g) (hpk : 0 < g K.p K.k) :
     (K.xBj g, K.Q2 g) ∈ kinematicDomain (2 * g K.p K.k) ↔ K.M2 g ≤ K.W2 g ∧ K.yInel g ≤ 1 := by
-  rw [invariants_mem_kinematicDomain_iff' g K hQ hpq]
+  rw [invariants_mem_kinematicDomain_iff' g K hQ]
   refine and_congr ?_ ?_
   · rw [W2_eq_with_Q2 g K hg, M2_def]
     constructor <;> intro h <;> linarith
@@ -194,7 +205,7 @@ theorem invariants_mem_kinematicDomain_iff (g : Bilin V) (hg : g.IsSymm) (K : Di
 invariants `(x, Q²)` in the kinematic domain at `S = 2 P·k`. -/
 theorem BasicAssumptions.invariants_mem_kinematicDomain {g : Bilin V} {K : DisKinematics V}
     (h : BasicAssumptions g K) : (K.xBj g, K.Q2 g) ∈ kinematicDomain (2 * g K.p K.k) :=
-  (invariants_mem_kinematicDomain_iff' g K h.q2_pos h.p_dot_q_pos).2
+  (invariants_mem_kinematicDomain_iff' g K h.q2_pos).2
     ⟨h.q2_le_two_p_dot_q, h.p_dot_q_le_p_dot_k⟩
 
 end DisKinematics

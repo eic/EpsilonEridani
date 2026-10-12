@@ -20,7 +20,8 @@ the Lebesgue measure `dx dQ²` on `ℝ × ℝ`.
 Local integrability is required only on the open interior, not up to the boundary: the photon
 propagator makes a physical cross section grow like `1 / Q⁴` as `Q² → 0`, so it need not be
 integrable over the whole domain. Since a Born cross section vanishes off the interior, it is
-determined by its values there (`BornCrossSection.ext_of_eqOn_interior`).
+determined by its values there (`BornCrossSection.ext_of_eqOn_interior`) and almost-everywhere
+strongly measurable on all of `ℝ × ℝ` (`BornCrossSection.aestronglyMeasurable`).
 
 ## Main definitions
 
@@ -85,6 +86,17 @@ lemma support_subset (σ : BornCrossSection S) :
 lemma locallyIntegrableOn (σ : BornCrossSection S) :
     LocallyIntegrableOn σ (interior (kinematicDomain S)) :=
   σ.locallyIntegrableOn'
+
+/-- A Born cross section is almost-everywhere strongly measurable as a function on all of
+`ℝ × ℝ`: it vanishes off the interior of the kinematic domain, so it agrees with the indicator
+of that interior times its own values, which are a.e. strongly measurable there by local
+integrability. -/
+lemma aestronglyMeasurable (σ : BornCrossSection S) : AEStronglyMeasurable σ volume := by
+  have h : (interior (kinematicDomain S)).indicator ⇑σ = ⇑σ :=
+    indicator_eq_self.2 σ.support_subset
+  rw [← h]
+  exact (aestronglyMeasurable_indicator_iff isOpen_interior.measurableSet).2
+    σ.locallyIntegrableOn.aestronglyMeasurable
 
 lemma eq_zero_of_notMem_interior (σ : BornCrossSection S) {z : ℝ × ℝ}
     (hz : z ∉ interior (kinematicDomain S)) : σ z = 0 :=
