@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.SpecialFunctions.SigmoidExtensions
 public import EpsilonEridani.Particles.Nuclei.Basic
 public import Physlib.SpaceAndTime.Space.Module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
@@ -93,7 +94,7 @@ namespace DensityProfile
 
 variable {nuc : Nucleus} (ρ : DensityProfile nuc)
 
-/-- A density profile is integrable: its integral is the mass number, which is not zero. -/
+/-- The density of a density profile is integrable over space. -/
 lemma integrable : Integrable ρ.density := by
   refine Integrable.of_integral_ne_zero ?_
   rw [ρ.integral_density]
@@ -110,9 +111,23 @@ end Nucleus
 def hardSphereDensity (m R : ℝ) : ℝ → ℝ :=
   (Iic R).indicator fun _ => 3 * m / (4 * π * R ^ 3)
 
-@[simp]
 lemma hardSphereDensity_def (m R : ℝ) :
     hardSphereDensity m R = (Iic R).indicator fun _ => 3 * m / (4 * π * R ^ 3) := (rfl)
+
+/-- The hard-sphere profile takes its constant interior value `3m / (4π R³)` up to the
+radius `R`. -/
+@[simp]
+lemma hardSphereDensity_of_le {m R r : ℝ} (h : r ≤ R) :
+    hardSphereDensity m R r = 3 * m / (4 * π * R ^ 3) := by
+  rw [hardSphereDensity_def]
+  exact indicator_of_mem (mem_Iic.2 h) _
+
+/-- The hard-sphere profile vanishes beyond the radius `R`. -/
+@[simp]
+lemma hardSphereDensity_of_lt {m R r : ℝ} (h : R < r) :
+    hardSphereDensity m R r = 0 := by
+  rw [hardSphereDensity_def]
+  exact indicator_of_notMem (fun hr => not_lt.2 (mem_Iic.1 hr) h) _
 
 lemma hardSphereDensity_nonneg {m R : ℝ} (hm : 0 ≤ m) (hR : 0 ≤ R) (r : ℝ) :
     0 ≤ hardSphereDensity m R r := by
@@ -156,8 +171,7 @@ theorem integral_gaussianDensity (m : ℝ) {R : ℝ} (hR : R ≠ 0) :
     simp only [gaussianDensity_def, div_pow, neg_mul, inv_mul_eq_div]
   have hc : 0 < (π * R ^ 2) ^ (3 / 2 : ℝ) := by positivity
   simp only [h, integral_const_mul, GaussianFourier.integral_rexp_neg_mul_sq_norm hR2,
-    Space.finrank_eq_dim, div_inv_eq_mul]
-  norm_num
+    Space.finrank_eq_dim, div_inv_eq_mul, Nat.cast_ofNat]
   exact div_mul_cancel₀ m hc.ne'
 
 /-! ### The Woods–Saxon profile -/
@@ -168,9 +182,19 @@ logistic function `Real.sigmoid`. -/
 def woodsSaxonDensity (ρ₀ R a r : ℝ) : ℝ :=
   ρ₀ * Real.sigmoid ((R - r) / a)
 
-@[simp]
 lemma woodsSaxonDensity_def (ρ₀ R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r = ρ₀ * Real.sigmoid ((R - r) / a) := (rfl)
+
+/-- The Woods–Saxon profile in its quotient form, `ρ₀ / (1 + exp((r - R)/a))`. -/
+lemma woodsSaxonDensity_eq_div (ρ₀ R a r : ℝ) :
+    woodsSaxonDensity ρ₀ R a r = ρ₀ / (1 + exp ((r - R) / a)) := by
+  rw [woodsSaxonDensity_def, Real.sigmoid_def, ← neg_div, neg_sub, ← one_div, mul_one_div]
+
+/-- At the half-density radius `r = R`, the Woods–Saxon profile takes half its central
+value `ρ₀ / 2`. -/
+lemma woodsSaxonDensity_self (ρ₀ R a : ℝ) :
+    woodsSaxonDensity ρ₀ R a R = ρ₀ / 2 := by
+  rw [woodsSaxonDensity_def, sub_self, zero_div, Real.sigmoid_zero, ← one_div, mul_one_div]
 
 lemma woodsSaxonDensity_nonneg {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
     0 ≤ woodsSaxonDensity ρ₀ R a r := by
@@ -187,18 +211,12 @@ lemma woodsSaxonDensity_eq_mul (ρ₀ R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r = ρ₀ * woodsSaxonDensity 1 R a r := by
   simp [woodsSaxonDensity_def]
 
-/-- Every real number is bounded by its exponential: `Real.sigmoid x ≤ Real.exp x`. -/
-lemma real_sigmoid_le_exp (x : ℝ) : Real.sigmoid x ≤ Real.exp x := by
-  rw [Real.sigmoid_def, ← inv_inv (Real.exp x),
-    inv_le_inv₀ (by positivity) (by positivity), ← Real.exp_neg]
-  exact le_add_of_nonneg_left zero_le_one
-
 /-- The Woods–Saxon profile is bounded by the exponential tail `ρ₀ exp(-(r - R)/a)`. -/
-lemma woodsSaxonDensity_le {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
+lemma woodsSaxonDensity_le_mul_exp {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r ≤ ρ₀ * exp (-((r - R) / a)) := by
   rw [woodsSaxonDensity_def, ← neg_div, neg_sub]
   gcongr
-  exact real_sigmoid_le_exp _
+  exact Real.sigmoid_le_exp _
 
 /-- The Woods–Saxon profile is integrable over space whenever the surface thickness is
 positive. -/
@@ -207,20 +225,22 @@ theorem integrable_woodsSaxonDensity (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a) :
   simp_rw [woodsSaxonDensity_eq_mul ρ₀]
   refine Integrable.const_mul ?_ ρ₀
   rw [integrable_fun_norm_addHaar, Space.finrank_eq_dim]
+  -- The radial exponent `dim Space - 1` is the literal `3 - 1 = 2`.
+  simp only [Nat.reduceSub]
   -- Compare with `exp (R / a) * r² exp(-r / a)`, integrable on `(0, ∞)` as a Gamma integral.
   have hg : IntegrableOn (fun r : ℝ => exp (R / a) * (r ^ 2 * exp (-a⁻¹ * r))) (Ioi 0) := by
     refine Integrable.const_mul ?_ _
     refine (integrableOn_rpow_mul_exp_neg_mul_rpow (s := 2) (p := 1) (by norm_num) one_pos
       (inv_pos.2 ha)).congr_fun (fun r _ => ?_) measurableSet_Ioi
     simp [rpow_ofNat]
-  refine hg.mono' ?_ (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr => ?_)
+  refine hg.mono' ?_ (ae_restrict_of_forall_mem measurableSet_Ioi fun r _ => ?_)
   · refine (Continuous.aestronglyMeasurable ?_).restrict
     simp_rw [woodsSaxonDensity_def]
     fun_prop (disch := intro r; positivity)
   · have h0 : 0 ≤ woodsSaxonDensity 1 R a r := woodsSaxonDensity_nonneg zero_le_one R a r
-    rw [Nat.add_one_sub_one, smul_eq_mul, Real.norm_of_nonneg (mul_nonneg (sq_nonneg r) h0)]
+    rw [smul_eq_mul, Real.norm_of_nonneg (mul_nonneg (sq_nonneg r) h0)]
     calc r ^ 2 * woodsSaxonDensity 1 R a r ≤ r ^ 2 * (1 * exp (-((r - R) / a))) := by
-          gcongr; exact woodsSaxonDensity_le zero_le_one R a r
+          gcongr; exact woodsSaxonDensity_le_mul_exp zero_le_one R a r
       _ = exp (R / a) * (r ^ 2 * exp (-a⁻¹ * r)) := by
           have hexp : -((r - R) / a) = R / a + -a⁻¹ * r := by
             field_simp
@@ -232,7 +252,6 @@ theorem integrable_woodsSaxonDensity (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a) :
 def woodsSaxonIntegral (R a : ℝ) : ℝ :=
   ∫ x : Space, woodsSaxonDensity 1 R a ‖x‖
 
-@[simp]
 lemma woodsSaxonIntegral_def (R a : ℝ) :
     woodsSaxonIntegral R a = ∫ x : Space, woodsSaxonDensity 1 R a ‖x‖ := (rfl)
 
@@ -250,12 +269,12 @@ lemma integral_woodsSaxonDensity (ρ₀ R a : ℝ) :
   simp_rw [woodsSaxonDensity_eq_mul ρ₀]
   exact integral_const_mul _ _
 
-/-- The central density `ρ₀` that normalises the Woods–Saxon profile with half-density radius `R`
-and surface thickness `a` to `m`. -/
+/-- For `0 < a`, the central density `ρ₀` that normalises the Woods–Saxon profile with
+half-density radius `R` and surface thickness `a` to `m` (see
+`integral_woodsSaxonDensity_eq_iff`); the value is junk otherwise. -/
 def woodsSaxonCentralDensity (m R a : ℝ) : ℝ :=
   m / woodsSaxonIntegral R a
 
-@[simp]
 lemma woodsSaxonCentralDensity_def (m R a : ℝ) :
     woodsSaxonCentralDensity m R a = m / woodsSaxonIntegral R a := (rfl)
 

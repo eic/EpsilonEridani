@@ -127,11 +127,11 @@ def lead208 : Nucleus := ⟨208, 82, by decide, by decide⟩
 
 /-- The deuteron is isoscalar. -/
 @[simp]
-theorem isIsoscalar_deuteron : deuteron.IsIsoscalar := (rfl)
+theorem isIsoscalar_deuteron : deuteron.IsIsoscalar := by decide
 
 /-- Carbon-12 is isoscalar. -/
 @[simp]
-theorem isIsoscalar_carbon12 : carbon12.IsIsoscalar := (rfl)
+theorem isIsoscalar_carbon12 : carbon12.IsIsoscalar := by decide
 
 /-- The free proton is not isoscalar. -/
 @[simp]
