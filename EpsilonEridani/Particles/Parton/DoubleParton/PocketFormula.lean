@@ -5,7 +5,6 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import EpsilonEridani.Mathematics.Gaussian
@@ -30,7 +29,7 @@ profile, `F(p₁, p₂, y) = f(p₁) f(p₂) G(y)`, the cross section collapses 
 statement with the factorisation as an explicit hypothesis: it is a model assumption, not a
 property of QCD. The single-scattering cross sections `σ_A` and `σ_B` are
 `Particles.Parton.singleScatteringCrossSection`, and the Gaussian transverse profile of the
-`σ_eff` examples is `Mathematics.Gaussian.gaussianProfile`.
+`σ_eff` examples is `Gaussian.gaussianProfile`.
 
 The parton labels form an arbitrary measure space `(P, ν)` and the transverse separation an
 arbitrary measure space `(T, μ)`. For physical applications `P` is `Flavour × ℝ`, with counting
@@ -56,7 +55,8 @@ plane `EuclideanSpace ℝ (Fin 2)`.
   hypothesis.
 * `effectiveCrossSection_le_measureReal`: the Cauchy-Schwarz bound: a normalised profile
   vanishing almost everywhere outside a set `S` has `σ_eff ≤ |S|`.
-* `effectiveCrossSection_indicator`: the uniform profile on `S` saturates that bound.
+* `effectiveCrossSection_indicator`: the uniform profile on `S` has `σ_eff = |S|`, so it saturates
+  that bound when `0 < |S|`.
 * `effectiveCrossSection_gaussianProfile`: two Gaussian profiles of widths `w`, `w'` have
   `σ_eff = 2π(w² + w'²)`, so `4πw²` for equal widths.
 
@@ -188,18 +188,18 @@ theorem effectiveCrossSection_comm (μ : Measure T) (G G' : T → ℝ) :
     effectiveCrossSection μ G' G = effectiveCrossSection μ G G' := by
   simp_rw [effectiveCrossSection, mul_comm]
 
-section Factorised
+section Factorized
 
 variable {ν : Measure P} {μ : Measure T} [SFinite ν] [SFinite μ]
 
-/-- Under the factorisation hypothesis, `F(p₁, p₂, y) = f(p₁) f(p₂) G(y)` and likewise for `F'`,
-the ordered integral is the product of the two single-scattering cross sections and the overlap
-of the transverse profiles. -/
-theorem orderedDPSIntegral_eq_of_factorised {F F' : P → P → T → ℝ} {f f' : P → ℝ} {G G' : T → ℝ}
-    (hF : ∀ p₁ p₂ y, F p₁ p₂ y = f p₁ * f p₂ * G y)
-    (hF' : ∀ p₁ p₂ y, F' p₁ p₂ y = f' p₁ * f' p₂ * G' y) (σ₁ σ₂ : P → P → ℝ) :
+/-- Under the factorisation hypothesis, `F(p₁, p₂, y) = f₁(p₁) f₂(p₂) G(y)` and likewise for
+`F'`, the ordered integral is the product of the two single-scattering cross sections and the
+overlap of the transverse profiles. -/
+theorem orderedDPSIntegral_eq_of_factorized {F F' : P → P → T → ℝ} {f₁ f₂ f₁' f₂' : P → ℝ}
+    {G G' : T → ℝ} (hF : ∀ p₁ p₂ y, F p₁ p₂ y = f₁ p₁ * f₂ p₂ * G y)
+    (hF' : ∀ p₁ p₂ y, F' p₁ p₂ y = f₁' p₁ * f₂' p₂ * G' y) (σ₁ σ₂ : P → P → ℝ) :
     orderedDPSIntegral ν μ F F' σ₁ σ₂ =
-      singleScatteringCrossSection ν f f' σ₁ * singleScatteringCrossSection ν f f' σ₂ *
+      singleScatteringCrossSection ν f₁ f₁' σ₁ * singleScatteringCrossSection ν f₂ f₂' σ₂ *
         ∫ y, G y * G' y ∂μ := by
   rw [orderedDPSIntegral, singleScatteringCrossSection_def, singleScatteringCrossSection_def,
     ← integral_prod_mul, ← integral_prod_mul]
@@ -224,16 +224,39 @@ theorem dpsCrossSection_eq_mul_div_effectiveCrossSection {F F' : P → P → T �
   have hsymm' : ∀ p₁ p₂ y, F' p₂ p₁ y = F' p₁ p₂ y := fun p₁ p₂ y => by
     rw [hF', hF']; ring
   rw [dpsCrossSection_eq_mul_orderedDPSIntegral hsymm hsymm',
-    orderedDPSIntegral_eq_of_factorised hF hF', effectiveCrossSection, div_inv_eq_mul]
+    orderedDPSIntegral_eq_of_factorized hF hF', effectiveCrossSection, div_inv_eq_mul]
   ring
 
-end Factorised
+end Factorized
 
 /-! ### The Cauchy-Schwarz bound -/
 
 section Bound
 
 variable {μ : Measure T}
+
+/-- The effective cross section of two almost everywhere nonnegative profiles is nonnegative. -/
+theorem effectiveCrossSection_nonneg {G G' : T → ℝ} (hG : 0 ≤ᵐ[μ] G) (hG' : 0 ≤ᵐ[μ] G') :
+    0 ≤ effectiveCrossSection μ G G' := by
+  rw [effectiveCrossSection, inv_nonneg]
+  refine integral_nonneg_of_ae ?_
+  filter_upwards [hG, hG'] with y hy hy'
+  exact mul_nonneg hy hy'
+
+/-- A square-integrable normalised profile has positive effective cross section: its overlap with
+itself is a genuine positive number, not the junk value `0`. -/
+theorem effectiveCrossSection_self_pos {G : T → ℝ} (hG2 : MemLp G 2 μ)
+    (hnorm : ∫ y, G y ∂μ = 1) : 0 < effectiveCrossSection μ G G := by
+  rw [effectiveCrossSection, inv_pos]
+  refine (integral_nonneg fun y => mul_self_nonneg (G y)).lt_of_ne fun h => ?_
+  -- `∫ G² = 0` forces `G = 0` almost everywhere, contradicting `∫ G = 1`.
+  have hint : Integrable (fun y => G y * G y) μ := by simpa only [sq] using hG2.integrable_sq
+  have hG0 : G =ᵐ[μ] 0 := by
+    filter_upwards [(integral_eq_zero_iff_of_nonneg (fun y => mul_self_nonneg (G y)) hint).1
+      h.symm] with y hy
+    exact mul_self_eq_zero.1 hy
+  rw [integral_congr_ae hG0] at hnorm
+  simp at hnorm
 
 /-- **The Cauchy-Schwarz bound on the effective cross section.** A normalised transverse profile
 that vanishes almost everywhere outside a set `S` of finite measure has `σ_eff ≤ |S|`: a profile
@@ -270,15 +293,13 @@ theorem effectiveCrossSection_le_measureReal {G : T → ℝ} {S : Set T} (hμS :
   have hkey : 1 ≤ μ.real S * ∫ y, G y * G y ∂μ := by
     rw [← Real.one_le_sqrt, Real.sqrt_mul measureReal_nonneg]
     exact hle.trans hcs
-  have hpos : 0 < ∫ y, G y * G y ∂μ := by
-    refine (integral_nonneg fun y => mul_self_nonneg (G y)).lt_of_ne fun h => ?_
-    rw [← h, mul_zero] at hkey
-    norm_num at hkey
+  have hpos : 0 < ∫ y, G y * G y ∂μ := inv_pos.1 (effectiveCrossSection_self_pos hG2 hnorm)
   rw [effectiveCrossSection, inv_le_iff_one_le_mul₀ hpos]
   exact hkey
 
-/-- The uniform profile `|S|⁻¹ 𝟙_S` on a measurable set `S` has effective cross section `|S|`,
-saturating `effectiveCrossSection_le_measureReal`. -/
+/-- The uniform profile `|S|⁻¹ 𝟙_S` on a measurable set `S` has effective cross section `|S|`.
+When `0 < |S|` this profile is normalised, so it saturates `effectiveCrossSection_le_measureReal`;
+when `|S| = 0` the profile vanishes and both sides are `0`. -/
 @[simp]
 theorem effectiveCrossSection_indicator {S : Set T} (hS : MeasurableSet S) :
     effectiveCrossSection μ (S.indicator fun _ => (μ.real S)⁻¹)
@@ -294,31 +315,18 @@ end Bound
 
 /-- **The effective cross section of two Gaussian profiles.** For widths `w` and `w'`,
 `σ_eff = 2π (w² + w'²)`. -/
-@[simp]
 theorem effectiveCrossSection_gaussianProfile {w w' : ℝ} (hw : w ≠ 0) (hw' : w' ≠ 0) :
     effectiveCrossSection volume (gaussianProfile w) (gaussianProfile w') =
       2 * π * (w ^ 2 + w' ^ 2) := by
-  set b := (2 * w ^ 2)⁻¹ + (2 * w' ^ 2)⁻¹
-  have hb : 0 < b := by positivity
-  have : (fun y => gaussianProfile w y * gaussianProfile w' y) =
-      fun y : EuclideanSpace ℝ (Fin 2) =>
-        ((2 * π * w ^ 2)⁻¹ * (2 * π * w' ^ 2)⁻¹) * exp (-b * ‖y‖ ^ 2) := by
-    ext y
-    rw [gaussianProfile_def, gaussianProfile_def, mul_mul_mul_comm, ← exp_add]
-    congr 2
-    ring
-  rw [effectiveCrossSection, this, integral_const_mul,
-    GaussianFourier.integral_rexp_neg_mul_sq_norm hb, finrank_euclideanSpace_fin]
-  norm_num [b]
-  field_simp
-  ring
+  rw [effectiveCrossSection, integral_gaussianProfile_mul_gaussianProfile hw hw', inv_inv]
 
 /-- Two Gaussian profiles of equal width `w` have `σ_eff = 4π w²`. -/
 @[simp]
 theorem effectiveCrossSection_gaussianProfile_self (w : ℝ) :
     effectiveCrossSection volume (gaussianProfile w) (gaussianProfile w) = 4 * π * w ^ 2 := by
   rcases eq_or_ne w 0 with rfl | hw
-  · simp [effectiveCrossSection, gaussianProfile_def]
+  · -- For `w = 0` the profile is identically zero (`(2π · 0²)⁻¹ = 0`), so both sides vanish.
+    simp [effectiveCrossSection, gaussianProfile_def]
   · rw [effectiveCrossSection_gaussianProfile hw hw]
     ring
 
