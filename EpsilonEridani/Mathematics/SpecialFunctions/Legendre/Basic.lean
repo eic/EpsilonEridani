@@ -39,8 +39,9 @@ unique.
   `one_sub_X_sq_mul_derivative_legendre_succ`: the ladder relations for the derivatives;
 * `derivative_one_sub_X_sq_mul_derivative_legendre`: Legendre's differential equation
   `((1 - X²) Pₙ')' = -n (n + 1) Pₙ`;
-* `integral_legendre_mul_legendre`: the orthogonality relation
-  `∫₋₁¹ Pₘ Pₙ = if m = n then 2 / (2n + 1) else 0`.
+* `integral_legendre_mul_legendre`, `setIntegral_Icc_legendre_mul_legendre`: the orthogonality
+  relation `∫₋₁¹ Pₘ Pₙ = if m = n then 2 / (2n + 1) else 0`, as an interval integral and as a set
+  integral over `Set.Icc (-1) 1`.
 
 Mathlib's `Polynomial.shiftedLegendre` is the integer-coefficient family on `[0, 1]` given by
 explicit coefficients, with its Rodrigues formula. The two are related by
@@ -85,22 +86,21 @@ theorem legendre_add_two (n : ℕ) : legendre (n + 2) = C ((n + 2 : ℝ)⁻¹) *
 of the Legendre polynomials. -/
 theorem add_two_mul_legendre_add_two (n : ℕ) : (n + 2 : ℝ[X]) * legendre (n + 2) =
     (2 * n + 3 : ℝ[X]) * X * legendre (n + 1) - (n + 1 : ℝ[X]) * legendre n := by
-  rw [legendre_add_two, ← mul_assoc]
-  convert one_mul _
   have hcoeff : (n + 2 : ℝ[X]) = C (n + 2 : ℝ) := by
     rw [map_add, C_eq_natCast, C_ofNat]
-  rw [hcoeff, ← C_mul, mul_inv_cancel₀ (by positivity), C_1]
+  rw [legendre_add_two, hcoeff, ← mul_assoc, ← C_mul, mul_inv_cancel₀ (by positivity), C_1,
+    one_mul]
 
 /-- Bonnet's recurrence evaluated at a point. -/
-theorem add_two_mul_legendre_eval_add_two (n : ℕ) (x : ℝ) : (n + 2) * (legendre (n + 2)).eval x =
+theorem add_two_mul_legendre_add_two_eval (n : ℕ) (x : ℝ) : (n + 2) * (legendre (n + 2)).eval x =
     (2 * n + 3) * x * (legendre (n + 1)).eval x - (n + 1) * (legendre n).eval x := by
   simpa using congrArg (eval x) (add_two_mul_legendre_add_two n)
 
 /-- The three-term recurrence evaluated at a point and solved for `Pₙ₊₂ (x)`. -/
-theorem legendre_eval_add_two (n : ℕ) (x : ℝ) : (legendre (n + 2)).eval x =
+theorem legendre_add_two_eval (n : ℕ) (x : ℝ) : (legendre (n + 2)).eval x =
     ((2 * n + 3) * x * (legendre (n + 1)).eval x - (n + 1) * (legendre n).eval x) / (n + 2) := by
   rw [eq_div_iff (by positivity), mul_comm]
-  exact add_two_mul_legendre_eval_add_two n x
+  exact add_two_mul_legendre_add_two_eval n x
 
 /-- `P₂ = (3X² - 1) / 2`. -/
 theorem legendre_two : legendre 2 = C 2⁻¹ * (3 * X ^ 2 - 1) := by
@@ -110,13 +110,11 @@ theorem legendre_two : legendre 2 = C 2⁻¹ * (3 * X ^ 2 - 1) := by
 
 /-- `P₃ = (5X³ - 3X) / 2`. -/
 theorem legendre_three : legendre 3 = C 2⁻¹ * (5 * X ^ 3 - 3 * X) := by
-  have h2 : (C 2⁻¹ : ℝ[X]) * 2 = 1 := by rw [← C_ofNat, ← C_mul, inv_mul_cancel₀ two_ne_zero, C_1]
-  have h3 : (C 3⁻¹ : ℝ[X]) * 3 = 1 := by
-    rw [← C_ofNat, ← C_mul, inv_mul_cancel₀ three_ne_zero, C_1]
-  rw [legendre_add_two, legendre_two]
-  simp only [Nat.cast_one, legendre_one]
-  rw [show (1 + 2 : ℝ) = 3 by norm_num]
-  linear_combination (5 * C 2⁻¹ * X ^ 3 - 3 * C 2⁻¹ * X) * h3 + 2 * C 3⁻¹ * X * h2
+  refine Polynomial.funext fun x => ?_
+  rw [legendre_add_two_eval, legendre_two]
+  simp only [Nat.cast_one, legendre_one, eval_mul, eval_sub, eval_C, eval_X, eval_pow, eval_ofNat,
+    eval_one]
+  ring
 
 /-- Every Legendre polynomial takes the value `1` at `1`. -/
 @[simp] theorem legendre_eval_one (n : ℕ) : (legendre n).eval 1 = 1 := by
@@ -124,7 +122,7 @@ theorem legendre_three : legendre 3 = C 2⁻¹ * (5 * X ^ 3 - 3 * X) := by
   | zero => simp
   | one => simp
   | more n h₀ h₁ =>
-    have h := add_two_mul_legendre_eval_add_two n 1
+    have h := add_two_mul_legendre_add_two_eval n 1
     rw [h₀, h₁] at h
     exact mul_left_cancel₀ (by positivity : (n + 2 : ℝ) ≠ 0) (by linear_combination h)
 
@@ -169,7 +167,7 @@ private theorem coeff_legendre_of_lt {n k : ℕ} (h : n < k) : (legendre n).coef
     exact (mul_eq_zero.mp (h'.trans (by ring))).resolve_left (by positivity)
 
 /-- The coefficient of `Xⁿ` in `Pₙ`, which is its leading coefficient, is `(2n choose n) / 2ⁿ`. -/
-theorem coeff_legendre_self (n : ℕ) : (legendre n).coeff n = n.centralBinom / 2 ^ n := by
+@[simp] theorem coeff_legendre_self (n : ℕ) : (legendre n).coeff n = n.centralBinom / 2 ^ n := by
   induction n using Nat.twoStepInduction with
   | zero => simp
   | one => simp [Nat.centralBinom]
@@ -180,16 +178,16 @@ theorem coeff_legendre_self (n : ℕ) : (legendre n).coeff n = n.centralBinom / 
         (n + 1).centralBinom := by exact_mod_cast Nat.succ_mul_centralBinom_succ (n + 1)
     push_cast at hc
     refine mul_left_cancel₀ (by positivity : (n + 2 : ℝ) ≠ 0) ?_
-    rw [h, mul_zero, sub_zero, ← mul_div_assoc, ← mul_div_assoc, hc, pow_succ _ (n + 1)]
+    rw [h, mul_zero, sub_zero, pow_succ 2 (n + 1)]
     field_simp
-    ring
+    linear_combination -hc
 
 private theorem coeff_legendre_self_ne_zero (n : ℕ) : (legendre n).coeff n ≠ 0 := by
   rw [coeff_legendre_self]
   exact div_ne_zero (by exact_mod_cast n.centralBinom_ne_zero) (by positivity)
 
 /-- No Legendre polynomial vanishes. -/
-theorem legendre_ne_zero (n : ℕ) : legendre n ≠ 0 := fun h =>
+@[simp] theorem legendre_ne_zero (n : ℕ) : legendre n ≠ 0 := fun h =>
   coeff_legendre_self_ne_zero n (by rw [h, coeff_zero])
 
 /-- `Pₙ` has degree exactly `n`. -/
@@ -281,7 +279,8 @@ open MeasureTheory intervalIntegral
 with respect to Lebesgue measure. -/
 theorem integral_legendre_mul_legendre_of_ne {m n : ℕ} (h : m ≠ n) :
     ∫ x in (-1 : ℝ)..1, (legendre m).eval x * (legendre n).eval x = 0 := by
-  have hs := integral_derivative_mul_derivative_mul (1 - X ^ 2) (legendre m) (legendre n)
+  have hs := integral_derivative_mul_derivative_mul_eq_integral_mul_derivative_mul_derivative
+    (1 - X ^ 2) (legendre m) (legendre n)
     (a := -1) (b := 1) (by norm_num) (by norm_num)
   have e : ∀ (k : ℕ) (p q : ℝ[X]) (x : ℝ), eval x (-((k : ℝ[X]) * (k + 1)) * p * q) =
       -((k : ℝ) * (k + 1)) * (eval x p * eval x q) := fun k p q x => by
@@ -309,7 +308,7 @@ private theorem add_two_mul_integral_legendre_add_two_mul (n : ℕ) (q : ℝ[X])
   rw [← integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
     (Continuous.intervalIntegrable (by fun_prop) _ _)]
   exact integral_congr fun x _ => by
-    linear_combination q.eval x * add_two_mul_legendre_eval_add_two n x
+    linear_combination q.eval x * add_two_mul_legendre_add_two_eval n x
 
 /-- **Normalisation of the Legendre polynomials**: `∫₋₁¹ Pₙ² = 2 / (2n + 1)`. -/
 theorem integral_legendre_mul_self (n : ℕ) :
@@ -347,6 +346,14 @@ theorem integral_legendre_mul_legendre (m n : ℕ) :
   · subst h
     exact integral_legendre_mul_self m
   · exact integral_legendre_mul_legendre_of_ne h
+
+/-- The Legendre orthogonality relation as a set integral over `[-1, 1]`, the form in which it
+enters the `L²` inner product on `Set.Icc (-1) 1`. -/
+theorem setIntegral_Icc_legendre_mul_legendre (m n : ℕ) :
+    ∫ x in Set.Icc (-1 : ℝ) 1, (legendre m).eval x * (legendre n).eval x =
+      if m = n then (2 / (2 * n + 1) : ℝ) else 0 := by
+  rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by norm_num),
+    integral_legendre_mul_legendre]
 
 end Orthogonality
 
