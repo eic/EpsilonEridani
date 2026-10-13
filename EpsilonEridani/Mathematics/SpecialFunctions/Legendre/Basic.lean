@@ -145,7 +145,7 @@ theorem legendre_comp_neg_X (n : ℕ) : (legendre n).comp (-X) = (-1) ^ n * lege
   simpa using congrArg (eval x) (legendre_comp_neg_X n)
 
 /-- `Pₙ (-1) = (-1)ⁿ`. -/
-@[simp] theorem legendre_eval_neg_one (n : ℕ) : (legendre n).eval (-1) = (-1) ^ n := by
+theorem legendre_eval_neg_one (n : ℕ) : (legendre n).eval (-1) = (-1) ^ n := by
   simp [legendre_eval_neg]
 
 /-- Bonnet's recurrence read off on coefficients. -/
