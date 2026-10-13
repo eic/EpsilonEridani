@@ -36,6 +36,9 @@ declaration order, the file contains:
   transverse part. This is the inequality behind lower bounds on momentum transfers at fixed
   light-cone momentum fractions, such as the minimal momentum transfer of off-forward parton
   kinematics;
+* for a four-vector whose spatial part is `a • n` along a unit vector `n`, the factorisation
+  `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of its Minkowski square into its light-cone components
+  (`minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul`);
 * in at least two spatial dimensions, the existence of two vectors on the mass shell with
   prescribed energies above the mass and a prescribed angle between their spatial parts
   (`exists_massShell_pair_angle_eq`);
@@ -103,6 +106,15 @@ lemma minkowskiProduct_self_nonpos_of_causal_of_orthogonal {d : ℕ} (w : Vector
   -- `(n⁰)² (w⁰)² ≤ ⟪s, s⟫ ⟪t, t⟫ ≤ (n⁰)² ⟪t, t⟫` by causality `⟪s, s⟫ ≤ (n⁰)²`; dividing
   -- by `(n⁰)² > 0` gives `(w⁰)² ≤ ⟪t, t⟫`
   nlinarith [mul_le_mul_of_nonneg_right hn hw]
+
+/-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
+the product `(v⁰ + a) (v⁰ - a)` of its light-cone components along `n`. -/
+theorem minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v, v⟫ₘ = (v.timeComponent + a) * (v.timeComponent - a) := by
+  rw [minkowskiProduct_self_eq_sq_sub, hv]
+  simp only [norm_smul, hn, Real.norm_eq_abs, mul_one, sq_abs]
+  ring
 
 end Vector
 end Lorentz
