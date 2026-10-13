@@ -190,6 +190,19 @@ theorem twoParticleCorrelation_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ
     twoParticleCorrelation n (fun j => φ j + ψ) = twoParticleCorrelation n φ := by
   simp [twoParticleCorrelation]
 
+/-- The sum of a constant over the ordered pairs of distinct indices of a `Fintype` is the
+number `M (M - 1)` of such pairs times the constant, where `M = Fintype.card ι`. This is the
+count of ordered pairs of distinct particles that normalises the two-particle correlation. -/
+theorem sum_univ_sum_erase_const [DecidableEq ι] {R : Type*} [CommRing R] (c : R) :
+    ∑ j : ι, ∑ _ ∈ univ.erase j, c = Fintype.card ι * (Fintype.card ι - 1) * c := by
+  calc ∑ j : ι, ∑ _ ∈ univ.erase j, c
+      = ∑ j : ι, ((Fintype.card ι : R) - 1) * c := Finset.sum_congr rfl fun j _ => by
+        rw [Finset.sum_const, Finset.card_erase_of_mem (mem_univ j), Finset.card_univ,
+          nsmul_eq_mul, Nat.cast_pred (Fintype.card_pos_iff.2 ⟨j⟩)]
+    _ = Fintype.card ι * (Fintype.card ι - 1) * c := by
+        simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        ring
+
 /-! ### The anisotropy coefficient of a distribution on the circle -/
 
 /-- The anisotropy coefficient of harmonic `n` of a single-particle distribution `μ` on the
@@ -258,7 +271,7 @@ theorem anisotropyCoeff_map_add_const_eq_self_iff (μ : Measure (AddCircle T)) (
 
 section Expectation
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ : Measure (AddCircle T)}
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ ν : Measure (AddCircle T)}
   {φ : ι → Ω → AddCircle T}
 
 /-- The `Q`-vector of an event whose angles are almost everywhere measurable is almost everywhere
@@ -292,31 +305,9 @@ theorem integrable_twoParticleCorrelation (hφ : ∀ j, AEMeasurable (φ j) P) (
     Integrable (fun ω => twoParticleCorrelation n fun j => φ j ω) P :=
   ((integrable_norm_qVector_sq hφ n).sub (integrable_const _)).div_const _
 
-end Integrable
-
-/-! ### Expectations for independent draws -/
-
-/-- For two independent particles with distribution `μ`, the expectation of
-`e^{i n φ} conj (e^{i n φ'}) = e^{i n (φ - φ')}` is `|V_n|²`. -/
-theorem integral_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hXY : IndepFun X Y P)
-    (hX : HasLaw X μ P) (hY : HasLaw Y μ P) (n : ℤ) :
-    ∫ ω, fourier n (X ω) * conj (fourier n (Y ω)) ∂P = (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := by
-  have hX' : ∫ ω, fourier n (X ω) ∂P = anisotropyCoeff μ n :=
-    hX.integral_comp (fourier n).continuous.aestronglyMeasurable
-  have hY' : ∫ ω, fourier n (Y ω) ∂P = anisotropyCoeff μ n :=
-    hY.integral_comp (fourier n).continuous.aestronglyMeasurable
-  rw [hXY.integral_fun_comp_mul_comp (f := fun x => fourier n x)
-      (g := fun y => conj (fourier n y)) hX.aemeasurable hY.aemeasurable
-      (fourier n).continuous.aestronglyMeasurable
-      (Complex.continuous_conj.comp (fourier n).continuous).aestronglyMeasurable]
-  simp only [integral_conj, hX', hY', Complex.mul_conj']
-
-variable [IsProbabilityMeasure P] (hφ : ∀ j, HasLaw (φ j) μ P)
-  (hind : Pairwise fun j k => IndepFun (φ j) (φ k) P)
-include hφ
-
-/-- The expectation of the `Q`-vector of `M` particles with distribution `μ` is `M V_n`. -/
-theorem integral_qVector (n : ℤ) :
+/-- The expectation of the `Q`-vector of `M` particles with distribution `μ` is `M V_n`. Only
+the finiteness of the measure enters: independence is not needed for the first moment. -/
+theorem integral_qVector (hφ : ∀ j, HasLaw (φ j) μ P) (n : ℤ) :
     ∫ ω, qVector n (fun j => φ j ω) ∂P = Fintype.card ι * anisotropyCoeff μ n := by
   have h1 : ∀ j, ∫ ω, fourier n (φ j ω) ∂P = anisotropyCoeff μ n := fun j =>
     (hφ j).integral_comp (fourier n).continuous.aestronglyMeasurable
@@ -324,7 +315,30 @@ theorem integral_qVector (n : ℤ) :
   rw [integral_finsetSum _ fun j _ => integrable_fourier_comp (hφ j).aemeasurable n]
   simp only [h1, sum_const, card_univ, nsmul_eq_mul]
 
-include hind
+end Integrable
+
+/-! ### Expectations for independent draws -/
+
+/-- For two independent particles with laws `μ` and `ν`, the expectation of
+`e^{i n φ} conj (e^{i n φ'}) = e^{i n (φ - φ')}` is `anisotropyCoeff μ n * conj
+(anisotropyCoeff ν n)`; for two particles with the same law `μ` this is `|V_n|²`. -/
+theorem integral_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hXY : IndepFun X Y P)
+    (hX : HasLaw X μ P) (hY : HasLaw Y ν P) (n : ℤ) :
+    ∫ ω, fourier n (X ω) * conj (fourier n (Y ω)) ∂P =
+      anisotropyCoeff μ n * conj (anisotropyCoeff ν n) := by
+  have hX' : ∫ ω, fourier n (X ω) ∂P = anisotropyCoeff μ n :=
+    hX.integral_comp (fourier n).continuous.aestronglyMeasurable
+  have hY' : ∫ ω, fourier n (Y ω) ∂P = anisotropyCoeff ν n :=
+    hY.integral_comp (fourier n).continuous.aestronglyMeasurable
+  rw [hXY.integral_fun_comp_mul_comp (f := fun x => fourier n x)
+      (g := fun y => conj (fourier n y)) hX.aemeasurable hY.aemeasurable
+      (fourier n).continuous.aestronglyMeasurable
+      (Complex.continuous_conj.comp (fourier n).continuous).aestronglyMeasurable]
+  simp only [integral_conj, hX', hY']
+
+variable [IsProbabilityMeasure P] (hφ : ∀ j, HasLaw (φ j) μ P)
+  (hind : Pairwise fun j k => IndepFun (φ j) (φ k) P)
+include hφ hind
 
 /-- **Expectation of the squared `Q`-vector.** For `M` pairwise independent particles with
 distribution `μ`, `E |Q_n|² = M + M (M - 1) |V_n|²`. The term `M` is the self-correlation. -/
@@ -332,13 +346,6 @@ theorem integral_norm_qVector_sq (n : ℤ) :
     ∫ ω, ‖qVector n (fun j => φ j ω)‖ ^ 2 ∂P =
       Fintype.card ι + Fintype.card ι * (Fintype.card ι - 1) * ‖anisotropyCoeff μ n‖ ^ 2 := by
   classical
-  have hcount : ∑ j : ι, ∑ k ∈ univ.erase j, (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 =
-      Fintype.card ι * (Fintype.card ι - 1) * (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := by
-    rcases Nat.eq_zero_or_pos (Fintype.card ι) with h | h
-    · simp [Finset.univ_eq_empty_iff.2 (Fintype.card_eq_zero_iff.1 h), h]
-    · simp only [sum_const, card_erase_of_mem (mem_univ _), card_univ, nsmul_eq_mul,
-        Nat.cast_sub h, Nat.cast_one]
-      ring
   have hpair : ∀ j, ∀ k ∈ univ.erase j,
       Integrable (fun ω => fourier n (φ j ω) * conj (fourier n (φ k ω))) P := fun j k _ =>
     integrable_fourier_mul_conj_fourier (hφ j).aemeasurable (hφ k).aemeasurable n
@@ -352,9 +359,11 @@ theorem integral_norm_qVector_sq (n : ℤ) :
   simp_rw [fun j => integral_finsetSum _ (hpair j)]
   have hjk : ∀ j, ∀ k ∈ univ.erase j,
       ∫ ω, fourier n (φ j ω) * conj (fourier n (φ k ω)) ∂P =
-        (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := fun j k hk =>
-    integral_fourier_mul_conj_fourier (hind (Finset.ne_of_mem_erase hk).symm) (hφ j) (hφ k) n
-  simp only [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j), hcount]
+        (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := fun j k hk => by
+    rw [integral_fourier_mul_conj_fourier (hind (Finset.ne_of_mem_erase hk).symm) (hφ j)
+      (hφ k) n, Complex.mul_conj']
+  simp only [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j),
+    sum_univ_sum_erase_const]
   simp
 
 /-- For `M ≥ 1` pairwise independent particles with distribution `μ`, the expectation of

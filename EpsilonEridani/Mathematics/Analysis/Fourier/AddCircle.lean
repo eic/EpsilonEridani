@@ -6,13 +6,16 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
+public import TauCeti.Analysis.Fourier.AddCircle
 
 /-!
 # The Fourier monomials on the circle as a character and as random variables
 
-Extensions of `Mathlib.Analysis.Fourier.AddCircle`: the Fourier monomial `fourier n` is a
-character of the circle in its argument (`fourier_apply_add`), and, being bounded by `1`, it is
-integrable against any finite measure when composed with an almost everywhere measurable angle
+Extensions of `Mathlib.Analysis.Fourier.AddCircle` and of `TauCeti.Analysis.Fourier.AddCircle`:
+the Fourier monomial `fourier n` is a character of the circle in its argument
+(`fourier_apply_add`, read off the bundled additive character `TauCeti.fourierAddChar`, which
+fixes the normalisation of the harmonics), and, being bounded by `1`, it is integrable against
+any finite measure when composed with an almost everywhere measurable angle
 (`integrable_fourier_comp`, `integrable_fourier_mul_conj_fourier`).
 -/
 
@@ -25,16 +28,13 @@ namespace EpsilonEridani
 
 variable {T : ℝ}
 
-/-- The Fourier monomial is a character of the circle: `e^{i n (x + y)} = e^{i n x} e^{i n y}`. -/
+/-- The Fourier monomial is a character of the circle: `e^{i n (x + y)} = e^{i n x} e^{i n y}`,
+read off the bundled additive character `TauCeti.fourierAddChar` of
+`TauCeti.Analysis.Fourier.AddCircle`, whose `fourierAddChar_apply` identifies it with Mathlib's
+`fourier n`. -/
 theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
     fourier n (x + y) = fourier n x * fourier n y := by
-  simp only [fourier_apply, smul_add, toCircle_add, Circle.coe_mul]
-
-/-- The Fourier monomial satisfies `fourier n (x - y) = fourier n x * conj (fourier n y)`. -/
-theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
-    fourier n (x - y) = fourier n x * conj (fourier n y) := by
-  rw [sub_eq_add_neg, fourier_apply_add]
-  simp only [fourier_apply, zsmul_neg, fourier_neg']
+  simp only [← TauCeti.fourierAddChar_apply, AddChar.map_add_eq_mul]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
 
@@ -48,12 +48,10 @@ theorem integrable_fourier_comp {X : Ω → AddCircle T} (hX : AEMeasurable X P)
 integrable. -/
 theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEMeasurable X P)
     (hY : AEMeasurable Y P) (n : ℤ) :
-    Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P := by
-  have : (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) =
-      (fun ω => fourier n ((X - Y) ω)) := by
-    ext ω
-    simpa [Pi.sub_apply] using (fourier_apply_sub n (X ω) (Y ω)).symm
-  rw [this]
-  exact integrable_fourier_comp (AEMeasurable.sub hX hY) n
+    Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P :=
+  (integrable_fourier_comp hX n).mul_bdd (c := 1)
+    (((Complex.continuous_conj.comp (fourier n).continuous).measurable.comp_aemeasurable
+        hY).aestronglyMeasurable)
+    (Filter.Eventually.of_forall fun ω => by simp)
 
 end EpsilonEridani
