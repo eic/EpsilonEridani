@@ -7,6 +7,8 @@ module
 
 public import EpsilonEridani.Particles.Parton.TMD.Basic
 public import EpsilonEridani.Particles.Parton.TMD.Reduction
+public import Mathlib.Analysis.InnerProductSpace.TwoDim
+public import Mathlib.MeasureTheory.Integral.CircleAverage
 /-!
 
 # TMD Azimuthal Average
@@ -16,18 +18,20 @@ vector-argument function on `TransversePlane` to a scalar-magnitude `Tmd`.
 
 ## Motivation
 
-The transverse-momentum-dependent correlator (Layer 0.4 of the
-`TransverseMomentumDistributions` roadmap) is a function on the two-dimensional
-transverse plane `TransversePlane = EuclideanSpace ℝ (Fin 2)`.  Reducing it to a
-`Tmd` requires summing over the circle of radius `|kT|`.  The azimuthal average
-performs this sum and produces a function of the scalar magnitude `kT` alone.
+Layer 2.4 of the `WignerDistributions` roadmap asks for the azimuthal average of a
+vector-argument TMD, a function on the two-dimensional transverse plane
+`TransversePlane = EuclideanSpace ℝ (Fin 2)`, landing in the magnitude-valued `Tmd`.
+The average is Mathlib's `Real.circleAverage`, transported to `TransversePlane` along
+`Complex.orthonormalBasisOneI.repr`.
 
 ## Key results
 
-* `azimuthalAverage_areaForm_eq_zero`: the average annihilates the area form
-  `ω(v,w) = v₁·w₂ − v₂·w₁`.  This is the mathematical statement that the
-  `F₁₄` amplitude integrates to zero over circles — acceptance example 6 of
-  the `TransverseMomentumDistributions` roadmap Layer 2.4.
+* `azimuthalAverage_eq_zero_of_odd`: the average annihilates every function odd in the
+  transverse vector.
+* `azimuthalAverage_areaForm_eq_zero`: in particular it annihilates the area form
+  `w ↦ ω(w, v)` of any orientation of the transverse plane.  This is the area-form
+  ingredient of the `F₁₄` annihilation in Layer 2.4 of the `WignerDistributions` roadmap;
+  the `F₁₄` amplitude itself is not defined here.
 * `azimuthalAverage_nonneg`: the average preserves the nonnegativity
   condition of `TMD.IsTmdDensity`.
 * `azimuthalTmd_isTmdDensity`: the average of a vector-argument density
@@ -39,8 +43,7 @@ performs this sum and produces a function of the scalar magnitude `kT` alone.
 noncomputable section
 
 open Real
-open Set
-open MeasureTheory
+open scoped EuclideanSpace
 
 namespace EpsilonEridani
 namespace Particles
@@ -54,72 +57,60 @@ variable {Flavor : Type}
 /-- The two-dimensional transverse plane in momentum space. -/
 abbrev TransversePlane : Type := EuclideanSpace ℝ (Fin 2)
 
-/-- Standard basis vector `e₁ = (1, 0)`. -/
-noncomputable def e1 : TransversePlane := !₂[1, 0]
-
-/-- Standard basis vector `e₂ = (0, 1)`. -/
-noncomputable def e2 : TransversePlane := !₂[0, 1]
-
-/-- The unit vector pointing at polar angle `θ` in the transverse plane. -/
-noncomputable def unitVector (θ : ℝ) : TransversePlane :=
-  !₂[cos θ, sin θ]
-
-/-- The radial vector of radius `kT` at polar angle `θ`. -/
+/-- The radial vector of radius `kT` at polar angle `θ` in the transverse plane:
+    `circleMap 0 kT θ` read in the coordinates `Complex.orthonormalBasisOneI`. -/
 noncomputable def radialVector (kT : ℝ) (θ : ℝ) : TransversePlane :=
-  kT • unitVector θ
+  Complex.orthonormalBasisOneI.repr (circleMap 0 kT θ)
+
+/-- The radial vector has norm `|kT|`. -/
+lemma radialVector_norm (kT : ℝ) (θ : ℝ) : ‖radialVector kT θ‖ = |kT| := by
+  rw [radialVector, LinearIsometryEquiv.norm_map, norm_circleMap_zero]
+
+/-- For nonnegative `kT`, the radial vector has norm `kT`. -/
+lemma radialVector_norm_of_nonneg (kT : ℝ) (hkT : 0 ≤ kT) (θ : ℝ) :
+    ‖radialVector kT θ‖ = kT := by
+  rw [radialVector_norm, abs_of_nonneg hkT]
 
 /-! ## Core definitions -/
 
 /-- The azimuthal average of a function `f : TransversePlane → ℝ → ℝ → ℝ → ℝ`
-    (with arguments `(vector, x, Q2, ζ)`) at fixed `(x, kT, Q2, ζ)`.  This is
-    `(1 / 2π)` times the integral over the polar angle `θ ∈ [0, 2π)` of `f` on the
-    circle of radius `kT`. -/
+    (with arguments `(vector, x, Q2, ζ)`) at fixed `(x, kT, Q2, ζ)`: the circle average
+    of `f` over the circle of radius `kT` centred at the origin. -/
 noncomputable def azimuthalAverage
     (f : TransversePlane → ℝ → ℝ → ℝ → ℝ)
     (x : ℝ) (kT : ℝ) (Q2 ζ : ℝ) : ℝ :=
-  (1 / (2 * π)) * ∫ θ in (0 : ℝ)..(2 * π), f (radialVector kT θ) x Q2 ζ
+  Real.circleAverage (fun z => f (Complex.orthonormalBasisOneI.repr z) x Q2 ζ) 0 kT
 
-/-- Plain azimuthal average without the `x, Q2, ζ` arguments (for pure transverse-plane
-    functions). -/
-noncomputable def azimuthalAveragePure (f : TransversePlane → ℝ) (kT : ℝ) : ℝ :=
-  (1 / (2 * π)) * ∫ θ in (0 : ℝ)..(2 * π), f (radialVector kT θ)
+/-- The azimuthal average is `(1 / 2π)` times the integral of `f` along the radial vector
+    over the polar angle `θ ∈ [0, 2π]`. -/
+lemma azimuthalAverage_eq_integral
+    (f : TransversePlane → ℝ → ℝ → ℝ → ℝ) (x : ℝ) (kT : ℝ) (Q2 ζ : ℝ) :
+    azimuthalAverage f x kT Q2 ζ =
+      (2 * π)⁻¹ * ∫ θ in (0 : ℝ)..(2 * π), f (radialVector kT θ) x Q2 ζ :=
+  Real.circleAverage_def
 
-/-! ## Area form and its annihilation -/
+/-! ## Annihilation of odd functions and of the area form -/
 
-/-- The area form (symplectic form) on `TransversePlane`:
-    `ω(v, w) = v₁·w₂ − v₂·w₁`. -/
-noncomputable def areaForm (v w : TransversePlane) : ℝ :=
-  v 0 * w 1 - v 1 * w 0
+/-- The azimuthal average of a function odd in the transverse vector vanishes. -/
+lemma azimuthalAverage_eq_zero_of_odd
+    (f : TransversePlane → ℝ → ℝ → ℝ → ℝ) (x : ℝ) (kT : ℝ) (Q2 ζ : ℝ)
+    (hf : ∀ w, f (-w) x Q2 ζ = -f w x Q2 ζ) :
+    azimuthalAverage f x kT Q2 ζ = 0 := by
+  have h : azimuthalAverage f x kT Q2 ζ = -azimuthalAverage f x kT Q2 ζ := by
+    conv_lhs => rw [azimuthalAverage, ← Real.circleAverage_neg_radius]
+    have hneg : ∀ θ, circleMap 0 (-kT) θ = -circleMap 0 kT θ := fun θ => by
+      simp [circleMap]
+    simp_rw [azimuthalAverage, Real.circleAverage_def, hneg, map_neg, hf,
+      intervalIntegral.integral_neg, smul_neg]
+  linarith
 
-/-- The area form is alternating: `ω(v, v) = 0`. -/
-lemma areaForm_self (v : TransversePlane) : areaForm v v = 0 := by
-  dsimp [areaForm]
-  ring
-
-/-- Integrating `areaForm (radialVector kT θ) v` over `θ ∈ [0, 2π)` gives zero.  The
-    integrand is explicitly `kT·(v₂ cos θ − v₁ sin θ)`, which is a sinusoid and
-    integrates to zero over a full period. -/
-lemma integral_areaForm_radial_over_circle (kT : ℝ) (v : TransversePlane) :
-    ∫ θ in (0 : ℝ)..(2 * π), areaForm (radialVector kT θ) v = 0 := by
-  have h : ∀ θ, areaForm (radialVector kT θ) v = kT * v 1 * cos θ - kT * v 0 * sin θ := by
-    intro θ
-    simp [areaForm, radialVector, unitVector]
-    ring
-  simp_rw [h]
-  rw [intervalIntegral.integral_sub (continuous_cos.intervalIntegrable _ _ |>.const_mul _)
-      (continuous_sin.intervalIntegrable _ _ |>.const_mul _),
-    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    integral_cos, integral_sin]
-  simp
-
-/-- The azimuthal average of `areaForm(·, v)` is zero for any fixed vector `v`.
-
-    This is the cancellation that makes `F₁₄` vanish in semi-inclusive DIS:
-    the area form carries a single power of the transverse momentum, so its
-    angular integral over any circle is zero. -/
-lemma azimuthalAverage_areaForm_eq_zero (v : TransversePlane) (x : ℝ) (kT : ℝ) (Q2 ζ : ℝ) :
-    azimuthalAverage (fun w _ _ _ => areaForm w v) x kT Q2 ζ = 0 := by
-  rw [azimuthalAverage, integral_areaForm_radial_over_circle kT v, mul_zero]
+/-- The azimuthal average of `w ↦ ω(w, v)` is zero, for the area form `ω` of any
+    orientation of the transverse plane and any fixed vector `v`. -/
+lemma azimuthalAverage_areaForm_eq_zero
+    (o : Orientation ℝ TransversePlane (Fin 2))
+    (v : TransversePlane) (x : ℝ) (kT : ℝ) (Q2 ζ : ℝ) :
+    azimuthalAverage (fun w _ _ _ => o.areaForm w v) x kT Q2 ζ = 0 :=
+  azimuthalAverage_eq_zero_of_odd _ x kT Q2 ζ fun w => by simp
 
 /-! ## Density preservation -/
 
@@ -130,13 +121,7 @@ theorem azimuthalAverage_nonneg
     (hf : ∀ v x Q2 ζ, 0 ≤ f v x Q2 ζ)
     (x : ℝ) (kT : ℝ) (Q2 ζ : ℝ) :
     0 ≤ azimuthalAverage f x kT Q2 ζ :=
-  mul_nonneg (by positivity)
-    (intervalIntegral.integral_nonneg (by positivity) fun _ _ => hf _ x Q2 ζ)
-
-/-- `azimuthalAveragePure` preserves nonnegativity. -/
-lemma azimuthalAveragePure_nonneg (f : TransversePlane → ℝ)
-    (hf : ∀ v, 0 ≤ f v) (kT : ℝ) : 0 ≤ azimuthalAveragePure f kT :=
-  mul_nonneg (by positivity) (intervalIntegral.integral_nonneg (by positivity) fun _ _ => hf _)
+  Real.circleAverage_nonneg_of_nonneg fun _ _ => hf _ _ _ _
 
 /-! ## Mapping to `Tmd` -/
 
@@ -158,28 +143,12 @@ lemma azimuthalTmd_isTmdDensity
     (h_supportX : ∀ v i x Q2 ζ, x < 0 ∨ 1 < x → Φ v i x Q2 ζ = 0) :
     IsTmdDensity (azimuthalTmd Φ) where
   supportX i x kT Q2 ζ hx := by
-    simp [azimuthalTmd, azimuthalAverage, h_supportX _ i x Q2 ζ hx]
+    simp [azimuthalTmd, azimuthalAverage, h_supportX _ i x Q2 ζ hx, Real.circleAverage_def]
   supportKT i x kT Q2 ζ hkT := by
     simp [azimuthalTmd, hkT]
   nonneg i x kT Q2 ζ _ _ hkT := by
     simp only [azimuthalTmd, not_lt.mpr hkT, ite_false]
     exact azimuthalAverage_nonneg _ (fun v x Q2 ζ => hΦ v i x Q2 ζ) x kT Q2 ζ
-
-/-! ## Support lemmas for the radial vector -/
-
-/-- The unit vector has norm 1. -/
-lemma unitVector_norm (θ : ℝ) : ‖unitVector θ‖ = 1 := by
-  rw [EuclideanSpace.norm_eq, Real.sqrt_eq_one]
-  simp [unitVector, Real.cos_sq_add_sin_sq]
-
-/-- The radial vector has norm `|kT|`. -/
-lemma radialVector_norm (kT : ℝ) (θ : ℝ) : ‖radialVector kT θ‖ = |kT| := by
-  rw [radialVector, norm_smul, unitVector_norm, mul_one, Real.norm_eq_abs]
-
-/-- For nonnegative `kT`, the radial vector has norm `kT`. -/
-lemma radialVector_norm_of_nonneg (kT : ℝ) (hkT : 0 ≤ kT) (θ : ℝ) :
-    ‖radialVector kT θ‖ = kT := by
-  rw [radialVector_norm, abs_of_nonneg hkT]
 
 end TMD
 end Parton
