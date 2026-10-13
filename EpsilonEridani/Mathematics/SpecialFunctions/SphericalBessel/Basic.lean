@@ -10,8 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import EpsilonEridani.Mathematics.Analysis.Analytic.DSlope
 public import EpsilonEridani.Mathematics.Analysis.Calculus.Deriv.EvenFunction
-public import EpsilonEridani.Mathematics.Analysis.Normed.Module.SMulEqZero
-public import EpsilonEridani.Mathematics.Analysis.SpecialFunctions.Trigonometric.Sinc
+public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Sinc
 
 /-!
 # Spherical Bessel functions of the first kind
@@ -30,7 +29,9 @@ value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
 ## Main definitions
 
 * `EpsilonEridani.Real.sphericalBesselJ l x`: the spherical Bessel function `j_l(x)`; the Rayleigh
-  formula defining it is `sphericalBesselJ_def`.
+  formula defining it is `sphericalBesselJ_def` together with `reducedSphericalBesselJ_def`.
+* `EpsilonEridani.Real.reducedSphericalBesselJ l x`: the even analytic factor
+  `(-(1 / x) d/dx) ^ l (sin x / x)`, with `j_l(x) = x ^ l * reducedSphericalBesselJ l x`.
 
 ## Main statements
 
@@ -41,10 +42,15 @@ value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
 * `tendsto_sphericalBesselJ_div_pow`: the leading behaviour `j_l(x) / x ^ l → 1 / (2 l + 1)‼` at
   the origin.
 * `sphericalBesselJ_neg`: the parity `j_l(-x) = (-1) ^ l j_l(x)`.
-* `sphericalBesselJ_mul_add_two`: the three-term recurrence in the order on the whole line, and
+* `reducedSphericalBesselJ_apply_zero`: the value `1 / (2 l + 1)‼` of the reduced function at the
+  origin, and `hasDerivAt_reducedSphericalBesselJ`: its Rayleigh step, the derivative of the
+  reduced function of order `l` is `-x` times the one of order `l + 1`.
+* `mul_sphericalBesselJ_add_two`: the three-term recurrence in the order on the whole line, and
   `sphericalBesselJ_add_two`: its form solved for `j_{l + 2}(x)`, for `x ≠ 0`.
-* `hasDerivAt_sphericalBesselJ` and `hasDerivAt_sphericalBesselJ_succ`: the two derivative
-  relations for `x ≠ 0`, which lower and raise the order. They form a ladder pair.
+* `mul_deriv_sphericalBesselJ` and `mul_deriv_sphericalBesselJ_succ`: the two derivative
+  relations on the whole line, which raise and lower the order. They form a ladder pair.
+  `hasDerivAt_sphericalBesselJ` and `hasDerivAt_sphericalBesselJ_succ` are their forms for
+  `x ≠ 0`.
 * `hasDerivAt_sphericalBesselJ_apply_zero`: the derivative at the origin, `j_1'(0) = 1 / 3` and
   `j_l'(0) = 0` for `l ≠ 1`.
 * `sphericalBesselJ_equation`: `j_l` solves the spherical Bessel equation
@@ -66,57 +72,72 @@ open EpsilonEridani
 
 namespace EpsilonEridani.Real
 
-/-- The reduced spherical Bessel function `(-(1 / x) d/dx) ^ l (sin x / x)`; it is even, analytic,
-and equals `j_l(x) / x ^ l` away from the origin. -/
-private noncomputable def reducedSphericalBesselJ (l : ℕ) : ℝ → ℝ :=
+/-- The reduced spherical Bessel function `(-(1 / x) d/dx) ^ l (sin x / x)`, the even analytic
+factor in `j_l(x) = x ^ l * reducedSphericalBesselJ l x` (`sphericalBesselJ_def`). The operator
+`-(1 / x) d/dx` is `f ↦ -dslope (deriv f) 0` (`reducedSphericalBesselJ_def`), which agrees with
+`-f' x / x` for `x ≠ 0` on the even functions it is applied to and takes the limiting value at
+`x = 0`. -/
+noncomputable def reducedSphericalBesselJ (l : ℕ) : ℝ → ℝ :=
   (fun f : ℝ → ℝ => -dslope (deriv f) 0)^[l] sinc
+
+/-- The reduced spherical Bessel function is the `l`-th iterate of `-(1 / x) d/dx` on
+`sin x / x`, with `-(1 / x) d/dx` taken as `f ↦ -dslope (deriv f) 0`. -/
+theorem reducedSphericalBesselJ_def (l : ℕ) :
+    reducedSphericalBesselJ l = (fun f : ℝ → ℝ => -dslope (deriv f) 0)^[l] sinc :=
+  (rfl)
 
 local notation "G" => reducedSphericalBesselJ
 
-private lemma reduced_zero : G 0 = sinc := rfl
+/-- The reduced spherical Bessel function of order zero is `sin x / x`. -/
+@[simp]
+theorem reducedSphericalBesselJ_zero : reducedSphericalBesselJ 0 = sinc := (rfl)
 
 private lemma reduced_succ (l : ℕ) : G (l + 1) = -dslope (deriv (G l)) 0 :=
   Function.iterate_succ_apply' _ l sinc
 
-/-- A function that vanishes identically has zero derivative. -/
-private lemma eq_zero_of_hasDerivAt_of_forall_eq_zero {F : ℝ → ℝ} {D y : ℝ} (h : ∀ z, F z = 0)
-    (hd : HasDerivAt F D y) : D = 0 :=
-  hd.unique ((hasDerivAt_const y 0).congr_of_eventuallyEq (Eventually.of_forall h))
-
 /-- The spherical Bessel function of the first kind of order `l`, given by the Rayleigh formula
-`j_l(x) = x ^ l * (-(1 / x) d/dx) ^ l (sin x / x)` (`sphericalBesselJ_def`). The operator
-`-(1 / x) d/dx` is `f ↦ -dslope (deriv f) 0`, which agrees with `-f' x / x` for `x ≠ 0` on the even
-functions it is applied to and takes the limiting value at `x = 0`. The resulting function is
-analytic on the whole line (`analyticAt_sphericalBesselJ`). -/
-noncomputable def sphericalBesselJ (l : ℕ) (x : ℝ) : ℝ := x ^ l * G l x
+`j_l(x) = x ^ l * (-(1 / x) d/dx) ^ l (sin x / x)` (`sphericalBesselJ_def` and
+`reducedSphericalBesselJ_def`). The resulting function is analytic on the whole line
+(`analyticAt_sphericalBesselJ`). -/
+noncomputable def sphericalBesselJ (l : ℕ) (x : ℝ) : ℝ := x ^ l * reducedSphericalBesselJ l x
 
-/-- The Rayleigh formula `j_l(x) = x ^ l * (-(1 / x) d/dx) ^ l (sin x / x)` defining
-`sphericalBesselJ`, with `-(1 / x) d/dx` taken as `f ↦ -dslope (deriv f) 0`. -/
+/-- The spherical Bessel function `j_l(x)` is `x ^ l` times the reduced function of order `l`. -/
 theorem sphericalBesselJ_def (l : ℕ) (x : ℝ) :
-    sphericalBesselJ l x = x ^ l * (fun f : ℝ → ℝ => -dslope (deriv f) 0)^[l] sinc x :=
+    sphericalBesselJ l x = x ^ l * reducedSphericalBesselJ l x :=
   (rfl)
 
 private lemma analyticOnNhd_reduced (l : ℕ) : AnalyticOnNhd ℝ (G l) Set.univ := by
   induction l with
   | zero =>
-    rw [reduced_zero]
+    rw [reducedSphericalBesselJ_zero]
     exact fun x _ => analyticAt_sinc x
   | succ l ih =>
     rw [reduced_succ]
     exact ((analyticOnNhd_dslope (s := Set.univ)).mpr ih.deriv).neg
 
+/-- Every reduced spherical Bessel function is real analytic on the whole line. -/
 @[fun_prop]
-private lemma differentiable_reduced (l : ℕ) : Differentiable ℝ (G l) :=
-  fun x => (analyticOnNhd_reduced l x (Set.mem_univ x)).differentiableAt
+theorem analyticAt_reducedSphericalBesselJ (l : ℕ) (x : ℝ) :
+    AnalyticAt ℝ (reducedSphericalBesselJ l) x :=
+  analyticOnNhd_reduced l x (Set.mem_univ x)
 
+/-- Every reduced spherical Bessel function is differentiable. -/
 @[fun_prop]
-private lemma continuous_reduced (l : ℕ) : Continuous (G l) :=
-  (differentiable_reduced l).continuous
+theorem differentiable_reducedSphericalBesselJ (l : ℕ) :
+    Differentiable ℝ (reducedSphericalBesselJ l) :=
+  fun x => (analyticAt_reducedSphericalBesselJ l x).differentiableAt
 
-/-- Each reduced function is even. -/
-private lemma reduced_neg (l : ℕ) (x : ℝ) : G l (-x) = G l x := by
+/-- Every reduced spherical Bessel function is continuous. -/
+@[fun_prop]
+theorem continuous_reducedSphericalBesselJ (l : ℕ) : Continuous (reducedSphericalBesselJ l) :=
+  (differentiable_reducedSphericalBesselJ l).continuous
+
+/-- Every reduced spherical Bessel function is even. -/
+@[simp]
+theorem reducedSphericalBesselJ_neg (l : ℕ) (x : ℝ) :
+    reducedSphericalBesselJ l (-x) = reducedSphericalBesselJ l x := by
   induction l generalizing x with
-  | zero => rw [reduced_zero, sinc_neg]
+  | zero => rw [reducedSphericalBesselJ_zero, sinc_neg]
   | succ l ih =>
     -- the derivative of the even function `G l` is odd
     have hodd : ∀ y, deriv (G l) (-y) = -deriv (G l) y := Function.Even.deriv ih
@@ -129,31 +150,33 @@ private lemma reduced_neg (l : ℕ) (x : ℝ) : G l (-x) = G l x := by
 
 /-- The derivative of `G l` vanishes at the origin, as it is even. -/
 private lemma deriv_reduced_zero (l : ℕ) : deriv (G l) 0 = 0 :=
-  (Function.Even.deriv (reduced_neg l)).map_zero
+  (Function.Even.deriv (reducedSphericalBesselJ_neg l)).map_zero
 
-/-- The Rayleigh step everywhere: `(G l)' = -x * G (l + 1)`. -/
-private lemma hasDerivAt_reduced (l : ℕ) (x : ℝ) :
-    HasDerivAt (G l) (-x * G (l + 1) x) x := by
+/-- The Rayleigh step on the whole line: the derivative of the reduced function of order `l` is
+`-x` times the reduced function of order `l + 1`. -/
+theorem hasDerivAt_reducedSphericalBesselJ (l : ℕ) (x : ℝ) :
+    HasDerivAt (reducedSphericalBesselJ l) (-x * reducedSphericalBesselJ (l + 1) x) x := by
   have h := sub_smul_dslope (deriv (G l)) 0 x
   rw [deriv_reduced_zero, sub_zero, sub_zero, smul_eq_mul] at h
   -- h: deriv (G l) x = x * dslope (deriv (G l)) 0 x
   rw [reduced_succ, Pi.neg_apply]
   have : (-x) * (-dslope (deriv (G l)) 0 x) = x * dslope (deriv (G l)) 0 x := by ring
   rw [this, h]
-  exact (differentiable_reduced l x).hasDerivAt
+  exact (differentiable_reducedSphericalBesselJ l x).hasDerivAt
 
 /-- `x G 0 = sin x`. -/
 private lemma mul_reduced_zero (x : ℝ) : x * G 0 x = sin x := by
-  rw [reduced_zero]
+  rw [reducedSphericalBesselJ_zero]
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   · rw [sinc_of_ne_zero hx, mul_div_cancel₀ _ hx]
 
 /-- The first derivative of `x G 0 = sin x`: `G 0 - x ^ 2 G 1 = cos x`. -/
 private lemma reduced_one (x : ℝ) : G 0 x - x ^ 2 * G 1 x = cos x := by
-  have hd := ((hasDerivAt_id' x).mul (hasDerivAt_reduced 0 x)).sub (hasDerivAt_sin x)
-  linear_combination
-    eq_zero_of_hasDerivAt_of_forall_eq_zero (fun z => sub_eq_zero.mpr (mul_reduced_zero z)) hd
+  have hd :=
+    ((hasDerivAt_id' x).mul (hasDerivAt_reducedSphericalBesselJ 0 x)).sub (hasDerivAt_sin x)
+  linear_combination hd.unique ((hasDerivAt_const x 0).congr_of_eventuallyEq
+    (.of_forall fun z => sub_eq_zero.mpr (mul_reduced_zero z)))
 
 /-- The base case of the recurrence: `x ^ 2 G 2 - 3 G 1 + G 0 = 0`. -/
 private lemma reduced_recurrence_zero (x : ℝ) :
@@ -161,13 +184,13 @@ private lemma reduced_recurrence_zero (x : ℝ) :
   -- second derivative: `x (x ^ 2 G 2 - 3 G 1 + G 0) = 0`
   have h2 : ∀ y, y * (y ^ 2 * G 2 y - 3 * G 1 y + G 0 y) = 0 := by
     intro y
-    have hd := ((hasDerivAt_reduced 0 y).sub ((hasDerivAt_pow 2 y).mul
-      (hasDerivAt_reduced 1 y))).sub (hasDerivAt_cos y)
-    linear_combination
-      eq_zero_of_hasDerivAt_of_forall_eq_zero (fun z => sub_eq_zero.mpr (reduced_one z)) hd +
-        mul_reduced_zero y
-  -- `x * f x = 0` everywhere and `f` continuous at `0` force `f = 0`, also at the origin
-  exact congrFun (ContinuousAt.eq_zero_of_forall_smul_eq_zero (by fun_prop) h2) x
+    have hd := ((hasDerivAt_reducedSphericalBesselJ 0 y).sub ((hasDerivAt_pow 2 y).mul
+      (hasDerivAt_reducedSphericalBesselJ 1 y))).sub (hasDerivAt_cos y)
+    linear_combination hd.unique ((hasDerivAt_const y 0).congr_of_eventuallyEq
+      (.of_forall fun z => sub_eq_zero.mpr (reduced_one z))) + mul_reduced_zero y
+  -- `x * f x = 0` everywhere and `f` continuous force `f = 0`, also at the origin
+  exact congrFun (Continuous.ext_on (dense_compl_singleton 0) (by fun_prop) continuous_const
+    fun y hy => (mul_eq_zero.mp (h2 y)).resolve_left hy) x
 
 /-- The three-term recurrence of the reduced functions,
 `x ^ 2 G (l + 2) - (2 l + 3) G (l + 1) + G l = 0`, on the whole line. -/
@@ -180,19 +203,21 @@ private lemma reduced_recurrence (l : ℕ) (x : ℝ) :
     have h : ∀ y, y * (y ^ 2 * G (l + 3) y - (2 * (l + 1 : ℕ) + 3) * G (l + 2) y
         + G (l + 1) y) = 0 := by
       intro y
-      have hd := (((hasDerivAt_pow 2 y).mul (hasDerivAt_reduced (l + 2) y)).sub
-        ((hasDerivAt_reduced (l + 1) y).const_mul (2 * (l : ℝ) + 3))).add
-        (hasDerivAt_reduced l y)
-      have := eq_zero_of_hasDerivAt_of_forall_eq_zero ih hd
+      have hd := (((hasDerivAt_pow 2 y).mul (hasDerivAt_reducedSphericalBesselJ (l + 2) y)).sub
+        ((hasDerivAt_reducedSphericalBesselJ (l + 1) y).const_mul (2 * (l : ℝ) + 3))).add
+        (hasDerivAt_reducedSphericalBesselJ l y)
+      have := hd.unique ((hasDerivAt_const y 0).congr_of_eventuallyEq (.of_forall ih))
       push_cast at this ⊢
       norm_num at this
       linear_combination -this
-    exact congrFun (ContinuousAt.eq_zero_of_forall_smul_eq_zero (by fun_prop) h) x
+    exact congrFun (Continuous.ext_on (dense_compl_singleton 0) (by fun_prop) continuous_const
+      fun y hy => (mul_eq_zero.mp (h y)).resolve_left hy) x
 
-/-- The value of the reduced functions at the origin, `G l 0 = 1 / (2 l + 1)‼`. -/
-private lemma reduced_apply_zero (l : ℕ) : G l 0 = (((2 * l + 1)‼ : ℕ) : ℝ)⁻¹ := by
+/-- The value of the reduced functions at the origin, `1 / (2 l + 1)‼`. -/
+theorem reducedSphericalBesselJ_apply_zero (l : ℕ) :
+    reducedSphericalBesselJ l 0 = (((2 * l + 1)‼ : ℕ) : ℝ)⁻¹ := by
   induction l with
-  | zero => simp [reduced_zero]
+  | zero => simp
   | succ l ih =>
     have h := reduced_recurrence l 0
     have hl : 2 * (l + 1) + 1 = 2 * l + 1 + 2 := by ring
@@ -207,12 +232,12 @@ private lemma reduced_apply_zero (l : ℕ) : G l 0 = (((2 * l + 1)‼ : ℕ) : �
 @[simp]
 theorem sphericalBesselJ_zero : sphericalBesselJ 0 = sinc := by
   funext x
-  rw [sphericalBesselJ, pow_zero, one_mul, reduced_zero]
+  rw [sphericalBesselJ, pow_zero, one_mul, reducedSphericalBesselJ_zero]
 
 /-- Every spherical Bessel function `j_l` is real analytic on the whole line. -/
 @[fun_prop]
 theorem analyticAt_sphericalBesselJ (l : ℕ) (x : ℝ) : AnalyticAt ℝ (sphericalBesselJ l) x :=
-  (analyticAt_id.pow l).mul (analyticOnNhd_reduced l x (Set.mem_univ x))
+  (analyticAt_id.pow l).mul (analyticAt_reducedSphericalBesselJ l x)
 
 /-- Every spherical Bessel function `j_l` is smooth. -/
 @[fun_prop]
@@ -241,8 +266,8 @@ theorem sphericalBesselJ_apply_zero (l : ℕ) :
 theorem tendsto_sphericalBesselJ_div_pow (l : ℕ) :
     Tendsto (fun x => sphericalBesselJ l x / x ^ l) (𝓝[≠] 0)
       (𝓝 (((2 * l + 1)‼ : ℕ) : ℝ)⁻¹) := by
-  rw [← reduced_apply_zero]
-  refine (((continuous_reduced l).tendsto 0).mono_left nhdsWithin_le_nhds).congr' ?_
+  rw [← reducedSphericalBesselJ_apply_zero]
+  refine (((continuous_reducedSphericalBesselJ l).tendsto 0).mono_left nhdsWithin_le_nhds).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with x hx
   rw [sphericalBesselJ, mul_div_cancel_left₀ _ (pow_ne_zero l hx)]
 
@@ -250,13 +275,13 @@ theorem tendsto_sphericalBesselJ_div_pow (l : ℕ) :
 @[simp]
 theorem sphericalBesselJ_neg (l : ℕ) (x : ℝ) :
     sphericalBesselJ l (-x) = (-1) ^ l * sphericalBesselJ l x := by
-  rw [sphericalBesselJ, sphericalBesselJ, reduced_neg, neg_pow, mul_assoc]
+  rw [sphericalBesselJ, sphericalBesselJ, reducedSphericalBesselJ_neg, neg_pow, mul_assoc]
 
 /-- The three-term recurrence in the order on the whole line:
-`x j_{l + 2}(x) + x j_l(x) = (2 l + 3) j_{l + 1}(x)`. -/
-theorem sphericalBesselJ_mul_add_two (l : ℕ) (x : ℝ) :
-    x * sphericalBesselJ (l + 2) x + x * sphericalBesselJ l x =
-      (2 * l + 3) * sphericalBesselJ (l + 1) x := by
+`x j_{l + 2}(x) = (2 l + 3) j_{l + 1}(x) - x j_l(x)`. -/
+theorem mul_sphericalBesselJ_add_two (l : ℕ) (x : ℝ) :
+    x * sphericalBesselJ (l + 2) x =
+      (2 * l + 3) * sphericalBesselJ (l + 1) x - x * sphericalBesselJ l x := by
   simp only [sphericalBesselJ]
   linear_combination x ^ (l + 1) * reduced_recurrence l x
 
@@ -266,35 +291,50 @@ theorem sphericalBesselJ_add_two (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     sphericalBesselJ (l + 2) x =
       (2 * l + 3) / x * sphericalBesselJ (l + 1) x - sphericalBesselJ l x := by
   field_simp
-  linear_combination sphericalBesselJ_mul_add_two l x
+  linear_combination mul_sphericalBesselJ_add_two l x
 
 /-- The product rule for `j_l(x) = x ^ l G l x`, on the whole line. -/
 private lemma hasDerivAt_sphericalBesselJ_aux (l : ℕ) (x : ℝ) :
     HasDerivAt (sphericalBesselJ l) (l * x ^ (l - 1) * G l x + x ^ l * (-x * G (l + 1) x)) x :=
-  (hasDerivAt_pow l x).mul (hasDerivAt_reduced l x)
+  (hasDerivAt_pow l x).mul (hasDerivAt_reducedSphericalBesselJ l x)
 
-/-- The derivative relation lowering the order, `j_l' = l / x * j_l - j_{l + 1}` for `x ≠ 0`. -/
-theorem hasDerivAt_sphericalBesselJ (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
-    HasDerivAt (sphericalBesselJ l)
-      (l / x * sphericalBesselJ l x - sphericalBesselJ (l + 1) x) x := by
-  convert hasDerivAt_sphericalBesselJ_aux l x using 1
+/-- The derivative relation raising the order on the whole line,
+`x j_l'(x) = l j_l(x) - x j_{l + 1}(x)`. -/
+theorem mul_deriv_sphericalBesselJ (l : ℕ) (x : ℝ) :
+    x * deriv (sphericalBesselJ l) x =
+      l * sphericalBesselJ l x - x * sphericalBesselJ (l + 1) x := by
+  rw [(hasDerivAt_sphericalBesselJ_aux l x).deriv]
   simp only [sphericalBesselJ]
   rcases l with _ | l
   · ring
   · rw [Nat.add_sub_cancel]
-    field_simp
     ring
 
-/-- The derivative relation raising the order,
+/-- The derivative relation lowering the order on the whole line,
+`x j_{l + 1}'(x) = x j_l(x) - (l + 2) j_{l + 1}(x)`. -/
+theorem mul_deriv_sphericalBesselJ_succ (l : ℕ) (x : ℝ) :
+    x * deriv (sphericalBesselJ (l + 1)) x =
+      x * sphericalBesselJ l x - (l + 2) * sphericalBesselJ (l + 1) x := by
+  have h := mul_deriv_sphericalBesselJ (l + 1) x
+  push_cast at h
+  linear_combination h - mul_sphericalBesselJ_add_two l x
+
+/-- The derivative relation raising the order, `j_l' = l / x * j_l - j_{l + 1}` for `x ≠ 0`. -/
+theorem hasDerivAt_sphericalBesselJ (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt (sphericalBesselJ l)
+      (l / x * sphericalBesselJ l x - sphericalBesselJ (l + 1) x) x := by
+  refine (differentiable_sphericalBesselJ l x).hasDerivAt.congr_deriv ?_
+  field_simp
+  linear_combination mul_deriv_sphericalBesselJ l x
+
+/-- The derivative relation lowering the order,
 `j_{l + 1}' = j_l - (l + 2) / x * j_{l + 1}` for `x ≠ 0`. -/
 theorem hasDerivAt_sphericalBesselJ_succ (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     HasDerivAt (sphericalBesselJ (l + 1))
       (sphericalBesselJ l x - (l + 2) / x * sphericalBesselJ (l + 1) x) x := by
-  convert hasDerivAt_sphericalBesselJ (l + 1) hx using 1
-  rw [sphericalBesselJ_add_two l hx]
-  push_cast
+  refine (differentiable_sphericalBesselJ (l + 1) x).hasDerivAt.congr_deriv ?_
   field_simp
-  ring
+  linear_combination mul_deriv_sphericalBesselJ_succ l x
 
 /-- The derivative of `j_l` for `x ≠ 0`, `j_l' = l / x * j_l - j_{l + 1}`. -/
 theorem deriv_sphericalBesselJ (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
@@ -313,7 +353,7 @@ theorem hasDerivAt_sphericalBesselJ_apply_zero (l : ℕ) :
   convert hasDerivAt_sphericalBesselJ_aux l 0 using 1
   rcases l with _ | _ | l
   · simp
-  · simp [reduced_apply_zero]
+  · simp [reducedSphericalBesselJ_apply_zero]
   · simp
 
 /-- The derivative at the origin: `j_1'(0) = 1 / 3`, and `j_l'(0) = 0` for every `l ≠ 1`. -/
@@ -328,7 +368,7 @@ theorem sphericalBesselJ_one (x : ℝ) : sphericalBesselJ 1 x = sin x / x ^ 2 - 
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   · have h := reduced_one x
-    rw [reduced_zero, sinc_of_ne_zero hx] at h
+    rw [reducedSphericalBesselJ_zero, sinc_of_ne_zero hx] at h
     rw [sphericalBesselJ, pow_one]
     field_simp at h ⊢
     linear_combination -h
