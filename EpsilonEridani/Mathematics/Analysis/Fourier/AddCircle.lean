@@ -14,9 +14,9 @@ public import TauCeti.Analysis.Fourier.AddCircle
 Extensions of `Mathlib.Analysis.Fourier.AddCircle` and of `TauCeti.Analysis.Fourier.AddCircle`:
 the Fourier monomial `fourier n` is a character of the circle in its argument
 (`fourier_apply_add`, read off the bundled additive character `TauCeti.fourierAddChar`, which
-fixes the normalisation of the harmonics), and, being bounded by `1`, it is integrable against
-any finite measure when composed with an almost everywhere measurable angle
-(`integrable_fourier_comp`, `integrable_fourier_mul_conj_fourier`).
+fixes the normalisation of the harmonics, and `fourier_apply_sub`), and, having modulus `1`
+(`norm_fourier_apply`), it is integrable against any finite measure when composed with an almost
+everywhere measurable angle (`integrable_fourier_comp`, `integrable_fourier_mul_conj_fourier`).
 -/
 
 public section
@@ -36,22 +36,30 @@ theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
     fourier n (x + y) = fourier n x * fourier n y := by
   simp only [← TauCeti.fourierAddChar_apply, AddChar.map_add_eq_mul]
 
+/-- The Fourier monomial turns a difference into a product with a conjugate:
+`e^{i n (x - y)} = e^{i n x} conj (e^{i n y})`. -/
+theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
+    fourier n (x - y) = fourier n x * conj (fourier n y) := by
+  rw [sub_eq_add_neg, fourier_apply_add]
+  simp only [fourier_apply, zsmul_neg, fourier_neg']
+
+/-- The Fourier monomial takes values of modulus `1`: `‖e^{i n x}‖ = 1`. -/
+theorem norm_fourier_apply (n : ℤ) (x : AddCircle T) : ‖fourier n x‖ = 1 := by
+  rw [fourier_apply, Circle.norm_coe]
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
 
 /-- The harmonic `e^{i n X}` of an almost everywhere measurable angle `X` is integrable. -/
 theorem integrable_fourier_comp {X : Ω → AddCircle T} (hX : AEMeasurable X P) (n : ℤ) :
     Integrable (fun ω => fourier n (X ω)) P :=
   .of_bound ((fourier n).continuous.measurable.comp_aemeasurable hX).aestronglyMeasurable 1
-    (Filter.Eventually.of_forall fun ω => by simp)
+    (Filter.Eventually.of_forall fun ω => (norm_fourier_apply n (X ω)).le)
 
 /-- The pair harmonic `e^{i n X} conj (e^{i n Y})` of two almost everywhere measurable angles is
-integrable. -/
+integrable, as the instance `e^{i n (X - Y)}` of `integrable_fourier_comp`. -/
 theorem integrable_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hX : AEMeasurable X P)
     (hY : AEMeasurable Y P) (n : ℤ) :
-    Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P :=
-  (integrable_fourier_comp hX n).mul_bdd (c := 1)
-    (((Complex.continuous_conj.comp (fourier n).continuous).measurable.comp_aemeasurable
-        hY).aestronglyMeasurable)
-    (Filter.Eventually.of_forall fun ω => by simp)
+    Integrable (fun ω => fourier n (X ω) * conj (fourier n (Y ω))) P := by
+  simpa only [Pi.sub_apply, fourier_apply_sub] using integrable_fourier_comp (hX.sub hY) n
 
 end EpsilonEridani

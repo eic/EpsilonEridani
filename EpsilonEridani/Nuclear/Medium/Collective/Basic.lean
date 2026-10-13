@@ -113,7 +113,7 @@ theorem qVector_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T)
 @[simp]
 theorem norm_qVector_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T) :
     ‖qVector n (fun j => φ j + ψ)‖ = ‖qVector n φ‖ := by
-  simp [qVector_add_const]
+  rw [qVector_add_const, norm_mul, norm_fourier_apply, one_mul]
 
 /-- The `Q`-vector depends continuously on the angles. -/
 @[fun_prop]
@@ -123,7 +123,7 @@ theorem continuous_qVector (n : ℤ) : Continuous (qVector (T := T) (ι := ι) n
 /-- The modulus of the `Q`-vector is at most the multiplicity. -/
 theorem norm_qVector_le_card (n : ℤ) (φ : ι → AddCircle T) : ‖qVector n φ‖ ≤ Fintype.card ι := by
   refine (norm_sum_le _ _).trans ?_
-  simp
+  simp only [norm_fourier_apply, sum_const, card_univ, nsmul_eq_mul, mul_one, le_refl]
 
 /-- The squared modulus of the `Q`-vector is the self-correlation `M` plus the sum over ordered
 pairs of distinct particles of `e^{i n φⱼ} conj (e^{i n φₖ}) = e^{i n (φⱼ - φₖ)}`. -/
@@ -132,7 +132,8 @@ theorem ofReal_norm_qVector_sq [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle
       Fintype.card ι + ∑ j, ∑ k ∈ univ.erase j, fourier n (φ j) * conj (fourier n (φ k)) := by
   simp only [← Complex.mul_conj', qVector, map_sum, Finset.sum_mul_sum]
   refine (Finset.sum_congr rfl fun j _ => (Finset.add_sum_erase _ _ (mem_univ j)).symm).trans ?_
-  simp [Complex.mul_conj', Finset.card_univ]
+  simp only [Complex.mul_conj', norm_fourier_apply, Complex.ofReal_one, one_pow,
+    Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
 
 /-- The single-event two-particle correlation `⟨2⟩ = (|Q_n|² - M) / (M (M - 1))`: the squared
 modulus of the `Q`-vector with the self-correlation removed, averaged over the `M (M - 1)` ordered
@@ -231,9 +232,8 @@ theorem anisotropyCoeff_neg (μ : Measure (AddCircle T)) (n : ℤ) :
 theorem norm_anisotropyCoeff_le_one (μ : Measure (AddCircle T)) [IsProbabilityMeasure μ]
     (n : ℤ) : ‖anisotropyCoeff μ n‖ ≤ 1 := by
   refine (norm_integral_le_of_norm_le_const (C := 1) (Filter.Eventually.of_forall
-    fun x => ?_)).trans ?_
-  · simp
-  · simp
+    fun x => (norm_fourier_apply n x).le)).trans ?_
+  simp
 
 /-- For a distribution with density `f` with respect to the normalised Haar measure, the
 anisotropy coefficient of harmonic `n` is the Fourier coefficient of `f` of index `-n`. -/
@@ -257,7 +257,7 @@ theorem anisotropyCoeff_map_add_const (μ : Measure (AddCircle T)) (n : ℤ) (ψ
 @[simp]
 theorem norm_anisotropyCoeff_map_add_const (μ : Measure (AddCircle T)) (n : ℤ) (ψ : AddCircle T) :
     ‖anisotropyCoeff (μ.map (· + ψ)) n‖ = ‖anisotropyCoeff μ n‖ := by
-  simp [anisotropyCoeff_map_add_const]
+  rw [anisotropyCoeff_map_add_const, norm_mul, norm_fourier_apply, one_mul]
 
 /-- The anisotropy coefficient itself is not rotation invariant: rotating by `ψ` leaves it
 unchanged exactly when it vanishes or `e^{i n ψ} = 1`. -/
