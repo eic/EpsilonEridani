@@ -42,8 +42,10 @@ alone, as theorems rather than assumptions.
 * `exists_isHelicityMatrixOf_iff`: the bounds are complete. A triple `(F₁, F₂, F₃)` is
   represented by some positive-semidefinite helicity matrix exactly when
   `√(1 + γ²) |F₃| ≤ 2 F₁` and `F_L^{exact} ≥ 0`.
-* `IsHelicityMatrixOf.sq_apply_plus_minus_le`: the Cauchy-Schwarz bound on the helicity-flip
-  interference entry in terms of the transverse absorption cross sections.
+* `IsHelicityMatrixOf.sq_apply_plus_minus_le`, `IsHelicityMatrixOf.sq_apply_plus_long_le`,
+  `IsHelicityMatrixOf.sq_apply_minus_long_le`: the Cauchy-Schwarz bounds on the interference
+  entries — the helicity-flip one in terms of the transverse absorption cross sections, and the
+  transverse-longitudinal ones in terms of `F_L^{exact}`.
 * `IsHelicityMatrixOf.crossSectionBracket_nonneg`: the inclusive cross section of
   `Inclusive.CrossSection` is non-negative throughout the physical region
   `1 - y - M² x² y² / Q² ≥ 0`, for either sign of the parity-odd term. It is a non-negative
@@ -65,8 +67,9 @@ and the flux factor drops out of every bound below.
 The matrix is taken real, as in `Particles.Parton.PDF.SpinDensity`. Here this is a restriction
 rather than a consequence of time reversal: the off-diagonal entries of the forward boson–nucleon
 matrix (for example the `(+1, 0)` interference behind `σ_LT`) are complex in general. The
-diagonal bounds are unaffected, while `IsHelicityMatrixOf.sq_apply_plus_minus_le` covers real
-interference amplitudes only; the complex case is `Matrix.PosSemidef.normSq_le`. The structure
+diagonal bounds are unaffected, while the interference bounds (`sq_apply_plus_minus_le`,
+`sq_apply_plus_long_le`, `sq_apply_minus_long_le`) cover real interference amplitudes only; the
+complex case is `Matrix.PosSemidef.normSq_le`. The structure
 functions are
 the dimensionless ones of `Inclusive.CrossSection`, with `F₂` in the physical normalisation of
 `Tensors.Longitudinal.structureF2`. The sign attaching `-F₃` to helicity `+1` is a convention for
@@ -242,6 +245,44 @@ theorem sq_apply_plus_minus_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hQ2 :
   have hcs := H.posSemidef.sq_apply_le idxPlus idxMinus
   rw [h.plus, h.minus] at hcs
   linear_combination hcs - F3 ^ 2 / 4 * hs
+
+/-- **Cauchy-Schwarz for the transverse-longitudinal interference.** `2 x` times the square of
+the `(+1, 0)` entry of the helicity matrix, behind `σ_LT`, is bounded by the product of the
+`+1` transverse and the longitudinal absorption cross sections,
+`(F₁ - √(1 + γ²) F₃ / 2) F_L^{exact}`. It is stated multiplied by `2 x`, with no division, so
+that it applies without `x ≠ 0`. -/
+theorem sq_apply_plus_long_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 ≤ x) :
+    2 * x * H.mat idxPlus idxLong ^ 2
+      ≤ (F1 - Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2) * FLExact M x Q2 F1 F2 := by
+  have hcs := H.posSemidef.sq_apply_le idxPlus idxLong
+  rw [h.plus] at hcs
+  calc 2 * x * H.mat idxPlus idxLong ^ 2
+      ≤ 2 * x * ((F1 - Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2)
+          * H.mat idxLong idxLong) :=
+        mul_le_mul_of_nonneg_left hcs (mul_nonneg zero_le_two hx)
+    _ = (F1 - Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2)
+        * (2 * x * H.mat idxLong idxLong) := by ring
+    _ = (F1 - Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2) * FLExact M x Q2 F1 F2 := by
+      rw [h.long]
+
+/-- **Cauchy-Schwarz for the transverse-longitudinal interference of the other helicity.**
+`2 x` times the square of the `(-1, 0)` entry of the helicity matrix is bounded by the product
+of the `-1` transverse and the longitudinal absorption cross sections,
+`(F₁ + √(1 + γ²) F₃ / 2) F_L^{exact}`. As above, it is stated multiplied by `2 x`, with no
+division. -/
+theorem sq_apply_minus_long_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 ≤ x) :
+    2 * x * H.mat idxMinus idxLong ^ 2
+      ≤ (F1 + Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2) * FLExact M x Q2 F1 F2 := by
+  have hcs := H.posSemidef.sq_apply_le idxMinus idxLong
+  rw [h.minus] at hcs
+  calc 2 * x * H.mat idxMinus idxLong ^ 2
+      ≤ 2 * x * ((F1 + Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2)
+          * H.mat idxLong idxLong) :=
+        mul_le_mul_of_nonneg_left hcs (mul_nonneg zero_le_two hx)
+    _ = (F1 + Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2)
+        * (2 * x * H.mat idxLong idxLong) := by ring
+    _ = (F1 + Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 / 2) * FLExact M x Q2 F1 F2 := by
+      rw [h.long]
 
 end IsHelicityMatrixOf
 
