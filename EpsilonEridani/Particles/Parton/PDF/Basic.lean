@@ -144,68 +144,85 @@ lemma valence_sumRule [Fintype Flavor]
     mellinMoment f 0 i Q2 = h.valenceTarget i :=
   h.valence i Q2
 
-/-! ### Relabelling the species index
+/-! ### Pulling a density back along a map of parton indices
 
-A map `σ : κ → ι` of species indices pulls a density over `ι` back to a density over `κ`. The
-density assumptions survive any relabelling; the species-summed moments and the sum-rule bundle
-survive a bijective one. Charge conjugation and flavour symmetries act on densities this way. -/
+A map `σ : κ → ι` of parton indices pulls a density over `ι` back to a density over `κ`,
+`comap σ f k = f (σ k)`. The density assumptions survive any such pullback; the summed moments
+and the sum-rule bundle survive a bijective one. Charge conjugation and flavour symmetries act on
+densities this way. -/
 
-section Relabel
+section Comap
 
-variable {ι κ : Type}
+variable {ι κ μ : Type}
 
-/-- The density over `κ` whose species `k` carries the density of species `σ k` in `f`. -/
-def relabel (σ : κ → ι) (f : Pdf ι) : Pdf κ := fun k => f (σ k)
+/-- A moment of a density depends on it only through the density of the given parton at the
+given scale. -/
+lemma mellinMoment_congr {f : Pdf ι} {g : Pdf κ} {i : ι} {j : κ} {Q2 : ℝ}
+    (h : ∀ x, f i x Q2 = g j x Q2) (n : ℕ) :
+    mellinMoment f n i Q2 = mellinMoment g n j Q2 := by
+  simp only [mellinMoment, h]
+
+/-- The density over `κ` whose parton `k` carries the density of parton `σ k` in `f`. -/
+def comap (σ : κ → ι) (f : Pdf ι) : Pdf κ := fun k => f (σ k)
 
 @[simp]
-lemma relabel_apply (σ : κ → ι) (f : Pdf ι) (k : κ) (x Q2 : ℝ) :
-    relabel σ f k x Q2 = f (σ k) x Q2 :=
+lemma comap_apply (σ : κ → ι) (f : Pdf ι) (k : κ) (x Q2 : ℝ) :
+    comap σ f k x Q2 = f (σ k) x Q2 :=
   rfl
 
 @[simp]
-lemma mellinMoment_relabel (σ : κ → ι) (f : Pdf ι) (n : ℕ) (k : κ) (Q2 : ℝ) :
-    mellinMoment (relabel σ f) n k Q2 = mellinMoment f n (σ k) Q2 := by
-  simp [mellinMoment]
+lemma comap_id (f : Pdf ι) : comap id f = f :=
+  rfl
 
-/-- A bijective relabelling preserves every moment summed over all species. -/
-lemma sum_mellinMoment_relabel [Fintype ι] [Fintype κ] {σ : κ → ι} (hσ : σ.Bijective)
+@[simp]
+lemma comap_comap (σ : κ → ι) (τ : μ → κ) (f : Pdf ι) :
+    comap τ (comap σ f) = comap (σ ∘ τ) f :=
+  rfl
+
+@[simp]
+lemma mellinMoment_comap (σ : κ → ι) (f : Pdf ι) (n : ℕ) (k : κ) (Q2 : ℝ) :
+    mellinMoment (comap σ f) n k Q2 = mellinMoment f n (σ k) Q2 :=
+  mellinMoment_congr (fun _ => comap_apply σ f k _ Q2) n
+
+/-- A bijective pullback preserves every moment summed over all partons. -/
+lemma sum_mellinMoment_comap [Fintype ι] [Fintype κ] {σ : κ → ι} (hσ : σ.Bijective)
     (f : Pdf ι) (n : ℕ) (Q2 : ℝ) :
-    ∑ k, mellinMoment (relabel σ f) n k Q2 = ∑ i, mellinMoment f n i Q2 := by
-  simp only [mellinMoment_relabel]
+    ∑ k, mellinMoment (comap σ f) n k Q2 = ∑ i, mellinMoment f n i Q2 := by
+  simp only [mellinMoment_comap]
   exact hσ.sum_comp fun i => mellinMoment f n i Q2
 
-/-- Relabelling preserves the physical half of the assumptions. -/
-lemma IsPartonDensity.relabel {f : Pdf ι} (h : IsPartonDensity f) (σ : κ → ι) :
-    IsPartonDensity (relabel σ f) where
-  support k x Q2 hx := by simpa only [relabel_apply] using h.support (σ k) x Q2 hx
-  nonneg k x Q2 hx₀ hx₁ := by simpa only [relabel_apply] using h.nonneg (σ k) x Q2 hx₀ hx₁
+/-- A pullback preserves the physical half of the assumptions. -/
+lemma IsPartonDensity.comap {f : Pdf ι} (h : IsPartonDensity f) (σ : κ → ι) :
+    IsPartonDensity (comap σ f) where
+  support k x Q2 hx := by simpa only [comap_apply] using h.support (σ k) x Q2 hx
+  nonneg k x Q2 hx₀ hx₁ := by simpa only [comap_apply] using h.nonneg (σ k) x Q2 hx₀ hx₁
 
-/-- Relabelling preserves the analytic half of the assumptions. -/
-lemma Regularity.relabel {f : Pdf ι} (h : Regularity f) (σ : κ → ι) :
-    Regularity (relabel σ f) where
-  measurable k Q2 := by simpa only [relabel_apply] using h.measurable (σ k) Q2
-  momentIntegrable n k Q2 := by simpa only [relabel_apply] using h.momentIntegrable n (σ k) Q2
+/-- A pullback preserves the analytic half of the assumptions. -/
+lemma Regularity.comap {f : Pdf ι} (h : Regularity f) (σ : κ → ι) :
+    Regularity (comap σ f) where
+  measurable k Q2 := by simpa only [comap_apply] using h.measurable (σ k) Q2
+  momentIntegrable n k Q2 := by simpa only [comap_apply] using h.momentIntegrable n (σ k) Q2
 
-/-- Relabelling preserves the density assumptions. -/
-lemma Assumptions.relabel {f : Pdf ι} (h : Assumptions f) (σ : κ → ι) :
-    Assumptions (relabel σ f) :=
-  assumptions_iff.2 ⟨h.isPartonDensity.relabel σ, h.regularity.relabel σ⟩
+/-- A pullback preserves the density assumptions. -/
+lemma Assumptions.comap {f : Pdf ι} (h : Assumptions f) (σ : κ → ι) :
+    Assumptions (comap σ f) :=
+  assumptions_iff.2 ⟨h.isPartonDensity.comap σ, h.regularity.comap σ⟩
 
-/-- A bijective relabelling preserves the sum-rule bundle, with the target value of each species
+/-- A bijective pullback preserves the sum-rule bundle, with the target value of each parton
 taken from its image. -/
-def SumRuleAssumptions.relabel [Fintype ι] [Fintype κ] {f : Pdf ι} (h : SumRuleAssumptions f)
-    {σ : κ → ι} (hσ : σ.Bijective) : SumRuleAssumptions (relabel σ f) where
-  momentum Q2 := (sum_mellinMoment_relabel hσ f 1 Q2).trans (h.momentum Q2)
+def SumRuleAssumptions.comap [Fintype ι] [Fintype κ] {f : Pdf ι} (h : SumRuleAssumptions f)
+    {σ : κ → ι} (hσ : σ.Bijective) : SumRuleAssumptions (comap σ f) where
+  momentum Q2 := (sum_mellinMoment_comap hσ f 1 Q2).trans (h.momentum Q2)
   valenceTarget k := h.valenceTarget (σ k)
-  valence k Q2 := (mellinMoment_relabel σ f 0 k Q2).trans (h.valence (σ k) Q2)
+  valence k Q2 := (mellinMoment_comap σ f 0 k Q2).trans (h.valence (σ k) Q2)
 
 @[simp]
-lemma SumRuleAssumptions.relabel_valenceTarget [Fintype ι] [Fintype κ] {f : Pdf ι}
+lemma SumRuleAssumptions.comap_valenceTarget [Fintype ι] [Fintype κ] {f : Pdf ι}
     (h : SumRuleAssumptions f) {σ : κ → ι} (hσ : σ.Bijective) (k : κ) :
-    (h.relabel hσ).valenceTarget k = h.valenceTarget (σ k) :=
+    (h.comap hσ).valenceTarget k = h.valenceTarget (σ k) :=
   rfl
 
-end Relabel
+end Comap
 
 end PDF
 end Parton
