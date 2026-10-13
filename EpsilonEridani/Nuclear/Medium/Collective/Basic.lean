@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.Algebra.BigOperators.Finset
 public import EpsilonEridani.Mathematics.Analysis.Fourier.AddCircle
 public import Mathlib.Probability.Independence.Integration
 public import Mathlib.Probability.HasLaw
@@ -190,19 +191,6 @@ theorem twoParticleCorrelation_neg (n : ℤ) (φ : ι → AddCircle T) :
 theorem twoParticleCorrelation_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T) :
     twoParticleCorrelation n (fun j => φ j + ψ) = twoParticleCorrelation n φ := by
   simp [twoParticleCorrelation]
-
-/-- The sum of a constant over the ordered pairs of distinct indices of a `Fintype` is the
-number `M (M - 1)` of such pairs times the constant, where `M = Fintype.card ι`. This is the
-count of ordered pairs of distinct particles that normalises the two-particle correlation. -/
-theorem sum_univ_sum_erase_const [DecidableEq ι] {R : Type*} [CommRing R] (c : R) :
-    ∑ j : ι, ∑ _ ∈ univ.erase j, c = Fintype.card ι * (Fintype.card ι - 1) * c := by
-  calc ∑ j : ι, ∑ _ ∈ univ.erase j, c
-      = ∑ j : ι, ((Fintype.card ι : R) - 1) * c := Finset.sum_congr rfl fun j _ => by
-        rw [Finset.sum_const, Finset.card_erase_of_mem (mem_univ j), Finset.card_univ,
-          nsmul_eq_mul, Nat.cast_pred (Fintype.card_pos_iff.2 ⟨j⟩)]
-    _ = Fintype.card ι * (Fintype.card ι - 1) * c := by
-        simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-        ring
 
 /-! ### The anisotropy coefficient of a distribution on the circle -/
 
