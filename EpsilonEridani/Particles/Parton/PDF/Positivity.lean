@@ -152,13 +152,13 @@ lemma g1_def (ρ : SpinDensity) :
 /-- Defining expression for `h1`. -/
 lemma h1_def (ρ : SpinDensity) : h1 ρ = ρ.mat idxPP idxMM := rfl
 
-/-- `f₁ + g₁` is twice the aligned diagonal entry of the spin-density matrix. This is the
-combination the Soffer bound constrains. -/
+/-- `f₁ + g₁` is the sum of the two aligned diagonal entries of the spin-density matrix. This is
+the combination the Soffer bound constrains. -/
 lemma f1_add_g1 (ρ : SpinDensity) :
     f1 ρ + g1 ρ = ρ.mat idxPP idxPP + ρ.mat idxMM idxMM := by
   rw [f1_def, g1_def]; ring
 
-/-- `f₁ - g₁` is twice the anti-aligned diagonal entry of the spin-density matrix. -/
+/-- `f₁ - g₁` is the sum of the two anti-aligned diagonal entries of the spin-density matrix. -/
 lemma f1_sub_g1 (ρ : SpinDensity) :
     f1 ρ - g1 ρ = ρ.mat idxPM idxPM + ρ.mat idxMP idxMP := by
   rw [f1_def, g1_def]; ring
@@ -166,10 +166,10 @@ lemma f1_sub_g1 (ρ : SpinDensity) :
 /-- **Unpolarized positivity.** The unpolarized distribution is nonnegative, at fixed
 `(x, Q²)`, as a consequence of positive semidefiniteness alone. -/
 theorem f1_nonneg (ρ : SpinDensity) : 0 ≤ f1 ρ := by
-  have hPP := ρ.posSemidef.apply_self_nonneg idxPP
-  have hPM := ρ.posSemidef.apply_self_nonneg idxPM
-  have hMP := ρ.posSemidef.apply_self_nonneg idxMP
-  have hMM := ρ.posSemidef.apply_self_nonneg idxMM
+  have hPP := ρ.posSemidef.diag_nonneg (i := idxPP)
+  have hPM := ρ.posSemidef.diag_nonneg (i := idxPM)
+  have hMP := ρ.posSemidef.diag_nonneg (i := idxMP)
+  have hMM := ρ.posSemidef.diag_nonneg (i := idxMM)
   rw [f1_def]
   linarith
 
@@ -178,13 +178,13 @@ fixed `(x, Q²)`. Equivalently, both `f₁ + g₁` and `f₁ - g₁` are nonnega
 sums of diagonal entries of a positive-semidefinite matrix. -/
 theorem abs_g1_le_f1 (ρ : SpinDensity) : |g1 ρ| ≤ f1 ρ := by
   have hsum : 0 ≤ f1 ρ + g1 ρ := by
-    have hPP := ρ.posSemidef.apply_self_nonneg idxPP
-    have hMM := ρ.posSemidef.apply_self_nonneg idxMM
+    have hPP := ρ.posSemidef.diag_nonneg (i := idxPP)
+    have hMM := ρ.posSemidef.diag_nonneg (i := idxMM)
     rw [f1_add_g1]
     linarith
   have hdiff : 0 ≤ f1 ρ - g1 ρ := by
-    have hPM := ρ.posSemidef.apply_self_nonneg idxPM
-    have hMP := ρ.posSemidef.apply_self_nonneg idxMP
+    have hPM := ρ.posSemidef.diag_nonneg (i := idxPM)
+    have hMP := ρ.posSemidef.diag_nonneg (i := idxMP)
     rw [f1_sub_g1]
     linarith
   rw [abs_le]
