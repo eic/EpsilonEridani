@@ -27,14 +27,18 @@ used in hadronic physics; see `EpsilonEridani/Particles/Parton/PDF/Positivity.le
 bound on the quark transversity distribution, which is exactly this inequality applied to the
 parton spin-density matrix.
 
-A real matrix is positive semidefinite exactly when its image under the coercion `ℝ → 𝕜` is, which
-is what lets a complex positive-semidefinite matrix with real entries descend to a real one.
+The entrywise real part of a positive-semidefinite matrix is positive semidefinite, and a real
+matrix is positive semidefinite exactly when its image under the coercion `ℝ → 𝕜` is. This is what
+lets a complex positive-semidefinite matrix descend to a real one.
 
 ## Main results
 
 - `Matrix.PosSemidef.re_apply_self_nonneg`: nonnegativity of the real part of the diagonal.
 - `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound over `RCLike`.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: its real specialisation.
+- `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix.
+- `Matrix.re_star_dotProduct_map_ofReal_mulVec`: the real part of the quadratic form of a real
+  matrix on a vector over `𝕜`, split along the real and imaginary parts of the vector.
 - `Matrix.posSemidef_map_ofReal_iff`: positive semidefiniteness is unchanged by `ℝ → 𝕜`.
 
 ## Implementation notes
@@ -76,40 +80,41 @@ lemma PosSemidef.two_mul_norm_apply_le {M : Matrix n n 𝕜} (hM : M.PosSemidef)
   rw [RCLike.normSq_eq_def'] at hcs
   nlinarith [sq_nonneg (re (M i i) - re (M j j)), norm_nonneg (M i j)]
 
+/-- The entrywise real part of a positive-semidefinite matrix is positive semidefinite: its
+quadratic form on a real vector is the real part of the quadratic form of the matrix. -/
+lemma PosSemidef.map_re [Finite n] {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
+    (M.map re).PosSemidef := by
+  have := Fintype.ofFinite n
+  refine posSemidef_iff_dotProduct_mulVec.mpr ⟨hM.1.map re fun z => by simp, fun x => ?_⟩
+  refine (hM.re_dotProduct_nonneg fun i => (x i : 𝕜)).trans_eq ?_
+  simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, RCLike.conj_ofReal,
+    star_trivial, map_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  simp only [mul_re, ofReal_re, ofReal_im, zero_mul, mul_zero, sub_zero]
+
+/-- The real part of the quadratic form of a real matrix, coerced to `𝕜`, is the sum of its real
+quadratic forms on the real and imaginary parts of the vector. -/
+lemma re_star_dotProduct_map_ofReal_mulVec [Fintype n] (M : Matrix n n ℝ) (x : n → 𝕜) :
+    re (star x ⬝ᵥ (M.map ((↑) : ℝ → 𝕜) *ᵥ x)) =
+      (fun i => re (x i)) ⬝ᵥ (M *ᵥ fun i => re (x i)) +
+        (fun i => im (x i)) ⬝ᵥ (M *ᵥ fun i => im (x i)) := by
+  simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, map_sum,
+    Finset.mul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  simp only [mul_re, mul_im, conj_re, conj_im, ofReal_re, ofReal_im]
+  ring
+
 /-- A real matrix is positive semidefinite if and only if its image under the coercion
 `ℝ → 𝕜` is. -/
 lemma posSemidef_map_ofReal_iff [Finite n] {M : Matrix n n ℝ} :
     (M.map ((↑) : ℝ → 𝕜)).PosSemidef ↔ M.PosSemidef := by
+  refine ⟨fun h => by simpa [Matrix.map_map, Function.comp_def] using h.map_re, fun h => ?_⟩
   have := Fintype.ofFinite n
-  have hstar : Function.Semiconj ((↑) : ℝ → 𝕜) star star := fun x => by simp
-  simp only [posSemidef_iff_dotProduct_mulVec, isHermitian_map_iff hstar RCLike.ofReal_injective]
-  refine and_congr_right fun hM => ⟨fun h x => ?_, fun h x => ?_⟩
-  · -- Test the form over `𝕜` on the real vector `x`.
-    have hx := h (fun i => (x i : 𝕜))
-    simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, RCLike.conj_ofReal,
-      star_trivial] at hx ⊢
-    exact_mod_cast hx
-  · -- Split `x` into its real and imaginary parts; the cross terms cancel by symmetry of `M`.
-    have hsym : ∀ i j, M j i = M i j := fun i j => by simpa using hM.apply i j
-    have hq := h (fun i => re (x i))
-    have hq' := h (fun i => im (x i))
-    rw [RCLike.nonneg_iff]
-    simp only [dotProduct, mulVec, map_apply, Pi.star_apply, star_trivial, RCLike.star_def,
-      map_sum, Finset.mul_sum, mul_re, mul_im, conj_re, conj_im, ofReal_re, ofReal_im, zero_mul,
-      sub_zero, add_zero] at hq hq' ⊢
-    constructor
-    · convert add_nonneg hq hq' using 1
-      rw [← Finset.sum_add_distrib]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun j _ => by ring
-    · -- The imaginary part is the antisymmetric cross term, which vanishes since `M` is symmetric.
-      have hswap : ∑ i, ∑ j, im (x i) * (M i j * re (x j)) =
-          ∑ i, ∑ j, re (x i) * (M i j * im (x j)) := by
-        rw [Finset.sum_comm]
-        exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hsym]; ring
-      simp only [neg_mul, ← sub_eq_add_neg, Finset.sum_sub_distrib]
-      rw [hswap, sub_self]
+  have hH : (M.map ((↑) : ℝ → 𝕜)).IsHermitian := h.1.map _ fun x => by simp
+  refine posSemidef_iff_dotProduct_mulVec.mpr ⟨hH, fun x => ?_⟩
+  rw [RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
+  exact ⟨add_nonneg (by simpa using h.dotProduct_mulVec_nonneg _)
+    (by simpa using h.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self x⟩
 
 end RCLike
 
