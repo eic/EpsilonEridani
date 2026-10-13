@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Tactic.Linarith
+public import TauCeti.Analysis.Matrix.PosSemidef
 
 
 /-!
@@ -21,8 +22,10 @@ principal `2 × 2` minors:
 * `Matrix.PosSemidef.two_mul_abs_apply_le`: `2 * |M i j| ≤ M i i + M j j`.
 
 The second is the arithmetic-mean form of the Cauchy-Schwarz inequality
-`(M i j) ^ 2 ≤ M i i * M j j` for a positive-semidefinite matrix. It is stated multiplied out,
-with no division, so that it applies without field side conditions. This is the form in which
+`(M i j) ^ 2 ≤ M i i * M j j` for a positive-semidefinite matrix, whose geometric-mean form is
+`Matrix.PosSemidef.sq_apply_le` (the real case of Tau Ceti's `Matrix.PosSemidef.normSq_le`).
+It is stated multiplied out, with no division, so that it applies without field side
+conditions. This is the form in which
 positivity constraints are used in hadronic physics; see
 `Physlib/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark transversity
 distribution, which is exactly this inequality applied to the parton spin-density matrix.
@@ -33,6 +36,7 @@ distribution, which is exactly this inequality applied to the parton spin-densit
 - `Matrix.PosSemidef.quadraticForm_psdTestVector`: nonnegativity on `e i + ε • e j`.
 - `Matrix.PosSemidef.apply_self_nonneg`: nonnegativity of the diagonal.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: the entrywise arithmetic-mean bound.
+- `Matrix.PosSemidef.sq_apply_le`: the entrywise geometric-mean bound.
 
 ## Implementation notes
 
@@ -141,5 +145,12 @@ lemma PosSemidef.two_mul_abs_apply_le [Finite n] {M : Matrix n n ℝ} (hM : M.Po
   have hminus := hM.quadraticForm_psdTestVector i j (-1)
   rw [hsymm] at hplus hminus
   rcases abs_cases (M i j) with ⟨habs, _⟩ | ⟨habs, _⟩ <;> rw [habs] <;> linarith
+
+/-- **Entrywise geometric-mean bound for a real positive-semidefinite matrix.**
+The square of an entry is bounded by the product of the two diagonal entries of its row and
+column: the real form of the scalar Cauchy-Schwarz inequality `Matrix.PosSemidef.normSq_le`. -/
+lemma PosSemidef.sq_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
+    M i j ^ 2 ≤ M i i * M j j := by
+  simpa [RCLike.normSq_apply, sq] using hM.normSq_le i j
 
 end Matrix

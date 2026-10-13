@@ -199,6 +199,11 @@ lemma FLExact_eq_targetMassTerm_of_isCallanGross (M x Q2 F1 F2 : ℝ) (h : IsCal
   unfold IsCallanGross at h
   rw [FLExact_eq_FL_add, h, zero_add]
 
+/-- At non-negative virtuality the target-mass factor `√(1 + 4 M² x² / Q²)` is at least `1`. -/
+lemma one_le_sqrt_one_add_targetMass (M x : ℝ) {Q2 : ℝ} (hQ2 : 0 ≤ Q2) :
+    1 ≤ Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) :=
+  Real.one_le_sqrt.mpr (le_add_of_nonneg_right (by positivity))
+
 /-- The physical second structure function. `Tensors.Hadronic.IsF1F2Decomposition` carries
 `F₂/(p·q)` in its last slot, so the physical `F₂` is that coefficient times `p·q`. -/
 def structureF2 (g : Bilin V) (K : DisKinematics V) (F2c : ℝ) : ℝ := g K.p K.q * F2c

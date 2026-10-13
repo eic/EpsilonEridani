@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Inclusive.CrossSection
-public import TauCeti.Analysis.Matrix.PosSemidef
+public import EpsilonEridani.Mathematics.DataStructures.Matrix.PosSemidef
 
 /-!
 # Positivity of the inclusive structure functions from the helicity matrix
@@ -47,7 +47,8 @@ alone, as theorems rather than assumptions.
 * `IsHelicityMatrixOf.crossSectionBracket_nonneg`: the inclusive cross section of
   `Inclusive.CrossSection` is non-negative throughout the physical region
   `1 - y - M² x² y² / Q² ≥ 0`, for either sign of the parity-odd term. It is a non-negative
-  combination of `σ₊`, `σ₋` and `σ_L`.
+  combination of `σ₊`, `σ₋` and `σ_L`
+  (`IsHelicityMatrixOf.one_add_targetMass_mul_crossSectionBracket_eq`).
 * `forall_apply_self_nonneg_iff_exists_isHelicityMatrixOf`: for a parity-even hadronic tensor in
   the transverse basis of `Tensors.Hadronic`, positivity of the tensor on every vector is
   equivalent to the existence of a positive-semidefinite helicity matrix for its structure
@@ -56,7 +57,17 @@ alone, as theorems rather than assumptions.
 
 ## Conventions
 
-The matrix is real, following `Particles.Parton.PDF.SpinDensity`. The structure functions are
+The diagonal entries are the absorption cross sections divided by a common positive flux factor
+(the Hand normalisation of the virtual-photon flux, which is convention dependent); the
+identifications with the structure functions above are equalities of these normalised entries,
+and the flux factor drops out of every bound below.
+
+The matrix is taken real, as in `Particles.Parton.PDF.SpinDensity`. Here this is a restriction
+rather than a consequence of time reversal: the off-diagonal entries of the forward boson–nucleon
+matrix (for example the `(+1, 0)` interference behind `σ_LT`) are complex in general. The
+diagonal bounds are unaffected, while `IsHelicityMatrixOf.sq_apply_plus_minus_le` covers real
+interference amplitudes only; the complex case is `Matrix.PosSemidef.normSq_le`. The structure
+functions are
 the dimensionless ones of `Inclusive.CrossSection`, with `F₂` in the physical normalisation of
 `Tensors.Longitudinal.structureF2`. The sign attaching `-F₃` to helicity `+1` is a convention for
 the orientation of the transverse plane; every bound below is symmetric under `F₃ ↦ -F₃`.
@@ -80,7 +91,7 @@ namespace Scattering
 namespace DIS
 namespace Inclusive
 
-open Tensors.Longitudinal (FL FLExact IsCallanGross structureF2)
+open Tensors.Longitudinal (FL FLExact IsCallanGross one_le_sqrt_one_add_targetMass structureF2)
 
 /-!
 ## The helicity matrix
@@ -116,12 +127,6 @@ lemma idxLong_def : idxLong = 1 := (rfl)
 
 lemma idxMinus_def : idxMinus = 2 := (rfl)
 
-/-- **Cauchy-Schwarz for the helicity amplitudes.** An interference entry is bounded by the
-geometric mean of the two absorption cross sections it interferes. -/
-lemma sq_apply_le (H : HelicityMatrix) (i j : Fin 3) :
-    H.mat i j ^ 2 ≤ H.mat i i * H.mat j j := by
-  simpa [RCLike.normSq_apply, sq] using H.posSemidef.normSq_le i j
-
 /-- The diagonal helicity matrix with non-negative absorption cross sections `d`. -/
 def diagonal (d : Fin 3 → ℝ) (hd : 0 ≤ d) : HelicityMatrix where
   mat := Matrix.diagonal d
@@ -151,11 +156,6 @@ structure IsHelicityMatrixOf (H : HelicityMatrix) (M x Q2 F1 F2 F3 : ℝ) : Prop
   /-- The longitudinal absorption cross section. -/
   long : 2 * x * H.mat idxLong idxLong = FLExact M x Q2 F1 F2
 
-/-- At non-negative virtuality the target-mass factor `√(1 + 4 M² x² / Q²)` is at least `1`. -/
-private lemma one_le_sqrt_one_add_targetMass (M x : ℝ) {Q2 : ℝ} (hQ2 : 0 ≤ Q2) :
-    1 ≤ Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) :=
-  Real.one_le_sqrt.mpr (le_add_of_nonneg_right (by positivity))
-
 namespace IsHelicityMatrixOf
 
 variable {H : HelicityMatrix} {M x Q2 F1 F2 F3 : ℝ}
@@ -166,11 +166,26 @@ lemma F1_eq (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) :
   rw [h.plus, h.minus]
   ring
 
+/-- `√(1 + γ²) F₃` is the difference of the two transverse absorption cross sections. -/
+lemma sqrt_mul_F3_eq (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) :
+    Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3
+      = H.mat idxMinus idxMinus - H.mat idxPlus idxPlus := by
+  rw [h.plus, h.minus]
+  ring
+
+/-- At non-negative virtuality, `F₃` is the difference of the two transverse absorption cross
+sections divided by `√(1 + γ²)`. -/
+lemma F3_eq (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hQ2 : 0 ≤ Q2) :
+    F3 = (H.mat idxMinus idxMinus - H.mat idxPlus idxPlus)
+      / Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) := by
+  rw [← h.sqrt_mul_F3_eq, mul_div_cancel_left₀ _
+    (zero_lt_one.trans_le (one_le_sqrt_one_add_targetMass M x hQ2)).ne']
+
 /-- **`F₁ ≥ 0`**, from the non-negativity of the two transverse absorption cross sections. -/
 theorem F1_nonneg (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) : 0 ≤ F1 := by
   rw [h.F1_eq]
-  have := H.posSemidef.diag_nonneg (i := idxPlus)
-  have := H.posSemidef.diag_nonneg (i := idxMinus)
+  have hp := H.posSemidef.diag_nonneg (i := idxPlus)
+  have hm := H.posSemidef.diag_nonneg (i := idxMinus)
   positivity
 
 /-- **The parity-odd structure function is bounded by the parity-even one**, exactly in the
@@ -217,14 +232,14 @@ theorem F2_nonneg (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 ≤ x) (hQ2
   have hpos : 0 < 1 + 4 * M ^ 2 * x ^ 2 / Q2 := by positivity
   exact nonneg_of_mul_nonneg_right (le_trans (by positivity) hle) hpos
 
-/-- **Cauchy-Schwarz for the helicity-flip interference.** The `(+1, -1)` entry of the helicity
-matrix is bounded by the product of the transverse absorption cross sections,
+/-- **Cauchy-Schwarz for the helicity-flip interference.** The square of the `(+1, -1)` entry of
+the helicity matrix is bounded by the product of the transverse absorption cross sections,
 `F₁² - (1 + γ²) F₃² / 4`. -/
 theorem sq_apply_plus_minus_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hQ2 : 0 ≤ Q2) :
     H.mat idxPlus idxMinus ^ 2 ≤ F1 ^ 2 - (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F3 ^ 2 / 4 := by
   have hs : Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) ^ 2 = 1 + 4 * M ^ 2 * x ^ 2 / Q2 :=
     Real.sq_sqrt (by positivity)
-  have hcs := H.sq_apply_le idxPlus idxMinus
+  have hcs := H.posSemidef.sq_apply_le idxPlus idxMinus
   rw [h.plus, h.minus] at hcs
   linear_combination hcs - F3 ^ 2 / 4 * hs
 
@@ -293,82 +308,64 @@ theorem exists_isHelicityMatrixOf_and_not_isCallanGross (M : ℝ) {x Q2 : ℝ} (
 ## Positivity of the inclusive cross section
 -/
 
+/-- **The cross-section bracket in the helicity basis.** `(1 + γ²)` times the bracket of
+`Inclusive.CrossSection` is `x` times a combination of the three absorption cross sections:
+`A ± s Y₋ √(1 + γ²)` multiplies `σ₊` and `σ₋` respectively, and `4 (1 - y - M² x² y² / Q²)`
+multiplies `σ_L`, where `A = Y₊ + γ² y² / 2` and `γ² = 4 M² x² / Q²`. -/
+theorem IsHelicityMatrixOf.one_add_targetMass_mul_crossSectionBracket_eq {H : HelicityMatrix}
+    {M x Q2 F1 F2 F3 : ℝ} (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (s y : ℝ) (hQ2 : 0 ≤ Q2) :
+    (1 + 4 * M ^ 2 * x ^ 2 / Q2) * crossSectionBracket M s x Q2 y F1 F2 F3 =
+      x * ((Yplus y + 4 * M ^ 2 * x ^ 2 / Q2 * y ^ 2 / 2
+            + s * Yminus y * Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2)) * H.mat idxPlus idxPlus
+        + (Yplus y + 4 * M ^ 2 * x ^ 2 / Q2 * y ^ 2 / 2
+            - s * Yminus y * Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2)) * H.mat idxMinus idxMinus
+        + 4 * (1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) * H.mat idxLong idxLong) := by
+  have hr2 : Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) ^ 2 = 1 + 4 * M ^ 2 * x ^ 2 / Q2 :=
+    Real.sq_sqrt (by positivity)
+  have hlong := h.long
+  rw [Tensors.Longitudinal.FLExact] at hlong
+  rw [crossSectionBracket_def, Yplus_def, h.plus, h.minus]
+  linear_combination (-2 * (1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2)) * hlong
+    + (s * Yminus y * x * F3) * hr2
+
 /-- **The inclusive cross section is non-negative.** In the physical region
 `1 - y - M² x² y² / Q² ≥ 0`, for a parity-odd sign `|s| ≤ 1`, the bracket of
 `Inclusive.CrossSection` is non-negative whenever the structure functions are represented by a
-positive-semidefinite helicity matrix: `(1 + γ²)` times the bracket is `x` times a combination
-of the three absorption cross sections `σ₊`, `σ₋`, `σ_L` with non-negative coefficients. -/
+positive-semidefinite helicity matrix: by
+`IsHelicityMatrixOf.one_add_targetMass_mul_crossSectionBracket_eq`, `(1 + γ²)` times the bracket
+is `x` times a combination of the three absorption cross sections with non-negative
+coefficients (`abs_mul_Yminus_mul_sqrt_le`). -/
 theorem IsHelicityMatrixOf.crossSectionBracket_nonneg {H : HelicityMatrix}
-    {M s x Q2 y F1 F2 F3 : ℝ} (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 < x)
-    (hQ2 : 0 ≤ Q2) (hs : |s| ≤ 1) (hy : 0 ≤ y) (hphys : 0 ≤ 1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) :
+    {M s x Q2 y F1 F2 F3 : ℝ} (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 ≤ x)
+    (hQ2 : 0 ≤ Q2) (hs : |s| ≤ 1) (hphys : 0 ≤ 1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) :
     0 ≤ crossSectionBracket M s x Q2 y F1 F2 F3 := by
-  obtain ⟨G, hG⟩ : ∃ G, G = 4 * M ^ 2 * x ^ 2 / Q2 := ⟨_, rfl⟩
-  obtain ⟨r, hr⟩ : ∃ r, r = Real.sqrt (1 + G) := ⟨_, rfl⟩
-  have hG0 : 0 ≤ G := hG ▸ by positivity
-  have hr0 : 0 ≤ r := hr ▸ Real.sqrt_nonneg _
-  have hr2 : r ^ 2 = 1 + G := hr ▸ Real.sq_sqrt (by positivity)
-  have hMG : M ^ 2 * x ^ 2 * y ^ 2 / Q2 = G * y ^ 2 / 4 := by rw [hG]; ring
-  rw [hMG] at hphys
-  have hy1 : y ≤ 1 := by nlinarith
-  -- the three absorption cross sections
+  have hG : 0 ≤ 4 * M ^ 2 * x ^ 2 / Q2 := by positivity
+  obtain ⟨hsl, hsr⟩ := abs_le.mp (abs_mul_Yminus_mul_sqrt_le hs y hG)
   have hp := H.posSemidef.diag_nonneg (i := idxPlus)
   have hm := H.posSemidef.diag_nonneg (i := idxMinus)
   have hl := H.posSemidef.diag_nonneg (i := idxLong)
-  have hplus := h.plus
-  have hminus := h.minus
-  have hlong := h.long
-  rw [← hG, ← hr] at hplus hminus
-  rw [Tensors.Longitudinal.FLExact, ← hG] at hlong
-  -- the coefficient `A = y² - 2 y + 2 + γ² y² / 2` of `F₁` dominates the coefficient
-  -- `Y₋ √(1 + γ²)` of `F₃`, because `A² - (1 + γ²) Y₋² = 4 (1 - y - γ² y² / 4)²`
-  have hYm : 0 ≤ Yminus y := Yminus_nonneg hy (by linarith)
-  have hkey : (y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2) ^ 2 - (Yminus y * r) ^ 2
-      = (2 * (1 - y - G * y ^ 2 / 4)) ^ 2 := by
-    rw [mul_pow, hr2, Yminus_eq_mul]
-    ring
-  have hA0 : 0 ≤ y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2 := by nlinarith
-  have hdom : Yminus y * r ≤ y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2 :=
-    (pow_le_pow_iff_left₀ (mul_nonneg hYm hr0) hA0 two_ne_zero).mp (by nlinarith)
-  have hsY : |s * Yminus y * r| ≤ y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2 := by
-    rw [abs_mul, abs_mul, abs_of_nonneg hYm, abs_of_nonneg hr0, mul_assoc]
-    nlinarith [abs_nonneg s, mul_nonneg hYm hr0]
-  obtain ⟨hsl, hsr⟩ := abs_le.mp hsY
-  -- the bracket as a non-negative combination of the absorption cross sections
-  have hexp : (1 + G) * crossSectionBracket M s x Q2 y F1 F2 F3 =
-      x * ((y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2 + s * Yminus y * r) * H.mat idxPlus idxPlus
-        + (y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2 - s * Yminus y * r) * H.mat idxMinus idxMinus
-        + 4 * (1 - y - G * y ^ 2 / 4) * H.mat idxLong idxLong) := by
-    rw [crossSectionBracket_def, hMG, hplus, hminus]
-    linear_combination (-2 * (1 - y - G * y ^ 2 / 4)) * hlong + (s * Yminus y * x * F3) * hr2
-  have hcomb : 0 ≤ (1 + G) * crossSectionBracket M s x Q2 y F1 F2 F3 := by
-    rw [hexp]
-    apply mul_nonneg hx.le
-    have h1 := mul_nonneg (show 0 ≤ y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2 + s * Yminus y * r by
-      linarith) hp
-    have h2 := mul_nonneg (show 0 ≤ y ^ 2 - 2 * y + 2 + G * y ^ 2 / 2 - s * Yminus y * r by
-      linarith) hm
-    have h3 := mul_nonneg (mul_nonneg zero_le_four hphys) hl
-    linarith
-  exact (mul_nonneg_iff_of_pos_left (by linarith : (0 : ℝ) < 1 + G)).mp hcomb
+  refine (mul_nonneg_iff_of_pos_left (by linarith : (0 : ℝ) < 1 + 4 * M ^ 2 * x ^ 2 / Q2)).mp ?_
+  rw [h.one_add_targetMass_mul_crossSectionBracket_eq s y hQ2]
+  exact mul_nonneg hx (add_nonneg (add_nonneg (mul_nonneg (by linarith) hp)
+    (mul_nonneg (by linarith) hm)) (mul_nonneg (by linarith) hl))
 
 /-- **The inclusive cross section is non-negative**: `crossSectionBracket_nonneg` scaled by a
 non-negative flux factor. -/
 theorem IsHelicityMatrixOf.dSigmaDxDQ2_nonneg {H : HelicityMatrix} {K M s x Q2 y F1 F2 F3 : ℝ}
-    (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hK : 0 ≤ K) (hx : 0 < x) (hQ2 : 0 ≤ Q2)
-    (hs : |s| ≤ 1) (hy : 0 ≤ y) (hphys : 0 ≤ 1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) :
+    (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hK : 0 ≤ K) (hx : 0 ≤ x) (hQ2 : 0 ≤ Q2)
+    (hs : |s| ≤ 1) (hphys : 0 ≤ 1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) :
     0 ≤ dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 := by
   rw [dSigmaDxDQ2_def]
-  have := h.crossSectionBracket_nonneg hx hQ2 hs hy hphys
+  have := h.crossSectionBracket_nonneg hx hQ2 hs hphys
   positivity
 
 /-- **The reduced cross section is non-negative** in the physical region. -/
 theorem IsHelicityMatrixOf.reducedCrossSection_nonneg {H : HelicityMatrix}
-    {M s x Q2 y F1 F2 F3 : ℝ} (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 < x)
-    (hQ2 : 0 ≤ Q2) (hs : |s| ≤ 1) (hy : 0 ≤ y)
-    (hphys : 0 ≤ 1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) :
+    {M s x Q2 y F1 F2 F3 : ℝ} (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 ≤ x)
+    (hQ2 : 0 ≤ Q2) (hs : |s| ≤ 1) (hphys : 0 ≤ 1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) :
     0 ≤ reducedCrossSection M s x Q2 y F1 F2 F3 := by
   rw [reducedCrossSection_def]
-  have := h.crossSectionBracket_nonneg hx hQ2 hs hy hphys
+  have := h.crossSectionBracket_nonneg hx hQ2 hs hphys
   have := Yplus_pos y
   positivity
 
@@ -380,14 +377,16 @@ longitudinal entries of the helicity matrix are values of the tensor itself: on 
 direction `e`, `g`-orthogonal to `q` and to `p_T`, the tensor is `-(e·e) F₁`
 (`Tensors.Hadronic.apply_self_of_isF1F2Decomposition_of_spectator`), and on the
 longitudinal direction `p_T` it is `F_L^{exact}` up to the positive factor `(p_T·p_T) / (2 x)`
-(`Tensors.Longitudinal.two_xBj_mul_apply_pTransverse`). Positivity of the tensor is then
-equivalent to the existence of a helicity matrix with `F₃ = 0`.
+(`Tensors.Longitudinal.two_xBj_mul_apply_pTransverse`). Splitting a general vector along `q`,
+`p_T` and the spectator subspace (`Tensors.Hadronic.exists_apply_self_eq_of_isF1F2Decomposition`),
+positivity of the tensor is then equivalent to the existence of a helicity matrix with
+`F₃ = 0`.
 -/
 
 section Tensor
 
 open Kinematics (Bilin DisKinematics)
-open Tensors.Hadronic (IsF1F2Decomposition pTransverse transverseMetric_apply)
+open Tensors.Hadronic (IsF1F2Decomposition pTransverse)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
@@ -414,39 +413,15 @@ theorem forall_apply_self_nonneg_iff_exists_isHelicityMatrixOf (g : Bilin V)
   have hpq := K.pq_ne_zero_of_xBj_ne_zero g hx.ne'
   have hTT : 0 < g T T :=
     Tensors.Longitudinal.pTransverse_self_pos g K hSymm hQ2 hpq (hM ▸ sq_nonneg M)
-  have hTq : g T K.q = 0 := Tensors.Hadronic.pTransverse_orthogonal_q g K hqq
-  have hqT : g K.q T = 0 := by rw [hSymm.eq, hTq]
   refine ⟨fun h => ⟨?_, h T⟩, fun ⟨hF1, hL⟩ v => ?_⟩
-  · have := h e
-    rw [Tensors.Hadronic.apply_self_of_isF1F2Decomposition_of_spectator g K hW hqe hTe] at this
+  · have hWe := h e
+    rw [Tensors.Hadronic.apply_self_of_isF1F2Decomposition_of_spectator g K hW hqe hTe] at hWe
     nlinarith
-  -- split `v` into its `q`, `p_T` and spectator components
-  set a := g K.q v / g K.q K.q
-  set b := g T v / g T T
-  set u := v - a • K.q - b • T
-  have hqu : g K.q u = 0 := by
-    simp only [u, map_sub, map_smul, smul_eq_mul, hqT, a]
-    field_simp
-    ring
-  have hTu : g T u = 0 := by
-    simp only [u, map_sub, map_smul, smul_eq_mul, hTq, b]
-    field_simp
-    ring
-  have huu : g u u = g v v - g K.q v ^ 2 / g K.q K.q - g T v ^ 2 / g T T := by
-    simp only [u, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
-      hqT, hTq, hSymm.eq v K.q, hSymm.eq v T, a, b]
-    field_simp
-    ring
-  have hWT := Tensors.Longitudinal.apply_pTransverse_self g K W hSymm hqq F1 F2c hW
-  have hWv : W v v = -F1 * g u u + b ^ 2 * W T T := by
-    rw [hW, transverseMetric_apply, huu, hWT]
-    simp only [b]
-    field_simp
-    ring
+  obtain ⟨u, hqu, hTu, hWv⟩ :=
+    Tensors.Hadronic.exists_apply_self_eq_of_isF1F2Decomposition g K hSymm hqq hTT.ne' hW v
   rw [hWv]
-  have := hspec u hqu hTu
-  have : 0 ≤ W T T := hL
-  nlinarith [sq_nonneg b, mul_nonneg (sq_nonneg b) this]
+  exact add_nonneg (mul_nonneg (neg_nonneg.mpr (hspec u hqu hTu)) (by linarith))
+    (mul_nonneg (sq_nonneg _) hL)
 
 end Tensor
 
