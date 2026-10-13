@@ -44,7 +44,7 @@ valence number.
 * `PDF.valenceNumber_eq_sub_valenceTarget`: under the sum-rule bundle, the valence number is the
   quark target minus the antiquark target.
 * `PDF.valenceNumber_eq_zero_of_quark_eq_antiquark`: a flavour with equal quark and antiquark
-  densities at a scale has vanishing valence number there;
+  densities on the unit interval at a scale has vanishing valence number there;
   `PDF.valenceNumber_eq_zero_of_chargeConj_eq` is the case of a charge-conjugation invariant
   density.
 
@@ -153,17 +153,18 @@ theorem valenceNumber_chargeConj (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : �
     valenceNumber (chargeConj f) i Q2 = -valenceNumber f i Q2 := by
   simp [valenceNumber_def]
 
-/-- A flavour whose quark and antiquark densities coincide at the scale `Q2` has vanishing
-valence number there. -/
+/-- A flavour whose quark and antiquark densities coincide on the unit interval at the scale
+`Q2` has vanishing valence number there. -/
 theorem valenceNumber_eq_zero_of_quark_eq_antiquark {f : Pdf (Species Flavor)} {i : Flavor}
-    {Q2 : ℝ} (h : ∀ x, f (.quark i) x Q2 = f (.antiquark i) x Q2) : valenceNumber f i Q2 = 0 := by
+    {Q2 : ℝ} (h : Set.EqOn (f (.quark i) · Q2) (f (.antiquark i) · Q2) (Set.Icc 0 1)) :
+    valenceNumber f i Q2 = 0 := by
   rw [valenceNumber_def, mellinMoment_congr h, sub_self]
 
 /-- A density invariant under charge conjugation has vanishing valence number for every flavour
 at every scale. -/
 theorem valenceNumber_eq_zero_of_chargeConj_eq {f : Pdf (Species Flavor)} (h : chargeConj f = f)
     (i : Flavor) (Q2 : ℝ) : valenceNumber f i Q2 = 0 :=
-  valenceNumber_eq_zero_of_quark_eq_antiquark fun x => by
+  valenceNumber_eq_zero_of_quark_eq_antiquark fun x _ => by
     simpa using congr_fun₃ h (.antiquark i) x Q2
 
 end PDF

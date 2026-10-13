@@ -156,11 +156,12 @@ section Comap
 variable {ι κ μ : Type}
 
 /-- A moment of a density depends on it only through the density of the given parton at the
-given scale. -/
+given scale on the unit interval. -/
 lemma mellinMoment_congr {f : Pdf ι} {g : Pdf κ} {i : ι} {j : κ} {Q2 : ℝ}
-    (h : ∀ x, f i x Q2 = g j x Q2) (n : ℕ) :
-    mellinMoment f n i Q2 = mellinMoment g n j Q2 := by
-  simp only [mellinMoment, h]
+    (h : Set.EqOn (f i · Q2) (g j · Q2) (Set.Icc 0 1)) (n : ℕ) :
+    mellinMoment f n i Q2 = mellinMoment g n j Q2 :=
+  MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x hx => by
+    simp only [show f i x Q2 = g j x Q2 from h hx]
 
 /-- The density over `κ` whose parton `k` carries the density of parton `σ k` in `f`. -/
 def comap (σ : κ → ι) (f : Pdf ι) : Pdf κ := fun k => f (σ k)
@@ -182,7 +183,7 @@ lemma comap_comap (σ : κ → ι) (τ : μ → κ) (f : Pdf ι) :
 @[simp]
 lemma mellinMoment_comap (σ : κ → ι) (f : Pdf ι) (n : ℕ) (k : κ) (Q2 : ℝ) :
     mellinMoment (comap σ f) n k Q2 = mellinMoment f n (σ k) Q2 :=
-  mellinMoment_congr (fun _ => comap_apply σ f k _ Q2) n
+  mellinMoment_congr (fun _ _ => comap_apply σ f k _ Q2) n
 
 /-- A bijective pullback preserves every moment summed over all partons. -/
 lemma sum_mellinMoment_comap [Fintype ι] [Fintype κ] {σ : κ → ι} (hσ : σ.Bijective)

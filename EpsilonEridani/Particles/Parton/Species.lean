@@ -5,7 +5,8 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib
+public import Mathlib.Algebra.Ring.Nat
+public import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Parton species and their charge conjugation
@@ -105,7 +106,7 @@ the gluon term. -/
 theorem sum_univ [Fintype Flavor] {M : Type*} [AddCommMonoid M] (g : Species Flavor → M) :
     ∑ s, g s = ∑ i, g (quark i) + ∑ i, g (antiquark i) + g gluon := by
   rw [← equivSum.symm.sum_comp]
-  simp [Fintype.sum_sum_type]
+  simp [Fintype.sum_sum_type, one_nsmul]
 
 /-- Charge conjugation of parton species: the quark and the antiquark of each flavour are
 exchanged, and the gluon is its own antiparticle. -/
