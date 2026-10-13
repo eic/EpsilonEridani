@@ -38,9 +38,9 @@ the differential equation in Sturm–Liouville form is what makes the family ort
 The index is fixed at `3/2` rather than carried as a parameter: the weighted-`L²` theory built on
 this family uses the weight `1 - x²` of this index only. The polynomials are defined over any field
 `R`, the recurrence dividing by `n + 2`; the parity statements and the degree bound hold there,
-while the recurrence in division-free form, the exact degree, the leading coefficient and the
-endpoint value assume that `R` has characteristic zero. The real family is
-`gegenbauerThreeHalves ℝ`.
+while the recurrence in division-free form, the exact degree, the leading coefficient, the endpoint
+value, the derivative relations and the differential equation assume that `R` has characteristic
+zero. The real family is `gegenbauerThreeHalves ℝ`.
 
 ## Main definitions
 
@@ -259,6 +259,8 @@ private theorem derivative_gegenbauerThreeHalves_add_two_of {n : ℕ}
   simp only [derivative_mul, derivative_sub, derivative_C, derivative_X, zero_mul, zero_add,
     mul_one] at hd
   refine mul_left_cancel₀ h₂ ?_
+  -- push `C` through sums and products to `natCast`, so that the `ring` behind `linear_combination`
+  -- cancels `C ((n : R) + 2)` against the expanded `(n : R[X]) + 2` instead of an opaque atom
   simp only [C_add, C_mul, C_eq_natCast, C_ofNat, C_1] at hd h ⊢
   linear_combination hd + ((n : R[X]) + 3) * h
 
@@ -278,6 +280,7 @@ private theorem derivative_gegenbauerThreeHalves_ladder (n : ℕ) :
   | succ n ih =>
     have hP := derivative_gegenbauerThreeHalves_add_two_of R ih.2
     have hrec := C_mul_gegenbauerThreeHalves_add_two R n
+    -- `C`-normalisation as above, so that `linear_combination` sees matching atoms
     simp only [C_add, C_mul, C_eq_natCast, C_ofNat, C_1, Nat.cast_add, Nat.cast_one]
       at hP hrec ih ⊢
     refine ⟨by linear_combination hP, ?_⟩
@@ -317,6 +320,7 @@ theorem one_sub_X_sq_mul_derivative_derivative_gegenbauerThreeHalves (n : ℕ) :
   simp only [derivative_mul, derivative_sub, derivative_one, derivative_X_pow, derivative_C,
     derivative_X, zero_mul, zero_add, zero_sub, mul_one] at h
   have hP := derivative_gegenbauerThreeHalves_succ R n
+  -- `C`-normalisation as above, so that `linear_combination` sees matching atoms
   simp only [C_add, C_mul, C_eq_natCast, C_ofNat, C_1, Nat.cast_ofNat] at h hP ⊢
   linear_combination h - ((n : R[X]) + 1) * hP
 
@@ -328,6 +332,7 @@ theorem derivative_one_sub_X_sq_sq_mul_derivative_gegenbauerThreeHalves (n : ℕ
     derivative ((1 - X ^ 2) ^ 2 * derivative (gegenbauerThreeHalves R n)) =
       -C ((n : R) * (n + 3)) * ((1 - X ^ 2) * gegenbauerThreeHalves R n) := by
   have h := one_sub_X_sq_mul_derivative_derivative_gegenbauerThreeHalves R n
+  -- `C`-normalisation as above, so that `linear_combination` sees matching atoms
   simp only [derivative_mul, derivative_pow, derivative_sub, derivative_one, derivative_X, C_ofNat,
     Nat.cast_ofNat]
   linear_combination (1 - X ^ 2) * h

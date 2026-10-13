@@ -20,12 +20,13 @@ for an operator whose leading coefficient vanishes at the endpoints, so that the
 of the integration by parts drops. Combined with an eigenfunction equation it makes the polynomial
 eigenfunctions for distinct eigenvalues orthogonal: the Legendre polynomials are the eigenfunctions
 of the case `w = 1 - X ^ 2` on `[-1, 1]`, and the Gegenbauer polynomials of index `3/2` of
-`Mathematics/SpecialFunctions/Gegenbauer/Measure.lean` those of the case `w = (1 - X ^ 2) ^ 2`, an
-operator symmetric for the weight `1 - X ^ 2`.
+`Mathematics/SpecialFunctions/Gegenbauer/Basic.lean` (applied in
+`Mathematics/SpecialFunctions/Gegenbauer/Measure.lean`) those of the case `w = (1 - X ^ 2) ^ 2`,
+an operator symmetric for the weight `1 - X ^ 2`.
 
 ## Main statements
 
-* `Polynomial.integral_derivative_mul_derivative_mul`: the symmetry of
+* `Polynomial.integral_derivative_mul_derivative_mul_comm`: the symmetry of
   `p ↦ derivative (w * derivative p)` under the interval integral on `[a, b]` when `w` vanishes
   at `a` and `b`.
 -/
@@ -41,7 +42,7 @@ on `[a, b]` when its leading coefficient `w` vanishes at both endpoints: pairing
 with `q` gives the same integral as pairing `p` with it applied to `q`. This is the
 Sturm–Liouville symmetry (with weight `1`); combined with the eigenfunction equation it makes the
 eigenfunctions for distinct eigenvalues orthogonal. -/
-theorem integral_derivative_mul_derivative_mul (w p q : ℝ[X]) {a b : ℝ} (ha : w.eval a = 0)
+theorem integral_derivative_mul_derivative_mul_comm (w p q : ℝ[X]) {a b : ℝ} (ha : w.eval a = 0)
     (hb : w.eval b = 0) :
     ∫ x in a..b, (derivative (w * derivative p) * q).eval x =
       ∫ x in a..b, (p * derivative (w * derivative q)).eval x := by

@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Measure.WithDensity
 import EpsilonEridani.Mathematics.Calculus.Polynomial
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-!
 # The weight measure and orthogonality of the Gegenbauer polynomials of index `3/2`
@@ -34,7 +33,7 @@ weighted `L²` theory of the family can be built on it in the same way.
 Orthogonality is proved by the Sturm–Liouville argument: `C_n^{(3/2)}` solves
 `((1 - x²)² y')' = -n (n + 3) (1 - x²) y`, the operator on the left is symmetric under the
 integral over `[-1, 1]` because `(1 - x²)²` vanishes at both endpoints
-(`Polynomial.integral_derivative_mul_derivative_mul`), and the eigenvalues `n (n + 3)` are
+(`Polynomial.integral_derivative_mul_derivative_mul_comm`), and the eigenvalues `n (n + 3)` are
 distinct. The squared norms then follow from the three-term recurrence, paired with
 `C_{n+2}^{(3/2)}` and with `C_{n+1}^{(3/2)}`.
 
@@ -94,6 +93,7 @@ theorem integral_gegenbauerThreeHalvesMeasure {E : Type*} [NormedAddCommGroup E]
   rw [ENNReal.toReal_ofReal (one_sub_sq_nonneg_of_mem_Ioc hx)]
 
 /-- `gegenbauerThreeHalvesMeasure` has total mass `∫₋₁¹ (1 - x²) dx = 4 / 3`. -/
+@[simp]
 theorem gegenbauerThreeHalvesMeasure_univ :
     gegenbauerThreeHalvesMeasure Set.univ = ENNReal.ofReal (4 / 3) := by
   rw [gegenbauerThreeHalvesMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
@@ -128,6 +128,13 @@ private theorem integrable_eval_mul_eval (p q : ℝ[X]) :
     Integrable (fun x => p.eval x * q.eval x) gegenbauerThreeHalvesMeasure :=
   (p.continuous.mul q.continuous).continuousOn.integrable_gegenbauerThreeHalvesMeasure
 
+/-- The weighted pairing of two polynomial evaluations depends only on their product. -/
+private theorem integral_eval_mul_eval_congr {p₁ q₁ p₂ q₂ : ℝ[X]}
+    (h : p₁ * q₁ = p₂ * q₂) :
+    ∫ x, p₁.eval x * q₁.eval x ∂gegenbauerThreeHalvesMeasure =
+      ∫ x, p₂.eval x * q₂.eval x ∂gegenbauerThreeHalvesMeasure :=
+  integral_congr_ae (ae_of_all _ fun x => by simpa only [eval_mul] using congrArg (eval x) h)
+
 /-- The eigenvalues `n (n + 3)` of the Gegenbauer differential equation are distinct. -/
 private theorem natCast_mul_add_three_ne {m n : ℕ} (h : m ≠ n) :
     (m : ℝ) * (m + 3) ≠ n * (n + 3) := by
@@ -140,20 +147,22 @@ private theorem natCast_mul_add_three_ne {m n : ℕ} (h : m ≠ n) :
 theorem integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves_of_ne {m n : ℕ} (h : m ≠ n) :
     ∫ x, (gegenbauerThreeHalves ℝ m).eval x * (gegenbauerThreeHalves ℝ n).eval x
       ∂gegenbauerThreeHalvesMeasure = 0 := by
-  have hs := integral_derivative_mul_derivative_mul ((1 - X ^ 2) ^ 2) (gegenbauerThreeHalves ℝ m)
-    (gegenbauerThreeHalves ℝ n) (a := -1) (b := 1) (by norm_num) (by norm_num)
+  have hs := integral_derivative_mul_derivative_mul_comm ((1 - X ^ 2) ^ 2)
+    (gegenbauerThreeHalves ℝ m) (gegenbauerThreeHalves ℝ n) (a := -1) (b := 1) (by norm_num)
+    (by norm_num)
   rw [derivative_one_sub_X_sq_sq_mul_derivative_gegenbauerThreeHalves,
     derivative_one_sub_X_sq_sq_mul_derivative_gegenbauerThreeHalves] at hs
   have key : ∀ (c : ℝ) (p q : ℝ[X]), ∫ x in (-1 : ℝ)..1, (-C c * ((1 - X ^ 2) * p) * q).eval x =
       -c * ∫ x, p.eval x * q.eval x ∂gegenbauerThreeHalvesMeasure := fun c p q => by
     rw [integral_gegenbauerThreeHalvesMeasure, ← intervalIntegral.integral_const_mul]
-    congr 1 with x
-    simp only [eval_mul, eval_neg, eval_C, eval_sub, eval_one, eval_pow, eval_X, smul_eq_mul]
-    ring
+    exact intervalIntegral.integral_congr fun x _ => by
+      simp only [eval_mul, eval_neg, eval_C, eval_sub, eval_one, eval_pow, eval_X, smul_eq_mul]
+      ring
   have hcomm : ∫ x, (gegenbauerThreeHalves ℝ n).eval x * (gegenbauerThreeHalves ℝ m).eval x
       ∂gegenbauerThreeHalvesMeasure = ∫ x, (gegenbauerThreeHalves ℝ m).eval x *
         (gegenbauerThreeHalves ℝ n).eval x ∂gegenbauerThreeHalvesMeasure :=
-    integral_congr_ae (ae_of_all _ fun x => mul_comm _ _)
+    integral_eval_mul_eval_congr
+      (mul_comm (gegenbauerThreeHalves ℝ n) (gegenbauerThreeHalves ℝ m))
   rw [key, mul_comm (gegenbauerThreeHalves ℝ m), key, hcomm] at hs
   have hne := sub_ne_zero.mpr (natCast_mul_add_three_ne h).symm
   exact (mul_eq_zero.mp (by linear_combination hs)).resolve_left hne
@@ -199,13 +208,14 @@ private theorem integral_gegenbauerThreeHalves_mul_self_add_two (n : ℕ) :
       (gegenbauerThreeHalves ℝ (n + 1)).eval x ∂gegenbauerThreeHalvesMeasure =
         ∫ x, (X * gegenbauerThreeHalves ℝ (n + 1)).eval x *
           (gegenbauerThreeHalves ℝ (n + 2)).eval x ∂gegenbauerThreeHalvesMeasure :=
-    integral_congr_ae (ae_of_all _ fun x => by simp only [eval_mul, eval_X]; ring)
+    integral_eval_mul_eval_congr (by ring)
   rw [hX] at h₂
   push_cast at h₂
   linear_combination (2 * (n : ℝ) + 7) * h₁ - (2 * (n : ℝ) + 5) * h₂
 
 /-- The squared norm of `C_n^{(3/2)}`:
 `∫₋₁¹ (1 - x²) C_n^{(3/2)}(x)² dx = 2 (n + 1) (n + 2) / (2n + 3)`. -/
+@[simp]
 theorem integral_gegenbauerThreeHalves_mul_self : ∀ n : ℕ,
     ∫ x, (gegenbauerThreeHalves ℝ n).eval x * (gegenbauerThreeHalves ℝ n).eval x
       ∂gegenbauerThreeHalvesMeasure = 2 * (n + 1) * (n + 2) / (2 * n + 3)
@@ -235,6 +245,7 @@ theorem integral_gegenbauerThreeHalves_mul_self : ∀ n : ℕ,
 
 /-- **Orthogonality relation** of the Gegenbauer polynomials of index `3/2`:
 `∫₋₁¹ (1 - x²) C_m^{(3/2)}(x) C_n^{(3/2)}(x) dx = δ_{mn} 2 (n + 1) (n + 2) / (2n + 3)`. -/
+@[simp]
 theorem integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves (m n : ℕ) :
     ∫ x, (gegenbauerThreeHalves ℝ m).eval x * (gegenbauerThreeHalves ℝ n).eval x
       ∂gegenbauerThreeHalvesMeasure =
