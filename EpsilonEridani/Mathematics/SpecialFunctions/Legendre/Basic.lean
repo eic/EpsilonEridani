@@ -78,7 +78,7 @@ noncomputable def legendre : ℕ → ℝ[X]
 
 /-- The three-term recurrence solved for `Pₙ₊₂`:
 `Pₙ₊₂ = ((2n + 3) X Pₙ₊₁ - (n + 1) Pₙ) / (n + 2)`. -/
-theorem legendre_add_two (n : ℕ) : legendre (n + 2) = C ((n + 2 : ℝ)⁻¹) *
+@[simp] theorem legendre_add_two (n : ℕ) : legendre (n + 2) = C ((n + 2 : ℝ)⁻¹) *
     ((2 * n + 3 : ℝ[X]) * X * legendre (n + 1) - (n + 1 : ℝ[X]) * legendre n) := by
   rw [legendre]
 
@@ -140,7 +140,7 @@ theorem legendre_comp_neg_X (n : ℕ) : (legendre n).comp (-X) = (-1) ^ n * lege
     linear_combination h - (-1) ^ n * add_two_mul_legendre_add_two n
 
 /-- Parity of the Legendre polynomials, evaluated at a point. -/
-theorem legendre_eval_neg (n : ℕ) (x : ℝ) :
+@[simp] theorem legendre_eval_neg (n : ℕ) (x : ℝ) :
     (legendre n).eval (-x) = (-1) ^ n * (legendre n).eval x := by
   simpa using congrArg (eval x) (legendre_comp_neg_X n)
 
