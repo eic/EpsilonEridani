@@ -289,12 +289,6 @@ theorem quarkNumber_def (O : FieldContent) :
     lightConeSpin (f ::ₘ O) = f.lightConeSpin + lightConeSpin O := by
   simp [lightConeSpin_def]
 
--- `grind` matches patterns in its own rule set, in which the definitional unfolding of the
--- `insert` of the `{f, g}` multiset notation into `cons` is not available. Registering it lets the
--- `@[grind =]` lemmas below evaluate the twist and quark number of a concrete field content
--- written in that notation.
-attribute [grind =] Multiset.insert_eq_cons
-
 @[simp, grind =] theorem twist_cons (f : LightConeField) (O : FieldContent) :
     twist (f ::ₘ O) = f.twist + twist O := by
   simp [twist_def]
@@ -302,6 +296,16 @@ attribute [grind =] Multiset.insert_eq_cons
 @[simp, grind =] theorem quarkNumber_cons (f : LightConeField) (O : FieldContent) :
     quarkNumber (f ::ₘ O) = f.quarkNumber + quarkNumber O := by
   simp [quarkNumber_def]
+
+-- Not `@[simp]`: `simp` already rewrites `insert` to `cons` by `Multiset.insert_eq_cons`. These
+-- let `grind` evaluate field contents written in the `{f, g}` notation.
+@[grind =] theorem twist_insert (f : LightConeField) (O : FieldContent) :
+    twist (insert f O) = f.twist + twist O := by
+  simp
+
+@[grind =] theorem quarkNumber_insert (f : LightConeField) (O : FieldContent) :
+    quarkNumber (insert f O) = f.quarkNumber + quarkNumber O := by
+  simp
 
 @[simp] theorem massDimension_singleton (f : LightConeField) :
     massDimension {f} = f.massDimension := by
@@ -444,7 +448,7 @@ theorem twist_eq_two_iff_of_quarkNumber_eq_zero {O : FieldContent} (hO : quarkNu
     twist O = 2 ↔ O = {quarkBar .good, quark .good} ∨
       O = {fieldStrength .plusTransverse, fieldStrength .plusTransverse} ∨
       O = {fieldStrength .plusMinus} ∨ O = {fieldStrength .purelyTransverse} := by
-  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl | rfl | rfl) <;> simp⟩
+  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl | rfl | rfl) <;> grind⟩
   obtain ⟨a, ha, rfl⟩ | ⟨a, b, ha, hb, rfl⟩ := twist_eq_two_iff.1 h
   · rcases a with (_ | _) | (_ | _) | (_ | _ | _ | _) <;> simp_all
   · simp only [LightConeField.twist_eq_one_iff] at ha hb
