@@ -5,4 +5,4 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Physlib.Mathematics.Distribution.Basic
+public import Physlib.Mathematics.Distribution.TemperedDistribution
