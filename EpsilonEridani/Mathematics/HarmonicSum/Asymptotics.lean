@@ -17,11 +17,9 @@ two-sided bound
   `log N + γ + 1/(2N) - 1/(8N²) ≤ S₁(N) ≤ log N + γ + 1/(2N)`,  `N ≥ 1`,
 
 with `γ` the Euler–Mascheroni constant. This gives `S₁(N) = log N + γ + O(1/N)` and its
-refinement `S₁(N) = log N + γ + 1/(2N) + O(1/N²)`. The bound comes from comparing `log(1 + 1/a)`
-with its trapezoidal approximation `1/(2a) + 1/(2(a + 1))` through the series
-`log(1 + 1/a) = ∑_k 2/(2k+1) (2a+1)^(-(2k+1))` (Mathlib's `Real.hasSum_log_one_add_inv`), which
-is summed against a geometric series via `hasSum_geometric_of_lt_one` and `hasSum_le`, following
-the proof plan of Mathlib's Stirling approximation (`Stirling.log_stirlingSeq_sdiff_le`). These
+refinement `S₁(N) = log N + γ + 1/(2N) + O(1/N²)`. The bound compares `log(1 + 1/a)` with its
+trapezoidal value `1/(2a) + 1/(2(a + 1))` via the odd-power series
+`log(1 + 1/a) = ∑_k 2/(2k+1) (2a+1)^(-(2k+1))` (Mathlib's `Real.hasSum_log_one_add_inv`). These
 asymptotics are what relate the large-`N` growth of the anomalous dimensions to the `z → 1`
 singularities of the splitting kernels.
 
@@ -52,6 +50,10 @@ namespace EpsilonEridani
 /-- The trapezoidal value `1/(2a) + 1/(2(a+1))` of `∫_a^{a+1} dx/x` exceeds `log(1 + 1/a)`. -/
 theorem log_one_add_inv_le_inv_two_mul_add_inv_two_mul_add_one {a : ℝ} (ha : 0 < a) :
     Real.log (1 + a⁻¹) ≤ (2 * a)⁻¹ + (2 * (a + 1))⁻¹ := by
+  -- The trapezoidal value is the sum of the geometric series `∑ 2u^(2k+1)`, `u = 1/(2a+1)`, on
+  -- the same odd powers as the series `Real.hasSum_log_one_add_inv` for `log(1 + 1/a)`; the
+  -- term-by-term comparison follows the proof plan of Mathlib's Stirling approximation
+  -- (`Stirling.log_stirlingSeq_sdiff_le`).
   set u : ℝ := 1 / (2 * a + 1) with hu
   have hu0 : 0 < u := by positivity
   have hu1 : u < 1 := by rw [hu, div_lt_one (by positivity)]; linarith

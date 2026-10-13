@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-public import EpsilonEridani.Mathematics.HarmonicSum.Asymptotics
 public import EpsilonEridani.Mathematics.SpecialFunctions.Gamma.DigammaExtensions
 
 /-!
@@ -37,10 +36,6 @@ functions of the moment variable `N` and harmonic sums of `N`; the inversion con
 Mellin transform runs through complex `N`, and the pole structure of the moments in the complex
 plane is what controls the behaviour of the densities in momentum-fraction space.
 
-From the large-`N` bounds on `harmonic` in `EpsilonEridani.Mathematics.HarmonicSum.Asymptotics`,
-the file also derives the expansion `ψ(N) = log N - 1/(2N) + O(1/N²)` of the digamma function
-along the positive integers.
-
 ## Main definitions
 
 * `EpsilonEridani.complexHarmonic`: the continuation `s ↦ ψ(s + 1) + γ` of `S₁`.
@@ -58,8 +53,6 @@ along the positive integers.
 * `EpsilonEridani.meromorphicOrderAt_complexHarmonic_neg_nat_succ` and
   `EpsilonEridani.tendsto_mul_complexHarmonic_neg_nat_succ`: a simple pole with residue `-1`
   at each negative integer.
-* `EpsilonEridani.isBigO_digamma_natCast_sub_log_add_inv_two_mul_inv_sq`:
-  `ψ(N) = log N - 1/(2N) + O(1/N²)`.
 
 ## References
 
@@ -71,7 +64,7 @@ along the positive integers.
 
 @[expose] public section
 
-open Complex Filter Topology Asymptotics
+open Complex Filter Topology
 open scoped Real
 
 namespace EpsilonEridani
@@ -235,23 +228,5 @@ theorem tendsto_mul_complexHarmonic_neg_nat_succ (m : ℕ) :
   simp only [Pi.smul_apply', Pi.pow_apply, smul_eq_mul]
   rw [show (-1 : WithTop ℤ) = ((-1 : ℤ) : WithTop ℤ) by norm_cast, WithTop.untop₀_coe,
     neg_neg, zpow_one, sub_neg_eq_add]
-
-/-- **The large-`N` asymptotics of the digamma function**, `ψ(N) = log N - 1/(2N) + O(1/N²)`
-along the positive integers. -/
-theorem isBigO_digamma_natCast_sub_log_add_inv_two_mul_inv_sq :
-    (fun n : ℕ => digamma n - Real.log n + (2 * (n : ℂ))⁻¹) =O[atTop]
-      (fun n : ℕ => ((n : ℝ) ^ 2)⁻¹) := by
-  refine IsBigO.of_norm_left
-    (isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_sub_inv_two_mul_inv_sq.norm_left.congr'
-      ?_ EventuallyEq.rfl)
-  filter_upwards [eventually_ne_atTop 0] with n hn
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
-  rw [← Complex.norm_real]
-  congr 1
-  -- `ψ(k + 1) = S₁(k) - γ = S₁(k + 1) - 1/(k + 1) - γ`
-  rw [harmonic_succ]
-  push_cast
-  rw [digamma_nat_add_one, mul_inv]
-  ring
 
 end EpsilonEridani
