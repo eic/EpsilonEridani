@@ -68,11 +68,10 @@ familiar single-nucleon-helicity expressions `q_{+/+} ± q_{−/+}` (`f1_eq_of_p
 ## Implementation notes
 
 The matrix is taken over `ℝ`. The leading-twist unpolarized, helicity and transversity block
-is real: hermiticity plus time-reversal invariance make the double-flip entry real. A
-description that keeps the T-odd entries (Sivers and Boer-Mulders type, or the twist-3
-structure that the Wandzura-Wilczek relation concerns) needs `Matrix _ _ ℂ`; that complex matrix
-is `SpinDensityC` in `EpsilonEridani.Particles.Parton.PDF.ComplexSpinDensity`, of which
-`SpinDensity` is the time-reversal-invariant specialisation.
+is real: hermiticity plus time-reversal invariance make the double-flip entry real. The
+complex generalisation of this matrix is `SpinDensityC` in
+`EpsilonEridani.Particles.Parton.PDF.ComplexSpinDensity`, of which `SpinDensity` is the
+time-reversal-invariant specialisation.
 
 ## Main results
 

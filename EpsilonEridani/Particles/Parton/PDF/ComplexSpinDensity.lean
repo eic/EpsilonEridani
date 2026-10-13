@@ -218,6 +218,12 @@ lemma IsParityInvariant.mat_idxMP_eq_mat_idxPM {ρ : SpinDensityC} (h : ρ.IsPar
     ρ.mat idxMP idxMP = ρ.mat idxPM idxPM :=
   h.2.1
 
+/-- Under parity invariance the two double-helicity-flip entries are equal. -/
+lemma IsParityInvariant.mat_idxMM_idxPP_eq_mat_idxPP_idxMM {ρ : SpinDensityC}
+    (h : ρ.IsParityInvariant) :
+    ρ.mat idxMM idxPP = ρ.mat idxPP idxMM :=
+  h.2.2
+
 /-- Under parity invariance `f₁` reduces to the single-nucleon-helicity expression
 `q_{+/+} + q_{−/+}`. -/
 lemma f1_eq_of_parityInvariant (h : ρ.IsParityInvariant) :
@@ -235,7 +241,7 @@ lemma IsParityInvariant.im_transversity {ρ : SpinDensityC} (h : ρ.IsParityInva
     ρ.transversity.im = 0 := by
   -- Parity identifies the double-flip entry with its transpose, hermiticity with its conjugate.
   have hconj : conj (ρ.mat idxMM idxPP) = ρ.mat idxPP idxMM := ρ.posSemidef.1.apply idxPP idxMM
-  rw [h.2.2] at hconj
+  rw [h.mat_idxMM_idxPP_eq_mat_idxPP_idxMM] at hconj
   exact Complex.conj_eq_iff_im.mp hconj
 
 /-! ### Time reversal and the real specialisation -/
