@@ -5,6 +5,7 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
+public import EpsilonEridani.Mathematics.LieAlgebra.Casimir
 public import EpsilonEridani.QFT.QCD.SUNStructureConstants
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.Idempotents
@@ -38,8 +39,9 @@ entered as a numeral:
 
 * `colorSingletProj N`, `colorOctetProj N`: the projectors onto the two colour channels.
 * `colorSingletState N`: the unit-normalised colour-singlet state `δ_{ij} / √N`.
-* `colorAction N a`: the generator `Tᵃ` acting on the pair's colour space, `ψ ↦ Tᵃ ψ - ψ Tᵃ`.
-* `colorCasimir N`: the quadratic Casimir `Σₐ (Tᵃ)²` on the pair's colour space.
+
+The colour action of `Tᵃ` on the pair is the adjoint action `LieAlgebra.ad ℂ _ (genM N a)`, and
+its quadratic Casimir is `LieModule.casimir ℂ _ _ (genM N) (genM N)`.
 
 ## Main results
 
@@ -50,9 +52,9 @@ entered as a numeral:
   `trace_conjTranspose_colorSingletState_mul_self`: the singlet projector projects onto a
   unit-norm state.
 * `trace_colorSingletProj`, `trace_colorOctetProj`: the traces `1` and `N² - 1`.
-* `commute_colorAction_colorSingletProj`, `commute_colorAction_colorOctetProj`: both channels are
-  invariant under the colour action.
-* `colorCasimir_eq`, `colorCasimir_mul_colorSingletProj`, `colorCasimir_mul_colorOctetProj`: the
+* `commute_ad_colorSingletProj`, `commute_ad_colorOctetProj`: both channels are invariant under
+  the colour action.
+* `casimir_genM_eq`, `casimir_genM_mul_colorSingletProj`, `casimir_genM_mul_colorOctetProj`: the
   Casimir is `0` on the singlet channel and `N` on the octet channel.
 
 ## References
@@ -104,12 +106,6 @@ theorem colorOctetProj_eq : colorOctetProj N = 1 - colorSingletProj N := by
     Matrix.sum_apply, Matrix.sub_apply, Matrix.smul_apply, one_apply_kd]
   simp only [Matrix.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum, h]
   ring
-
-/-- The octet component of `ψ` is what remains after removing its singlet component. -/
-@[simp]
-theorem colorOctetProj_apply_eq_sub (ψ : Matrix (Fin N) (Fin N) ℂ) :
-    colorOctetProj N ψ = ψ - colorSingletProj N ψ := by
-  rw [colorOctetProj_eq, LinearMap.sub_apply, Module.End.one_apply]
 
 /-- The two colour channels exhaust the pair's colour space. -/
 @[simp]
@@ -192,68 +188,62 @@ theorem trace_colorOctetProj [NeZero N] :
 
 /-! ### The colour action on the pair -/
 
-/-- The generator `Tᵃ` acting on the colour space of a quark-antiquark pair. The quark index of
-`ψ_{i j}` carries the fundamental representation and the antiquark index the conjugate one, with
-generators `-(Tᵃ)ᵀ`; together they act by the commutator `ψ ↦ Tᵃ ψ - ψ Tᵃ`. -/
-def colorAction (N : ℕ) (a : SUNIndex N) : Module.End ℂ (Matrix (Fin N) (Fin N) ℂ) :=
-  LinearMap.mulLeft ℂ (genM N a) - LinearMap.mulRight ℂ (genM N a)
+/-! The generator `Tᵃ` acts on the colour space of a quark-antiquark pair by the adjoint action
+`LieAlgebra.ad ℂ _ (genM N a)`: the quark index of `ψ_{i j}` carries the fundamental
+representation and the antiquark index the conjugate one, with generators `-(Tᵃ)ᵀ`, and together
+they act by the commutator `ψ ↦ Tᵃ ψ - ψ Tᵃ`. The channel statements below hold for the adjoint
+action of an arbitrary matrix. -/
 
-@[simp]
-theorem colorAction_apply (a : SUNIndex N) (ψ : Matrix (Fin N) (Fin N) ℂ) :
-    colorAction N a ψ = genM N a * ψ - ψ * genM N a := (rfl)
+attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The colour action annihilates the singlet channel: `[Tᵃ, P₁ ψ] = 0`. -/
+/-- The adjoint action annihilates the singlet channel: `[X, P₁ ψ] = 0`. -/
 @[simp]
-theorem colorAction_mul_colorSingletProj (a : SUNIndex N) :
-    colorAction N a * colorSingletProj N = 0 := by
+theorem ad_mul_colorSingletProj (X : Matrix (Fin N) (Fin N) ℂ) :
+    LieAlgebra.ad ℂ _ X * colorSingletProj N = 0 := by
   ext ψ : 1
-  simp
+  simp [LieRing.of_associative_ring_bracket]
 
-/-- The colour action maps into the octet channel: `P₁ [Tᵃ, ψ] = 0`, because a commutator is
+/-- The adjoint action maps into the octet channel: `P₁ [X, ψ] = 0`, because a commutator is
 traceless. -/
 @[simp]
-theorem colorSingletProj_mul_colorAction (a : SUNIndex N) :
-    colorSingletProj N * colorAction N a = 0 := by
+theorem colorSingletProj_mul_ad (X : Matrix (Fin N) (Fin N) ℂ) :
+    colorSingletProj N * LieAlgebra.ad ℂ _ X = 0 := by
   ext ψ : 1
-  simp [trace_sub, trace_mul_comm (genM N a)]
+  simp [LieRing.of_associative_ring_bracket, trace_sub, trace_mul_comm X]
 
 /-- The singlet channel is invariant under the colour action of the pair. -/
-theorem commute_colorAction_colorSingletProj (a : SUNIndex N) :
-    Commute (colorAction N a) (colorSingletProj N) := by
-  rw [Commute, SemiconjBy, colorAction_mul_colorSingletProj, colorSingletProj_mul_colorAction]
+theorem commute_ad_colorSingletProj (X : Matrix (Fin N) (Fin N) ℂ) :
+    Commute (LieAlgebra.ad ℂ _ X) (colorSingletProj N) := by
+  rw [Commute, SemiconjBy, ad_mul_colorSingletProj, colorSingletProj_mul_ad]
 
 /-- The octet channel is invariant under the colour action of the pair. -/
-theorem commute_colorAction_colorOctetProj (a : SUNIndex N) :
-    Commute (colorAction N a) (colorOctetProj N) := by
+theorem commute_ad_colorOctetProj (X : Matrix (Fin N) (Fin N) ℂ) :
+    Commute (LieAlgebra.ad ℂ _ X) (colorOctetProj N) := by
   rw [colorOctetProj_eq]
-  exact (Commute.one_right _).sub_right (commute_colorAction_colorSingletProj a)
+  exact (Commute.one_right _).sub_right (commute_ad_colorSingletProj X)
 
 /-! ### The quadratic Casimir -/
 
-/-- The quadratic Casimir `Σₐ (Tᵃ)²` of `su(N)` acting on the colour space of a quark-antiquark
-pair. -/
-def colorCasimir (N : ℕ) : Module.End ℂ (Matrix (Fin N) (Fin N) ℂ) :=
-  ∑ a : SUNIndex N, colorAction N a * colorAction N a
-
-/-- The Casimir of the pair in closed form, `Σₐ [Tᵃ, [Tᵃ, ψ]] = N ψ - Tr ψ · 1`, from the
-fundamental Casimir and the sandwich form of the completeness relation. -/
-@[simp]
-theorem colorCasimir_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
-    colorCasimir N ψ = (N : ℂ) • ψ - ψ.trace • 1 := by
-  have h (a : SUNIndex N) : colorAction N a (colorAction N a ψ) =
+/-- The quadratic Casimir `Σₐ (Tᵃ)²` of `su(N)` on the colour space of a quark-antiquark pair, in
+closed form: `Σₐ [Tᵃ, [Tᵃ, ψ]] = N ψ - Tr ψ · 1`, from the fundamental Casimir and the sandwich
+form of the completeness relation. -/
+theorem casimir_genM_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
+    LieModule.casimir ℂ _ _ (genM N) (genM N) ψ = (N : ℂ) • ψ - ψ.trace • 1 := by
+  have h (a : SUNIndex N) : ⁅genM N a, ⁅genM N a, ψ⁆⁆ =
       genM N a * genM N a * ψ - (2 : ℂ) • (genM N a * ψ * genM N a) +
         ψ * (genM N a * genM N a) := by
-    simp only [colorAction_apply, two_smul]
+    simp only [LieRing.of_associative_ring_bracket, two_smul]
     noncomm_ring
-  simp only [colorCasimir, LinearMap.sum_apply, Module.End.mul_apply, h, Finset.sum_add_distrib,
-    Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.mul_sum, ← Finset.smul_sum, sum_genM_sq,
-    sum_genM_sandwich, smul_mul_assoc, mul_smul_comm, one_mul, mul_one]
+  simp only [LieModule.casimir_apply, h, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+    ← Finset.sum_mul, ← Finset.mul_sum, ← Finset.smul_sum, sum_genM_sq, sum_genM_sandwich,
+    smul_mul_assoc, mul_smul_comm, one_mul, mul_one]
   module
 
 /-- The Casimir of the pair is `N` times the octet projector. -/
-theorem colorCasimir_eq : colorCasimir N = (N : ℂ) • colorOctetProj N := by
+theorem casimir_genM_eq :
+    LieModule.casimir ℂ _ _ (genM N) (genM N) = (N : ℂ) • colorOctetProj N := by
   ext ψ : 1
-  rw [colorCasimir_apply, colorOctetProj_eq, LinearMap.smul_apply, LinearMap.sub_apply,
+  rw [casimir_genM_apply, colorOctetProj_eq, LinearMap.smul_apply, LinearMap.sub_apply,
     Module.End.one_apply, colorSingletProj_apply]
   rcases eq_or_ne (N : ℂ) 0 with hN | hN
   · obtain rfl : N = 0 := Nat.cast_eq_zero.1 hN
@@ -262,13 +252,14 @@ theorem colorCasimir_eq : colorCasimir N = (N : ℂ) • colorOctetProj N := by
 
 /-- The Casimir vanishes on the colour-singlet channel. -/
 @[simp]
-theorem colorCasimir_mul_colorSingletProj : colorCasimir N * colorSingletProj N = 0 := by
-  rw [colorCasimir_eq, smul_mul_assoc, colorOctetProj_mul_colorSingletProj, smul_zero]
+theorem casimir_genM_mul_colorSingletProj :
+    LieModule.casimir ℂ _ _ (genM N) (genM N) * colorSingletProj N = 0 := by
+  rw [casimir_genM_eq, smul_mul_assoc, colorOctetProj_mul_colorSingletProj, smul_zero]
 
 /-- The Casimir takes the value `N = C_A` on the colour-octet channel. -/
 @[simp]
-theorem colorCasimir_mul_colorOctetProj :
-    colorCasimir N * colorOctetProj N = (N : ℂ) • colorOctetProj N := by
-  rw [colorCasimir_eq, smul_mul_assoc, isIdempotentElem_colorOctetProj.eq]
+theorem casimir_genM_mul_colorOctetProj :
+    LieModule.casimir ℂ _ _ (genM N) (genM N) * colorOctetProj N = (N : ℂ) • colorOctetProj N := by
+  rw [casimir_genM_eq, smul_mul_assoc, isIdempotentElem_colorOctetProj.eq]
 
 end EpsilonEridani.QFT.Quarkonium
