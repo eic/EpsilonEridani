@@ -57,7 +57,7 @@ whole real line need no domain hypothesis where `0` is harmless.
   Press (1944), §6.22.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
