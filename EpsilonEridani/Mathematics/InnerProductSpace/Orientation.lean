@@ -49,7 +49,9 @@ theorem volumeForm_orientation_apply {n : ℕ} (v : Fin n → EuclideanSpace ℝ
     (EuclideanSpace.orientation (Fin n)).volumeForm v = (Matrix.of fun i j => v i j).det := by
   rw [Orientation.volumeForm_robust _ (basisFun (Fin n) ℝ) (orientation_def _).symm,
     basisFun_toBasis, PiLp.basisFun_eq_pi_basisFun, Module.Basis.det_map, Pi.basisFun_det_apply]
-  rfl
+  -- The two sides differ only in how the `WithLp` coercion of `v` is written; make that
+  -- identification explicit instead of closing it by `rfl` through the wrapper.
+  simp only [LinearEquiv.symm_symm, Function.comp_def, WithLp.coe_linearEquiv]
 
 /-- In the plane, the area form of the standard orientation is the cross product
 `u 0 * v 1 - u 1 * v 0`. -/

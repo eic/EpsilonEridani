@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
-public import EpsilonEridani.Mathematics.InnerProductSpace.Orientation
+public import Mathlib.Analysis.InnerProductSpace.TwoDim
 
 /-!
 # Light-front components and transverse boosts
@@ -468,6 +468,16 @@ lemma transversePart_transverseBoost (v : E²) (p : Lorentz.Vector 3) :
     transversePart (transverseBoost v p) = transversePart p + plusComponent p • v := by
   rw [transverseBoost_apply, transversePart_ofLightFront]
 
+/-- In the light-front frame of `P`, reached by the boost with parameter `-P_T / P⁺`, the
+transverse part of `k` is its transverse momentum relative to `P`. This holds as a
+consequence of the definition for all `P`; the "frame reached by the boost with parameter
+`-P_T / P⁺`" interpretation requires `P⁺ ≠ 0`. -/
+lemma transversePart_transverseBoost_eq_relativeTransverse (k P : Lorentz.Vector 3) :
+    transversePart (transverseBoost (-((plusComponent P)⁻¹ • transversePart P)) k) =
+      relativeTransverse k P := by
+  rw [transversePart_transverseBoost, relativeTransverse_def]
+  module
+
 /-- Transverse boosts preserve the Minkowski product. -/
 @[simp]
 lemma minkowskiProduct_transverseBoost (v : E²) (p q : Lorentz.Vector 3) :
@@ -511,8 +521,15 @@ lemma transversePart_transverseBoost_eq_zero_iff (v : E²)
     {P : Lorentz.Vector 3} (hP : plusComponent P ≠ 0) :
     transversePart (transverseBoost v P) = 0 ↔
       v = -((plusComponent P)⁻¹ • transversePart P) := by
-  rw [transversePart_transverseBoost, ← _root_.smul_neg, eq_inv_smul_iff₀ hP,
-    eq_neg_iff_add_eq_zero, add_comm (transversePart P)]
+  rw [transversePart_transverseBoost]
+  constructor
+  · intro h
+    have h' := congrArg ((plusComponent P)⁻¹ • ·) h
+    rw [_root_.smul_add, _root_.smul_smul, inv_mul_cancel₀ hP, one_smul, _root_.smul_zero] at h'
+    exact eq_neg_of_add_eq_zero_right h'
+  · intro h
+    subst h
+    simp [_root_.smul_smul, mul_inv_cancel₀ hP]
 
 /-- Relative transverse momenta are invariant under transverse boosts. -/
 @[simp]
@@ -640,22 +657,3 @@ lemma areaForm_relativeTransverse_transverseIsometry (o : Orientation ℝ E² (F
 
 end LightFront
 end EpsilonEridani
-
-namespace Lorentz.Vector
-
-open EpsilonEridani.LightFront
-
-/-- The transverse plane. -/
-local notation "E²" => EuclideanSpace ℝ (Fin 2)
-
-/-- In the light-front frame of `P`, reached by the boost with parameter `-P_T / P⁺`, the
-transverse part of `k` is its transverse momentum relative to `P`. This holds as a
-consequence of the definition for all `P`; the "frame reached by the boost with parameter
-`-P_T / P⁺`" interpretation requires `P⁺ ≠ 0`. -/
-lemma transversePart_transverseBoost_eq_relativeTransverse (k P : Vector 3) :
-    transversePart (transverseBoost (-((plusComponent P)⁻¹ • transversePart P)) k) =
-      relativeTransverse k P := by
-  rw [transversePart_transverseBoost, relativeTransverse_def]
-  module
-
-end Lorentz.Vector
