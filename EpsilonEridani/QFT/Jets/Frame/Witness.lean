@@ -38,10 +38,15 @@ def restFrameWit : Frame gWit where
   n := (1, 0, 0)
   timelike := by norm_num
 
+/-- The rest frame vector is the time direction `(1, 0, 0)`. -/
+@[simp]
+theorem restFrameWit_n : restFrameWit.n = ((1, 0, 0) : ℝ × ℝ × ℝ) :=
+  (rfl)
+
 /-- In the rest frame the energy of a momentum is its time component. -/
 @[simp]
 theorem energy_restFrameWit_apply (p : ℝ × ℝ × ℝ) : restFrameWit.energy p = p.1 := by
-  simp [energy_apply, restFrameWit]
+  simp [energy_apply, restFrameWit_n]
 
 /-- Two back-to-back photons, `(1, 1, 0)` and `(1, -1, 0)`, have `cos θ = -1` in the rest
 frame. -/
