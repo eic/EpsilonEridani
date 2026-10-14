@@ -25,10 +25,8 @@ closed form of the squared norms,
 (DLMF Table 18.3.1 at `λ = 3/2`, where the Gamma-function constant
 `π 2^{1 - 2λ} Γ(n + 2λ) / ((n + λ) Γ(λ)² n!)` reduces to this rational number).
 
-The measure is spelled as Lebesgue measure on `(-1, 1]` with a density, in the form the
-weight-change isometry of the Chebyshev development of TauCeti
-(`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`) is stated in, so that the
-weighted `L²` theory of the family can be built on it in the same way.
+The measure is spelled as Lebesgue measure on `(-1, 1]` with a density, the shape the standard
+`withDensity` and weighted-`L²` API consumes.
 
 Orthogonality is proved by the Sturm–Liouville argument: `C_n^{(3/2)}` solves
 `((1 - x²)² y')' = -n (n + 3) (1 - x²) y`, the operator on the left is symmetric under the
@@ -45,8 +43,9 @@ distinct. The squared norms then follow from the three-term recurrence, paired w
 
 * `EpsilonEridani.integral_gegenbauerThreeHalvesMeasure`: integrals against the measure are
   weighted interval integrals over `[-1, 1]`.
-* `EpsilonEridani.gegenbauerThreeHalvesMeasure_univ`: the measure has total mass `4 / 3`; in
-  particular it is a finite measure.
+* `EpsilonEridani.gegenbauerThreeHalvesMeasure_univ`,
+  `EpsilonEridani.gegenbauerThreeHalvesMeasure_real_univ`: the measure has total mass `4 / 3`,
+  in `ℝ≥0∞` and in `ℝ`; in particular it is a finite measure.
 * `ContinuousOn.integrable_gegenbauerThreeHalvesMeasure`: a function continuous on `[-1, 1]` is
   integrable for the measure.
 * `EpsilonEridani.integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves`: the orthogonality
@@ -57,6 +56,7 @@ distinct. The squared norms then follow from the three-term recurrence, paired w
 * G. Szegő, *Orthogonal Polynomials*, AMS Colloquium Publications 23, 4th edition (1975),
   chapter IV, §4.7.
 * NIST Digital Library of Mathematical Functions, §18.3 and §18.8.
+* The Chebyshev weight measure of the TauCeti library, the template this construction follows.
 -/
 
 public section
@@ -95,7 +95,7 @@ theorem integral_gegenbauerThreeHalvesMeasure {E : Type*} [NormedAddCommGroup E]
 /-- `gegenbauerThreeHalvesMeasure` has total mass `∫₋₁¹ (1 - x²) dx = 4 / 3`. -/
 @[simp]
 theorem gegenbauerThreeHalvesMeasure_univ :
-    gegenbauerThreeHalvesMeasure Set.univ = ENNReal.ofReal (4 / 3) := by
+    gegenbauerThreeHalvesMeasure Set.univ = 4 / 3 := by
   rw [gegenbauerThreeHalvesMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ,
     ← ofReal_integral_eq_lintegral_ofReal
@@ -104,12 +104,20 @@ theorem gegenbauerThreeHalvesMeasure_univ :
       (ae_restrict_of_forall_mem measurableSet_Ioc fun _ => one_sub_sq_nonneg_of_mem_Ioc),
     ← intervalIntegral.integral_of_le (by norm_num), intervalIntegral.integral_sub
       intervalIntegrable_const ((continuous_pow 2).intervalIntegrable _ _), integral_pow]
+  -- evaluate the mass, then normalise `ofReal (4 / 3)` to the `ℝ≥0∞` literal
+  norm_num [ENNReal.ofReal_div_of_pos, ENNReal.ofReal_ofNat]
+
+/-- The total mass of `gegenbauerThreeHalvesMeasure`, as a real number. -/
+@[simp]
+theorem gegenbauerThreeHalvesMeasure_real_univ :
+    gegenbauerThreeHalvesMeasure.real Set.univ = 4 / 3 := by
+  rw [measureReal_def, gegenbauerThreeHalvesMeasure_univ]
   norm_num
 
 instance : IsFiniteMeasure gegenbauerThreeHalvesMeasure where
   measure_univ_lt_top := by
     rw [gegenbauerThreeHalvesMeasure_univ]
-    exact ENNReal.ofReal_lt_top
+    exact ENNReal.div_lt_top (by norm_num) (by norm_num)
 
 /-- A function continuous on `[-1, 1]` is integrable for `gegenbauerThreeHalvesMeasure`; in
 particular every polynomial is. -/

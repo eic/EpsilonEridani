@@ -60,6 +60,8 @@ zero. The real family is `gegenbauerThreeHalves ℝ`.
 * `EpsilonEridani.derivative_gegenbauerThreeHalves_succ`,
   `EpsilonEridani.X_mul_derivative_gegenbauerThreeHalves_succ`: the raising and lowering relations
   of the derivatives.
+* `EpsilonEridani.one_sub_X_sq_mul_derivative_gegenbauerThreeHalves`: the derivative through the
+  family itself, `(1 - X²) (C_n^{(3/2)})' = (n + 3) X C_n^{(3/2)} - (n + 1) C_{n+1}^{(3/2)}`.
 * `EpsilonEridani.one_sub_X_sq_mul_derivative_derivative_gegenbauerThreeHalves`: the Gegenbauer
   differential equation, and
   `EpsilonEridani.derivative_one_sub_X_sq_sq_mul_derivative_gegenbauerThreeHalves` its
