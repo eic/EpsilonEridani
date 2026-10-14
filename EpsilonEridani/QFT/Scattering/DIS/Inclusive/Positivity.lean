@@ -31,6 +31,8 @@ alone, as theorems rather than assumptions.
 
 ## Main results
 
+* `IsHelicityMatrixOf.unique`: the helicity matrix determines the structure functions
+  (`IsHelicityMatrixOf.F1_eq`, `IsHelicityMatrixOf.F2_eq`, `IsHelicityMatrixOf.F3_eq`).
 * `IsHelicityMatrixOf.F1_nonneg`, `IsHelicityMatrixOf.abs_F3_le_two_mul_F1`,
   `IsHelicityMatrixOf.FLExact_nonneg`, `IsHelicityMatrixOf.F2_nonneg`: the bounds
   `F₁ ≥ 0`, `|F₃| ≤ 2 F₁` (sharpened by the factor `√(1 + γ²)` in
@@ -184,6 +186,24 @@ lemma F3_eq (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hQ2 : 0 ≤ Q2) :
   rw [← h.sqrt_mul_F3_eq, mul_div_cancel_left₀ _
     (zero_lt_one.trans_le (one_le_sqrt_one_add_targetMass M x hQ2)).ne']
 
+/-- `(1 + γ²) F₂` is `2 x` times the sum of the longitudinal absorption cross section and `F₁`. -/
+lemma F2_eq (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) :
+    (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 = 2 * x * (H.mat idxLong idxLong + F1) := by
+  have hlong := h.long
+  rw [Tensors.Longitudinal.FLExact_def] at hlong
+  linarith
+
+/-- **The structure functions are determined by the helicity matrix.** At non-negative
+virtuality, two triples of structure functions represented by the same helicity matrix are
+equal. -/
+theorem unique (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) {F1' F2' F3' : ℝ}
+    (h' : IsHelicityMatrixOf H M x Q2 F1' F2' F3') (hQ2 : 0 ≤ Q2) :
+    F1 = F1' ∧ F2 = F2' ∧ F3 = F3' := by
+  have hF1 : F1 = F1' := by rw [h.F1_eq, h'.F1_eq]
+  have hpos : (1 + 4 * M ^ 2 * x ^ 2 / Q2) ≠ 0 := by positivity
+  refine ⟨hF1, mul_left_cancel₀ hpos ?_, by rw [h.F3_eq hQ2, h'.F3_eq hQ2]⟩
+  rw [h.F2_eq, h'.F2_eq, hF1]
+
 /-- **`F₁ ≥ 0`**, from the non-negativity of the two transverse absorption cross sections. -/
 theorem F1_nonneg (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) : 0 ≤ F1 := by
   rw [h.F1_eq]
@@ -223,7 +243,7 @@ cross section written in `F₁` and `F₂`. -/
 theorem two_mul_mul_F1_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 ≤ x) :
     2 * x * F1 ≤ (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 := by
   have := h.FLExact_nonneg hx
-  rw [Tensors.Longitudinal.FLExact] at this
+  rw [Tensors.Longitudinal.FLExact_def] at this
   linarith
 
 /-- **`F₂ ≥ 0`.** Since `F₁ ≥ 0`, the longitudinal bound `two_mul_mul_F1_le` forces `F₂` to be
@@ -341,9 +361,9 @@ theorem exists_isHelicityMatrixOf_and_not_isCallanGross (M : ℝ) {x Q2 : ℝ} (
     (hQ2 : 0 ≤ Q2) :
     (∃ H, IsHelicityMatrixOf H M x Q2 0 1 0) ∧ ¬ IsCallanGross x 0 1 := by
   refine ⟨(exists_isHelicityMatrixOf_iff hx).mpr ⟨by simp, ?_⟩, ?_⟩
-  · rw [Tensors.Longitudinal.FLExact, mul_one, mul_zero, sub_zero]
+  · rw [Tensors.Longitudinal.FLExact_def, mul_one, mul_zero, sub_zero]
     positivity
-  · simp [IsCallanGross, FL]
+  · simp [Tensors.Longitudinal.isCallanGross_iff]
 
 /-!
 ## Positivity of the inclusive cross section
@@ -364,7 +384,7 @@ theorem IsHelicityMatrixOf.one_add_targetMass_mul_crossSectionBracket_eq {H : He
   have hr2 : Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) ^ 2 = 1 + 4 * M ^ 2 * x ^ 2 / Q2 :=
     Real.sq_sqrt (by positivity)
   have hlong := h.long
-  rw [Tensors.Longitudinal.FLExact] at hlong
+  rw [Tensors.Longitudinal.FLExact_def] at hlong
   rw [crossSectionBracket_def, Yplus_def, h.plus, h.minus]
   linear_combination (-2 * (1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2)) * hlong
     + (s * Yminus y * x * F3) * hr2

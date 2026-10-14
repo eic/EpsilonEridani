@@ -151,6 +151,8 @@ variable {V : Type} [AddCommGroup V] [Module ℝ V]
 variable and the two transverse structure functions. -/
 def FL (x F1 F2 : ℝ) : ℝ := F2 - 2 * x * F1
 
+lemma FL_def (x F1 F2 : ℝ) : FL x F1 F2 = F2 - 2 * x * F1 := (rfl)
+
 /-- The Callan-Gross relation, as a predicate on a pair of structure functions at a given
 value of the Bjorken variable: the longitudinal structure function vanishes. -/
 def IsCallanGross (x F1 F2 : ℝ) : Prop := FL x F1 F2 = 0
@@ -170,6 +172,9 @@ variable `x`, the hard scale `Q²` and the two transverse structure functions. T
 the massless `FL`, is the combination that measures longitudinal absorption at finite target
 mass (`two_xBj_mul_apply_pTransverse`); the two agree at `M = 0` (`FLExact_zero_mass`). -/
 def FLExact (M x Q2 F1 F2 : ℝ) : ℝ := (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1
+
+lemma FLExact_def (M x Q2 F1 F2 : ℝ) :
+    FLExact M x Q2 F1 F2 = (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1 := (rfl)
 
 /-- At zero target mass the target-mass-exact longitudinal structure function is the massless
 one. -/

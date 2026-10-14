@@ -15,13 +15,12 @@ public import TauCeti.Analysis.Matrix.PosSemidef
 
 Evaluating the quadratic form of a real positive-semidefinite matrix `M` on the test vector
 `e i + ε • e j` gives a nonnegative quadratic polynomial in `ε` for every pair of indices
-`i, j`. Specialising `ε` to `0` and to `±1` yields the two entrywise bounds carried by the
-principal `2 × 2` minors:
+`i, j`. Specialising `ε` to `±1` yields the entrywise bound carried by the principal `2 × 2`
+minors, `Matrix.PosSemidef.two_mul_abs_apply_le`: `2 * |M i j| ≤ M i i + M j j`.
+(Specialising `ε` to `0` gives nonnegativity of the diagonal, which is Mathlib's
+`Matrix.PosSemidef.diag_nonneg`.)
 
-* `Matrix.PosSemidef.apply_self_nonneg`: `0 ≤ M i i`;
-* `Matrix.PosSemidef.two_mul_abs_apply_le`: `2 * |M i j| ≤ M i i + M j j`.
-
-The second is the arithmetic-mean form of the Cauchy-Schwarz inequality
+This is the arithmetic-mean form of the Cauchy-Schwarz inequality
 `(M i j) ^ 2 ≤ M i i * M j j` for a positive-semidefinite matrix, whose geometric-mean form is
 `Matrix.PosSemidef.sq_apply_le` (the real case of Tau Ceti's `Matrix.PosSemidef.normSq_le`).
 It is stated multiplied out, with no division, so that it applies without field side
@@ -34,7 +33,6 @@ distribution, which is exactly this inequality applied to the parton spin-densit
 
 - `Matrix.PosSemidef.quadraticForm_nonneg`: the quadratic form written as an iterated sum.
 - `Matrix.PosSemidef.quadraticForm_psdTestVector`: nonnegativity on `e i + ε • e j`.
-- `Matrix.PosSemidef.apply_self_nonneg`: nonnegativity of the diagonal.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: the entrywise arithmetic-mean bound.
 - `Matrix.PosSemidef.sq_apply_le`: the entrywise geometric-mean bound.
 
@@ -118,13 +116,6 @@ lemma PosSemidef.quadraticForm_psdTestVector [Finite n] {M : Matrix n n ℝ} (hM
       = (M i i + ε * M i j) + ε * (M j i + ε * M j j) := by ring_nf
   rw [hring]
   exact h
-
-/-- The diagonal entries of a real positive-semidefinite matrix are nonnegative. -/
-lemma PosSemidef.apply_self_nonneg [Finite n] {M : Matrix n n ℝ} (hM : M.PosSemidef) (i : n) :
-    0 ≤ M i i := by
-  have := Fintype.ofFinite n
-  classical
-  linarith [hM.quadraticForm_psdTestVector i i 0]
 
 /-- **Entrywise arithmetic-mean bound for a real positive-semidefinite matrix.**
 Twice the absolute value of an entry is bounded by the sum of the two diagonal entries of its
