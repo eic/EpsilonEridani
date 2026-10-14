@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.HarmonicSum.Basic
 public import EpsilonEridani.QFT.Factorization.Evolution.Kernel.NormalForm
 public import EpsilonEridani.QFT.QCD.Basic
 
@@ -332,30 +333,25 @@ theorem moment_pgg {N : ℕ} (hN : 2 ≤ N) :
 
 /-! ### Conservation -/
 
-private theorem harmonic_one_eq : harmonic 1 = 1 := by
-  rw [show (1 : ℕ) = 0 + 1 from rfl, harmonic_succ, harmonic_zero]
-  norm_num
-
-private theorem harmonic_two_eq : harmonic 2 = 3 / 2 := by
-  rw [show (2 : ℕ) = 1 + 1 from rfl, harmonic_succ, harmonic_one_eq]
-  norm_num
-
 /-- **Quark-number conservation.** The quark-number moment of the non-singlet kernel vanishes,
 `M[P_qq](1) = 0`, so evolution preserves the number of quarks minus antiquarks of each
 flavour. -/
+@[simp]
 theorem moment_pqq_one : (pqq c).moment 1 = 0 := by
   rw [show (pqq c).moment 1 = (pqq c).moment ((1 : ℕ) : ℝ) by norm_num, moment_pqq c one_ne_zero,
-    harmonic_one_eq]
+    harmonic_one]
   norm_num
 
 /-- The momentum moment of the quark-to-quark kernel, `M[P_qq](2) = -(4/3) C_F`. -/
+@[simp]
 theorem moment_pqq_two : (pqq c).moment 2 = -(4 / 3 * c.cF) := by
   rw [show (pqq c).moment 2 = (pqq c).moment ((2 : ℕ) : ℝ) by norm_num, moment_pqq c two_ne_zero,
-    harmonic_two_eq]
+    harmonic_two]
   norm_num
   ring
 
 /-- The momentum moment of the gluon-in-quark kernel, `M[P_gq](2) = (4/3) C_F`. -/
+@[simp]
 theorem moment_pgq_two : (pgq c).moment 2 = 4 / 3 * c.cF := by
   rw [show (pgq c).moment 2 = (pgq c).moment ((2 : ℕ) : ℝ) by norm_num, moment_pgq c le_rfl]
   norm_num
@@ -363,6 +359,7 @@ theorem moment_pgq_two : (pgq c).moment 2 = 4 / 3 * c.cF := by
 
 /-- The momentum moment of the singlet quark-in-gluon kernel, `M[2 n_f P_qg](2) = (2/3) n_f T_F`.
 -/
+@[simp]
 theorem moment_pqgSinglet_two : (pqgSinglet c).moment 2 = 2 / 3 * c.nF * c.tF := by
   rw [show (pqgSinglet c).moment 2 = (pqgSinglet c).moment ((2 : ℕ) : ℝ) by norm_num,
     moment_pqgSinglet c two_ne_zero]
@@ -371,9 +368,10 @@ theorem moment_pqgSinglet_two : (pqgSinglet c).moment 2 = 2 / 3 * c.nF * c.tF :=
 
 /-- The momentum moment of the gluon-to-gluon kernel, `M[P_gg](2) = -(2/3) n_f T_F`: the
 `C_A` terms cancel between the regular, plus and delta parts. -/
+@[simp]
 theorem moment_pgg_two : (pgg c).moment 2 = -(2 / 3 * c.nF * c.tF) := by
   rw [show (pgg c).moment 2 = (pgg c).moment ((2 : ℕ) : ℝ) by norm_num, moment_pgg c le_rfl,
-    harmonic_two_eq]
+    harmonic_two]
   norm_num
   ring
 
