@@ -1015,9 +1015,19 @@ jobs:
   # the fallback restored THIS run's own cache, the published docs are newer than the branch and
   # it lags by one run -- which the best-effort note above already covers, and which the next
   # successful deploy repairs.
+  #
+  # The condition names its status checks explicitly. A bare `if:` gets an implicit `success()`,
+  # which requires EVERY upstream job in the graph to have succeeded -- including `fallback-site`
+  # (an ancestor through `deploy`), which is skipped on every healthy run. With the implicit check
+  # this job was skipped on every run, so `docgen` was never created.
   advance-docgen-ref:
     needs: [build-site, deploy]
-    if: needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main'
+    if: >-
+      ${{ !cancelled()
+      && needs.build-site.result == 'success'
+      && needs.deploy.result == 'success'
+      && needs.build-site.outputs.docs-source-sha != ''
+      && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
