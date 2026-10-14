@@ -67,7 +67,7 @@ concurrency:
 jobs:
   label:
     if: github.repository == 'eic/EpsilonEridani'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 15
     steps:
       # Pinned to a full SHA, not a floating major tag: this step receives the App
