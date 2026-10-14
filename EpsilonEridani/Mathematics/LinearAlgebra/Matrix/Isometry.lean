@@ -33,7 +33,8 @@ For sesquilinear forms the analogue of the transformed Gram matrix `Λᵀ * g * 
 - `LinearMap.sum_bilin_sum_smul_of_mem_orthogonalGroup`: invariance of `∑ a, B (x a) (y a)`
   under an orthogonal rotation of the families `x` and `y`.
 - `Matrix.star_mulVec_dotProduct_mulVec_mulVec`: transforming both arguments of the
-  sesquilinear form `star x ⬝ᵥ A *ᵥ y` by `S` replaces its matrix `A` by `Sᴴ * A * S`.
+  sesquilinear form `star x ⬝ᵥ A *ᵥ y` by a rectangular matrix `S` replaces its matrix `A` by
+  `Sᴴ * A * S`.
 -/
 
 public section
@@ -112,11 +113,11 @@ end LinearMap
 
 namespace Matrix
 
-variable {n R : Type*} [Fintype n] [CommSemiring R] [StarRing R]
+variable {m n R : Type*} [Fintype m] [Fintype n] [NonUnitalSemiring R] [StarRing R]
 
-/-- Transforming both arguments of the sesquilinear form `star x ⬝ᵥ A *ᵥ y` by `S` replaces its
-matrix `A` by `Sᴴ * A * S`. -/
-theorem star_mulVec_dotProduct_mulVec_mulVec (S A : Matrix n n R) (x y : n → R) :
+/-- Transforming both arguments of the sesquilinear form `star x ⬝ᵥ A *ᵥ y` by a rectangular
+matrix `S` replaces its matrix `A` by `Sᴴ * A * S`. -/
+theorem star_mulVec_dotProduct_mulVec_mulVec (S : Matrix m n R) (A : Matrix m m R) (x y : n → R) :
     star (S *ᵥ x) ⬝ᵥ A *ᵥ (S *ᵥ y) = star x ⬝ᵥ (Sᴴ * A * S) *ᵥ y := by
   simp only [star_mulVec, dotProduct_mulVec, vecMul_vecMul, Matrix.mul_assoc]
 

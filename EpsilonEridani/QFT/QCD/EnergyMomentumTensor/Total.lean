@@ -102,7 +102,7 @@ energy-momentum tensor in spacetime dimension `D = card n`. -/
 theorem trace_total (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian) (ψ : m → ℂ)
     (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
     trace (g⁻¹ * total g β γ ψ Dψ F) =
-      (star ψ ⬝ᵥ β *ᵥ diracOp g γ Dψ).re + (Fintype.card n / 4 - 1) * gluonFieldSq g F := by
+      (star ψ ⬝ᵥ β *ᵥ diracOpApply g γ Dψ).re + (Fintype.card n / 4 - 1) * gluonFieldSq g F := by
   rw [total_def, Matrix.mul_add, trace_add, trace_quarkPart hg hγ, trace_gluonPart]
 
 /-- In four spacetime dimensions and on solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the
@@ -111,7 +111,7 @@ trace of the total energy-momentum tensor is the classical value `Re (ψ‾ M ψ
 quark part contributes only through the masses. -/
 theorem trace_total_of_diracEq (hn : Fintype.card n = 4) (hg : g.IsSymm)
     (hγ : ∀ μ, (β * γ μ).IsHermitian) {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ}
-    (h : diracOp g γ Dψ = M *ᵥ ψ) (F : ι → Matrix n n ℝ) :
+    (h : diracOpApply g γ Dψ = M *ᵥ ψ) (F : ι → Matrix n n ℝ) :
     trace (g⁻¹ * total g β γ ψ Dψ F) = (star ψ ⬝ᵥ (β * M) *ᵥ ψ).re := by
   rw [trace_total hg hγ, h, mulVec_mulVec, hn]
   norm_num

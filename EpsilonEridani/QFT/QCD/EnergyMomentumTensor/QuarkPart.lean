@@ -49,7 +49,7 @@ index of `D_ν ψ`.
 * `quarkKinetic β γ ψ Dψ`: the gauge-invariant, unsymmetrised (kinetic) tensor
   `(1/2) ψ‾ γ_μ i D↔_ν ψ`.
 * `quarkPart β γ ψ Dψ`: the quark part `T_q`, the symmetric part of `quarkKinetic`.
-* `diracOp g γ Dψ`: the value `i γ^μ D_μ ψ` of the Dirac operator.
+* `diracOpApply g γ Dψ`: the value `i γ^μ D_μ ψ` of the Dirac operator.
 
 ## Main statements
 
@@ -113,30 +113,30 @@ lemma quarkPart_def (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m �
 /-- The quark part is symmetric. This is an identity: it uses neither the equations of motion
 nor any property of the gamma matrices. -/
 theorem isSymm_quarkPart (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → ℂ)
-    (Dψ : n → m → ℂ) : (quarkPart β γ ψ Dψ).IsSymm := by
-  simp only [IsSymm, quarkPart_def, transpose_smul, transpose_add, transpose_transpose, add_comm]
+    (Dψ : n → m → ℂ) : (quarkPart β γ ψ Dψ).IsSymm :=
+  (isSymm_add_transpose_self _).smul _
 
 variable {β : Matrix m m ℂ} {γ : n → Matrix m m ℂ}
 
-/-- When each `β * γ μ` is Hermitian, `(i/2) (ψ‾ γ_μ D_ν ψ - (D_ν ψ)‾ γ_μ ψ)` is real, so taking
+/-- When `β * γ μ` is Hermitian, `(i/2) (ψ‾ γ_μ D_ν ψ - (D_ν ψ)‾ γ_μ ψ)` is real, so taking
 the real part in `quarkKinetic` loses nothing. -/
-theorem ofReal_quarkKinetic_apply (hγ : ∀ μ, (β * γ μ).IsHermitian) (ψ : m → ℂ)
-    (Dψ : n → m → ℂ) (μ ν : n) :
+theorem ofReal_quarkKinetic_apply (ψ : m → ℂ) (Dψ : n → m → ℂ) (μ ν : n)
+    (hγ : (β * γ μ).IsHermitian) :
     (quarkKinetic β γ ψ Dψ μ ν : ℂ) =
       I * (star ψ ⬝ᵥ (β * γ μ) *ᵥ Dψ ν - star (Dψ ν) ⬝ᵥ (β * γ μ) *ᵥ ψ) / 2 := by
-  rw [quarkKinetic_apply, ofReal_div, ← (hγ μ).star_dotProduct_mulVec_comm (Dψ ν) ψ]
+  rw [quarkKinetic_apply, ofReal_div, ← hγ.star_dotProduct_mulVec_comm (Dψ ν) ψ]
   congr 1
   rw [← conj_eq_iff_re]
   simp only [RCLike.star_def, map_mul, map_sub, conj_I, conj_conj]
   ring
 
-/-- When each `β * γ μ` is Hermitian, `(1/2) ψ‾ γ_μ i D↔_ν ψ = Re (ψ‾ γ_μ i D_ν ψ)`: the
+/-- When `β * γ μ` is Hermitian, `(1/2) ψ‾ γ_μ i D↔_ν ψ = Re (ψ‾ γ_μ i D_ν ψ)`: the
 derivative acting to the left contributes the complex conjugate of the one acting to the
 right. -/
-theorem quarkKinetic_apply_of_isHermitian (hγ : ∀ μ, (β * γ μ).IsHermitian) (ψ : m → ℂ)
-    (Dψ : n → m → ℂ) (μ ν : n) :
+theorem quarkKinetic_apply_of_isHermitian (ψ : m → ℂ) (Dψ : n → m → ℂ) (μ ν : n)
+    (hγ : (β * γ μ).IsHermitian) :
     quarkKinetic β γ ψ Dψ μ ν = (star ψ ⬝ᵥ (β * γ μ) *ᵥ (I • Dψ ν)).re := by
-  rw [quarkKinetic_apply, ← (hγ μ).star_dotProduct_mulVec_comm ψ (Dψ ν), mulVec_smul,
+  rw [quarkKinetic_apply, ← hγ.star_dotProduct_mulVec_comm ψ (Dψ ν), mulVec_smul,
     dotProduct_smul]
   simp only [RCLike.star_def, mul_re, I_re, sub_re, conj_re, I_im, sub_im, conj_im, smul_eq_mul]
   ring
@@ -189,20 +189,21 @@ theorem quarkPart_equivariant {S : Matrix m m ℂ} {Λ : Matrix n n ℝ}
 
 variable [DecidableEq n]
 
-/-- The value `i γ^μ D_μ ψ = i g^{μν} γ_ν D_μ ψ` of the Dirac operator on a field with covariant
-derivatives `Dψ`. -/
-def diracOp (g : Matrix n n ℝ) (γ : n → Matrix m m ℂ) (Dψ : n → m → ℂ) : m → ℂ :=
+/-- The value `i γ^μ D_μ ψ = i g^{μν} γ_ν D_μ ψ` of the Dirac operator applied to a field with
+covariant derivatives `Dψ`. -/
+def diracOpApply (g : Matrix n n ℝ) (γ : n → Matrix m m ℂ) (Dψ : n → m → ℂ) : m → ℂ :=
   I • ∑ μ, ∑ ν, (g⁻¹ μ ν : ℂ) • γ ν *ᵥ Dψ μ
 
 @[simp]
-lemma diracOp_def (g : Matrix n n ℝ) (γ : n → Matrix m m ℂ) (Dψ : n → m → ℂ) :
-    diracOp g γ Dψ = I • ∑ μ, ∑ ν, (g⁻¹ μ ν : ℂ) • γ ν *ᵥ Dψ μ := (rfl)
+lemma diracOpApply_def (g : Matrix n n ℝ) (γ : n → Matrix m m ℂ) (Dψ : n → m → ℂ) :
+    diracOpApply g γ Dψ = I • ∑ μ, ∑ ν, (g⁻¹ μ ν : ℂ) • γ ν *ᵥ Dψ μ := (rfl)
 
 /-- The trace `(1/2) g^{μν} ψ‾ γ_ν i D↔_μ ψ` of the kinetic tensor is `Re (ψ‾ i γ^μ D_μ ψ)`. -/
-theorem trace_inv_mul_quarkKinetic (hγ : ∀ μ, (β * γ μ).IsHermitian) (g : Matrix n n ℝ)
+theorem trace_quarkKinetic (hγ : ∀ μ, (β * γ μ).IsHermitian) (g : Matrix n n ℝ)
     (ψ : m → ℂ) (Dψ : n → m → ℂ) :
-    trace (g⁻¹ * quarkKinetic β γ ψ Dψ) = (star ψ ⬝ᵥ β *ᵥ diracOp g γ Dψ).re := by
-  simp only [trace, diag, mul_apply, quarkKinetic_apply_of_isHermitian hγ, diracOp_def,
+    trace (g⁻¹ * quarkKinetic β γ ψ Dψ) = (star ψ ⬝ᵥ β *ᵥ diracOpApply g γ Dψ).re := by
+  simp only [trace, diag, mul_apply,
+    fun μ ν => quarkKinetic_apply_of_isHermitian ψ Dψ μ ν (hγ μ), diracOpApply_def,
     mulVec_smul, mulVec_sum, mulVec_mulVec, dotProduct_smul, dotProduct_sum, Finset.smul_sum,
     smul_eq_mul, re_sum]
   refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
@@ -211,12 +212,12 @@ theorem trace_inv_mul_quarkKinetic (hγ : ∀ μ, (β * γ μ).IsHermitian) (g :
 /-- The trace `T_q^μ{}_μ = Re (ψ‾ i γ^μ D_μ ψ)` of the quark part, for a symmetric metric. -/
 theorem trace_quarkPart {g : Matrix n n ℝ} (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian)
     (ψ : m → ℂ) (Dψ : n → m → ℂ) :
-    trace (g⁻¹ * quarkPart β γ ψ Dψ) = (star ψ ⬝ᵥ β *ᵥ diracOp g γ Dψ).re := by
+    trace (g⁻¹ * quarkPart β γ ψ Dψ) = (star ψ ⬝ᵥ β *ᵥ diracOpApply g γ Dψ).re := by
   have hT : trace (g⁻¹ * (quarkKinetic β γ ψ Dψ)ᵀ) = trace (g⁻¹ * quarkKinetic β γ ψ Dψ) := by
     rw [← trace_transpose, transpose_mul, transpose_transpose, transpose_nonsing_inv, hg.eq,
       trace_mul_comm]
   rw [quarkPart_def, Matrix.mul_smul, Matrix.mul_add, trace_smul, trace_add, hT,
-    trace_inv_mul_quarkKinetic hγ, smul_eq_mul]
+    trace_quarkKinetic hγ, smul_eq_mul]
   ring
 
 /-- On solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ` with mass matrix `M`, the trace of
@@ -224,7 +225,7 @@ the quark part is the classical value `Re (ψ‾ M ψ)`, that is `Σ_q m_q ψ‾
 diagonal in flavour. This holds in every spacetime dimension. -/
 theorem trace_quarkPart_of_diracEq {g : Matrix n n ℝ} (hg : g.IsSymm)
     (hγ : ∀ μ, (β * γ μ).IsHermitian) {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ}
-    (h : diracOp g γ Dψ = M *ᵥ ψ) :
+    (h : diracOpApply g γ Dψ = M *ᵥ ψ) :
     trace (g⁻¹ * quarkPart β γ ψ Dψ) = (star ψ ⬝ᵥ (β * M) *ᵥ ψ).re := by
   rw [trace_quarkPart hg hγ, h, mulVec_mulVec]
 
