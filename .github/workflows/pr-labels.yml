@@ -69,7 +69,8 @@ jobs:
                 || contains(github.event.changes.body.from, 'epsiloneridani-scoreboard')
                 || contains(github.event.changes.body.from, 'epsiloneridani-review-in-progress')))
       )
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     # Serialize all events for one PR on its number. Don't cancel: GitHub already collapses a burst
     # (one run in progress, one pending, and a third cancels the pending one), so cancelling would buy
     # only the tail of a run that is already executing -- and it would buy it by interrupting a
@@ -129,7 +130,8 @@ jobs:
             && github.event.workflow_run.event == 'pull_request_target'
             && github.event.workflow_run.pull_requests[0] == null)
       )
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     outputs:
       pr: ${{ steps.r.outputs.pr }}
     steps:
@@ -179,7 +181,8 @@ jobs:
   label-resolved:
     needs: resolve
     if: needs.resolve.outputs.pr != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     # The same group as `label`, so the two paths serialize against each other. See that job for why
     # cancel-in-progress stays false.
     concurrency:
@@ -230,7 +233,8 @@ jobs:
       github.repository == 'eic/EpsilonEridani'
       && (github.event_name == 'schedule'
         || (github.event_name == 'workflow_dispatch' && inputs.pr == 'all'))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     concurrency:
       group: pr-labels-sweep
       cancel-in-progress: false
