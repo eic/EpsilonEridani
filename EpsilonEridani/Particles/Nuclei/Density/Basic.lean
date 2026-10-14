@@ -100,6 +100,10 @@ lemma integrable : Integrable ρ.density := by
   rw [ρ.integral_density]
   exact_mod_cast nuc.massNumber_pos.ne'
 
+-- The normalisation law is a simp normal form: `simp` reduces the integral of a profile's
+-- density to the mass number.
+attribute [simp] integral_density
+
 end DensityProfile
 
 end Nucleus
@@ -153,7 +157,6 @@ theorem integral_hardSphereDensity (m : ℝ) {R : ℝ} (hR : 0 < R) :
 def gaussianDensity (m R r : ℝ) : ℝ :=
   m / (π * R ^ 2) ^ (3 / 2 : ℝ) * exp (-(r / R) ^ 2)
 
-@[simp]
 lemma gaussianDensity_def (m R r : ℝ) :
     gaussianDensity m R r = m / (π * R ^ 2) ^ (3 / 2 : ℝ) * exp (-(r / R) ^ 2) := (rfl)
 
