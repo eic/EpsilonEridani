@@ -63,7 +63,7 @@ value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
   formula), §10.51 (recurrence and derivatives) and §10.52 (limiting forms).
 -/
 
-public section
+@[expose] public section
 
 open Filter Topology Real
 open scoped Nat

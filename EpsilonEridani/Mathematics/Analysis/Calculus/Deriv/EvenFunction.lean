@@ -20,7 +20,7 @@ origin, which is what identifies that operator with the Rayleigh operator `-(1 /
 the origin.
 -/
 
-public section
+@[expose] public section
 
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 

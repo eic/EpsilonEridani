@@ -24,7 +24,7 @@ Removing the removable singularity of `f' / x` at the origin in this way keeps t
 (`EpsilonEridani.Mathematics.SpecialFunctions.SphericalBessel.Basic`) is made total.
 -/
 
-public section
+@[expose] public section
 
 open Filter Topology
 

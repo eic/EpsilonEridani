@@ -18,7 +18,7 @@ function `dslope sin 0` (`Real.sinc_eq_dslope`) and `dslope` preserves analytici
 (`EpsilonEridani.Real.analyticAt_sinc`).
 -/
 
-public section
+@[expose] public section
 
 open Real
 
