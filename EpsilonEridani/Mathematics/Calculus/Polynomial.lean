@@ -40,7 +40,7 @@ with `q` gives the same integral as pairing `p` with it applied to `q`. This is 
 Sturm–Liouville symmetry (with weight `1`); combined with the eigenfunction equation it makes the
 eigenfunctions for distinct eigenvalues orthogonal. -/
 theorem integral_derivative_mul_derivative_mul_eq_integral_mul_derivative_mul_derivative
-    (w p q : ℝ[X]) {a b : ℝ} (ha : w.eval a = 0) (hb : w.eval b = 0) :
+    (w p q : ℝ[X]) (a b : ℝ) (ha : w.eval a = 0) (hb : w.eval b = 0) :
     ∫ x in a..b, (derivative (w * derivative p) * q).eval x =
       ∫ x in a..b, (p * derivative (w * derivative q)).eval x := by
   have key : derivative (w * derivative p) * q - p * derivative (w * derivative q) =

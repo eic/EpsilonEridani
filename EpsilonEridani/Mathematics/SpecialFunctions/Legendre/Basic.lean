@@ -77,8 +77,9 @@ noncomputable def legendre : ℕ → ℝ[X]
 @[simp] theorem legendre_one : legendre 1 = X := by rw [legendre]
 
 /-- The three-term recurrence solved for `Pₙ₊₂`:
-`Pₙ₊₂ = ((2n + 3) X Pₙ₊₁ - (n + 1) Pₙ) / (n + 2)`. -/
-@[simp] theorem legendre_add_two (n : ℕ) : legendre (n + 2) = C ((n + 2 : ℝ)⁻¹) *
+`Pₙ₊₂ = ((2n + 3) X Pₙ₊₁ - (n + 1) Pₙ) / (n + 2)`. Use it by explicit rewriting; it is not a
+`simp` lemma, since the expanded form is not a normal form. -/
+theorem legendre_add_two (n : ℕ) : legendre (n + 2) = C ((n + 2 : ℝ)⁻¹) *
     ((2 * n + 3 : ℝ[X]) * X * legendre (n + 1) - (n + 1 : ℝ[X]) * legendre n) := by
   rw [legendre]
 
@@ -280,8 +281,7 @@ with respect to Lebesgue measure. -/
 theorem integral_legendre_mul_legendre_of_ne {m n : ℕ} (h : m ≠ n) :
     ∫ x in (-1 : ℝ)..1, (legendre m).eval x * (legendre n).eval x = 0 := by
   have hs := integral_derivative_mul_derivative_mul_eq_integral_mul_derivative_mul_derivative
-    (1 - X ^ 2) (legendre m) (legendre n)
-    (a := -1) (b := 1) (by norm_num) (by norm_num)
+    (1 - X ^ 2) (legendre m) (legendre n) (-1) 1 (by norm_num) (by norm_num)
   have e : ∀ (k : ℕ) (p q : ℝ[X]) (x : ℝ), eval x (-((k : ℝ[X]) * (k + 1)) * p * q) =
       -((k : ℝ) * (k + 1)) * (eval x p * eval x q) := fun k p q x => by
     simp only [eval_mul, eval_neg, eval_natCast, eval_add, eval_one]
