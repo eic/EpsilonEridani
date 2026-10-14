@@ -39,7 +39,7 @@ as a `finsum` over all powers of `b`; when `b` has no constant term only the pow
   325.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -116,17 +116,18 @@ lemma toPowerSeries_one : (1 : SubstGroup R).toPowerSeries = X := (rfl)
 lemma toPowerSeries_mul (F G : SubstGroup R) :
     (F * G).toPowerSeries = F.toPowerSeries.subst G.toPowerSeries := (rfl)
 
-@[simp]
 lemma toPowerSeries_inv (F : SubstGroup R) :
     F⁻¹.toPowerSeries =
       F.toPowerSeries.substInvOfIsUnit F.isUnit_coeff_one_toPowerSeries := (rfl)
 
 /-- `F⁻¹(F(X)) = X`. -/
+@[simp]
 lemma subst_toPowerSeries_inv_left (F : SubstGroup R) :
     F⁻¹.toPowerSeries.subst F.toPowerSeries = X :=
   subst_substInvOfIsUnit_left _ F.constantCoeff_toPowerSeries _
 
 /-- `F(F⁻¹(X)) = X`. -/
+@[simp]
 lemma subst_toPowerSeries_inv_right (F : SubstGroup R) :
     F.toPowerSeries.subst F⁻¹.toPowerSeries = X :=
   subst_substInvOfIsUnit_right _ F.constantCoeff_toPowerSeries _
@@ -161,6 +162,14 @@ def linearCoeff : SubstGroup R →* Rˣ where
 @[simp]
 lemma coe_linearCoeff (F : SubstGroup R) :
     (linearCoeff F : R) = coeff 1 F.toPowerSeries := (rfl)
+
+/-- The linear coefficient of the inverse substitution is the inverse of the linear
+coefficient. -/
+@[simp]
+lemma coeff_one_toPowerSeries_inv (F : SubstGroup R) :
+    coeff 1 F⁻¹.toPowerSeries = ((linearCoeff F)⁻¹ : Rˣ) := by
+  rw [toPowerSeries_inv]
+  exact coeff_one_substInvOfIsUnit _ _
 
 lemma mem_ker_linearCoeff_iff {F : SubstGroup R} :
     F ∈ linearCoeff.ker ↔ coeff 1 F.toPowerSeries = 1 := by

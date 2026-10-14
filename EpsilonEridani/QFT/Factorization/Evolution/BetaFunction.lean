@@ -48,7 +48,8 @@ and the third is not, unless `β₀ = β₁ = 0`.
 ## Main statements
 
 * `transformBeta_eq_iff`: `transformBeta F β` is the unique `β'` with `β'(F(a)) = F'(a) β(a)`.
-* `X_sq_dvd_transformBeta`: a beta function stays one under a redefinition of the coupling.
+* `X_pow_dvd_transformBeta`: a power series divisible by `X ^ n` stays one under a
+  redefinition of the coupling; in particular a beta function stays one.
 * `betaCoeff_transformBeta_zero`, `betaCoeff_transformBeta_one`,
   `betaCoeff_transformBeta_two`: the transformation of `β₀`, `β₁`, `β₂` under any redefinition.
 * `betaCoeff_transformBeta_zero_of_coeff_one_eq_one`,
@@ -69,7 +70,7 @@ and the third is not, unless `β₀ = β₁ = 0`.
 * J. C. Collins, *Renormalization*, Cambridge University Press (1984).
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
@@ -128,14 +129,15 @@ theorem transformBeta_mul (F G : SubstGroup R) (β : R⟦X⟧) :
 
 /-! ### The first three coefficients -/
 
-/-- A beta function, a power series without constant or linear term, stays one under a
-redefinition of the coupling. -/
-theorem X_sq_dvd_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
-    X ^ 2 ∣ transformBeta F β := by
+/-- A power series divisible by `X ^ n` stays so under a redefinition of the coupling: the
+order of vanishing is preserved. In particular a beta function, a power series without
+constant or linear term, stays one. -/
+theorem X_pow_dvd_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (n : ℕ) (hβ : X ^ n ∣ β) :
+    X ^ n ∣ transformBeta F β := by
   obtain ⟨γ, rfl⟩ := hβ
   rw [transformBeta_def, mul_left_comm, subst_mul F⁻¹.hasSubst, subst_pow F⁻¹.hasSubst,
     subst_X F⁻¹.hasSubst]
-  exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr F⁻¹.constantCoeff_toPowerSeries) 2).mul_right _
+  exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr F⁻¹.constantCoeff_toPowerSeries) n).mul_right _
 
 /-- The coefficients of `a²`, `a³` and `a⁴` in `β'(F(a)) = F'(a) β(a)`, for
 `β' = transformBeta F β` and `F(a) = u a + c₁ a² + c₂ a³ + ⋯`. -/
@@ -153,7 +155,7 @@ private lemma coeff_subst_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ 
         coeff 1 F.toPowerSeries * coeff 4 β + 2 * coeff 2 F.toPowerSeries * coeff 3 β +
           3 * coeff 3 F.toPowerSeries * coeff 2 β := by
   have hβ' := X_pow_dvd_iff.mp hβ
-  have hγ := X_pow_dvd_iff.mp (X_sq_dvd_transformBeta F hβ)
+  have hγ := X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ)
   have h₂ := congrArg (coeff 2) (subst_transformBeta F β)
   have h₃ := congrArg (coeff 3) (subst_transformBeta F β)
   have h₄ := congrArg (coeff 4) (subst_transformBeta F β)
