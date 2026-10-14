@@ -70,9 +70,8 @@ theorem rotation_mul_rotation (θ φ : ℝ) : rotation θ * rotation φ = rotati
 
 /-- The transpose of the rotation by `θ` is the rotation by `-θ`, its inverse. -/
 theorem rotation_transpose (θ : ℝ) : (rotation θ)ᵀ = rotation (-θ) := by
-  rw [rotation_def, rotation_def, cos_neg, sin_neg, neg_neg]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp
+  fin_cases i <;> fin_cases j <;> simp [rotation_def, cos_neg, sin_neg]
 
 /-- The rotation matrix has determinant `1`. -/
 @[simp]
