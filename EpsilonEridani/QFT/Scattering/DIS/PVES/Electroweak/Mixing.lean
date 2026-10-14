@@ -137,7 +137,7 @@ theorem rotation_conj_neutralMassMatrix (g g' v θ : ℝ) :
       ring
     · simp only [Fin.mk_one, cons_val_zero, cons_val_one]
       ring
-  rw [neutralMassMatrix_def, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_vecMulVec,
+  simp only [neutralMassMatrix_def, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_vecMulVec,
     Matrix.vecMulVec_mul, Matrix.vecMul_transpose, hw]
 
 /-- The diagonal `(1,1)` entry of the neutral mass matrix in the basis rotated by `θ`, the
