@@ -116,7 +116,7 @@ theorem totalDegree_compositeDeg (o : FreeMonoid B) :
   simp [compositeDeg_def, map_list_sum, Function.comp_def]
 
 /-- Each factor of a composite operator has total degree at most that of the operator. -/
-theorem totalDegree_le_totalDegree_compositeDeg {o : FreeMonoid B} {b : B} (hb : b ∈ o.toList) :
+theorem totalDegree_le_totalDegree_compositeDeg {o : FreeMonoid B} {b : B} (hb : b ∈ o) :
     totalDegree (deg b) ≤ totalDegree (compositeDeg deg o) := by
   rw [totalDegree_compositeDeg]
   exact List.le_sum_of_mem (List.mem_map_of_mem hb)
