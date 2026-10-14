@@ -142,6 +142,7 @@ the two breaks the gluon-column momentum identity by exactly this factor. -/
 theorem pqgSinglet_def : pqgSinglet c = (2 * c.nF) • pqg c :=
   (rfl)
 
+/-- The regular part of the singlet-normalised `P_qg` is `2 n_f T_F (z² + (1-z)²)`. -/
 @[simp]
 theorem pqgSinglet_regular :
     (pqgSinglet c).regular = fun z => 2 * c.nF * c.tF * (z ^ 2 + (1 - z) ^ 2) := by
@@ -149,10 +150,13 @@ theorem pqgSinglet_regular :
   simp only [pqgSinglet_def, KernelForm.smul_regular, pqg_regular]
   ring
 
+/-- The singlet-normalised `P_qg` has no plus part: quark-pair emission has no soft `z → 1`
+singularity. -/
 @[simp]
 theorem pqgSinglet_plusCoeff : (pqgSinglet c).plusCoeff = 0 := by
   simp [pqgSinglet_def]
 
+/-- The singlet-normalised `P_qg` has no delta part. -/
 @[simp]
 theorem pqgSinglet_deltaCoeff : (pqgSinglet c).deltaCoeff = 0 := by
   simp [pqgSinglet_def]
