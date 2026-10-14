@@ -494,21 +494,21 @@ jobs:
           lake build --no-build --rehash -o .lake/outputs.jsonl
           echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
           lake cache stage .lake/outputs.jsonl "$RUNNER_TEMP/lake-cache-staging"
-          # `lake cache put-staged` does not configure the workspace, which is precisely what
-          # keeps project build code out of the publisher, so it cannot derive the toolchain and
-          # platform halves of the upload scope. The publisher supplies them from the sparse pin
-          # instead, which is right only while the package config keeps the two assumptions
-          # below. Check them here, where the workspace does exist: `platformIndependent` is
-          # what makes Lake leave the platform out of the scope (put-staged's default), while
-          # `fixedToolchain` or `bootstrap` would make Lake leave the toolchain out of it (which
-          # put-staged is told to include). Either silent mismatch would publish under a scope
-          # pr-build's `lake cache get --service ... --repo` never reads, i.e. a cache never hit.
+          # publish-lake-cache has no workspace, which is precisely what keeps project build code
+          # out of the publisher, so it cannot derive the toolchain and platform halves of the
+          # upload scope. It writes the revision map under `tc/<toolchain>/` with no platform
+          # segment instead, which is right only while the package config keeps the two
+          # assumptions below. Check them here, where the workspace does exist:
+          # `platformIndependent` is what makes Lake leave the platform out of the scope, while
+          # `fixedToolchain` or `bootstrap` would make Lake leave the toolchain out of it. Either
+          # silent mismatch would publish under a scope pr-build's
+          # `lake cache get --service ... --repo` never reads, i.e. a cache never hit.
           if ! grep -Eq '^[[:space:]]*platformIndependent[[:space:]]*=[[:space:]]*true' lakefile.toml; then
-            echo "::error::lakefile.toml no longer sets platformIndependent = true; publish-lake-cache must now pass --platform to lake cache put-staged"
+            echo "::error::lakefile.toml no longer sets platformIndependent = true; publish-lake-cache must now add the platform to its revision-map key"
             exit 1
           fi
           if grep -Eq '^[[:space:]]*(fixedToolchain|bootstrap)[[:space:]]*=[[:space:]]*true' lakefile.toml; then
-            echo "::error::lakefile.toml now sets fixedToolchain or bootstrap; Lake drops the toolchain from the scope for such a package, so publish-lake-cache must stop passing --toolchain"
+            echo "::error::lakefile.toml now sets fixedToolchain or bootstrap; Lake drops the toolchain from the scope for such a package, so publish-lake-cache must drop tc/<toolchain> from its revision-map key"
             exit 1
           fi
           # `lake env` reports the workspace's own view of the toolchain, which is exactly the
