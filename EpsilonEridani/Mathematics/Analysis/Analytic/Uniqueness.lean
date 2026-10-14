@@ -47,6 +47,10 @@ open Complex Filter Metric Set Topology
 
 variable {ι F : Type*} [Fintype ι] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
+/-- The inclusion `ℝ → ℂ` maps punctured neighbourhoods to punctured neighbourhoods. -/
+private theorem tendsto_ofReal_nhdsNE (x : ℝ) : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
+  continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ hs => ofReal_injective.ne hs
+
 /-- The vanishing statement of `AnalyticAt.eventuallyEq_zero_of_eventuallyEq_zero_ofReal` for a
 complete target. Completeness is what Mathlib's `AnalyticAt.exists_ball_analyticOnNhd` asks for to
 make the function analytic on a whole ball around the point. -/
@@ -73,15 +77,9 @@ private theorem eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux [CompleteSpace
       _ < ε := (dist_pi_lt_iff hε).1 hw i
   -- The parameters of the points of the line inside the ball form a convex open set.
   set S : Set ℂ := p ⁻¹' ball z₀ ε
-  have hS : Convex ℝ S := by
-    intro a ha b hb s t hs ht hst
-    have hpab : p (s • a + t • b) = s • p a + t • p b := by
-      funext i
-      simp only [p, Pi.add_apply, Pi.smul_apply, smul_eq_mul, real_smul]
-      have hst' : (s : ℂ) + t = 1 := by exact_mod_cast hst
-      linear_combination -(u i : ℂ) * hst'
-    rw [mem_preimage, hpab]
-    exact convex_ball z₀ ε ha hb hs ht hst
+  have hS : Convex ℝ S :=
+    ((convex_ball z₀ ε).translate_preimage_right fun i => (u i : ℂ)).linear_preimage
+      ((LinearMap.toSpanSingleton ℂ _ fun i => (v i : ℂ)).restrictScalars ℝ)
   have hS₀ : (0 : ℂ) ∈ S := by
     simp only [S, mem_preimage, mem_ball]
     refine (dist_pi_lt_iff hε).2 fun i => ?_
@@ -95,10 +93,7 @@ private theorem eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux [CompleteSpace
         (isOpen_ball.mem_nhds (by simpa using hu.trans_le (min_le_right r ρ)))
     have hpreal : ∀ s : ℝ, p s = fun i => ((u + s • v) i : ℂ) := fun s => funext fun i => by
       simp [p]
-    have ht : Tendsto (fun s : ℝ => (s : ℂ)) (𝓝[≠] 0) (𝓝[≠] 0) := by
-      simpa using continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin
-        (x := (0 : ℝ)) (t := {0}ᶜ) fun s hs => by simpa using hs
-    refine ht.frequently ?_
+    refine (ofReal_zero ▸ tendsto_ofReal_nhdsNE 0).frequently ?_
     refine (eventually_nhdsWithin_of_eventually_nhds (hreal.mono fun s hs => ?_)).frequently
     simpa [hpreal s] using hρ₀ (mem_ball.1 hs)
   have hS' : AnalyticOnNhd ℂ (f ∘ p) S :=

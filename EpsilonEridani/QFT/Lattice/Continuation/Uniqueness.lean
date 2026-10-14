@@ -35,9 +35,10 @@ the Euclidean section in `U`.
   `continuation x₀ ∈ U` agree on all of `U`.
 * `eqOn_of_eqOn_euclideanSection`: two functions holomorphic on an open preconnected set `U` that
   meets the Euclidean section, and that agree on `U ∩ euclideanSection d`, agree on `U`.
-* `eqOn_of_eqOn_euclideanSection_of_spaceLike`: if `U` contains every spacelike Minkowski
-  separation and some spacelike separation exists, then `U` meets the Euclidean section, so the two
-  functions agree on all of `U`, and in particular at every spacelike separation.
+* `eq_of_eqOn_euclideanSection_of_spaceLike`: if `U` also contains every spacelike Minkowski
+  separation, the two functions agree at every spacelike separation. The equal-time projection of a
+  spacelike separation is a point of `U` on the Euclidean section, so no separate hypothesis that
+  `U` meets the Euclidean section is needed.
 
 ## References
 
@@ -78,9 +79,7 @@ theorem eqOn_of_eventuallyEq_continuation {f g : ComplexSeparation d → F}
   -- real slice.
   set e : ComplexSeparation d ≃L[ℂ] ComplexSeparation d := timeRotation
   have he : AnalyticOnNhd ℂ e (e ⁻¹' U) := e.toContinuousLinearMap.analyticOnNhd _
-  have hU' : IsPreconnected (e ⁻¹' U) := by
-    rw [← e.image_symm_eq_preimage]
-    exact hU.image _ e.symm.continuous.continuousOn
+  have hU' : IsPreconnected (e ⁻¹' U) := e.toHomeomorph.isPreconnected_preimage.2 hU
   have hT : Tendsto (WithLp.toLp 2) (𝓝 (WithLp.ofLp x₀)) (𝓝 x₀) := by
     simpa using (PiLp.continuous_toLp 2 _).tendsto (WithLp.ofLp x₀)
   have key : EqOn (f ∘ e) (g ∘ e) (e ⁻¹' U) :=
@@ -110,16 +109,14 @@ theorem eqOn_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
 
 /-- **The Euclidean values determine the spacelike values.** Two functions holomorphic on an
 open preconnected set `U` that contains every spacelike Minkowski separation, and that agree at
-every point of `U` on the Euclidean section, agree on all of `U`, and so at every spacelike
-Minkowski separation. The spacelike separation `v` only witnesses that one exists: its equal-time
-projection is a point of `U` on the Euclidean section. -/
-theorem eqOn_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → F}
+every point of `U` on the Euclidean section, agree at every spacelike Minkowski separation. -/
+theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → F}
     {U : Set (ComplexSeparation d)} (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hUo : IsOpen U) (hU : IsPreconnected U)
     (hspace : ∀ v : Vector d, causalCharacter v = .spaceLike → ofMinkowski v ∈ U)
     (hfg : EqOn f g (U ∩ (euclideanSection d : Set (ComplexSeparation d))))
     {v : Vector d} (hv : causalCharacter v = .spaceLike) :
-    EqOn f g U := by
+    f (ofMinkowski v) = g (ofMinkowski v) := by
   -- The equal-time projection of `v` is again spacelike, and lies on the Euclidean section.
   let w : Vector d := Sum.elim (fun _ => 0) fun i => v (Sum.inr i)
   have hw : causalCharacter w = .spaceLike := by
@@ -129,7 +126,7 @@ theorem eqOn_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d �
     nlinarith [mul_self_nonneg (v (Sum.inl 0))]
   have hwE : ofMinkowski w ∈ euclideanSection d :=
     ofMinkowski_mem_euclideanSection_iff.2 rfl
-  exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg
+  exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg (hspace v hv)
 
 end Continuation
 end Lattice
