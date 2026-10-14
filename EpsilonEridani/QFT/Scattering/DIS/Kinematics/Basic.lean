@@ -98,13 +98,19 @@ orthogonal complement of `ℝ ∙ u` for `g.flip` in the sense of `LinearMap.Bil
 For a symmetric form this is `g.orthogonal (ℝ ∙ u)`. -/
 lemma range_projOrthogonal (g : Bilin V) {u : V} (hu : g u u ≠ 0) :
     LinearMap.range (g.projOrthogonal u) = g.flip.orthogonal (ℝ ∙ u) := by
-  rw [LinearMap.BilinForm.orthogonal_span_singleton_eq_toLin_ker]
   ext v
+  rw [LinearMap.mem_range, LinearMap.BilinForm.mem_orthogonal_iff]
   constructor
-  · rintro ⟨w, rfl⟩
-    exact g.projOrthogonal_orthogonal hu w
-  · intro hv
-    exact ⟨v, (g.projOrthogonal_eq_self_iff hu).mpr hv⟩
+  · rintro ⟨w, rfl⟩ n hn
+    rw [Submodule.mem_span_singleton] at hn
+    obtain ⟨c, rfl⟩ := hn
+    rw [LinearMap.BilinForm.flip_apply, map_smul, g.projOrthogonal_orthogonal hu w,
+      smul_zero]
+  · rintro hv
+    have hvu : g v u = 0 := by
+      have h := hv u (Submodule.mem_span_singleton_self u)
+      rwa [LinearMap.BilinForm.flip_apply] at h
+    exact ⟨v, (g.projOrthogonal_eq_self_iff hu).mpr hvu⟩
 
 /-- The pairing of two projected vectors: `g (projOrthogonal u v) (projOrthogonal u w)
 = g v w - g v u * g u w / g u u`. No symmetry of `g` is needed. -/
