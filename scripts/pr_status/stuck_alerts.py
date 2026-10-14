@@ -138,7 +138,11 @@ MARKER_RE = re.compile(r"<!--stuck:v1 (" + KEY_RE.pattern + r")-->\s*\Z")
 
 # --- thresholds --------------------------------------------------------------
 # Each scheduler threshold is ~2-3x the workflow's cadence, generous enough to
-# ride out GitHub's routine scheduled-run delays without false-firing.
+# ride out GitHub's routine scheduled-run delays without false-firing. For the
+# sub-daily crons the cadence is not what GitHub delivers: it drops most of a
+# frequent schedule under load, and in October 2026 the 15-minute, hourly and
+# two-hourly workflows all ran only every 3-9 hours. Those share one 12h floor,
+# which still catches a schedule that has genuinely stopped within half a day.
 BUMP_STUCK_HOURS = 24
 # A lint repair PR starts red by design and needs a worker round or two; two days open means the
 # worker is not getting it green on its own.
@@ -163,12 +167,12 @@ SCHEDULERS = {
     "update.yml":            ("daily mathlib bump",       30),
     "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
-    "housekeeping.yml":      ("queue housekeeping",        7),
+    "housekeeping.yml":      ("queue housekeeping",       12),
     "mattermost-healthcheck.yml": ("mattermost healthcheck", 15),
-    "merge-sweep.yml":       ("merge sweep",               4),
-    # Every 15 minutes; the threshold is deliberately loose because GitHub
-    # routinely delays a scheduled run well past its cadence.
-    "merge-conflicts.yml":   ("merge-conflict labels",     2),
+    "merge-sweep.yml":       ("merge sweep",              12),
+    # Every 15 minutes, but GitHub delivers it every few hours; a push to main
+    # also runs it, so the cron is only the backstop this watches.
+    "merge-conflicts.yml":   ("merge-conflict labels",    12),
 }
 # How many consecutive failed scheduled runs make a workflow "failing" rather than
 # flaky, and how many recent runs to read to decide. Two is one full cadence of
