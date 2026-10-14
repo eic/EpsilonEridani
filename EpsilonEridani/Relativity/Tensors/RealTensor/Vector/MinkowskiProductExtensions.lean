@@ -38,7 +38,10 @@ declaration order, the file contains:
   kinematics;
 * for a four-vector whose spatial part is `a • n` along a unit vector `n`, the factorisation
   `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of its Minkowski square into its light-cone components
-  (`minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul`);
+  (`minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul`), with the component
+  `⟪v.spatialPart, n⟫ = a` of such a vector along `n`
+  (`inner_spatialPart_eq_of_spatialPart_eq_smul`) and its nullness when `v⁰ = a`
+  (`minkowskiProduct_self_eq_zero_of_spatialPart_eq_smul`);
 * in at least two spatial dimensions, the existence of two vectors on the mass shell with
   prescribed energies above the mass and a prescribed angle between their spatial parts
   (`exists_massShell_pair_angle_eq`);
@@ -115,6 +118,19 @@ theorem minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul {d : ℕ} {v : Vecto
   rw [minkowskiProduct_self_eq_sq_sub, hv]
   simp only [norm_smul, hn, Real.norm_eq_abs, mul_one, sq_abs]
   ring
+
+/-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
+theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v.spatialPart, n⟫_ℝ = a := by
+  rw [hv, real_inner_smul_self_left, hn, mul_one, mul_one]
+
+/-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
+null: `⟪v, v⟫ₘ = 0`. -/
+theorem minkowskiProduct_self_eq_zero_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (ht : v.timeComponent = a)
+    (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
+  rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
 
 end Vector
 end Lorentz

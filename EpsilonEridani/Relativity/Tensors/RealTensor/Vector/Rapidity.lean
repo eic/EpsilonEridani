@@ -115,7 +115,7 @@ theorem timeComponent_add_inner_spatialPart_eq_sqrt_mul_exp_rapidity {v : Vector
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
     (h : |a| < v.timeComponent) :
     v.timeComponent + a = √⟪v, v⟫ₘ * exp (v.rapidity n) := by
-  have hpar : ⟪v.spatialPart, n⟫_ℝ = a := by rw [hv, real_inner_smul_self_left, hn]; ring
+  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
   have hA : 0 ≤ v.timeComponent + a := by linarith [neg_abs_le a]
   have hB : 0 < v.timeComponent - a := by linarith [le_abs_self a]
   rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, exp_rapidity (by rwa [hpar]),
@@ -129,7 +129,7 @@ theorem timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity {v : Ve
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
     (h : |a| < v.timeComponent) :
     v.timeComponent - a = √⟪v, v⟫ₘ * exp (-v.rapidity n) := by
-  have hpar : ⟪v.spatialPart, n⟫_ℝ = a := by rw [hv, real_inner_smul_self_left, hn]; ring
+  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
   have hA : 0 < v.timeComponent + a := by linarith [neg_abs_le a]
   have hB : 0 ≤ v.timeComponent - a := by linarith [le_abs_self a]
   -- `e^{-y} = √(v⁰ - a) / √(v⁰ + a)`, the forward computation with the two components swapped
