@@ -18,8 +18,9 @@ the EIC Yellow Report §7.1.6.
 
 ## Main definitions
 
-* `DiffractiveKinematics`: the data of a diffractive DIS event with an identified surviving
-  target-like momentum `P'` and the mass of the remaining system.
+* `DiffractiveKinematics`: the data of a diffractive DIS event: the inclusive kinematics
+  `K`, whose `pPrime` field is the identified surviving target-like momentum `P'`, together with
+  the mass of the remaining system.
 * `xi`: the momentum fraction lost by the target, `ξ = Δ·q / P·q`.
 * `beta`: the parton's fraction of the exchange, `β = Q² / (2 Δ·q)`.
 * `t`: the invariant momentum transfer to the target, `t = Δ²`.
@@ -47,21 +48,21 @@ namespace DIS
 /-!
 ## Diffractive kinematics record
 
-A diffractive DIS event is identified by, in addition to the inclusive kinematics `K`,
-a surviving target-like momentum `P'` and the invariant mass squared `MX2` of the
-remaining system `X`.
+A diffractive DIS event is identified by the inclusive kinematics `K`, whose `pPrime` field
+carries the surviving target-like momentum `P'`, together with the invariant mass squared
+`MX2` of the remaining system `X`.
 -/
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics
 
-/-- Diffractive DIS kinematics: the data of a diffractive event. -/
+/-- Diffractive DIS kinematics: the data of a diffractive event. The surviving target-like
+momentum `P'` is carried by the inclusive record as `K.pPrime`. -/
 structure DiffractiveKinematics (V : Type) [AddCommGroup V] [Module ℝ V] where
-  /-- Inclusive DIS kinematics (provides `p`, `k`, `q`, `q = k - kPrime`). -/
+  /-- Inclusive DIS kinematics: `p`, `k`, `q` with `q = k - kPrime`, and the outgoing
+  target-like momentum `pPrime`. -/
   K : DisKinematics V
-  /-- The surviving target-like four-momentum. -/
-  P' : V
   /-- The invariant mass squared of the remaining system `X`, i.e. `(q + P - P')²`. -/
   MX2 : ℝ
 
@@ -69,17 +70,17 @@ namespace DiffractiveKinematics
 
 variable {V}
 
-/-- The momentum transfer to the target: `Δ = P - P'`. -/
-def Delta (D : DiffractiveKinematics V) : V := D.K.p - D.P'
+/-- The momentum transfer to the target: `Δ = P - P'`, with `P' = K.pPrime`. -/
+def Delta (D : DiffractiveKinematics V) : V := D.K.p - D.K.pPrime
 
 @[simp]
-lemma hDelta (D : DiffractiveKinematics V) : D.Delta = D.K.p - D.P' := rfl
+lemma Delta_def (D : DiffractiveKinematics V) : D.Delta = D.K.p - D.K.pPrime := rfl
 
 /-- The invariant momentum transfer `t = Δ²`. -/
 def t (D : DiffractiveKinematics V) (g : Bilin V) : ℝ := g D.Delta D.Delta
 
 @[simp]
-lemma h_t (D : DiffractiveKinematics V) (g : Bilin V) : D.t g = g D.Delta D.Delta := rfl
+lemma t_def (D : DiffractiveKinematics V) (g : Bilin V) : D.t g = g D.Delta D.Delta := rfl
 
 /-- The variable `ξ = Δ·q / P·q`. -/
 noncomputable def xi (D : DiffractiveKinematics V) (g : Bilin V) : ℝ :=
