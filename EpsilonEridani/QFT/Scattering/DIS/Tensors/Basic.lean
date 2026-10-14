@@ -276,21 +276,22 @@ lemma transverseMetric_isSymm (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsS
   have hg : ∀ x y : V, g x y = g y x := hSymm.eq
   simp [transverseMetric_apply, hg, mul_comm]
 
-/-- The transverse part of the hadron momentum, `p^μ - (p·q / q²) q^μ`. -/
+/-- The transverse part of the hadron momentum: the projection `Bilin.projOrthogonal g K.q`
+of `p` onto the `g`-orthogonal complement of `q`, `p^μ - (p·q / q²) q^μ`. -/
 noncomputable def pTransverse (g : Bilin V) (K : DisKinematics V) : V :=
-  K.p - (g K.p K.q / g K.q K.q) • K.q
-
-/-- Pointwise pairing of the transverse hadron momentum against a vector. -/
-lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
-    g (pTransverse g K) v = g K.p v - (g K.p K.q / g K.q K.q) * g K.q v := by
-  simp only [pTransverse, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
-    smul_eq_mul]
+  g.projOrthogonal K.q K.p
 
 /-- The transverse hadron momentum is the projection of `p` onto the `g`-orthogonal complement
 of `q`. -/
 lemma pTransverse_eq_projOrthogonal (g : Bilin V) (K : DisKinematics V) :
     pTransverse g K = g.projOrthogonal K.q K.p :=
-  (g.projOrthogonal_apply K.q K.p).symm
+  (rfl)
+
+/-- Pointwise pairing of the transverse hadron momentum against a vector. -/
+lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
+    g (pTransverse g K) v = g K.p v - (g K.p K.q / g K.q K.q) * g K.q v := by
+  rw [pTransverse_eq_projOrthogonal, g.projOrthogonal_apply, map_sub, map_smul,
+    LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
 
 /-- The transverse hadron momentum is `g`-orthogonal to `q`. -/
 lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q K.q ≠ 0) :
@@ -336,7 +337,8 @@ lemma pairing_invariant_of_fixed (g : Bilin V) (K : DisKinematics V) {f : V →�
 lemma stabilizer_fixes_pTransverse (g : Bilin V) (K : DisKinematics V) {f : V →ₗ[ℝ] V}
     (hf : IsKinematicStabilizer g K f) :
     f (pTransverse g K) = pTransverse g K := by
-  simp only [pTransverse, map_sub, map_smul, hf.fixes_p, hf.fixes_q]
+  rw [pTransverse_eq_projOrthogonal, g.projOrthogonal_apply, map_sub, map_smul,
+    hf.fixes_p, hf.fixes_q]
 
 /-- The transverse metric projector is Lorentz covariant. -/
 lemma transverseMetric_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
@@ -836,7 +838,8 @@ def uniquenessWit : UniquenessAssumptions gWit kWit where
 /-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
 already `gWit`-orthogonal to `q`. -/
 @[simp] lemma pTransverse_kWit : pTransverse gWit kWit = ((1, 0, 0) : ℝ × ℝ × ℝ) := by
-  simp [pTransverse]
+  rw [pTransverse_eq_projOrthogonal, gWit.projOrthogonal_apply]
+  simp
 
 /-- **`SpectatorAssumptions` is satisfiable.** On the witness kinematics the spectator
 subspace is the spacelike line through `u = (0,0,1)`. Two spectator vectors of equal norm are

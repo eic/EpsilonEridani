@@ -166,11 +166,8 @@ theorem range_spatial : LinearMap.range F.spatial = g.flip.orthogonal (ℝ ∙ F
 mass-shell relation `g p_s p_s = m² - E(p)²`. -/
 theorem spatial_pairing_spatial (hg : g.IsSymm) (a b : V) :
     g (F.spatial a) (F.spatial b) = g a b - F.energy a * F.energy b := by
-  have hN : g F.n F.n ≠ 0 := F.timelike.ne'
-  rw [spatial_apply, spatial_apply, Bilin.apply_sub_smul_pair, hg.eq F.n b, energy_apply,
-    energy_apply, div_mul_div_comm _ (Real.sqrt _), Real.mul_self_sqrt F.timelike.le]
-  field_simp
-  ring
+  rw [spatial_def, g.projOrthogonal_pairing F.timelike.ne' a b, energy_apply, energy_apply,
+    hg.eq F.n b, div_mul_div_comm _ (Real.sqrt _), Real.mul_self_sqrt F.timelike.le]
 
 /-! ### The spatial norm and the opening angle -/
 

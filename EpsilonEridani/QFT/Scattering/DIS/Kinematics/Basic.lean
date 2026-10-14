@@ -106,6 +106,14 @@ lemma range_projOrthogonal (g : Bilin V) {u : V} (hu : g u u ≠ 0) :
   · intro hv
     exact ⟨v, (g.projOrthogonal_eq_self_iff hu).mpr hv⟩
 
+/-- The pairing of two projected vectors: `g (projOrthogonal u v) (projOrthogonal u w)
+= g v w - g v u * g u w / g u u`. No symmetry of `g` is needed. -/
+lemma projOrthogonal_pairing (g : Bilin V) {u : V} (hu : g u u ≠ 0) (v w : V) :
+    g (g.projOrthogonal u v) (g.projOrthogonal u w) = g v w - g v u * g u w / g u u := by
+  rw [projOrthogonal_apply, projOrthogonal_apply, apply_sub_smul_pair]
+  field_simp
+  ring
+
 end Bilin
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
