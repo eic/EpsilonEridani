@@ -36,6 +36,8 @@ lets a complex positive-semidefinite matrix descend to a real one.
 - `Matrix.PosSemidef.re_apply_self_nonneg`: nonnegativity of the real part of the diagonal.
 - `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound over `RCLike`.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: its real specialisation.
+- `Matrix.re_star_dotProduct_mulVec_ofReal`: the real part of the quadratic form of a matrix over
+  `𝕜` on a real vector is the quadratic form of its entrywise real part.
 - `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix.
 - `Matrix.re_star_dotProduct_map_ofReal_mulVec`: the real part of the quadratic form of a real
   matrix on a vector over `𝕜`, split along the real and imaginary parts of the vector.
@@ -80,17 +82,23 @@ lemma PosSemidef.two_mul_norm_apply_le {M : Matrix n n 𝕜} (hM : M.PosSemidef)
   rw [RCLike.normSq_eq_def'] at hcs
   nlinarith [sq_nonneg (re (M i i) - re (M j j)), norm_nonneg (M i j)]
 
+/-- The real part of the quadratic form of a matrix over `𝕜` on a real vector, coerced to `𝕜`,
+is the quadratic form of the entrywise real part of the matrix on that vector. -/
+lemma re_star_dotProduct_mulVec_ofReal [Fintype n] (M : Matrix n n 𝕜) (x : n → ℝ) :
+    re (star (fun i => (x i : 𝕜)) ⬝ᵥ (M *ᵥ fun i => (x i : 𝕜))) = x ⬝ᵥ (M.map re *ᵥ x) := by
+  simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, RCLike.conj_ofReal,
+    map_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  simp only [mul_re, ofReal_re, ofReal_im, zero_mul, mul_zero, sub_zero]
+
 /-- The entrywise real part of a positive-semidefinite matrix is positive semidefinite: its
-quadratic form on a real vector is the real part of the quadratic form of the matrix. -/
+quadratic form on a real vector is the real part of the quadratic form of the matrix
+(`Matrix.re_star_dotProduct_mulVec_ofReal`). -/
 lemma PosSemidef.map_re [Finite n] {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
     (M.map re).PosSemidef := by
   have := Fintype.ofFinite n
   refine posSemidef_iff_dotProduct_mulVec.mpr ⟨hM.1.map re fun z => by simp, fun x => ?_⟩
-  refine (hM.re_dotProduct_nonneg fun i => (x i : 𝕜)).trans_eq ?_
-  simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, RCLike.conj_ofReal,
-    star_trivial, map_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  simp only [mul_re, ofReal_re, ofReal_im, zero_mul, mul_zero, sub_zero]
+  exact (hM.re_dotProduct_nonneg _).trans_eq (re_star_dotProduct_mulVec_ofReal M x)
 
 /-- The real part of the quadratic form of a real matrix, coerced to `𝕜`, is the sum of its real
 quadratic forms on the real and imaginary parts of the vector. -/
