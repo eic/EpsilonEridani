@@ -14,10 +14,11 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProdu
 The rapidity of a four-vector `v` along a spatial direction `n` is `y = artanh (v_∥ / v⁰)`, where
 `v_∥ = ⟪v.spatialPart, n⟫` is the component of the spatial part along `n`
 (`Lorentz.Vector.rapidity`). This is the physical rapidity along `n` only for a unit vector,
-`‖n‖ = 1`: the definition is not invariant under rescaling `n` (`Lorentz.Vector.rapidity_smul`).
+`‖n‖ = 1`: the definition is not invariant under rescaling `n`
+(`Lorentz.Vector.rapidity_smul_right`).
 Inside the forward light cone along `n`, that is for `|v_∥| < v⁰`, it recovers the velocity,
-`tanh y = v_∥ / v⁰` (`Lorentz.Vector.tanh_rapidity`), and it is the logarithm of the ratio of the
-two light-cone components along `n`: `e^{y} = √(v⁰ + v_∥) / √(v⁰ - v_∥)`
+`tanh y = v_∥ / v⁰` (`Lorentz.Vector.tanh_rapidity`), and it is half the logarithm of the ratio of
+the two light-cone components along `n`: `e^{y} = √(v⁰ + v_∥) / √(v⁰ - v_∥)`
 (`Lorentz.Vector.exp_rapidity`), so `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)`
 (`Lorentz.Vector.exp_two_mul_rapidity`).
 
@@ -46,7 +47,7 @@ variable {d : ℕ}
 
 /-- The rapidity `artanh (v_∥ / v⁰)` of the four-vector `v` along the spatial direction `n`, with
 `v_∥ = ⟪v.spatialPart, n⟫` the component of the spatial part along `n`. It is the rapidity along
-`n` only when `‖n‖ = 1`; rescaling `n` rescales `v_∥` (`Lorentz.Vector.rapidity_smul`). -/
+`n` only when `‖n‖ = 1`; rescaling `n` rescales `v_∥` (`Lorentz.Vector.rapidity_smul_right`). -/
 def rapidity (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) : ℝ :=
   artanh (⟪v.spatialPart, n⟫_ℝ / v.timeComponent)
 
@@ -57,7 +58,7 @@ theorem rapidity_def (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) :
 
 /-- Rescaling the direction rescales the component along it: the rapidity along `c • n` is
 `artanh (c v_∥ / v⁰)`, so `rapidity` is the rapidity along `n` only for a unit vector `n`. -/
-theorem rapidity_smul (v : Vector d) (c : ℝ) (n : EuclideanSpace ℝ (Fin d)) :
+theorem rapidity_smul_right (v : Vector d) (c : ℝ) (n : EuclideanSpace ℝ (Fin d)) :
     v.rapidity (c • n) = artanh (c * ⟪v.spatialPart, n⟫_ℝ / v.timeComponent) := by
   rw [rapidity_def, real_inner_smul_right]
 
@@ -90,8 +91,8 @@ theorem exp_rapidity {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
   congr 1
   field_simp
 
-/-- **The rapidity is the logarithm of the ratio of the light-cone components.** Inside the
-forward light cone along `n`, `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)`. -/
+/-- **The rapidity is half the logarithm of the ratio of the light-cone components.** Inside
+the forward light cone along `n`, `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)`. -/
 theorem exp_two_mul_rapidity {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
     (h : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent) :
     exp (2 * v.rapidity n) = (v.timeComponent + ⟪v.spatialPart, n⟫_ℝ) /

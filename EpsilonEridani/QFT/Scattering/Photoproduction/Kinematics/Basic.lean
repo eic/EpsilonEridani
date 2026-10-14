@@ -16,8 +16,10 @@ scattering angle `θ` hands the photon the virtuality `emissionVirtuality m E E'
 
 The explicit data of the subject are a `ChargedSource` (charge, mass, charge radius and Lorentz
 factor in the collider frame), the photon variables `PhotonKinematics` (energy in the collider
-frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`), and the photon energy
-fraction `PhotonKinematics.energyFraction`. The kinematic minimum of the virtuality is strictly
+frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`, reached by a photon
+whose virtuality is `-q²` for a null four-momentum `q` along an axis,
+`PhotonKinematics.isReal_of_spatialPart_eq_smul`), and the photon energy fraction
+`PhotonKinematics.energyFraction`. The kinematic minimum of the virtuality is strictly
 positive for a massive source (`ChargedSource.photonVirtualityMin_pos`) and strictly exceeds the
 familiar `m² x² / (1 - x)` in terms of the energy fraction `x` carried by the photon
 (`ChargedSource.sq_mul_sq_div_one_sub_lt_photonVirtualityMin`). The set
@@ -94,6 +96,14 @@ def IsReal (k : PhotonKinematics) : Prop := k.virtuality = 0
 /-- A photon is real exactly at zero virtuality. -/
 @[simp]
 theorem isReal_iff (k : PhotonKinematics) : k.IsReal ↔ k.virtuality = 0 := (Iff.rfl)
+
+/-- **A photon of null four-momentum along an axis is real.** If the virtuality of `k` is `-q²`
+for a four-momentum `q` of energy `k.energy` along the unit axis `n`, then `k` is real. -/
+theorem isReal_of_spatialPart_eq_smul {k : PhotonKinematics} {d : ℕ} {q : Lorentz.Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) (hq : q.timeComponent = k.energy)
+    (hq' : q.spatialPart = k.energy • n) (hk : k.virtuality = -⟪q, q⟫ₘ) : k.IsReal := by
+  rw [isReal_iff, hk, Lorentz.Vector.minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hq',
+    hq, sub_self, mul_zero, neg_zero]
 
 /-- The fraction `x = k / E` of the source energy carried by the photon. -/
 def energyFraction (k : PhotonKinematics) (s : ChargedSource) : ℝ := k.energy / s.energy
