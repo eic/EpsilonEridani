@@ -16,7 +16,8 @@ expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ 
 companion to `Lorentz.Vector.minkowskiProduct_add_self`; the additivity of the spatial part,
 `(u + v).spatialPart = u.spatialPart + v.spatialPart`; the factorisation
 `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial part is `a • n`
-along a unit vector `n` into its light-cone components; the length of the spatial part of a
+along a unit vector `n` into its light-cone components, with the component `⟪v.spatialPart, n⟫ = a`
+of such a vector along `n` and its nullness when `v⁰ = a`; the length of the spatial part of a
 vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
 in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
 energies above the mass and a prescribed angle between their spatial parts.
@@ -58,6 +59,19 @@ theorem minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul {d : ℕ} {v : Vecto
   rw [minkowskiProduct_self_eq_sq_sub, hv]
   simp only [norm_smul, hn, Real.norm_eq_abs, mul_one, sq_abs]
   ring
+
+/-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
+theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v.spatialPart, n⟫_ℝ = a := by
+  rw [hv, real_inner_smul_self_left, hn, mul_one, mul_one]
+
+/-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
+null: `⟪v, v⟫ₘ = 0`. -/
+theorem minkowskiProduct_self_eq_zero_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (ht : v.timeComponent = a)
+    (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
+  rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
 
 end Vector
 end Lorentz
