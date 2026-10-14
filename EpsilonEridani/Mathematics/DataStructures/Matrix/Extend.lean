@@ -30,7 +30,7 @@ namespace Matrix
 
 open Function
 
-variable {ι κ m R : Type*} [Fintype ι] [Fintype κ] [NonUnitalNonAssocSemiring R] {e : κ → ι}
+variable {ι κ R : Type*} [Fintype ι] [Fintype κ] [NonUnitalNonAssocSemiring R] {e : κ → ι}
 
 /-- Pairing a vector extended by zero along an injection with `f` only sees `f` on the range. -/
 theorem extend_dotProduct (he : Injective e) (c : κ → R) (f : ι → R) :
