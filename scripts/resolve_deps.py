@@ -421,9 +421,15 @@ class Resolver:
             feasible.append(dict(entry, pins=pins))
 
         def rank(entry):
+            # Within a toolchain, a mathlib commit some dependency pins exactly (its own CI built
+            # it) beats a newer one that every dependency only fits `near`: past every
+            # dependency's own pin, nothing has built the pairing. On 2026-10-15 Physlib's exact
+            # pin (the v4.35.0 tag) lost to master commits past a refactor Physlib could not build.
+            toolchain, date = newness(entry)
+            built = any(p["fit"] == "exact" for name, p in entry["pins"].items() if name != MATHLIB)
             carried = sum(1 for p in entry["pins"].values() if p["fit"] == "carried")
             behind = sum(p.get("index", 0) for p in entry["pins"].values())
-            return newness(entry) + (-carried, -behind)
+            return (toolchain, built, date, -carried, -behind)
         feasible.sort(key=rank, reverse=True)
         if not feasible:
             raise RuntimeError("no feasible pin set, not even the current one; see `blocked`")

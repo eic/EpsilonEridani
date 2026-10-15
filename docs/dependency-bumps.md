@@ -61,9 +61,13 @@ For each M every dependency takes its newest fitting commit. A dependency with n
 on its current pin (`carried`) only while M stays on the Lean line main is already on: main
 builds that pin today. A carried pin is not checked against M; it may already pin a newer
 toolchain or mathlib. Otherwise M is **blocked** by that dependency. The chosen set is the
-feasible one with the newest M (toolchain, then date). Carried pins only break exact ties:
-ranking them higher would let one dependency that fits nothing stall mathlib on an older
-commit.
+feasible one with the newest M: newest toolchain first; then, on that toolchain, an M that at
+least one dependency pins `exact` (its own CI built it) over one that every dependency only
+fits `near`; then the newest date. So mathlib follows the most advanced dependency but does
+not run past all of them on the same toolchain: on 2026-10-15 Physlib pinned the v4.35.0 tag
+exactly, and master commits after it carried a refactor (`Set` as a structure) that Physlib
+could not build. Carried pins only break exact ties: ranking them higher would let one
+dependency that fits nothing stall mathlib on an older commit.
 
 These rules only predict. The bump PR's build is the arbiter. A set whose build fails inside
 a dependency (not something EpsilonEridani can fix) is meant to be passed back with

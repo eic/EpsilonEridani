@@ -233,6 +233,29 @@ class Resolution(unittest.TestCase):
         second = resolve(g, pins, lean("v4.34.0"), exclude=[bad])
         self.assertNotEqual({n: p["rev"] for n, p in second["pins"].items()}, bad)
 
+    def test_mathlib_does_not_pass_every_dependency_on_the_same_toolchain(self):
+        # 2026-10-15: Physlib pinned the v4.35.0 tag exactly, TauCeti an older commit, and
+        # master moved on (same toolchain) into a refactor Physlib could not build. Both sets
+        # are feasible; the one Physlib's CI built wins over the newer master commit.
+        g = Graph()
+        mathlib_line(g)
+        g.commit(ML, "m4", "m3", lean_toolchain=lean("v4.35.0"))
+        g.commit(ML, "m5", "m4", branch="master")
+        g.tags = {"s1": "v4.34.1", "m4": "v4.35.0"}
+        g.cached = "m5"
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m4"), lean_toolchain=lean("v4.35.0"))
+        g.commit(TC, "t1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(TC, "t2", "t1", branch="main", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual({n: (p["rev"], p["fit"]) for n, p in r["pins"].items()},
+                         {"mathlib": ("m4", "descendant"), "Physlib": ("p2", "exact"), "TauCeti": ("t2", "near")})
+        # once a dependency has built the newer commit, mathlib follows it
+        g.commit(PL, "p3", "p2", branch="master", lake_manifest=manifest("m5"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual({n: p["rev"] for n, p in r["pins"].items()},
+                         {"mathlib": "m5", "Physlib": "p3", "TauCeti": "t2"})
+
     def test_mathlib_hold_quotes_the_newest_blocked_commit(self):
         # Blocked commits are collected cached-tip first, then dependency pins: here the newer
         # m4 comes second, and its reason is the one to report.
