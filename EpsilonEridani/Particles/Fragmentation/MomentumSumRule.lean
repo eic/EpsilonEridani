@@ -188,8 +188,8 @@ theorem momentumSumRule_invFrag : MomentumSumRule invFrag := by
   refine fun _ Q2 => ⟨?_, ?_⟩
   · rw [invFrag_def, integrableOn_indicatorUnitInterval_iff (F := fun z y => z * y),
       integrableOn_Icc_iff_integrableOn_Ioc,
-      integrableOn_congr_fun (g := fun _ => (1 : ℝ)) (fun z hz => mul_inv_cancel₀ hz.1.ne')
-        measurableSet_Ioc]
+      integrableOn_congr_fun (g := fun _ => (1 : ℝ))
+        (fun z (hz : z ∈ Ioc 0 1) => mul_inv_cancel₀ hz.1.ne') measurableSet_Ioc]
     exact integrableOn_const measure_Ioc_lt_top.ne
   rw [invFrag_def, zMoment_indicatorUnitInterval, zMoment_eq_intervalIntegral]
   calc ∫ z in (0 : ℝ)..1, z ^ 1 * z⁻¹ = ∫ _ in (0 : ℝ)..1, (1 : ℝ) :=
