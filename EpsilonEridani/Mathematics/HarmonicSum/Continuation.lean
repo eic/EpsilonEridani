@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-public import EpsilonEridani.Mathematics.SpecialFunctions.Gamma.DigammaExtensions
+public import EpsilonEridani.Mathematics.SpecialFunctions.Gamma.Digamma.Extensions
 
 /-!
 # The meromorphic continuation of the first harmonic sum
@@ -29,7 +29,7 @@ and develops its basic theory:
 
 The analyticity of `Γ` and `ψ` away from the non-positive integers, which these regularity
 statements rest on, is proved in
-`EpsilonEridani.Mathematics.SpecialFunctions.Gamma.DigammaExtensions`.
+`EpsilonEridani.Mathematics.SpecialFunctions.Gamma.Digamma.Extensions`.
 
 The continuation matters because the Mellin moments of the splitting kernels are rational
 functions of the moment variable `N` and harmonic sums of `N`; the inversion contour of the
