@@ -20,9 +20,10 @@ two different mesons over the same flavour type, such as the positive pion and t
 can be compared. The mass and the decay constant are positive; the chiral limit is reached as the
 limit of a family of such data, never as an instance.
 
-The decay constant is the one of the axial-current matrix element
-`⟨0| qbar γ^μ γ₅ q |M(P)⟩ = i f_M P^μ`, in which the charged-pion constant is close to `130 MeV`
-rather than `92 MeV`.
+The decay constant is the one of the flavour-changing axial-current matrix element
+`⟨0| qbar' γ^μ γ₅ q |M(P)⟩ = i f_M P^μ` between the vacuum and a meson whose valence quark has
+flavour `q` and whose valence antiquark has flavour `q'`; in this convention the charged-pion
+constant is close to `130 MeV` rather than `92 MeV`.
 
 The valence content enters the valence sum rules of a meson's parton densities only through its
 *net valence numbers*: the number of valence quarks minus the number of valence antiquarks of each
@@ -54,32 +55,35 @@ built from quark masses, the limits are exactly the degeneracy of the correspond
   valence antiquark charge.
 * `LightFlavor`: the up, down and strange flavours, with their charges `LightFlavor.charge`.
 * `piPlus`, `piMinus`, `kPlus`, `kMinus`: the charged pions and kaons over `LightFlavor`.
-* `FlavorBreaking`: the isospin- and SU(3)-breaking parameters, with the limits
-  `FlavorBreaking.IsIsospinLimit` and `FlavorBreaking.IsSU3Limit`.
+* `FlavorBreaking`: the isospin-breaking parameter and the strange-light mass splitting, with
+  the limits `FlavorBreaking.IsIsospinLimit` and `FlavorBreaking.IsSU3Limit`.
 
 ## Main results
 
-* `PseudoscalarMeson.valenceNumber_eq_one_iff`, `valenceNumber_eq_neg_one_iff`: the net valence
-  number is `+1` exactly on the valence quark flavour and `-1` exactly on the valence antiquark
-  flavour of a flavoured meson.
+* `PseudoscalarMeson.valenceNumber_apply_eq_one_iff`, `valenceNumber_apply_eq_neg_one_iff`:
+  the net valence number is `+1` exactly on the valence quark flavour and `-1` exactly on the
+  valence antiquark flavour of a flavoured meson.
 * `PseudoscalarMeson.valenceNumber_eq_iff`: two mesons have the same net valence numbers exactly
   when they share their valence quark and valence antiquark, or when the valence quark and
   antiquark flavours coincide in both mesons.
+* `PseudoscalarMeson.valenceQuark_eq_and_valenceAntiquark_eq_of_valenceNumber_eq`: the net
+  valence numbers determine the valence quark and valence antiquark of a flavoured meson.
 * `PseudoscalarMeson.sum_valenceNumber`: the net valence numbers sum to zero.
 * `PseudoscalarMeson.IsChargeConsistent.sum_mul_valenceNumber`: the charge-weighted net valence
   numbers sum to the meson's charge.
-* `kPlus_valenceQuark_eq_piPlus_valenceQuark`, `kPlus_valenceAntiquark_ne_piPlus_valenceAntiquark`:
-  the positive pion and kaon share their valence quark and differ in their valence antiquark.
+* `kPlus_valenceNumber_ne_piPlus_valenceNumber`: the positive pion and the positive kaon have
+  different net valence numbers.
 * `FlavorBreaking.isSU3Limit_ofMasses_iff`: the SU(3) limit is the degeneracy of the three
   light-quark masses.
 
 ## References
 
 * S. Navas et al. (Particle Data Group), *Review of Particle Physics*, Phys. Rev. D 110 (2024)
-  030001: the masses, and the decay constants in the review *Leptonic decays of charged
-  pseudoscalar mesons*.
+  030001: the masses, and the decay constants and their convention in the review *Leptonic decays
+  of charged pseudoscalar mesons*.
 * G. P. Lepage and S. J. Brodsky, *Exclusive processes in perturbative quantum chromodynamics*,
-  Phys. Rev. D 22 (1980) 2157, for the decay-constant convention.
+  Phys. Rev. D 22 (1980) 2157: the exclusive-process formalism; note that it uses the
+  `f_π ≈ 92 MeV` normalisation, smaller than the one adopted here by `√2`.
 -/
 
 public section
@@ -87,7 +91,8 @@ public section
 namespace EpsilonEridani.Particles.Meson
 
 /-- A pseudoscalar meson as explicit data over a flavour type: its mass, its decay constant
-`f_M` in the convention `⟨0| qbar γ^μ γ₅ q |M(P)⟩ = i f_M P^μ`, its electric charge in units of the
+`f_M` in the convention `⟨0| qbar' γ^μ γ₅ q |M(P)⟩ = i f_M P^μ` for a meson whose valence quark has
+flavour `q` and whose valence antiquark has flavour `q'`, its electric charge in units of the
 positron charge, and the flavours of its valence quark and valence antiquark. -/
 @[ext]
 structure PseudoscalarMeson (Flavor : Type*) where
@@ -184,40 +189,41 @@ theorem valenceNumber_eq_zero_iff :
 
 /-- The net valence number is `+1` exactly on the valence quark flavour, and only when that
 flavour differs from the valence antiquark flavour. -/
-theorem valenceNumber_eq_one_iff (a : Flavor) :
+theorem valenceNumber_apply_eq_one_iff (a : Flavor) :
     M.valenceNumber a = 1 ↔ a = M.valenceQuark ∧ a ≠ M.valenceAntiquark := by
   rw [valenceNumber_apply]
   split_ifs <;> simp_all
 
 /-- The net valence number is `-1` exactly on the valence antiquark flavour, and only when that
 flavour differs from the valence quark flavour. -/
-theorem valenceNumber_eq_neg_one_iff (a : Flavor) :
+theorem valenceNumber_apply_eq_neg_one_iff (a : Flavor) :
     M.valenceNumber a = -1 ↔ a = M.valenceAntiquark ∧ a ≠ M.valenceQuark := by
   rw [valenceNumber_apply]
   split_ifs <;> simp_all
 
 theorem valenceNumber_valenceQuark (h : M.valenceQuark ≠ M.valenceAntiquark) :
     M.valenceNumber M.valenceQuark = 1 :=
-  (M.valenceNumber_eq_one_iff _).2 ⟨rfl, h⟩
+  (M.valenceNumber_apply_eq_one_iff _).2 ⟨rfl, h⟩
 
 theorem valenceNumber_valenceAntiquark (h : M.valenceQuark ≠ M.valenceAntiquark) :
     M.valenceNumber M.valenceAntiquark = -1 :=
-  (M.valenceNumber_eq_neg_one_iff _).2 ⟨rfl, Ne.symm h⟩
+  (M.valenceNumber_apply_eq_neg_one_iff _).2 ⟨rfl, Ne.symm h⟩
 
 /-- A flavour carried by neither the valence quark nor the valence antiquark has net valence
 number zero. -/
-theorem valenceNumber_eq_zero_of_ne {a : Flavor} (hq : a ≠ M.valenceQuark)
+theorem valenceNumber_apply_eq_zero_of_ne {a : Flavor} (hq : a ≠ M.valenceQuark)
     (ha : a ≠ M.valenceAntiquark) : M.valenceNumber a = 0 := by
   simp [valenceNumber_apply, hq, ha]
 
 @[simp]
-theorem valenceNumber_chargeConj : M.chargeConj.valenceNumber = -M.valenceNumber := by
+theorem chargeConj_valenceNumber : M.chargeConj.valenceNumber = -M.valenceNumber := by
   simp [valenceNumber]
 
 /-- **Equality of net valence numbers.** Two mesons have the same net valence numbers exactly
 when they share their valence quark and valence antiquark flavours, or when the valence quark and
 antiquark flavours coincide in both mesons; in particular, the net valence numbers determine the
-valence pair of a flavoured meson. -/
+valence pair of a flavoured meson (`valenceQuark_eq_and_valenceAntiquark_eq_of_valenceNumber_eq`).
+-/
 theorem valenceNumber_eq_iff (M' : PseudoscalarMeson Flavor) :
     M.valenceNumber = M'.valenceNumber ↔
       (M.valenceQuark = M'.valenceQuark ∧ M.valenceAntiquark = M'.valenceAntiquark) ∨
@@ -226,6 +232,17 @@ theorem valenceNumber_eq_iff (M' : PseudoscalarMeson Flavor) :
   rw [Pi.single_add_single_eq_single_add_single (u := (1 : ℤ)) (v := -1) one_ne_zero
     (neg_ne_zero.2 one_ne_zero)]
   simp
+
+/-- The net valence numbers determine the valence pair of a flavoured meson: a flavoured meson
+and any meson with the same net valence numbers share their valence quark and valence antiquark
+flavours. -/
+theorem valenceQuark_eq_and_valenceAntiquark_eq_of_valenceNumber_eq
+    (M' : PseudoscalarMeson Flavor) (h : M.valenceNumber = M'.valenceNumber)
+    (hM : M.valenceQuark ≠ M.valenceAntiquark) :
+    M.valenceQuark = M'.valenceQuark ∧ M.valenceAntiquark = M'.valenceAntiquark := by
+  rcases (M.valenceNumber_eq_iff M').1 h with h' | h'
+  · exact h'
+  · exact absurd h'.1 hM
 
 variable [Fintype Flavor]
 
@@ -288,9 +305,13 @@ instance : Fintype LightFlavor where
   elems := {u, d, s}
   complete x := by cases x <;> simp
 
-/-- `Finset.univ` over the light flavours is the finite set `{u, d, s}`, so that sums over
-`LightFlavor` can be evaluated flavour by flavour. -/
-theorem univ_eq : (Finset.univ : Finset LightFlavor) = {u, d, s} := by decide
+/-- The sum of a function over the light flavours is the sum of its values on `u`, `d` and `s`,
+so that sums over `LightFlavor` can be evaluated flavour by flavour. -/
+@[simp]
+theorem sum_univ {M : Type*} [AddCommMonoid M] (f : LightFlavor → M) :
+    ∑ a, f a = f u + f d + f s := by
+  rw [show (Finset.univ : Finset LightFlavor) = {u, d, s} from rfl]
+  simp [Finset.sum_insert, add_assoc]
 
 /-- The electric charge of the quark of each light flavour, in units of the positron charge. -/
 noncomputable def charge : LightFlavor → ℝ
@@ -374,16 +395,6 @@ theorem isChargeConsistent_kMinus : kMinus.IsChargeConsistent LightFlavor.charge
   rw [kMinus_eq_chargeConj_kPlus, PseudoscalarMeson.isChargeConsistent_chargeConj_iff]
   exact isChargeConsistent_kPlus
 
-/-- The positive pion and the positive kaon have the same valence quark. -/
-theorem kPlus_valenceQuark_eq_piPlus_valenceQuark :
-    kPlus.valenceQuark = piPlus.valenceQuark := (rfl)
-
-/-- **Disjoint valence antiquarks.** The positive kaon's valence antiquark `sbar` is not the
-positive pion's `dbar`. -/
-theorem kPlus_valenceAntiquark_ne_piPlus_valenceAntiquark :
-    kPlus.valenceAntiquark ≠ piPlus.valenceAntiquark := by
-  simp
-
 /-- The positive pion and the positive kaon have different net valence numbers. -/
 theorem kPlus_valenceNumber_ne_piPlus_valenceNumber :
     kPlus.valenceNumber ≠ piPlus.valenceNumber := by
@@ -400,25 +411,25 @@ Both are differences rather than ratios, so that each limit is the vanishing of 
 structure FlavorBreaking where
   /-- The isospin-breaking parameter, the light-quark mass difference `m_d - m_u`. -/
   isospinBreaking : ℝ
-  /-- The strange-breaking parameter, the strange-minus-light mass difference
-  `m_s - (m_u + m_d) / 2`. -/
-  strangeBreaking : ℝ
+  /-- The strange-light mass splitting, the difference `m_s - (m_u + m_d) / 2` between the
+  strange and the average light-quark mass. -/
+  strangeMassSplitting : ℝ
 
 namespace FlavorBreaking
 
 /-- The isospin limit: the light-quark mass difference vanishes. -/
 def IsIsospinLimit (b : FlavorBreaking) : Prop := b.isospinBreaking = 0
 
-/-- The SU(3) flavour limit: both the light-quark and the strange-minus-light mass differences
-vanish. -/
+/-- The SU(3) flavour limit: both the light-quark mass difference and the strange-light mass
+splitting vanish. -/
 def IsSU3Limit (b : FlavorBreaking) : Prop :=
-  b.isospinBreaking = 0 ∧ b.strangeBreaking = 0
+  b.isospinBreaking = 0 ∧ b.strangeMassSplitting = 0
 
 theorem isIsospinLimit_iff (b : FlavorBreaking) :
     b.IsIsospinLimit ↔ b.isospinBreaking = 0 := Iff.rfl
 
 theorem isSU3Limit_iff (b : FlavorBreaking) :
-    b.IsSU3Limit ↔ b.isospinBreaking = 0 ∧ b.strangeBreaking = 0 := Iff.rfl
+    b.IsSU3Limit ↔ b.isospinBreaking = 0 ∧ b.strangeMassSplitting = 0 := Iff.rfl
 
 /-- The SU(3) limit implies the isospin limit. -/
 theorem IsSU3Limit.isIsospinLimit {b : FlavorBreaking} (h : b.IsSU3Limit) : b.IsIsospinLimit :=
@@ -427,15 +438,15 @@ theorem IsSU3Limit.isIsospinLimit {b : FlavorBreaking} (h : b.IsSU3Limit) : b.Is
 /-- The breaking parameters of the light-quark masses `m_u`, `m_d`, `m_s`. -/
 noncomputable def ofMasses (mu md ms : ℝ) : FlavorBreaking where
   isospinBreaking := md - mu
-  strangeBreaking := ms - (mu + md) / 2
+  strangeMassSplitting := ms - (mu + md) / 2
 
 @[simp]
 theorem ofMasses_isospinBreaking (mu md ms : ℝ) :
     (ofMasses mu md ms).isospinBreaking = md - mu := (rfl)
 
 @[simp]
-theorem ofMasses_strangeBreaking (mu md ms : ℝ) :
-    (ofMasses mu md ms).strangeBreaking = ms - (mu + md) / 2 := (rfl)
+theorem ofMasses_strangeMassSplitting (mu md ms : ℝ) :
+    (ofMasses mu md ms).strangeMassSplitting = ms - (mu + md) / 2 := (rfl)
 
 /-- The isospin limit of quark-mass breaking data is the degeneracy of the up and down masses. -/
 theorem isIsospinLimit_ofMasses_iff (mu md ms : ℝ) :
@@ -446,7 +457,7 @@ theorem isIsospinLimit_ofMasses_iff (mu md ms : ℝ) :
 masses. -/
 theorem isSU3Limit_ofMasses_iff (mu md ms : ℝ) :
     (ofMasses mu md ms).IsSU3Limit ↔ mu = md ∧ md = ms := by
-  rw [isSU3Limit_iff, ofMasses_isospinBreaking, ofMasses_strangeBreaking]
+  rw [isSU3Limit_iff, ofMasses_isospinBreaking, ofMasses_strangeMassSplitting]
   constructor
   · rintro ⟨h₁, h₂⟩
     constructor <;> linarith
