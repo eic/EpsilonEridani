@@ -180,6 +180,23 @@ def IsPolarizedDecomposition
     (A : Bilin V) : Prop :=
   ∀ x Q2, A = (G.g1 x Q2 + G.g2 x Q2) • A
 
+/-- `IsPolarizedDecomposition` is only a scaling condition: it holds exactly when `A = 0` or
+`g₁ + g₂ = 1` everywhere. It does not identify the covariant structures of the antisymmetric
+tensor; that is `Polarized.IsG1G2Decomposition`. -/
+lemma isPolarizedDecomposition_iff (G : StructureFunctions) (A : Bilin V) :
+    IsPolarizedDecomposition V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
+  refine ⟨fun h => or_iff_not_imp_left.mpr fun hA x Q2 => ?_, ?_⟩
+  · obtain ⟨v, w, hvw⟩ : ∃ v w, A v w ≠ 0 := by
+      by_contra! h0
+      exact hA (LinearMap.ext₂ h0)
+    have h1 := LinearMap.congr_fun₂ (h x Q2) v w
+    rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul] at h1
+    have h2 : (G.g1 x Q2 + G.g2 x Q2 - 1) * A v w = 0 := by linarith
+    exact sub_eq_zero.mp ((mul_eq_zero.mp h2).resolve_right hvw)
+  · rintro (rfl | h) x Q2
+    · rw [smul_zero]
+    · rw [h x Q2, one_smul]
+
 /-- Endpoint conditions on the polarized structure functions at the elastic point `x = 1`.
 
 These are *not* sum rules: a sum rule is an identity for a moment `∫₀¹ dx xⁿ g(x, Q²)`,
