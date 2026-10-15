@@ -54,8 +54,9 @@ its quadratic Casimir is `LieModule.casimir ℂ _ _ (genM N) (genM N)`.
 * `trace_colorSingletProj`, `trace_colorOctetProj`: the traces `1` and `N² - 1`.
 * `commute_ad_colorSingletProj`, `commute_ad_colorOctetProj`: both channels are invariant under
   the colour action.
-* `casimir_genM_eq`, `casimir_genM_mul_colorSingletProj`, `casimir_genM_mul_colorOctetProj`: the
-  Casimir is `0` on the singlet channel and `N` on the octet channel.
+* `casimir_genM_eq`, `casimir_genM_mul_colorSingletProj`, `casimir_genM_mul_colorOctetProj`,
+  `colorSingletProj_mul_casimir_genM`, `colorOctetProj_mul_casimir_genM`: the Casimir is `0` on
+  the singlet channel and `N` on the octet channel, from either side.
 
 ## References
 
@@ -112,6 +113,11 @@ theorem colorOctetProj_eq : colorOctetProj N = 1 - colorSingletProj N := by
 theorem colorSingletProj_add_colorOctetProj : colorSingletProj N + colorOctetProj N = 1 := by
   rw [colorOctetProj_eq, add_sub_cancel]
 
+/-- The two colour channels exhaust the pair's colour space, in the reversed addition order. -/
+@[simp]
+theorem colorOctetProj_add_colorSingletProj : colorOctetProj N + colorSingletProj N = 1 := by
+  rw [add_comm (colorOctetProj N) (colorSingletProj N), colorSingletProj_add_colorOctetProj]
+
 /-- The singlet projector is idempotent. -/
 theorem isIdempotentElem_colorSingletProj : IsIdempotentElem (colorSingletProj N) := by
   refine LinearMap.ext fun ψ ↦ ?_
@@ -125,6 +131,18 @@ theorem isIdempotentElem_colorSingletProj : IsIdempotentElem (colorSingletProj N
 theorem isIdempotentElem_colorOctetProj : IsIdempotentElem (colorOctetProj N) := by
   rw [colorOctetProj_eq]
   exact isIdempotentElem_colorSingletProj.one_sub
+
+/-- The singlet projector squares to itself: `P₁ P₁ = P₁`. -/
+@[simp]
+theorem colorSingletProj_mul_self :
+    colorSingletProj N * colorSingletProj N = colorSingletProj N :=
+  isIdempotentElem_colorSingletProj.eq
+
+/-- The octet projector squares to itself: `P₈ P₈ = P₈`. -/
+@[simp]
+theorem colorOctetProj_mul_self :
+    colorOctetProj N * colorOctetProj N = colorOctetProj N :=
+  isIdempotentElem_colorOctetProj.eq
 
 /-- The singlet and octet channels are orthogonal. -/
 @[simp]
@@ -261,5 +279,18 @@ theorem casimir_genM_mul_colorSingletProj :
 theorem casimir_genM_mul_colorOctetProj :
     LieModule.casimir ℂ _ _ (genM N) (genM N) * colorOctetProj N = (N : ℂ) • colorOctetProj N := by
   rw [casimir_genM_eq, smul_mul_assoc, isIdempotentElem_colorOctetProj.eq]
+
+/-- The Casimir vanishes on the colour-singlet channel, multiplying from the right. -/
+@[simp]
+theorem colorSingletProj_mul_casimir_genM :
+    colorSingletProj N * LieModule.casimir ℂ _ _ (genM N) (genM N) = 0 := by
+  rw [casimir_genM_eq, mul_smul_comm, colorSingletProj_mul_colorOctetProj, smul_zero]
+
+/-- The Casimir takes the value `N = C_A` on the colour-octet channel, multiplying from the
+right. -/
+@[simp]
+theorem colorOctetProj_mul_casimir_genM :
+    colorOctetProj N * LieModule.casimir ℂ _ _ (genM N) (genM N) = (N : ℂ) • colorOctetProj N := by
+  rw [casimir_genM_eq, mul_smul_comm, colorOctetProj_mul_self]
 
 end EpsilonEridani.QFT.Quarkonium
