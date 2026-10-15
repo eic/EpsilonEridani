@@ -196,10 +196,6 @@ omit [Module ℝ V] in
 @[simp] lemma toDisKinematics_q (K : ExclKinematics V) :
     K.toDisKinematics.q = K.q := rfl
 
-omit [Module ℝ V] in
-lemma toDisKinematics_hq (K : ExclKinematics V) :
-    K.toDisKinematics.hq = K.hqLepton := rfl
-
 end ExclKinematics
 
 end Kinematics
