@@ -41,6 +41,12 @@ theorem gaussianProfile_def (w : ℝ) (y : EuclideanSpace ℝ (Fin 2)) :
     gaussianProfile w y = (2 * π * w ^ 2)⁻¹ * exp (-‖y‖ ^ 2 / (2 * w ^ 2)) :=
   (rfl)
 
+/-- The Gaussian profile of width `0` is identically zero, since `(2 * π * 0 ^ 2)⁻¹ = 0`. -/
+@[simp]
+theorem gaussianProfile_zero : gaussianProfile 0 = 0 := by
+  ext y
+  simp [gaussianProfile]
+
 theorem gaussianProfile_nonneg (w : ℝ) (y : EuclideanSpace ℝ (Fin 2)) :
     0 ≤ gaussianProfile w y := by
   unfold gaussianProfile
@@ -49,8 +55,8 @@ theorem gaussianProfile_nonneg (w : ℝ) (y : EuclideanSpace ℝ (Fin 2)) :
 /-- The Gaussian integral on the plane: `∫ exp (-b ‖y‖²) dy = π / b` for `0 < b`. -/
 theorem integral_exp_neg_mul_sq_norm_plane {b : ℝ} (hb : 0 < b) :
     ∫ y : EuclideanSpace ℝ (Fin 2), exp (-b * ‖y‖ ^ 2) = π / b := by
-  rw [GaussianFourier.integral_rexp_neg_mul_sq_norm hb, finrank_euclideanSpace_fin, Nat.cast_ofNat,
-    div_self two_ne_zero, rpow_one]
+  rw [GaussianFourier.integral_rexp_neg_mul_sq_norm hb]
+  norm_num [finrank_euclideanSpace_fin]
 
 /-- The Gaussian profile is normalised. -/
 @[simp]
@@ -65,10 +71,12 @@ theorem integral_gaussianProfile_eq_one {w : ℝ} (hw : w ≠ 0) :
   rw [this, integral_const_mul, integral_exp_neg_mul_sq_norm_plane (by positivity)]
   field_simp
 
-/-- A Gaussian profile of nonzero width is integrable. -/
-theorem integrable_gaussianProfile {w : ℝ} (hw : w ≠ 0) : Integrable (gaussianProfile w) := by
-  refine Integrable.of_integral_ne_zero ?_
-  simp [hw]
+/-- The Gaussian profile is integrable. -/
+theorem integrable_gaussianProfile (w : ℝ) : Integrable (gaussianProfile w) := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · refine Integrable.of_integral_ne_zero ?_
+    simp [hw]
 
 /-- The overlap of two Gaussian profiles of widths `w` and `w'` is the Gaussian density of width
 `√(w² + w'²)` at the origin, `∫ G_w G_w' = (2π (w² + w'²))⁻¹`. -/

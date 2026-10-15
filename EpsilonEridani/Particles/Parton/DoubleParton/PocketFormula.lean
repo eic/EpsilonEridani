@@ -49,8 +49,9 @@ plane `EuclideanSpace ℝ (Fin 2)`.
 ## Main results
 
 * `dpsCrossSection_eq_mul_orderedDPSIntegral`: for double parton distributions symmetric under
-  exchange of their two partons, `σ_DPS = (m/2) × (ordered integral)`, where `m` is `1` for
-  identical processes and `2` otherwise.
+  exchange of their two partons at fixed transverse separation,
+  `σ_DPS = (m/2) × (ordered integral)`, where `m` is `1` for identical processes and `2`
+  otherwise.
 * `dpsCrossSection_eq_mul_div_effectiveCrossSection`: the pocket formula under the factorisation
   hypothesis.
 * `effectiveCrossSection_le_measureReal`: the Cauchy-Schwarz bound: a normalised profile
@@ -78,7 +79,7 @@ open MeasureTheory Real EpsilonEridani.Gaussian
 
 namespace EpsilonEridani.Particles.Parton.DoubleParton
 
-variable {P T Proc : Type*} [MeasurableSpace P] [MeasurableSpace T]
+variable {P T Proc : Type*} [MeasurableSpace P] [MeasurableSpace T] [DecidableEq Proc]
 
 /-! ### The single- and double-scattering cross sections -/
 
@@ -92,7 +93,6 @@ def orderedDPSIntegral (ν : Measure P) (μ : Measure T) (F F' : P → P → T �
     F z.1.1.1 z.1.2.1 z.2 * F' z.1.1.2 z.1.2.2 z.2 * (σ₁ z.1.1.1 z.1.1.2 * σ₂ z.1.2.1 z.1.2.2)
     ∂((ν.prod ν).prod (ν.prod ν)).prod μ
 
-open scoped Classical in
 /-- The double-parton-scattering cross section for the two processes `A` and `B`, with partonic
 cross sections `σ A` and `σ B`. The final state `{A, B}` is reached by every ordered assignment
 of the processes to the two labelled parton pairs, `(A, B)` and `(B, A)` (which coincide when the
@@ -112,7 +112,6 @@ theorem orderedDPSIntegral_def (ν : Measure P) (μ : Measure T) (F F' : P → P
         ∂((ν.prod ν).prod (ν.prod ν)).prod μ :=
   (rfl)
 
-open scoped Classical in
 theorem dpsCrossSection_def (ν : Measure P) (μ : Measure T)
     (F F' : P → P → T → ℝ) (σ : Proc → P → P → ℝ) (A B : Proc) :
     dpsCrossSection ν μ F F' σ A B =
@@ -125,7 +124,6 @@ processes are named. -/
 theorem dpsCrossSection_comm (ν : Measure P) (μ : Measure T)
     (F F' : P → P → T → ℝ) (σ : Proc → P → P → ℝ) (A B : Proc) :
     dpsCrossSection ν μ F F' σ B A = dpsCrossSection ν μ F F' σ A B := by
-  classical
   rw [dpsCrossSection, dpsCrossSection, Finset.pair_comm]
 
 /-! ### The symmetry factor -/
@@ -134,8 +132,10 @@ section Symmetry
 
 variable {ν : Measure P} {μ : Measure T} [SFinite ν] [SFinite μ]
 
-/-- For double parton distributions symmetric under exchange of their two partons, the ordered
-integral does not depend on which parton pair enters which partonic cross section. -/
+/-- For double parton distributions symmetric under exchange of their two partons at fixed
+transverse separation `y`, the ordered integral does not depend on which parton pair enters which
+partonic cross section. This is the `y`-even case of the exchange symmetry
+`F(p₁, p₂, y) = F(p₂, p₁, -y)` of a general double parton distribution. -/
 theorem orderedDPSIntegral_comm {F F' : P → P → T → ℝ} (hF : ∀ p₁ p₂ y, F p₂ p₁ y = F p₁ p₂ y)
     (hF' : ∀ p₁ p₂ y, F' p₂ p₁ y = F' p₁ p₂ y) (σ₁ σ₂ : P → P → ℝ) :
     orderedDPSIntegral ν μ F F' σ₂ σ₁ = orderedDPSIntegral ν μ F F' σ₁ σ₂ := by
@@ -153,9 +153,9 @@ theorem orderedDPSIntegral_comm {F F' : P → P → T → ℝ} (hF : ∀ p₁ p�
   rw [he_apply, hF, hF']
   ring
 
-open scoped Classical in
 /-- **The factor `m/2`.** For double parton distributions symmetric under exchange of their two
-partons, the double-parton-scattering cross section is `m/2` times the ordered integral, where
+partons at fixed transverse separation `y` (as in `orderedDPSIntegral_comm`), the
+double-parton-scattering cross section is `m/2` times the ordered integral, where
 `m` is `1` for identical processes and `2` otherwise: the number of distinct assignments of the
 processes to the two parton pairs. -/
 theorem dpsCrossSection_eq_mul_orderedDPSIntegral {F F' : P → P → T → ℝ}
@@ -207,7 +207,6 @@ theorem orderedDPSIntegral_eq_of_factorized {F F' : P → P → T → ℝ} {f₁
   rw [hF, hF']
   ring
 
-open scoped Classical in
 /-- **The pocket formula.** If both double parton distributions factorise into single-parton
 densities times a transverse profile, `F(p₁, p₂, y) = f(p₁) f(p₂) G(y)` and
 `F'(p₁', p₂', y) = f'(p₁') f'(p₂') G'(y)`, then `σ_DPS = (m/2) σ_A σ_B / σ_eff`, with
@@ -243,13 +242,13 @@ theorem effectiveCrossSection_nonneg {G G' : T → ℝ} (hG : 0 ≤ᵐ[μ] G) (h
   filter_upwards [hG, hG'] with y hy hy'
   exact mul_nonneg hy hy'
 
-/-- A square-integrable normalised profile has positive effective cross section: its overlap with
-itself is a genuine positive number, not the junk value `0`. -/
+/-- A square-integrable profile with nonzero integral has positive effective cross section: its
+overlap with itself is a genuine positive number, not the junk value `0`. -/
 theorem effectiveCrossSection_self_pos {G : T → ℝ} (hG2 : MemLp G 2 μ)
-    (hnorm : ∫ y, G y ∂μ = 1) : 0 < effectiveCrossSection μ G G := by
+    (hnorm : ∫ y, G y ∂μ ≠ 0) : 0 < effectiveCrossSection μ G G := by
   rw [effectiveCrossSection, inv_pos]
   refine (integral_nonneg fun y => mul_self_nonneg (G y)).lt_of_ne fun h => ?_
-  -- `∫ G² = 0` forces `G = 0` almost everywhere, contradicting `∫ G = 1`.
+  -- `∫ G² = 0` forces `G = 0` almost everywhere, contradicting `∫ G ≠ 0`.
   have hint : Integrable (fun y => G y * G y) μ := by simpa only [sq] using hG2.integrable_sq
   have hG0 : G =ᵐ[μ] 0 := by
     filter_upwards [(integral_eq_zero_iff_of_nonneg (fun y => mul_self_nonneg (G y)) hint).1
@@ -257,6 +256,21 @@ theorem effectiveCrossSection_self_pos {G : T → ℝ} (hG2 : MemLp G 2 μ)
     exact mul_self_eq_zero.1 hy
   rw [integral_congr_ae hG0] at hnorm
   simp at hnorm
+
+/-- The Cauchy-Schwarz inequality on a set of finite measure:
+`(∫_S |G|)² ≤ |S| ∫_S G²` for `G` square-integrable on `S`. -/
+theorem sq_setIntegral_abs_le_measureReal_mul_setIntegral_sq {G : T → ℝ} {S : Set T}
+    (hμS : μ S ≠ ⊤) (hG2 : MemLp G 2 (μ.restrict S)) :
+    (∫ y in S, |G y| ∂μ) ^ 2 ≤ μ.real S * ∫ y in S, G y ^ 2 ∂μ := by
+  have : IsFiniteMeasure (μ.restrict S) := isFiniteMeasure_restrict.2 hμS
+  -- Hölder with `p = q = 2` for `1 ⬝ |G|`: `∫_S |G| ≤ |S|^(1/2) (∫_S G²)^(1/2)`.
+  have hcs := integral_mul_le_Lp_mul_Lq_of_nonneg (μ := μ.restrict S) Real.HolderConjugate.two_two
+    (f := fun _ => (1 : ℝ)) (g := |G|) (ae_of_all _ fun _ => zero_le_one)
+    (ae_of_all _ fun y => abs_nonneg (G y)) (by simpa using memLp_const (1 : ℝ))
+    (by simpa using hG2.abs)
+  rw [← Real.sqrt_le_sqrt_iff (by positivity), Real.sqrt_sq (integral_nonneg fun y => abs_nonneg _),
+    Real.sqrt_mul measureReal_nonneg, Real.sqrt_eq_rpow, Real.sqrt_eq_rpow]
+  simpa [Real.rpow_two] using hcs
 
 /-- **The Cauchy-Schwarz bound on the effective cross section.** A normalised transverse profile
 that vanishes almost everywhere outside a set `S` of finite measure has `σ_eff ≤ |S|`: a profile
@@ -272,12 +286,6 @@ theorem effectiveCrossSection_le_measureReal {G : T → ℝ} {S : Set T} (hμS :
       simpa only [sq] using mt (memLp_two_iff_integrable_sq hint.aestronglyMeasurable).2 hG2
     rw [effectiveCrossSection, integral_undef this, inv_zero]
     exact measureReal_nonneg
-  have : IsFiniteMeasure (μ.restrict S) := isFiniteMeasure_restrict.2 hμS
-  -- Cauchy-Schwarz on `S`: `1 = ∫_S G ≤ ∫_S 1 ⬝ |G| ≤ |S|^(1/2) (∫ G²)^(1/2)`.
-  have hcs := integral_mul_le_Lp_mul_Lq_of_nonneg (μ := μ.restrict S) Real.HolderConjugate.two_two
-    (f := fun _ => (1 : ℝ)) (g := |G|) (ae_of_all _ fun _ => zero_le_one)
-    (ae_of_all _ fun y => abs_nonneg (G y)) (by simpa using memLp_const (1 : ℝ))
-    (by simpa using hG2.abs.restrict S)
   have hGsq : ∀ᵐ y ∂μ, y ∉ S → G y ^ 2 = 0 := by
     filter_upwards [hG] with y hy
     intro h'
@@ -285,15 +293,16 @@ theorem effectiveCrossSection_le_measureReal {G : T → ℝ} {S : Set T} (hμS :
   have hsq : ∫ y in S, G y ^ 2 ∂μ = ∫ y, G y * G y ∂μ := by
     rw [setIntegral_eq_integral_of_ae_compl_eq_zero hGsq]
     simp_rw [sq]
-  simp only [Pi.abs_apply, one_mul, one_pow, integral_const, measureReal_restrict_apply_univ,
-    smul_eq_mul, mul_one, Real.rpow_two, sq_abs, hsq, ← Real.sqrt_eq_rpow] at hcs
+  -- Cauchy-Schwarz on `S`: `1 = ∫_S G ≤ ∫_S |G|` and `(∫_S |G|)² ≤ |S| ∫ G²`.
   have hle : 1 ≤ ∫ y in S, |G y| ∂μ := by
     rw [← hnorm, ← setIntegral_eq_integral_of_ae_compl_eq_zero hG]
     exact integral_mono hint.integrableOn hint.abs.integrableOn fun y => le_abs_self (G y)
   have hkey : 1 ≤ μ.real S * ∫ y, G y * G y ∂μ := by
-    rw [← Real.one_le_sqrt, Real.sqrt_mul measureReal_nonneg]
-    exact hle.trans hcs
-  have hpos : 0 < ∫ y, G y * G y ∂μ := inv_pos.1 (effectiveCrossSection_self_pos hG2 hnorm)
+    rw [← hsq]
+    exact (one_le_pow₀ hle).trans
+      (sq_setIntegral_abs_le_measureReal_mul_setIntegral_sq hμS (hG2.restrict S))
+  have hpos : 0 < ∫ y, G y * G y ∂μ :=
+    inv_pos.1 (effectiveCrossSection_self_pos hG2 (by simp [hnorm]))
   rw [effectiveCrossSection, inv_le_iff_one_le_mul₀ hpos]
   exact hkey
 
@@ -326,7 +335,7 @@ theorem effectiveCrossSection_gaussianProfile_self (w : ℝ) :
     effectiveCrossSection volume (gaussianProfile w) (gaussianProfile w) = 4 * π * w ^ 2 := by
   rcases eq_or_ne w 0 with rfl | hw
   · -- For `w = 0` the profile is identically zero (`(2π · 0²)⁻¹ = 0`), so both sides vanish.
-    simp [effectiveCrossSection, gaussianProfile_def]
+    simp [effectiveCrossSection]
   · rw [effectiveCrossSection_gaussianProfile hw hw]
     ring
 
