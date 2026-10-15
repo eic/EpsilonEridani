@@ -45,6 +45,9 @@ value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
 * `reducedSphericalBesselJ_apply_zero`: the value `1 / (2 l + 1)‼` of the reduced function at the
   origin, and `hasDerivAt_reducedSphericalBesselJ`: its Rayleigh step, the derivative of the
   reduced function of order `l` is `-x` times the one of order `l + 1`.
+* `reducedSphericalBesselJ_add_two`: the three-term recurrence of the reduced functions on the
+  whole line, which is the even factor of `mul_sphericalBesselJ_add_two` and stays informative
+  at the origin.
 * `mul_sphericalBesselJ_add_two`: the three-term recurrence in the order on the whole line, and
   `sphericalBesselJ_add_two`: its form solved for `j_{l + 2}(x)`, for `x ≠ 0`.
 * `mul_deriv_sphericalBesselJ` and `mul_deriv_sphericalBesselJ_succ`: the two derivative
@@ -192,10 +195,13 @@ private lemma reduced_recurrence_zero (x : ℝ) :
   exact congrFun (Continuous.ext_on (dense_compl_singleton 0) (by fun_prop) continuous_const
     fun y hy => (mul_eq_zero.mp (h2 y)).resolve_left hy) x
 
-/-- The three-term recurrence of the reduced functions,
-`x ^ 2 G (l + 2) - (2 l + 3) G (l + 1) + G l = 0`, on the whole line. -/
-private lemma reduced_recurrence (l : ℕ) (x : ℝ) :
-    x ^ 2 * G (l + 2) x - (2 * l + 3) * G (l + 1) x + G l x = 0 := by
+/-- The three-term recurrence of the reduced functions on the whole line:
+`x ^ 2 * reducedSphericalBesselJ (l + 2) x - (2 * l + 3) * reducedSphericalBesselJ (l + 1) x
++ reducedSphericalBesselJ l x = 0`. Unlike `mul_sphericalBesselJ_add_two`, which multiplies it
+by `x ^ (l + 1)`, it does not degenerate to `0 = 0` at the origin. -/
+theorem reducedSphericalBesselJ_add_two (l : ℕ) (x : ℝ) :
+    x ^ 2 * reducedSphericalBesselJ (l + 2) x - (2 * l + 3) * reducedSphericalBesselJ (l + 1) x +
+      reducedSphericalBesselJ l x = 0 := by
   induction l generalizing x with
   | zero => simpa using reduced_recurrence_zero x
   | succ l ih =>
@@ -214,12 +220,13 @@ private lemma reduced_recurrence (l : ℕ) (x : ℝ) :
       fun y hy => (mul_eq_zero.mp (h y)).resolve_left hy) x
 
 /-- The value of the reduced functions at the origin, `1 / (2 l + 1)‼`. -/
+@[simp]
 theorem reducedSphericalBesselJ_apply_zero (l : ℕ) :
     reducedSphericalBesselJ l 0 = (((2 * l + 1)‼ : ℕ) : ℝ)⁻¹ := by
   induction l with
   | zero => simp
   | succ l ih =>
-    have h := reduced_recurrence l 0
+    have h := reducedSphericalBesselJ_add_two l 0
     have hl : 2 * (l + 1) + 1 = 2 * l + 1 + 2 := by ring
     rw [hl, Nat.doubleFactorial_add_two, Nat.cast_mul, mul_inv, ← ih]
     push_cast
@@ -283,7 +290,7 @@ theorem mul_sphericalBesselJ_add_two (l : ℕ) (x : ℝ) :
     x * sphericalBesselJ (l + 2) x =
       (2 * l + 3) * sphericalBesselJ (l + 1) x - x * sphericalBesselJ l x := by
   simp only [sphericalBesselJ]
-  linear_combination x ^ (l + 1) * reduced_recurrence l x
+  linear_combination x ^ (l + 1) * reducedSphericalBesselJ_add_two l x
 
 /-- The three-term recurrence in the order:
 `j_{l + 2}(x) = (2 l + 3) / x * j_{l + 1}(x) - j_l(x)` for `x ≠ 0`. -/
