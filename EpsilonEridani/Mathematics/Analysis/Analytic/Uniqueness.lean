@@ -48,7 +48,8 @@ open Complex Filter Metric Set Topology
 variable {ι F : Type*} [Fintype ι] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
 /-- The inclusion `ℝ → ℂ` maps punctured neighbourhoods to punctured neighbourhoods. -/
-private theorem tendsto_ofReal_nhdsNE (x : ℝ) : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
+theorem Complex.tendsto_ofReal_nhdsNE (x : ℝ) :
+    Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
   continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ hs => ofReal_injective.ne hs
 
 /-- The vanishing statement of `AnalyticAt.eventuallyEq_zero_of_eventuallyEq_zero_ofReal` for a

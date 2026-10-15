@@ -107,6 +107,17 @@ theorem eqOn_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
   filter_upwards [hc.continuousAt.preimage_mem_nhds (hUo.mem_nhds hzU)] with x hx
   exact hfg ⟨hx, by rw [SetLike.mem_coe, euclideanSection_def]; exact LinearMap.mem_range_self _ x⟩
 
+/-- The equal-time projection of a spacelike Minkowski vector is spacelike: replacing the time
+component of `v` by `0` leaves the Minkowski square negative, since the spatial components of a
+spacelike vector cannot all vanish. -/
+theorem causalCharacter_sum_elim_zero_eq_spaceLike_of_spaceLike {v : Vector d}
+    (hv : causalCharacter v = .spaceLike) :
+    causalCharacter (Sum.elim (fun _ => 0) fun i => v (Sum.inr i)) = .spaceLike := by
+  rw [spaceLike_iff_norm_sq_neg] at hv ⊢
+  rw [minkowskiProduct_toCoord] at hv ⊢
+  simp only [Sum.elim_inl, Sum.elim_inr, mul_zero, zero_sub, neg_neg_iff_pos]
+  nlinarith [mul_self_nonneg (v (Sum.inl 0))]
+
 /-- **The Euclidean values determine the spacelike values.** Two functions holomorphic on an
 open preconnected set `U` that contains every spacelike Minkowski separation, and that agree at
 every point of `U` on the Euclidean section, agree at every spacelike Minkowski separation. -/
@@ -119,11 +130,8 @@ theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → 
     f (ofMinkowski v) = g (ofMinkowski v) := by
   -- The equal-time projection of `v` is again spacelike, and lies on the Euclidean section.
   let w : Vector d := Sum.elim (fun _ => 0) fun i => v (Sum.inr i)
-  have hw : causalCharacter w = .spaceLike := by
-    rw [spaceLike_iff_norm_sq_neg] at hv ⊢
-    rw [minkowskiProduct_toCoord] at hv ⊢
-    simp only [w, Sum.elim_inl, Sum.elim_inr, mul_zero, zero_sub, neg_neg_iff_pos]
-    nlinarith [mul_self_nonneg (v (Sum.inl 0))]
+  have hw : causalCharacter w = .spaceLike :=
+    causalCharacter_sum_elim_zero_eq_spaceLike_of_spaceLike hv
   have hwE : ofMinkowski w ∈ euclideanSection d :=
     ofMinkowski_mem_euclideanSection_iff.2 rfl
   exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg (hspace v hv)
