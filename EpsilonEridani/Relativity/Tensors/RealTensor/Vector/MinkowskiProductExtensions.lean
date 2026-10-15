@@ -34,9 +34,9 @@ the reflexive-form results about light-cone bases in
   fractions, such as the minimal momentum transfer of off-forward parton kinematics.
 * For two distinct spatial directions `i ≠ j`, the vectors `ofTimeAndTwoSpatial i j x y z =
   x e₀ + y eᵢ + z eⱼ` span a three-dimensional Minkowski subspace on which the Minkowski product
-  is the diagonal form `x x' - y y' - z z'` (`minkowskiProduct_ofTimeAndTwoSpatial`). This gives
-  explicit configurations, such as light-cone frames, in any spacetime with at least two spatial
-  dimensions.
+  is the diagonal form `x x' - y y' - z z'` (`minkowskiProduct_ofTimeAndTwoSpatial_eq`). This
+  gives explicit configurations, such as light-cone frames, in any spacetime with at least two
+  spatial dimensions.
 -/
 
 public section
@@ -173,7 +173,7 @@ lemma ofTimeAndTwoSpatial_def {d : ℕ} (i j : Fin d) (x y z : ℝ) :
 /-- For distinct spatial directions the Minkowski product of two vectors
 `x e₀ + y eᵢ + z eⱼ` and `x' e₀ + y' eᵢ + z' eⱼ` is `x x' - y y' - z z'`. -/
 @[simp]
-lemma minkowskiProduct_ofTimeAndTwoSpatial {d : ℕ} {i j : Fin d} (hij : i ≠ j)
+lemma minkowskiProduct_ofTimeAndTwoSpatial_eq {d : ℕ} {i j : Fin d} (hij : i ≠ j)
     (x y z x' y' z' : ℝ) :
     ⟪ofTimeAndTwoSpatial i j x y z, ofTimeAndTwoSpatial i j x' y' z'⟫ₘ =
       x * x' - y * y' - z * z' := by
@@ -184,7 +184,8 @@ lemma minkowskiProduct_ofTimeAndTwoSpatial {d : ℕ} {i j : Fin d} (hij : i ≠ 
   ring
 
 @[simp]
-lemma ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z x' y' z' : ℝ) :
+lemma ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d)
+    (x y z x' y' z' : ℝ) :
     ofTimeAndTwoSpatial i j x y z - ofTimeAndTwoSpatial i j x' y' z' =
       ofTimeAndTwoSpatial i j (x - x') (y - y') (z - z') := by
   simp only [ofTimeAndTwoSpatial_def, sub_smul]
