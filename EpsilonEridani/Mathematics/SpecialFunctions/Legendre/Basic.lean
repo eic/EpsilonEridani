@@ -280,8 +280,8 @@ open MeasureTheory intervalIntegral
 with respect to Lebesgue measure. -/
 theorem integral_legendre_mul_legendre_of_ne {m n : ℕ} (h : m ≠ n) :
     ∫ x in (-1 : ℝ)..1, (legendre m).eval x * (legendre n).eval x = 0 := by
-  have hs := integral_derivative_mul_derivative_mul_eq_integral_mul_derivative_mul_derivative
-    (1 - X ^ 2) (legendre m) (legendre n) (-1) 1 (by norm_num) (by norm_num)
+  have hs := integral_derivative_mul_derivative_mul_comm (1 - X ^ 2) (legendre m) (legendre n)
+    (a := -1) (b := 1) (by norm_num) (by norm_num)
   have e : ∀ (k : ℕ) (p q : ℝ[X]) (x : ℝ), eval x (-((k : ℝ[X]) * (k + 1)) * p * q) =
       -((k : ℝ) * (k + 1)) * (eval x p * eval x q) := fun k p q x => by
     simp only [eval_mul, eval_neg, eval_natCast, eval_add, eval_one]
