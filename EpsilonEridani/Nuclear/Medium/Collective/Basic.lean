@@ -351,7 +351,7 @@ theorem integral_norm_qVector_sq (n : ℤ) :
     rw [integral_fourier_mul_conj_fourier (hind (Finset.ne_of_mem_erase hk).symm) (hφ j)
       (hφ k) n, Complex.mul_conj']
   simp only [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j),
-    sum_univ_sum_erase_const']
+    sum_sum_erase_const', Finset.card_univ]
   simp
 
 /-- For `M ≥ 1` pairwise independent particles with distribution `μ`, the expectation of
