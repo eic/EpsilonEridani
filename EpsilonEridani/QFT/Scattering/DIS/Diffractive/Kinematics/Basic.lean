@@ -27,7 +27,7 @@ and proves, with no mass or high-energy approximation,
 
 * `x = ξ β` whenever `Δ·q ≠ 0` (`xBj_eq_xi_mul_beta`), which is why `β` is a momentum fraction
   of the exchange;
-* `β = Q² / (Q² + M_X² - t)` (`beta_eq_Q2_div`), equivalently
+* `β = Q² / (Q² + M_X² - t)` (`beta_eq_Q2_div`), equivalently, for `Q² ≠ 0`,
   `M_X² = Q² (1/β - 1) + t` (`MX2_eq_Q2_mul_inv_beta_sub_one_add_tMom`);
 * `ξ = (Q² + M_X² - t) / (Q² + W² - M²)` with `M² = P²` (`xi_eq_Q2_add_MX2_sub_tMom_div`), so
   that `ξ` is fixed by the measured mass of the diffractive system and the inclusive kinematics;
@@ -179,25 +179,17 @@ end toExclKinematics
 
 omit [Module ℝ V] in
 /-- The exclusive transfer `P' - P` of the bridged event is `-Δ`. -/
+@[simp]
 lemma delta_toExclKinematics (K : DisKinematics V) (phiL phiH : ℝ) :
     (toExclKinematics K phiL phiH).delta = -deltaTarget K := by
   rw [ExclKinematics.delta, toExclKinematics_pPrime, toExclKinematics_p, deltaTarget, neg_sub]
 
 /-- The diffractive `t` is the exclusive `t` of the bridged event, `t = (P' - P)²`. -/
+@[simp]
 lemma tMom_toExclKinematics (g : Bilin V) (K : DisKinematics V) (phiL phiH : ℝ) :
     (toExclKinematics K phiL phiH).tMom g = tMom g K := by
   simp only [ExclKinematics.tMom, delta_toExclKinematics, map_neg, LinearMap.neg_apply, neg_neg,
     tMom]
-
-/-- `t = M² - 2 P·P' + M_Y²` with `M² = P²`. -/
-lemma tMom_eq_p_sq_sub_two_mul_apply_p_pPrime_add_MY2 (g : Bilin V) (hg : g.IsSymm)
-    (K : DisKinematics V) :
-    tMom g K = g K.p K.p - 2 * g K.p K.pPrime + MY2 g K := by
-  have h := hg.polarization K.p (-K.pPrime)
-  rw [← sub_eq_add_neg] at h
-  simp only [map_neg, LinearMap.neg_apply, neg_neg] at h
-  rw [tMom, deltaTarget, MY2]
-  linarith
 
 /-- Expansion of the diffractive mass: `M_X² = 2 Δ·q - Q² + t`. -/
 lemma MX2_eq_two_mul_apply_deltaTarget_q_sub_Q2_add_tMom (g : Bilin V) (hg : g.IsSymm)
@@ -224,6 +216,13 @@ lemma MY2_eq_p_sq_sub_two_mul_apply_p_deltaTarget_add_tMom (g : Bilin V) (hg : g
   simp only [map_neg, LinearMap.neg_apply, neg_neg] at h
   rw [MY2, tMom, deltaTarget]
   linarith
+
+/-- `t = M² - 2 P·P' + M_Y²` with `M² = P²`. -/
+lemma tMom_eq_p_sq_sub_two_mul_apply_p_pPrime_add_MY2 (g : Bilin V) (hg : g.IsSymm)
+    (K : DisKinematics V) :
+    tMom g K = g K.p K.p - 2 * g K.p K.pPrime + MY2 g K := by
+  rw [MY2_eq_p_sq_sub_two_mul_apply_p_deltaTarget_add_tMom g hg K, apply_deltaTarget_right]
+  ring
 
 /-- **`x = ξ β`.** The Bjorken variable is the product of the momentum fraction `ξ` lost by
 the target and the fraction `β` of that momentum carried by the struck parton. The only
