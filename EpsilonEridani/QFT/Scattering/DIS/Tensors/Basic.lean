@@ -143,15 +143,6 @@ lemma isIsometry_id (g : Bilin V) : IsIsometry g (LinearMap.id) := by
   intro v w
   simp
 
-/-- A bilinear form invariant under a linear map `f` has no component between a vector `v`
-fixed by `f` and a vector `u` reversed by `f`. -/
-lemma apply_eq_zero_of_apply_eq_self_of_apply_eq_neg {W : Bilin V} {f : V →ₗ[ℝ] V}
-    (hf : ∀ v w : V, W (f v) (f w) = W v w) {v u : V} (hfv : f v = v) (hfu : f u = -u) :
-    W v u = 0 := by
-  have h := hf v u
-  rw [hfv, hfu, map_neg] at h
-  linarith
-
 /-- Reflection of `V` in the `g`-orthogonal hyperplane to `u`, `v ↦ v - 2 (g u v / g u u) u`.
 The definition is unconditional; it is a `g`-isometry when `g` is symmetric and
 `g u u ≠ 0` (`reflect_isometry`), and degenerates to the identity when `g u u = 0`, since
