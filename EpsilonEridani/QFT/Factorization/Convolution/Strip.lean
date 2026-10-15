@@ -70,6 +70,11 @@ variable {f : ℝ → ℝ}
 ## The weighted spaces
 -/
 
+/-- The real power weight `x ^ σ` is continuous on `(0, 1]`. -/
+theorem continuousOn_rpow_const_Ioc {σ : ℝ} :
+    ContinuousOn (fun x : ℝ => x ^ σ) (Ioc 0 1) :=
+  continuousOn_id.rpow_const fun _ hx => Or.inl hx.1.ne'
+
 /-- Dividing out a power weight: if `x ^ c * f x` is integrable on a measurable `s ⊆ (0, ∞)`, then
 `f` is a.e.-strongly-measurable on `s`. -/
 theorem aestronglyMeasurable_of_integrableOn_cpow_mul {s : Set ℝ} (hs : MeasurableSet s)
@@ -120,14 +125,12 @@ theorem mellinDisConvergent_iff_integrableOn_rpow_mul {N : ℂ} :
     rw [aestronglyMeasurable_indicator_iff measurableSet_Ioc,
       Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self]
     exact Complex.continuous_ofReal.comp_aestronglyMeasurable hf
-  have hw : ContinuousOn (fun x : ℝ => x ^ (N.re - 1)) (Ioc 0 1) :=
-    continuousOn_id.rpow_const fun x hx => Or.inl hx.1.ne'
   rw [mellinDisConvergent_def]
   refine (integrableOn_congr_fun (fun x hx => ?_) measurableSet_Ioc).trans
     ((mellin_convergent_iff_norm (s := N) Ioc_subset_Ioi_self measurableSet_Ioc hg).trans
       ((integrableOn_congr_fun (g := fun x => ‖x ^ (N.re - 1) * f x‖) (fun x hx => ?_)
         measurableSet_Ioc).trans (integrable_norm_iff
-          ((hw.aestronglyMeasurable measurableSet_Ioc).mul hf))))
+          ((continuousOn_rpow_const_Ioc.aestronglyMeasurable measurableSet_Ioc).mul hf))))
   · rw [indicator_of_mem hx, smul_eq_mul]
   · dsimp only
     rw [indicator_of_mem hx, Complex.norm_real, norm_mul,
@@ -147,10 +150,9 @@ theorem mellinDisConvergent_iff_re {N : ℂ} :
 theorem MellinDisConvergent.of_re_le_re {N M : ℂ} (h : MellinDisConvergent f N)
     (hNM : N.re ≤ M.re) : MellinDisConvergent f M := by
   have hf := h.aestronglyMeasurable
-  have hw : ContinuousOn (fun x : ℝ => x ^ (M.re - 1)) (Ioc 0 1) :=
-    continuousOn_id.rpow_const fun x hx => Or.inl hx.1.ne'
   rw [mellinDisConvergent_iff_integrableOn_rpow_mul] at h ⊢
-  refine Integrable.mono' h.norm ((hw.aestronglyMeasurable measurableSet_Ioc).mul hf) ?_
+  refine Integrable.mono' h.norm
+    ((continuousOn_rpow_const_Ioc.aestronglyMeasurable measurableSet_Ioc).mul hf) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
   rw [norm_mul, norm_mul, Real.norm_of_nonneg (Real.rpow_pos_of_pos hx.1 _).le,
     Real.norm_of_nonneg (Real.rpow_pos_of_pos hx.1 _).le]
@@ -256,7 +258,9 @@ theorem mellinDisConvergent_of_isBigO_rpow (hf : LocallyIntegrableOn f (Ioc 0 1)
 theorem differentiableAt_mellinDis (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
     (hb : f =O[𝓝[>] 0] fun x => x ^ (-b)) {N : ℂ} (hN : b < N.re) :
     DifferentiableAt ℂ (mellinDis f) N := by
-  rw [show mellinDis f = _ from funext (mellinDis_eq_mellin_indicator f)]
+  have h : mellinDis f = mellin ((Ioc 0 1).indicator fun x => (f x : ℂ)) :=
+    funext (mellinDis_eq_mellin_indicator f)
+  rw [h]
   exact mellin_differentiableAt_of_isBigO_rpow (a := N.re + 1)
     (locallyIntegrableOn_Ioi_indicator_Ioc hf)
     ((indicator_Ioc_eventuallyEq_zero_atTop 0 1 _).trans_isBigO (isBigO_zero _ _))
