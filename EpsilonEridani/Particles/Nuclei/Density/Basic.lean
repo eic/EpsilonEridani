@@ -56,6 +56,8 @@ distance `‖x‖` from the origin of `Space`, and proves each normalisable:
   their normalisation parameter.
 * `EpsilonEridani.integrable_woodsSaxonDensity`: the Woods–Saxon profile is integrable
   over `ℝ³` for every positive surface thickness.
+* `EpsilonEridani.integral_woodsSaxonDensity_woodsSaxonCentralDensity`: for `0 < a`, the
+  Woods–Saxon profile with central density `woodsSaxonCentralDensity m R a` integrates to `m`.
 * `EpsilonEridani.existsUnique_integral_woodsSaxonDensity_eq`: for `0 < a`, exactly one
   central density normalises the Woods–Saxon profile to a given value, and
   `EpsilonEridani.woodsSaxonCentralDensity_pos` shows it is positive when the value is.
@@ -139,6 +141,7 @@ lemma hardSphereDensity_nonneg {m R : ℝ} (hm : 0 ≤ m) (hR : 0 ≤ R) (r : �
   exact indicator_nonneg (fun _ _ => by positivity) r
 
 /-- The hard-sphere profile of radius `R > 0` integrates to `m` over space. -/
+@[simp]
 theorem integral_hardSphereDensity (m : ℝ) {R : ℝ} (hR : 0 < R) :
     ∫ x : Space, hardSphereDensity m R ‖x‖ = m := by
   have h : (fun x : Space => hardSphereDensity m R ‖x‖) =
@@ -165,6 +168,7 @@ lemma gaussianDensity_nonneg {m : ℝ} (hm : 0 ≤ m) (R r : ℝ) : 0 ≤ gaussi
   positivity
 
 /-- The Gaussian profile of range `R ≠ 0` integrates to `m` over space. -/
+@[simp]
 theorem integral_gaussianDensity (m : ℝ) {R : ℝ} (hR : R ≠ 0) :
     ∫ x : Space, gaussianDensity m R ‖x‖ = m := by
   have hR2 : 0 < (R ^ 2)⁻¹ := by positivity
@@ -293,10 +297,17 @@ theorem integral_woodsSaxonDensity_eq_iff {ρ₀ m R a : ℝ} (ha : 0 < a) :
   rw [integral_woodsSaxonDensity, woodsSaxonCentralDensity_def,
     eq_div_iff (woodsSaxonIntegral_pos R ha).ne']
 
+/-- For `0 < a`, the Woods–Saxon profile with central density `woodsSaxonCentralDensity m R a`
+integrates to `m`: `woodsSaxonCentralDensity` normalises the profile. -/
+@[simp]
+theorem integral_woodsSaxonDensity_woodsSaxonCentralDensity (m R : ℝ) {a : ℝ} (ha : 0 < a) :
+    ∫ x : Space, woodsSaxonDensity (woodsSaxonCentralDensity m R a) R a ‖x‖ = m :=
+  (integral_woodsSaxonDensity_eq_iff ha).2 rfl
+
 /-- For `0 < a`, exactly one central density normalises the Woods–Saxon profile to `m`. -/
 theorem existsUnique_integral_woodsSaxonDensity_eq (m R : ℝ) {a : ℝ} (ha : 0 < a) :
     ∃! ρ₀ : ℝ, ∫ x : Space, woodsSaxonDensity ρ₀ R a ‖x‖ = m :=
-  ⟨woodsSaxonCentralDensity m R a, (integral_woodsSaxonDensity_eq_iff ha).2 rfl,
+  ⟨woodsSaxonCentralDensity m R a, integral_woodsSaxonDensity_woodsSaxonCentralDensity m R ha,
     fun _ h => (integral_woodsSaxonDensity_eq_iff ha).1 h⟩
 
 /-! ### The bundled profiles of a nucleus -/
@@ -323,7 +334,7 @@ def woodsSaxon (R : ℝ) {a : ℝ} (ha : 0 < a) : DensityProfile nuc where
   density x := woodsSaxonDensity (woodsSaxonCentralDensity nuc.massNumber R a) R a ‖x‖
   density_nonneg x := woodsSaxonDensity_nonneg
     (woodsSaxonCentralDensity_pos (by exact_mod_cast nuc.massNumber_pos) R ha).le _ _ _
-  integral_density := (integral_woodsSaxonDensity_eq_iff ha).2 rfl
+  integral_density := integral_woodsSaxonDensity_woodsSaxonCentralDensity _ R ha
 
 @[simp] lemma hardSphere_density {R : ℝ} (hR : 0 < R) (x : Space) :
     (hardSphere nuc hR).density x = hardSphereDensity nuc.massNumber R ‖x‖ := (rfl)
