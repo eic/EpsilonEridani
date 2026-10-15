@@ -92,8 +92,8 @@ noncomputable def volumeForm : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ :=
 column `j`. -/
 theorem volumeForm_apply (v : Fin 4 → Vector 3) :
     volumeForm v = -Matrix.det (Matrix.of fun i j => v j (finSumFinEquiv.symm i)) := by
-  rw [volumeForm, AlternatingMap.neg_apply, Module.Basis.det_apply]
-  congr 2
+  rw [volumeForm, AlternatingMap.neg_apply, Module.Basis.det_apply, neg_inj]
+  rfl
 
 /-- The Laplace expansion of the volume form along the time components: `ε(x, y, z, w)` is minus
 the alternating sum of the time components times the `3 × 3` determinants of the spatial
@@ -137,6 +137,10 @@ theorem volumeForm_basisFin4_comp (g : Fin 4 → Fin 4) :
     volumeForm (fun i => basisFin4 (g i)) = -(leviCivitaSymbol g : ℝ) := by
   rw [volumeForm, AlternatingMap.neg_apply, Module.Basis.det_apply, neg_inj,
     leviCivitaSymbol_eq_det]
+  -- `leviCivitaSymbol_eq_det` writes the determinant of a bare `Fin 4 → Fin 4 → ℤ` function,
+  -- which `rw` cannot match against the `Matrix`-typed argument of `Int.cast_det` (the `Matrix`
+  -- type synonym is not unfolded at `rw`'s transparency); the `change` only inserts the
+  -- definitionally equal `Matrix.of` wrapper, exposing the matrix to the cast push.
   change _ = ((Matrix.of fun i j => ((KroneckerDelta.kroneckerDelta (g i) j : ℕ) : ℤ)).det : ℝ)
   rw [Int.cast_det, ← Matrix.det_transpose]
   congr 1
