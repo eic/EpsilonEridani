@@ -240,11 +240,23 @@ lemma orderedRegion_subset_Icc (T : ℝ) (n : ℕ) (t : ℝ) :
     orderedRegion T n t ⊆ Set.Icc (fun _ => t) (fun _ => T) :=
   fun _ hp => ⟨fun i => (hp.2 i).1.le, fun i => (hp.2 i).2.le⟩
 
+end OrderedSimplex
+end EpsilonEridani
+
+open MeasureTheory EpsilonEridani.OrderedSimplex in
 /-- A function continuous on all of `ℝ ^ n` is integrable on the ordered region: the region is
 bounded, sitting inside the compact cube `[t, T] ^ n`. -/
 lemma Continuous.integrableOn_orderedRegion {n : ℕ} {g : (Fin n → ℝ) → ℝ} (hg : Continuous g)
     (T t : ℝ) : IntegrableOn g (orderedRegion T n t) :=
   (hg.continuousOn.integrableOn_compact isCompact_Icc).mono_set (orderedRegion_subset_Icc T n t)
+
+namespace EpsilonEridani
+namespace OrderedSimplex
+
+open scoped Nat
+open MeasureTheory intervalIntegral
+
+variable {f : ℝ → ℝ}
 
 /-- For continuous `f`, the integrand `p ↦ f (p 0) * ⋯ * f (p (n - 1))` is integrable on the
 ordered region, which is bounded. -/
