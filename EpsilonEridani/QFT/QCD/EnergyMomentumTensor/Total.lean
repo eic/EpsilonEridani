@@ -35,8 +35,9 @@ strengths is as in `EpsilonEridani.QFT.QCD.EnergyMomentumTensor.GluonPart`.
 * `trace_total`: `T^μ{}_μ = Re (ψ‾ i γ^μ D_μ ψ) + (D / 4 - 1) F^a_{αβ} F^{a αβ}` in spacetime
   dimension `D`.
 * `trace_total_of_diracEq`: in four dimensions and on solutions of the Dirac equation
-  `i γ^μ D_μ ψ = M ψ`, the trace is the classical value `Re (ψ‾ M ψ) = Σ_q m_q ψ‾_q ψ_q`:
-  classically only the quark masses break tracelessness.
+  `i γ^μ D_μ ψ = M ψ`, the trace is the classical value `Re (ψ‾ M ψ)`, which is
+  `Σ_q m_q ψ‾_q ψ_q` for a mass matrix diagonal in flavour: classically only the quark masses
+  break tracelessness.
 
 ## References
 
