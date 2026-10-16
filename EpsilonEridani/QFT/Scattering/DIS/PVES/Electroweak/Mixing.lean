@@ -35,7 +35,8 @@ a massless photon, and as the angle whose tangent is the ratio `g'/g` of the gau
 * `mul_sin_eq_mul_cos_iff_eq_weakMixingAngle`: for `g ≠ 0` and `θ ∈ (-π/2, π/2)`,
   `g sin θ = g' cos θ` if and only if `θ = arctan (g'/g)`.
 * `rotation_conj_neutralMassMatrix_eq_diagonal_iff`: the two characterisations combined.
-* `tan_weakMixingAngle`: `tan θ_W = g'/g`; `sin_weakMixingAngle`, `cos_weakMixingAngle`: for
+* `tan_weakMixingAngle`: `tan θ_W = g'/g`; `mul_sin_weakMixingAngle_eq_mul_cos`: for `g ≠ 0`,
+  `g sin θ_W = g' cos θ_W`; `sin_weakMixingAngle`, `cos_weakMixingAngle`: for
   `g > 0`, `sin θ_W = g'/√(g² + g'²)` and `cos θ_W = g/√(g² + g'²)`.
 * `weakMixingConsistency_iff_sin2ThetaW_eq_sin_sq_weakMixingAngle`: for `gSU2 ≠ 0`, the
   tree-level weak-mixing contract `weakMixingConsistency` of `Parameters` says exactly that
@@ -84,10 +85,11 @@ theorem neutralMassMatrix_eq_smul_fin_two (g g' v : ℝ) :
 
 /-- The neutral mass matrix applied to a field configuration `w = (w₀, w₁)` in the basis
 `(W³, B)`. -/
+@[simp]
 theorem neutralMassMatrix_mulVec (g g' v : ℝ) (w : Fin 2 → ℝ) :
     neutralMassMatrix g g' v *ᵥ w = ((v ^ 2 / 4) * (g * w 0 - g' * w 1)) • ![g, -g'] := by
-  ext i
-  fin_cases i <;> simp [neutralMassMatrix_def, mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+  simp only [neutralMassMatrix_def, smul_mulVec, vecMulVec_mulVec, op_smul_eq_smul, smul_smul,
+    vec2_dotProduct, cons_val_zero, cons_val_one, neg_mul, ← sub_eq_add_neg]
 
 /-- **Exactly one massless neutral combination.** For a nonzero vacuum expectation value and
 couplings not both zero, a combination of `W³` and `B` is massless if and only if it is a
@@ -106,13 +108,7 @@ theorem neutralMassMatrix_mulVec_eq_zero_iff {g g' v : ℝ} (hv : v ≠ 0) (hg :
   · intro h
     refine ⟨(g' * w 0 + g * w 1) / (g ^ 2 + g' ^ 2), ?_⟩
     ext i
-    fin_cases i
-    · simp only [Fin.zero_eta, Pi.smul_apply, cons_val_zero, smul_eq_mul]
-      field_simp
-      linear_combination g * h
-    · simp only [Fin.mk_one, Pi.smul_apply, cons_val_one, cons_val_zero, smul_eq_mul]
-      field_simp
-      linear_combination -g' * h
+    fin_cases i <;> simp <;> field_simp <;> [linear_combination g * h; linear_combination -g' * h]
   · rintro ⟨c, rfl⟩
     simp only [Pi.smul_apply, cons_val_zero, cons_val_one, smul_eq_mul]
     ring
@@ -132,11 +128,7 @@ theorem rotation_conj_neutralMassMatrix (g g' v θ : ℝ) :
       ![g * cos θ + g' * sin θ, g * sin θ - g' * cos θ] := by
     rw [rotation_mulVec]
     ext i
-    fin_cases i
-    · simp only [Fin.zero_eta, cons_val_zero, cons_val_one]
-      ring
-    · simp only [Fin.mk_one, cons_val_zero, cons_val_one]
-      ring
+    fin_cases i <;> simp <;> ring
   simp only [neutralMassMatrix_def, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_vecMulVec,
     Matrix.vecMulVec_mul, Matrix.vecMul_transpose, hw]
 
@@ -205,6 +197,15 @@ theorem weakMixingAngle_mem_Ioo (g g' : ℝ) :
 theorem tan_weakMixingAngle (g g' : ℝ) : tan (weakMixingAngle g g') = g' / g := by
   rw [weakMixingAngle_def, tan_arctan]
 
+/-- `g sin θ_W = g' cos θ_W` for a nonzero `SU(2)` coupling: at the weak mixing angle the second
+rotated field, the photon, is massless. -/
+theorem mul_sin_weakMixingAngle_eq_mul_cos {g : ℝ} (hg : g ≠ 0) (g' : ℝ) :
+    g * sin (weakMixingAngle g g') = g' * cos (weakMixingAngle g g') := by
+  have ht := tan_weakMixingAngle g g'
+  rw [tan_eq_sin_div_cos,
+    div_eq_div_iff (cos_pos_of_mem_Ioo (weakMixingAngle_mem_Ioo g g')).ne' hg] at ht
+  linear_combination ht
+
 /-- `cos² θ_W = g²/(g² + g'²)` for a nonzero `SU(2)` coupling. -/
 theorem cos_sq_weakMixingAngle {g : ℝ} (hg : g ≠ 0) (g' : ℝ) :
     cos (weakMixingAngle g g') ^ 2 = g ^ 2 / (g ^ 2 + g' ^ 2) := by
@@ -220,17 +221,15 @@ theorem sin_sq_weakMixingAngle {g : ℝ} (hg : g ≠ 0) (g' : ℝ) :
 /-- `cos θ_W = g/√(g² + g'²)` for a positive `SU(2)` coupling. -/
 theorem cos_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
     cos (weakMixingAngle g g') = g / √(g ^ 2 + g' ^ 2) := by
-  rw [← sqrt_sq (cos_pos_of_mem_Ioo (weakMixingAngle_mem_Ioo g g')).le,
-    cos_sq_weakMixingAngle hg.ne', sqrt_div (sq_nonneg g), sqrt_sq hg.le]
+  have h : 1 + (g' / g) ^ 2 = (g ^ 2 + g' ^ 2) / g ^ 2 := by field_simp
+  rw [weakMixingAngle_def, cos_arctan, h, sqrt_div' _ (sq_nonneg g), sqrt_sq hg.le, one_div_div]
 
 /-- `sin θ_W = g'/√(g² + g'²)` for a positive `SU(2)` coupling. -/
 theorem sin_weakMixingAngle {g : ℝ} (hg : 0 < g) (g' : ℝ) :
     sin (weakMixingAngle g g') = g' / √(g ^ 2 + g' ^ 2) := by
-  have hs : 0 < √(g ^ 2 + g' ^ 2) := by positivity
-  have ht := tan_weakMixingAngle g g'
-  rw [tan_eq_sin_div_cos, cos_weakMixingAngle hg] at ht
-  field_simp at ht ⊢
-  linear_combination ht
+  have h : 1 + (g' / g) ^ 2 = (g ^ 2 + g' ^ 2) / g ^ 2 := by field_simp
+  rw [weakMixingAngle_def, sin_arctan, h, sqrt_div' _ (sq_nonneg g), sqrt_sq hg.le,
+    div_div_div_cancel_right₀ hg.ne']
 
 /-- **From the couplings to the angle.** For `g ≠ 0` and `θ ∈ (-π/2, π/2)`, the relation
 `g sin θ = g' cos θ` holds exactly at `θ = θ_W = arctan (g'/g)`. -/
@@ -244,10 +243,7 @@ theorem mul_sin_eq_mul_cos_iff_eq_weakMixingAngle {g g' θ : ℝ} (hg : g ≠ 0)
     rw [tan_eq_sin_div_cos, div_eq_div_iff (cos_pos_of_mem_Ioo hθ).ne' hg]
     linear_combination h
   · rintro rfl
-    have ht := tan_weakMixingAngle g g'
-    rw [tan_eq_sin_div_cos,
-      div_eq_div_iff (cos_pos_of_mem_Ioo (weakMixingAngle_mem_Ioo g g')).ne' hg] at ht
-    linear_combination ht
+    exact mul_sin_weakMixingAngle_eq_mul_cos hg g'
 
 /-- **The two definitions of the weak mixing angle agree.** For a nonzero vacuum expectation
 value, a nonzero `SU(2)` coupling and `θ ∈ (-π/2, π/2)`, the rotation by `θ` diagonalises the
@@ -270,7 +266,7 @@ theorem rotation_weakMixingAngle_conj_neutralMassMatrix_eq_diagonal {g : ℝ} (h
         (rotation (weakMixingAngle g g'))ᵀ =
       diagonal ![v ^ 2 * (g ^ 2 + g' ^ 2) / 4, 0] :=
   rotation_conj_neutralMassMatrix_eq_diagonal_of_mul_sin_eq_mul_cos
-    ((mul_sin_eq_mul_cos_iff_eq_weakMixingAngle hg (weakMixingAngle_mem_Ioo g g')).mpr rfl)
+    (mul_sin_weakMixingAngle_eq_mul_cos hg g')
 
 /-- **The tree-level weak-mixing contract is `sin2ThetaW = sin² θ_W`.** For a parameter record
 with nonzero `SU(2)` coupling, `weakMixingConsistency` holds if and only if its `sin2ThetaW` is

@@ -6,6 +6,7 @@ Authors: The EpsilonEridani contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
@@ -15,7 +16,10 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 The real `2 × 2` matrix `Matrix.rotation θ = !![cos θ, -sin θ; sin θ, cos θ]` of the
 counterclockwise rotation of `ℝ²` by the angle `θ`.
 
-Mathlib has no explicit rotation matrix (the `GeneralLinearGroup` files list it as a TODO). It is
+Mathlib has the conformal matrix `Matrix.planeConformalMatrix a b = !![a, -b; b, a]` in `GL₂`,
+which `Complex.toMatrix_rotation` identifies with multiplication by a unit complex number, but no
+rotation matrix parametrised by the angle (the `GeneralLinearGroup` file lists one as a TODO);
+`Matrix.rotation θ` is its case `a = cos θ`, `b = sin θ`. The angle parametrisation is
 needed whenever a physical model mixes two real fields by an angle: the neutral electroweak gauge
 fields `(W³, B)` are rotated into `(Z, A)` by the weak mixing angle, and the mass matrix is
 diagonalised by conjugating with this rotation. The results here are the facts such a
@@ -24,6 +28,8 @@ membership in the special orthogonal group.
 
 ## Main results
 
+* `Matrix.rotation_eq_planeConformalMatrix`: the rotation is Mathlib's
+  `planeConformalMatrix (cos θ) (sin θ)`.
 * `Matrix.rotation_mulVec`: the rotation applied to a vector `w`, componentwise.
 * `Matrix.rotation_zero`, `Matrix.rotation_mul_rotation`: the rotation by `0` is the identity,
   and composing rotations adds their angles.
@@ -47,6 +53,13 @@ noncomputable def rotation (θ : ℝ) : _root_.Matrix (Fin 2) (Fin 2) ℝ :=
 theorem rotation_def (θ : ℝ) : rotation θ = !![cos θ, -sin θ; sin θ, cos θ] := by
   rw [rotation]
 
+/-- The rotation by `θ` is the underlying matrix of Mathlib's conformal matrix
+`planeConformalMatrix (cos θ) (sin θ)`, an element of `GL₂(ℝ)`. -/
+theorem rotation_eq_planeConformalMatrix (θ : ℝ) :
+    rotation θ = (planeConformalMatrix (cos θ) (sin θ)
+      (by rw [cos_sq_add_sin_sq]; exact one_ne_zero) : _root_.Matrix (Fin 2) (Fin 2) ℝ) := by
+  rw [rotation_def, val_planeConformalMatrix]
+
 /-- The rotation by `θ` applied to a vector `w = (w₀, w₁)`. -/
 @[simp]
 theorem rotation_mulVec (θ : ℝ) (w : Fin 2 → ℝ) :
@@ -69,6 +82,7 @@ theorem rotation_mul_rotation (θ φ : ℝ) : rotation θ * rotation φ = rotati
     simp [rotation_def, mul_apply, Fin.sum_univ_two, cos_add, sin_add] <;> ring
 
 /-- The transpose of the rotation by `θ` is the rotation by `-θ`, its inverse. -/
+@[simp]
 theorem rotation_transpose (θ : ℝ) : (rotation θ)ᵀ = rotation (-θ) := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [rotation_def, cos_neg, sin_neg]
