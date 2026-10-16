@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import EpsilonEridani.Mathematics.Analysis.Analytic.DSlope
 public import EpsilonEridani.Mathematics.Analysis.Calculus.Deriv.EvenFunction
+public import EpsilonEridani.Mathematics.Analysis.Normed.Module.SMulEqZero
 public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Sinc
 
 /-!
@@ -173,12 +174,6 @@ theorem hasDerivAt_reducedSphericalBesselJ (l : ℕ) (x : ℝ) :
   rw [this, h]
   exact (differentiable_reducedSphericalBesselJ l x).hasDerivAt
 
-/-- A continuous function `f` with `x * f x = 0` everywhere vanishes, also at the origin. -/
-private lemma eq_zero_of_forall_mul_eq_zero {f : ℝ → ℝ} (hf : Continuous f)
-    (h : ∀ x, x * f x = 0) (x : ℝ) : f x = 0 :=
-  congrFun (hf.ext_on (dense_compl_singleton 0) continuous_const
-    fun y hy => (mul_eq_zero.mp (h y)).resolve_left hy) x
-
 /-- The first derivative of `x G 0 = sin x`: `G 0 - x ^ 2 G 1 = cos x`. -/
 private lemma reduced_one (x : ℝ) : G 0 x - x ^ 2 * G 1 x = cos x := by
   have hd :=
@@ -197,7 +192,8 @@ private lemma reduced_recurrence_zero (x : ℝ) :
     linear_combination hd.unique ((hasDerivAt_const y 0).congr_of_eventuallyEq
       (.of_forall fun z => sub_eq_zero.mpr (reduced_one z))) +
       (reducedSphericalBesselJ_zero ▸ mul_sinc y : y * G 0 y = sin y)
-  exact eq_zero_of_forall_mul_eq_zero (by fun_prop) h2 x
+  exact congrFun (ContinuousAt.eq_zero_of_forall_smul_eq_zero (by fun_prop)
+    (fun y => smul_eq_mul y _ ▸ h2 y)) x
 
 /-- The three-term recurrence of the reduced functions on the whole line:
 `x ^ 2 * reducedSphericalBesselJ (l + 2) x - (2 * l + 3) * reducedSphericalBesselJ (l + 1) x
@@ -222,7 +218,8 @@ theorem reducedSphericalBesselJ_add_two (l : ℕ) (x : ℝ) :
         hd.unique ((hasDerivAt_const y 0).congr_of_eventuallyEq (.of_forall ih))
       push_cast
       linear_combination -hstep
-    exact eq_zero_of_forall_mul_eq_zero (by fun_prop) h x
+    exact congrFun (ContinuousAt.eq_zero_of_forall_smul_eq_zero (by fun_prop)
+      (fun y => smul_eq_mul y _ ▸ h y)) x
 
 /-- The value of the reduced functions at the origin, `1 / (2 l + 1)‼`. -/
 @[simp]
