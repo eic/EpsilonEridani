@@ -156,18 +156,18 @@ positive-semidefinite matrix: on a real vector its quadratic form is the real pa
 quadratic form of `M`. The index type is arbitrary. -/
 theorem PosSemidef.map_re {𝕜 : Type*} [RCLike 𝕜] {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
     (M.map RCLike.re).PosSemidef := by
-  refine ⟨IsHermitian.ext fun i j => ?_, fun x => ?_⟩
-  · rw [map_apply, map_apply, star_trivial, ← hM.isHermitian.apply i j, RCLike.star_def,
-      RCLike.conj_re]
-  · -- Evaluate the quadratic form of `M` on `x` viewed as a vector over `𝕜`.
-    have h := (RCLike.nonneg_iff.mp (hM.2 (x.mapRange ((↑) : ℝ → 𝕜) (by simp)))).1
-    rw [Finsupp.sum_mapRange_index (by simp)] at h
-    have key (a : n) (b : ℝ) : ((x.mapRange ((↑) : ℝ → 𝕜) (by simp)).sum fun j yj =>
-        star (b : 𝕜) * M a j * yj) = x.sum fun j xj => star (b : 𝕜) * M a j * xj :=
-      Finsupp.sum_mapRange_index fun _ => mul_zero _
-    simp only [key] at h
-    simp only [Finsupp.sum, map_sum, RCLike.star_def, RCLike.conj_ofReal,
-      RCLike.re_ofReal_mul, RCLike.re_mul_ofReal] at h
-    simpa only [Finsupp.sum, map_apply, star_trivial] using h
+  refine ⟨hM.isHermitian.map RCLike.re fun z => by simp [RCLike.star_def], fun x => ?_⟩
+  -- `h` is nonnegativity of `re (yᴴ M y)` for the vector `y` over `𝕜` underlying `x`.
+  set y : n →₀ 𝕜 := x.mapRange ((↑) : ℝ → 𝕜) RCLike.ofReal_zero
+  have h := (RCLike.nonneg_iff.mp (hM.2 y)).1
+  -- Strip the coercion from the outer `Finsupp.sum`, then from the inner one.
+  rw [Finsupp.sum_mapRange_index fun _ => by simp] at h
+  have inner (a : n) (b : 𝕜) : (y.sum fun j yj => b * M a j * yj) =
+      x.sum fun j xj => b * M a j * xj :=
+    Finsupp.sum_mapRange_index fun _ => mul_zero _
+  -- `re` passes through both sums as an additive map.
+  simp only [inner, map_finsuppSum RCLike.re, RCLike.star_def, RCLike.conj_ofReal,
+    RCLike.re_ofReal_mul, RCLike.re_mul_ofReal] at h
+  simpa only [map_apply, star_trivial] using h
 
 end Matrix

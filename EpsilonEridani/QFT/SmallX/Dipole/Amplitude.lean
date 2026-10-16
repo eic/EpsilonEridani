@@ -17,8 +17,9 @@ The forward scattering amplitude `N x y` of a colour dipole with its quark at tr
 position `x` and its antiquark at `y`, at a fixed rapidity, is the target average of
 `1 - S U x y`, where `S U x y = (1 / N_c) Re Tr(U(x) U(y)†)` is the dipole operator of a
 light-cone Wilson-line configuration `U` with values in `U(N_c)`. Its dipole S-matrix is
-`S = 1 - N`. This file records the conditions that every such average
-satisfies and derives the unitarity bound `0 ≤ N x y ≤ 1` from them.
+`S = 1 - N`. This file records two conditions that every such average satisfies, together with
+a non-negativity condition on the S-matrix carried as a hypothesis, and derives the unitarity
+bound `0 ≤ N x y ≤ 1` from them.
 
 An amplitude `N` is *admissible* (`SmallX.IsAdmissible`) when
 
@@ -60,7 +61,7 @@ dipole amplitude and its unitarity bound.
 
 ## Main results
 
-- `SmallX.mem_Icc_of_posSemidef_one_sub`: colour transparency and a positive-semidefinite
+- `SmallX.mem_Icc_zero_two_of_posSemidef_one_sub`: colour transparency and a positive-semidefinite
   S-matrix give `N x y ∈ [0, 2]`, for a kernel on an arbitrary index type.
 - `SmallX.IsAdmissible.symm`: an admissible amplitude is symmetric in its endpoints.
 - `SmallX.IsAdmissible.mem_Icc`: the unitarity bound `N x y ∈ [0, 1]`.
@@ -91,7 +92,7 @@ structure IsAdmissible (N : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (F
 /-- A colour-transparent amplitude whose S-matrix `1 - N` is a positive-semidefinite kernel lies
 in `[0, 2]`: the S-matrix has unit diagonal, so every entry has modulus at most one. The kernel
 may live on an arbitrary index type; no structure of the transverse plane enters. -/
-theorem mem_Icc_of_posSemidef_one_sub {α : Type*} {N : α → α → ℝ} (hN : ∀ x, N x x = 0)
+theorem mem_Icc_zero_two_of_posSemidef_one_sub {α : Type*} {N : α → α → ℝ} (hN : ∀ x, N x x = 0)
     (hS : (Matrix.of fun x y => 1 - N x y).PosSemidef) (x y : α) :
     N x y ∈ Set.Icc (0 : ℝ) 2 := by
   have h := hS.norm_le_one_of_apply_self_eq_one (a := x) (b := y) (by simp [hN])
@@ -111,7 +112,7 @@ theorem symm (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : N x y = 
 
 /-- An admissible amplitude is non-negative. -/
 theorem nonneg (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : 0 ≤ N x y :=
-  (mem_Icc_of_posSemidef_one_sub hN.apply_self hN.posSemidef_one_sub x y).1
+  (mem_Icc_zero_two_of_posSemidef_one_sub hN.apply_self hN.posSemidef_one_sub x y).1
 
 /-- **Unitarity bound**: an admissible amplitude lies in the unit interval, `0 ≤ N x y ≤ 1`. -/
 theorem mem_Icc (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) :
@@ -127,16 +128,13 @@ It is `noncomputable` because it branches on equality of transverse positions, w
 decidable computably. -/
 noncomputable def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y then 0 else 1
 
-/-- The black disc amplitude at a quark position `x` and an antiquark position `y`. -/
-lemma blackDisc_apply (x y : EuclideanSpace ℝ (Fin 2)) :
-    blackDisc x y = if x = y then 0 else 1 := rfl
-
 /-- The black disc is colour transparent: a dipole of zero size does not scatter. -/
-lemma blackDisc_apply_self (x : EuclideanSpace ℝ (Fin 2)) : blackDisc x x = 0 := by
+@[simp] lemma blackDisc_apply_self (x : EuclideanSpace ℝ (Fin 2)) : blackDisc x x = 0 := by
   simp [blackDisc]
 
 /-- The black disc scatters maximally for every nonzero dipole size. -/
-lemma blackDisc_apply_ne {x y : EuclideanSpace ℝ (Fin 2)} (h : x ≠ y) : blackDisc x y = 1 := by
+@[simp] lemma blackDisc_apply_ne {x y : EuclideanSpace ℝ (Fin 2)} (h : x ≠ y) :
+    blackDisc x y = 1 := by
   simp [blackDisc, h]
 
 /-- The **black disc** is admissible: its S-matrix is the identity kernel. -/
@@ -145,25 +143,20 @@ theorem isAdmissible_blackDisc : IsAdmissible blackDisc := by
   · have e : (1 : Matrix (EuclideanSpace ℝ (Fin 2)) _ ℝ) =
         Matrix.of fun x y => 1 - blackDisc x y := by
       ext x y
-      by_cases h : x = y <;> simp [h, Matrix.one_apply, blackDisc]
+      by_cases h : x = y <;> simp [h, Matrix.one_apply]
     exact e ▸ PosSemidef.one
-  · by_cases h : x = y <;> simp [blackDisc, h]
+  · by_cases h : x = y <;> simp [h]
 
 /-- The **Golec-Biernat-Wüsthoff amplitude** `N x y = 1 - exp (-Q_s² ‖x - y‖² / 4)` at
-saturation scale `Q_s`: it saturates at one for a large dipole and is colour transparent, with
-exactly quadratic behaviour at small dipole size. Its S-matrix is a Gaussian kernel in the
-dipole size `‖x - y‖`. -/
+saturation scale `Q_s`. It is colour transparent; for `Q_s ≠ 0` it saturates at one for a large
+dipole and is quadratic at small dipole size, while at `Q_s = 0` it degenerates to the zero
+amplitude. Its S-matrix is a Gaussian kernel in the dipole size `‖x - y‖`. -/
 noncomputable def golecBiernatWusthoff (Qs : ℝ) (x y : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   1 - Real.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2))
 
-/-- The Golec-Biernat-Wüsthoff amplitude at a quark position `x` and an antiquark position
-`y`. -/
-lemma golecBiernatWusthoff_apply (Qs : ℝ) (x y : EuclideanSpace ℝ (Fin 2)) :
-    golecBiernatWusthoff Qs x y = 1 - Real.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2)) := rfl
-
-/-- The Golec-Biernat-Wüsthoff amplitude is colour transparent, with exactly quadratic
-behaviour at small dipole size. -/
-lemma golecBiernatWusthoff_apply_self (Qs : ℝ) (x : EuclideanSpace ℝ (Fin 2)) :
+/-- The Golec-Biernat-Wüsthoff amplitude is colour transparent: a dipole of zero size does not
+scatter. -/
+@[simp] lemma golecBiernatWusthoff_apply_self (Qs : ℝ) (x : EuclideanSpace ℝ (Fin 2)) :
     golecBiernatWusthoff Qs x x = 0 := by
   simp [golecBiernatWusthoff]
 
@@ -185,7 +178,7 @@ theorem isAdmissible_golecBiernatWusthoff (Qs : ℝ) :
       simp only [map_apply, of_apply, ← Complex.ofReal_neg, ← Complex.ofReal_exp,
         RCLike.re_to_complex, Complex.ofReal_re, sub_sub_cancel, golecBiernatWusthoff]
     exact e ▸ hG.map_re
-  · rw [golecBiernatWusthoff_apply]
+  · simp only [golecBiernatWusthoff]
     linarith [Real.exp_pos (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2))]
 
 end SmallX
