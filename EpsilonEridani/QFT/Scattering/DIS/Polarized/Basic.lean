@@ -11,8 +11,10 @@ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 # Polarized DIS Interfaces (Stage 10)
 
 This module introduces polarized DIS interfaces: a structure-function container for
-`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, a decomposition
-schema, and endpoint conditions at `x = 1`. The moment identities usually called sum rules
+`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, the scaling condition
+`IsPolarizedDecomposition` (equivalent to `A = 0` or `g₁ + g₂ = 1` by
+`isPolarizedDecomposition_iff`; the covariant decomposition is `Polarized.IsG1G2Decomposition`),
+and endpoint conditions at `x = 1`. The moment identities usually called sum rules
 live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
 
 -/
@@ -174,7 +176,9 @@ lemma tensorAssumptions_iff_isAlt {W : Type} [AddCommGroup W] [Module ℝ W]
   · intro h
     exact ⟨fun v w => (LinearMap.BilinForm.IsAlt.neg_eq h w v).symm⟩
 
-/-- Polarized decomposition schema. -/
+/-- The scaling condition `A = (g₁ + g₂) • A` at every `(x, Q²)`. Despite its name it is not a
+decomposition of the tensor: by `isPolarizedDecomposition_iff` it holds exactly when `A = 0` or
+`g₁ + g₂ = 1` everywhere. The covariant decomposition is `Polarized.IsG1G2Decomposition`. -/
 def IsPolarizedDecomposition
     (G : StructureFunctions)
     (A : Bilin V) : Prop :=
