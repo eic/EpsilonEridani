@@ -210,7 +210,7 @@ lemma cons_mem_orderedRegion_iff {T t x : ℝ} {n : ℕ} {q : Fin n → ℝ} :
 
 /-- Over a countable index type, the strictly monotone functions into a second-countable
 order-closed linear order form a measurable set. -/
-@[simp, measurability]
+@[measurability]
 lemma measurableSet_setOf_strictMono {ι α : Type*} [Countable ι] [Preorder ι]
     [TopologicalSpace α] [LinearOrder α] [OrderClosedTopology α] [SecondCountableTopology α]
     [MeasurableSpace α] [OpensMeasurableSpace α] :
