@@ -15,7 +15,8 @@ public import EpsilonEridani.Mathematics.Analysis.Analytic.DSlope
 Mathlib proves that `Real.sinc` is continuous (`Real.continuous_sinc`). Since `sinc` is the slope
 function `dslope sin 0` (`Real.sinc_eq_dslope`) and `dslope` preserves analyticity
 (`EpsilonEridani.analyticAt_dslope`), `sinc` is real analytic on the whole line
-(`EpsilonEridani.Real.analyticAt_sinc`).
+(`EpsilonEridani.Real.analyticAt_sinc`). The same identification gives `x * sinc x = sin x` on
+the whole line, the origin included (`EpsilonEridani.Real.mul_sinc`).
 -/
 
 @[expose] public section
@@ -29,5 +30,10 @@ namespace EpsilonEridani.Real
 theorem analyticAt_sinc (x : ℝ) : AnalyticAt ℝ sinc x := by
   rw [sinc_eq_dslope]
   exact analyticAt_dslope.mpr analyticAt_sin
+
+/-- `x * sinc x = sin x` for every real `x`, including `x = 0`. -/
+@[simp]
+theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
+  simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
 
 end EpsilonEridani.Real

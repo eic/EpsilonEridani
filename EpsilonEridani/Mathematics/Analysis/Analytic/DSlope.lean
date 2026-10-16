@@ -34,6 +34,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
 namespace EpsilonEridani
 
 /-- The slope function `dslope f a` is analytic at `b` if and only if `f` is. -/
+@[simp]
 theorem analyticAt_dslope : AnalyticAt 𝕜 (dslope f a) b ↔ AnalyticAt 𝕜 f b := by
   refine ⟨fun h => ?_, fun hf => ?_⟩
   · -- `f x = f a + (x - a) • dslope f a x`
@@ -56,6 +57,7 @@ theorem analyticAt_dslope : AnalyticAt 𝕜 (dslope f a) b ↔ AnalyticAt 𝕜 f
 
 /-- The slope function `dslope f a` is analytic on a neighbourhood of each point of `s` if and
 only if `f` is. -/
+@[simp]
 theorem analyticOnNhd_dslope : AnalyticOnNhd 𝕜 (dslope f a) s ↔ AnalyticOnNhd 𝕜 f s :=
   forall₂_congr fun _ _ => analyticAt_dslope
 
