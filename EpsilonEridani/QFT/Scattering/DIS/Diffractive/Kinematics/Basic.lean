@@ -196,7 +196,7 @@ lemma MX2_eq_two_mul_apply_deltaTarget_q_sub_Q2_add_tMom (g : Bilin V) (hg : g.I
     (K : DisKinematics V) :
     MX2 g K = 2 * g (deltaTarget K) K.q - K.Q2 g + tMom g K := by
   have h := hg.polarization (deltaTarget K) K.q
-  rw [add_comm] at h
+  rw [add_comm (deltaTarget K) K.q] at h
   rw [MX2, pX, tMom, DisKinematics.Q2]
   linarith
 
@@ -211,10 +211,13 @@ lemma two_mul_apply_deltaTarget_q_eq_Q2_add_MX2_sub_tMom (g : Bilin V) (hg : g.I
 lemma MY2_eq_p_sq_sub_two_mul_apply_p_deltaTarget_add_tMom (g : Bilin V) (hg : g.IsSymm)
     (K : DisKinematics V) :
     MY2 g K = g K.p K.p - 2 * g K.p (deltaTarget K) + tMom g K := by
+  have hp : K.p + -deltaTarget K = K.pPrime := by
+    rw [deltaTarget]
+    abel
   have h := hg.polarization K.p (-deltaTarget K)
-  rw [← sub_eq_add_neg, deltaTarget, sub_sub_cancel] at h
+  rw [hp] at h
   simp only [map_neg, LinearMap.neg_apply, neg_neg] at h
-  rw [MY2, tMom, deltaTarget]
+  rw [MY2, tMom]
   linarith
 
 /-- `t = M² - 2 P·P' + M_Y²` with `M² = P²`. -/
