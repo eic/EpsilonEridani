@@ -87,10 +87,8 @@ lemma locallyIntegrableOn (σ : BornCrossSection S) :
     LocallyIntegrableOn σ (interior (kinematicDomain S)) :=
   σ.locallyIntegrableOn'
 
-/-- A Born cross section is almost-everywhere strongly measurable as a function on all of
-`ℝ × ℝ`: it vanishes off the interior of the kinematic domain, so it agrees with the indicator
-of that interior times its own values, which are a.e. strongly measurable there by local
-integrability. -/
+/-- A Born cross section is a.e. strongly measurable on all of `ℝ × ℝ` for the Lebesgue measure
+`dx dQ²`. -/
 lemma aestronglyMeasurable (σ : BornCrossSection S) : AEStronglyMeasurable σ volume := by
   have h : (interior (kinematicDomain S)).indicator ⇑σ = ⇑σ :=
     indicator_eq_self.2 σ.support_subset
@@ -101,6 +99,13 @@ lemma aestronglyMeasurable (σ : BornCrossSection S) : AEStronglyMeasurable σ v
 lemma eq_zero_of_notMem_interior (σ : BornCrossSection S) {z : ℝ × ℝ}
     (hz : z ∉ interior (kinematicDomain S)) : σ z = 0 :=
   Function.notMem_support.1 fun h => hz (σ.support_subset h)
+
+/-- On a kinematic domain with `S ≤ 0`, which has empty interior, every Born cross section
+vanishes identically. -/
+lemma eq_zero_of_nonpos (hS : S ≤ 0) (σ : BornCrossSection S) : ⇑σ = 0 := by
+  funext z
+  refine σ.eq_zero_of_notMem_interior fun hz => ?_
+  exact hS.not_gt (interior_kinematicDomain_nonempty_iff.1 ⟨z, hz⟩)
 
 /-- A Born cross section is determined by its values on the interior of the kinematic domain. -/
 theorem ext_of_eqOn_interior {σ τ : BornCrossSection S}
