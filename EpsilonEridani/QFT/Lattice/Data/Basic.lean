@@ -122,39 +122,42 @@ structure HasContinuumLimit (F : ℝ → EuclideanDataset ι) (D : EuclideanData
 
 section ofTendsto
 
-variable {F : ℝ → EuclideanDataset ι} {S : Matrix ι ι ℝ}
+variable {F : ℝ → EuclideanDataset ι} {v : ι → ℝ} {S : Matrix ι ι ℝ}
 
-/-- The dataset with central values `v` whose covariance is the limit `S` of the covariances of a
-family of datasets as `a → 0⁺`; the limit of positive semidefinite matrices is again positive
-semidefinite. When the central values of the family converge to `v`, this is the continuum limit
-of the family (`hasContinuumLimit_ofTendsto`). -/
-def ofTendsto (v : ι → ℝ) (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
+/-- The continuum limit of a family of datasets whose central values and covariances converge to
+`v` and `S` as `a → 0⁺`: the dataset with central values `v` and covariance `S`, the limit of
+positive semidefinite matrices being again positive semidefinite. Separate limits
+`hv` and `hS` of the central values and covariances combine to the hypothesis as
+`hv.prodMk_nhds hS`. -/
+def ofTendsto
+    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
     EuclideanDataset ι where
   value := v
   covariance := S
   posSemidef_covariance :=
-    posSemidef_is_closed.mem_of_tendsto hS (.of_forall fun a => (F a).posSemidef_covariance)
+    posSemidef_is_closed.mem_of_tendsto h.snd_nhds
+      (.of_forall fun a => (F a).posSemidef_covariance)
 
-/-- The central values of `ofTendsto v hS` are `v`. -/
+/-- The central values of `ofTendsto h` are the limit of the central values. -/
 @[simp]
-theorem ofTendsto_value (v : ι → ℝ) (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
-    (ofTendsto v hS).value = v :=
+theorem ofTendsto_value
+    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
+    (ofTendsto h).value = v :=
   (rfl)
 
-/-- The covariance of `ofTendsto v hS` is the limit `S` of the covariances. -/
+/-- The covariance of `ofTendsto h` is the limit of the covariances. -/
 @[simp]
-theorem ofTendsto_covariance (v : ι → ℝ)
-    (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
-    (ofTendsto v hS).covariance = S :=
+theorem ofTendsto_covariance
+    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
+    (ofTendsto h).covariance = S :=
   (rfl)
 
 /-- If the central values and the covariances of a family of datasets converge as `a → 0⁺`, then
 the limits form the continuum limit of the family. -/
-theorem hasContinuumLimit_ofTendsto {v : ι → ℝ}
-    (hv : Tendsto (fun a => (F a).value) (𝓝[>] 0) (𝓝 v))
-    (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
-    HasContinuumLimit F (ofTendsto v hS) :=
-  ⟨hv, hS⟩
+theorem hasContinuumLimit_ofTendsto
+    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
+    HasContinuumLimit F (ofTendsto h) :=
+  ⟨h.fst_nhds, h.snd_nhds⟩
 
 end ofTendsto
 
@@ -239,8 +242,9 @@ end NoiseModel
 
 variable [Fintype ι] (D : EuclideanDataset ι)
 
-/-- The covariance of the linear functionals `c ⬝ᵥ value` and `c' ⬝ᵥ value` of the data: the
-bilinear form `c ⬝ᵥ covariance *ᵥ c'`. -/
+/-- The covariance of the measured values of the linear functionals `c` and `c'` of the data: the
+bilinear form `c ⬝ᵥ covariance *ᵥ c'`. Under any noise model `X` it is the covariance of
+`c ⬝ᵥ X` and `c' ⬝ᵥ X` (`IsNoiseModel.covariance_dotProduct`). -/
 def covarianceForm (c c' : ι → ℝ) : ℝ :=
   c ⬝ᵥ D.covariance *ᵥ c'
 
@@ -253,8 +257,39 @@ theorem covarianceForm_comm (c c' : ι → ℝ) : D.covarianceForm c c' = D.cova
   simpa [covarianceForm_def] using
     D.posSemidef_covariance.isHermitian.star_dotProduct_mulVec_comm c c'
 
-/-- The variance of the linear functional `c ⬝ᵥ value` of the data: the quadratic form
-`c ⬝ᵥ covariance *ᵥ c`. -/
+/-- The covariance of two functionals is additive in the first functional. -/
+theorem covarianceForm_add_left (c₁ c₂ c' : ι → ℝ) :
+    D.covarianceForm (c₁ + c₂) c' = D.covarianceForm c₁ c' + D.covarianceForm c₂ c' := by
+  simp only [covarianceForm_def, add_dotProduct]
+
+/-- The covariance of two functionals is additive in the second functional. -/
+theorem covarianceForm_add_right (c c₁' c₂' : ι → ℝ) :
+    D.covarianceForm c (c₁' + c₂') = D.covarianceForm c c₁' + D.covarianceForm c c₂' := by
+  simp only [covarianceForm_def, mulVec_add, dotProduct_add]
+
+/-- The covariance of two functionals is homogeneous in the first functional. -/
+theorem covarianceForm_smul_left (r : ℝ) (c c' : ι → ℝ) :
+    D.covarianceForm (r • c) c' = r * D.covarianceForm c c' := by
+  simp only [covarianceForm_def, smul_dotProduct, smul_eq_mul]
+
+/-- The covariance of two functionals is homogeneous in the second functional. -/
+theorem covarianceForm_smul_right (r : ℝ) (c c' : ι → ℝ) :
+    D.covarianceForm c (r • c') = r * D.covarianceForm c c' := by
+  simp only [covarianceForm_def, mulVec_smul, dotProduct_smul, smul_eq_mul]
+
+/-- The covariance of the zero functional with any functional vanishes. -/
+@[simp]
+theorem covarianceForm_zero_left (c' : ι → ℝ) : D.covarianceForm 0 c' = 0 := by
+  simp [covarianceForm_def]
+
+/-- The covariance of any functional with the zero functional vanishes. -/
+@[simp]
+theorem covarianceForm_zero_right (c : ι → ℝ) : D.covarianceForm c 0 = 0 := by
+  simp [covarianceForm_def]
+
+/-- The variance of the measured value of the linear functional `c` of the data: the quadratic
+form `c ⬝ᵥ covariance *ᵥ c`. Under any noise model `X` it is the variance of `c ⬝ᵥ X`
+(`IsNoiseModel.variance_dotProduct`). -/
 def variance (c : ι → ℝ) : ℝ :=
   D.covarianceForm c c
 
@@ -270,12 +305,22 @@ theorem covarianceForm_self (c : ι → ℝ) : D.covarianceForm c c = D.variance
 /-- The variance of a sum of functionals. -/
 theorem variance_add (c c' : ι → ℝ) :
     D.variance (c + c') = D.variance c + 2 * D.covarianceForm c c' + D.variance c' := by
-  have := D.covarianceForm_comm c' c
-  simp only [variance_def, covarianceForm_def] at this ⊢
-  simp only [mulVec_add, dotProduct_add, add_dotProduct, this]
+  simp only [← covarianceForm_self, covarianceForm_add_left, covarianceForm_add_right,
+    D.covarianceForm_comm c' c]
   ring
 
+/-- The variance of a multiple of a functional. -/
+theorem variance_smul (r : ℝ) (c : ι → ℝ) : D.variance (r • c) = r ^ 2 * D.variance c := by
+  simp only [← covarianceForm_self, covarianceForm_smul_left, covarianceForm_smul_right]
+  ring
+
+/-- The zero functional has zero variance. -/
+@[simp]
+theorem variance_zero : D.variance 0 = 0 :=
+  D.covarianceForm_zero_left 0
+
 /-- Variances are nonnegative. -/
+@[simp]
 theorem variance_nonneg (c : ι → ℝ) : 0 ≤ D.variance c := by
   simpa [variance_def] using D.posSemidef_covariance.dotProduct_mulVec_nonneg c
 
@@ -283,11 +328,19 @@ theorem variance_nonneg (c : ι → ℝ) : 0 ≤ D.variance c := by
 theorem variance_eq_zero_iff {c : ι → ℝ} : D.variance c = 0 ↔ D.covariance *ᵥ c = 0 := by
   simpa [variance_def] using D.posSemidef_covariance.dotProduct_mulVec_zero_iff
 
+/-- The covariance of two functionals of a dataset reindexed along an injection is the covariance
+of the functionals extended by zero to the whole dataset. -/
+theorem comp_covarianceForm [Fintype κ] {e : κ → ι} (he : Function.Injective e) (c c' : κ → ℝ) :
+    (D.comp e).covarianceForm c c' =
+      D.covarianceForm (Function.extend e c 0) (Function.extend e c' 0) := by
+  rw [covarianceForm_def, covarianceForm_def, he.extend_dotProduct_mulVec_extend he,
+    comp_covariance]
+
 /-- The variance of a functional of a dataset reindexed along an injection is the variance of the
 functional extended by zero to the whole dataset. -/
 theorem comp_variance [Fintype κ] {e : κ → ι} (he : Function.Injective e) (c : κ → ℝ) :
     (D.comp e).variance c = D.variance (Function.extend e c 0) := by
-  rw [variance_def, variance_def, Matrix.extend_dotProduct_mulVec_extend he, comp_covariance]
+  simp only [← covarianceForm_self, D.comp_covarianceForm he]
 
 /-- The *determined subspace* of a dataset: the linear functionals of the data with zero variance,
 that is the kernel of the covariance. These are the functionals exactly determined by the data. -/
@@ -322,6 +375,13 @@ theorem HasContinuumLimit.tendsto_variance {F : ℝ → EuclideanDataset ι}
   simp only [variance_def]
   exact (hq.tendsto _).comp h.tendsto_covariance
 
+variable {D} in
+/-- The functionals of the central values converge along a continuum limit. -/
+theorem HasContinuumLimit.tendsto_dotProduct_value {F : ℝ → EuclideanDataset ι}
+    (h : HasContinuumLimit F D) (c : ι → ℝ) :
+    Tendsto (fun a => c ⬝ᵥ (F a).value) (𝓝[>] 0) (𝓝 (c ⬝ᵥ D.value)) :=
+  ((continuous_const.dotProduct continuous_id).tendsto _).comp h.tendsto_value
+
 /-! ### Variances under a noise model -/
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
@@ -330,8 +390,8 @@ namespace IsNoiseModel
 
 variable {D} {X : ι → Ω → ℝ} {μ : Measure Ω} [IsFiniteMeasure μ]
 
-/-- Under a noise model, the mean of a linear combination of the noise is the corresponding
-functional of the central values. -/
+/-- Under a noise model, the mean of a linear combination of the random data `X` is the
+corresponding functional of the central values. -/
 theorem integral_dotProduct (h : D.IsNoiseModel X μ) (c : ι → ℝ) :
     μ[fun ω => c ⬝ᵥ (X · ω)] = c ⬝ᵥ D.value := by
   simp only [dotProduct]
@@ -339,21 +399,21 @@ theorem integral_dotProduct (h : D.IsNoiseModel X μ) (c : ι → ℝ) :
   simp [integral_const_mul, h.integral_eq_value]
 
 /-- Under a noise model, the covariance of two functionals of the data is the covariance of the
-corresponding linear combinations of the noise. -/
+corresponding linear combinations of the random data `X`. -/
 theorem covariance_dotProduct (h : D.IsNoiseModel X μ) (c c' : ι → ℝ) :
     cov[fun ω => c ⬝ᵥ (X · ω), fun ω => c' ⬝ᵥ (X · ω); μ] = D.covarianceForm c c' := by
   rw [covariance_dotProduct_dotProduct h.memLp, h.covarianceMatrix_eq, covarianceForm_def]
 
 /-- Under a noise model, the variance of a functional of the data is the variance of the
-corresponding linear combination of the noise. -/
+corresponding linear combination of the random data `X`. -/
 theorem variance_dotProduct (h : D.IsNoiseModel X μ) (c : ι → ℝ) :
     Var[fun ω => c ⬝ᵥ (X · ω); μ] = D.variance c := by
   rw [← covariance_self (memLp_dotProduct h.memLp c).aemeasurable, h.covariance_dotProduct,
     covarianceForm_self]
 
 /-- Under a noise model, a functional lies in the determined subspace exactly when the
-corresponding linear combination of the noise is almost surely equal to the functional of the
-central values. -/
+corresponding linear combination of the random data `X` is almost surely equal to the functional
+of the central values. -/
 theorem ae_eq_dotProduct_value_iff_mem_determinedSubspace (h : D.IsNoiseModel X μ)
     (c : ι → ℝ) :
     ((fun ω => c ⬝ᵥ (X · ω)) =ᵐ[μ] fun _ => c ⬝ᵥ D.value) ↔ c ∈ D.determinedSubspace := by

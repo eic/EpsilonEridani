@@ -12,25 +12,27 @@ public import Mathlib.Data.Matrix.Mul
 
 For an injective `e : κ → ι`, the vector `Function.extend e c 0 : ι → R` places the entries of
 `c : κ → R` on the range of `e` and is zero elsewhere. Pairing it with any vector therefore only
-sees the entries on the range of `e`. This file records that fact for `⬝ᵥ` and for quadratic
-forms; it is the linear algebra relating a quadratic form on a reindexed family to the quadratic
+sees the entries on the range of `e`. This file records that fact for `⬝ᵥ` and for bilinear
+forms; it is the linear algebra relating a bilinear form on a reindexed family to the bilinear
 form on the whole family.
 
 ## Main results
 
-* `Matrix.extend_dotProduct`, `Matrix.dotProduct_extend`:
+* `Function.Injective.extend_dotProduct`, `Function.Injective.dotProduct_extend`:
   `Function.extend e c 0 ⬝ᵥ f = c ⬝ᵥ (f ∘ e)` and its mirror image.
-* `Matrix.extend_dotProduct_mulVec_extend`: the quadratic form of `M` on
-  `Function.extend e c 0` is the quadratic form of `M.submatrix e e` on `c`.
+* `Function.Injective.extend_dotProduct_mulVec_extend`: the bilinear form of `M` on
+  `Function.extend e c 0` and `Function.extend e' c' 0` is the bilinear form of
+  `M.submatrix e e'` on `c` and `c'`.
 -/
 
 public section
 
-namespace Matrix
+namespace Function.Injective
 
-open Function
+open Matrix
 
-variable {ι κ R : Type*} [Fintype ι] [Fintype κ] [NonUnitalNonAssocSemiring R] {e : κ → ι}
+variable {ι ι' κ κ' R : Type*} [Fintype ι] [Fintype ι'] [Fintype κ] [Fintype κ']
+  [NonUnitalNonAssocSemiring R] {e : κ → ι} {e' : κ' → ι'}
 
 /-- Pairing a vector extended by zero along an injection with `f` only sees `f` on the range. -/
 theorem extend_dotProduct (he : Injective e) (c : κ → R) (f : ι → R) :
@@ -48,13 +50,14 @@ theorem dotProduct_extend (he : Injective e) (f : ι → R) (c : κ → R) :
     (fun i hi => by simp [extend_apply' _ _ _ (by simpa using hi)])
     (fun k => by simp [he.extend_apply])).symm
 
-/-- The quadratic form of a matrix on a vector extended by zero along an injection is the quadratic
-form of the submatrix along the injection on the vector. -/
-theorem extend_dotProduct_mulVec_extend (he : Injective e) (M : Matrix ι ι R)
-    (c : κ → R) : extend e c 0 ⬝ᵥ M *ᵥ extend e c 0 = c ⬝ᵥ M.submatrix e e *ᵥ c := by
-  rw [extend_dotProduct he]
+/-- The bilinear form of a matrix on two vectors extended by zero along injections is the bilinear
+form of the submatrix along the injections on the vectors. -/
+theorem extend_dotProduct_mulVec_extend (he : Injective e) (he' : Injective e')
+    (M : Matrix ι ι' R) (c : κ → R) (c' : κ' → R) :
+    extend e c 0 ⬝ᵥ M *ᵥ extend e' c' 0 = c ⬝ᵥ M.submatrix e e' *ᵥ c' := by
+  rw [he.extend_dotProduct]
   congr 1
   funext k
-  simp [mulVec, dotProduct_extend he, comp_def]
+  simp [mulVec, he'.dotProduct_extend, comp_def]
 
-end Matrix
+end Function.Injective

@@ -55,6 +55,7 @@ theorem covarianceMatrix_apply (X : ι → Ω → ℝ) (μ : Measure Ω) (i j : 
   (rfl)
 
 /-- The covariance matrix of a reindexed family is the corresponding submatrix. -/
+@[simp]
 theorem covarianceMatrix_comp (X : ι → Ω → ℝ) (μ : Measure Ω) (e : κ → ι) :
     covarianceMatrix (X ∘ e) μ = (covarianceMatrix X μ).submatrix e e := by
   ext
