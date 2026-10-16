@@ -54,16 +54,16 @@ The second half of the file identifies the iterated integral with a Lebesgue int
 `ℝ ^ n`.  `orderedRegion T n t` is the subset `{p : Fin n → ℝ | t < p 0 < ⋯ < p (n - 1) < T}`
 of `Fin n → ℝ`, with its smallest coordinate first.
 
-* `setIntegral_orderedRegion_succ`: for an integrand integrable on the region, splitting off
-  the smallest coordinate `p 0` (a volume-preserving `Fin.cons` decomposition followed by
+* `setIntegral_orderedRegion_succ`: for an integrand `g` integrable on the region, splitting
+  off the smallest coordinate `p 0` (a volume-preserving `Fin.cons` decomposition followed by
   Fubini) turns the integral over the `(n + 1)`-coordinate region into the integral over
-  `x ∈ (t, T)` of `f x` times the integral over the `n`-coordinate region with lower
-  endpoint `x`;
+  `x ∈ (t, T)` of the integral of `q ↦ g (Fin.cons x q)` over the `n`-coordinate region with
+  lower endpoint `x`;
 * `setIntegral_orderedRegion_eq_orderedProdIntegral`: hence, by induction, for continuous `f`
   and `t ≤ T`, `∫ p in orderedRegion T n t, ∏ i, f (p i) = orderedProdIntegral f T n t`;
 * `setIntegral_orderedRegion_eq_pow_div_factorial` and `volume_orderedRegion`: combined with
-  `orderedProdIntegral_eq`, the region integral is `(∫ s in t..T, f s) ^ n / n !`, and the
-  region has volume `(T - t) ^ n / n !`.
+  `orderedProdIntegral_eq`, for continuous `f` and `t ≤ T` the region integral is
+  `(∫ s in t..T, f s) ^ n / n !`, and for `t ≤ T` the region has volume `(T - t) ^ n / n !`.
 
 The same induction again avoids the symmetrization argument: no permuted copies of the region
 appear, only the measurable set itself and Fubini on `ℝ × ℝ ^ n`.
@@ -75,6 +75,9 @@ primitive, for interval integrability of the integrand at each stage, and for in
 the product integrand on the bounded ordered region.  It could be relaxed towards
 `IntervalIntegrable` at the cost of carrying integrability hypotheses through the induction;
 that is not attempted here.
+
+The ordered-region results additionally require `t ≤ T`: for `T < t` and `n ≥ 1` the region
+is empty, while `orderedProdIntegral` is a signed iterated integral and need not vanish.
 
 Nothing in this file is physics-specific: it is mathlib-shaped and upstreamable, and is kept
 here only so that downstream files can use it now.  Upstreaming is handled separately, as
@@ -205,18 +208,22 @@ lemma cons_mem_orderedRegion_iff {T t x : ℝ} {n : ℕ} {q : Fin n → ℝ} :
   · rintro ⟨⟨htx, hxT⟩, hq, hqi⟩
     exact ⟨⟨fun i => (hqi i).1, hq⟩, ⟨htx, hxT⟩, fun i => ⟨htx.trans (hqi i).1, (hqi i).2⟩⟩
 
+/-- Over a countable index type, the strictly monotone functions into a second-countable
+order-closed linear order form a measurable set. -/
+@[simp, measurability]
+lemma measurableSet_setOf_strictMono {ι α : Type*} [Countable ι] [Preorder ι]
+    [TopologicalSpace α] [LinearOrder α] [OrderClosedTopology α] [SecondCountableTopology α]
+    [MeasurableSpace α] [OpensMeasurableSpace α] :
+    MeasurableSet {p : ι → α | StrictMono p} := by
+  simp only [StrictMono, Set.ofPred_forall]
+  exact .iInter fun i => .iInter fun j => .iInter fun _ =>
+    measurableSet_lt (measurable_pi_apply i) (measurable_pi_apply j)
+
 /-- The ordered region is a measurable subset of `Fin n → ℝ`. -/
-@[measurability]
+@[simp, measurability]
 lemma measurableSet_orderedRegion (T : ℝ) (n : ℕ) (t : ℝ) :
-    MeasurableSet (orderedRegion T n t) := by
-  have hmono : MeasurableSet {p : Fin n → ℝ | StrictMono p} := by
-    simp only [StrictMono, Set.ofPred_forall]
-    exact .iInter fun i => .iInter fun j => .iInter fun _ =>
-      measurableSet_lt (measurable_pi_apply i) (measurable_pi_apply j)
-  have hIoo : MeasurableSet {p : Fin n → ℝ | ∀ i, p i ∈ Set.Ioo t T} := by
-    simp only [Set.ofPred_forall]
-    exact .iInter fun i => measurableSet_Ioo.preimage (measurable_pi_apply i)
-  exact hmono.inter hIoo
+    MeasurableSet (orderedRegion T n t) :=
+  measurableSet_setOf_strictMono.inter (MeasurableSet.univ_pi' fun _ => measurableSet_Ioo)
 
 /-- The ordered region sits inside the cube `[t, T] ^ n`. -/
 lemma orderedRegion_subset_Icc (T : ℝ) (n : ℕ) (t : ℝ) :
@@ -231,13 +238,14 @@ lemma integrableOn_orderedRegion_prod (hf : Continuous f) (T : ℝ) (n : ℕ) (t
     |>.integrableOn_compact isCompact_Icc).mono_set (orderedRegion_subset_Icc T n t)
 
 /-- **Fubini on the ordered region.** Integrating out every coordinate but the smallest one,
-`x = p 0`, leaves `f x` times the integral over the ordered region with lower endpoint `x`.
-This is the measure-theoretic counterpart of `orderedProdIntegral_succ`; for continuous `f`
-the integrability hypothesis is `integrableOn_orderedRegion_prod`. -/
-theorem setIntegral_orderedRegion_succ {T : ℝ} {n : ℕ} {t : ℝ}
-    (hf : IntegrableOn (fun p : Fin (n + 1) → ℝ => ∏ i, f (p i)) (orderedRegion T (n + 1) t)) :
-    ∫ p in orderedRegion T (n + 1) t, ∏ i, f (p i) =
-      ∫ x in Set.Ioo t T, f x * ∫ q in orderedRegion T n x, ∏ j, f (q j) := by
+`x = p 0`, leaves the integral of `q ↦ g (Fin.cons x q)` over the ordered region with lower
+endpoint `x`.  This is the measure-theoretic counterpart of `orderedProdIntegral_succ`; for the
+product integrand of a continuous `f` the integrability hypothesis is
+`integrableOn_orderedRegion_prod`. -/
+theorem setIntegral_orderedRegion_succ {T : ℝ} {n : ℕ} {t : ℝ} {g : (Fin (n + 1) → ℝ) → ℝ}
+    (hg : IntegrableOn g (orderedRegion T (n + 1) t)) :
+    ∫ p in orderedRegion T (n + 1) t, g p =
+      ∫ x in Set.Ioo t T, ∫ q in orderedRegion T n x, g (Fin.cons x q) := by
   -- `e.symm (x, q) = Fin.cons x q` splits off the smallest coordinate and preserves volume.
   set e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0
   have he : MeasurePreserving e.symm (volume.prod volume) volume :=
@@ -250,37 +258,37 @@ theorem setIntegral_orderedRegion_succ {T : ℝ} {n : ℕ} {t : ℝ}
   have hmemS (x : ℝ) (q : Fin n → ℝ) :
       (x, q) ∈ S ↔ x ∈ Set.Ioo t T ∧ q ∈ orderedRegion T n x := by
     simp only [S, Set.mem_preimage, he_apply, cons_mem_orderedRegion_iff]
-  set g : ℝ × (Fin n → ℝ) → ℝ := fun z => f z.1 * ∏ j, f (z.2 j)
-  have hg (z : ℝ × (Fin n → ℝ)) : ∏ i, f (e.symm z i) = g z := by
-    simp [g, he_apply, Fin.prod_univ_succ]
-  have hint : Integrable (S.indicator g) (volume.prod volume) := by
-    rw [← he.integrableOn_comp_preimage e.symm.measurableEmbedding] at hf
+  set h : ℝ × (Fin n → ℝ) → ℝ := fun z => g (Fin.cons z.1 z.2)
+  have hh (z : ℝ × (Fin n → ℝ)) : g (e.symm z) = h z := by
+    simp [h, he_apply]
+  have hint : Integrable (S.indicator h) (volume.prod volume) := by
+    rw [← he.integrableOn_comp_preimage e.symm.measurableEmbedding] at hg
     rw [integrable_indicator_iff hS]
-    exact hf.congr_fun (fun z _ => hg z) hS
+    exact hg.congr_fun (fun z _ => hh z) hS
   -- At fixed `x`, the slice of `S` is the ordered region with lower endpoint `x`, or empty.
-  have hslice (x : ℝ) : ∫ q, S.indicator g (x, q) =
-      (Set.Ioo t T).indicator (fun x => f x * ∫ q in orderedRegion T n x, ∏ j, f (q j)) x := by
+  have hslice (x : ℝ) : ∫ q, S.indicator h (x, q) =
+      (Set.Ioo t T).indicator (fun x => ∫ q in orderedRegion T n x, g (Fin.cons x q)) x := by
     by_cases hx : x ∈ Set.Ioo t T
-    · have hpt : (fun q => S.indicator g (x, q)) =
-          (orderedRegion T n x).indicator (fun q => f x * ∏ j, f (q j)) := by
+    · have hpt : (fun q => S.indicator h (x, q)) =
+          (orderedRegion T n x).indicator (fun q => g (Fin.cons x q)) := by
         ext q
         by_cases hq : q ∈ orderedRegion T n x
         · rw [Set.indicator_of_mem ((hmemS x q).2 ⟨hx, hq⟩), Set.indicator_of_mem hq]
         · rw [Set.indicator_of_notMem (fun h => hq ((hmemS x q).1 h).2),
             Set.indicator_of_notMem hq]
       rw [hpt, MeasureTheory.integral_indicator (measurableSet_orderedRegion T n x),
-        MeasureTheory.integral_const_mul, Set.indicator_of_mem hx]
-    · have hpt : (fun q => S.indicator g (x, q)) = fun _ => 0 := by
+        Set.indicator_of_mem hx]
+    · have hpt : (fun q => S.indicator h (x, q)) = fun _ => 0 := by
         ext q
         simp [hmemS, hx]
       rw [hpt, MeasureTheory.integral_zero, Set.indicator_of_notMem hx]
-  calc ∫ p in orderedRegion T (n + 1) t, ∏ i, f (p i)
-      = ∫ z in S, g z ∂(volume.prod volume) := by
+  calc ∫ p in orderedRegion T (n + 1) t, g p
+      = ∫ z in S, h z ∂(volume.prod volume) := by
         rw [← he.setIntegral_preimage_emb e.symm.measurableEmbedding]
-        exact setIntegral_congr_fun hS fun z _ => hg z
-    _ = ∫ x, ∫ q, S.indicator g (x, q) := by
+        exact setIntegral_congr_fun hS fun z _ => hh z
+    _ = ∫ x, ∫ q, S.indicator h (x, q) := by
         rw [← MeasureTheory.integral_indicator hS, integral_prod _ hint]
-    _ = ∫ x in Set.Ioo t T, f x * ∫ q in orderedRegion T n x, ∏ j, f (q j) := by
+    _ = ∫ x in Set.Ioo t T, ∫ q in orderedRegion T n x, g (Fin.cons x q) := by
         simp_rw [hslice, MeasureTheory.integral_indicator measurableSet_Ioo]
 
 /-- **The Fubini identification.** For continuous `f` and `t ≤ T`, the Lebesgue integral of
@@ -295,16 +303,18 @@ theorem setIntegral_orderedRegion_eq_orderedProdIntegral (hf : Continuous f) (n 
     rw [setIntegral_orderedRegion_succ (integrableOn_orderedRegion_prod hf T (n + 1) t),
       orderedProdIntegral_succ,
       intervalIntegral.integral_of_le htT, integral_Ioc_eq_integral_Ioo]
-    exact setIntegral_congr_fun measurableSet_Ioo fun x hx => by rw [ih hx.2.le]
+    refine setIntegral_congr_fun measurableSet_Ioo fun x hx => ?_
+    simp only [Fin.prod_univ_succ, Fin.cons_zero, Fin.cons_succ]
+    rw [MeasureTheory.integral_const_mul, ih hx.2.le]
 
-/-- The integral of `f (p 0) * ⋯ * f (p (n - 1))` over the ordered region of `ℝ ^ n` is
-`(∫ s in t..T, f s) ^ n / n !`. -/
+/-- For continuous `f` and `t ≤ T`, the integral of `f (p 0) * ⋯ * f (p (n - 1))` over the
+ordered region of `ℝ ^ n` is `(∫ s in t..T, f s) ^ n / n !`. -/
 theorem setIntegral_orderedRegion_eq_pow_div_factorial (hf : Continuous f) (n : ℕ) {t T : ℝ}
     (htT : t ≤ T) :
     ∫ p in orderedRegion T n t, ∏ i, f (p i) = (∫ s in t..T, f s) ^ n / n ! := by
   rw [setIntegral_orderedRegion_eq_orderedProdIntegral hf n htT, orderedProdIntegral_eq hf]
 
-/-- The Lebesgue measure of the ordered region `t < p 0 < ⋯ < p (n - 1) < T` is
+/-- For `t ≤ T`, the Lebesgue measure of the ordered region `t < p 0 < ⋯ < p (n - 1) < T` is
 `(T - t) ^ n / n !`. -/
 theorem volume_orderedRegion (n : ℕ) {t T : ℝ} (htT : t ≤ T) :
     volume (orderedRegion T n t) = ENNReal.ofReal ((T - t) ^ n / n !) := by
