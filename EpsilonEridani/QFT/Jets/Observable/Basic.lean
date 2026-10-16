@@ -37,12 +37,13 @@ The safety predicates are stated for observables with values in an arbitrary (to
 codomain, so that vector-valued quantities such as the total momentum `Multiset.sum`, or later the
 multiset of jet momenta, are covered by the same definitions. Safety is preserved by composition
 with continuous maps (`IsIRCSafe.map`) and by pairing (`IsIRCSafe.prodMk`), hence by continuous
-addition and multiplication (`IsIRCSafe.add`, `IsIRCSafe.mul`), so the safe observables with values
-in a topological ring form a subring (`ircSafeSubring`).
+addition, negation, subtraction and multiplication (`IsIRCSafe.add`, `IsIRCSafe.neg`,
+`IsIRCSafe.sub`, `IsIRCSafe.mul`), so the safe observables with values in a topological ring form
+a subring (`ircSafeSubring`).
 
-The basic positive examples are the total momentum (`isIRCSafe_sum`) and the invariant mass
-squared `g P P` of the total momentum `P` of the whole final state, for a continuous bilinear form
-`g` (`isIRCSafe_bilinForm_sum_sum`).
+The basic positive examples are the total momentum (`isIRCSafe_multisetSum`) and the invariant
+mass squared `invariantMassSq g s = g P P` of the total momentum `P` of the whole final state, for
+a continuous bilinear form `g` (`isIRCSafe_invariantMassSq`).
 
 ## References
 
@@ -126,9 +127,8 @@ theorem splitCollinear_cons_of_mem {p : V} (q : V) (z : ℝ) {s : Multiset V} (h
 @[simp]
 theorem card_splitCollinear {p : V} (z : ℝ) {s : Multiset V} (hp : p ∈ s) :
     Multiset.card (splitCollinear p z s) = Multiset.card s + 1 := by
-  have := Multiset.card_pos_iff_exists_mem.2 ⟨p, hp⟩
-  simp [splitCollinear_def, Multiset.card_erase_of_mem hp]
-  omega
+  obtain ⟨t, rfl⟩ := Multiset.exists_cons_of_mem hp
+  simp
 
 /-- A collinear splitting of a member preserves the total momentum. -/
 @[simp]
@@ -150,15 +150,27 @@ a final state by the collinear pair `z • p`, `(1 - z) • p` with `z ∈ [0, 1
 def IsCollinearSafe (O : Multiset V → X) : Prop :=
   ∀ s : Multiset V, ∀ p ∈ s, ∀ z ∈ Set.Icc (0 : ℝ) 1, O (splitCollinear p z s) = O s
 
-theorem isCollinearSafe_iff {O : Multiset V → X} :
-    IsCollinearSafe O ↔
-      ∀ s : Multiset V, ∀ p ∈ s, ∀ z ∈ Set.Icc (0 : ℝ) 1, O (splitCollinear p z s) = O s :=
-  Iff.rfl
+/-- Collinear safety in terms of a final state `p ::ₘ s` that visibly contains the split
+momentum `p`. -/
+theorem isCollinearSafe_iff_cons {O : Multiset V → X} :
+    IsCollinearSafe O ↔ ∀ (s : Multiset V) (p : V), ∀ z ∈ Set.Icc (0 : ℝ) 1,
+      O (z • p ::ₘ (1 - z) • p ::ₘ s) = O (p ::ₘ s) := by
+  refine ⟨fun hO s p z hz => ?_, fun hO s p hp z hz => ?_⟩
+  · rw [← splitCollinear_cons_self]
+    exact hO _ p (Multiset.mem_cons_self p s) z hz
+  · obtain ⟨t, rfl⟩ := Multiset.exists_cons_of_mem hp
+    rw [splitCollinear_cons_self]
+    exact hO t p z hz
 
 theorem IsCollinearSafe.apply_splitCollinear {O : Multiset V → X} (hO : IsCollinearSafe O)
     {s : Multiset V} {p : V} (hp : p ∈ s) {z : ℝ} (hz : z ∈ Set.Icc (0 : ℝ) 1) :
     O (splitCollinear p z s) = O s :=
   hO s p hp z hz
+
+theorem IsCollinearSafe.apply_cons {O : Multiset V → X} (hO : IsCollinearSafe O)
+    (s : Multiset V) (p : V) {z : ℝ} (hz : z ∈ Set.Icc (0 : ℝ) 1) :
+    O (z • p ::ₘ (1 - z) • p ::ₘ s) = O (p ::ₘ s) :=
+  isCollinearSafe_iff_cons.1 hO s p z hz
 
 /-- A collinear safe observable does not see an added zero momentum on a nonempty final state:
 splitting with fraction `0` adds exactly a zero momentum. -/
@@ -195,10 +207,6 @@ def IsInfraredSafe (O : Multiset V → X) : Prop :=
 theorem isInfraredSafe_iff {O : Multiset V → X} :
     IsInfraredSafe O ↔ ∀ s : Multiset V, Tendsto (fun p : V => O (p ::ₘ s)) (𝓝 0) (𝓝 (O s)) :=
   Iff.rfl
-
-theorem IsInfraredSafe.tendsto {O : Multiset V → X} (hO : IsInfraredSafe O) (s : Multiset V) :
-    Tendsto (fun p : V => O (p ::ₘ s)) (𝓝 0) (𝓝 (O s)) :=
-  hO s
 
 theorem isInfraredSafe_const (x : X) : IsInfraredSafe (fun _ : Multiset V => x) :=
   fun _ => tendsto_const_nhds
@@ -249,6 +257,16 @@ theorem IsIRCSafe.add [Add X] [ContinuousAdd X] {O₁ O₂ : Multiset V → X} (
     (h₂ : IsIRCSafe O₂) : IsIRCSafe (fun s => O₁ s + O₂ s) :=
   h₁.map₂ (f := (· + ·)) continuous_add h₂
 
+/-- The negation of an infrared and collinear safe observable is safe. -/
+theorem IsIRCSafe.neg [Neg X] [ContinuousNeg X] {O : Multiset V → X} (h : IsIRCSafe O) :
+    IsIRCSafe (fun s => -O s) :=
+  h.map (f := Neg.neg) continuous_neg
+
+/-- The difference of two infrared and collinear safe observables is safe. -/
+theorem IsIRCSafe.sub [Sub X] [ContinuousSub X] {O₁ O₂ : Multiset V → X} (h₁ : IsIRCSafe O₁)
+    (h₂ : IsIRCSafe O₂) : IsIRCSafe (fun s => O₁ s - O₂ s) :=
+  h₁.map₂ (f := (· - ·)) continuous_sub h₂
+
 /-- The product of two infrared and collinear safe observables is safe. -/
 theorem IsIRCSafe.mul [Mul X] [ContinuousMul X] {O₁ O₂ : Multiset V → X} (h₁ : IsIRCSafe O₁)
     (h₂ : IsIRCSafe O₂) : IsIRCSafe (fun s => O₁ s * O₂ s) :=
@@ -264,7 +282,7 @@ def ircSafeSubring (R : Type*) [Ring R] [TopologicalSpace R] [IsTopologicalRing 
   one_mem' := isIRCSafe_const 1
   add_mem' {O₁ O₂} (h₁ : IsIRCSafe O₁) (h₂ : IsIRCSafe O₂) := h₁.add h₂
   mul_mem' {O₁ O₂} (h₁ : IsIRCSafe O₁) (h₂ : IsIRCSafe O₂) := h₁.mul h₂
-  neg_mem' {O} (h : IsIRCSafe O) := IsIRCSafe.map (f := fun x : R => -x) continuous_neg h
+  neg_mem' {O} (h : IsIRCSafe O) := h.neg
 
 @[simp]
 theorem mem_ircSafeSubring {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
@@ -291,38 +309,49 @@ end IRC
 section TotalMomentum
 
 /-- The total momentum of a final state is infrared safe. -/
-theorem isInfraredSafe_sum [AddCommMonoid V] [TopologicalSpace V] [ContinuousAdd V] :
+theorem isInfraredSafe_multisetSum [AddCommMonoid V] [TopologicalSpace V] [ContinuousAdd V] :
     IsInfraredSafe (Multiset.sum : Multiset V → V) := by
   intro s
   simp only [Multiset.sum_cons]
   simpa using (tendsto_id : Tendsto id (𝓝 (0 : V)) (𝓝 0)).add_const s.sum
 
-variable [AddCommGroup V] [Module ℝ V] [DecidableEq V]
+variable [AddCommGroup V] [Module ℝ V]
+
+/-- The invariant mass squared of a final state with respect to a bilinear form `g` (the
+Minkowski metric, say): `g P P` for the total momentum `P = s.sum`. -/
+def invariantMassSq (g : LinearMap.BilinForm ℝ V) : Observable V :=
+  fun s => g s.sum s.sum
+
+theorem invariantMassSq_def (g : LinearMap.BilinForm ℝ V) (s : Multiset V) :
+    invariantMassSq g s = g s.sum s.sum :=
+  (rfl)
+
+variable [DecidableEq V]
 
 /-- The total momentum of a final state is collinear safe. -/
-theorem isCollinearSafe_sum : IsCollinearSafe (Multiset.sum : Multiset V → V) :=
+theorem isCollinearSafe_multisetSum : IsCollinearSafe (Multiset.sum : Multiset V → V) :=
   fun _ _ hp z _ => sum_splitCollinear z hp
 
 /-- The total momentum of a final state is infrared and collinear safe. -/
-theorem isIRCSafe_sum [TopologicalSpace V] [ContinuousAdd V] :
+theorem isIRCSafe_multisetSum [TopologicalSpace V] [ContinuousAdd V] :
     IsIRCSafe (Multiset.sum : Multiset V → V) :=
-  ⟨isCollinearSafe_sum, isInfraredSafe_sum⟩
+  ⟨isCollinearSafe_multisetSum, isInfraredSafe_multisetSum⟩
 
-/-- The invariant mass squared `g P P` of the total momentum `P` of a final state is infrared and
-collinear safe, for any jointly continuous bilinear form `g`. -/
-theorem isIRCSafe_bilinForm_sum_sum [TopologicalSpace V] [ContinuousAdd V]
+/-- The invariant mass squared is infrared and collinear safe for any jointly continuous bilinear
+form `g`. -/
+theorem isIRCSafe_invariantMassSq [TopologicalSpace V] [ContinuousAdd V]
     (g : LinearMap.BilinForm ℝ V) (hg : Continuous fun q : V × V => g q.1 q.2) :
-    IsIRCSafe (fun s : Multiset V => g s.sum s.sum) :=
-  isIRCSafe_sum.map₂ (f := fun x y => g x y) hg isIRCSafe_sum
+    IsIRCSafe (invariantMassSq g) := by
+  rw [show invariantMassSq g = fun s => g s.sum s.sum from funext (invariantMassSq_def g)]
+  exact isIRCSafe_multisetSum.map₂ (f := fun x y => g x y) hg isIRCSafe_multisetSum
 
-/-- The invariant mass squared `g P P` of the total momentum `P` of a final state is infrared and
-collinear safe, for any bilinear form `g` on a finite-dimensional `V` with its canonical
-topology. -/
-theorem isIRCSafe_bilinForm_sum_sum_of_finite [TopologicalSpace V] [IsModuleTopology ℝ V]
+/-- The invariant mass squared is infrared and collinear safe for any bilinear form `g` on a
+finite-dimensional `V` with its canonical topology. -/
+theorem isIRCSafe_invariantMassSq_of_finite [TopologicalSpace V] [IsModuleTopology ℝ V]
     [Module.Finite ℝ V] (g : LinearMap.BilinForm ℝ V) :
-    IsIRCSafe (fun s : Multiset V => g s.sum s.sum) := by
+    IsIRCSafe (invariantMassSq g) := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd ℝ V
-  exact isIRCSafe_bilinForm_sum_sum g (IsModuleTopology.continuous_bilinear_of_finite_left g)
+  exact isIRCSafe_invariantMassSq g (IsModuleTopology.continuous_bilinear_of_finite_left g)
 
 end TotalMomentum
 

@@ -19,10 +19,10 @@ with observables that fail them. This file records the two standard ones.
 * The leading-particle energy `leadingEnergy E`, the least upper bound of `0` and the values of an
   energy function `E` on the particles of a final state, is infrared safe whenever `E p → 0` as
   `p → 0` (`isInfraredSafe_leadingEnergy`), but for a nonzero linear energy functional it is not
-  collinear safe (`not_isCollinearSafe_leadingEnergy`): splitting a single particle of energy
-  `E p ≥ 0` with fraction `z` makes the leading energy equal to `max z (1 - z) * E p`, which is at
-  most `E p` (`leadingEnergy_splitCollinear_singleton`), so already `z = 1 / 2` witnesses the
-  failure.
+  collinear safe (`not_isCollinearSafe_leadingEnergy`): splitting a particle of energy `E p ≥ 0`
+  with fraction `z` replaces its contribution `E p` by `max z (1 - z) * E p`, which is at most
+  `E p` (`leadingEnergy_splitCollinear`), so already `z = 1 / 2` on a single particle witnesses
+  the failure.
 
 ## References
 
@@ -57,6 +57,12 @@ theorem multiplicity_cons (p : V) (s : Multiset V) :
     multiplicity (p ::ₘ s) = multiplicity s + 1 := by
   simp [multiplicity_def]
 
+/-- The multiplicity of the union of two final states is the sum of their multiplicities. -/
+@[simp]
+theorem multiplicity_add (s t : Multiset V) :
+    multiplicity (s + t) = multiplicity s + multiplicity t := by
+  simp [multiplicity_def]
+
 /-- The particle multiplicity is not collinear safe: splitting a particle adds one. -/
 theorem not_isCollinearSafe_multiplicity [AddCommGroup V] [Module ℝ V] [DecidableEq V] :
     ¬ IsCollinearSafe (multiplicity : Observable V) := by
@@ -70,7 +76,7 @@ particle. -/
 theorem not_isInfraredSafe_multiplicity [Zero V] [TopologicalSpace V] :
     ¬ IsInfraredSafe (multiplicity : Observable V) := by
   intro h
-  have := h.tendsto 0
+  have := isInfraredSafe_iff.1 h 0
   simp only [multiplicity_cons, multiplicity_zero, zero_add] at this
   exact one_ne_zero (tendsto_const_nhds_iff.1 this)
 
@@ -83,8 +89,8 @@ noncomputable def leadingEnergy (E : V → ℝ) : Observable V :=
   fun s => (s.map E).fold max 0
 
 @[simp]
-theorem leadingEnergy_zero (E : V → ℝ) : leadingEnergy E 0 = 0 :=
-  (rfl)
+theorem leadingEnergy_zero (E : V → ℝ) : leadingEnergy E 0 = 0 := by
+  simp [leadingEnergy]
 
 @[simp]
 theorem leadingEnergy_cons (E : V → ℝ) (p : V) (s : Multiset V) :
@@ -109,6 +115,20 @@ theorem le_leadingEnergy {E : V → ℝ} {s : Multiset V} {p : V} (hp : p ∈ s)
     E p ≤ leadingEnergy E s :=
   (leadingEnergy_le_iff.1 le_rfl).2 p hp
 
+/-- The leading-particle energy of the union of two final states is the larger of the two. -/
+@[simp]
+theorem leadingEnergy_add (E : V → ℝ) (s t : Multiset V) :
+    leadingEnergy E (s + t) = max (leadingEnergy E s) (leadingEnergy E t) := by
+  refine le_antisymm (leadingEnergy_le_iff.2 ⟨?_, fun p hp => ?_⟩)
+    (max_le (leadingEnergy_le_iff.2 ⟨leadingEnergy_nonneg E _, fun p hp => ?_⟩)
+      (leadingEnergy_le_iff.2 ⟨leadingEnergy_nonneg E _, fun p hp => ?_⟩))
+  · exact (leadingEnergy_nonneg E s).trans (le_max_left _ _)
+  · rcases Multiset.mem_add.1 hp with hp | hp
+    · exact (le_leadingEnergy hp).trans (le_max_left _ _)
+    · exact (le_leadingEnergy hp).trans (le_max_right _ _)
+  · exact le_leadingEnergy (Multiset.mem_add.2 (Or.inl hp))
+  · exact le_leadingEnergy (Multiset.mem_add.2 (Or.inr hp))
+
 /-- The leading-particle energy is infrared safe for an energy function that vanishes in the
 limit of vanishing momentum. -/
 theorem isInfraredSafe_leadingEnergy [Zero V] [TopologicalSpace V] {E : V → ℝ}
@@ -122,16 +142,15 @@ section Linear
 
 variable [AddCommGroup V] [Module ℝ V] [DecidableEq V]
 
-/-- Splitting a single particle of nonnegative energy `E p` with fraction `z ∈ [0, 1]` makes the
-leading-particle energy equal to `max z (1 - z) * E p`, which is at most `E p`. -/
-theorem leadingEnergy_splitCollinear_singleton (E : V →ₗ[ℝ] ℝ) {p : V} (hp : 0 ≤ E p) {z : ℝ}
-    (hz : z ∈ Set.Icc (0 : ℝ) 1) :
-    leadingEnergy E (splitCollinear p z {p}) = max z (1 - z) * E p := by
-  rw [← Multiset.cons_zero, splitCollinear_cons_self]
-  have h₂ : 0 ≤ (1 - z) * E p := mul_nonneg (sub_nonneg.2 hz.2) hp
-  have key : max (z * E p) ((1 - z) * E p) = max z (1 - z) * E p :=
-    (max_mul_of_nonneg _ _ hp).symm
-  simp [max_eq_left h₂, key]
+/-- Splitting a particle of nonnegative energy `E p` with fraction `z` replaces its contribution
+`E p` to the leading-particle energy by `max z (1 - z) * E p`, which for `z ∈ [0, 1]` is at most
+`E p`. -/
+theorem leadingEnergy_splitCollinear (E : V →ₗ[ℝ] ℝ) {p : V} (hp : 0 ≤ E p) {z : ℝ}
+    (s : Multiset V) :
+    leadingEnergy E (splitCollinear p z s) =
+      max (max z (1 - z) * E p) (leadingEnergy E (s.erase p)) := by
+  rw [splitCollinear_def, leadingEnergy_cons, leadingEnergy_cons, ← max_assoc, map_smul, map_smul,
+    smul_eq_mul, smul_eq_mul, ← max_mul_of_nonneg _ _ hp]
 
 /-- The leading-particle energy of a nonzero linear energy functional is not collinear safe:
 splitting a single particle of positive energy into two halves halves the leading energy. -/
@@ -146,9 +165,9 @@ theorem not_isCollinearSafe_leadingEnergy {E : V →ₗ[ℝ] ℝ} (hE : E ≠ 0)
     · exact ⟨q, hq⟩
   have hz : (1 / 2 : ℝ) ∈ Set.Icc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
   have := h.apply_splitCollinear (Multiset.mem_singleton_self p) hz
-  rw [leadingEnergy_splitCollinear_singleton E hp.le hz, leadingEnergy_singleton,
-    max_eq_left hp.le] at this
-  norm_num at this
+  rw [leadingEnergy_splitCollinear E hp.le, Multiset.erase_singleton, leadingEnergy_zero,
+    leadingEnergy_singleton, max_eq_left hp.le] at this
+  norm_num [max_eq_left (by positivity : (0 : ℝ) ≤ 1 / 2 * E p)] at this
   linarith
 
 end Linear
