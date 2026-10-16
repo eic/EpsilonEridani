@@ -194,6 +194,16 @@ lemma mem_orderedRegion {T t : ℝ} {n : ℕ} {p : Fin n → ℝ} :
 lemma orderedRegion_zero (T t : ℝ) : orderedRegion T 0 t = Set.univ :=
   Set.eq_univ_of_forall fun _ => ⟨fun i => i.elim0, fun i => i.elim0⟩
 
+/-- For `T ≤ t`, the ordered region with at least one coordinate is empty: every coordinate
+would have to lie in the empty interval `(t, T)`.  This is the degenerate regime excluded by
+the `t ≤ T` hypothesis of the region theorems. -/
+@[simp]
+lemma orderedRegion_eq_empty {T t : ℝ} (h : T ≤ t) (n : ℕ) :
+    orderedRegion T (n + 1) t = ∅ := by
+  rw [Set.eq_empty_iff_forall_notMem]
+  intro p hp
+  exact absurd ((hp.2 0).1.trans (hp.2 0).2) (not_lt.mpr h)
+
 /-- Peeling off the smallest coordinate: `Fin.cons x q` lies in the ordered region with
 `n + 1` coordinates exactly when `x ∈ (t, T)` and `q` lies in the ordered region with lower
 endpoint `x`.  This is the set-level form of `orderedProdIntegral_succ`. -/
@@ -230,17 +240,24 @@ lemma orderedRegion_subset_Icc (T : ℝ) (n : ℕ) (t : ℝ) :
     orderedRegion T n t ⊆ Set.Icc (fun _ => t) (fun _ => T) :=
   fun _ hp => ⟨fun i => (hp.2 i).1.le, fun i => (hp.2 i).2.le⟩
 
+/-- A function continuous on all of `ℝ ^ n` is integrable on the ordered region: the region is
+bounded, sitting inside the compact cube `[t, T] ^ n`. -/
+lemma Continuous.integrableOn_orderedRegion {n : ℕ} {g : (Fin n → ℝ) → ℝ} (hg : Continuous g)
+    (T t : ℝ) : IntegrableOn g (orderedRegion T n t) :=
+  (hg.continuousOn.integrableOn_compact isCompact_Icc).mono_set (orderedRegion_subset_Icc T n t)
+
 /-- For continuous `f`, the integrand `p ↦ f (p 0) * ⋯ * f (p (n - 1))` is integrable on the
 ordered region, which is bounded. -/
 lemma integrableOn_orderedRegion_prod (hf : Continuous f) (T : ℝ) (n : ℕ) (t : ℝ) :
     IntegrableOn (fun p : Fin n → ℝ => ∏ i, f (p i)) (orderedRegion T n t) :=
-  ((continuous_finsetProd _ fun i _ => hf.comp (continuous_apply i)).continuousOn
-    |>.integrableOn_compact isCompact_Icc).mono_set (orderedRegion_subset_Icc T n t)
+  Continuous.integrableOn_orderedRegion
+    (continuous_finsetProd _ fun i _ => hf.comp (continuous_apply i)) T t
 
 /-- **Fubini on the ordered region.** Integrating out every coordinate but the smallest one,
 `x = p 0`, leaves the integral of `q ↦ g (Fin.cons x q)` over the ordered region with lower
-endpoint `x`.  This is the measure-theoretic counterpart of `orderedProdIntegral_succ`; for the
-product integrand of a continuous `f` the integrability hypothesis is
+endpoint `x`.  This is the measure-theoretic counterpart of `orderedProdIntegral_succ`.  The
+integrability hypothesis holds for any integrand continuous on `ℝ ^ (n + 1)`, by
+`Continuous.integrableOn_orderedRegion`; for the product integrand of a continuous `f` it is
 `integrableOn_orderedRegion_prod`. -/
 theorem setIntegral_orderedRegion_succ {T : ℝ} {n : ℕ} {t : ℝ} {g : (Fin (n + 1) → ℝ) → ℝ}
     (hg : IntegrableOn g (orderedRegion T (n + 1) t)) :
