@@ -23,13 +23,15 @@ is the net outgoing charge `∑ᵢ ηᵢ Qᵢ`, which vanishes for a process tha
 * `netCharge L`: the net outgoing charge `∑ᵢ ηᵢ Qᵢ` of a family of legs.
 * `chargedLine p p' Q`: a charged particle entering the hard scattering with momentum `p` and
   leaving it with momentum `p'`.
-* `DisKinematics.chargedLegs`: the lepton line and the hadron line of lepton–hadron scattering.
+* `DisKinematics.chargedLegs`: the lepton line and the hadron line of elastic lepton–hadron
+  scattering `ℓ h → ℓ h` (a single outgoing hadron carrying the incoming charge; not the
+  inclusive final state).
 
 ## Main statements
 
 * `netCharge_sumElim`: the net charge of a union of legs is the sum of the net charges.
 * `netCharge_chargedLine`, `DisKinematics.netCharge_chargedLegs`: a charged line, and hence
-  lepton–hadron scattering, conserves charge.
+  elastic lepton–hadron scattering, conserves charge.
 -/
 
 @[expose] public section
@@ -116,9 +118,10 @@ namespace DisKinematics
 
 variable [AddCommGroup V]
 
-/-- The charged legs of lepton–hadron scattering with the kinematics `K`: the lepton line
-from `K.k` to `K.kPrime` with charge `eLepton`, and the hadron line from `K.p` to `K.pPrime`
-with charge `eHadron`. -/
+/-- The charged legs of elastic lepton–hadron scattering `ℓ h → ℓ h` with the kinematics `K`
+(a single outgoing hadron carrying the incoming charge; not the inclusive final state): the
+lepton line from `K.k` to `K.kPrime` with charge `eLepton`, and the hadron line from `K.p` to
+`K.pPrime` with charge `eHadron`. -/
 def chargedLegs (K : DisKinematics V) (eLepton eHadron : ℝ) : Fin 2 ⊕ Fin 2 → ChargedLeg V :=
   Sum.elim (chargedLine K.k K.kPrime eLepton) (chargedLine K.p K.pPrime eHadron)
 
@@ -126,8 +129,8 @@ def chargedLegs (K : DisKinematics V) (eLepton eHadron : ℝ) : Fin 2 ⊕ Fin 2 
     K.chargedLegs eLepton eHadron =
       Sum.elim (chargedLine K.k K.kPrime eLepton) (chargedLine K.p K.pPrime eHadron) := (rfl)
 
-/-- Lepton–hadron scattering conserves charge: its charged legs carry no net charge out of the
-process. -/
+/-- Elastic lepton–hadron scattering conserves charge: its charged legs carry no net charge out
+of the process. -/
 theorem netCharge_chargedLegs (K : DisKinematics V) (eLepton eHadron : ℝ) :
     netCharge (K.chargedLegs eLepton eHadron) = 0 := by
   simp
