@@ -26,7 +26,7 @@ namespace Kinematics
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
-open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
 
 /-- Minimal off-forward exclusive kinematics container. -/
 structure ExclKinematics where
@@ -162,6 +162,39 @@ lemma xiSkew_eq_xB_form
     ring
   rw [xiSkew, hnum, apply_p_add_pPrime_q_add_qPrime g hg K hqPrime hp, hden,
     div_div_div_cancel_right₀ h2pq]
+
+omit [Module ℝ V] in
+/-- The inclusive view of an exclusive event: the same momenta and the same lepton momentum
+transfer `q = k - k'`, as a `DisKinematics` record. The inclusive variables (`xBj`, `yInel`,
+`W2`) and their lemmas apply to an exclusive event through this map, with the outgoing
+hadron `pPrime` carried as the `pPrime` field. -/
+def toDisKinematics (K : ExclKinematics V) : DisKinematics V where
+  p := K.p
+  pPrime := K.pPrime
+  k := K.k
+  kPrime := K.kPrime
+  q := K.q
+  hq := K.hqLepton
+
+omit [Module ℝ V] in
+@[simp] lemma toDisKinematics_p (K : ExclKinematics V) :
+    K.toDisKinematics.p = K.p := rfl
+
+omit [Module ℝ V] in
+@[simp] lemma toDisKinematics_pPrime (K : ExclKinematics V) :
+    K.toDisKinematics.pPrime = K.pPrime := rfl
+
+omit [Module ℝ V] in
+@[simp] lemma toDisKinematics_k (K : ExclKinematics V) :
+    K.toDisKinematics.k = K.k := rfl
+
+omit [Module ℝ V] in
+@[simp] lemma toDisKinematics_kPrime (K : ExclKinematics V) :
+    K.toDisKinematics.kPrime = K.kPrime := rfl
+
+omit [Module ℝ V] in
+@[simp] lemma toDisKinematics_q (K : ExclKinematics V) :
+    K.toDisKinematics.q = K.q := rfl
 
 end ExclKinematics
 
