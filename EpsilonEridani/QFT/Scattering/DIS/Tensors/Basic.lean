@@ -124,18 +124,6 @@ lemma rankOne_isSymm (g : Bilin V) (a : V) : (rankOne g a a).IsSymm := by
   intro v w
   simp [rankOne_apply, mul_comm]
 
-/-- Expansion of a bilinear form on a pair of vectors each shifted along `u`. -/
-lemma apply_sub_smul_pair (g : Bilin V) (u x y : V) (a b : ℝ) :
-    g (x - a • u) (y - b • u)
-      = g x y - b * g x u - a * g u y + a * b * g u u := by
-  have h1 : g (x - a • u) = g x - a • g u := by
-    rw [map_sub, map_smul]
-  have h3 : ∀ z : V, g z (y - b • u) = g z y - b * g z u := by
-    intro z
-    rw [map_sub, map_smul, smul_eq_mul]
-  rw [h1, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, h3 x, h3 u]
-  ring
-
 /-- A linear endomorphism preserving the background form `g`. For `g` a Lorentz metric these
 are exactly the (linear) Lorentz transformations. -/
 def IsIsometry (g : Bilin V) (f : V →ₗ[ℝ] V) : Prop :=
@@ -188,7 +176,7 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
     IsIsometry g (reflect g u) := by
   intro v w
   have hc : (g u u)⁻¹ * g u u = 1 := inv_mul_cancel₀ hu
-  rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
+  rw [reflect_apply, reflect_apply, Kinematics.Bilin.apply_sub_smul_pair, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
 end Bilin
@@ -490,22 +478,28 @@ lemma transverseMetric_isSymm (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsS
   have hg : ∀ x y : V, g x y = g y x := hSymm.eq
   simp [transverseMetric_apply, hg, mul_comm]
 
-/-- The transverse part of the hadron momentum, `p^μ - (p·q / q²) q^μ`. -/
+/-- The transverse part of the hadron momentum: the projection `Bilin.projOrthogonal g K.q`
+of `p` onto the `g`-orthogonal complement of `q`, `p^μ - (p·q / q²) q^μ`. -/
 noncomputable def pTransverse (g : Bilin V) (K : DisKinematics V) : V :=
-  K.p - (g K.p K.q / g K.q K.q) • K.q
+  g.projOrthogonal K.q K.p
+
+/-- The transverse hadron momentum is the projection of `p` onto the `g`-orthogonal complement
+of `q`. -/
+lemma pTransverse_eq_projOrthogonal (g : Bilin V) (K : DisKinematics V) :
+    pTransverse g K = g.projOrthogonal K.q K.p :=
+  (rfl)
 
 /-- Pointwise pairing of the transverse hadron momentum against a vector. -/
 lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
     g (pTransverse g K) v = g K.p v - (g K.p K.q / g K.q K.q) * g K.q v := by
-  simp only [pTransverse, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
-    smul_eq_mul]
+  rw [pTransverse_eq_projOrthogonal, g.projOrthogonal_apply, map_sub, map_smul,
+    LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
 
 /-- The transverse hadron momentum is `g`-orthogonal to `q`. -/
 lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q K.q ≠ 0) :
     g (pTransverse g K) K.q = 0 := by
-  have h : g K.p K.q / g K.q K.q * g K.q K.q = g K.p K.q := by
-    rw [div_eq_mul_inv, mul_assoc, inv_mul_cancel₀ hQ2, mul_one]
-  rw [pTransverse_pairing, h, sub_self]
+  rw [pTransverse_eq_projOrthogonal]
+  exact g.projOrthogonal_orthogonal hQ2 K.p
 
 /-!
 
@@ -545,7 +539,8 @@ lemma pairing_invariant_of_fixed (g : Bilin V) (K : DisKinematics V) {f : V →�
 lemma stabilizer_fixes_pTransverse (g : Bilin V) (K : DisKinematics V) {f : V →ₗ[ℝ] V}
     (hf : IsKinematicStabilizer g K f) :
     f (pTransverse g K) = pTransverse g K := by
-  simp only [pTransverse, map_sub, map_smul, hf.fixes_p, hf.fixes_q]
+  rw [pTransverse_eq_projOrthogonal, g.projOrthogonal_apply, map_sub, map_smul,
+    hf.fixes_p, hf.fixes_q]
 
 /-- The transverse metric projector is Lorentz covariant. -/
 lemma transverseMetric_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
@@ -1045,7 +1040,8 @@ def uniquenessWit : UniquenessAssumptions gWit kWit where
 /-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
 already `gWit`-orthogonal to `q`. -/
 @[simp] lemma pTransverse_kWit : pTransverse gWit kWit = ((1, 0, 0) : ℝ × ℝ × ℝ) := by
-  simp [pTransverse]
+  rw [pTransverse_eq_projOrthogonal, gWit.projOrthogonal_apply]
+  simp
 
 /-- **`SpectatorAssumptions` is satisfiable.** On the witness kinematics the spectator
 subspace is the spacelike line through `u = (0,0,1)`. Two spectator vectors of equal norm are
