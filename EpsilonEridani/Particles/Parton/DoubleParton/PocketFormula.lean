@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
+public import EpsilonEridani.Mathematics.CauchySchwarz
 public import EpsilonEridani.Mathematics.Gaussian
 public import EpsilonEridani.Particles.Parton.CrossSection
 
@@ -75,7 +76,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Real EpsilonEridani.Gaussian
+open MeasureTheory Real EpsilonEridani.CauchySchwarz EpsilonEridani.Gaussian
 
 namespace EpsilonEridani.Particles.Parton.DoubleParton
 
@@ -256,21 +257,6 @@ theorem effectiveCrossSection_self_pos {G : T → ℝ} (hG2 : MemLp G 2 μ)
     exact mul_self_eq_zero.1 hy
   rw [integral_congr_ae hG0] at hnorm
   simp at hnorm
-
-/-- The Cauchy-Schwarz inequality on a set of finite measure:
-`(∫_S |G|)² ≤ |S| ∫_S G²` for `G` square-integrable on `S`. -/
-theorem sq_setIntegral_abs_le_measureReal_mul_setIntegral_sq {G : T → ℝ} {S : Set T}
-    (hμS : μ S ≠ ⊤) (hG2 : MemLp G 2 (μ.restrict S)) :
-    (∫ y in S, |G y| ∂μ) ^ 2 ≤ μ.real S * ∫ y in S, G y ^ 2 ∂μ := by
-  have : IsFiniteMeasure (μ.restrict S) := isFiniteMeasure_restrict.2 hμS
-  -- Hölder with `p = q = 2` for `1 ⬝ |G|`: `∫_S |G| ≤ |S|^(1/2) (∫_S G²)^(1/2)`.
-  have hcs := integral_mul_le_Lp_mul_Lq_of_nonneg (μ := μ.restrict S) Real.HolderConjugate.two_two
-    (f := fun _ => (1 : ℝ)) (g := |G|) (ae_of_all _ fun _ => zero_le_one)
-    (ae_of_all _ fun y => abs_nonneg (G y)) (by simpa using memLp_const (1 : ℝ))
-    (by simpa using hG2.abs)
-  rw [← Real.sqrt_le_sqrt_iff (by positivity), Real.sqrt_sq (integral_nonneg fun y => abs_nonneg _),
-    Real.sqrt_mul measureReal_nonneg, Real.sqrt_eq_rpow, Real.sqrt_eq_rpow]
-  simpa [Real.rpow_two] using hcs
 
 /-- **The Cauchy-Schwarz bound on the effective cross section.** A normalised transverse profile
 that vanishes almost everywhere outside a set `S` of finite measure has `σ_eff ≤ |S|`: a profile
