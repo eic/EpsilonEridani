@@ -24,11 +24,10 @@ file records the resulting entrywise bounds on the off-diagonal entries:
 (Nonnegativity of the diagonal is Mathlib's `Matrix.PosSemidef.diag_nonneg`.)
 
 Both bounds are stated multiplied out, with no division, so that they apply without field side
-conditions. This is the form in which
-positivity constraints are used in hadronic physics; see
-`Physlib/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark transversity
-distribution, which is exactly the arithmetic-mean inequality applied to the parton
-spin-density matrix.
+conditions. This is the form in which positivity constraints are used in hadronic physics; see
+`EpsilonEridani/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark
+transversity distribution, which is exactly the arithmetic-mean inequality applied to the
+parton spin-density matrix.
 
 ## Main results
 
@@ -37,10 +36,12 @@ spin-density matrix.
 
 ## Implementation notes
 
-Everything here is stated over `ℝ`. `Matrix.PosSemidef` is available over more general
-star-ordered rings, and the corresponding statements over `RCLike 𝕜` replace `|·|` by `‖·‖`;
-that generalisation is not needed for the leading-twist positivity bounds (whose relevant
-block is real) and is left to whoever first needs the T-odd, genuinely complex entries.
+Everything here is stated over `ℝ`. The geometric-mean bound is already available over
+`RCLike 𝕜`: it is Tau Ceti's `Matrix.PosSemidef.normSq_le`, of which `sq_apply_le` is the
+real case. Only the `|·|`-form `two_mul_abs_apply_le` is specific to `ℝ` here; its `RCLike`
+version (with `|·|` replaced by `‖·‖`) is not needed for the leading-twist positivity bounds
+(whose relevant block is real) and is left to whoever first needs the T-odd, genuinely
+complex entries.
 
 These lemmas are stated for a general index type rather than for `Fin n`, and are candidates
 for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.

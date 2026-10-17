@@ -60,9 +60,10 @@ structure functions from measured cross sections rests.
 `x`, `y`, `Q²` are the invariants of `Kinematics.DisKinematics` and the structure functions are
 the dimensionless ones, with `F₂` in the physical normalisation of `Tensors.Longitudinal`. The
 real parameter `s` is the sign of the parity-odd term: `s = 1` for a positron or antineutrino
-beam and `s = -1` for an electron or neutrino beam. Nothing here constrains `s` to `±1`; only
-`s ≠ 0` is ever needed. The flux factor `K` is an argument, since its propagator content
-depends on the exchanged boson.
+beam and `s = -1` for an electron or neutrino beam. Nothing here constrains `s` to `±1`; most
+results need only `s ≠ 0`, and the domination bound `abs_mul_Yminus_mul_sqrt_le` needs
+`|s| ≤ 1`. The flux factor `K` is an argument, since its propagator content depends on the
+exchanged boson.
 
 ## References
 
