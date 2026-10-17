@@ -78,17 +78,46 @@ lemma circleAverageTransverse_neg_radius (g : Transverse → ℝ) (kT : ℝ) :
     circleAverageTransverse g (-kT) = circleAverageTransverse g kT :=
   Real.circleAverage_neg_radius
 
+/-- The circle average does not change when the radius is replaced by its absolute value. -/
+@[simp]
+lemma circleAverageTransverse_abs_radius (g : Transverse → ℝ) (kT : ℝ) :
+    circleAverageTransverse g |kT| = circleAverageTransverse g kT :=
+  Real.circleAverage_abs_radius
+
+/-- The circle average at zero radius is the value at the origin. -/
+@[simp]
+lemma circleAverageTransverse_zero_radius (g : Transverse → ℝ) :
+    circleAverageTransverse g 0 = g 0 := by
+  simp only [circleAverageTransverse, Real.circleAverage_zero, map_zero]
+
 /-- The circle average of the zero function vanishes. -/
 @[simp]
-lemma circleAverageTransverse_zero (kT : ℝ) : circleAverageTransverse 0 kT = 0 := by
+lemma circleAverageTransverse_zero_fun (kT : ℝ) : circleAverageTransverse 0 kT = 0 := by
   simp [circleAverageTransverse, Real.circleAverage_const]
+
+/-- The circle average depends only on the values of the function on the circle `‖w‖ = |kT|`. -/
+lemma circleAverageTransverse_congr_sphere {g₁ g₂ : Transverse → ℝ} {kT : ℝ}
+    (h : ∀ w, ‖w‖ = |kT| → g₁ w = g₂ w) :
+    circleAverageTransverse g₁ kT = circleAverageTransverse g₂ kT := by
+  simp only [circleAverageTransverse]
+  refine Real.circleAverage_congr_sphere fun z hz => h _ ?_
+  rw [LinearIsometryEquiv.norm_map]
+  rwa [Metric.mem_sphere, dist_zero_right] at hz
+
+/-- The circle average of a function nonnegative on the circle `‖w‖ = |kT|` is nonnegative. -/
+lemma circleAverageTransverse_nonneg_of_nonneg {g : Transverse → ℝ} {kT : ℝ}
+    (hg : ∀ w, ‖w‖ = |kT| → 0 ≤ g w) : 0 ≤ circleAverageTransverse g kT := by
+  simp only [circleAverageTransverse]
+  refine Real.circleAverage_nonneg_of_nonneg fun z hz => hg _ ?_
+  rw [LinearIsometryEquiv.norm_map]
+  rwa [Metric.mem_sphere, dist_zero_right] at hz
 
 /-- The circle average of a function odd on the circle `‖w‖ = |kT|` vanishes. -/
 lemma circleAverageTransverse_eq_zero_of_odd {g : Transverse → ℝ} {kT : ℝ}
     (hg : ∀ w, ‖w‖ = |kT| → g (-w) = -g w) :
     circleAverageTransverse g kT = 0 := by
   have hodd : ∀ θ, g (radialVector (-kT) θ) = -g (radialVector kT θ) := fun θ => by
-    rw [radialVector_neg, hg _ (norm_radialVector kT θ)]
+    rw [radialVector_neg_radius, hg _ (norm_radialVector kT θ)]
   have h := circleAverageTransverse_neg_radius g kT
   rw [circleAverageTransverse_eq_integral, circleAverageTransverse_eq_integral] at h
   simp_rw [hodd, intervalIntegral.integral_neg] at h
@@ -127,6 +156,11 @@ lemma azimuthalAverage_of_nonneg (f : VectorTmd Flavor) (i : Flavor) {x kT Q2 ζ
     azimuthalAverage f i x kT Q2 ζ = circleAverageTransverse (f i x · Q2 ζ) kT := by
   simp [azimuthalAverage, not_lt.mpr hkT]
 
+/-- The azimuthal average at zero transverse momentum is the value at the origin. -/
+lemma azimuthalAverage_zero_radius (f : VectorTmd Flavor) (i : Flavor) (x Q2 ζ : ℝ) :
+    azimuthalAverage f i x 0 Q2 ζ = f i x 0 Q2 ζ := by
+  rw [azimuthalAverage_of_nonneg f i (kT := 0) le_rfl, circleAverageTransverse_zero_radius]
+
 /-- The azimuthal average of a vector-argument density is a density in the sense of
     `TMD.IsTmdDensity`. -/
 theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDensity f) :
@@ -135,11 +169,11 @@ theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDe
     rcases lt_or_ge kT 0 with hkT | hkT
     · exact azimuthalAverage_of_neg f i hkT
     · have h0 : (f i x · Q2 ζ) = 0 := funext fun v => hf.supportX i x v Q2 ζ hx
-      rw [azimuthalAverage_of_nonneg f i hkT, h0, circleAverageTransverse_zero]
+      rw [azimuthalAverage_of_nonneg f i hkT, h0, circleAverageTransverse_zero_fun]
   supportKT i x kT Q2 ζ hkT := azimuthalAverage_of_neg f i hkT
   nonneg i x kT Q2 ζ hx0 hx1 hkT := by
     rw [azimuthalAverage_of_nonneg f i hkT]
-    exact Real.circleAverage_nonneg_of_nonneg fun _ _ => hf.nonneg i x _ Q2 ζ hx0 hx1
+    exact circleAverageTransverse_nonneg_of_nonneg fun w _ => hf.nonneg i x w Q2 ζ hx0 hx1
 
 end GTMD
 end Parton

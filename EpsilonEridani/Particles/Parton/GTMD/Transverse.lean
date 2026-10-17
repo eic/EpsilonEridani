@@ -26,7 +26,7 @@ two-vectors, together with its polar parametrisation `radialVector`.
 * `radialVector_apply_zero`, `radialVector_apply_one`: the Cartesian components
   `(kT cos θ, kT sin θ)`.
 * `norm_radialVector`: the radial vector has norm `|kT|`.
-* `radialVector_neg`: reversing the radius reverses the vector.
+* `radialVector_neg_radius`: reversing the radius reverses the vector.
 -/
 
 @[expose] public section
@@ -65,11 +65,11 @@ lemma norm_radialVector (kT θ : ℝ) : ‖radialVector kT θ‖ = |kT| := by
 
 /-- The radial vector of radius zero is the origin. -/
 @[simp]
-lemma radialVector_zero (θ : ℝ) : radialVector 0 θ = 0 := by
+lemma radialVector_zero_radius (θ : ℝ) : radialVector 0 θ = 0 := by
   simp [radialVector, circleMap_zero_radius]
 
 /-- Reversing the radius reverses the radial vector. -/
-lemma radialVector_neg (kT θ : ℝ) : radialVector (-kT) θ = -radialVector kT θ := by
+lemma radialVector_neg_radius (kT θ : ℝ) : radialVector (-kT) θ = -radialVector kT θ := by
   rw [radialVector, radialVector, ← map_neg]
   congr 1
   simp [circleMap_zero]
