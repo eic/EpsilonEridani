@@ -24,8 +24,8 @@ flavour space into the two sectors that collinear evolution keeps apart.
   `singletVector` (one on every quark and antiquark, zero on the gluon) and the gluon basis
   vector.
 * The *non-singlet sector* `nonSinglet` consists of the vectors with vanishing quark singlet and
-  vanishing gluon component. It contains the valence combinations `q_i - q̄_i` and the flavour
-  differences `(q_i + q̄_i) - (q_j + q̄_j)`.
+  vanishing gluon component. It contains the valence combinations `q_i - qbar_i` and the flavour
+  differences `(q_i + qbar_i) - (q_j + qbar_j)`.
 
 A splitting-kernel or anomalous-dimension matrix whose quark lines conserve flavour, and whose
 four channels `q ← q`, `q ← g`, `g ← q` and `g ← g` depend neither on the flavour nor on the
@@ -175,12 +175,12 @@ section Ring
 
 variable {R : Type*} [CommRing R] [DecidableEq Flavor]
 
-/-- The valence combination `q_i - q̄_i` is non-singlet. -/
+/-- The valence combination `q_i - qbar_i` is non-singlet. -/
 theorem single_quark_sub_single_antiquark_mem_nonSinglet [Fintype Flavor] (i : Flavor) :
     (Pi.single (quark i) 1 - Pi.single (antiquark i) 1 : Species Flavor → R) ∈ nonSinglet := by
   simp [singlet_apply, Pi.single_apply]
 
-/-- The flavour difference `(q_i + q̄_i) - (q_j + q̄_j)` is non-singlet. -/
+/-- The flavour difference `(q_i + qbar_i) - (q_j + qbar_j)` is non-singlet. -/
 theorem single_quark_add_single_antiquark_sub_mem_nonSinglet [Fintype Flavor] (i j : Flavor) :
     (Pi.single (quark i) 1 + Pi.single (antiquark i) 1 -
       (Pi.single (quark j) 1 + Pi.single (antiquark j) 1) : Species Flavor → R) ∈ nonSinglet := by
