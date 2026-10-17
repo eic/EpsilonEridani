@@ -29,17 +29,25 @@ and the safety conditions themselves:
 * `IsInfraredSafe O`: `O (p ::ₘ s)` tends to `O s` as `p` tends to `0`;
 * `IsIRCSafe O`: both.
 
+`IsCollinearSafe` is stated on final states `p ::ₘ s` that visibly contain the split momentum, so
+that it needs no decidable equality on `V`; `isCollinearSafe_iff_splitCollinear` restates it with
+`splitCollinear`.
+
 Infrared safety is a limit condition, not continuity of `O` in the final state: `IsInfraredSafe`
 constrains only the limit of adding a momentum at each fixed `s`, so a safe observable need not be
-continuous as a function of the momenta.
+continuous as a function of the momenta. The limit is taken over the full neighbourhood filter
+`𝓝 0`, which contains the point `p = 0` itself, so for a T1 codomain an infrared safe observable
+also satisfies `O (0 ::ₘ s) = O s` exactly (`IsInfraredSafe.apply_zero_cons`).
 
 The safety predicates are stated for observables with values in an arbitrary (topological)
 codomain, so that vector-valued quantities such as the total momentum `Multiset.sum`, or later the
-multiset of jet momenta, are covered by the same definitions. Safety is preserved by composition
-with continuous maps (`IsIRCSafe.map`) and by pairing (`IsIRCSafe.prodMk`), hence by continuous
-addition, negation, subtraction and multiplication (`IsIRCSafe.add`, `IsIRCSafe.neg`,
-`IsIRCSafe.sub`, `IsIRCSafe.mul`), so the safe observables with values in a topological ring form
-a subring (`ircSafeSubring`).
+multiset of jet momenta, are covered by the same definitions. Each of the two conditions is
+preserved by composition with maps (`IsCollinearSafe.map`, and `IsInfraredSafe.map` for continuous
+maps) and by pairing (`IsCollinearSafe.prodMk`, `IsInfraredSafe.prodMk`), hence by addition,
+negation, subtraction and multiplication (`IsCollinearSafe.add`, …, and `IsInfraredSafe.add`, …
+for continuous operations), and so is their conjunction (`IsIRCSafe.add`, `IsIRCSafe.neg`,
+`IsIRCSafe.sub`, `IsIRCSafe.mul`). The safe observables with values in a topological ring therefore
+form a subring (`ircSafeSubring`).
 
 The basic positive examples are the total momentum (`isIRCSafe_multisetSum`) and the invariant
 mass squared `invariantMassSq g s = g P P` of the total momentum `P` of the whole final state, for
@@ -143,54 +151,75 @@ end Split
 
 section Collinear
 
-variable [AddCommGroup V] [Module ℝ V] [DecidableEq V]
+variable [AddCommGroup V] [Module ℝ V]
 
-/-- An observable is *collinear safe* if it is exactly invariant under replacing any member `p` of
-a final state by the collinear pair `z • p`, `(1 - z) • p` with `z ∈ [0, 1]`. -/
+/-- An observable is *collinear safe* if it is exactly invariant under replacing a member `p` of
+a final state `p ::ₘ s` by the collinear pair `z • p`, `(1 - z) • p` with `z ∈ [0, 1]`. -/
 def IsCollinearSafe (O : Multiset V → X) : Prop :=
-  ∀ s : Multiset V, ∀ p ∈ s, ∀ z ∈ Set.Icc (0 : ℝ) 1, O (splitCollinear p z s) = O s
+  ∀ (s : Multiset V) (p : V), ∀ z ∈ Set.Icc (0 : ℝ) 1, O (z • p ::ₘ (1 - z) • p ::ₘ s) = O (p ::ₘ s)
 
-/-- Collinear safety in terms of a final state `p ::ₘ s` that visibly contains the split
-momentum `p`. -/
-theorem isCollinearSafe_iff_cons {O : Multiset V → X} :
+theorem isCollinearSafe_def {O : Multiset V → X} :
     IsCollinearSafe O ↔ ∀ (s : Multiset V) (p : V), ∀ z ∈ Set.Icc (0 : ℝ) 1,
-      O (z • p ::ₘ (1 - z) • p ::ₘ s) = O (p ::ₘ s) := by
-  refine ⟨fun hO s p z hz => ?_, fun hO s p hp z hz => ?_⟩
-  · rw [← splitCollinear_cons_self]
-    exact hO _ p (Multiset.mem_cons_self p s) z hz
+      O (z • p ::ₘ (1 - z) • p ::ₘ s) = O (p ::ₘ s) :=
+  Iff.rfl
+
+/-- Collinear safety in terms of `splitCollinear`: `O` is invariant under every collinear splitting
+of a member of a final state. -/
+theorem isCollinearSafe_iff_splitCollinear [DecidableEq V] {O : Multiset V → X} :
+    IsCollinearSafe O ↔ ∀ s : Multiset V, ∀ p ∈ s, ∀ z ∈ Set.Icc (0 : ℝ) 1,
+      O (splitCollinear p z s) = O s := by
+  refine ⟨fun hO s p hp z hz => ?_, fun hO s p z hz => ?_⟩
   · obtain ⟨t, rfl⟩ := Multiset.exists_cons_of_mem hp
     rw [splitCollinear_cons_self]
     exact hO t p z hz
-
-theorem IsCollinearSafe.apply_splitCollinear {O : Multiset V → X} (hO : IsCollinearSafe O)
-    {s : Multiset V} {p : V} (hp : p ∈ s) {z : ℝ} (hz : z ∈ Set.Icc (0 : ℝ) 1) :
-    O (splitCollinear p z s) = O s :=
-  hO s p hp z hz
-
-theorem IsCollinearSafe.apply_cons {O : Multiset V → X} (hO : IsCollinearSafe O)
-    (s : Multiset V) (p : V) {z : ℝ} (hz : z ∈ Set.Icc (0 : ℝ) 1) :
-    O (z • p ::ₘ (1 - z) • p ::ₘ s) = O (p ::ₘ s) :=
-  isCollinearSafe_iff_cons.1 hO s p z hz
+  · rw [← splitCollinear_cons_self]
+    exact hO _ p (Multiset.mem_cons_self p s) z hz
 
 /-- A collinear safe observable does not see an added zero momentum on a nonempty final state:
 splitting with fraction `0` adds exactly a zero momentum. -/
 theorem IsCollinearSafe.apply_zero_cons {O : Multiset V → X} (hO : IsCollinearSafe O)
     {s : Multiset V} (hs : s ≠ 0) : O (0 ::ₘ s) = O s := by
   obtain ⟨p, hp⟩ := Multiset.exists_mem_of_ne_zero hs
-  rw [← splitCollinear_zero hp]
-  exact hO.apply_splitCollinear hp ⟨le_rfl, zero_le_one⟩
+  obtain ⟨t, rfl⟩ := Multiset.exists_cons_of_mem hp
+  simpa using hO t _ 0 ⟨le_rfl, zero_le_one⟩
 
 theorem isCollinearSafe_const (x : X) : IsCollinearSafe (fun _ : Multiset V => x) :=
-  fun _ _ _ _ _ => rfl
+  fun _ _ _ _ => rfl
 
 theorem IsCollinearSafe.map {O : Multiset V → X} (f : X → Y) (hO : IsCollinearSafe O) :
     IsCollinearSafe (f ∘ O) :=
-  fun s p hp z hz => congrArg f (hO s p hp z hz)
+  fun s p z hz => congrArg f (hO s p z hz)
 
 theorem IsCollinearSafe.prodMk {O₁ : Multiset V → X} {O₂ : Multiset V → Y}
     (h₁ : IsCollinearSafe O₁) (h₂ : IsCollinearSafe O₂) :
     IsCollinearSafe (fun s => (O₁ s, O₂ s)) :=
-  fun s p hp z hz => Prod.ext (h₁ s p hp z hz) (h₂ s p hp z hz)
+  fun s p z hz => Prod.ext (h₁ s p z hz) (h₂ s p z hz)
+
+/-- Any function of two collinear safe observables is collinear safe. -/
+theorem IsCollinearSafe.map₂ {Z : Type*} {O₁ : Multiset V → X} {O₂ : Multiset V → Y}
+    (f : X → Y → Z) (h₁ : IsCollinearSafe O₁) (h₂ : IsCollinearSafe O₂) :
+    IsCollinearSafe (fun s => f (O₁ s) (O₂ s)) :=
+  (h₁.prodMk h₂).map (Function.uncurry f)
+
+/-- The sum of two collinear safe observables is collinear safe. -/
+theorem IsCollinearSafe.add [Add X] {O₁ O₂ : Multiset V → X} (h₁ : IsCollinearSafe O₁)
+    (h₂ : IsCollinearSafe O₂) : IsCollinearSafe (fun s => O₁ s + O₂ s) :=
+  h₁.map₂ (· + ·) h₂
+
+/-- The negation of a collinear safe observable is collinear safe. -/
+theorem IsCollinearSafe.neg [Neg X] {O : Multiset V → X} (h : IsCollinearSafe O) :
+    IsCollinearSafe (fun s => -O s) :=
+  h.map Neg.neg
+
+/-- The difference of two collinear safe observables is collinear safe. -/
+theorem IsCollinearSafe.sub [Sub X] {O₁ O₂ : Multiset V → X} (h₁ : IsCollinearSafe O₁)
+    (h₂ : IsCollinearSafe O₂) : IsCollinearSafe (fun s => O₁ s - O₂ s) :=
+  h₁.map₂ (· - ·) h₂
+
+/-- The product of two collinear safe observables is collinear safe. -/
+theorem IsCollinearSafe.mul [Mul X] {O₁ O₂ : Multiset V → X} (h₁ : IsCollinearSafe O₁)
+    (h₂ : IsCollinearSafe O₂) : IsCollinearSafe (fun s => O₁ s * O₂ s) :=
+  h₁.map₂ (· * ·) h₂
 
 end Collinear
 
@@ -200,13 +229,21 @@ variable [Zero V] [TopologicalSpace V] [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- An observable is *infrared safe* if adding a momentum `p` to any final state and letting `p`
 tend to zero recovers the value on the original state. This is a limit condition at each fixed
-final state, not continuity of the observable. -/
+final state, not continuity of the observable. The limit is over the full neighbourhood filter
+`𝓝 0`, not the punctured one, so for a T1 codomain such as `ℝ` it also forces the exact equality
+`O (0 ::ₘ s) = O s` for every `s`, including `s = 0` (`IsInfraredSafe.apply_zero_cons`). -/
 def IsInfraredSafe (O : Multiset V → X) : Prop :=
   ∀ s : Multiset V, Tendsto (fun p : V => O (p ::ₘ s)) (𝓝 0) (𝓝 (O s))
 
-theorem isInfraredSafe_iff {O : Multiset V → X} :
+theorem isInfraredSafe_def {O : Multiset V → X} :
     IsInfraredSafe O ↔ ∀ s : Multiset V, Tendsto (fun p : V => O (p ::ₘ s)) (𝓝 0) (𝓝 (O s)) :=
   Iff.rfl
+
+/-- In a T1 codomain an infrared safe observable does not see an added zero momentum, since the
+limit defining infrared safety is over a filter containing `p = 0`. -/
+theorem IsInfraredSafe.apply_zero_cons [T1Space X] {O : Multiset V → X} (hO : IsInfraredSafe O)
+    (s : Multiset V) : O (0 ::ₘ s) = O s :=
+  pure_le_nhds_iff.1 ((hO s).mono_left (pure_le_nhds 0))
 
 theorem isInfraredSafe_const (x : X) : IsInfraredSafe (fun _ : Multiset V => x) :=
   fun _ => tendsto_const_nhds
@@ -220,12 +257,39 @@ theorem IsInfraredSafe.prodMk {O₁ : Multiset V → X} {O₂ : Multiset V → Y
     IsInfraredSafe (fun s => (O₁ s, O₂ s)) :=
   fun s => (h₁ s).prodMk_nhds (h₂ s)
 
+/-- A continuous function of two infrared safe observables is infrared safe. -/
+theorem IsInfraredSafe.map₂ {Z : Type*} [TopologicalSpace Z] {O₁ : Multiset V → X}
+    {O₂ : Multiset V → Y} {f : X → Y → Z} (hf : Continuous (Function.uncurry f))
+    (h₁ : IsInfraredSafe O₁) (h₂ : IsInfraredSafe O₂) :
+    IsInfraredSafe (fun s => f (O₁ s) (O₂ s)) :=
+  (h₁.prodMk h₂).map hf
+
+/-- The sum of two infrared safe observables is infrared safe. -/
+theorem IsInfraredSafe.add [Add X] [ContinuousAdd X] {O₁ O₂ : Multiset V → X}
+    (h₁ : IsInfraredSafe O₁) (h₂ : IsInfraredSafe O₂) : IsInfraredSafe (fun s => O₁ s + O₂ s) :=
+  h₁.map₂ (f := (· + ·)) continuous_add h₂
+
+/-- The negation of an infrared safe observable is infrared safe. -/
+theorem IsInfraredSafe.neg [Neg X] [ContinuousNeg X] {O : Multiset V → X} (h : IsInfraredSafe O) :
+    IsInfraredSafe (fun s => -O s) :=
+  h.map (f := Neg.neg) continuous_neg
+
+/-- The difference of two infrared safe observables is infrared safe. -/
+theorem IsInfraredSafe.sub [Sub X] [ContinuousSub X] {O₁ O₂ : Multiset V → X}
+    (h₁ : IsInfraredSafe O₁) (h₂ : IsInfraredSafe O₂) : IsInfraredSafe (fun s => O₁ s - O₂ s) :=
+  h₁.map₂ (f := (· - ·)) continuous_sub h₂
+
+/-- The product of two infrared safe observables is infrared safe. -/
+theorem IsInfraredSafe.mul [Mul X] [ContinuousMul X] {O₁ O₂ : Multiset V → X}
+    (h₁ : IsInfraredSafe O₁) (h₂ : IsInfraredSafe O₂) : IsInfraredSafe (fun s => O₁ s * O₂ s) :=
+  h₁.map₂ (f := (· * ·)) continuous_mul h₂
+
 end Infrared
 
 section IRC
 
-variable [AddCommGroup V] [Module ℝ V] [DecidableEq V] [TopologicalSpace V]
-  [TopologicalSpace X] [TopologicalSpace Y]
+variable [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [TopologicalSpace X]
+  [TopologicalSpace Y]
 
 /-- An observable is *infrared and collinear safe* if it is both collinear safe and infrared
 safe. This is the condition under which an observable has a finite fixed-order prediction. -/
@@ -250,27 +314,27 @@ theorem IsIRCSafe.prodMk {O₁ : Multiset V → X} {O₂ : Multiset V → Y} (h�
 theorem IsIRCSafe.map₂ {Z : Type*} [TopologicalSpace Z] {O₁ : Multiset V → X}
     {O₂ : Multiset V → Y} {f : X → Y → Z} (hf : Continuous (Function.uncurry f))
     (h₁ : IsIRCSafe O₁) (h₂ : IsIRCSafe O₂) : IsIRCSafe (fun s => f (O₁ s) (O₂ s)) :=
-  (h₁.prodMk h₂).map hf
+  ⟨h₁.collinear.map₂ f h₂.collinear, h₁.infrared.map₂ hf h₂.infrared⟩
 
 /-- The sum of two infrared and collinear safe observables is safe. -/
 theorem IsIRCSafe.add [Add X] [ContinuousAdd X] {O₁ O₂ : Multiset V → X} (h₁ : IsIRCSafe O₁)
     (h₂ : IsIRCSafe O₂) : IsIRCSafe (fun s => O₁ s + O₂ s) :=
-  h₁.map₂ (f := (· + ·)) continuous_add h₂
+  ⟨h₁.collinear.add h₂.collinear, h₁.infrared.add h₂.infrared⟩
 
 /-- The negation of an infrared and collinear safe observable is safe. -/
 theorem IsIRCSafe.neg [Neg X] [ContinuousNeg X] {O : Multiset V → X} (h : IsIRCSafe O) :
     IsIRCSafe (fun s => -O s) :=
-  h.map (f := Neg.neg) continuous_neg
+  ⟨h.collinear.neg, h.infrared.neg⟩
 
 /-- The difference of two infrared and collinear safe observables is safe. -/
 theorem IsIRCSafe.sub [Sub X] [ContinuousSub X] {O₁ O₂ : Multiset V → X} (h₁ : IsIRCSafe O₁)
     (h₂ : IsIRCSafe O₂) : IsIRCSafe (fun s => O₁ s - O₂ s) :=
-  h₁.map₂ (f := (· - ·)) continuous_sub h₂
+  ⟨h₁.collinear.sub h₂.collinear, h₁.infrared.sub h₂.infrared⟩
 
 /-- The product of two infrared and collinear safe observables is safe. -/
 theorem IsIRCSafe.mul [Mul X] [ContinuousMul X] {O₁ O₂ : Multiset V → X} (h₁ : IsIRCSafe O₁)
     (h₂ : IsIRCSafe O₂) : IsIRCSafe (fun s => O₁ s * O₂ s) :=
-  h₁.map₂ (f := (· * ·)) continuous_mul h₂
+  ⟨h₁.collinear.mul h₂.collinear, h₁.infrared.mul h₂.infrared⟩
 
 variable (V) in
 /-- The infrared and collinear safe observables with values in a topological ring form a
@@ -326,11 +390,21 @@ theorem invariantMassSq_def (g : LinearMap.BilinForm ℝ V) (s : Multiset V) :
     invariantMassSq g s = g s.sum s.sum :=
   (rfl)
 
-variable [DecidableEq V]
+@[simp]
+theorem invariantMassSq_zero (g : LinearMap.BilinForm ℝ V) : invariantMassSq g 0 = 0 := by
+  simp [invariantMassSq_def]
+
+/-- The invariant mass squared of the union of two final states is not additive: it picks up the
+two cross terms `g P Q` and `g Q P` of their total momenta `P` and `Q`. -/
+theorem invariantMassSq_add (g : LinearMap.BilinForm ℝ V) (s t : Multiset V) :
+    invariantMassSq g (s + t) =
+      invariantMassSq g s + g s.sum t.sum + g t.sum s.sum + invariantMassSq g t := by
+  simp only [invariantMassSq_def, Multiset.sum_add, map_add, LinearMap.add_apply]
+  abel
 
 /-- The total momentum of a final state is collinear safe. -/
 theorem isCollinearSafe_multisetSum : IsCollinearSafe (Multiset.sum : Multiset V → V) :=
-  fun _ _ hp z _ => sum_splitCollinear z hp
+  fun _ p z _ => by simp [← add_assoc, smul_add_one_sub_smul]
 
 /-- The total momentum of a final state is infrared and collinear safe. -/
 theorem isIRCSafe_multisetSum [TopologicalSpace V] [ContinuousAdd V] :
@@ -341,9 +415,8 @@ theorem isIRCSafe_multisetSum [TopologicalSpace V] [ContinuousAdd V] :
 form `g`. -/
 theorem isIRCSafe_invariantMassSq [TopologicalSpace V] [ContinuousAdd V]
     (g : LinearMap.BilinForm ℝ V) (hg : Continuous fun q : V × V => g q.1 q.2) :
-    IsIRCSafe (invariantMassSq g) := by
-  rw [show invariantMassSq g = fun s => g s.sum s.sum from funext (invariantMassSq_def g)]
-  exact isIRCSafe_multisetSum.map₂ (f := fun x y => g x y) hg isIRCSafe_multisetSum
+    IsIRCSafe (invariantMassSq g) :=
+  isIRCSafe_multisetSum.map₂ (f := fun x y => g x y) hg isIRCSafe_multisetSum
 
 /-- The invariant mass squared is infrared and collinear safe for any bilinear form `g` on a
 finite-dimensional `V` with its canonical topology. -/
