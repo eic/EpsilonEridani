@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Tactic.Linarith
 
@@ -27,16 +28,24 @@ positivity constraints are used in hadronic physics; see
 `Physlib/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark transversity
 distribution, which is exactly this inequality applied to the parton spin-density matrix.
 
+Real positive-semidefinite matrices also arise as real parts of complex ones: for a Hermitian
+`M` and a real vector `x`, `xᵀ (Re M) x = Re (xᴴ M x)`, so `Matrix.PosSemidef.map_re` passes from
+a positive-semidefinite matrix over an `RCLike` field to its entrywise real part. This is how a
+real kernel such as `exp (-c ‖a - b‖²)` inherits positivity from its complex counterpart.
+
 ## Main results
 
 - `Matrix.PosSemidef.quadraticForm_nonneg`: the quadratic form written as an iterated sum.
 - `Matrix.PosSemidef.quadraticForm_psdTestVector`: nonnegativity on `e i + ε • e j`.
 - `Matrix.PosSemidef.apply_self_nonneg`: nonnegativity of the diagonal.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: the entrywise arithmetic-mean bound.
+- `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix over an
+  `RCLike` field is positive semidefinite.
 
 ## Implementation notes
 
-Everything here is stated over `ℝ`. `Matrix.PosSemidef` is available over more general
+Everything here is stated over `ℝ`, with an `RCLike` matrix only as the input of
+`Matrix.PosSemidef.map_re`. `Matrix.PosSemidef` is available over more general
 star-ordered rings, and the corresponding statements over `RCLike 𝕜` replace `|·|` by `‖·‖`;
 that generalisation is not needed for the leading-twist positivity bounds (whose relevant
 block is real) and is left to whoever first needs the T-odd, genuinely complex entries.
@@ -49,7 +58,7 @@ for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
 
 namespace Matrix
 
-open scoped BigOperators
+open scoped BigOperators ComplexOrder
 
 variable {n : Type*}
 
@@ -141,5 +150,24 @@ lemma PosSemidef.two_mul_abs_apply_le [Finite n] {M : Matrix n n ℝ} (hM : M.Po
   have hminus := hM.quadraticForm_psdTestVector i j (-1)
   rw [hsymm] at hplus hminus
   rcases abs_cases (M i j) with ⟨habs, _⟩ | ⟨habs, _⟩ <;> rw [habs] <;> linarith
+
+/-- The entrywise real part of a positive-semidefinite matrix over an `RCLike` field is a real
+positive-semidefinite matrix: on a real vector its quadratic form is the real part of the
+quadratic form of `M`. The index type is arbitrary. -/
+theorem PosSemidef.map_re {𝕜 : Type*} [RCLike 𝕜] {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
+    (M.map RCLike.re).PosSemidef := by
+  refine ⟨hM.isHermitian.map RCLike.re fun z => by simp [RCLike.star_def], fun x => ?_⟩
+  -- `h` is nonnegativity of `re (yᴴ M y)` for the vector `y` over `𝕜` underlying `x`.
+  set y : n →₀ 𝕜 := x.mapRange ((↑) : ℝ → 𝕜) RCLike.ofReal_zero
+  have h := (RCLike.nonneg_iff.mp (hM.2 y)).1
+  -- Strip the coercion from the outer `Finsupp.sum`, then from the inner one.
+  rw [Finsupp.sum_mapRange_index fun _ => by simp] at h
+  have inner (a : n) (b : 𝕜) : (y.sum fun j yj => b * M a j * yj) =
+      x.sum fun j xj => b * M a j * xj :=
+    Finsupp.sum_mapRange_index fun _ => mul_zero _
+  -- `re` passes through both sums as an additive map.
+  simp only [inner, map_finsuppSum RCLike.re, RCLike.star_def, RCLike.conj_ofReal,
+    RCLike.re_ofReal_mul, RCLike.re_mul_ofReal] at h
+  simpa only [map_apply, star_trivial] using h
 
 end Matrix
