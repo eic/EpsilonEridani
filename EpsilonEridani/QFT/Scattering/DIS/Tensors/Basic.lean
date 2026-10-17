@@ -679,6 +679,45 @@ theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSy
     conserved_right := fromF1F2_conserved_right g K hSymm hQ2 F1 F2
     symm := fromF1F2_isSymm g K hSymm F1 F2 }
 
+/-- On a spectator direction `e`, `g`-orthogonal to `q` and to `p_T`, a tensor with an
+`F1`/`F2` decomposition takes the value `-(e·e) F1`: only the transverse projector sees `e`.
+On a unit spacelike spectator (`e·e = -1`) this is `F1`, the transverse absorption. -/
+lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinematics V)
+    {W : Bilin V} {F1 F2 : ℝ} (hW : IsF1F2Decomposition g K W F1 F2) {e : V}
+    (hqe : g K.q e = 0) (hTe : g (pTransverse g K) e = 0) :
+    W e e = -g e e * F1 := by
+  rw [hW, transverseMetric_apply, hqe, hTe]
+  ring
+
+/-- **Orthogonal splitting of a decomposed tensor.** Write `v = a q + b p_T + u` with `u`
+`g`-orthogonal to `q` and to `p_T`, where `b = (p_T·v) / (p_T·p_T)`. A tensor with an
+`F1`/`F2` decomposition then takes the value `-(u·u) F1 + b² W(p_T, p_T)` on `v`: the `q`
+component is invisible and the cross terms vanish. -/
+lemma exists_apply_self_eq_of_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V)
+    (hSymm : g.IsSymm) (hqq : g K.q K.q ≠ 0)
+    (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) {W : Bilin V} {F1 F2 : ℝ}
+    (hW : IsF1F2Decomposition g K W F1 F2) (v : V) :
+    ∃ u : V, g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
+      W v v = -g u u * F1 + (g (pTransverse g K) v / g (pTransverse g K) (pTransverse g K)) ^ 2
+        * W (pTransverse g K) (pTransverse g K) := by
+  set T := pTransverse g K
+  have hTq : g T K.q = 0 := pTransverse_orthogonal_q g K hqq
+  have hqT : g K.q T = 0 := by rw [hSymm.eq, hTq]
+  set a := g K.q v / g K.q K.q
+  set b := g T v / g T T
+  refine ⟨v - a • K.q - b • T, ?_, ?_, ?_⟩
+  · simp only [map_sub, map_smul, smul_eq_mul, hqT, a]
+    field_simp
+    ring
+  · simp only [map_sub, map_smul, smul_eq_mul, hTq, b]
+    field_simp
+    ring
+  · rw [hW v v, hW T T, transverseMetric_apply, transverseMetric_apply]
+    simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
+      hqT, hTq, hSymm.eq v K.q, hSymm.eq v T, a, b]
+    field_simp
+    ring
+
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one
 pair does the reverse. -/
