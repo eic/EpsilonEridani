@@ -130,25 +130,24 @@ def singlet : (Species Flavor → R) →ₗ[R] R where
   map_smul' c v := by
     simp only [Pi.smul_apply, smul_eq_mul, ← mul_add, ← Finset.mul_sum, RingHom.id_apply]
 
-@[simp]
 theorem singlet_apply (v : Species Flavor → R) :
     singlet v = ∑ i, (v (quark i) + v (antiquark i)) := (rfl)
 
 /-- The quark singlet is the pairing with `singletVector`. -/
 theorem singletVector_dotProduct (v : Species Flavor → R) : singletVector ⬝ᵥ v = singlet v := by
-  simp [dotProduct, sum_univ, Finset.sum_add_distrib]
+  simp [singlet_apply, dotProduct, sum_univ, Finset.sum_add_distrib]
 
 /-- The quark singlet of `singletVector` is the number `2 n_f` of quark and antiquark species. -/
 @[simp]
 theorem singlet_singletVector :
     singlet (singletVector : Species Flavor → R) = 2 * Fintype.card Flavor := by
-  simp [one_add_one_eq_two, Finset.card_univ, mul_comm]
+  simp [singlet_apply, one_add_one_eq_two, Finset.card_univ, mul_comm]
 
 /-- The gluon basis vector has no quark singlet. -/
 @[simp]
 theorem singlet_single_gluon [DecidableEq Flavor] (b : R) :
     singlet (Pi.single (gluon : Species Flavor) b) = 0 := by
-  simp
+  simp [singlet_apply]
 
 /-- The pair `(Σ v, v gluon)` of the quark singlet and the gluon component, as a linear map. -/
 def singletGluon : (Species Flavor → R) →ₗ[R] Fin 2 → R :=
@@ -179,13 +178,13 @@ variable {R : Type*} [CommRing R] [DecidableEq Flavor]
 /-- The valence combination `q_i - q̄_i` is non-singlet. -/
 theorem single_quark_sub_single_antiquark_mem_nonSinglet [Fintype Flavor] (i : Flavor) :
     (Pi.single (quark i) 1 - Pi.single (antiquark i) 1 : Species Flavor → R) ∈ nonSinglet := by
-  simp [Pi.single_apply]
+  simp [singlet_apply, Pi.single_apply]
 
 /-- The flavour difference `(q_i + q̄_i) - (q_j + q̄_j)` is non-singlet. -/
 theorem single_quark_add_single_antiquark_sub_mem_nonSinglet [Fintype Flavor] (i j : Flavor) :
     (Pi.single (quark i) 1 + Pi.single (antiquark i) 1 -
       (Pi.single (quark j) 1 + Pi.single (antiquark j) 1) : Species Flavor → R) ∈ nonSinglet := by
-  simp [Pi.single_apply, Finset.sum_add_distrib]
+  simp [singlet_apply, Pi.single_apply, Finset.sum_add_distrib]
 
 /-- When the number `2 n_f` of quark and antiquark species is invertible, flavour space is the
 direct sum of the singlet sector and the non-singlet sector. -/
@@ -339,7 +338,8 @@ singlet. -/
 @[simp]
 theorem flavorBlindMatrix_mulVec_gluon (v : Species Flavor → R) :
     (flavorBlindMatrix qq qg gq gg *ᵥ v) gluon = gq * singlet v + gg * v gluon := by
-  simp [mulVec, dotProduct, sum_univ, Finset.mul_sum, mul_add, Finset.sum_add_distrib]
+  simp [singlet_apply, mulVec, dotProduct, sum_univ, Finset.mul_sum, mul_add,
+    Finset.sum_add_distrib]
 
 /-- The quark singlet of `P *ᵥ v` sees `v` only through its quark singlet and its gluon
 component, the gluon entering with the singlet weight `2 n_f qg`. -/
@@ -392,7 +392,7 @@ theorem flavorBlindMatrix_mulVec_singletVector :
       qq • singletVector +
         (2 * Fintype.card Flavor * gq) • Pi.single (gluon : Species Flavor) 1 := by
   ext s
-  cases s <;> simp [one_add_one_eq_two, Finset.card_univ, mul_comm]
+  cases s <;> simp [mul_comm]
 
 /-- A flavour-blind kernel maps the gluon basis vector into the singlet sector. -/
 theorem flavorBlindMatrix_mulVec_single_gluon :
