@@ -107,16 +107,16 @@ theorem eqOn_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
   filter_upwards [hc.continuousAt.preimage_mem_nhds (hUo.mem_nhds hzU)] with x hx
   exact hfg ⟨hx, by rw [SetLike.mem_coe, euclideanSection_def]; exact LinearMap.mem_range_self _ x⟩
 
-/-- The equal-time projection of a spacelike Minkowski vector is spacelike: replacing the time
-component of `v` by `0` leaves the Minkowski square negative, since the spatial components of a
-spacelike vector cannot all vanish. -/
-theorem causalCharacter_sum_elim_zero_eq_spaceLike_of_spaceLike {v : Vector d}
-    (hv : causalCharacter v = .spaceLike) :
-    causalCharacter (Sum.elim (fun _ => 0) fun i => v (Sum.inr i)) = .spaceLike := by
-  rw [spaceLike_iff_norm_sq_neg] at hv ⊢
-  rw [minkowskiProduct_toCoord] at hv ⊢
-  simp only [Sum.elim_inl, Sum.elim_inr, mul_zero, zero_sub, neg_neg_iff_pos]
-  nlinarith [mul_self_nonneg (v (Sum.inl 0))]
+/-- The spatial part of a spacelike vector does not vanish: a Minkowski vector whose spatial
+components all vanish has Minkowski square equal to the square of its time component, which is
+nonnegative. -/
+theorem spatialPart_ne_zero_of_spaceLike {v : Vector d}
+    (hv : causalCharacter v = .spaceLike) : spatialPart v ≠ 0 := by
+  rw [spaceLike_iff_norm_sq_neg, minkowskiProduct_toCoord] at hv
+  intro h
+  have h0 : ∀ i, v (Sum.inr i) = 0 := fun i => congrFun ((WithLp.toLp_eq_zero (p := 2)).mp h) i
+  simp only [h0, mul_zero, Finset.sum_const_zero, sub_zero] at hv
+  exact absurd hv (not_lt.2 (mul_self_nonneg _))
 
 /-- **The Euclidean values determine the spacelike values.** Two functions holomorphic on an
 open preconnected set `U` that contains every spacelike Minkowski separation, and that agree at
@@ -128,12 +128,17 @@ theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → 
     (hfg : EqOn f g (U ∩ (euclideanSection d : Set (ComplexSeparation d))))
     {v : Vector d} (hv : causalCharacter v = .spaceLike) :
     f (ofMinkowski v) = g (ofMinkowski v) := by
-  -- The equal-time projection of `v` is again spacelike, and lies on the Euclidean section.
+  -- The equal-time projection of `v` lies on the Euclidean section; it is nonzero because the
+  -- spatial part of a spacelike vector cannot vanish, so it is spacelike.
   let w : Vector d := Sum.elim (fun _ => 0) fun i => v (Sum.inr i)
-  have hw : causalCharacter w = .spaceLike :=
-    causalCharacter_sum_elim_zero_eq_spaceLike_of_spaceLike hv
   have hwE : ofMinkowski w ∈ euclideanSection d :=
     ofMinkowski_mem_euclideanSection_iff.2 rfl
+  have hw0 : w ≠ 0 := by
+    intro h
+    refine spatialPart_ne_zero_of_spaceLike hv ((WithLp.toLp_eq_zero (p := 2)).mpr ?_)
+    exact funext fun i => congrFun h (Sum.inr i)
+  have hw : causalCharacter w = .spaceLike :=
+    causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection hwE hw0
   exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg (hspace v hv)
 
 end Continuation
