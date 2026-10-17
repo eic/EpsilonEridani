@@ -63,7 +63,7 @@ dipole amplitude and its unitarity bound.
 
 - `SmallX.mem_Icc_zero_two_of_posSemidef_one_sub`: colour transparency and a positive-semidefinite
   S-matrix give `N x y ∈ [0, 2]`, for a kernel on an arbitrary index type.
-- `SmallX.IsAdmissible.symm`: an admissible amplitude is symmetric in its endpoints.
+- `SmallX.IsAdmissible.apply_comm`: an admissible amplitude is symmetric in its endpoints.
 - `SmallX.IsAdmissible.mem_Icc`: the unitarity bound `N x y ∈ [0, 1]`.
 - `SmallX.isAdmissible_blackDisc` and `SmallX.isAdmissible_golecBiernatWusthoff`: the black disc
   and the Golec-Biernat-Wüsthoff amplitude are admissible.
@@ -89,14 +89,15 @@ structure IsAdmissible (N : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (F
   /-- The dipole S-matrix `1 - N` is non-negative. -/
   le_one (x y : EuclideanSpace ℝ (Fin 2)) : N x y ≤ 1
 
-/-- A colour-transparent amplitude whose S-matrix `1 - N` is a positive-semidefinite kernel lies
-in `[0, 2]`: the S-matrix has unit diagonal, so every entry has modulus at most one. The kernel
-may live on an arbitrary index type; no structure of the transverse plane enters. -/
-theorem mem_Icc_zero_two_of_posSemidef_one_sub {α : Type*} {N : α → α → ℝ} (hN : ∀ x, N x x = 0)
-    (hS : (Matrix.of fun x y => 1 - N x y).PosSemidef) (x y : α) :
-    N x y ∈ Set.Icc (0 : ℝ) 2 := by
-  have h := hS.norm_le_one_of_apply_self_eq_one (a := x) (b := y) (by simp [hN])
-    (by simp [hN])
+/-- Colour transparency at the two endpoints `x` and `y` and a positive-semidefinite
+S-matrix `1 - N` give `N x y ∈ [0, 2]`: the S-matrix is `1` on the diagonal at `x` and `y`,
+so the entry between them has modulus at most one. The kernel may live on an arbitrary index
+type; no structure of the transverse plane enters. -/
+theorem mem_Icc_zero_two_of_posSemidef_one_sub {α : Type*} {N : α → α → ℝ}
+    (hS : (Matrix.of fun x y => 1 - N x y).PosSemidef) {x y : α} (hx : N x x = 0)
+    (hy : N y y = 0) : N x y ∈ Set.Icc (0 : ℝ) 2 := by
+  have h := hS.norm_le_one_of_apply_self_eq_one (a := x) (b := y) (by simp [hx])
+    (by simp [hy])
   rw [of_apply, Real.norm_eq_abs, abs_le] at h
   constructor <;> linarith [h.1, h.2]
 
@@ -105,14 +106,15 @@ variable {N : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) → ℝ}
 namespace IsAdmissible
 
 /-- An admissible amplitude is symmetric under exchange of the quark and antiquark positions. -/
-theorem symm (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : N x y = N y x := by
+theorem apply_comm (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : N x y = N y x := by
   have h := hN.posSemidef_one_sub.isHermitian.apply x y
   simp only [of_apply, star_trivial] at h
   linarith
 
 /-- An admissible amplitude is non-negative. -/
 theorem nonneg (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : 0 ≤ N x y :=
-  (mem_Icc_zero_two_of_posSemidef_one_sub hN.apply_self hN.posSemidef_one_sub x y).1
+  (mem_Icc_zero_two_of_posSemidef_one_sub hN.posSemidef_one_sub (hN.apply_self x)
+    (hN.apply_self y)).1
 
 /-- **Unitarity bound**: an admissible amplitude lies in the unit interval, `0 ≤ N x y ≤ 1`. -/
 theorem mem_Icc (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) :
@@ -154,6 +156,18 @@ amplitude. Its S-matrix is a Gaussian kernel in the dipole size `‖x - y‖`. -
 noncomputable def golecBiernatWusthoff (Qs : ℝ) (x y : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   1 - Real.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2))
 
+/-- The Golec-Biernat-Wüsthoff amplitude as an explicit formula in the dipole size, so that
+consumers of the amplitude need not unfold the definition. -/
+lemma golecBiernatWusthoff_def (Qs : ℝ) (x y : EuclideanSpace ℝ (Fin 2)) :
+    golecBiernatWusthoff Qs x y = 1 - Real.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2)) := (rfl)
+
+/-- The dipole S-matrix `1 - N` of the Golec-Biernat-Wüsthoff amplitude is a Gaussian in the
+dipole size `‖x - y‖`. -/
+@[simp] lemma one_sub_golecBiernatWusthoff (Qs : ℝ) (x y : EuclideanSpace ℝ (Fin 2)) :
+    1 - golecBiernatWusthoff Qs x y = Real.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2)) := by
+  rw [golecBiernatWusthoff_def]
+  ring
+
 /-- The Golec-Biernat-Wüsthoff amplitude is colour transparent: a dipole of zero size does not
 scatter. -/
 @[simp] lemma golecBiernatWusthoff_apply_self (Qs : ℝ) (x : EuclideanSpace ℝ (Fin 2)) :
@@ -176,9 +190,9 @@ theorem isAdmissible_golecBiernatWusthoff (Qs : ℝ) :
         Matrix.of fun x y => 1 - golecBiernatWusthoff Qs x y := by
       ext x y
       simp only [map_apply, of_apply, ← Complex.ofReal_neg, ← Complex.ofReal_exp,
-        RCLike.re_to_complex, Complex.ofReal_re, sub_sub_cancel, golecBiernatWusthoff]
+        RCLike.re_to_complex, Complex.ofReal_re, one_sub_golecBiernatWusthoff]
     exact e ▸ hG.map_re
-  · simp only [golecBiernatWusthoff]
+  · rw [golecBiernatWusthoff_def]
     linarith [Real.exp_pos (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2))]
 
 end SmallX
