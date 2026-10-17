@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -138,6 +139,29 @@ lemma sudakov_le_one {K : ℝ → ℝ} {t T : ℝ} (h : 0 ≤ ∫ s in t..T, K s
     sudakov K t T ≤ 1 := by
   rw [sudakov, Real.exp_le_one_iff]
   linarith
+
+/-- The Sudakov form factor is continuous in the lower scale, for a continuous kernel. -/
+lemma continuous_sudakov {K : ℝ → ℝ} (hK : Continuous K) (T : ℝ) :
+    Continuous fun t => sudakov K t T := by
+  have hprim : Continuous fun t : ℝ => ∫ s in t..T, K s := by
+    refine (intervalIntegral.continuous_primitive (μ := MeasureTheory.volume)
+      (fun a b => hK.intervalIntegrable a b) T).neg.congr fun t => ?_
+    simp only [Pi.neg_apply]
+    rw [intervalIntegral.integral_symm t T, neg_neg]
+  simpa [sudakov] using (continuous_neg.comp hprim).rexp
+
+/-- **The derivative of the Sudakov form factor in the lower scale** is `K t` times the factor
+itself: lowering the scale by `dt` admits an emission with probability `K t dt`, conditionally on
+there having been none above `t`.
+
+This is the differential form of the no-emission probability, and is what makes `K t * Δ_K t` the
+density of the first emission scale. -/
+lemma hasDerivAt_sudakov {K : ℝ → ℝ} (hK : Continuous K) (t T : ℝ) :
+    HasDerivAt (fun s => sudakov K s T) (K t * sudakov K t T) t := by
+  have hprim : HasDerivAt (fun s => ∫ r in s..T, K r) (-K t) t :=
+    intervalIntegral.integral_hasDerivAt_left (hK.intervalIntegrable _ _)
+      (hK.stronglyMeasurableAtFilter _ _) hK.continuousAt
+  simpa [sudakov, mul_comm] using hprim.neg.exp
 
 /-- The veto identity in the shower's own vocabulary: the veto chain built from the
 overestimate `G` sums to the Sudakov factor of the true kernel `K`. -/
