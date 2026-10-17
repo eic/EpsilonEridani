@@ -26,7 +26,8 @@ as a `finsum` over all powers of `b`; when `b` has no constant term only the pow
 * `EpsilonEridani.SubstGroup R`: the group of power series `u X + O(X²)` with `u` a unit, under
   substitution.
 * `EpsilonEridani.SubstGroup.linearCoeff`: the homomorphism `F ↦ F'(0)` to `Rˣ`.
-* `EpsilonEridani.SubstGroup.rescale u`: the linear substitution `X ↦ u X`.
+* `EpsilonEridani.SubstGroup.rescale`: the homomorphism `u ↦ (X ↦ u X)` from `Rˣ`, splitting
+  `linearCoeff`.
 
 ## Main statements
 
@@ -110,15 +111,15 @@ instance : Inv (SubstGroup R) :=
     constantCoeff_substInvOfIsUnit _ _, by simp⟩⟩
 
 @[simp]
-lemma toPowerSeries_one : (1 : SubstGroup R).toPowerSeries = X := (rfl)
+lemma toPowerSeries_one : (1 : SubstGroup R).toPowerSeries = X := rfl
 
 @[simp]
 lemma toPowerSeries_mul (F G : SubstGroup R) :
-    (F * G).toPowerSeries = F.toPowerSeries.subst G.toPowerSeries := (rfl)
+    (F * G).toPowerSeries = F.toPowerSeries.subst G.toPowerSeries := rfl
 
 lemma toPowerSeries_inv (F : SubstGroup R) :
     F⁻¹.toPowerSeries =
-      F.toPowerSeries.substInvOfIsUnit F.isUnit_coeff_one_toPowerSeries := (rfl)
+      F.toPowerSeries.substInvOfIsUnit F.isUnit_coeff_one_toPowerSeries := rfl
 
 /-- `F⁻¹(F(X)) = X`. -/
 @[simp]
@@ -161,47 +162,43 @@ def linearCoeff : SubstGroup R →* Rˣ where
 
 @[simp]
 lemma coe_linearCoeff (F : SubstGroup R) :
-    (linearCoeff F : R) = coeff 1 F.toPowerSeries := (rfl)
+    (linearCoeff F : R) = coeff 1 F.toPowerSeries := by
+  rw [linearCoeff, MonoidHom.coe_mk, OneHom.coe_mk, IsUnit.unit_spec]
 
 /-- The linear coefficient of the inverse substitution is the inverse of the linear
 coefficient. -/
 @[simp]
 lemma coeff_one_toPowerSeries_inv (F : SubstGroup R) :
     coeff 1 F⁻¹.toPowerSeries = ((linearCoeff F)⁻¹ : Rˣ) := by
-  rw [toPowerSeries_inv]
-  exact coeff_one_substInvOfIsUnit _ _
+  rw [toPowerSeries_inv, coeff_one_substInvOfIsUnit,
+    show F.isUnit_coeff_one_toPowerSeries.unit = linearCoeff F from
+      Units.ext (coe_linearCoeff F).symm]
 
 lemma mem_ker_linearCoeff_iff {F : SubstGroup R} :
     F ∈ linearCoeff.ker ↔ coeff 1 F.toPowerSeries = 1 := by
   rw [MonoidHom.mem_ker, Units.ext_iff, coe_linearCoeff, Units.val_one]
 
-/-- The linear substitution `X ↦ u X`, whose action by substitution is `PowerSeries.rescale u`. -/
-def rescale (u : Rˣ) : SubstGroup R :=
-  ⟨C (u : R) * X, by simp, by simp⟩
+/-- The linear substitution `X ↦ u X`, whose action by substitution is `PowerSeries.rescale u`:
+a homomorphism `Rˣ →* SubstGroup R` splitting `linearCoeff`. -/
+def rescale : Rˣ →* SubstGroup R where
+  toFun u := ⟨C (u : R) * X, by simp, by simp⟩
+  map_one' := by
+    ext1
+    simp only [Units.val_one, map_one, one_mul, toPowerSeries_one]
+  map_mul' u v := by
+    ext1
+    simp only [toPowerSeries_mul]
+    rw [← smul_eq_C_mul X (v : R), ← PowerSeries.rescale_eq_subst, ← rescale_X, ← rescale_X,
+      rescale_rescale, Units.val_mul]
 
 @[simp]
-lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = C (u : R) * X := (rfl)
+lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = C (u : R) * X := by
+  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk]
 
 @[simp]
 lemma linearCoeff_rescale (u : Rˣ) : linearCoeff (rescale u) = u := by
   ext
   simp
-
-@[simp]
-lemma rescale_one : rescale (1 : Rˣ) = 1 := by
-  ext1
-  simp
-
-@[simp]
-lemma rescale_mul (u v : Rˣ) : rescale (u * v) = rescale u * rescale v := by
-  ext1
-  simp only [toPowerSeries_mul, toPowerSeries_rescale]
-  rw [← smul_eq_C_mul X (v : R), ← PowerSeries.rescale_eq_subst, ← rescale_X, ← rescale_X,
-    rescale_rescale, Units.val_mul]
-
-@[simp]
-lemma rescale_inv (u : Rˣ) : rescale u⁻¹ = (rescale u)⁻¹ :=
-  eq_inv_of_mul_eq_one_left (by rw [← rescale_mul, inv_mul_cancel, rescale_one])
 
 end SubstGroup
 
