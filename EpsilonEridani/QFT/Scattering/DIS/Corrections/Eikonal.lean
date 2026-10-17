@@ -52,6 +52,10 @@ The charged legs `L`, their net charge `netCharge L = ∑ᵢ ηᵢ Qᵢ`, the ch
   families of legs as a double sum over pairs of legs; for `M = L` this is `J·J`.
 * `eikonalCurrent_sumElim`: the current of a union of legs is the sum of the currents, so the
   current of a scattering process splits into a lepton current and a hadron current.
+* `eikonalCurrent_chargedLine`: the current of a charged line, `J(ℓ) = Q (p'/(p'·ℓ) - p/(p·ℓ))`.
+* `eikonalCurrent_chargedLine_conserved_left`, `eikonalCurrent_chargedLine_conserved_right`: the
+  current of a single charged line is conserved by itself, `J(ℓ)·ℓ = 0`, and `ℓ·J(ℓ) = 0` for a
+  symmetric `g`.
 * `eikonalCurrent_chargedLegs`: the eikonal current of elastic lepton–hadron scattering, the
   lepton current plus the hadron current.
 * `eikonalCurrent_chargedLegs_conserved_left`, `eikonalCurrent_chargedLegs_conserved_right`: the

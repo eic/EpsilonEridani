@@ -32,6 +32,9 @@ is the net outgoing charge `∑ᵢ ηᵢ Qᵢ`, which vanishes for a process tha
 * `netCharge_sumElim`: the net charge of a union of legs is the sum of the net charges.
 * `netCharge_chargedLine`, `DisKinematics.netCharge_chargedLegs`: a charged line, and hence
   elastic lepton–hadron scattering, conserves charge.
+* `DisKinematics.chargedLegs_eq_sumElim`: the legs of elastic lepton–hadron scattering as the
+  union of the lepton line and the hadron line; this is the reduction that lets
+  `netCharge_sumElim` and `Corrections.eikonalCurrent_sumElim` apply to them.
 -/
 
 @[expose] public section
