@@ -75,8 +75,8 @@ theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
 
 /-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
 null: `⟪v, v⟫ₘ = 0`. -/
-theorem minkowskiProduct_self_eq_zero_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (ht : v.timeComponent = a)
+theorem minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul {d : ℕ}
+    {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (ht : v.timeComponent = a)
     (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
   rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
 
