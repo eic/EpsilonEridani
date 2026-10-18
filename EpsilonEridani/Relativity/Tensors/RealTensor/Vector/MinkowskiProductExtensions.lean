@@ -19,7 +19,8 @@ companion to `Lorentz.Vector.minkowskiProduct_add_self`; the additivity of the s
 `(u + v).spatialPart = u.spatialPart + v.spatialPart`; the factorisation
 `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial part is `a • n`
 along a unit vector `n` into its light-cone components, with the component `⟪v.spatialPart, n⟫ = a`
-of such a vector along `n` and its nullness when `v⁰ = a`; the length of the spatial part of a
+of such a vector along `n`, its nullness when `v⁰ = a`, and its form `(v⁰)² - ⟪v.spatialPart, n⟫²`
+in terms of the component along `n`; the length of the spatial part of a
 vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
 in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
 energies above the mass and a prescribed angle between their spatial parts.
@@ -80,6 +81,15 @@ theorem minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul
     (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
   rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
 
+/-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
+`(v⁰)² - ⟪v.spatialPart, n⟫²`, the square of its time component minus the square of its
+component along `n`. -/
+theorem minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v, v⟫ₘ = v.timeComponent ^ 2 - ⟪v.spatialPart, n⟫_ℝ ^ 2 := by
+  rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv,
+    inner_spatialPart_eq_of_spatialPart_eq_smul hn hv, sq_sub_sq]
+
 end Vector
 end Lorentz
 
@@ -131,10 +141,10 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
   have hpt : p.timeComponent = E := rfl
   have hp't : p'.timeComponent = E' := rfl
   refine ⟨p, p', ?_, ?_, hpt, hp't, ?_⟩
-  · rw [minkowskiProduct_self_eq_sq_sub, hps, hpt]
-    simp [norm_smul, he₀, abs_of_pos hP, hPsq]
-  · rw [minkowskiProduct_self_eq_sq_sub, hp's, hp't]
-    simp [norm_smul, hu, abs_of_pos hP', hP'sq]
+  · rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul he₀ hps, hpt]
+    linear_combination -hPsq
+  · rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hu hp's, hp't]
+    linear_combination -hP'sq
   · rw [hps, hp's, angle_smul_left_of_pos _ _ hP, angle_smul_right_of_pos _ _ hP']
     simp [angle, hu₀, he₀, hu, Real.arccos_cos h0 hπ]
 
