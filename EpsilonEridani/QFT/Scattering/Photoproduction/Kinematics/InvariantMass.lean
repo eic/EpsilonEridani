@@ -39,8 +39,9 @@ quantities rather than by convention. The target has momentum `p` against the be
   `-q²`, in terms of its energy fraction, `W² = M² - Q² + 2 (x E_s E + p q_∥)`
   (`minkowskiProduct_add_self_of_target_energyFraction`). Along the beam axis `q` is null
   (`Lorentz.Vector.minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul`), and
-  `W² = M² + 2 x E_s (E + p)` (`minkowskiProduct_add_self_of_realPhoton_energyFraction`) and
-  `x = e^{y} (W² - M²) / (2 W E_s)` (`energyFraction_eq_exp_rapidity_mul_sub_div_sqrt`).
+  `W² = M² + 2 x E_s (E + p)` (`minkowskiProduct_add_self_of_realPhoton_energyFraction`),
+  `e^{2y} = (2 x E_s + E - p) / (E + p)` (`exp_two_mul_rapidity_of_realPhoton_energyFraction`)
+  and `x = e^{y} (W² - M²) / (2 W E_s)` (`energyFraction_eq_exp_rapidity_mul_sub_div_sqrt`).
 
 For a massless target these reduce to the familiar `W² = 4 k E`, `e^{2y} = k / E`,
 `k = (W / 2) e^{y}` and `E = (W / 2) e^{-y}` (`minkowskiProduct_add_self_of_masslessTarget`,
@@ -217,6 +218,17 @@ theorem minkowskiProduct_add_self_of_realPhoton_energyFraction
     ⟪q + P, q + P⟫ₘ = M ^ 2 + 2 * γ.energyFraction s * s.energy * (E + p) := by
   rw [mul_assoc 2, PhotonKinematics.energyFraction_def, div_mul_cancel₀ _ hs]
   exact minkowskiProduct_add_self_of_realPhoton hn hq hq' hP hP' hM
+
+include hn in
+omit hM in
+/-- **The rapidity from the energy fraction.** A photon `γ` of four-momentum `q` along the beam
+axis carrying the fraction `x` of the energy `E_s ≠ 0` of the source `s` forms with the target a
+system of rapidity `y` along the beam axis with `e^{2y} = (2 x E_s + E - p) / (E + p)`. -/
+theorem exp_two_mul_rapidity_of_realPhoton_energyFraction (hq' : q.spatialPart = γ.energy • n)
+    (hs : s.energy ≠ 0) (hk : 0 < γ.energy) (hp : -E < p) (hpE : p ≤ E) :
+    exp (2 * (q + P).rapidity n) = (2 * γ.energyFraction s * s.energy + E - p) / (E + p) := by
+  rw [mul_assoc 2, PhotonKinematics.energyFraction_def, div_mul_cancel₀ _ hs]
+  exact exp_two_mul_rapidity_of_realPhoton hn hq hq' hP hP' hk hp hpE
 
 include hn in
 /-- **The energy fraction from the invariant mass and the rapidity.** A photon `γ` of

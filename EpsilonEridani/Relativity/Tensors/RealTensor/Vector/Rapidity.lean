@@ -31,7 +31,7 @@ by its transverse mass and its rapidity: `v⁰ ± v_∥ = m_T e^{±y}`
 
 For a four-vector whose spatial part lies along a unit vector `n`, the transverse mass is the
 invariant mass `W = √⟪v, v⟫ₘ`
-(`Lorentz.Vector.minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul`, in
+(`Lorentz.Vector.minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul`, in
 `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`), and the same
 relations read `v⁰ ± v_∥ = W e^{±y}`, `v⁰ = W cosh y` and `v_∥ = W sinh y`
 (the `_of_spatialPart_eq_smul` forms).
@@ -159,14 +159,6 @@ theorem inner_spatialPart_eq_sqrt_mul_sinh_rapidity {v : Vector d} {n : Euclidea
   linear_combination (timeComponent_add_inner_spatialPart_eq_sqrt_mul_exp_rapidity h -
     timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity h) / 2
 
-/-- For a four-vector whose spatial part is `a • n` along a unit vector `n`, the transverse mass
-along `n` is the invariant mass: `√((v⁰)² - v_∥²) = √⟪v, v⟫ₘ`. -/
-private theorem sqrt_sq_sub_inner_sq_eq_of_spatialPart_eq_smul {v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
-    √(v.timeComponent ^ 2 - ⟪v.spatialPart, n⟫_ℝ ^ 2) = √⟪v, v⟫ₘ := by
-  rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv,
-    inner_spatialPart_eq_of_spatialPart_eq_smul hn hv, sq_sub_sq]
-
 /-- **A collinear four-vector from its invariant mass and rapidity, forward component.** If the
 spatial part of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then
 `v⁰ + a = W e^{y}`, with `W = √⟪v, v⟫ₘ` and `y` the rapidity along `n`. -/
@@ -176,7 +168,7 @@ theorem timeComponent_add_eq_sqrt_minkowskiProduct_mul_exp_rapidity_of_spatialPa
     v.timeComponent + a = √⟪v, v⟫ₘ * exp (v.rapidity n) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
   have := timeComponent_add_inner_spatialPart_eq_sqrt_mul_exp_rapidity (hpar ▸ h)
-  rwa [sqrt_sq_sub_inner_sq_eq_of_spatialPart_eq_smul hn hv, hpar] at this
+  rwa [← minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv, hpar] at this
 
 /-- **A collinear four-vector from its invariant mass and rapidity, backward component.** If the
 spatial part of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then
@@ -187,7 +179,7 @@ theorem timeComponent_sub_eq_sqrt_minkowskiProduct_mul_exp_neg_rapidity_of_spati
     v.timeComponent - a = √⟪v, v⟫ₘ * exp (-v.rapidity n) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
   have := timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity (hpar ▸ h)
-  rwa [sqrt_sq_sub_inner_sq_eq_of_spatialPart_eq_smul hn hv, hpar] at this
+  rwa [← minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv, hpar] at this
 
 /-- The energy of a collinear four-vector is `W cosh y`. -/
 theorem timeComponent_eq_sqrt_minkowskiProduct_mul_cosh_rapidity_of_spatialPart_eq_smul
@@ -195,7 +187,7 @@ theorem timeComponent_eq_sqrt_minkowskiProduct_mul_cosh_rapidity_of_spatialPart_
     (hv : v.spatialPart = a • n) (h : |a| < v.timeComponent) :
     v.timeComponent = √⟪v, v⟫ₘ * cosh (v.rapidity n) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
-  rw [← sqrt_sq_sub_inner_sq_eq_of_spatialPart_eq_smul hn hv]
+  rw [minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv]
   exact timeComponent_eq_sqrt_mul_cosh_rapidity (hpar ▸ h)
 
 /-- The momentum `a` along the axis of a collinear four-vector of spatial part `a • n` is
@@ -206,7 +198,7 @@ theorem eq_sqrt_minkowskiProduct_mul_sinh_rapidity_of_spatialPart_eq_smul {v : V
     a = √⟪v, v⟫ₘ * sinh (v.rapidity n) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
   have := inner_spatialPart_eq_sqrt_mul_sinh_rapidity (hpar ▸ h)
-  rwa [sqrt_sq_sub_inner_sq_eq_of_spatialPart_eq_smul hn hv, hpar] at this
+  rwa [← minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv, hpar] at this
 
 end Vector
 end Lorentz
