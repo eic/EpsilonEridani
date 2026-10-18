@@ -144,6 +144,87 @@ lemma valence_sumRule [Fintype Flavor]
     mellinMoment f 0 i Q2 = h.valenceTarget i :=
   h.valence i Q2
 
+/-! ### Pulling a density back along a map of parton indices
+
+A map `σ : κ → ι` of parton indices pulls a density over `ι` back to a density over `κ`,
+`comap σ f k = f (σ k)`. The density assumptions survive any such pullback; the summed moments
+and the sum-rule bundle survive a bijective one. Charge conjugation and flavour symmetries act on
+densities this way. -/
+
+section Comap
+
+variable {ι κ μ : Type}
+
+/-- A moment of a density depends on it only through the density of the given parton at the
+given scale on the unit interval. -/
+lemma mellinMoment_congr {f : Pdf ι} {g : Pdf κ} {i : ι} {j : κ} {Q2 : ℝ}
+    (h : Set.EqOn (f i · Q2) (g j · Q2) (Set.Icc 0 1)) (n : ℕ) :
+    mellinMoment f n i Q2 = mellinMoment g n j Q2 :=
+  MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x hx => by
+    simp only [show f i x Q2 = g j x Q2 from h hx]
+
+/-- The density over `κ` whose parton `k` carries the density of parton `σ k` in `f`. -/
+def comap (σ : κ → ι) (f : Pdf ι) : Pdf κ := fun k => f (σ k)
+
+@[simp]
+lemma comap_apply (σ : κ → ι) (f : Pdf ι) (k : κ) (x Q2 : ℝ) :
+    comap σ f k x Q2 = f (σ k) x Q2 :=
+  rfl
+
+@[simp]
+lemma comap_id (f : Pdf ι) : comap id f = f :=
+  rfl
+
+@[simp]
+lemma comap_comap (σ : κ → ι) (τ : μ → κ) (f : Pdf ι) :
+    comap τ (comap σ f) = comap (σ ∘ τ) f :=
+  rfl
+
+@[simp]
+lemma mellinMoment_comap (σ : κ → ι) (f : Pdf ι) (n : ℕ) (k : κ) (Q2 : ℝ) :
+    mellinMoment (comap σ f) n k Q2 = mellinMoment f n (σ k) Q2 :=
+  mellinMoment_congr (fun _ _ => comap_apply σ f k _ Q2) n
+
+/-- A bijective pullback preserves every moment summed over all partons. -/
+lemma sum_mellinMoment_comap [Fintype ι] [Fintype κ] {σ : κ → ι} (hσ : σ.Bijective)
+    (f : Pdf ι) (n : ℕ) (Q2 : ℝ) :
+    ∑ k, mellinMoment (comap σ f) n k Q2 = ∑ i, mellinMoment f n i Q2 := by
+  simp only [mellinMoment_comap]
+  exact hσ.sum_comp fun i => mellinMoment f n i Q2
+
+/-- A pullback preserves the physical half of the assumptions. -/
+lemma IsPartonDensity.comap {f : Pdf ι} (h : IsPartonDensity f) (σ : κ → ι) :
+    IsPartonDensity (comap σ f) where
+  support k x Q2 hx := by simpa only [comap_apply] using h.support (σ k) x Q2 hx
+  nonneg k x Q2 hx₀ hx₁ := by simpa only [comap_apply] using h.nonneg (σ k) x Q2 hx₀ hx₁
+
+/-- A pullback preserves the analytic half of the assumptions. -/
+lemma Regularity.comap {f : Pdf ι} (h : Regularity f) (σ : κ → ι) :
+    Regularity (comap σ f) where
+  measurable k Q2 := by simpa only [comap_apply] using h.measurable (σ k) Q2
+  momentIntegrable n k Q2 := by simpa only [comap_apply] using h.momentIntegrable n (σ k) Q2
+
+/-- A pullback preserves the density assumptions. -/
+lemma Assumptions.comap {f : Pdf ι} (h : Assumptions f) (σ : κ → ι) :
+    Assumptions (comap σ f) :=
+  assumptions_iff.2 ⟨h.isPartonDensity.comap σ, h.regularity.comap σ⟩
+
+/-- A bijective pullback preserves the sum-rule bundle, with the target value of each parton
+taken from its image. -/
+def SumRuleAssumptions.comap [Fintype ι] [Fintype κ] {f : Pdf ι} (h : SumRuleAssumptions f)
+    {σ : κ → ι} (hσ : σ.Bijective) : SumRuleAssumptions (comap σ f) where
+  momentum Q2 := (sum_mellinMoment_comap hσ f 1 Q2).trans (h.momentum Q2)
+  valenceTarget k := h.valenceTarget (σ k)
+  valence k Q2 := (mellinMoment_comap σ f 0 k Q2).trans (h.valence (σ k) Q2)
+
+@[simp]
+lemma SumRuleAssumptions.comap_valenceTarget [Fintype ι] [Fintype κ] {f : Pdf ι}
+    (h : SumRuleAssumptions f) {σ : κ → ι} (hσ : σ.Bijective) (k : κ) :
+    (h.comap hσ).valenceTarget k = h.valenceTarget (σ k) :=
+  rfl
+
+end Comap
+
 end PDF
 end Parton
 end Particles

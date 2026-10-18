@@ -18,7 +18,7 @@ PUBLISHER = ROOT / ".github/workflows/publish-lake-cache.yml"
 TOOLCHAIN_TAGS = ROOT / "scripts/toolchain_tags.py"
 SHA = "a" * 40
 TOOLCHAIN = "leanprover/lean4:v4.34.0-rc1"
-ENDPOINT = "https://cache.epsiloneridaniproject.org/revisions"
+ENDPOINT = "https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions"
 
 
 def response(body: str, returncode: int = 0, stderr: str = ""):

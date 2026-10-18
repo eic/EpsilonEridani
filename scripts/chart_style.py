@@ -1,4 +1,4 @@
-"""Shared visual language for SVG charts on the Tau Ceti statistics page."""
+"""Shared visual language for SVG charts on the Epsilon Eridani statistics page."""
 
 BG = "#101936"
 PANEL = "#1b2547"
