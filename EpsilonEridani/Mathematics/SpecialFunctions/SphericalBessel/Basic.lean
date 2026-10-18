@@ -45,9 +45,10 @@ value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
 * `sphericalBesselJ_neg`: the parity `j_l(-x) = (-1) ^ l j_l(x)`.
 * `reducedSphericalBesselJ_zero` and `reducedSphericalBesselJ_succ`: the reduced function of
   order zero is `sinc`, and the one of order `l + 1` is `-(1 / x) d/dx` of the one of order `l`.
-* `reducedSphericalBesselJ_apply_zero`: the value `1 / (2 l + 1)‼` of the reduced function at the
-  origin, and `hasDerivAt_reducedSphericalBesselJ`: its Rayleigh step, the derivative of the
-  reduced function of order `l` is `-x` times the one of order `l + 1`.
+* `reducedSphericalBesselJ_apply_zero`: the value `1 / (2 l + 1)‼` of the reduced function at
+  the origin, and `hasDerivAt_reducedSphericalBesselJ` with `deriv_reducedSphericalBesselJ`:
+  its Rayleigh step, the derivative of the reduced function of order `l` is `-x` times the one of
+  order `l + 1`.
 * `reducedSphericalBesselJ_add_two`: the three-term recurrence of the reduced functions on the
   whole line, which is the even factor of `mul_sphericalBesselJ_add_two` and stays informative
   at the origin.
@@ -131,6 +132,12 @@ theorem analyticAt_reducedSphericalBesselJ (l : ℕ) (x : ℝ) :
     AnalyticAt ℝ (reducedSphericalBesselJ l) x :=
   analyticOnNhd_reduced l x (Set.mem_univ x)
 
+/-- Every reduced spherical Bessel function is smooth. -/
+@[fun_prop]
+theorem contDiff_reducedSphericalBesselJ (l : ℕ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (reducedSphericalBesselJ l) :=
+  AnalyticOnNhd.contDiff fun x _ => analyticAt_reducedSphericalBesselJ l x
+
 /-- Every reduced spherical Bessel function is differentiable. -/
 @[fun_prop]
 theorem differentiable_reducedSphericalBesselJ (l : ℕ) :
@@ -173,6 +180,13 @@ theorem hasDerivAt_reducedSphericalBesselJ (l : ℕ) (x : ℝ) :
   have : (-x) * (-dslope (deriv (G l)) 0 x) = x * dslope (deriv (G l)) 0 x := by ring
   rw [this, h]
   exact (differentiable_reducedSphericalBesselJ l x).hasDerivAt
+
+/-- The derivative of the reduced spherical Bessel function of order `l` is `-x` times the one
+of order `l + 1`, on the whole line. -/
+@[simp]
+theorem deriv_reducedSphericalBesselJ (l : ℕ) (x : ℝ) :
+    deriv (reducedSphericalBesselJ l) x = -x * reducedSphericalBesselJ (l + 1) x :=
+  (hasDerivAt_reducedSphericalBesselJ l x).deriv
 
 /-- The first derivative of `x G 0 = sin x`: `G 0 - x ^ 2 G 1 = cos x`. -/
 private lemma reduced_one (x : ℝ) : G 0 x - x ^ 2 * G 1 x = cos x := by
