@@ -310,7 +310,7 @@ so that sums over `LightFlavor` can be evaluated flavour by flavour. -/
 @[simp]
 theorem sum_univ {M : Type*} [AddCommMonoid M] (f : LightFlavor → M) :
     ∑ a, f a = f u + f d + f s := by
-  rw [show (Finset.univ : Finset LightFlavor) = {u, d, s} from rfl]
+  rw [← Finset.eq_univ_of_forall (s := {u, d, s}) fun a => by cases a <;> simp]
   simp [Finset.sum_insert, add_assoc]
 
 /-- The electric charge of the quark of each light flavour, in units of the positron charge. -/
@@ -374,6 +374,12 @@ noncomputable def kMinus : PseudoscalarMeson LightFlavor := kPlus.chargeConj
 @[simp] theorem kPlus_mass : kPlus.mass = 493.677 := (rfl)
 
 @[simp] theorem kPlus_decayConstant : kPlus.decayConstant = 155.7 := (rfl)
+
+@[simp]
+theorem piPlus_valenceNumber : piPlus.valenceNumber = Pi.single u 1 - Pi.single d 1 := (rfl)
+
+@[simp]
+theorem kPlus_valenceNumber : kPlus.valenceNumber = Pi.single u 1 - Pi.single s 1 := (rfl)
 
 @[simp] theorem piMinus_eq_chargeConj_piPlus : piMinus = piPlus.chargeConj := (rfl)
 
@@ -449,12 +455,14 @@ theorem ofMasses_strangeMassSplitting (mu md ms : ℝ) :
     (ofMasses mu md ms).strangeMassSplitting = ms - (mu + md) / 2 := (rfl)
 
 /-- The isospin limit of quark-mass breaking data is the degeneracy of the up and down masses. -/
+@[simp]
 theorem isIsospinLimit_ofMasses_iff (mu md ms : ℝ) :
     (ofMasses mu md ms).IsIsospinLimit ↔ mu = md := by
   rw [isIsospinLimit_iff, ofMasses_isospinBreaking, sub_eq_zero, eq_comm]
 
 /-- The SU(3) limit of quark-mass breaking data is the degeneracy of all three light-quark
 masses. -/
+@[simp]
 theorem isSU3Limit_ofMasses_iff (mu md ms : ℝ) :
     (ofMasses mu md ms).IsSU3Limit ↔ mu = md ∧ md = ms := by
   rw [isSU3Limit_iff, ofMasses_isospinBreaking, ofMasses_strangeMassSplitting]
@@ -468,7 +476,7 @@ theorem isSU3Limit_ofMasses_iff (mu md ms : ℝ) :
 a heavier strange quark are in the first and not the second. -/
 theorem exists_isIsospinLimit_not_isSU3Limit :
     ∃ b : FlavorBreaking, b.IsIsospinLimit ∧ ¬ b.IsSU3Limit :=
-  ⟨ofMasses 0 0 1, by simp [isIsospinLimit_ofMasses_iff, isSU3Limit_ofMasses_iff]⟩
+  ⟨ofMasses 0 0 1, by simp⟩
 
 end FlavorBreaking
 
