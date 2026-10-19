@@ -28,10 +28,12 @@ Reference: P. Hoodbhoy, R. L. Jaffe and A. Manohar, *Novel effects in deep inela
 scattering from spin-one hadrons*, Nucl. Phys. B **312** (1989) 571, §3.
 -/
 
-@[expose] public section
+public section
 
 namespace EpsilonEridani
-namespace AngularMomentum
+namespace Particles
+namespace Parton
+namespace PDF
 
 /-!
 ## Allowed helicity changes in a forward matrix element
@@ -64,7 +66,8 @@ def helicityChanges (twoJ : ℕ) : Set ℤ :=
     2 * d = m - m'}
 
 /-- A helicity change `d` can occur in a forward matrix element on a target of spin
-`J = twoJ / 2` exactly when its magnitude does not exceed the spin of the target. -/
+`J = twoJ / 2` exactly when its magnitude does not exceed `twoJ`, twice the spin of the
+target (the extreme sublevels `m/2 = J` and `m'/2 = -J` give `d = 2J`). -/
 @[simp] theorem mem_helicityChanges_iff {twoJ : ℕ} {d : ℤ} :
     d ∈ helicityChanges twoJ ↔ d.natAbs ≤ twoJ := by
   constructor
@@ -119,5 +122,7 @@ theorem two_mem_helicityChanges_two : (2 : ℤ) ∈ helicityChanges 2 := by
   simp only [two_mem_helicityChanges_iff]
   omega
 
-end AngularMomentum
+end PDF
+end Parton
+end Particles
 end EpsilonEridani
