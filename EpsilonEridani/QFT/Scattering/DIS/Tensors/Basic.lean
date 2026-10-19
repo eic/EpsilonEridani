@@ -689,10 +689,32 @@ lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinem
   rw [hW, transverseMetric_apply, hqe, hTe]
   ring
 
-/-- **Orthogonal splitting of a decomposed tensor.** Write `v = a q + b p_T + u` with `u`
-`g`-orthogonal to `q` and to `p_T`, where `b = (p_T·v) / (p_T·p_T)`. A tensor with an
-`F1`/`F2` decomposition then takes the value `-(u·u) F1 + b² W(p_T, p_T)` on `v`: the `q`
-component is invisible and the cross terms vanish. -/
+/-- **Orthogonal splitting along `q` and `p_T`.** When `q` and `p_T` are non-null, every vector
+splits as `v = a p_T + b q + u` with `u` `g`-orthogonal to `q` and to `p_T`. This discharges the
+`SpectatorAssumptions.span` condition; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
+`b = (q·v) / (q·q)`. -/
+lemma exists_orthogonal_spectator (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
+    (hqq : g K.q K.q ≠ 0) (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) (v : V) :
+    ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
+      v = a • pTransverse g K + b • K.q + u := by
+  set T := pTransverse g K
+  have hTq : g T K.q = 0 := pTransverse_orthogonal_q g K hqq
+  have hqT : g K.q T = 0 := by rw [hSymm.eq, hTq]
+  set a := g T v / g T T
+  set b := g K.q v / g K.q K.q
+  refine ⟨a, b, v - a • T - b • K.q, ?_, ?_, by abel⟩
+  · simp only [map_sub, map_smul, smul_eq_mul, hqT, b]
+    field_simp
+    ring
+  · simp only [map_sub, map_smul, smul_eq_mul, hTq, a]
+    field_simp
+    ring
+
+/-- **Orthogonal splitting of a decomposed tensor.** Write `v = a p_T + b q + u` with `u`
+`g`-orthogonal to `q` and to `p_T` (`exists_orthogonal_spectator`), so that
+`a = (p_T·v) / (p_T·p_T)`. A tensor with an `F1`/`F2` decomposition then takes the value
+`-(u·u) F1 + a² W(p_T, p_T)` on `v`: the `q` component is invisible and the cross terms
+vanish. -/
 lemma exists_apply_self_eq_of_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V)
     (hSymm : g.IsSymm) (hqq : g K.q K.q ≠ 0)
     (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) {W : Bilin V} {F1 F2 : ℝ}
@@ -700,23 +722,15 @@ lemma exists_apply_self_eq_of_isF1F2Decomposition (g : Bilin V) (K : DisKinemati
     ∃ u : V, g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
       W v v = -g u u * F1 + (g (pTransverse g K) v / g (pTransverse g K) (pTransverse g K)) ^ 2
         * W (pTransverse g K) (pTransverse g K) := by
-  set T := pTransverse g K
-  have hTq : g T K.q = 0 := pTransverse_orthogonal_q g K hqq
-  have hqT : g K.q T = 0 := by rw [hSymm.eq, hTq]
-  set a := g K.q v / g K.q K.q
-  set b := g T v / g T T
-  refine ⟨v - a • K.q - b • T, ?_, ?_, ?_⟩
-  · simp only [map_sub, map_smul, smul_eq_mul, hqT, a]
-    field_simp
-    ring
-  · simp only [map_sub, map_smul, smul_eq_mul, hTq, b]
-    field_simp
-    ring
-  · rw [hW v v, hW T T, transverseMetric_apply, transverseMetric_apply]
-    simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
-      hqT, hTq, hSymm.eq v K.q, hSymm.eq v T, a, b]
-    field_simp
-    ring
+  obtain ⟨a, b, u, huq, huT, rfl⟩ := exists_orthogonal_spectator g K hSymm hqq hTT v
+  refine ⟨u, huq, huT, ?_⟩
+  have hTq : g (pTransverse g K) K.q = 0 := pTransverse_orthogonal_q g K hqq
+  have hqT : g K.q (pTransverse g K) = 0 := by rw [hSymm.eq, hTq]
+  rw [hW _ _, hW, transverseMetric_apply, transverseMetric_apply]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    hqT, hTq, huq, huT, hSymm.eq u K.q, hSymm.eq u (pTransverse g K)]
+  field_simp
+  ring
 
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one

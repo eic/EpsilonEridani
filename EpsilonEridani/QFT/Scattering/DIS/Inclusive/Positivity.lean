@@ -51,11 +51,14 @@ alone, as theorems rather than assumptions.
   interference entries — the helicity-flip one in terms of the transverse absorption cross
   sections, and the transverse-longitudinal ones, stated once in the row index, in terms of
   `F_L^{exact}`.
-* `IsHelicityMatrixOf.crossSectionBracket_nonneg`: the inclusive cross section of
+* `IsHelicityMatrixOf.crossSectionBracket_nonneg`: the cross-section bracket of
   `Inclusive.CrossSection` is non-negative throughout the physical region
   `1 - y - M² x² y² / Q² ≥ 0`, for either sign of the parity-odd term. It is a non-negative
   combination of `σ₊`, `σ₋` and `σ_L`
   (`IsHelicityMatrixOf.one_add_gammaSq_mul_crossSectionBracket_eq`).
+* `IsHelicityMatrixOf.dSigmaDxDQ2_nonneg`, `IsHelicityMatrixOf.reducedCrossSection_nonneg`: the
+  corresponding statements that the inclusive cross section and the reduced cross section are
+  non-negative.
 * `forall_apply_self_nonneg_iff_exists_isHelicityMatrixOf`: for a parity-even hadronic tensor in
   the transverse basis of `Tensors.Hadronic`, positivity of the tensor on every vector is
   equivalent to the existence of a positive-semidefinite helicity matrix for its structure
@@ -271,9 +274,9 @@ theorem sq_apply_plus_minus_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hQ2 :
 
 /-- **Cauchy-Schwarz for the transverse-longitudinal interference, in the row index.** `2 x`
 times the square of the entry of the helicity matrix in row `i` and the longitudinal column
-is bounded by the product of the absorption cross section of row `i` and the longitudinal
-one, `H.mat i i * F_L^{exact}`. It is stated multiplied by `2 x`, with no division, so that
-it applies without `x ≠ 0`. -/
+is bounded by `2 x` times the product of the absorption cross section `σ_i` of row `i` and the
+longitudinal one `σ_L`, written `H.mat i i * F_L^{exact}` since `2 x σ_L = F_L^{exact}`. It is
+stated with no division by `x`, so that it applies without `x ≠ 0`. -/
 theorem two_mul_mul_sq_apply_long_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) (hx : 0 ≤ x)
     (i : Fin 3) :
     2 * x * H.mat i idxLong ^ 2 ≤ H.mat i i * FLExact M x Q2 F1 F2 := by
@@ -285,10 +288,10 @@ theorem two_mul_mul_sq_apply_long_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3) 
     _ = H.mat i i * FLExact M x Q2 F1 F2 := by rw [h.long]
 
 /-- **Cauchy-Schwarz for the transverse-longitudinal interference.** `2 x` times the square of
-the `(+1, 0)` entry of the helicity matrix, behind `σ_LT`, is bounded by the product of the
-`+1` transverse and the longitudinal absorption cross sections,
-`(F₁ - √(1 + γ²) F₃ / 2) F_L^{exact}`. It is stated multiplied by `2 x`, with no division, so
-that it applies without `x ≠ 0`. -/
+the `(+1, 0)` entry of the helicity matrix, behind `σ_LT`, is bounded by `2 x` times the product
+of the `+1` transverse and the longitudinal absorption cross sections, `2 x σ₊ σ_L`, written
+`(F₁ - √(1 + γ²) F₃ / 2) F_L^{exact}`. It is stated with no division by `x`, so that it applies
+without `x ≠ 0`. -/
 theorem two_mul_mul_sq_apply_plus_long_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3)
     (hx : 0 ≤ x) :
     2 * x * H.mat idxPlus idxLong ^ 2
@@ -296,10 +299,10 @@ theorem two_mul_mul_sq_apply_plus_long_le (h : IsHelicityMatrixOf H M x Q2 F1 F2
   simpa [h.plus] using h.two_mul_mul_sq_apply_long_le hx idxPlus
 
 /-- **Cauchy-Schwarz for the transverse-longitudinal interference of the other helicity.**
-`2 x` times the square of the `(-1, 0)` entry of the helicity matrix is bounded by the product
-of the `-1` transverse and the longitudinal absorption cross sections,
-`(F₁ + √(1 + γ²) F₃ / 2) F_L^{exact}`. As above, it is stated multiplied by `2 x`, with no
-division. -/
+`2 x` times the square of the `(-1, 0)` entry of the helicity matrix is bounded by `2 x` times
+the product of the `-1` transverse and the longitudinal absorption cross sections, `2 x σ₋ σ_L`,
+written `(F₁ + √(1 + γ²) F₃ / 2) F_L^{exact}`. As above, it is stated with no division by
+`x`. -/
 theorem two_mul_mul_sq_apply_minus_long_le (h : IsHelicityMatrixOf H M x Q2 F1 F2 F3)
     (hx : 0 ≤ x) :
     2 * x * H.mat idxMinus idxLong ^ 2
