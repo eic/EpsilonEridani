@@ -36,8 +36,9 @@ part `SpinDensityC.re`, a real `SpinDensity` with the same `f₁` and `Δq` and 
 (`SpinDensityC.exists_not_isTimeReversalInvariant`).
 
 Parity, `SpinDensityC.IsParityInvariant`, is stated on the entries that angular-momentum
-conservation allows in the forward direction, descends to the real part
-(`SpinDensityC.IsParityInvariant.re`), and corresponds exactly to the real
+conservation allows in the forward direction, and is exactly parity invariance of the real part
+together with reality of transversity (`SpinDensityC.isParityInvariant_iff`); it descends to the
+real part (`SpinDensityC.IsParityInvariant.re`) and corresponds exactly to the real
 `IsParityInvariant` under the specialisation (`SpinDensity.isParityInvariant_toSpinDensityC_iff`).
 
 Positivity of `f₁` and helicity dominance `|Δq| ≤ f₁` (`SpinDensityC.f1_nonneg`,
@@ -234,9 +235,9 @@ lemma IsParityInvariant.mat_idxMM_idxPP_eq_mat_idxPP_idxMM {ρ : SpinDensityC}
   h.2.2
 
 /-- Parity invariance descends to the real part: the two real diagonal equations are the real
-parts of the complex ones, with no time-reversal assumption. The converse, from a
-parity-invariant real part back to a parity-invariant helicity-amplitude matrix, needs
-time-reversal invariance (`isParityInvariant_re_iff`). -/
+parts of the complex ones, with no time-reversal assumption. The converse needs only reality of
+transversity, not time-reversal invariance: both directions of the transfer are recorded in
+`isParityInvariant_iff`. -/
 lemma IsParityInvariant.re {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
     PDF.IsParityInvariant ρ.re :=
   ⟨congrArg Complex.re h.1, congrArg Complex.re h.2.1⟩
@@ -261,6 +262,25 @@ lemma IsParityInvariant.im_transversity {ρ : SpinDensityC} (h : ρ.IsParityInva
     simpa using ρ.posSemidef.1.apply idxPP idxMM
   rw [h.mat_idxMM_idxPP_eq_mat_idxPP_idxMM] at hconj
   exact Complex.conj_eq_iff_im.mp hconj
+
+/-- Parity invariance is exactly parity invariance of the real part together with reality of
+transversity. The forward direction is `IsParityInvariant.re` and
+`IsParityInvariant.im_transversity`; for the converse, the two diagonal equations lift because
+the diagonal of a hermitian matrix is real, and the double-helicity-flip equation is, by
+hermiticity, exactly the statement that the double-flip entry is real. No hypothesis beyond
+positive semidefiniteness is needed. -/
+lemma isParityInvariant_iff :
+    ρ.IsParityInvariant ↔ PDF.IsParityInvariant ρ.re ∧ ρ.transversity.im = 0 := by
+  refine ⟨fun h => ⟨h.re, h.im_transversity⟩, ?_⟩
+  rintro ⟨hp, him⟩
+  refine ⟨?_, ?_, ?_⟩
+  · simpa using congrArg ((↑) : ℝ → ℂ) hp.1
+  · simpa using congrArg ((↑) : ℝ → ℂ) hp.2
+  · -- Hermiticity identifies the double-flip entry with the conjugate of transversity.
+    have hconj : conj (ρ.mat idxPP idxMM) = ρ.mat idxMM idxPP := by
+      simpa using ρ.posSemidef.1.apply idxMM idxPP
+    rw [← hconj, ← transversity_def]
+    exact Complex.conj_eq_iff_im.mpr him
 
 /-! ### Time reversal and the real specialisation -/
 
@@ -365,11 +385,11 @@ lemma toSpinDensityC_re {ρ : SpinDensityC} (h : ρ.IsTimeReversalInvariant) :
   exact h.map_re_map_ofReal
 
 /-- On time-reversal-invariant matrices, taking the real part preserves and reflects parity
-invariance. -/
+invariance. This is the time-reversal-invariant specialisation of `isParityInvariant_iff`. -/
 @[simp]
 lemma isParityInvariant_re_iff {ρ : SpinDensityC} (h : ρ.IsTimeReversalInvariant) :
     PDF.IsParityInvariant ρ.re ↔ ρ.IsParityInvariant := by
-  rw [← SpinDensity.isParityInvariant_toSpinDensityC_iff, toSpinDensityC_re h]
+  rw [isParityInvariant_iff, and_iff_left h.im_transversity]
 
 /-- **The real spin-density matrix is the time-reversal-invariant complex one.** Taking the real
 part and coercing back are inverse bijections between the time-reversal-invariant complex
