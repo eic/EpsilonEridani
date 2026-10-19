@@ -65,7 +65,7 @@ uvx --from git+https://github.com/eic/EpsilonEridaniReview epsiloneridani-review
 
 It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/eic/EpsilonEridaniReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
 
-The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/eic/EpsilonEridaniReview/tree/main/rubrics). We'll update these as we see what is most useful!
+The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, and proof quality; see [the rubrics directory](https://github.com/eic/EpsilonEridaniReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
