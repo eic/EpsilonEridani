@@ -38,8 +38,8 @@ QCD kernels have this shape. For such a matrix `P`:
 * every non-singlet vector is an eigenvector of `P` with eigenvalue `qq`, and every non-singlet
   combination `w ⬝ᵥ f` of an arbitrary vector `f` is multiplied by `qq`: the quark-gluon mixing
   acts only on the singlet;
-* both sectors are invariant, and when `2 n_f` is invertible they are complementary, of
-  dimensions `2` and `2 n_f - 1` over a field.
+* both sectors are invariant, and when `2 n_f` is invertible they are complementary. Over a
+  field with at least one flavour they have dimensions `2` and `2 n_f - 1`.
 
 The transpose of `flavorBlindMatrix qq qg gq gg` is `flavorBlindMatrix qq gq qg gg`
 (`transpose_flavorBlindMatrix`). The evolution of the fragmentation functions into a fixed hadron
@@ -117,6 +117,16 @@ theorem mem_singletSector [DecidableEq Flavor] {v : Species Flavor → R} :
     v ∈ singletSector ↔ ∃ a b : R, a • singletVector + b • Pi.single gluon 1 = v :=
   Submodule.mem_span_pair
 
+/-- `singletVector` lies in the singlet sector. -/
+theorem singletVector_mem_singletSector [DecidableEq Flavor] :
+    (singletVector : Species Flavor → R) ∈ singletSector :=
+  Submodule.subset_span (by simp)
+
+/-- Every vector supported on the gluon lies in the singlet sector. -/
+theorem single_gluon_mem_singletSector [DecidableEq Flavor] (b : R) :
+    (Pi.single gluon b : Species Flavor → R) ∈ singletSector :=
+  mem_singletSector.2 ⟨0, b, by rw [zero_smul, zero_add, ← Pi.single_smul, smul_eq_mul, mul_one]⟩
+
 /-! ### The quark singlet and the non-singlet sector -/
 
 variable [Fintype Flavor]
@@ -134,6 +144,7 @@ theorem singlet_apply (v : Species Flavor → R) :
     singlet v = ∑ i, (v (quark i) + v (antiquark i)) := (rfl)
 
 /-- The quark singlet is the pairing with `singletVector`. -/
+@[simp]
 theorem singletVector_dotProduct (v : Species Flavor → R) : singletVector ⬝ᵥ v = singlet v := by
   simp [singlet_apply, dotProduct, sum_univ, Finset.sum_add_distrib]
 
@@ -143,7 +154,7 @@ theorem singlet_singletVector :
     singlet (singletVector : Species Flavor → R) = 2 * Fintype.card Flavor := by
   simp [singlet_apply, one_add_one_eq_two, Finset.card_univ, mul_comm]
 
-/-- The gluon basis vector has no quark singlet. -/
+/-- Any vector supported on the gluon has no quark singlet. -/
 @[simp]
 theorem singlet_single_gluon [DecidableEq Flavor] (b : R) :
     singlet (Pi.single (gluon : Species Flavor) b) = 0 := by
@@ -228,19 +239,33 @@ section Field
 
 variable {K : Type*} [Field K]
 
-/-- When `2 n_f` is non-zero, the non-singlet sector has dimension `2 n_f - 1`: the
-`2 n_f + 1` parton species less the two dimensions of the singlet sector. -/
-theorem finrank_nonSinglet [Fintype Flavor] (h : (2 * Fintype.card Flavor : K) ≠ 0) :
+/-- The non-singlet sector has dimension `2 n_f - 1`: the `2 n_f + 1` parton species less the
+two independent constraints `Σ v = 0` and `v gluon = 0`. -/
+theorem finrank_nonSinglet [Fintype Flavor] :
     finrank K (nonSinglet : Submodule K (Species Flavor → K)) = 2 * Fintype.card Flavor - 1 := by
   classical
-  have : Nonempty Flavor := by
-    rw [← Fintype.card_pos_iff]
-    by_contra hc
-    simp_all
-  have hsum := Submodule.finrank_add_eq_of_isCompl
-    (isCompl_singletSector_nonSinglet (isUnit_iff_ne_zero.2 h))
-  rw [finrank_singletSector, finrank_fintype_fun_eq_card, card] at hsum
-  omega
+  rcases isEmpty_or_nonempty Flavor with hF | ⟨⟨i⟩⟩
+  · -- Without flavours the gluon is the only species, and its component vanishes.
+    rw [Fintype.card_eq_zero, Submodule.finrank_eq_zero, eq_bot_iff]
+    intro v hv
+    rw [Submodule.mem_bot]
+    ext s
+    cases s with
+    | quark j => exact isEmptyElim j
+    | antiquark j => exact isEmptyElim j
+    | gluon => exact (mem_nonSinglet.1 hv).2
+  · -- `singletGluon` is surjective, so rank-nullity leaves `2 n_f + 1 - 2` dimensions.
+    have hsurj : Function.Surjective (singletGluon : (Species Flavor → K) →ₗ[K] Fin 2 → K) := by
+      intro x
+      refine ⟨Pi.single (quark i) (x 0) + Pi.single gluon (x 1), ?_⟩
+      ext k
+      fin_cases k <;> simp [singlet_apply, Pi.single_apply]
+    have hsum := LinearMap.finrank_range_add_finrank_ker
+      (singletGluon : (Species Flavor → K) →ₗ[K] Fin 2 → K)
+    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, finrank_fin_fun,
+      finrank_fintype_fun_eq_card, card] at hsum
+    rw [nonSinglet]
+    omega
 
 end Field
 
@@ -321,6 +346,10 @@ combination `2 n_f qg`. -/
 def singletGluonMatrix (nf : ℕ) : Matrix (Fin 2) (Fin 2) R :=
   !![qq, 2 * nf * qg; gq, gg]
 
+@[simp]
+theorem singletGluonMatrix_def (nf : ℕ) :
+    singletGluonMatrix qq qg gq gg nf = !![qq, 2 * nf * qg; gq, gg] := (rfl)
+
 variable [Fintype Flavor]
 
 @[simp]
@@ -361,7 +390,7 @@ theorem singletGluon_flavorBlindMatrix_mulVec (v : Species Flavor → R) :
   rw [singletGluon_apply, singletGluon_apply, singlet_flavorBlindMatrix_mulVec,
     flavorBlindMatrix_mulVec_gluon]
   ext k
-  fin_cases k <;> simp [singletGluonMatrix, mulVec, dotProduct, Fin.sum_univ_two]
+  fin_cases k <;> simp [mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- **Non-singlet vectors are eigenvectors.** A flavour-blind kernel acts on the non-singlet
 sector as multiplication by its quark-quark entry: the gluon does not mix with it. -/
@@ -372,8 +401,8 @@ theorem flavorBlindMatrix_mulVec_of_mem_nonSinglet {v : Species Flavor → R}
   cases s <;> simp [hv.1, hv.2]
 
 /-- **Non-singlet combinations evolve without gluon mixing.** For a non-singlet `w` and an
-arbitrary vector `f`, the combination `w ⬝ᵥ f` of the components of `P *ᵥ f` is `qq` times the
-same combination of the components of `f`. -/
+arbitrary vector `f`, the non-singlet combination `w ⬝ᵥ (P *ᵥ f)` of the evolved vector is `qq`
+times the same combination `w ⬝ᵥ f` of `f`. -/
 theorem dotProduct_flavorBlindMatrix_mulVec_of_mem_nonSinglet {w : Species Flavor → R}
     (hw : w ∈ nonSinglet) (f : Species Flavor → R) :
     w ⬝ᵥ (flavorBlindMatrix qq qg gq gg *ᵥ f) = qq * (w ⬝ᵥ f) := by
@@ -386,7 +415,8 @@ theorem flavorBlindMatrix_mulVec_mem_nonSinglet {v : Species Flavor → R} (hv :
   rw [flavorBlindMatrix_mulVec_of_mem_nonSinglet _ _ _ _ hv]
   exact Submodule.smul_mem _ _ hv
 
-/-- A flavour-blind kernel maps `singletVector` into the singlet sector. -/
+/-- A flavour-blind kernel maps `singletVector` to `qq • singletVector` plus `2 n_f gq` times the
+gluon basis vector. -/
 theorem flavorBlindMatrix_mulVec_singletVector :
     flavorBlindMatrix qq qg gq gg *ᵥ singletVector =
       qq • singletVector +
@@ -394,7 +424,8 @@ theorem flavorBlindMatrix_mulVec_singletVector :
   ext s
   cases s <;> simp [mul_comm]
 
-/-- A flavour-blind kernel maps the gluon basis vector into the singlet sector. -/
+/-- A flavour-blind kernel maps the gluon basis vector to `qg • singletVector` plus `gg` times the
+gluon basis vector. -/
 theorem flavorBlindMatrix_mulVec_single_gluon :
     flavorBlindMatrix qq qg gq gg *ᵥ Pi.single (gluon : Species Flavor) 1 =
       qg • singletVector + gg • Pi.single gluon 1 := by
@@ -407,10 +438,8 @@ theorem flavorBlindMatrix_mulVec_mem_singletSector {v : Species Flavor → R}
   obtain ⟨a, b, rfl⟩ := mem_singletSector.1 hv
   rw [mulVec_add, mulVec_smul, mulVec_smul, flavorBlindMatrix_mulVec_singletVector,
     flavorBlindMatrix_mulVec_single_gluon]
-  have h₁ : (singletVector : Species Flavor → R) ∈ singletSector :=
-    Submodule.subset_span (by simp)
-  have h₂ : (Pi.single gluon 1 : Species Flavor → R) ∈ singletSector :=
-    Submodule.subset_span (by simp)
+  have h₁ := singletVector_mem_singletSector (R := R) (Flavor := Flavor)
+  have h₂ := single_gluon_mem_singletSector (Flavor := Flavor) (1 : R)
   exact Submodule.add_mem _
     (Submodule.smul_mem _ _ (Submodule.add_mem _ (Submodule.smul_mem _ _ h₁)
       (Submodule.smul_mem _ _ h₂)))
