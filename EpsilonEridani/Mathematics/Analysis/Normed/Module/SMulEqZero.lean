@@ -11,7 +11,8 @@ public import Mathlib.Analysis.Normed.Module.Basic
 # Vanishing of functions with `x • f x = 0`
 
 A function into a normed space that is continuous at the origin and whose scalar multiple
-`x • f x` vanishes identically is itself zero (`ContinuousAt.eq_zero_of_forall_smul_eq_zero`).
+`x • f x` vanishes identically is itself zero (`ContinuousAt.eq_zero_of_forall_smul_eq_zero`,
+with the multiplicative form `ContinuousAt.eq_zero_of_forall_mul_eq_zero` for `f : 𝕜 → 𝕜`).
 Away from the origin the scalar is a unit, so the function vanishes there by Mathlib's
 `smul_eq_zero`, and continuity at the origin fixes the remaining value `f 0` as the limit of
 the vanishing values. This is a removable-singularity criterion: it promotes an identity that
@@ -43,3 +44,9 @@ theorem ContinuousAt.eq_zero_of_forall_smul_eq_zero {f : 𝕜 → E} (hf : Conti
   rcases eq_or_ne y 0 with rfl | hy
   · exact h0
   · exact (smul_eq_zero.mp (h y)).resolve_left hy
+
+/-- If `f : 𝕜 → 𝕜` is continuous at `0` and `x * f x = 0` for every `x`, then `f = 0`: the
+multiplicative form of `ContinuousAt.eq_zero_of_forall_smul_eq_zero`. -/
+theorem ContinuousAt.eq_zero_of_forall_mul_eq_zero {f : 𝕜 → 𝕜} (hf : ContinuousAt f 0)
+    (h : ∀ x, x * f x = 0) : f = 0 :=
+  hf.eq_zero_of_forall_smul_eq_zero h
