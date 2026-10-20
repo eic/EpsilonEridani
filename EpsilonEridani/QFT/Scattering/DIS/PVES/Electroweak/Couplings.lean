@@ -190,43 +190,36 @@ and the electron carry the same charge, which is what allows a single `Q` in `of
 open GenerationAssignments FermionNeutralCurrentCouplings
 
 /-- The up quark, the upper component of the quark doublet, has charge `2/3`. -/
-@[simp]
 theorem doubletElectricCharge_standardModel_YQ_zero :
     doubletElectricCharge (standardModel.YQ : ℝ) 0 = 2 / 3 := by
   norm_num [doubletElectricCharge_apply]
 
 /-- The down quark, the lower component of the quark doublet, has charge `-1/3`. -/
-@[simp]
 theorem doubletElectricCharge_standardModel_YQ_one :
     doubletElectricCharge (standardModel.YQ : ℝ) 1 = -1 / 3 := by
   norm_num [doubletElectricCharge_apply]
 
 /-- The neutrino, the upper component of the lepton doublet, is electrically neutral. -/
-@[simp]
 theorem doubletElectricCharge_standardModel_YL_zero :
     doubletElectricCharge (standardModel.YL : ℝ) 0 = 0 := by
   norm_num [doubletElectricCharge_apply]
 
 /-- The electron, the lower component of the lepton doublet, has charge `-1`. -/
-@[simp]
 theorem doubletElectricCharge_standardModel_YL_one :
     doubletElectricCharge (standardModel.YL : ℝ) 1 = -1 := by
   norm_num [doubletElectricCharge_apply]
 
 /-- The right-handed up-quark singlet has charge `2/3`. -/
-@[simp]
 theorem singletElectricCharge_standardModel_Yu :
     singletElectricCharge (standardModel.Yu : ℝ) = 2 / 3 := by
   norm_num [singletElectricCharge_def]
 
 /-- The right-handed down-quark singlet has charge `-1/3`. -/
-@[simp]
 theorem singletElectricCharge_standardModel_Yd :
     singletElectricCharge (standardModel.Yd : ℝ) = -1 / 3 := by
   norm_num [singletElectricCharge_def]
 
 /-- The right-handed electron singlet has charge `-1`. -/
-@[simp]
 theorem singletElectricCharge_standardModel_Ye :
     singletElectricCharge (standardModel.Ye : ℝ) = -1 := by
   norm_num [singletElectricCharge_def]
