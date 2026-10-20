@@ -144,8 +144,8 @@ lemma assumptions_modelPdf (Flavor : Type) (a b : ℕ) : Assumptions (modelPdf F
   assumptions_iff.mpr ⟨isPartonDensity_modelPdf Flavor a b, regularity_modelPdf Flavor a b⟩
 
 /-- **The Mellin moments of the model with exponents `a = 0` and `b = 1`**, the shape `1 - x`:
-`∫₀¹ xⁿ (1 - x) dx = 1 / ((n + 1) (n + 2))`. In particular the model carries unit number
-density, `n = 0`, and momentum fraction `1 / 6`, `n = 1`, at each of its flavours. -/
+`∫₀¹ xⁿ (1 - x) dx = 1 / ((n + 1) (n + 2))`. In particular the model carries number density
+`1 / 2`, `n = 0`, and momentum fraction `1 / 6`, `n = 1`, at each of its flavours. -/
 lemma mellinMoment_modelPdf_zero_one (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
     mellinMoment (modelPdf Flavor 0 1) n i Q2 = (((n : ℝ) + 1) * ((n : ℝ) + 2))⁻¹ := by
   have key : mellinMoment (modelPdf Flavor 0 1) n i Q2

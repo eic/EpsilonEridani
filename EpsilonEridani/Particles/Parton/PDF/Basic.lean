@@ -225,6 +225,59 @@ lemma SumRuleAssumptions.comap_valenceTarget [Fintype ι] [Fintype κ] {f : Pdf 
 
 end Comap
 
+/-! ### Rescaling a density parton by parton
+
+A weight `w : ι → ℝ` rescales a density over `ι` parton by parton, `weight w f i x Q2 =
+w i * f i x Q2`, and rescales every moment of each parton by the same factor. The density
+assumptions survive a nonnegative weight. A model density populating only some partons is built
+this way. -/
+
+section Weight
+
+variable {ι : Type}
+
+/-- The density whose parton `i` carries `w i` times the density of `i` in `f`. -/
+def weight (w : ι → ℝ) (f : Pdf ι) : Pdf ι := fun i x Q2 => w i * f i x Q2
+
+@[simp]
+lemma weight_apply (w : ι → ℝ) (f : Pdf ι) (i : ι) (x Q2 : ℝ) :
+    weight w f i x Q2 = w i * f i x Q2 :=
+  rfl
+
+/-- Rescaling a parton rescales each of its moments by the same factor. -/
+@[simp]
+lemma mellinMoment_weight (w : ι → ℝ) (f : Pdf ι) (n : ℕ) (i : ι) (Q2 : ℝ) :
+    mellinMoment (weight w f) n i Q2 = w i * mellinMoment f n i Q2 := by
+  rw [mellinMoment, mellinMoment, ← MeasureTheory.integral_const_mul]
+  exact MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => by
+    rw [weight_apply]; ring
+
+/-- A nonnegative weight preserves the physical half of the assumptions. -/
+lemma IsPartonDensity.weight {f : Pdf ι} (h : IsPartonDensity f) {w : ι → ℝ}
+    (hw : ∀ i, 0 ≤ w i) : IsPartonDensity (PDF.weight w f) where
+  support i x Q2 hx := by rw [weight_apply, h.support i x Q2 hx, mul_zero]
+  nonneg i x Q2 hx₀ hx₁ := mul_nonneg (hw i) (h.nonneg i x Q2 hx₀ hx₁)
+
+/-- Any weight preserves the analytic half of the assumptions. -/
+lemma Regularity.weight {f : Pdf ι} (h : Regularity f) (w : ι → ℝ) :
+    Regularity (PDF.weight w f) where
+  measurable i Q2 := (h.measurable i Q2).const_mul _
+  momentIntegrable n i Q2 := by
+    have hrw : (fun x : ℝ => x ^ n * PDF.weight w f i x Q2)
+        = fun x : ℝ => w i * (x ^ n * f i x Q2) := by
+      funext x
+      rw [weight_apply]
+      ring
+    rw [hrw]
+    exact (h.momentIntegrable n i Q2).const_mul _
+
+/-- A nonnegative weight preserves the density assumptions. -/
+lemma Assumptions.weight {f : Pdf ι} (h : Assumptions f) {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) :
+    Assumptions (PDF.weight w f) :=
+  assumptions_iff.2 ⟨h.isPartonDensity.weight hw, h.regularity.weight w⟩
+
+end Weight
+
 end PDF
 end Parton
 end Particles

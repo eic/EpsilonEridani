@@ -25,24 +25,27 @@ that a density carries at a scale is `PDF.valenceNumber`, and `PseudoscalarMeson
 the net valence number the meson's valence pair prescribes. A density has the valence numbers of a
 meson, `PseudoscalarMeson.HasValenceNumbers`, when the two agree at every flavour and every scale.
 For a flavoured meson this is the conjunction of exactly three sum rules
-(`hasValenceNumbers_iff_of_valence_ne`): one net quark of the valence quark's flavour, one net
-antiquark of the valence antiquark's flavour, and no net quarks of any other flavour. Against a
-density that carries the upstream sum-rule bundle, the assignment is a condition on the bundle's
-valence targets alone (`hasValenceNumbers_iff_valenceTarget`).
+(`hasValenceNumbers_iff_of_valenceQuark_ne_valenceAntiquark`): one net quark of the valence quark's
+flavour, one net antiquark of the valence antiquark's flavour, and no net quarks of any other
+flavour. When the valence flavours coincide it is the vanishing of every valence integral
+(`hasValenceNumbers_iff_of_valenceQuark_eq_valenceAntiquark`). Against a density that carries the
+upstream sum-rule bundle, the assignment is a condition on the bundle's valence targets alone
+(`hasValenceNumbers_iff_valenceTarget`), so it suffices to impose it at one scale
+(`hasValenceNumbers_of_forall_valenceNumber_eq`).
 
 Two consequences fix what the assignment means. The charge-weighted valence numbers of the density
 recover the meson's electric charge whenever the charge is the one carried by the valence pair
-(`HasValenceNumbers.sum_mul_valenceNumber_eq_charge`), and a single density determines the valence
-content of any flavoured meson whose valence numbers it carries
-(`valenceQuark_eq_and_valenceAntiquark_eq_of_hasValenceNumbers`), so the valence normalisation is
-unique.
+(`HasValenceNumbers.sum_mul_valenceNumber_eq_charge`), and the valence content of a flavoured meson
+is determined by any density carrying its valence numbers
+(`valenceQuark_eq_and_valenceAntiquark_eq_of_hasValenceNumbers`); the three sum rules themselves fix
+the valence integrals.
 
 That the assignment is consistent with the upstream sum-rule bundle — that the two can be imposed
-together — is exhibited rather than assumed. `PseudoscalarMeson.valenceModelPdf` carries the shape
-`2 (1 - x)` on the valence quark, on the valence antiquark and on the gluon and vanishes on every
-other species; it satisfies `PDF.Assumptions`, it has the valence numbers of its meson, and its
-three populated species carry a third of the momentum each, so the momentum sum rule holds with
-the gluon included.
+together — is exhibited rather than assumed. `PseudoscalarMeson.valenceModelPdf` is the upstream
+`PDF.weight` rescaling that carries the shape `2 (1 - x)` on the valence quark, on the valence
+antiquark and on the gluon and vanishes on every other species; it satisfies `PDF.Assumptions`, it
+has the valence numbers of its meson, and its three populated species carry a third of the momentum
+each, so the momentum sum rule holds with the gluon included.
 
 ## Main definitions
 
@@ -50,12 +53,13 @@ the gluon included.
   every scale.
 * `PseudoscalarMeson.valenceWeight`, `PseudoscalarMeson.valenceModelPdf`: the valence model
   density of a meson and the weight it gives each parton species.
-* `PseudoscalarMeson.valenceModelSumRules`: the upstream sum-rule bundle of the valence model.
+* `PseudoscalarMeson.valenceModelSumRuleAssumptions`: the upstream sum-rule bundle of the valence
+  model.
 
 ## Main results
 
-* `PseudoscalarMeson.hasValenceNumbers_iff_of_valence_ne`: the three valence sum rules of a
-  flavoured meson.
+* `PseudoscalarMeson.hasValenceNumbers_iff_of_valenceQuark_ne_valenceAntiquark`: the three valence
+  sum rules of a flavoured meson.
 * `PseudoscalarMeson.hasValenceNumbers_iff_valenceTarget`: against the upstream sum-rule bundle,
   the valence assignment is a condition on the valence targets.
 * `PseudoscalarMeson.HasValenceNumbers.sum_mul_valenceNumber_eq_charge`: the charge-weighted
@@ -92,17 +96,11 @@ variable {Flavor : Type} [DecidableEq Flavor]
 /-- The density `f` of the parton species over `Flavor` **has the valence numbers of the meson
 `M`** when, at every flavour and every scale, the net number of quarks of that flavour it carries
 is the net valence number of that flavour in `M`. For a flavoured meson this is the conjunction of
-the three valence sum rules of `hasValenceNumbers_iff_of_valence_ne`. -/
+the three valence sum rules of `hasValenceNumbers_iff_of_valenceQuark_ne_valenceAntiquark`. -/
 def HasValenceNumbers (M : PseudoscalarMeson Flavor) (f : PDF.Pdf (Species Flavor)) : Prop :=
   ∀ i Q2, PDF.valenceNumber f i Q2 = (M.valenceNumber i : ℝ)
 
 variable {M M' : PseudoscalarMeson Flavor} {f : PDF.Pdf (Species Flavor)}
-
-/-- The valence sum rule a density with the valence numbers of `M` obeys at a flavour and a
-scale. -/
-theorem HasValenceNumbers.valenceNumber_eq (h : M.HasValenceNumbers f) (i : Flavor) (Q2 : ℝ) :
-    PDF.valenceNumber f i Q2 = (M.valenceNumber i : ℝ) :=
-  h i Q2
 
 /-- The valence assignment spelled out, flavour by flavour and scale by scale. -/
 theorem hasValenceNumbers_iff :
@@ -113,7 +111,7 @@ theorem hasValenceNumbers_iff :
 meson whose valence quark and valence antiquark differ exactly when it carries one net quark of
 the valence quark's flavour, one net antiquark of the valence antiquark's flavour — a net quark
 number `-1` — and no net quarks of any other flavour, at every scale. -/
-theorem hasValenceNumbers_iff_of_valence_ne (M : PseudoscalarMeson Flavor)
+theorem hasValenceNumbers_iff_of_valenceQuark_ne_valenceAntiquark (M : PseudoscalarMeson Flavor)
     (f : PDF.Pdf (Species Flavor)) (h : M.valenceQuark ≠ M.valenceAntiquark) :
     M.HasValenceNumbers f ↔
       (∀ Q2, PDF.valenceNumber f M.valenceQuark Q2 = 1) ∧
@@ -121,9 +119,9 @@ theorem hasValenceNumbers_iff_of_valence_ne (M : PseudoscalarMeson Flavor)
           ∀ i, i ≠ M.valenceQuark → i ≠ M.valenceAntiquark →
             ∀ Q2, PDF.valenceNumber f i Q2 = 0 := by
   refine ⟨fun hf => ⟨fun Q2 => ?_, fun Q2 => ?_, fun i hq ha Q2 => ?_⟩, fun hf i Q2 => ?_⟩
-  · rw [hf.valenceNumber_eq, M.valenceNumber_valenceQuark h, Int.cast_one]
-  · rw [hf.valenceNumber_eq, M.valenceNumber_valenceAntiquark h, Int.cast_neg, Int.cast_one]
-  · rw [hf.valenceNumber_eq, M.valenceNumber_apply_eq_zero_of_ne hq ha, Int.cast_zero]
+  · rw [hf M.valenceQuark Q2, M.valenceNumber_valenceQuark h, Int.cast_one]
+  · rw [hf M.valenceAntiquark Q2, M.valenceNumber_valenceAntiquark h, Int.cast_neg, Int.cast_one]
+  · rw [hf i Q2, M.valenceNumber_apply_eq_zero_of_ne hq ha, Int.cast_zero]
   · by_cases hq : i = M.valenceQuark
     · subst hq
       rw [hf.1 Q2, M.valenceNumber_valenceQuark h, Int.cast_one]
@@ -144,8 +142,20 @@ theorem hasValenceNumbers_iff_valenceTarget [Fintype Flavor] (M : PseudoscalarMe
         = (M.valenceNumber i : ℝ) := by
   refine ⟨fun hf i => ?_, fun hf i Q2 => ?_⟩
   · rw [← PDF.valenceNumber_eq_sub_valenceTarget h i 0]
-    exact hf.valenceNumber_eq i 0
+    exact hf i 0
   · rw [PDF.valenceNumber_eq_sub_valenceTarget h i Q2]
+    exact hf i
+
+/-- **One scale is enough.** A density carrying the upstream sum-rule bundle has the valence
+numbers of `M` at every scale as soon as it has them at a single scale `Q2₀`: by
+`hasValenceNumbers_iff_valenceTarget` the assignment is a condition on the bundle's
+scale-independent valence targets. -/
+theorem hasValenceNumbers_of_forall_valenceNumber_eq [Fintype Flavor]
+    (M : PseudoscalarMeson Flavor) {f : PDF.Pdf (Species Flavor)}
+    (h : PDF.SumRuleAssumptions f) (Q2₀ : ℝ)
+    (hf : ∀ i, PDF.valenceNumber f i Q2₀ = (M.valenceNumber i : ℝ)) : M.HasValenceNumbers f :=
+  (M.hasValenceNumbers_iff_valenceTarget h).2 fun i => by
+    rw [← PDF.valenceNumber_eq_sub_valenceTarget h i Q2₀]
     exact hf i
 
 /-- **Charge conjugation.** The charge-conjugate density has the valence numbers of the
@@ -164,15 +174,15 @@ weighted by the quark charges, sum to the meson's charge at every scale. -/
 theorem HasValenceNumbers.sum_mul_valenceNumber_eq_charge [Fintype Flavor] {e : Flavor → ℝ}
     (hf : M.HasValenceNumbers f) (he : M.IsChargeConsistent e) (Q2 : ℝ) :
     ∑ i, e i * PDF.valenceNumber f i Q2 = M.charge := by
-  simp only [hf.valenceNumber_eq _ Q2]
+  simp only [hasValenceNumbers_iff.mp hf]
   exact he.sum_mul_valenceNumber
 
-/-- **Uniqueness of the valence normalisation.** Two mesons whose valence numbers one density
-carries have the same net valence numbers. -/
+/-- **The net valence numbers of a meson are determined by any density carrying them.** Two mesons
+whose valence numbers one density carries have the same net valence numbers. -/
 theorem valenceNumber_eq_of_hasValenceNumbers (hM : M.HasValenceNumbers f)
     (hM' : M'.HasValenceNumbers f) : M.valenceNumber = M'.valenceNumber := by
   funext i
-  exact Int.cast_injective ((hM.valenceNumber_eq i 0).symm.trans (hM'.valenceNumber_eq i 0))
+  exact Int.cast_injective ((hM i 0).symm.trans (hM' i 0))
 
 /-- **The valence content of a flavoured meson is determined by its densities.** Any density
 carrying the valence numbers of a flavoured meson and of a second meson forces the two to share
@@ -184,22 +194,31 @@ theorem valenceQuark_eq_and_valenceAntiquark_eq_of_hasValenceNumbers
   M.valenceQuark_eq_and_valenceAntiquark_eq_of_valenceNumber_eq M'
     (valenceNumber_eq_of_hasValenceNumbers hM hM') h
 
+/-- **The flavour-neutral case.** A density has the valence numbers of a meson whose valence quark
+and valence antiquark share a flavour exactly when every valence integral vanishes, those valence
+numbers all being zero. Only the valence integrals vanish: the individual quark and antiquark
+densities need not. -/
+theorem hasValenceNumbers_iff_of_valenceQuark_eq_valenceAntiquark (M : PseudoscalarMeson Flavor)
+    (f : PDF.Pdf (Species Flavor)) (h : M.valenceQuark = M.valenceAntiquark) :
+    M.HasValenceNumbers f ↔ ∀ i Q2, PDF.valenceNumber f i Q2 = 0 := by
+  have hM : M.valenceNumber = 0 := M.valenceNumber_eq_zero_iff.2 h
+  simp only [hasValenceNumbers_iff, hM, Pi.zero_apply, Int.cast_zero]
+
 /-- A charge-conjugation invariant density has the valence numbers of every meson whose valence
-quark and valence antiquark share a flavour, those valence numbers all being zero. Only the
-valence integrals vanish: the individual quark and antiquark densities need not. -/
+quark and valence antiquark share a flavour: the C-invariant case of
+`hasValenceNumbers_iff_of_valenceQuark_eq_valenceAntiquark`. -/
 theorem hasValenceNumbers_of_chargeConj_eq (M : PseudoscalarMeson Flavor)
     {f : PDF.Pdf (Species Flavor)} (h : M.valenceQuark = M.valenceAntiquark)
-    (hf : PDF.chargeConj f = f) : M.HasValenceNumbers f := by
-  intro i Q2
-  have hM : M.valenceNumber i = 0 := congrFun (M.valenceNumber_eq_zero_iff.2 h) i
-  rw [PDF.valenceNumber_eq_zero_of_chargeConj_eq hf i Q2, hM, Int.cast_zero]
+    (hf : PDF.chargeConj f = f) : M.HasValenceNumbers f :=
+  (M.hasValenceNumbers_iff_of_valenceQuark_eq_valenceAntiquark f h).2
+    fun i Q2 => PDF.valenceNumber_eq_zero_of_chargeConj_eq hf i Q2
 
 /-! ### A valence model density
 
 The valence assignment and the upstream sum-rule bundle can be imposed on one density at once.
-`valenceModelPdf` is the witness: the shape `2 (1 - x)` of
-`EpsilonEridani.Particles.Parton.PDF.modelPdf` carried by the valence quark, the valence antiquark
-and the gluon, and nothing on any other species. -/
+`valenceModelPdf` is the witness: the `EpsilonEridani.Particles.Parton.PDF.weight` rescaling of the
+shape `1 - x` of `EpsilonEridani.Particles.Parton.PDF.modelPdf` that carries `2 (1 - x)` on the
+valence quark, the valence antiquark and the gluon, and nothing on any other species. -/
 
 /-- The weight the valence model of `M` gives each parton species: two on the quark of the valence
 quark's flavour, on the antiquark of the valence antiquark's flavour, and on the gluon, and zero on
@@ -243,7 +262,7 @@ every other species, at every scale. It satisfies the upstream density assumptio
 (`sum_mellinMoment_one_valenceModelPdf`), its three populated species carrying a third of the
 momentum each. -/
 def valenceModelPdf (M : PseudoscalarMeson Flavor) : PDF.Pdf (Species Flavor) :=
-  fun s x Q2 => M.valenceWeight s * PDF.modelPdf (Species Flavor) 0 1 s x Q2
+  PDF.weight M.valenceWeight (PDF.modelPdf (Species Flavor) 0 1)
 
 @[simp]
 theorem valenceModelPdf_apply (s : Species Flavor) (x Q2 : ℝ) :
@@ -252,23 +271,8 @@ theorem valenceModelPdf_apply (s : Species Flavor) (x Q2 : ℝ) :
 
 /-- The valence model satisfies the upstream density assumptions: it is a non-negative weighting,
 species by species, of a density that does. -/
-theorem assumptions_valenceModelPdf : PDF.Assumptions M.valenceModelPdf where
-  support s x Q2 hx := by
-    rw [valenceModelPdf_apply,
-      (PDF.isPartonDensity_modelPdf (Species Flavor) 0 1).support s x Q2 hx, mul_zero]
-  nonneg s x Q2 hx₀ hx₁ :=
-    mul_nonneg (M.valenceWeight_nonneg s)
-      ((PDF.isPartonDensity_modelPdf (Species Flavor) 0 1).nonneg s x Q2 hx₀ hx₁)
-  measurable s Q2 :=
-    ((PDF.regularity_modelPdf (Species Flavor) 0 1).measurable s Q2).const_mul _
-  momentIntegrable n s Q2 := by
-    have h : (fun x : ℝ => x ^ n * M.valenceModelPdf s x Q2) = fun x : ℝ =>
-        M.valenceWeight s * (x ^ n * PDF.modelPdf (Species Flavor) 0 1 s x Q2) := by
-      funext x
-      rw [valenceModelPdf_apply]
-      ring
-    rw [h]
-    exact ((PDF.regularity_modelPdf (Species Flavor) 0 1).momentIntegrable n s Q2).const_mul _
+theorem assumptions_valenceModelPdf : PDF.Assumptions M.valenceModelPdf :=
+  (PDF.assumptions_modelPdf (Species Flavor) 0 1).weight M.valenceWeight_nonneg
 
 /-- The Mellin moments of the valence model: the species weight times the moment
 `1 / ((n + 1) (n + 2))` of the shape `1 - x`. -/
@@ -276,17 +280,12 @@ theorem assumptions_valenceModelPdf : PDF.Assumptions M.valenceModelPdf where
 theorem mellinMoment_valenceModelPdf (n : ℕ) (s : Species Flavor) (Q2 : ℝ) :
     PDF.mellinMoment M.valenceModelPdf n s Q2
       = M.valenceWeight s * (((n : ℝ) + 1) * ((n : ℝ) + 2))⁻¹ := by
-  have h : ∀ x : ℝ, x ^ n * M.valenceModelPdf s x Q2
-      = M.valenceWeight s * (x ^ n * PDF.modelPdf (Species Flavor) 0 1 s x Q2) := fun x => by
-    rw [valenceModelPdf_apply]
-    ring
-  rw [PDF.mellinMoment, MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => h x,
-    MeasureTheory.integral_const_mul, ← PDF.mellinMoment,
-    PDF.mellinMoment_modelPdf_zero_one]
+  rw [valenceModelPdf, PDF.mellinMoment_weight, PDF.mellinMoment_modelPdf_zero_one]
 
-/-- **The valence model has the valence numbers of its meson**: the valence quark contributes one
-net quark of its flavour, the valence antiquark one net antiquark of its own, and no other flavour
-is populated. -/
+/-- **The valence model has the valence numbers of its meson**: for a flavoured meson the valence
+quark contributes one net quark of its flavour, the valence antiquark one net antiquark of its own,
+and no other flavour is populated; when the two valence flavours coincide their contributions
+cancel and every valence integral vanishes. -/
 theorem hasValenceNumbers_valenceModelPdf : M.HasValenceNumbers M.valenceModelPdf := by
   intro i Q2
   rw [PDF.valenceNumber_def, mellinMoment_valenceModelPdf, mellinMoment_valenceModelPdf,
@@ -305,7 +304,8 @@ theorem sum_mellinMoment_one_valenceModelPdf [Fintype Flavor] (Q2 : ℝ) :
 /-- **The valence assignment and the upstream sum-rule bundle are consistent**: the valence model
 of `M` carries the bundle, each species' valence target being half its weight, and has the valence
 numbers of `M` by `hasValenceNumbers_valenceModelPdf`. -/
-def valenceModelSumRules [Fintype Flavor] : PDF.SumRuleAssumptions M.valenceModelPdf where
+def valenceModelSumRuleAssumptions [Fintype Flavor] :
+    PDF.SumRuleAssumptions M.valenceModelPdf where
   momentum Q2 := M.sum_mellinMoment_one_valenceModelPdf Q2
   valenceTarget s := M.valenceWeight s / 2
   valence s Q2 := by
@@ -314,8 +314,8 @@ def valenceModelSumRules [Fintype Flavor] : PDF.SumRuleAssumptions M.valenceMode
     ring
 
 @[simp]
-theorem valenceModelSumRules_valenceTarget [Fintype Flavor] (s : Species Flavor) :
-    (M.valenceModelSumRules).valenceTarget s = M.valenceWeight s / 2 :=
+theorem valenceModelSumRuleAssumptions_valenceTarget [Fintype Flavor] (s : Species Flavor) :
+    (M.valenceModelSumRuleAssumptions).valenceTarget s = M.valenceWeight s / 2 :=
   (rfl)
 
 end PseudoscalarMeson
