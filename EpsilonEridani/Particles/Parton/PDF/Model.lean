@@ -143,6 +143,27 @@ lemma regularity_modelPdf (Flavor : Type) (a b : ℕ) : Regularity (modelPdf Fla
 lemma assumptions_modelPdf (Flavor : Type) (a b : ℕ) : Assumptions (modelPdf Flavor a b) :=
   assumptions_iff.mpr ⟨isPartonDensity_modelPdf Flavor a b, regularity_modelPdf Flavor a b⟩
 
+/-- **The Mellin moments of the model with exponents `a = 0` and `b = 1`**, the shape `1 - x`:
+`∫₀¹ xⁿ (1 - x) dx = 1 / ((n + 1) (n + 2))`. In particular the model carries unit number
+density, `n = 0`, and momentum fraction `1 / 6`, `n = 1`, at each of its flavours. -/
+lemma mellinMoment_modelPdf_zero_one (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor 0 1) n i Q2 = (((n : ℝ) + 1) * ((n : ℝ) + 2))⁻¹ := by
+  have key : mellinMoment (modelPdf Flavor 0 1) n i Q2
+      = ∫ x in Set.Icc (0 : ℝ) 1, (x ^ n - x ^ (n + 1)) :=
+    MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x hx => by
+      rw [modelPdf_apply, Set.indicator_of_mem hx, betaShape, pow_zero, pow_one, pow_succ]
+      ring
+  rw [key, MeasureTheory.integral_Icc_eq_integral_Ioc,
+    ← intervalIntegral.integral_of_le zero_le_one,
+    intervalIntegral.integral_sub (intervalIntegral.intervalIntegrable_pow n)
+      (intervalIntegral.intervalIntegrable_pow (n + 1)),
+    integral_pow, integral_pow]
+  have h1 : ((n : ℝ) + 1) ≠ 0 := by positivity
+  have h2 : ((n : ℝ) + 2) ≠ 0 := by positivity
+  push_cast
+  field_simp
+  ring
+
 /-- Every Mellin moment of the model is nonnegative. -/
 lemma mellinMoment_modelPdf_nonneg (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 : ℝ) :
     0 ≤ mellinMoment (modelPdf Flavor a b) n i Q2 := by
