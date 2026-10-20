@@ -61,7 +61,6 @@ theorem rotation_eq_planeConformalMatrix (θ : ℝ) :
   rw [rotation_def, val_planeConformalMatrix]
 
 /-- The rotation by `θ` applied to a vector `w = (w₀, w₁)`. -/
-@[simp]
 theorem rotation_mulVec (θ : ℝ) (w : Fin 2 → ℝ) :
     rotation θ *ᵥ w = ![cos θ * w 0 - sin θ * w 1, sin θ * w 0 + cos θ * w 1] := by
   rw [rotation_def]

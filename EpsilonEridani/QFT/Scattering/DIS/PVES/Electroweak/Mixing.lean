@@ -85,7 +85,6 @@ theorem neutralMassMatrix_eq_smul_fin_two (g g' v : ℝ) :
 
 /-- The neutral mass matrix applied to a field configuration `w = (w₀, w₁)` in the basis
 `(W³, B)`. -/
-@[simp]
 theorem neutralMassMatrix_mulVec (g g' v : ℝ) (w : Fin 2 → ℝ) :
     neutralMassMatrix g g' v *ᵥ w = ((v ^ 2 / 4) * (g * w 0 - g' * w 1)) • ![g, -g'] := by
   simp only [neutralMassMatrix_def, smul_mulVec, vecMulVec_mulVec, op_smul_eq_smul, smul_smul,
