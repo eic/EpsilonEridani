@@ -20,9 +20,11 @@ conjugate generators `-(Tᵃ)ᵀ` act on `j` from the right, and the generator `
 the commutator `ψ ↦ Tᵃ ψ - ψ Tᵃ`.
 
 This module decomposes `N ⊗ N* = 1 ⊕ (N² - 1)` into the colour-singlet and colour-octet channels
-(the octet being the adjoint representation, of dimension `8` at `N = 3`). Both projectors are
-built from the generalized Gell-Mann generators `Tᵃ = SUNGen.genM N a` of `su(N)`, and every
-property below is proved from the trace and completeness identities of
+(the octet being the adjoint representation, of dimension `8` at `N = 3`). The octet projector is
+built from the generalized Gell-Mann generators `Tᵃ = SUNGen.genM N a` of `su(N)` and the singlet
+projector directly from the trace; that the two are complementary (`colorOctetProj_eq`) is what
+the completeness relation of the generators supplies. Every property below is proved from the
+trace and completeness identities of
 `EpsilonEridani.QFT.QCD.SUNGenerators` and `EpsilonEridani.QFT.QCD.SUNStructureConstants`, never
 entered as a numeral:
 
@@ -46,9 +48,11 @@ its quadratic Casimir is `LieModule.casimir ℂ _ _ (genM N) (genM N)`.
 ## Main results
 
 * `colorOctetProj_eq`: the octet projector built from the generators is `1 - colorSingletProj N`.
+* `colorSingletProj_apply_eq_self_iff`, `colorOctetProj_apply_eq_self_iff`: the singlet channel
+  consists of the multiples of `1` and the octet channel of the traceless wave functions.
 * `completeOrthogonalIdempotents_colorSingletProj_colorOctetProj`: the two projectors are
   complete orthogonal idempotents.
-* `colorSingletProj_apply_eq_colorSingletState` and
+* `colorSingletProj_apply_eq_smul_colorSingletState` and
   `trace_conjTranspose_colorSingletState_mul_self`: the singlet projector projects onto a
   unit-norm state.
 * `trace_colorSingletProj`, `trace_colorOctetProj`: the traces `1` and `N² - 1`.
@@ -85,7 +89,9 @@ def colorSingletProj (N : ℕ) : Module.End ℂ (Matrix (Fin N) (Fin N) ℂ) :=
 
 @[simp]
 theorem colorSingletProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
-    colorSingletProj N ψ = ((N : ℂ)⁻¹ * ψ.trace) • 1 := (rfl)
+    colorSingletProj N ψ = ((N : ℂ)⁻¹ * ψ.trace) • 1 := by
+  rw [colorSingletProj, LinearMap.smulRight_apply, LinearMap.smul_apply, traceLinearMap_apply,
+    smul_eq_mul]
 
 /-- The projector onto the colour-octet channel of a quark-antiquark pair, built from the
 generators of `su(N)`: `ψ ↦ 2 Σₐ Tr(ψ Tᵃ) Tᵃ`. The factor `2` is `1 / T_F`. -/
@@ -94,19 +100,26 @@ def colorOctetProj (N : ℕ) : Module.End ℂ (Matrix (Fin N) (Fin N) ℂ) :=
     ((2 : ℂ) • (traceLinearMap (Fin N) ℂ ℂ ∘ₗ LinearMap.mulRight ℂ (genM N a))).smulRight
       (genM N a)
 
-theorem colorOctetProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
+/-- The octet projector in its defining generator form, `ψ ↦ 2 Σₐ Tr(ψ Tᵃ) Tᵃ`; the closed form
+is `colorOctetProj_apply`. -/
+theorem colorOctetProj_apply_eq_sum (ψ : Matrix (Fin N) (Fin N) ℂ) :
     colorOctetProj N ψ = ∑ a : SUNIndex N, (2 * (ψ * genM N a).trace) • genM N a := by
   simp [colorOctetProj, LinearMap.sum_apply]
 
 /-- The octet projector is the complement of the singlet projector: by the completeness relation
 of the generators, `2 Σₐ Tr(ψ Tᵃ) Tᵃ = ψ - (Tr ψ / N) · 1`. -/
 theorem colorOctetProj_eq : colorOctetProj N = 1 - colorSingletProj N := by
-  ext ψ i l
-  have h := sum_genM_proj_apply ψ i l
-  rw [LinearMap.sub_apply, Module.End.one_apply, colorSingletProj_apply, colorOctetProj_apply,
-    Matrix.sum_apply, Matrix.sub_apply, Matrix.smul_apply, one_apply_kd]
-  simp only [Matrix.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum, h]
-  ring
+  ext ψ : 1
+  rw [colorOctetProj_apply_eq_sum]
+  simp only [mul_smul, ← Finset.smul_sum]
+  rw [sum_genM_proj, smul_smul, mul_one_div_cancel two_ne_zero, one_smul, LinearMap.sub_apply,
+    Module.End.one_apply, colorSingletProj_apply]
+
+/-- The octet projector in closed form: `P₈ ψ = ψ - (Tr ψ / N) · 1`. -/
+@[simp]
+theorem colorOctetProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
+    colorOctetProj N ψ = ψ - ((N : ℂ)⁻¹ * ψ.trace) • 1 := by
+  rw [colorOctetProj_eq, LinearMap.sub_apply, Module.End.one_apply, colorSingletProj_apply]
 
 /-- The two colour channels exhaust the pair's colour space. -/
 @[simp]
@@ -161,12 +174,46 @@ theorem completeOrthogonalIdempotents_colorSingletProj_colorOctetProj :
   rw [colorOctetProj_eq]
   exact .of_isIdempotentElem isIdempotentElem_colorSingletProj
 
+/-- A wave function lies in the singlet channel exactly when it is a multiple of `1`. -/
+theorem colorSingletProj_apply_eq_self_iff (ψ : Matrix (Fin N) (Fin N) ℂ) :
+    colorSingletProj N ψ = ψ ↔ ∃ c : ℂ, ψ = c • 1 := by
+  refine ⟨fun h ↦ ⟨_, h.symm.trans (colorSingletProj_apply ψ)⟩, ?_⟩
+  rintro ⟨c, rfl⟩
+  rcases eq_or_ne (N : ℂ) 0 with hN | hN
+  · obtain rfl : N = 0 := Nat.cast_eq_zero.1 hN
+    exact Subsingleton.elim _ _
+  · rw [colorSingletProj_apply, trace_smul, trace_one, Fintype.card_fin, smul_eq_mul,
+      mul_left_comm, inv_mul_cancel₀ hN, mul_one]
+
+/-- A wave function lies in the octet channel exactly when it is traceless. -/
+theorem colorOctetProj_apply_eq_self_iff (ψ : Matrix (Fin N) (Fin N) ℂ) :
+    colorOctetProj N ψ = ψ ↔ ψ.trace = 0 := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simp [Subsingleton.elim (colorOctetProj 0 ψ) ψ]
+  · have : NeZero N := ⟨hN.ne'⟩
+    simp [sub_eq_self, Nat.pos_iff_ne_zero.1 hN]
+
 /-! ### The normalised singlet state -/
 
 /-- The colour-singlet state `δ_{ij} / √N` of a quark-antiquark pair, normalised to unit norm. -/
 def colorSingletState (N : ℕ) : Matrix (Fin N) (Fin N) ℂ := (((√N)⁻¹ : ℝ) : ℂ) • 1
 
+/-- The defining formula of the colour-singlet state, `ψ₁ = (1 / √N) · 1`. -/
+theorem colorSingletState_def :
+    colorSingletState N = (((√N)⁻¹ : ℝ) : ℂ) • (1 : Matrix (Fin N) (Fin N) ℂ) := (rfl)
+
+/-- The entries of the colour-singlet state: `(ψ₁)_{ij} = δ_{ij} / √N`. -/
+@[simp]
+theorem colorSingletState_apply (i j : Fin N) :
+    colorSingletState N i j = if i = j then (((√N)⁻¹ : ℝ) : ℂ) else 0 := by
+  simp [colorSingletState, one_apply]
+
+/-- The colour-singlet state is self-adjoint. -/
+theorem conjTranspose_colorSingletState : (colorSingletState N)ᴴ = colorSingletState N := by
+  simp [colorSingletState]
+
 /-- The colour-singlet state has unit norm: `Tr(ψ₁† ψ₁) = 1`, for `ψ₁ = δ_{ij} / √N`. -/
+@[simp]
 theorem trace_conjTranspose_colorSingletState_mul_self [NeZero N] :
     ((colorSingletState N)ᴴ * colorSingletState N).trace = 1 := by
   have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne N)
@@ -179,7 +226,7 @@ theorem trace_conjTranspose_colorSingletState_mul_self [NeZero N] :
 
 /-- The singlet projector is the orthogonal projection onto the unit-norm singlet state:
 `P₁ ψ = Tr(ψ₁† ψ) ψ₁`. Its factor `1 / N` is the square of the normalisation `1 / √N`. -/
-theorem colorSingletProj_apply_eq_colorSingletState (ψ : Matrix (Fin N) (Fin N) ℂ) :
+theorem colorSingletProj_apply_eq_smul_colorSingletState (ψ : Matrix (Fin N) (Fin N) ℂ) :
     colorSingletProj N ψ = ((colorSingletState N)ᴴ * ψ).trace • colorSingletState N := by
   have h : (√N : ℝ)⁻¹ * (√N)⁻¹ = (N : ℝ)⁻¹ := by
     rw [← mul_inv, Real.mul_self_sqrt (Nat.cast_nonneg N)]
@@ -191,12 +238,14 @@ theorem colorSingletProj_apply_eq_colorSingletState (ψ : Matrix (Fin N) (Fin N)
 /-! ### Traces -/
 
 /-- The singlet channel is one-dimensional: its projector has trace `1`. -/
+@[simp]
 theorem trace_colorSingletProj [NeZero N] :
     LinearMap.trace ℂ (Matrix (Fin N) (Fin N) ℂ) (colorSingletProj N) = 1 := by
   rw [colorSingletProj, LinearMap.trace_smulRight, LinearMap.smul_apply, traceLinearMap_apply,
     trace_one, Fintype.card_fin, smul_eq_mul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 (NeZero.ne N))]
 
 /-- The octet channel has dimension `N² - 1`: its projector has trace `N² - 1`. -/
+@[simp]
 theorem trace_colorOctetProj [NeZero N] :
     LinearMap.trace ℂ (Matrix (Fin N) (Fin N) ℂ) (colorOctetProj N) = (N : ℂ) ^ 2 - 1 := by
   rw [colorOctetProj_eq, map_sub, trace_colorSingletProj, LinearMap.trace_one,
@@ -210,7 +259,12 @@ theorem trace_colorOctetProj [NeZero N] :
 `LieAlgebra.ad ℂ _ (genM N a)`: the quark index of `ψ_{i j}` carries the fundamental
 representation and the antiquark index the conjugate one, with generators `-(Tᵃ)ᵀ`, and together
 they act by the commutator `ψ ↦ Tᵃ ψ - ψ Tᵃ`. The channel statements below hold for the adjoint
-action of an arbitrary matrix. -/
+action of an arbitrary matrix.
+
+The Lie bracket on matrices used here, and by the Casimir results below, is the commutator
+bracket of `LieRing.ofAssociativeRing`, which Mathlib does not make a global instance; a file
+that states or rewrites with these results must enable it as this one does, with
+`attribute [local instance 100] LieRing.ofAssociativeRing`. -/
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 

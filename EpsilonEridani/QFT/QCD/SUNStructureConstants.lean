@@ -257,6 +257,16 @@ lemma sum_genM_sandwich (X : Matrix (Fin N) (Fin N) ℂ) :
   rw [Matrix.sum_apply, sum_genM_sandwich_apply]
   simp only [Matrix.smul_apply, Matrix.sub_apply, smul_eq_mul, one_apply_kd]
 
+/-- **Completeness, projection form** as a matrix identity: `Σₐ Tr(X Tᵃ) Tᵃ = (1/2)(X -
+Tr(X)/N · 1)`. -/
+lemma sum_genM_proj (X : Matrix (Fin N) (Fin N) ℂ) :
+    (∑ a : SUNIndex N, Matrix.trace (X * genM N a) • genM N a)
+      = (1 / 2 : ℂ) • (X - (((N : ℂ))⁻¹ * Matrix.trace X) • (1 : Matrix (Fin N) (Fin N) ℂ)) := by
+  ext i l
+  rw [Matrix.sum_apply]
+  simp only [Matrix.smul_apply, Matrix.sub_apply, smul_eq_mul, one_apply_kd]
+  exact sum_genM_proj_apply X i l
+
 /-- `Σ_c Tᶜ Tᵇ Tᶜ = -Tᵇ/(2N)`: the sandwich at a traceless matrix.  This is the step that
 uses tracelessness of the individual generators. -/
 lemma sum_genM_sandwich_gen (b : SUNIndex N) :
