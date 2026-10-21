@@ -36,23 +36,26 @@ rather than independent data.
 ## Main definitions
 
 * `chiralCoupling t3 q s2`: the `Z` coupling `T³ - Q sin²θ_W` of a chiral field.
-* `FermionNeutralCurrentCouplings.gL`, `FermionNeutralCurrentCouplings.gR`: the left- and
-  right-handed couplings `(g_V ± g_A) / 2` of a vector/axial coupling pair.
 * `FermionNeutralCurrentCouplings.ofQuantumNumbers t3 q s2`: the couplings
   `g_V = T³ - 2 Q sin²θ_W`, `g_A = T³` of a fermion whose left-handed component has
   weak-isospin third component `t3` and whose electric charge is `q`.
 
 ## Main results
 
-* `FermionNeutralCurrentCouplings.gL_add_gR`, `FermionNeutralCurrentCouplings.gL_sub_gR`:
-  `g_V = g_L + g_R` and `g_A = g_L - g_R`.
+* `FermionNeutralCurrentCouplings.ofQuantumNumbers_gL`,
+  `FermionNeutralCurrentCouplings.ofQuantumNumbers_gR`: the chiral couplings
+  `FermionNeutralCurrentCouplings.gL`, `FermionNeutralCurrentCouplings.gR` of
+  `ofQuantumNumbers t3 q s2` are `chiralCoupling t3 q s2` and `chiralCoupling 0 q s2`.
 * `FermionNeutralCurrentCouplings.eq_ofQuantumNumbers_iff`: a coupling pair is that of the
   quantum numbers `(T³, Q)` exactly when its left-handed coupling is the `Z` coupling of a field
   with these quantum numbers and its right-handed coupling is that of a singlet of charge `Q`.
-* `smTreeLevelCouplings_eq`: the tabulated electron, up-quark and down-quark couplings are the
-  values of `ofQuantumNumbers` at the Standard Model quantum numbers.
-* `ofQuantumNumbers_neutrino`: the neutrino is electrically neutral, but it couples to the `Z`
-  with `g_V = g_A = 1/2` at every value of `sin²θ_W`.
+* `doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_Yu` and its down-quark
+  and electron analogues: the doublet and singlet components of each charged Standard Model
+  fermion carry the same electric charge.
+* `smTreeLevelCouplings_eq_ofQuantumNumbers`: the tabulated electron, up-quark and down-quark
+  couplings are the values of `ofQuantumNumbers` at the Standard Model quantum numbers.
+* `FermionNeutralCurrentCouplings.ofQuantumNumbers_neutrino`: the neutrino is electrically
+  neutral, but it couples to the `Z` with `g_V = g_A = 1/2` at every value of `sin²θ_W`.
 
 ## References
 
@@ -76,56 +79,17 @@ def chiralCoupling (t3 q s2 : ℝ) : ℝ := t3 - q * s2
 theorem chiralCoupling_def (t3 q s2 : ℝ) : chiralCoupling t3 q s2 = t3 - q * s2 :=
   (rfl)
 
-/-- An electrically neutral weak-isospin singlet does not couple to the `Z` boson. -/
+/-- A weak-isospin singlet of charge `q` couples to the `Z` boson with `-Q sin²θ_W`. -/
 @[simp]
-theorem chiralCoupling_zero_zero (s2 : ℝ) : chiralCoupling 0 0 s2 = 0 := by
-  simp [chiralCoupling_def]
+theorem chiralCoupling_zero_left (q s2 : ℝ) : chiralCoupling 0 q s2 = -(q * s2) := by
+  rw [chiralCoupling_def, zero_sub]
+
+/-- An electrically neutral field couples to the `Z` boson with its weak isospin `T³`. -/
+@[simp]
+theorem chiralCoupling_charge_zero (t3 s2 : ℝ) : chiralCoupling t3 0 s2 = t3 := by
+  rw [chiralCoupling_def, zero_mul, sub_zero]
 
 namespace FermionNeutralCurrentCouplings
-
-variable (c d : FermionNeutralCurrentCouplings)
-
-/-- The left-handed neutral-current coupling `g_L = (g_V + g_A) / 2`. -/
-def gL : ℝ := (c.gV + c.gA) / 2
-
-/-- The right-handed neutral-current coupling `g_R = (g_V - g_A) / 2`. -/
-def gR : ℝ := (c.gV - c.gA) / 2
-
-/-- The left-handed coupling unfolded. -/
-theorem gL_def : c.gL = (c.gV + c.gA) / 2 :=
-  (rfl)
-
-/-- The right-handed coupling unfolded. -/
-theorem gR_def : c.gR = (c.gV - c.gA) / 2 :=
-  (rfl)
-
-/-- The vector coupling is the sum of the chiral couplings, `g_V = g_L + g_R`. -/
-@[simp]
-theorem gL_add_gR : c.gL + c.gR = c.gV := by
-  rw [gL_def, gR_def]
-  ring
-
-/-- The axial coupling is the difference of the chiral couplings, `g_A = g_L - g_R`. -/
-@[simp]
-theorem gL_sub_gR : c.gL - c.gR = c.gA := by
-  rw [gL_def, gR_def]
-  ring
-
-variable {c d} in
-/-- A vector/axial coupling pair is determined by its two chiral couplings. -/
-theorem ext_gL_gR (hL : c.gL = d.gL) (hR : c.gR = d.gR) : c = d := by
-  obtain ⟨cV, cA⟩ := c
-  obtain ⟨dV, dA⟩ := d
-  have hV : cV = dV := by
-    simpa using congrArg₂ (· + ·) hL hR
-  have hA : cA = dA := by
-    simpa using congrArg₂ (· - ·) hL hR
-  rw [hV, hA]
-
-variable {c d} in
-/-- Two vector/axial coupling pairs are equal exactly when their chiral couplings agree. -/
-theorem ext_gL_gR_iff : c = d ↔ c.gL = d.gL ∧ c.gR = d.gR :=
-  ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun h => ext_gL_gR h.1 h.2⟩
 
 /-- The neutral-current couplings `g_V = T³ - 2 Q sin²θ_W` and `g_A = T³` of a fermion whose
 left-handed component has weak-isospin third component `t3`, whose right-handed component is a
@@ -147,7 +111,6 @@ theorem ofQuantumNumbers_gA (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gA = t3
 
 /-- The left-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a field with
 weak-isospin third component `t3` and charge `q`. -/
-@[simp]
 theorem ofQuantumNumbers_gL (t3 q s2 : ℝ) :
     (ofQuantumNumbers t3 q s2).gL = chiralCoupling t3 q s2 := by
   rw [gL_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
@@ -155,7 +118,6 @@ theorem ofQuantumNumbers_gL (t3 q s2 : ℝ) :
 
 /-- The right-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a
 weak-isospin singlet of charge `q`. -/
-@[simp]
 theorem ofQuantumNumbers_gR (t3 q s2 : ℝ) :
     (ofQuantumNumbers t3 q s2).gR = chiralCoupling 0 q s2 := by
   rw [gR_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
@@ -184,10 +146,32 @@ end FermionNeutralCurrentCouplings
 With the Standard Model hypercharges `(YQ, Yu, Yd, YL, Ye) = (1/3, 4/3, -2/3, -1, -2)`, the
 charge formula `Q = T³ + Y / 2` gives the physical charges of the five multiplets. In particular
 the left-handed (doublet) and right-handed (singlet) components of the up quark, the down quark
-and the electron carry the same charge, which is what allows a single `Q` in `ofQuantumNumbers`.
+and the electron carry the same charge, which is what allows a single `Q` in `ofQuantumNumbers`;
+the three `_eq_singletElectricCharge_` lemmas below state this.
 -/
 
 open GenerationAssignments FermionNeutralCurrentCouplings
+
+/-- The left-handed up quark, the upper component of the quark doublet, and the right-handed
+up-quark singlet carry the same electric charge. -/
+theorem doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_Yu :
+    doubletElectricCharge (standardModel.YQ : ℝ) 0 =
+      singletElectricCharge (standardModel.Yu : ℝ) := by
+  norm_num [doubletElectricCharge_apply, singletElectricCharge_def]
+
+/-- The left-handed down quark, the lower component of the quark doublet, and the right-handed
+down-quark singlet carry the same electric charge. -/
+theorem doubletElectricCharge_standardModel_YQ_one_eq_singletElectricCharge_Yd :
+    doubletElectricCharge (standardModel.YQ : ℝ) 1 =
+      singletElectricCharge (standardModel.Yd : ℝ) := by
+  norm_num [doubletElectricCharge_apply, singletElectricCharge_def]
+
+/-- The left-handed electron, the lower component of the lepton doublet, and the right-handed
+electron singlet carry the same electric charge. -/
+theorem doubletElectricCharge_standardModel_YL_one_eq_singletElectricCharge_Ye :
+    doubletElectricCharge (standardModel.YL : ℝ) 1 =
+      singletElectricCharge (standardModel.Ye : ℝ) := by
+  norm_num [doubletElectricCharge_apply, singletElectricCharge_def]
 
 /-- The up quark, the upper component of the quark doublet, has charge `2/3`. -/
 theorem doubletElectricCharge_standardModel_YQ_zero :
@@ -212,17 +196,20 @@ theorem doubletElectricCharge_standardModel_YL_one :
 /-- The right-handed up-quark singlet has charge `2/3`. -/
 theorem singletElectricCharge_standardModel_Yu :
     singletElectricCharge (standardModel.Yu : ℝ) = 2 / 3 := by
-  norm_num [singletElectricCharge_def]
+  rw [← doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_Yu,
+    doubletElectricCharge_standardModel_YQ_zero]
 
 /-- The right-handed down-quark singlet has charge `-1/3`. -/
 theorem singletElectricCharge_standardModel_Yd :
     singletElectricCharge (standardModel.Yd : ℝ) = -1 / 3 := by
-  norm_num [singletElectricCharge_def]
+  rw [← doubletElectricCharge_standardModel_YQ_one_eq_singletElectricCharge_Yd,
+    doubletElectricCharge_standardModel_YQ_one]
 
 /-- The right-handed electron singlet has charge `-1`. -/
 theorem singletElectricCharge_standardModel_Ye :
     singletElectricCharge (standardModel.Ye : ℝ) = -1 := by
-  norm_num [singletElectricCharge_def]
+  rw [← doubletElectricCharge_standardModel_YL_one_eq_singletElectricCharge_Ye,
+    doubletElectricCharge_standardModel_YL_one]
 
 /-!
 ## The tabulated couplings are derived
@@ -235,7 +222,7 @@ as data. They are the values of `ofQuantumNumbers` at the quantum numbers above.
 every `sin²θ_W`, the electron, up-quark and down-quark couplings of `smTreeLevelCouplings` are
 `ofQuantumNumbers` evaluated at the weak-isospin weight of the fermion's doublet component and at
 the electric charge `T³ + Y / 2` that the Standard Model hypercharge of its doublet gives it. -/
-theorem smTreeLevelCouplings_eq (s2 : ℝ) :
+theorem smTreeLevelCouplings_eq_ofQuantumNumbers (s2 : ℝ) :
     smTreeLevelCouplings s2 =
       { electron :=
           ofQuantumNumbers (isospinWeight 1) (doubletElectricCharge (standardModel.YL : ℝ) 1) s2
@@ -250,6 +237,8 @@ theorem smTreeLevelCouplings_eq (s2 : ℝ) :
     FermionNeutralCurrentCouplings.mk.injEq, and_true]
   refine ⟨?_, ?_, ?_⟩ <;> ring
 
+namespace FermionNeutralCurrentCouplings
+
 /-- **The neutrino couples to the `Z` but not to the photon.** The upper component of the
 Standard Model lepton doublet has electric charge `0`
 (`doubletElectricCharge_standardModel_YL_zero`), but its neutral-current couplings are
@@ -259,5 +248,7 @@ theorem ofQuantumNumbers_neutrino (s2 : ℝ) :
     ofQuantumNumbers (isospinWeight 0) (doubletElectricCharge (standardModel.YL : ℝ) 0) s2 =
       { gV := 1 / 2, gA := 1 / 2 } := by
   rw [doubletElectricCharge_standardModel_YL_zero, ofQuantumNumbers_neutral, isospinWeight_zero]
+
+end FermionNeutralCurrentCouplings
 
 end EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak

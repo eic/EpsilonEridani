@@ -11,7 +11,9 @@ public import Physlib.Particles.StandardModel.Basic
 # PVES Electroweak Parameters
 
 This module defines electroweak parameter and effective neutral-current coupling
-interfaces used by parity-violating electron scattering (PVES) contracts.
+interfaces used by parity-violating electron scattering (PVES) contracts, together with the
+left- and right-handed couplings `g_L = (g_V + g_A) / 2` and `g_R = (g_V - g_A) / 2` of a
+vector/axial coupling pair.
 
 -/
 
@@ -47,6 +49,54 @@ structure FermionNeutralCurrentCouplings where
   gV : ℝ
   /-- Axial coupling. -/
   gA : ℝ
+
+namespace FermionNeutralCurrentCouplings
+
+variable (c d : FermionNeutralCurrentCouplings)
+
+/-- The left-handed neutral-current coupling `g_L = (g_V + g_A) / 2`. -/
+def gL : ℝ := (c.gV + c.gA) / 2
+
+/-- The right-handed neutral-current coupling `g_R = (g_V - g_A) / 2`. -/
+def gR : ℝ := (c.gV - c.gA) / 2
+
+/-- The left-handed coupling unfolded. -/
+theorem gL_def : c.gL = (c.gV + c.gA) / 2 :=
+  (rfl)
+
+/-- The right-handed coupling unfolded. -/
+theorem gR_def : c.gR = (c.gV - c.gA) / 2 :=
+  (rfl)
+
+/-- The vector coupling is the sum of the chiral couplings, `g_V = g_L + g_R`. -/
+@[simp]
+theorem gL_add_gR : c.gL + c.gR = c.gV := by
+  rw [gL_def, gR_def]
+  ring
+
+/-- The axial coupling is the difference of the chiral couplings, `g_A = g_L - g_R`. -/
+@[simp]
+theorem gL_sub_gR : c.gL - c.gR = c.gA := by
+  rw [gL_def, gR_def]
+  ring
+
+variable {c d} in
+/-- A vector/axial coupling pair is determined by its two chiral couplings. -/
+theorem ext_gL_gR (hL : c.gL = d.gL) (hR : c.gR = d.gR) : c = d := by
+  obtain ⟨cV, cA⟩ := c
+  obtain ⟨dV, dA⟩ := d
+  have hV : cV = dV := by
+    simpa using congrArg₂ (· + ·) hL hR
+  have hA : cA = dA := by
+    simpa using congrArg₂ (· - ·) hL hR
+  rw [hV, hA]
+
+variable {c d} in
+/-- Two vector/axial coupling pairs are equal exactly when their chiral couplings agree. -/
+theorem ext_gL_gR_iff : c = d ↔ c.gL = d.gL ∧ c.gR = d.gR :=
+  ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun h => ext_gL_gR h.1 h.2⟩
+
+end FermionNeutralCurrentCouplings
 
 /-- Effective neutral-current coupling bundle used in PVES channels. -/
 structure NeutralCurrentCouplings where
