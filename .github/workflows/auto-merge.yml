@@ -53,7 +53,19 @@ jobs:
           || contains(github.event.changes.body.from, 'epsiloneridani-review-in-progress')))
     outputs:
       pr: ${{ steps.r.outputs.pr }}
+      review_ref: ${{ steps.review-pin.outputs.sha }}
     steps:
+      # The trusted copy of this workflow file (the commit this run came from), whose
+      # reusable-workflow pin below is the EpsilonEridaniReview commit `review_ref` must name.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: .github
+          persist-credentials: false
+      - id: review-pin
+        uses: ./.github/actions/review-pin
+        with:
+          workflow: auto-merge.yml
       - id: r
         env:
           GH_TOKEN: ${{ github.token }}
@@ -78,10 +90,10 @@ jobs:
     if: ${{ needs.resolve.outputs.pr != '' }}
     # Pinned to a EpsilonEridaniReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: eic/EpsilonEridaniReview/.github/workflows/merge-only.yml@73f61deb51cad9d881cd0f6f6f418afc78302499
+    uses: eic/EpsilonEridaniReview/.github/workflows/merge-only.yml@11818532110e43b9029fe628291e786621232900
     with:
       pr: ${{ needs.resolve.outputs.pr }}
-      review_ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
+      review_ref: ${{ needs.resolve.outputs.review_ref }}
     # Pass only the App credentials merge-only needs, not all of EpsilonEridani's secrets.
     secrets:
       APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
