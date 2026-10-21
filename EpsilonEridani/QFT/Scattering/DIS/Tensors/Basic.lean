@@ -5,6 +5,7 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
+public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 /-!
 
@@ -12,7 +13,9 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 This module introduces tensor objects for inclusive DIS:
 
-- A leptonic tensor model built from incoming and outgoing lepton momenta.
+- A leptonic tensor model built from incoming and outgoing lepton momenta, and its extension
+  to a vector/axial-vector exchange, whose parity-odd part is the contraction
+  `ε(·, ·, k, k')` of a supplied alternating four-form `ε`.
 - Reflections of a bilinear form, used as concrete elements of the stabilizer of the
   kinematics inside the `g`-isometry group.
 - An abstract hadronic tensor with explicit Lorentz-covariance, symmetry and
@@ -63,11 +66,13 @@ property of `(V, g, p, q)`. The same section supplies `uniquenessWit` and
 `spectatorAssumptions_kWit`, instantiating `UniquenessAssumptions` and `SpectatorAssumptions`
 on one set of kinematics.
 
-The parity-violating `F₃ ε^{μναβ} p_α q_β / (2 p·q)` term is *not* included: on an abstract
-`V` with only a bilinear form there is no orientation or volume form, and physlib's
-`Relativity.Tensors.RealTensor.Metrics.LeviCivita` supplies `leviCivita4Int` only as a
-component symbol on `Fin 4` indices of `realLorentzTensor`. Adding `F₃` honestly requires
-first specializing this module to `Lorentz.Vector 3`.
+The parity-violating hadronic term `F₃ ε^{μναβ} p_α q_β / (2 p·q)` is *not* included. On an
+abstract `V` with only a bilinear form there is no orientation or volume form, so a parity-odd
+structure needs an alternating four-form supplied as data; the leptonic side does this in
+`Leptonic.lMuNuOdd`. The hadronic decomposition does not use such a form yet, and
+`IsLorentzCovariant` is not the covariance notion it needs: for a volume form `ε` on a
+four-dimensional space, a reflection in the kinematic stabilizer reverses the sign of
+`ε(·, ·, p, q)`, so that term satisfies `IsLorentzCovariant` only if it vanishes.
 
 -/
 
@@ -209,6 +214,203 @@ lemma lMuNu_isSymm (g : Bilin V) (K : Kinematics.DisKinematics V) (hSymm : g.IsS
   intro v w
   have hg : ∀ x y : V, g x y = g y x := hSymm.eq
   simp [lMuNu_apply, hg, mul_comm, add_comm]
+
+/-- Contracting `lMuNu` with `q = k - k'` in the first slot leaves only lepton-mass terms:
+`q^μ L_{μν} = k² k'_ν - k'² k_ν`. -/
+lemma lMuNu_apply_q_left (g : Bilin V) (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm)
+    (w : V) :
+    lMuNu g K K.q w = g K.k K.k * g K.kPrime w - g K.kPrime K.kPrime * g K.k w := by
+  simp only [lMuNu_apply, K.q_eq_sub, map_sub, LinearMap.sub_apply, hSymm.eq K.kPrime K.k]
+  ring
+
+/-- Contracting `lMuNu` with `q = k - k'` in the second slot leaves only lepton-mass terms:
+`L_{μν} q^ν = k² k'_μ - k'² k_μ`. -/
+lemma lMuNu_apply_q_right (g : Bilin V) (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm)
+    (v : V) :
+    lMuNu g K v K.q = g K.k K.k * g K.kPrime v - g K.kPrime K.kPrime * g K.k v := by
+  rw [(lMuNu_isSymm g K hSymm).eq v K.q, lMuNu_apply_q_left g K hSymm]
+
+/-!
+
+### The vector/axial-vector leptonic tensor
+
+For a lepton-side vertex `γ^μ (c_V - c_A γ₅)` the spin trace over massless leptons is
+
+  `(c_V² + c_A²) (k^μ k'^ν + k'^μ k^ν - (k·k') g^{μν}) ± 2 i c_V c_A ε^{μναβ} k_α k'_β`,
+
+up to the overall factor `4` of the trace. The symmetric part is the vector-exchange tensor
+`lMuNu` rescaled by `c_V² + c_A²`; the antisymmetric part is proportional to the parity-odd
+structure `ε(·, ·, k, k')`. As for the hadronic tensor, the tensor is represented by a real
+bilinear form. Its antisymmetric part models `i ε^{μναβ} k_α k'_β` with the factor `i`
+*dropped*, not absorbed: the alternating four-form `ε`, supplied as data, is real-valued, and
+only the real sign conventions for `ε^{0123}` and for `γ₅` sit in the choice of `ε`.
+Contracting this parity-odd part with another real parity-odd structure modelled the same way
+must therefore restore the compensating factor `i² = -1`. Lepton-mass terms of the trace are
+not included.
+The formula follows from the four-slash trace identities
+`spaceTime.γ.Trace.slash_mul_slash_mul_slash_mul_slash_trace` and
+`spaceTime.γ.Trace.gamma5_slash_mul_slash_mul_slash_mul_slash_trace` on `Lorentz.Vector 3`;
+`lMuNuVA` is defined by the formula on an abstract `V` and is not derived from them here.
+See Halzen & Martin, *Quarks and Leptons* (1984), and Devenish & Cooper-Sarkar, *Deep Inelastic
+Scattering* (2004), ch. 3.
+
+-/
+
+/-- The parity-odd leptonic structure `(v, w) ↦ ε(v, w, k, k')`, the contraction of an
+alternating four-form `ε` with the incoming and outgoing lepton momenta. -/
+def lMuNuOdd (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V) : Bilin V :=
+  ε.bilinMap ![K.k, K.kPrime]
+
+/-- Pointwise value of the parity-odd leptonic structure. -/
+lemma lMuNuOdd_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V) (v w : V) :
+    lMuNuOdd ε K v w = ε ![v, w, K.k, K.kPrime] :=
+  ε.bilinMap_apply _ v w
+
+/-- The parity-odd leptonic structure is alternating. -/
+lemma isAlt_lMuNuOdd (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V) :
+    (lMuNuOdd ε K).IsAlt :=
+  ε.isAlt_bilinMap _
+
+/-- The parity-odd leptonic structure vanishes on the diagonal. -/
+@[simp] lemma lMuNuOdd_apply_self (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
+    (v : V) : lMuNuOdd ε K v v = 0 :=
+  ε.bilinMap_apply_self _ v
+
+/-- The parity-odd leptonic structure annihilates `k` in its first slot. -/
+@[simp] lemma lMuNuOdd_apply_k_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (w : V) : lMuNuOdd ε K K.k w = 0 :=
+  ε.bilinMap_apply_left_eq_zero ![K.k, K.kPrime] 0 w
+
+/-- The parity-odd leptonic structure annihilates `k'` in its first slot. -/
+@[simp] lemma lMuNuOdd_apply_kPrime_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (w : V) : lMuNuOdd ε K K.kPrime w = 0 :=
+  ε.bilinMap_apply_left_eq_zero ![K.k, K.kPrime] 1 w
+
+/-- The parity-odd leptonic structure annihilates `k` in its second slot. -/
+@[simp] lemma lMuNuOdd_apply_k_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (v : V) : lMuNuOdd ε K v K.k = 0 :=
+  ε.bilinMap_apply_right_eq_zero ![K.k, K.kPrime] 0 v
+
+/-- The parity-odd leptonic structure annihilates `k'` in its second slot. -/
+@[simp] lemma lMuNuOdd_apply_kPrime_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (v : V) : lMuNuOdd ε K v K.kPrime = 0 :=
+  ε.bilinMap_apply_right_eq_zero ![K.k, K.kPrime] 1 v
+
+/-- The parity-odd leptonic structure is conserved in its first slot, for any lepton masses. -/
+@[simp] lemma lMuNuOdd_conserved_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (w : V) : lMuNuOdd ε K K.q w = 0 := by
+  simp [K.q_eq_sub]
+
+/-- The parity-odd leptonic structure is conserved in its second slot, for any lepton
+masses. -/
+@[simp] lemma lMuNuOdd_conserved_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (v : V) : lMuNuOdd ε K v K.q = 0 := by
+  simp [K.q_eq_sub]
+
+/-- The parity-odd leptonic structure is not identically zero: some alternating four-form on
+`ℝ⁴` gives a nonzero one. -/
+lemma exists_lMuNuOdd_ne_zero :
+    ∃ (ε : (Fin 4 → ℝ) [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics (Fin 4 → ℝ)),
+      lMuNuOdd ε K ≠ 0 := by
+  let e := Pi.basisFun ℝ (Fin 4)
+  refine ⟨e.det, ⟨0, 0, e 2, e 3, e 2 - e 3, rfl⟩, fun h => ?_⟩
+  have h0 := LinearMap.congr_fun₂ h (e 0) (e 1)
+  have he : ⇑e = ![e 0, e 1, e 2, e 3] := (FinVec.etaExpand_eq _).symm
+  rw [lMuNuOdd_apply, LinearMap.zero_apply, LinearMap.zero_apply] at h0
+  simp only [← he, Module.Basis.det_self] at h0
+  exact one_ne_zero h0
+
+/-- A model of the spin-summed leptonic tensor of a massless lepton coupling through the vertex
+`γ^μ (c_V - c_A γ₅)`, up to the trace's overall factor `4` and with the parity-odd part given
+by the supplied alternating form `ε` (see the section docstring for the normalization and the
+dropped factor `i`). For symmetric `g` its symmetric part is `(c_V² + c_A²) lMuNu` and its
+antisymmetric part is `2 c_V c_A` times the parity-odd structure `lMuNuOdd ε K`
+(`inv_two_smul_lMuNuVA_add_flip`, `inv_two_smul_lMuNuVA_sub_flip`). -/
+def lMuNuVA (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
+    (cV cA : ℝ) : Bilin V :=
+  (cV ^ 2 + cA ^ 2) • lMuNu g K + (2 * cV * cA) • lMuNuOdd ε K
+
+/-- The vector/axial-vector leptonic tensor as a combination of bilinear forms. -/
+lemma lMuNuVA_def (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
+    (cV cA : ℝ) :
+    lMuNuVA g ε K cV cA = (cV ^ 2 + cA ^ 2) • lMuNu g K + (2 * cV * cA) • lMuNuOdd ε K :=
+  (rfl)
+
+/-- Pointwise value of the vector/axial-vector leptonic tensor. -/
+@[simp] lemma lMuNuVA_apply (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (cV cA : ℝ) (v w : V) :
+    lMuNuVA g ε K cV cA v w
+      = (cV ^ 2 + cA ^ 2) * lMuNu g K v w + 2 * cV * cA * lMuNuOdd ε K v w := by
+  simp [lMuNuVA_def]
+
+/-- A pure vector coupling of unit strength gives back the vector-exchange tensor `lMuNu`. -/
+@[simp] lemma lMuNuVA_one_zero (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) : lMuNuVA g ε K 1 0 = lMuNu g K := by
+  simp [lMuNuVA_def]
+
+/-- Exchanging the arguments of the vector/axial-vector leptonic tensor reverses the sign of its
+parity-odd part. -/
+lemma lMuNuVA_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinematics.DisKinematics V)
+    (hSymm : g.IsSymm) (cV cA : ℝ) :
+    (lMuNuVA g ε K cV cA).flip
+      = (cV ^ 2 + cA ^ 2) • lMuNu g K - (2 * cV * cA) • lMuNuOdd ε K := by
+  have hOdd : (lMuNuOdd ε K).flip = -lMuNuOdd ε K := by
+    ext v w
+    simp [(isAlt_lMuNuOdd ε K).neg_eq]
+  simp only [lMuNuVA_def, map_add, map_smul,
+    LinearMap.BilinForm.isSymm_iff_flip.mp (lMuNu_isSymm g K hSymm), hOdd]
+  module
+
+/-- The symmetric part of the vector/axial-vector leptonic tensor is `(c_V² + c_A²) lMuNu`. -/
+theorem inv_two_smul_lMuNuVA_add_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
+    (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA + (lMuNuVA g ε K cV cA).flip)
+      = (cV ^ 2 + cA ^ 2) • lMuNu g K := by
+  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA_def]
+  module
+
+/-- The antisymmetric part of the vector/axial-vector leptonic tensor is `2 c_V c_A` times the
+parity-odd structure `ε(·, ·, k, k')`. -/
+theorem inv_two_smul_lMuNuVA_sub_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
+    (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA - (lMuNuVA g ε K cV cA).flip)
+      = (2 * cV * cA) • lMuNuOdd ε K := by
+  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA_def]
+  module
+
+/-- Contracting the vector/axial-vector leptonic tensor with `q = k - k'` in the first slot
+leaves only the lepton-mass terms of its symmetric part. -/
+theorem lMuNuVA_apply_q_left (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) (w : V) :
+    lMuNuVA g ε K cV cA K.q w
+      = (cV ^ 2 + cA ^ 2) * (g K.k K.k * g K.kPrime w - g K.kPrime K.kPrime * g K.k w) := by
+  rw [lMuNuVA_apply, lMuNu_apply_q_left g K hSymm, lMuNuOdd_conserved_left, mul_zero,
+    add_zero]
+
+/-- Contracting the vector/axial-vector leptonic tensor with `q = k - k'` in the second slot
+leaves only the lepton-mass terms of its symmetric part. -/
+theorem lMuNuVA_apply_q_right (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) (v : V) :
+    lMuNuVA g ε K cV cA v K.q
+      = (cV ^ 2 + cA ^ 2) * (g K.k K.k * g K.kPrime v - g K.kPrime K.kPrime * g K.k v) := by
+  rw [lMuNuVA_apply, lMuNu_apply_q_right g K hSymm, lMuNuOdd_conserved_right, mul_zero,
+    add_zero]
+
+/-- For massless leptons the vector/axial-vector leptonic tensor is conserved in its first
+slot: `q^μ L_{μν} = 0`. -/
+theorem lMuNuVA_conserved_left (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
+    (hk' : g K.kPrime K.kPrime = 0) (cV cA : ℝ) (w : V) :
+    lMuNuVA g ε K cV cA K.q w = 0 := by
+  simp [lMuNuVA_apply_q_left g ε K hSymm, hk, hk']
+
+/-- For massless leptons the vector/axial-vector leptonic tensor is conserved in its second
+slot: `L_{μν} q^ν = 0`. -/
+theorem lMuNuVA_conserved_right (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (hk : g K.k K.k = 0)
+    (hk' : g K.kPrime K.kPrime = 0) (cV cA : ℝ) (v : V) :
+    lMuNuVA g ε K cV cA v K.q = 0 := by
+  simp [lMuNuVA_apply_q_right g ε K hSymm, hk, hk']
 
 end Leptonic
 
@@ -476,6 +678,59 @@ theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSy
     conserved_left := fromF1F2_conserved_left g K hQ2 F1 F2
     conserved_right := fromF1F2_conserved_right g K hSymm hQ2 F1 F2
     symm := fromF1F2_isSymm g K hSymm F1 F2 }
+
+/-- On a spectator direction `e`, `g`-orthogonal to `q` and to `p_T`, a tensor with an
+`F1`/`F2` decomposition takes the value `-(e·e) F1`: only the transverse projector sees `e`.
+On a unit spacelike spectator (`e·e = -1`) this is `F1`, the transverse absorption. -/
+lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinematics V)
+    {W : Bilin V} {F1 F2 : ℝ} (hW : IsF1F2Decomposition g K W F1 F2) {e : V}
+    (hqe : g K.q e = 0) (hTe : g (pTransverse g K) e = 0) :
+    W e e = -g e e * F1 := by
+  rw [hW, transverseMetric_apply, hqe, hTe]
+  ring
+
+/-- **Orthogonal splitting along `q` and `p_T`.** When `q` and `p_T` are non-null, every vector
+splits as `v = a p_T + b q + u` with `u` `g`-orthogonal to `q` and to `p_T`. This discharges the
+`SpectatorAssumptions.span` condition; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
+`b = (q·v) / (q·q)`. -/
+lemma exists_orthogonal_spectator (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
+    (hqq : g K.q K.q ≠ 0) (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) (v : V) :
+    ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
+      v = a • pTransverse g K + b • K.q + u := by
+  set T := pTransverse g K
+  have hTq : g T K.q = 0 := pTransverse_orthogonal_q g K hqq
+  have hqT : g K.q T = 0 := by rw [hSymm.eq, hTq]
+  set a := g T v / g T T
+  set b := g K.q v / g K.q K.q
+  refine ⟨a, b, v - a • T - b • K.q, ?_, ?_, by abel⟩
+  · simp only [map_sub, map_smul, smul_eq_mul, hqT, b]
+    field_simp
+    ring
+  · simp only [map_sub, map_smul, smul_eq_mul, hTq, a]
+    field_simp
+    ring
+
+/-- **Orthogonal splitting of a decomposed tensor.** Write `v = a p_T + b q + u` with `u`
+`g`-orthogonal to `q` and to `p_T` (`exists_orthogonal_spectator`), so that
+`a = (p_T·v) / (p_T·p_T)`. A tensor with an `F1`/`F2` decomposition then takes the value
+`-(u·u) F1 + a² W(p_T, p_T)` on `v`: the `q` component is invisible and the cross terms
+vanish. -/
+lemma exists_apply_self_eq_of_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V)
+    (hSymm : g.IsSymm) (hqq : g K.q K.q ≠ 0)
+    (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) {W : Bilin V} {F1 F2 : ℝ}
+    (hW : IsF1F2Decomposition g K W F1 F2) (v : V) :
+    ∃ u : V, g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
+      W v v = -g u u * F1 + (g (pTransverse g K) v / g (pTransverse g K) (pTransverse g K)) ^ 2
+        * W (pTransverse g K) (pTransverse g K) := by
+  obtain ⟨a, b, u, huq, huT, rfl⟩ := exists_orthogonal_spectator g K hSymm hqq hTT v
+  refine ⟨u, huq, huT, ?_⟩
+  have hTq : g (pTransverse g K) K.q = 0 := pTransverse_orthogonal_q g K hqq
+  have hqT : g K.q (pTransverse g K) = 0 := by rw [hSymm.eq, hTq]
+  rw [hW _ _, hW, transverseMetric_apply, transverseMetric_apply]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    hqT, hTq, huq, huT, hSymm.eq u K.q, hSymm.eq u (pTransverse g K)]
+  field_simp
+  ring
 
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one

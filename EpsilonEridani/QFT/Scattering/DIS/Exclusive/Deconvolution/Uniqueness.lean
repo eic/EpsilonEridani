@@ -273,7 +273,7 @@ theorem shadow_visible_in_lowSkewness_dglap (K : ComptonCoefficient)
   have hdata : AgreeOnLowSkewnessDglap S (Model.zero Flavor) xi0 := by
     intro i x xi t hdglap hxi
     simpa using hcon i x xi t hdglap hxi
-  obtain ⟨dt, hdt⟩ := huniq S (Model.zero Flavor) R (admitsDoubleDistribution_zero Flavor) hdata
+  obtain ⟨dt, hdt⟩ := huniq S (Model.zero Flavor) R (AdmitsDoubleDistribution.zero Flavor) hdata
   refine not_isShadow_of_eq_gpdOfDTerm K hsep S hS dt ?_
   intro i x xi t
   simpa using hdt i x xi t

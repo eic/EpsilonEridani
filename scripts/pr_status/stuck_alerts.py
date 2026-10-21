@@ -13,7 +13,7 @@ alerted" list below for ordinary backlog that does not belong here.
 
 Detectors (each names the infra failure it implies):
 
-  1. stuck-bump      The last-known-good bump PR (branch hopscotch/lkg-bump) has a
+  1. stuck-bump      The rolling bump PR (branch bump-mathlib/resolved) has a
                      RED `build` check that has stayed red past a grace window. The
                      daily bump cannot cross a mathlib breaking change on its own;
                      something needs a fix, e.g. a proof, scripts/lint-env.sh, or a
@@ -126,7 +126,7 @@ import core  # noqa: E402
 import zulip as zp  # noqa: E402
 
 REPO = core.REPO
-LKG_BRANCH = "hopscotch/lkg-bump"  # keep in sync with update.yml's LKG_BRANCH
+BUMP_BRANCH = "bump-mathlib/resolved"  # keep in sync with update.yml's BUMP_BRANCH
 LINT_REPAIR_BRANCH = "lint-repair/main"  # keep in sync with lint-full.yml
 
 # Keys we generate use only this alphabet; the marker is anchored to the final
@@ -138,7 +138,11 @@ MARKER_RE = re.compile(r"<!--stuck:v1 (" + KEY_RE.pattern + r")-->\s*\Z")
 
 # --- thresholds --------------------------------------------------------------
 # Each scheduler threshold is ~2-3x the workflow's cadence, generous enough to
-# ride out GitHub's routine scheduled-run delays without false-firing.
+# ride out GitHub's routine scheduled-run delays without false-firing. For the
+# sub-daily crons the cadence is not what GitHub delivers: it drops most of a
+# frequent schedule under load, and in October 2026 the 15-minute, hourly and
+# two-hourly workflows all ran only every 3-9 hours. Those share one 12h floor,
+# which still catches a schedule that has genuinely stopped within half a day.
 BUMP_STUCK_HOURS = 24
 # A lint repair PR starts red by design and needs a worker round or two; two days open means the
 # worker is not getting it green on its own.
@@ -163,12 +167,12 @@ SCHEDULERS = {
     "update.yml":            ("daily mathlib bump",       30),
     "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
-    "housekeeping.yml":      ("queue housekeeping",        7),
+    "housekeeping.yml":      ("queue housekeeping",       12),
     "mattermost-healthcheck.yml": ("mattermost healthcheck", 15),
-    "merge-sweep.yml":       ("merge sweep",               4),
-    # Every 15 minutes; the threshold is deliberately loose because GitHub
-    # routinely delays a scheduled run well past its cadence.
-    "merge-conflicts.yml":   ("merge-conflict labels",     2),
+    "merge-sweep.yml":       ("merge sweep",              12),
+    # Every 15 minutes, but GitHub delivers it every few hours; a push to main
+    # also runs it, so the cron is only the backstop this watches.
+    "merge-conflicts.yml":   ("merge-conflict labels",    12),
 }
 # How many consecutive failed scheduled runs make a workflow "failing" rather than
 # flaky, and how many recent runs to read to decide. Two is one full cadence of
@@ -247,14 +251,14 @@ newest_status = core.newest_status
 
 def detect_stuck_bump():
     prs = gh_stream(
-        f"/repos/{REPO}/pulls?state=open&head=eic:{LKG_BRANCH}&per_page=5",
+        f"/repos/{REPO}/pulls?state=open&head=eic:{BUMP_BRANCH}&per_page=5",
         jq='.[] | {number, head: .head.sha, created_at}', paginate=False)
     out = []
     for pr in prs:
         state, _ = newest_status(pr["head"], "build")
-        # Clock off the PR's age, not the build-status timestamp. A HEALTHY LKG
-        # bump PR merges within hours and a fresh one is created per advance, so an
-        # open LKG PR older than the window is reliably stuck. The build-status
+        # Clock off the PR's age, not the build-status timestamp. A HEALTHY bump
+        # PR merges within hours and the next advance opens a new one, so an
+        # open bump PR older than the window is reliably stuck. The build-status
         # `updated_at` is the wrong clock here: the daily bump force-pushes this
         # branch, re-running the SAME red build and resetting that timestamp every
         # day -- which would permanently mask a genuine multi-day wedge (observed
@@ -263,9 +267,9 @@ def detect_stuck_bump():
         if state in ("failure", "error") and hours_since(pr["created_at"]) >= BUMP_STUCK_HOURS:
             out.append({
                 "key": f"stuck-bump/{pr['number']}",
-                "title": "Mathlib bump wedged — LKG bump PR build stays red",
+                "title": "Dependency bump wedged — bump PR build stays red",
                 "body": (
-                    f"The last-known-good bump PR "
+                    f"The rolling dependency bump PR "
                     f"https://github.com/{REPO}/pull/{pr['number']} has had a red "
                     f"`build` check and has been open over {BUMP_STUCK_HOURS}h. The daily bump cannot "
                     f"cross a mathlib breaking change on its own.\n\n"
@@ -327,7 +331,7 @@ def detect_stale_pin():
             f"{PIN_STALE_DAYS} days; the daily bump has stalled.\n\n"
             f"**Fix:** find why — a wedged bump PR (see any stuck-bump alert), an "
             f"unresolved first-known-bad freeze, or `update.yml` failing — and clear "
-            f"it so `hopscotch/lkg-bump` can move forward again."),
+            f"it so `bump-mathlib/resolved` can move forward again."),
     }]
 
 
@@ -789,10 +793,11 @@ def detect_main_red():
     # advances faster than CI finishes, every failed run may stop being "the tip"
     # before this hourly detector observes it. Keep a known-red state active until
     # a newer successful run proves recovery. Cancelled/skipped runs are not
-    # evidence either way (the main-CI concurrency policy may supersede pending
-    # runs deliberately), so scan past every non-conclusive result as well as
-    # queued/in-progress runs. Serialization keeps completed runs in creation
-    # order; do not remove that policy without revisiting this detector.
+    # evidence either way (a manual cancel says nothing about the tree), so scan
+    # past every non-conclusive result as well as queued/in-progress runs. Main
+    # CI runs once per commit and runs may overlap, so a run can conclude before
+    # an older one; ordering by creation (push order) rather than completion is
+    # what makes "newest conclusive" mean "newest commit with a verdict".
     runs = gh_stream(
         f"/repos/{REPO}/actions/workflows/ci.yml/runs?branch=main&event=push"
         f"&per_page={MAIN_CI_WINDOW}",

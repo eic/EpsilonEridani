@@ -22,10 +22,12 @@ The second is the arithmetic-mean form of the Cauchy-Schwarz bound `Matrix.PosSe
 of `TauCeti.Analysis.Matrix.PosSemidef`. It is stated multiplied out, with no division, so that it
 applies without field side conditions. Its specialisation to `𝕜 = ℝ` is
 `Matrix.PosSemidef.two_mul_abs_apply_le`, `2 * |M i j| ≤ M i i + M j j`; over `ℝ` the first bound
-is Mathlib's `Matrix.PosSemidef.diag_nonneg`. This is the form in which positivity constraints are
-used in hadronic physics; see `EpsilonEridani/Particles/Parton/PDF/Positivity.lean` for the Soffer
-bound on the quark transversity distribution, which is exactly this inequality applied to the
-parton spin-density matrix.
+is Mathlib's `Matrix.PosSemidef.diag_nonneg`, and the real case of `normSq_le` is
+`Matrix.PosSemidef.sq_apply_le`, `(M i j) ^ 2 ≤ M i i * M j j`. This is the form in which
+positivity constraints are used in hadronic physics; see
+`EpsilonEridani/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark transversity
+distribution, which is exactly the arithmetic-mean inequality applied to the parton spin-density
+matrix.
 
 The entrywise real part of a positive-semidefinite matrix is positive semidefinite, and a real
 matrix is positive semidefinite exactly when its image under the coercion `ℝ → 𝕜` is. This is what
@@ -35,7 +37,8 @@ lets a complex positive-semidefinite matrix descend to a real one.
 
 - `Matrix.PosSemidef.re_apply_self_nonneg`: nonnegativity of the real part of the diagonal.
 - `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound over `RCLike`.
-- `Matrix.PosSemidef.two_mul_abs_apply_le`: its real specialisation.
+- `Matrix.PosSemidef.sq_apply_le`: the entrywise geometric-mean bound over `ℝ`.
+- `Matrix.PosSemidef.two_mul_abs_apply_le`: the real specialisation of the arithmetic-mean bound.
 - `Matrix.re_star_dotProduct_mulVec_ofReal`: the real part of the quadratic form of a matrix over
   `𝕜` on a real vector is the quadratic form of its entrywise real part.
 - `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix.
@@ -52,8 +55,6 @@ for upstreaming to `Mathlib/Analysis/Matrix/PosDef.lean`.
 @[expose] public section
 
 namespace Matrix
-
-open scoped BigOperators
 
 variable {n : Type*}
 
@@ -125,6 +126,13 @@ lemma posSemidef_map_ofReal_iff [Finite n] {M : Matrix n n ℝ} :
     (by simpa using h.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self x⟩
 
 end RCLike
+
+/-- **Entrywise geometric-mean bound for a real positive-semidefinite matrix.**
+The square of an entry is bounded by the product of the two diagonal entries of its row and
+column: the real form of the scalar Cauchy-Schwarz inequality `Matrix.PosSemidef.normSq_le`. -/
+lemma PosSemidef.sq_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
+    M i j ^ 2 ≤ M i i * M j j := by
+  simpa [RCLike.normSq_apply, sq] using hM.normSq_le i j
 
 /-- **Entrywise arithmetic-mean bound for a real positive-semidefinite matrix.**
 Twice the absolute value of an entry is bounded by the sum of the two diagonal entries of its

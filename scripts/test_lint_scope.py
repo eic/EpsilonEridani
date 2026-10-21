@@ -1,38 +1,23 @@
 """Tests for scripts/lint-scope.sh, with a fake `gh` that serves canned API responses."""
 
-import json
 import os
 import pathlib
 import shlex
-import stat
+import shutil
 import subprocess
+import sys
 import tempfile
-import textwrap
 import unittest
 
 import yaml
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+import fake_gh  # noqa: E402
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "lint-scope.sh"
 SHA_A, SHA_B = "a" * 40, "b" * 40
-
-FAKE_GH = textwrap.dedent('''\
-    #!/usr/bin/env python3
-    import json, os, subprocess, sys
-    responses = json.load(open(os.environ["FAKE_GH_RESPONSES"]))
-    args = sys.argv[1:]
-    assert args[0] == "api", args
-    path = next(a for a in args[1:] if not a.startswith("-") and a != args[args.index("--jq") + 1]
-                ) if "--jq" in args else next(a for a in args[1:] if not a.startswith("-"))
-    path = path.split("?")[0]
-    if path not in responses:
-        sys.exit(f"fake gh: no response for {path}")
-    data = json.dumps(responses[path])
-    if "--jq" in args:
-        data = subprocess.run(["jq", "-r", args[args.index("--jq") + 1]], input=data,
-                              capture_output=True, text=True, check=True).stdout
-    sys.stdout.write(data)
-''')
 
 
 def pr(head_ref="feature", labels=()):
@@ -43,18 +28,13 @@ def f(status, filename):
     return {"status": status, "filename": filename}
 
 
+@unittest.skipUnless(shutil.which("jq"), "needs jq")
 class LintScopeTest(unittest.TestCase):
     def run_scope(self, env, responses):
         with tempfile.TemporaryDirectory() as d:
             d = pathlib.Path(d)
-            gh = d / "bin" / "gh"
-            gh.parent.mkdir()
-            gh.write_text(FAKE_GH)
-            gh.chmod(gh.stat().st_mode | stat.S_IEXEC)
-            (d / "responses.json").write_text(json.dumps(responses))
             github_env = d / "github_env"
-            full_env = dict(os.environ, PATH=f"{gh.parent}:{os.environ['PATH']}",
-                            FAKE_GH_RESPONSES=str(d / "responses.json"),
+            full_env = dict(fake_gh.install(d, responses),
                             GITHUB_ENV=str(github_env), GH_TOKEN="x", REPO="o/r", **env)
             out = subprocess.run(["bash", str(SCRIPT), str(d / "scope")], env=full_env,
                                  capture_output=True, text=True)

@@ -20,7 +20,8 @@ pins. The first `main` commit on toolchain X therefore pins mathlib at or after 
 The tool tags only commits on `main`, and reports a release `main` never ran on as
 `unreachable`. Two things cause that: the daily bump stepped over the release's window on
 mathlib master, which for a stable release has been fifteen hours, or mathlib cut the
-release on its `stable` branch, which `check-bump.sh` will not let this repository pin.
+release on its `stable` branch and no bump moved to that tag: `check-bump.sh` accepts a
+`v4.*` release tag on a newer toolchain, but a bump only goes there when a dependency pins it.
 
 Tagging one anyway takes four steps. `v4.33.0` was done this way:
 
@@ -56,7 +57,7 @@ If a tag does not match the rule, the tool reports it and changes nothing.
 
     GH_TOKEN / GITHUB_TOKEN   authenticates the `gh` CLI
     GH_REPO                   this repository (default eic/EpsilonEridani)
-    LAKE_CACHE_REVISION_ENDPOINT_PUBLIC   default https://cache.epsiloneridaniproject.org/revisions
+    LAKE_CACHE_REVISION_ENDPOINT_PUBLIC   default https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions
 
 Only python3's standard library, git, and an authenticated `gh` CLI.
 """
@@ -67,7 +68,6 @@ import argparse
 import datetime
 import hashlib
 import json
-import math
 import os
 import re
 import subprocess
@@ -75,47 +75,19 @@ import sys
 import time
 
 from lake_cache_probe import exact_map_url
+from lean_versions import TOOLCHAIN_PREFIX, release_key, release_of_toolchain, release_refs, release_tags
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "pr_status"))
+import mattermost as mm  # noqa: E402
 import zulip as zp  # noqa: E402
 
 REPO = os.environ.get("GH_REPO", "eic/EpsilonEridani")
 REVISIONS = os.environ.get("LAKE_CACHE_REVISION_ENDPOINT_PUBLIC",
-                           "https://cache.epsiloneridaniproject.org/revisions")
+                           "https://s3-central.nrp-nautilus.io/epsiloneridani-cache/revisions")
 
 # Releases older than this are out of scope: the Lake artifact cache does not reach back
 # past them, so a tag could not promise a usable cache. Raise it, never lower it.
 EARLIEST_RELEASE = "v4.33.0-rc1"
-
-RELEASE_RE = re.compile(r"\Av(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?\Z")
-TOOLCHAIN_PREFIX = "leanprover/lean4:"
-
-
-# --- version names -----------------------------------------------------------
-
-def parse_release(name):
-    """(major, minor, patch, rc) for a Lean release name, else None.
-
-    A final release sorts after every rc of the same version, so rc-lessness is `inf`."""
-    match = RELEASE_RE.match(name or "")
-    if not match:
-        return None
-    major, minor, patch, rc = match.groups()
-    return (int(major), int(minor), int(patch), int(rc) if rc is not None else math.inf)
-
-
-def release_key(name):
-    return parse_release(name) or (math.inf,) * 4
-
-
-def release_of_toolchain(toolchain):
-    """The release a `leanprover/lean4:vX` pin names, or None for anything else: a
-    nightly, a fork channel, a local build. Only releases get tags."""
-    text = (toolchain or "").strip()
-    if not text.startswith(TOOLCHAIN_PREFIX):
-        return None
-    name = text[len(TOOLCHAIN_PREFIX):]
-    return name if parse_release(name) else None
 
 
 # --- this repository ---------------------------------------------------------
@@ -208,8 +180,7 @@ def gh_optional(path, jq=None):
 def ci_passed(sha):
     """Whether main's post-merge CI concluded successfully on this commit.
 
-    None when it never ran there, which is normal: ci.yml coalesces bursts, so plenty of
-    main commits have no run of their own."""
+    None when no run there has concluded yet, which is normal while it is still building."""
     raw = gh_optional(f"repos/{REPO}/actions/workflows/ci.yml/runs?head_sha={sha}&per_page=10",
                       jq='[.workflow_runs[] | select(.status == "completed") | .conclusion]'
                          ' | .[0] // ""')
@@ -243,23 +214,12 @@ def mathlib_releases():
     toolchains `main` ran on is not the set of releases: a release main stepped over, or
     could never have pinned, has no era here and would otherwise be missing from a report
     whose entire job is to say which releases have no tag."""
-    raw = gh("repos/leanprover-community/mathlib4/git/matching-refs/tags/v", jq=".[].ref")
-    names = {ref.rsplit("/", 1)[-1] for ref in raw.splitlines()}
-    return sorted((n for n in names if parse_release(n)), key=release_key)
+    return sorted(release_refs(gh, "leanprover-community/mathlib4"), key=release_key)
 
 
 def existing_tags():
     """{release: commit} for the release tags this repository already has."""
-    raw = gh_optional(f"repos/{REPO}/git/matching-refs/tags/",
-                      jq='.[] | [.ref, .object.sha, .object.type] | @tsv') or ""
-    out = {}
-    for line in raw.splitlines():
-        ref, sha, kind = line.split("\t")
-        name = ref[len("refs/tags/"):]
-        if not parse_release(name):
-            continue
-        out[name] = gh(f"repos/{REPO}/git/tags/{sha}", jq=".object.sha") if kind == "tag" else sha
-    return out
+    return release_tags(gh_optional, REPO, resolve=gh)
 
 
 # --- the report --------------------------------------------------------------
@@ -280,7 +240,8 @@ from what is already recorded, without rebuilding.
 
 The tool tags only commits on main, and reports a release main never ran on as
 `unreachable`: either the daily bump stepped over its window on mathlib master, or mathlib
-cut it on its `stable` branch, which check-bump.sh will not let this repository pin. Tagging
+cut it on its `stable` branch and no bump moved to that tag (check-bump.sh accepts a `v4.*`
+release tag on a newer toolchain, but a bump only goes there when a dependency pins it). Tagging
 one anyway takes four manual steps, including a build. v4.33.0 was done that way; the steps
 are in this script's module docstring.
 
@@ -334,8 +295,7 @@ def audit(ref=None):
         conclusion = ci_passed(sha)
         row["ci"] = conclusion
         if conclusion is None:
-            # Not blocked: nothing is wrong, the run has not finished. ci.yml coalesces
-            # bursts, so a commit can wait an hour for a run of its own.
+            # Not blocked: nothing is wrong, the run has not finished.
             row["status"] = "pending"
             row["reason"] = f"post-merge CI has not concluded on {sha[:8]}"
             rows.append(row)
@@ -463,8 +423,9 @@ def render(rows, include_policy=True, collapse_old=False):
         lines += ["",
                   "    Either the daily bump stepped over the release's window on mathlib",
                   "    master, which for a stable release has been as short as fifteen hours,",
-                  "    or mathlib cut it on its `stable` branch, which check-bump.sh could",
-                  "    never have let this repository pin at all."]
+                  "    or mathlib cut it on its `stable` branch and no bump moved to that",
+                  "    tag: check-bump.sh accepts a `v4.*` release tag on a newer toolchain,",
+                  "    but a bump only goes there when a dependency pins it."]
     return "\n".join(lines) + "\n"
 
 
@@ -513,22 +474,25 @@ def create_tag(row, dry_run=False):
     return True
 
 
-# --- waiting, and posting to Zulip ------------------------------------------
+# --- waiting, and posting to Zulip and Mattermost ---------------------------
 
 MARKER_RE = re.compile(r"<!--toolchain-tags:v1 ([0-9a-f]{16})-->\s*\Z")
 BRIEF_COMMAND = "python3 scripts/toolchain_tags.py --brief"
 SHELL_FENCE = f"```shell\n{BRIEF_COMMAND}\n```"
 OLD_FENCE = f"```\n{BRIEF_COMMAND}\n```"
+# Mattermost shows an HTML comment as literal text, so there the digest rides in the
+# post's props instead of in a marker.
+MM_DIGEST_PROP = "toolchain_tags_digest"
 
 
 def wait_for_ci(sha, timeout_minutes=180, poll_seconds=120, sleep=None):
     """Block until main's post-merge CI concludes on `sha`. Returns its conclusion, or
     None on timeout.
 
-    The push that changes `lean-toolchain` arrives 40 to 70 minutes before the release can
-    be tagged: ci.yml coalesces bursts, so the bump waits for a run of its own, and that run
-    then takes 20 to 30 minutes and publishes the cache at the end of it. Reporting at push
-    time would always say "not yet", so wait for the thing being waited on."""
+    The push that changes `lean-toolchain` arrives 20 to 30 minutes before the release can
+    be tagged: ci.yml's run on that commit takes that long and publishes the cache at the
+    end of it. Reporting at push time would always say "not yet", so wait for the thing
+    being waited on."""
     sleep = sleep or time.sleep
     deadline = time.monotonic() + timeout_minutes * 60
     while True:
@@ -563,6 +527,23 @@ def last_posted_report(z, bot_id):
     return None, None
 
 
+def last_mattermost_digest(bot_id):
+    """The digest on this account's newest report in the channel, or None.
+
+    As on Zulip, the previous state lives in the channel rather than in a file. Reads the
+    newest 200 posts, which reaches back far past the last report on a channel this quiet."""
+    res = mm.api_request("GET", f"/channels/{mm.CHANNEL_ID}/posts?per_page=200") or {}
+    posts = res.get("posts") or {}
+    for post_id in res.get("order") or []:  # newest first
+        post = posts.get(post_id) or {}
+        if post.get("user_id") != bot_id:
+            continue
+        digest = (post.get("props") or {}).get(MM_DIGEST_PROP)
+        if digest:
+            return digest
+    return None
+
+
 def post_content(rows, digest):
     """The command someone would run, and what it printed."""
     body = render(rows, include_policy=False, collapse_old=True).rstrip()
@@ -576,7 +557,8 @@ def post_content(rows, digest):
 def post_if_changed(rows, dry_run=False):
     """Repair a legacy command fence, then post when the state changed.
 
-    Returns True only if a new message was posted."""
+    Zulip and Mattermost each compare against their own last report, so either works
+    without the other. Returns True only if a new message was posted."""
     digest = state_digest(rows)
     content = post_content(rows, digest)
     if dry_run:
@@ -587,7 +569,6 @@ def post_if_changed(rows, dry_run=False):
     api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
     site = (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip()
     posted = False
-    previous = None
 
     if not (email and api_key):
         print("::warning::ZULIP_EMAIL / ZULIP_API_KEY not set; skipping Zulip toolchain tags report", file=sys.stderr)
@@ -606,18 +587,21 @@ def post_if_changed(rows, dry_run=False):
             z.send_message(content)
             posted = True
 
-    if previous != digest:
-        mm_token = (os.environ.get("MATTERMOST_BOT_TOKEN") or "").strip()
-        mm_channel = (os.environ.get("MATTERMOST_CHANNEL_ID") or "").strip()
-        mm_url = (os.environ.get("MATTERMOST_URL") or "").strip().rstrip("/")
-        if not (mm_token and mm_channel and mm_url):
-            print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID not set; skipping Mattermost toolchain tags report", file=sys.stderr)
+    if not (mm.BOT_TOKEN and mm.CHANNEL_ID and mm.URL):
+        print("::warning::MATTERMOST_BOT_TOKEN / MATTERMOST_CHANNEL_ID / MATTERMOST_URL not set; "
+              "skipping Mattermost toolchain tags report", file=sys.stderr)
+    else:
+        previous = last_mattermost_digest(mm.api_request("GET", "/users/me")["id"])
+        if previous == digest:
+            log(f"state unchanged since the last Mattermost post ({digest}); saying nothing")
         else:
-            log("posting to Mattermost")
-            req = urllib.request.Request(f"{mm_url}/api/v4/posts", method="POST",
-                data=json.dumps({"channel_id": mm_channel, "message": content}).encode("utf-8"),
-                headers={"Authorization": f"Bearer {mm_token}", "Content-Type": "application/json"})
-            urllib.request.urlopen(req)
+            log(f"state changed ({previous or 'nothing posted yet'} -> {digest}); "
+                "posting to Mattermost")
+            mm.api_request("POST", "/posts", {
+                "channel_id": mm.CHANNEL_ID,
+                "message": MARKER_RE.sub("", content).rstrip(),
+                "props": {MM_DIGEST_PROP: digest},
+            })
             posted = True
 
     return posted
