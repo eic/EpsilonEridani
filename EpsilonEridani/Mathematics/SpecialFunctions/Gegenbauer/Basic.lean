@@ -40,14 +40,15 @@ The index is fixed at `3/2` rather than carried as a parameter: the weighted-`L�
 this family uses the weight `1 - x²` of this index only. The polynomials are defined over any field
 `R`, the recurrence dividing by `n + 2`; the parity statements and the degree bound hold there,
 while the recurrence in division-free form, the exact degree, the leading coefficient, the endpoint
-value, the derivative relations and the differential equation assume that `R` has characteristic
-zero. The real family is `gegenbauerThreeHalves ℝ`.
+value, the derivative relations, the differential equation and the basis of `R[X]` formed by the
+family — which rests on the exact degree — assume that `R` has characteristic zero. The real family
+is `gegenbauerThreeHalves ℝ`.
 
 ## Main definitions
 
 * `EpsilonEridani.gegenbauerThreeHalves R n`: the Gegenbauer polynomial `C_n^{(3/2)}` in `R[X]`.
 * `EpsilonEridani.gegenbauerThreeHalvesBasis R`: the family, indexed by its degree, as a basis of
-  `R[X]`.
+  `R[X]`, over a field `R` of characteristic zero.
 
 ## Main statements
 

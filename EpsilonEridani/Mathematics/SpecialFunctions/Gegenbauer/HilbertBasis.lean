@@ -28,10 +28,12 @@ finite and supported on `[-1, 1]`, so that `exp (a |x|)` is a continuous functio
 a compact set.
 
 The orthonormality and the final assembly are done here rather than through the family-agnostic
-`TauCeti.hilbertBasisOfWeightedMeasure`, whose conclusion is a basis of `L²` of a measure written
-as an explicit `withDensity`: the body of `gegenbauerThreeHalvesMeasure` is not exposed, so that
-space is not definitionally this one, and transporting across the two would cost more than the
-four lemmas it saves. TauCeti's own Chebyshev family is assembled directly for the same reason.
+`TauCeti.hilbertBasisOfWeightedMeasure`, whose conclusion is a basis of `L²` of a measure spelled
+as an explicit `withDensity`. That is a different space to Lean: the body of
+`gegenbauerThreeHalvesMeasure` is not exposed outside its own module, so
+`Lp 𝕜 2 gegenbauerThreeHalvesMeasure` is not definitionally the `L²` of the `withDensity` form,
+and every statement would have to be transported along
+`EpsilonEridani.gegenbauerThreeHalvesMeasure_eq_withDensity`.
 
 The resulting unitary `L²(gegenbauerThreeHalvesMeasure) ≃ₗᵢ ℓ²(ℕ)` is what makes the Gegenbauer
 coefficients of a function a complete invariant: two functions with the same coefficients agree
@@ -44,8 +46,6 @@ decouples into the independent evolution of its coefficients.
 
 * `EpsilonEridani.polynomialEvalGegenbauerThreeHalvesLp`: polynomial evaluation as a linear map
   into `L²(gegenbauerThreeHalvesMeasure)`.
-* `EpsilonEridani.gegenbauerThreeHalvesNormSq`: the squared `L²` norm
-  `2 (n + 1) (n + 2) / (2n + 3)` of `C_n^{(3/2)}`.
 * `EpsilonEridani.normalizedGegenbauerThreeHalves`,
   `EpsilonEridani.normalizedGegenbauerThreeHalvesLp`: the normalized mode
   `C_n^{(3/2)} / ‖C_n^{(3/2)}‖`, as a function and as a vector of `L²`.
@@ -54,6 +54,8 @@ decouples into the independent evolution of its coefficients.
 
 ## Main statements
 
+* `EpsilonEridani.norm_polynomialEvalGegenbauerThreeHalvesLp_gegenbauerThreeHalves`: the `L²` norm
+  of `C_n^{(3/2)}` is `√(gegenbauerThreeHalvesNormSq n)`.
 * `EpsilonEridani.orthonormal_normalizedGegenbauerThreeHalvesLp`: the modes are orthonormal.
 * `EpsilonEridani.orthogonal_span_normalizedGegenbauerThreeHalvesLp_eq_bot`: completeness.
 * `EpsilonEridani.gegenbauerThreeHalvesHilbertBasis_repr_apply`: the `n`-th coordinate of the
@@ -74,17 +76,7 @@ namespace EpsilonEridani
 
 open MeasureTheory Polynomial
 
-/-! ### Polynomial moments of the weight measure -/
-
-/-- Every monomial has a finite moment against the Gegenbauer weight measure. -/
-theorem integrable_pow_gegenbauerThreeHalvesMeasure (k : ℕ) :
-    Integrable (fun x : ℝ => x ^ k) gegenbauerThreeHalvesMeasure :=
-  (continuous_pow k).continuousOn.integrable_gegenbauerThreeHalvesMeasure
-
-/-- A real polynomial evaluation is square integrable for the Gegenbauer weight measure. -/
-theorem memLp_two_eval_gegenbauerThreeHalvesMeasure (q : ℝ[X]) :
-    MemLp (fun x : ℝ => q.eval x) 2 gegenbauerThreeHalvesMeasure :=
-  TauCeti.memLp_two_eval_of_forall_integrable_pow integrable_pow_gegenbauerThreeHalvesMeasure q
+/-! ### Polynomial evaluation in `L²` -/
 
 /-- Evaluation of a real polynomial, cast into any `RCLike` scalar field, as a linear map into
 `L²(gegenbauerThreeHalvesMeasure)`. It is well defined because every polynomial has a finite
@@ -101,23 +93,6 @@ theorem coeFn_polynomialEvalGegenbauerThreeHalvesLp (𝕜 : Type*) [RCLike 𝕜]
 
 /-! ### The normalized modes -/
 
-/-- The squared `L²(gegenbauerThreeHalvesMeasure)` norm of `C_n^{(3/2)}`. That it is this
-rational number is `EpsilonEridani.integral_gegenbauerThreeHalves_mul_self`; the name is
-introduced here because the normalisation of the modes, and the Gegenbauer coefficients of a
-function, are read against it. -/
-noncomputable def gegenbauerThreeHalvesNormSq (n : ℕ) : ℝ :=
-  2 * (n + 1) * (n + 2) / (2 * n + 3)
-
-/-- The defining value `2 (n + 1) (n + 2) / (2n + 3)` of the squared norm. -/
-theorem gegenbauerThreeHalvesNormSq_def (n : ℕ) :
-    gegenbauerThreeHalvesNormSq n = 2 * (n + 1) * (n + 2) / (2 * n + 3) :=
-  (rfl)
-
-/-- No Gegenbauer polynomial is null for the weight measure. -/
-theorem gegenbauerThreeHalvesNormSq_pos (n : ℕ) : 0 < gegenbauerThreeHalvesNormSq n := by
-  rw [gegenbauerThreeHalvesNormSq_def]
-  positivity
-
 /-- The norm `‖C_n^{(3/2)}‖`, by which the modes are divided, is nonzero. -/
 theorem sqrt_gegenbauerThreeHalvesNormSq_ne_zero (n : ℕ) :
     Real.sqrt (gegenbauerThreeHalvesNormSq n) ≠ 0 :=
@@ -129,44 +104,38 @@ noncomputable def normalizedGegenbauerThreeHalves (n : ℕ) (x : ℝ) : ℝ :=
   (gegenbauerThreeHalves ℝ n).eval x / Real.sqrt (gegenbauerThreeHalvesNormSq n)
 
 /-- The defining equation of the normalized Gegenbauer mode. -/
-@[simp]
 theorem normalizedGegenbauerThreeHalves_def (n : ℕ) (x : ℝ) :
     normalizedGegenbauerThreeHalves n x =
       (gegenbauerThreeHalves ℝ n).eval x / Real.sqrt (gegenbauerThreeHalvesNormSq n) :=
   (rfl)
 
-/-- The normalized Gegenbauer mode is continuous. -/
-theorem continuous_normalizedGegenbauerThreeHalves (n : ℕ) :
-    Continuous (normalizedGegenbauerThreeHalves n) :=
-  (gegenbauerThreeHalves ℝ n).continuous.div_const _
-
-/-- The normalized Gegenbauer mode is square integrable for the weight measure. -/
-theorem memLp_normalizedGegenbauerThreeHalves (n : ℕ) :
-    MemLp (normalizedGegenbauerThreeHalves n) 2 gegenbauerThreeHalvesMeasure := by
-  have hcont := continuous_normalizedGegenbauerThreeHalves n
-  rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
-  exact (hcont.pow 2).continuousOn.integrable_gegenbauerThreeHalvesMeasure
-
-/-- The normalized Gegenbauer mode, cast into any `RCLike` scalar field, is square integrable
-for the weight measure. -/
-theorem memLp_algebraMap_normalizedGegenbauerThreeHalves {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
-    MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedGegenbauerThreeHalves n x)) 2
-      gegenbauerThreeHalvesMeasure := by
-  simpa only [← RCLike.algebraMap_eq_ofReal] using
-    (memLp_normalizedGegenbauerThreeHalves n).ofReal (K := 𝕜)
-
-/-- The normalized Gegenbauer mode as a vector of `L²(gegenbauerThreeHalvesMeasure)`. -/
+/-- The normalized Gegenbauer mode as a vector of `L²(gegenbauerThreeHalvesMeasure)`: the `L²`
+evaluation of `C_n^{(3/2)}`, divided by the norm `‖C_n^{(3/2)}‖`. -/
 noncomputable def normalizedGegenbauerThreeHalvesLp (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     Lp 𝕜 2 gegenbauerThreeHalvesMeasure :=
-  (memLp_algebraMap_normalizedGegenbauerThreeHalves (𝕜 := 𝕜) n).toLp _
+  (Real.sqrt (gegenbauerThreeHalvesNormSq n))⁻¹ •
+    polynomialEvalGegenbauerThreeHalvesLp 𝕜 (gegenbauerThreeHalves ℝ n)
+
+/-- Under the evaluation map, `C_n^{(3/2)}` is its norm times the `n`-th normalized mode. -/
+theorem polynomialEvalGegenbauerThreeHalvesLp_gegenbauerThreeHalves (𝕜 : Type*) [RCLike 𝕜]
+    (n : ℕ) :
+    polynomialEvalGegenbauerThreeHalvesLp 𝕜 (gegenbauerThreeHalves ℝ n) =
+      Real.sqrt (gegenbauerThreeHalvesNormSq n) • normalizedGegenbauerThreeHalvesLp 𝕜 n := by
+  rw [normalizedGegenbauerThreeHalvesLp,
+    smul_inv_smul₀ (sqrt_gegenbauerThreeHalvesNormSq_ne_zero n)]
 
 /-- The `L²` representative of the `n`-th mode is the normalized Gegenbauer mode. -/
 theorem coeFn_normalizedGegenbauerThreeHalvesLp {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
     ⇑(normalizedGegenbauerThreeHalvesLp 𝕜 n) =ᵐ[gegenbauerThreeHalvesMeasure]
-      fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedGegenbauerThreeHalves n x) :=
-  MemLp.coeFn_toLp _
+      fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedGegenbauerThreeHalves n x) := by
+  filter_upwards [Lp.coeFn_smul (Real.sqrt (gegenbauerThreeHalvesNormSq n))⁻¹
+      (polynomialEvalGegenbauerThreeHalvesLp 𝕜 (gegenbauerThreeHalves ℝ n)),
+    coeFn_polynomialEvalGegenbauerThreeHalvesLp 𝕜 (gegenbauerThreeHalves ℝ n)] with x hsmul heval
+  rw [normalizedGegenbauerThreeHalvesLp, hsmul, Pi.smul_apply, heval, Algebra.smul_def, ← map_mul,
+    inv_mul_eq_div, normalizedGegenbauerThreeHalves_def]
 
 /-- The normalized Gegenbauer modes have Kronecker-delta pairings for the weight measure. -/
+@[simp]
 theorem integral_normalizedGegenbauerThreeHalves_mul_normalizedGegenbauerThreeHalves (m n : ℕ) :
     ∫ x, normalizedGegenbauerThreeHalves m x * normalizedGegenbauerThreeHalves n x
       ∂gegenbauerThreeHalvesMeasure = if m = n then 1 else 0 := by
@@ -184,8 +153,7 @@ theorem integral_normalizedGegenbauerThreeHalves_mul_normalizedGegenbauerThreeHa
     integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves]
   split_ifs with h
   · subst h
-    rw [← gegenbauerThreeHalvesNormSq_def,
-      Real.mul_self_sqrt (gegenbauerThreeHalvesNormSq_pos m).le,
+    rw [Real.mul_self_sqrt (gegenbauerThreeHalvesNormSq_pos m).le,
       inv_mul_cancel₀ (gegenbauerThreeHalvesNormSq_pos m).ne']
   · rw [mul_zero]
 
@@ -221,23 +189,17 @@ theorem orthonormal_normalizedGegenbauerThreeHalvesLp {𝕜 : Type*} [RCLike �
     Orthonormal 𝕜 (normalizedGegenbauerThreeHalvesLp 𝕜) :=
   orthonormal_iff_ite.mpr inner_normalizedGegenbauerThreeHalvesLp
 
-/-! ### From the modes to every polynomial -/
-
-/-- Under the evaluation map, `C_n^{(3/2)}` is its norm times the `n`-th normalized mode. -/
-theorem polynomialEvalGegenbauerThreeHalvesLp_gegenbauerThreeHalves (𝕜 : Type*) [RCLike 𝕜]
+/-- The `L²(gegenbauerThreeHalvesMeasure)` norm of `C_n^{(3/2)}` is the square root of
+`gegenbauerThreeHalvesNormSq n`, which is what justifies that name. -/
+theorem norm_polynomialEvalGegenbauerThreeHalvesLp_gegenbauerThreeHalves (𝕜 : Type*) [RCLike 𝕜]
     (n : ℕ) :
-    polynomialEvalGegenbauerThreeHalvesLp 𝕜 (gegenbauerThreeHalves ℝ n) =
-      Real.sqrt (gegenbauerThreeHalvesNormSq n) • normalizedGegenbauerThreeHalvesLp 𝕜 n := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_polynomialEvalGegenbauerThreeHalvesLp 𝕜 (gegenbauerThreeHalves ℝ n),
-    coeFn_normalizedGegenbauerThreeHalvesLp (𝕜 := 𝕜) n,
-    Lp.coeFn_smul (Real.sqrt (gegenbauerThreeHalvesNormSq n))
-      (normalizedGegenbauerThreeHalvesLp 𝕜 n)] with x heval hmode hsmul
-  rw [heval, hsmul, Pi.smul_apply, hmode, normalizedGegenbauerThreeHalves_def, Algebra.smul_def,
-    ← map_mul]
-  congr 1
-  have hs := sqrt_gegenbauerThreeHalvesNormSq_ne_zero n
-  field_simp
+    ‖polynomialEvalGegenbauerThreeHalvesLp 𝕜 (gegenbauerThreeHalves ℝ n)‖ =
+      Real.sqrt (gegenbauerThreeHalvesNormSq n) := by
+  rw [polynomialEvalGegenbauerThreeHalvesLp_gegenbauerThreeHalves, norm_smul,
+    (orthonormal_normalizedGegenbauerThreeHalvesLp (𝕜 := 𝕜)).norm_eq_one n, mul_one,
+    Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
+
+/-! ### From the modes to every polynomial -/
 
 /-- Every polynomial evaluation lies in the linear span of the normalized Gegenbauer modes: the
 family is a basis of `ℝ[X]`, so this is the basis expansion transported into `L²`. -/
@@ -261,7 +223,7 @@ theorem polynomialEvalGegenbauerThreeHalvesLp_mem_span (𝕜 : Type*) [RCLike �
 
 /-- A vector orthogonal to every normalized Gegenbauer mode is orthogonal to the `L²` evaluation
 of every real polynomial. -/
-theorem inner_polynomialEvalGegenbauerThreeHalvesLp_eq_zero (𝕜 : Type*) [RCLike 𝕜]
+private theorem inner_polynomialEvalGegenbauerThreeHalvesLp_eq_zero (𝕜 : Type*) [RCLike 𝕜]
     (g : Lp 𝕜 2 gegenbauerThreeHalvesMeasure)
     (hmode : ∀ n, inner 𝕜 g (normalizedGegenbauerThreeHalvesLp 𝕜 n) = 0) (q : ℝ[X]) :
     inner 𝕜 g (polynomialEvalGegenbauerThreeHalvesLp 𝕜 q) = 0 := by
@@ -274,16 +236,9 @@ theorem inner_polynomialEvalGegenbauerThreeHalvesLp_eq_zero (𝕜 : Type*) [RCLi
 
 /-! ### Completeness -/
 
-/-- Every exponential weight is integrable for the Gegenbauer weight measure: it is a finite
-measure supported on the compact interval `[-1, 1]`. This is the hypothesis of moment
-determinacy. -/
-theorem integrable_exp_mul_abs_gegenbauerThreeHalvesMeasure (a : ℝ) :
-    Integrable (fun x : ℝ => Real.exp (a * |x|)) gegenbauerThreeHalvesMeasure :=
-  (Real.continuous_exp.comp
-    (continuous_const.mul continuous_abs)).continuousOn.integrable_gegenbauerThreeHalvesMeasure
-
-/-- A vector orthogonal to every normalized Gegenbauer mode has vanishing monomial moments. -/
-theorem monomial_moment_gegenbauerThreeHalvesMeasure_eq_zero (𝕜 : Type*) [RCLike 𝕜]
+/-- A vector orthogonal to every normalized Gegenbauer mode integrates to zero against every
+monomial: `∫ xⁿ g x ∂gegenbauerThreeHalvesMeasure = 0`. -/
+private theorem integral_pow_mul_gegenbauerThreeHalvesMeasure_eq_zero (𝕜 : Type*) [RCLike 𝕜]
     (g : Lp 𝕜 2 gegenbauerThreeHalvesMeasure)
     (hmode : ∀ n, inner 𝕜 g (normalizedGegenbauerThreeHalvesLp 𝕜 n) = 0) (n : ℕ) :
     ∫ x, (algebraMap ℝ 𝕜 x) ^ n * g x ∂gegenbauerThreeHalvesMeasure = 0 := by
@@ -312,7 +267,7 @@ theorem orthogonal_span_normalizedGegenbauerThreeHalvesLp_eq_bot (𝕜 : Type*) 
     (TauCeti.ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp
       (ν := gegenbauerThreeHalvesMeasure)
       ⟨1, one_pos, integrable_exp_mul_abs_gegenbauerThreeHalvesMeasure 1⟩ (Lp.memLp g)
-      (monomial_moment_gegenbauerThreeHalvesMeasure_eq_zero 𝕜 g hmode))
+      (integral_pow_mul_gegenbauerThreeHalvesMeasure_eq_zero 𝕜 g hmode))
 
 /-- **The Gegenbauer polynomials of index `3/2` are a Hilbert basis of
 `L²(gegenbauerThreeHalvesMeasure)`.** Orthonormality is
