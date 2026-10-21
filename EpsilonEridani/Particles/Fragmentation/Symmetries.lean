@@ -38,13 +38,13 @@ into `h` of those species of flavour `i` that are valence constituents of `h`, a
 *unfavoured* combination collects the rest. A flavour for which exactly one of the quark and the
 antiquark is a valence constituent is a `IsValenceFlavor`; for such a flavour each combination is
 a single fragmentation function, conjugating the parton index exchanges the two, and their
-difference is the valence combination `D_{q_i} - D_{q̄_i}`. For a flavour whose quark and antiquark
-both occur, as in a flavour-neutral hadron, the two combinations are not separated, and
+difference is the valence combination `D_{q_i} - D_{qbar_i}`. For a flavour whose quark and
+antiquark both occur, as in a flavour-neutral hadron, the two combinations are not separated, and
 `not_isValenceFlavor_pion_zero` exhibits that case.
 
-The pion triplet is worked out as an instance: `pionContent` is `π⁺ = u d̄`, `π⁻ = d ū` and the
+The pion triplet is worked out as an instance: `pionContent` is `π⁺ = u dbar`, `π⁻ = d ubar` and the
 flavour-neutral `π⁰`, and `favoured_pion_plus_down_eq_favoured_pion_plus_up` is the familiar
-`D_u^{π⁺} = D_{d̄}^{π⁺}`, derived from the two relations rather than assumed.
+`D_u^{π⁺} = D_{dbar}^{π⁺}`, derived from the two relations rather than assumed.
 
 ## Main definitions
 
@@ -73,7 +73,7 @@ flavour-neutral `π⁰`, and `favoured_pion_plus_down_eq_favoured_pion_plus_up` 
   hadron and its antiparticle have the same favoured combination.
 * `Fragmentation.favoured_valenceStepFrag_ne_unfavoured`: the two combinations are not identified
   by the relations.
-* `Fragmentation.favoured_pion_plus_down_eq_favoured_pion_plus_up`: `D_u^{π⁺} = D_{d̄}^{π⁺}`.
+* `Fragmentation.favoured_pion_plus_down_eq_favoured_pion_plus_up`: `D_u^{π⁺} = D_{dbar}^{π⁺}`.
 
 ## References
 
@@ -172,7 +172,7 @@ variable {D : Frag Hadron (Species Flavor)} {τ : Hadron → Hadron} {ρ : Flavo
 
 /-- A family satisfies the *charge-conjugation relation* for the antiparticle map `τ` when the
 fragmentation of the antiparton of `s` into the antihadron `τ h` is the fragmentation of `s` into
-`h`, `D_{τ h}^{s̄} = D_h^s`. It is the relation that the action of charge conjugation on the
+`h`, `D_{τ h}^{sbar} = D_h^s`. It is the relation that the action of charge conjugation on the
 light-cone correlator imposes on the fragmentation functions of a multiplet. -/
 def ChargeConjRelation (τ : Hadron → Hadron) (D : Frag Hadron (Species Flavor)) : Prop :=
   ∀ h s z Q2, D (τ h) (Species.conj s) z Q2 = D h s z Q2
@@ -210,7 +210,7 @@ theorem partonConj_partonConj (D : Frag Hadron (Species Flavor)) :
 
 /-- A family that satisfies both the charge-conjugation relation and the flavour relation of a
 symmetry acting on the multiplet by the same permutation relates the relabelled parton to the
-conjugate parton inside one hadron: `D_h^{ρ s} = D_h^{s̄}`. For the pion triplet, with `ρ` the
+conjugate parton inside one hadron: `D_h^{ρ s} = D_h^{sbar}`. For the pion triplet, with `ρ` the
 exchange of the up and the down flavour, this is what turns the fragmentation of a down quark
 into the fragmentation of an up antiquark. -/
 theorem apply_map_eq_apply_conj (hτ : Function.Involutive τ) (hCC : ChargeConjRelation τ D)
@@ -330,7 +330,7 @@ theorem unfavoured_eq_apply_quark (hq' : Species.antiquark i ∈ C.valence h)
   rw [unfavoured_def, hset, Finset.sum_singleton]
 
 /-- On a flavour whose valence constituent is the quark, the difference of the two combinations is
-the valence combination `D_{q_i} - D_{q̄_i}` of that flavour. -/
+the valence combination `D_{q_i} - D_{qbar_i}` of that flavour. -/
 theorem favoured_sub_unfavoured_eq (hq : Species.quark i ∈ C.valence h)
     (hq' : Species.antiquark i ∉ C.valence h) (z Q2 : ℝ) :
     favoured C D h i z Q2 - unfavoured C D h i z Q2
@@ -534,11 +534,11 @@ theorem PionFlavor.swap_involutive : Function.Involutive swap := by
 
 /-- The pion triplet. -/
 inductive Pion where
-  /-- The positive pion `u d̄`. -/
+  /-- The positive pion `u dbar`. -/
   | plus
   /-- The neutral pion. -/
   | zero
-  /-- The negative pion `d ū`. -/
+  /-- The negative pion `d ubar`. -/
   | minus
 
 /-- The antiparticle of a pion: the charged pions are exchanged and the neutral pion is its own
@@ -553,8 +553,8 @@ theorem Pion.conj_involutive : Function.Involutive Pion.conj := by
   intro h
   cases h <;> rfl
 
-/-- The valence content of the pions: `π⁺ = u d̄` and `π⁻ = d ū`, while the neutral pion, a
-superposition of `u ū` and `d d̄`, has all four light species as valence constituents. -/
+/-- The valence content of the pions: `π⁺ = u dbar` and `π⁻ = d ubar`, while the neutral pion, a
+superposition of `u ubar` and `d dbar`, has all four light species as valence constituents. -/
 def Pion.valence : Pion → Finset (Species PionFlavor)
   | plus => {.quark .up, .antiquark .down}
   | zero => {.quark .up, .antiquark .up, .quark .down, .antiquark .down}
@@ -636,8 +636,8 @@ theorem pion_map_swap_mem_valence_conj (h : Pion) (s : Species PionFlavor) :
     -- `simp only` already closes the two charged cases; the neutral one needs the reordering.
     try tauto
 
-/-- The two favoured combinations of the positive pion agree: `D_u^{π⁺} = D_{d̄}^{π⁺}`. This is the
-relation that reduces the independent pion fragmentation functions to one favoured and one
+/-- The two favoured combinations of the positive pion agree: `D_u^{π⁺} = D_{dbar}^{π⁺}`. This is
+the relation that reduces the independent pion fragmentation functions to one favoured and one
 unfavoured function, and it is a consequence of charge conjugation together with isospin, not a
 separate assumption. -/
 theorem favoured_pion_plus_down_eq_favoured_pion_plus_up
@@ -648,7 +648,7 @@ theorem favoured_pion_plus_down_eq_favoured_pion_plus_up
   have h1 := apply_map_eq_apply_conj Pion.conj_involutive hCC hI .plus (Species.quark .down) z Q2
   simpa using h1.symm
 
-/-- The two unfavoured combinations of the positive pion agree: `D_d^{π⁺} = D_{ū}^{π⁺}`. -/
+/-- The two unfavoured combinations of the positive pion agree: `D_d^{π⁺} = D_{ubar}^{π⁺}`. -/
 theorem unfavoured_pion_plus_down_eq_unfavoured_pion_plus_up
     {D : Frag Pion (Species PionFlavor)} (hCC : ChargeConjRelation Pion.conj D)
     (hI : FlavorRelation Pion.conj PionFlavor.swap D) (z Q2 : ℝ) :
