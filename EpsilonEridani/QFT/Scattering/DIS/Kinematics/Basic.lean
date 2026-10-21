@@ -10,8 +10,9 @@ public import Mathlib
 
 # Deep Inelastic Scattering Kinematics
 
-This module introduces a minimal kinematic record and canonical DIS invariants.
-The design follows the architecture freeze document.
+This module introduces the abstract bilinear form `Bilin` used to evaluate Lorentz-invariant
+scalar products, with its symmetric square expansions, and a minimal kinematic record with the
+canonical DIS invariants. The design follows the architecture freeze document.
 
 -/
 
@@ -27,6 +28,24 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
 /-- A bilinear form used to evaluate Lorentz-invariant scalar products in abstract form. -/
 abbrev Bilin (V : Type) [AddCommGroup V] [Module ℝ V] := LinearMap.BilinForm ℝ V
+
+namespace Bilin
+
+variable {V}
+
+/-- Square of a sum for a symmetric form: `(u + v)² = u² + 2 u·v + v²`. -/
+lemma apply_add_self (g : Bilin V) (hg : g.IsSymm) (u v : V) :
+    g (u + v) (u + v) = g u u + 2 * g u v + g v v := by
+  linarith [hg.polarization u v]
+
+/-- Square of a difference for a symmetric form: `(u - v)² = u² - 2 u·v + v²`. -/
+lemma apply_sub_self (g : Bilin V) (hg : g.IsSymm) (u v : V) :
+    g (u - v) (u - v) = g u u - 2 * g u v + g v v := by
+  rw [sub_eq_add_neg, apply_add_self g hg]
+  simp only [map_neg, LinearMap.neg_apply, neg_neg]
+  ring
+
+end Bilin
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
 structure DisKinematics where
@@ -79,20 +98,7 @@ lemma kPrime_eq (K : DisKinematics V) : K.kPrime = K.k - K.q := by
 lemma W2_expand (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
     K.W2 g = g K.p K.p + 2 * g K.p K.q + g K.q K.q := by
   unfold W2
-  calc
-    g (K.p + K.q) (K.p + K.q)
-    = g (K.p + K.q) K.p + g (K.p + K.q) K.q := by
-        rw [(g (K.p + K.q)).map_add]
-    _ = (g K.p K.p + g K.q K.p) + (g K.p K.q + g K.q K.q) := by
-      have hp : g (K.p + K.q) K.p = g K.p K.p + g K.q K.p := by
-        rw [map_add, LinearMap.add_apply]
-      have hq : g (K.p + K.q) K.q = g K.p K.q + g K.q K.q := by
-        rw [map_add, LinearMap.add_apply]
-      rw [hp, hq]
-    _ = g K.p K.p + g K.p K.q + (g K.q K.p + g K.q K.q) := by ring
-    _ = g K.p K.p + g K.p K.q + (g K.p K.q + g K.q K.q) := by
-      rw [hSymm.eq K.q K.p]
-    _ = g K.p K.p + 2 * g K.p K.q + g K.q K.q := by ring
+  rw [Bilin.apply_add_self g hSymm]
 
 /-- Rewrite `W2` using `Q2 = -q^2`. -/
 lemma W2_eq_with_Q2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
