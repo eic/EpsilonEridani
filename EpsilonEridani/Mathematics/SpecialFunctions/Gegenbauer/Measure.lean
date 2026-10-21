@@ -38,6 +38,8 @@ distinct. The squared norms then follow from the three-term recurrence, paired w
 ## Main definitions
 
 * `EpsilonEridani.gegenbauerThreeHalvesMeasure`: the measure `(1 - x²) dx` on `(-1, 1]`.
+* `EpsilonEridani.gegenbauerThreeHalvesNormSq`: the squared norm
+  `2 (n + 1) (n + 2) / (2n + 3)` of `C_n^{(3/2)}` for the measure.
 
 ## Main statements
 
@@ -47,9 +49,11 @@ distinct. The squared norms then follow from the three-term recurrence, paired w
   `EpsilonEridani.gegenbauerThreeHalvesMeasure_real_univ`: the measure has total mass `4 / 3`,
   in `ℝ≥0∞` and in `ℝ`; in particular it is a finite measure.
 * `ContinuousOn.integrable_gegenbauerThreeHalvesMeasure`: a function continuous on `[-1, 1]` is
-  integrable for the measure.
+  integrable for the measure; `EpsilonEridani.integrable_pow_gegenbauerThreeHalvesMeasure` and
+  `EpsilonEridani.integrable_exp_mul_abs_gegenbauerThreeHalvesMeasure` are the monomial and
+  exponential instances.
 * `EpsilonEridani.integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves`: the orthogonality
-  relation with the squared norms `2 (n + 1) (n + 2) / (2n + 3)`.
+  relation, with the squared norms `EpsilonEridani.integral_gegenbauerThreeHalves_mul_self`.
 
 ## References
 
@@ -130,6 +134,18 @@ theorem _root_.ContinuousOn.integrable_gegenbauerThreeHalvesMeasure {E : Type*}
   refine (ContinuousOn.integrableOn_Icc ?_).mono_set Set.Ioc_subset_Icc_self
   simp_rw [ENNReal.toReal_ofReal']
   exact (by fun_prop : Continuous fun x : ℝ => max (1 - x ^ 2) 0).continuousOn.smul hf
+
+/-- Every monomial has a finite moment against `gegenbauerThreeHalvesMeasure`. -/
+theorem integrable_pow_gegenbauerThreeHalvesMeasure (k : ℕ) :
+    Integrable (fun x : ℝ => x ^ k) gegenbauerThreeHalvesMeasure :=
+  (continuous_pow k).continuousOn.integrable_gegenbauerThreeHalvesMeasure
+
+/-- Every exponential weight is integrable for `gegenbauerThreeHalvesMeasure`: it is a finite
+measure supported on the compact interval `[-1, 1]`. -/
+theorem integrable_exp_mul_abs_gegenbauerThreeHalvesMeasure (a : ℝ) :
+    Integrable (fun x : ℝ => Real.exp (a * |x|)) gegenbauerThreeHalvesMeasure :=
+  (Real.continuous_exp.comp
+    (continuous_const.mul continuous_abs)).continuousOn.integrable_gegenbauerThreeHalvesMeasure
 
 /-- A product of polynomial evaluations is integrable for `gegenbauerThreeHalvesMeasure`. -/
 private theorem integrable_eval_mul_eval (p q : ℝ[X]) :
@@ -221,14 +237,33 @@ private theorem integral_gegenbauerThreeHalves_mul_self_add_two (n : ℕ) :
   push_cast at h₂
   linear_combination (2 * (n : ℝ) + 7) * h₁ - (2 * (n : ℝ) + 5) * h₂
 
+/-- The squared norm of `C_n^{(3/2)}` for `gegenbauerThreeHalvesMeasure`, the rational number
+`2 (n + 1) (n + 2) / (2n + 3)` of `EpsilonEridani.integral_gegenbauerThreeHalves_mul_self`. The
+normalisation of the Gegenbauer modes, and the Gegenbauer coefficients of a function, are read
+against it. -/
+noncomputable def gegenbauerThreeHalvesNormSq (n : ℕ) : ℝ :=
+  2 * (n + 1) * (n + 2) / (2 * n + 3)
+
+/-- The defining value `2 (n + 1) (n + 2) / (2n + 3)` of the squared norm. -/
+theorem gegenbauerThreeHalvesNormSq_def (n : ℕ) :
+    gegenbauerThreeHalvesNormSq n = 2 * (n + 1) * (n + 2) / (2 * n + 3) :=
+  (rfl)
+
+/-- The squared norm `2 (n + 1) (n + 2) / (2n + 3)` is positive; with
+`EpsilonEridani.integral_gegenbauerThreeHalves_mul_self` this says that no `C_n^{(3/2)}` is null
+for the weight measure. -/
+theorem gegenbauerThreeHalvesNormSq_pos (n : ℕ) : 0 < gegenbauerThreeHalvesNormSq n := by
+  rw [gegenbauerThreeHalvesNormSq_def]
+  positivity
+
 /-- The squared norm of `C_n^{(3/2)}`:
 `∫₋₁¹ (1 - x²) C_n^{(3/2)}(x)² dx = 2 (n + 1) (n + 2) / (2n + 3)`. -/
 @[simp]
 theorem integral_gegenbauerThreeHalves_mul_self : ∀ n : ℕ,
     ∫ x, (gegenbauerThreeHalves ℝ n).eval x * (gegenbauerThreeHalves ℝ n).eval x
-      ∂gegenbauerThreeHalvesMeasure = 2 * (n + 1) * (n + 2) / (2 * n + 3)
+      ∂gegenbauerThreeHalvesMeasure = gegenbauerThreeHalvesNormSq n
   | 0 => by
-    norm_num [measureReal_def, gegenbauerThreeHalvesMeasure_univ]
+    norm_num [gegenbauerThreeHalvesNormSq_def, measureReal_def, gegenbauerThreeHalvesMeasure_univ]
   | 1 => by
     have h : ∀ x : ℝ, (1 - x ^ 2) • ((gegenbauerThreeHalves ℝ 1).eval x *
         (gegenbauerThreeHalves ℝ 1).eval x) = 9 * x ^ 2 - 9 * x ^ 4 := fun x => by
@@ -241,12 +276,13 @@ theorem integral_gegenbauerThreeHalves_mul_self : ∀ n : ℕ,
       ((by fun_prop : Continuous fun x : ℝ => 9 * x ^ 4).intervalIntegrable _ _),
       intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul, integral_pow,
       integral_pow]
-    norm_num
+    norm_num [gegenbauerThreeHalvesNormSq_def]
   | n + 2 => by
     have h := integral_gegenbauerThreeHalves_mul_self_add_two n
     rw [integral_gegenbauerThreeHalves_mul_self (n + 1)] at h
     have h₂ : ((n : ℝ) + 2) * (2 * n + 7) ≠ 0 := by positivity
     rw [← mul_right_inj' h₂, h]
+    simp only [gegenbauerThreeHalvesNormSq_def]
     push_cast
     field_simp
     ring
@@ -257,7 +293,7 @@ theorem integral_gegenbauerThreeHalves_mul_self : ∀ n : ℕ,
 theorem integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves (m n : ℕ) :
     ∫ x, (gegenbauerThreeHalves ℝ m).eval x * (gegenbauerThreeHalves ℝ n).eval x
       ∂gegenbauerThreeHalvesMeasure =
-        if m = n then 2 * ((n : ℝ) + 1) * (n + 2) / (2 * n + 3) else 0 := by
+        if m = n then gegenbauerThreeHalvesNormSq n else 0 := by
   split_ifs with h
   · rw [h, integral_gegenbauerThreeHalves_mul_self]
   · exact integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves_of_ne h
