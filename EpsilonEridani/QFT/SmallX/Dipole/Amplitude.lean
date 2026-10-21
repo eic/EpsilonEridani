@@ -69,7 +69,9 @@ dipole amplitude and its unitarity bound.
   and the Golec-Biernat-Wüsthoff amplitude are admissible.
 -/
 
-@[expose] public section
+public section
+
+noncomputable section
 
 namespace EpsilonEridani
 namespace QFT
@@ -128,7 +130,7 @@ nonzero dipole size, and is colour transparent. Its S-matrix is the identity ker
 
 It is `noncomputable` because it branches on equality of transverse positions, which is not
 decidable computably. -/
-noncomputable def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y then 0 else 1
+def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y then 0 else 1
 
 /-- The black disc is colour transparent: a dipole of zero size does not scatter. -/
 @[simp] lemma blackDisc_apply_self (x : EuclideanSpace ℝ (Fin 2)) : blackDisc x x = 0 := by
@@ -139,21 +141,24 @@ noncomputable def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y
     blackDisc x y = 1 := by
   simp [blackDisc, h]
 
+/-- The dipole S-matrix `1 - N` of the black disc is the identity kernel. -/
+lemma one_sub_blackDisc :
+    (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) => 1 - blackDisc x y) = 1 := by
+  ext x y
+  by_cases h : x = y <;> simp [h, Matrix.one_apply]
+
 /-- The **black disc** is admissible: its S-matrix is the identity kernel. -/
 theorem isAdmissible_blackDisc : IsAdmissible blackDisc := by
   refine ⟨fun x => blackDisc_apply_self x, ?_, fun x y => ?_⟩
-  · have e : (1 : Matrix (EuclideanSpace ℝ (Fin 2)) _ ℝ) =
-        Matrix.of fun x y => 1 - blackDisc x y := by
-      ext x y
-      by_cases h : x = y <;> simp [h, Matrix.one_apply]
-    exact e ▸ PosSemidef.one
+  · rw [one_sub_blackDisc]
+    exact PosSemidef.one
   · by_cases h : x = y <;> simp [h]
 
 /-- The **Golec-Biernat-Wüsthoff amplitude** `N x y = 1 - exp (-Q_s² ‖x - y‖² / 4)` at
 saturation scale `Q_s`. It is colour transparent; for `Q_s ≠ 0` it saturates at one for a large
 dipole and is quadratic at small dipole size, while at `Q_s = 0` it degenerates to the zero
 amplitude. Its S-matrix is a Gaussian kernel in the dipole size `‖x - y‖`. -/
-noncomputable def golecBiernatWusthoff (Qs : ℝ) (x y : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+def golecBiernatWusthoff (Qs : ℝ) (x y : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   1 - Real.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2))
 
 /-- The Golec-Biernat-Wüsthoff amplitude as an explicit formula in the dipole size, so that
