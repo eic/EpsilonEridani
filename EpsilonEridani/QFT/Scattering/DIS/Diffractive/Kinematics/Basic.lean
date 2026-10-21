@@ -126,6 +126,18 @@ lemma apply_deltaTarget_right (g : Bilin V) (K : DisKinematics V) (v : V) :
     g v (deltaTarget K) = g v K.p - g v K.pPrime := by
   rw [deltaTarget, map_sub]
 
+/-- Square of a sum for a symmetric form: `(u + v)² = u² + 2 u·v + v²`. -/
+lemma apply_add_add_self (g : Bilin V) (hg : g.IsSymm) (u v : V) :
+    g (u + v) (u + v) = g u u + 2 * g u v + g v v := by
+  linarith [hg.polarization u v]
+
+/-- Square of a difference for a symmetric form: `(u - v)² = u² - 2 u·v + v²`. -/
+lemma apply_sub_sub_self (g : Bilin V) (hg : g.IsSymm) (u v : V) :
+    g (u - v) (u - v) = g u u - 2 * g u v + g v v := by
+  rw [sub_eq_add_neg, apply_add_add_self g hg]
+  simp only [map_neg, LinearMap.neg_apply, neg_neg]
+  ring
+
 /-- `ξ = 1 - P'·q / P·q` whenever `P·q ≠ 0`. -/
 lemma xi_eq_one_sub_div (g : Bilin V) (K : DisKinematics V) (hpq : g K.p K.q ≠ 0) :
     xi g K = 1 - g K.pPrime K.q / g K.p K.q := by
@@ -195,10 +207,8 @@ lemma tMom_toExclKinematics (g : Bilin V) (K : DisKinematics V) (phiL phiH : ℝ
 lemma MX2_eq_two_mul_apply_deltaTarget_q_sub_Q2_add_tMom (g : Bilin V) (hg : g.IsSymm)
     (K : DisKinematics V) :
     MX2 g K = 2 * g (deltaTarget K) K.q - K.Q2 g + tMom g K := by
-  have h := hg.polarization (deltaTarget K) K.q
-  rw [add_comm (deltaTarget K) K.q] at h
-  rw [MX2, pX, tMom, DisKinematics.Q2]
-  linarith
+  rw [MX2, pX, add_comm K.q, apply_add_add_self g hg, tMom, DisKinematics.Q2]
+  ring
 
 /-- The denominator of `β` in terms of the event invariants: `2 Δ·q = Q² + M_X² - t`. -/
 lemma two_mul_apply_deltaTarget_q_eq_Q2_add_MX2_sub_tMom (g : Bilin V) (hg : g.IsSymm)
@@ -211,14 +221,9 @@ lemma two_mul_apply_deltaTarget_q_eq_Q2_add_MX2_sub_tMom (g : Bilin V) (hg : g.I
 lemma MY2_eq_p_sq_sub_two_mul_apply_p_deltaTarget_add_tMom (g : Bilin V) (hg : g.IsSymm)
     (K : DisKinematics V) :
     MY2 g K = g K.p K.p - 2 * g K.p (deltaTarget K) + tMom g K := by
-  have hp : K.p + -deltaTarget K = K.pPrime := by
-    rw [deltaTarget]
-    abel
-  have h := hg.polarization K.p (-deltaTarget K)
-  rw [hp] at h
-  simp only [map_neg, LinearMap.neg_apply, neg_neg] at h
-  rw [MY2, tMom]
-  linarith
+  have hpPrime : K.pPrime = K.p - deltaTarget K := by
+    rw [deltaTarget, sub_sub_cancel]
+  rw [MY2, hpPrime, apply_sub_sub_self g hg, tMom]
 
 /-- `t = M² - 2 P·P' + M_Y²` with `M² = P²`. -/
 lemma tMom_eq_p_sq_sub_two_mul_apply_p_pPrime_add_MY2 (g : Bilin V) (hg : g.IsSymm)
