@@ -521,6 +521,14 @@ lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q 
     rw [div_eq_mul_inv, mul_assoc, inv_mul_cancel₀ hQ2, mul_one]
   rw [pTransverse_pairing, h, sub_self]
 
+/-- A form conserved in its first slot does not distinguish `p` from `p_T` there. -/
+lemma apply_p_eq_apply_pTransverse {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
+    (hleft : ∀ v : V, W K.q v = 0) (v : V) : W K.p v = W (pTransverse g K) v := by
+  have hp : K.p = pTransverse g K + (g K.p K.q / g K.q K.q) • K.q := by
+    rw [pTransverse, sub_add_cancel]
+  rw [hp, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hleft, smul_zero,
+    add_zero]
+
 /-!
 
 ## Lorentz covariance
@@ -635,7 +643,7 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
   have hf := reflect_isKinematicStabilizer g K hSymm u hu hup huq
   rw [← LinearMap.BilinForm.flip_apply W v u]
   exact Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (W := W.flip)
-    (hW _ hf u v)
+    (by simp only [LinearMap.BilinForm.flip_apply]; exact hW _ hf u v)
     (Bilin.reflect_apply_of_orthogonal g u v huv)
     (Bilin.reflect_apply_self g u hu)
 
@@ -1049,6 +1057,27 @@ structure SpectatorPair (g : Bilin V) (K : DisKinematics V) : Type where
   /-- `e₂` is not null. -/
   e₂_self_ne_zero : g e₂ e₂ ≠ 0
 
+/-- A combination of the spectator directions is `g`-orthogonal to `q`. -/
+lemma SpectatorPair.smul_add_smul_orthogonal_q {g : Bilin V} {K : DisKinematics V}
+    (hP : SpectatorPair g K) (c₁ c₂ : ℝ) : g K.q (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
+  simp only [map_add, map_smul, hP.e₁_orthogonal_q, hP.e₂_orthogonal_q, smul_zero, add_zero]
+
+/-- A combination of the spectator directions is `g`-orthogonal to `p_T`. -/
+lemma SpectatorPair.smul_add_smul_orthogonal_pT {g : Bilin V} {K : DisKinematics V}
+    (hP : SpectatorPair g K) (c₁ c₂ : ℝ) :
+    g (pTransverse g K) (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
+  simp only [map_add, map_smul, hP.e₁_orthogonal_pT, hP.e₂_orthogonal_pT, smul_zero, add_zero]
+
+/-- The spectator directions are `g`-orthogonal, so `g` is diagonal on their combinations. -/
+lemma SpectatorPair.apply_smul_add_smul {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
+    (hP : SpectatorPair g K) (c₁ c₂ d₁ d₂ : ℝ) :
+    g (c₁ • hP.e₁ + c₂ • hP.e₂) (d₁ • hP.e₁ + d₂ • hP.e₂) =
+      c₁ * d₁ * g hP.e₁ hP.e₁ + c₂ * d₂ * g hP.e₂ hP.e₂ := by
+  have h₂₁ : g hP.e₂ hP.e₁ = 0 := by rw [hSymm.eq, hP.e₁_orthogonal_e₂]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    hP.e₁_orthogonal_e₂, h₂₁, mul_zero, add_zero, zero_add]
+  ring
+
 /-- An adapted frame for the kinematics: a `SpectatorPair` `e₁`, `e₂` such that `p_T`, `q`,
 `e₁`, `e₂` span `V`.
 
@@ -1083,11 +1112,8 @@ lemma SpectatorPlane.spectatorSplitting {g : Bilin V} {K : DisKinematics V}
     (hP : SpectatorPlane g K) : SpectatorSplitting g K where
   span v := by
     obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
-    refine ⟨a, b, c₁ • hP.e₁ + c₂ • hP.e₂, ?_, ?_, add_assoc _ _ _⟩
-    · simp only [map_add, map_smul, hP.e₁_orthogonal_q, hP.e₂_orthogonal_q, smul_zero,
-        add_zero]
-    · simp only [map_add, map_smul, hP.e₁_orthogonal_pT, hP.e₂_orthogonal_pT, smul_zero,
-        add_zero]
+    exact ⟨a, b, c₁ • hP.e₁ + c₂ • hP.e₂, hP.smul_add_smul_orthogonal_q c₁ c₂,
+      hP.smul_add_smul_orthogonal_pT c₁ c₂, add_assoc _ _ _⟩
 
 /-- A `SpectatorPlane` whose non-zero spectators are non-null supplies `SpectatorPartners`: a
 spectator with frame coordinates `c₁`, `c₂` has the partner
@@ -1100,37 +1126,32 @@ lemma SpectatorPlane.spectatorPartners {g : Bilin V} {K : DisKinematics V} (hSym
   partner u huq huT hu := by
     refine ⟨hnull u huq huT hu, ?_⟩
     obtain ⟨a, b, c₁, c₂, hv⟩ := hP.span u
-    have h₁q : g hP.e₁ K.q = 0 := by rw [hSymm.eq, hP.e₁_orthogonal_q]
-    have h₂q : g hP.e₂ K.q = 0 := by rw [hSymm.eq, hP.e₂_orthogonal_q]
-    have h₁T : g hP.e₁ (pTransverse g K) = 0 := by rw [hSymm.eq, hP.e₁_orthogonal_pT]
-    have h₂T : g hP.e₂ (pTransverse g K) = 0 := by rw [hSymm.eq, hP.e₂_orthogonal_pT]
-    have h₂₁ : g hP.e₂ hP.e₁ = 0 := by rw [hSymm.eq, hP.e₁_orthogonal_e₂]
-    have huu : g u u = c₁ ^ 2 * g hP.e₁ hP.e₁ + c₂ ^ 2 * g hP.e₂ hP.e₂ := by
-      rw [hv] at huq huT ⊢
+    have hss := hP.apply_smul_add_smul hSymm c₁ c₂ c₁ c₂
+    have hsu' := hP.apply_smul_add_smul hSymm c₁ c₂ (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
+    have hu'u' := hP.apply_smul_add_smul hSymm (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
+      (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
+    have hsq := hP.smul_add_smul_orthogonal_q c₁ c₂
+    have hsT := hP.smul_add_smul_orthogonal_pT c₁ c₂
+    have hu'q := hP.smul_add_smul_orthogonal_q (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
+    have hu'T := hP.smul_add_smul_orthogonal_pT (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
+    have hv' := hv.trans (add_assoc _ _ _)
+    generalize c₁ • hP.e₁ + c₂ • hP.e₂ = s at hss hsu' hsq hsT hv'
+    generalize (-(c₂ * g hP.e₂ hP.e₂)) • hP.e₁ + (c₁ * g hP.e₁ hP.e₁) • hP.e₂ = u'
+      at hsu' hu'u' hu'q hu'T
+    -- Against a spectator, `u` pairs as its spectator part `s`.
+    have hpair : ∀ w : V, g K.q w = 0 → g (pTransverse g K) w = 0 → g u w = g s w := by
+      intro w hwq hwT
+      rw [hv']
       simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-        hP.e₁_orthogonal_q, hP.e₂_orthogonal_q, hP.e₁_orthogonal_pT, hP.e₂_orthogonal_pT,
-        hP.e₁_orthogonal_e₂, h₁q, h₂q, h₁T, h₂T, h₂₁, mul_zero, add_zero] at huq huT ⊢
-      linear_combination a * huT + b * huq
-    refine ⟨(-(c₂ * g hP.e₂ hP.e₂)) • hP.e₁ + (c₁ * g hP.e₁ hP.e₁) • hP.e₂, ?_, ?_, ?_, ?_⟩
-    · simp only [map_add, map_smul, hP.e₁_orthogonal_q, hP.e₂_orthogonal_q, smul_zero,
-        add_zero]
-    · simp only [map_add, map_smul, hP.e₁_orthogonal_pT, hP.e₂_orthogonal_pT, smul_zero,
-        add_zero]
-    · rw [hv]
-      simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-        hP.e₁_orthogonal_q, hP.e₂_orthogonal_q, hP.e₁_orthogonal_pT, hP.e₂_orthogonal_pT,
-        hP.e₁_orthogonal_e₂, h₂₁, mul_zero, add_zero, zero_add]
+        hwq, hwT, mul_zero, zero_add]
+    have huu : g u u = g s s := by rw [hpair u huq huT, hSymm.eq s, hpair s hsq hsT]
+    refine ⟨u', hu'q, hu'T, by rw [hpair u' hu'q hu'T, hsu']; ring, ?_⟩
+    have h : g u' u' = g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂ * g u u := by
+      rw [hu'u', huu, hss]
       ring
-    · have h : g ((-(c₂ * g hP.e₂ hP.e₂)) • hP.e₁ + (c₁ * g hP.e₁ hP.e₁) • hP.e₂)
-          ((-(c₂ * g hP.e₂ hP.e₂)) • hP.e₁ + (c₁ * g hP.e₁ hP.e₁) • hP.e₂) =
-          g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂ * g u u := by
-        rw [huu]
-        simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-          hP.e₁_orthogonal_e₂, h₂₁, mul_zero, add_zero, zero_add]
-        ring
-      rw [h]
-      exact mul_ne_zero (mul_ne_zero hP.e₁_self_ne_zero hP.e₂_self_ne_zero)
-        (hnull u huq huT hu)
+    rw [h]
+    exact mul_ne_zero (mul_ne_zero hP.e₁_self_ne_zero hP.e₂_self_ne_zero)
+      (hnull u huq huT hu)
 
 /-!
 
