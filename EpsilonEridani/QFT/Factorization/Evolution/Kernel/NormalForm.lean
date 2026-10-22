@@ -90,9 +90,10 @@ namespace KernelForm
 /-- The action of a kernel in normal form on a test function `φ`:
 `⟨P, φ⟩ = ∫₀¹ r z * φ z dz + p ⟨[1 / (1 - z)]₊, φ⟩ + d φ 1`.
 
-It converges when `r * φ` is integrable on `[0, 1]` and `φ` satisfies the hypotheses of
-`EpsilonEridani.intervalIntegrable_plusOneMinus_integrand`; outside them it takes the junk value of
-the Bochner integral. -/
+Integrability of `r * φ` on `[0, 1]` together with the hypotheses of
+`EpsilonEridani.intervalIntegrable_plusOneMinus_integrand` on `φ` is sufficient for both integrals
+to converge. Where an integral does not converge, its term takes the junk value of the Bochner
+integral. -/
 noncomputable def pair (P : KernelForm) (φ : ℝ → ℝ) : ℝ :=
   (∫ z in (0 : ℝ)..1, P.regular z * φ z) + P.plusCoeff * plusOneMinus φ + P.deltaCoeff * φ 1
 
@@ -105,9 +106,11 @@ theorem pair_def (P : KernelForm) (φ : ℝ → ℝ) :
 
 /-- The Mellin moment `M[P](N) = ⟨P, z ^ (N - 1)⟩` of a kernel, at a real index `N`. Quark
 number is the moment at `N = 1` and the momentum fraction the moment at `N = 2`. The regular
-part contributes `∫₀¹ z ^ (N - 1) r z dz`, which converges only for `N` in a half-line
-determined by the behaviour of `r` at `z = 0`. Outside that half-line the moment takes the junk
-value of the Bochner integral, not a value of the analytic continuation of the moment in `N`. -/
+part contributes `∫₀¹ z ^ (N - 1) r z dz`, whose convergence depends on `r` and is a hypothesis
+of every statement about the moment; for a regular part integrable away from `z = 0`, as those
+of the leading-order kernels are, it converges for `N` in a half-line determined by the
+singularity of `r` at `z = 0`. Where it does not converge the moment takes the junk value of the
+Bochner integral, not a value of the analytic continuation of the moment in `N`. -/
 noncomputable def moment (P : KernelForm) (N : ℝ) : ℝ :=
   P.pair fun z => z ^ (N - 1)
 

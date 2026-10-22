@@ -12,8 +12,8 @@ public import EpsilonEridani.QFT.QCD.Basic
 /-!
 # The leading-order splitting kernels
 
-The four leading-order (Gribov–Lipatov–Altarelli–Parisi) splitting kernels of QCD, written in
-the normal form `r(z) + p [1 / (1 - z)]₊ + d δ(1 - z)` of
+The four leading-order (Dokshitzer–Gribov–Lipatov–Altarelli–Parisi) splitting kernels of QCD,
+written in the normal form `r(z) + p [1 / (1 - z)]₊ + d δ(1 - z)` of
 `EpsilonEridani.QFT.Factorization.Evolution.KernelForm`. They are normalised to the coupling
 `α_s / (2π)`, and `P_ab` is the kernel for finding parton `a` inside parton `b`:
 
@@ -28,8 +28,10 @@ gauge group, or at points such as `C_F = C_A = 2 n_f T_F` that are not QCD.
 
 The familiar forms `C_F [(1 + z²)/(1 - z)]₊` of `P_qq` and `2 C_A z [1/(1-z)]₊ + …` of `P_gg`
 are theorems about the pairing with test functions (`pair_pqq`, `pair_pgg`), not definitions.
-The Mellin moments are computed in closed form at natural indices. At `N = 1` and `N = 2` they
-give the conservation identities: quark number, `M[P_qq](1) = 0`, and momentum,
+The Mellin moments are computed in closed form: at every real index in the half-line of
+convergence for the three kernels whose moments are rational functions of `N`, and at natural
+indices for `P_qq` and `P_gg`, whose moments involve the harmonic numbers. At `N = 1` and `N = 2`
+they give the conservation identities: quark number, `M[P_qq](1) = 0`, and momentum,
 `M[P_qq](2) + M[P_gq](2) = 0` and `M[P_gg](2) + M[2 n_f P_qg](2) = 0`. These are derived from the
 kernels and not imposed on them: the `n_f`-dependent delta coefficient of `P_gg` is what makes
 the second momentum identity hold.
@@ -43,16 +45,23 @@ the second momentum identity hold.
 
 * `pair_pqq`: `P_qq` is the plus distribution `C_F [(1 + z²)/(1 - z)]₊`.
 * `pair_pgg`: `P_gg` is `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)]` plus its delta term.
-* `moment_pqq`, `moment_pgq`, `moment_pqg`, `moment_pqgSinglet`, `moment_pgg`: the moments in
-  closed form, in terms of the harmonic numbers `S₁(N) = H_N`.
+* `moment_pgq`, `moment_pqg`, `moment_pqgSinglet`: the moments in closed form at every real
+  index `N` for which the integral converges, as rational functions of `N`.
+* `moment_pqq`, `moment_pgg`: the moments in closed form at natural indices, in terms of the
+  harmonic numbers `S₁(N) = H_N`.
 * `moment_pqq_one`: quark-number conservation.
 * `moment_pqq_two_add_moment_pgq_two`, `moment_pgg_two_add_moment_pqgSinglet_two`: momentum
   conservation in the quark and the gluon column.
 
 ## References
 
+* V. N. Gribov and L. N. Lipatov, *Deep inelastic e p scattering in perturbation theory*,
+  Sov. J. Nucl. Phys. 15 (1972) 438.
 * G. Altarelli and G. Parisi, *Asymptotic freedom in parton language*, Nucl. Phys. B 126 (1977)
   298.
+* Yu. L. Dokshitzer, *Calculation of the structure functions for deep inelastic scattering and
+  e⁺e⁻ annihilation by perturbation theory in quantum chromodynamics*, Sov. Phys. JETP 46 (1977)
+  641.
 * R. K. Ellis, W. J. Stirling and B. R. Webber, *QCD and Collider Physics*, Cambridge University
   Press (1996), §4.3.
 * F. J. Yndurain, *The Theory of Quark and Gluon Interactions*, 4th ed., Springer (2006), ch. 4.
@@ -104,8 +113,8 @@ noncomputable def pgg : KernelForm :=
 theorem pqq_regular : (pqq c).regular = fun z => -c.cF * (1 + z) :=
   (rfl)
 
-/-- The coefficient of `[1/(1-z)]₊` in `P_qq` is `2 C_F`: the soft singularity of quark
-emission is weighted by the colour charge of the quark. -/
+/-- The coefficient of `[1/(1-z)]₊` in `P_qq` is `2 C_F`: the soft singularity of gluon
+emission off a quark is weighted by the colour charge of the quark. -/
 @[simp]
 theorem pqq_plusCoeff : (pqq c).plusCoeff = 2 * c.cF :=
   (rfl)
@@ -168,7 +177,7 @@ theorem pgg_regular :
   (rfl)
 
 /-- The coefficient of `[1/(1-z)]₊` in `P_gg` is `2 C_A`: the soft singularity of gluon
-emission is weighted by the colour charge of the gluon. -/
+emission off a gluon is weighted by the colour charge of the gluon. -/
 @[simp]
 theorem pgg_plusCoeff : (pgg c).plusCoeff = 2 * c.cA :=
   (rfl)
@@ -180,11 +189,13 @@ theorem pgg_deltaCoeff : (pgg c).deltaCoeff = 11 / 6 * c.cA - 2 / 3 * c.nF * c.t
 /-! ### The unregularised forms -/
 
 /-- **`P_qq` is `C_F [(1 + z²)/(1 - z)]₊`.** The normal form of `P_qq` pairs with a test
-function `φ` as the plus functional of `C_F (1 + z²)/(1 - z)`, for every `φ` integrable on
-`[0, 1]` whose pairing with `[1/(1-z)]₊` converges. -/
-theorem pair_pqq {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1)
+function `φ` as the plus functional of `C_F (1 + z²)/(1 - z)`, for every `φ` whose pairing with
+`[1/(1-z)]₊` converges; such a `φ` is integrable on `[0, 1]` by
+`EpsilonEridani.intervalIntegrable_of_plusOneMinus_integrand`. -/
+theorem pair_pqq {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1) :
     (pqq c).pair φ = c.cF * plusFunctional (fun z => (1 + z ^ 2) / (1 - z)) φ := by
+  have hφ := intervalIntegrable_of_plusOneMinus_integrand hφ₁
   have hlin : IntervalIntegrable (fun z => (1 + z) * φ z) volume 0 1 :=
     hφ.continuousOn_mul (by fun_prop)
   have hconst : IntervalIntegrable (fun z : ℝ => φ 1 * (1 + z)) volume 0 1 :=
@@ -218,20 +229,20 @@ theorem pair_pqq {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1)
 
 /-- **`P_gg` in its familiar form.** The normal form of `P_gg` pairs with a test function `φ` as
 `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)] + ((11/6) C_A - (2/3) n_f T_F) δ(1-z)`, for every `φ`
-integrable on `[0, 1]` against which the regular part converges and whose pairing with
-`[1/(1-z)]₊` converges. -/
-theorem pair_pgg {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1)
+whose pairing with `[1/(1-z)]₊` converges and against which the regular part converges. -/
+theorem pair_pgg {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1)
     (hreg : IntervalIntegrable (fun z => ((1 - z) / z + z * (1 - z)) * φ z) volume 0 1) :
     (pgg c).pair φ =
       2 * c.cA * (plusOneMinus (fun z => z * φ z) +
           ∫ z in (0 : ℝ)..1, ((1 - z) / z + z * (1 - z)) * φ z) +
         (11 / 6 * c.cA - 2 / 3 * c.nF * c.tF) * φ 1 := by
+  have hφ := intervalIntegrable_of_plusOneMinus_integrand hφ₁
   have hsplit : (fun z => 2 * c.cA * (-1 + (1 - z) / z + z * (1 - z)) * φ z) =
       fun z => 2 * c.cA * (-φ z + ((1 - z) / z + z * (1 - z)) * φ z) := by
     funext z
     ring
-  simp only [plusOneMinus_id_mul hφ hφ₁, KernelForm.pair_def, pgg_regular, pgg_plusCoeff,
+  simp only [plusOneMinus_id_mul hφ₁, KernelForm.pair_def, pgg_regular, pgg_plusCoeff,
     pgg_deltaCoeff, hsplit,
     intervalIntegral.integral_const_mul]
   rw [intervalIntegral.integral_add (f := fun z => -φ z) hφ.neg hreg, intervalIntegral.integral_neg]
@@ -239,18 +250,35 @@ theorem pair_pgg {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1)
 
 /-! ### Moments in closed form -/
 
-/-- The integral over `[0, 1]` of a cubic polynomial times `z ^ n`, monomial by monomial. The
-regular parts of the four kernels, times `z ^ n`, all reduce to this almost everywhere. -/
-private theorem integral_cubic_mul_pow (a₀ a₁ a₂ a₃ : ℝ) (n : ℕ) :
-    ∫ z in (0 : ℝ)..1, (a₀ * z ^ n + a₁ * z ^ (n + 1) + a₂ * z ^ (n + 2) + a₃ * z ^ (n + 3)) =
-      a₀ / (n + 1) + a₁ / (n + 2) + a₂ / (n + 3) + a₃ / (n + 4) := by
-  have hi (a : ℝ) (k : ℕ) : IntervalIntegrable (fun z : ℝ => a * z ^ k) volume 0 1 :=
-    (intervalIntegral.intervalIntegrable_pow k).const_mul a
-  rw [intervalIntegral.integral_add (((hi _ _).add (hi _ _)).add (hi _ _)) (hi _ _),
-    intervalIntegral.integral_add ((hi _ _).add (hi _ _)) (hi _ _),
-    intervalIntegral.integral_add (hi _ _) (hi _ _)]
-  simp only [intervalIntegral.integral_const_mul, integral_pow]
-  push_cast
+/-- The integral over `[0, 1]` of a cubic polynomial times `z ^ s`, monomial by monomial, for a
+real exponent `s > -1`. The regular parts of the four kernels, times `z ^ (N - 1)`, all reduce to
+this almost everywhere, with `s = N - 1`, or `s = N - 2` for the two kernels with a `1 / z`
+singularity. -/
+private theorem integral_cubic_mul_rpow (a₀ a₁ a₂ a₃ : ℝ) {s : ℝ} (hs : -1 < s) :
+    ∫ z in (0 : ℝ)..1, (a₀ + a₁ * z + a₂ * z ^ 2 + a₃ * z ^ 3) * z ^ s =
+      a₀ / (s + 1) + a₁ / (s + 2) + a₂ / (s + 3) + a₃ / (s + 4) := by
+  have hi (a : ℝ) {r : ℝ} (hr : -1 < r) :
+      IntervalIntegrable (fun z : ℝ => a * z ^ r) volume 0 1 :=
+    (intervalIntegral.intervalIntegrable_rpow' hr).const_mul a
+  have hint {r : ℝ} (hr : -1 < r) : ∫ z in (0 : ℝ)..1, z ^ r = 1 / (r + 1) := by
+    rw [integral_rpow (Or.inl hr), Real.one_rpow,
+      Real.zero_rpow (by linarith : (0 : ℝ) < r + 1).ne', sub_zero]
+  have h0 := hi a₀ hs
+  have h1 := hi a₁ (by linarith : -1 < s + 1)
+  have h2 := hi a₂ (by linarith : -1 < s + 2)
+  have h3 := hi a₃ (by linarith : -1 < s + 3)
+  have hsplit : ∫ z in (0 : ℝ)..1, (a₀ + a₁ * z + a₂ * z ^ 2 + a₃ * z ^ 3) * z ^ s =
+      ∫ z in (0 : ℝ)..1,
+        (a₀ * z ^ s + a₁ * z ^ (s + 1) + a₂ * z ^ (s + 2) + a₃ * z ^ (s + 3)) := by
+    refine intervalIntegral.integral_congr_ae ?_
+    filter_upwards [Measure.ae_ne volume (0 : ℝ)] with z hz _
+    rw [show s + 2 = s + 1 + 1 by ring, show s + 3 = s + 1 + 1 + 1 by ring]
+    simp only [Real.rpow_add_one hz]
+    ring
+  rw [hsplit, intervalIntegral.integral_add ((h0.add h1).add h2) h3,
+    intervalIntegral.integral_add (h0.add h1) h2, intervalIntegral.integral_add h0 h1]
+  simp only [intervalIntegral.integral_const_mul, hint hs, hint (by linarith : -1 < s + 1),
+    hint (by linarith : -1 < s + 2), hint (by linarith : -1 < s + 3)]
   ring
 
 /-- The quark-to-quark moment `γ_qq(N) = C_F [3/2 - 2 S₁(N) + 1/(N (N+1))]`, for `N ≥ 1`. -/
@@ -259,8 +287,8 @@ theorem moment_pqq {N : ℕ} (hN : N ≠ 0) :
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
   have hint : ∫ z in (0 : ℝ)..1, -c.cF * (1 + z) * z ^ n =
       -c.cF / (n + 1) + -c.cF / (n + 2) + 0 / (n + 3) + 0 / (n + 4) :=
-    (intervalIntegral.integral_congr fun z _ => by ring).trans
-      (integral_cubic_mul_pow _ _ _ _ n)
+    (intervalIntegral.integral_congr fun z _ => by simp only [Real.rpow_natCast]; ring).trans
+      (integral_cubic_mul_rpow _ _ _ _ (neg_one_lt_zero.trans_le n.cast_nonneg))
   rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
     KernelForm.pair_pow]
   simp only [pqq_regular, hint, pqq_plusCoeff, pqq_deltaCoeff, harmonic_succ]
@@ -268,43 +296,54 @@ theorem moment_pqq {N : ℕ} (hN : N ≠ 0) :
   field_simp
   ring
 
-/-- The gluon-in-quark moment `γ_gq(N) = C_F (N² + N + 2) / ((N - 1) N (N + 1))`, for `N ≥ 2`.
-The closed form has a pole at `N = 1`, where the integral defining the moment does not converge
-and `(pgq c).moment 1` is the junk value of the Bochner integral. -/
-theorem moment_pgq {N : ℕ} (hN : 2 ≤ N) :
+/-- The gluon-in-quark moment `γ_gq(N) = C_F (N² + N + 2) / ((N - 1) N (N + 1))`, at every real
+`N > 1`. The closed form has a pole at `N = 1`, where the integral defining the moment does not
+converge and `(pgq c).moment 1` is the junk value of the Bochner integral. -/
+theorem moment_pgq {N : ℝ} (hN : 1 < N) :
     (pgq c).moment N = c.cF * (N ^ 2 + N + 2) / ((N - 1) * N * (N + 1)) := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hN
-  have hint : ∫ z in (0 : ℝ)..1, c.cF * (1 + (1 - z) ^ 2) / z * z ^ (n + 1) =
-      2 * c.cF / (n + 1) + -(2 * c.cF) / (n + 2) + c.cF / (n + 3) + 0 / (n + 4) := by
-    refine (intervalIntegral.integral_congr_ae ?_).trans (integral_cubic_mul_pow _ _ _ _ n)
+  have hint : ∫ z in (0 : ℝ)..1, c.cF * (1 + (1 - z) ^ 2) / z * z ^ (N - 1) =
+      2 * c.cF / (N - 2 + 1) + -(2 * c.cF) / (N - 2 + 2) + c.cF / (N - 2 + 3) +
+        0 / (N - 2 + 4) := by
+    refine (intervalIntegral.integral_congr_ae ?_).trans
+      (integral_cubic_mul_rpow _ _ _ _ (by linarith : (-1 : ℝ) < N - 2))
     filter_upwards [Measure.ae_ne volume (0 : ℝ)] with z hz _
+    rw [show N - 1 = N - 2 + 1 by ring, Real.rpow_add_one hz]
     field_simp
     ring
-  rw [show ((2 + n : ℕ) : ℝ) = ((n + 1 : ℕ) : ℝ) + 1 by push_cast; ring,
-    KernelForm.moment_natCast_add_one, KernelForm.pair_pow]
-  simp only [pgq_regular, hint, pgq_plusCoeff, pgq_deltaCoeff]
-  push_cast
+  have h1 : N - 1 ≠ 0 := by intro h; linarith
+  have h0 : N ≠ 0 := by intro h; linarith
+  have h2 : N + 1 ≠ 0 := by intro h; linarith
+  have h3 : N + 2 ≠ 0 := by intro h; linarith
+  rw [KernelForm.moment_def, KernelForm.pair_def]
+  simp only [pgq_regular, hint, pgq_plusCoeff, pgq_deltaCoeff, zero_mul, add_zero]
+  rw [show N - 2 + 1 = N - 1 by ring, show N - 2 + 2 = N by ring, show N - 2 + 3 = N + 1 by ring,
+    show N - 2 + 4 = N + 2 by ring]
   field_simp
   ring
 
-/-- The per-flavour quark-in-gluon moment `T_F (N² + N + 2) / (N (N + 1) (N + 2))`, for
-`N ≥ 1`. -/
-theorem moment_pqg {N : ℕ} (hN : N ≠ 0) :
+/-- The per-flavour quark-in-gluon moment `T_F (N² + N + 2) / (N (N + 1) (N + 2))`, at every
+real `N > 0`. -/
+theorem moment_pqg {N : ℝ} (hN : 0 < N) :
     (pqg c).moment N = c.tF * (N ^ 2 + N + 2) / (N * (N + 1) * (N + 2)) := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
-  have hint : ∫ z in (0 : ℝ)..1, c.tF * (z ^ 2 + (1 - z) ^ 2) * z ^ n =
-      c.tF / (n + 1) + -(2 * c.tF) / (n + 2) + 2 * c.tF / (n + 3) + 0 / (n + 4) :=
+  have hint : ∫ z in (0 : ℝ)..1, c.tF * (z ^ 2 + (1 - z) ^ 2) * z ^ (N - 1) =
+      c.tF / (N - 1 + 1) + -(2 * c.tF) / (N - 1 + 2) + 2 * c.tF / (N - 1 + 3) +
+        0 / (N - 1 + 4) :=
     (intervalIntegral.integral_congr fun z _ => by ring).trans
-      (integral_cubic_mul_pow _ _ _ _ n)
-  rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
-    KernelForm.pair_pow]
-  simp only [pqg_regular, hint, pqg_plusCoeff, pqg_deltaCoeff]
+      (integral_cubic_mul_rpow _ _ _ _ (by linarith : (-1 : ℝ) < N - 1))
+  have h0 : N ≠ 0 := hN.ne'
+  have h1 : N + 1 ≠ 0 := by intro h; linarith
+  have h2 : N + 2 ≠ 0 := by intro h; linarith
+  have h3 : N + 3 ≠ 0 := by intro h; linarith
+  rw [KernelForm.moment_def, KernelForm.pair_def]
+  simp only [pqg_regular, hint, pqg_plusCoeff, pqg_deltaCoeff, zero_mul, add_zero]
+  rw [show N - 1 + 1 = N by ring, show N - 1 + 2 = N + 1 by ring, show N - 1 + 3 = N + 2 by ring,
+    show N - 1 + 4 = N + 3 by ring]
   field_simp
   ring
 
 /-- The singlet quark-in-gluon moment `γ_qg(N) = 2 n_f T_F (N² + N + 2) / (N (N + 1) (N + 2))`,
-for `N ≥ 1`. -/
-theorem moment_pqgSinglet {N : ℕ} (hN : N ≠ 0) :
+at every real `N > 0`. -/
+theorem moment_pqgSinglet {N : ℝ} (hN : 0 < N) :
     (pqgSinglet c).moment N = 2 * c.nF * c.tF * (N ^ 2 + N + 2) / (N * (N + 1) * (N + 2)) := by
   rw [pqgSinglet_def, KernelForm.moment_smul, moment_pqg c hN]
   ring
@@ -320,8 +359,10 @@ theorem moment_pgg {N : ℕ} (hN : 2 ≤ N) :
   have hint : ∫ z in (0 : ℝ)..1, 2 * c.cA * (-1 + (1 - z) / z + z * (1 - z)) * z ^ (n + 1) =
       2 * c.cA / (n + 1) + -(4 * c.cA) / (n + 2) + 2 * c.cA / (n + 3) +
         -(2 * c.cA) / (n + 4) := by
-    refine (intervalIntegral.integral_congr_ae ?_).trans (integral_cubic_mul_pow _ _ _ _ n)
+    refine (intervalIntegral.integral_congr_ae ?_).trans
+      (integral_cubic_mul_rpow _ _ _ _ (neg_one_lt_zero.trans_le n.cast_nonneg))
     filter_upwards [Measure.ae_ne volume (0 : ℝ)] with z hz _
+    simp only [Real.rpow_natCast]
     field_simp
     ring
   rw [show ((2 + n : ℕ) : ℝ) = ((n + 1 : ℕ) : ℝ) + 1 by push_cast; ring,
@@ -353,17 +394,14 @@ theorem moment_pqq_two : (pqq c).moment 2 = -(4 / 3 * c.cF) := by
 /-- The momentum moment of the gluon-in-quark kernel, `M[P_gq](2) = (4/3) C_F`. -/
 @[simp]
 theorem moment_pgq_two : (pgq c).moment 2 = 4 / 3 * c.cF := by
-  rw [show (pgq c).moment 2 = (pgq c).moment ((2 : ℕ) : ℝ) by norm_num, moment_pgq c le_rfl]
-  norm_num
+  rw [moment_pgq c one_lt_two]
   ring
 
 /-- The momentum moment of the singlet quark-in-gluon kernel, `M[2 n_f P_qg](2) = (2/3) n_f T_F`.
 -/
 @[simp]
 theorem moment_pqgSinglet_two : (pqgSinglet c).moment 2 = 2 / 3 * c.nF * c.tF := by
-  rw [show (pqgSinglet c).moment 2 = (pqgSinglet c).moment ((2 : ℕ) : ℝ) by norm_num,
-    moment_pqgSinglet c two_ne_zero]
-  norm_num
+  rw [moment_pqgSinglet c two_pos]
   ring
 
 /-- The momentum moment of the gluon-to-gluon kernel, `M[P_gg](2) = -(2/3) n_f T_F`: the

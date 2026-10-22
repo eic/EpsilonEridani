@@ -34,6 +34,8 @@ object.
   `⟨[K]₊, φ⟩` converges when `K z * (1 - z)` is integrable on `(0, 1]`, `φ` is
   a.e.-strongly-measurable there, and `φ z - φ 1 = O(1 - z)` uniformly for almost every
   `z ∈ (0, 1]`.
+* `EpsilonEridani.intervalIntegrable_of_plusOneMinus_integrand`: conversely, a test function whose
+  integrand against `[1 / (1 - z)]₊` is integrable is itself integrable on `[0, 1]`.
 * `EpsilonEridani.plusFunctional_congr_ae_left`, `EpsilonEridani.plusFunctional_congr_ae_right`:
   `⟨[K]₊, φ⟩` depends only on the a.e. class of `K` on `(0, 1]`, and on the a.e. class of `φ`
   there together with the value `φ 1`.
@@ -138,6 +140,18 @@ theorem intervalIntegrable_plusOneMinus_integrand {φ : ℝ → ℝ} {L : ℝ}
   refine (intervalIntegrable_const (c := (1 : ℝ))).congr_ae ?_
   filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (1 : ℝ))] with z hz
   rw [inv_mul_cancel₀ (sub_ne_zero.2 (Ne.symm hz))]
+
+/-- A test function whose integrand against `[1 / (1 - z)]₊` is integrable on `[0, 1]` is itself
+integrable there: `φ z - φ 1` is that integrand times the bounded factor `1 - z`. Convergence of
+`⟨[1 / (1 - z)]₊, φ⟩` therefore needs no separate integrability hypothesis on `φ`. -/
+theorem intervalIntegrable_of_plusOneMinus_integrand {φ : ℝ → ℝ}
+    (hφ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1) :
+    IntervalIntegrable φ volume 0 1 := by
+  have hsub : IntervalIntegrable (fun z => φ z - φ 1) volume 0 1 := by
+    refine (hφ.mul_continuousOn (g := fun z => 1 - z) (by fun_prop)).congr_ae ?_
+    filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (1 : ℝ))] with z hz
+    rw [mul_comm _ (1 - z), ← mul_assoc, mul_inv_cancel₀ (sub_ne_zero.2 (Ne.symm hz)), one_mul]
+  exact (hsub.add (intervalIntegrable_const (c := φ 1))).congr fun z _ => sub_add_cancel _ _
 
 /-- A plus functional depends only on the almost-everywhere class of its kernel on `(0, 1]`. -/
 theorem plusFunctional_congr_ae_left {K K' : ℝ → ℝ} (φ : ℝ → ℝ)
@@ -254,9 +268,10 @@ theorem plusOneMinus_mul {g φ : ℝ → ℝ}
 /-- The multiplication identity at `g z = z`: `z [1 / (1 - z)]₊ = [1 / (1 - z)]₊ - 1` as
 distributions, since `(z - 1) / (1 - z) = -1`. Paired with `φ`,
 `⟨[1 / (1 - z)]₊, z φ⟩ = ⟨[1 / (1 - z)]₊, φ⟩ - ∫₀¹ φ z dz`. -/
-theorem plusOneMinus_id_mul {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1)
+theorem plusOneMinus_id_mul {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1) :
     plusOneMinus (fun z => z * φ z) = plusOneMinus φ - ∫ z in (0 : ℝ)..1, φ z := by
+  have hφ := intervalIntegrable_of_plusOneMinus_integrand hφ₁
   have hneg : (fun z => (1 - z)⁻¹ * (z - 1) * φ z) =ᵐ[volume] fun z => -φ z := by
     filter_upwards [Measure.ae_ne volume (1 : ℝ)] with z hz
     have h1z : (1 : ℝ) - z ≠ 0 := sub_ne_zero.2 (Ne.symm hz)

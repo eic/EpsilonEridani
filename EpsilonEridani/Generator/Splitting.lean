@@ -16,8 +16,12 @@ the veto algorithm needs.
 ## Relation to the rest of the library
 
 `EpsilonEridani.QFT.Factorization.Evolution.Basic` has `SplittingKernel` as an *abstract*
-`Flavor → Flavor → ℝ → ℝ → ℝ`; no concrete kernel exists anywhere in the specification
-layer, so these are new definitions rather than transcriptions of existing ones.
+`Flavor → Flavor → ℝ → ℝ → ℝ`. The concrete leading-order kernels are
+`EpsilonEridani.QFT.Factorization.Evolution.pqq`, `pgq`, `pqg` and `pgg`
+(`Evolution/Kernel/LeadingOrder.lean`): distributions in normal form over `ℝ`, parametrised by
+colour factors. The `Float` functions below are numeric transcriptions of their unregularised
+forms (`P_qq` as `C_F (1 + z²)/(1 - z)`, which is `Evolution.pair_pqq`), with the plus and
+delta parts dropped because the sampler never reaches `z = 1`.
 
 The colour factors are not new, though, and are not guessed:
 
