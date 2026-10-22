@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Physlib.Relativity.Tensors.RealTensor.Vector.Causality.Basic
+public import Physlib.Relativity.Causality.Basic
 /-!
 
 # The Euclidean continuation of separations and the null-separation obstruction

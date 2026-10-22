@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Analytic.IsolatedZeros
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Module.Completion

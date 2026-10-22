@@ -39,6 +39,8 @@ structure functions from measured cross sections rests.
 * `Yminus_le_Yplus`, `one_le_Yplus`, `Yminus_le_two_mul`: the inelasticity inequalities. They
   are sharp: `Y₊ - Y₋ = 2 (1 - y)²` (`Yplus_sub_Yminus`), so the parity-odd coefficient reaches
   the parity-even one at `y = 1`.
+* `abs_mul_Yminus_mul_sqrt_le`: the finite-target-mass form `|s Y₋ √(1 + G)| ≤ Y₊ + G y² / 2`,
+  sharp on the kinematic boundary (`sq_Yplus_add_sub_mul_sq_Yminus`).
 * `reducedCrossSection_eq_FL`: `σ_r` in terms of `F_L`, exactly in the target mass; at `M = 0`
   the target-mass term vanishes and it is `F₂ ∓ (Y₋ / Y₊) x F₃ - (y² / Y₊) F_L`.
 * `reducedCrossSection_eq_F2_iff`: `σ_r = F₂` exactly when the parity-odd, longitudinal and
@@ -58,9 +60,10 @@ structure functions from measured cross sections rests.
 `x`, `y`, `Q²` are the invariants of `Kinematics.DisKinematics` and the structure functions are
 the dimensionless ones, with `F₂` in the physical normalisation of `Tensors.Longitudinal`. The
 real parameter `s` is the sign of the parity-odd term: `s = 1` for a positron or antineutrino
-beam and `s = -1` for an electron or neutrino beam. Nothing here constrains `s` to `±1`; only
-`s ≠ 0` is ever needed. The flux factor `K` is an argument, since its propagator content
-depends on the exchanged boson.
+beam and `s = -1` for an electron or neutrino beam. Nothing here constrains `s` to `±1`; most
+results need only `s ≠ 0`, and the domination bound `abs_mul_Yminus_mul_sqrt_le` needs
+`|s| ≤ 1`. The flux factor `K` is an argument, since its propagator content depends on the
+exchanged boson.
 
 ## References
 
@@ -162,6 +165,30 @@ lemma Yminus_le_two_mul (y : ℝ) : Yminus y ≤ 2 * y := by
 lemma Yminus_nonneg {y : ℝ} (h0 : 0 ≤ y) (h2 : y ≤ 2) : 0 ≤ Yminus y := by
   rw [Yminus_eq_mul]
   exact mul_nonneg h0 (by linarith)
+
+/-- The square of `Y₊ + G y² / 2` exceeds `(1 + G)` times the square of `Y₋` by the perfect
+square `4 (1 - y - G y² / 4)²`. With `G = 4 M² x² / Q²` the defect vanishes exactly on the
+kinematic boundary `1 - y - M² x² y² / Q² = 0`; at `G = 0` it is `Yplus_sub_Yminus` multiplied
+by `Y₊ + Y₋ = 2`. -/
+lemma sq_Yplus_add_sub_mul_sq_Yminus (y G : ℝ) :
+    (Yplus y + G * y ^ 2 / 2) ^ 2 - (1 + G) * Yminus y ^ 2
+      = (2 * (1 - y - G * y ^ 2 / 4)) ^ 2 := by
+  rw [Yplus_def, Yminus_def]
+  ring
+
+/-- **The parity-odd inelasticity coefficient is dominated at finite target mass.** For
+`G ≥ 0` (in the cross section `G = 4 M² x² / Q²`) and a parity-odd sign `|s| ≤ 1`,
+`|s Y₋ √(1 + G)| ≤ Y₊ + G y² / 2` for every real `y`, with equality for `|s| = 1` on the
+kinematic boundary (`sq_Yplus_add_sub_mul_sq_Yminus`). -/
+lemma abs_mul_Yminus_mul_sqrt_le {s : ℝ} (hs : |s| ≤ 1) (y : ℝ) {G : ℝ} (hG : 0 ≤ G) :
+    |s * Yminus y * Real.sqrt (1 + G)| ≤ Yplus y + G * y ^ 2 / 2 := by
+  have hA : 0 ≤ Yplus y + G * y ^ 2 / 2 := add_nonneg (Yplus_pos y).le (by positivity)
+  have hYr : |Yminus y * Real.sqrt (1 + G)| ≤ Yplus y + G * y ^ 2 / 2 := by
+    refine abs_le_of_sq_le_sq ?_ hA
+    rw [mul_pow, Real.sq_sqrt (by linarith)]
+    nlinarith [sq_Yplus_add_sub_mul_sq_Yminus y G, sq_nonneg (2 * (1 - y - G * y ^ 2 / 4))]
+  rw [mul_assoc, abs_mul]
+  exact (mul_le_of_le_one_left (abs_nonneg _) hs).trans hYr
 
 /-!
 ## The cross-section bracket and the cross section

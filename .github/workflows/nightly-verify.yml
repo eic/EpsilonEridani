@@ -588,8 +588,8 @@ jobs:
                    if sha else "an unresolved commit")
           lines = [f"**Nightly verification did not come back clean** on {where}."]
 
-          # Deliberately does not claim the cached per-push CI passed for this SHA: main's CI
-          # coalesces intermediate commits, so this workflow's commit may never have had its own run.
+          # Deliberately does not claim the cached per-push CI passed for this SHA: that run may
+          # still be in progress, or may have failed, when this one reports.
           if os.environ.get("RESULT") != "success":
               if os.environ.get("BUILD") not in ("success", "", None):
                   lines.append("The from-source build FAILED with the artifact cache disabled. "
