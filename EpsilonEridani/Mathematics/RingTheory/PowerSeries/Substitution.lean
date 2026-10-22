@@ -33,6 +33,8 @@ as a `finsum` over all powers of `b`; when `b` has no constant term only the pow
 
 * `PowerSeries.coeff_subst_eq_sum_range`: `[Xⁿ] f(b) = ∑_{d ≤ n} [X^d] f • [Xⁿ] b ^ d`.
 * `PowerSeries.coeff_one_subst`: the chain rule `[X] f(b) = [X] f • [X] b`.
+* `PowerSeries.coeff_two_subst`, `PowerSeries.coeff_three_subst`, `PowerSeries.coeff_four_subst`:
+  the coefficients of `X²`, `X³`, `X⁴` in `f(b)` in terms of those of `f` and `b`.
 
 ## References
 
@@ -66,6 +68,33 @@ coefficients: `[X] f(b) = [X] f • [X] b`. -/
 theorem coeff_one_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧) :
     coeff 1 (f.subst b) = coeff 1 f • coeff 1 b := by
   simp [coeff_subst_eq_sum_range hb, Finset.sum_range_succ, coeff_one]
+
+/-- The quadratic coefficient of a substitution without constant term:
+`[X²] f(b) = [X] f • [X²] b + [X²] f • ([X] b)²`. -/
+theorem coeff_two_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧) :
+    coeff 2 (f.subst b) = coeff 1 f • coeff 2 b + coeff 2 f • coeff 1 b ^ 2 := by
+  simp [coeff_subst_eq_sum_range hb, Finset.sum_range_succ, pow_succ, coeff_mul,
+    Finset.Nat.sum_antidiagonal_succ, hb, coeff_one]
+
+/-- The cubic coefficient of a substitution without constant term:
+`[X³] f(b) = [X] f • [X³] b + [X²] f • 2 [X] b [X²] b + [X³] f • ([X] b)³`. -/
+theorem coeff_three_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧) :
+    coeff 3 (f.subst b) = coeff 1 f • coeff 3 b + coeff 2 f • (2 * coeff 1 b * coeff 2 b) +
+      coeff 3 f • coeff 1 b ^ 3 := by
+  simp [coeff_subst_eq_sum_range hb, Finset.sum_range_succ, pow_succ, coeff_mul,
+    Finset.Nat.sum_antidiagonal_succ, hb, coeff_one, Algebra.smul_def]
+  ring
+
+/-- The quartic coefficient of a substitution without constant term:
+`[X⁴] f(b) = [X] f • [X⁴] b + [X²] f • (2 [X] b [X³] b + ([X²] b)²) + [X³] f • 3 ([X] b)² [X²] b
++ [X⁴] f • ([X] b)⁴`. -/
+theorem coeff_four_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧) :
+    coeff 4 (f.subst b) = coeff 1 f • coeff 4 b +
+      coeff 2 f • (2 * coeff 1 b * coeff 3 b + coeff 2 b ^ 2) +
+      coeff 3 f • (3 * coeff 1 b ^ 2 * coeff 2 b) + coeff 4 f • coeff 1 b ^ 4 := by
+  simp [coeff_subst_eq_sum_range hb, Finset.sum_range_succ, pow_succ, coeff_mul,
+    Finset.Nat.sum_antidiagonal_succ, hb, coeff_one, Algebra.smul_def]
+  ring
 
 end PowerSeries
 
@@ -163,7 +192,7 @@ def linearCoeff : SubstGroup R →* Rˣ where
 @[simp]
 lemma coe_linearCoeff (F : SubstGroup R) :
     (linearCoeff F : R) = coeff 1 F.toPowerSeries := by
-  rw [linearCoeff, MonoidHom.coe_mk, OneHom.coe_mk, IsUnit.unit_spec]
+  simp [linearCoeff]
 
 /-- The linear coefficient of the inverse substitution is the inverse of the linear
 coefficient. -/
@@ -188,12 +217,17 @@ def rescale : Rˣ →* SubstGroup R where
   map_mul' u v := by
     ext1
     simp only [toPowerSeries_mul]
-    rw [← smul_eq_C_mul X (v : R), ← PowerSeries.rescale_eq_subst, ← rescale_X, ← rescale_X,
-      rescale_rescale, Units.val_mul]
+    rw [← smul_eq_C_mul X (v : R), ← PowerSeries.rescale_eq_subst, ← rescale_X ((u * v : Rˣ) : R),
+      ← rescale_X (u : R), rescale_rescale, Units.val_mul]
 
 @[simp]
 lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = C (u : R) * X := by
-  rw [rescale, MonoidHom.coe_mk, OneHom.coe_mk]
+  simp [rescale]
+
+/-- Substituting `X ↦ u X` is `PowerSeries.rescale u`. -/
+lemma subst_toPowerSeries_rescale (u : Rˣ) (f : R⟦X⟧) :
+    f.subst (rescale u).toPowerSeries = PowerSeries.rescale (u : R) f := by
+  rw [toPowerSeries_rescale, ← smul_eq_C_mul, ← rescale_eq_subst]
 
 @[simp]
 lemma linearCoeff_rescale (u : Rˣ) : linearCoeff (rescale u) = u := by
