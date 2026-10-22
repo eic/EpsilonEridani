@@ -97,8 +97,9 @@ lemma real_exp_eq_tsum (x : ℝ) : Real.exp x = ∑' n : ℕ, x ^ n / n ! := by
 /-- The weight of the veto chain that rejects exactly `n` proposals, as a function of the
 integrated overestimate `b` and the integrated excess `d`.
 
-The `n!` is the symmetry factor of the ordered rejection scales; see the module docstring
-for the integral identity it comes from, which is the step not proved here. -/
+The `n!` is the symmetry factor of the ordered rejection scales; `vetoWeight_eq_ordered` below
+derives this weight from `EpsilonEridani.OrderedSimplex.orderedProdIntegral_eq`, the ordered
+integral identity stated in the module docstring. -/
 noncomputable def vetoWeight (b d : ℝ) (n : ℕ) : ℝ := d ^ n / n ! * Real.exp (-b)
 
 /-- **The veto identity.** Summing the veto chain over every number of rejections gives
