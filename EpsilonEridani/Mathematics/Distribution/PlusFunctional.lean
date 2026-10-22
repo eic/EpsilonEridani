@@ -45,6 +45,8 @@ object.
   `⟨[K]₊, g φ⟩ = g 1 ⟨[K]₊, φ⟩ + ∫₀¹ K z (g z - g 1) φ z dz`, which for `K z = 1 / (1 - z)`
   (`EpsilonEridani.plusOneMinus_mul`) is the distributional identity
   `g z [1 / (1 - z)]₊ = g 1 [1 / (1 - z)]₊ + (g z - g 1) / (1 - z)`.
+* `EpsilonEridani.plusOneMinus_id_mul`: its case `g z = z`,
+  `z [1 / (1 - z)]₊ = [1 / (1 - z)]₊ - 1`.
 * `EpsilonEridani.plusOneMinus_pow`: the moments of the plus distribution are harmonic numbers,
   `⟨[1 / (1 - z)]₊, z ^ n⟩ = -H_n`.
 
@@ -248,6 +250,22 @@ theorem plusOneMinus_mul {g φ : ℝ → ℝ}
     plusOneMinus (fun z => g z * φ z) =
       g 1 * plusOneMinus φ + ∫ z in (0 : ℝ)..1, (1 - z)⁻¹ * (g z - g 1) * φ z :=
   plusFunctional_mul_right hφ hg
+
+/-- The multiplication identity at `g z = z`: `z [1 / (1 - z)]₊ = [1 / (1 - z)]₊ - 1` as
+distributions, since `(z - 1) / (1 - z) = -1`. Paired with `φ`,
+`⟨[1 / (1 - z)]₊, z φ⟩ = ⟨[1 / (1 - z)]₊, φ⟩ - ∫₀¹ φ z dz`. -/
+theorem plusOneMinus_id_mul {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1)
+    (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1) :
+    plusOneMinus (fun z => z * φ z) = plusOneMinus φ - ∫ z in (0 : ℝ)..1, φ z := by
+  have hneg : (fun z => (1 - z)⁻¹ * (z - 1) * φ z) =ᵐ[volume] fun z => -φ z := by
+    filter_upwards [Measure.ae_ne volume (1 : ℝ)] with z hz
+    have h1z : (1 : ℝ) - z ≠ 0 := sub_ne_zero.2 (Ne.symm hz)
+    field_simp
+    ring
+  rw [plusOneMinus_mul (g := fun z => z) hφ₁ (hφ.neg.congr_ae (ae_restrict_of_ae hneg.symm)),
+    intervalIntegral.integral_congr_ae (hneg.mono fun z hz _ => hz),
+    intervalIntegral.integral_neg]
+  ring
 
 /-- **The moments of `[1 / (1 - z)]₊` are harmonic numbers**:
 `⟨[1 / (1 - z)]₊, z ^ n⟩ = ∫₀¹ (z ^ n - 1) / (1 - z) dz = -H_n`. In the Mellin indexing

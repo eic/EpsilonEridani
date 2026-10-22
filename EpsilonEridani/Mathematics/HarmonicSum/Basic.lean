@@ -182,6 +182,16 @@ theorem harmonicSum_pos {m : List ℤ} (hm : ∀ a ∈ m, 0 < a) {n : ℕ} (hn :
 
 /-! ### Small values -/
 
+/-- The first harmonic number: `harmonic 1 = 1`. -/
+theorem harmonic_one : harmonic 1 = 1 := by
+  rw [show (1 : ℕ) = 0 + 1 from rfl, harmonic_succ, harmonic_zero]
+  norm_num
+
+/-- The second harmonic number: `harmonic 2 = 3 / 2`. -/
+theorem harmonic_two : harmonic 2 = 3 / 2 := by
+  rw [show (2 : ℕ) = 1 + 1 from rfl, harmonic_succ, harmonic_one]
+  norm_num
+
 /-- `S₁(1) = 1`. -/
 theorem harmonicSum_singleton_one_one : harmonicSum [1] 1 = 1 := by
   norm_num [harmonicSum_cons]
