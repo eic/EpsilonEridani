@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Analytic.IsolatedZeros
 public import Mathlib.Analysis.Calculus.DSlope
 
@@ -45,7 +46,7 @@ theorem analyticAt_dslope : AnalyticAt 𝕜 (dslope f a) b ↔ AnalyticAt 𝕜 f
     exact analyticAt_const.add ((analyticAt_id.sub analyticAt_const).smul h)
   rcases eq_or_ne b a with rfl | h
   · obtain ⟨p, hp⟩ := hf
-    exact ⟨_, hp.has_fpower_series_dslope_fslope⟩
+    exact ⟨_, hp.dslope_fslope⟩
   · -- away from `a`, `dslope f a` agrees near `b` with the difference quotient
     refine AnalyticAt.congr ?_ (dslope_eventuallyEq_slope_of_ne f h).symm
     have hslope : slope f a = fun x => (x - a)⁻¹ • (f x - f a) := by
