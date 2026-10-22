@@ -6,17 +6,19 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
+public import Physlib.Relativity.Tensors.RealTensor.Vector.Causality.Basic
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 
 /-!
 # Extensions of the Minkowski product on Lorentz vectors
 
-Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
+Facts about `Physlib`'s Minkowski product that go beyond `Physlib`'s own API: the
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
 companion to `Lorentz.Vector.minkowskiProduct_add_self`; the length of the spatial part of a
-vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
-in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
-energies above the mass and a prescribed angle between their spatial parts.
+vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; the
+nonvanishing of the spatial part of a spacelike vector (`spatialPart_ne_zero_of_spaceLike`);
+and, in at least two spatial dimensions, the existence of two vectors on the mass shell with
+prescribed energies above the mass and a prescribed angle between their spatial parts.
 -/
 
 public section
@@ -39,6 +41,16 @@ this is `√((p⁰)² - m²)`. -/
 lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vector d) :
     ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - ⟪p, p⟫ₘ) := by
   rw [minkowskiProduct_self_eq_sq_sub, sub_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
+
+/-- The spatial part of a spacelike vector does not vanish: a Minkowski vector whose spatial
+components all vanish has Minkowski square equal to the square of its time component, which is
+nonnegative. -/
+lemma spatialPart_ne_zero_of_spaceLike {d : ℕ} (v : Vector d)
+    (hv : causalCharacter v = CausalCharacter.spaceLike) : spatialPart v ≠ 0 := by
+  intro h
+  have h' : ⟪v, v⟫ₘ < 0 := (spaceLike_iff_norm_sq_neg v).mp hv
+  rw [minkowskiProduct_self_eq_sq_sub, h, norm_zero] at h'
+  nlinarith [sq_nonneg v.timeComponent]
 
 end Vector
 end Lorentz

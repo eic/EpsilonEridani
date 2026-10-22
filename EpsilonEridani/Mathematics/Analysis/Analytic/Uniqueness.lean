@@ -47,11 +47,6 @@ open Complex Filter Metric Set Topology
 
 variable {ι F : Type*} [Fintype ι] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- The inclusion `ℝ → ℂ` maps punctured neighbourhoods to punctured neighbourhoods. -/
-theorem Complex.tendsto_ofReal_nhdsNE (x : ℝ) :
-    Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
-  continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ hs => ofReal_injective.ne hs
-
 /-- The vanishing statement of `AnalyticAt.eventuallyEq_zero_of_eventuallyEq_zero_ofReal` for a
 complete target. Completeness is what Mathlib's `AnalyticAt.exists_ball_analyticOnNhd` asks for to
 make the function analytic on a whole ball around the point. -/
@@ -94,7 +89,10 @@ private theorem eventuallyEq_zero_of_eventuallyEq_zero_ofReal_aux [CompleteSpace
         (isOpen_ball.mem_nhds (by simpa using hu.trans_le (min_le_right r ρ)))
     have hpreal : ∀ s : ℝ, p s = fun i => ((u + s • v) i : ℂ) := fun s => funext fun i => by
       simp [p]
-    refine (ofReal_zero ▸ tendsto_ofReal_nhdsNE 0).frequently ?_
+    -- The inclusion `ℝ → ℂ` maps punctured neighbourhoods to punctured neighbourhoods.
+    have htof : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] (0 : ℝ)) (𝓝[≠] ((0 : ℝ) : ℂ)) :=
+      continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ hs => ofReal_injective.ne hs
+    refine (ofReal_zero ▸ htof).frequently ?_
     refine (eventually_nhdsWithin_of_eventually_nhds (hreal.mono fun s hs => ?_)).frequently
     simpa [hpreal s] using hρ₀ (mem_ball.1 hs)
   have hS' : AnalyticOnNhd ℂ (f ∘ p) S :=

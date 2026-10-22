@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Mathematics.Analysis.Analytic.Uniqueness
 public import EpsilonEridani.QFT.Lattice.Continuation.Basic
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 
 /-!
 # Uniqueness of the continuation from the Euclidean section
@@ -50,7 +51,7 @@ the Euclidean section in `U`.
 
 The Euclidean section is not an open subset of `ComplexSeparation d`, so Mathlib's identity
 theorem does not apply to it directly. It is, however, the image of the real slice `ℝ^{1+d}` under
-the time rotation `timeRotation` (`timeRotation_ofReal`), which makes it a maximal totally real
+the Wick rotation `wickRotation` (`wickRotation_ofReal`), which makes it a maximal totally real
 subspace. The uniqueness therefore reduces to
 `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq_ofReal`, whose hypothesis is agreement at the
 real points near one real point.
@@ -75,9 +76,9 @@ theorem eqOn_of_eventuallyEq_continuation {f g : ComplexSeparation d → F}
     (hU : IsPreconnected U) {x₀ : EuclideanSeparation d} (h₀ : continuation x₀ ∈ U)
     (hfg : (fun x => f (continuation x)) =ᶠ[𝓝 x₀] fun x => g (continuation x)) :
     EqOn f g U := by
-  -- Pull everything back along the time rotation, which turns the Euclidean section into the
+  -- Pull everything back along the Wick rotation, which turns the Euclidean section into the
   -- real slice.
-  set e : ComplexSeparation d ≃L[ℂ] ComplexSeparation d := timeRotation
+  set e : ComplexSeparation d ≃L[ℂ] ComplexSeparation d := wickRotation
   have he : AnalyticOnNhd ℂ e (e ⁻¹' U) := e.toContinuousLinearMap.analyticOnNhd _
   have hU' : IsPreconnected (e ⁻¹' U) := e.toHomeomorph.isPreconnected_preimage.2 hU
   have hT : Tendsto (WithLp.toLp 2) (𝓝 (WithLp.ofLp x₀)) (𝓝 x₀) := by
@@ -85,8 +86,8 @@ theorem eqOn_of_eventuallyEq_continuation {f g : ComplexSeparation d → F}
   have key : EqOn (f ∘ e) (g ∘ e) (e ⁻¹' U) :=
     (hf.comp he fun _ hz => hz).eqOn_of_preconnected_of_eventuallyEq_ofReal
       (hg.comp he fun _ hz => hz) hU' (x₀ := WithLp.ofLp x₀)
-      (by simpa [e, timeRotation_ofReal] using h₀)
-      ((hT.eventually hfg).mono fun y hy => by simpa [e, timeRotation_ofReal] using hy)
+      (by simpa [e, wickRotation_ofReal] using h₀)
+      ((hT.eventually hfg).mono fun y hy => by simpa [e, wickRotation_ofReal] using hy)
   intro z hz
   simpa using key (x := e.symm z) (by simpa using hz)
 
@@ -107,17 +108,6 @@ theorem eqOn_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
   filter_upwards [hc.continuousAt.preimage_mem_nhds (hUo.mem_nhds hzU)] with x hx
   exact hfg ⟨hx, by rw [SetLike.mem_coe, euclideanSection_def]; exact LinearMap.mem_range_self _ x⟩
 
-/-- The spatial part of a spacelike vector does not vanish: a Minkowski vector whose spatial
-components all vanish has Minkowski square equal to the square of its time component, which is
-nonnegative. -/
-theorem spatialPart_ne_zero_of_spaceLike {v : Vector d}
-    (hv : causalCharacter v = .spaceLike) : spatialPart v ≠ 0 := by
-  rw [spaceLike_iff_norm_sq_neg, minkowskiProduct_toCoord] at hv
-  intro h
-  have h0 : ∀ i, v (Sum.inr i) = 0 := fun i => congrFun ((WithLp.toLp_eq_zero (p := 2)).mp h) i
-  simp only [h0, mul_zero, Finset.sum_const_zero, sub_zero] at hv
-  exact absurd hv (not_lt.2 (mul_self_nonneg _))
-
 /-- **The Euclidean values determine the spacelike values.** Two functions holomorphic on an
 open preconnected set `U` that contains every spacelike Minkowski separation, and that agree at
 every point of `U` on the Euclidean section, agree at every spacelike Minkowski separation. -/
@@ -135,8 +125,12 @@ theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → 
     ofMinkowski_mem_euclideanSection_iff.2 rfl
   have hw0 : w ≠ 0 := by
     intro h
-    refine spatialPart_ne_zero_of_spaceLike hv ((WithLp.toLp_eq_zero (p := 2)).mpr ?_)
-    exact funext fun i => congrFun h (Sum.inr i)
+    refine spatialPart_ne_zero_of_spaceLike v hv ?_
+    -- Componentwise: `spatialPart v i = v (Sum.inr i)` by `spatialPart_apply_eq_toCoord`, and
+    -- `w = 0` says `w (Sum.inr i) = v (Sum.inr i) = 0` componentwise, as `Vector d` is a pi type.
+    ext i
+    rw [spatialPart_apply_eq_toCoord]
+    exact congrFun h (Sum.inr i)
   have hw : causalCharacter w = .spaceLike :=
     causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection hwE hw0
   exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg (hspace v hv)
