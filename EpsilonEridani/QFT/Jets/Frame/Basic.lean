@@ -39,17 +39,17 @@ without that hypothesis `spatialNorm` and `cosAngle` are just the stated formula
 
 * `EpsilonEridani.QFT.Jets.Frame g`: a reference vector `n` with `0 < g n n` (timelike in the
   signature `(+,-,-,-)`) for the bilinear form `g`.
-* `Frame.energy`, `Frame.spatial`: the energy functional and the spatial projection of a frame.
+* `Frame.energy`, `Frame.spatialPart`: the energy functional and the spatial projection of a frame.
 * `Frame.spatialNorm`, `Frame.cosAngle`: the magnitude of the spatial part and the cosine of the
   opening angle between two momenta.
 
 ## Main statements
 
-* `Frame.spatial_orthogonal_n`, `Frame.energy_spatial`: the spatial part is orthogonal to the frame
-  vector and carries no energy.
-* `Frame.ker_spatial`, `Frame.range_spatial`: the spatial projection has kernel `ℝ ∙ n` and range
-  the momenta `p` with `g p n = 0`.
-* `Frame.spatial_pairing_spatial`: `g a_s b_s = g a b - E(a) E(b)`.
+* `Frame.spatialPart_orthogonal_n`, `Frame.energy_spatialPart`: the spatial part is orthogonal to
+  the frame vector and carries no energy.
+* `Frame.ker_spatialPart`, `Frame.range_spatialPart`: the spatial projection has kernel `ℝ ∙ n`
+  and range the momenta `p` with `g p n = 0`.
+* `Frame.spatialPart_pairing_spatialPart`: `g a_s b_s = g a b - E(a) E(b)`.
 * `Frame.spatialNorm_eq_sqrt_energy_sq_sub`: `|p_s| = √(E(p)² - g p p)`, and
   `Frame.spatialNorm_eq_abs_energy_of_massless`: a massless momentum has `|p_s| = |E(p)|`.
 * `Frame.one_sub_cosAngle_of_massless`: `1 - cos θ_ab = g a b / (E(a) E(b))` for massless `a`, `b`
@@ -116,66 +116,67 @@ theorem n_ne_zero : F.n ≠ 0 :=
 
 /-- The spatial part of a momentum relative to the frame, `p - (g p n / g n n) • n`: the projection
 `Bilin.projOrthogonal g n` along `ℝ ∙ n` onto the `g`-orthogonal complement of `n`. -/
-def spatial : V →ₗ[ℝ] V :=
+def spatialPart : V →ₗ[ℝ] V :=
   g.projOrthogonal F.n
 
-theorem spatial_def : F.spatial = g.projOrthogonal F.n :=
+theorem spatialPart_def : F.spatialPart = g.projOrthogonal F.n :=
   (rfl)
 
-theorem spatial_apply (p : V) : F.spatial p = p - (g p F.n / g F.n F.n) • F.n :=
+theorem spatialPart_apply (p : V) : F.spatialPart p = p - (g p F.n / g F.n F.n) • F.n :=
   g.projOrthogonal_apply F.n p
 
 /-- A momentum is the sum of its time part, along the frame vector, and its spatial part. -/
-theorem energy_div_smul_add_spatial (p : V) :
-    (F.energy p / Real.sqrt (g F.n F.n)) • F.n + F.spatial p = p := by
-  simp [energy_apply, spatial_apply, div_div, Real.mul_self_sqrt F.timelike.le]
+theorem energy_div_smul_add_spatialPart (p : V) :
+    (F.energy p / Real.sqrt (g F.n F.n)) • F.n + F.spatialPart p = p := by
+  simp [energy_apply, spatialPart_apply, div_div, Real.mul_self_sqrt F.timelike.le]
 
 /-- The spatial part is `g`-orthogonal to the frame vector. -/
 @[simp]
-theorem spatial_orthogonal_n (p : V) : g (F.spatial p) F.n = 0 :=
+theorem spatialPart_orthogonal_n (p : V) : g (F.spatialPart p) F.n = 0 :=
   g.projOrthogonal_orthogonal F.timelike.ne' p
 
 /-- The spatial part carries no energy. -/
 @[simp]
-theorem energy_spatial (p : V) : F.energy (F.spatial p) = 0 := by
-  rw [energy_apply, spatial_orthogonal_n, zero_div]
+theorem energy_spatialPart (p : V) : F.energy (F.spatialPart p) = 0 := by
+  rw [energy_apply, spatialPart_orthogonal_n, zero_div]
 
 @[simp]
-theorem spatial_n : F.spatial F.n = 0 :=
+theorem spatialPart_n : F.spatialPart F.n = 0 :=
   g.projOrthogonal_apply_self F.timelike.ne'
 
-theorem spatial_eq_self_iff {p : V} : F.spatial p = p ↔ g p F.n = 0 :=
+theorem spatialPart_eq_self_iff {p : V} : F.spatialPart p = p ↔ g p F.n = 0 :=
   g.projOrthogonal_eq_self_iff F.timelike.ne'
 
 /-- The spatial projection is idempotent. -/
 @[simp]
-theorem spatial_spatial (p : V) : F.spatial (F.spatial p) = F.spatial p :=
+theorem spatialPart_spatialPart (p : V) : F.spatialPart (F.spatialPart p) = F.spatialPart p :=
   g.projOrthogonal_projOrthogonal F.timelike.ne' p
 
 /-- The momenta with vanishing spatial part are the multiples of the frame vector. -/
-theorem ker_spatial : LinearMap.ker F.spatial = ℝ ∙ F.n :=
+theorem ker_spatialPart : LinearMap.ker F.spatialPart = ℝ ∙ F.n :=
   g.ker_projOrthogonal F.timelike.ne'
 
 /-- The spatial parts are exactly the momenta `p` with `g p n = 0`, that is, the orthogonal
 complement of `ℝ ∙ n` for `g.flip` in the sense of `LinearMap.BilinForm.orthogonal`. For a
 symmetric form this is `g.orthogonal (ℝ ∙ n)`. -/
-theorem range_spatial : LinearMap.range F.spatial = g.flip.orthogonal (ℝ ∙ F.n) :=
+theorem range_spatialPart : LinearMap.range F.spatialPart = g.flip.orthogonal (ℝ ∙ F.n) :=
   g.range_projOrthogonal F.timelike.ne'
 
 /-- The `g`-product of two spatial parts, `g a_s b_s = g a b - E(a) E(b)`. For `a = b` this is the
 mass-shell relation `g p_s p_s = m² - E(p)²`. -/
-theorem spatial_pairing_spatial (hg : g.IsSymm) (a b : V) :
-    g (F.spatial a) (F.spatial b) = g a b - F.energy a * F.energy b := by
-  rw [spatial_def, g.projOrthogonal_pairing F.timelike.ne' a b, energy_apply, energy_apply,
+theorem spatialPart_pairing_spatialPart (hg : g.IsSymm) (a b : V) :
+    g (F.spatialPart a) (F.spatialPart b) = g a b - F.energy a * F.energy b := by
+  rw [spatialPart_def, g.projOrthogonal_pairing F.timelike.ne' a b, energy_apply, energy_apply,
     hg.eq F.n b, div_mul_div_comm _ (Real.sqrt _), Real.mul_self_sqrt F.timelike.le]
 
 /-! ### The spatial norm and the opening angle -/
 
 /-- The magnitude `|p_s| = √(-g p_s p_s)` of the spatial part of a momentum. -/
 def spatialNorm (p : V) : ℝ :=
-  Real.sqrt (-g (F.spatial p) (F.spatial p))
+  Real.sqrt (-g (F.spatialPart p) (F.spatialPart p))
 
-theorem spatialNorm_def (p : V) : F.spatialNorm p = Real.sqrt (-g (F.spatial p) (F.spatial p)) :=
+theorem spatialNorm_def (p : V) :
+    F.spatialNorm p = Real.sqrt (-g (F.spatialPart p) (F.spatialPart p)) :=
   (rfl)
 
 theorem spatialNorm_nonneg (p : V) : 0 ≤ F.spatialNorm p := by
@@ -183,7 +184,7 @@ theorem spatialNorm_nonneg (p : V) : 0 ≤ F.spatialNorm p := by
   exact Real.sqrt_nonneg _
 
 theorem spatialNorm_pos_iff (p : V) :
-    0 < F.spatialNorm p ↔ 0 < -g (F.spatial p) (F.spatial p) := by
+    0 < F.spatialNorm p ↔ 0 < -g (F.spatialPart p) (F.spatialPart p) := by
   rw [spatialNorm_def, Real.sqrt_pos]
 
 @[simp]
@@ -194,7 +195,7 @@ theorem spatialNorm_smul (c : ℝ) (p : V) : F.spatialNorm (c • p) = |c| * F.s
 /-- The spatial norm in terms of the energy and the invariant mass, `|p_s| = √(E(p)² - g p p)`. -/
 theorem spatialNorm_eq_sqrt_energy_sq_sub (hg : g.IsSymm) (p : V) :
     F.spatialNorm p = Real.sqrt (F.energy p ^ 2 - g p p) := by
-  rw [spatialNorm_def, F.spatial_pairing_spatial hg]
+  rw [spatialNorm_def, F.spatialPart_pairing_spatialPart hg]
   congr 1
   ring
 
@@ -206,10 +207,10 @@ theorem spatialNorm_eq_abs_energy_of_massless (hg : g.IsSymm) {p : V} (hp : g p 
 /-- The cosine of the opening angle between two momenta in the frame,
 `cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`. -/
 def cosAngle (a b : V) : ℝ :=
-  -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b)
+  -g (F.spatialPart a) (F.spatialPart b) / (F.spatialNorm a * F.spatialNorm b)
 
 theorem cosAngle_def (a b : V) :
-    F.cosAngle a b = -g (F.spatial a) (F.spatial b) / (F.spatialNorm a * F.spatialNorm b) :=
+    F.cosAngle a b = -g (F.spatialPart a) (F.spatialPart b) / (F.spatialNorm a * F.spatialNorm b) :=
   (rfl)
 
 theorem cosAngle_comm (hg : g.IsSymm) (a b : V) : F.cosAngle a b = F.cosAngle b a := by
@@ -217,7 +218,7 @@ theorem cosAngle_comm (hg : g.IsSymm) (a b : V) : F.cosAngle a b = F.cosAngle b 
 
 /-- A momentum of nonzero spatial norm makes angle zero with itself. -/
 theorem cosAngle_self {p : V} (hp : F.spatialNorm p ≠ 0) : F.cosAngle p p = 1 := by
-  have hpos : 0 < -g (F.spatial p) (F.spatial p) :=
+  have hpos : 0 < -g (F.spatialPart p) (F.spatialPart p) :=
     (F.spatialNorm_pos_iff p).mp ((F.spatialNorm_nonneg p).lt_of_ne' hp)
   rw [cosAngle_def, spatialNorm_def, Real.mul_self_sqrt hpos.le, div_self hpos.ne']
 
@@ -240,7 +241,7 @@ theorem one_sub_cosAngle_of_massless (hg : g.IsSymm) {a b : V} (ha : g a a = 0)
     1 - F.cosAngle a b = g a b / (F.energy a * F.energy b) := by
   simp only [cosAngle_def, F.spatialNorm_eq_abs_energy_of_massless hg ha,
     F.spatialNorm_eq_abs_energy_of_massless hg hb, abs_of_pos hEa, abs_of_pos hEb,
-    F.spatial_pairing_spatial hg]
+    F.spatialPart_pairing_spatialPart hg]
   field_simp
   ring
 
