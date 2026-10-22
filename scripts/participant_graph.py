@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a compact SVG snapshot of human participation across Tau Ceti.
+"""Generate a compact SVG snapshot of human participation across Epsilon Eridani.
 
 A participant is a human GitHub account that has opened a pull request or issue,
 participated in one of those conversations (including reviews), or authored a
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", help="offline JSON snapshot; otherwise query GitHub with gh")
     ap.add_argument("--dump-data", help="write the fetched, filtered actor snapshot as JSON")
-    ap.add_argument("--title", default="Tau Ceti — human participation")
+    ap.add_argument("--title", default="Epsilon Eridani — human participation")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 

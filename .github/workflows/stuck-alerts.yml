@@ -42,7 +42,7 @@ concurrency:
 jobs:
   stuck-alerts:
     if: github.repository == 'eic/EpsilonEridani'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7

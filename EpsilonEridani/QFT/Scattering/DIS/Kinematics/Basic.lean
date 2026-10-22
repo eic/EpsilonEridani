@@ -101,6 +101,20 @@ lemma W2_eq_with_Q2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
   unfold Q2
   ring
 
+/-- A non-zero Bjorken variable forces `p·q ≠ 0`, since `x = Q² / (2 p·q)`. -/
+lemma pq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj g ≠ 0) :
+    g K.p K.q ≠ 0 := by
+  intro h
+  apply hx
+  simp [xBj, h]
+
+/-- A non-zero Bjorken variable forces `q² ≠ 0`, since `x = Q² / (2 p·q)` and `Q² = -q²`. -/
+lemma q_sq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj g ≠ 0) :
+    g K.q K.q ≠ 0 := by
+  intro h
+  apply hx
+  simp [xBj, Q2, h]
+
 end DisKinematics
 
 end Kinematics

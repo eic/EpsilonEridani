@@ -1,7 +1,7 @@
 # Pull-request statistics graphs
 
 `pr_stats_graphs.py` regenerates the seven pull-request statistics assets intended for
-the Tau Ceti Statistics page:
+the Epsilon Eridani Statistics page:
 
 ```sh
 python3 scripts/pr_stats_graphs.py \

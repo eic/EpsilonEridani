@@ -292,35 +292,41 @@ def fermionSelfEnergyIntegrand : OneLoopScalarIntegrand where
     fermionSelfEnergyIntegrand.totalDenominatorPower = 2 :=
   rfl
 
-/-- The gauge-boson self-energy integrand reduces to the canonical scalar master. -/
-@[simp] lemma evaluate_gaugeBosonSelfEnergyIntegrand :
-    gaugeBosonSelfEnergyIntegrand.evaluate = gaugeBosonSelfEnergyMaster :=
+/-- The gauge-boson self-energy integrand records the canonical scalar master. -/
+@[simp] lemma gaugeBosonSelfEnergyIntegrand_reducedMaster :
+    gaugeBosonSelfEnergyIntegrand.reducedMaster = gaugeBosonSelfEnergyMaster :=
   rfl
 
-/-- The ghost self-energy integrand reduces to the canonical scalar master. -/
-@[simp] lemma evaluate_ghostSelfEnergyIntegrand :
-    ghostSelfEnergyIntegrand.evaluate = ghostSelfEnergyMaster :=
+/-- The ghost self-energy integrand records the canonical scalar master. -/
+@[simp] lemma ghostSelfEnergyIntegrand_reducedMaster :
+    ghostSelfEnergyIntegrand.reducedMaster = ghostSelfEnergyMaster :=
   rfl
 
-/-- The fermion self-energy integrand reduces to the canonical scalar master. -/
-@[simp] lemma evaluate_fermionSelfEnergyIntegrand :
-    fermionSelfEnergyIntegrand.evaluate = fermionSelfEnergyMaster :=
+/-- The fermion self-energy integrand records the canonical scalar master. -/
+@[simp] lemma fermionSelfEnergyIntegrand_reducedMaster :
+    fermionSelfEnergyIntegrand.reducedMaster = fermionSelfEnergyMaster :=
   rfl
 
 /-- Canonical reduction witness for the gauge-boson self-energy scalar integrand. -/
 lemma reduction_gaugeBosonSelfEnergyIntegrand :
     ScalarIntegrandReduction gaugeBosonSelfEnergyIntegrand gaugeBosonSelfEnergyMaster where
-  hEvaluate := evaluate_gaugeBosonSelfEnergyIntegrand
+  hEvaluate :=
+    (OneLoopScalarIntegrand.evaluate_eq_reducedMaster _).trans
+      gaugeBosonSelfEnergyIntegrand_reducedMaster
 
 /-- Canonical reduction witness for the ghost self-energy scalar integrand. -/
 lemma reduction_ghostSelfEnergyIntegrand :
     ScalarIntegrandReduction ghostSelfEnergyIntegrand ghostSelfEnergyMaster where
-  hEvaluate := evaluate_ghostSelfEnergyIntegrand
+  hEvaluate :=
+    (OneLoopScalarIntegrand.evaluate_eq_reducedMaster _).trans
+      ghostSelfEnergyIntegrand_reducedMaster
 
 /-- Canonical reduction witness for the fermion self-energy scalar integrand. -/
 lemma reduction_fermionSelfEnergyIntegrand :
     ScalarIntegrandReduction fermionSelfEnergyIntegrand fermionSelfEnergyMaster where
-  hEvaluate := evaluate_fermionSelfEnergyIntegrand
+  hEvaluate :=
+    (OneLoopScalarIntegrand.evaluate_eq_reducedMaster _).trans
+      fermionSelfEnergyIntegrand_reducedMaster
 
 end OneLoopScalars
 end DimensionalRegularization

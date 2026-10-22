@@ -1,80 +1,95 @@
 name: Update Dependencies
 
-# Keeps the mathlib pin moving using the leanprover-community/downstream-reports
-# composite actions (EpsilonEridani is registered as a downstream there). Daily behavior:
-#   - mathlib compatible: open/update a single "bump to last-known-good" PR.
-#   - mathlib incompatible: open a tracking issue naming the first-known-bad mathlib
-#     commit, plus a fix PR whose manifest is pinned at that commit (a ready-made branch to fix in
-#     place — not for merging as-is), and close the LKG bump PR until resolved.
-# PRs and pushes use the epsiloneridani-review-bot App token so pr-build/review trigger
-# normally. Both update paths preserve Mathlib's `master` nomination and change only the
-# manifest/toolchain pins, so bump-guard can validate and auto-merge them once green.
+# Keeps the direct dependencies (mathlib, Physlib, TauCeti) moving together (docs/dependency-bumps.md).
+# Daily:
+#   - `resolve` runs scripts/resolve_deps.py: the newest mutually compatible pin set and why each pin
+#     is held back, in the job summary. It needs only read access.
+#   - `bump` writes that set into lake-manifest.json and lean-toolchain (scripts/write_bump.py, which
+#     refuses anything the bump guard's manifest check would reject) and opens or refreshes ONE rolling
+#     PR from the bump-mathlib/resolved branch; when main is already on the newest set it closes that
+#     PR. The PR changes only the two pin files, so bump-guard validates it and the review pipeline
+#     can auto-merge it once its sandboxed build is green.
+# PRs and commits use the epsiloneridani-review-bot App token so pr-build/review trigger normally.
+# Not yet: a set whose build fails inside a dependency is not recorded for `resolve_deps.py --exclude`;
+# such a PR stays red until upstream moves or a human closes it.
 
 on:
   schedule:
   - cron: "0 17 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: update-dependencies
+  cancel-in-progress: false
+
 env:
-  LKG_BRANCH: hopscotch/lkg-bump
+  BUMP_BRANCH: bump-mathlib/resolved
 
 jobs:
-  bump:
+  resolve:
+    if: github.repository == 'eic/EpsilonEridani'
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # about 8 minutes of GitHub API calls
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+    outputs:
+      changed: ${{ steps.resolve.outputs.changed }}
     steps:
-      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        id: app-token
-        with:
-          client-id: ${{ secrets.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: eic
-          repositories: EpsilonEridani
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
+      - uses: actions/checkout@v7
 
+      - name: Resolve the newest compatible pins
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/resolve_deps.py --summary --out resolved.json | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "changed=$(jq -r .changed resolved.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: resolved
+          path: resolved.json
+          if-no-files-found: error
+          retention-days: 7
+
+  bump:
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
       - uses: actions/checkout@v7
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
 
-      # Suppress the LKG bump while a regression is active: the only open PR
-      # should be the fix one carrying the first-known-bad manifest pin.
-      - name: Check whether an incompatibility is reported
-        id: fkb
-        uses: leanprover-community/downstream-reports/.github/actions/query-latest@62750c6a09e73013f9c23c7ee007c612793fe9a2
+      - uses: actions/download-artifact@v8
         with:
-          query-type: first-known-bad
+          name: resolved
 
-      - name: Bump to latest mathlib
-        id: bump
-        if: steps.fkb.outputs.commit == ''
-        uses: leanprover-community/downstream-reports/.github/actions/bump-to-latest@62750c6a09e73013f9c23c7ee007c612793fe9a2
-        with:
-          preserve-lakefile: true
+      - name: Write the chosen pins
+        if: needs.resolve.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/write_bump.py --resolved resolved.json
+          # Title and body for the PR, from the same answer the summary showed.
+          python3 - <<'PY'
+          import json, sys
+          sys.path.insert(0, "scripts")
+          import resolve_deps as rd
+          result = json.load(open("resolved.json"))
+          moved = [f"{name} to {rd.short(p['rev'])}" for name, p in result["pins"].items()
+                   if p["rev"] != p["previous"]]
+          tc = result["toolchain"]
+          if tc["chosen"] != tc["previous"]:
+              moved.append(f"Lean to {rd.show_toolchain(tc['chosen'])}")
+          open("title.txt", "w").write("chore(deps): bump " + ", ".join(moved) + "\n")
+          open("summary.md", "w").write(rd.summary(result) + "\n")
+          PY
 
-      - name: Open or update PR
-        if: steps.fkb.outputs.commit == '' && steps.bump.outputs.updated == 'true'
-        uses: leanprover-community/downstream-reports/.github/actions/open-bump-pr@62750c6a09e73013f9c23c7ee007c612793fe9a2
-        with:
-          branch: ${{ env.LKG_BRANCH }}
-          title: "chore: ${{ steps.bump.outputs.pr-title }}"
-          message: ${{ steps.bump.outputs.bump-description }}
-          commit-message: ${{ steps.bump.outputs.commit-message }}
-          token: ${{ steps.app-token.outputs.token }}
-          git-user-name: epsiloneridani-review-bot[bot]
-          git-user-email: 290224625+epsiloneridani-review-bot[bot]@users.noreply.github.com
-
-  open-issue:
-    runs-on: ubuntu-latest
-    needs: bump
-    permissions:
-      issues: write
-      contents: write
-      pull-requests: write
-    steps:
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
@@ -83,31 +98,79 @@ jobs:
           owner: eic
           repositories: EpsilonEridani
           permission-contents: write
-          permission-issues: write
           permission-pull-requests: write
 
-      - uses: actions/checkout@v7
-
-      - name: Open or update incompatibility issue and fix PR
-        id: track
-        uses: leanprover-community/downstream-reports/.github/actions/track-incompatibility@62750c6a09e73013f9c23c7ee007c612793fe9a2
-        with:
-          open-pr: true
-          preserve-lakefile: true
-          token: ${{ steps.app-token.outputs.token }}
-          git-user-name: epsiloneridani-review-bot[bot]
-          git-user-email: 290224625+epsiloneridani-review-bot[bot]@users.noreply.github.com
-
-      - name: Close the LKG bump PR while a fix PR is open
-        if: steps.track.outputs.pr-action == 'created' || steps.track.outputs.pr-action == 'noop-existing'
+      - name: Open, refresh or close the bump PR
         env:
-          GH_TOKEN: ${{ github.token }}
-          FKB_PR: ${{ steps.track.outputs.pr-number }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          CHANGED: ${{ needs.resolve.outputs.changed }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          lkg_pr=$(gh pr list --state open --head "$LKG_BRANCH" --json number --jq '.[0].number // empty')
-          if [ -z "$lkg_pr" ]; then
-            echo "No open LKG bump PR; nothing to close."
+          branch=$BUMP_BRANCH
+          main_sha=$(git rev-parse HEAD)
+          # Only the bot's own PR from this repository counts: `gh pr list --head` would also match a
+          # fork's branch of the same name.
+          # shellcheck disable=SC2016 # the jq program is single-quoted on purpose
+          existing=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$branch" \
+            --jq '[.[] | select(.head.repo.full_name == $ENV.REPO
+              and .user.login == "epsiloneridani-review-bot[bot]")][0].number // empty')
+
+          if [ "$CHANGED" != true ]; then
+            if [ -n "$existing" ]; then
+              gh pr close "$existing" -R "$REPO" --delete-branch \
+                --comment "main is already on the newest compatible pin set ($RUN_URL)."
+            fi
             exit 0
           fi
-          gh pr close "$lkg_pr" --comment "Closing in favor of #${FKB_PR}: EpsilonEridani is currently incompatible with the latest mathlib, so attention should go to the PR whose manifest is pinned at the first-known-bad commit. A new last-known-good bump PR will be opened automatically once the incompatibility is resolved."
+
+          # A PR already carrying exactly these pins on top of current main is left alone, so a
+          # quiet day does not restart its build and review.
+          if [ -n "$existing" ]; then
+            head=$(gh api "repos/$REPO/git/ref/heads/$branch" --jq .object.sha)
+            parent=$(gh api "repos/$REPO/git/commits/$head" --jq '.parents[0].sha')
+            same=1
+            for f in lake-manifest.json lean-toolchain; do
+              gh api -H "Accept: application/vnd.github.raw" "repos/$REPO/contents/$f?ref=$head" > theirs
+              cmp -s theirs "$f" || same=0
+            done
+            if [ "$parent" = "$main_sha" ] && [ "$same" = 1 ]; then
+              echo "PR #$existing already carries this set on main $main_sha."
+              exit 0
+            fi
+          fi
+
+          # One commit on main changing only the two pin files, made through the API so it is the
+          # App's (and signed), then the branch is moved to it.
+          title=$(cat title.txt)
+          base_tree=$(gh api "repos/$REPO/git/commits/$main_sha" --jq .tree.sha)
+          jq -n --arg base "$base_tree" --rawfile manifest lake-manifest.json \
+            --rawfile toolchain lean-toolchain \
+            '{base_tree: $base, tree: [
+               {path: "lake-manifest.json", mode: "100644", type: "blob", content: $manifest},
+               {path: "lean-toolchain", mode: "100644", type: "blob", content: $toolchain}]}' > tree.json
+          tree=$(gh api "repos/$REPO/git/trees" --input tree.json --jq .sha)
+          jq -n --arg msg "$title" --arg tree "$tree" --arg parent "$main_sha" \
+            '{message: $msg, tree: $tree, parents: [$parent]}' > commit.json
+          commit=$(gh api "repos/$REPO/git/commits" --input commit.json --jq .sha)
+          if gh api "repos/$REPO/git/ref/heads/$branch" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/heads/$branch" -f sha="$commit" -F force=true > /dev/null
+          else
+            gh api "repos/$REPO/git/refs" -f ref="refs/heads/$branch" -f sha="$commit" > /dev/null
+          fi
+
+          {
+            echo "The newest mutually compatible pin set, from the daily resolver ($RUN_URL)."
+            echo "Only lake-manifest.json and lean-toolchain change, written by scripts/write_bump.py;"
+            echo "bump-guard validates the move and the sandboxed build decides whether the set builds."
+            echo
+            cat summary.md
+            echo
+            echo "Roadmap: none"
+          } > body.md
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" -R "$REPO" --title "$title" --body-file body.md
+          else
+            gh pr create -R "$REPO" --head "$branch" --base main --title "$title" --body-file body.md
+          fi
