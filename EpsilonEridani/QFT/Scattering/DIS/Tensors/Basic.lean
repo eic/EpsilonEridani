@@ -1042,14 +1042,14 @@ structure SpectatorPair (g : Bilin V) (K : DisKinematics V) : Type where
   e₁ : V
   /-- The second spectator direction. -/
   e₂ : V
-  /-- `e₁` is orthogonal to the momentum transfer. -/
-  e₁_orthogonal_q : g K.q e₁ = 0
-  /-- `e₂` is orthogonal to the momentum transfer. -/
-  e₂_orthogonal_q : g K.q e₂ = 0
-  /-- `e₁` is orthogonal to the transverse hadron momentum. -/
-  e₁_orthogonal_pT : g (pTransverse g K) e₁ = 0
-  /-- `e₂` is orthogonal to the transverse hadron momentum. -/
-  e₂_orthogonal_pT : g (pTransverse g K) e₂ = 0
+  /-- The momentum transfer is `g`-orthogonal to `e₁`. -/
+  q_orthogonal_e₁ : g K.q e₁ = 0
+  /-- The momentum transfer is `g`-orthogonal to `e₂`. -/
+  q_orthogonal_e₂ : g K.q e₂ = 0
+  /-- The transverse hadron momentum is `g`-orthogonal to `e₁`. -/
+  pT_orthogonal_e₁ : g (pTransverse g K) e₁ = 0
+  /-- The transverse hadron momentum is `g`-orthogonal to `e₂`. -/
+  pT_orthogonal_e₂ : g (pTransverse g K) e₂ = 0
   /-- The two spectator directions are orthogonal. -/
   e₁_orthogonal_e₂ : g e₁ e₂ = 0
   /-- `e₁` is not null. -/
@@ -1057,16 +1057,17 @@ structure SpectatorPair (g : Bilin V) (K : DisKinematics V) : Type where
   /-- `e₂` is not null. -/
   e₂_self_ne_zero : g e₂ e₂ ≠ 0
 
-/-- A combination of the spectator directions is `g`-orthogonal to `q`. -/
-lemma SpectatorPair.smul_add_smul_orthogonal_q {g : Bilin V} {K : DisKinematics V}
+/-- The momentum transfer is `g`-orthogonal to a combination of the spectator directions. -/
+lemma SpectatorPair.q_orthogonal_smul_add_smul {g : Bilin V} {K : DisKinematics V}
     (hP : SpectatorPair g K) (c₁ c₂ : ℝ) : g K.q (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
-  simp only [map_add, map_smul, hP.e₁_orthogonal_q, hP.e₂_orthogonal_q, smul_zero, add_zero]
+  simp only [map_add, map_smul, hP.q_orthogonal_e₁, hP.q_orthogonal_e₂, smul_zero, add_zero]
 
-/-- A combination of the spectator directions is `g`-orthogonal to `p_T`. -/
-lemma SpectatorPair.smul_add_smul_orthogonal_pT {g : Bilin V} {K : DisKinematics V}
+/-- The transverse hadron momentum is `g`-orthogonal to a combination of the spectator
+directions. -/
+lemma SpectatorPair.pT_orthogonal_smul_add_smul {g : Bilin V} {K : DisKinematics V}
     (hP : SpectatorPair g K) (c₁ c₂ : ℝ) :
     g (pTransverse g K) (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
-  simp only [map_add, map_smul, hP.e₁_orthogonal_pT, hP.e₂_orthogonal_pT, smul_zero, add_zero]
+  simp only [map_add, map_smul, hP.pT_orthogonal_e₁, hP.pT_orthogonal_e₂, smul_zero, add_zero]
 
 /-- The spectator directions are `g`-orthogonal, so `g` is diagonal on their combinations. -/
 lemma SpectatorPair.apply_smul_add_smul {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
@@ -1108,12 +1109,12 @@ lemma SpectatorPartners.self_ne_zero_of_spectator {g : Bilin V} {K : DisKinemati
 
 /-- The adapted frame of a `SpectatorPlane` splits every vector: the spectator part of
 `a • p_T + b • q + c₁ • e₁ + c₂ • e₂` is `c₁ • e₁ + c₂ • e₂`. -/
-lemma SpectatorPlane.spectatorSplitting {g : Bilin V} {K : DisKinematics V}
+lemma SpectatorPlane.toSpectatorSplitting {g : Bilin V} {K : DisKinematics V}
     (hP : SpectatorPlane g K) : SpectatorSplitting g K where
   span v := by
     obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
-    exact ⟨a, b, c₁ • hP.e₁ + c₂ • hP.e₂, hP.smul_add_smul_orthogonal_q c₁ c₂,
-      hP.smul_add_smul_orthogonal_pT c₁ c₂, add_assoc _ _ _⟩
+    exact ⟨a, b, c₁ • hP.e₁ + c₂ • hP.e₂, hP.q_orthogonal_smul_add_smul c₁ c₂,
+      hP.pT_orthogonal_smul_add_smul c₁ c₂, add_assoc _ _ _⟩
 
 /-- A `SpectatorPlane` whose non-zero spectators are non-null supplies `SpectatorPartners`: a
 spectator with frame coordinates `c₁`, `c₂` has the partner
@@ -1122,7 +1123,7 @@ lemma SpectatorPlane.spectatorPartners {g : Bilin V} {K : DisKinematics V} (hSym
     (hP : SpectatorPlane g K)
     (hnull : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u ≠ 0) :
     SpectatorPartners g K where
-  toSpectatorSplitting := hP.spectatorSplitting
+  toSpectatorSplitting := hP.toSpectatorSplitting
   partner u huq huT hu := by
     refine ⟨hnull u huq huT hu, ?_⟩
     obtain ⟨a, b, c₁, c₂, hv⟩ := hP.span u
@@ -1130,10 +1131,10 @@ lemma SpectatorPlane.spectatorPartners {g : Bilin V} {K : DisKinematics V} (hSym
     have hsu' := hP.apply_smul_add_smul hSymm c₁ c₂ (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
     have hu'u' := hP.apply_smul_add_smul hSymm (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
       (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
-    have hsq := hP.smul_add_smul_orthogonal_q c₁ c₂
-    have hsT := hP.smul_add_smul_orthogonal_pT c₁ c₂
-    have hu'q := hP.smul_add_smul_orthogonal_q (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
-    have hu'T := hP.smul_add_smul_orthogonal_pT (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
+    have hsq := hP.q_orthogonal_smul_add_smul c₁ c₂
+    have hsT := hP.pT_orthogonal_smul_add_smul c₁ c₂
+    have hu'q := hP.q_orthogonal_smul_add_smul (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
+    have hu'T := hP.pT_orthogonal_smul_add_smul (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
     have hv' := hv.trans (add_assoc _ _ _)
     generalize c₁ • hP.e₁ + c₂ • hP.e₂ = s at hss hsu' hsq hsT hv'
     generalize (-(c₂ * g hP.e₂ hP.e₂)) • hP.e₁ + (c₁ * g hP.e₁ hP.e₁) • hP.e₂ = u'
