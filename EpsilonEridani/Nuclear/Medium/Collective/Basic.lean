@@ -97,43 +97,45 @@ theorem qVector_def (n : ℤ) (φ : ι → AddCircle T) : qVector n φ = ∑ j, 
 /-- The zeroth harmonic counts the particles: `Q_0 = M`. -/
 @[simp]
 theorem qVector_zero (φ : ι → AddCircle T) : qVector 0 φ = Fintype.card ι := by
-  simp [qVector]
+  simp [qVector_def]
 
 /-- The `Q`-vector of harmonic `-n` is the complex conjugate of that of harmonic `n`. -/
 @[simp]
 theorem qVector_neg (n : ℤ) (φ : ι → AddCircle T) : qVector (-n) φ = conj (qVector n φ) := by
-  simp [qVector]
+  simp [qVector_def]
 
 /-- A common rotation of all angles by `ψ` multiplies the `Q`-vector by `e^{i n ψ}`. -/
 theorem qVector_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T) :
     qVector n (fun j => φ j + ψ) = fourier n ψ * qVector n φ := by
   rw [mul_comm]
-  simp only [qVector, Finset.sum_mul, fourier_apply_add]
+  simp only [qVector_def, Finset.sum_mul, fourier_eval_add]
 
 /-- The modulus of the `Q`-vector is invariant under a common rotation of all angles. -/
 @[simp]
 theorem norm_qVector_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T) :
     ‖qVector n (fun j => φ j + ψ)‖ = ‖qVector n φ‖ := by
-  rw [qVector_add_const, norm_mul, norm_fourier_apply, one_mul]
+  rw [qVector_add_const, norm_mul, norm_fourier_eval, one_mul]
 
 /-- The `Q`-vector depends continuously on the angles. -/
 @[fun_prop]
-theorem continuous_qVector (n : ℤ) : Continuous (qVector (T := T) (ι := ι) n) :=
-  continuous_finsetSum _ fun j _ => (fourier n).continuous.comp (continuous_apply j)
+theorem continuous_qVector (n : ℤ) : Continuous (qVector (T := T) (ι := ι) n) := by
+  simp_rw [funext (qVector_def n)]
+  exact continuous_finsetSum _ fun j _ => (fourier n).continuous.comp (continuous_apply j)
 
 /-- The modulus of the `Q`-vector is at most the multiplicity. -/
 theorem norm_qVector_le_card (n : ℤ) (φ : ι → AddCircle T) : ‖qVector n φ‖ ≤ Fintype.card ι := by
+  rw [qVector_def]
   refine (norm_sum_le _ _).trans ?_
-  simp only [norm_fourier_apply, sum_const, card_univ, nsmul_eq_mul, mul_one, le_refl]
+  simp only [norm_fourier_eval, sum_const, card_univ, nsmul_eq_mul, mul_one, le_refl]
 
 /-- The squared modulus of the `Q`-vector is the self-correlation `M` plus the sum over ordered
 pairs of distinct particles of `e^{i n φⱼ} conj (e^{i n φₖ}) = e^{i n (φⱼ - φₖ)}`. -/
 theorem ofReal_norm_qVector_sq [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle T) :
     (‖qVector n φ‖ : ℂ) ^ 2 =
       Fintype.card ι + ∑ j, ∑ k ∈ univ.erase j, fourier n (φ j) * conj (fourier n (φ k)) := by
-  simp only [← Complex.mul_conj', qVector, map_sum, Finset.sum_mul_sum]
+  simp only [← Complex.mul_conj', qVector_def, map_sum, Finset.sum_mul_sum]
   refine (Finset.sum_congr rfl fun j _ => (Finset.add_sum_erase _ _ (mem_univ j)).symm).trans ?_
-  simp only [Complex.mul_conj', norm_fourier_apply, Complex.ofReal_one, one_pow,
+  simp only [Complex.mul_conj', norm_fourier_eval, Complex.ofReal_one, one_pow,
     Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
 
 /-- The single-event two-particle correlation `⟨2⟩ = (|Q_n|² - M) / (M (M - 1))`: the squared
@@ -148,11 +150,37 @@ theorem twoParticleCorrelation_def (n : ℤ) (φ : ι → AddCircle T) :
       (‖qVector n φ‖ ^ 2 - Fintype.card ι) / (Fintype.card ι * (Fintype.card ι - 1)) :=
   (rfl)
 
+/-- Clearing the denominator of the two-particle correlation:
+`M (M - 1) ⟨2⟩ = |Q_n|² - M`, at every multiplicity. -/
+theorem card_mul_card_sub_one_mul_twoParticleCorrelation (n : ℤ) (φ : ι → AddCircle T) :
+    Fintype.card ι * (Fintype.card ι - 1) * twoParticleCorrelation n φ =
+      ‖qVector n φ‖ ^ 2 - Fintype.card ι := by
+  rw [twoParticleCorrelation_def]
+  rcases le_or_gt (Fintype.card ι) 1 with h | h
+  · -- at `M ≤ 1` both sides vanish: `Q_n = 0` for `M = 0` and `|Q_n| = 1` for `M = 1`
+    interval_cases hM : Fintype.card ι
+    · have : IsEmpty ι := Fintype.card_eq_zero_iff.1 hM
+      simp [qVector_def]
+    · obtain ⟨j, hj⟩ := Fintype.card_eq_one_iff.1 hM
+      have : Unique ι := ⟨⟨j⟩, hj⟩
+      simp [qVector_def]
+  · have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast h
+    have hD : (Fintype.card ι : ℝ) * (Fintype.card ι - 1) ≠ 0 := by
+      apply mul_ne_zero <;> [positivity; linarith]
+    exact mul_div_cancel₀ _ hD
+
+/-- The squared modulus of the `Q`-vector is the self-correlation `M` plus `M (M - 1)` times the
+two-particle correlation, at every multiplicity. -/
+theorem norm_qVector_sq_eq_card_add_mul_twoParticleCorrelation (n : ℤ) (φ : ι → AddCircle T) :
+    ‖qVector n φ‖ ^ 2 =
+      Fintype.card ι + Fintype.card ι * (Fintype.card ι - 1) * twoParticleCorrelation n φ := by
+  rw [card_mul_card_sub_one_mul_twoParticleCorrelation, add_sub_cancel]
+
 /-- At multiplicity `M ≤ 1` there are no ordered pairs of distinct particles, the denominator
 `M (M - 1)` vanishes and the two-particle correlation takes the junk value `0`. -/
 theorem twoParticleCorrelation_eq_zero_of_card_le_one (h : Fintype.card ι ≤ 1) (n : ℤ)
     (φ : ι → AddCircle T) : twoParticleCorrelation n φ = 0 := by
-  rw [twoParticleCorrelation]
+  rw [twoParticleCorrelation_def]
   interval_cases Fintype.card ι <;> simp
 
 /-- The two-particle correlation is the average of `e^{i n (φⱼ - φₖ)}` over ordered pairs of
@@ -161,7 +189,7 @@ theorem ofReal_twoParticleCorrelation_eq_sum [DecidableEq ι] (n : ℤ) (φ : ι
     (twoParticleCorrelation n φ : ℂ) =
       (∑ j, ∑ k ∈ univ.erase j, fourier n (φ j) * conj (fourier n (φ k))) /
         (Fintype.card ι * (Fintype.card ι - 1)) := by
-  rw [twoParticleCorrelation]
+  rw [twoParticleCorrelation_def]
   push_cast
   rw [ofReal_norm_qVector_sq]
   ring
@@ -173,7 +201,7 @@ theorem abs_twoParticleCorrelation_le_one (n : ℤ) (φ : ι → AddCircle T) :
   -- for M ≤ 1 the denominator M (M - 1) vanishes and ⟨2⟩ takes the junk value 0
   rcases le_or_gt (Fintype.card ι) 1 with h | h
   · simp [twoParticleCorrelation_eq_zero_of_card_le_one h]
-  rw [twoParticleCorrelation]
+  rw [twoParticleCorrelation_def]
   have h2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast h
   have hq := pow_le_pow_left₀ (norm_nonneg _) (norm_qVector_le_card n φ) 2
   have hD : (0 : ℝ) < Fintype.card ι * (Fintype.card ι - 1) := by nlinarith
@@ -184,13 +212,20 @@ theorem abs_twoParticleCorrelation_le_one (n : ℤ) (φ : ι → AddCircle T) :
 @[simp]
 theorem twoParticleCorrelation_neg (n : ℤ) (φ : ι → AddCircle T) :
     twoParticleCorrelation (-n) φ = twoParticleCorrelation n φ := by
-  simp [twoParticleCorrelation]
+  simp [twoParticleCorrelation_def]
 
 /-- The two-particle correlation is invariant under a common rotation of all angles. -/
 @[simp]
 theorem twoParticleCorrelation_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T) :
     twoParticleCorrelation n (fun j => φ j + ψ) = twoParticleCorrelation n φ := by
-  simp [twoParticleCorrelation]
+  simp [twoParticleCorrelation_def]
+
+/-- The two-particle correlation depends continuously on the angles. -/
+@[fun_prop]
+theorem continuous_twoParticleCorrelation (n : ℤ) :
+    Continuous (twoParticleCorrelation (T := T) (ι := ι) n) := by
+  simp_rw [funext (twoParticleCorrelation_def n)]
+  fun_prop
 
 /-! ### The anisotropy coefficient of a distribution on the circle -/
 
@@ -204,23 +239,25 @@ theorem anisotropyCoeff_def (μ : Measure (AddCircle T)) (n : ℤ) :
     anisotropyCoeff μ n = ∫ x, fourier n x ∂μ :=
   (rfl)
 
-/-- The zeroth coefficient of a probability distribution is `1`. -/
+/-- The zeroth coefficient is the total mass of the distribution; for a probability distribution
+it is `1`. -/
 @[simp]
-theorem anisotropyCoeff_zero (μ : Measure (AddCircle T)) [IsProbabilityMeasure μ] :
-    anisotropyCoeff μ 0 = 1 := by
-  simp [anisotropyCoeff]
+theorem anisotropyCoeff_zero (μ : Measure (AddCircle T)) :
+    anisotropyCoeff μ 0 = μ.real Set.univ := by
+  simp [anisotropyCoeff_def]
 
 /-- The coefficient of harmonic `-n` is the complex conjugate of that of harmonic `n`. -/
 @[simp]
 theorem anisotropyCoeff_neg (μ : Measure (AddCircle T)) (n : ℤ) :
     anisotropyCoeff μ (-n) = conj (anisotropyCoeff μ n) := by
-  simp_rw [anisotropyCoeff, fourier_neg, integral_conj]
+  simp_rw [anisotropyCoeff_def, fourier_neg, integral_conj]
 
 /-- The coefficients of a probability distribution have modulus at most `1`. -/
 theorem norm_anisotropyCoeff_le_one (μ : Measure (AddCircle T)) [IsProbabilityMeasure μ]
     (n : ℤ) : ‖anisotropyCoeff μ n‖ ≤ 1 := by
+  rw [anisotropyCoeff_def]
   refine (norm_integral_le_of_norm_le_const (C := 1) (Filter.Eventually.of_forall
-    fun x => (norm_fourier_apply n x).le)).trans ?_
+    fun x => (norm_fourier_eval n x).le)).trans ?_
   simp
 
 /-- For a distribution with density `f` with respect to the normalised Haar measure, the
@@ -229,23 +266,23 @@ theorem anisotropyCoeff_withDensity [Fact (0 < T)] {f : AddCircle T → ENNReal}
     (hf : AEMeasurable f haarAddCircle) (hf_lt_top : ∀ᵐ x ∂haarAddCircle, f x < ⊤) (n : ℤ) :
     anisotropyCoeff (haarAddCircle.withDensity f) n =
       fourierCoeff (fun x => ((f x).toReal : ℂ)) (-n) := by
-  simp [anisotropyCoeff, integral_withDensity_eq_integral_toReal_smul₀ hf hf_lt_top, fourierCoeff,
-    Complex.real_smul, mul_comm]
+  simp [anisotropyCoeff_def, integral_withDensity_eq_integral_toReal_smul₀ hf hf_lt_top,
+    fourierCoeff, Complex.real_smul, mul_comm]
 
 /-- Rotating a distribution by `ψ` multiplies its anisotropy coefficient by `e^{i n ψ}`. -/
 theorem anisotropyCoeff_map_add_const (μ : Measure (AddCircle T)) (n : ℤ) (ψ : AddCircle T) :
     anisotropyCoeff (μ.map (· + ψ)) n = fourier n ψ * anisotropyCoeff μ n := by
-  simp only [anisotropyCoeff, ← integral_const_mul]
+  simp only [anisotropyCoeff_def, ← integral_const_mul]
   rw [integral_map (measurable_add_const ψ).aemeasurable
     (fourier n).continuous.aestronglyMeasurable]
   congr 1 with x
-  rw [fourier_apply_add, mul_comm]
+  rw [fourier_eval_add, mul_comm]
 
 /-- The modulus of the anisotropy coefficient is invariant under rotations. -/
 @[simp]
 theorem norm_anisotropyCoeff_map_add_const (μ : Measure (AddCircle T)) (n : ℤ) (ψ : AddCircle T) :
     ‖anisotropyCoeff (μ.map (· + ψ)) n‖ = ‖anisotropyCoeff μ n‖ := by
-  rw [anisotropyCoeff_map_add_const, norm_mul, norm_fourier_apply, one_mul]
+  rw [anisotropyCoeff_map_add_const, norm_mul, norm_fourier_eval, one_mul]
 
 /-- The anisotropy coefficient itself is not rotation invariant: rotating by `ψ` leaves it
 unchanged exactly when it vanishes or `e^{i n ψ} = 1`. -/
@@ -264,15 +301,24 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ ν : Measure (Ad
 
 /-- The `Q`-vector of an event whose angles are almost everywhere measurable is almost everywhere
 measurable. -/
+@[fun_prop]
 theorem aemeasurable_qVector (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
     AEMeasurable (fun ω => qVector n fun j => φ j ω) P :=
   (continuous_qVector n).measurable.comp_aemeasurable (AEMeasurable.of_eval hφ)
+
+/-- The two-particle correlation of an event whose angles are almost everywhere measurable is
+almost everywhere measurable. -/
+@[fun_prop]
+theorem aemeasurable_twoParticleCorrelation (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
+    AEMeasurable (fun ω => twoParticleCorrelation n fun j => φ j ω) P :=
+  (continuous_twoParticleCorrelation n).measurable.comp_aemeasurable (AEMeasurable.of_eval hφ)
 
 section Integrable
 
 variable [IsFiniteMeasure P]
 
 /-- The `Q`-vector of an event whose angles are almost everywhere measurable is integrable. -/
+@[fun_prop]
 theorem integrable_qVector (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
     Integrable (fun ω => qVector n fun j => φ j ω) P :=
   .of_bound (aemeasurable_qVector hφ n).aestronglyMeasurable (Fintype.card ι)
@@ -280,6 +326,7 @@ theorem integrable_qVector (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
 
 /-- The squared modulus of the `Q`-vector of an event whose angles are almost everywhere
 measurable is integrable. -/
+@[fun_prop]
 theorem integrable_norm_qVector_sq (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
     Integrable (fun ω => ‖qVector n fun j => φ j ω‖ ^ 2) P :=
   .of_bound ((aemeasurable_qVector hφ n).norm.pow_const 2).aestronglyMeasurable
@@ -289,9 +336,11 @@ theorem integrable_norm_qVector_sq (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ
 
 /-- The two-particle correlation of an event whose angles are almost everywhere measurable is
 integrable. -/
+@[fun_prop]
 theorem integrable_twoParticleCorrelation (hφ : ∀ j, AEMeasurable (φ j) P) (n : ℤ) :
     Integrable (fun ω => twoParticleCorrelation n fun j => φ j ω) P :=
-  ((integrable_norm_qVector_sq hφ n).sub (integrable_const _)).div_const _
+  .of_bound (aemeasurable_twoParticleCorrelation hφ n).aestronglyMeasurable 1
+    (Filter.Eventually.of_forall fun _ => (abs_twoParticleCorrelation_le_one n _))
 
 /-- The expectation of the `Q`-vector of `M` particles with distribution `μ` is `M V_n`. Only
 the finiteness of the measure enters: independence is not needed for the first moment. -/
@@ -299,7 +348,7 @@ theorem integral_qVector (hφ : ∀ j, HasLaw (φ j) μ P) (n : ℤ) :
     ∫ ω, qVector n (fun j => φ j ω) ∂P = Fintype.card ι * anisotropyCoeff μ n := by
   have h1 : ∀ j, ∫ ω, fourier n (φ j ω) ∂P = anisotropyCoeff μ n := fun j =>
     (hφ j).integral_comp (fourier n).continuous.aestronglyMeasurable
-  simp_rw [qVector]
+  simp_rw [qVector_def]
   rw [integral_finsetSum _ fun j _ => integrable_fourier_comp (hφ j).aemeasurable n]
   simp only [h1, sum_const, card_univ, nsmul_eq_mul]
 
@@ -350,9 +399,9 @@ theorem integral_norm_qVector_sq (n : ℤ) :
         (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := fun j k hk => by
     rw [integral_fourier_mul_conj_fourier (hind (Finset.ne_of_mem_erase hk).symm) (hφ j)
       (hφ k) n, Complex.mul_conj']
-  simp only [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j),
-    sum_sum_erase_const', Finset.card_univ]
-  simp
+  -- each of the `M (M - 1)` ordered pairs of distinct particles contributes `|V_n|²`
+  rw [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j), sum_sum_erase_const',
+    Finset.card_univ, integral_const, probReal_univ, one_smul]
 
 /-- For `M ≥ 1` pairwise independent particles with distribution `μ`, the expectation of
 `|Q_n|² / M²` exceeds `|V_n|²` by the self-correlation term `(1 - |V_n|²) / M`; it vanishes
@@ -372,7 +421,7 @@ theorem integral_twoParticleCorrelation (hM : 1 < Fintype.card ι) (n : ℤ) :
   have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast hM
   have hM0 : (Fintype.card ι : ℝ) ≠ 0 := by positivity
   have hM1 : (Fintype.card ι : ℝ) - 1 ≠ 0 := by linarith
-  simp_rw [twoParticleCorrelation]
+  simp_rw [twoParticleCorrelation_def]
   simp only [integral_div,
     integral_sub (integrable_norm_qVector_sq (fun j => (hφ j).aemeasurable) n) (integrable_const _),
     integral_norm_qVector_sq hφ hind, integral_const, probReal_univ, one_smul,
