@@ -29,7 +29,7 @@ respect to a light-cone basis aligned with the collision axis. The standard ligh
 Minkowski space, `n± = (e₀ ± eᵢ)/√2`, is constructed in `EpsilonEridani.Relativity.LightConeBasis`.
 
 Contracting an alternating four-form `ε` with the two basis vectors gives the *transverse
-antisymmetric tensor* `ε_T^{μν} = ε^{μνρσ} n_{+ρ} n_{-σ}`, the bilinear form
+antisymmetric tensor* `ε_{T μν} = ε_{μνρσ} n₊^ρ n₋^σ`, the bilinear form
 `(u, v) ↦ ε(u, v, n₊, n₋)`. It is alternating, vanishes on the longitudinal subspace and only sees
 the transverse parts of its arguments. When `B` is nondegenerate its second index can be raised,
 giving the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
@@ -55,7 +55,7 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
   (right) orthogonal complement of the longitudinal subspace.
 * `LightConeBasis.transverseProj`: the transverse projector `v ↦ v_T`.
 * `LightConeBasis.transverseEps`: the transverse antisymmetric tensor `(u, v) ↦ ε(u, v, n₊, n₋)`.
-* `LightConeBasis.transverseEpsLin`: the same tensor with its second index raised by a
+* `LightConeBasis.transverseEpsRaise`: the same tensor with its second index raised by a
   nondegenerate form, the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`.
 
 ## Main statements
@@ -75,10 +75,10 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 * `LightConeBasis.transverseEps_transverseProj_left`,
   `LightConeBasis.transverseEps_transverseProj_right`: the transverse antisymmetric tensor only
   sees the transverse parts of its arguments.
-* `LightConeBasis.eq_transverseEpsLin_iff`: `E u` is the unique vector `w` with
+* `LightConeBasis.eq_transverseEpsRaise_iff`: `E u` is the unique vector `w` with
   `B w v = ε(u, v, n₊, n₋)` for all `v`.
-* `LightConeBasis.transverseEpsLin_mem_transverse`: `E` takes values in the transverse subspace.
-* `LightConeBasis.isSkewAdjoint_transverseEpsLin`: for a symmetric form `E` is skew-adjoint.
+* `LightConeBasis.transverseEpsRaise_mem_transverse`: `E` takes values in the transverse subspace.
+* `LightConeBasis.isSkewAdjoint_transverseEpsRaise`: for a symmetric form `E` is skew-adjoint.
 
 ## References
 
@@ -335,8 +335,8 @@ section CommRing
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] {B : BilinForm R V}
   (L : LightConeBasis B) (ε : V [⋀^Fin 4]→ₗ[R] R)
 
-/-- The transverse antisymmetric tensor `ε_T^{μν} = ε^{μνρσ} n_{+ρ} n_{-σ}` of a light-cone basis
-with respect to an alternating four-form `ε`: the bilinear form `(u, v) ↦ ε(u, v, n₊, n₋)`. -/
+/-- The transverse antisymmetric tensor `ε_{T μν} = ε_{μνρσ} n₊^ρ n₋^σ` of a light-cone basis with
+respect to an alternating four-form `ε`: the bilinear form `(u, v) ↦ ε(u, v, n₊, n₋)`. -/
 def transverseEps : BilinForm R V :=
   ε.bilinMap ![L.nPlus, L.nMinus]
 
@@ -358,19 +358,19 @@ theorem transverseEps_apply_swap (u v : V) :
   ((L.isAlt_transverseEps ε).neg_eq v u).symm
 
 @[simp]
-theorem transverseEps_nPlus_left (v : V) : L.transverseEps ε L.nPlus v = 0 :=
+theorem transverseEps_nPlus_left_eq_zero (v : V) : L.transverseEps ε L.nPlus v = 0 :=
   ε.bilinMap_apply_left_eq_zero ![L.nPlus, L.nMinus] 0 v
 
 @[simp]
-theorem transverseEps_nMinus_left (v : V) : L.transverseEps ε L.nMinus v = 0 :=
+theorem transverseEps_nMinus_left_eq_zero (v : V) : L.transverseEps ε L.nMinus v = 0 :=
   ε.bilinMap_apply_left_eq_zero ![L.nPlus, L.nMinus] 1 v
 
 @[simp]
-theorem transverseEps_nPlus_right (u : V) : L.transverseEps ε u L.nPlus = 0 :=
+theorem transverseEps_nPlus_right_eq_zero (u : V) : L.transverseEps ε u L.nPlus = 0 :=
   ε.bilinMap_apply_right_eq_zero ![L.nPlus, L.nMinus] 0 u
 
 @[simp]
-theorem transverseEps_nMinus_right (u : V) : L.transverseEps ε u L.nMinus = 0 :=
+theorem transverseEps_nMinus_right_eq_zero (u : V) : L.transverseEps ε u L.nMinus = 0 :=
   ε.bilinMap_apply_right_eq_zero ![L.nPlus, L.nMinus] 1 u
 
 /-- The transverse antisymmetric tensor only sees the transverse part of its first argument. -/
@@ -385,9 +385,8 @@ theorem transverseEps_transverseProj_right (u v : V) :
     L.transverseEps ε u (L.transverseProj v) = L.transverseEps ε u v := by
   simp [transverseProj_apply]
 
-theorem transverseEps_smul (c : R) : L.transverseEps (c • ε) = c • L.transverseEps ε := by
-  ext u v
-  simp [transverseEps_apply]
+theorem transverseEps_smul (c : R) : L.transverseEps (c • ε) = c • L.transverseEps ε :=
+  ε.bilinMap_smul _ c
 
 end CommRing
 
@@ -399,52 +398,53 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensiona
 /-- The transverse antisymmetric tensor with its second index raised by a nondegenerate form `B`:
 the endomorphism `E` of `V` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
 `(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`. -/
-noncomputable def transverseEpsLin : V →ₗ[K] V :=
+noncomputable def transverseEpsRaise : V →ₗ[K] V :=
   (L.transverseEps ε).symmCompOfNondegenerate B hB
 
 /-- The characteristic property of the raised transverse antisymmetric tensor. -/
 @[simp]
-theorem bilinForm_transverseEpsLin_apply (u v : V) :
-    B (L.transverseEpsLin ε hB u) v = L.transverseEps ε u v :=
+theorem bilinForm_transverseEpsRaise_apply (u v : V) :
+    B (L.transverseEpsRaise ε hB u) v = L.transverseEps ε u v :=
   symmCompOfNondegenerate_left_apply _ hB v u
 
 /-- `E u` is the unique vector `w` with `B w v = ε(u, v, n₊, n₋)` for all `v`. -/
-theorem eq_transverseEpsLin_iff {u w : V} :
-    w = L.transverseEpsLin ε hB u ↔ ∀ v, B w v = L.transverseEps ε u v := by
+theorem eq_transverseEpsRaise_iff {u w : V} :
+    w = L.transverseEpsRaise ε hB u ↔ ∀ v, B w v = L.transverseEps ε u v := by
   constructor
   · rintro rfl v
-    exact L.bilinForm_transverseEpsLin_apply ε hB u v
+    exact L.bilinForm_transverseEpsRaise_apply ε hB u v
   · intro h
     refine (B.toDual hB).injective (LinearMap.ext fun v => ?_)
-    rw [toDual_def, toDual_def, h, bilinForm_transverseEpsLin_apply]
+    rw [toDual_def, toDual_def, h, bilinForm_transverseEpsRaise_apply]
 
-theorem bilinForm_transverseEpsLin_apply_swap (u v : V) :
-    B (L.transverseEpsLin ε hB u) v = -B (L.transverseEpsLin ε hB v) u := by
-  rw [bilinForm_transverseEpsLin_apply, bilinForm_transverseEpsLin_apply, transverseEps_apply_swap]
-
-@[simp]
-theorem transverseEpsLin_nPlus : L.transverseEpsLin ε hB L.nPlus = 0 :=
-  ((L.eq_transverseEpsLin_iff ε hB).2 fun v => by simp).symm
+theorem bilinForm_transverseEpsRaise_apply_swap (u v : V) :
+    B (L.transverseEpsRaise ε hB u) v = -B (L.transverseEpsRaise ε hB v) u := by
+  rw [bilinForm_transverseEpsRaise_apply, bilinForm_transverseEpsRaise_apply,
+    transverseEps_apply_swap]
 
 @[simp]
-theorem transverseEpsLin_nMinus : L.transverseEpsLin ε hB L.nMinus = 0 :=
-  ((L.eq_transverseEpsLin_iff ε hB).2 fun v => by simp).symm
+theorem transverseEpsRaise_nPlus_eq_zero : L.transverseEpsRaise ε hB L.nPlus = 0 :=
+  ((L.eq_transverseEpsRaise_iff ε hB).2 fun v => by simp).symm
+
+@[simp]
+theorem transverseEpsRaise_nMinus_eq_zero : L.transverseEpsRaise ε hB L.nMinus = 0 :=
+  ((L.eq_transverseEpsRaise_iff ε hB).2 fun v => by simp).symm
 
 /-- The raised transverse antisymmetric tensor only sees the transverse part of its argument. -/
 @[simp]
-theorem transverseEpsLin_transverseProj (u : V) :
-    L.transverseEpsLin ε hB (L.transverseProj u) = L.transverseEpsLin ε hB u :=
-  ((L.eq_transverseEpsLin_iff ε hB).2 fun v => by simp).symm
+theorem transverseEpsRaise_transverseProj (u : V) :
+    L.transverseEpsRaise ε hB (L.transverseProj u) = L.transverseEpsRaise ε hB u :=
+  ((L.eq_transverseEpsRaise_iff ε hB).2 fun v => by simp).symm
 
-theorem transverseEpsLin_comp_transverseProj :
-    L.transverseEpsLin ε hB ∘ₗ L.transverseProj = L.transverseEpsLin ε hB :=
-  LinearMap.ext (L.transverseEpsLin_transverseProj ε hB)
+theorem transverseEpsRaise_comp_transverseProj :
+    L.transverseEpsRaise ε hB ∘ₗ L.transverseProj = L.transverseEpsRaise ε hB :=
+  LinearMap.ext (L.transverseEpsRaise_transverseProj ε hB)
 
-theorem transverseEpsLin_smul (c : K) :
-    L.transverseEpsLin (c • ε) hB = c • L.transverseEpsLin ε hB := by
+theorem transverseEpsRaise_smul (c : K) :
+    L.transverseEpsRaise (c • ε) hB = c • L.transverseEpsRaise ε hB := by
   ext u
   symm
-  rw [eq_transverseEpsLin_iff, transverseEps_smul]
+  rw [eq_transverseEpsRaise_iff, transverseEps_smul]
   intro v
   simp
 
@@ -455,27 +455,27 @@ include hB'
 
 /-- For a reflexive form the raised transverse antisymmetric tensor takes values in the transverse
 subspace. -/
-theorem transverseEpsLin_mem_transverse (u : V) : L.transverseEpsLin ε hB u ∈ L.transverse := by
+theorem transverseEpsRaise_mem_transverse (u : V) : L.transverseEpsRaise ε hB u ∈ L.transverse := by
   rw [L.mem_transverse_iff_bilinForm_right_eq_zero hB']
   simp
 
 @[simp]
-theorem transverseProj_transverseEpsLin (u : V) :
-    L.transverseProj (L.transverseEpsLin ε hB u) = L.transverseEpsLin ε hB u :=
-  L.isProj_transverseProj.map_id _ (L.transverseEpsLin_mem_transverse ε hB hB' u)
+theorem transverseProj_transverseEpsRaise (u : V) :
+    L.transverseProj (L.transverseEpsRaise ε hB u) = L.transverseEpsRaise ε hB u :=
+  L.isProj_transverseProj.map_id _ (L.transverseEpsRaise_mem_transverse ε hB hB' u)
 
-theorem transverseProj_comp_transverseEpsLin :
-    L.transverseProj ∘ₗ L.transverseEpsLin ε hB = L.transverseEpsLin ε hB :=
-  LinearMap.ext (L.transverseProj_transverseEpsLin ε hB hB')
+theorem transverseProj_comp_transverseEpsRaise :
+    L.transverseProj ∘ₗ L.transverseEpsRaise ε hB = L.transverseEpsRaise ε hB :=
+  LinearMap.ext (L.transverseProj_transverseEpsRaise ε hB hB')
 
 end IsRefl
 
 /-- For a symmetric form the raised transverse antisymmetric tensor is skew-adjoint. -/
-theorem isSkewAdjoint_transverseEpsLin (hB' : B.IsSymm) :
-    B.IsSkewAdjoint (L.transverseEpsLin ε hB) := by
+theorem isSkewAdjoint_transverseEpsRaise (hB' : B.IsSymm) :
+    B.IsSkewAdjoint (L.transverseEpsRaise ε hB) := by
   intro u v
-  have h := hB'.eq u (L.transverseEpsLin ε hB v)
-  rw [Pi.neg_apply, map_neg, h, ← bilinForm_transverseEpsLin_apply_swap]
+  have h := hB'.eq u (L.transverseEpsRaise ε hB v)
+  rw [Pi.neg_apply, map_neg, h, ← bilinForm_transverseEpsRaise_apply_swap]
 
 end Field
 

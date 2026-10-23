@@ -23,7 +23,9 @@ energies above the mass and a prescribed angle between their spatial parts.
 It also records the symmetry (`isSymm_toBilinForm_minkowskiProduct`) and nondegeneracy
 (`nondegenerate_toBilinForm_minkowskiProduct`) of the Minkowski product as a bilinear form, the
 witnesses that supply the `IsRefl` and `Nondegenerate` hypotheses of the results about light-cone
-bases in `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
+bases in `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`, and the components
+`(E u)^μ = η^{μμ} F(u, e_μ)` of a bilinear form `F` with its second index raised by the Minkowski
+metric (`symmCompOfNondegenerate_minkowskiProduct_apply`).
 -/
 
 public section
@@ -119,5 +121,17 @@ theorem nondegenerate_toBilinForm_minkowskiProduct {d : ℕ} :
   (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
     isSymm_toBilinForm_minkowskiProduct.isRefl).2 fun p hp =>
       (minkowskiProduct_eq_zero_forall_iff p).1 hp
+
+/-- A bilinear form `F` with its second index raised by the Minkowski metric, in components: the
+endomorphism `E` with `⟪E u, v⟫ₘ = F u v` has `(E u)^μ = η^{μμ} F(u, e_μ)`. -/
+theorem symmCompOfNondegenerate_minkowskiProduct_apply {d : ℕ}
+    (F : LinearMap.BilinForm ℝ (Vector d)) (u : Vector d) (μ : Fin 1 ⊕ Fin d) :
+    F.symmCompOfNondegenerate (minkowskiProduct (d := d)).toBilinForm
+        nondegenerate_toBilinForm_minkowskiProduct u μ =
+      minkowskiMatrix μ μ * F u (basis μ) := by
+  have h := LinearMap.BilinForm.symmCompOfNondegenerate_left_apply F
+    nondegenerate_toBilinForm_minkowskiProduct (basis μ) u
+  rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_basis_right] at h
+  rw [← h, ← _root_.mul_assoc, minkowskiMatrix.η_apply_mul_η_apply_diag, one_mul]
 
 end EpsilonEridani

@@ -28,6 +28,7 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
 - `AlternatingMap.isAlt_bilinMap`: `f.bilinMap m` is alternating.
 - `AlternatingMap.bilinMap_apply_left_eq_zero`, `AlternatingMap.bilinMap_apply_right_eq_zero`:
   it vanishes when either argument is one of the fixed vectors `m i`.
+- `AlternatingMap.bilinMap_smul`: it is linear in `f`.
 -/
 
 public section
@@ -77,6 +78,12 @@ theorem bilinMap_apply_right_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : F
     (i : Fin n) (v : M) : f.bilinMap m v (m i) = 0 :=
   f.map_eq_zero_of_eq _ (i := 1) (j := i.succ.succ) (by simp)
     (Fin.succ_zero_eq_one ▸ (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _).symm))
+
+/-- `f.bilinMap m` is linear in `f`: scaling the alternating map scales the bilinear map. -/
+theorem bilinMap_smul (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (c : R) :
+    (c • f).bilinMap m = c • f.bilinMap m := by
+  ext v w
+  simp [bilinMap_apply]
 
 end CommSemiring
 
