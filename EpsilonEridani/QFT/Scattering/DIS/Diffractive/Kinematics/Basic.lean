@@ -90,7 +90,10 @@ def tMom (g : Bilin V) (K : DisKinematics V) : ℝ :=
 lemma tMom_def (g : Bilin V) (K : DisKinematics V) :
     tMom g K = g (deltaTarget K) (deltaTarget K) := (rfl)
 
-/-- The fraction of the target momentum carried by the exchange, `ξ = Δ·q / P·q`. -/
+/-- The fraction of the target momentum carried by the exchange, `ξ = Δ·q / P·q`: the momentum
+fraction lost by the target, the `x_IP` of the diffraction literature. Despite the shared symbol
+`ξ`, this is not `ExclKinematics.xiSkew`, the skewness of the exclusive event that
+`toExclKinematics` bridges to. -/
 noncomputable def xi (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (deltaTarget K) K.q / g K.p K.q
 

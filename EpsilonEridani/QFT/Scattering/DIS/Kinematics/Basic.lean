@@ -12,7 +12,7 @@ public import Mathlib
 
 This module introduces the abstract bilinear form `Bilin` used to evaluate Lorentz-invariant
 scalar products, with its symmetric square expansions, and a minimal kinematic record with the
-canonical DIS invariants. The design follows the architecture freeze document.
+canonical DIS invariants.
 
 -/
 
