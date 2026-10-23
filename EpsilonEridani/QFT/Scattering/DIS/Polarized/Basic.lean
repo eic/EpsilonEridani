@@ -12,10 +12,10 @@ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 
 This module introduces polarized DIS interfaces: a structure-function container for
 `g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, the scaling condition
-`IsPolarizedDecomposition` (equivalent to `A = 0` or `g₁ + g₂ = 1` by
-`isPolarizedDecomposition_iff`; the covariant decomposition is `Polarized.IsG1G2Decomposition`),
-and endpoint conditions at `x = 1`. The moment identities usually called sum rules
-live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
+`IsStructureFunctionScaling` (equivalent to `A = 0` or `g₁ + g₂ = 1` by
+`isStructureFunctionScaling_iff`; the covariant decomposition is
+`Polarized.IsG1G2Decomposition`), and endpoint conditions at `x = 1`. The moment identities
+usually called sum rules live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
 
 -/
 
@@ -176,19 +176,17 @@ lemma tensorAssumptions_iff_isAlt {W : Type} [AddCommGroup W] [Module ℝ W]
   · intro h
     exact ⟨fun v w => (LinearMap.BilinForm.IsAlt.neg_eq h w v).symm⟩
 
-/-- The scaling condition `A = (g₁ + g₂) • A` at every `(x, Q²)`. Despite its name it is not a
-decomposition of the tensor: by `isPolarizedDecomposition_iff` it holds exactly when `A = 0` or
-`g₁ + g₂ = 1` everywhere. The covariant decomposition is `Polarized.IsG1G2Decomposition`. -/
-def IsPolarizedDecomposition
+/-- The scaling condition `A = (g₁ + g₂) • A` at every `(x, Q²)`. By
+`isStructureFunctionScaling_iff` it holds exactly when `A = 0` or `g₁ + g₂ = 1` everywhere. -/
+def IsStructureFunctionScaling
     (G : StructureFunctions)
     (A : Bilin V) : Prop :=
   ∀ x Q2, A = (G.g1 x Q2 + G.g2 x Q2) • A
 
-/-- `IsPolarizedDecomposition` is only a scaling condition: it holds exactly when `A = 0` or
-`g₁ + g₂ = 1` everywhere. It does not identify the covariant structures of the antisymmetric
-tensor; that is `Polarized.IsG1G2Decomposition`. -/
-lemma isPolarizedDecomposition_iff (G : StructureFunctions) (A : Bilin V) :
-    IsPolarizedDecomposition V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
+/-- The scaling condition `IsStructureFunctionScaling` holds exactly when `A = 0` or
+`g₁ + g₂ = 1` everywhere. -/
+lemma isStructureFunctionScaling_iff (G : StructureFunctions) (A : Bilin V) :
+    IsStructureFunctionScaling V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
   refine ⟨fun h => or_iff_not_imp_left.mpr fun hA x Q2 => ?_, ?_⟩
   · obtain ⟨v, w, hvw⟩ : ∃ v w, A v w ≠ 0 := by
       by_contra! h0

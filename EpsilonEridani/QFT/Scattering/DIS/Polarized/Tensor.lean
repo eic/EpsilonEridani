@@ -41,9 +41,10 @@ gives Minkowski kinematics on `ℝ⁴` where such probes exist (`Witness.spinUni
 ## Orientation
 
 An abstract `V` carrying only a bilinear form has no volume form, so the four-form `ε` is
-explicit data, as for `Tensors.Leptonic.lMuNuOdd`. Both structures are linear in `ε`:
-replacing `ε` by `-ε` flips the sign of both (`spinStructureOne_neg`, `spinStructureTwo_neg`),
-and of every asymmetry built from them, so these signs are meaningful only once `ε` is fixed.
+explicit data, as for `Tensors.Leptonic.lMuNuOdd`. Replacing `ε` by `-ε` flips the sign
+of both structures (`spinStructureOne_neg`, `spinStructureTwo_neg`) and of `fromG1G2`
+(`fromG1G2_neg`), hence of every asymmetry built from them, so these signs are meaningful only
+once `ε` is fixed.
 
 ## Not included
 
@@ -151,41 +152,28 @@ theorem spinStructureTwo_isAlt (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Polarize
 /-- `E₁` is odd under spin reversal `S ↦ -S`. -/
 @[simp] theorem spinStructureOne_reverse (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : PolarizedKinematics g) : spinStructureOne ε K.reverse = -spinStructureOne ε K := by
-  ext v w
-  have h : ![v, w, K.q, -K.S] =
-      Function.update ![v, w, K.q, K.S] 3 (-(![v, w, K.q, K.S] 3)) := by
-    ext i; fin_cases i <;> rfl
-  simp only [LinearMap.neg_apply, spinStructureOne_apply, PolarizedKinematics.reverse_S,
-    PolarizedKinematics.reverse_toDisKinematics]
-  rw [h, ε.map_update_neg, Function.update_eq_self]
+  simp only [spinStructureOne, PolarizedKinematics.reverse_S,
+    PolarizedKinematics.reverse_toDisKinematics, ε.bilinMap_vecCons_neg]
 
 /-- `E₂` is odd under spin reversal `S ↦ -S`. -/
 @[simp] theorem spinStructureTwo_reverse (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : PolarizedKinematics g) : spinStructureTwo ε K.reverse = -spinStructureTwo ε K := by
-  ext v w
-  set u := g K.p K.q • K.S - g K.S K.q • K.p
-  have h : ![v, w, K.q, g K.p K.q • -K.S - g (-K.S) K.q • K.p] =
-      Function.update ![v, w, K.q, u] 3 (-(![v, w, K.q, u] 3)) := by
-    ext i; fin_cases i
-    · rfl
-    · rfl
-    · rfl
-    · simp [u, sub_eq_add_neg, add_comm]
-  simp only [LinearMap.neg_apply, spinStructureTwo_apply, PolarizedKinematics.reverse_S,
+  have h : g K.p K.q • -K.S - g (-K.S) K.q • K.p = -(g K.p K.q • K.S - g K.S K.q • K.p) := by
+    rw [map_neg, LinearMap.neg_apply]
+    module
+  simp only [spinStructureTwo, PolarizedKinematics.reverse_S,
     PolarizedKinematics.reverse_toDisKinematics]
-  rw [h, ε.map_update_neg, Function.update_eq_self]
+  rw [h, ε.bilinMap_vecCons_neg]
 
-/-- `E₁` is linear in the orientation: `-ε` gives `-E₁`. -/
-theorem spinStructureOne_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
-    spinStructureOne (-ε) K = -spinStructureOne ε K := by
-  ext v w
-  simp [spinStructureOne_apply]
+/-- Reversing the orientation `ε ↦ -ε` negates `E₁`. -/
+@[simp] theorem spinStructureOne_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureOne (-ε) K = -spinStructureOne ε K :=
+  ε.bilinMap_neg _
 
-/-- `E₂` is linear in the orientation: `-ε` gives `-E₂`. -/
-theorem spinStructureTwo_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
-    spinStructureTwo (-ε) K = -spinStructureTwo ε K := by
-  ext v w
-  simp [spinStructureTwo_apply]
+/-- Reversing the orientation `ε ↦ -ε` negates `E₂`. -/
+@[simp] theorem spinStructureTwo_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureTwo (-ε) K = -spinStructureTwo ε K :=
+  ε.bilinMap_neg _
 
 /-! ### The tensor built from `g₁`, `g₂` -/
 
@@ -240,8 +228,8 @@ theorem tensorAssumptions_fromG1G2 (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Pola
     spinStructureTwo_reverse, PolarizedKinematics.reverse_toDisKinematics]
   ring
 
-/-- `fromG1G2` is linear in the orientation: `-ε` gives `-fromG1G2`. -/
-theorem fromG1G2_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) :
+/-- Reversing the orientation `ε ↦ -ε` negates `fromG1G2`. -/
+@[simp] theorem fromG1G2_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) :
     fromG1G2 (-ε) K g₁ g₂ = -fromG1G2 ε K g₁ g₂ := by
   ext v w
   simp only [fromG1G2_apply, LinearMap.neg_apply, spinStructureOne_neg, spinStructureTwo_neg]
@@ -294,6 +282,11 @@ theorem conserved_left (h : IsG1G2Decomposition ε K G W) (w : V) : W K.q w = 0 
 /-- A tensor decomposing on `E₁`, `E₂` is conserved in its second slot. -/
 theorem conserved_right (h : IsG1G2Decomposition ε K G W) (v : V) : W v K.q = 0 :=
   h ▸ fromG1G2_conserved_right ε K _ _ v
+
+/-- Under spin reversal `S ↦ -S` a tensor decomposing on `E₁`, `E₂` is negated: `-W`
+decomposes with the same structure functions at the reversed kinematics. -/
+theorem reverse (h : IsG1G2Decomposition ε K G W) : IsG1G2Decomposition ε K.reverse G (-W) := by
+  rw [IsG1G2Decomposition, fromG1G2_reverse, h.eq, PolarizedKinematics.reverse_toDisKinematics]
 
 end IsG1G2Decomposition
 
@@ -366,14 +359,33 @@ def ηWit : Bilin (Fin 4 → ℝ) :=
 def εWit : (Fin 4 → ℝ) [⋀^Fin 4]→ₗ[ℝ] ℝ :=
   Matrix.detRowAlternating
 
-/-- Mathlib has no `detRowAlternating_apply`: `Matrix.det` is defined as
-`detRowAlternating`, so this holds by unfolding that definition. -/
+/-- The witness four-form evaluates to the determinant of the matrix whose rows are its
+arguments. -/
 lemma εWit_apply (M : Fin 4 → Fin 4 → ℝ) : εWit M = (Matrix.of M).det :=
+  -- `Matrix.det` is defined as `detRowAlternating`.
   rfl
+
+/-- Cofactor expansion of the witness four-form along its first argument. -/
+lemma εWit_apply_vecCons (a b c d : Fin 4 → ℝ) :
+    εWit ![a, b, c, d] =
+      a 0 * (b 1 * (c 2 * d 3 - c 3 * d 2) - b 2 * (c 1 * d 3 - c 3 * d 1)
+          + b 3 * (c 1 * d 2 - c 2 * d 1))
+        - a 1 * (b 0 * (c 2 * d 3 - c 3 * d 2) - b 2 * (c 0 * d 3 - c 3 * d 0)
+          + b 3 * (c 0 * d 2 - c 2 * d 0))
+        + a 2 * (b 0 * (c 1 * d 3 - c 3 * d 1) - b 1 * (c 0 * d 3 - c 3 * d 0)
+          + b 3 * (c 0 * d 1 - c 1 * d 0))
+        - a 3 * (b 0 * (c 1 * d 2 - c 2 * d 1) - b 1 * (c 0 * d 2 - c 2 * d 0)
+          + b 2 * (c 0 * d 1 - c 1 * d 0)) := by
+  rw [εWit_apply, Matrix.det_succ_row_zero]
+  simp (disch := decide) [Fin.sum_univ_succ, Matrix.det_fin_three, Fin.succAbove_of_castSucc_lt,
+    Fin.succAbove_of_le_castSucc]
+  ring
 
 /-- Witness kinematics on `ℝ⁴` with the metric `ηWit`: a target of unit mass at rest,
 `p = (1, 0, 0, 0)`, momentum transfer `q = (1, 0, 1, 1)` (so `p·q = 1`, `Q² = 1`) and spin
-`S = (0, 0, 0, 1)`, which has `S·q = -1 ≠ 0`. -/
+`S = (0, 0, 0, 1)`, which has `S·q = -1 ≠ 0`. The lepton line is the placeholder `k = q`,
+`k' = 0` (and `p' = 0`), so this is an algebraic non-degeneracy witness, not a physical
+event. -/
 def kWit4 : PolarizedKinematics ηWit where
   p := ![1, 0, 0, 0]
   pPrime := 0
@@ -395,45 +407,47 @@ lemma kWit4_M2 : kWit4.M2 ηWit = 1 := by simp [DisKinematics.M2_def]
 
 lemma kWit4_p_q : ηWit kWit4.p kWit4.q = 1 := by simp
 
+/-- The probe pair `(p + S, e₁)` on the witness, which sees `E₁` but not `E₂`. -/
+def probeOne : (Fin 4 → ℝ) × (Fin 4 → ℝ) := (![1, 0, 0, 1], ![0, 1, 0, 0])
+
+/-- The probe pair `(e₁, S)` on the witness, which sees `E₂` but not `E₁`. -/
+def probeTwo : (Fin 4 → ℝ) × (Fin 4 → ℝ) := (![0, 1, 0, 0], ![0, 0, 0, 1])
+
 /-- `E₁(p + S, e₁) = 1` on the witness. -/
-lemma spinStructureOne_kWit4_one :
-    spinStructureOne εWit kWit4 ![1, 0, 0, 1] ![0, 1, 0, 0] = 1 := by
-  rw [spinStructureOne_apply, εWit_apply, Matrix.det_succ_row_zero]
-  simp (disch := decide) [Fin.sum_univ_succ, Matrix.det_fin_three, Fin.succAbove_of_castSucc_lt,
-    Fin.succAbove_of_le_castSucc]
+lemma spinStructureOne_probeOne_eq_one :
+    spinStructureOne εWit kWit4 probeOne.1 probeOne.2 = 1 := by
+  rw [spinStructureOne_apply, εWit_apply_vecCons]
+  norm_num [probeOne]
 
 /-- `E₂(p + S, e₁) = 0` on the witness, since `(p·q) S − (S·q) p = p + S` there. -/
-lemma spinStructureTwo_kWit4_one :
-    spinStructureTwo εWit kWit4 ![1, 0, 0, 1] ![0, 1, 0, 0] = 0 := by
-  rw [spinStructureTwo_apply, εWit_apply, Matrix.det_succ_row_zero]
-  simp (disch := decide) [Fin.sum_univ_succ, Matrix.det_fin_three, Fin.succAbove_of_castSucc_lt,
-    Fin.succAbove_of_le_castSucc]
+lemma spinStructureTwo_probeOne_eq_zero :
+    spinStructureTwo εWit kWit4 probeOne.1 probeOne.2 = 0 := by
+  rw [spinStructureTwo_apply, εWit_apply_vecCons]
+  norm_num [probeOne]
 
 /-- `E₁(e₁, S) = 0` on the witness. -/
-lemma spinStructureOne_kWit4_two :
-    spinStructureOne εWit kWit4 ![0, 1, 0, 0] ![0, 0, 0, 1] = 0 := by
-  rw [spinStructureOne_apply, εWit_apply, Matrix.det_succ_row_zero]
-  simp (disch := decide) [Fin.sum_univ_succ, Matrix.det_fin_three, Fin.succAbove_of_castSucc_lt,
-    Fin.succAbove_of_le_castSucc]
+lemma spinStructureOne_probeTwo_eq_zero :
+    spinStructureOne εWit kWit4 probeTwo.1 probeTwo.2 = 0 := by
+  rw [spinStructureOne_apply, εWit_apply_vecCons]
+  norm_num [probeTwo]
 
 /-- `E₂(e₁, S) = 1` on the witness. -/
-lemma spinStructureTwo_kWit4_two :
-    spinStructureTwo εWit kWit4 ![0, 1, 0, 0] ![0, 0, 0, 1] = 1 := by
-  rw [spinStructureTwo_apply, εWit_apply, Matrix.det_succ_row_zero]
-  simp (disch := decide) [Fin.sum_univ_succ, Matrix.det_fin_three, Fin.succAbove_of_castSucc_lt,
-    Fin.succAbove_of_le_castSucc]
+lemma spinStructureTwo_probeTwo_eq_one :
+    spinStructureTwo εWit kWit4 probeTwo.1 probeTwo.2 = 1 := by
+  rw [spinStructureTwo_apply, εWit_apply_vecCons]
+  norm_num [probeTwo]
 
 /-- **`SpinUniquenessAssumptions` is satisfiable.** The pair `(p + S, e₁)` sees only `E₁` and
 the pair `(e₁, S)` sees only `E₂`. -/
 def spinUniquenessWit : SpinUniquenessAssumptions εWit kWit4 where
-  vOne := ![1, 0, 0, 1]
-  wOne := ![0, 1, 0, 0]
-  structureOne_ne_zero := by rw [spinStructureOne_kWit4_one]; exact one_ne_zero
-  structureTwo_eq_zero := spinStructureTwo_kWit4_one
-  vTwo := ![0, 1, 0, 0]
-  wTwo := ![0, 0, 0, 1]
-  structureOne_eq_zero := spinStructureOne_kWit4_two
-  structureTwo_ne_zero := by rw [spinStructureTwo_kWit4_two]; exact one_ne_zero
+  vOne := probeOne.1
+  wOne := probeOne.2
+  structureOne_ne_zero := by rw [spinStructureOne_probeOne_eq_one]; exact one_ne_zero
+  structureTwo_eq_zero := spinStructureTwo_probeOne_eq_zero
+  vTwo := probeTwo.1
+  wTwo := probeTwo.2
+  structureOne_eq_zero := spinStructureOne_probeTwo_eq_zero
+  structureTwo_ne_zero := by rw [spinStructureTwo_probeTwo_eq_one]; exact one_ne_zero
 
 /-- On the witness, `E₁` and `E₂` are linearly independent. -/
 theorem linearIndependent_spinStructure_kWit4 :
