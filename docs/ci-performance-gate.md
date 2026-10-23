@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Tau Ceti rejects accidental elaboration catastrophes before they reach `main`
+Epsilon Eridani rejects accidental elaboration catastrophes before they reach `main`
 without making merges wait for the external radar service. The required build
 has a per-Lean-process wall-clock ceiling, and the parallel `perf` status checks
 each added or modified Lean module. It uses retired hardware instructions where
@@ -54,7 +54,7 @@ Every command that may elaborate candidate Lean code runs inside `bwrap`:
 - the existing `/dev/shm`, network, and out-of-tree-write self-tests must pass
   before candidate code runs.
 
-The networked setup fetches Mathlib oleans and Tau Ceti's public, main-built
+The networked setup fetches Mathlib oleans and Epsilon Eridani's public, main-built
 artifact cache using only trusted base configuration. Cache endpoints and
 network access are not passed into `bwrap`. The cache may prepare dependency
 cones, but it is explicitly disabled after the selected module output is
@@ -106,7 +106,7 @@ a cheaper measurement design before it becomes required.
 The implementation uses GNU `timeout` through a small shell wrapper (not a
 Python interpreter per module). A local 200-process startup microbenchmark
 measured about 4.3 ms median and 5.6 ms p90 added cost per invocation. Even if
-all 1,895 current Tau Ceti modules rebuild, that is roughly eight CPU-seconds of wrapper
+all 196 current Epsilon Eridani modules rebuild, that is under one CPU-second of wrapper
 startup, parallelized with the build; cache-hit PRs pay it only for modules Lake
 actually invokes. This is encouraging but is not a substitute for the paired
 CI measurements below, which include runner scheduling and filesystem effects.

@@ -1,6 +1,6 @@
-# Working in Tau Ceti
+# Working in Epsilon Eridani
 
-This is the AI-owned code repo of Tau Ceti. Read `README.md` for what the project is and how
+This is the AI-owned code repo of Epsilon Eridani. Read `README.md` for what the project is and how
 the three repos fit together; this file only adds the contract for agents working here.
 
 ## Before you write code
@@ -46,7 +46,7 @@ scope do not coincide.
   Mathlib linter set (style, file length, no `maxHeartbeats` overrides). Do not try to disable
   these.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
-- Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
+- Epsilon Eridani does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every
   in-repository use and remove the obsolete names and module paths in the same PR. Do not add or
   retain anything whose only purpose is compatibility: aliases, wrapper declarations, forwarding
