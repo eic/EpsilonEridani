@@ -256,15 +256,15 @@ theorem integrable_woodsSaxonDensity_norm (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a)
           ring
 
 /-- The integral over space of the Woods–Saxon profile with unit central density. -/
-def woodsSaxonIntegral_norm (R a : ℝ) : ℝ :=
+def woodsSaxonNormIntegral (R a : ℝ) : ℝ :=
   ∫ x : Space, woodsSaxonDensity 1 R a ‖x‖
 
-lemma woodsSaxonIntegral_norm_def (R a : ℝ) :
-    woodsSaxonIntegral_norm R a = ∫ x : Space, woodsSaxonDensity 1 R a ‖x‖ := (rfl)
+lemma woodsSaxonNormIntegral_def (R a : ℝ) :
+    woodsSaxonNormIntegral R a = ∫ x : Space, woodsSaxonDensity 1 R a ‖x‖ := (rfl)
 
-lemma woodsSaxonIntegral_norm_pos (R : ℝ) {a : ℝ} (ha : 0 < a) :
-    0 < woodsSaxonIntegral_norm R a := by
-  rw [woodsSaxonIntegral_norm_def, integral_pos_iff_support_of_nonneg
+lemma woodsSaxonNormIntegral_pos (R : ℝ) {a : ℝ} (ha : 0 < a) :
+    0 < woodsSaxonNormIntegral R a := by
+  rw [woodsSaxonNormIntegral_def, integral_pos_iff_support_of_nonneg
     (fun x => woodsSaxonDensity_nonneg zero_le_one R a ‖x‖)
     (integrable_woodsSaxonDensity_norm 1 R ha)]
   have : Function.support (fun x : Space => woodsSaxonDensity 1 R a ‖x‖) = univ :=
@@ -274,7 +274,7 @@ lemma woodsSaxonIntegral_norm_pos (R : ℝ) {a : ℝ} (ha : 0 < a) :
 
 /-- The integral of the Woods–Saxon profile is linear in its central density. -/
 lemma integral_woodsSaxonDensity_norm (ρ₀ R a : ℝ) :
-    ∫ x : Space, woodsSaxonDensity ρ₀ R a ‖x‖ = ρ₀ * woodsSaxonIntegral_norm R a := by
+    ∫ x : Space, woodsSaxonDensity ρ₀ R a ‖x‖ = ρ₀ * woodsSaxonNormIntegral R a := by
   simp_rw [woodsSaxonDensity_eq_mul ρ₀]
   exact integral_const_mul _ _
 
@@ -282,22 +282,22 @@ lemma integral_woodsSaxonDensity_norm (ρ₀ R a : ℝ) :
 half-density radius `R` and surface thickness `a` to `m` (see
 `integral_woodsSaxonDensity_norm_eq_iff`); the value is junk otherwise. -/
 def woodsSaxonCentralDensity (m R a : ℝ) : ℝ :=
-  m / woodsSaxonIntegral_norm R a
+  m / woodsSaxonNormIntegral R a
 
 lemma woodsSaxonCentralDensity_def (m R a : ℝ) :
-    woodsSaxonCentralDensity m R a = m / woodsSaxonIntegral_norm R a := (rfl)
+    woodsSaxonCentralDensity m R a = m / woodsSaxonNormIntegral R a := (rfl)
 
 /-- The Woods–Saxon central density normalising to a positive `m` is positive. -/
 lemma woodsSaxonCentralDensity_pos {m : ℝ} (hm : 0 < m) (R : ℝ) {a : ℝ} (ha : 0 < a) :
     0 < woodsSaxonCentralDensity m R a :=
-  div_pos hm (woodsSaxonIntegral_norm_pos R ha)
+  div_pos hm (woodsSaxonNormIntegral_pos R ha)
 
 /-- For `0 < a`, the Woods–Saxon profile integrates to `m` exactly when its central density is
 `woodsSaxonCentralDensity m R a`. -/
 theorem integral_woodsSaxonDensity_norm_eq_iff {ρ₀ m R a : ℝ} (ha : 0 < a) :
     ∫ x : Space, woodsSaxonDensity ρ₀ R a ‖x‖ = m ↔ ρ₀ = woodsSaxonCentralDensity m R a := by
   rw [integral_woodsSaxonDensity_norm, woodsSaxonCentralDensity_def,
-    eq_div_iff (woodsSaxonIntegral_norm_pos R ha).ne']
+    eq_div_iff (woodsSaxonNormIntegral_pos R ha).ne']
 
 /-- For `0 < a`, the Woods–Saxon profile with central density `woodsSaxonCentralDensity m R a`
 integrates to `m`: `woodsSaxonCentralDensity` normalises the profile. -/
