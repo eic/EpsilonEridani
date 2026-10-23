@@ -1,6 +1,6 @@
 # Upstream shim registry
 
-`EpsilonEridani/upstream-shims.json` records Tau Ceti source that is temporary pending a
+`EpsilonEridani/upstream-shims.json` records Epsilon Eridani source that is temporary pending a
 replacement in an upstream library. The replacement may land in any direct dependency: Mathlib,
 Physlib (including the PhyslibAlpha and QuantumInfo libraries of the Physlib package) or TauCeti.
 It is AI-owned data: a source-only migration PR may update the registry in the same commit as the

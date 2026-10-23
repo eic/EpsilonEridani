@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Report tracked Tau Ceti shims whose replacement exists in a pinned upstream library.
+"""Report tracked Epsilon Eridani shims whose replacement exists in a pinned upstream library.
 
 The registry in ``EpsilonEridani/upstream-shims.json`` is AI-owned metadata kept out of module
 docstrings; its schema and blocking policy are documented in ``docs/upstream-shim-registry.md``.
 A replacement may land in any direct dependency: Mathlib, Physlib (including the PhyslibAlpha and
 QuantumInfo libraries of the Physlib package) or TauCeti. Exact replacements and broader landing
 sentinels carry different guidance. The default invocation is report-only; ``--fail-on-available``
-turns an exact finding into an autonomous PR gate that hands the source or bump PR to a Tau Ceti
+turns an exact finding into an autonomous PR gate that hands the source or bump PR to a Epsilon Eridani
 worker. Malformed metadata or an unavailable Lean environment is always an infrastructure error.
 """
 
@@ -31,7 +31,7 @@ OWN_LIBRARY = "EpsilonEridani"
 UPSTREAM = r"(?:Mathlib|Physlib(?:Alpha)?|QuantumInfo|TauCeti)"
 DECLARATION = re.compile(r"[^\W\d][\w']*(?:\.[^\W\d][\w']*)*")
 MODULE = re.compile(r"[A-Z][\w']*(?:\.[^\W\d][\w']*)+")
-PROBE_PREFIX = "TAUCETI_UPSTREAM_DECL\t"
+PROBE_PREFIX = "EPSILONERIDANI_UPSTREAM_DECL\t"
 PACKAGE_BUILD_LIB = pathlib.Path(".lake/build/lib/lean")
 SELF_DECLARED = re.compile(r"\btemporary\b.{0,40}\bshim\b", re.IGNORECASE | re.DOTALL)
 SELF_DECLARED_OBSOLESCENCE = re.compile(
@@ -207,7 +207,7 @@ def source_declarations(path: pathlib.Path) -> set[str]:
 
 
 def tree_declarations(source_root: pathlib.Path) -> set[str]:
-    """Collect command-level declaration names from the current Tau Ceti tree."""
+    """Collect command-level declaration names from the current Epsilon Eridani tree."""
 
     found: set[str] = set()
     for path in source_root.rglob("*.lean"):
@@ -471,7 +471,7 @@ def markdown_summary(
 
     tracked = sum(len(group.sources) for group in groups)
     lines = ["## Expired upstream shim check", "",
-             f"Tracked **{tracked}** Tau Ceti source files.", ""]
+             f"Tracked **{tracked}** Epsilon Eridani source files.", ""]
     if not available:
         lines.append("No configured replacement target exists in the pinned dependencies.")
         return "\n".join(lines) + "\n"
@@ -483,7 +483,7 @@ def markdown_summary(
     lines.extend([
         f"Found upstream triggers affecting **{len(available)}** source files. {disposition}",
         "",
-        "| Tau Ceti source | Available upstream trigger | Migration guidance | Context |",
+        "| Epsilon Eridani source | Available upstream trigger | Migration guidance | Context |",
         "|---|---|---|---|",
     ])
     for replacement in available:
