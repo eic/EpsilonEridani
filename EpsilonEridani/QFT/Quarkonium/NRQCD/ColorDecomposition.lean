@@ -269,19 +269,12 @@ that states or rewrites with these results must enable it as this one does, with
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The adjoint action on the colour space of the pair is the matrix commutator:
-`⁅X, ψ⁆ = X ψ - ψ X`. -/
-theorem ad_apply_matrix (X ψ : Matrix (Fin N) (Fin N) ℂ) :
-    LieAlgebra.ad ℂ _ X ψ = X * ψ - ψ * X := by
-  simp [LieRing.of_associative_ring_bracket]
-
 /-- The adjoint action annihilates the singlet channel: `[X, P₁ ψ] = 0`. -/
 @[simp]
 theorem ad_mul_colorSingletProj (X : Matrix (Fin N) (Fin N) ℂ) :
     LieAlgebra.ad ℂ _ X * colorSingletProj N = 0 := by
   ext ψ : 1
-  rw [Module.End.mul_apply, ad_apply_matrix]
-  simp
+  simp [LieRing.of_associative_ring_bracket]
 
 /-- The adjoint action maps into the octet channel: `P₁ [X, ψ] = 0`, because a commutator is
 traceless. -/
@@ -289,8 +282,7 @@ traceless. -/
 theorem colorSingletProj_mul_ad (X : Matrix (Fin N) (Fin N) ℂ) :
     colorSingletProj N * LieAlgebra.ad ℂ _ X = 0 := by
   ext ψ : 1
-  rw [Module.End.mul_apply, ad_apply_matrix]
-  simp [trace_sub, trace_mul_comm X]
+  simp [LieRing.of_associative_ring_bracket, trace_sub, trace_mul_comm X]
 
 /-- The singlet channel is invariant under the colour action of the pair. -/
 theorem commute_ad_colorSingletProj (X : Matrix (Fin N) (Fin N) ℂ) :
@@ -313,8 +305,7 @@ theorem casimir_genM_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
   have h (a : SUNIndex N) : ⁅genM N a, ⁅genM N a, ψ⁆⁆ =
       genM N a * genM N a * ψ - (2 : ℂ) • (genM N a * ψ * genM N a) +
         ψ * (genM N a * genM N a) := by
-    change LieAlgebra.ad ℂ _ (genM N a) (LieAlgebra.ad ℂ _ (genM N a) ψ) = _
-    rw [ad_apply_matrix, ad_apply_matrix, two_smul]
+    simp only [LieRing.of_associative_ring_bracket, two_smul]
     noncomm_ring
   simp only [LieModule.casimir_apply, h, Finset.sum_add_distrib, Finset.sum_sub_distrib,
     ← Finset.sum_mul, ← Finset.mul_sum, ← Finset.smul_sum, sum_genM_sq, sum_genM_sandwich,
