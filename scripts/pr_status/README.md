@@ -66,45 +66,43 @@ signals used for Zulip reactions. A green build/review reaction is not a claim
 that a PR passes all merge prerequisites. Destructive housekeeping continues to
 use its stricter OWNER/MEMBER/COLLABORATOR comment policy.
 
-## Zulip reactions
+## Mattermost reactions
 
-[`zulip.py`](zulip.py) finds-or-creates the PR's message in the **PRs** topic and
-reconciles two independent, mutually-exclusive reaction groups from `core.derive`:
+[`mattermost.py`](mattermost.py) finds-or-creates the PR's announcement post in the **ε Eri**
+Mattermost channel (identified by a hidden `[PR-###-ANNOUNCEMENT]` tag) and reconciles two
+independent reaction groups on it from `core.derive`:
 
 | Group | State | Emoji |
 | --- | --- | --- |
-| **CI (build)** | waiting / running | 🟡 `yellow` |
-| | passed | 🟢 `green_circle` |
-| | failed | 🔴 `red_circle` |
+| **CI (build)** | waiting / running | 🟡 `large_yellow_circle` |
+| | passed | ✅ `white_check_mark` |
+| | failed | ❌ `x` |
 | **Review / lifecycle** | review in progress | 👀 `eyes` |
 | | waiting for review | *(none)* |
-| | changes requested / blocked | ✍️ `writing` |
-| | all review done, all green | ✔️ `check` |
-| | merged | `:merge:` |
-| | closed, not merged | `:closed-pr:` |
+| | changes requested / blocked | ✍️ `writing_hand` |
+| | all review done, all green | ✅ `white_check_mark` |
+| | merged | 🎉 `tada` |
+| | closed, not merged | 📕 `closed_book` |
 
-Each message includes the PR's author and the area from every `roadmap/...`
-label (with `unlabelled` distinct from the deliberate `roadmap/none`). A later
-label change edits the existing message in place, so a roadmap label added after
-the PR opens is still shown. The message is found-or-created from the PR's
-metadata *before* the fallible CI and review reads, so a transient GitHub hiccup
-can never leave a PR without its durable Zulip message. Only the bot's *own*
-reactions are authoritative (presence is judged by the bot's user id), so a
-human reacting on a status message never confuses reconciliation.
+Only the bot's *own* reactions are touched (they are selected by the bot's user id), so a human
+reacting on a status post never confuses reconciliation.
 
-Three event-driven workflows drive it:
+Four workflows drive it:
 
-- [`zulip-pr.yml`](../../.github/workflows/zulip-pr.yml): on PR
-  `opened`/`reopened`/`closed` and label changes. Creates the message, keeps its
-  roadmap metadata current, and owns the merged/closed ending. The automatic
-  status-label transitions also make review reactions refresh promptly; on an
-  open PR they can self-heal a message missed by a transient opening failure,
-  while label churn on a closed PR can never create a late post.
-- [`zulip-pr-status.yml`](../../.github/workflows/zulip-pr-status.yml): on
-  `workflow_run` of `pr-build` and `Review`. Refreshes the CI and review groups.
+- [`mattermost-pr.yml`](../../.github/workflows/mattermost-pr.yml): on PR
+  `opened`/`reopened`/`closed` and label changes. Creates the post, keeps its roadmap
+  metadata current, and owns the merged/closed ending.
+- [`mattermost-pr-status.yml`](../../.github/workflows/mattermost-pr-status.yml): on CI and
+  review status changes. Refreshes the CI and review groups.
 - [`mattermost-healthcheck.yml`](../../.github/workflows/mattermost-healthcheck.yml): a
-  schedule (every 6h) that runs `check` to probe the credentials, so a broken
-  key is caught even during quiet periods with no PR activity.
+  schedule (every six hours) that runs `check` to probe the credentials, so a broken token
+  is caught even during quiet periods with no PR activity.
+- [`mattermost-pr-backfill.yml`](../../.github/workflows/mattermost-pr-backfill.yml): manual;
+  see [Backfill](#backfill-run-locally).
+
+[`zulip.py`](zulip.py) is the same sink for a Zulip channel and topic. Epsilon Eridani has no
+Zulip, so no workflow runs it for PR reactions; it stays because `stuck_alerts.py` and
+`toolchain_tags.py` reuse its client and helpers, and its unit tests still run in CI.
 
 ## Merge conflicts
 
@@ -180,16 +178,15 @@ Note that labelling and commenting both bump the PR's `updatedAt`, which
 seven-day stale-close clock. That is the intended trade: a PR that just learned it
 conflicts should get its week to act on it.
 
-## Stuck-automation alerts (Tau Ceti > "Stuck PRs")
+## Stuck-automation alerts (Mattermost "ε Eri")
 
 [`stuck_alerts.py`](stuck_alerts.py), driven by
-[`stuck-alerts.yml`](../../.github/workflows/stuck-alerts.yml) hourly, posts to a
-second topic (**Stuck PRs**) whenever Epsilon Eridani's own automation wedges and cannot
-recover on its own. It reuses `core`'s GitHub-truth helpers and `zulip`'s Zulip
-client (pointed at the topic via `ZULIP_TOPIC`) and is idempotent the same way:
-one bot message per active alert, tagged with a hidden `<!--stuck:v1 <key>-->`
-marker, edited to a ✅ checkmark when the situation clears and never re-posted
-while it persists.
+[`stuck-alerts.yml`](../../.github/workflows/stuck-alerts.yml) hourly, reports whenever
+Epsilon Eridani's own automation wedges and cannot recover on its own. When at least one alert
+is active it posts one "🚨 Active Stuck Alerts" message listing them to the **ε Eri** Mattermost
+channel; when none is, it posts nothing. (Its Zulip path, one idempotent message per alert in a
+"Stuck PRs" topic edited to ✅ when the situation clears, runs only when `ZULIP_*` secrets are
+set; Epsilon Eridani sets none, so it logs a warning and is skipped.)
 
 This is an **emergency channel, not a help queue.** Every alert means a piece of
 infrastructure needs fixing so the wedge cannot recur, not that a human should
@@ -202,68 +199,60 @@ verdict, changes-requested nobody addressed, open roadmap issues); the module
 docstring lists the full catalogue and the reasoning.
 
 Run `python3 scripts/pr_status/stuck_alerts.py --dry-run` (with `gh` authenticated)
-to print the alerts it would post without touching Zulip. Its run goes red only on
-a persistent Zulip config break, exactly like the healthcheck.
+to print the alerts it would post without posting anywhere. A failed Mattermost post makes
+the run red; a Zulip configuration problem only warns.
 
 ## One-time setup
 
-1. **Create a dedicated Zulip bot** (Zulip → Settings → Bots → Add a new bot,
-   type *Generic*). Subscribe it to the **Tau Ceti** channel: a bot can only
-   post and react in channels it belongs to.
+1. **Create a dedicated Mattermost bot account** and add it to the **ε Eri** channel: a bot
+   can only post and react in channels it belongs to.
 2. **Add repository secrets** on `eic/EpsilonEridani`:
-   - `ZULIP_API_KEY`: the bot's API key
-   - `ZULIP_EMAIL`: the bot's email (e.g. `epsiloneridani-pr-bot@leanprover.zulipchat.com`)
+   - `MATTERMOST_BOT_TOKEN`: the bot's access token
+   - `MATTERMOST_CHANNEL_ID`: the channel's id (not its name)
 
-   The site is hard-coded to `https://leanprover.zulipchat.com` in the workflows.
+   and the repository **variable** `MATTERMOST_URL`: the server's base URL. Then confirm:
 
-   > **Set the key without a trailing newline.** A newline (or stray
-   > whitespace) rides into the Basic-auth header and Zulip rejects the key as
-   > `Malformed API key` (a 401). Use `--body`, which does not append one:
-   >
-   > ```bash
-   > gh secret set ZULIP_API_KEY --repo eic/EpsilonEridani --body "$KEY"
-   > ```
-   >
-   > Avoid `echo "$KEY" | gh secret set ...` (echo adds a newline). The script
-   > also `.strip()`s both creds defensively, but set them cleanly anyway.
+   ```bash
+   export MATTERMOST_URL=... MATTERMOST_BOT_TOKEN=... MATTERMOST_CHANNEL_ID=...
+   python3 scripts/pr_status/mattermost.py check   # exits 0 and prints OK when healthy
+   ```
+
+The Zulip sink, unused here, takes `ZULIP_API_KEY` and `ZULIP_EMAIL` (the site is hard-coded to
+`https://leanprover.zulipchat.com` in the workflows). If it is ever configured, set the key with
+`gh secret set ZULIP_API_KEY --body "$KEY"` rather than piping `echo`, so no trailing newline
+rides into the auth header and gets rejected as `Malformed API key`.
 
 The labels need no secret: `pr-labels.yml` uses the same GitHub App
 (`APP_ID` / `APP_PRIVATE_KEY`) already configured for the roadmap and merge
 workflows, scoped to this repo, and provisions lifecycle labels on first use.
 
-## Failure modes (Zulip)
+## Failure modes (Mattermost)
 
-The Zulip integration is quiet about cosmetic problems and loud about real ones,
+The Mattermost integration is quiet about cosmetic problems and loud about real ones,
 because the two are easy to confuse from the outside:
 
-- A **transient** hiccup (one Zulip 5xx, a network blip, a PR with no message
+- A **transient** hiccup (one failed reaction, a network blip, a PR with no post
   yet) is cosmetic and self-heals on the next reconcile. The script logs it and
   exits 0, so the workflow run stays green.
-- A **configuration** break (missing/empty creds, a bad API key (401), a
-  forbidden bot (403), or the bot not subscribed to the channel) breaks *every*
-  PR and will not fix itself. The script logs it, emits a GitHub Actions
-  `::error::` annotation, and exits non-zero, so the workflow run goes **red**.
+- A **configuration** break (`MATTERMOST_URL` or `MATTERMOST_BOT_TOKEN` unset, a rejected
+  token, or the bot unable to access the channel) breaks *every* PR and will not fix itself.
+  The script raises a config error and exits non-zero, so the workflow run goes **red**; the
+  six-hourly healthcheck surfaces it even when no PR is active.
 
-When a run is red, re-set `ZULIP_API_KEY` per the gotcha above, then confirm:
-
-```bash
-export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
-python3 scripts/pr_status/zulip.py check   # exits 0 and prints OK when healthy
-```
+When a run is red, re-set the secrets, then confirm with `mattermost.py check` as above.
 
 ## Backfill (run locally)
 
-To seed labels and/or Zulip messages for PRs that predate this integration, run
+To seed labels and/or Mattermost posts for PRs that predate this integration, run
 the reconcilers over the open PRs with `gh` authenticated:
 
 ```bash
 # Labels: needs only an authenticated gh with issues:write.
 python3 scripts/pr_status/labels.py reconcile-all
 
-# Zulip: needs the status bot credentials exported. This paginates the complete
-# PR history in one low-request stream and edits existing posts in place,
-# including posts whose URL predates the FormalFrontier -> eic transfer.
-export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
+# Mattermost: needs the status bot credentials exported. This paginates the complete
+# PR history in one low-request stream and edits existing posts in place.
+export MATTERMOST_URL=... MATTERMOST_BOT_TOKEN=... MATTERMOST_CHANNEL_ID=...
 gh api --paginate \
   'repos/eic/EpsilonEridani/pulls?state=all&sort=created&direction=asc&per_page=100' \
   --jq '.[] | {
@@ -274,18 +263,18 @@ gh api --paginate \
     title,
     author: .user.login,
     roadmaps: [.labels[].name | select(startswith("roadmap/"))]
-  }' | python3 scripts/pr_status/zulip.py backfill --dry-run --strict
+  }' | python3 scripts/pr_status/mattermost.py backfill --dry-run --strict
 
 # After reviewing the dry-run summary, omit --dry-run to apply it.
 ```
 
 Re-running either is safe: it converges to current GitHub state and changes
-nothing else. The `Zulip PR backfill` workflow runs the same full-history post
+nothing else. The `Mattermost PR backfill` workflow runs the same full-history post
 update with the repository's status-bot secrets, so old posts can be migrated
-without copying credentials locally. It defaults to a dry run, continues past
-individual failures and reports them together, retries transient Zulip failures,
-and intentionally does not create missing messages. `pr-labels.yml` also has a
-`workflow_dispatch` that reconciles one PR or all open PRs from the Actions tab.
+without copying credentials locally. It takes a `dry_run` input, continues past
+individual failures and reports them together (`--strict` turns those into a failed run).
+`pr-labels.yml` also has a `workflow_dispatch` that reconciles one PR or all open PRs from
+the Actions tab.
 
 ## Unit tests
 
