@@ -20,8 +20,8 @@ declaration order, the file contains:
 
 * the expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`
   (`minkowskiProduct_sub_self`), companion to `Lorentz.Vector.minkowskiProduct_add_self`;
-* the additivity of the spatial part, `(u + v).spatialPart = u.spatialPart + v.spatialPart`
-  (`spatialPart_add`);
+* the additivity of the time component and of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and
+  `(u + v).spatialPart = u.spatialPart + v.spatialPart` (`timeComponent_add`, `spatialPart_add`);
 * the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on
   the mass shell `⟪p, p⟫ₘ = m²` (`norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self`);
 * the Minkowski product of the vector `ofTimeAndSpatial x s` with time component `x` and spatial
@@ -41,7 +41,8 @@ declaration order, the file contains:
   (`minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul`), with the component
   `⟪v.spatialPart, n⟫ = a` of such a vector along `n`
   (`inner_spatialPart_eq_of_spatialPart_eq_smul`), its nullness when `v⁰ = a`
-  (`minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul`), and its form
+  (`minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul`), the positivity of
+  `√⟪v, v⟫ₘ` when `|a| < v⁰` (`sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul`), and its form
   `(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component along `n`
   (`minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul`);
 * in at least two spatial dimensions, the existence of two vectors on the mass shell with
@@ -69,6 +70,11 @@ lemma minkowskiProduct_sub_self {d : ℕ} (u v : Vector d) :
   simp only [map_sub, _root_.sub_apply]
   rw [minkowskiProduct_symm v u]
   ring
+
+/-- The time component of a sum is the sum of the time components. -/
+lemma timeComponent_add {d : ℕ} (u v : Vector d) :
+    (u + v).timeComponent = u.timeComponent + v.timeComponent :=
+  rfl
 
 /-- The spatial part of a sum is the sum of the spatial parts. -/
 @[simp]
@@ -133,6 +139,14 @@ theorem minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul
     {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (ht : v.timeComponent = a)
     (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
   rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
+
+/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < v⁰` has positive
+invariant mass: `0 < √⟪v, v⟫ₘ`. -/
+theorem sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
+    (h : |a| < v.timeComponent) : 0 < √⟪v, v⟫ₘ := by
+  rw [Real.sqrt_pos, minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv]
+  exact mul_pos (by linarith [neg_abs_le a]) (by linarith [le_abs_self a])
 
 /-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
 `(v⁰)² - ⟪v.spatialPart, n⟫²`, the square of its time component minus the square of its

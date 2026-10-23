@@ -20,7 +20,8 @@ Inside the forward light cone along `n`, that is for `|v_∥| < v⁰`, it recove
 `tanh y = v_∥ / v⁰` (`Lorentz.Vector.tanh_rapidity`), and it is half the logarithm of the ratio of
 the two light-cone components along `n`: `e^{y} = √(v⁰ + v_∥) / √(v⁰ - v_∥)`
 (`Lorentz.Vector.exp_rapidity`), so `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)`
-(`Lorentz.Vector.exp_two_mul_rapidity`).
+(`Lorentz.Vector.exp_two_mul_rapidity`) and `y = ½ log ((v⁰ + v_∥) / (v⁰ - v_∥))`
+(`Lorentz.Vector.rapidity_eq_half_log`).
 
 The two light-cone components multiply to the square `m_T² = (v⁰)² - v_∥²` of the transverse mass
 along `n`, so inside that cone the energy and the component along `n` of a four-vector are fixed
@@ -32,9 +33,8 @@ by its transverse mass and its rapidity: `v⁰ ± v_∥ = m_T e^{±y}`
 For a four-vector whose spatial part lies along a unit vector `n`, the transverse mass is the
 invariant mass `W = √⟪v, v⟫ₘ`
 (`Lorentz.Vector.minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul`, in
-`EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`), and the same
-relations read `v⁰ ± v_∥ = W e^{±y}`, `v⁰ = W cosh y` and `v_∥ = W sinh y`
-(the `_of_spatialPart_eq_smul` forms).
+`EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`), and the
+light-cone relations read `v⁰ ± v_∥ = W e^{±y}` (the `_of_spatialPart_eq_smul` forms).
 
 These are the variables in which collider kinematics along a beam axis is reported, and the form
 in which an invariant mass and a rapidity are traded for energies.
@@ -110,6 +110,15 @@ theorem exp_two_mul_rapidity {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
     Real.mul_self_sqrt (by linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ]),
     Real.mul_self_sqrt (by linarith [le_abs_self ⟪v.spatialPart, n⟫_ℝ])]
 
+/-- **The rapidity as a logarithm.** Inside the forward light cone along `n`,
+`y = ½ log ((v⁰ + v_∥) / (v⁰ - v_∥))`. -/
+theorem rapidity_eq_half_log {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
+    (h : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent) :
+    v.rapidity n = 1 / 2 * log ((v.timeComponent + ⟪v.spatialPart, n⟫_ℝ) /
+      (v.timeComponent - ⟪v.spatialPart, n⟫_ℝ)) := by
+  rw [← exp_two_mul_rapidity h, log_exp]
+  ring
+
 /-- `x = √(x y) (√x / √y)` for `x ≥ 0` and `y > 0`: the algebra shared by the forward and the
 backward light-cone component below. -/
 private theorem eq_sqrt_mul_mul_sqrt_div {x y : ℝ} (hx : 0 ≤ x) (hy : 0 < y) :
@@ -179,25 +188,6 @@ theorem timeComponent_sub_eq_sqrt_minkowskiProduct_mul_exp_neg_rapidity_of_spati
     v.timeComponent - a = √⟪v, v⟫ₘ * exp (-v.rapidity n) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
   have := timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity (hpar ▸ h)
-  rwa [← minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv, hpar] at this
-
-/-- The energy of a collinear four-vector is `W cosh y`. -/
-theorem timeComponent_eq_sqrt_minkowskiProduct_mul_cosh_rapidity_of_spatialPart_eq_smul
-    {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ}
-    (hv : v.spatialPart = a • n) (h : |a| < v.timeComponent) :
-    v.timeComponent = √⟪v, v⟫ₘ * cosh (v.rapidity n) := by
-  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
-  rw [minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv]
-  exact timeComponent_eq_sqrt_mul_cosh_rapidity (hpar ▸ h)
-
-/-- The momentum `a` along the axis of a collinear four-vector of spatial part `a • n` is
-`W sinh y`. -/
-theorem eq_sqrt_minkowskiProduct_mul_sinh_rapidity_of_spatialPart_eq_smul {v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
-    (h : |a| < v.timeComponent) :
-    a = √⟪v, v⟫ₘ * sinh (v.rapidity n) := by
-  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
-  have := inner_spatialPart_eq_sqrt_mul_sinh_rapidity (hpar ▸ h)
   rwa [← minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv, hpar] at this
 
 end Vector
