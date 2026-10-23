@@ -1,6 +1,6 @@
 # Toolchain tags
 
-Tau Ceti tags eligible Lean releases as `vX`, the way Mathlib does, so a project on Lean
+Epsilon Eridani tags eligible Lean releases as `vX`, the way Mathlib does, so a project on Lean
 v4.34.0 can check out `v4.34.0` here and get a tree that builds.
 
 ## The rule

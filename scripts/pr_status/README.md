@@ -184,7 +184,7 @@ conflicts should get its week to act on it.
 
 [`stuck_alerts.py`](stuck_alerts.py), driven by
 [`stuck-alerts.yml`](../../.github/workflows/stuck-alerts.yml) hourly, posts to a
-second topic (**Stuck PRs**) whenever Tau Ceti's own automation wedges and cannot
+second topic (**Stuck PRs**) whenever Epsilon Eridani's own automation wedges and cannot
 recover on its own. It reuses `core`'s GitHub-truth helpers and `zulip`'s Zulip
 client (pointed at the topic via `ZULIP_TOPIC`) and is idempotent the same way:
 one bot message per active alert, tagged with a hidden `<!--stuck:v1 <key>-->`
