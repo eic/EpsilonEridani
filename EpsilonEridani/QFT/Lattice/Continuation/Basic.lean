@@ -41,8 +41,6 @@ so that the sign of the invariant square is never lost by rereading one as the o
   (`complexMinkowskiProduct_continuation_self_re_neg`): it is strictly spacelike.
 * `eq_zero_of_mem_closure_euclideanSection_of_complexMinkowskiProduct_self_eq_zero`: the only
   null vector in the closure of the Euclidean section is the origin.
-* `map_wickRotation_minkowskiSection`: the Wick rotation `wickRotation`, which multiplies the time
-  component by `-i`, carries the Minkowski section onto the Euclidean section.
 * `ofMinkowski_mem_euclideanSection_iff`: the real Minkowski vectors on the Euclidean section are
   exactly those with vanishing time component; in particular a nonzero one is spacelike
   (`causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection`), and a nonzero vector that
@@ -215,9 +213,9 @@ theorem isClosed_euclideanSection : IsClosed (euclideanSection d : Set (ComplexS
 /-! ### The Wick rotation -/
 
 /-- The *Wick rotation*: the complex-linear automorphism of `ComplexSeparation d` that multiplies
-the time component by `-i` and fixes the spatial components. It carries the Minkowski section onto
-the Euclidean section (`map_wickRotation_minkowskiSection`), which makes the Euclidean section a
-maximal totally real subspace of `ComplexSeparation d`. -/
+the time component by `-i` and fixes the spatial components. It carries the real points of
+`ComplexSeparation d` onto the Euclidean section (`wickRotation_ofReal`), which makes the
+Euclidean section a maximal totally real subspace of `ComplexSeparation d`. -/
 noncomputable def wickRotation : ComplexSeparation d ≃L[ℂ] ComplexSeparation d :=
   ContinuousLinearEquiv.piCongrRight fun μ => Sum.elim
     (fun _ => ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (-I) (neg_ne_zero.2 I_ne_zero)))
@@ -242,27 +240,6 @@ theorem wickRotation_ofReal (y : Fin 1 ⊕ Fin d → ℝ) :
     wickRotation (fun μ => (y μ : ℂ)) = continuation (WithLp.toLp 2 y) := by
   funext μ
   rcases μ with a | i <;> simp
-
-/-- **The Wick rotation carries the Minkowski section onto the Euclidean section.** -/
-theorem map_wickRotation_minkowskiSection :
-    (minkowskiSection d).map ((wickRotation (d := d)).toLinearEquiv.toLinearMap.restrictScalars ℝ) =
-      euclideanSection d := by
-  ext z
-  simp only [Submodule.mem_map, euclideanSection_def, LinearMap.mem_range,
-    LinearMap.coe_restrictScalars, LinearEquiv.coe_toLinearMap,
-    ContinuousLinearEquiv.coe_toLinearEquiv]
-  constructor
-  · -- A point of the Minkowski section is the real point of its real parts.
-    rintro ⟨w, hw, rfl⟩
-    rw [mem_minkowskiSection_iff] at hw
-    refine ⟨WithLp.toLp 2 fun μ => (w μ).re, ?_⟩
-    rw [← wickRotation_ofReal]
-    congr 1
-    funext μ
-    exact Complex.ext (ofReal_re _) ((ofReal_im _).trans (hw μ).symm)
-  · rintro ⟨x, rfl⟩
-    exact ⟨fun μ => (x μ : ℂ), mem_minkowskiSection_iff.2 fun μ => ofReal_im _,
-      by rw [wickRotation_ofReal, WithLp.toLp_ofLp]⟩
 
 /-! ### The null-separation obstruction -/
 
