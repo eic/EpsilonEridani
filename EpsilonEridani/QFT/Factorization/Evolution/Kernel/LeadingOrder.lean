@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.Calculus.IntegralRpow
 public import EpsilonEridani.Mathematics.HarmonicSum.Basic
 public import EpsilonEridani.QFT.Factorization.Evolution.Kernel.NormalForm
 public import EpsilonEridani.QFT.QCD.Basic
@@ -33,8 +34,9 @@ convergence for the three kernels whose moments are rational functions of `N`, a
 indices for `P_qq` and `P_gg`, whose moments involve the harmonic numbers. At `N = 1` and `N = 2`
 they give the conservation identities: quark number, `M[P_qq](1) = 0`, and momentum,
 `M[P_qq](2) + M[P_gq](2) = 0` and `M[P_gg](2) + M[2 n_f P_qg](2) = 0`. These are derived from the
-kernels and not imposed on them: the `n_f`-dependent delta coefficient of `P_gg` is what makes
-the second momentum identity hold.
+kernels and not imposed on them: the `n_f`-dependent delta coefficient of `P_gg`, which is half
+the one-loop beta-function coefficient `β₀` (`pgg_deltaCoeff_eq_beta0`), is what makes the second
+momentum identity hold.
 
 ## Main definitions
 
@@ -49,6 +51,7 @@ the second momentum identity hold.
   index `N` for which the integral converges, as rational functions of `N`.
 * `moment_pqq`, `moment_pgg`: the moments in closed form at natural indices, in terms of the
   harmonic numbers `S₁(N) = H_N`.
+* `pgg_deltaCoeff_eq_beta0`: the delta coefficient of `P_gg` is `β₀ / 2`.
 * `moment_pqq_one`: quark-number conservation.
 * `moment_pqq_two_add_moment_pgq_two`, `moment_pgg_two_add_moment_pqgSinglet_two`: momentum
   conservation in the quark and the gluon column.
@@ -186,6 +189,14 @@ theorem pgg_plusCoeff : (pgg c).plusCoeff = 2 * c.cA :=
 theorem pgg_deltaCoeff : (pgg c).deltaCoeff = 11 / 6 * c.cA - 2 / 3 * c.nF * c.tF :=
   (rfl)
 
+/-- The coefficient of `δ(1-z)` in `P_gg` is half the one-loop beta-function coefficient,
+`β₀ / 2 = (11/6) C_A - (2/3) n_f T_F`. This is what makes the gluon-column momentum identity
+`moment_pgg_two_add_moment_pqgSinglet_two` hold: the virtual term of `P_gg` carries the same
+gluon self-energy that drives the running of `α_s`. -/
+theorem pgg_deltaCoeff_eq_beta0 : (pgg c).deltaCoeff = beta0 c / 2 := by
+  rw [pgg_deltaCoeff, beta0]
+  ring
+
 /-! ### The unregularised forms -/
 
 /-- **`P_qq` is `C_F [(1 + z²)/(1 - z)]₊`.** The normal form of `P_qq` pairs with a test
@@ -215,11 +226,14 @@ theorem pair_pqq {φ : ℝ → ℝ}
     rw [intervalIntegral.integral_add (intervalIntegrable_const (c := (1 : ℝ)))
       intervalIntegral.intervalIntegrable_id]
     norm_num
+  have hKφ : IntervalIntegrable (fun z => -(1 + z) * φ z) volume 0 1 :=
+    (hlin.const_mul (-1)).congr fun z _ => by ring
+  have hK : IntervalIntegrable (fun z : ℝ => -(1 + z)) volume 0 1 :=
+    (by fun_prop : Continuous fun z : ℝ => -(1 + z)).intervalIntegrable 0 1
   have hplus : plusFunctional (fun z => -(1 + z)) φ =
       φ 1 * (3 / 2) - ∫ z in (0 : ℝ)..1, (1 + z) * φ z := by
-    rw [plusFunctional_def, ← h32, ← intervalIntegral.integral_const_mul,
-      ← intervalIntegral.integral_sub hconst hlin]
-    congr 1 with z
+    rw [plusFunctional_of_intervalIntegrable hKφ hK]
+    simp only [neg_mul, intervalIntegral.integral_neg, h32]
     ring
   rw [plusFunctional_congr_ae_left φ hK, plusFunctional_add_left hsing hreg,
     plusFunctional_const_mul_left, hplus]
@@ -249,37 +263,6 @@ theorem pair_pgg {φ : ℝ → ℝ}
   ring
 
 /-! ### Moments in closed form -/
-
-/-- The integral over `[0, 1]` of a cubic polynomial times `z ^ s`, monomial by monomial, for a
-real exponent `s > -1`. The regular parts of the four kernels, times `z ^ (N - 1)`, all reduce to
-this almost everywhere, with `s = N - 1`, or `s = N - 2` for the two kernels with a `1 / z`
-singularity. -/
-private theorem integral_cubic_mul_rpow (a₀ a₁ a₂ a₃ : ℝ) {s : ℝ} (hs : -1 < s) :
-    ∫ z in (0 : ℝ)..1, (a₀ + a₁ * z + a₂ * z ^ 2 + a₃ * z ^ 3) * z ^ s =
-      a₀ / (s + 1) + a₁ / (s + 2) + a₂ / (s + 3) + a₃ / (s + 4) := by
-  have hi (a : ℝ) {r : ℝ} (hr : -1 < r) :
-      IntervalIntegrable (fun z : ℝ => a * z ^ r) volume 0 1 :=
-    (intervalIntegral.intervalIntegrable_rpow' hr).const_mul a
-  have hint {r : ℝ} (hr : -1 < r) : ∫ z in (0 : ℝ)..1, z ^ r = 1 / (r + 1) := by
-    rw [integral_rpow (Or.inl hr), Real.one_rpow,
-      Real.zero_rpow (by linarith : (0 : ℝ) < r + 1).ne', sub_zero]
-  have h0 := hi a₀ hs
-  have h1 := hi a₁ (by linarith : -1 < s + 1)
-  have h2 := hi a₂ (by linarith : -1 < s + 2)
-  have h3 := hi a₃ (by linarith : -1 < s + 3)
-  have hsplit : ∫ z in (0 : ℝ)..1, (a₀ + a₁ * z + a₂ * z ^ 2 + a₃ * z ^ 3) * z ^ s =
-      ∫ z in (0 : ℝ)..1,
-        (a₀ * z ^ s + a₁ * z ^ (s + 1) + a₂ * z ^ (s + 2) + a₃ * z ^ (s + 3)) := by
-    refine intervalIntegral.integral_congr_ae ?_
-    filter_upwards [Measure.ae_ne volume (0 : ℝ)] with z hz _
-    rw [show s + 2 = s + 1 + 1 by ring, show s + 3 = s + 1 + 1 + 1 by ring]
-    simp only [Real.rpow_add_one hz]
-    ring
-  rw [hsplit, intervalIntegral.integral_add ((h0.add h1).add h2) h3,
-    intervalIntegral.integral_add (h0.add h1) h2, intervalIntegral.integral_add h0 h1]
-  simp only [intervalIntegral.integral_const_mul, hint hs, hint (by linarith : -1 < s + 1),
-    hint (by linarith : -1 < s + 2), hint (by linarith : -1 < s + 3)]
-  ring
 
 /-- The quark-to-quark moment `γ_qq(N) = C_F [3/2 - 2 S₁(N) + 1/(N (N+1))]`, for `N ≥ 1`. -/
 theorem moment_pqq {N : ℕ} (hN : N ≠ 0) :
@@ -388,7 +371,7 @@ theorem moment_pqq_one : (pqq c).moment 1 = 0 := by
 theorem moment_pqq_two : (pqq c).moment 2 = -(4 / 3 * c.cF) := by
   rw [show (pqq c).moment 2 = (pqq c).moment ((2 : ℕ) : ℝ) by norm_num, moment_pqq c two_ne_zero,
     harmonic_two]
-  norm_num
+  push_cast
   ring
 
 /-- The momentum moment of the gluon-in-quark kernel, `M[P_gq](2) = (4/3) C_F`. -/
@@ -410,7 +393,7 @@ theorem moment_pqgSinglet_two : (pqgSinglet c).moment 2 = 2 / 3 * c.nF * c.tF :=
 theorem moment_pgg_two : (pgg c).moment 2 = -(2 / 3 * c.nF * c.tF) := by
   rw [show (pgg c).moment 2 = (pgg c).moment ((2 : ℕ) : ℝ) by norm_num, moment_pgg c le_rfl,
     harmonic_two]
-  norm_num
+  push_cast
   ring
 
 /-- **Momentum conservation in the quark column.** `M[P_qq](2) + M[P_gq](2) = 0`: the momentum

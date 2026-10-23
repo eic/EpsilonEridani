@@ -20,8 +20,10 @@ the veto algorithm needs.
 `EpsilonEridani.QFT.Factorization.Evolution.pqq`, `pgq`, `pqg` and `pgg`
 (`Evolution/Kernel/LeadingOrder.lean`): distributions in normal form over `ℝ`, parametrised by
 colour factors. The `Float` functions below are numeric transcriptions of their unregularised
-forms (`P_qq` as `C_F (1 + z²)/(1 - z)`, which is `Evolution.pair_pqq`), with the plus and
-delta parts dropped because the sampler never reaches `z = 1`.
+forms: they drop the delta terms and keep the plus parts as the plain functions `1 / (1 - z)`,
+without the plus prescription, since the sampler cuts `z` away from the endpoints. For example
+`pQQ` is `C_F (1 + z²)/(1 - z)`, the function whose plus prescription `C_F [(1 + z²)/(1 - z)]₊`
+is the regularised kernel `Evolution.pqq` (`Evolution.pair_pqq`).
 
 The colour factors are not new, though, and are not guessed:
 

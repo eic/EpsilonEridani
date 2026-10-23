@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.Distribution.PlusFunctional
+public import EpsilonEridani.QFT.Factorization.Convolution.Mellin
 
 /-!
 # Splitting kernels in distributional normal form
@@ -27,8 +28,11 @@ a coefficient `p` of the plus distribution `[1 / (1 - z)]₊` and a coefficient 
   `⟨P, φ⟩ = ∫₀¹ r z * φ z dz + p ⟨[1 / (1 - z)]₊, φ⟩ + d φ 1`.
 
 Its Mellin moment is the pairing with `z ^ (N - 1)`, indexed so that quark number is the moment
-at `N = 1` and the momentum fraction the moment at `N = 2`. At natural indices the moments of the
-plus part are harmonic numbers (`EpsilonEridani.plusOneMinus_pow`).
+at `N = 1` and the momentum fraction the moment at `N = 2`, as for `Convolution.mellinDis`. The
+moment-space evolution of `Evolution/MomentSpace.lean` indexes by the power of `z` instead
+(`momentumMomentIndex = 1`, `valenceMomentIndex = 0`), so `KernelForm.moment P (n + 1)` is its
+index-`n` moment. At natural indices the moments of the plus part are harmonic numbers
+(`EpsilonEridani.plusOneMinus_pow`).
 
 The regular part is a function on `ℝ`. Only its almost-everywhere class on `(0, 1)` enters the
 pairing (`KernelForm.pair_congr_ae_left`), as for the densities on which kernels act, whose
@@ -36,7 +40,8 @@ support in `[0, 1]` is likewise a hypothesis and not part of their type.
 
 The pairing and the moments are total functions. Where the integral defining them does not
 converge they take the junk value of the Bochner integral, as `EpsilonEridani.plusFunctional`
-does, so a statement about a moment carries the hypothesis on `N` under which it converges.
+does, so a closed-form evaluation of a moment carries the hypothesis on `N` under which it
+converges.
 
 ## Main definitions
 
@@ -48,8 +53,10 @@ does, so a statement about a moment carries the hypothesis on `N` under which it
 
 * `KernelForm.pair_pow`: the pairing with `z ^ n` is
   `∫₀¹ r z * z ^ n dz - p H_n + d`, with `H_n` the `n`-th harmonic number.
-* `KernelForm.moment_natCast_add_one`, `KernelForm.moment_natCast`: the moments at natural
-  indices are pairings with natural powers.
+* `KernelForm.moment_natCast_add_one`: the moments at natural indices are pairings with natural
+  powers.
+* `KernelForm.mellinDis_regular_eq_moment`: for a kernel without plus and delta parts the moment
+  is the Mellin transform `Convolution.mellinDis` of its regular part.
 * `KernelForm.pair_congr_ae_left`, `KernelForm.pair_congr_ae_right`, `KernelForm.moment_congr_ae`:
   the pairing sees only the almost-everywhere class of the regular part and of the test function.
 * `KernelForm.pair_smul`, `KernelForm.moment_smul`: the pairing is homogeneous in the kernel, for
@@ -105,12 +112,20 @@ theorem pair_def (P : KernelForm) (φ : ℝ → ℝ) :
   (rfl)
 
 /-- The Mellin moment `M[P](N) = ⟨P, z ^ (N - 1)⟩` of a kernel, at a real index `N`. Quark
-number is the moment at `N = 1` and the momentum fraction the moment at `N = 2`. The regular
-part contributes `∫₀¹ z ^ (N - 1) r z dz`, whose convergence depends on `r` and is a hypothesis
-of every statement about the moment; for a regular part integrable away from `z = 0`, as those
-of the leading-order kernels are, it converges for `N` in a half-line determined by the
-singularity of `r` at `z = 0`. Where it does not converge the moment takes the junk value of the
-Bochner integral, not a value of the analytic continuation of the moment in `N`. -/
+number is the moment at `N = 1` and the momentum fraction the moment at `N = 2`: this is the
+literature's index convention, that of `Convolution.mellinDis`, the transform of functions it
+extends (`mellinDis_regular_eq_moment`). It is shifted by one from the convention of
+`EpsilonEridani.Particles.Parton.PDF.mellinMoment` (`∫ x ^ n * f`) used by the moment-space
+evolution of `Evolution/MomentSpace.lean`: `P.moment (n + 1)` is the index-`n` moment there, so
+the momentum moment `P.moment 2` sits at `momentumMomentIndex = 1` and the quark-number moment
+`P.moment 1` at `valenceMomentIndex = 0`.
+
+The regular part contributes `∫₀¹ z ^ (N - 1) r z dz`, whose convergence depends on `r`; every
+statement that evaluates the moment in closed form carries the hypothesis on `N` under which it
+converges. For a regular part integrable away from `z = 0`, as those of the leading-order kernels
+are, it converges for `N` in a half-line determined by the singularity of `r` at `z = 0`. Where it
+does not converge the moment takes the junk value of the Bochner integral, not a value of the
+analytic continuation of the moment in `N`. -/
 noncomputable def moment (P : KernelForm) (N : ℝ) : ℝ :=
   P.pair fun z => z ^ (N - 1)
 
@@ -122,13 +137,6 @@ theorem moment_def (P : KernelForm) (N : ℝ) : P.moment N = P.pair fun z => z ^
 theorem moment_natCast_add_one (P : KernelForm) (n : ℕ) :
     P.moment (n + 1) = P.pair fun z => z ^ n := by
   simp only [moment_def, add_sub_cancel_right, Real.rpow_natCast]
-
-/-- At a nonzero natural index `N` the Mellin moment is the pairing with the monomial
-`z ^ (N - 1)`, with natural subtraction. -/
-theorem moment_natCast (P : KernelForm) {N : ℕ} (hN : N ≠ 0) :
-    P.moment N = P.pair fun z => z ^ (N - 1) := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
-  simpa using P.moment_natCast_add_one n
 
 /-- **The pairing sees only the almost-everywhere class of the regular part.** Two kernels with
 the same coefficients whose regular parts agree almost everywhere on `(0, 1]` pair equally with
@@ -143,7 +151,7 @@ theorem pair_congr_ae_left {P Q : KernelForm}
   rw [pair_def, pair_def, hint, hp, hd]
 
 /-- **The pairing sees only the almost-everywhere class of the test function** on `(0, 1]`,
-together with its value at `1`, where the plus and delta parts are concentrated. -/
+together with its value `φ 1`, which the delta part evaluates and the plus part subtracts. -/
 theorem pair_congr_ae_right (P : KernelForm) {φ ψ : ℝ → ℝ}
     (h : φ =ᵐ[volume.restrict (Ioc 0 1)] ψ) (h1 : φ 1 = ψ 1) : P.pair φ = P.pair ψ := by
   have hint : (∫ z in (0 : ℝ)..1, P.regular z * φ z) = ∫ z in (0 : ℝ)..1, P.regular z * ψ z := by
@@ -157,6 +165,20 @@ theorem moment_congr_ae {P Q : KernelForm}
     (hr : P.regular =ᵐ[volume.restrict (Ioc 0 1)] Q.regular) (hp : P.plusCoeff = Q.plusCoeff)
     (hd : P.deltaCoeff = Q.deltaCoeff) (N : ℝ) : P.moment N = Q.moment N :=
   pair_congr_ae_left hr hp hd _
+
+/-- For a kernel without plus and delta parts the Mellin moment is the Mellin transform
+`Convolution.mellinDis` of its regular part, in the same index convention: both are
+`∫₀¹ z ^ (N - 1) r z dz`. -/
+theorem mellinDis_regular_eq_moment {P : KernelForm} (hp : P.plusCoeff = 0)
+    (hd : P.deltaCoeff = 0) (N : ℝ) :
+    Convolution.mellinDis P.regular N = P.moment N := by
+  simp only [moment_def, pair_def, hp, hd, zero_mul, add_zero]
+  rw [Convolution.mellinDis, intervalIntegral.integral_of_le zero_le_one,
+    ← integral_complex_ofReal]
+  refine setIntegral_congr_fun measurableSet_Ioc fun x hx => ?_
+  simp only [Complex.ofReal_mul, Complex.ofReal_cpow hx.1.le, Complex.ofReal_sub,
+    Complex.ofReal_one]
+  exact mul_comm _ _
 
 /-- **Natural moments of a kernel.** The pairing with `z ^ n` is
 `∫₀¹ r z * z ^ n dz - p H_n + d`: the plus part contributes the harmonic number `H_n` and the
