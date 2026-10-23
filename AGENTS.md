@@ -20,6 +20,20 @@ expanding the project's mathematical scope), relocating a misplaced declaration,
 cleaner idiom, and documenting existing code are all welcome at any time. The roadmap conditions
 what new mathematics gets *added*, not whether already-merged code may be made better.
 
+**Material in upstream namespaces is PhyslibAlpha-eligible.** A declaration placed in a Physlib
+or Mathlib namespace rather than under `EpsilonEridani` (dot notation on an upstream type, or an
+`*Extensions.lean` module extending a Physlib module at the mirrored path) is written to be
+contributed to PhyslibAlpha, the lightly reviewed library inside the Physlib package, without
+renaming. Keep such material in its own module at the path PhyslibAlpha would use, with the
+upstream module as its first import, so the whole file can move. The flow is "mirror, pin,
+delete": once a human has landed the file in PhyslibAlpha and a dependency bump pins a Physlib
+commit carrying it, delete the local copy and import the upstream module in the same PR, as the
+no-compatibility rule below requires. You may prepare the upstream contribution (the file, its
+API map, attribution); never open a pull request in `leanprover-community/physlib` yourself.
+Material under the `EpsilonEridani` namespace is not eligible until it is renamed into an upstream
+namespace, which is an ordinary refactor. As with Mathlib, promotion from PhyslibAlpha into
+Physlib is Physlib's decision, and nothing on a roadmap is ever "pending upstream".
+
 Every pull request description must also contain one standalone attribution line:
 
 ```text
