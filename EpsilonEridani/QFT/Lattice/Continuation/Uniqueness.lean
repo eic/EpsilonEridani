@@ -86,8 +86,8 @@ theorem eqOn_of_eventuallyEq_continuation {f g : ComplexSeparation d → F}
   have key : EqOn (f ∘ e) (g ∘ e) (e ⁻¹' U) :=
     (hf.comp he fun _ hz => hz).eqOn_of_preconnected_of_eventuallyEq_ofReal
       (hg.comp he fun _ hz => hz) hU' (x₀ := WithLp.ofLp x₀)
-      (by simpa [e, wickRotation_ofReal] using h₀)
-      ((hT.eventually hfg).mono fun y hy => by simpa [e, wickRotation_ofReal] using hy)
+      (by simpa [e] using h₀)
+      ((hT.eventually hfg).mono fun y hy => by simpa [e] using hy)
   intro z hz
   simpa using key (x := e.symm z) (by simpa using hz)
 
@@ -120,17 +120,14 @@ theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → 
     f (ofMinkowski v) = g (ofMinkowski v) := by
   -- The equal-time projection of `v` lies on the Euclidean section; it is nonzero because the
   -- spatial part of a spacelike vector cannot vanish, so it is spacelike.
-  let w : Vector d := Sum.elim (fun _ => 0) fun i => v (Sum.inr i)
+  let w : Vector d := v - v.timeComponent • basis (Sum.inl 0)
   have hwE : ofMinkowski w ∈ euclideanSection d :=
-    ofMinkowski_mem_euclideanSection_iff.2 rfl
+    ofMinkowski_mem_euclideanSection_iff.2 (by simp [w])
   have hw0 : w ≠ 0 := by
     intro h
     refine spatialPart_ne_zero_of_spaceLike v hv ?_
-    -- Componentwise: `spatialPart v i = v (Sum.inr i)` by `spatialPart_apply_eq_toCoord`, and
-    -- `w = 0` says `w (Sum.inr i) = v (Sum.inr i) = 0` componentwise, as `Vector d` is a pi type.
     ext i
-    rw [spatialPart_apply_eq_toCoord]
-    exact congrFun h (Sum.inr i)
+    simpa [w, spatialPart_apply_eq_toCoord] using congrArg (fun u : Vector d => u (Sum.inr i)) h
   have hw : causalCharacter w = .spaceLike :=
     causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection hwE hw0
   exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg (hspace v hv)

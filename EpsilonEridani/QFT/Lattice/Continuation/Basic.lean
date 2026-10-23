@@ -237,15 +237,9 @@ theorem wickRotation_apply_inr (z : ComplexSeparation d) (i : Fin d) :
 
 /-- The Wick rotation of the real point `y` is the continuation of `y` read as a Euclidean
 separation. -/
+@[simp]
 theorem wickRotation_ofReal (y : Fin 1 ⊕ Fin d → ℝ) :
     wickRotation (fun μ => (y μ : ℂ)) = continuation (WithLp.toLp 2 y) := by
-  funext μ
-  rcases μ with a | i <;> simp
-
-/-- The Wick rotation of a real Minkowski vector is the continuation of the Euclidean separation
-with the same components. -/
-theorem wickRotation_ofMinkowski (v : Vector d) :
-    wickRotation (ofMinkowski v) = continuation (WithLp.toLp 2 v) := by
   funext μ
   rcases μ with a | i <;> simp
 
@@ -254,15 +248,21 @@ theorem map_wickRotation_minkowskiSection :
     (minkowskiSection d).map ((wickRotation (d := d)).toLinearEquiv.toLinearMap.restrictScalars ℝ) =
       euclideanSection d := by
   ext z
-  simp only [Submodule.mem_map, minkowskiSection_def, euclideanSection_def, LinearMap.mem_range,
+  simp only [Submodule.mem_map, euclideanSection_def, LinearMap.mem_range,
     LinearMap.coe_restrictScalars, LinearEquiv.coe_toLinearMap,
     ContinuousLinearEquiv.coe_toLinearEquiv]
   constructor
-  · rintro ⟨_, ⟨v, rfl⟩, rfl⟩
-    exact ⟨WithLp.toLp 2 v, (wickRotation_ofMinkowski v).symm⟩
+  · -- A point of the Minkowski section is the real point of its real parts.
+    rintro ⟨w, hw, rfl⟩
+    rw [mem_minkowskiSection_iff] at hw
+    refine ⟨WithLp.toLp 2 fun μ => (w μ).re, ?_⟩
+    rw [← wickRotation_ofReal]
+    congr 1
+    funext μ
+    exact Complex.ext (ofReal_re _) ((ofReal_im _).trans (hw μ).symm)
   · rintro ⟨x, rfl⟩
-    exact ⟨_, ⟨WithLp.ofLp x, rfl⟩,
-      by rw [wickRotation_ofMinkowski (WithLp.ofLp x), WithLp.toLp_ofLp]⟩
+    exact ⟨fun μ => (x μ : ℂ), mem_minkowskiSection_iff.2 fun μ => ofReal_im _,
+      by rw [wickRotation_ofReal, WithLp.toLp_ofLp]⟩
 
 /-! ### The null-separation obstruction -/
 
