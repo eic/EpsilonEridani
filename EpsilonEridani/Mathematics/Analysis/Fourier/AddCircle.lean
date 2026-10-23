@@ -17,6 +17,10 @@ the Fourier monomial `fourier n`, with the normalisation of the bundled additive
 `fourier_eval_sub`), and, having modulus `1` (`norm_fourier_eval`), it is integrable against any
 finite measure when composed with an almost everywhere measurable angle
 (`integrable_fourier_comp`, `integrable_fourier_mul_conj_fourier`).
+
+The docstrings below write the monomial as `e^{i n x}`: this abbreviates `fourier n x`, which
+Mathlib defines (`fourier_coe_apply`) as `e^{2 π i n x / T}` for an arbitrary period `T`, so the
+two readings coincide only in the physical case `T = 2π`.
 -/
 
 public section
