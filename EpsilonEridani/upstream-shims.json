@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "sources": [
+      "EpsilonEridani/Mathematics/KroneckerDelta/BasicExtensions.lean"
+    ],
+    "declarations": [
+      "KroneckerDelta.extendIndices",
+      "KroneckerDelta.generalizedKroneckerDelta_contraction"
+    ],
+    "modules": [
+      "PhyslibAlpha.Mathematics.KroneckerDelta.Basic"
+    ],
+    "speculative": true,
+    "note": "Extends Physlib.Mathematics.KroneckerDelta.Basic (index splitting via extendIndices and the contraction law for the generalized Kronecker delta over an arbitrary finite index type); PhyslibAlpha-eligible per AGENTS.md, written to move to the mirrored PhyslibAlpha path without renaming. Author: Wouter Deconinck, Apache 2.0, in this repository. Targets are guesses until a PhyslibAlpha pull request fixes the path; make the entry exact then."
+  }
+]
