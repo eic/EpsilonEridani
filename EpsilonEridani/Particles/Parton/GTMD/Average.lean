@@ -19,19 +19,23 @@ by averaging over the polar angle at fixed radius. This module makes that averag
 
 ## Main definitions
 
-* `circleAverageTransverse g kT`: the mean of `g : Transverse → ℝ` over the circle of radius
+* `circleAverageTransverse g kT`: the mean of `g : Transverse → E` over the circle of radius
   `kT` about the origin, i.e. Mathlib's `Real.circleAverage` transported to `Transverse`
-  along `Complex.orthonormalBasisOneI.repr`.
+  along `Complex.orthonormalBasisOneI.repr`. Following Mathlib's convention, it is `0` when
+  `g` is not circle integrable.
 * `VectorTmd`: a transverse-momentum dependent distribution whose transverse-momentum
   argument is a vector in `Transverse`.
 * `IsVectorTmdDensity`: the vector-argument analogue of `TMD.IsTmdDensity`.
-* `azimuthalAverage`: the per-flavour circle average of a `VectorTmd`, a `TMD.Tmd`.
+* `azimuthalAverage`: the per-flavour circle average of a `VectorTmd`, a `TMD.Tmd`. It inherits
+  the junk value `0` of `circleAverageTransverse` on non-integrable slices, which is why
+  `IsVectorTmdDensity` needs no measurability or integrability condition.
 
 ## Main results
 
-* `circleAverageTransverse_eq_integral`: the average is `(2π)⁻¹ ∫₀^{2π} g (radialVector kT θ) dθ`.
-* `circleAverageTransverse_eq_zero_of_odd`: the average annihilates every function that is odd
-  on the circle, in particular every linear functional.
+* `circleAverageTransverse_eq_integral`: the average is
+  `(2π)⁻¹ • ∫₀^{2π} g (circleMapTransverse kT θ) dθ`.
+* `circleAverageTransverse_eq_zero_of_odd`, `azimuthalAverage_eq_zero_of_odd`: the averages
+  annihilate every function that is odd on the circle, in particular every linear map.
 * `isTmdDensity_azimuthalAverage`: the azimuthal average of a vector-argument density is a
   density in the sense of `TMD.IsTmdDensity`.
 
@@ -55,74 +59,81 @@ namespace Particles
 namespace Parton
 namespace GTMD
 
-variable {Flavor : Type}
+variable {Flavor : Type} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ## The circle average on the transverse plane -/
 
 /-- The mean of `g` over the circle of radius `kT` about the origin of the transverse plane:
-    Mathlib's `Real.circleAverage` transported along `Complex.orthonormalBasisOneI.repr`. -/
-def circleAverageTransverse (g : Transverse → ℝ) (kT : ℝ) : ℝ :=
+    Mathlib's `Real.circleAverage` transported along `Complex.orthonormalBasisOneI.repr`.
+    Following Mathlib's convention, the value is `0` when
+    `fun z => g (Complex.orthonormalBasisOneI.repr z)` is not circle integrable, so the
+    identification with the mean requires circle integrability. -/
+def circleAverageTransverse (g : Transverse → E) (kT : ℝ) : E :=
   Real.circleAverage (fun z => g (Complex.orthonormalBasisOneI.repr z)) 0 kT
 
-/-- The circle average is `(2π)⁻¹` times the integral of `g` along the radial vector over the
-    polar angle `θ ∈ [0, 2π]`. -/
-lemma circleAverageTransverse_eq_integral (g : Transverse → ℝ) (kT : ℝ) :
+/-- The circle average on the transverse plane is Mathlib's `Real.circleAverage` of the
+    function read in the coordinates `Complex.orthonormalBasisOneI`. -/
+lemma circleAverageTransverse_def (g : Transverse → E) (kT : ℝ) :
     circleAverageTransverse g kT =
-      (2 * π)⁻¹ * ∫ θ in (0 : ℝ)..(2 * π), g (radialVector kT θ) := by
-  rw [circleAverageTransverse, Real.circleAverage_def, smul_eq_mul]
-  simp only [radialVector]
+      Real.circleAverage (fun z => g (Complex.orthonormalBasisOneI.repr z)) 0 kT :=
+  rfl
+
+/-- The circle average is `(2π)⁻¹` times the integral of `g` along `circleMapTransverse kT`
+    over the polar angle `θ ∈ [0, 2π]`. -/
+lemma circleAverageTransverse_eq_integral (g : Transverse → E) (kT : ℝ) :
+    circleAverageTransverse g kT =
+      (2 * π)⁻¹ • ∫ θ in (0 : ℝ)..(2 * π), g (circleMapTransverse kT θ) := by
+  rw [circleAverageTransverse_def, Real.circleAverage_def]
+  simp only [circleMapTransverse]
 
 /-- The circle average does not change when the radius is replaced by its negative. -/
 @[simp]
-lemma circleAverageTransverse_neg_radius (g : Transverse → ℝ) (kT : ℝ) :
+lemma circleAverageTransverse_neg_radius (g : Transverse → E) (kT : ℝ) :
     circleAverageTransverse g (-kT) = circleAverageTransverse g kT :=
   Real.circleAverage_neg_radius
 
 /-- The circle average does not change when the radius is replaced by its absolute value. -/
 @[simp]
-lemma circleAverageTransverse_abs_radius (g : Transverse → ℝ) (kT : ℝ) :
+lemma circleAverageTransverse_abs_radius (g : Transverse → E) (kT : ℝ) :
     circleAverageTransverse g |kT| = circleAverageTransverse g kT :=
   Real.circleAverage_abs_radius
 
 /-- The circle average at zero radius is the value at the origin. -/
 @[simp]
-lemma circleAverageTransverse_zero_radius (g : Transverse → ℝ) :
+lemma circleAverageTransverse_zero_radius [CompleteSpace E] (g : Transverse → E) :
     circleAverageTransverse g 0 = g 0 := by
-  simp only [circleAverageTransverse, Real.circleAverage_zero, map_zero]
+  rw [circleAverageTransverse_def, Real.circleAverage_zero, map_zero]
 
-/-- The circle average of the zero function vanishes. -/
+/-- The circle average of a constant function is that constant. -/
 @[simp]
-lemma circleAverageTransverse_zero_fun (kT : ℝ) : circleAverageTransverse 0 kT = 0 := by
-  simp [circleAverageTransverse, Real.circleAverage_const]
+lemma circleAverageTransverse_const [CompleteSpace E] (c : E) (kT : ℝ) :
+    circleAverageTransverse (fun _ => c) kT = c :=
+  Real.circleAverage_const c 0 kT
 
 /-- The circle average depends only on the values of the function on the circle `‖w‖ = |kT|`. -/
-lemma circleAverageTransverse_congr_sphere {g₁ g₂ : Transverse → ℝ} {kT : ℝ}
+lemma circleAverageTransverse_congr_sphere {g₁ g₂ : Transverse → E} {kT : ℝ}
     (h : ∀ w, ‖w‖ = |kT| → g₁ w = g₂ w) :
     circleAverageTransverse g₁ kT = circleAverageTransverse g₂ kT := by
-  simp only [circleAverageTransverse]
-  refine Real.circleAverage_congr_sphere fun z hz => h _ ?_
-  rw [LinearIsometryEquiv.norm_map]
-  rwa [Metric.mem_sphere, dist_zero_right] at hz
+  rw [circleAverageTransverse_def, circleAverageTransverse_def]
+  exact Real.circleAverage_congr_sphere fun z hz => h _ (norm_repr_eq_of_mem_sphere hz)
 
 /-- The circle average of a function nonnegative on the circle `‖w‖ = |kT|` is nonnegative. -/
 lemma circleAverageTransverse_nonneg_of_nonneg {g : Transverse → ℝ} {kT : ℝ}
     (hg : ∀ w, ‖w‖ = |kT| → 0 ≤ g w) : 0 ≤ circleAverageTransverse g kT := by
-  simp only [circleAverageTransverse]
-  refine Real.circleAverage_nonneg_of_nonneg fun z hz => hg _ ?_
-  rw [LinearIsometryEquiv.norm_map]
-  rwa [Metric.mem_sphere, dist_zero_right] at hz
+  rw [circleAverageTransverse_def]
+  exact Real.circleAverage_nonneg_of_nonneg fun z hz => hg _ (norm_repr_eq_of_mem_sphere hz)
 
 /-- The circle average of a function odd on the circle `‖w‖ = |kT|` vanishes. -/
-lemma circleAverageTransverse_eq_zero_of_odd {g : Transverse → ℝ} {kT : ℝ}
+lemma circleAverageTransverse_eq_zero_of_odd {g : Transverse → E} {kT : ℝ}
     (hg : ∀ w, ‖w‖ = |kT| → g (-w) = -g w) :
     circleAverageTransverse g kT = 0 := by
-  have hodd : ∀ θ, g (radialVector (-kT) θ) = -g (radialVector kT θ) := fun θ => by
-    rw [radialVector_neg_radius, hg _ (norm_radialVector kT θ)]
+  have hodd : ∀ θ, g (circleMapTransverse (-kT) θ) = -g (circleMapTransverse kT θ) := fun θ => by
+    rw [circleMapTransverse_neg_radius, hg _ (norm_circleMapTransverse kT θ)]
   have h := circleAverageTransverse_neg_radius g kT
   rw [circleAverageTransverse_eq_integral, circleAverageTransverse_eq_integral] at h
-  simp_rw [hodd, intervalIntegral.integral_neg] at h
+  simp_rw [hodd, intervalIntegral.integral_neg, smul_neg] at h
   rw [circleAverageTransverse_eq_integral]
-  linarith
+  linear_combination (norm := module) (-2⁻¹ : ℝ) • h
 
 /-! ## Vector-argument TMDs and their azimuthal average -/
 
@@ -156,7 +167,18 @@ lemma azimuthalAverage_of_nonneg (f : VectorTmd Flavor) (i : Flavor) {x kT Q2 ζ
     azimuthalAverage f i x kT Q2 ζ = circleAverageTransverse (f i x · Q2 ζ) kT := by
   simp [azimuthalAverage, not_lt.mpr hkT]
 
+/-- The azimuthal average annihilates every vector-argument TMD that is odd in its
+    transverse-momentum argument on the circle `‖w‖ = |kT|`. -/
+lemma azimuthalAverage_eq_zero_of_odd (f : VectorTmd Flavor) (i : Flavor) {x kT Q2 ζ : ℝ}
+    (hf : ∀ w, ‖w‖ = |kT| → f i x (-w) Q2 ζ = -f i x w Q2 ζ) :
+    azimuthalAverage f i x kT Q2 ζ = 0 := by
+  rcases lt_or_ge kT 0 with hkT | hkT
+  · exact azimuthalAverage_of_neg f i hkT
+  · rw [azimuthalAverage_of_nonneg f i hkT]
+    exact circleAverageTransverse_eq_zero_of_odd hf
+
 /-- The azimuthal average at zero transverse momentum is the value at the origin. -/
+@[simp]
 lemma azimuthalAverage_zero_radius (f : VectorTmd Flavor) (i : Flavor) (x Q2 ζ : ℝ) :
     azimuthalAverage f i x 0 Q2 ζ = f i x 0 Q2 ζ := by
   rw [azimuthalAverage_of_nonneg f i (kT := 0) le_rfl, circleAverageTransverse_zero_radius]
@@ -168,8 +190,8 @@ theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDe
   supportX i x kT Q2 ζ hx := by
     rcases lt_or_ge kT 0 with hkT | hkT
     · exact azimuthalAverage_of_neg f i hkT
-    · have h0 : (f i x · Q2 ζ) = 0 := funext fun v => hf.supportX i x v Q2 ζ hx
-      rw [azimuthalAverage_of_nonneg f i hkT, h0, circleAverageTransverse_zero_fun]
+    · have h0 : (f i x · Q2 ζ) = fun _ => 0 := funext fun v => hf.supportX i x v Q2 ζ hx
+      rw [azimuthalAverage_of_nonneg f i hkT, h0, circleAverageTransverse_const]
   supportKT i x kT Q2 ζ hkT := azimuthalAverage_of_neg f i hkT
   nonneg i x kT Q2 ζ hx0 hx1 hkT := by
     rw [azimuthalAverage_of_nonneg f i hkT]

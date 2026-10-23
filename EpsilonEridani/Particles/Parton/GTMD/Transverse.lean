@@ -6,29 +6,31 @@ Authors: Joseph Tooby-Smith
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import Mathlib.MeasureTheory.Integral.CircleIntegral
 /-!
 
 # The transverse plane
 
 This module defines the transverse plane `Transverse = EuclideanSpace ℝ (Fin 2)` of the
 light-front frame, in which transverse momenta and transverse positions are genuine
-two-vectors, together with its polar parametrisation `radialVector`.
+two-vectors, together with its polar parametrisation `circleMapTransverse`.
 
 ## Main definitions
 
 * `Transverse`: the two-dimensional transverse plane.
-* `radialVector kT θ`: the vector of radius `kT` at polar angle `θ`, i.e. Mathlib's
+* `circleMapTransverse kT θ`: the vector of radius `kT` at polar angle `θ`, i.e. Mathlib's
   `circleMap 0 kT θ` read in the coordinates `Complex.orthonormalBasisOneI`.
 
 ## Main results
 
-* `radialVector_apply_zero`, `radialVector_apply_one`: the Cartesian components
+* `circleMapTransverse_apply_zero`, `circleMapTransverse_apply_one`: the Cartesian components
   `(kT cos θ, kT sin θ)`.
-* `norm_radialVector`: the radial vector has norm `|kT|`.
-* `radialVector_neg_radius`: reversing the radius reverses the vector.
+* `norm_circleMapTransverse`: the vector has norm `|kT|`.
+* `range_circleMapTransverse`: the vectors of radius `kT` exhaust the circle `‖w‖ = |kT|`.
+* `circleMapTransverse_neg_radius`: reversing the radius reverses the vector.
+* `norm_repr_eq_of_mem_sphere`: the coordinates `Complex.orthonormalBasisOneI` carry the circle
+  of radius `r` in `ℂ` to the circle `‖w‖ = r`.
 -/
-
 @[expose] public section
 
 noncomputable section
@@ -43,36 +45,48 @@ namespace GTMD
 /-- The two-dimensional transverse plane of the light-front frame. -/
 abbrev Transverse : Type := EuclideanSpace ℝ (Fin 2)
 
-/-- The radial vector of radius `kT` at polar angle `θ` in the transverse plane:
+/-- The vector of radius `kT` at polar angle `θ` in the transverse plane:
     `circleMap 0 kT θ` read in the coordinates `Complex.orthonormalBasisOneI`. -/
-def radialVector (kT θ : ℝ) : Transverse :=
+def circleMapTransverse (kT θ : ℝ) : Transverse :=
   Complex.orthonormalBasisOneI.repr (circleMap 0 kT θ)
 
-/-- The first Cartesian component of the radial vector is `kT cos θ`. -/
+/-- The first Cartesian component of `circleMapTransverse kT θ` is `kT cos θ`. -/
 @[simp]
-lemma radialVector_apply_zero (kT θ : ℝ) : radialVector kT θ 0 = kT * cos θ := by
-  simp [radialVector, circleMap_zero]
+lemma circleMapTransverse_apply_zero (kT θ : ℝ) : circleMapTransverse kT θ 0 = kT * cos θ := by
+  simp [circleMapTransverse, circleMap_zero]
 
-/-- The second Cartesian component of the radial vector is `kT sin θ`. -/
+/-- The second Cartesian component of `circleMapTransverse kT θ` is `kT sin θ`. -/
 @[simp]
-lemma radialVector_apply_one (kT θ : ℝ) : radialVector kT θ 1 = kT * sin θ := by
-  simp [radialVector, circleMap_zero]
+lemma circleMapTransverse_apply_one (kT θ : ℝ) : circleMapTransverse kT θ 1 = kT * sin θ := by
+  simp [circleMapTransverse, circleMap_zero]
 
-/-- The radial vector has norm `|kT|`. -/
+/-- The coordinates `Complex.orthonormalBasisOneI` carry the circle of radius `r` about the
+    origin of `ℂ` to the circle `‖w‖ = r` of the transverse plane. -/
+lemma norm_repr_eq_of_mem_sphere {r : ℝ} {z : ℂ} (hz : z ∈ Metric.sphere (0 : ℂ) r) :
+    ‖Complex.orthonormalBasisOneI.repr z‖ = r := by
+  rw [LinearIsometryEquiv.norm_map, mem_sphere_zero_iff_norm.mp hz]
+
+/-- The vector `circleMapTransverse kT θ` has norm `|kT|`. -/
 @[simp]
-lemma norm_radialVector (kT θ : ℝ) : ‖radialVector kT θ‖ = |kT| := by
-  rw [radialVector, LinearIsometryEquiv.norm_map, norm_circleMap_zero]
+lemma norm_circleMapTransverse (kT θ : ℝ) : ‖circleMapTransverse kT θ‖ = |kT| := by
+  rw [circleMapTransverse, LinearIsometryEquiv.norm_map, norm_circleMap_zero]
 
-/-- The radial vector of radius zero is the origin. -/
+/-- The vectors `circleMapTransverse kT θ` exhaust the circle `‖w‖ = |kT|`. -/
+lemma range_circleMapTransverse (kT : ℝ) :
+    Set.range (circleMapTransverse kT) = Metric.sphere 0 |kT| := by
+  rw [show circleMapTransverse kT = Complex.orthonormalBasisOneI.repr ∘ circleMap 0 kT from rfl,
+    Set.range_comp, range_circleMap, LinearIsometryEquiv.image_sphere, map_zero]
+
+/-- The vector of radius zero is the origin. -/
 @[simp]
-lemma radialVector_zero_radius (θ : ℝ) : radialVector 0 θ = 0 := by
-  simp [radialVector, circleMap_zero_radius]
+lemma circleMapTransverse_zero_radius (θ : ℝ) : circleMapTransverse 0 θ = 0 := by
+  simp [circleMapTransverse, circleMap_zero_radius]
 
-/-- Reversing the radius reverses the radial vector. -/
-lemma radialVector_neg_radius (kT θ : ℝ) : radialVector (-kT) θ = -radialVector kT θ := by
-  rw [radialVector, radialVector, ← map_neg]
-  congr 1
-  simp [circleMap_zero]
+/-- Reversing the radius reverses the vector. -/
+lemma circleMapTransverse_neg_radius (kT θ : ℝ) :
+    circleMapTransverse (-kT) θ = -circleMapTransverse kT θ := by
+  have hc : circleMap 0 (-kT) θ = -circleMap 0 kT θ := by simp [circleMap_zero]
+  rw [circleMapTransverse, hc, map_neg, circleMapTransverse]
 
 end GTMD
 end Parton
