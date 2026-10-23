@@ -521,18 +521,18 @@ jobs:
           fi
           test -f pr/EpsilonEridani.lean && test ! -L pr/EpsilonEridani.lean
 
-      - name: Prepare inherited Mathlib shim obligations
+      - name: Prepare inherited upstream shim obligations
         if: ${{ env.INFRA != '1' }}
         run: |
           # Compare with the inherited registry (not today's base tip), so unrelated source
           # PRs from inheriting registry edits that landed after they branched.
-          base_shims="$RUNNER_TEMP/base-mathlib-shims.json"
-          if [ -f mergebase/EpsilonEridani/mathlib-shims.json ]; then
-            cp mergebase/EpsilonEridani/mathlib-shims.json "$base_shims"
+          base_shims="$RUNNER_TEMP/base-upstream-shims.json"
+          if [ -f mergebase/EpsilonEridani/upstream-shims.json ]; then
+            cp mergebase/EpsilonEridani/upstream-shims.json "$base_shims"
             echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
             echo "BASE_SHIM_ROOT=$(realpath mergebase)" >> "$GITHUB_ENV"
             echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
-          elif [ -f pr/EpsilonEridani/mathlib-shims.json ]; then
+          elif [ -f pr/EpsilonEridani/upstream-shims.json ]; then
             # A PR that introduces the registry has no inherited obligations, but its entries are
             # all new and must still be checked. An older PR containing neither copy predates the
             # mechanism and is left alone until it rebases onto a registry-bearing main.
@@ -560,10 +560,11 @@ jobs:
             exit 1
           fi
 
-      # The trusted checker requires each source-only PR that declares a new temporary Mathlib shim
-      # to record a concrete expiry target in EpsilonEridani's AI-owned registry. Keeping the registry under
-      # EpsilonEridani/ lets a worker add or remove entries in the same autonomous source PR as the shim.
-      - name: Temporary Mathlib shims have machine-checkable expiry targets
+      # The trusted checker requires each source-only PR that declares a new temporary upstream shim
+      # (pending Mathlib, Physlib, PhyslibAlpha or TauCeti) to record a concrete expiry target in
+      # EpsilonEridani's AI-owned registry. Keeping the registry under EpsilonEridani/ lets a worker add
+      # or remove entries in the same autonomous source PR as the shim.
+      - name: Temporary upstream shims have machine-checkable expiry targets
         id: shim_coverage
         if: ${{ env.INFRA != '1' && env.OUT_OF_SCOPE != '1' && env.SHIM_CHECK == '1' }}
         continue-on-error: true
@@ -573,8 +574,8 @@ jobs:
           [ -z "${BASE_SHIM_REGISTRY:-}" ] || args+=(
             --base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT"
           )
-          python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/EpsilonEridani/mathlib-shims.json "${args[@]}"
+          python3 gate/scripts/check-expired-upstream-shims.py \
+            --repo-root pr --manifest pr/EpsilonEridani/upstream-shims.json "${args[@]}"
           rc=$?
           echo "SHIM_COVERAGE_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
@@ -1057,12 +1058,13 @@ jobs:
           retention-days: 1
           compression-level: 0
 
-      # A replacement normally becomes newly actionable when the pinned Mathlib moves; that bump PR
+      # A replacement normally becomes newly actionable when a pinned dependency moves; that bump PR
       # is picked up by Tau Ceti's bump worker. Running the same trusted probe on source PRs also
-      # prevents a newly-added shim from targeting API that already exists at the current pin. The
-      # probe follows the build so a partial Mathlib download can be recovered by the normal build
-      # path first. Only concrete replacements block; broader sentinels remain audit warnings.
-      - name: Migrate shims whose exact replacements exist in pinned Mathlib
+      # prevents a newly-added shim from targeting API that already exists at the current pins. The
+      # probe follows the build so a partial dependency download can be recovered by the normal
+      # build path first, and so the other dependencies' built modules exist for the declaration
+      # probe to import. Only concrete replacements block; broader sentinels remain audit warnings.
+      - name: Migrate shims whose exact replacements exist in the pinned dependencies
         id: shim_expiry
         if: ${{ always() && env.INFRA != '1' && env.OUT_OF_SCOPE != '1' && env.SHIM_CHECK == '1' }}
         continue-on-error: true
@@ -1073,8 +1075,8 @@ jobs:
             args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
-          python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/EpsilonEridani/mathlib-shims.json "${args[@]}"
+          python3 gate/scripts/check-expired-upstream-shims.py \
+            --repo-root pr --manifest pr/EpsilonEridani/upstream-shims.json "${args[@]}"
           rc=$?
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
@@ -1179,7 +1181,7 @@ jobs:
                || [ "${{ steps.shim_coverage.outcome }}" = "failure" ]; then
             state=failure; desc="shim expiry metadata invalid — see failed checker step"
           elif [ "${{ env.SHIM_EXPIRY_RC }}" = "3" ]; then
-            state=failure; desc="Mathlib replacements landed — autonomous shim migration required"
+            state=failure; desc="upstream replacements landed — autonomous shim migration required"
           elif { [ -n "${{ env.SHIM_EXPIRY_RC }}" ] \
                  && [ "${{ env.SHIM_EXPIRY_RC }}" != "0" ]; } \
                || [ "${{ steps.shim_expiry.outcome }}" = "failure" ]; then

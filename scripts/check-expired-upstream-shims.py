@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Report tracked Tau Ceti shims whose replacement exists in pinned Mathlib.
+"""Report tracked Tau Ceti shims whose replacement exists in a pinned upstream library.
 
-The registry in ``EpsilonEridani/mathlib-shims.json`` is AI-owned metadata kept out of module docstrings;
-its schema and blocking policy are documented in ``docs/mathlib-shim-registry.md``. Exact
-replacements and broader landing sentinels carry different guidance. The default invocation is
-report-only; ``--fail-on-available`` turns an exact finding into an autonomous PR gate that hands
-the source or bump PR to a Tau Ceti worker. Malformed metadata or an unavailable Lean environment
-is always an infrastructure error.
+The registry in ``EpsilonEridani/upstream-shims.json`` is AI-owned metadata kept out of module
+docstrings; its schema and blocking policy are documented in ``docs/upstream-shim-registry.md``.
+A replacement may land in any direct dependency: Mathlib, Physlib (including the PhyslibAlpha and
+QuantumInfo libraries of the Physlib package) or TauCeti. Exact replacements and broader landing
+sentinels carry different guidance. The default invocation is report-only; ``--fail-on-available``
+turns an exact finding into an autonomous PR gate that hands the source or bump PR to a Tau Ceti
+worker. Malformed metadata or an unavailable Lean environment is always an infrastructure error.
 """
 
 from __future__ import annotations
@@ -24,18 +25,23 @@ from collections.abc import Iterable, Sequence
 from lean_source import qualified_declarations, strip_comments_and_strings
 
 
+OWN_LIBRARY = "EpsilonEridani"
+# The libraries a self-declaration may name. Module targets are not restricted to this list:
+# any library a dependency package provides resolves at probe time (see `library_root`).
+UPSTREAM = r"(?:Mathlib|Physlib(?:Alpha)?|QuantumInfo|TauCeti)"
 DECLARATION = re.compile(r"[^\W\d][\w']*(?:\.[^\W\d][\w']*)*")
-MODULE = re.compile(r"Mathlib(?:\.[^\W\d][\w']*)+")
-PROBE_PREFIX = "TAUCETI_MATHLIB_DECL\t"
+MODULE = re.compile(r"[A-Z][\w']*(?:\.[^\W\d][\w']*)+")
+PROBE_PREFIX = "TAUCETI_UPSTREAM_DECL\t"
+PACKAGE_BUILD_LIB = pathlib.Path(".lake/build/lib/lean")
 SELF_DECLARED = re.compile(r"\btemporary\b.{0,40}\bshim\b", re.IGNORECASE | re.DOTALL)
 SELF_DECLARED_OBSOLESCENCE = re.compile(
-    r"\bwhen\s+Mathlib\b.{0,160}\b(?:deleted?|removed?)\b", re.IGNORECASE | re.DOTALL
+    rf"\bwhen\s+{UPSTREAM}\b.{{0,160}}\b(?:deleted?|removed?)\b", re.IGNORECASE | re.DOTALL
 )
 SELF_DECLARED_VENDORING = re.compile(
-    r"\bmigrate\s+to\s+Mathlib\s+and\s+delete\b", re.IGNORECASE
+    rf"\bmigrate\s+to\s+{UPSTREAM}\s+and\s+delete\b", re.IGNORECASE
 )
 SELF_DECLARED_PORT = re.compile(
-    r"\b(?:this\s+)?copy\b.{0,80}\bdeleted\b.{0,80}\bMathlib\b", re.IGNORECASE | re.DOTALL
+    rf"\b(?:this\s+)?copy\b.{{0,80}}\bdeleted\b.{{0,80}}\b{UPSTREAM}\b", re.IGNORECASE | re.DOTALL
 )
 SELF_DECLARED_UPSTREAM_REFACTOR = re.compile(
     r"\bupstream\b.{0,500}\bshould\b.{0,160}\b(?:refactored|deleted)\b"
@@ -51,7 +57,7 @@ NEGATED_SELF_DECLARATION = re.compile(
 
 @dataclasses.dataclass(frozen=True)
 class ShimGroup:
-    """Source files sharing the same possible Mathlib replacements."""
+    """Source files sharing the same possible upstream replacements."""
 
     sources: tuple[pathlib.Path, ...]
     declarations: tuple[str, ...]
@@ -63,7 +69,7 @@ class ShimGroup:
 
 @dataclasses.dataclass(frozen=True)
 class AvailableReplacement:
-    """A tracked source and the replacement targets already present in Mathlib."""
+    """A tracked source and the replacement targets already present in a pinned dependency."""
 
     source: pathlib.Path
     targets: tuple[str, ...]
@@ -115,14 +121,17 @@ def load_registry(
             if DECLARATION.fullmatch(declaration) is None:
                 raise ValueError(f"entry {index}: invalid declaration name {declaration!r}")
         for module in modules:
-            if MODULE.fullmatch(module) is None:
-                raise ValueError(f"entry {index}: invalid Mathlib module name {module!r}")
+            if MODULE.fullmatch(module) is None or module.split(".")[0] == OWN_LIBRARY:
+                raise ValueError(
+                    f"entry {index}: invalid upstream module name {module!r} "
+                    f"(a `Library.Path` outside {OWN_LIBRARY})"
+                )
 
         sources: list[pathlib.Path] = []
         for source_raw in sources_raw:
             source = pathlib.Path(source_raw)
             if source.is_absolute() or ".." in source.parts or source.suffix != ".lean" \
-                    or not source.parts or source.parts[0] != "EpsilonEridani":
+                    or not source.parts or source.parts[0] != OWN_LIBRARY:
                 raise ValueError(f"entry {index}: source must be a EpsilonEridani/*.lean path: {source}")
             if source in seen_sources:
                 raise ValueError(f"entry {index}: duplicate source {source}")
@@ -137,7 +146,7 @@ def load_registry(
 
 
 def find_self_declared_shims(source_root: pathlib.Path) -> set[pathlib.Path]:
-    """Find prose that declares a temporary/pending Mathlib relationship.
+    """Find prose that declares a temporary/pending upstream relationship.
 
     The registry remains authoritative after process prose is removed from module docstrings. This
     scan is one-way enforcement: newly added self-declarations must be registered, while removing
@@ -170,7 +179,7 @@ def validate_registry_coverage(groups: Sequence[ShimGroup], source_root: pathlib
     if untracked:
         rendered = "\n".join(f"  {source}" for source in untracked)
         raise ValueError(
-            "self-declared Mathlib shims are missing from EpsilonEridani/mathlib-shims.json:\n"
+            "self-declared upstream shims are missing from EpsilonEridani/upstream-shims.json:\n"
             f"{rendered}"
         )
 
@@ -247,7 +256,7 @@ def validate_registry_ratchet(
             if not base_path.is_file():
                 raise ValueError(f"base registry source does not exist under --base-root: {source}")
             if declared is None:
-                declared = tree_declarations(repo_root / "EpsilonEridani")
+                declared = tree_declarations(repo_root / OWN_LIBRARY)
             live_surface = source_declarations(base_path).intersection(declared)
             if live_surface and rehomed_surface is None:
                 covering_groups = tuple(candidate for candidate in groups if covers(candidate, base))
@@ -293,14 +302,67 @@ def only_new_or_changed_groups(
     return tuple(changed)
 
 
-def render_declaration_probe(declarations: Iterable[str]) -> str:
-    """Build a Lean command that checks names in the fully imported Mathlib environment."""
+def direct_dependencies(manifest: pathlib.Path) -> tuple[str, ...]:
+    """Package directory names of the direct dependencies, read from the Lake manifest.
+
+    Lake marks a dependency's own dependencies `inherited`; the direct ones are the packages the
+    lakefile requires (mathlib, Physlib, TauCeti today), and the only ones whose built modules the
+    probe imports. Lake checks a package out under ``.lake/packages/<name>`` with `«»` removed.
+    """
+
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"cannot read the Lake manifest {manifest}: {error}") from error
+    packages = data.get("packages") if isinstance(data, dict) else None
+    if not isinstance(packages, list):
+        raise RuntimeError(f"{manifest} has no `packages` list")
+    return tuple(
+        str(package["name"]).strip("«»") for package in packages
+        if isinstance(package, dict) and package.get("inherited") is False
+        and isinstance(package.get("name"), str)
+    )
+
+
+def built_modules(package_dir: pathlib.Path) -> tuple[str, ...]:
+    """Module names of a dependency package's compiled modules, from its ``.olean`` outputs.
+
+    Only a module with an olean can be imported by the probe, and only the upstream modules
+    EpsilonEridani (transitively) imports have one in a build of EpsilonEridani; ``lake env lean``
+    builds nothing. So a declaration is found when it lives in Mathlib (whose cache is complete)
+    or in an upstream module EpsilonEridani already uses, which is where a shim's replacement is
+    expected to land; a replacement elsewhere is reached by also naming its module.
+    """
+
+    lib = package_dir / PACKAGE_BUILD_LIB
+    if not lib.is_dir():
+        return ()
+    return tuple(sorted(
+        ".".join(path.relative_to(lib).with_suffix("").parts)
+        for path in lib.rglob("*.olean") if path.is_file()
+    ))
+
+
+def probe_imports(repo_root: pathlib.Path, packages_root: pathlib.Path) -> tuple[str, ...]:
+    """The modules the declaration probe imports: all of Mathlib, plus every built module of the
+    other direct dependencies."""
+
+    imports = ["Mathlib"]
+    for name in direct_dependencies(repo_root / "lake-manifest.json"):
+        if name != "mathlib":
+            imports.extend(built_modules(packages_root / name))
+    return tuple(imports)
+
+
+def render_declaration_probe(
+    declarations: Iterable[str], imports: Iterable[str] = ("Mathlib",)
+) -> str:
+    """Build a Lean command that checks names in the imported upstream environment."""
 
     names = sorted(set(declarations))
-    lines = [
-        "import Mathlib",
+    lines = [f"import {module}" for module in imports] + [
         "open Lean Elab Command",
-        "elab \"#checkMathlibShims\" : command => do",
+        "elab \"#checkUpstreamShims\" : command => do",
         "  let env ← getEnv",
     ]
     if not names:
@@ -310,7 +372,7 @@ def render_declaration_probe(declarations: Iterable[str]) -> str:
             f"  if env.contains `{name} then",
             f"    liftIO <| IO.println \"{PROBE_PREFIX}{name}\"",
         ])
-    lines.append("#checkMathlibShims")
+    lines.append("#checkUpstreamShims")
     return "\n".join(lines) + "\n"
 
 
@@ -324,13 +386,16 @@ def parse_probe_output(output: str) -> set[str]:
     }
 
 
-def probe_declarations(declarations: Iterable[str], lake_root: pathlib.Path) -> set[str]:
-    """Return declarations found in pinned Mathlib's Lean environment."""
+def probe_declarations(
+    declarations: Iterable[str], lake_root: pathlib.Path,
+    imports: Iterable[str] = ("Mathlib",),
+) -> set[str]:
+    """Return declarations found in the pinned dependencies' Lean environment."""
 
     names = tuple(sorted(set(declarations)))
     if not names:
         return set()
-    source = render_declaration_probe(names)
+    source = render_declaration_probe(names, imports)
     completed = subprocess.run(
         ["lake", "env", "lean", "/dev/stdin"],
         cwd=lake_root,
@@ -341,30 +406,52 @@ def probe_declarations(declarations: Iterable[str], lake_root: pathlib.Path) -> 
     )
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip() or "Lean exited nonzero"
-        raise RuntimeError(f"could not inspect pinned Mathlib declarations:\n{detail}")
+        raise RuntimeError(f"could not inspect pinned upstream declarations:\n{detail}")
     return parse_probe_output(completed.stdout)
 
 
-def module_path(mathlib_root: pathlib.Path, module: str) -> pathlib.Path:
-    """Translate a Mathlib module name to its source path."""
+def library_root(packages_root: pathlib.Path, library: str) -> pathlib.Path:
+    """The source directory of an upstream library, in whichever dependency package provides it.
 
-    return mathlib_root.joinpath(*module.split(".")).with_suffix(".lean")
+    A package may provide several libraries (Physlib provides `Physlib`, `PhyslibAlpha` and
+    `QuantumInfo`), so libraries are located by their source directory, not by package name.
+    """
+
+    if not packages_root.is_dir():
+        raise RuntimeError(f"dependency packages do not exist: {packages_root}")
+    providers = sorted(
+        package for package in packages_root.iterdir()
+        if package.is_dir() and (package / library).is_dir()
+    )
+    if not providers:
+        raise RuntimeError(
+            f"no dependency under {packages_root} provides the library {library}; is it a "
+            "library of a package the lakefile requires?"
+        )
+    if len(providers) > 1:
+        names = ", ".join(package.name for package in providers)
+        raise RuntimeError(f"several dependencies provide the library {library}: {names}")
+    return providers[0] / library
+
+
+def module_path(packages_root: pathlib.Path, module: str) -> pathlib.Path:
+    """Translate an upstream module name to its source path."""
+
+    library, *rest = module.split(".")
+    return library_root(packages_root, library).joinpath(*rest).with_suffix(".lean")
 
 
 def available_replacements(
-    groups: Sequence[ShimGroup], found_declarations: set[str], mathlib_root: pathlib.Path
+    groups: Sequence[ShimGroup], found_declarations: set[str], packages_root: pathlib.Path
 ) -> tuple[AvailableReplacement, ...]:
-    """Pair each source with targets already available in pinned Mathlib."""
-
-    if any(group.modules for group in groups) and not (mathlib_root / "Mathlib").is_dir():
-        raise RuntimeError(f"Mathlib source tree does not exist: {mathlib_root}")
+    """Pair each source with targets already available in the pinned dependencies."""
 
     available: list[AvailableReplacement] = []
     for group in groups:
         targets = tuple(
             [f"declaration {name}" for name in group.declarations if name in found_declarations]
             + [f"module {name}" for name in group.modules
-               if module_path(mathlib_root, name).is_file()]
+               if module_path(packages_root, name).is_file()]
         )
         if targets:
             available.extend(
@@ -383,10 +470,10 @@ def markdown_summary(
     """Render the check's GitHub Actions summary."""
 
     tracked = sum(len(group.sources) for group in groups)
-    lines = ["## Expired Mathlib shim check", "",
+    lines = ["## Expired upstream shim check", "",
              f"Tracked **{tracked}** Tau Ceti source files.", ""]
     if not available:
-        lines.append("No configured replacement target exists in the pinned dependency.")
+        lines.append("No configured replacement target exists in the pinned dependencies.")
         return "\n".join(lines) + "\n"
     disposition = (
         "Sources with exact replacements block this PR until its worker migrates them; "
@@ -428,7 +515,8 @@ def warning_message(replacement: AvailableReplacement) -> str:
                   "canonical counterparts and preserve or re-home source-only API")
     else:
         advice = "migrate to the canonical target and delete only the superseded surface"
-    return f"Pinned Mathlib now provides {targets}; {advice} ({replacement.note}){speculative}"
+    return (f"The pinned dependencies now provide {targets}; {advice} "
+            f"({replacement.note}){speculative}")
 
 
 def blocks_bump(replacement: AvailableReplacement) -> bool:
@@ -446,26 +534,28 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
                         help="trusted base registry whose live obligations may not be weakened")
     parser.add_argument("--base-root", type=pathlib.Path,
                         help="checkout containing --base-manifest's inherited source files")
-    parser.add_argument("--mathlib-root", type=pathlib.Path)
+    parser.add_argument("--packages-root", type=pathlib.Path,
+                        help="Lake's checkout of the dependencies (default: .lake/packages)")
     parser.add_argument("--lake-root", type=pathlib.Path)
     parser.add_argument("--coverage-only", action="store_true",
-                        help="validate source coverage without probing Mathlib")
+                        help="validate source coverage without probing the dependencies")
     parser.add_argument("--only-new", action="store_true",
                         help="probe only entries added or changed relative to --base-manifest")
     parser.add_argument("--fail-on-available", action="store_true",
-                        help="exit 3 when Mathlib provides a configured exact replacement")
+                        help="exit 3 when a pinned dependency provides a configured exact "
+                             "replacement")
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     repo_root = args.repo_root.resolve()
-    manifest = (args.manifest or repo_root / "EpsilonEridani/mathlib-shims.json").resolve()
-    mathlib_root = (args.mathlib_root or repo_root / ".lake/packages/mathlib").resolve()
+    manifest = (args.manifest or repo_root / OWN_LIBRARY / "upstream-shims.json").resolve()
+    packages_root = (args.packages_root or repo_root / ".lake/packages").resolve()
     lake_root = (args.lake_root or repo_root).resolve()
     try:
         groups = load_registry(manifest, repo_root)
-        validate_registry_coverage(groups, repo_root / "EpsilonEridani")
+        validate_registry_coverage(groups, repo_root / OWN_LIBRARY)
         base_groups: tuple[ShimGroup, ...] = ()
         if args.base_manifest is not None:
             if not args.base_manifest.is_file():
@@ -476,7 +566,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             base_root = (args.base_root or repo_root).resolve()
             validate_registry_ratchet(groups, base_groups, repo_root, base_root)
         if args.coverage_only:
-            print("check-expired-mathlib-shims: registry covers all self-declared shims")
+            print("check-expired-upstream-shims: registry covers all self-declared shims")
             return 0
         if args.only_new:
             if args.base_manifest is None:
@@ -484,16 +574,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             probe_groups = only_new_or_changed_groups(groups, base_groups)
         else:
             probe_groups = groups
-        declarations = (name for group in probe_groups for name in group.declarations)
-        found = probe_declarations(declarations, lake_root)
-        available = available_replacements(probe_groups, found, mathlib_root)
+        names = sorted({name for group in probe_groups for name in group.declarations})
+        found = (probe_declarations(names, lake_root, probe_imports(repo_root, packages_root))
+                 if names else set())
+        available = available_replacements(probe_groups, found, packages_root)
     except Exception as error:
-        print(f"check-expired-mathlib-shims: error: {error}", file=sys.stderr)
+        print(f"check-expired-upstream-shims: error: {error}", file=sys.stderr)
         return 2
 
     tracked = sum(len(group.sources) for group in groups)
     blocking = tuple(replacement for replacement in available if blocks_bump(replacement))
-    print(f"check-expired-mathlib-shims: {tracked} tracked files, "
+    print(f"check-expired-upstream-shims: {tracked} tracked files, "
           f"{len(available)} with available replacements ({len(blocking)} blocking)")
     for replacement in available:
         annotation = "error" if args.fail_on_available and blocks_bump(replacement) else "warning"
