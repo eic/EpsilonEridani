@@ -16,7 +16,9 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
 companion to `Lorentz.Vector.minkowskiProduct_add_self`; the additivity of the time component and
-of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and `(u + v).spatialPart = u.spatialPart + v.spatialPart`;
+of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and `(u + v).spatialPart = u.spatialPart + v.spatialPart`,
+and the closure of collinearity under sums, `(u + v).spatialPart = (a + b) • n` when
+`u.spatialPart = a • n` and `v.spatialPart = b • n`;
 the factorisation `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial
 part is `a • n` along a unit vector `n` into its light-cone components, with the component
 `⟪v.spatialPart, n⟫ = a` of such a vector along `n`, its nullness when `v⁰ = a`, the positivity of
@@ -73,6 +75,14 @@ theorem minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul {d : ℕ} {v : Vecto
   rw [minkowskiProduct_self_eq_sq_sub, hv]
   simp only [norm_smul, hn, Real.norm_eq_abs, mul_one, sq_abs]
   ring
+
+/-- The spatial part of a sum of four-vectors whose spatial parts lie along `n` lies along `n`
+too: if `u.spatialPart = a • n` and `v.spatialPart = b • n`, then
+`(u + v).spatialPart = (a + b) • n`. -/
+theorem spatialPart_add_eq_smul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ} (hu : u.spatialPart = a • n)
+    (hv : v.spatialPart = b • n) : (u + v).spatialPart = (a + b) • n := by
+  rw [spatialPart_add, hu, hv, add_smul]
 
 /-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
 theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}

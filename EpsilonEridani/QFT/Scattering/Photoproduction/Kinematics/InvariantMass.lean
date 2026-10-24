@@ -28,8 +28,10 @@ quantities rather than by convention. The target has momentum `p` against the be
   `Q² = -q²` enters `W²` explicitly.
 * For a photon of energy `k` and momentum `a` along the beam axis, of any virtuality, the system's
   rapidity obeys `e^{2y} = (k + a + E - p) / (k - a + E + p)`
-  (`exp_two_mul_rapidity_of_collinearPhoton`) and `k + a + E - p = W e^{y}`
-  (`photonEnergy_add_photonMomentum_add_targetEnergy_sub_momentum_eq_sqrt_mul_exp_rapidity`),
+  (`exp_two_mul_rapidity_of_collinearPhoton`) and its light-cone components along the beam axis
+  are `k + a + E - p = W e^{y}` and `k - a + E + p = W e^{-y}`
+  (`photonEnergy_add_photonMomentum_add_targetEnergy_sub_momentum_eq_sqrt_mul_exp_rapidity`,
+  `photonEnergy_sub_photonMomentum_add_targetEnergy_add_momentum_eq_sqrt_mul_exp_neg_rapidity`),
   where `W > 0` (`sqrt_minkowskiProduct_add_self_pos_of_collinearPhoton`).
 * For a real photon, `a = k`, `W² = M² + 2 k (E + p)` (`minkowskiProduct_add_self_of_realPhoton`),
   `e^{2y} = (2 k + E - p) / (E + p)` (`exp_two_mul_rapidity_of_realPhoton`) and
@@ -93,18 +95,6 @@ theorem minkowskiProduct_add_self_of_target (hP : P.timeComponent = E)
   rw [minkowskiProduct_add_self, hM, hqP]
   ring
 
-/-- The photon–target system of a photon of energy `k` and a target of energy `E` has energy
-`k + E`. -/
-private theorem timeComponent_add_target (hq : q.timeComponent = k) (hP : P.timeComponent = E) :
-    (q + P).timeComponent = k + E := by
-  rw [timeComponent_add, hq, hP]
-
-/-- The photon–target system of a photon of momentum `a` along the beam axis and a target of
-momentum `p` against it has spatial part `(a - p) • n`. -/
-private theorem spatialPart_add_target (hq' : q.spatialPart = a • n)
-    (hP' : P.spatialPart = -p • n) : (q + P).spatialPart = (a - p) • n := by
-  rw [spatialPart_add, hq', hP', sub_smul, _root_.neg_smul, ← sub_eq_add_neg]
-
 /-- The system of a photon of energy `k > 0` along the beam axis and a target of energy `E` and
 momentum `-E < p ≤ E` against it lies inside the forward light cone along the beam axis:
 `|k - p| < k + E`. -/
@@ -124,9 +114,10 @@ and momentum `p` against it, inside the forward light cone `|a - p| < k + E`, ha
 along the beam axis with `e^{2y} = (k + a + E - p) / (k - a + E + p)`. -/
 theorem exp_two_mul_rapidity_of_collinearPhoton (h : |a - p| < k + E) :
     exp (2 * (q + P).rapidity n) = (k + a + E - p) / (k - a + E + p) := by
-  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn (spatialPart_add_target hq' hP')
-  rw [exp_two_mul_rapidity (by rw [hpar, timeComponent_add_target hq hP]; exact h), hpar,
-    timeComponent_add_target hq hP]
+  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn
+    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP')
+  rw [exp_two_mul_rapidity (by rw [hpar, timeComponent_add, hq, hP]; exact h), hpar,
+    timeComponent_add, hq, hP]
   congr 1 <;> ring
 
 /-- **The forward light-cone component from the invariant mass and the rapidity.** For a photon
@@ -136,8 +127,22 @@ the beam axis is `W e^{y}`, where `W` and `y` are its invariant mass and rapidit
 theorem photonEnergy_add_photonMomentum_add_targetEnergy_sub_momentum_eq_sqrt_mul_exp_rapidity
     (h : |a - p| < k + E) : k + a + E - p = √⟪q + P, q + P⟫ₘ * exp ((q + P).rapidity n) := by
   have := timeComponent_add_eq_sqrt_minkowskiProduct_mul_exp_rapidity_of_spatialPart_eq_smul hn
-    (spatialPart_add_target hq' hP') (by rw [timeComponent_add_target hq hP]; exact h)
-  rw [timeComponent_add_target hq hP] at this
+    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP')
+    (by rw [timeComponent_add, hq, hP]; exact h)
+  rw [timeComponent_add, hq, hP] at this
+  linear_combination this
+
+/-- **The backward light-cone component from the invariant mass and the rapidity.** For a photon
+of energy `k` and momentum `a` along the beam axis and a target of energy `E` and momentum `p`
+against it, with `|a - p| < k + E`, the light-cone component `k - a + E + p` of the system along
+the beam axis is `W e^{-y}`, where `W` and `y` are its invariant mass and rapidity. -/
+theorem photonEnergy_sub_photonMomentum_add_targetEnergy_add_momentum_eq_sqrt_mul_exp_neg_rapidity
+    (h : |a - p| < k + E) :
+    k - a + E + p = √⟪q + P, q + P⟫ₘ * exp (-(q + P).rapidity n) := by
+  have := timeComponent_sub_eq_sqrt_minkowskiProduct_mul_exp_neg_rapidity_of_spatialPart_eq_smul
+    hn (spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP')
+    (by rw [timeComponent_add, hq, hP]; exact h)
+  rw [timeComponent_add, hq, hP] at this
   linear_combination this
 
 /-- **The invariant mass is positive.** A photon of energy `k` and momentum `a` along the beam axis
@@ -145,8 +150,9 @@ and a target of energy `E` and momentum `p` against it, with `|a - p| < k + E`, 
 invariant mass `W > 0`. -/
 theorem sqrt_minkowskiProduct_add_self_pos_of_collinearPhoton (h : |a - p| < k + E) :
     0 < √⟪q + P, q + P⟫ₘ :=
-  sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul hn (spatialPart_add_target hq' hP')
-    (by rw [timeComponent_add_target hq hP]; exact h)
+  sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul hn
+    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP')
+    (by rw [timeComponent_add, hq, hP]; exact h)
 
 end CollinearPhoton
 
@@ -180,12 +186,10 @@ the photon–target system; so `W` and `y` determine each other. -/
 theorem targetEnergy_add_momentum_eq_sqrt_mul_exp_neg_rapidity (hk : 0 < k) (hp : -E < p)
     (hpE : p ≤ E) :
     E + p = √⟪q + P, q + P⟫ₘ * exp (-(q + P).rapidity n) := by
-  have :=
-    timeComponent_sub_eq_sqrt_minkowskiProduct_mul_exp_neg_rapidity_of_spatialPart_eq_smul hn
-      (spatialPart_add_target hq' hP')
-      (by rw [timeComponent_add_target hq hP]; exact abs_sub_lt_add hk hp hpE)
-  rw [timeComponent_add_target hq hP] at this
-  linear_combination this
+  have h :=
+    photonEnergy_sub_photonMomentum_add_targetEnergy_add_momentum_eq_sqrt_mul_exp_neg_rapidity hn
+      hq hq' hP hP' (abs_sub_lt_add hk hp hpE)
+  linear_combination h
 
 /-- **The photon energy from the invariant mass and the rapidity.** A real photon of energy `k`
 and a target of mass `M` form a system of invariant mass `W` and rapidity `y` with
