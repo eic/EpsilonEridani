@@ -8,6 +8,7 @@ module
 public import EpsilonEridani.Mathematics.SpecialFunctions.BesselK.Basic
 public import EpsilonEridani.QFT.Scattering.Photoproduction.Kinematics.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
@@ -31,13 +32,15 @@ The organising identity is `photonFluxProfile_eq_integral`:
 a consequence of `hasDerivAt_photonFluxProfile`, which says that the derivative of the bracket is
 `-ξ K₁(ξ)²`. Everything else follows: the profile is positive
 (`photonFluxProfile_pos`) and strictly decreasing (`strictAntiOn_photonFluxProfile`); it is
-suppressed like `exp (-2ξ)` at large `ξ` (`abs_photonFluxProfile_le`), which is the coherence
+suppressed like `exp (-2ξ)` at large `ξ` (`abs_photonFluxProfile_le_mul_exp_neg`, and
+`ChargedSource.abs_integratedPhotonFlux_le_mul_exp_neg` for the spectrum), which is the coherence
 cutoff appearing as a decay rate rather than as a sharp edge; and it grows like `-log ξ` at small
 `ξ` (`isEquivalent_photonFluxProfile_neg_log`), so the spectrum behaves as the inverse photon
 energy times the logarithm of the ratio of the maximal photon energy `γ / b_min` to the actual one
-(`ChargedSource.isEquivalent_integratedPhotonFlux_neg_log`). The integrand `t K₁(t)²` of the
+(`ChargedSource.isEquivalent_integratedPhotonFlux_mul_log_div`). The integrand `t K₁(t)²` of the
 organising identity is, up to normalisation, the impact-parameter differential flux, so that
-identity is also what fixes the relative normalisation of the two forms of the spectrum.
+identity is also what fixes the relative normalisation of the two forms of the spectrum; it is
+integrable beyond any positive `ξ` (`integrableOn_mul_besselK_one_sq`).
 
 The charge radius carried by `ChargedSource` plays no role here: this is the point-source
 spectrum, and `b_min` is an external cutoff on the impact parameter rather than a property of the
@@ -97,7 +100,7 @@ theorem hasDerivAt_photonFluxProfile {ξ : ℝ} (hξ : 0 < ξ) :
 /-- The profile is suppressed like `exp (-2ξ)` at large argument, at the rate set by the decay of
 the two Bessel functions. This is the coherence cutoff of the point-source spectrum in its exact
 form: a decay rate, not a sharp edge. -/
-theorem abs_photonFluxProfile_le {ξ : ℝ} (hξ : 0 < ξ) :
+theorem abs_photonFluxProfile_le_mul_exp_neg {ξ : ℝ} (hξ : 0 < ξ) :
     |photonFluxProfile ξ| ≤ (1 + ξ) ^ 3 / ξ * exp (-(2 * ξ)) := by
   have hξne : ξ ≠ 0 := hξ.ne'
   have hK₀ := besselK_pos 0 hξ
@@ -125,11 +128,11 @@ theorem abs_photonFluxProfile_le {ξ : ℝ} (hξ : 0 < ξ) :
         ring
 
 /-- The profile vanishes at large argument. -/
-theorem tendsto_photonFluxProfile_atTop : Tendsto photonFluxProfile atTop (𝓝 0) := by
+theorem tendsto_photonFluxProfile_atTop_nhds_zero : Tendsto photonFluxProfile atTop (𝓝 0) := by
   refine squeeze_zero_norm' (a := fun ξ : ℝ ↦ 8 * (ξ ^ 2 * exp (-ξ))) ?_ ?_
   · filter_upwards [eventually_ge_atTop (1 : ℝ)] with ξ hξ
     have hξ0 : 0 < ξ := lt_of_lt_of_le one_pos hξ
-    refine (abs_photonFluxProfile_le hξ0).trans ?_
+    refine (abs_photonFluxProfile_le_mul_exp_neg hξ0).trans ?_
     have h₁ : (1 + ξ) ^ 3 / ξ ≤ 8 * ξ ^ 2 := by
       rw [div_le_iff₀ hξ0]
       nlinarith [sq_nonneg (ξ - 1), sq_nonneg ξ]
@@ -138,21 +141,34 @@ theorem tendsto_photonFluxProfile_atTop : Tendsto photonFluxProfile atTop (𝓝 
       _ = 8 * (ξ ^ 2 * exp (-ξ)) := by ring
   · simpa using (Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 2).const_mul 8
 
+private theorem hasDerivAt_neg_photonFluxProfile {t : ℝ} (ht : 0 < t) :
+    HasDerivAt (fun y ↦ -photonFluxProfile y) (t * besselK 1 t ^ 2) t := by
+  simpa using (hasDerivAt_photonFluxProfile ht).fun_neg
+
+private theorem tendsto_neg_photonFluxProfile_atTop_nhds_zero :
+    Tendsto (fun t ↦ -photonFluxProfile t) atTop (𝓝 0) := by
+  simpa using tendsto_photonFluxProfile_atTop_nhds_zero.neg
+
+/-- The tail integrand of `photonFluxProfile_eq_integral` is integrable beyond any positive
+argument, so that the tail integral may be split, rescaled or compared. -/
+theorem integrableOn_mul_besselK_one_sq {ξ : ℝ} (hξ : 0 < ξ) :
+    IntegrableOn (fun t ↦ t * besselK 1 t ^ 2) (Ioi ξ) :=
+  integrableOn_Ioi_deriv_of_nonneg
+    ((hasDerivAt_photonFluxProfile hξ).continuousAt.fun_neg.continuousWithinAt)
+    (fun _ ht ↦ hasDerivAt_neg_photonFluxProfile (hξ.trans ht))
+    (fun _ ht ↦ mul_nonneg (hξ.trans ht).le (sq_nonneg _))
+    tendsto_neg_photonFluxProfile_atTop_nhds_zero
+
 /-- **The profile is the tail integral of `t K₁(t)²`.** The integrand is, up to normalisation, the
 impact-parameter differential flux of the same point source, so this identity is what relates the
 integrated spectrum to its impact-parameter form. -/
 theorem photonFluxProfile_eq_integral {ξ : ℝ} (hξ : 0 < ξ) :
     photonFluxProfile ξ = ∫ t in Ioi ξ, t * besselK 1 t ^ 2 := by
-  have hcont : ContinuousWithinAt (fun t ↦ -photonFluxProfile t) (Ici ξ) ξ :=
-    ((hasDerivAt_photonFluxProfile hξ).continuousAt.fun_neg).continuousWithinAt
-  have hderiv : ∀ t ∈ Ioi ξ,
-      HasDerivAt (fun t ↦ -photonFluxProfile t) (t * besselK 1 t ^ 2) t := fun t ht ↦ by
-    simpa using (hasDerivAt_photonFluxProfile (hξ.trans ht)).fun_neg
-  have hnonneg : ∀ t ∈ Ioi ξ, 0 ≤ t * besselK 1 t ^ 2 := fun t ht ↦
-    mul_nonneg (hξ.trans ht).le (sq_nonneg _)
-  have hlim : Tendsto (fun t ↦ -photonFluxProfile t) atTop (𝓝 0) := by
-    simpa using tendsto_photonFluxProfile_atTop.neg
-  rw [integral_Ioi_of_hasDerivAt_of_nonneg hcont hderiv hnonneg hlim]
+  rw [integral_Ioi_of_hasDerivAt_of_nonneg
+    ((hasDerivAt_photonFluxProfile hξ).continuousAt.fun_neg.continuousWithinAt)
+    (fun _ ht ↦ hasDerivAt_neg_photonFluxProfile (hξ.trans ht))
+    (fun _ ht ↦ mul_nonneg (hξ.trans ht).le (sq_nonneg _))
+    tendsto_neg_photonFluxProfile_atTop_nhds_zero]
   ring
 
 /-- The profile is strictly decreasing on `(0, ∞)`. -/
@@ -180,49 +196,33 @@ theorem photonFluxProfile_pos {ξ : ℝ} (hξ : 0 < ξ) : 0 < photonFluxProfile 
 /-- **The profile is logarithmic at the origin:** `photonFluxProfile ξ ~ -log ξ` as `ξ → 0⁺`. -/
 theorem isEquivalent_photonFluxProfile_neg_log :
     photonFluxProfile ~[𝓝[>] (0 : ℝ)] fun ξ ↦ -log ξ := by
-  -- The leading behaviour comes from `ξ K₀(ξ) K₁(ξ)`, in which `ξ K₁(ξ) → 1` and
-  -- `K₀(ξ) ~ -log ξ`; the two squared terms stay bounded and divide away.
+  -- The leading term `ξ K₁(ξ) · K₀(ξ)` is equivalent to `-log ξ`, since `ξ K₁(ξ) → 1` and
+  -- `K₀(ξ) ~ -log ξ`; the remaining `((ξ K₀(ξ))² - (ξ K₁(ξ))²)/2` has a finite limit and is
+  -- therefore negligible beside `-log ξ`, which diverges.
   have hlog : Tendsto (fun ξ : ℝ ↦ -log ξ) (𝓝[>] 0) atTop :=
     tendsto_neg_atBot_atTop.comp tendsto_log_nhdsGT_zero
-  have hpos : ∀ᶠ ξ in 𝓝[>] (0 : ℝ), 0 < -log ξ := hlog.eventually_gt_atTop 0
-  rw [isEquivalent_iff_tendsto_one (hpos.mono fun ξ h ↦ ne_of_gt h)]
-  -- the leading term, and the bounded term that divides away
-  have hlead : Tendsto (fun ξ : ℝ ↦ besselK 0 ξ / (-log ξ) * (ξ * besselK 1 ξ))
-      (𝓝[>] 0) (𝓝 1) := by
-    have h := (isEquivalent_iff_tendsto_one (hpos.mono fun ξ h ↦ ne_of_gt h)).1
-      isEquivalent_besselK_zero_neg_log
-    simpa using h.mul tendsto_mul_besselK_one_nhdsGT_zero
-  have hsmall : Tendsto (fun ξ : ℝ ↦ (ξ * besselK 1 ξ) ^ 2 / (2 * -log ξ)) (𝓝[>] 0) (𝓝 0) := by
-    refine Tendsto.div_atTop (a := 1) ?_ (hlog.const_mul_atTop two_pos)
-    simpa using tendsto_mul_besselK_one_nhdsGT_zero.pow 2
-  have hdiff : Tendsto (fun ξ : ℝ ↦ besselK 0 ξ / (-log ξ) * (ξ * besselK 1 ξ)
-      - (ξ * besselK 1 ξ) ^ 2 / (2 * -log ξ)) (𝓝[>] 0) (𝓝 1) := by
-    have h := hlead.sub hsmall
-    rwa [sub_zero] at h
-  -- Both bounds are the same computation: the quotient is `hlead - hsmall + C` with
-  -- `0 ≤ C ≤ hsmall`, so it lies between `hlead - hsmall` and `hlead`.
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hdiff hlead ?_ ?_
-  all_goals
-    filter_upwards [self_mem_nhdsWithin, hpos] with ξ (hξ : 0 < ξ) hM
-    have hK₀ := besselK_pos 0 hξ
-    have hK₁ := besselK_pos 1 hξ
-    have hle : besselK 0 ξ ≤ besselK 1 ξ := besselK_le_besselK (by norm_num) ξ
-    have hlne : log ξ ≠ 0 := neg_ne_zero.mp (ne_of_gt hM)
-    have hkey : photonFluxProfile ξ / (-log ξ)
-        = besselK 0 ξ / (-log ξ) * (ξ * besselK 1 ξ) - (ξ * besselK 1 ξ) ^ 2 / (2 * -log ξ)
-          + (ξ * besselK 0 ξ) ^ 2 / (2 * -log ξ) := by
-      rw [photonFluxProfile_def]
-      field_simp
-      ring
-    have hd : (0 : ℝ) < (2 * -log ξ)⁻¹ := inv_pos.2 (by linarith)
-    have hCnonneg : 0 ≤ (ξ * besselK 0 ξ) ^ 2 / (2 * -log ξ) :=
-      div_nonneg (sq_nonneg _) (by linarith)
-    have hCle : (ξ * besselK 0 ξ) ^ 2 / (2 * -log ξ) ≤ (ξ * besselK 1 ξ) ^ 2 / (2 * -log ξ) := by
-      rw [div_eq_mul_inv, div_eq_mul_inv]
-      refine mul_le_mul_of_nonneg_right ?_ hd.le
-      nlinarith [mul_pos hξ hK₀, mul_le_mul_of_nonneg_left hle hξ.le]
-    rw [Pi.div_apply, hkey]
-    linarith
+  have hone : (fun ξ : ℝ ↦ ξ * besselK 1 ξ) ~[𝓝[>] (0 : ℝ)] Function.const ℝ (1 : ℝ) :=
+    (isEquivalent_const_iff_tendsto one_ne_zero).2 tendsto_mul_besselK_one_nhdsGT_zero
+  have hlead : (fun ξ : ℝ ↦ ξ * besselK 1 ξ * besselK 0 ξ) ~[𝓝[>] (0 : ℝ)] fun ξ ↦ -log ξ :=
+    ((hone.mul isEquivalent_besselK_zero_neg_log).congr_left
+      (Eventually.of_forall fun ξ ↦ rfl)).congr_right (Eventually.of_forall fun ξ ↦ one_mul _)
+  have hzero : Tendsto (fun ξ : ℝ ↦ ξ * besselK 0 ξ) (𝓝[>] 0) (𝓝 0) := by
+    have hmul : ∀ ξ : ℝ, -(log ξ * ξ ^ (1 : ℝ)) = ξ * -log ξ := fun ξ ↦ by
+      rw [Real.rpow_one]; ring
+    have heq : (fun ξ : ℝ ↦ ξ * besselK 0 ξ) ~[𝓝[>] (0 : ℝ)] fun ξ : ℝ ↦ ξ * -log ξ :=
+      (((IsEquivalent.refl (u := fun ξ : ℝ ↦ ξ)).mul isEquivalent_besselK_zero_neg_log).congr_left
+        (Eventually.of_forall fun ξ ↦ rfl)).congr_right (Eventually.of_forall fun ξ ↦ rfl)
+    exact heq.tendsto_nhds_iff.2
+      (by simpa only [hmul, neg_zero] using (tendsto_log_mul_rpow_nhdsGT_zero one_pos).neg)
+  have hnorm : Tendsto (norm ∘ fun ξ : ℝ ↦ -log ξ) (𝓝[>] 0) atTop := by
+    simpa [Function.comp_def, Real.norm_eq_abs] using tendsto_abs_atTop_atTop.comp hlog
+  have hrem : (fun ξ : ℝ ↦ ((ξ * besselK 0 ξ) ^ 2 - (ξ * besselK 1 ξ) ^ 2) / 2)
+      =o[𝓝[>] (0 : ℝ)] fun ξ ↦ -log ξ := by
+    have hlim := ((hzero.pow 2).sub (tendsto_mul_besselK_one_nhdsGT_zero.pow 2)).div_const 2
+    exact (hlim.isBigO_one ℝ).trans_isLittleO (isLittleO_const_left.2 (Or.inr hnorm))
+  refine (hlead.add_isLittleO hrem).congr_left (Eventually.of_forall fun ξ ↦ ?_)
+  rw [Pi.add_apply, photonFluxProfile_def]
+  ring
 
 /-! ### The spectrum of a charged source -/
 
@@ -255,6 +255,18 @@ theorem integratedPhotonFlux_pos (hZ : s.charge ≠ 0) (hγ : 0 < s.gamma) (hα 
   rw [integratedPhotonFlux_def]
   exact mul_pos hnum (photonFluxProfile_pos hξ)
 
+/-- **The flux is exponentially suppressed above the coherent energy.** At photon energy `k` the
+spectrum is bounded by `exp (-(2 k b_min / γ))` up to an algebraic prefactor, so the rate of the
+suppression is twice the inverse of the maximal coherent photon energy `γ / b_min`. -/
+theorem abs_integratedPhotonFlux_le_mul_exp_neg (hα : 0 ≤ α) (hγ : 0 < s.gamma) (hb : 0 < bMin)
+    (hk : 0 < k) : |s.integratedPhotonFlux α bMin k| ≤ 2 * s.charge ^ 2 * α / π / k *
+      ((1 + k * bMin / s.gamma) ^ 3 / (k * bMin / s.gamma) *
+        exp (-(2 * (k * bMin / s.gamma)))) := by
+  have hξ : 0 < k * bMin / s.gamma := by positivity
+  have hnum : 0 ≤ 2 * s.charge ^ 2 * α / π / k := by positivity
+  rw [integratedPhotonFlux_def, abs_mul, abs_of_nonneg hnum]
+  exact mul_le_mul_of_nonneg_left (abs_photonFluxProfile_le_mul_exp_neg hξ) hnum
+
 /-- **The flux is proportional to the squared charge.** Two point sources at the same Lorentz
 factor, seen at the same minimum impact parameter and photon energy, have fluxes in the ratio of
 their squared charges; stated in cross-multiplied form, so that it needs no non-vanishing
@@ -270,7 +282,7 @@ theorem charge_sq_mul_integratedPhotonFlux_eq_charge_sq_mul (s t : ChargedSource
 source the maximal coherent photon energy is `γ / b_min`, and the spectrum behaves as
 `(2 Z² α / π) (1/k) log (γ / (k b_min))`, the logarithm of the ratio of that maximum to the actual
 photon energy. -/
-theorem isEquivalent_integratedPhotonFlux_neg_log (s : ChargedSource) (hγ : 0 < s.gamma)
+theorem isEquivalent_integratedPhotonFlux_mul_log_div (s : ChargedSource) (hγ : 0 < s.gamma)
     (hb : 0 < bMin) (α : ℝ) :
     (fun k ↦ s.integratedPhotonFlux α bMin k) ~[𝓝[>] (0 : ℝ)]
       fun k ↦ 2 * s.charge ^ 2 * α / π / k * log (s.gamma / (k * bMin)) := by
