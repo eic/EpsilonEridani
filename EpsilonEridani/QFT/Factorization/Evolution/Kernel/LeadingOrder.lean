@@ -228,11 +228,11 @@ theorem pair_pqq {φ : ℝ → ℝ}
     norm_num
   have hKφ : IntervalIntegrable (fun z => -(1 + z) * φ z) volume 0 1 :=
     (hlin.const_mul (-1)).congr fun z _ => by ring
-  have hK : IntervalIntegrable (fun z : ℝ => -(1 + z)) volume 0 1 :=
+  have hKint : IntervalIntegrable (fun z : ℝ => -(1 + z)) volume 0 1 :=
     (by fun_prop : Continuous fun z : ℝ => -(1 + z)).intervalIntegrable 0 1
   have hplus : plusFunctional (fun z => -(1 + z)) φ =
       φ 1 * (3 / 2) - ∫ z in (0 : ℝ)..1, (1 + z) * φ z := by
-    rw [plusFunctional_of_intervalIntegrable hKφ hK]
+    rw [plusFunctional_of_intervalIntegrable hKφ hKint]
     simp only [neg_mul, intervalIntegral.integral_neg, h32]
     ring
   rw [plusFunctional_congr_ae_left φ hK, plusFunctional_add_left hsing hreg,
