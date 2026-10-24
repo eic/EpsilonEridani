@@ -201,7 +201,7 @@ theorem transverseEpsRaise_minkowskiProduct_apply
     (u : Vector d) (μ : Fin 1 ⊕ Fin d) :
     L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct u μ =
       minkowskiMatrix μ μ * ε ![u, basis μ, L.nPlus, L.nMinus] := by
-  rw [transverseEpsRaise, symmCompOfNondegenerate_minkowskiProduct_apply, transverseEps_apply]
+  rw [transverseEpsRaise_def, symmCompOfNondegenerate_minkowskiProduct_apply, transverseEps_apply]
 
 /-- The characteristic property of the raised transverse antisymmetric tensor of Minkowski space,
 stated with the Minkowski product: `⟪E u, v⟫ₘ = ε(u, v, n₊, n₋)`. -/
@@ -218,11 +218,13 @@ variable (L : LightConeBasis (minkowskiProduct (d := 3)).toBilinForm)
 
 /-- At the volume form, the raised transverse antisymmetric tensor of a light-cone basis of
 four-dimensional Minkowski space is the contraction `volumeFormRaise n₊ n₋` of the volume form with
-`n₊` and `n₋`; both are the same raising of the same bilinear form, so this holds by definition. -/
+`n₊` and `n₋`: both are the same raising of the same bilinear form, so this holds by unfolding the
+two definitions. -/
 theorem transverseEpsRaise_volumeForm :
     L.transverseEpsRaise volumeForm nondegenerate_toBilinForm_minkowskiProduct =
-      volumeFormRaise L.nPlus L.nMinus :=
-  rfl
+      volumeFormRaise L.nPlus L.nMinus := by
+  rw [transverseEpsRaise_def, transverseEps_def]
+  exact (EpsilonEridani.volumeFormRaise_def _ _).symm
 
 /-- The transverse antisymmetric tensor of Minkowski space squares to minus the transverse
 projector, `ε_T^{μν} ε_{Tν}{}^{ρ} = -g_T^{μρ}`. -/

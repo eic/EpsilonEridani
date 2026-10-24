@@ -340,6 +340,10 @@ respect to an alternating four-form `ε`: the bilinear form `(u, v) ↦ ε(u, v,
 def transverseEps : BilinForm R V :=
   ε.bilinMap ![L.nPlus, L.nMinus]
 
+/-- Unfolding lemma for `transverseEps`, whose body is not exposed. -/
+theorem transverseEps_def : L.transverseEps ε = ε.bilinMap ![L.nPlus, L.nMinus] :=
+  (rfl)
+
 theorem transverseEps_apply (u v : V) :
     L.transverseEps ε u v = ε ![u, v, L.nPlus, L.nMinus] :=
   ε.bilinMap_apply _ u v
@@ -400,6 +404,11 @@ the endomorphism `E` of `V` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
 `(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`. -/
 noncomputable def transverseEpsRaise : V →ₗ[K] V :=
   (L.transverseEps ε).symmCompOfNondegenerate B hB
+
+/-- Unfolding lemma for `transverseEpsRaise`, whose body is not exposed. -/
+theorem transverseEpsRaise_def :
+    L.transverseEpsRaise ε hB = (L.transverseEps ε).symmCompOfNondegenerate B hB :=
+  (rfl)
 
 /-- The characteristic property of the raised transverse antisymmetric tensor. -/
 @[simp]

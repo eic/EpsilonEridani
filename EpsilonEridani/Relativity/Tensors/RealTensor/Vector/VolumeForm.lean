@@ -183,6 +183,13 @@ noncomputable def volumeFormRaise (a b : Vector 3) : Vector 3 →ₗ[ℝ] Vector
   LinearMap.BilinForm.symmCompOfNondegenerate (volumeForm.bilinMap ![a, b])
     (minkowskiProduct (d := 3)).toBilinForm nondegenerate_toBilinForm_minkowskiProduct
 
+/-- Unfolding lemma for `volumeFormRaise`, whose body is not exposed. -/
+theorem volumeFormRaise_def (a b : Vector 3) :
+    volumeFormRaise a b =
+      LinearMap.BilinForm.symmCompOfNondegenerate (volumeForm.bilinMap ![a, b])
+        (minkowskiProduct (d := 3)).toBilinForm nondegenerate_toBilinForm_minkowskiProduct :=
+  (rfl)
+
 /-- The characteristic property of `volumeFormRaise a b`: `⟪volumeFormRaise a b u, v⟫ₘ =
 ε(u, v, a, b)`. -/
 @[simp]
