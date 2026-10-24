@@ -42,7 +42,8 @@ whole real line need no domain hypothesis where `0` is harmless.
 * `EpsilonEridani.besselK_pos`: `K_ν(x) > 0` for `x > 0`.
 * `EpsilonEridani.besselK_le_besselK`: `K_ν ≤ K_μ` when `|ν| ≤ |μ|`.
 * `EpsilonEridani.besselK_add_one_sub_besselK_sub_one`: `K_{ν+1} - K_{ν-1} = (2ν/x) K_ν`.
-* `EpsilonEridani.hasDerivAt_besselK`: `K_ν' = -(K_{ν-1} + K_{ν+1}) / 2`, and its special
+* `EpsilonEridani.hasDerivAt_besselK`: `K_ν' = -(K_{ν-1} + K_{ν+1}) / 2`, and
+  `EpsilonEridani.hasDerivAt_besselK_sub_one`: `K_ν' = -K_{ν-1} - (ν/x) K_ν`, with its special
   cases `EpsilonEridani.hasDerivAt_besselK_zero`: `K₀' = -K₁` and
   `EpsilonEridani.hasDerivAt_besselK_one`: `K₁' = -K₀ - K₁/x`.
 * `EpsilonEridani.strictAntiOn_besselK`: `K_ν` is strictly decreasing on `(0, ∞)`.
@@ -53,7 +54,7 @@ whole real line need no domain hypothesis where `0` is harmless.
   and hence `EpsilonEridani.tendsto_mul_besselK_one_nhdsGT_zero`: `x K₁(x) → 1` as `x → 0⁺`.
 * `EpsilonEridani.neg_log_sub_one_le_besselK`,
   `EpsilonEridani.besselK_zero_le_log_two_div_add_exp_neg_one`:
-  `-log x - 1 ≤ K_ν(x)` and `K₀(x) ≤ log (2/x) + e⁻¹` near the origin, whence
+  `-log x - 1 ≤ K_ν(x)` for `x > 0` and `K₀(x) ≤ log (2/x) + e⁻¹` for `0 < x ≤ 2`, whence
   `EpsilonEridani.tendsto_besselK_nhdsGT_zero`: `K_ν(x) → ∞` as `x → 0⁺`, and
   `EpsilonEridani.isEquivalent_besselK_zero_neg_log`: `K₀(x) ~ -log x` as `x → 0⁺`.
 
@@ -81,6 +82,10 @@ def besselK (ν x : ℝ) : ℝ :=
 /-- The defining integral representation of `K_ν(x)`. -/
 theorem besselK_def (ν x : ℝ) :
     besselK ν x = ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) * cosh (ν * t) := (rfl)
+
+/-- The integral representation of `K₀(x)`, whose order factor `cosh (0 · t)` is `1`. -/
+theorem besselK_zero_eq (x : ℝ) : besselK 0 x = ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) := by
+  simp [besselK_def]
 
 /-- `K_ν` is even in the order. -/
 @[simp]
@@ -131,6 +136,11 @@ theorem integrableOn_besselK_integrand (ν : ℝ) {x : ℝ} (hx : 0 < x) :
   rw [Real.norm_of_nonneg (by positivity)]
   exact integrand_le hx ν (le_of_lt ht)
 
+/-- The integral of `besselK_zero_eq` converges for `x > 0`. -/
+theorem integrableOn_besselK_zero_integrand {x : ℝ} (hx : 0 < x) :
+    IntegrableOn (fun t ↦ exp (-(x * cosh t))) (Ioi 0) := by
+  simpa using integrableOn_besselK_integrand 0 hx
+
 /-- For `x ≤ 0` the integral defining `K_ν(x)` diverges, and `besselK ν x` is `0`. -/
 theorem besselK_of_nonpos (ν : ℝ) {x : ℝ} (hx : x ≤ 0) : besselK ν x = 0 := by
   refine integral_undef fun hint ↦ ?_
@@ -170,6 +180,23 @@ theorem besselK_le_besselK {ν μ : ℝ} (h : |ν| ≤ |μ|) (x : ℝ) : besselK
 
 /-! ### The recurrence in the order -/
 
+/-- The primitive `sinh (ν t) exp (-x cosh t)` that the recurrence in the order integrates decays
+at infinity, since the exponent dominates every exponential growth of the prefactor. -/
+private theorem tendsto_sinh_mul_exp_neg_cosh_atTop {x : ℝ} (hx : 0 < x) (ν : ℝ) :
+    Tendsto (fun t : ℝ ↦ sinh (ν * t) * exp (-(x * cosh t))) atTop (𝓝 0) := by
+  refine squeeze_zero_norm' ?_
+    (by simpa using tendsto_exp_neg_atTop_nhds_zero.const_mul (exp ((|ν| + 1) ^ 2 / x)))
+  filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+  calc ‖sinh (ν * t) * exp (-(x * cosh t))‖
+      = |sinh (ν * t)| * exp (-(x * cosh t)) := by
+        rw [Real.norm_eq_abs, abs_mul, abs_of_pos (exp_pos _)]
+    _ = exp (-(x * cosh t)) * |sinh (ν * t)| := mul_comm _ _
+    _ ≤ exp (-(x * cosh t)) * cosh (ν * t) := by
+        gcongr
+        rw [abs_sinh, ← cosh_abs]
+        exact (sinh_lt_cosh _).le
+    _ ≤ exp ((|ν| + 1) ^ 2 / x) * exp (-t) := integrand_le hx ν ht
+
 /-- The recurrence in the order, `K_{ν+1}(x) - K_{ν-1}(x) = (2ν/x) K_ν(x)` (DLMF 10.29.1). -/
 theorem besselK_add_one_sub_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     besselK (ν + 1) x - besselK (ν - 1) x = 2 * ν / x * besselK ν x := by
@@ -202,33 +229,8 @@ theorem besselK_add_one_sub_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
   have hF'int : IntegrableOn (fun t ↦ ν * (exp (-(x * cosh t)) * cosh (ν * t)) -
       x / 2 * (exp (-(x * cosh t)) * cosh ((ν + 1) * t) -
         exp (-(x * cosh t)) * cosh ((ν - 1) * t))) (Ioi 0) := hintScaled.sub hintTail
-  -- The primitive decays super-exponentially, since `cosh t` grows faster than `|sinh (ν t)|`.
-  have hlim : Tendsto (fun t : ℝ ↦ sinh (ν * t) * exp (-(x * cosh t))) atTop (𝓝 0) := by
-    have hbot : Tendsto (fun t : ℝ ↦ |ν| * t - x * t ^ 2 / 4) atTop atBot := by
-      refine tendsto_atBot_mono' _ ?_ tendsto_neg_atTop_atBot
-      filter_upwards [eventually_ge_atTop (4 * (|ν| + 1) / x), eventually_ge_atTop (0 : ℝ)]
-        with t ht ht0
-      rw [div_le_iff₀ hx] at ht
-      nlinarith
-    refine squeeze_zero_norm' ?_ (tendsto_exp_atBot.comp hbot)
-    filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-    have h₁ : exp (ν * t) ≤ exp (|ν| * t) :=
-      exp_le_exp.2 (mul_le_mul_of_nonneg_right (le_abs_self ν) ht)
-    have h₂ : exp (-(ν * t)) ≤ exp (|ν| * t) :=
-      exp_le_exp.2 (by rw [← neg_mul]; exact mul_le_mul_of_nonneg_right (neg_le_abs ν) ht)
-    have habs : |sinh (ν * t)| ≤ exp (|ν| * t) := by
-      rw [abs_le, sinh_eq]
-      exact ⟨by linarith [exp_pos (ν * t)], by linarith [exp_pos (-(ν * t))]⟩
-    have hcosh : x * (t ^ 2 / 4) ≤ x * cosh t := by
-      refine mul_le_mul_of_nonneg_left ?_ hx.le
-      rw [cosh_eq]
-      linarith [quadratic_le_exp_of_nonneg ht, exp_pos (-t)]
-    calc ‖sinh (ν * t) * exp (-(x * cosh t))‖
-        = |sinh (ν * t)| * exp (-(x * cosh t)) := by
-          rw [Real.norm_eq_abs, abs_mul, abs_of_pos (exp_pos _)]
-      _ ≤ exp (|ν| * t) * exp (-(x * (t ^ 2 / 4))) := by gcongr
-      _ = exp (|ν| * t - x * t ^ 2 / 4) := by rw [← exp_add]; ring_nf
-  have hFTC := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv hF'int hlim
+  have hFTC := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv hF'int
+    (tendsto_sinh_mul_exp_neg_cosh_atTop hx ν)
   simp only [mul_zero, sinh_zero, zero_mul, sub_zero] at hFTC
   rw [integral_sub hintScaled hintTail, integral_const_mul, integral_const_mul,
     integral_sub hintAdd hintSub] at hFTC
@@ -277,22 +279,22 @@ theorem hasDerivAt_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
   · exact (((hasDerivAt_id y).mul_const (cosh t)).fun_neg.exp.mul_const
       (cosh (ν * t))).congr_deriv (by simp only [id, one_mul]; ring)
 
-/-- The derivative relation `K₀' = -K₁`. -/
+/-- The derivative relation `K_ν'(x) = -K_{ν-1}(x) - (ν/x) K_ν(x)` (DLMF 10.29.2), the form in
+which only the order below `ν` appears. -/
+theorem hasDerivAt_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
+    HasDerivAt (besselK ν) (-besselK (ν - 1) x - ν / x * besselK ν x) x :=
+  (hasDerivAt_besselK ν hx).congr_deriv
+    (by linear_combination (-1 / 2 : ℝ) * besselK_add_one_sub_besselK_sub_one ν hx)
+
+/-- The derivative relation `K₀' = -K₁`, the case `ν = 0` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_zero {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (besselK 0) (-besselK 1 x) x := by
-  convert hasDerivAt_besselK 0 hx using 1
-  rw [zero_sub, zero_add, besselK_neg]
-  ring
+    HasDerivAt (besselK 0) (-besselK 1 x) x :=
+  (hasDerivAt_besselK_sub_one 0 hx).congr_deriv (by rw [zero_sub, besselK_neg]; ring)
 
 /-- The derivative relation `K₁'(x) = -K₀(x) - K₁(x)/x`, the case `ν = 1` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_one {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (besselK 1) (-besselK 0 x - besselK 1 x / x) x := by
-  have h := besselK_add_one_sub_besselK_sub_one 1 hx
-  rw [show (1 : ℝ) + 1 = 2 by norm_num, show (1 : ℝ) - 1 = 0 by norm_num] at h
-  refine (hasDerivAt_besselK 1 hx).congr_deriv ?_
-  rw [show (1 : ℝ) + 1 = 2 by norm_num, show (1 : ℝ) - 1 = 0 by norm_num]
-  field_simp at h ⊢
-  linarith
+    HasDerivAt (besselK 1) (-besselK 0 x - besselK 1 x / x) x :=
+  (hasDerivAt_besselK_sub_one 1 hx).congr_deriv (by rw [sub_self]; ring)
 
 /-- `K_ν` is continuous on `(0, ∞)`. -/
 theorem continuousOn_besselK (ν : ℝ) : ContinuousOn (besselK ν) (Ioi 0) :=
@@ -401,12 +403,15 @@ theorem tendsto_mul_besselK_one_nhdsGT_zero :
     calc x * besselK 1 x ≤ x * (exp (-x) * (1 + 1 / x)) := this
       _ = exp (-x) * (x + 1) := by field_simp
 
-/-- A logarithmic lower bound with the sharp coefficient: `-log x - 1 ≤ K_ν(x)` for `0 < x ≤ 1`,
+/-- A logarithmic lower bound with the sharp coefficient: `-log x - 1 ≤ K_ν(x)` for `x > 0`,
 in every order. -/
-theorem neg_log_sub_one_le_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) (hx1 : x ≤ 1) :
+theorem neg_log_sub_one_le_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     -log x - 1 ≤ besselK ν x := by
-  -- On `(0, -log x]` the integrand is at least `1 - x exp t`, whose integral is `-log x - 1 + x`.
-  have hT0 : 0 ≤ -log x := neg_nonneg.2 (log_nonpos hx.le hx1)
+  -- Beyond `x = 1` the bound is negative; below it, the integrand is at least `1 - x exp t` on
+  -- `(0, -log x]`, whose integral is `-log x - 1 + x`.
+  rcases le_or_gt 1 x with h1 | h1
+  · exact le_trans (by linarith [log_nonneg h1]) (besselK_nonneg ν x)
+  have hT0 : 0 ≤ -log x := neg_nonneg.2 (log_nonpos hx.le h1.le)
   have hlinint : IntervalIntegrable (fun t : ℝ ↦ x * exp t) volume 0 (-log x) :=
     (Real.continuous_exp.intervalIntegrable 0 (-log x)).const_mul x
   have hcomp : ∫ t in Ioc (0 : ℝ) (-log x), (1 - x * exp t)
@@ -446,17 +451,11 @@ theorem besselK_zero_le_log_two_div_add_exp_neg_one {x : ℝ} (hx : 0 < x) (hx2 
   -- `x cosh t ≥ 1 + (t - log (2/x))`, so the tail is at most `e⁻¹`.
   have hT0 : 0 ≤ log (2 / x) := log_nonneg ((one_le_div hx).2 hx2)
   have hexpT : exp (log (2 / x)) = 2 / x := exp_log (by positivity)
-  have hint : IntegrableOn (fun t : ℝ ↦ exp (-(x * cosh t))) (Ioi 0) := by
-    simpa using integrableOn_besselK_integrand 0 hx
-  have hK0 : besselK 0 x = ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) := by
-    rw [besselK_def]; simp
-  have hdisj : Disjoint (Ioc (0 : ℝ) (log (2 / x))) (Ioi (log (2 / x))) := by
-    rw [Set.disjoint_left]
-    exact fun a ha hb ↦ absurd ha.2 (not_le.2 hb)
+  have hint := integrableOn_besselK_zero_integrand hx
   have hsplit : (∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)))
       = (∫ t in Ioc (0 : ℝ) (log (2 / x)), exp (-(x * cosh t)))
         + ∫ t in Ioi (log (2 / x)), exp (-(x * cosh t)) := by
-    rw [← Ioc_union_Ioi_eq_Ioi hT0, setIntegral_union hdisj measurableSet_Ioi
+    rw [← Ioc_union_Ioi_eq_Ioi hT0, setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
       (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hT0))]
   have hhead : (∫ t in Ioc (0 : ℝ) (log (2 / x)), exp (-(x * cosh t))) ≤ log (2 / x) := by
     calc (∫ t in Ioc (0 : ℝ) (log (2 / x)), exp (-(x * cosh t)))
@@ -484,7 +483,7 @@ theorem besselK_zero_le_log_two_div_add_exp_neg_one {x : ℝ} (hx : 0 < x) (hx2 
       _ = exp (-1) := by
           rw [integral_const_mul, integral_exp_neg_Ioi, mul_assoc, ← exp_add, add_neg_cancel,
             exp_zero, mul_one]
-  rw [hK0, hsplit]
+  rw [besselK_zero_eq, hsplit]
   linarith
 
 /-- Every `K_ν` diverges at the origin. -/
@@ -492,9 +491,8 @@ theorem tendsto_besselK_nhdsGT_zero (ν : ℝ) : Tendsto (besselK ν) (𝓝[>] 0
   have hlog : Tendsto (fun x : ℝ ↦ -log x) (𝓝[>] 0) atTop :=
     tendsto_neg_atBot_atTop.comp tendsto_log_nhdsGT_zero
   refine tendsto_atTop_mono' _ ?_ (hlog.atTop_div_const two_pos)
-  filter_upwards [self_mem_nhdsWithin, Ioc_mem_nhdsGT (by norm_num : (0 : ℝ) < 1),
-    hlog.eventually_ge_atTop 2] with x (hx : 0 < x) hx1 hM
-  linarith [neg_log_sub_one_le_besselK ν hx hx1.2]
+  filter_upwards [self_mem_nhdsWithin, hlog.eventually_ge_atTop 2] with x (hx : 0 < x) hM
+  linarith [neg_log_sub_one_le_besselK ν hx]
 
 /-- `K₀` is logarithmic at the origin: `K₀(x) ~ -log x` as `x → 0⁺`. -/
 theorem isEquivalent_besselK_zero_neg_log :
@@ -509,12 +507,11 @@ theorem isEquivalent_besselK_zero_neg_log :
   have hupp : Tendsto (fun x : ℝ ↦ 1 + (log 2 + exp (-1)) * (-log x)⁻¹) (𝓝[>] 0) (𝓝 1) := by
     simpa using tendsto_const_nhds.add (hinv.const_mul (log 2 + exp (-1)))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow hupp ?_ ?_
-  · filter_upwards [self_mem_nhdsWithin, Ioc_mem_nhdsGT (by norm_num : (0 : ℝ) < 1), hpos]
-      with x (hx : 0 < x) hx1 hM
+  · filter_upwards [self_mem_nhdsWithin, hpos] with x (hx : 0 < x) hM
     have hlne : log x ≠ 0 := neg_ne_zero.mp (ne_of_gt hM)
     rw [Pi.div_apply, le_div_iff₀ hM, show (1 - (-log x)⁻¹) * -log x = -log x - 1 by
       field_simp; ring]
-    exact neg_log_sub_one_le_besselK 0 hx hx1.2
+    exact neg_log_sub_one_le_besselK 0 hx
   · filter_upwards [self_mem_nhdsWithin, Ioc_mem_nhdsGT (by norm_num : (0 : ℝ) < 2), hpos]
       with x (hx : 0 < x) hx2 hM
     have hlne : log x ≠ 0 := neg_ne_zero.mp (ne_of_gt hM)
