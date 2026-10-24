@@ -307,8 +307,6 @@ lemma kPol_M2 : kPol.M2 gWit = 1 := by simp [DisKinematics.M2_def, kPol]
 `BasicAssumptions`. -/
 lemma basicAssumptions_kPol : DisKinematics.BasicAssumptions gWit kPol where
   q2_pos := by norm_num [DisKinematics.Q2, kPol]
-  p_dot_q_pos := by norm_num [kPol]
-  p_dot_k_pos := by norm_num [kPol]
   q2_le_two_p_dot_q := by norm_num [DisKinematics.Q2, kPol]
   p_dot_q_le_p_dot_k := by norm_num [kPol]
 

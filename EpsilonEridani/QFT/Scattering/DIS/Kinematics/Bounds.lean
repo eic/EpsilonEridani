@@ -32,8 +32,6 @@ variable {V}
 /-- A minimal assumption bundle used to establish canonical DIS bounds. -/
 structure BasicAssumptions (g : Bilin V) (K : DisKinematics V) : Prop where
   q2_pos : 0 < K.Q2 g
-  p_dot_q_pos : 0 < g K.p K.q
-  p_dot_k_pos : 0 < g K.p K.k
   q2_le_two_p_dot_q : K.Q2 g ≤ 2 * g K.p K.q
   p_dot_q_le_p_dot_k : g K.p K.q ≤ g K.p K.k
 
@@ -59,13 +57,15 @@ lemma yInel_le_one (g : Bilin V) (K : DisKinematics V) (hpk : 0 < g K.p K.k)
   unfold yInel
   exact (div_le_one hpk).2 h
 
-lemma xBj_in_unitInterval (g : Bilin V) (K : DisKinematics V) (h : BasicAssumptions g K) :
-    0 < K.xBj g ∧ K.xBj g ≤ 1 :=
-  ⟨xBj_pos g K h.q2_pos h.p_dot_q_pos, xBj_le_one g K h.p_dot_q_pos h.q2_le_two_p_dot_q⟩
+/-- Under `BasicAssumptions`, `P·q > 0`, since `0 < Q² ≤ 2 P·q`. -/
+lemma BasicAssumptions.p_dot_q_pos {g : Bilin V} {K : DisKinematics V}
+    (h : BasicAssumptions g K) : 0 < g K.p K.q := by
+  linarith [h.q2_pos, h.q2_le_two_p_dot_q]
 
-lemma yInel_in_unitInterval (g : Bilin V) (K : DisKinematics V) (h : BasicAssumptions g K) :
-    0 < K.yInel g ∧ K.yInel g ≤ 1 :=
-  ⟨yInel_pos g K h.p_dot_q_pos h.p_dot_k_pos, yInel_le_one g K h.p_dot_k_pos h.p_dot_q_le_p_dot_k⟩
+/-- Under `BasicAssumptions`, `P·k > 0`, since `0 < P·q ≤ P·k`. -/
+lemma BasicAssumptions.p_dot_k_pos {g : Bilin V} {K : DisKinematics V}
+    (h : BasicAssumptions g K) : 0 < g K.p K.k :=
+  h.p_dot_q_pos.trans_le h.p_dot_q_le_p_dot_k
 
 end DisKinematics
 

@@ -46,8 +46,9 @@ bound `y (1 + x M² / S) ≤ 1`; nothing in this file uses that refinement.
   the bounds of `DisKinematics.BasicAssumptions` has its invariants in the domain.
 * `interior_kinematicDomain` and `mem_interior_kinematicDomain`: the interior is given by the
   strict inequalities `0 < x < 1`, `0 < Q² < x S`, with membership in that form.
-* `kinematicDomain_inter_fst_eq_one` and `elasticLine_subset_frontier`: the part of the domain on
-  `x = 1` is exactly the elastic line, and it lies on the boundary of the domain.
+* `kinematicDomain_inter_fst_eq_one_eq_elasticLine` and
+  `elasticLine_subset_frontier_kinematicDomain`: the part of the domain on `x = 1` is exactly the
+  elastic line, and it lies on the boundary of the domain.
 * `kinematicDomain_nonempty_iff` and `interior_kinematicDomain_nonempty_iff`: the domain, and
   equally its interior, is nonempty exactly when `S > 0`.
 
@@ -69,7 +70,7 @@ namespace Scattering
 namespace DIS
 namespace Kinematics
 
-open Set Filter Topology
+open Set
 
 /-- The kinematic domain of inclusive deep-inelastic scattering in the variables `z = (x, Q²)` at
 a fixed lepton-target invariant `S = 2 P·k`: `0 < x ≤ 1`, `0 < Q²` and `Q² ≤ x S`, the last being
@@ -86,7 +87,8 @@ def elasticLine (S : ℝ) : Set (ℝ × ℝ) :=
   ({1} : Set ℝ) ×ˢ Ioc 0 S
 
 @[simp] lemma mem_elasticLine {S : ℝ} {z : ℝ × ℝ} :
-    z ∈ elasticLine S ↔ z.1 = 1 ∧ 0 < z.2 ∧ z.2 ≤ S := (Iff.rfl)
+    z ∈ elasticLine S ↔ z.1 = 1 ∧ 0 < z.2 ∧ z.2 ≤ S := by
+  simp [elasticLine]
 
 /-- The domain is nonempty exactly when `S = 2 P·k` is positive. -/
 theorem kinematicDomain_nonempty_iff {S : ℝ} : (kinematicDomain S).Nonempty ↔ 0 < S := by
@@ -100,29 +102,29 @@ theorem kinematicDomain_nonempty_iff {S : ℝ} : (kinematicDomain S).Nonempty �
 `0 < x < 1`, `0 < Q² < x S`. -/
 theorem interior_kinematicDomain (S : ℝ) :
     interior (kinematicDomain S) = {z | 0 < z.1 ∧ z.1 < 1 ∧ 0 < z.2 ∧ z.2 < z.1 * S} := by
-  refine Subset.antisymm (fun z hz => ?_) (interior_maximal ?_ ?_)
-  · obtain ⟨hx, -, hQ, -⟩ := interior_subset hz
-    -- From an interior point one can move a little in any direction and stay in the domain;
-    -- moving in `x` and in `Q²` makes both non-strict upper bounds strict.
-    have key : ∀ v : ℝ × ℝ, ∃ t : ℝ, 0 < t ∧ z + t • v ∈ kinematicDomain S := by
-      intro v
-      have hc : Tendsto (fun t : ℝ => z + t • v) (𝓝[>] 0) (𝓝 z) := by
-        have hcont : Continuous fun t : ℝ => z + t • v := by fun_prop
-        simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-      obtain ⟨t, hmem, ht⟩ :=
-        ((hc.eventually (mem_interior_iff_mem_nhds.1 hz)).and self_mem_nhdsWithin).exists
-      exact ⟨t, ht, hmem⟩
-    obtain ⟨t, ht, -, hx1, -⟩ := key (1, 0)
-    obtain ⟨u, hu, -, -, -, hy⟩ := key (0, 1)
-    simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_one,
-      mul_zero, add_zero] at hx1 hy
-    exact ⟨hx, by linarith, hQ, by linarith⟩
-  · rintro z ⟨hx, hx1, hQ, hy⟩
-    exact ⟨hx, hx1.le, hQ, hy.le⟩
-  · exact (isOpen_lt continuous_const continuous_fst).and <|
-      (isOpen_lt continuous_fst continuous_const).and <|
-      (isOpen_lt continuous_const continuous_snd).and <|
-      isOpen_lt continuous_snd (continuous_fst.mul continuous_const)
+  -- Write the domain as an intersection of four constraints and take interiors termwise; the
+  -- upper edge is a sublevel set of `Q² - x S`, a surjective continuous linear functional.
+  let L : ℝ × ℝ →L[ℝ] ℝ := ContinuousLinearMap.snd ℝ ℝ ℝ - S • ContinuousLinearMap.fst ℝ ℝ ℝ
+  have hL : Function.Surjective L := fun a => ⟨(0, a), by simp [L]⟩
+  have h (s t : Set ℝ) : {z : ℝ × ℝ | 0 < z.1} ∩ (Prod.fst ⁻¹' s ∩ ({z | 0 < z.2} ∩ L ⁻¹' t)) =
+      {z | 0 < z.1 ∧ z.1 ∈ s ∧ 0 < z.2 ∧ z.2 - S * z.1 ∈ t} := by
+    ext z
+    simp [L]
+  have hD : kinematicDomain S =
+      {z : ℝ × ℝ | 0 < z.1} ∩ (Prod.fst ⁻¹' Iic 1 ∩ ({z | 0 < z.2} ∩ L ⁻¹' Iic 0)) := by
+    rw [h]
+    ext z
+    simp [mul_comm]
+  have hI : {z : ℝ × ℝ | 0 < z.1 ∧ z.1 < 1 ∧ 0 < z.2 ∧ z.2 < z.1 * S} =
+      {z : ℝ × ℝ | 0 < z.1} ∩ (Prod.fst ⁻¹' Iio 1 ∩ ({z | 0 < z.2} ∩ L ⁻¹' Iio 0)) := by
+    rw [h]
+    ext z
+    simp [mul_comm]
+  rw [hD, hI, interior_inter, interior_inter, interior_inter,
+    (isOpen_lt continuous_const continuous_fst).interior_eq,
+    (isOpen_lt continuous_const continuous_snd).interior_eq,
+    ← isOpenMap_fst.preimage_interior_eq_interior_preimage continuous_fst, interior_Iic,
+    L.interior_preimage hL, interior_Iic]
 
 /-- Membership in the interior of the kinematic domain: the strict inequalities
 `0 < x < 1`, `0 < Q² < x S`. -/
@@ -140,7 +142,7 @@ theorem interior_kinematicDomain_nonempty_iff {S : ℝ} :
   exact ⟨by norm_num, by norm_num, by positivity, by linarith⟩
 
 /-- The part of the kinematic domain on the line `x = 1` is exactly the elastic line. -/
-theorem kinematicDomain_inter_fst_eq_one (S : ℝ) :
+theorem kinematicDomain_inter_fst_eq_one_eq_elasticLine (S : ℝ) :
     kinematicDomain S ∩ {z | z.1 = 1} = elasticLine S := by
   ext z
   simp only [mem_inter_iff, mem_kinematicDomain, mem_ofPred_eq, mem_elasticLine]
@@ -151,16 +153,17 @@ theorem kinematicDomain_inter_fst_eq_one (S : ℝ) :
     exact ⟨⟨by simp [hx], hx.le, hQ, by simpa [hx] using hy⟩, hx⟩
 
 lemma elasticLine_subset_kinematicDomain (S : ℝ) : elasticLine S ⊆ kinematicDomain S := by
-  rw [← kinematicDomain_inter_fst_eq_one]
+  rw [← kinematicDomain_inter_fst_eq_one_eq_elasticLine]
   exact inter_subset_left
 
 /-- The elastic line lies on the boundary of the kinematic domain: it belongs to the domain but
 not to its interior. -/
-theorem elasticLine_subset_frontier (S : ℝ) : elasticLine S ⊆ frontier (kinematicDomain S) := by
+theorem elasticLine_subset_frontier_kinematicDomain (S : ℝ) :
+    elasticLine S ⊆ frontier (kinematicDomain S) := by
   intro z hz
   refine ⟨subset_closure (elasticLine_subset_kinematicDomain S hz), fun h => ?_⟩
   rw [interior_kinematicDomain] at h
-  exact h.2.1.ne hz.1
+  exact h.2.1.ne (mem_elasticLine.1 hz).1
 
 namespace DisKinematics
 
@@ -220,7 +223,7 @@ theorem invariants_mem_kinematicDomain_iff (g : Bilin V) (hg : g.IsSymm) (K : Di
 theorem invariants_mem_elasticLine_iff (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V)
     (hQ : 0 < K.Q2 g) (hpk : 0 < g K.p K.k) :
     (K.xBj g, K.Q2 g) ∈ elasticLine (2 * g K.p K.k) ↔ K.W2 g = K.M2 g ∧ K.yInel g ≤ 1 := by
-  rw [← kinematicDomain_inter_fst_eq_one, mem_inter_iff,
+  rw [← kinematicDomain_inter_fst_eq_one_eq_elasticLine, mem_inter_iff,
     invariants_mem_kinematicDomain_iff g hg K hQ hpk, mem_ofPred_eq, W2_eq_with_Q2 g K hg, M2_def]
   constructor
   · rintro ⟨⟨-, hy⟩, hx⟩

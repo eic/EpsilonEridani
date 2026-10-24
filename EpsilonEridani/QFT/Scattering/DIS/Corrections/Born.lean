@@ -102,7 +102,7 @@ lemma eq_zero_of_notMem_interior (σ : BornCrossSection S) {z : ℝ × ℝ}
 
 /-- On a kinematic domain with `S ≤ 0`, which has empty interior, every Born cross section
 vanishes identically. -/
-lemma eq_zero_of_nonpos (hS : S ≤ 0) (σ : BornCrossSection S) : ⇑σ = 0 := by
+lemma coe_eq_zero_of_nonpos (hS : S ≤ 0) (σ : BornCrossSection S) : ⇑σ = 0 := by
   funext z
   refine σ.eq_zero_of_notMem_interior fun hz => ?_
   exact hS.not_gt (interior_kinematicDomain_nonempty_iff.1 ⟨z, hz⟩)
@@ -147,13 +147,12 @@ every kinematic domain, although it is not integrable up to the boundary `Q² = 
 example (S : ℝ) : BornCrossSection S :=
   ofLocallyIntegrableOn (fun z => (z.1 * z.2 ^ 2)⁻¹)
     (((continuous_fst.mul (continuous_snd.pow 2)).continuousOn.inv₀ fun z hz => by
-      rw [mem_interior_kinematicDomain] at hz
-      exact mul_ne_zero hz.1.ne' (pow_ne_zero 2 hz.2.2.1.ne')).locallyIntegrableOn
+      obtain ⟨hx, -, hQ, -⟩ := mem_interior_kinematicDomain.1 hz
+      exact mul_ne_zero hx.ne' (pow_ne_zero 2 hQ.ne')).locallyIntegrableOn
         isOpen_interior.measurableSet)
     fun z hz => by
-      rw [mem_interior_kinematicDomain] at hz
-      have := hz.1
-      have := hz.2.2.1
+      obtain ⟨hx, -, hQ, -⟩ := mem_interior_kinematicDomain.1 hz
+      -- `positivity` reads `hx : 0 < z.1` and `hQ : 0 < z.2` from the context.
       positivity
 
 end BornCrossSection
