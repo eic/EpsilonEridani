@@ -106,8 +106,7 @@ theorem volumeForm_apply (v : Fin 4 → Vector 3) :
   rw [volumeForm, _root_.neg_apply, Module.Basis.det_apply, neg_inj]
   refine congrArg Matrix.det ?_
   ext i j
-  simp [Module.Basis.toMatrix_apply, minkowskiBasisFin4, Module.Basis.repr_reindex_apply,
-    Lorentz.Vector.basis_repr_apply]
+  simp [Module.Basis.toMatrix_apply, minkowskiBasisFin4, Lorentz.Vector.basis_repr_apply]
 
 /-- The Laplace expansion of the volume form along the time components: `ε(x, y, z, w)` is minus
 the alternating sum of the time components times the `3 × 3` determinants of the spatial
