@@ -28,6 +28,8 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
 - `AlternatingMap.isAlt_bilinMap`: `f.bilinMap m` is alternating.
 - `AlternatingMap.bilinMap_apply_left_eq_zero`, `AlternatingMap.bilinMap_apply_right_eq_zero`:
   it vanishes when either argument is one of the fixed vectors `m i`.
+- `AlternatingMap.bilinMap_neg`, `AlternatingMap.bilinMap_update_neg`,
+  `AlternatingMap.bilinMap_pair_neg_right`: it changes sign when `f` or one fixed vector is negated.
 -/
 
 public section
@@ -79,5 +81,39 @@ theorem bilinMap_apply_right_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : F
     (Fin.succ_zero_eq_one ▸ (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _).symm))
 
 end CommSemiring
+
+section CommRing
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {n : ℕ}
+
+/-- Negating the alternating map negates its bilinear map. -/
+@[simp]
+theorem bilinMap_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
+    (-f).bilinMap m = -f.bilinMap m :=
+  LinearMap.ext₂ fun _ _ => rfl
+
+/-- Negating one fixed vector negates the bilinear map. -/
+theorem bilinMap_update_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (i : Fin n) :
+    f.bilinMap (Function.update m i (-m i)) = -f.bilinMap m := by
+  ext v w
+  rw [bilinMap_apply, LinearMap.neg_apply, LinearMap.neg_apply, bilinMap_apply,
+    Matrix.vecCons, Matrix.vecCons, Fin.cons_update, Fin.cons_update, f.map_update_neg]
+  have hcons :
+      (Fin.cons v (Fin.cons w m : Fin (n + 1) → M) : Fin (n + 2) → M) i.succ.succ = m i := by
+    rw [Fin.cons_succ, Fin.cons_succ]
+  rw [← hcons, Function.update_eq_self, Matrix.vecCons, Matrix.vecCons]
+
+/-- Negating the second of two fixed vectors negates the bilinear map. -/
+@[simp]
+theorem bilinMap_pair_neg_right (f : M [⋀^Fin 4]→ₗ[R] N) (a b : M) :
+    f.bilinMap ![a, -b] = -f.bilinMap ![a, b] := by
+  have h : ![a, -b] = Function.update ![a, b] 1 (-b) := by
+    ext i
+    fin_cases i <;> simp
+  rw [h]
+  exact f.bilinMap_update_neg ![a, b] 1
+
+end CommRing
 
 end AlternatingMap

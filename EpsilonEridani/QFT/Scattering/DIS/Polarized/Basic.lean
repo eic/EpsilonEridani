@@ -11,9 +11,11 @@ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 # Polarized DIS Interfaces (Stage 10)
 
 This module introduces polarized DIS interfaces: a structure-function container for
-`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, a decomposition
-schema, and endpoint conditions at `x = 1`. The moment identities usually called sum rules
-live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
+`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, the fixed-point
+condition `IsFixedByStructureFunctionSum` (equivalent to `A = 0` or `g₁ + g₂ = 1` by
+`isFixedByStructureFunctionSum_iff`; the covariant decomposition is
+`Polarized.IsG1G2Decomposition`), and endpoint conditions at `x = 1`. The moment identities
+usually called sum rules live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
 
 -/
 
@@ -174,11 +176,28 @@ lemma tensorAssumptions_iff_isAlt {W : Type} [AddCommGroup W] [Module ℝ W]
   · intro h
     exact ⟨fun v w => (LinearMap.BilinForm.IsAlt.neg_eq h w v).symm⟩
 
-/-- Polarized decomposition schema. -/
-def IsPolarizedDecomposition
+/-- The fixed-point condition `A = (g₁ + g₂) • A` at every `(x, Q²)`. By
+`isFixedByStructureFunctionSum_iff` it holds exactly when `A = 0` or `g₁ + g₂ = 1` everywhere. -/
+def IsFixedByStructureFunctionSum
     (G : StructureFunctions)
     (A : Bilin V) : Prop :=
   ∀ x Q2, A = (G.g1 x Q2 + G.g2 x Q2) • A
+
+/-- The fixed-point condition `IsFixedByStructureFunctionSum` holds exactly when `A = 0` or
+`g₁ + g₂ = 1` everywhere. -/
+lemma isFixedByStructureFunctionSum_iff (G : StructureFunctions) (A : Bilin V) :
+    IsFixedByStructureFunctionSum V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
+  refine ⟨fun h => or_iff_not_imp_left.mpr fun hA x Q2 => ?_, ?_⟩
+  · obtain ⟨v, w, hvw⟩ : ∃ v w, A v w ≠ 0 := by
+      by_contra! h0
+      exact hA (LinearMap.ext₂ h0)
+    have h1 := LinearMap.congr_fun₂ (h x Q2) v w
+    rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul] at h1
+    have h2 : (G.g1 x Q2 + G.g2 x Q2 - 1) * A v w = 0 := by linarith
+    exact sub_eq_zero.mp ((mul_eq_zero.mp h2).resolve_right hvw)
+  · rintro (rfl | h) x Q2
+    · rw [smul_zero]
+    · rw [h x Q2, one_smul]
 
 /-- Endpoint conditions on the polarized structure functions at the elastic point `x = 1`.
 
