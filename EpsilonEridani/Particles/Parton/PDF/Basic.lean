@@ -229,12 +229,13 @@ end Comap
 
 A weight `w : ι → ℝ` rescales a density over `ι` parton by parton, `weight w f i x Q2 =
 w i * f i x Q2`, and rescales every moment of each parton by the same factor. The density
-assumptions survive a nonnegative weight. A model density populating only some partons is built
-this way. -/
+assumptions survive a nonnegative weight, and a pullback of a rescaling is the rescaling of the
+pullback by the pulled-back weight (`comap_weight`). A model density populating only some partons
+is built this way. -/
 
 section Weight
 
-variable {ι : Type}
+variable {ι κ : Type}
 
 /-- The density whose parton `i` carries `w i` times the density of `i` in `f`. -/
 def weight (w : ι → ℝ) (f : Pdf ι) : Pdf ι := fun i x Q2 => w i * f i x Q2
@@ -251,6 +252,11 @@ lemma mellinMoment_weight (w : ι → ℝ) (f : Pdf ι) (n : ℕ) (i : ι) (Q2 :
   rw [mellinMoment, mellinMoment, ← MeasureTheory.integral_const_mul]
   exact MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => by
     rw [weight_apply]; ring
+
+/-- Pulling back a rescaled density rescales the pullback, by the pulled-back weight. -/
+lemma comap_weight (σ : κ → ι) (w : ι → ℝ) (f : Pdf ι) :
+    comap σ (weight w f) = weight (w ∘ σ) (comap σ f) :=
+  rfl
 
 /-- A nonnegative weight preserves the physical half of the assumptions. -/
 lemma IsPartonDensity.weight {f : Pdf ι} (h : IsPartonDensity f) {w : ι → ℝ}
