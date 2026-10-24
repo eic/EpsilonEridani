@@ -37,8 +37,11 @@ cancelling identically.  `vetoDensity_eq` restates it as the emission density be
 only: the theorem says *if* you draw the next scale from the overestimate's Sudakov and
 accept with the ratio, *then* the result is distributed by the true kernel.  It does not
 certify this code — the gap named in the plan's Phase 2, that the algorithm's output law
-equals the series, needs a symmetrization lemma mathlib does not have.  What it does buy is
-that the acceptance rule is pinned rather than tunable: getting it wrong is a bug.
+equals the series, is not the ordered-integral identity any more
+(`EpsilonEridani.OrderedSimplex.setIntegral_orderedRegion_eq_orderedProdIntegral` proves it)
+but the modelling of the sampler itself: no probability space connects this code's draws to
+that law.  What it does buy is that the acceptance rule is pinned rather than tunable:
+getting it wrong is a bug.
 
 The line carrying the whole argument is the rejection branch, which continues **from the
 rejected scale**.  Restarting from the original scale would sample the overestimate's
