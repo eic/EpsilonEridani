@@ -5,20 +5,20 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-public import Mathlib.Topology.ContinuousMap.Weierstrass
+public import TauCeti.Probability.Moments.VanishingMoments
 
 /-!
 # The moment problem on a compact interval
 
 An integrable function on a compact interval `[a, b]` is determined almost everywhere by the
 numbers `∫_a^b x^n f(x) dx`, `n ∈ ℕ`: this is the uniqueness half of the Hausdorff moment
-problem, and `ae_eq_of_forall_setIntegral_Icc_pow_mul_eq` is the form proved here. The proof is
-the classical one — the moments determine the integral of `f` against every polynomial, the
-Weierstrass approximation theorem upgrades that to every continuous function, and a function
-integrating to zero against every smooth compactly supported test function vanishes almost
-everywhere.
+problem, and `ae_eq_of_forall_setIntegral_Icc_pow_mul_eq` is the form proved here. The analytic
+work is done by TauCeti's `TauCeti.ae_eq_zero_of_forall_moment_eq_zero`, which kills a function
+with vanishing moments against an arbitrary measure on `ℝ` provided some exponential weight
+`e^{a|x|}` keeps it integrable. On a compact interval that weight is free: a continuous factor
+against a function integrable on a compact set stays integrable, so the only hypothesis left
+here is integrability on `[a, b]`.
 
 Determinacy is sharp in the number of moments used: **no finite set of moments determines the
 function.** For every `N` the functions annihilated by the moments of order `0, …, N` already
@@ -34,10 +34,6 @@ them.
 
 ## Main results
 
-- `setIntegral_Icc_eval_mul_eq_zero`: vanishing moments give a vanishing integral against every
-  polynomial.
-- `setIntegral_Icc_mul_eq_zero_of_continuousOn`: the same against every function continuous on
-  the interval, by Weierstrass approximation.
 - `ae_eq_zero_of_forall_setIntegral_Icc_pow_mul_eq_zero` and
   `ae_eq_of_forall_setIntegral_Icc_pow_mul_eq`: **moment determinacy.**
 - `setIntegral_Icc_eval_mul_eq_sum` and `setIntegral_Icc_pow_mul_eval_eq_sum`: moments against a
@@ -49,7 +45,7 @@ them.
 ## References
 
 * N. I. Akhiezer, *The Classical Moment Problem*, Hafner (1965), Chapter 2, for the Hausdorff
-  moment problem and the role of polynomial density.
+  moment problem and the role of polynomial density, which is what the TauCeti engine supplies.
 
 Nothing in this file is physics-specific.
 -/
@@ -101,64 +97,17 @@ theorem setIntegral_Icc_pow_mul_eval_eq_sum {m : ℕ} {p : Polynomial ℝ} (hm :
   congr 1
   exact setIntegral_congr_fun measurableSet_Icc fun x _ => by rw [← pow_add, add_comm]
 
-/-- If every moment of `f` on `[a, b]` vanishes then so does the integral of `f` against every
-polynomial. -/
-theorem setIntegral_Icc_eval_mul_eq_zero (hf : IntegrableOn f (Icc a b))
-    (hmom : ∀ n : ℕ, ∫ x in Icc a b, x ^ n * f x = 0) (p : Polynomial ℝ) :
-    ∫ x in Icc a b, p.eval x * f x = 0 := by
-  rw [setIntegral_Icc_eval_mul_eq_sum (Nat.lt_succ_self _) hf]
-  simp [hmom]
-
-/-- If every moment of `f` on `[a, b]` vanishes then so does the integral of `f` against every
-function continuous on `[a, b]`. This is where the Weierstrass approximation theorem enters. -/
-theorem setIntegral_Icc_mul_eq_zero_of_continuousOn (hf : IntegrableOn f (Icc a b))
-    (hmom : ∀ n : ℕ, ∫ x in Icc a b, x ^ n * f x = 0) (hg : ContinuousOn g (Icc a b)) :
-    ∫ x in Icc a b, g x * f x = 0 := by
-  have hgf : IntegrableOn (fun x => g x * f x) (Icc a b) :=
-    IntegrableOn.continuousOn_mul hg hf isCompact_Icc
-  have habs : IntegrableOn (fun x => |f x|) (Icc a b) := hf.abs
-  have hLnonneg : 0 ≤ ∫ x in Icc a b, |f x| :=
-    setIntegral_nonneg measurableSet_Icc fun x _ => abs_nonneg _
-  -- The integral is within `ε * ∫ |f|` of zero for every `ε > 0`, by approximating `g` uniformly
-  -- on `[a, b]` by a polynomial, against which the integral vanishes exactly.
-  have key : ∀ ε : ℝ, 0 < ε →
-      |∫ x in Icc a b, g x * f x| ≤ ε * ∫ x in Icc a b, |f x| := by
-    intro ε hε
-    obtain ⟨p, hp⟩ := exists_polynomial_near_of_continuousOn a b g hg ε hε
-    have hpf : IntegrableOn (fun x => p.eval x * f x) (Icc a b) :=
-      IntegrableOn.continuousOn_mul p.continuous.continuousOn hf isCompact_Icc
-    have hdiff : IntegrableOn (fun x => (g x - p.eval x) * f x) (Icc a b) := by
-      simp_rw [sub_mul]; exact hgf.sub hpf
-    have hsub : ∫ x in Icc a b, (g x - p.eval x) * f x = ∫ x in Icc a b, g x * f x := by
-      simp_rw [sub_mul]
-      rw [integral_sub hgf hpf, setIntegral_Icc_eval_mul_eq_zero hf hmom p, sub_zero]
-    rw [← hsub]
-    calc |∫ x in Icc a b, (g x - p.eval x) * f x|
-        ≤ ∫ x in Icc a b, |(g x - p.eval x) * f x| := abs_integral_le_integral_abs
-      _ ≤ ∫ x in Icc a b, ε * |f x| := by
-          refine setIntegral_mono_on hdiff.abs (habs.const_mul ε) measurableSet_Icc fun x hx => ?_
-          rw [abs_mul]
-          refine mul_le_mul_of_nonneg_right ?_ (abs_nonneg _)
-          rw [← abs_neg, neg_sub]
-          exact (hp x hx).le
-      _ = ε * ∫ x in Icc a b, |f x| := integral_const_mul ε _
-  -- Letting `ε → 0` kills the integral.
-  have hzero : |∫ x in Icc a b, g x * f x| ≤ 0 := by
-    refine le_of_forall_pos_le_add fun ε hε => ?_
-    rw [zero_add]
-    refine (key (ε / ((∫ x in Icc a b, |f x|) + 1)) (by positivity)).trans ?_
-    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity : (0:ℝ) < (∫ x in Icc a b, |f x|) + 1)]
-    nlinarith
-  exact abs_eq_zero.mp (le_antisymm hzero (abs_nonneg _))
-
 /-- **Determinacy of the Hausdorff moment problem.** An integrable function on a compact
-interval all of whose moments vanish is almost everywhere zero. -/
+interval all of whose moments vanish is almost everywhere zero.
+
+This is `TauCeti.ae_eq_zero_of_forall_moment_eq_zero` at `volume.restrict (Icc a b)`: the
+exponential weight it asks for costs nothing on a compact interval, since multiplying an
+integrable function there by a continuous one preserves integrability. -/
 theorem ae_eq_zero_of_forall_setIntegral_Icc_pow_mul_eq_zero (hf : IntegrableOn f (Icc a b))
     (hmom : ∀ n : ℕ, ∫ x in Icc a b, x ^ n * f x = 0) :
     f =ᵐ[volume.restrict (Icc a b)] 0 :=
-  ae_eq_zero_of_integral_contDiff_smul_eq_zero hf.locallyIntegrable fun φ hφ _ => by
-    simpa only [smul_eq_mul] using
-      setIntegral_Icc_mul_eq_zero_of_continuousOn hf hmom hφ.continuous.continuousOn
+  TauCeti.ae_eq_zero_of_forall_moment_eq_zero f
+    ⟨1, one_pos, IntegrableOn.continuousOn_mul (by fun_prop) hf isCompact_Icc⟩ hmom
 
 /-- **An integrable function on a compact interval is determined by its moments.** -/
 theorem ae_eq_of_forall_setIntegral_Icc_pow_mul_eq (hf : IntegrableOn f (Icc a b))
@@ -178,8 +127,11 @@ theorem ae_eq_of_forall_setIntegral_Icc_pow_mul_eq (hf : IntegrableOn f (Icc a b
 /-! ### Failure of determinacy from finitely many moments -/
 
 /-- **No finite set of moments determines a function on `[a, b]`.** For every `N` there is a
-nonzero polynomial of degree at most `N + 1`, not identically zero on `[a, b]`, all of whose
-moments of order `0, …, N` on `[a, b]` vanish.
+nonzero polynomial of degree at most `N + 1`, *not* almost everywhere zero on `[a, b]`, all of
+whose moments of order `0, …, N` on `[a, b]` vanish. Negating the almost-everywhere relation is
+what makes this sharp: the counterexample is not a null perturbation of `0`, so it is one that
+`ae_eq_of_forall_setIntegral_Icc_pow_mul_eq` would have ruled out had all the moments been
+known.
 
 The reason is a dimension count: the `N + 2` monomials `1, …, x^(N + 1)` give `N + 2` vectors in
 the `(N + 1)`-dimensional space of moment vectors of order `0, …, N`, so they satisfy a
@@ -188,7 +140,8 @@ counterexample. The counterexamples therefore form a nonzero subspace of an expl
 `(N + 2)`-dimensional space of polynomials. Contrast
 `ae_eq_of_forall_setIntegral_Icc_pow_mul_eq`, where *all* moments are used. -/
 theorem exists_polynomial_ne_zero_setIntegral_Icc_pow_mul_eq_zero (hab : a < b) (N : ℕ) :
-    ∃ p : Polynomial ℝ, p ≠ 0 ∧ p.natDegree ≤ N + 1 ∧ (∃ x ∈ Icc a b, p.eval x ≠ 0) ∧
+    ∃ p : Polynomial ℝ, p ≠ 0 ∧ p.natDegree ≤ N + 1 ∧
+      ¬ (fun x => p.eval x) =ᵐ[volume.restrict (Icc a b)] 0 ∧
       ∀ n ≤ N, ∫ x in Icc a b, x ^ n * p.eval x = 0 := by
   classical
   -- `N + 2` monomial moment vectors in an `(N + 1)`-dimensional space are linearly dependent.
@@ -212,11 +165,19 @@ theorem exists_polynomial_ne_zero_setIntegral_Icc_pow_mul_eq_zero (hab : a < b) 
     exact (Polynomial.natDegree_C_mul_le _ _).trans (by simpa using Nat.lt_succ_iff.mp i.isLt)
   have hne : p ≠ 0 := fun h => hj (by rw [← hcoeff j, h, Polynomial.coeff_zero])
   refine ⟨p, hne, hdeg, ?_, ?_⟩
-  · -- A nonzero polynomial has finitely many roots, while `[a, b]` is infinite.
-    by_contra hcon
-    push Not at hcon
-    exact hne (Polynomial.eq_zero_of_infinite_isRoot _
-      ((Set.Icc_infinite hab).mono fun x hx => hcon x hx))
+  · -- A nonzero polynomial has finitely many roots, hence vanishes on a null set, while
+    -- `[a, b]` has positive length.
+    intro hp0
+    have hroots : ∀ᵐ x ∂volume.restrict (Icc a b), p.eval x ≠ 0 := by
+      rw [ae_iff]
+      simpa using (Polynomial.finite_setOfPred_isRoot hne).measure_zero
+        (volume.restrict (Icc a b))
+    have hbot : ∀ᵐ _x ∂volume.restrict (Icc a b), False := by
+      filter_upwards [hp0, hroots] with x hx hxne
+      exact hxne (by simpa using hx)
+    rw [Filter.eventually_false_iff_eq_bot, ae_eq_bot, Measure.restrict_eq_zero, Real.volume_Icc,
+      ENNReal.ofReal_eq_zero] at hbot
+    linarith
   · intro n hn
     have h := congrFun hsum ⟨n, Nat.lt_succ_of_le hn⟩
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at h
