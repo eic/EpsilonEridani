@@ -210,6 +210,37 @@ theorem isClosed_minkowskiSection : IsClosed (minkowskiSection d : Set (ComplexS
 theorem isClosed_euclideanSection : IsClosed (euclideanSection d : Set (ComplexSeparation d)) :=
   Submodule.closed_of_finiteDimensional _
 
+/-! ### The Wick rotation -/
+
+/-- The *Wick rotation*: the complex-linear automorphism of `ComplexSeparation d` that multiplies
+the time component by `-i` and fixes the spatial components. It carries the real points of
+`ComplexSeparation d` onto the Euclidean section (`wickRotation_ofReal`), which makes the
+Euclidean section a maximal totally real subspace of `ComplexSeparation d`. -/
+noncomputable def wickRotation : ComplexSeparation d ≃L[ℂ] ComplexSeparation d :=
+  ContinuousLinearEquiv.piCongrRight fun μ => Sum.elim
+    (fun _ => ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (-I) (neg_ne_zero.2 I_ne_zero)))
+    (fun _ => ContinuousLinearEquiv.refl ℂ ℂ) μ
+
+/-- The Wick rotation multiplies the time component by `-i`. -/
+@[simp]
+theorem wickRotation_apply_inl (z : ComplexSeparation d) (a : Fin 1) :
+    wickRotation z (Sum.inl a) = -I * z (Sum.inl a) := by
+  simp [wickRotation, mul_comm]
+
+/-- The Wick rotation fixes the spatial components. -/
+@[simp]
+theorem wickRotation_apply_inr (z : ComplexSeparation d) (i : Fin d) :
+    wickRotation z (Sum.inr i) = z (Sum.inr i) := by
+  simp [wickRotation]
+
+/-- The Wick rotation of the real point `y` is the continuation of `y` read as a Euclidean
+separation. -/
+@[simp]
+theorem wickRotation_ofReal (y : Fin 1 ⊕ Fin d → ℝ) :
+    wickRotation (fun μ => (y μ : ℂ)) = continuation (WithLp.toLp 2 y) := by
+  funext μ
+  rcases μ with a | i <;> simp
+
 /-! ### The null-separation obstruction -/
 
 /-- The continuation turns the Euclidean inner product into minus the Minkowski product. -/
