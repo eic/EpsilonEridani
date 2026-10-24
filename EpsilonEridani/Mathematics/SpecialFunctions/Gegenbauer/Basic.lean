@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Degree.Lemmas
 public import Mathlib.Algebra.Polynomial.Derivative
-public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Nat.Choose.Cast
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 import Mathlib.Tactic.FieldSimp
@@ -40,15 +39,12 @@ The index is fixed at `3/2` rather than carried as a parameter: the weighted-`L�
 this family uses the weight `1 - x²` of this index only. The polynomials are defined over any field
 `R`, the recurrence dividing by `n + 2`; the parity statements and the degree bound hold there,
 while the recurrence in division-free form, the exact degree, the leading coefficient, the endpoint
-value, the derivative relations, the differential equation and the basis of `R[X]` formed by the
-family — which rests on the exact degree — assume that `R` has characteristic zero. The real family
-is `gegenbauerThreeHalves ℝ`.
+value, the derivative relations and the differential equation assume that `R` has characteristic
+zero. The real family is `gegenbauerThreeHalves ℝ`.
 
 ## Main definitions
 
 * `EpsilonEridani.gegenbauerThreeHalves R n`: the Gegenbauer polynomial `C_n^{(3/2)}` in `R[X]`.
-* `EpsilonEridani.gegenbauerThreeHalvesBasis R`: the family, indexed by its degree, as a basis of
-  `R[X]`, over a field `R` of characteristic zero.
 
 ## Main statements
 
@@ -248,32 +244,6 @@ theorem degree_gegenbauerThreeHalves (n : ℕ) : (gegenbauerThreeHalves R n).deg
 theorem leadingCoeff_gegenbauerThreeHalves (n : ℕ) :
     (gegenbauerThreeHalves R n).leadingCoeff = ((2 * n + 1)‼ : ℕ) / (n ! : ℕ) := by
   rw [leadingCoeff, natDegree_gegenbauerThreeHalves, coeff_gegenbauerThreeHalves_self]
-
-/-! ### The family as a basis of the polynomial ring -/
-
-/-- The Gegenbauer polynomials of index `3/2`, packaged as a polynomial sequence: the `n`-th
-member has degree `n`. -/
-noncomputable def gegenbauerThreeHalvesSequence : Polynomial.Sequence R :=
-  ⟨gegenbauerThreeHalves R, degree_gegenbauerThreeHalves R⟩
-
-/-- The `n`-th member of the Gegenbauer sequence is `C_n^{(3/2)}`. -/
-@[simp]
-theorem gegenbauerThreeHalvesSequence_apply (n : ℕ) :
-    gegenbauerThreeHalvesSequence R n = gegenbauerThreeHalves R n :=
-  (rfl)
-
-/-- The Gegenbauer polynomials of index `3/2`, indexed by their degree, form a basis of `R[X]`.
-Expanding a polynomial in this basis is what turns a statement about all polynomials into a
-statement about the family, and conversely. -/
-noncomputable def gegenbauerThreeHalvesBasis : Module.Basis ℕ R R[X] :=
-  (gegenbauerThreeHalvesSequence R).basis fun n =>
-    isUnit_iff_ne_zero.mpr (leadingCoeff_ne_zero.mpr (gegenbauerThreeHalves_ne_zero R n))
-
-/-- The `n`-th vector of the Gegenbauer basis is `C_n^{(3/2)}`. -/
-@[simp]
-theorem gegenbauerThreeHalvesBasis_apply (n : ℕ) :
-    gegenbauerThreeHalvesBasis R n = gegenbauerThreeHalves R n :=
-  Polynomial.Sequence.basis_eq_self _ _ n
 
 /-! ### Derivatives and the differential equation -/
 

@@ -40,6 +40,8 @@ distinct. The squared norms then follow from the three-term recurrence, paired w
 * `EpsilonEridani.gegenbauerThreeHalvesMeasure`: the measure `(1 - x²) dx` on `(-1, 1]`.
 * `EpsilonEridani.gegenbauerThreeHalvesNormSq`: the squared norm
   `2 (n + 1) (n + 2) / (2n + 3)` of `C_n^{(3/2)}` for the measure.
+* `EpsilonEridani.normalizedGegenbauerThreeHalves`: the normalized mode
+  `C_n^{(3/2)} / ‖C_n^{(3/2)}‖`.
 
 ## Main statements
 
@@ -49,18 +51,23 @@ distinct. The squared norms then follow from the three-term recurrence, paired w
   `EpsilonEridani.gegenbauerThreeHalvesMeasure_real_univ`: the measure has total mass `4 / 3`,
   in `ℝ≥0∞` and in `ℝ`; in particular it is a finite measure.
 * `ContinuousOn.integrable_gegenbauerThreeHalvesMeasure`: a function continuous on `[-1, 1]` is
-  integrable for the measure; `EpsilonEridani.integrable_pow_gegenbauerThreeHalvesMeasure` and
-  `EpsilonEridani.integrable_exp_mul_abs_gegenbauerThreeHalvesMeasure` are the monomial and
-  exponential instances.
+  integrable for the measure, with
+  `EpsilonEridani.integrable_exp_mul_abs_gegenbauerThreeHalvesMeasure` its exponential instance.
 * `EpsilonEridani.integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves`: the orthogonality
-  relation, with the squared norms `EpsilonEridani.integral_gegenbauerThreeHalves_mul_self`.
+  relation, with the squared norms `EpsilonEridani.integral_gegenbauerThreeHalves_mul_self`;
+  `EpsilonEridani.integral_normalizedGegenbauerThreeHalves_mul_normalizedGegenbauerThreeHalves` is
+  its Kronecker-delta form for the normalized modes.
 
 ## References
 
 * G. Szegő, *Orthogonal Polynomials*, AMS Colloquium Publications 23, 4th edition (1975),
   chapter IV, §4.7.
 * NIST Digital Library of Mathematical Functions, §18.3 and §18.8.
-* The Chebyshev weight measure of the TauCeti library, the template this construction follows.
+* The Chebyshev weight measure of the TauCeti library
+  (`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`), the template this
+  construction follows: the measure in its `withDensity` form, the squared norms as a named
+  constant, and the normalized modes with their Kronecker-delta pairing are adapted from
+  `TauCeti.measureT`, `TauCeti.chebyshevTNormSq` and `TauCeti.normalizedChebyshevT` there.
 -/
 
 public section
@@ -134,11 +141,6 @@ theorem _root_.ContinuousOn.integrable_gegenbauerThreeHalvesMeasure {E : Type*}
   refine (ContinuousOn.integrableOn_Icc ?_).mono_set Set.Ioc_subset_Icc_self
   simp_rw [ENNReal.toReal_ofReal']
   exact (by fun_prop : Continuous fun x : ℝ => max (1 - x ^ 2) 0).continuousOn.smul hf
-
-/-- Every monomial has a finite moment against `gegenbauerThreeHalvesMeasure`. -/
-theorem integrable_pow_gegenbauerThreeHalvesMeasure (k : ℕ) :
-    Integrable (fun x : ℝ => x ^ k) gegenbauerThreeHalvesMeasure :=
-  (continuous_pow k).continuousOn.integrable_gegenbauerThreeHalvesMeasure
 
 /-- Every exponential weight is integrable for `gegenbauerThreeHalvesMeasure`: it is a finite
 measure supported on the compact interval `[-1, 1]`. -/
@@ -256,6 +258,11 @@ theorem gegenbauerThreeHalvesNormSq_pos (n : ℕ) : 0 < gegenbauerThreeHalvesNor
   rw [gegenbauerThreeHalvesNormSq_def]
   positivity
 
+/-- The norm `‖C_n^{(3/2)}‖`, by which the modes are divided, is nonzero. -/
+theorem sqrt_gegenbauerThreeHalvesNormSq_ne_zero (n : ℕ) :
+    Real.sqrt (gegenbauerThreeHalvesNormSq n) ≠ 0 :=
+  Real.sqrt_ne_zero'.mpr (gegenbauerThreeHalvesNormSq_pos n)
+
 /-- The squared norm of `C_n^{(3/2)}`:
 `∫₋₁¹ (1 - x²) C_n^{(3/2)}(x)² dx = 2 (n + 1) (n + 2) / (2n + 3)`. -/
 @[simp]
@@ -297,5 +304,41 @@ theorem integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves (m n : ℕ) :
   split_ifs with h
   · rw [h, integral_gegenbauerThreeHalves_mul_self]
   · exact integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves_of_ne h
+
+/-! ### The normalized modes -/
+
+/-- The normalized Gegenbauer mode `C_n^{(3/2)} / ‖C_n^{(3/2)}‖`, of unit norm for
+`gegenbauerThreeHalvesMeasure`. -/
+noncomputable def normalizedGegenbauerThreeHalves (n : ℕ) (x : ℝ) : ℝ :=
+  (gegenbauerThreeHalves ℝ n).eval x / Real.sqrt (gegenbauerThreeHalvesNormSq n)
+
+/-- The defining equation of the normalized Gegenbauer mode. -/
+theorem normalizedGegenbauerThreeHalves_def (n : ℕ) (x : ℝ) :
+    normalizedGegenbauerThreeHalves n x =
+      (gegenbauerThreeHalves ℝ n).eval x / Real.sqrt (gegenbauerThreeHalvesNormSq n) :=
+  (rfl)
+
+/-- The normalized Gegenbauer modes have Kronecker-delta pairings for the weight measure. -/
+@[simp]
+theorem integral_normalizedGegenbauerThreeHalves_mul_normalizedGegenbauerThreeHalves (m n : ℕ) :
+    ∫ x, normalizedGegenbauerThreeHalves m x * normalizedGegenbauerThreeHalves n x
+      ∂gegenbauerThreeHalvesMeasure = if m = n then 1 else 0 := by
+  have hm := sqrt_gegenbauerThreeHalvesNormSq_ne_zero m
+  have hn := sqrt_gegenbauerThreeHalvesNormSq_ne_zero n
+  have hsplit : ∀ x : ℝ, normalizedGegenbauerThreeHalves m x *
+      normalizedGegenbauerThreeHalves n x =
+        (Real.sqrt (gegenbauerThreeHalvesNormSq m) *
+            Real.sqrt (gegenbauerThreeHalvesNormSq n))⁻¹ *
+          ((gegenbauerThreeHalves ℝ m).eval x * (gegenbauerThreeHalves ℝ n).eval x) := by
+    intro x
+    rw [normalizedGegenbauerThreeHalves_def, normalizedGegenbauerThreeHalves_def]
+    field_simp
+  rw [integral_congr_ae (Filter.Eventually.of_forall hsplit), integral_const_mul,
+    integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves]
+  split_ifs with h
+  · subst h
+    rw [Real.mul_self_sqrt (gegenbauerThreeHalvesNormSq_pos m).le,
+      inv_mul_cancel₀ (gegenbauerThreeHalvesNormSq_pos m).ne']
+  · rw [mul_zero]
 
 end EpsilonEridani
