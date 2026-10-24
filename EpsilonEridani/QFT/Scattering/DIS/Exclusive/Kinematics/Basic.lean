@@ -11,7 +11,10 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 # Exclusive DIS Kinematics Interfaces
 
 This module extends the inclusive kinematics layer with off-forward variables used by
-DVCS and DVMP interfaces.
+DVCS and DVMP interfaces. The record `ExclKinematics` extends `DisKinematics`, so the inclusive
+invariants (`Q2`, `xBj`, `yInel`, `W2`) and their lemmas apply to an exclusive event through the
+parent projection `ExclKinematics.toDisKinematics`. The same record carries diffractive DIS
+events `P + q = P' + X`, with the diffractive system `X` in the produced-system field `qPrime`.
 
 -/
 
@@ -26,38 +29,25 @@ namespace Kinematics
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
-open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
 
-/-- Minimal off-forward exclusive kinematics container. -/
-structure ExclKinematics where
-  /-- Incoming hadron momentum. -/
-  p : V
-  /-- Outgoing hadron momentum. -/
-  pPrime : V
-  /-- Incoming lepton momentum. -/
-  k : V
-  /-- Outgoing lepton momentum. -/
-  kPrime : V
-  /-- Momentum of the exchanged virtual photon, `q = k - k'` by `hqLepton`. -/
-  q : V
-  /-- Momentum of the produced real photon (DVCS) or meson (DVMP). -/
+/-- Minimal off-forward exclusive kinematics container: the inclusive process data of
+`DisKinematics` together with a produced system `q'` at the hadronic vertex `p + q = p' + q'`.
+It serves the exclusive channels (DVCS, DVMP) and diffractive DIS alike. -/
+structure ExclKinematics extends DisKinematics V where
+  /-- Momentum of the system produced at the hadronic vertex: the real photon in DVCS, the meson
+  in DVMP, the diffractive system `X` in diffractive DIS. -/
   qPrime : V
   /-- Azimuthal angle of the lepton plane. -/
   phiL : ℝ
   /-- Azimuthal angle of the hadron plane. -/
   phiH : ℝ
-  /-- The virtual photon carries the lepton momentum transfer. -/
-  hqLepton : q = k - kPrime
   /-- Momentum conservation at the hadronic vertex, `p + q = p' + q'`. -/
   hMomentum : p + q = pPrime + qPrime
 
 namespace ExclKinematics
 
 variable {V}
-
-/-- Hard scale in the exclusive channel. -/
-def Q2 (g : Bilin V) (K : ExclKinematics V) : ℝ :=
-  - g K.q K.q
 
 omit [Module ℝ V] in
 /-- Momentum transfer to the hadron, `Δ = p' - p`. -/
@@ -79,11 +69,6 @@ noncomputable def xiSkew (g : Bilin V) (K : ExclKinematics V) : ℝ :=
 /-- Relative azimuthal angle between hadron and lepton planes. -/
 def phiDiff (K : ExclKinematics V) : ℝ :=
   K.phiH - K.phiL
-
-omit [Module ℝ V] in
-lemma q_eq_lepton_transfer (K : ExclKinematics V) :
-    K.q = K.k - K.kPrime :=
-  K.hqLepton
 
 omit [Module ℝ V] in
 /-- Momentum conservation expresses the hadron momentum transfer through the photon side,
@@ -138,7 +123,7 @@ lemma apply_p_add_pPrime_q_add_qPrime
     rw [hq'] at h
     simp only [map_sub, LinearMap.sub_apply] at h
     linarith
-  rw [tMom, Q2, hp', hq']
+  rw [tMom, DisKinematics.Q2, hp', hq']
   simp only [map_add, map_sub, LinearMap.add_apply]
   linear_combination (-1 : ℝ) * hpΔ + hg.eq K.delta K.p - hqΔ + hg.eq K.delta K.q
 
@@ -152,7 +137,7 @@ lemma xiSkew_eq_xB_form
       K.Q2 g / (2 * g K.p K.q) /
         (2 - K.Q2 g / (2 * g K.p K.q) + K.Q2 g / (2 * g K.p K.q) * K.tMom g / K.Q2 g) := by
   have hnum : -g K.delta (K.q + K.qPrime) = K.Q2 g := by
-    rw [neg_delta_apply_q_add_qPrime g hg K, hqPrime, Q2, zero_sub]
+    rw [neg_delta_apply_q_add_qPrime g hg K, hqPrime, DisKinematics.Q2, zero_sub]
   have h2pq : 2 * g K.p K.q ≠ 0 := mul_ne_zero two_ne_zero hpq
   have hden : 2 - K.Q2 g / (2 * g K.p K.q) + K.Q2 g / (2 * g K.p K.q) * K.tMom g / K.Q2 g
       = (4 * g K.p K.q + K.tMom g - K.Q2 g) / (2 * g K.p K.q) := by
