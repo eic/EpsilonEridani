@@ -18,6 +18,11 @@ non-negativity, and the moments of monomials `c zᵐ`), and the construction
 `indicatorUnitInterval`, which cuts a family off outside the unit interval and is used to build
 explicit fragmentation families satisfying `Assumptions`.
 
+Finally it provides the pullback `comap τ σ D` of a family along a map `τ` of the observed
+hadrons and a map `σ` of the parton flavours, which is how charge conjugation and the flavour
+symmetries of a hadron multiplet act on fragmentation families. The pullback preserves
+`Assumptions` and carries every `z`-moment to a `z`-moment.
+
 -/
 
 @[expose] public section
@@ -133,6 +138,54 @@ lemma assumptions_indicatorUnitInterval {f : Frag Hadron Flavor}
   nonneg h i z Q2 hz₀ hz₁ := by
     rw [indicatorUnitInterval_of_mem f ⟨hz₀, hz₁⟩]
     exact hf h i z Q2 hz₀ hz₁
+
+section Comap
+
+variable {Hadron' Flavor' Hadron'' Flavor'' : Type}
+
+/-- The family over `Hadron'` and `Flavor'` whose fragmentation of parton `i` into hadron `h` is
+the fragmentation of `σ i` into `τ h` in `D`. Charge conjugation and the flavour symmetries of a
+hadron multiplet act on fragmentation families this way. -/
+def comap (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (D : Frag Hadron Flavor) :
+    Frag Hadron' Flavor' :=
+  fun h i => D (τ h) (σ i)
+
+@[simp]
+lemma comap_apply (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (D : Frag Hadron Flavor)
+    (h : Hadron') (i : Flavor') (z Q2 : ℝ) : comap τ σ D h i z Q2 = D (τ h) (σ i) z Q2 :=
+  (rfl)
+
+@[simp]
+lemma comap_id (D : Frag Hadron Flavor) : comap id id D = D :=
+  (rfl)
+
+@[simp]
+lemma comap_comap (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (τ' : Hadron'' → Hadron')
+    (σ' : Flavor'' → Flavor') (D : Frag Hadron Flavor) :
+    comap τ' σ' (comap τ σ D) = comap (τ ∘ τ') (σ ∘ σ') D :=
+  (rfl)
+
+/-- Cutting off outside the unit interval commutes with a pullback: both act on the value of the
+family and neither touches the momentum fraction. -/
+@[simp]
+lemma comap_indicatorUnitInterval (τ : Hadron' → Hadron) (σ : Flavor' → Flavor)
+    (f : Frag Hadron Flavor) :
+    comap τ σ (indicatorUnitInterval f) = indicatorUnitInterval (comap τ σ f) :=
+  (rfl)
+
+@[simp]
+lemma zMoment_comap (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (D : Frag Hadron Flavor)
+    (n : ℕ) (h : Hadron') (i : Flavor') (Q2 : ℝ) :
+    zMoment (comap τ σ D) n h i Q2 = zMoment D n (τ h) (σ i) Q2 :=
+  (rfl)
+
+/-- A pullback preserves the structural assumptions. -/
+lemma Assumptions.comap {D : Frag Hadron Flavor} (hD : Assumptions D) (τ : Hadron' → Hadron)
+    (σ : Flavor' → Flavor) : Assumptions (Fragmentation.comap τ σ D) where
+  support h i z Q2 hz := hD.support (τ h) (σ i) z Q2 hz
+  nonneg h i z Q2 hz₀ hz₁ := hD.nonneg (τ h) (σ i) z Q2 hz₀ hz₁
+
+end Comap
 
 end Fragmentation
 end Particles
