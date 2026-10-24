@@ -53,7 +53,7 @@ jobs:
     needs: pin
     # Pinned to a EpsilonEridaniReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: eic/EpsilonEridaniReview/.github/workflows/merge-sweep.yml@11818532110e43b9029fe628291e786621232900
+    uses: eic/EpsilonEridaniReview/.github/workflows/merge-sweep.yml@2e7506c28bcd0591a3e9ab75c3312073664ce21f
     with:
       dry_run: ${{ inputs.dry-run || false }}
       review_ref: ${{ needs.pin.outputs.review_ref }}
