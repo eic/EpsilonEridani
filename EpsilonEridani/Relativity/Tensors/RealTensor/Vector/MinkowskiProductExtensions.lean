@@ -125,7 +125,7 @@ theorem nondegenerate_toBilinForm_minkowskiProduct {d : ℕ} :
 /-- A bilinear form `F` with its second index raised by the Minkowski metric, in components: the
 endomorphism `E` with `⟪E u, v⟫ₘ = F u v` has `(E u)^μ = η^{μμ} F(u, e_μ)`. -/
 theorem symmCompOfNondegenerate_minkowskiProduct_apply {d : ℕ}
-    (F : LinearMap.BilinForm ℝ (Vector d)) (u : Vector d) (μ : Fin 1 ⊕ Fin d) :
+    (F : LinearMap.BilinForm ℝ (Lorentz.Vector d)) (u : Lorentz.Vector d) (μ : Fin 1 ⊕ Fin d) :
     F.symmCompOfNondegenerate (minkowskiProduct (d := d)).toBilinForm
         nondegenerate_toBilinForm_minkowskiProduct u μ =
       minkowskiMatrix μ μ * F u (basis μ) := by
