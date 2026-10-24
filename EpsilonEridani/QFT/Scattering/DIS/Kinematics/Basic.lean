@@ -28,6 +28,20 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
 /-- A bilinear form used to evaluate Lorentz-invariant scalar products in abstract form. -/
 abbrev Bilin (V : Type) [AddCommGroup V] [Module ℝ V] := LinearMap.BilinForm ℝ V
 
+namespace Bilin
+
+variable {V}
+
+/-- A bilinear form has no component between a vector `v` fixed by a linear map `f` and a
+vector `u` reversed by `f`, provided the component `W v u` is invariant under `f`. -/
+lemma apply_eq_zero_of_apply_eq_self_of_apply_eq_neg {W : Bilin V} {f : V →ₗ[ℝ] V} {v u : V}
+    (hf : W (f v) (f u) = W v u) (hfv : f v = v) (hfu : f u = -u) :
+    W v u = 0 := by
+  rw [hfv, hfu, map_neg] at hf
+  linarith
+
+end Bilin
+
 /-- Minimal process-level kinematics for inclusive DIS. -/
 structure DisKinematics where
   /-- Incoming hadron momentum. -/
