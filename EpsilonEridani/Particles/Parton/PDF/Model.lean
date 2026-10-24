@@ -28,11 +28,17 @@ The same shape carried by a diagonal spin-density matrix discharges
 `EpsilonEridani.Particles.Parton.PDF.SpinDensityAssumptions`
 (`spinDensityAssumptions_modelSpinDensity`), which likewise had no instance.
 
+Every Mellin moment of the model is available in closed form: the shape integrates to the Euler
+Beta value `a! b! / (a + b + 1)!` (`integral_betaShape`), so the `n`-th moment is
+`(n + a)! b! / (n + a + b + 1)!` (`mellinMoment_modelPdf`). Every moment computation against the
+model rests on it.
+
 ## ii. Key results
 
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.mellinMoment_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
 
 ## iii. Table of contents
@@ -46,8 +52,10 @@ The same shape carried by a diagonal spin-density matrix discharges
 
 The exponents are natural numbers, not reals. A realistic small-`x` fit wants `x^a` with
 `-1 < a < 0`, which is `Real.rpow` and needs the Beta-integral convergence argument in place
-of continuity on a compact set; that generalization is not attempted here. Nothing in the
-statements below depends on the particular values of `a` and `b`.
+of continuity on a compact set; that generalization is not attempted here. Every statement below
+is uniform in `a` and `b`, with one exception: `mellinMoment_modelPdf_zero_one` specializes the
+closed-form moment to `a = 0`, `b = 1` with the factorials evaluated, and is kept because it is
+the form in which `simp` evaluates the moments of the meson valence model built on that shape.
 
 -/
 
@@ -55,7 +63,7 @@ statements below depends on the particular values of `a` and `b`.
 
 noncomputable section
 
-open scoped BigOperators
+open scoped BigOperators Nat
 
 namespace EpsilonEridani
 namespace Particles
@@ -142,6 +150,66 @@ lemma regularity_modelPdf (Flavor : Type) (a b : ℕ) : Regularity (modelPdf Fla
 /-- **`PDF.Assumptions` is satisfiable, by an explicit model.** -/
 lemma assumptions_modelPdf (Flavor : Type) (a b : ℕ) : Assumptions (modelPdf Flavor a b) :=
   assumptions_iff.mpr ⟨isPartonDensity_modelPdf Flavor a b, regularity_modelPdf Flavor a b⟩
+
+/-- **The Euler Beta value of the shape**: `∫₀¹ x^a (1 - x)^b dx = a! b! / (a + b + 1)!`. The
+integration by parts that produces the factorials is here the recursion
+`∫ x^a (1-x)^(b+1) = ∫ x^a (1-x)^b - ∫ x^(a+1) (1-x)^b`, an induction on `b` over all `a`. -/
+lemma integral_betaShape (a b : ℕ) :
+    ∫ x in Set.Icc (0 : ℝ) 1, betaShape a b x = (a ! * b ! : ℝ) / (a + b + 1)! := by
+  induction b generalizing a with
+  | zero =>
+    have key : ∫ x in Set.Icc (0 : ℝ) 1, betaShape a 0 x = ∫ x in Set.Icc (0 : ℝ) 1, x ^ a :=
+      MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => by
+        rw [betaShape, pow_zero, mul_one]
+    have ha : (a ! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 a.factorial_ne_zero
+    rw [key, MeasureTheory.integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le zero_le_one, integral_pow, Nat.add_zero,
+      Nat.factorial_zero, Nat.factorial_succ, one_pow, zero_pow (Nat.succ_ne_zero a), sub_zero]
+    push_cast
+    field_simp
+  | succ b ih =>
+    have key : ∫ x in Set.Icc (0 : ℝ) 1, betaShape a (b + 1) x
+        = (∫ x in Set.Icc (0 : ℝ) 1, betaShape a b x)
+          - ∫ x in Set.Icc (0 : ℝ) 1, betaShape (a + 1) b x := by
+      rw [← MeasureTheory.integral_sub (continuous_betaShape a b).integrableOn_Icc
+        (continuous_betaShape (a + 1) b).integrableOn_Icc]
+      exact MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => by
+        rw [betaShape, betaShape, betaShape, pow_succ (1 - x) b, pow_succ x a]
+        ring
+    have h₁ : a + 1 + b + 1 = a + b + 1 + 1 := by omega
+    have h₂ : a + (b + 1) + 1 = a + b + 1 + 1 := by omega
+    have hf : ((a + b + 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _)
+    have hs : ((a : ℝ) + b + 1 + 1) ≠ 0 := by positivity
+    rw [key, ih a, ih (a + 1), h₁, h₂, Nat.factorial_succ (a + b + 1), Nat.factorial_succ a,
+      Nat.factorial_succ b]
+    push_cast
+    field_simp
+    ring
+
+/-- **The Mellin moments of the model in closed form**: `∫₀¹ xⁿ x^a (1 - x)^b dx` is the Euler
+Beta value `(n + a)! b! / (n + a + b + 1)!`, at every flavour and every scale. -/
+lemma mellinMoment_modelPdf (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor a b) n i Q2 = ((n + a)! * b ! : ℝ) / (n + a + b + 1)! := by
+  have key : mellinMoment (modelPdf Flavor a b) n i Q2
+      = ∫ x in Set.Icc (0 : ℝ) 1, betaShape (n + a) b x :=
+    MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x hx => by
+      rw [modelPdf_apply, Set.indicator_of_mem hx, betaShape, betaShape, pow_add]
+      ring
+  rw [key, integral_betaShape]
+
+/-- **The Mellin moments of the model with exponents `a = 0` and `b = 1`**, the shape `1 - x`:
+`∫₀¹ xⁿ (1 - x) dx = 1 / ((n + 1) (n + 2))`. In particular the model carries number density
+`1 / 2`, `n = 0`, and momentum fraction `1 / 6`, `n = 1`, at each of its flavours. This is the
+`a = 0`, `b = 1` case of `mellinMoment_modelPdf` with the factorials evaluated. -/
+@[simp]
+lemma mellinMoment_modelPdf_zero_one (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor 0 1) n i Q2 = (((n : ℝ) + 1) * ((n : ℝ) + 2))⁻¹ := by
+  have hn : (n ! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
+  rw [mellinMoment_modelPdf, Nat.add_zero, Nat.factorial_one,
+    Nat.factorial_succ (n + 1), Nat.factorial_succ n]
+  push_cast
+  field_simp
+  ring
 
 /-- Every Mellin moment of the model is nonnegative. -/
 lemma mellinMoment_modelPdf_nonneg (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 : ℝ) :
