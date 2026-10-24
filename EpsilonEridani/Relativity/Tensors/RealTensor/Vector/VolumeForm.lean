@@ -104,7 +104,7 @@ column `j`. -/
 theorem volumeForm_apply (v : Fin 4 → Vector 3) :
     volumeForm v = -Matrix.det (Matrix.of fun i j => v j (finSumFinEquiv.symm i)) := by
   rw [volumeForm, _root_.neg_apply, Module.Basis.det_apply, neg_inj]
-  congr 1
+  refine congrArg Matrix.det ?_
   ext i j
   simp [Module.Basis.toMatrix_apply, minkowskiBasisFin4, Module.Basis.repr_reindex_apply,
     Lorentz.Vector.basis_repr_apply]
