@@ -44,7 +44,7 @@ calculation determines can be made about it without any lattice construction.
 * `EuclideanDataset.hasContinuumLimit_ofTendsto`: if the central values and covariances of a family
   converge, the limit covariance is again positive semidefinite, so the limits form a dataset
   `EuclideanDataset.ofTendsto`, the continuum limit of the family; it is unique
-  (`EuclideanDataset.HasContinuumLimit.unique`), and variances converge with it.
+  (`EuclideanDataset.HasContinuumLimit.unique`), and covariances and variances converge with it.
 
 ## References
 
@@ -333,7 +333,7 @@ of the functionals extended by zero to the whole dataset. -/
 theorem comp_covarianceForm [Fintype κ] {e : κ → ι} (he : Function.Injective e) (c c' : κ → ℝ) :
     (D.comp e).covarianceForm c c' =
       D.covarianceForm (Function.extend e c 0) (Function.extend e c' 0) := by
-  rw [covarianceForm_def, covarianceForm_def, he.extend_dotProduct_mulVec_extend he,
+  rw [covarianceForm_def, covarianceForm_def, he.extend_zero_dotProduct_mulVec_extend_zero he,
     comp_covariance]
 
 /-- The variance of a functional of a dataset reindexed along an injection is the variance of the
@@ -357,23 +357,34 @@ theorem mem_determinedSubspace_iff_variance_eq_zero {c : ι → ℝ} :
     c ∈ D.determinedSubspace ↔ D.variance c = 0 := by
   rw [mem_determinedSubspace, variance_eq_zero_iff]
 
+/-- The covariance of an exactly determined functional with any functional is zero. -/
+theorem covarianceForm_eq_zero_of_mem_determinedSubspace {c : ι → ℝ}
+    (hc : c ∈ D.determinedSubspace) (c' : ι → ℝ) : D.covarianceForm c c' = 0 := by
+  rw [covarianceForm_comm, covarianceForm_def, D.mem_determinedSubspace.1 hc, dotProduct_zero]
+
 /-- Adding an exactly determined functional to a functional does not change its variance. -/
 theorem variance_add_of_mem_determinedSubspace {c : ι → ℝ} (hc : c ∈ D.determinedSubspace)
     (c' : ι → ℝ) : D.variance (c + c') = D.variance c' := by
-  have hc' : D.covarianceForm c c' = 0 := by
-    rw [covarianceForm_comm, covarianceForm_def, D.mem_determinedSubspace.1 hc, dotProduct_zero]
-  rw [variance_add, hc', D.mem_determinedSubspace_iff_variance_eq_zero.1 hc]
+  rw [variance_add, D.covarianceForm_eq_zero_of_mem_determinedSubspace hc,
+    D.mem_determinedSubspace_iff_variance_eq_zero.1 hc]
   ring
+
+variable {D} in
+/-- The covariances of pairs of functionals converge along a continuum limit. -/
+theorem HasContinuumLimit.tendsto_covarianceForm {F : ℝ → EuclideanDataset ι}
+    (h : HasContinuumLimit F D) (c c' : ι → ℝ) :
+    Tendsto (fun a => (F a).covarianceForm c c') (𝓝[>] 0) (𝓝 (D.covarianceForm c c')) := by
+  have hb : Continuous fun S : Matrix ι ι ℝ => c ⬝ᵥ S *ᵥ c' :=
+    continuous_const.dotProduct (continuous_id.matrix_mulVec continuous_const)
+  simp only [covarianceForm_def]
+  exact (hb.tendsto _).comp h.tendsto_covariance
 
 variable {D} in
 /-- Variances converge along a continuum limit. -/
 theorem HasContinuumLimit.tendsto_variance {F : ℝ → EuclideanDataset ι}
     (h : HasContinuumLimit F D) (c : ι → ℝ) :
-    Tendsto (fun a => (F a).variance c) (𝓝[>] 0) (𝓝 (D.variance c)) := by
-  have hq : Continuous fun S : Matrix ι ι ℝ => c ⬝ᵥ S *ᵥ c :=
-    continuous_const.dotProduct (continuous_id.matrix_mulVec continuous_const)
-  simp only [variance_def]
-  exact (hq.tendsto _).comp h.tendsto_covariance
+    Tendsto (fun a => (F a).variance c) (𝓝[>] 0) (𝓝 (D.variance c)) :=
+  h.tendsto_covarianceForm c c
 
 variable {D} in
 /-- The functionals of the central values converge along a continuum limit. -/
