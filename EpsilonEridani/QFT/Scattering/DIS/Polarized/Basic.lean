@@ -11,9 +11,9 @@ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 # Polarized DIS Interfaces (Stage 10)
 
 This module introduces polarized DIS interfaces: a structure-function container for
-`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, the scaling condition
-`IsStructureFunctionScaling` (equivalent to `A = 0` or `g₁ + g₂ = 1` by
-`isStructureFunctionScaling_iff`; the covariant decomposition is
+`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, the fixed-point
+condition `IsFixedByStructureFunctionSum` (equivalent to `A = 0` or `g₁ + g₂ = 1` by
+`isFixedByStructureFunctionSum_iff`; the covariant decomposition is
 `Polarized.IsG1G2Decomposition`), and endpoint conditions at `x = 1`. The moment identities
 usually called sum rules live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
 
@@ -176,17 +176,17 @@ lemma tensorAssumptions_iff_isAlt {W : Type} [AddCommGroup W] [Module ℝ W]
   · intro h
     exact ⟨fun v w => (LinearMap.BilinForm.IsAlt.neg_eq h w v).symm⟩
 
-/-- The scaling condition `A = (g₁ + g₂) • A` at every `(x, Q²)`. By
-`isStructureFunctionScaling_iff` it holds exactly when `A = 0` or `g₁ + g₂ = 1` everywhere. -/
-def IsStructureFunctionScaling
+/-- The fixed-point condition `A = (g₁ + g₂) • A` at every `(x, Q²)`. By
+`isFixedByStructureFunctionSum_iff` it holds exactly when `A = 0` or `g₁ + g₂ = 1` everywhere. -/
+def IsFixedByStructureFunctionSum
     (G : StructureFunctions)
     (A : Bilin V) : Prop :=
   ∀ x Q2, A = (G.g1 x Q2 + G.g2 x Q2) • A
 
-/-- The scaling condition `IsStructureFunctionScaling` holds exactly when `A = 0` or
+/-- The fixed-point condition `IsFixedByStructureFunctionSum` holds exactly when `A = 0` or
 `g₁ + g₂ = 1` everywhere. -/
-lemma isStructureFunctionScaling_iff (G : StructureFunctions) (A : Bilin V) :
-    IsStructureFunctionScaling V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
+lemma isFixedByStructureFunctionSum_iff (G : StructureFunctions) (A : Bilin V) :
+    IsFixedByStructureFunctionSum V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
   refine ⟨fun h => or_iff_not_imp_left.mpr fun hA x Q2 => ?_, ?_⟩
   · obtain ⟨v, w, hvw⟩ : ∃ v w, A v w ≠ 0 := by
       by_contra! h0
