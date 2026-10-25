@@ -5,6 +5,7 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
+public import EpsilonEridani.Mathematics.LieAlgebra.Casimir
 public import EpsilonEridani.QFT.QCD.SUNGenerators
 /-!
 
@@ -29,6 +30,11 @@ the generators are Hermitian (`SUNGen.conj_suNGenEntry`), and with it the last o
 three colour invariants follows:
 
 `suNAdjointStatement` — `Σ_{cd} f^{acd} f^{bcd} = N δᵃᵇ`, i.e. `C_A = N`, for every `N`.
+
+The operator form of the same invariant acts on a matrix by the commutator:
+`Σₐ [Tᵃ, [Tᵃ, ψ]] = N ψ - Tr(ψ) · 1` (`casimir_genM_apply`, with `sum_ad_genM_sq_apply`
+the form `simp` reaches).  It needs only the two matrix forms of completeness, not the
+structure constants.
 
 ## The derivation
 
@@ -290,6 +296,38 @@ lemma sum_genM_sq :
     smul_smul, ← sub_smul]
   congr 1
   ring
+
+/-! The Lie bracket on matrices used by the two Casimir lemmas below is the commutator
+bracket of `LieRing.ofAssociativeRing`, which Mathlib does not make a global instance; it is
+enabled here for the rest of this file. -/
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- The quadratic Casimir of `su(N)` acting on a matrix by the commutator, in closed form:
+`Σₐ [Tᵃ, [Tᵃ, ψ]] = N ψ - Tr(ψ) · 1`, the operator form of `C_A = N`, from the fundamental
+Casimir `sum_genM_sq` and the sandwich form `sum_genM_sandwich` of the completeness
+relation. -/
+lemma casimir_genM_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
+    LieModule.casimir ℂ _ _ (genM N) (genM N) ψ = (N : ℂ) • ψ - ψ.trace • 1 := by
+  have h (a : SUNIndex N) : ⁅genM N a, ⁅genM N a, ψ⁆⁆ =
+      genM N a * genM N a * ψ - (2 : ℂ) • (genM N a * ψ * genM N a) +
+        ψ * (genM N a * genM N a) := by
+    simp only [LieRing.of_associative_ring_bracket, two_smul]
+    noncomm_ring
+  simp only [LieModule.casimir_apply, h, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+    ← Finset.sum_mul, ← Finset.mul_sum, ← Finset.smul_sum, sum_genM_sq, sum_genM_sandwich,
+    smul_mul_assoc, mul_smul_comm, one_mul, mul_one]
+  module
+
+/-- The adjoint Casimir action in closed form, `Σₐ [Tᵃ, [Tᵃ, ψ]] = N ψ - Tr(ψ) · 1`, stated
+on the sum of double commutators that `LieModule.casimir_apply` unfolds the Casimir to, so
+that `simp` reaches the closed form; `casimir_genM_apply` is the same statement before the
+unfolding. -/
+-- The priority beats `Fintype.sum_sum_type`, which would otherwise split the sum over the
+-- `Sum`-based `SUNIndex` before this closed form can fire.
+@[simp high]
+lemma sum_ad_genM_sq_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
+    (∑ a : SUNIndex N, ⁅genM N a, ⁅genM N a, ψ⁆⁆) = (N : ℂ) • ψ - ψ.trace • 1 := by
+  simpa only [LieModule.casimir_apply] using casimir_genM_apply ψ
 
 /-- `Σₐ Tr(X Tᵃ) Tr(Y Tᵃ) = (1/2)(Tr(YX) - Tr(X)Tr(Y)/N)`: the projection form paired
 against a second matrix.  This is the contraction that collapses the `d` sum in the

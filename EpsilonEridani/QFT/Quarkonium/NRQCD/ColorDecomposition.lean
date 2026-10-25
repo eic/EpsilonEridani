@@ -297,21 +297,6 @@ theorem commute_ad_colorOctetProj (X : Matrix (Fin N) (Fin N) ℂ) :
 
 /-! ### The quadratic Casimir -/
 
-/-- The quadratic Casimir `Σₐ (Tᵃ)²` of `su(N)` on the colour space of a quark-antiquark pair, in
-closed form: `Σₐ [Tᵃ, [Tᵃ, ψ]] = N ψ - Tr ψ · 1`, from the fundamental Casimir and the sandwich
-form of the completeness relation. -/
-theorem casimir_genM_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
-    LieModule.casimir ℂ _ _ (genM N) (genM N) ψ = (N : ℂ) • ψ - ψ.trace • 1 := by
-  have h (a : SUNIndex N) : ⁅genM N a, ⁅genM N a, ψ⁆⁆ =
-      genM N a * genM N a * ψ - (2 : ℂ) • (genM N a * ψ * genM N a) +
-        ψ * (genM N a * genM N a) := by
-    simp only [LieRing.of_associative_ring_bracket, two_smul]
-    noncomm_ring
-  simp only [LieModule.casimir_apply, h, Finset.sum_add_distrib, Finset.sum_sub_distrib,
-    ← Finset.sum_mul, ← Finset.mul_sum, ← Finset.smul_sum, sum_genM_sq, sum_genM_sandwich,
-    smul_mul_assoc, mul_smul_comm, one_mul, mul_one]
-  module
-
 /-- The Casimir of the pair is `N` times the octet projector. -/
 theorem casimir_genM_eq :
     LieModule.casimir ℂ _ _ (genM N) (genM N) = (N : ℂ) • colorOctetProj N := by
