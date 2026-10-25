@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import EpsilonEridani.Mathematics.MeasureTheory.FinRev
 public import EpsilonEridani.Mathematics.MeasureTheory.StrictMono
 
 /-!
@@ -66,11 +67,13 @@ of `Fin n → ℝ`, with its smallest coordinate first.
   `orderedProdIntegral_eq`, for continuous `f` and `t ≤ T` the region integral is
   `(∫ s in t..T, f s) ^ n / n !`, and the region has volume `(T - t) ^ n / n !` for every
   `t` and `T`;
-* `preimage_comp_rev_orderedRegion` with its `volume_` and `setIntegral_` companions: the
-  same region with its largest coordinate first — the descending region
-  `{p | StrictAnti p ∧ ∀ i, p i ∈ (t, T)}` in which ordered tuples are usually labelled — is
+* `descendingRegion T n t`, the same region with its largest coordinate first
+  (`{p | StrictAnti p ∧ ∀ i, p i ∈ (t, T)}`, the labelling `T > t₁ > ⋯ > tₙ > t` above), is
   the preimage of `orderedRegion` under the measure-preserving coordinate reversal
-  `p ↦ p ∘ Fin.rev`, so its volume and integrals reduce to the ascending ones.
+  `p ↦ p ∘ Fin.rev` (`preimage_comp_rev_orderedRegion`).  So its integrals reduce to the
+  ascending ones (`setIntegral_descendingRegion`), and `volume_descendingRegion` and
+  `setIntegral_descendingRegion_eq_orderedProdIntegral` restate the volume and the
+  identification in that labelling.
 
 The same induction again avoids the symmetrization argument: no permuted copies of the region
 appear, only the measurable set itself and Fubini on `ℝ × ℝ ^ n`.
@@ -83,12 +86,13 @@ the product integrand on the bounded ordered region.  It could be relaxed toward
 `IntervalIntegrable` at the cost of carrying integrability hypotheses through the induction;
 that is not attempted here.
 
-The identification theorems `setIntegral_orderedRegion_eq_orderedProdIntegral` and
-`setIntegral_orderedRegion_eq_pow_div_factorial` additionally require `t ≤ T`: for `T < t`
+The identification theorems `setIntegral_orderedRegion_eq_orderedProdIntegral`,
+`setIntegral_orderedRegion_eq_pow_div_factorial` and
+`setIntegral_descendingRegion_eq_orderedProdIntegral` additionally require `t ≤ T`: for `T < t`
 and `n ≥ 1` the region is empty, while `orderedProdIntegral` is a signed iterated integral
 and need not vanish.  The slicing, measurability, integrability and volume statements carry
-no such hypothesis; `volume_orderedRegion` covers the empty regime as well, both sides
-vanishing there.
+no such hypothesis; `volume_orderedRegion` and `volume_descendingRegion` cover the empty
+regime as well, both sides vanishing there.
 
 Nothing in this file is physics-specific: it is mathlib-shaped and upstreamable, and is kept
 here only so that downstream files can use it now.  Upstreaming is handled separately, as
@@ -292,20 +296,18 @@ theorem setIntegral_orderedRegion_succ {E : Type*} [NormedAddCommGroup E] [Norme
   -- At fixed `x`, the slice of `S` is the ordered region with lower endpoint `x`, or empty.
   have hslice (x : ℝ) : ∫ q, S.indicator h (x, q) =
       (Set.Ioo t T).indicator (fun x => ∫ q in orderedRegion T n x, g (Fin.cons x q)) x := by
+    simp_rw [← Set.indicator_comp_right (Prod.mk x) (g := h)]
     by_cases hx : x ∈ Set.Ioo t T
-    · have hpt : (fun q => S.indicator h (x, q)) =
-          (orderedRegion T n x).indicator (fun q => g (Fin.cons x q)) := by
-        ext q
-        by_cases hq : q ∈ orderedRegion T n x
-        · rw [Set.indicator_of_mem ((hmemS x q).2 ⟨hx, hq⟩), Set.indicator_of_mem hq]
-        · rw [Set.indicator_of_notMem (fun h => hq ((hmemS x q).1 h).2),
-            Set.indicator_of_notMem hq]
-      rw [hpt, MeasureTheory.integral_indicator (measurableSet_orderedRegion T n x),
-        Set.indicator_of_mem hx]
-    · have hpt : (fun q => S.indicator h (x, q)) = fun _ => 0 := by
+    · have hpre : Prod.mk x ⁻¹' S = orderedRegion T n x := by
         ext q
         simp [hmemS, hx]
-      rw [hpt, MeasureTheory.integral_zero, Set.indicator_of_notMem hx]
+      rw [hpre, MeasureTheory.integral_indicator (measurableSet_orderedRegion T n x),
+        Set.indicator_of_mem hx]
+      rfl
+    · have hpre : Prod.mk x ⁻¹' S = ∅ := by
+        ext q
+        simp [hmemS, hx]
+      rw [hpre, Set.indicator_empty, MeasureTheory.integral_zero, Set.indicator_of_notMem hx]
   calc ∫ p in orderedRegion T (n + 1) t, g p
       = ∫ z in S, h z ∂(volume.prod volume) := by
         rw [← he.setIntegral_preimage_emb e.symm.measurableEmbedding]
@@ -342,7 +344,8 @@ theorem setIntegral_orderedRegion_eq_pow_div_factorial (hf : Continuous f) (n : 
 `(T - t) ^ n / n !`, with `T - t` read through `ENNReal.ofReal`.  No inequality between `t`
 and `T` is needed: for `T < t` and `n ≥ 1` the region is empty and `ENNReal.ofReal (T - t) = 0`
 agrees with that, while for `n = 0` both sides are `1`. -/
-theorem volume_orderedRegion (n : ℕ) (t T : ℝ) :
+@[simp]
+theorem volume_orderedRegion (T : ℝ) (n : ℕ) (t : ℝ) :
     volume (orderedRegion T n t) = ENNReal.ofReal (T - t) ^ n / (n ! : ENNReal) := by
   rcases n with _ | m
   · rw [orderedRegion_zero, volume_pi]
@@ -362,76 +365,67 @@ theorem volume_orderedRegion (n : ℕ) (t T : ℝ) :
 
 /-! ### The descending region -/
 
-/-- Reversing coordinates preserves volume: `p ↦ p ∘ Fin.rev` is the coordinate permutation
-that `Fin.revPerm` induces on `Fin n → ℝ`, measure-preserving by
-`volume_measurePreserving_piCongrLeft`. -/
-lemma volume_preserving_comp_rev (n : ℕ) :
-    MeasurePreserving (fun p : Fin n → ℝ => p ∘ Fin.rev) volume volume := by
-  have hcoe : ⇑(MeasurableEquiv.piCongrLeft (fun _ : Fin n => ℝ) Fin.revPerm) =
-      (fun p : Fin n → ℝ => p ∘ Fin.rev) := by
-    funext p b
-    have h2 : (Equiv.piCongrLeft (fun _ : Fin n => ℝ) Fin.revPerm) p
-        (Fin.rev (Fin.rev b)) = p (Fin.rev b) :=
-      Equiv.piCongrLeft_apply_apply (fun _ : Fin n => ℝ) Fin.revPerm p (Fin.rev b)
-    rw [Fin.rev_rev] at h2
-    exact h2
-  rw [← hcoe]
-  exact volume_measurePreserving_piCongrLeft _ _
+/-- The descending region `T > p 0 > p 1 > ⋯ > p (n - 1) > t` of `ℝ ^ n`: the ordered region
+with its largest coordinate first, the labelling `T > t₁ > ⋯ > tₙ > t` of
+`orderedProdIntegral`'s docstring. -/
+def descendingRegion (T : ℝ) (n : ℕ) (t : ℝ) : Set (Fin n → ℝ) :=
+  {p | StrictAnti p ∧ ∀ i, p i ∈ Set.Ioo t T}
 
-/-- The ordered region read with its largest coordinate first: the preimage of
-`orderedRegion T n t` under the coordinate reversal `p ↦ p ∘ Fin.rev` is the descending
-region `{p | StrictAnti p ∧ ∀ i, p i ∈ (t, T)}`, the form in which ordered tuples are
-usually labelled. -/
+/-- Membership in the descending region: strictly decreasing coordinates, all in `(t, T)`. -/
+@[simp]
+lemma mem_descendingRegion {T t : ℝ} {n : ℕ} {p : Fin n → ℝ} :
+    p ∈ descendingRegion T n t ↔ StrictAnti p ∧ ∀ i, p i ∈ Set.Ioo t T :=
+  Iff.rfl
+
+/-- The descending region is the preimage of the ordered region under the coordinate reversal
+`p ↦ p ∘ Fin.rev`. -/
 lemma preimage_comp_rev_orderedRegion (T : ℝ) (n : ℕ) (t : ℝ) :
-    (fun p : Fin n → ℝ => p ∘ Fin.rev) ⁻¹' orderedRegion T n t =
-      {p : Fin n → ℝ | StrictAnti p ∧ ∀ i, p i ∈ Set.Ioo t T} := by
+    (fun p : Fin n → ℝ => p ∘ Fin.rev) ⁻¹' orderedRegion T n t = descendingRegion T n t := by
   ext p
-  simp only [Set.mem_preimage, Set.mem_ofPred_eq, mem_orderedRegion]
+  simp only [Set.mem_preimage, mem_orderedRegion, mem_descendingRegion]
   constructor
   · rintro ⟨hmono, hrange⟩
     refine ⟨?_, fun i => ?_⟩
-    · have hanti : StrictAnti ((p ∘ Fin.rev) ∘ Fin.rev) :=
-        hmono.comp_strictAnti Fin.rev_strictAnti
-      have hcomp : (p ∘ Fin.rev) ∘ Fin.rev = p := by funext i; simp
-      rwa [hcomp] at hanti
-    · have hi := hrange (Fin.rev i)
-      rwa [Function.comp_apply, Fin.rev_rev] at hi
+    · simpa only [comp_rev_comp_rev] using hmono.comp_strictAnti Fin.rev_strictAnti
+    · simpa only [Function.comp_apply, Fin.rev_rev] using hrange (Fin.rev i)
   · rintro ⟨hanti, hrange⟩
     exact ⟨hanti.comp Fin.rev_strictAnti, fun i => hrange (Fin.rev i)⟩
 
-/-- The descending region has the same volume as the ordered region: coordinate reversal is
-measure-preserving. -/
-lemma volume_preimage_comp_rev_orderedRegion (T : ℝ) (n : ℕ) (t : ℝ) :
-    volume ((fun p : Fin n → ℝ => p ∘ Fin.rev) ⁻¹' orderedRegion T n t) =
-      volume (orderedRegion T n t) := by
-  rw [← Measure.map_apply (volume_preserving_comp_rev n).measurable
-      (measurableSet_orderedRegion T n t), MeasurePreserving.map_eq (volume_preserving_comp_rev n)]
+/-- The descending region is a measurable subset of `Fin n → ℝ`. -/
+@[simp, measurability]
+lemma measurableSet_descendingRegion (T : ℝ) (n : ℕ) (t : ℝ) :
+    MeasurableSet (descendingRegion T n t) := by
+  rw [← preimage_comp_rev_orderedRegion]
+  exact (measurableSet_orderedRegion T n t).preimage (volume_preserving_comp_rev n).measurable
 
-/-- **The orientation bridge, integral form.** The integral of `g` over the descending region,
-the preimage of the ordered region under coordinate reversal, equals the integral of
-`g ∘ Fin.rev` over the ordered region: reversal is a measure-preserving change of variables
-between the two readings of the region. -/
-theorem setIntegral_preimage_comp_rev_orderedRegion {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {n : ℕ} {g : (Fin n → ℝ) → E} {T t : ℝ} :
-    ∫ p in (fun p : Fin n → ℝ => p ∘ Fin.rev) ⁻¹' orderedRegion T n t, g p =
-      ∫ q in orderedRegion T n t, g (q ∘ Fin.rev) := by
-  have hinv : ∀ p : Fin n → ℝ, (p ∘ Fin.rev) ∘ Fin.rev = p := fun p => by funext i; simp
-  have hme : MeasurableEmbedding (fun p : Fin n → ℝ => p ∘ Fin.rev) := by
-    refine MeasurableEmbedding.of_measurable_inverse
-      (volume_preserving_comp_rev n).measurable ?_ (volume_preserving_comp_rev n).measurable hinv
-    have hsurj : Function.Surjective (fun p : Fin n → ℝ => p ∘ Fin.rev) :=
-      fun b => ⟨b ∘ Fin.rev, hinv b⟩
-    rw [Set.range_eq_univ.mpr hsurj]
-    exact MeasurableSet.univ
-  have key := (volume_preserving_comp_rev n).setIntegral_preimage_emb hme
-    (fun q : Fin n → ℝ => g (q ∘ Fin.rev)) (orderedRegion T n t)
-  calc ∫ p in (fun p : Fin n → ℝ => p ∘ Fin.rev) ⁻¹' orderedRegion T n t, g p
-      = ∫ p in (fun p : Fin n → ℝ => p ∘ Fin.rev) ⁻¹' orderedRegion T n t,
-          g ((p ∘ Fin.rev) ∘ Fin.rev) :=
-        setIntegral_congr_fun
-          ((measurableSet_orderedRegion T n t).preimage (volume_preserving_comp_rev n).measurable)
-          fun p _ => (congrArg g (hinv p)).symm
-    _ = ∫ q in orderedRegion T n t, g (q ∘ Fin.rev) := key
+/-- **Change of variables between the two labellings.** The integral of `g` over the
+descending region equals the integral of `q ↦ g (q ∘ Fin.rev)` over the ordered region:
+coordinate reversal is a measure-preserving bijection between the two regions. -/
+theorem setIntegral_descendingRegion {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ} {g : (Fin n → ℝ) → E} {T t : ℝ} :
+    ∫ p in descendingRegion T n t, g p = ∫ q in orderedRegion T n t, g (q ∘ Fin.rev) := by
+  rw [← preimage_comp_rev_orderedRegion, ← (volume_preserving_comp_rev n).setIntegral_preimage_emb
+    (measurableEmbedding_comp_rev n) (fun q => g (q ∘ Fin.rev))]
+  simp only [comp_rev_comp_rev]
+
+/-- The Lebesgue measure of the descending region `T > p 0 > ⋯ > p (n - 1) > t` is
+`(T - t) ^ n / n !`, with `T - t` read through `ENNReal.ofReal`, as for the ordered region. -/
+@[simp]
+theorem volume_descendingRegion (T : ℝ) (n : ℕ) (t : ℝ) :
+    volume (descendingRegion T n t) = ENNReal.ofReal (T - t) ^ n / (n ! : ENNReal) := by
+  rw [← preimage_comp_rev_orderedRegion, (volume_preserving_comp_rev n).measure_preimage
+    (measurableSet_orderedRegion T n t).nullMeasurableSet, volume_orderedRegion]
+
+/-- **The Fubini identification, descending labelling.** For continuous `f` and `t ≤ T`, the
+Lebesgue integral of `f (p 0) * ⋯ * f (p (n - 1))` over the descending region
+`T > p 0 > ⋯ > p (n - 1) > t` of `ℝ ^ n` is the iterated integral
+`orderedProdIntegral f T n t`. -/
+theorem setIntegral_descendingRegion_eq_orderedProdIntegral (hf : Continuous f) (n : ℕ)
+    {t T : ℝ} (htT : t ≤ T) :
+    ∫ p in descendingRegion T n t, ∏ i, f (p i) = orderedProdIntegral f T n t := by
+  rw [setIntegral_descendingRegion, ← setIntegral_orderedRegion_eq_orderedProdIntegral hf n htT]
+  refine setIntegral_congr_fun (measurableSet_orderedRegion T n t) fun q _ => ?_
+  exact Equiv.prod_comp Fin.revPerm fun i => f (q i)
 
 end OrderedSimplex
 end EpsilonEridani

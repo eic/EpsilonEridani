@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!
-# Measurable sets of monotone functions
+# Measurable sets of strictly monotone functions
 
 Over a countable index type, the strictly monotone functions into a second-countable
 order-closed linear order form a measurable subset of the function space: strict monotonicity

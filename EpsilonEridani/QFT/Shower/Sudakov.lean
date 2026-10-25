@@ -62,8 +62,11 @@ weight and `sudakov_veto_ordered` sums the assembled terms to the true Sudakov f
 the chain from the ordered rejection integrals to `Δ_K` is machine-checked end to end.
 
 `orderedProdIntegral` is the *iterated* interval integral, smallest variable outermost; its
-identification with the Lebesgue integral of the product over the ordered subset of `ℝ^n` is
-`EpsilonEridani.OrderedSimplex.setIntegral_orderedRegion_eq_orderedProdIntegral`, proved in
+identification with the Lebesgue integral of the product over the region displayed above,
+`T > t₁ > ⋯ > tₙ > t` with the largest coordinate first, is
+`EpsilonEridani.OrderedSimplex.setIntegral_descendingRegion_eq_orderedProdIntegral` (and, with
+the coordinates listed smallest first,
+`EpsilonEridani.OrderedSimplex.setIntegral_orderedRegion_eq_orderedProdIntegral`), proved in
 `OrderedSimplexIntegral.lean` by Fubini for `t ≤ T`, the physically relevant case; for `T < t`
 the region is empty when `n ≥ 1`, while the iterated integral is signed.  What the chain does
 **not** establish, and should not be read into it, is anything probabilistic: there is no
