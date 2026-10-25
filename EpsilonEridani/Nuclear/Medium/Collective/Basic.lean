@@ -7,9 +7,6 @@ module
 
 public import EpsilonEridani.Mathematics.Algebra.BigOperators.Finset
 public import EpsilonEridani.Mathematics.Analysis.Fourier.AddCircle
-public import Mathlib.Probability.Independence.Integration
-public import Mathlib.Probability.HasLaw
-public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # Azimuthal harmonics of an event at finite multiplicity
@@ -28,13 +25,13 @@ normalisation of the harmonics is Mathlib's.
   observable of a single event.
 
 The squared modulus of the `Q`-vector contains the *self-correlation* `M` of every particle with
-itself (`ofReal_norm_qVector_sq`). For particles drawn independently from `μ`, its expectation is
-`M + M (M - 1) |V_n|²` (`integral_norm_qVector_sq`). The naive estimator `|Q_n|² / M²` is
-therefore biased by `(1 - |V_n|²) / M` (`integral_norm_qVector_sq_div_card_sq`). Subtracting the
-self-correlation and normalising by the number `M (M - 1)` of ordered pairs of distinct particles
-gives the two-particle correlation `⟨2⟩` (`twoParticleCorrelation`). Its expectation is exactly
-`|V_n|²` at every multiplicity `M ≥ 2` (`integral_twoParticleCorrelation`). This is the sense in
-which `|V_n|` is well posed at finite multiplicity.
+itself (`norm_qVector_sq`, `ofReal_norm_qVector_sq`). For particles drawn independently from `μ`,
+its expectation is `M + M (M - 1) |V_n|²` (`integral_norm_qVector_sq`). The naive estimator
+`|Q_n|² / M²` is therefore biased by `(1 - |V_n|²) / M` (`integral_norm_qVector_sq_div_card_sq`).
+Subtracting the self-correlation and normalising by the number `M (M - 1)` of ordered pairs of
+distinct particles gives the two-particle correlation `⟨2⟩` (`twoParticleCorrelation`). Its
+expectation is exactly `|V_n|²` at every multiplicity `M ≥ 2` (`integral_twoParticleCorrelation`).
+This is the sense in which `|V_n|` is well posed at finite multiplicity.
 
 Independence enters only through pairs of particles, so the expectations are stated under
 pairwise independence. `iIndepFun.indepFun` supplies that from mutual independence, and the
@@ -138,6 +135,24 @@ theorem ofReal_norm_qVector_sq [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle
   simp only [Complex.mul_conj', norm_fourier_eval, Complex.ofReal_one, one_pow,
     Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
 
+/-- The squared modulus of the `Q`-vector is the self-correlation `M` plus the sum over ordered
+pairs of distinct particles of `Re e^{i n (φⱼ - φₖ)}`, the cosine of `n (φⱼ - φₖ)` at `T = 2π`. -/
+theorem norm_qVector_sq [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle T) :
+    ‖qVector n φ‖ ^ 2 =
+      Fintype.card ι + ∑ j, ∑ k ∈ univ.erase j, (fourier n (φ j - φ k)).re := by
+  simpa only [← Complex.ofReal_pow, Complex.ofReal_re, Complex.add_re, Complex.natCast_re,
+    Complex.re_sum, fourier_eval_sub] using congrArg Complex.re (ofReal_norm_qVector_sq n φ)
+
+/-- At multiplicity `M ≤ 1` the squared modulus of the `Q`-vector is the self-correlation `M`:
+`Q_n = 0` for `M = 0` and `|Q_n| = 1` for `M = 1`. -/
+theorem norm_qVector_sq_of_card_le_one (h : Fintype.card ι ≤ 1) (n : ℤ) (φ : ι → AddCircle T) :
+    ‖qVector n φ‖ ^ 2 = Fintype.card ι := by
+  have := Fintype.card_le_one_iff_subsingleton.1 h
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨j⟩⟩
+  · simp [qVector_def]
+  · have : Unique ι := uniqueOfSubsingleton j
+    simp [qVector_def]
+
 /-- The single-event two-particle correlation `⟨2⟩ = (|Q_n|² - M) / (M (M - 1))`: the squared
 modulus of the `Q`-vector with the self-correlation removed, averaged over the `M (M - 1)` ordered
 pairs of distinct particles. When `M ≤ 1` the denominator vanishes and the value is `0` (Lean junk).
@@ -150,38 +165,43 @@ theorem twoParticleCorrelation_def (n : ℤ) (φ : ι → AddCircle T) :
       (‖qVector n φ‖ ^ 2 - Fintype.card ι) / (Fintype.card ι * (Fintype.card ι - 1)) :=
   (rfl)
 
-/-- Clearing the denominator of the two-particle correlation:
-`M (M - 1) ⟨2⟩ = |Q_n|² - M`, at every multiplicity. -/
-theorem card_mul_card_sub_one_mul_twoParticleCorrelation (n : ℤ) (φ : ι → AddCircle T) :
-    Fintype.card ι * (Fintype.card ι - 1) * twoParticleCorrelation n φ =
-      ‖qVector n φ‖ ^ 2 - Fintype.card ι := by
-  rw [twoParticleCorrelation_def]
-  rcases le_or_gt (Fintype.card ι) 1 with h | h
-  · -- at `M ≤ 1` both sides vanish: `Q_n = 0` for `M = 0` and `|Q_n| = 1` for `M = 1`
-    interval_cases hM : Fintype.card ι
-    · have : IsEmpty ι := Fintype.card_eq_zero_iff.1 hM
-      simp [qVector_def]
-    · obtain ⟨j, hj⟩ := Fintype.card_eq_one_iff.1 hM
-      have : Unique ι := ⟨⟨j⟩, hj⟩
-      simp [qVector_def]
-  · have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast h
-    have hD : (Fintype.card ι : ℝ) * (Fintype.card ι - 1) ≠ 0 := by
-      apply mul_ne_zero <;> [positivity; linarith]
-    exact mul_div_cancel₀ _ hD
+/-- At multiplicity `M ≤ 1` there are no ordered pairs of distinct particles, the denominator
+`M (M - 1)` vanishes and the two-particle correlation takes the junk value `0`. -/
+theorem twoParticleCorrelation_eq_zero_of_card_le_one (h : Fintype.card ι ≤ 1) (n : ℤ)
+    (φ : ι → AddCircle T) : twoParticleCorrelation n φ = 0 := by
+  rw [twoParticleCorrelation_def, norm_qVector_sq_of_card_le_one h, sub_self, zero_div]
 
 /-- The squared modulus of the `Q`-vector is the self-correlation `M` plus `M (M - 1)` times the
 two-particle correlation, at every multiplicity. -/
 theorem norm_qVector_sq_eq_card_add_mul_twoParticleCorrelation (n : ℤ) (φ : ι → AddCircle T) :
     ‖qVector n φ‖ ^ 2 =
       Fintype.card ι + Fintype.card ι * (Fintype.card ι - 1) * twoParticleCorrelation n φ := by
-  rw [card_mul_card_sub_one_mul_twoParticleCorrelation, add_sub_cancel]
+  rcases le_or_gt (Fintype.card ι) 1 with h | h
+  · rw [twoParticleCorrelation_eq_zero_of_card_le_one h, mul_zero, add_zero,
+      norm_qVector_sq_of_card_le_one h]
+  · have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast h
+    have hD : (Fintype.card ι : ℝ) * (Fintype.card ι - 1) ≠ 0 := by
+      apply mul_ne_zero <;> [positivity; linarith]
+    rw [twoParticleCorrelation_def, mul_div_cancel₀ _ hD, add_sub_cancel]
 
-/-- At multiplicity `M ≤ 1` there are no ordered pairs of distinct particles, the denominator
-`M (M - 1)` vanishes and the two-particle correlation takes the junk value `0`. -/
-theorem twoParticleCorrelation_eq_zero_of_card_le_one (h : Fintype.card ι ≤ 1) (n : ℤ)
-    (φ : ι → AddCircle T) : twoParticleCorrelation n φ = 0 := by
-  rw [twoParticleCorrelation_def]
-  interval_cases Fintype.card ι <;> simp
+/-- For `M ≥ 2` the two-particle correlation of the zeroth harmonic is `1`: every ordered pair of
+distinct particles contributes `e^0 = 1`. -/
+@[simp]
+theorem twoParticleCorrelation_zero (h : 1 < Fintype.card ι) (φ : ι → AddCircle T) :
+    twoParticleCorrelation 0 φ = 1 := by
+  have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast h
+  have hD : (Fintype.card ι : ℝ) * (Fintype.card ι - 1) ≠ 0 := by
+    apply mul_ne_zero <;> [positivity; linarith]
+  rw [twoParticleCorrelation_def, qVector_zero, Complex.norm_natCast, div_eq_one_iff_eq hD]
+  ring
+
+/-- The two-particle correlation is the average of `Re e^{i n (φⱼ - φₖ)}`, the cosine of
+`n (φⱼ - φₖ)` at `T = 2π`, over ordered pairs of distinct particles. -/
+theorem twoParticleCorrelation_eq_sum [DecidableEq ι] (n : ℤ) (φ : ι → AddCircle T) :
+    twoParticleCorrelation n φ =
+      (∑ j, ∑ k ∈ univ.erase j, (fourier n (φ j - φ k)).re) /
+        (Fintype.card ι * (Fintype.card ι - 1)) := by
+  rw [twoParticleCorrelation_def, norm_qVector_sq, add_sub_cancel_left]
 
 /-- The two-particle correlation is the average of `e^{i n (φⱼ - φₖ)}` over ordered pairs of
 distinct particles. -/
@@ -296,7 +316,7 @@ theorem anisotropyCoeff_map_add_const_eq_self_iff (μ : Measure (AddCircle T)) (
 
 section Expectation
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ ν : Measure (AddCircle T)}
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ : Measure (AddCircle T)}
   {φ : ι → Ω → AddCircle T}
 
 /-- The `Q`-vector of an event whose angles are almost everywhere measurable is almost everywhere
@@ -346,32 +366,15 @@ theorem integrable_twoParticleCorrelation (hφ : ∀ j, AEMeasurable (φ j) P) (
 the finiteness of the measure enters: independence is not needed for the first moment. -/
 theorem integral_qVector (hφ : ∀ j, HasLaw (φ j) μ P) (n : ℤ) :
     ∫ ω, qVector n (fun j => φ j ω) ∂P = Fintype.card ι * anisotropyCoeff μ n := by
-  have h1 : ∀ j, ∫ ω, fourier n (φ j ω) ∂P = anisotropyCoeff μ n := fun j =>
-    (hφ j).integral_comp (fourier n).continuous.aestronglyMeasurable
   simp_rw [qVector_def]
-  rw [integral_finsetSum _ fun j _ => integrable_fourier_comp (hφ j).aemeasurable n]
-  simp only [h1, sum_const, card_univ, nsmul_eq_mul]
+  rw [integral_finsetSum _ fun j _ => integrable_fourier_comp (hφ j).aemeasurable n,
+    anisotropyCoeff_def, ← nsmul_eq_mul, ← card_univ, ← sum_const]
+  exact Finset.sum_congr rfl fun j _ =>
+    (hφ j).integral_comp (fourier n).continuous.aestronglyMeasurable
 
 end Integrable
 
 /-! ### Expectations for independent draws -/
-
-/-- For two independent particles with laws `μ` and `ν`, the expectation of
-`e^{i n φ} conj (e^{i n φ'}) = e^{i n (φ - φ')}` is `anisotropyCoeff μ n * conj
-(anisotropyCoeff ν n)`; for two particles with the same law `μ` this is `|V_n|²`. -/
-theorem integral_fourier_mul_conj_fourier {X Y : Ω → AddCircle T} (hXY : IndepFun X Y P)
-    (hX : HasLaw X μ P) (hY : HasLaw Y ν P) (n : ℤ) :
-    ∫ ω, fourier n (X ω) * conj (fourier n (Y ω)) ∂P =
-      anisotropyCoeff μ n * conj (anisotropyCoeff ν n) := by
-  have hX' : ∫ ω, fourier n (X ω) ∂P = anisotropyCoeff μ n :=
-    hX.integral_comp (fourier n).continuous.aestronglyMeasurable
-  have hY' : ∫ ω, fourier n (Y ω) ∂P = anisotropyCoeff ν n :=
-    hY.integral_comp (fourier n).continuous.aestronglyMeasurable
-  rw [hXY.integral_fun_comp_mul_comp (f := fun x => fourier n x)
-      (g := fun y => conj (fourier n y)) hX.aemeasurable hY.aemeasurable
-      (fourier n).continuous.aestronglyMeasurable
-      (Complex.continuous_conj.comp (fourier n).continuous).aestronglyMeasurable]
-  simp only [integral_conj, hX', hY']
 
 variable [IsProbabilityMeasure P] (hφ : ∀ j, HasLaw (φ j) μ P)
   (hind : Pairwise fun j k => IndepFun (φ j) (φ k) P)
@@ -398,7 +401,7 @@ theorem integral_norm_qVector_sq (n : ℤ) :
       ∫ ω, fourier n (φ j ω) * conj (fourier n (φ k ω)) ∂P =
         (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := fun j k hk => by
     rw [integral_fourier_mul_conj_fourier (hind (Finset.ne_of_mem_erase hk).symm) (hφ j)
-      (hφ k) n, Complex.mul_conj']
+      (hφ k) n, ← anisotropyCoeff_def, Complex.mul_conj']
   -- each of the `M (M - 1)` ordered pairs of distinct particles contributes `|V_n|²`
   rw [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j), sum_sum_erase_const',
     Finset.card_univ, integral_const, probReal_univ, one_smul]
