@@ -7,7 +7,6 @@ module
 
 public import EpsilonEridani.Mathematics.Analysis.Analytic.Uniqueness
 public import EpsilonEridani.QFT.Lattice.Continuation.Basic
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 
 /-!
 # Uniqueness of the continuation from the Euclidean section
@@ -51,8 +50,8 @@ the Euclidean section in `U`.
 
 The Euclidean section is not an open subset of `ComplexSeparation d`, so Mathlib's identity
 theorem does not apply to it directly. It is, however, the image of the real slice `ℝ^{1+d}` under
-the Wick rotation `wickRotation` (`wickRotation_ofReal`), which makes it a maximal totally real
-subspace. The uniqueness therefore reduces to
+the Wick rotation `wickRotation` (`wickRotation_ofReal`, `preimage_wickRotation_euclideanSection`),
+which makes it a maximal totally real subspace. The uniqueness therefore reduces to
 `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq_ofReal`, whose hypothesis is agreement at the
 real points near one real point.
 -/
@@ -118,19 +117,10 @@ theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → 
     (hfg : EqOn f g (U ∩ (euclideanSection d : Set (ComplexSeparation d))))
     {v : Vector d} (hv : causalCharacter v = .spaceLike) :
     f (ofMinkowski v) = g (ofMinkowski v) := by
-  -- The equal-time projection of `v` lies on the Euclidean section; it is nonzero because the
-  -- spatial part of a spacelike vector cannot vanish, so it is spacelike.
-  let w : Vector d := v - v.timeComponent • basis (Sum.inl 0)
-  have hwE : ofMinkowski w ∈ euclideanSection d :=
-    ofMinkowski_mem_euclideanSection_iff.2 (by simp [w])
-  have hw0 : w ≠ 0 := by
-    intro h
-    refine spatialPart_ne_zero_of_spaceLike v hv ?_
-    ext i
-    simpa [w, spatialPart_apply_eq_toCoord] using congrArg (fun u : Vector d => u (Sum.inr i)) h
-  have hw : causalCharacter w = .spaceLike :=
-    causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection hwE hw0
-  exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace w hw, hwE⟩ hfg (hspace v hv)
+  -- The equal-time projection of `v` is a spacelike point of `U` on the Euclidean section.
+  have hwE := ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection v
+  have hw := causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike hv
+  exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace _ hw, hwE⟩ hfg (hspace v hv)
 
 end Continuation
 end Lattice

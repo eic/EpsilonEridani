@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Physlib.Relativity.Causality.Basic
+public import EpsilonEridani.Relativity.Causality.BasicExtensions
 /-!
 
 # The Euclidean continuation of separations and the null-separation obstruction
@@ -30,6 +30,13 @@ product `complexMinkowskiProduct` of signature `(+,-,…,-)`:
   component is purely imaginary and its spatial components are real
   (`mem_euclideanSection_iff`).
 
+The two sections are related by the *Wick rotation* `wickRotation`, the complex-linear automorphism
+of `ComplexSeparation d` that multiplies the time component by `-i`. It carries the real points
+onto the Euclidean section (`wickRotation_ofReal`), and the points it carries onto the Euclidean
+section are exactly those of the Minkowski section (`preimage_wickRotation_euclideanSection`). So
+the Euclidean section is a maximal totally real subspace of `ComplexSeparation d`, which is what
+makes a holomorphic function determined by its values there.
+
 Euclidean and Minkowski vectors are kept as distinct types, and the continuation is a named map,
 so that the sign of the invariant square is never lost by rereading one as the other.
 
@@ -45,6 +52,9 @@ so that the sign of the invariant square is never lost by rereading one as the o
   exactly those with vanishing time component; in particular a nonzero one is spacelike
   (`causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection`), and a nonzero vector that
   is not spacelike is not on it (`ofMinkowski_notMem_euclideanSection_of_ne_spaceLike`).
+* `causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike`: the equal-time projection of a
+  spacelike vector, which lies on the Euclidean section
+  (`ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection`), is again spacelike.
 * `ofMinkowski_notMem_euclideanSection_of_lightLike`: a nonzero light-like Minkowski vector is not
   the continuation of any real Euclidean separation. This is the kinematic half of the statement
   that a matrix element at light-like separation, and so a parton distribution, is not the
@@ -241,6 +251,27 @@ theorem wickRotation_ofReal (y : Fin 1 ⊕ Fin d → ℝ) :
   funext μ
   rcases μ with a | i <;> simp
 
+/-- The inverse Wick rotation multiplies the time component by `i`. -/
+@[simp]
+theorem wickRotation_symm_apply_inl (z : ComplexSeparation d) (a : Fin 1) :
+    wickRotation.symm z (Sum.inl a) = I * z (Sum.inl a) := by
+  conv_rhs => rw [← wickRotation.apply_symm_apply z]
+  rw [wickRotation_apply_inl, ← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul]
+
+/-- The inverse Wick rotation fixes the spatial components. -/
+@[simp]
+theorem wickRotation_symm_apply_inr (z : ComplexSeparation d) (i : Fin d) :
+    wickRotation.symm z (Sum.inr i) = z (Sum.inr i) := by
+  conv_rhs => rw [← wickRotation.apply_symm_apply z]
+  rw [wickRotation_apply_inr]
+
+/-- The Wick rotation matches the real points of `ComplexSeparation d` with the Euclidean section:
+the points it carries onto the Euclidean section are exactly those of the Minkowski section. -/
+theorem preimage_wickRotation_euclideanSection :
+    wickRotation ⁻¹' (euclideanSection d : Set (ComplexSeparation d)) = minkowskiSection d := by
+  ext z
+  simp [Sum.forall, Fin.forall_fin_one]
+
 /-! ### The null-separation obstruction -/
 
 /-- The continuation turns the Euclidean inner product into minus the Minkowski product. -/
@@ -300,6 +331,23 @@ theorem causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection {v : Ve
   have h := complexMinkowskiProduct_continuation_self_re_neg hx0
   rw [hx, complexMinkowskiProduct_ofMinkowski, ofReal_re] at h
   exact (spaceLike_iff_norm_sq_neg v).mpr h
+
+/-- The equal-time projection `v - v⁰ e₀` of a real Minkowski vector, which removes its time
+component, lies on the Euclidean section. -/
+theorem ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection (v : Vector d) :
+    ofMinkowski (v - v.timeComponent • basis (Sum.inl 0)) ∈ euclideanSection d :=
+  ofMinkowski_mem_euclideanSection_iff.2 (by simp)
+
+/-- The equal-time projection `v - v⁰ e₀` of a spacelike vector is again spacelike. -/
+theorem causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike {v : Vector d}
+    (hv : causalCharacter v = .spaceLike) :
+    causalCharacter (v - v.timeComponent • basis (Sum.inl 0)) = .spaceLike := by
+  -- The projection is nonzero because the spatial part of a spacelike vector cannot vanish.
+  refine causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection
+    (ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection v) fun h => ?_
+  refine spatialPart_ne_zero_of_spaceLike v hv ?_
+  ext i
+  simpa [spatialPart_apply_eq_toCoord] using congrArg (fun u : Vector d => u (Sum.inr i)) h
 
 /-- A nonzero real Minkowski vector that is not spacelike is not the continuation of any real
 Euclidean separation. -/
