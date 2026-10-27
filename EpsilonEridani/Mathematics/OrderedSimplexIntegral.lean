@@ -71,8 +71,9 @@ of `Fin n → ℝ`, with its smallest coordinate first.
   (`{p | StrictAnti p ∧ ∀ i, p i ∈ (t, T)}`, the labelling `T > t₁ > ⋯ > tₙ > t` above), is
   the preimage of `orderedRegion` under the measure-preserving coordinate reversal
   `p ↦ p ∘ Fin.rev` (`preimage_comp_rev_orderedRegion`).  So its integrals reduce to the
-  ascending ones (`setIntegral_descendingRegion`), and `volume_descendingRegion` and
-  `setIntegral_descendingRegion_eq_orderedProdIntegral` restate the volume and the
+  ascending ones (`setIntegral_descendingRegion`), and `volume_descendingRegion`,
+  `setIntegral_descendingRegion_eq_orderedProdIntegral` and
+  `setIntegral_descendingRegion_eq_pow_div_factorial` restate the volume and the
   identification in that labelling.
 
 The same induction again avoids the symmetrization argument: no permuted copies of the region
@@ -87,8 +88,9 @@ the product integrand on the bounded ordered region.  It could be relaxed toward
 that is not attempted here.
 
 The identification theorems `setIntegral_orderedRegion_eq_orderedProdIntegral`,
-`setIntegral_orderedRegion_eq_pow_div_factorial` and
-`setIntegral_descendingRegion_eq_orderedProdIntegral` additionally require `t ≤ T`: for `T < t`
+`setIntegral_orderedRegion_eq_pow_div_factorial`,
+`setIntegral_descendingRegion_eq_orderedProdIntegral` and
+`setIntegral_descendingRegion_eq_pow_div_factorial` additionally require `t ≤ T`: for `T < t`
 and `n ≥ 1` the region is empty, while `orderedProdIntegral` is a signed iterated integral
 and need not vanish.  The slicing, measurability, integrability and volume statements carry
 no such hypothesis; `volume_orderedRegion` and `volume_descendingRegion` cover the empty
@@ -426,6 +428,13 @@ theorem setIntegral_descendingRegion_eq_orderedProdIntegral (hf : Continuous f) 
   rw [setIntegral_descendingRegion, ← setIntegral_orderedRegion_eq_orderedProdIntegral hf n htT]
   refine setIntegral_congr_fun (measurableSet_orderedRegion T n t) fun q _ => ?_
   exact Equiv.prod_comp Fin.revPerm fun i => f (q i)
+
+/-- For continuous `f` and `t ≤ T`, the integral of `f (p 0) * ⋯ * f (p (n - 1))` over the
+descending region of `ℝ ^ n` is `(∫ s in t..T, f s) ^ n / n !`. -/
+theorem setIntegral_descendingRegion_eq_pow_div_factorial (hf : Continuous f) (n : ℕ)
+    {t T : ℝ} (htT : t ≤ T) :
+    ∫ p in descendingRegion T n t, ∏ i, f (p i) = (∫ s in t..T, f s) ^ n / n ! := by
+  rw [setIntegral_descendingRegion_eq_orderedProdIntegral hf n htT, orderedProdIntegral_eq hf]
 
 end OrderedSimplex
 end EpsilonEridani
