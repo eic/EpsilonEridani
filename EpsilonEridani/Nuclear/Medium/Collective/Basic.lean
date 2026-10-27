@@ -165,6 +165,13 @@ theorem twoParticleCorrelation_def (n : ℤ) (φ : ι → AddCircle T) :
       (‖qVector n φ‖ ^ 2 - Fintype.card ι) / (Fintype.card ι * (Fintype.card ι - 1)) :=
   (rfl)
 
+/-- At multiplicity `M ≥ 2` the number `M (M - 1)` of ordered pairs of distinct particles is
+positive; it is the denominator of the two-particle correlation. -/
+theorem card_mul_card_sub_one_pos (h : 1 < Fintype.card ι) :
+    (0 : ℝ) < Fintype.card ι * (Fintype.card ι - 1) := by
+  have h2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast h
+  nlinarith
+
 /-- At multiplicity `M ≤ 1` there are no ordered pairs of distinct particles, the denominator
 `M (M - 1)` vanishes and the two-particle correlation takes the junk value `0`. -/
 theorem twoParticleCorrelation_eq_zero_of_card_le_one (h : Fintype.card ι ≤ 1) (n : ℤ)
@@ -179,20 +186,16 @@ theorem norm_qVector_sq_eq_card_add_mul_twoParticleCorrelation (n : ℤ) (φ : �
   rcases le_or_gt (Fintype.card ι) 1 with h | h
   · rw [twoParticleCorrelation_eq_zero_of_card_le_one h, mul_zero, add_zero,
       norm_qVector_sq_of_card_le_one h]
-  · have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast h
-    have hD : (Fintype.card ι : ℝ) * (Fintype.card ι - 1) ≠ 0 := by
-      apply mul_ne_zero <;> [positivity; linarith]
-    rw [twoParticleCorrelation_def, mul_div_cancel₀ _ hD, add_sub_cancel]
+  · rw [twoParticleCorrelation_def, mul_div_cancel₀ _ (card_mul_card_sub_one_pos h).ne',
+      add_sub_cancel]
 
 /-- For `M ≥ 2` the two-particle correlation of the zeroth harmonic is `1`: every ordered pair of
 distinct particles contributes `e^0 = 1`. -/
 @[simp]
 theorem twoParticleCorrelation_zero (h : 1 < Fintype.card ι) (φ : ι → AddCircle T) :
     twoParticleCorrelation 0 φ = 1 := by
-  have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast h
-  have hD : (Fintype.card ι : ℝ) * (Fintype.card ι - 1) ≠ 0 := by
-    apply mul_ne_zero <;> [positivity; linarith]
-  rw [twoParticleCorrelation_def, qVector_zero, Complex.norm_natCast, div_eq_one_iff_eq hD]
+  rw [twoParticleCorrelation_def, qVector_zero, Complex.norm_natCast,
+    div_eq_one_iff_eq (card_mul_card_sub_one_pos h).ne']
   ring
 
 /-- The two-particle correlation is the average of `Re e^{i n (φⱼ - φₖ)}`, the cosine of
@@ -224,7 +227,7 @@ theorem abs_twoParticleCorrelation_le_one (n : ℤ) (φ : ι → AddCircle T) :
   rw [twoParticleCorrelation_def]
   have h2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast h
   have hq := pow_le_pow_left₀ (norm_nonneg _) (norm_qVector_le_card n φ) 2
-  have hD : (0 : ℝ) < Fintype.card ι * (Fintype.card ι - 1) := by nlinarith
+  have hD : (0 : ℝ) < Fintype.card ι * (Fintype.card ι - 1) := card_mul_card_sub_one_pos h
   simp only [abs_div, abs_of_pos hD, div_le_one hD, abs_sub_le_iff]
   constructor <;> nlinarith [sq_nonneg ‖qVector n φ‖]
 
@@ -272,13 +275,18 @@ theorem anisotropyCoeff_neg (μ : Measure (AddCircle T)) (n : ℤ) :
     anisotropyCoeff μ (-n) = conj (anisotropyCoeff μ n) := by
   simp_rw [anisotropyCoeff_def, fourier_neg, integral_conj]
 
+/-- The modulus of the anisotropy coefficient of harmonic `n` is at most the total mass of the
+distribution. -/
+theorem norm_anisotropyCoeff_le (μ : Measure (AddCircle T)) [IsFiniteMeasure μ] (n : ℤ) :
+    ‖anisotropyCoeff μ n‖ ≤ μ.real Set.univ := by
+  rw [anisotropyCoeff_def]
+  exact (norm_integral_le_of_norm_le_const (C := 1) (Filter.Eventually.of_forall
+    fun x => (norm_fourier_eval n x).le)).trans_eq (by simp)
+
 /-- The coefficients of a probability distribution have modulus at most `1`. -/
 theorem norm_anisotropyCoeff_le_one (μ : Measure (AddCircle T)) [IsProbabilityMeasure μ]
-    (n : ℤ) : ‖anisotropyCoeff μ n‖ ≤ 1 := by
-  rw [anisotropyCoeff_def]
-  refine (norm_integral_le_of_norm_le_const (C := 1) (Filter.Eventually.of_forall
-    fun x => (norm_fourier_eval n x).le)).trans ?_
-  simp
+    (n : ℤ) : ‖anisotropyCoeff μ n‖ ≤ 1 :=
+  (norm_anisotropyCoeff_le μ n).trans_eq (by simp)
 
 /-- For a distribution with density `f` with respect to the normalised Haar measure, the
 anisotropy coefficient of harmonic `n` is the Fourier coefficient of `f` of index `-n`. -/
@@ -421,14 +429,11 @@ theorem integral_norm_qVector_sq_div_card_sq [Nonempty ι] (n : ℤ) :
 with distribution `μ`, the expectation of `⟨2⟩` is exactly `|V_n|²`. -/
 theorem integral_twoParticleCorrelation (hM : 1 < Fintype.card ι) (n : ℤ) :
     ∫ ω, twoParticleCorrelation n (fun j => φ j ω) ∂P = ‖anisotropyCoeff μ n‖ ^ 2 := by
-  have h1 : (1 : ℝ) < Fintype.card ι := by exact_mod_cast hM
-  have hM0 : (Fintype.card ι : ℝ) ≠ 0 := by positivity
-  have hM1 : (Fintype.card ι : ℝ) - 1 ≠ 0 := by linarith
   simp_rw [twoParticleCorrelation_def]
   simp only [integral_div,
     integral_sub (integrable_norm_qVector_sq (fun j => (hφ j).aemeasurable) n) (integrable_const _),
     integral_norm_qVector_sq hφ hind, integral_const, probReal_univ, one_smul,
-    div_eq_iff (mul_ne_zero hM0 hM1)]
+    div_eq_iff (card_mul_card_sub_one_pos hM).ne']
   ring
 
 end Expectation
