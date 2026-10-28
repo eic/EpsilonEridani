@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Physlib.Relativity.CliffordAlgebra
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.NumberTheory.Zsqrtd.GaussianInt
 public import Physlib.Relativity.MinkowskiMatrix
@@ -29,6 +30,7 @@ computations.
 
 ## Main results
 
+- `spaceTime.isHermitian_γ0_mul_γDown`: each `γ⁰ γ_μ` is Hermitian.
 - `spaceTime.γ.gamma_anticomm`: the Clifford anticommutator `{γ^μ, γ^ν} = 2 η^{μν}`.
 - `spaceTime.γ.Slash.slash_mul_add_mul_slash`: the anticommutator `{/a, /b} = 2 (a·b)`.
 - `spaceTime.γ.Trace.slash_mul_slash_mul_slash_mul_slash_trace`: the four-slash trace
@@ -98,6 +100,12 @@ lemma γ2_eq : γ2 = !![0, 0, 0, -I; 0, 0, I, 0; 0, I, 0, 0; -I, 0, 0, 0] := by
 lemma γ3_eq : γ3 = !![0, 0, 1, 0; 0, 0, 0, -1; -1, 0, 0, 0; 0, 1, 0, 0] := by
   rw [γ3, Fermion.Dirac.endEquivMatrix_apply, Fermion.Dirac.gamma_toMatrix]
   ext i j; fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_four]
+
+/-- Each `γ⁰ γ_μ` is Hermitian, so the bilinears `ψ‾ γ_μ χ = ψ† γ⁰ γ_μ χ` are Hermitian
+forms. -/
+lemma isHermitian_γ0_mul_γDown (μ : Fin 4) : (γ0 * γDown μ).IsHermitian := by
+  fin_cases μ <;> simp [Matrix.IsHermitian, γ, γ0_eq, γ1_eq, γ2_eq, γ3_eq, ← Matrix.ext_iff,
+    Fin.forall_fin_succ]
 
 /-- `γ μ` is the Dirac-representation matrix of the upstream gamma endomorphism. -/
 lemma γ_eq_endEquivMatrix (μ : Fin 4) :
