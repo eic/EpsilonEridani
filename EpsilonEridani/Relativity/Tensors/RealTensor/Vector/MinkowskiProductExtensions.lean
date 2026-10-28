@@ -6,6 +6,8 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 
 /-!
@@ -17,6 +19,11 @@ companion to `Lorentz.Vector.minkowskiProduct_add_self`; the length of the spati
 vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
 in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
 energies above the mass and a prescribed angle between their spatial parts.
+
+It also records the symmetry of the Minkowski product as a bilinear form
+(`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
+the reflexive-form results about light-cone bases in
+`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
 -/
 
 public section
@@ -97,5 +104,12 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
     simp [norm_smul, hu, abs_of_pos hP', hP'sq]
   · rw [hps, hp's, angle_smul_left_of_pos _ _ hP, angle_smul_right_of_pos _ _ hP']
     simp [angle, hu₀, he₀, hu, Real.arccos_cos h0 hπ]
+
+/-- The Minkowski product is a symmetric bilinear form; in particular the reflexivity hypothesis
+of `LightConeBasis.bilinForm_eq_plus_mul_minus_add` and
+`LightConeBasis.isSelfAdjoint_transverseProj` holds for it (via `IsSymm.isRefl`). -/
+theorem isSymm_toBilinForm_minkowskiProduct {d : ℕ} :
+    (minkowskiProduct (d := d)).toBilinForm.IsSymm :=
+  ⟨minkowskiProduct_symm⟩
 
 end EpsilonEridani

@@ -65,7 +65,7 @@ uvx --from git+https://github.com/eic/EpsilonEridaniReview epsiloneridani-review
 
 It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/eic/EpsilonEridaniReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
 
-The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/eic/EpsilonEridaniReview/tree/main/rubrics). We'll update these as we see what is most useful!
+The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, and proof quality; see [the rubrics directory](https://github.com/eic/EpsilonEridaniReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
@@ -77,6 +77,12 @@ EpsilonEridani depends on Mathlib's `master` branch, and always defers to design
 AIs are encouraged to make PRs to EpsilonEridani that bump the pin to new commits on Mathlib's `master` branch, and fix any resulting problems in EpsilonEridani.
 
 We won't push material upstream from EpsilonEridani to Mathlib. Mathlib contributors are welcome to adopt, curate, and modify material from EpsilonEridani, while preparing PRs to Mathlib. Everything here is [Apache licensed](http://www.apache.org/licenses/).
+
+## Physlib, PhyslibAlpha and TauCeti
+
+EpsilonEridani also depends on [Physlib](https://github.com/leanprover-community/physlib) (its `master` branch) and [TauCeti](https://github.com/TauCetiProject/TauCeti) (its `main` branch), pinned alongside Mathlib in `lake-manifest.json`. A daily job proposes the newest mutually compatible set of pins as one bump PR, and the worker adapts `EpsilonEridani/` when a bump breaks the build; see `docs/dependency-bumps.md`. PhyslibAlpha is a library inside the Physlib package, downstream of Physlib, with an arXiv-style "one-look" review designed for large and AI-generated contributions, so the existing Physlib pin already makes `import PhyslibAlpha.*` available.
+
+Physlib is treated differently from Mathlib in one respect: **material in upstream namespaces is PhyslibAlpha-eligible.** A declaration that lives in a Physlib or Mathlib namespace rather than under `EpsilonEridani` (dot notation on an upstream type, or an `*Extensions.lean` module that extends a Physlib module at the mirrored path) is already shaped to move upstream without renaming, and PhyslibAlpha is where it should go once it is stable. The flow is "mirror, pin, delete": the file is contributed to PhyslibAlpha at the mirrored path (with the API map PhyslibAlpha's linters require), the next dependency bump pins a Physlib commit that carries it, and EpsilonEridani then deletes its copy and imports the upstream module. AIs may prepare the upstream contribution; a human opens the PhyslibAlpha pull request. Promotion from PhyslibAlpha into Physlib itself is Physlib's decision, just as absorbing material into Mathlib is Mathlib's.
 
 ## What EpsilonEridani is, and is not
 

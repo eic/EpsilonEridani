@@ -29,7 +29,19 @@ jobs:
         && contains(github.event.comment.body, '/review'))
     outputs:
       pr: ${{ steps.r.outputs.pr }}
+      review_ref: ${{ steps.review-pin.outputs.sha }}
     steps:
+      # The trusted copy of this workflow file (the commit this run came from), whose
+      # reusable-workflow pin below is the EpsilonEridaniReview commit `review_ref` must name.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: .github
+          persist-credentials: false
+      - id: review-pin
+        uses: ./.github/actions/review-pin
+        with:
+          workflow: review.yml
       - id: r
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,11 +91,11 @@ jobs:
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
     # Pinned to a EpsilonEridaniReview commit; bump deliberately (an unpinned @main lets an upstream change
     # break every contributor's review at once, and this workflow inherits EpsilonEridani's secrets).
-    uses: eic/EpsilonEridaniReview/.github/workflows/review.yml@73f61deb51cad9d881cd0f6f6f418afc78302499
+    uses: eic/EpsilonEridaniReview/.github/workflows/review.yml@2e7506c28bcd0591a3e9ab75c3312073664ce21f
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
-      review_ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
+      review_ref: ${{ needs.resolve.outputs.review_ref }}
       # Merging is handled by auto-merge.yml (the single merge path), so generation never merges.
       enable_automerge: false
     secrets: inherit

@@ -1,0 +1,14 @@
+[
+  {
+    "sources": [
+      "EpsilonEridani/Mathematics/KroneckerDelta/ContractionExtensions.lean"
+    ],
+    "declarations": [
+      "sum_generalizedKroneckerDelta_self_card",
+      "sum_generalizedKroneckerDelta_cons_card",
+      "sum_generalizedKroneckerDelta_cons₂_card",
+      "sum_generalizedKroneckerDelta_self_eq_factorial"
+    ],
+    "note": "Generalizes the Fin 4 contraction identities of Physlib.Mathematics.KroneckerDelta.Contraction to an arbitrary finite index type, by the same induction on generalizedKroneckerDelta_sum_snoc; proposed to Physlib under these names. Author: Wouter Deconinck, Apache 2.0, in this repository. Delete this module and the entry once the pinned Physlib carries them."
+  }
+]

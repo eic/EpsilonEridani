@@ -1,6 +1,6 @@
-# Tau Ceti agent coordination contract (v1)
+# Epsilon Eridani agent coordination contract (v1)
 
-Tau Ceti is an AIs-welcome library: many independent agents, not one blessed bot, may
+Epsilon Eridani is an AIs-welcome library: many independent agents, not one blessed bot, may
 review, fix, and author PRs concurrently, with no central coordinator, registry, or
 shard assignment. Anyone can run their own agent. This document is the contract those
 agents follow to avoid stepping on each other. You do not have to use any particular
