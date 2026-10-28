@@ -150,13 +150,15 @@ theorem hasValenceNumbers_iff_valenceTarget [Fintype Flavor] (M : PseudoscalarMe
 /-- **One scale is enough.** A density carrying the upstream sum-rule bundle has the valence
 numbers of `M` at every scale as soon as it has them at a single scale `Q2₀`: by
 `hasValenceNumbers_iff_valenceTarget` the assignment is a condition on the bundle's
-scale-independent valence targets. This is the meson instance of
-`PDF.valenceNumber_eq_of_forall_valenceNumber_eq`. -/
+scale-independent valence targets. This is the introduction rule of `HasValenceNumbers` from a
+single scale: it carries the general `PDF.valenceNumber_eq_of_forall_valenceNumber_eq` across
+`hasValenceNumbers_iff`, which a consumer outside this module cannot do by unfolding, the
+definition of `HasValenceNumbers` not being exposed. -/
 theorem hasValenceNumbers_of_forall_pdfValenceNumber_eq [Fintype Flavor]
     (M : PseudoscalarMeson Flavor) {f : PDF.Pdf (Species Flavor)}
     (h : PDF.SumRuleAssumptions f) (Q2₀ : ℝ)
     (hf : ∀ i, PDF.valenceNumber f i Q2₀ = (M.valenceNumber i : ℝ)) : M.HasValenceNumbers f :=
-  fun i Q2 => PDF.valenceNumber_eq_of_forall_valenceNumber_eq h hf i Q2
+  hasValenceNumbers_iff.mpr (PDF.valenceNumber_eq_of_forall_valenceNumber_eq h hf)
 
 /-- **Charge conjugation.** The charge-conjugate density has the valence numbers of the
 charge-conjugate meson exactly when the density has those of the meson: conjugating the hadron and
