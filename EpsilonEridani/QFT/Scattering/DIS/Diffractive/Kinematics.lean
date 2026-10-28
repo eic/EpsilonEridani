@@ -56,9 +56,10 @@ variable {V : Type} [AddCommGroup V] [Module ℝ V]
 makes `x = ξ β` provable rather than true by definition: the momentum fractions are derived from
 these fields, so the identity between them is a theorem, not a stipulation.
 
-Only the sign conditions of the physical region are imposed as fields; the remaining
-physical-region conditions `ξ ≤ 1` and `β ≤ 1` are not, so an inhabitant need not lie in the
-physical region, which is why `x_le_xi_of_beta_le_one` takes `β ≤ 1` as a hypothesis. -/
+Only the sign conditions of the physical region are imposed as fields; the other
+physical-region conditions, among them `ξ ≤ 1`, `β ≤ 1` and the boundary condition in `t`, are
+not, so an inhabitant need not lie in the physical region, which is why
+`x_le_xi_of_beta_le_one` takes `β ≤ 1` as a hypothesis. -/
 @[ext]
 structure Invariants where
   /-- `P · q`, positive in the physical region. -/
@@ -99,9 +100,8 @@ def beta (i : Invariants) : ℝ := i.Q2 / (2 * i.Dq)
 /-- Defining expression for `Invariants.beta`. -/
 theorem beta_def (i : Invariants) : i.beta = i.Q2 / (2 * i.Dq) := (rfl)
 
-/-- The positive magnitude `|t| = -t` of the momentum transfer, per Convention 2 of the Diffraction
-roadmap: every exponential or power law in the momentum transfer is written in terms of `absT`,
-never with the sign of `t` carried through by hand. -/
+/-- The positive magnitude `|t| = -t` of the momentum transfer, non-negative by `t_nonpos`
+(`absT_nonneg`). -/
 def absT (i : Invariants) : ℝ := -i.t
 
 /-- Defining expression for `Invariants.absT`. -/
@@ -109,6 +109,9 @@ theorem absT_eq_neg_t (i : Invariants) : i.absT = -i.t := (rfl)
 
 /-- The magnitude of the momentum transfer is non-negative. -/
 theorem absT_nonneg (i : Invariants) : 0 ≤ i.absT := neg_nonneg.mpr i.t_nonpos
+
+/-- The magnitude `absT` of the momentum transfer is its absolute value `|t|`. -/
+theorem absT_eq_abs_t (i : Invariants) : i.absT = |i.t| := (abs_of_nonpos i.t_nonpos).symm
 
 /-- The Bjorken variable is positive in the physical region. -/
 theorem x_pos (i : Invariants) : 0 < i.x :=
@@ -190,20 +193,14 @@ theorem ofExcl_t (g : Bilin V) (K : ExclKinematics V)
     (ofExcl g K hPq hDq hQ2 ht).t = K.tMom g := (rfl)
 
 /-- The diffractive Bjorken variable of an exclusive event is the inclusive Bjorken variable of
-the same momenta: `Invariants.x` agrees with `DisKinematics.xBj` on the inclusive record built
-from `K.p`, `K.pPrime`, `K.k`, `K.kPrime`, `K.q` and `K.hqLepton`. -/
+the same momenta: `Invariants.x` agrees with `DisKinematics.xBj` on
+`ExclKinematics.toDisKinematics`. -/
 theorem ofExcl_x (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
-    (ofExcl g K hPq hDq hQ2 ht).x =
-      DisKinematics.xBj g
-        { p := K.p
-          pPrime := K.pPrime
-          k := K.k
-          kPrime := K.kPrime
-          q := K.q
-          hq := K.hqLepton } := by
-  simp [x_def, ofExcl, DisKinematics.xBj, DisKinematics.Q2, ExclKinematics.Q2]
+    (ofExcl g K hPq hDq hQ2 ht).x = K.toDisKinematics.xBj g := by
+  rw [x_def, ofExcl_Q2, ofExcl_Pq, DisKinematics.xBj, ExclKinematics.Q2_toDisKinematics,
+    ExclKinematics.toDisKinematics_p, ExclKinematics.toDisKinematics_q]
 
 end Invariants
 
@@ -212,14 +209,18 @@ end Invariants
 /-- The kinematic boundary in `t` at fixed `ξ` in the target-elastic case (`M_Y = M`), with `M`
 the target mass: `tMinElastic M ξ = -ξ²M²/(1-ξ)`.
 
-The argument `xi` is the momentum fraction lost by the target, the `ξ = Δ·q / P·q` of
-`Invariants.xi`; it is not the skewness `ExclKinematics.xiSkew` (Belitsky-Müller-Kirchner's `η`),
-a different variable that also carries a `ξ` in the exclusive kinematics and for which the
-target-elastic boundary is a different function.
+The argument `xi` is the light-cone momentum fraction `Δ⁺/P⁺` lost by the target. It agrees
+with the invariant `ξ = Δ·q / P·q` of `Invariants.xi` only up to relative corrections of order
+`Q²M²/(P·q)²`, so exactly only in the Bjorken limit; at finite energy the target-elastic
+boundary is not exactly `tMinElastic M (Invariants.xi i)`. Nor is `xi` the skewness
+`ExclKinematics.xiSkew` (Belitsky-Müller-Kirchner's `η`), a different variable that also carries
+a `ξ` in the exclusive kinematics and for which the target-elastic boundary is a different
+function.
 
-The accessible momentum transfers of the target-elastic physical region are
-`t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)` (with `t ≤ 0` throughout); the boundary
-value is attained in the forward configuration, which is the point of minimum `|t|`.
+In terms of the light-cone fraction `ξ`, the accessible momentum transfers of the
+target-elastic physical region are `t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)`
+(`Invariants.t_le_tMinElastic_iff`, with `t ≤ 0` throughout); the boundary value is attained in
+the forward configuration, which is the point of minimum `|t|`.
 
 The boundary is obtained from the two-body threshold condition at fixed `(ξ, M, M_Y)`, and in
 the target-elastic case `M_Y = M` it reduces to `ξ²M²/(1-ξ)`; see Wolf, *Rept. Prog. Phys.*
@@ -231,6 +232,16 @@ def tMinElastic (M xi : ℝ) : ℝ := -(xi ^ 2 * M ^ 2) / (1 - xi)
 
 /-- Defining expression for `tMinElastic`. -/
 theorem tMinElastic_def (M xi : ℝ) : tMinElastic M xi = -(xi ^ 2 * M ^ 2) / (1 - xi) := (rfl)
+
+/-- The magnitude of the target-elastic boundary, `-tMinElastic M ξ = ξ²M²/(1-ξ)`. -/
+theorem neg_tMinElastic (M xi : ℝ) : -tMinElastic M xi = xi ^ 2 * M ^ 2 / (1 - xi) := by
+  rw [tMinElastic_def, neg_div, neg_neg]
+
+/-- The boundary condition `t ≤ tMinElastic M ξ` in terms of the magnitude of the momentum
+transfer: `|t| ≥ ξ²M²/(1-ξ)`. -/
+theorem Invariants.t_le_tMinElastic_iff (i : Invariants) (M xi : ℝ) :
+    i.t ≤ tMinElastic M xi ↔ xi ^ 2 * M ^ 2 / (1 - xi) ≤ i.absT := by
+  rw [absT_eq_neg_t, ← neg_tMinElastic, neg_le_neg_iff]
 
 /-- At vanishing momentum loss `ξ = 0` the target-elastic boundary degenerates to `t = 0`. -/
 @[simp]

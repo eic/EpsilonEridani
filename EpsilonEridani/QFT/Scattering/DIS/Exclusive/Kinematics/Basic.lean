@@ -26,7 +26,7 @@ namespace Kinematics
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
-open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
 
 /-- Minimal off-forward exclusive kinematics container. -/
 structure ExclKinematics where
@@ -58,6 +58,22 @@ variable {V}
 /-- Hard scale in the exclusive channel. -/
 def Q2 (g : Bilin V) (K : ExclKinematics V) : ℝ :=
   - g K.q K.q
+
+/-- The inclusive kinematics of the same event: the `DisKinematics` record of the momenta `p`,
+`p'`, `k`, `k'` and `q`, forgetting the produced particle `q'` and the azimuthal angles. -/
+@[simps]
+def toDisKinematics (K : ExclKinematics V) : DisKinematics V where
+  p := K.p
+  pPrime := K.pPrime
+  k := K.k
+  kPrime := K.kPrime
+  q := K.q
+  hq := K.hqLepton
+
+/-- The inclusive hard scale of the same momenta is the exclusive one: both are `Q² = -q²`. -/
+@[simp]
+lemma Q2_toDisKinematics (g : Bilin V) (K : ExclKinematics V) :
+    K.toDisKinematics.Q2 g = K.Q2 g := (rfl)
 
 omit [Module ℝ V] in
 /-- Momentum transfer to the hadron, `Δ = p' - p`. -/
