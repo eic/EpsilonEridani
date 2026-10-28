@@ -124,7 +124,7 @@ def ofLocallyIntegrableOn (f : ℝ × ℝ → ℝ)
   nonneg' := indicator_nonneg hf₀
   support_subset' := support_indicator_subset
   locallyIntegrableOn' :=
-    hf.congr (indicator_ae_eq_restrict isOpen_interior.measurableSet).symm
+    hf.congr (indicator_ae_eq_restrict isOpen_interior.nullMeasurableSet).symm
 
 @[simp] lemma coe_ofLocallyIntegrableOn (f : ℝ × ℝ → ℝ)
     (hf : LocallyIntegrableOn f (interior (kinematicDomain S)))
