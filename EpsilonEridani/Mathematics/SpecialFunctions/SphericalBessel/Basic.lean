@@ -23,7 +23,7 @@ The spherical Bessel function of the first kind of order `l` is given by the Ray
 
 The function `sin x / x` is `Real.sinc`. The iterates of `-(1 / x) d/dx` are taken with the
 operator `f ↦ -dslope (deriv f) 0`, which maps analytic functions to analytic functions
-(`EpsilonEridani.analyticAt_dslope`), so every iterate, and with it every `sphericalBesselJ l`, is
+(`AnalyticAt.dslope`), so every iterate, and with it every `sphericalBesselJ l`, is
 real analytic on the whole line. Every iterate is moreover even, so its derivative vanishes at the
 origin. For such `f` the operator agrees with `-f' x / x` for `x ≠ 0`, and at `x = 0` it takes the
 value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
@@ -125,7 +125,7 @@ private lemma analyticOnNhd_reduced (l : ℕ) : AnalyticOnNhd ℝ (G l) Set.univ
   | zero => exact fun x _ => analyticAt_sinc x
   | succ l ih =>
     rw [reducedSphericalBesselJ_succ]
-    exact ((analyticOnNhd_dslope (s := Set.univ)).mpr ih.deriv).neg
+    exact (ih.deriv.dslope 0).neg
 
 /-- Every reduced spherical Bessel function is real analytic on the whole line. -/
 @[fun_prop]

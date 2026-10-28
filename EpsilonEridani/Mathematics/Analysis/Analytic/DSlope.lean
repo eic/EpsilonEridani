@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.Analytic.Constructions
-public import Mathlib.Analysis.Analytic.IsolatedZeros
 public import Mathlib.Analysis.Calculus.DSlope
 
 /-!
@@ -16,9 +15,12 @@ public import Mathlib.Analysis.Calculus.DSlope
 derivative of `f`. Continuity and differentiability transfer away from `a` via Mathlib's
 `continuousAt_dslope_of_ne` and `differentiableAt_dslope_of_ne`. At `a`,
 `continuousAt_dslope_same` equates continuity of `dslope f a` with differentiability of `f` at `a`,
-not continuity of `f`. This file proves the analytic analogue, which needs no such case
-distinction: `dslope f a` is analytic at a point if and only if `f` is
-(`EpsilonEridani.analyticAt_dslope`), and so on any set (`EpsilonEridani.analyticOnNhd_dslope`).
+not continuity of `f`. Analyticity needs no such case distinction, and Mathlib provides one
+direction of it: `AnalyticAt.dslope` and `AnalyticOnNhd.dslope` state that `dslope f a` is analytic
+at a point, or on a neighbourhood of a set, whenever `f` is. This file proves the converse
+direction, which Mathlib lacks: `f` is analytic at `b` whenever `dslope f a` is
+(`AnalyticAt.of_dslope`), in the shape of Mathlib's `ContinuousAt.of_dslope` and
+`DifferentiableAt.of_dslope`.
 
 Removing the removable singularity of `f' / x` at the origin in this way keeps the iterates of
 `(1 / x) d/dx` analytic, which is how the Rayleigh formula for the spherical Bessel functions
@@ -27,39 +29,22 @@ Removing the removable singularity of `f' / x` at the origin in this way keeps t
 
 @[expose] public section
 
-open Filter Topology
-
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {f : 𝕜 → E} {a b : 𝕜} {s : Set 𝕜}
+  {f : 𝕜 → E} {a b : 𝕜}
 
 namespace EpsilonEridani
 
-/-- The slope function `dslope f a` is analytic at `b` if and only if `f` is. -/
-@[simp]
-theorem analyticAt_dslope : AnalyticAt 𝕜 (dslope f a) b ↔ AnalyticAt 𝕜 f b := by
-  refine ⟨fun h => ?_, fun hf => ?_⟩
-  · -- `f x = f a + (x - a) • dslope f a x`
-    have heq : (fun x => f a + (x - a) • dslope f a x) = f := by
-      funext x
-      rw [sub_smul_dslope, add_sub_cancel]
-    rw [← heq]
-    exact analyticAt_const.add ((analyticAt_id.sub analyticAt_const).smul h)
-  rcases eq_or_ne b a with rfl | h
-  · obtain ⟨p, hp⟩ := hf
-    exact ⟨_, hp.dslope_fslope⟩
-  · -- away from `a`, `dslope f a` agrees near `b` with the difference quotient
-    refine AnalyticAt.congr ?_ (dslope_eventuallyEq_slope_of_ne f h).symm
-    have hslope : slope f a = fun x => (x - a)⁻¹ • (f x - f a) := by
-      funext x
-      rw [slope_def_module]
-    rw [hslope]
-    exact ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.mpr h)).smul
-      (hf.sub analyticAt_const)
-
-/-- The slope function `dslope f a` is analytic on a neighbourhood of each point of `s` if and
-only if `f` is. -/
-@[simp]
-theorem analyticOnNhd_dslope : AnalyticOnNhd 𝕜 (dslope f a) s ↔ AnalyticOnNhd 𝕜 f s :=
-  forall₂_congr fun _ _ => analyticAt_dslope
+/-- If `dslope f a` is analytic at `b`, then so is `f`, for any base point `a`. Combined with
+Mathlib's `AnalyticAt.dslope`, which gives the converse, `dslope f a` is analytic at `b` if and
+only if `f` is, with no case distinction on `b = a` (contrast `continuousAt_dslope_same`, which at
+`b = a` relates `dslope f a` to the differentiability of `f` instead). This is the analytic
+analogue of Mathlib's `ContinuousAt.of_dslope` and `DifferentiableAt.of_dslope`. -/
+theorem _root_.AnalyticAt.of_dslope (h : AnalyticAt 𝕜 (dslope f a) b) : AnalyticAt 𝕜 f b := by
+  -- `f x = f a + (x - a) • dslope f a x`
+  have heq : (fun x => f a + (x - a) • dslope f a x) = f := by
+    funext x
+    rw [sub_smul_dslope, add_sub_cancel]
+  rw [← heq]
+  exact analyticAt_const.add ((analyticAt_id.sub analyticAt_const).smul h)
 
 end EpsilonEridani
