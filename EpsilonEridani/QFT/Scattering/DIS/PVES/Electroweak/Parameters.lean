@@ -15,6 +15,16 @@ interfaces used by parity-violating electron scattering (PVES) contracts, togeth
 left- and right-handed couplings `g_L = (g_V + g_A) / 2` and `g_R = (g_V - g_A) / 2` of a
 vector/axial coupling pair.
 
+It also defines the neutral-current couplings of an arbitrary fermion as functions of its quantum
+numbers: `chiralCoupling t3 q s2 = T³ - Q sin²θ_W` is the `Z` coupling of a chiral field, and
+`FermionNeutralCurrentCouplings.ofQuantumNumbers t3 q s2` is the pair
+`g_V = T³ - 2 Q sin²θ_W`, `g_A = T³` of a fermion whose left-handed component has weak-isospin
+third component `t3`, whose right-handed component is a singlet, and whose electric charge is `q`.
+Its chiral couplings are `chiralCoupling t3 q s2` and `chiralCoupling 0 q s2`
+(`FermionNeutralCurrentCouplings.ofQuantumNumbers_gL`,
+`FermionNeutralCurrentCouplings.ofQuantumNumbers_gR`), and
+`FermionNeutralCurrentCouplings.eq_ofQuantumNumbers_iff` characterises it by these two values.
+
 -/
 
 @[expose] public section
@@ -55,10 +65,10 @@ namespace FermionNeutralCurrentCouplings
 variable (c d : FermionNeutralCurrentCouplings)
 
 /-- The left-handed neutral-current coupling `g_L = (g_V + g_A) / 2`. -/
-def gL : ℝ := (c.gV + c.gA) / 2
+@[no_expose] def gL : ℝ := (c.gV + c.gA) / 2
 
 /-- The right-handed neutral-current coupling `g_R = (g_V - g_A) / 2`. -/
-def gR : ℝ := (c.gV - c.gA) / 2
+@[no_expose] def gR : ℝ := (c.gV - c.gA) / 2
 
 /-- The left-handed coupling unfolded. -/
 theorem gL_def : c.gL = (c.gV + c.gA) / 2 :=
@@ -83,13 +93,12 @@ theorem gL_sub_gR : c.gL - c.gR = c.gA := by
 variable {c d} in
 /-- A vector/axial coupling pair is determined by its two chiral couplings. -/
 theorem ext_gL_gR (hL : c.gL = d.gL) (hR : c.gR = d.gR) : c = d := by
+  have hV : c.gV = d.gV := by rw [← gL_add_gR c, ← gL_add_gR d, hL, hR]
+  have hA : c.gA = d.gA := by rw [← gL_sub_gR c, ← gL_sub_gR d, hL, hR]
   obtain ⟨cV, cA⟩ := c
   obtain ⟨dV, dA⟩ := d
-  have hV : cV = dV := by
-    simpa using congrArg₂ (· + ·) hL hR
-  have hA : cA = dA := by
-    simpa using congrArg₂ (· - ·) hL hR
-  rw [hV, hA]
+  rw [mk.injEq]
+  exact ⟨hV, hA⟩
 
 variable {c d} in
 /-- Two vector/axial coupling pairs are equal exactly when their chiral couplings agree. -/
@@ -284,6 +293,76 @@ electron-quark couplings `C_{1q} = 2 g_A^e g_V^q`.  The weak charges below are t
 quantities parity-violating electron scattering actually reports.
 
 -/
+
+/-- The neutral-current coupling `T³ - Q sin²θ_W` of a chiral fermion field with weak-isospin
+third component `t3` and electric charge `q`, at `sin²θ_W = s2`. It is the charge with which the
+field couples to the `Z` boson, in units of `g / cos θ_W`; a weak-isospin singlet has `t3 = 0`. -/
+@[no_expose] def chiralCoupling (t3 q s2 : ℝ) : ℝ := t3 - q * s2
+
+/-- The chiral coupling unfolded. -/
+theorem chiralCoupling_def (t3 q s2 : ℝ) : chiralCoupling t3 q s2 = t3 - q * s2 :=
+  (rfl)
+
+/-- A weak-isospin singlet of charge `q` couples to the `Z` boson with `-Q sin²θ_W`. -/
+@[simp]
+theorem chiralCoupling_isospin_zero (q s2 : ℝ) : chiralCoupling 0 q s2 = -(q * s2) := by
+  rw [chiralCoupling_def, zero_sub]
+
+/-- An electrically neutral field couples to the `Z` boson with its weak isospin `T³`. -/
+@[simp]
+theorem chiralCoupling_charge_zero (t3 s2 : ℝ) : chiralCoupling t3 0 s2 = t3 := by
+  rw [chiralCoupling_def, zero_mul, sub_zero]
+
+namespace FermionNeutralCurrentCouplings
+
+/-- The neutral-current couplings `g_V = T³ - 2 Q sin²θ_W` and `g_A = T³` of a fermion whose
+left-handed component has weak-isospin third component `t3`, whose right-handed component is a
+weak-isospin singlet, and whose electric charge is `q`, at `sin²θ_W = s2`. The normalisation is
+that of the Particle Data Group: the `Z` vertex is `-i (g / (2 cos θ_W)) γ^μ (g_V - g_A γ⁵)`. -/
+@[no_expose] def ofQuantumNumbers (t3 q s2 : ℝ) : FermionNeutralCurrentCouplings where
+  gV := t3 - 2 * q * s2
+  gA := t3
+
+/-- The vector coupling `g_V = T³ - 2 Q sin²θ_W`. -/
+@[simp]
+theorem ofQuantumNumbers_gV (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gV = t3 - 2 * q * s2 :=
+  (rfl)
+
+/-- The axial coupling `g_A = T³`. -/
+@[simp]
+theorem ofQuantumNumbers_gA (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gA = t3 :=
+  (rfl)
+
+/-- The left-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a field with
+weak-isospin third component `t3` and charge `q`. -/
+theorem ofQuantumNumbers_gL (t3 q s2 : ℝ) :
+    (ofQuantumNumbers t3 q s2).gL = chiralCoupling t3 q s2 := by
+  rw [gL_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
+  ring
+
+/-- The right-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a
+weak-isospin singlet of charge `q`. -/
+theorem ofQuantumNumbers_gR (t3 q s2 : ℝ) :
+    (ofQuantumNumbers t3 q s2).gR = chiralCoupling 0 q s2 := by
+  rw [gR_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
+  ring
+
+/-- A vector/axial coupling pair is that of the quantum numbers `(t3, q)` exactly when its
+left-handed coupling is the `Z` coupling of a field with these quantum numbers and its
+right-handed coupling is the `Z` coupling of a singlet of the same charge. -/
+theorem eq_ofQuantumNumbers_iff {c : FermionNeutralCurrentCouplings} {t3 q s2 : ℝ} :
+    c = ofQuantumNumbers t3 q s2 ↔
+      c.gL = chiralCoupling t3 q s2 ∧ c.gR = chiralCoupling 0 q s2 := by
+  rw [ext_gL_gR_iff, ofQuantumNumbers_gL, ofQuantumNumbers_gR]
+
+/-- An electrically neutral fermion couples to the `Z` only through its left-handed component:
+its vector and axial couplings both equal `T³`, whatever the value of `sin²θ_W`. -/
+theorem ofQuantumNumbers_charge_zero (t3 s2 : ℝ) :
+    ofQuantumNumbers t3 0 s2 = { gV := t3, gA := t3 } := by
+  rw [ofQuantumNumbers]
+  simp
+
+end FermionNeutralCurrentCouplings
 
 /-- Standard-model tree-level neutral-current couplings at a given `sin^2(theta_W)`. -/
 def smTreeLevelCouplings (s2 : ℝ) : NeutralCurrentCouplings where

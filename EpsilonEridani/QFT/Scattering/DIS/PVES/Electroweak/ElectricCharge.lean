@@ -198,6 +198,14 @@ noncomputable def singletElectricCharge (y : ℝ) : ℝ := y / 2
 theorem singletElectricCharge_def (y : ℝ) : singletElectricCharge y = y / 2 :=
   (rfl)
 
+/-- The `k`-th component of a doublet of hypercharge `y` has the electric charge of a singlet of
+hypercharge `y + 2 T³ₖ`. -/
+theorem doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight (y : ℝ)
+    (k : Fin 2) :
+    doubletElectricCharge y k = singletElectricCharge (y + 2 * isospinWeight k) := by
+  rw [doubletElectricCharge_apply, singletElectricCharge_def]
+  ring
+
 /-- The electric-charge operator `Q = T³ + y / 2` on a weak-isospin doublet of hypercharge `y`. -/
 noncomputable def electricChargeOperator (y : ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
   isospinT3 + ((y / 2 : ℝ) : ℂ) • 1
