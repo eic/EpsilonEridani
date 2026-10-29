@@ -290,7 +290,7 @@ lemma pTransverse_def (g : Bilin V) (K : DisKinematics V) :
 /-- Pointwise pairing of the transverse hadron momentum against a vector. -/
 lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
     g (pTransverse g K) v = g K.p v - (g K.p K.q / g K.q K.q) * g K.q v := by
-  rw [pTransverse_def, g.projOrthogonal_apply, map_sub, map_smul,
+  simp only [pTransverse_def, Bilin.projOrthogonal_apply, map_sub, map_smul,
     LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
 
 /-- The transverse hadron momentum is `g`-orthogonal to `q`. -/
@@ -337,8 +337,8 @@ lemma pairing_invariant_of_fixed (g : Bilin V) (K : DisKinematics V) {f : V →�
 lemma stabilizer_fixes_pTransverse (g : Bilin V) (K : DisKinematics V) {f : V →ₗ[ℝ] V}
     (hf : IsKinematicStabilizer g K f) :
     f (pTransverse g K) = pTransverse g K := by
-  rw [pTransverse_def, g.projOrthogonal_apply, map_sub, map_smul,
-    hf.fixes_p, hf.fixes_q]
+  simp only [pTransverse_def, Bilin.projOrthogonal_apply, map_sub, map_smul, hf.fixes_p,
+    hf.fixes_q]
 
 /-- The transverse metric projector is Lorentz covariant. -/
 lemma transverseMetric_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
