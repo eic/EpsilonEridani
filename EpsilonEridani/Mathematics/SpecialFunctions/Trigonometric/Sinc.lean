@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
-public import EpsilonEridani.Mathematics.Analysis.Analytic.DSlope
 
 /-!
 # Analyticity of `Real.sinc`

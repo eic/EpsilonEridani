@@ -9,9 +9,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
-public import EpsilonEridani.Mathematics.Analysis.Analytic.DSlope
-public import EpsilonEridani.Mathematics.Analysis.Calculus.Deriv.EvenFunction
-public import EpsilonEridani.Mathematics.Analysis.Normed.Module.SMulEqZero
+public import EpsilonEridani.Mathematics.Calculus.EvenFunction
+public import EpsilonEridani.Mathematics.Normed.Module.SMulEqZero
 public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Sinc
 
 /-!
@@ -27,6 +26,15 @@ operator `f ↦ -dslope (deriv f) 0`, which maps analytic functions to analytic 
 real analytic on the whole line. Every iterate is moreover even, so its derivative vanishes at the
 origin. For such `f` the operator agrees with `-f' x / x` for `x ≠ 0`, and at `x = 0` it takes the
 value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
+
+Mathlib's `Complex.besselJ` is the Bessel function of the first kind of complex order and
+argument. The spherical functions are its half-integer-order special case: `j_l(x)` is
+`√(π / (2 * x)) * Complex.besselJ (l + 1 / 2) x` away from the origin (DLMF §10.47). That
+development is not the basis here: its analyticity is available on the slit plane
+`Complex.slitPlane` (`Complex.analyticAt_besselJ`), with the whole-plane form
+(`Complex.analyticAt_besselJ_int`) restricted to integer order, and it is complex-valued, so it
+provides neither the whole-line real analyticity of `j_l` nor its value at the removable
+singularity `x = 0`. The Rayleigh formula above supplies both directly.
 
 ## Main definitions
 
@@ -174,9 +182,9 @@ private lemma deriv_reduced_zero (l : ℕ) : deriv (G l) 0 = 0 :=
 `-x` times the reduced function of order `l + 1`. -/
 theorem hasDerivAt_reducedSphericalBesselJ (l : ℕ) (x : ℝ) :
     HasDerivAt (reducedSphericalBesselJ l) (-x * reducedSphericalBesselJ (l + 1) x) x := by
-  have h := sub_smul_dslope (deriv (G l)) 0 x
-  rw [deriv_reduced_zero, sub_zero, sub_zero, smul_eq_mul] at h
-  -- h: deriv (G l) x = x * dslope (deriv (G l)) 0 x
+  have h := sub_smul_dslope_of_zero (deriv_reduced_zero l) x
+  rw [sub_zero, smul_eq_mul] at h
+  -- h: x * dslope (deriv (G l)) 0 x = deriv (G l) x
   rw [reducedSphericalBesselJ_succ, Pi.neg_apply]
   have : (-x) * (-dslope (deriv (G l)) 0 x) = x * dslope (deriv (G l)) 0 x := by ring
   rw [this, h]
@@ -194,14 +202,11 @@ private lemma deriv_eq_of_forall_eq {f g : ℝ → ℝ} {f' g' x : ℝ} (hf : Ha
     (hg : HasDerivAt g g' x) (h : ∀ y, f y = g y) : f' = g' :=
   hf.unique (hg.congr_of_eventuallyEq (.of_forall h))
 
-/-- `x G 0 = sin x`. -/
-private lemma mul_reducedSphericalBesselJ_zero (x : ℝ) : x * G 0 x = sin x := mul_sinc x
-
 /-- The first derivative of `x G 0 = sin x`: `G 0 - x ^ 2 G 1 = cos x`. -/
 private lemma reduced_one (x : ℝ) : G 0 x - x ^ 2 * G 1 x = cos x := by
   linear_combination deriv_eq_of_forall_eq
     ((hasDerivAt_id' x).mul (hasDerivAt_reducedSphericalBesselJ 0 x)) (hasDerivAt_sin x)
-    mul_reducedSphericalBesselJ_zero
+    mul_sinc
 
 /-- The base case of the recurrence: `x ^ 2 G 2 - 3 G 1 + G 0 = 0`. -/
 private lemma reduced_recurrence_zero (x : ℝ) :
@@ -211,8 +216,8 @@ private lemma reduced_recurrence_zero (x : ℝ) :
     intro y
     linear_combination deriv_eq_of_forall_eq ((hasDerivAt_reducedSphericalBesselJ 0 y).sub
       ((hasDerivAt_pow 2 y).mul (hasDerivAt_reducedSphericalBesselJ 1 y))) (hasDerivAt_cos y)
-      reduced_one + mul_reducedSphericalBesselJ_zero y
-  exact congrFun (ContinuousAt.eq_zero_of_forall_mul_eq_zero (by fun_prop) h2) x
+      reduced_one + y * reducedSphericalBesselJ_zero y + mul_sinc y
+  exact congrFun (ContinuousAt.eq_zero_of_forall_smul_eq_zero (by fun_prop) h2) x
 
 /-- The three-term recurrence of the reduced functions on the whole line:
 `x ^ 2 * reducedSphericalBesselJ (l + 2) x - (2 * l + 3) * reducedSphericalBesselJ (l + 1) x
@@ -237,7 +242,7 @@ theorem reducedSphericalBesselJ_add_two (l : ℕ) (x : ℝ) :
         deriv_eq_of_forall_eq hd (hasDerivAt_const y 0) ih
       push_cast
       linear_combination -hstep
-    exact congrFun (ContinuousAt.eq_zero_of_forall_mul_eq_zero (by fun_prop) h) x
+    exact congrFun (ContinuousAt.eq_zero_of_forall_smul_eq_zero (by fun_prop) h) x
 
 /-- The value of the reduced functions at the origin, `1 / (2 l + 1)‼`. -/
 @[simp]
