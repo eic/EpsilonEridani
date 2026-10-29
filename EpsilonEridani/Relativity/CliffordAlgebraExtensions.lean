@@ -12,7 +12,6 @@ public import Physlib.Relativity.MinkowskiMatrix
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 public import Physlib.Mathematics.LeviCivita.Basic
 public import Physlib.Mathematics.KroneckerDelta.Basic
-public import EpsilonEridani.Mathematics.KroneckerDelta.BasicExtensions
 
 /-!
 # Gamma matrix anticommutator and Dirac slash extensions

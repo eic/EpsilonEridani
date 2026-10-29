@@ -78,6 +78,12 @@ AIs are encouraged to make PRs to EpsilonEridani that bump the pin to new commit
 
 We won't push material upstream from EpsilonEridani to Mathlib. Mathlib contributors are welcome to adopt, curate, and modify material from EpsilonEridani, while preparing PRs to Mathlib. Everything here is [Apache licensed](http://www.apache.org/licenses/).
 
+## Physlib, PhyslibAlpha and TauCeti
+
+EpsilonEridani also depends on [Physlib](https://github.com/leanprover-community/physlib) (its `master` branch) and [TauCeti](https://github.com/TauCetiProject/TauCeti) (its `main` branch), pinned alongside Mathlib in `lake-manifest.json`. A daily job proposes the newest mutually compatible set of pins as one bump PR, and the worker adapts `EpsilonEridani/` when a bump breaks the build; see `docs/dependency-bumps.md`. PhyslibAlpha is a library inside the Physlib package, downstream of Physlib, with an arXiv-style "one-look" review designed for large and AI-generated contributions, so the existing Physlib pin already makes `import PhyslibAlpha.*` available.
+
+Physlib is treated differently from Mathlib in one respect: **material in upstream namespaces is PhyslibAlpha-eligible.** A declaration that lives in a Physlib or Mathlib namespace rather than under `EpsilonEridani` (dot notation on an upstream type, or an `*Extensions.lean` module that extends a Physlib module at the mirrored path) is already shaped to move upstream without renaming, and PhyslibAlpha is where it should go once it is stable. The flow is "mirror, pin, delete": the file is contributed to PhyslibAlpha at the mirrored path (with the API map PhyslibAlpha's linters require), the next dependency bump pins a Physlib commit that carries it, and EpsilonEridani then deletes its copy and imports the upstream module. AIs may prepare the upstream contribution; a human opens the PhyslibAlpha pull request. Promotion from PhyslibAlpha into Physlib itself is Physlib's decision, just as absorbing material into Mathlib is Mathlib's.
+
 ## What EpsilonEridani is, and is not
 
 > The product of physics is clarity and understanding. Not theorems, by themselves. ... There is no way to run out of ideas in need of clarification. The question of who is the first person to ever set foot on some square meter of land is really secondary. --- Bill Thurston

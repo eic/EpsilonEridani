@@ -1,6 +1,6 @@
 # Toolchain tags
 
-Tau Ceti tags eligible Lean releases as `vX`, the way Mathlib does, so a project on Lean
+Epsilon Eridani tags eligible Lean releases as `vX`, the way Mathlib does, so a project on Lean
 v4.34.0 can check out `v4.34.0` here and get a tree that builds.
 
 ## The rule
@@ -45,8 +45,10 @@ never lower it.
 
 ## Reporting
 
-`.github/workflows/toolchain-tags.yml` posts to Zulip (Tau Ceti > "Toolchain tags") when a
-release becomes taggable or turns out not to be taggable. It runs on a push to `main` that
+`.github/workflows/toolchain-tags.yml` posts to the **ε Eri** Mattermost channel when a
+release becomes taggable or turns out not to be taggable. (It posts to Zulip as well only when
+`ZULIP_*` secrets are set; Epsilon Eridani has no Zulip and sets none, so that path logs a warning
+and is skipped.) It runs on a push to `main` that
 changes `lean-toolchain`, waits for `ci.yml` to conclude on that commit, and then posts only
 if the state has changed since its last message. It reads that state from a marker in the
 message, so it stores nothing, and it never creates a tag. Before comparing that marker,
