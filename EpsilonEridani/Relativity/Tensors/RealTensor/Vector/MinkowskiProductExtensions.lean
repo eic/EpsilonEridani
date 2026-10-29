@@ -9,20 +9,17 @@ public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 
 /-!
 # Extensions of the Minkowski product on Lorentz vectors
 
 Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
-companion to `Lorentz.Vector.minkowskiProduct_add_self`; the additivity of the time component and
-of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and `(u + v).spatialPart = u.spatialPart + v.spatialPart`,
-and the closure of collinearity under sums, `(u + v).spatialPart = (a + b) • n` when
-`u.spatialPart = a • n` and `v.spatialPart = b • n`;
-the factorisation `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial
-part is `a • n` along a unit vector `n` into its light-cone components, with the component
-`⟪v.spatialPart, n⟫ = a` of such a vector along `n`, its nullness when `v⁰ = a`, the positivity of
-`√⟪v, v⟫ₘ` when `|a| < v⁰`, and its form `(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component
+companion to `Lorentz.Vector.minkowskiProduct_add_self`; the factorisation
+`⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial part is `a • n`
+along a unit vector `n` into its light-cone components, its nullness when `v⁰ = a`, the positivity
+of `√⟪v, v⟫ₘ` when `|a| < v⁰`, and its form `(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component
 along `n`; the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is
 `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and, in at least two spatial dimensions, the
 existence of two vectors on the mass shell with prescribed energies above the mass and a
@@ -49,18 +46,6 @@ lemma minkowskiProduct_sub_self {d : ℕ} (u v : Vector d) :
   rw [minkowskiProduct_symm v u]
   ring
 
-/-- The time component of a sum is the sum of the time components. -/
-lemma timeComponent_add {d : ℕ} (u v : Vector d) :
-    (u + v).timeComponent = u.timeComponent + v.timeComponent :=
-  rfl
-
-/-- The spatial part of a sum is the sum of the spatial parts. -/
-@[simp]
-lemma spatialPart_add {d : ℕ} (u v : Vector d) :
-    (u + v).spatialPart = u.spatialPart + v.spatialPart := by
-  ext i
-  simp
-
 /-- The spatial part of `p` has length `√((p⁰)² - ⟪p, p⟫ₘ)`; on the mass shell `⟪p, p⟫ₘ = m²`
 this is `√((p⁰)² - m²)`. -/
 lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vector d) :
@@ -75,20 +60,6 @@ theorem minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul {d : ℕ} {v : Vecto
   rw [minkowskiProduct_self_eq_sq_sub, hv]
   simp only [norm_smul, hn, Real.norm_eq_abs, mul_one, sq_abs]
   ring
-
-/-- The spatial part of a sum of four-vectors whose spatial parts lie along `n` lies along `n`
-too: if `u.spatialPart = a • n` and `v.spatialPart = b • n`, then
-`(u + v).spatialPart = (a + b) • n`. -/
-theorem spatialPart_add_eq_smul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ} (hu : u.spatialPart = a • n)
-    (hv : v.spatialPart = b • n) : (u + v).spatialPart = (a + b) • n := by
-  rw [spatialPart_add, hu, hv, add_smul]
-
-/-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
-theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
-    ⟪v.spatialPart, n⟫_ℝ = a := by
-  rw [hv, real_inner_smul_self_left, hn, mul_one, mul_one]
 
 /-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
 null: `⟪v, v⟫ₘ = 0`. -/

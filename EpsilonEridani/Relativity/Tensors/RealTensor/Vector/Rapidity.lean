@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 
 /-!
@@ -34,7 +35,8 @@ For a four-vector whose spatial part lies along a unit vector `n`, the transvers
 invariant mass `W = √⟪v, v⟫ₘ`
 (`Lorentz.Vector.minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul`, in
 `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`), and the
-light-cone relations read `v⁰ ± v_∥ = W e^{±y}` (the `_of_spatialPart_eq_smul` forms).
+light-cone relations read `v⁰ ± a = W e^{±y}` with `e^{2y} = (v⁰ + a) / (v⁰ - a)`
+(the `_of_spatialPart_eq_smul` forms).
 
 These are the variables in which collider kinematics along a beam axis is reported, and the form
 in which an invariant mass and a rapidity are traded for energies.
@@ -167,6 +169,16 @@ theorem inner_spatialPart_eq_sqrt_mul_sinh_rapidity {v : Vector d} {n : Euclidea
   rw [sinh_eq]
   linear_combination (timeComponent_add_inner_spatialPart_eq_sqrt_mul_exp_rapidity h -
     timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity h) / 2
+
+/-- **The exponential of twice the rapidity of a collinear four-vector.** If the spatial part
+of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then `e^{2y} = (v⁰ + a) / (v⁰ - a)`, with
+`y` the rapidity of `v` along `n`. -/
+theorem exp_two_mul_rapidity_of_spatialPart_eq_smul {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
+    (h : |a| < v.timeComponent) :
+    exp (2 * v.rapidity n) = (v.timeComponent + a) / (v.timeComponent - a) := by
+  have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
+  rw [exp_two_mul_rapidity (hpar ▸ h), hpar]
 
 /-- **A collinear four-vector from its invariant mass and rapidity, forward component.** If the
 spatial part of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then
