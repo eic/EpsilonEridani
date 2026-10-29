@@ -188,13 +188,9 @@ def IsFixedByStructureFunctionSum
 lemma isFixedByStructureFunctionSum_iff (G : StructureFunctions) (A : Bilin V) :
     IsFixedByStructureFunctionSum V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
   refine ⟨fun h => or_iff_not_imp_left.mpr fun hA x Q2 => ?_, ?_⟩
-  · obtain ⟨v, w, hvw⟩ : ∃ v w, A v w ≠ 0 := by
-      by_contra! h0
-      exact hA (LinearMap.ext₂ h0)
-    have h1 := LinearMap.congr_fun₂ (h x Q2) v w
-    rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul] at h1
-    have h2 : (G.g1 x Q2 + G.g2 x Q2 - 1) * A v w = 0 := by linarith
-    exact sub_eq_zero.mp ((mul_eq_zero.mp h2).resolve_right hvw)
+  · have h0 : (G.g1 x Q2 + G.g2 x Q2 - 1) • A = 0 := by
+      rw [sub_smul (M := Bilin V), one_smul, ← h x Q2, sub_self]
+    exact sub_eq_zero.mp ((smul_eq_zero.mp h0).resolve_right hA)
   · rintro (rfl | h) x Q2
     · rw [smul_zero]
     · rw [h x Q2, one_smul]

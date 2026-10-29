@@ -40,8 +40,13 @@ theorem det_fin_four (A : Matrix (Fin 4) (Fin 4) R) :
         - A 0 3 * (A 1 0 * (A 2 1 * A 3 2 - A 2 2 * A 3 1) - A 1 1 * (A 2 0 * A 3 2 - A 2 2 * A 3 0)
           + A 1 2 * (A 2 0 * A 3 1 - A 2 1 * A 3 0)) := by
   rw [det_succ_row_zero]
-  simp (disch := decide) [Fin.sum_univ_succ, det_fin_three, Fin.succAbove_of_castSucc_lt,
-    Fin.succAbove_of_le_castSucc]
+  simp (disch := decide) only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue, det_fin_three,
+    submatrix_apply, Fin.succ_zero_eq_one, Fin.succ_one_eq_two, Fin.reduceSucc, Fin.sum_univ_succ,
+    Fin.coe_ofNat_eq_mod, Nat.zero_mod, pow_zero, one_mul, Fin.succAbove_of_le_castSucc,
+    Fin.val_succ, Fin.succ_succAbove_one, zero_add, pow_one, neg_mul, Fin.succAbove_of_castSucc_lt,
+    Fin.castSucc_zero, Even.neg_pow, one_pow, Finset.univ_unique, Fin.default_eq_zero,
+    Fin.val_eq_zero, Odd.neg_one_pow, Finset.sum_neg_distrib, Finset.sum_singleton,
+    Fin.reduceCastSucc]
   ring
 
 /-- The determinant of four rows `v 0, …, v 3`, as the alternating map `detRowAlternating`,
