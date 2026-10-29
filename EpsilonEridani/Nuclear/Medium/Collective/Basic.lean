@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.Algebra.BigOperators.Finset
-public import EpsilonEridani.Mathematics.Analysis.Fourier.AddCircle
+public import EpsilonEridani.Mathematics.Probability.Fourier.AddCircle
 
 /-!
 # Azimuthal harmonics of an event at finite multiplicity
