@@ -8,6 +8,7 @@ module
 public import EpsilonEridani.Mathematics.LieAlgebra.SpecialUnitary.Extensions
 public import EpsilonEridani.Particles.StandardModel.HiggsBoson.BasicExtensions
 public import EpsilonEridani.QFT.QCD.SU2Generators
+public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Representation
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Physlib.Relativity.PauliMatrices.Basic
 
@@ -34,6 +35,12 @@ weak-isospin third component `T³` and hypercharge `Y` is `Q = T³ + Y / 2`.
 * `doubletStabilizer_higgsVacuum`: the generators annihilating the Higgs vacuum are the real
   multiples of `electricChargeGenerator`. `finrank_doubletStabilizer_higgsVacuum` says there is
   exactly one.
+* `doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_standardModel_Yu` and
+  its down-quark and electron analogues: at the hypercharges of
+  `GenerationAssignments.standardModel` the doublet and singlet components of each charged
+  fermion carry the same physical charge, `2/3`, `-1/3` and `-1`
+  (`doubletElectricCharge_standardModel_*`, `singletElectricCharge_standardModel_*`), and the
+  neutrino is electrically neutral (`doubletElectricCharge_standardModel_YL_zero`).
 * `doubletAction_electricChargeGenerator`: on a doublet of hypercharge `y` the unbroken
   generator acts as `i` times `electricChargeOperator y = T³ + y / 2`.
   `isospinT3_mulVec_single` gives the weights `isospinWeight k = ±1/2` of `T³` on the two
@@ -60,6 +67,7 @@ namespace EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak
 open Complex Matrix PauliMatrix
 open EpsilonEridani.LieAlgebra.SpecialUnitary EpsilonEridani.Particles.StandardModel.HiggsBoson
 open EpsilonEridani.QFT.QCD.RepresentationColor
+open GenerationAssignments
 
 /-- The weak-isospin weights of a doublet: the `T³` eigenvalue `1/2` of the upper component and
 `-1/2` of the lower one. -/
@@ -197,6 +205,94 @@ noncomputable def singletElectricCharge (y : ℝ) : ℝ := y / 2
 /-- The singlet electric charge unfolded. -/
 theorem singletElectricCharge_def (y : ℝ) : singletElectricCharge y = y / 2 :=
   (rfl)
+
+/-- The `k`-th component of a doublet of hypercharge `y` has the electric charge of a singlet of
+hypercharge `y + 2 T³ₖ`. -/
+theorem doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight (y : ℝ)
+    (k : Fin 2) :
+    doubletElectricCharge y k = singletElectricCharge (y + 2 * isospinWeight k) := by
+  rw [doubletElectricCharge_apply, singletElectricCharge_def]
+  ring
+
+/-!
+## The charges of one Standard Model generation
+
+With the Standard Model hypercharges `(YQ, Yu, Yd, YL, Ye) = (1/3, 4/3, -2/3, -1, -2)` of
+`GenerationAssignments.standardModel`, the charge formula `Q = T³ + Y / 2` gives the physical
+charges of the five multiplets of one generation. In particular the left-handed (doublet) and
+right-handed (singlet) components of the up quark, the down quark and the electron carry the
+same charge, so a single `Q` describes both chiralities of each charged fermion; the three
+`_eq_singletElectricCharge_` lemmas below state this, as instances of
+`doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight`.
+-/
+
+/-- The left-handed up quark, the upper component of the quark doublet, and the right-handed
+up-quark singlet carry the same electric charge. -/
+theorem doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_standardModel_Yu :
+    doubletElectricCharge (standardModel.YQ : ℝ) 0 =
+      singletElectricCharge (standardModel.Yu : ℝ) := by
+  rw [doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight,
+    isospinWeight_zero]
+  congr 1
+  norm_num
+
+/-- The left-handed down quark, the lower component of the quark doublet, and the right-handed
+down-quark singlet carry the same electric charge. -/
+theorem doubletElectricCharge_standardModel_YQ_one_eq_singletElectricCharge_standardModel_Yd :
+    doubletElectricCharge (standardModel.YQ : ℝ) 1 =
+      singletElectricCharge (standardModel.Yd : ℝ) := by
+  rw [doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight,
+    isospinWeight_one]
+  congr 1
+  norm_num
+
+/-- The left-handed electron, the lower component of the lepton doublet, and the right-handed
+electron singlet carry the same electric charge. -/
+theorem doubletElectricCharge_standardModel_YL_one_eq_singletElectricCharge_standardModel_Ye :
+    doubletElectricCharge (standardModel.YL : ℝ) 1 =
+      singletElectricCharge (standardModel.Ye : ℝ) := by
+  rw [doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight,
+    isospinWeight_one]
+  congr 1
+  norm_num
+
+/-- The up quark, the upper component of the quark doublet, has charge `2/3`. -/
+theorem doubletElectricCharge_standardModel_YQ_zero :
+    doubletElectricCharge (standardModel.YQ : ℝ) 0 = 2 / 3 := by
+  norm_num [doubletElectricCharge_apply]
+
+/-- The down quark, the lower component of the quark doublet, has charge `-1/3`. -/
+theorem doubletElectricCharge_standardModel_YQ_one :
+    doubletElectricCharge (standardModel.YQ : ℝ) 1 = -1 / 3 := by
+  norm_num [doubletElectricCharge_apply]
+
+/-- The neutrino, the upper component of the lepton doublet, is electrically neutral. -/
+theorem doubletElectricCharge_standardModel_YL_zero :
+    doubletElectricCharge (standardModel.YL : ℝ) 0 = 0 := by
+  norm_num [doubletElectricCharge_apply]
+
+/-- The electron, the lower component of the lepton doublet, has charge `-1`. -/
+theorem doubletElectricCharge_standardModel_YL_one :
+    doubletElectricCharge (standardModel.YL : ℝ) 1 = -1 := by
+  norm_num [doubletElectricCharge_apply]
+
+/-- The right-handed up-quark singlet has charge `2/3`. -/
+theorem singletElectricCharge_standardModel_Yu :
+    singletElectricCharge (standardModel.Yu : ℝ) = 2 / 3 := by
+  rw [← doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_standardModel_Yu,
+    doubletElectricCharge_standardModel_YQ_zero]
+
+/-- The right-handed down-quark singlet has charge `-1/3`. -/
+theorem singletElectricCharge_standardModel_Yd :
+    singletElectricCharge (standardModel.Yd : ℝ) = -1 / 3 := by
+  rw [← doubletElectricCharge_standardModel_YQ_one_eq_singletElectricCharge_standardModel_Yd,
+    doubletElectricCharge_standardModel_YQ_one]
+
+/-- The right-handed electron singlet has charge `-1`. -/
+theorem singletElectricCharge_standardModel_Ye :
+    singletElectricCharge (standardModel.Ye : ℝ) = -1 := by
+  rw [← doubletElectricCharge_standardModel_YL_one_eq_singletElectricCharge_standardModel_Ye,
+    doubletElectricCharge_standardModel_YL_one]
 
 /-- The electric-charge operator `Q = T³ + y / 2` on a weak-isospin doublet of hypercharge `y`. -/
 noncomputable def electricChargeOperator (y : ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
