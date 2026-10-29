@@ -99,6 +99,11 @@ variable (ρ : SpinDensityC)
 lemma coe_re_mat_apply_self (i : Fin 4) : ((ρ.mat i i).re : ℂ) = ρ.mat i i :=
   ρ.posSemidef.1.coe_re_apply_self i
 
+/-- The helicity-amplitude matrix is hermitian: conjugating an entry gives the transposed
+entry. -/
+lemma conj_mat_apply (i j : Fin 4) : conj (ρ.mat i j) = ρ.mat j i := by
+  simpa using ρ.posSemidef.1.apply j i
+
 /-- The unpolarized leading-twist density `f₁`, the helicity average of the diagonal number
 densities. At fixed `(x, Q²)`. -/
 def f1 : ℝ :=
@@ -153,6 +158,9 @@ def re : SpinDensity where
 @[simp]
 lemma mat_re : ρ.re.mat = ρ.mat.map Complex.re := rfl
 
+/-- The entries of the real part are the real parts of the entries. -/
+lemma mat_re_apply (i j : Fin 4) : ρ.re.mat i j = (ρ.mat i j).re := rfl
+
 /-- The real part is compatible with `f₁`. -/
 @[simp]
 lemma f1_re : PDF.f1 ρ.re = ρ.f1 := rfl
@@ -168,13 +176,13 @@ lemma h1_re : PDF.h1 ρ.re = ρ.transversity.re := rfl
 
 /-- `f₁ + Δq` is the sum of the two aligned diagonal entries of the helicity-amplitude matrix.
 This is the combination the Soffer bound constrains. -/
-lemma f1_add_deltaQ : ρ.f1 + ρ.deltaQ = (ρ.mat idxPP idxPP).re + (ρ.mat idxMM idxMM).re :=
-  PDF.f1_add_g1 ρ.re
+lemma f1_add_deltaQ : ρ.f1 + ρ.deltaQ = (ρ.mat idxPP idxPP).re + (ρ.mat idxMM idxMM).re := by
+  rw [← f1_re, ← g1_re, PDF.f1_add_g1, mat_re_apply, mat_re_apply]
 
 /-- `f₁ - Δq` is the sum of the two anti-aligned diagonal entries of the helicity-amplitude
 matrix. -/
-lemma f1_sub_deltaQ : ρ.f1 - ρ.deltaQ = (ρ.mat idxPM idxPM).re + (ρ.mat idxMP idxMP).re :=
-  PDF.f1_sub_g1 ρ.re
+lemma f1_sub_deltaQ : ρ.f1 - ρ.deltaQ = (ρ.mat idxPM idxPM).re + (ρ.mat idxMP idxMP).re := by
+  rw [← f1_re, ← g1_re, PDF.f1_sub_g1, mat_re_apply, mat_re_apply]
 
 /-- **Unpolarized positivity.** `f₁` is nonnegative at fixed `(x, Q²)`, from positive
 semidefiniteness alone. This is `PDF.f1_nonneg` for the real part. -/
@@ -239,27 +247,26 @@ parts of the complex ones, with no time-reversal assumption. The converse needs 
 transversity, not time-reversal invariance: both directions of the transfer are recorded in
 `isParityInvariant_iff`. -/
 lemma IsParityInvariant.re {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
-    PDF.IsParityInvariant ρ.re :=
-  ⟨congrArg Complex.re h.1, congrArg Complex.re h.2.1⟩
+    PDF.IsParityInvariant ρ.re := by
+  simp only [PDF.IsParityInvariant, mat_re_apply, h.1, h.2.1, and_self]
 
 /-- Under parity invariance `f₁` reduces to the single-nucleon-helicity expression
 `q_{+/+} + q_{−/+}`. -/
 lemma f1_eq_of_parityInvariant (h : ρ.IsParityInvariant) :
-    ρ.f1 = (ρ.mat idxPP idxPP).re + (ρ.mat idxPM idxPM).re :=
-  PDF.f1_eq_of_parityInvariant ρ.re h.re
+    ρ.f1 = (ρ.mat idxPP idxPP).re + (ρ.mat idxPM idxPM).re := by
+  rw [← f1_re, PDF.f1_eq_of_parityInvariant ρ.re h.re, mat_re_apply, mat_re_apply]
 
 /-- Under parity invariance `Δq` reduces to the single-nucleon-helicity expression
 `q_{+/+} - q_{−/+}`. -/
 lemma deltaQ_eq_of_parityInvariant (h : ρ.IsParityInvariant) :
-    ρ.deltaQ = (ρ.mat idxPP idxPP).re - (ρ.mat idxPM idxPM).re :=
-  PDF.g1_eq_of_parityInvariant ρ.re h.re
+    ρ.deltaQ = (ρ.mat idxPP idxPP).re - (ρ.mat idxPM idxPM).re := by
+  rw [← g1_re, PDF.g1_eq_of_parityInvariant ρ.re h.re, mat_re_apply, mat_re_apply]
 
 /-- Under parity invariance transversity is real. -/
 lemma IsParityInvariant.im_transversity {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
     ρ.transversity.im = 0 := by
   -- Parity identifies the double-flip entry with its transpose, hermiticity with its conjugate.
-  have hconj : conj (ρ.mat idxMM idxPP) = ρ.mat idxPP idxMM := by
-    simpa using ρ.posSemidef.1.apply idxPP idxMM
+  have hconj := ρ.conj_mat_apply idxMM idxPP
   rw [h.mat_idxMM_idxPP_eq_mat_idxPP_idxMM] at hconj
   exact Complex.conj_eq_iff_im.mp hconj
 
@@ -277,9 +284,7 @@ lemma isParityInvariant_iff :
   · simpa using congrArg ((↑) : ℝ → ℂ) hp.1
   · simpa using congrArg ((↑) : ℝ → ℂ) hp.2
   · -- Hermiticity identifies the double-flip entry with the conjugate of transversity.
-    have hconj : conj (ρ.mat idxPP idxMM) = ρ.mat idxMM idxPP := by
-      simpa using ρ.posSemidef.1.apply idxMM idxPP
-    rw [← hconj, ← transversity_def]
+    rw [← ρ.conj_mat_apply, ← transversity_def]
     exact Complex.conj_eq_iff_im.mpr him
 
 /-! ### Time reversal and the real specialisation -/
@@ -301,9 +306,8 @@ lemma isTimeReversalInvariant_iff_forall_im_eq_zero :
 symmetry of the matrix. -/
 lemma isTimeReversalInvariant_iff_isSymm :
     ρ.IsTimeReversalInvariant ↔ ρ.mat.IsSymm := by
-  have hconj : ∀ i j, conj (ρ.mat i j) = ρ.mat j i := fun i j => by
-    simpa using ρ.posSemidef.1.apply j i
-  simp only [IsTimeReversalInvariant, IsSymm, ← Matrix.ext_iff, map_apply, transpose_apply, hconj]
+  simp only [IsTimeReversalInvariant, IsSymm, ← Matrix.ext_iff, map_apply, transpose_apply,
+    conj_mat_apply]
 
 /-- Under time-reversal invariance transversity is real. -/
 lemma IsTimeReversalInvariant.im_transversity {ρ : SpinDensityC}
@@ -358,19 +362,18 @@ lemma deltaQ_toSpinDensityC : ρ.toSpinDensityC.deltaQ = PDF.g1 ρ := by
 lemma transversity_toSpinDensityC : ρ.toSpinDensityC.transversity = (PDF.h1 ρ : ℂ) := by
   simp [SpinDensityC.transversity_def, PDF.h1_def]
 
-/-- Parity invariance of a real spin-density matrix is parity invariance of its complex matrix: the
-double-flip relation of the complex predicate holds automatically for a real symmetric matrix. -/
-@[simp]
-lemma isParityInvariant_toSpinDensityC_iff :
-    ρ.toSpinDensityC.IsParityInvariant ↔ PDF.IsParityInvariant ρ := by
-  have hsym : ρ.mat idxMM idxPP = ρ.mat idxPP idxMM := by
-    simpa using ρ.posSemidef.1.apply idxPP idxMM
-  simp [SpinDensityC.IsParityInvariant, PDF.IsParityInvariant, hsym]
-
 @[simp]
 lemma re_toSpinDensityC : ρ.toSpinDensityC.re = ρ := by
   ext i j
   simp
+
+/-- Parity invariance of a real spin-density matrix is parity invariance of its complex matrix: the
+double-flip relation of the complex predicate holds automatically, because the transversity of
+the complex matrix is real (`SpinDensityC.isParityInvariant_iff`). -/
+@[simp]
+lemma isParityInvariant_toSpinDensityC_iff :
+    ρ.toSpinDensityC.IsParityInvariant ↔ PDF.IsParityInvariant ρ := by
+  simp [SpinDensityC.isParityInvariant_iff]
 
 end SpinDensity
 
@@ -383,13 +386,6 @@ lemma toSpinDensityC_re {ρ : SpinDensityC} (h : ρ.IsTimeReversalInvariant) :
     ρ.re.toSpinDensityC = ρ := by
   ext : 1
   exact h.map_re_map_ofReal
-
-/-- On time-reversal-invariant matrices, taking the real part preserves and reflects parity
-invariance. This is the time-reversal-invariant specialisation of `isParityInvariant_iff`. -/
-@[simp]
-lemma isParityInvariant_re_iff {ρ : SpinDensityC} (h : ρ.IsTimeReversalInvariant) :
-    PDF.IsParityInvariant ρ.re ↔ ρ.IsParityInvariant := by
-  rw [isParityInvariant_iff, and_iff_left h.im_transversity]
 
 /-- **The real spin-density matrix is the time-reversal-invariant complex one.** Taking the real
 part and coercing back are inverse bijections between the time-reversal-invariant complex
