@@ -33,7 +33,7 @@ symmetry under the operator `P₁₂ = TensorProduct.comm` exchanging the two sp
 
 The Casimir computation rests on the exchange identity `Σᵢ σᵢ ⊗ σᵢ = 2 P₁₂ - 1` of the Pauli
 matrices (`PauliMatrix.sum_map_toEuclideanLin_pauliMatrix_inr`), which with `Σᵢ Sᵢ Sᵢ = 3/4` on `ℂ²`
-gives `S² = 3/2 + (σ⃗₁ · σ⃗₂) / 2 = 1 + P₁₂`. Consequently the exchange operator acts on the
+gives `S² = 3/2 + (σ(1) · σ(2)) / 2 = 1 + P₁₂`. Consequently the exchange operator acts on the
 channel of total spin `S` by `(-1)^(S + 1)`: this is the spin factor in the charge-conjugation
 eigenvalue of a quark-antiquark pair.
 
@@ -277,7 +277,8 @@ theorem commute_toEnd_spinTripletProj (X : Module.End ℂ ℂ²) :
 /-! ### The total-spin Casimir -/
 
 /-- The total-spin Casimir of the pair is twice the triplet projector: `S² = 1 + P₁₂ = 2 P₁`.
-It follows from `S² = 3/2 + (σ⃗₁ · σ⃗₂) / 2` and the exchange identity `σ⃗₁ · σ⃗₂ = 2 P₁₂ - 1`. -/
+It follows from `S² = 3/2 + (σ(1) · σ(2)) / 2` and the exchange identity
+`σ(1) · σ(2) = 2 P₁₂ - 1`. -/
 theorem casimir_spinGen_eq :
     LieModule.casimir ℂ _ (ℂ² ⊗[ℂ] ℂ²) spinGen spinGen =
       (2 : ℂ) • spinTripletProj := by
