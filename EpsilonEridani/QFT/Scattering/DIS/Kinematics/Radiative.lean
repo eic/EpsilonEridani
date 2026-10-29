@@ -50,9 +50,10 @@ the shift `ReconstructedInvariants.shiftXQ2` (or `ReconstructedInvariants.shiftX
   `RadiativeEvent.electronMethod_x_ne_trueInvariants_x_of_collinear_initialState`: after collinear
   initial-state emission of energy fraction `1 - z` the electron method returns
   `x_e = x y / (1 - z (1 - y))` in terms of the true `x` and `y`, which differs from a nonzero `x`
-  for `z < 1` and `0 < y < 1`, and `Q² = z Q²_e` for massless leptons
-  (`RadiativeEvent.trueInvariants_Q2_of_collinear_initialState`, which holds with explicit mass
-  remainders in general).
+  for `z < 1` and `0 < y < 1`, so that its `(x, y)` shift does not vanish
+  (`RadiativeEvent.shiftXY_electronMethod_ne_zero_of_collinear_initialState`), and `Q² = z Q²_e`
+  for massless leptons (`RadiativeEvent.trueInvariants_Q2_of_collinear_initialState`, which holds
+  with explicit mass remainders in general).
 
 The scalar products are those of an arbitrary bilinear form `g` on the momentum space, as for
 `DisKinematics`. An on-shell photon exactly collinear with a lepton forces that lepton to be
@@ -308,7 +309,7 @@ theorem sigmaMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0)
       ← trueInvariants_eq_of_photon_eq_zero g .initialState h]
     exact sigmaMethod_y_eq_trueInvariants_y_initialState g
   ext
-  · rw [sigmaMethod_x, ← sigmaMethod_y g e.k, hy, hQ, TrueInvariants.toReconstructedInvariants_Q2,
+  · rw [sigmaMethod_x_eq_div, sigmaMethod_Q2, hy, hQ, TrueInvariants.toReconstructedInvariants_Q2,
       TrueInvariants.toReconstructedInvariants_x, trueInvariants_x_eq, trueInvariants_y_eq,
       leptonIn_of_photon_eq_zero l h, mul_assoc, mul_div_cancel₀ _ hpk]
   · exact hQ
@@ -442,6 +443,18 @@ theorem electronMethod_x_ne_trueInvariants_x_of_collinear_initialState (hk : g e
   rw [Ne, div_eq_iff (by linarith), mul_right_inj' hx]
   exact hd.ne
 
+/-- After exactly collinear initial-state emission, the `(x, y)` shift of the electron method
+does not vanish, under the hypotheses of
+`electronMethod_x_ne_trueInvariants_x_of_collinear_initialState`. -/
+theorem shiftXY_electronMethod_ne_zero_of_collinear_initialState (hk : g e.k e.k = 0)
+    (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) (hz1 : z < 1)
+    (hpk : g e.p e.k ≠ 0) (hy0 : 0 < (e.trueInvariants g .initialState).y)
+    (hy1 : (e.trueInvariants g .initialState).y < 1)
+    (hx : (e.trueInvariants g .initialState).x ≠ 0) :
+    (electronMethod g e.k e.p e.kPrime).shiftXY (e.trueInvariants g .initialState) ≠ 0 :=
+  fun h => electronMethod_x_ne_trueInvariants_x_of_collinear_initialState g hk hk' hcol hz1 hpk
+    hy0 hy1 hx (ReconstructedInvariants.shiftXY_eq_zero_iff.1 h).1
+
 /-- The Sigma method recovers the true Bjorken variable after exactly collinear initial-state
 emission. With `sigmaMethod_y_eq_trueInvariants_y_initialState`, the Sigma method is exact in
 `(x, y)` (`shiftXY_sigmaMethod_eq_zero_of_collinear_initialState`); its virtuality is the electron
@@ -449,7 +462,7 @@ one, `Q² = z Q²_e`. -/
 theorem sigmaMethod_x_eq_trueInvariants_x_of_collinear_initialState (hk : g e.k e.k = 0)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) (hpk : g e.p e.k ≠ 0) :
     (sigmaMethod g e.k e.p e.kPrime e.pX).x = (e.trueInvariants g .initialState).x := by
-  rw [sigmaMethod_x, ← sigmaMethod_y g e.k, sigmaMethod_y_eq_trueInvariants_y_initialState g,
+  rw [sigmaMethod_x_eq_div, sigmaMethod_Q2, sigmaMethod_y_eq_trueInvariants_y_initialState g,
     trueInvariants_x_of_collinear_initialState g hk hk' hcol,
     trueInvariants_y_of_collinear_initialState g hcol]
   field_simp

@@ -231,6 +231,12 @@ def mixedMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants wher
   Q2 := (electronMethod g k p kPrime).Q2
   y := (hadronicMethod g k p pX).y
 
+/-- The Sigma-method Bjorken variable is `x_Σ = Q²_e / (2 (p·k) y_Σ)`. -/
+theorem sigmaMethod_x_eq_div (g : Bilin V) (k p kPrime pX : V) :
+    (sigmaMethod g k p kPrime pX).x =
+      (sigmaMethod g k p kPrime pX).Q2 / (2 * g p k * (sigmaMethod g k p kPrime pX).y) := by
+  rw [sigmaMethod_x, sigmaMethod_Q2, sigmaMethod_y]
+
 /-- The Sigma-method inelasticity in terms of the measured momenta,
 `y_Σ = (p·q_h) / (p·q_h + p·k')`. -/
 theorem sigmaMethod_y_eq (g : Bilin V) (k p kPrime pX : V) :
@@ -242,7 +248,7 @@ theorem sigmaMethod_y_eq (g : Bilin V) (k p kPrime pX : V) :
 theorem sigmaMethod_x_eq (g : Bilin V) (k p kPrime pX : V) :
     (sigmaMethod g k p kPrime pX).x = (electronMethod g k p kPrime).Q2 *
       (g p (pX - p) + g p kPrime) / (2 * g p k * g p (pX - p)) := by
-  rw [sigmaMethod_x, ← sigmaMethod_y g k, sigmaMethod_y_eq]
+  rw [sigmaMethod_x_eq_div, sigmaMethod_Q2, sigmaMethod_y_eq]
   simp only [div_eq_mul_inv, mul_inv, inv_inv]
   ring
 
@@ -323,16 +329,6 @@ def shiftXY (r : ReconstructedInvariants) (t : TrueInvariants) : ℝ × ℝ :=
 @[simp] theorem shiftXY_eq_zero_iff {r : ReconstructedInvariants} {t : TrueInvariants} :
     r.shiftXY t = 0 ↔ r.x = t.x ∧ r.y = t.y := by
   simp [Prod.ext_iff, sub_eq_zero]
-
-/-- An exact measurement has no `(x, Q²)` shift. -/
-theorem shiftXQ2_toReconstructedInvariants_self (t : TrueInvariants) :
-    t.toReconstructedInvariants.shiftXQ2 t = 0 := by
-  simp
-
-/-- An exact measurement has no `(x, y)` shift. -/
-theorem shiftXY_toReconstructedInvariants_self (t : TrueInvariants) :
-    t.toReconstructedInvariants.shiftXY t = 0 := by
-  simp
 
 end ReconstructedInvariants
 
