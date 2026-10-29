@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Joseph Tooby-Smith
+Authors: Joseph Tooby-Smith, The EpsilonEridani contributors
 -/
 module
 
@@ -335,6 +335,7 @@ theorem ofQuantumNumbers_gA (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gA = t3
 
 /-- The left-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a field with
 weak-isospin third component `t3` and charge `q`. -/
+@[simp]
 theorem ofQuantumNumbers_gL (t3 q s2 : ℝ) :
     (ofQuantumNumbers t3 q s2).gL = chiralCoupling t3 q s2 := by
   rw [gL_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
@@ -342,6 +343,7 @@ theorem ofQuantumNumbers_gL (t3 q s2 : ℝ) :
 
 /-- The right-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a
 weak-isospin singlet of charge `q`. -/
+@[simp]
 theorem ofQuantumNumbers_gR (t3 q s2 : ℝ) :
     (ofQuantumNumbers t3 q s2).gR = chiralCoupling 0 q s2 := by
   rw [gR_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
@@ -369,6 +371,24 @@ def smTreeLevelCouplings (s2 : ℝ) : NeutralCurrentCouplings where
   electron := { gV := -1 / 2 + 2 * s2, gA := -1 / 2 }
   upType := { gV := 1 / 2 - 4 / 3 * s2, gA := 1 / 2 }
   downType := { gV := -1 / 2 + 2 / 3 * s2, gA := -1 / 2 }
+
+/-- The tabulated electron couplings: `g_V^e = -1/2 + 2 sin²θ_W` and `g_A^e = -1/2`. -/
+@[simp]
+theorem smTreeLevelCouplings_electron (s2 : ℝ) :
+    (smTreeLevelCouplings s2).electron = { gV := -1 / 2 + 2 * s2, gA := -1 / 2 } :=
+  (rfl)
+
+/-- The tabulated up-quark couplings: `g_V^u = 1/2 - (4/3) sin²θ_W` and `g_A^u = 1/2`. -/
+@[simp]
+theorem smTreeLevelCouplings_upType (s2 : ℝ) :
+    (smTreeLevelCouplings s2).upType = { gV := 1 / 2 - 4 / 3 * s2, gA := 1 / 2 } :=
+  (rfl)
+
+/-- The tabulated down-quark couplings: `g_V^d = -1/2 + (2/3) sin²θ_W` and `g_A^d = -1/2`. -/
+@[simp]
+theorem smTreeLevelCouplings_downType (s2 : ℝ) :
+    (smTreeLevelCouplings s2).downType = { gV := -1 / 2 + 2 / 3 * s2, gA := -1 / 2 } :=
+  (rfl)
 
 /-- Low-energy electron-up-quark coupling `C_{1u} = -1/2 + (4/3) sin^2(theta_W)`. -/
 def c1Up (s2 : ℝ) : ℝ :=

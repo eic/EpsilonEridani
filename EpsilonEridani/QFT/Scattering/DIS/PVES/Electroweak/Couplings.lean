@@ -28,24 +28,25 @@ The vector and axial couplings of the Particle Data Group, in which the `Z` vert
 The couplings of an arbitrary fermion, as functions of `(T³, Q, sin²θ_W)`, are `chiralCoupling`
 and `FermionNeutralCurrentCouplings.ofQuantumNumbers` of `Electroweak.Parameters`. This file
 evaluates them at the quantum numbers of one Standard Model generation: the weak-isospin
-weights `isospinWeight` of a doublet, the hypercharges `GenerationAssignments.standardModel`, and
-the electric charges `Q = T³ + Y / 2` of `doubletElectricCharge` and `singletElectricCharge`. The
-result is that the tabulated couplings `smTreeLevelCouplings` used by the parity-violating
-scattering interfaces are the values of the general coupling function at these quantum numbers,
-rather than independent data.
+weights `isospinWeight` of a doublet and the electric charges `Q = T³ + Y / 2` that the
+hypercharges of `GenerationAssignments.standardModel` give through `doubletElectricCharge` and
+`singletElectricCharge`, evaluated in `Electroweak.ElectricCharge`. The result is that the
+tabulated couplings `smTreeLevelCouplings` used by the parity-violating scattering interfaces
+are the values of the general coupling function at these quantum numbers, rather than
+independent data.
 
 ## Main results
 
-* `doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_standardModel_Yu` and
-  its down-quark and electron analogues: the doublet and singlet components of each charged
-  Standard Model fermion carry the same electric charge.
 * `smTreeLevelCouplings_electron_eq_ofQuantumNumbers`,
   `smTreeLevelCouplings_upType_eq_ofQuantumNumbers`,
   `smTreeLevelCouplings_downType_eq_ofQuantumNumbers`: the tabulated electron, up-quark and
   down-quark couplings are the values of `ofQuantumNumbers` at the Standard Model quantum numbers;
   `smTreeLevelCouplings_eq_ofQuantumNumbers` collects the three.
 * `FermionNeutralCurrentCouplings.ofQuantumNumbers_neutrino`: the neutrino is electrically
-  neutral, but it couples to the `Z` with `g_V = g_A = 1/2` at every value of `sin²θ_W`.
+  neutral, but it couples to the `Z` with `g_V = g_A = 1/2` at every value of `sin²θ_W`;
+  `FermionNeutralCurrentCouplings.ofQuantumNumbers_neutrino_gR` and
+  `FermionNeutralCurrentCouplings.ofQuantumNumbers_neutrino_gV_ne_zero` state that its
+  right-handed coupling vanishes and that its vector coupling does not.
 
 ## References
 
@@ -60,92 +61,14 @@ noncomputable section
 
 namespace EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak
 
-/-!
-## The quantum numbers of one Standard Model generation
-
-With the Standard Model hypercharges `(YQ, Yu, Yd, YL, Ye) = (1/3, 4/3, -2/3, -1, -2)`, the
-charge formula `Q = T³ + Y / 2` gives the physical charges of the five multiplets. In particular
-the left-handed (doublet) and right-handed (singlet) components of the up quark, the down quark
-and the electron carry the same charge, which is what allows a single `Q` in `ofQuantumNumbers`;
-the three `_eq_singletElectricCharge_` lemmas below state this, as instances of
-`doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight`.
--/
-
 open GenerationAssignments FermionNeutralCurrentCouplings
-
-/-- The left-handed up quark, the upper component of the quark doublet, and the right-handed
-up-quark singlet carry the same electric charge. -/
-theorem doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_standardModel_Yu :
-    doubletElectricCharge (standardModel.YQ : ℝ) 0 =
-      singletElectricCharge (standardModel.Yu : ℝ) := by
-  rw [doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight,
-    isospinWeight_zero]
-  congr 1
-  norm_num
-
-/-- The left-handed down quark, the lower component of the quark doublet, and the right-handed
-down-quark singlet carry the same electric charge. -/
-theorem doubletElectricCharge_standardModel_YQ_one_eq_singletElectricCharge_standardModel_Yd :
-    doubletElectricCharge (standardModel.YQ : ℝ) 1 =
-      singletElectricCharge (standardModel.Yd : ℝ) := by
-  rw [doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight,
-    isospinWeight_one]
-  congr 1
-  norm_num
-
-/-- The left-handed electron, the lower component of the lepton doublet, and the right-handed
-electron singlet carry the same electric charge. -/
-theorem doubletElectricCharge_standardModel_YL_one_eq_singletElectricCharge_standardModel_Ye :
-    doubletElectricCharge (standardModel.YL : ℝ) 1 =
-      singletElectricCharge (standardModel.Ye : ℝ) := by
-  rw [doubletElectricCharge_eq_singletElectricCharge_add_two_mul_isospinWeight,
-    isospinWeight_one]
-  congr 1
-  norm_num
-
-/-- The up quark, the upper component of the quark doublet, has charge `2/3`. -/
-theorem doubletElectricCharge_standardModel_YQ_zero :
-    doubletElectricCharge (standardModel.YQ : ℝ) 0 = 2 / 3 := by
-  norm_num [doubletElectricCharge_apply]
-
-/-- The down quark, the lower component of the quark doublet, has charge `-1/3`. -/
-theorem doubletElectricCharge_standardModel_YQ_one :
-    doubletElectricCharge (standardModel.YQ : ℝ) 1 = -1 / 3 := by
-  norm_num [doubletElectricCharge_apply]
-
-/-- The neutrino, the upper component of the lepton doublet, is electrically neutral. -/
-theorem doubletElectricCharge_standardModel_YL_zero :
-    doubletElectricCharge (standardModel.YL : ℝ) 0 = 0 := by
-  norm_num [doubletElectricCharge_apply]
-
-/-- The electron, the lower component of the lepton doublet, has charge `-1`. -/
-theorem doubletElectricCharge_standardModel_YL_one :
-    doubletElectricCharge (standardModel.YL : ℝ) 1 = -1 := by
-  norm_num [doubletElectricCharge_apply]
-
-/-- The right-handed up-quark singlet has charge `2/3`. -/
-theorem singletElectricCharge_standardModel_Yu :
-    singletElectricCharge (standardModel.Yu : ℝ) = 2 / 3 := by
-  rw [← doubletElectricCharge_standardModel_YQ_zero_eq_singletElectricCharge_standardModel_Yu,
-    doubletElectricCharge_standardModel_YQ_zero]
-
-/-- The right-handed down-quark singlet has charge `-1/3`. -/
-theorem singletElectricCharge_standardModel_Yd :
-    singletElectricCharge (standardModel.Yd : ℝ) = -1 / 3 := by
-  rw [← doubletElectricCharge_standardModel_YQ_one_eq_singletElectricCharge_standardModel_Yd,
-    doubletElectricCharge_standardModel_YQ_one]
-
-/-- The right-handed electron singlet has charge `-1`. -/
-theorem singletElectricCharge_standardModel_Ye :
-    singletElectricCharge (standardModel.Ye : ℝ) = -1 := by
-  rw [← doubletElectricCharge_standardModel_YL_one_eq_singletElectricCharge_standardModel_Ye,
-    doubletElectricCharge_standardModel_YL_one]
 
 /-!
 ## The tabulated couplings are derived
 
 The couplings `smTreeLevelCouplings` of the parity-violating scattering interfaces were entered
-as data. They are the values of `ofQuantumNumbers` at the quantum numbers above.
+as data. They are the values of `ofQuantumNumbers` at the quantum numbers of one Standard Model
+generation: the weights `isospinWeight` and the charges of `Electroweak.ElectricCharge`.
 -/
 
 /-- The tabulated electron couplings are `ofQuantumNumbers` at the quantum numbers of the lower
@@ -155,7 +78,7 @@ theorem smTreeLevelCouplings_electron_eq_ofQuantumNumbers (s2 : ℝ) :
       ofQuantumNumbers (isospinWeight 1) (doubletElectricCharge (standardModel.YL : ℝ) 1) s2 := by
   rw [isospinWeight_one, doubletElectricCharge_standardModel_YL_one, eq_ofQuantumNumbers_iff,
     gL_def, gR_def, chiralCoupling_def, chiralCoupling_def]
-  simp only [smTreeLevelCouplings]
+  simp only [smTreeLevelCouplings_electron]
   constructor <;> ring
 
 /-- The tabulated up-quark couplings are `ofQuantumNumbers` at the quantum numbers of the upper
@@ -165,7 +88,7 @@ theorem smTreeLevelCouplings_upType_eq_ofQuantumNumbers (s2 : ℝ) :
       ofQuantumNumbers (isospinWeight 0) (doubletElectricCharge (standardModel.YQ : ℝ) 0) s2 := by
   rw [isospinWeight_zero, doubletElectricCharge_standardModel_YQ_zero, eq_ofQuantumNumbers_iff,
     gL_def, gR_def, chiralCoupling_def, chiralCoupling_def]
-  simp only [smTreeLevelCouplings]
+  simp only [smTreeLevelCouplings_upType]
   constructor <;> ring
 
 /-- The tabulated down-quark couplings are `ofQuantumNumbers` at the quantum numbers of the lower
@@ -175,7 +98,7 @@ theorem smTreeLevelCouplings_downType_eq_ofQuantumNumbers (s2 : ℝ) :
       ofQuantumNumbers (isospinWeight 1) (doubletElectricCharge (standardModel.YQ : ℝ) 1) s2 := by
   rw [isospinWeight_one, doubletElectricCharge_standardModel_YQ_one, eq_ofQuantumNumbers_iff,
     gL_def, gR_def, chiralCoupling_def, chiralCoupling_def]
-  simp only [smTreeLevelCouplings]
+  simp only [smTreeLevelCouplings_downType]
   constructor <;> ring
 
 /-- **The tabulated neutral-current couplings are derived from the gauge quantum numbers.** At
@@ -206,6 +129,22 @@ theorem ofQuantumNumbers_neutrino (s2 : ℝ) :
     ofQuantumNumbers (isospinWeight 0) (doubletElectricCharge (standardModel.YL : ℝ) 0) s2 =
       { gV := 1 / 2, gA := 1 / 2 } := by
   rw [doubletElectricCharge_standardModel_YL_zero, ofQuantumNumbers_charge_zero, isospinWeight_zero]
+
+/-- The neutrino's right-handed coupling `g_R = (g_V - g_A) / 2` vanishes, so its neutral-current
+couplings do not depend on whether a right-handed neutral singlet is present. -/
+theorem ofQuantumNumbers_neutrino_gR (s2 : ℝ) :
+    (ofQuantumNumbers (isospinWeight 0) (doubletElectricCharge (standardModel.YL : ℝ) 0) s2).gR
+      = 0 := by
+  rw [ofQuantumNumbers_neutrino, gR_def]
+  norm_num
+
+/-- The neutrino's vector coupling does not vanish: the neutrino couples to the `Z` boson at
+every `sin²θ_W`, even though it is electrically neutral. -/
+theorem ofQuantumNumbers_neutrino_gV_ne_zero (s2 : ℝ) :
+    (ofQuantumNumbers (isospinWeight 0) (doubletElectricCharge (standardModel.YL : ℝ) 0) s2).gV
+      ≠ 0 := by
+  rw [ofQuantumNumbers_neutrino]
+  norm_num
 
 end FermionNeutralCurrentCouplings
 
