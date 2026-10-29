@@ -54,8 +54,7 @@ theorem cosAngle_backToBack_restFrameWit_eq_neg_one :
     restFrameWit.cosAngle ((1, 1, 0) : ℝ × ℝ × ℝ) (1, -1, 0) = -1 := by
   have h := restFrameWit.one_sub_cosAngle_of_massless gWit_isSymm
     (a := ((1, 1, 0) : ℝ × ℝ × ℝ)) (b := (1, -1, 0)) (by norm_num) (by norm_num)
-    (by norm_num [energy_restFrameWit_apply]) (by norm_num [energy_restFrameWit_apply])
-  rw [energy_restFrameWit_apply, energy_restFrameWit_apply] at h
+    (by norm_num) (by norm_num)
   norm_num at h
   linarith
 
