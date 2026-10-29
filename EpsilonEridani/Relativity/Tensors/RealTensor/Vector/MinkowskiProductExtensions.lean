@@ -70,6 +70,50 @@ namespace EpsilonEridani
 open Real InnerProductGeometry Lorentz.Vector
 open scoped InnerProductSpace Lorentz.Vector
 
+/-- The vector `x e₀ + y eᵢ + z eⱼ` built from the time direction and the spatial directions
+`i` and `j`. -/
+def ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z : ℝ) : Lorentz.Vector d :=
+  x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
+  z • Lorentz.Vector.basis (Sum.inr j)
+
+lemma ofTimeAndTwoSpatial_def {d : ℕ} (i j : Fin d) (x y z : ℝ) :
+    ofTimeAndTwoSpatial i j x y z =
+      x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
+      z • Lorentz.Vector.basis (Sum.inr j) := (rfl)
+
+@[simp]
+lemma timeComponent_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d) (x y z : ℝ) :
+    (ofTimeAndTwoSpatial i j x y z).timeComponent = x := by
+  simp [ofTimeAndTwoSpatial_def]
+
+@[simp]
+lemma spatialPart_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d) (x y z : ℝ) :
+    (ofTimeAndTwoSpatial i j x y z).spatialPart =
+      y • EuclideanSpace.basisFun (Fin d) ℝ i + z • EuclideanSpace.basisFun (Fin d) ℝ j := by
+  ext k
+  simp [ofTimeAndTwoSpatial_def, basis_apply, eq_comm]
+
+/-- For distinct spatial directions the Minkowski product of two vectors
+`x e₀ + y eᵢ + z eⱼ` and `x' e₀ + y' eᵢ + z' eⱼ` is `x x' - y y' - z z'`. -/
+@[simp]
+lemma minkowskiProduct_ofTimeAndTwoSpatial_eq {d : ℕ} {i j : Fin d} (hij : i ≠ j)
+    (x y z x' y' z' : ℝ) :
+    ⟪ofTimeAndTwoSpatial i j x y z, ofTimeAndTwoSpatial i j x' y' z'⟫ₘ =
+      x * x' - y * y' - z * z' := by
+  simp only [ofTimeAndTwoSpatial_def, map_add, map_smul, add_apply, smul_apply,
+    minkowskiProduct_basis_left, minkowskiMatrix.inl_0_inl_0, basis_apply, ↓reduceIte, mul_one,
+    reduceCtorEq, mul_zero, add_zero, smul_eq_mul, minkowskiMatrix.inr_i_inr_i, zero_add,
+    Sum.inr.injEq, hij.symm, mul_neg, hij]
+  ring
+
+@[simp]
+lemma ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d)
+    (x y z x' y' z' : ℝ) :
+    ofTimeAndTwoSpatial i j x y z - ofTimeAndTwoSpatial i j x' y' z' =
+      ofTimeAndTwoSpatial i j (x - x') (y - y') (z - z') := by
+  simp only [ofTimeAndTwoSpatial_def, sub_smul]
+  abel
+
 /-- In at least two spatial dimensions, for energies `E`, `E'` above `|m|` and an angle
 `θ ∈ [0, π]`, there are two vectors on the mass shell `⟪p, p⟫ₘ = m²` with time components `E` and
 `E'` whose spatial parts make the angle `θ`. -/
@@ -102,16 +146,14 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
       simp only [u]
       nlinarith [sq_abs (cos θ), sq_abs (sin θ), sin_sq_add_cos_sq θ]
     nlinarith [norm_nonneg u]
-  -- `Physlib` has no constructor from a time component and a spatial part with
-  -- `timeComponent`/`spatialPart` lemmas, so `p` and `p'` are built as raw functions on
-  -- `Fin 1 ⊕ Fin d`; `timeComponent` and `spatialPart` are the `abbrev`s `v (Sum.inl 0)` and
-  -- `toLp (fun i => v (Sum.inr i))`, so the four component equations below hold by `rfl`.
-  let p : Lorentz.Vector d := fun μ => Sum.elim (fun _ => E) (fun i => (P • e₀) i) μ
-  let p' : Lorentz.Vector d := fun μ => Sum.elim (fun _ => E') (fun i => (P' • u) i) μ
-  have hps : p.spatialPart = P • e₀ := rfl
-  have hp's : p'.spatialPart = P' • u := rfl
-  have hpt : p.timeComponent = E := rfl
-  have hp't : p'.timeComponent = E' := rfl
+  let p := ofTimeAndTwoSpatial (⟨0, by omega⟩ : Fin d) ⟨1, by omega⟩ E P 0
+  let p' := ofTimeAndTwoSpatial (⟨0, by omega⟩ : Fin d) ⟨1, by omega⟩ E' (P' * cos θ) (P' * sin θ)
+  have hps : p.spatialPart = P • e₀ := by simp [p, e₀, b]
+  have hp's : p'.spatialPart = P' • u := by
+    simp only [p', spatialPart_ofTimeAndTwoSpatial_eq, u, e₀, e₁, b]
+    module
+  have hpt : p.timeComponent = E := timeComponent_ofTimeAndTwoSpatial_eq ..
+  have hp't : p'.timeComponent = E' := timeComponent_ofTimeAndTwoSpatial_eq ..
   refine ⟨p, p', ?_, ?_, hpt, hp't, ?_⟩
   · rw [minkowskiProduct_self_eq_sq_sub, hps, hpt]
     simp [norm_smul, he₀, abs_of_pos hP, hPsq]
@@ -153,42 +195,3 @@ lemma minkowskiProduct_self_nonpos_of_orthogonal_causal {d : ℕ} (n : Vector d)
 
 end Vector
 end Lorentz
-
-namespace EpsilonEridani
-
-open Lorentz.Vector
-open scoped Lorentz.Vector
-
-/-- The vector `x e₀ + y eᵢ + z eⱼ` built from the time direction and the spatial directions
-`i` and `j`. -/
-def ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z : ℝ) : Lorentz.Vector d :=
-  x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
-  z • Lorentz.Vector.basis (Sum.inr j)
-
-lemma ofTimeAndTwoSpatial_def {d : ℕ} (i j : Fin d) (x y z : ℝ) :
-    ofTimeAndTwoSpatial i j x y z =
-      x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
-      z • Lorentz.Vector.basis (Sum.inr j) := (rfl)
-
-/-- For distinct spatial directions the Minkowski product of two vectors
-`x e₀ + y eᵢ + z eⱼ` and `x' e₀ + y' eᵢ + z' eⱼ` is `x x' - y y' - z z'`. -/
-@[simp]
-lemma minkowskiProduct_ofTimeAndTwoSpatial_eq {d : ℕ} {i j : Fin d} (hij : i ≠ j)
-    (x y z x' y' z' : ℝ) :
-    ⟪ofTimeAndTwoSpatial i j x y z, ofTimeAndTwoSpatial i j x' y' z'⟫ₘ =
-      x * x' - y * y' - z * z' := by
-  simp only [ofTimeAndTwoSpatial_def, map_add, map_smul, add_apply, smul_apply,
-    minkowskiProduct_basis_left, minkowskiMatrix.inl_0_inl_0, basis_apply, ↓reduceIte, mul_one,
-    reduceCtorEq, mul_zero, add_zero, smul_eq_mul, minkowskiMatrix.inr_i_inr_i, zero_add,
-    Sum.inr.injEq, hij.symm, mul_neg, hij]
-  ring
-
-@[simp]
-lemma ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d)
-    (x y z x' y' z' : ℝ) :
-    ofTimeAndTwoSpatial i j x y z - ofTimeAndTwoSpatial i j x' y' z' =
-      ofTimeAndTwoSpatial i j (x - x') (y - y') (z - z') := by
-  simp only [ofTimeAndTwoSpatial_def, sub_smul]
-  abel
-
-end EpsilonEridani
