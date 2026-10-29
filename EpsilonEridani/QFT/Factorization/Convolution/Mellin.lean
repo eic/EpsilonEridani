@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Joseph Tooby-Smith
+Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
@@ -37,19 +37,14 @@ DGLAP equation becomes, for each value of the Mellin index, an ordinary differen
 
 ## Which transform
 
-Mathlib's `mellin` (`Mathlib/Analysis/MellinTransform.lean`) integrates over `Set.Ioi 0` and would
-supply convergence and analyticity in the complex index for free, at the cost of extending each
-distribution by zero to `(0, ∞)`. No mathlib source was available in the environment in which this
-module was written, so its exact signature and hypotheses could not be checked; rather than guess
-them, the transform here is defined from scratch on the DIS domain. The intended bridge, to be
-added once the signature can be confirmed, is
-
-```
-mellinDis f N = mellin (fun t => if t ≤ 1 then (f t : ℂ) else 0) N
-```
-
-from which analyticity of `mellinDis` in `N` on the convergence strip would follow. Until then,
-analyticity in `N` is *not* available from this module.
+Mathlib's `mellin` (`Mathlib/Analysis/MellinTransform.lean`) integrates over `Set.Ioi 0`, at the
+cost of extending each distribution by zero to `(0, ∞)`. The transform here is defined directly on
+the DIS domain. `EpsilonEridani.QFT.Factorization.Convolution.Strip` supplies the bridge
+`mellinDis f N = mellin (Set.indicator (Set.Ioc 0 1) fun x => (f x : ℂ)) N`. It also
+characterises convergence at `N` as `f ∈ L¹((0, 1], x ^ (Re N - 1) dx)` and shows that it
+propagates to larger `Re N`, so that the real points of convergence form an upper set. For `f`
+locally integrable on `(0, 1]` with `f x = O(x ^ (-b))` as `x → 0⁺`, it proves convergence and
+holomorphy on the half-plane `b < Re N`.
 
 ## Scope
 
@@ -98,6 +93,17 @@ the convolution theorem is a genuine constraint and not a formality. -/
 def MellinDisConvergent (f : ℝ → ℝ) (N : ℂ) : Prop :=
   MeasureTheory.IntegrableOn
     (fun x : ℝ => (x : ℂ) ^ (N - 1) * (f x : ℂ)) (Set.Ioc (0 : ℝ) 1)
+
+/-- `MellinDisConvergent` unfolded: integrability of the complex integrand on `(0, 1]`. -/
+theorem mellinDisConvergent_def {f : ℝ → ℝ} {N : ℂ} :
+    MellinDisConvergent f N ↔
+      MeasureTheory.IntegrableOn (fun x : ℝ => (x : ℂ) ^ (N - 1) * (f x : ℂ)) (Set.Ioc (0 : ℝ) 1) :=
+  Iff.rfl
+
+/-- `mellinDis` unfolded: the integral of the complex integrand over `(0, 1]`. -/
+theorem mellinDis_def {f : ℝ → ℝ} {N : ℂ} :
+    mellinDis f N = ∫ x in Set.Ioc (0 : ℝ) 1, (x : ℂ) ^ (N - 1) * (f x : ℂ) :=
+  rfl
 
 /-- The Mellin transform of the zero distribution vanishes. -/
 lemma mellinDis_zero (N : ℂ) : mellinDis (fun _ => 0) N = 0 := by
