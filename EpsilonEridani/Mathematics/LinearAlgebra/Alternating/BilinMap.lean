@@ -28,6 +28,8 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
 - `AlternatingMap.isAlt_bilinMap`: `f.bilinMap m` is alternating.
 - `AlternatingMap.bilinMap_apply_left_eq_zero`, `AlternatingMap.bilinMap_apply_right_eq_zero`:
   it vanishes when either argument is one of the fixed vectors `m i`.
+- `AlternatingMap.bilinMap_neg`, `AlternatingMap.bilinMap_update_neg`,
+  `AlternatingMap.bilinMap_pair_neg_snd`: it changes sign when `f` or one fixed vector is negated.
 -/
 
 public section
@@ -79,5 +81,46 @@ theorem bilinMap_apply_right_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : F
     (Fin.succ_zero_eq_one ▸ (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _).symm))
 
 end CommSemiring
+
+section AddCommGroupCodomain
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommGroup N] [Module R N] {n : ℕ}
+
+/-- Negating the alternating map negates its bilinear map. -/
+@[simp]
+theorem bilinMap_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
+    (-f).bilinMap m = -f.bilinMap m :=
+  LinearMap.ext₂ fun _ _ => rfl
+
+end AddCommGroupCodomain
+
+section AddCommGroupDomain
+
+variable {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {n : ℕ}
+
+/-- Negating one fixed vector negates the bilinear map. -/
+theorem bilinMap_update_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (i : Fin n) :
+    f.bilinMap (Function.update m i (-m i)) = -f.bilinMap m := by
+  ext v w
+  -- Write `m` as `update m i (m i)` so that both sides carry the update. `Fin.cons_update` then
+  -- moves it out through the two `vecCons` layers; Mathlib states it only for `Fin.cons`, so
+  -- `Matrix.vecCons` is unfolded to `Fin.cons`.
+  conv_rhs => rw [← Function.update_eq_self i m]
+  simp only [bilinMap_apply, LinearMap.neg_apply, Matrix.vecCons, Fin.cons_update,
+    f.map_update_neg]
+
+/-- Negating the second of two fixed vectors negates the bilinear map. -/
+@[simp]
+theorem bilinMap_pair_neg_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b : M) :
+    f.bilinMap ![a, -b] = -f.bilinMap ![a, b] := by
+  have h : ![a, -b] = Function.update ![a, b] 1 (-b) := by
+    ext i
+    fin_cases i <;> simp
+  rw [h]
+  exact f.bilinMap_update_neg ![a, b] 1
+
+end AddCommGroupDomain
 
 end AlternatingMap
