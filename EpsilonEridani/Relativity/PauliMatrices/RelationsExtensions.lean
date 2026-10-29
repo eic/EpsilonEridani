@@ -15,9 +15,10 @@ import Mathlib.LinearAlgebra.TensorProduct.Basis
 For two spin-`1/2` systems, with spin spaces `ℂ²`, the scalar product of their Pauli vectors is
 expressed through the operator exchanging them:
 
-`σ⃗₁ · σ⃗₂ = Σᵢ σᵢ ⊗ σᵢ = 2 P₁₂ - 1`,
+`σ(1) · σ(2) = Σᵢ σᵢ ⊗ σᵢ = 2 P₁₂ - 1`,
 
-where `P₁₂ = TensorProduct.comm` swaps the two tensor factors. In components this is the
+where `σ(k)` is the Pauli vector of the `k`-th system and `P₁₂ = TensorProduct.comm` swaps the
+two tensor factors. In components this is the
 completeness relation `Σᵢ (σᵢ)_{αβ} (σᵢ)_{γδ} = 2 δ_{αδ} δ_{βγ} - δ_{αβ} δ_{γδ}` of the spatial
 Pauli matrices. Its Lorentz-covariant form, contracting the four-vector of Pauli matrices with the
 Minkowski metric, is `PauliMatrix.pauliCo_contr_pauliContr`, stated in Physlib's tensor-tree
