@@ -28,6 +28,15 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
 /-- A bilinear form used to evaluate Lorentz-invariant scalar products in abstract form. -/
 abbrev Bilin (V : Type) [AddCommGroup V] [Module ℝ V] := LinearMap.BilinForm ℝ V
 
+variable {V} in
+/-- The expansion of `-(z u - v)²` about `-(u - v)²`, which holds without any mass-shell
+condition on `u` or `v`. -/
+theorem neg_apply_smul_sub (g : Bilin V) (u v : V) (z : ℝ) :
+    -g (z • u - v) (z • u - v) =
+      z * -g (u - v) (u - v) + (1 - z) * (z * g u u - g v v) := by
+  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
+  ring
+
 /-- Minimal process-level kinematics for inclusive DIS. -/
 structure DisKinematics where
   /-- Incoming hadron momentum. -/
