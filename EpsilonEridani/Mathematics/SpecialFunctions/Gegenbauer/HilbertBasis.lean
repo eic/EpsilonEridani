@@ -34,8 +34,8 @@ That machinery is stated for the weighted measure in its `withDensity` spelling,
 body of `gegenbauerThreeHalvesMeasure` but is not definitionally available outside the module
 defining it. The two `L²` spaces are nevertheless *equal*, so `TauCeti.castLpₗᵢ` at
 `EpsilonEridani.gegenbauerThreeHalvesMeasure_eq_withDensity` moves vectors and bases between them
-without moving representatives, exactly as `TauCeti.gaussianHermiteHilbertBasis` moves the Hermite
-basis onto `L²(γ)`.
+without moving representatives. `TauCeti.gaussianHermiteHilbertBasis` makes the same move onto
+`L²(γ)` with a raw `cast`; the bundled isometry is what `HilbertBasis.mapₗᵢ` consumes here.
 
 The resulting unitary `L²(gegenbauerThreeHalvesMeasure) ≃ₗᵢ ℓ²(ℕ)` is what makes the Gegenbauer
 coefficients of a function a complete invariant: two functions with the same coefficients agree
@@ -53,6 +53,9 @@ decouples into the independent evolution of its coefficients.
 
 ## Main statements
 
+* `EpsilonEridani.memLp_normalizedGegenbauerThreeHalves`,
+  `EpsilonEridani.memLp_algebraMap_normalizedGegenbauerThreeHalves`: the modes are in
+  `L²(gegenbauerThreeHalvesMeasure)`, as real functions and with their values cast to `𝕜`.
 * `EpsilonEridani.inner_normalizedGegenbauerThreeHalvesLp_eq_integral`: the inner product against
   the `n`-th mode — the `n`-th Gegenbauer coefficient — is the weighted integral.
 * `EpsilonEridani.orthonormal_normalizedGegenbauerThreeHalvesLp`: the modes are orthonormal.
@@ -63,12 +66,13 @@ decouples into the independent evolution of its coefficients.
 ## References
 
 * G. Szegő, *Orthogonal Polynomials*, AMS Colloquium Publications 23, 4th edition (1975),
-  chapter IV, §4.7 and §3.1.
+  chapter III, §3.1 (completeness) and chapter IV, §4.7 (the ultraspherical family).
 * The weighted-`L²` development of the TauCeti library: the bridge
   `TauCeti.Analysis.InnerProductSpace.WeightedOrthogonalBasis` with its completeness input
   `TauCeti.Analysis.InnerProductSpace.PolynomialCompleteness`, and
   `TauCeti.Probability.Distributions.Gaussian.Hermite.Basis`, the instance of both at the Hermite
-  family whose transport onto a named measure this file follows.
+  family, which transports its basis onto a named measure by `cast` where this file uses
+  `TauCeti.castLpₗᵢ`.
 * `TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`, from which the shape of the
   mode layer — `TauCeti.normalizedChebyshevTLp` with its representative and inner-product lemmas —
   is adapted.
@@ -83,14 +87,9 @@ open MeasureTheory
 /-! ### The weight data of the family
 
 The weighted-basis bridge takes the reference measure and the weight separately, so the
-orthogonality relation and the exponential moment are restated for
+orthogonality relation and the `L²` membership of the modes are restated for
 `volume.restrict (Ioc (-1) 1)` and `w x = 1 - x²`, whose `withDensity` is
 `gegenbauerThreeHalvesMeasure`. -/
-
-/-- The weight `1 - x²` is non-negative almost everywhere on `(-1, 1]`. -/
-private theorem one_sub_sq_nonneg_ae :
-    ∀ᵐ x ∂(volume.restrict (Set.Ioc (-1 : ℝ) 1)), 0 ≤ 1 - x ^ 2 :=
-  ae_restrict_of_forall_mem measurableSet_Ioc fun _ hx => by nlinarith [hx.1, hx.2]
 
 /-- The orthogonality relation in the form the weighted-basis bridge takes it: the weight is a
 factor of the integrand and the measure is unweighted. -/
@@ -104,26 +103,30 @@ private theorem integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves_mul_wei
   rw [smul_eq_mul]
   ring
 
-/-- The exponential moment of the weight measure, in the existential `withDensity` form the
-completeness theorem takes it. -/
-private theorem exp_moment_gegenbauerThreeHalvesWeight :
-    ∃ a : ℝ, 0 < a ∧ Integrable (fun x : ℝ => Real.exp (a * |x|))
-      ((volume.restrict (Set.Ioc (-1 : ℝ) 1)).withDensity
-        fun x => ENNReal.ofReal (1 - x ^ 2)) :=
-  ⟨1, one_pos, gegenbauerThreeHalvesMeasure_eq_withDensity ▸
-    integrable_exp_mul_abs_gegenbauerThreeHalvesMeasure 1⟩
-
 /-- The `MemLp` obligation of the normalized family, the generic
 `TauCeti.memLp_two_bareNormalized` at `p n = C_n^{(3/2)}`, `c = gegenbauerThreeHalvesNormSq`. -/
-private theorem memLp_normalizedGegenbauerThreeHalves (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
+private theorem memLp_normalizedGegenbauerThreeHalves_withDensity (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) ((gegenbauerThreeHalves ℝ n).eval x /
         Real.sqrt (gegenbauerThreeHalvesNormSq n))) 2
       ((volume.restrict (Set.Ioc (-1 : ℝ) 1)).withDensity
         fun x => ENNReal.ofReal (1 - x ^ 2)) :=
-  TauCeti.memLp_two_bareNormalized (𝕜 := 𝕜) exp_moment_gegenbauerThreeHalvesWeight
+  TauCeti.memLp_two_bareNormalized (𝕜 := 𝕜) exists_integrable_exp_mul_abs_withDensity_one_sub_sq
     (gegenbauerThreeHalves ℝ) gegenbauerThreeHalvesNormSq n
 
 /-! ### The modes in `L²` -/
+
+/-- The scalar-cast normalized Gegenbauer mode lies in `L²(gegenbauerThreeHalvesMeasure)`. -/
+theorem memLp_algebraMap_normalizedGegenbauerThreeHalves {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
+    MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedGegenbauerThreeHalves n x)) 2
+      gegenbauerThreeHalvesMeasure := by
+  simp_rw [normalizedGegenbauerThreeHalves_def]
+  rw [gegenbauerThreeHalvesMeasure_eq_withDensity]
+  exact memLp_normalizedGegenbauerThreeHalves_withDensity 𝕜 n
+
+/-- The normalized Gegenbauer mode lies in `L²(gegenbauerThreeHalvesMeasure)`. -/
+theorem memLp_normalizedGegenbauerThreeHalves (n : ℕ) :
+    MemLp (normalizedGegenbauerThreeHalves n) 2 gegenbauerThreeHalvesMeasure :=
+  memLp_algebraMap_normalizedGegenbauerThreeHalves (𝕜 := ℝ) n
 
 /-- The normalized Gegenbauer mode as a vector of `L²(gegenbauerThreeHalvesMeasure)`: the
 `TauCeti.bareNormalizedLp` vector of the weight data, carried onto the named measure by
@@ -133,7 +136,7 @@ noncomputable def normalizedGegenbauerThreeHalvesLp (𝕜 : Type*) [RCLike 𝕜]
   TauCeti.castLpₗᵢ (𝕜 := 𝕜) gegenbauerThreeHalvesMeasure_eq_withDensity.symm
     (TauCeti.bareNormalizedLp (𝕜 := 𝕜) (fun n x => (gegenbauerThreeHalves ℝ n).eval x)
       (fun x => 1 - x ^ 2) gegenbauerThreeHalvesNormSq
-      (memLp_normalizedGegenbauerThreeHalves 𝕜) n)
+      (memLp_normalizedGegenbauerThreeHalves_withDensity 𝕜) n)
 
 /-- The `L²` representative of the `n`-th mode is the normalized Gegenbauer mode. -/
 theorem coeFn_normalizedGegenbauerThreeHalvesLp {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
@@ -145,13 +148,13 @@ theorem coeFn_normalizedGegenbauerThreeHalvesLp {𝕜 : Type*} [RCLike 𝕜] (n 
   have hbare : ∀ᵐ x ∂gegenbauerThreeHalvesMeasure,
       ⇑(TauCeti.bareNormalizedLp (𝕜 := 𝕜) (fun n x => (gegenbauerThreeHalves ℝ n).eval x)
           (fun x => 1 - x ^ 2) gegenbauerThreeHalvesNormSq
-          (memLp_normalizedGegenbauerThreeHalves 𝕜) n) x =
+          (memLp_normalizedGegenbauerThreeHalves_withDensity 𝕜) n) x =
         (algebraMap ℝ 𝕜) ((gegenbauerThreeHalves ℝ n).eval x /
           Real.sqrt (gegenbauerThreeHalvesNormSq n)) := by
     rw [gegenbauerThreeHalvesMeasure_eq_withDensity]
     exact TauCeti.coeFn_bareNormalizedLp (𝕜 := 𝕜) (fun n x => (gegenbauerThreeHalves ℝ n).eval x)
       (fun x => 1 - x ^ 2) gegenbauerThreeHalvesNormSq
-      (memLp_normalizedGegenbauerThreeHalves 𝕜) n
+      (memLp_normalizedGegenbauerThreeHalves_withDensity 𝕜) n
   filter_upwards [hbare] with x hx
   rw [normalizedGegenbauerThreeHalvesLp, TauCeti.coeFn_castLpₗᵢ, hx,
     normalizedGegenbauerThreeHalves_def]
@@ -181,14 +184,14 @@ noncomputable def gegenbauerThreeHalvesHilbertBasis (𝕜 : Type*) [RCLike 𝕜]
     HilbertBasis ℕ 𝕜 (Lp 𝕜 2 gegenbauerThreeHalvesMeasure) :=
   (TauCeti.hilbertBasisOfWeightedMeasure (𝕜 := 𝕜)
     (fun n x => (gegenbauerThreeHalves ℝ n).eval x) (fun x => 1 - x ^ 2)
-    gegenbauerThreeHalvesNormSq one_sub_sq_nonneg_ae (by fun_prop)
+    gegenbauerThreeHalvesNormSq ae_zero_le_one_sub_sq (by fun_prop)
     gegenbauerThreeHalvesNormSq_pos
     integral_gegenbauerThreeHalves_mul_gegenbauerThreeHalves_mul_weight
-    (memLp_normalizedGegenbauerThreeHalves 𝕜)
+    (memLp_normalizedGegenbauerThreeHalves_withDensity 𝕜)
     (TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot (𝕜 := 𝕜) (gegenbauerThreeHalves ℝ)
       (fun x => 1 - x ^ 2) gegenbauerThreeHalvesNormSq (degree_gegenbauerThreeHalves ℝ)
-      gegenbauerThreeHalvesNormSq_pos exp_moment_gegenbauerThreeHalvesWeight
-      (memLp_normalizedGegenbauerThreeHalves 𝕜))).mapₗᵢ
+      gegenbauerThreeHalvesNormSq_pos exists_integrable_exp_mul_abs_withDensity_one_sub_sq
+      (memLp_normalizedGegenbauerThreeHalves_withDensity 𝕜))).mapₗᵢ
       (TauCeti.castLpₗᵢ gegenbauerThreeHalvesMeasure_eq_withDensity.symm)
 
 /-- The basis vectors are the normalized Gegenbauer modes. Without this the construction would
