@@ -18,6 +18,12 @@ non-negativity, and the moments of monomials `c zᵐ`), and the construction
 `indicatorUnitInterval`, which cuts a family off outside the unit interval and is used to build
 explicit fragmentation families satisfying `Assumptions`.
 
+Finally it provides the pullback `comap τ σ D` of a family along a map `τ` of the observed
+hadrons and a map `σ` of the parton flavours, which is how charge conjugation and the flavour
+symmetries of a hadron multiplet act on fragmentation families. The pullback preserves
+`Assumptions` and carries every `z`-moment to a `z`-moment. A family fixed by a pullback is
+`Invariant`.
+
 -/
 
 @[expose] public section
@@ -133,6 +139,89 @@ lemma assumptions_indicatorUnitInterval {f : Frag Hadron Flavor}
   nonneg h i z Q2 hz₀ hz₁ := by
     rw [indicatorUnitInterval_of_mem f ⟨hz₀, hz₁⟩]
     exact hf h i z Q2 hz₀ hz₁
+
+section Comap
+
+variable {Hadron' Flavor' Hadron'' Flavor'' : Type}
+
+/-- The family over `Hadron'` and `Flavor'` whose fragmentation of parton `i` into hadron `h` is
+the fragmentation of `σ i` into `τ h` in `D`. Charge conjugation and the flavour symmetries of a
+hadron multiplet act on fragmentation families this way. -/
+def comap (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (D : Frag Hadron Flavor) :
+    Frag Hadron' Flavor' :=
+  fun h i => D (τ h) (σ i)
+
+@[simp]
+lemma comap_apply (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (D : Frag Hadron Flavor)
+    (h : Hadron') (i : Flavor') (z Q2 : ℝ) : comap τ σ D h i z Q2 = D (τ h) (σ i) z Q2 :=
+  (rfl)
+
+@[simp]
+lemma comap_id (D : Frag Hadron Flavor) : comap id id D = D :=
+  (rfl)
+
+@[simp]
+lemma comap_comap (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (τ' : Hadron'' → Hadron')
+    (σ' : Flavor'' → Flavor') (D : Frag Hadron Flavor) :
+    comap τ' σ' (comap τ σ D) = comap (τ ∘ τ') (σ ∘ σ') D :=
+  (rfl)
+
+/-- Cutting off outside the unit interval commutes with a pullback: both act on the value of the
+family and neither touches the momentum fraction. -/
+@[simp]
+lemma comap_indicatorUnitInterval (τ : Hadron' → Hadron) (σ : Flavor' → Flavor)
+    (f : Frag Hadron Flavor) :
+    comap τ σ (indicatorUnitInterval f) = indicatorUnitInterval (comap τ σ f) :=
+  (rfl)
+
+@[simp]
+lemma zMoment_comap (τ : Hadron' → Hadron) (σ : Flavor' → Flavor) (D : Frag Hadron Flavor)
+    (n : ℕ) (h : Hadron') (i : Flavor') (Q2 : ℝ) :
+    zMoment (comap τ σ D) n h i Q2 = zMoment D n (τ h) (σ i) Q2 :=
+  (rfl)
+
+/-- A pullback preserves the structural assumptions. -/
+lemma Assumptions.comap {D : Frag Hadron Flavor} (hD : Assumptions D) (τ : Hadron' → Hadron)
+    (σ : Flavor' → Flavor) : Assumptions (Fragmentation.comap τ σ D) where
+  support h i z Q2 hz := hD.support (τ h) (σ i) z Q2 hz
+  nonneg h i z Q2 hz₀ hz₁ := hD.nonneg (τ h) (σ i) z Q2 hz₀ hz₁
+
+/-- A family is *invariant* under a map `τ` of the observed hadrons and a map `σ` of the parton
+flavours when pulling it back along them returns the family: `D_{τ h}^{σ i} = D_h^i`. -/
+def Invariant (τ : Hadron → Hadron) (σ : Flavor → Flavor) (D : Frag Hadron Flavor) : Prop :=
+  comap τ σ D = D
+
+variable {τ : Hadron → Hadron} {σ σ' : Flavor → Flavor} {D : Frag Hadron Flavor}
+
+lemma invariant_iff : Invariant τ σ D ↔ ∀ h i z Q2, D (τ h) (σ i) z Q2 = D h i z Q2 :=
+  ⟨fun hD h i z Q2 => congr_fun (congr_fun (congr_fun (congr_fun hD h) i) z) Q2,
+    fun hD => funext fun h => funext fun i => funext fun z => funext fun Q2 => hD h i z Q2⟩
+
+lemma Invariant.apply (hD : Invariant τ σ D) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
+    D (τ h) (σ i) z Q2 = D h i z Q2 :=
+  invariant_iff.1 hD h i z Q2
+
+/-- Invariance under an involution of the partons, read with that involution on the right-hand
+side. -/
+lemma Invariant.apply_eq (hσ : Function.Involutive σ) (hD : Invariant τ σ D) (h : Hadron)
+    (i : Flavor) (z Q2 : ℝ) : D (τ h) i z Q2 = D h (σ i) z Q2 := by
+  rw [← hD.apply h (σ i) z Q2, hσ i]
+
+/-- A family invariant under two maps of the partons paired with the same involution of the
+hadrons takes the same value on both images of a parton inside one hadron:
+`D_h^{σ' i} = D_h^{σ i}`. This is what reduces the number of independent fragmentation functions of
+a multiplet: for the pion triplet, charge conjugation and the exchange of the up and the down
+flavour act on the hadrons by the same involution, which turns the fragmentation of a down quark
+into the fragmentation of an up antiquark. -/
+lemma Invariant.apply_eq_apply (hτ : Function.Involutive τ)
+    (hσ : Invariant τ σ D) (hσ' : Invariant τ σ' D) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
+    D h (σ' i) z Q2 = D h (σ i) z Q2 := by
+  have h₁ := hσ.apply (τ h) i z Q2
+  have h₂ := hσ'.apply (τ h) i z Q2
+  rw [hτ h] at h₁ h₂
+  rw [h₂, h₁]
+
+end Comap
 
 end Fragmentation
 end Particles
