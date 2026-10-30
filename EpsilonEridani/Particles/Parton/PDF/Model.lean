@@ -30,11 +30,11 @@ The same shape carried by a diagonal spin-density matrix discharges
 
 Every Mellin moment of the model is available in closed form: the shape integrates to the Euler
 Beta value `a! b! / (a + b + 1)!` (`integral_betaShape`), so the `n`-th moment is
-`(n + a)! b! / (n + a + b + 1)!` (`mellinMoment_modelPdf`). Every moment computation against the
-model rests on it.
+`(n + a)! b! / (n + a + b + 1)!` (`mellinMoment_modelPdf`).
 
 ## ii. Key results
 
+- `EpsilonEridani.Particles.Parton.PDF.comap_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
@@ -46,7 +46,8 @@ model rests on it.
 - A. The shape and the model
 - B. The physical half
 - C. The analytic half
-- D. The spin-density model
+- D. Moments in closed form
+- E. The spin-density model
 
 ## Implementation notes
 
@@ -94,6 +95,12 @@ def modelPdf (Flavor : Type) (a b : ℕ) : Pdf Flavor :=
 /-- Unfolding lemma for the model. -/
 lemma modelPdf_apply (Flavor : Type) (a b : ℕ) (i : Flavor) (x Q2 : ℝ) :
     modelPdf Flavor a b i x Q2 = Set.indicator (Set.Icc (0 : ℝ) 1) (betaShape a b) x := rfl
+
+/-- The model does not depend on the parton index, so reindexing it gives the model over the new
+index type. -/
+@[simp]
+lemma comap_modelPdf {ι κ : Type} (σ : κ → ι) (a b : ℕ) :
+    comap σ (modelPdf ι a b) = modelPdf κ a b := rfl
 
 /-! ### B. The physical half -/
 
@@ -150,6 +157,16 @@ lemma regularity_modelPdf (Flavor : Type) (a b : ℕ) : Regularity (modelPdf Fla
 /-- **`PDF.Assumptions` is satisfiable, by an explicit model.** -/
 lemma assumptions_modelPdf (Flavor : Type) (a b : ℕ) : Assumptions (modelPdf Flavor a b) :=
   assumptions_iff.mpr ⟨isPartonDensity_modelPdf Flavor a b, regularity_modelPdf Flavor a b⟩
+
+/-- Every Mellin moment of the model is nonnegative. -/
+lemma mellinMoment_modelPdf_nonneg (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    0 ≤ mellinMoment (modelPdf Flavor a b) n i Q2 := by
+  refine MeasureTheory.setIntegral_nonneg measurableSet_Icc ?_
+  intro x hx
+  exact mul_nonneg (pow_nonneg hx.1 n)
+    ((isPartonDensity_modelPdf Flavor a b).nonneg i x Q2 hx.1 hx.2)
+
+/-! ### D. Moments in closed form -/
 
 /-- **The Euler Beta value of the shape**: `∫₀¹ x^a (1 - x)^b dx = a! b! / (a + b + 1)!`. The
 integration by parts that produces the factorials is here the recursion
@@ -211,15 +228,7 @@ lemma mellinMoment_modelPdf_zero_one (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 
   field_simp
   ring
 
-/-- Every Mellin moment of the model is nonnegative. -/
-lemma mellinMoment_modelPdf_nonneg (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 : ℝ) :
-    0 ≤ mellinMoment (modelPdf Flavor a b) n i Q2 := by
-  refine MeasureTheory.setIntegral_nonneg measurableSet_Icc ?_
-  intro x hx
-  exact mul_nonneg (pow_nonneg hx.1 n)
-    ((isPartonDensity_modelPdf Flavor a b).nonneg i x Q2 hx.1 hx.2)
-
-/-! ### D. The spin-density model -/
+/-! ### E. The spin-density model -/
 
 /-- A diagonal spin-density family whose induced unpolarized density is `modelPdf`: all four
 helicity-diagonal number densities equal `x^a (1-x)^b / 2` on `[0, 1]`. Positive

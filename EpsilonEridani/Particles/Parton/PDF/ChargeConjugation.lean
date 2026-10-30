@@ -32,7 +32,7 @@ For a density carrying the sum-rule bundle, prescribing the valence numbers to b
 `v : Flavor → ℝ` is a condition on the bundle's scale-independent valence targets alone
 (`valenceNumber_eq_sub_valenceTarget`, `forall_valenceNumber_eq_iff_valenceTarget`); in
 particular such a prescription needs to be imposed at only one scale
-(`valenceNumber_eq_of_forall_valenceNumber_eq`).
+(`valenceNumber_eq_of_forall_valenceNumber_eq_atScale`).
 
 ## Main definitions
 
@@ -52,8 +52,8 @@ particular such a prescription needs to be imposed at only one scale
   quark target minus the antiquark target.
 * `PDF.forall_valenceNumber_eq_iff_valenceTarget`: under the sum-rule bundle, prescribed valence
   numbers are a condition on the bundle's valence targets alone;
-  `PDF.valenceNumber_eq_of_forall_valenceNumber_eq` is that such a prescription holds at every
-  scale as soon as it holds at one.
+  `PDF.valenceNumber_eq_of_forall_valenceNumber_eq_atScale` is that such a prescription holds at
+  every scale as soon as it holds at one.
 * `PDF.valenceNumber_eq_zero_of_quark_eq_antiquark`: a flavour with equal quark and antiquark
   densities on the unit interval at a scale has vanishing valence number there;
   `PDF.valenceNumber_eq_zero_of_chargeConj_eq` is the case of a charge-conjugation invariant
@@ -181,8 +181,8 @@ theorem forall_valenceNumber_eq_iff_valenceTarget [Fintype Flavor] {f : Pdf (Spe
 /-- **One scale is enough.** A density carrying the sum-rule bundle and the valence numbers `v` at
 a single scale `Q2₀` carries them at every scale: by `forall_valenceNumber_eq_iff_valenceTarget`
 the prescription is a condition on the bundle's scale-independent valence targets. -/
-theorem valenceNumber_eq_of_forall_valenceNumber_eq [Fintype Flavor] {f : Pdf (Species Flavor)}
-    {v : Flavor → ℝ} (h : SumRuleAssumptions f) {Q2₀ : ℝ}
+theorem valenceNumber_eq_of_forall_valenceNumber_eq_atScale [Fintype Flavor]
+    {f : Pdf (Species Flavor)} {v : Flavor → ℝ} (h : SumRuleAssumptions f) {Q2₀ : ℝ}
     (hf : ∀ i, valenceNumber f i Q2₀ = v i) (i : Flavor) (Q2 : ℝ) :
     valenceNumber f i Q2 = v i :=
   (forall_valenceNumber_eq_iff_valenceTarget h v).2
