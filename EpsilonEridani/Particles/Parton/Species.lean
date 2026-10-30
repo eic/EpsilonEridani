@@ -19,8 +19,9 @@ momentum sum rule `∑ₛ ∫₀¹ x fₛ(x) dx = 1` runs over all of them, the 
 
 Charge conjugation exchanges the quark and the antiquark of each flavour and fixes the gluon
 (`Species.conj`); it is an involution. A relabelling of the quark flavours acts on the species by
-renaming the flavour of a quark and of an antiquark and fixing the gluon (`Species.map`); an
-isospin rotation acts on a hadron's distributions this way.
+renaming the flavour of a quark and of an antiquark and fixing the gluon (`Species.map`); the
+isospin reflection exchanging the up and the down flavour acts on a hadron's distributions this
+way.
 
 The two species of one flavour, its quark and its antiquark, form `Species.flavorPair`.
 
@@ -38,7 +39,7 @@ The two species of one flavour, its quark and its antiquark, form `Species.flavo
 * `Species.sum_univ`: a sum over all species is the quark sum, the antiquark sum and the gluon term.
 * `Species.conj_involutive`: charge conjugation is an involution.
 * `Species.conj_map`: charge conjugation commutes with every flavour relabelling.
-* `Species.conj_mem_flavorPair`: charge conjugation permutes the two species of a flavour.
+* `Species.image_conj_flavorPair`: charge conjugation permutes the two species of a flavour.
 
 ## References
 
@@ -143,7 +144,8 @@ variable {Flavor' : Type}
 
 /-- The action of a relabelling `ρ` of the quark flavours on the parton species: it renames the
 flavour of a quark and of an antiquark and fixes the gluon. A flavour symmetry of a hadron
-multiplet, such as an isospin rotation, acts on the species this way. -/
+multiplet, such as the isospin reflection exchanging the up and the down flavour, acts on the
+species this way. -/
 def map (ρ : Flavor → Flavor') : Species Flavor → Species Flavor'
   | quark i => quark (ρ i)
   | antiquark i => antiquark (ρ i)
@@ -190,16 +192,20 @@ flavour, so it lies in no `flavorPair`. -/
 def flavorPair [DecidableEq Flavor] (i : Flavor) : Finset (Species Flavor) :=
   {quark i, antiquark i}
 
+theorem flavorPair_def [DecidableEq Flavor] (i : Flavor) :
+    flavorPair i = {quark i, antiquark i} :=
+  (rfl)
+
 @[simp]
 theorem mem_flavorPair [DecidableEq Flavor] {i : Flavor} {s : Species Flavor} :
     s ∈ flavorPair i ↔ s = quark i ∨ s = antiquark i := by
   simp [flavorPair]
 
-/-- Charge conjugation permutes the two species of a flavour, so it fixes the pair. It is not a
-`simp` lemma: `mem_flavorPair` already rewrites its left-hand side. -/
-theorem conj_mem_flavorPair [DecidableEq Flavor] {i : Flavor} {s : Species Flavor} :
-    s.conj ∈ flavorPair i ↔ s ∈ flavorPair i := by
-  cases s <;> simp
+/-- Charge conjugation exchanges the two species of a flavour, so it fixes the pair. -/
+theorem image_conj_flavorPair [DecidableEq Flavor] (i : Flavor) :
+    (flavorPair i).image conj = flavorPair i := by
+  rw [flavorPair_def, Finset.image_insert, Finset.image_singleton, conj_quark, conj_antiquark,
+    Finset.pair_comm]
 
 /-- A sum over the two species of a flavour. -/
 theorem sum_flavorPair [DecidableEq Flavor] {M : Type*} [AddCommMonoid M]
