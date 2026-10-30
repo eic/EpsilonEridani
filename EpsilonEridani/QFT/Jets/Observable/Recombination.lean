@@ -24,24 +24,28 @@ property of a scheme that a safety proof for an algorithm consumes.
   vanishing momentum changes nothing. Additivity and homogeneity together say exactly that the
   merge map is `ℝ`-linear on the pair (`RecombinationScheme.isLinearMap_uncurry_iff`).
 * `RecombinationScheme.IsCollinearExact` is the property that merging the two fragments
-  `z • p`, `(1 - z) • p` of a collinear splitting returns `p`.
+  `z • p`, `(1 - z) • p` of a collinear splitting returns `p`, and `.IsCollinearExactOn S` is the
+  same property for the momenta `p` of a set `S` only.
 
-Collinear exactness is what transfers to the observables built from the merged pseudojets: a
-clustering that merges a collinear pair before doing anything else — which is what a distance
-measure vanishing on collinear pairs delivers — is collinear safe as soon as the scheme is exact
-(`isCollinearSafe_of_isCollinearExact`), and a unital scheme with a continuous merge map absorbs
-a vanishingly soft momentum (`RecombinationScheme.IsUnital.tendsto_cons`).
+Collinear exactness is what reduces the safety of a clustering to the behaviour of the clustering
+itself: for an exact scheme, a clustering is collinear safe exactly when it treats a collinear
+pair as the merged pseudojet (`RecombinationScheme.IsCollinearExact.isCollinearSafe_iff`), which
+is what a distance measure vanishing on collinear pairs has to deliver, and a unital scheme
+continuous at `0` absorbs a vanishingly soft momentum
+(`RecombinationScheme.IsUnital.tendsto_cons`).
 
 Additivity, homogeneity and symmetry do not by themselves give collinear exactness: `smulScheme`,
 which adds the momenta and rescales the sum by a fixed factor `c`, has all three and merges a
 collinear pair into `c • p` (`not_isCollinearExact_smulScheme`). What pins the `E` scheme down is
 additivity together with the normalisation `IsUnital`, and those two characterise it exactly
 (`RecombinationScheme.eq_eScheme_iff`). A scheme that is *not* additive can still be exact, and
-`RecombinationScheme.IsHomogeneous.isCollinearExact_iff` isolates what it takes: a homogeneous
-scheme is exact precisely when it merges parallel momenta additively. That criterion is what the
-schemes rescaling a merged pair to make it massless with respect to a frame meet at the massless
-momenta, two parallel massless momenta summing to a massless momentum; those schemes are
-frame-dependent data and are stated where the frame is, not here.
+`RecombinationScheme.IsHomogeneous.isCollinearExactOn_iff` isolates what it takes: a homogeneous
+scheme is exact on a set closed under positive rescaling precisely when it merges parallel momenta
+of that set additively. The schemes rescaling a merged pair to make it massless with respect to a
+frame are not exact on all of `V`, since they rescale the sum of a massive pair, and the set is
+what lets them meet the criterion: on the massless momenta, two parallel momenta sum to a massless
+momentum and nothing is rescaled. Those schemes are frame-dependent data and are stated where the
+frame is, not here.
 
 ## References
 
@@ -93,10 +97,6 @@ theorem isAdditive_def :
 theorem isUnital_def : R.IsUnital ↔ ∀ a : V, R.merge a 0 = a :=
   Iff.rfl
 
-theorem IsAdditive.merge_add (hR : R.IsAdditive) (a₁ a₂ b₁ b₂ : V) :
-    R.merge (a₁ + a₂) (b₁ + b₂) = R.merge a₁ b₁ + R.merge a₂ b₂ :=
-  hR a₁ a₂ b₁ b₂
-
 theorem IsUnital.merge_zero (hR : R.IsUnital) (a : V) : R.merge a 0 = a :=
   hR a
 
@@ -120,6 +120,12 @@ that a collinear-safety proof for a jet algorithm consumes. -/
 def IsCollinearExact : Prop :=
   ∀ p : V, ∀ z ∈ Set.Icc (0 : ℝ) 1, R.merge (z • p) ((1 - z) • p) = p
 
+/-- A scheme is *collinear exact on* a set `S` of momenta if the two fragments of a collinear
+splitting of a member of `S` merge back into it. A scheme that rescales a merged pair to make it
+massless can only have this for a set of massless momenta, not on all of `V`. -/
+def IsCollinearExactOn (S : Set V) : Prop :=
+  ∀ p ∈ S, ∀ z ∈ Set.Icc (0 : ℝ) 1, R.merge (z • p) ((1 - z) • p) = p
+
 variable {R}
 
 theorem isHomogeneous_def :
@@ -130,9 +136,14 @@ theorem isCollinearExact_def :
     R.IsCollinearExact ↔ ∀ p : V, ∀ z ∈ Set.Icc (0 : ℝ) 1, R.merge (z • p) ((1 - z) • p) = p :=
   Iff.rfl
 
-theorem IsHomogeneous.merge_smul (hR : R.IsHomogeneous) {c : ℝ} (hc : 0 ≤ c) (a b : V) :
-    R.merge (c • a) (c • b) = c • R.merge a b :=
-  hR c hc a b
+theorem isCollinearExactOn_def {S : Set V} :
+    R.IsCollinearExactOn S ↔ ∀ p ∈ S, ∀ z ∈ Set.Icc (0 : ℝ) 1,
+      R.merge (z • p) ((1 - z) • p) = p :=
+  Iff.rfl
+
+/-- Collinear exactness is collinear exactness on the whole momentum space. -/
+theorem isCollinearExactOn_univ : R.IsCollinearExactOn Set.univ ↔ R.IsCollinearExact :=
+  ⟨fun h p => h p (Set.mem_univ p), fun h p _ => h p⟩
 
 /-- The defining property of a collinear exact scheme: the two fragments of a collinear splitting
 merge back into the momentum that was split. -/
@@ -147,40 +158,39 @@ theorem isLinearMap_uncurry_iff :
     IsLinearMap ℝ (fun x : V × V => R.merge x.1 x.2) ↔ R.IsAdditive ∧ R.IsHomogeneous := by
   refine ⟨fun h => ⟨fun a₁ a₂ b₁ b₂ => by simpa using h.map_add (a₁, b₁) (a₂, b₂),
     fun c _ a b => by simpa using h.map_smul c (a, b)⟩,
-    fun ⟨hadd, hhom⟩ => ⟨fun x y => by simpa using hadd x.1 y.1 x.2 y.2, fun c x => ?_⟩⟩
-  have hzero : R.merge 0 0 = 0 := by simpa using (hadd 0 0 0 0).symm
-  have hneg : ∀ a b : V, R.merge (-a) (-b) = -R.merge a b := fun a b => by
-    have h := hadd a (-a) b (-b)
-    rw [add_neg_cancel, add_neg_cancel, hzero] at h
-    exact eq_neg_of_add_eq_zero_right h.symm
+    fun ⟨hadd, hhom⟩ => ?_⟩
+  let f : V × V →+ V := AddMonoidHom.mk' (fun x => R.merge x.1 x.2) fun x y => by
+    simpa using hadd x.1 y.1 x.2 y.2
+  refine ⟨f.map_add, fun c x => ?_⟩
   simp only [Prod.smul_fst, Prod.smul_snd]
   rcases le_or_gt 0 c with hc | hc
   · exact hhom c hc x.1 x.2
   · calc R.merge (c • x.1) (c • x.2)
         = R.merge (-c • -x.1) (-c • -x.2) := by rw [neg_smul_neg, neg_smul_neg]
       _ = -c • R.merge (-x.1) (-x.2) := hhom (-c) (by linarith) _ _
-      _ = -c • -R.merge x.1 x.2 := by rw [hneg]
+      _ = -c • -R.merge x.1 x.2 := congrArg _ (f.map_neg x)
       _ = c • R.merge x.1 x.2 := by rw [smul_neg, neg_smul, neg_neg]
 
-/-- A positively homogeneous scheme is collinear exact exactly when it merges parallel momenta
-additively. This is the criterion a scheme that is not additive has to meet, and a scheme that
-rescales a merged pair to make it massless with respect to a frame meets it at the massless
-momenta: two parallel massless momenta already sum to a massless momentum, so no rescaling
-occurs there. -/
-theorem IsHomogeneous.isCollinearExact_iff (hhom : R.IsHomogeneous) :
-    R.IsCollinearExact ↔ ∀ t : ℝ, 0 ≤ t → ∀ p : V, R.merge p (t • p) = (1 + t) • p := by
+/-- A positively homogeneous scheme is collinear exact on a set closed under positive rescaling
+exactly when it merges parallel momenta of that set additively. This is the criterion a scheme
+that is not additive has to meet, and a scheme that rescales a merged pair to make it massless
+with respect to a frame meets it on the massless momenta: two parallel massless momenta already
+sum to a massless momentum, so no rescaling occurs there. -/
+theorem IsHomogeneous.isCollinearExactOn_iff (hhom : R.IsHomogeneous) {S : Set V}
+    (hS : ∀ c : ℝ, 0 < c → ∀ p ∈ S, c • p ∈ S) :
+    R.IsCollinearExactOn S ↔ ∀ t : ℝ, 0 ≤ t → ∀ p ∈ S, R.merge p (t • p) = (1 + t) • p := by
   constructor
-  · intro hR t ht p
+  · intro hR t ht p hp
     have ht1 : (0 : ℝ) < 1 + t := by linarith
     have ht1' : (1 + t) ≠ 0 := ht1.ne'
-    have hz := hR ((1 + t) • p) (1 + t)⁻¹
+    have hz := hR ((1 + t) • p) (hS _ ht1 p hp) (1 + t)⁻¹
       ⟨inv_nonneg.2 ht1.le, inv_le_one_of_one_le₀ (by linarith)⟩
     have hmul : (1 - (1 + t)⁻¹) * (1 + t) = t := by field_simp; ring
     rwa [inv_smul_smul₀ ht1', smul_smul, hmul] at hz
-  · intro hpar p z hz
+  · intro hpar p hp z hz
     obtain ⟨hz0, hz1⟩ := hz
     rcases hz0.eq_or_lt with rfl | hzpos
-    · have h0 := hpar 0 le_rfl p
+    · have h0 := hpar 0 le_rfl p hp
       simp only [zero_smul, add_zero, one_smul] at h0
       simpa [R.merge_comm 0 p] using h0
     · have hzne : z ≠ 0 := hzpos.ne'
@@ -189,8 +199,15 @@ theorem IsHomogeneous.isCollinearExact_iff (hhom : R.IsHomogeneous) :
         congr 1
         field_simp
       have hmul : z * (1 + (1 - z) / z) = 1 := by field_simp; ring
-      rw [hsplit, hhom z hz0, hpar ((1 - z) / z) (div_nonneg (by linarith) hz0) p, smul_smul,
+      rw [hsplit, hhom z hz0, hpar ((1 - z) / z) (div_nonneg (by linarith) hz0) p hp, smul_smul,
         hmul, one_smul]
+
+/-- A positively homogeneous scheme is collinear exact exactly when it merges parallel momenta
+additively. -/
+theorem IsHomogeneous.isCollinearExact_iff (hhom : R.IsHomogeneous) :
+    R.IsCollinearExact ↔ ∀ t : ℝ, 0 ≤ t → ∀ p : V, R.merge p (t • p) = (1 + t) • p := by
+  rw [← isCollinearExactOn_univ, hhom.isCollinearExactOn_iff fun _ _ _ _ => Set.mem_univ _]
+  simp
 
 end Homogeneous
 
@@ -202,7 +219,7 @@ variable (V) in
 /-- The `E` scheme: two pseudojets are merged by adding their momenta. The merged pseudojet is
 massive even when both of its constituents are massless, which is why a scheme that rescales to
 restore masslessness is a different scheme and inherits none of the theorems proved here. -/
-def eScheme [AddCommMonoid V] : RecombinationScheme V where
+@[expose] def eScheme [AddCommMonoid V] : RecombinationScheme V where
   merge := (· + ·)
   merge_comm := add_comm
 
@@ -220,14 +237,6 @@ theorem isAdditive_eScheme : (eScheme V).IsAdditive := fun a₁ a₂ b₁ b₂ =
 
 /-- The `E` scheme is unital: a vanishing momentum merges into nothing. -/
 theorem isUnital_eScheme : (eScheme V).IsUnital := fun a => by simp
-
-/-- The `E`-scheme merge is continuous in the momentum merged in, which is what the infrared
-limit of a soft momentum merged into a pseudojet needs. -/
-theorem continuous_eScheme_merge [TopologicalSpace V] [ContinuousAdd V] (a : V) :
-    Continuous ((eScheme V).merge a) := by
-  have h : (eScheme V).merge a = fun v : V => a + v := funext fun v => eScheme_merge a v
-  rw [h]
-  exact continuous_const.add continuous_id
 
 variable [Module ℝ V]
 
@@ -336,18 +345,19 @@ section CollinearSafety
 
 variable [AddCommGroup V] [Module ℝ V] {R : RecombinationScheme V}
 
-/-- A clustering that merges the pair produced by a collinear splitting before it does anything
-else is collinear safe whenever the scheme is collinear exact: the merged pair is the momentum
-that was split, so the clustering sees the original final state. The hypothesis `hJ` is what a
-distance measure vanishing on collinear pairs supplies, and it is the only place the algorithm
-itself enters; every observable of the output is then collinear safe by
-`IsCollinearSafe.map`. -/
-theorem isCollinearSafe_of_isCollinearExact (J : Multiset V → X) (hR : R.IsCollinearExact)
-    (hJ : ∀ p : V, ∀ z ∈ Set.Icc (0 : ℝ) 1, ∀ s : Multiset V,
-      J (z • p ::ₘ (1 - z) • p ::ₘ s) = J (R.merge (z • p) ((1 - z) • p) ::ₘ s)) :
-    IsCollinearSafe J :=
-  isCollinearSafe_def.2 fun s p z hz => by
-    rw [hJ p z hz s, hR.merge_smul_one_sub_smul p z hz]
+/-- For a collinear exact scheme, a clustering is collinear safe exactly when it gives the same
+output on the pair produced by a collinear splitting as on the merged pseudojet: the merged pair
+is the momentum that was split. This proves nothing about a clustering by itself; it isolates what
+a clustering has to deliver, which is what a distance measure vanishing on collinear pairs is for,
+and the scheme contributes only the exactness. Every observable of a safe clustering is then
+collinear safe by `IsCollinearSafe.map`. -/
+theorem RecombinationScheme.IsCollinearExact.isCollinearSafe_iff (hR : R.IsCollinearExact)
+    {J : Multiset V → X} :
+    IsCollinearSafe J ↔ ∀ p : V, ∀ z ∈ Set.Icc (0 : ℝ) 1, ∀ s : Multiset V,
+      J (z • p ::ₘ (1 - z) • p ::ₘ s) = J (R.merge (z • p) ((1 - z) • p) ::ₘ s) :=
+  isCollinearSafe_def.trans
+    ⟨fun h p z hz s => by rw [hR.merge_smul_one_sub_smul p z hz, h s p z hz],
+      fun h s p z hz => by rw [h p z hz s, hR.merge_smul_one_sub_smul p z hz]⟩
 
 end CollinearSafety
 
@@ -356,20 +366,22 @@ section InfraredSafety
 variable [AddCommGroup V] {R : RecombinationScheme V}
 
 /-- A clustering that merges a soft enough added momentum into the pseudojet `a` of the final
-state `a ::ₘ t` absorbs it in the limit, for a unital scheme whose merge map is continuous: the
-merged pseudojet tends to `a` itself. The hypothesis `hJ` is required only near `p = 0`, which is
-all a distance measure delivers — a hard momentum need not cluster with `a` at all. This is
-infrared safety at the states that have a pseudojet to merge into; the empty final state has
-none, and there no scheme can supply the hypothesis. -/
+state `a ::ₘ t` absorbs it in the limit, for a unital scheme whose merge map is continuous at `0`:
+the merged pseudojet tends to `a` itself. The hypothesis `hJ` is required only near `p = 0`, which
+is all a distance measure delivers — a hard momentum need not cluster with `a` at all — and the
+continuity of `J` only at `a`, so an observable that jumps elsewhere, as jet multiplicity does at
+a tie, is covered at the states away from the jump. This is infrared safety at the states that
+have a pseudojet to merge into; the empty final state has none, and there no scheme can supply the
+hypothesis. -/
 theorem RecombinationScheme.IsUnital.tendsto_cons [TopologicalSpace V] [TopologicalSpace X]
     (hR : R.IsUnital) {J : Multiset V → X} {a : V} {t : Multiset V}
-    (hRc : Continuous (R.merge a)) (hJc : Continuous fun v : V => J (v ::ₘ t))
+    (hRc : ContinuousAt (R.merge a) 0) (hJc : ContinuousAt (fun v : V => J (v ::ₘ t)) a)
     (hJ : ∀ᶠ p : V in 𝓝 0, J (p ::ₘ a ::ₘ t) = J (R.merge a p ::ₘ t)) :
     Tendsto (fun p : V => J (p ::ₘ a ::ₘ t)) (𝓝 0) (𝓝 (J (a ::ₘ t))) := by
   have h0 : J (R.merge a 0 ::ₘ t) = J (a ::ₘ t) := by rw [hR.merge_zero a]
   rw [← h0]
   refine Tendsto.congr' (hJ.mono fun p hp => hp.symm) ?_
-  simpa [Function.comp_def] using (hJc.comp hRc).tendsto 0
+  simpa [Function.comp_def, hR.merge_zero a] using (hJc.comp_of_eq hRc (hR.merge_zero a)).tendsto
 
 end InfraredSafety
 
