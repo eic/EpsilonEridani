@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearMap
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 /-!
 
@@ -700,6 +701,15 @@ structure UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
   /-- The `F2` probe pair sees `p_T ⊗ p_T`. -/
   pT_outer_nonzero : g (pTransverse g K) vF2 * g (pTransverse g K) wF2 ≠ 0
 
+/-- With probe vectors separating them, the transverse projector and `p_T ⊗ p_T` are linearly
+independent. -/
+private lemma linearIndependent_of_uniquenessAssumptions (g : Bilin V) (K : DisKinematics V)
+    (hU : UniquenessAssumptions g K) :
+    LinearIndependent ℝ
+      ![transverseMetric g K, Bilin.rankOne g (pTransverse g K) (pTransverse g K)] :=
+  LinearMap.linearIndependent_pair_of_probes hU.transverse_nonzero hU.pT_outer_zero
+    hU.transverse_zero hU.pT_outer_nonzero
+
 /-- With probe vectors separating the two basis structures, a decomposition with
 `(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this is the
 non-triviality statement that the old, non-transverse basis could not support. -/
@@ -707,17 +717,9 @@ lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
     (hU : UniquenessAssumptions g K) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
     fromF1F2 g K F1 F2 ≠ 0 := by
   intro hzero
-  rcases h with hF1 | hF2
-  · have h0 : fromF1F2 g K F1 F2 hU.vF1 hU.wF1 = 0 := by rw [hzero]; simp
-    rw [fromF1F2_apply, hU.pT_outer_zero, mul_zero, add_zero] at h0
-    rcases mul_eq_zero.mp h0 with h | h
-    · exact hF1 h
-    · exact hU.transverse_nonzero h
-  · have h0 : fromF1F2 g K F1 F2 hU.vF2 hU.wF2 = 0 := by rw [hzero]; simp
-    rw [fromF1F2_apply, hU.transverse_zero, mul_zero, zero_add] at h0
-    rcases mul_eq_zero.mp h0 with h | h
-    · exact hF2 h
-    · exact hU.pT_outer_nonzero h
+  obtain ⟨h1, h2⟩ := (linearIndependent_of_uniquenessAssumptions g K hU).eq_of_pair
+    (s' := 0) (t' := 0) (hzero.trans (by simp))
+  exact h.elim (· h1) (· h2)
 
 /-- **Uniqueness of the structure functions.** Given one probe pair that sees the transverse
 projector but not `p_T ⊗ p_T`, and one pair that does the reverse, the coefficients of a
@@ -730,51 +732,10 @@ lemma decomposition_unique
     (hW' : IsF1F2Decomposition g K W F1' F2')
     (hU : UniquenessAssumptions g K) :
     F1 = F1' ∧ F2 = F2' := by
-  have hEqF1 :
-      F1 * transverseMetric g K hU.vF1 hU.wF1
-          + F2 * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1)
-        = F1' * transverseMetric g K hU.vF1 hU.wF1
-          + F2' * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1) := by
-    calc
-      F1 * transverseMetric g K hU.vF1 hU.wF1
-          + F2 * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1)
-          = W hU.vF1 hU.wF1 := by simp [hW hU.vF1 hU.wF1]
-      _ = F1' * transverseMetric g K hU.vF1 hU.wF1
-          + F2' * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1) := by
-          simp [hW' hU.vF1 hU.wF1]
-  have hEqF1' : F1 * transverseMetric g K hU.vF1 hU.wF1
-      = F1' * transverseMetric g K hU.vF1 hU.wF1 := by
-    simpa [hU.pT_outer_zero] using hEqF1
-  have hMulF1 : (F1 - F1') * transverseMetric g K hU.vF1 hU.wF1 = 0 := by
-    linarith [hEqF1']
-  have hF1 : F1 = F1' := by
-    have hSub : F1 - F1' = 0 :=
-      (mul_eq_zero.mp hMulF1).resolve_right hU.transverse_nonzero
-    exact sub_eq_zero.mp hSub
-  have hEqF2 :
-      F1 * transverseMetric g K hU.vF2 hU.wF2
-          + F2 * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2)
-        = F1' * transverseMetric g K hU.vF2 hU.wF2
-          + F2' * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) := by
-    calc
-      F1 * transverseMetric g K hU.vF2 hU.wF2
-          + F2 * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2)
-          = W hU.vF2 hU.wF2 := by simp [hW hU.vF2 hU.wF2]
-      _ = F1' * transverseMetric g K hU.vF2 hU.wF2
-          + F2' * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) := by
-          simp [hW' hU.vF2 hU.wF2]
-  have hEqF2' :
-      F2 * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2)
-        = F2' * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) := by
-    simpa [hU.transverse_zero, hF1] using hEqF2
-  have hMulF2 :
-      (F2 - F2') * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) = 0 := by
-    linarith [hEqF2']
-  have hF2 : F2 = F2' := by
-    have hSub : F2 - F2' = 0 :=
-      (mul_eq_zero.mp hMulF2).resolve_right hU.pT_outer_nonzero
-    exact sub_eq_zero.mp hSub
-  exact ⟨hF1, hF2⟩
+  have hfrom : ∀ {a b : ℝ}, IsF1F2Decomposition g K W a b → W = fromF1F2 g K a b :=
+    fun hab => LinearMap.ext₂ fun v w => by rw [hab, fromF1F2_apply]
+  exact (linearIndependent_of_uniquenessAssumptions g K hU).eq_of_pair
+    ((hfrom hW).symm.trans (hfrom hW'))
 
 /-!
 

@@ -9,6 +9,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Kinematics
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.TargetMass
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearMap
 public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Determinant
 
 /-!
@@ -35,10 +36,11 @@ antisymmetric counterparts of `Tensors.Hadronic.IsF1F2Decomposition` and
 `Tensors.Hadronic.fromF1F2`.
 
 `SpinUniquenessAssumptions` collects two probe pairs separating `E₁` from `E₂`; under it the
-two structures are linearly independent (`linearIndependent_spinStructure`). If moreover
-`M² > 0` and `p·q ≠ 0`, `fromG1G2` determines `g₁`, `g₂` (`fromG1G2_inj`), so it is non-zero
-unless both structure-function values vanish (`fromG1G2_ne_zero`) and a decomposition fixes the
-structure-function values (`IsG1G2Decomposition.unique`).
+two structures are linearly independent (`linearIndependent_spinStructure`). If `E₁`, `E₂` are
+linearly independent, `M² > 0` and `p·q ≠ 0`, then `fromG1G2` determines `g₁`, `g₂`
+(`fromG1G2_inj`), so it is non-zero unless both structure-function values vanish
+(`fromG1G2_ne_zero`) and a decomposition fixes the structure-function values
+(`IsG1G2Decomposition.unique`).
 `Witness.kWit4` gives Minkowski kinematics on `ℝ⁴` where such probes exist for the volume form
 `ε = Matrix.detRowAlternating` (`Witness.spinUniquenessWit`).
 
@@ -56,8 +58,9 @@ On a four-dimensional `V` with `p`, `q`, `S` linearly independent, `Q² ≠ 0` a
 alternating forms that are conserved in both slots *and linear in `S`* form a two-dimensional
 space spanned by `E₁` and `E₂`; the alternating, `S`-linear candidate `ε(v, w, p, S)` is excluded
 because it is not conserved. The hypothesis `S·q ≠ 0` is needed: at `S·q = 0` the two structures
-degenerate, `E₂ = (p·q) E₁`. This uniqueness statement is not proved here; uniqueness of the
-coefficients `g₁`, `g₂` is proved only under `SpinUniquenessAssumptions`. Without the restriction
+degenerate, `E₂ = (p·q) E₁` (`spinStructureTwo_eq_smul_spinStructureOne`). This uniqueness
+statement is not proved here; uniqueness of the coefficients `g₁`, `g₂` is proved only when `E₁`,
+`E₂` are linearly independent. Without the restriction
 to `S`-linear forms the count is wrong: the alternating forms vanishing on `q` already form a
 three-dimensional space.
 
@@ -67,7 +70,7 @@ three-dimensional space.
   inelastic scattering*, Phys. Rept. **261** (1995) 1; arXiv:hep-ph/9501369, §§2–3.
 * A. V. Manohar, *An introduction to spin dependent deep inelastic scattering*,
   arXiv:hep-ph/9204208, §§2–3.
-* M. Lampe and E. Reya, *Spin physics and polarized structure functions*, Phys. Rept. **332**
+* B. Lampe and E. Reya, *Spin physics and polarized structure functions*, Phys. Rept. **332**
   (2000) 1; arXiv:hep-ph/9810270, §2.
 -/
 
@@ -106,6 +109,22 @@ def spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematic
 lemma spinStructureTwo_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (v w : V) :
     spinStructureTwo ε K v w = ε ![v, w, K.q, g K.p K.q • K.S - g K.S K.q • K.p] :=
   ε.bilinMap_apply _ _ _
+
+/-- `E₂ = (p·q) E₁ − (S·q) ε(·, ·, q, p)`. -/
+theorem spinStructureTwo_eq (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureTwo ε K =
+      g K.p K.q • spinStructureOne ε K - g K.S K.q • ε.bilinMap ![K.q, K.p] := by
+  rw [spinStructureTwo, spinStructureOne, ε.bilinMap_pair_sub_snd, ε.bilinMap_pair_smul_snd,
+    ε.bilinMap_pair_smul_snd]
+
+/-- At `S·q = 0` the two covariant structures degenerate: `E₂ = (p·q) E₁`. -/
+theorem spinStructureTwo_eq_smul_spinStructureOne (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (hSq : g K.S K.q = 0) :
+    spinStructureTwo ε K = g K.p K.q • spinStructureOne ε K := by
+  rw [spinStructureTwo_eq, hSq, zero_smul]
+  -- `rw [sub_zero]` cannot see the subtraction on `Bilin V = LinearMap.BilinForm ℝ V`, so the
+  -- group is named explicitly.
+  exact sub_zero (G := Bilin V) _
 
 /-! ### Alternation and conservation -/
 
@@ -328,47 +347,42 @@ structure SpinUniquenessAssumptions (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Pol
 /-- With probe vectors separating them, `E₁` and `E₂` are linearly independent. -/
 theorem linearIndependent_spinStructure (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
     (hU : SpinUniquenessAssumptions ε K) :
-    LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K] := by
-  refine (LinearIndependent.pair_iff (R := ℝ) (M := Bilin V)).mpr fun s t hst => ⟨?_, ?_⟩
-  · have h := LinearMap.congr_fun₂ hst hU.vOne hU.wOne
-    simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hU.structureTwo_eq_zero,
-      mul_zero, add_zero, LinearMap.zero_apply] at h
-    exact (mul_eq_zero.mp h).resolve_right hU.structureOne_ne_zero
-  · have h := LinearMap.congr_fun₂ hst hU.vTwo hU.wTwo
-    simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hU.structureOne_eq_zero,
-      mul_zero, zero_add, LinearMap.zero_apply] at h
-    exact (mul_eq_zero.mp h).resolve_right hU.structureTwo_ne_zero
+    LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K] :=
+  LinearMap.linearIndependent_pair_of_probes hU.structureOne_ne_zero hU.structureTwo_eq_zero
+    hU.structureOne_eq_zero hU.structureTwo_ne_zero
 
-/-- With probe vectors separating `E₁` and `E₂`, a positive target mass and `p·q ≠ 0`, the
+/-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, the
 tensor `fromG1G2` determines its structure-function values. -/
 theorem fromG1G2_inj (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
-    (hU : SpinUniquenessAssumptions ε K) (hM : 0 < K.M2 g) (hpq : g K.p K.q ≠ 0)
+    (hLI : LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K]) (hM : 0 < K.M2 g)
+    (hpq : g K.p K.q ≠ 0)
     {g₁ g₂ g₁' g₂' : ℝ} :
     fromG1G2 ε K g₁ g₂ = fromG1G2 ε K g₁' g₂' ↔ g₁ = g₁' ∧ g₂ = g₂' := by
   refine ⟨fun h => ?_, fun ⟨h1, h2⟩ => h1 ▸ h2 ▸ rfl⟩
-  obtain ⟨h1, h2⟩ := (linearIndependent_spinStructure ε K hU).eq_of_pair h
+  obtain ⟨h1, h2⟩ := hLI.eq_of_pair h
   have hs : √(K.M2 g) ≠ 0 := (Real.sqrt_pos.mpr hM).ne'
   exact ⟨mul_left_cancel₀ (div_ne_zero hs hpq) h1,
     mul_left_cancel₀ (div_ne_zero hs (pow_ne_zero 2 hpq)) h2⟩
 
-/-- With probe vectors separating `E₁` and `E₂`, a positive target mass and `p·q ≠ 0`, the
+/-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, the
 tensor `fromG1G2` with `(g₁, g₂) ≠ (0, 0)` is non-zero. -/
 theorem fromG1G2_ne_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ)
-    (hU : SpinUniquenessAssumptions ε K) (hM : 0 < K.M2 g) (hpq : g K.p K.q ≠ 0)
-    (h : g₁ ≠ 0 ∨ g₂ ≠ 0) : fromG1G2 ε K g₁ g₂ ≠ 0 := by
-  rw [← fromG1G2_zero ε K, Ne, fromG1G2_inj ε K hU hM hpq]
+    (hLI : LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K]) (hM : 0 < K.M2 g)
+    (hpq : g K.p K.q ≠ 0) (h : g₁ ≠ 0 ∨ g₂ ≠ 0) : fromG1G2 ε K g₁ g₂ ≠ 0 := by
+  rw [← fromG1G2_zero ε K, Ne, fromG1G2_inj ε K hLI hM hpq]
   exact not_and_or.mpr h
 
-/-- With probe vectors separating `E₁` and `E₂`, a positive target mass and `p·q ≠ 0`, two
+/-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, two
 decompositions of the same tensor have the same structure-function values at the kinematic
 point. -/
 theorem IsG1G2Decomposition.unique {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g}
-    {G G' : StructureFunctions} {W : Bilin V} (hU : SpinUniquenessAssumptions ε K)
-    (hM : 0 < K.M2 g) (hpq : g K.p K.q ≠ 0) (h : IsG1G2Decomposition ε K G W)
+    {G G' : StructureFunctions} {W : Bilin V}
+    (hLI : LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K]) (hM : 0 < K.M2 g)
+    (hpq : g K.p K.q ≠ 0) (h : IsG1G2Decomposition ε K G W)
     (h' : IsG1G2Decomposition ε K G' W) :
     G.g1 (K.xBj g) (K.Q2 g) = G'.g1 (K.xBj g) (K.Q2 g) ∧
       G.g2 (K.xBj g) (K.Q2 g) = G'.g2 (K.xBj g) (K.Q2 g) :=
-  (fromG1G2_inj ε K hU hM hpq).mp (h.eq.symm.trans h'.eq)
+  (fromG1G2_inj ε K hLI hM hpq).mp (h.eq.symm.trans h'.eq)
 
 /-! ### A witness in four-dimensional Minkowski space -/
 
@@ -385,6 +399,13 @@ def ηWit : Bilin (Fin 4 → ℝ) :=
   simp only [ηWit, Matrix.toBilin'_apply', dotProduct, Matrix.mulVec_diagonal, Fin.sum_univ_four,
     Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, one_mul, neg_mul,
     mul_neg]
+  ring
+
+/-- `ηWit` is symmetric, as a metric must be. -/
+lemma ηWit_isSymm : ηWit.IsSymm := by
+  refine { eq := ?_ }
+  intro v w
+  simp only [ηWit_apply]
   ring
 
 /-- Witness kinematics on `ℝ⁴` with the metric `ηWit`: a target of unit mass at rest,
@@ -410,6 +431,10 @@ def kWit4 : PolarizedKinematics ηWit where
 @[simp] lemma kWit4_S : kWit4.S = ![0, 0, 0, 1] := (rfl)
 
 @[simp] lemma kWit4_M2 : kWit4.M2 ηWit = 1 := by simp [DisKinematics.M2_def]
+
+@[simp] lemma kWit4_Q2 : kWit4.Q2 ηWit = 1 := by simp [DisKinematics.Q2]
+
+@[simp] lemma kWit4_xBj : kWit4.xBj ηWit = 1 / 2 := by simp [DisKinematics.xBj]
 
 lemma kWit4_p_q : ηWit kWit4.p kWit4.q = 1 := by simp
 
@@ -464,7 +489,8 @@ theorem linearIndependent_spinStructure_kWit4 :
 /-- On the witness, `fromG1G2` is non-zero unless both structure-function values vanish. -/
 theorem fromG1G2_kWit4_ne_zero (g₁ g₂ : ℝ) (h : g₁ ≠ 0 ∨ g₂ ≠ 0) :
     fromG1G2 detRowAlternating kWit4 g₁ g₂ ≠ 0 :=
-  fromG1G2_ne_zero detRowAlternating kWit4 g₁ g₂ spinUniquenessWit (by simp) (by simp) h
+  fromG1G2_ne_zero detRowAlternating kWit4 g₁ g₂ linearIndependent_spinStructure_kWit4 (by simp)
+    (by simp) h
 
 end Witness
 
