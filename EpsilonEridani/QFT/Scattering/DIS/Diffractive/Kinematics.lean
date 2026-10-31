@@ -195,6 +195,7 @@ theorem ofExcl_t (g : Bilin V) (K : ExclKinematics V)
 /-- The diffractive Bjorken variable of an exclusive event is the inclusive Bjorken variable of
 the same momenta: `Invariants.x` agrees with `DisKinematics.xBj` on
 `ExclKinematics.toDisKinematics`. -/
+@[simp]
 theorem ofExcl_x (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
@@ -206,21 +207,23 @@ end Invariants
 
 /-! ## The target-elastic boundary in `t` -/
 
-/-- The kinematic boundary in `t` at fixed `ξ` in the target-elastic case (`M_Y = M`), with `M`
-the target mass: `tMinElastic M ξ = -ξ²M²/(1-ξ)`.
+/-- The kinematic boundary in `t` at fixed light-cone momentum fraction in the target-elastic
+case (`M_Y = M`), with `M` the target mass: `tMinElastic M ξ = -ξ²M²/(1-ξ)`.
 
-The argument `xi` is the light-cone momentum fraction `Δ⁺/P⁺` lost by the target. It agrees
-with the invariant `ξ = Δ·q / P·q` of `Invariants.xi` only up to relative corrections of order
-`Q²M²/(P·q)²`, so exactly only in the Bjorken limit; at finite energy the target-elastic
-boundary is not exactly `tMinElastic M (Invariants.xi i)`. Nor is `xi` the skewness
-`ExclKinematics.xiSkew` (Belitsky-Müller-Kirchner's `η`), a different variable that also carries
-a `ξ` in the exclusive kinematics and for which the target-elastic boundary is a different
+The argument `xiLC` is the light-cone momentum fraction `ξ = Δ⁺/P⁺` lost by the target, named
+apart from the invariant `Invariants.xi = Δ·q / P·q`, with which it agrees only up to relative
+corrections of order `Q²M²/(P·q)²`, so exactly only in the Bjorken limit; at finite energy the
+target-elastic boundary is not exactly `tMinElastic M (Invariants.xi i)`. Nor is `xiLC` the
+skewness `ExclKinematics.xiSkew` (Belitsky-Müller-Kirchner's `η`), a different variable that also
+carries a `ξ` in the exclusive kinematics and for which the target-elastic boundary is a different
 function.
 
-In terms of the light-cone fraction `ξ`, the accessible momentum transfers of the
-target-elastic physical region are `t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)`
-(`Invariants.t_le_tMinElastic_iff`, with `t ≤ 0` throughout); the boundary value is attained in
-the forward configuration, which is the point of minimum `|t|`.
+For a light-cone fraction `ξ < 1`, the accessible momentum transfers of the target-elastic physical
+region are `t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)` (`le_tMinElastic_iff`, with
+`t ≤ 0` throughout); the boundary value is attained in the forward configuration, which is the
+point of minimum `|t|`. At the pole `ξ = 1` the true boundary diverges, whereas, like any real
+division in Lean, `tMinElastic M 1` is `0`; the characterisation is therefore stated only for
+`ξ < 1`.
 
 The boundary is obtained from the two-body threshold condition at fixed `(ξ, M, M_Y)`, and in
 the target-elastic case `M_Y = M` it reduces to `ξ²M²/(1-ξ)`; see Wolf, *Rept. Prog. Phys.*
@@ -228,33 +231,43 @@ the target-elastic case `M_Y = M` it reduces to `ξ²M²/(1-ξ)`; see Wolf, *Rep
 
 See `tMinElastic_def` for the defining expression and `tMinElastic_nonpos` for the sign
 property. -/
-def tMinElastic (M xi : ℝ) : ℝ := -(xi ^ 2 * M ^ 2) / (1 - xi)
+def tMinElastic (M xiLC : ℝ) : ℝ := -(xiLC ^ 2 * M ^ 2) / (1 - xiLC)
 
 /-- Defining expression for `tMinElastic`. -/
-theorem tMinElastic_def (M xi : ℝ) : tMinElastic M xi = -(xi ^ 2 * M ^ 2) / (1 - xi) := (rfl)
+theorem tMinElastic_def (M xiLC : ℝ) :
+    tMinElastic M xiLC = -(xiLC ^ 2 * M ^ 2) / (1 - xiLC) := (rfl)
 
 /-- The magnitude of the target-elastic boundary, `-tMinElastic M ξ = ξ²M²/(1-ξ)`. -/
-theorem neg_tMinElastic (M xi : ℝ) : -tMinElastic M xi = xi ^ 2 * M ^ 2 / (1 - xi) := by
+theorem neg_tMinElastic (M xiLC : ℝ) : -tMinElastic M xiLC = xiLC ^ 2 * M ^ 2 / (1 - xiLC) := by
   rw [tMinElastic_def, neg_div, neg_neg]
 
-/-- The boundary condition `t ≤ tMinElastic M ξ` in terms of the magnitude of the momentum
-transfer: `|t| ≥ ξ²M²/(1-ξ)`. -/
-theorem Invariants.t_le_tMinElastic_iff (i : Invariants) (M xi : ℝ) :
-    i.t ≤ tMinElastic M xi ↔ xi ^ 2 * M ^ 2 / (1 - xi) ≤ i.absT := by
-  rw [absT_eq_neg_t, ← neg_tMinElastic, neg_le_neg_iff]
+/-- The boundary condition `t ≤ tMinElastic M ξ` for a real momentum transfer `t`, in terms of its
+magnitude: `-t ≥ ξ²M²/(1-ξ)`. Here `M` and `xiLC` are arbitrary parameters, `xiLC` being the
+light-cone fraction of `tMinElastic`, and the equivalence holds for any choice of them. -/
+theorem le_tMinElastic_iff (M xiLC t : ℝ) :
+    t ≤ tMinElastic M xiLC ↔ xiLC ^ 2 * M ^ 2 / (1 - xiLC) ≤ -t := by
+  rw [← neg_tMinElastic, neg_le_neg_iff]
+
+/-- The boundary condition `t ≤ tMinElastic M ξ` for the momentum transfer of `i`, in terms of
+`Invariants.absT`: `|t| ≥ ξ²M²/(1-ξ)`. Here `M` and `xiLC` are arbitrary parameters unrelated to
+`i`; in particular `xiLC` is the light-cone fraction of `tMinElastic`, not `i.xi`. -/
+theorem Invariants.t_le_tMinElastic_iff (i : Invariants) (M xiLC : ℝ) :
+    i.t ≤ tMinElastic M xiLC ↔ xiLC ^ 2 * M ^ 2 / (1 - xiLC) ≤ i.absT := by
+  rw [Invariants.absT_eq_neg_t]
+  exact le_tMinElastic_iff M xiLC i.t
 
 /-- At vanishing momentum loss `ξ = 0` the target-elastic boundary degenerates to `t = 0`. -/
 @[simp]
-theorem tMinElastic_xi_zero (M : ℝ) : tMinElastic M 0 = 0 := by
+theorem tMinElastic_xiLC_zero (M : ℝ) : tMinElastic M 0 = 0 := by
   rw [tMinElastic_def]
   norm_num
 
-/-- The target-elastic boundary lies on the non-positive side of zero whenever `xi < 1`, in
+/-- The target-elastic boundary lies on the non-positive side of zero whenever `xiLC < 1`, in
 particular throughout the physical range `ξ ∈ [0, 1)`: the boundary of the physical region is on
 the same side of zero as the region it bounds. -/
-theorem tMinElastic_nonpos (M xi : ℝ) (h : xi < 1) : tMinElastic M xi ≤ 0 := by
+theorem tMinElastic_nonpos (M xiLC : ℝ) (h : xiLC < 1) : tMinElastic M xiLC ≤ 0 := by
   rw [tMinElastic_def, neg_div, neg_nonpos]
-  exact div_nonneg (mul_nonneg (sq_nonneg xi) (sq_nonneg M)) (sub_nonneg.mpr h.le)
+  exact div_nonneg (mul_nonneg (sq_nonneg xiLC) (sq_nonneg M)) (sub_nonneg.mpr h.le)
 
 end Diffractive
 end DIS
