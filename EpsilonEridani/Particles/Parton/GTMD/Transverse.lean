@@ -26,10 +26,12 @@ two-vectors, together with its polar parametrisation `circleMapTransverse`.
 * `circleMapTransverse_apply_zero`, `circleMapTransverse_apply_one`: the Cartesian components
   `(kT cos θ, kT sin θ)`.
 * `norm_circleMapTransverse`: the vector has norm `|kT|`.
-* `range_circleMapTransverse`: the vectors of radius `kT` exhaust the circle `‖w‖ = |kT|`.
 * `circleMapTransverse_neg_radius`: reversing the radius reverses the vector.
-* `norm_repr_eq_of_mem_sphere`: the coordinates `Complex.orthonormalBasisOneI` carry the circle
-  of radius `r` in `ℂ` to the circle `‖w‖ = r`.
+
+The coordinates `Complex.orthonormalBasisOneI` carry the circle of radius `r` in `ℂ` onto the
+circle `‖w‖ = r` of the transverse plane; that translation is
+`LinearIsometryEquiv.norm_map_of_mem_sphere_zero`, in
+`EpsilonEridani.Mathematics.LinearAlgebra.LinearIsometry.Sphere`.
 -/
 @[expose] public section
 
@@ -60,22 +62,10 @@ lemma circleMapTransverse_apply_zero (kT θ : ℝ) : circleMapTransverse kT θ 0
 lemma circleMapTransverse_apply_one (kT θ : ℝ) : circleMapTransverse kT θ 1 = kT * sin θ := by
   simp [circleMapTransverse, circleMap_zero]
 
-/-- The coordinates `Complex.orthonormalBasisOneI` carry the circle of radius `r` about the
-    origin of `ℂ` to the circle `‖w‖ = r` of the transverse plane. -/
-lemma norm_repr_eq_of_mem_sphere {r : ℝ} {z : ℂ} (hz : z ∈ Metric.sphere (0 : ℂ) r) :
-    ‖Complex.orthonormalBasisOneI.repr z‖ = r := by
-  rw [LinearIsometryEquiv.norm_map, mem_sphere_zero_iff_norm.mp hz]
-
 /-- The vector `circleMapTransverse kT θ` has norm `|kT|`. -/
 @[simp]
 lemma norm_circleMapTransverse (kT θ : ℝ) : ‖circleMapTransverse kT θ‖ = |kT| := by
   rw [circleMapTransverse, LinearIsometryEquiv.norm_map, norm_circleMap_zero]
-
-/-- The vectors `circleMapTransverse kT θ` exhaust the circle `‖w‖ = |kT|`. -/
-lemma range_circleMapTransverse (kT : ℝ) :
-    Set.range (circleMapTransverse kT) = Metric.sphere 0 |kT| := by
-  rw [show circleMapTransverse kT = Complex.orthonormalBasisOneI.repr ∘ circleMap 0 kT from rfl,
-    Set.range_comp, range_circleMap, LinearIsometryEquiv.image_sphere, map_zero]
 
 /-- The vector of radius zero is the origin. -/
 @[simp]

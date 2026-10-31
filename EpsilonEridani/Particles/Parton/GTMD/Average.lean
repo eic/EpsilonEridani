@@ -5,6 +5,7 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
+public import EpsilonEridani.Mathematics.LinearAlgebra.LinearIsometry.Sphere
 public import EpsilonEridani.Particles.Parton.GTMD.Transverse
 public import EpsilonEridani.Particles.Parton.TMD.Basic
 public import Mathlib.MeasureTheory.Integral.CircleAverage
@@ -26,6 +27,10 @@ by averaging over the polar angle at fixed radius. This module makes that averag
 * `VectorTmd`: a transverse-momentum dependent distribution whose transverse-momentum
   argument is a vector in `Transverse`.
 * `IsVectorTmdDensity`: the vector-argument analogue of `TMD.IsTmdDensity`.
+* `Regularity`: the vector-argument analogue of `TMD.Regularity`, the analytic half of the
+  assumption bundle: continuity of every transverse-momentum slice.
+* `Assumptions`: the full vector-argument assumption bundle, the physical conditions of
+  `IsVectorTmdDensity` together with the analytic condition of `Regularity`.
 * `azimuthalAverage`: the per-flavour circle average of a `VectorTmd`, a `TMD.Tmd`. It inherits
   the junk value `0` of `circleAverageTransverse` on non-integrable slices, which is why
   `IsVectorTmdDensity` needs no measurability or integrability condition.
@@ -34,10 +39,19 @@ by averaging over the polar angle at fixed radius. This module makes that averag
 
 * `circleAverageTransverse_eq_integral`: the average is
   `(2π)⁻¹ • ∫₀^{2π} g (circleMapTransverse kT θ) dθ`.
+* `circleAverageTransverse_const_on_circle`: the average of a function that is constant on
+  the circle `‖w‖ = |kT|` is that constant.
 * `circleAverageTransverse_eq_zero_of_odd`, `azimuthalAverage_eq_zero_of_odd`: the averages
   annihilate every function that is odd on the circle, in particular every linear map.
-* `isTmdDensity_azimuthalAverage`: the azimuthal average of a vector-argument density is a
-  density in the sense of `TMD.IsTmdDensity`.
+* `azimuthalAverage_comp_norm`: averaging a function of the magnitude alone returns that
+  function.
+* `isTmdDensity_azimuthalAverage`, `regularity_azimuthalAverage`,
+  `assumptions_azimuthalAverage`: the azimuthal average of a vector-argument density is a
+  density in the sense of `TMD.IsTmdDensity`, is regular in the sense of `TMD.Regularity`, and
+  satisfies the full `TMD.Assumptions` bundle, so it can be used with every consumer that
+  takes one.
+* `assumptions_iff`: the split of the vector-argument assumption bundle into its physical and
+  analytic halves is exact.
 
 ## References
 
@@ -76,7 +90,9 @@ def circleAverageTransverse (g : Transverse → E) (kT : ℝ) : E :=
 lemma circleAverageTransverse_def (g : Transverse → E) (kT : ℝ) :
     circleAverageTransverse g kT =
       Real.circleAverage (fun z => g (Complex.orthonormalBasisOneI.repr z)) 0 kT :=
-  rfl
+  (rfl)
+  -- `(rfl)`, not `rfl`: a syntactic `rfl` proof would implicitly tag the lemma `@[defeq]`,
+  -- which would let `dsimp` unfold `circleAverageTransverse` downstream.
 
 /-- The circle average is `(2π)⁻¹` times the integral of `g` along `circleMapTransverse kT`
     over the polar angle `θ ∈ [0, 2π]`. -/
@@ -104,24 +120,21 @@ lemma circleAverageTransverse_zero_radius [CompleteSpace E] (g : Transverse → 
     circleAverageTransverse g 0 = g 0 := by
   rw [circleAverageTransverse_def, Real.circleAverage_zero, map_zero]
 
-/-- The circle average of a constant function is that constant. -/
-@[simp]
-lemma circleAverageTransverse_const [CompleteSpace E] (c : E) (kT : ℝ) :
-    circleAverageTransverse (fun _ => c) kT = c :=
-  Real.circleAverage_const c 0 kT
-
-/-- The circle average depends only on the values of the function on the circle `‖w‖ = |kT|`. -/
-lemma circleAverageTransverse_congr_sphere {g₁ g₂ : Transverse → E} {kT : ℝ}
-    (h : ∀ w, ‖w‖ = |kT| → g₁ w = g₂ w) :
-    circleAverageTransverse g₁ kT = circleAverageTransverse g₂ kT := by
-  rw [circleAverageTransverse_def, circleAverageTransverse_def]
-  exact Real.circleAverage_congr_sphere fun z hz => h _ (norm_repr_eq_of_mem_sphere hz)
+/-- The circle average of a function that is constant on the circle `‖w‖ = |kT|` is that
+    constant. -/
+lemma circleAverageTransverse_const_on_circle [CompleteSpace E] {g : Transverse → E} {c : E}
+    {kT : ℝ} (h : ∀ w, ‖w‖ = |kT| → g w = c) :
+    circleAverageTransverse g kT = c := by
+  rw [circleAverageTransverse_def]
+  exact Real.circleAverage_const_on_circle fun z hz =>
+    h _ (Complex.orthonormalBasisOneI.repr.norm_map_of_mem_sphere_zero hz)
 
 /-- The circle average of a function nonnegative on the circle `‖w‖ = |kT|` is nonnegative. -/
 lemma circleAverageTransverse_nonneg_of_nonneg {g : Transverse → ℝ} {kT : ℝ}
     (hg : ∀ w, ‖w‖ = |kT| → 0 ≤ g w) : 0 ≤ circleAverageTransverse g kT := by
   rw [circleAverageTransverse_def]
-  exact Real.circleAverage_nonneg_of_nonneg fun z hz => hg _ (norm_repr_eq_of_mem_sphere hz)
+  exact Real.circleAverage_nonneg_of_nonneg fun z hz =>
+    hg _ (Complex.orthonormalBasisOneI.repr.norm_map_of_mem_sphere_zero hz)
 
 /-- The circle average of a function odd on the circle `‖w‖ = |kT|` vanishes. -/
 lemma circleAverageTransverse_eq_zero_of_odd {g : Transverse → E} {kT : ℝ}
@@ -148,6 +161,52 @@ structure IsVectorTmdDensity (f : VectorTmd Flavor) : Prop where
   supportX : ∀ i x kT Q2 ζ, x < 0 ∨ 1 < x → f i x kT Q2 ζ = 0
   /-- The density is nonnegative on the physical range of the momentum fraction. -/
   nonneg : ∀ i x kT Q2 ζ, 0 ≤ x → x ≤ 1 → 0 ≤ f i x kT Q2 ζ
+
+/-! ### The analytic/physical split of `Assumptions`
+
+As in the transverse-magnitude case (`EpsilonEridani.Particles.Parton.TMD.Assumptions`) the
+bundle mixes a definition with an obligation. `IsVectorTmdDensity` is the physical half —
+support in `x` and nonnegativity on the physical region — and is what "vector-argument
+transverse-momentum-dependent parton density" means. `Regularity` is the analytic half,
+continuity of the transverse-momentum slices; it is what transports to measurability of the
+azimuthal average in the transverse-momentum magnitude (`regularity_azimuthalAverage` below).
+`assumptions_iff` records that the split is exact.
+-/
+
+/-- **The analytic half of the vector-argument assumption bundle**: continuity of every
+    transverse-momentum slice. -/
+structure Regularity (f : VectorTmd Flavor) : Prop where
+  /-- `f i x · Q2 ζ` is continuous as a function of the transverse-momentum vector. -/
+  continuousKT : ∀ i x Q2 ζ, Continuous (fun w : Transverse => f i x w Q2 ζ)
+
+/-- Structural assumptions for vector-argument TMD objects: the physical conditions of
+    `IsVectorTmdDensity` together with the analytic condition of `Regularity`. -/
+structure Assumptions (f : VectorTmd Flavor) : Prop where
+  /-- The density vanishes outside the physical range `[0, 1]` of the momentum fraction. -/
+  supportX : ∀ i x kT Q2 ζ, x < 0 ∨ 1 < x → f i x kT Q2 ζ = 0
+  /-- The density is nonnegative on the physical range of the momentum fraction. -/
+  nonneg : ∀ i x kT Q2 ζ, 0 ≤ x → x ≤ 1 → 0 ≤ f i x kT Q2 ζ
+  /-- `f i x · Q2 ζ` is continuous as a function of the transverse-momentum vector. -/
+  continuousKT : ∀ i x Q2 ζ, Continuous (fun w : Transverse => f i x w Q2 ζ)
+
+/-- The physical half of a full vector-argument assumption bundle. -/
+lemma Assumptions.isVectorTmdDensity {f : VectorTmd Flavor} (h : Assumptions f) :
+    IsVectorTmdDensity f :=
+  { supportX := h.supportX, nonneg := h.nonneg }
+
+/-- The analytic half of a full vector-argument assumption bundle. -/
+lemma Assumptions.regularity {f : VectorTmd Flavor} (h : Assumptions f) :
+    Regularity f :=
+  { continuousKT := h.continuousKT }
+
+/-- The split is exact: `Assumptions` is the conjunction of the physical and the analytic
+    half, with no residue. -/
+lemma assumptions_iff {f : VectorTmd Flavor} :
+    Assumptions f ↔ IsVectorTmdDensity f ∧ Regularity f :=
+  ⟨fun h => ⟨h.isVectorTmdDensity, h.regularity⟩, fun h =>
+    { supportX := h.1.supportX
+      nonneg := h.1.nonneg
+      continuousKT := h.2.continuousKT }⟩
 
 /-- The azimuthal average of a vector-argument TMD: per flavour, the circle average of
     `f i x · Q2 ζ` over the circle of radius `kT`. Since a `TMD.Tmd` is a function of the
@@ -183,6 +242,15 @@ lemma azimuthalAverage_zero_radius (f : VectorTmd Flavor) (i : Flavor) (x Q2 ζ 
     azimuthalAverage f i x 0 Q2 ζ = f i x 0 Q2 ζ := by
   rw [azimuthalAverage_of_nonneg f i (kT := 0) le_rfl, circleAverageTransverse_zero_radius]
 
+/-- Averaging a function of the magnitude alone returns that function: the azimuthal average
+    is a retraction of the radial inclusion `g ↦ fun i x w Q2 ζ => g i x ‖w‖ Q2 ζ` of
+    `TMD.Tmd` into `VectorTmd`. -/
+lemma azimuthalAverage_comp_norm (g : TMD.Tmd Flavor) (i : Flavor) {x kT Q2 ζ : ℝ}
+    (hkT : 0 ≤ kT) :
+    azimuthalAverage (fun i x w Q2 ζ => g i x ‖w‖ Q2 ζ) i x kT Q2 ζ = g i x kT Q2 ζ := by
+  rw [azimuthalAverage_of_nonneg _ i hkT]
+  exact circleAverageTransverse_const_on_circle fun w hw => by rw [hw, abs_of_nonneg hkT]
+
 /-- The azimuthal average of a vector-argument density is a density in the sense of
     `TMD.IsTmdDensity`. -/
 theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDensity f) :
@@ -190,12 +258,38 @@ theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDe
   supportX i x kT Q2 ζ hx := by
     rcases lt_or_ge kT 0 with hkT | hkT
     · exact azimuthalAverage_of_neg f i hkT
-    · have h0 : (f i x · Q2 ζ) = fun _ => 0 := funext fun v => hf.supportX i x v Q2 ζ hx
-      rw [azimuthalAverage_of_nonneg f i hkT, h0, circleAverageTransverse_const]
+    · rw [azimuthalAverage_of_nonneg f i hkT]
+      exact circleAverageTransverse_const_on_circle fun w _ => hf.supportX i x w Q2 ζ hx
   supportKT i x kT Q2 ζ hkT := azimuthalAverage_of_neg f i hkT
   nonneg i x kT Q2 ζ hx0 hx1 hkT := by
     rw [azimuthalAverage_of_nonneg f i hkT]
     exact circleAverageTransverse_nonneg_of_nonneg fun w _ => hf.nonneg i x w Q2 ζ hx0 hx1
+
+/-- The azimuthal average of a regular vector-argument TMD is regular in the sense of
+    `TMD.Regularity`: continuity of every transverse-momentum slice gives measurability of
+    the averaged function in the transverse-momentum magnitude. -/
+theorem regularity_azimuthalAverage {f : VectorTmd Flavor} (hf : Regularity f) :
+    TMD.Regularity (azimuthalAverage f) where
+  measurableKT i x Q2 ζ := by
+    have hslice : Continuous (fun z : ℂ =>
+        f i x (Complex.orthonormalBasisOneI.repr z) Q2 ζ) :=
+      (hf.continuousKT i x Q2 ζ).comp Complex.orthonormalBasisOneI.repr.continuous
+    have hc : Continuous (fun kT : ℝ => circleAverageTransverse (f i x · Q2 ζ) kT) :=
+      (hslice.circleAverage (c := 0)).congr fun kT =>
+        (circleAverageTransverse_def (f i x · Q2 ζ) kT).symm
+    have hite : MeasureTheory.AEStronglyMeasurable (fun kT : ℝ =>
+        if kT < 0 then (0 : ℝ) else circleAverageTransverse (f i x · Q2 ζ) kT) :=
+      (Measurable.ite (measurableSet_lt measurable_id measurable_const)
+        measurable_const hc.measurable).aestronglyMeasurable
+    simpa only [azimuthalAverage] using hite
+
+/-- The azimuthal average of a vector-argument TMD satisfying the full assumption bundle
+    satisfies the full `TMD.Assumptions` bundle, so it can be used with every consumer that
+    takes one. -/
+theorem assumptions_azimuthalAverage {f : VectorTmd Flavor} (hf : Assumptions f) :
+    TMD.Assumptions (azimuthalAverage f) :=
+  TMD.assumptions_iff.mpr ⟨isTmdDensity_azimuthalAverage hf.isVectorTmdDensity,
+    regularity_azimuthalAverage hf.regularity⟩
 
 end GTMD
 end Parton
