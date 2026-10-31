@@ -6,11 +6,12 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Jets.Frame.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 
 /-!
 # A witness for reference frames
 
-The `+--` Minkowski form `gWit` on `ℝ × ℝ × ℝ`, also used as the DIS tensor witness, carries
+The `+--` Minkowski form `gWit` on `ℝ × ℝ × ℝ`, already used as the DIS tensor witness, carries
 the rest frame `n = (1, 0, 0)`. In it the energy of `p` is its time component, and two
 back-to-back photons have opening angle `π`.
 
@@ -30,7 +31,7 @@ namespace Jets
 namespace Frame
 namespace Witness
 
-open EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness (gWit gWit_isSymm)
+open EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.Witness (gWit gWit_isSymm)
 
 /-- The rest frame `n = (1, 0, 0)` of the Minkowski form `gWit`. -/
 def restFrameWit : Frame gWit where

@@ -17,7 +17,7 @@ It also supplies the basic API of the abstract bilinear form `Bilin V` that the 
 evaluated against: the expansion `Bilin.apply_sub_smul_pair`, the projection
 `Bilin.projOrthogonal` onto the `g`-orthogonal complement of a non-null vector, the rank-one
 forms `Bilin.rankOne`, the `g`-isometries `Bilin.IsIsometry` and the reflections
-`Bilin.reflect`. The `+--` Minkowski form `Witness.gWit` on `ℝ × ℝ × ℝ` is a concrete instance.
+`Bilin.reflect`.
 
 -/
 
@@ -196,30 +196,6 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
 end Bilin
-
-namespace Witness
-
-/-- The `+--` Minkowski form on `ℝ × ℝ × ℝ`, one time and two space directions:
-`g v w = v₀w₀ - v₁w₁ - v₂w₂`. This is the `Kinematics` sign convention, in the smallest
-dimension that admits two independent spacelike directions. -/
-def gWit : Bilin (ℝ × ℝ × ℝ) :=
-  LinearMap.mk₂ ℝ (fun v w => v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2)
-    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
-    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
-    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
-    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
-
-@[simp] lemma gWit_apply (v w : ℝ × ℝ × ℝ) :
-    gWit v w = v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2 := rfl
-
-/-- `gWit` is symmetric, as a metric must be. -/
-lemma gWit_isSymm : gWit.IsSymm := by
-  refine { eq := ?_ }
-  intro v w
-  simp only [gWit_apply]
-  ring
-
-end Witness
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
 structure DisKinematics where
