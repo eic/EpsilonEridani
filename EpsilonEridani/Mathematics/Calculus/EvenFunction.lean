@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Shift
 /-!
 # Derivatives of even functions
 
-The derivative of an even function is odd (`Function.Even.deriv`). In particular it
+The derivative of an even function is odd (`Function.Even.odd_deriv`). In particular it
 vanishes at the origin, by Mathlib's `Function.Odd.map_zero`. This is used in the construction of
 the spherical Bessel functions
 (`EpsilonEridani.Mathematics.SpecialFunctions.SphericalBessel.Basic`): the iterates of
@@ -25,7 +25,7 @@ the origin.
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The derivative of an even function is odd. -/
-theorem Function.Even.deriv {f : 𝕜 → F} (hf : Function.Even f) : Function.Odd (deriv f) := by
+theorem Function.Even.odd_deriv {f : 𝕜 → F} (hf : Function.Even f) : Function.Odd (deriv f) := by
   intro x
   have h : (fun y => f (-y)) = f := funext hf
   rw [← h, deriv_comp_neg, neg_neg, h]
