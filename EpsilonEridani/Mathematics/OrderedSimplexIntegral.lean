@@ -356,7 +356,7 @@ theorem volume_orderedRegion (T : ℝ) (n : ℕ) (t : ℝ) :
     · have hfin : volume (orderedRegion T (m + 1) t) ≠ ⊤ :=
         (measure_mono (orderedRegion_subset_Icc T (m + 1) t)).trans_lt
           isCompact_Icc.measure_lt_top |>.ne
-      have h := setIntegral_orderedRegion_eq_pow_div_factorial continuous_const (m + 1) htT (f := 1)
+      have h := setIntegral_orderedRegion_eq_pow_div_factorial continuous_one (m + 1) htT (f := 1)
       simp only [Pi.one_apply, Finset.prod_const_one, setIntegral_const, smul_eq_mul, mul_one,
         intervalIntegral.integral_const] at h
       rw [← ofReal_measureReal hfin, h, ENNReal.ofReal_div_of_pos (by positivity),
@@ -379,6 +379,20 @@ lemma mem_descendingRegion {T t : ℝ} {n : ℕ} {p : Fin n → ℝ} :
     p ∈ descendingRegion T n t ↔ StrictAnti p ∧ ∀ i, p i ∈ Set.Ioo t T :=
   Iff.rfl
 
+/-- With no coordinates, the descending region is the whole (one-point) space. -/
+@[simp]
+lemma descendingRegion_zero (T t : ℝ) : descendingRegion T 0 t = Set.univ :=
+  Set.eq_univ_of_forall fun _ => ⟨fun i => i.elim0, fun i => i.elim0⟩
+
+/-- For `T ≤ t`, the descending region with at least one coordinate is empty: every coordinate
+would have to lie in the empty interval `(t, T)`. -/
+@[simp]
+lemma descendingRegion_eq_empty {T t : ℝ} (h : T ≤ t) (n : ℕ) :
+    descendingRegion T (n + 1) t = ∅ := by
+  rw [Set.eq_empty_iff_forall_notMem]
+  intro p hp
+  exact absurd ((hp.2 0).1.trans (hp.2 0).2) (not_lt.mpr h)
+
 /-- The descending region is the preimage of the ordered region under the coordinate reversal
 `p ↦ p ∘ Fin.rev`. -/
 lemma preimage_comp_rev_orderedRegion (T : ℝ) (n : ℕ) (t : ℝ) :
@@ -399,6 +413,19 @@ lemma measurableSet_descendingRegion (T : ℝ) (n : ℕ) (t : ℝ) :
     MeasurableSet (descendingRegion T n t) := by
   rw [← preimage_comp_rev_orderedRegion]
   exact (measurableSet_orderedRegion T n t).preimage (volume_preserving_comp_rev n).measurable
+
+/-- The descending region sits inside the cube `[t, T] ^ n`. -/
+lemma descendingRegion_subset_Icc (T : ℝ) (n : ℕ) (t : ℝ) :
+    descendingRegion T n t ⊆ Set.Icc (fun _ => t) (fun _ => T) :=
+  fun _ hp => ⟨fun i => (hp.2 i).1.le, fun i => (hp.2 i).2.le⟩
+
+/-- A function continuous on the cube `[t, T] ^ n` is integrable on the descending region: the
+region is a measurable subset of that compact cube. -/
+lemma integrableOn_descendingRegion {n : ℕ} {E : Type*} [NormedAddCommGroup E]
+    {g : (Fin n → ℝ) → E} {T t : ℝ}
+    (hg : ContinuousOn g (Set.Icc (fun _ => t) (fun _ => T))) :
+    IntegrableOn g (descendingRegion T n t) :=
+  (hg.integrableOn_compact isCompact_Icc).mono_set (descendingRegion_subset_Icc T n t)
 
 /-- **Change of variables between the two labellings.** The integral of `g` over the
 descending region equals the integral of `q ↦ g (q ∘ Fin.rev)` over the ordered region:
@@ -427,7 +454,8 @@ theorem setIntegral_descendingRegion_eq_orderedProdIntegral (hf : Continuous f) 
     ∫ p in descendingRegion T n t, ∏ i, f (p i) = orderedProdIntegral f T n t := by
   rw [setIntegral_descendingRegion, ← setIntegral_orderedRegion_eq_orderedProdIntegral hf n htT]
   refine setIntegral_congr_fun (measurableSet_orderedRegion T n t) fun q _ => ?_
-  exact Equiv.prod_comp Fin.revPerm fun i => f (q i)
+  simpa only [Function.comp_apply, ← Fin.revPerm_apply] using
+    Equiv.prod_comp Fin.revPerm fun i => f (q i)
 
 /-- For continuous `f` and `t ≤ T`, the integral of `f (p 0) * ⋯ * f (p (n - 1))` over the
 descending region of `ℝ ^ n` is `(∫ s in t..T, f s) ^ n / n !`. -/

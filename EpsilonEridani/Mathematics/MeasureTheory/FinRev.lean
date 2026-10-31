@@ -28,6 +28,7 @@ open MeasureTheory
 variable {α : Type*}
 
 /-- Reversing the coordinates of a tuple twice gives the tuple back. -/
+@[simp]
 lemma comp_rev_comp_rev {n : ℕ} (p : Fin n → α) : (p ∘ Fin.rev) ∘ Fin.rev = p := by
   rw [Function.comp_assoc, Fin.rev_involutive.comp_self, Function.comp_id]
 
