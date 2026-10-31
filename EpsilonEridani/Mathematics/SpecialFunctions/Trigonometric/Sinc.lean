@@ -1,0 +1,38 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
+
+/-!
+# Analyticity of `Real.sinc`
+
+Mathlib proves that `Real.sinc` is continuous (`Real.continuous_sinc`). Since `sinc` is the slope
+function `dslope sin 0` (`Real.sinc_eq_dslope`) and `dslope` preserves analyticity
+(`AnalyticAt.dslope`), `sinc` is real analytic on the whole line
+(`EpsilonEridani.analyticAt_sinc`). The same identification gives `x * sinc x = sin x` on
+the whole line, the origin included (`EpsilonEridani.mul_sinc`).
+-/
+
+@[expose] public section
+
+open Real
+
+namespace EpsilonEridani
+
+/-- `Real.sinc` is real analytic at every point. -/
+@[fun_prop]
+theorem analyticAt_sinc (x : ℝ) : AnalyticAt ℝ sinc x := by
+  rw [sinc_eq_dslope]
+  exact analyticAt_sin.dslope 0
+
+/-- `x * sinc x = sin x` for every real `x`, including `x = 0`. -/
+@[simp]
+theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
+  simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
+
+end EpsilonEridani
