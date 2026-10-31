@@ -14,8 +14,10 @@ This module introduces a minimal kinematic record and canonical DIS invariants.
 The design follows the architecture freeze document.
 
 It also supplies the basic API of the abstract bilinear form `Bilin V` that the kinematics is
-evaluated against: the expansion `Bilin.apply_sub_smul_pair` and the projection
-`Bilin.projOrthogonal` onto the `g`-orthogonal complement of a non-null vector.
+evaluated against: the expansion `Bilin.apply_sub_smul_pair`, the projection
+`Bilin.projOrthogonal` onto the `g`-orthogonal complement of a non-null vector, the rank-one
+forms `Bilin.rankOne`, the `g`-isometries `Bilin.IsIsometry` and the reflections
+`Bilin.reflect`. The `+--` Minkowski form `Witness.gWit` on `ℝ × ℝ × ℝ` is a concrete instance.
 
 -/
 
@@ -40,12 +42,7 @@ variable {V}
 lemma apply_sub_smul_pair (g : Bilin V) (u x y : V) (a b : ℝ) :
     g (x - a • u) (y - b • u)
       = g x y - b * g x u - a * g u y + a * b * g u u := by
-  have h1 : g (x - a • u) = g x - a • g u := by
-    rw [map_sub, map_smul]
-  have h3 : ∀ z : V, g z (y - b • u) = g z y - b * g z u := by
-    intro z
-    rw [map_sub, map_smul, smul_eq_mul]
-  rw [h1, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, h3 x, h3 u]
+  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
   ring
 
 /-- The projection along `ℝ ∙ u` onto the `g`-orthogonal complement of `u`,
@@ -105,14 +102,124 @@ lemma range_projOrthogonal (g : Bilin V) {u : V} (hu : g u u ≠ 0) :
     fun hv ↦ ⟨v, (g.projOrthogonal_eq_self_iff hu).mpr hv⟩⟩
 
 /-- The pairing of two projected vectors: `g (projOrthogonal u v) (projOrthogonal u w)
-= g v w - g v u * g u w / g u u`. No symmetry of `g` is needed. -/
-lemma projOrthogonal_pairing (g : Bilin V) {u : V} (hu : g u u ≠ 0) (v w : V) :
+= g v w - g v u * g u w / g u u`. No symmetry of `g` is needed, and when `g u u = 0` both sides
+are `g v w`. -/
+lemma projOrthogonal_pairing (g : Bilin V) (u v w : V) :
     g (g.projOrthogonal u v) (g.projOrthogonal u w) = g v w - g v u * g u w / g u u := by
+  rcases eq_or_ne (g u u) 0 with hu | hu
+  · simp [projOrthogonal_apply, hu]
   rw [projOrthogonal_apply, projOrthogonal_apply, apply_sub_smul_pair]
   field_simp
   ring
 
+/-- The projection depends on `u` only through the line `ℝ ∙ u`. -/
+lemma projOrthogonal_smul (g : Bilin V) {c : ℝ} (hc : c ≠ 0) (u : V) :
+    g.projOrthogonal (c • u) = g.projOrthogonal u := by
+  ext v
+  rcases eq_or_ne (g u u) 0 with hu | hu
+  · simp [projOrthogonal_apply, hu]
+  simp only [projOrthogonal_apply, map_smul, LinearMap.smul_apply, smul_eq_mul, smul_smul]
+  congr 2
+  field_simp
+
+/-- Rank-one bilinear form `(v,w) ↦ g(a,v) g(b,w)` derived from a background bilinear form `g`. -/
+def rankOne (g : Bilin V) (a b : V) : Bilin V where
+  toFun := fun v =>
+    { toFun := fun w => g a v * g b w
+      map_add' := by
+        intro w₁ w₂
+        simp [mul_add, map_add]
+      map_smul' := by
+        intro c w
+        change g a v * g b (c • w) = c * (g a v * g b w)
+        rw [map_smul]
+        ring }
+  map_add' := by
+    intro v₁ v₂
+    ext w
+    simp [add_mul, map_add]
+  map_smul' := by
+    intro c v
+    ext w
+    change g a (c • v) * g b w = c * (g a v * g b w)
+    rw [map_smul]
+    ring
+
+@[simp] lemma rankOne_apply (g : Bilin V) (a b v w : V) :
+    rankOne g a b v w = g a v * g b w := rfl
+
+/-- A rank-one form built from a single vector is symmetric. -/
+lemma rankOne_isSymm (g : Bilin V) (a : V) : (rankOne g a a).IsSymm := by
+  refine { eq := ?_ }
+  intro v w
+  simp [rankOne_apply, mul_comm]
+
+/-- A linear endomorphism preserving the background form `g`. For `g` a Lorentz metric these
+are exactly the (linear) Lorentz transformations. -/
+def IsIsometry (g : Bilin V) (f : V →ₗ[ℝ] V) : Prop :=
+  ∀ v w : V, g (f v) (f w) = g v w
+
+/-- The identity map is a `g`-isometry. -/
+lemma isIsometry_id (g : Bilin V) : IsIsometry g (LinearMap.id) := by
+  intro v w
+  simp
+
+/-- Reflection of `V` in the `g`-orthogonal hyperplane to `u`, `v ↦ v - 2 (g u v / g u u) u`:
+`Module.preReflection u f` for the functional `f = 2 g u · / g u u`, which satisfies `f u = 2`
+when `g u u ≠ 0`. The definition is unconditional; it is a `g`-isometry when `g` is symmetric
+and `g u u ≠ 0` (`reflect_isometry`), and degenerates to the identity when `g u u = 0`, since
+`(0 : ℝ)⁻¹ = 0`. -/
+noncomputable def reflect (g : Bilin V) (u : V) : V →ₗ[ℝ] V :=
+  Module.preReflection u ((2 * (g u u)⁻¹) • g u)
+
+@[simp] lemma reflect_apply (g : Bilin V) (u v : V) :
+    reflect g u v = v - (2 * (g u u)⁻¹ * g u v) • u := by
+  simp only [reflect, Module.preReflection_apply, LinearMap.smul_apply, smul_eq_mul]
+
+/-- The reflection in `u` reverses `u`. -/
+lemma reflect_apply_self (g : Bilin V) (u : V) (hu : g u u ≠ 0) :
+    reflect g u u = -u :=
+  Module.preReflection_apply_self <| by
+    rw [LinearMap.smul_apply, smul_eq_mul, mul_assoc, inv_mul_cancel₀ hu, mul_one]
+
+/-- The reflection in `u` fixes every vector `g`-orthogonal to `u`. -/
+lemma reflect_apply_of_orthogonal (g : Bilin V) (u v : V) (h : g u v = 0) :
+    reflect g u v = v := by
+  rw [reflect_apply, h, mul_zero, zero_smul, sub_zero]
+
+/-- A reflection in a non-null direction is a `g`-isometry when `g` is symmetric. -/
+lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0) :
+    IsIsometry g (reflect g u) := by
+  intro v w
+  have hc : (g u u)⁻¹ * g u u = 1 := inv_mul_cancel₀ hu
+  rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
+  linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
+
 end Bilin
+
+namespace Witness
+
+/-- The `+--` Minkowski form on `ℝ × ℝ × ℝ`, one time and two space directions:
+`g v w = v₀w₀ - v₁w₁ - v₂w₂`. This is the `Kinematics` sign convention, in the smallest
+dimension that admits two independent spacelike directions. -/
+def gWit : Bilin (ℝ × ℝ × ℝ) :=
+  LinearMap.mk₂ ℝ (fun v w => v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2)
+    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+
+@[simp] lemma gWit_apply (v w : ℝ × ℝ × ℝ) :
+    gWit v w = v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2 := rfl
+
+/-- `gWit` is symmetric, as a metric must be. -/
+lemma gWit_isSymm : gWit.IsSymm := by
+  refine { eq := ?_ }
+  intro v w
+  simp only [gWit_apply]
+  ring
+
+end Witness
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
 structure DisKinematics where

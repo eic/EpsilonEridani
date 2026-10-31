@@ -13,8 +13,8 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 This module introduces tensor objects for inclusive DIS:
 
 - A leptonic tensor model built from incoming and outgoing lepton momenta.
-- Reflections of a bilinear form, used as concrete elements of the stabilizer of the
-  kinematics inside the `g`-isometry group.
+- Concrete elements of the stabilizer of the kinematics inside the `g`-isometry group, built
+  from the reflections `Kinematics.Bilin.reflect`.
 - An abstract hadronic tensor with explicit Lorentz-covariance, symmetry and
   current-conservation assumptions.
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
@@ -82,99 +82,6 @@ namespace Tensors
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
-
-namespace Bilin
-
-variable {V}
-
-/-- Rank-one bilinear form `(v,w) ↦ g(a,v) g(b,w)` derived from a background bilinear form `g`. -/
-def rankOne (g : Bilin V) (a b : V) : Bilin V where
-  toFun := fun v =>
-    { toFun := fun w => g a v * g b w
-      map_add' := by
-        intro w₁ w₂
-        simp [mul_add, map_add]
-      map_smul' := by
-        intro c w
-        change g a v * g b (c • w) = c * (g a v * g b w)
-        rw [map_smul]
-        ring }
-  map_add' := by
-    intro v₁ v₂
-    ext w
-    simp [add_mul, map_add]
-  map_smul' := by
-    intro c v
-    ext w
-    change g a (c • v) * g b w = c * (g a v * g b w)
-    rw [map_smul]
-    ring
-
-@[simp] lemma rankOne_apply (g : Bilin V) (a b v w : V) :
-    rankOne g a b v w = g a v * g b w := rfl
-
-/-- A rank-one form built from a single vector is symmetric. -/
-lemma rankOne_isSymm (g : Bilin V) (a : V) : (rankOne g a a).IsSymm := by
-  refine { eq := ?_ }
-  intro v w
-  simp [rankOne_apply, mul_comm]
-
-/-- A linear endomorphism preserving the background form `g`. For `g` a Lorentz metric these
-are exactly the (linear) Lorentz transformations. -/
-def IsIsometry (g : Bilin V) (f : V →ₗ[ℝ] V) : Prop :=
-  ∀ v w : V, g (f v) (f w) = g v w
-
-/-- The identity map is a `g`-isometry. -/
-lemma isIsometry_id (g : Bilin V) : IsIsometry g (LinearMap.id) := by
-  intro v w
-  simp
-
-/-- Reflection of `V` in the `g`-orthogonal hyperplane to `u`, `v ↦ v - 2 (g u v / g u u) u`.
-The definition is unconditional; it is a `g`-isometry when `g` is symmetric and
-`g u u ≠ 0` (`reflect_isometry`), and degenerates to the identity when `g u u = 0`, since
-`(0 : ℝ)⁻¹ = 0`. -/
-noncomputable def reflect (g : Bilin V) (u : V) : V →ₗ[ℝ] V where
-  toFun := fun v => v - (2 * (g u u)⁻¹ * g u v) • u
-  map_add' := by
-    intro v₁ v₂
-    have h : 2 * (g u u)⁻¹ * g u (v₁ + v₂)
-        = 2 * (g u u)⁻¹ * g u v₁ + 2 * (g u u)⁻¹ * g u v₂ := by
-      rw [map_add]
-      ring
-    simp only [h, add_smul]
-    abel
-  map_smul' := by
-    intro c v
-    have h : 2 * (g u u)⁻¹ * g u (c • v) = c * (2 * (g u u)⁻¹ * g u v) := by
-      rw [map_smul, smul_eq_mul]
-      ring
-    simp only [RingHom.id_apply, h, smul_sub, smul_smul]
-
-@[simp] lemma reflect_apply (g : Bilin V) (u v : V) :
-    reflect g u v = v - (2 * (g u u)⁻¹ * g u v) • u := rfl
-
-/-- The reflection in `u` reverses `u`. -/
-lemma reflect_apply_self (g : Bilin V) (u : V) (hu : g u u ≠ 0) :
-    reflect g u u = -u := by
-  have h : 2 * (g u u)⁻¹ * g u u = 2 := by
-    rw [mul_assoc, inv_mul_cancel₀ hu, mul_one]
-  rw [reflect_apply, h, two_smul]
-  abel
-
-/-- The reflection in `u` fixes every vector `g`-orthogonal to `u`. -/
-lemma reflect_apply_of_orthogonal (g : Bilin V) (u v : V) (h : g u v = 0) :
-    reflect g u v = v := by
-  rw [reflect_apply, h, mul_zero, zero_smul, sub_zero]
-
-/-- A reflection in a non-null direction is a `g`-isometry when `g` is symmetric. -/
-lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0) :
-    IsIsometry g (reflect g u) := by
-  intro v w
-  have hc : (g u u)⁻¹ * g u u = 1 := inv_mul_cancel₀ hu
-  rw [reflect_apply, reflect_apply, Kinematics.Bilin.apply_sub_smul_pair, hSymm.eq v u]
-  linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
-
-end Bilin
 
 namespace Leptonic
 
@@ -734,7 +641,8 @@ property of `(V, g, p, q)` and not of `W`.** Concretely:
   the prose caveat before `SpectatorAssumptions` states — now as a theorem.
 
 Both witnesses use the same `+---`-signature construction restricted to one time and two
-space directions, `ℝ × ℝ × ℝ` with `g (v₀,v₁,v₂) (w₀,w₁,w₂) = v₀w₀ - v₁w₁ - v₂w₂`, which is
+space directions, `ℝ × ℝ × ℝ` with `g (v₀,v₁,v₂) (w₀,w₁,w₂) = v₀w₀ - v₁w₁ - v₂w₂`
+(`Kinematics.Witness.gWit`), which is
 the smallest space carrying a timelike `p`, a spacelike `q` orthogonal to it, and one
 spectator direction — the minimum needed for `covariant_spectator_offDiagonal_zero` to bite.
 
@@ -749,25 +657,7 @@ of `exists_isF1F2Decomposition`.
 
 namespace Witness
 
-/-- The `+--` Minkowski form on `ℝ × ℝ × ℝ`, one time and two space directions:
-`g v w = v₀w₀ - v₁w₁ - v₂w₂`. This is the `Kinematics` sign convention, restricted to the
-smallest dimension that admits a spectator direction. -/
-def gWit : Bilin (ℝ × ℝ × ℝ) :=
-  LinearMap.mk₂ ℝ (fun v w => v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2)
-    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
-    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
-    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
-    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
-
-@[simp] lemma gWit_apply (v w : ℝ × ℝ × ℝ) :
-    gWit v w = v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2 := rfl
-
-/-- `gWit` is symmetric, as a metric must be. -/
-lemma gWit_isSymm : gWit.IsSymm := by
-  refine { eq := ?_ }
-  intro v w
-  simp only [gWit_apply]
-  ring
+open Kinematics.Witness
 
 /-- Witness kinematics: timelike hadron momentum `p = (1,0,0)` and spacelike momentum
 transfer `q = (0,1,0)`, orthogonal to `p`, which leaves `(0,0,1)` as a spectator direction

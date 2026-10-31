@@ -21,15 +21,18 @@ relative to a frame, and the frame is always an explicit argument. Over the abst
 * the **spatial norm** of `p` is `|p_s| = √(-g p_s p_s)`, and the **cosine of the opening angle** of
   `a` and `b` is `cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`.
 
-For a symmetric `g` the spatial parts satisfy `g a_s b_s = g a b - E(a) E(b)`, which is the
-mass-shell relation `E² = m² + |p_s|²` when `a = b`. Consequently a massless momentum (`g p p = 0`)
-has `|p_s| = |E(p)|`, and for two massless momenta of positive energy
+For a symmetric `g` the spatial parts satisfy `g a_s b_s = g a b - E(a) E(b)`, so that
+`cos θ_ab = (E(a) E(b) - g a b) / (|a_s| |b_s|)` for all momenta, and for `a = b` the spatial norm
+is `|p_s| = √(E(p)² - g p p)`. When `g p_s p_s ≤ 0`, as for a Minkowski form, this is the
+mass-shell relation `E² = m² + |p_s|²` with `m² = g p p`. Consequently a massless momentum
+(`g p p = 0`) has `|p_s| = |E(p)|`, and for two massless momenta whose energies have the same sign
 
   `1 - cos θ_ab = g a b / (E(a) E(b))`,
 
 the relation `2 a·b = 2 E_a E_b (1 - cos θ_ab)` on which the Durham and generalised-`k_T` distance
 measures rest. A massive pseudojet, such as the `E`-scheme sum of two massless momenta, does not
-satisfy it, which is why the massless hypotheses are stated.
+satisfy it, which is why the massless hypotheses are stated; for it the general formula for
+`cos θ_ab` above applies.
 
 No signature hypothesis on `g` is imposed. The names "magnitude" and "opening angle" are justified
 when `g` is negative definite on the `g`-orthogonal complement of `n`, as for a Minkowski form;
@@ -43,6 +46,11 @@ without that hypothesis `spatialNorm` and `cosAngle` are just the stated formula
 * `Frame.spatialNorm`, `Frame.cosAngle`: the magnitude of the spatial part and the cosine of the
   opening angle between two momenta.
 
+The frame vector is data only up to positive rescaling: `Frame.energy_eq_of_n_eq_smul`,
+`Frame.spatialPart_eq_of_n_eq_smul`, `Frame.spatialNorm_eq_of_n_eq_smul` and
+`Frame.cosAngle_eq_of_n_eq_smul` show that all four are unchanged when `n` is replaced by `c • n`
+with `0 < c` (`c ≠ 0` for the last three).
+
 ## Main statements
 
 * `Frame.spatialPart_orthogonal_n`, `Frame.energy_spatialPart`: the spatial part is orthogonal to
@@ -52,8 +60,9 @@ without that hypothesis `spatialNorm` and `cosAngle` are just the stated formula
 * `Frame.spatialPart_pairing_spatialPart`: `g a_s b_s = g a b - E(a) E(b)`.
 * `Frame.spatialNorm_eq_sqrt_energy_sq_sub`: `|p_s| = √(E(p)² - g p p)`, and
   `Frame.spatialNorm_eq_abs_energy_of_massless`: a massless momentum has `|p_s| = |E(p)|`.
+* `Frame.cosAngle_eq_energy_mul_sub_div`: `cos θ_ab = (E(a) E(b) - g a b) / (|a_s| |b_s|)`.
 * `Frame.one_sub_cosAngle_of_massless`: `1 - cos θ_ab = g a b / (E(a) E(b))` for massless `a`, `b`
-  of positive energy.
+  with `0 < E(a) E(b)`.
 
 A concrete frame, the rest frame of the `+--` Minkowski form, is in
 `EpsilonEridani.QFT.Jets.Frame.Witness`.
@@ -166,7 +175,7 @@ theorem range_spatialPart : LinearMap.range F.spatialPart = g.flip.orthogonal (�
 mass-shell relation `g p_s p_s = m² - E(p)²`. -/
 theorem spatialPart_pairing_spatialPart (hg : g.IsSymm) (a b : V) :
     g (F.spatialPart a) (F.spatialPart b) = g a b - F.energy a * F.energy b := by
-  rw [spatialPart_def, g.projOrthogonal_pairing F.timelike.ne' a b, energy_apply, energy_apply,
+  rw [spatialPart_def, g.projOrthogonal_pairing F.n a b, energy_apply, energy_apply,
     hg.eq F.n b, div_mul_div_comm _ (Real.sqrt _), Real.mul_self_sqrt F.timelike.le]
 
 /-! ### The spatial norm and the opening angle -/
@@ -234,16 +243,48 @@ theorem cosAngle_smul_right_of_pos {c : ℝ} (hc : 0 < c) (a b : V) :
   simp only [cosAngle_def, spatialNorm_smul, abs_of_pos hc, map_smul, smul_eq_mul]
   rw [mul_left_comm, ← mul_neg, mul_div_mul_left _ _ hc.ne']
 
-/-- For two massless momenta of positive energy, `1 - cos θ_ab = g a b / (E(a) E(b))`; that is,
-`2 a·b = 2 E_a E_b (1 - cos θ_ab)`. -/
+/-- The cosine of the opening angle in terms of energies and the invariant `g a b`,
+`cos θ_ab = (E(a) E(b) - g a b) / (|a_s| |b_s|)`, for arbitrary (massive or massless) momenta. -/
+theorem cosAngle_eq_energy_mul_sub_div (hg : g.IsSymm) (a b : V) :
+    F.cosAngle a b = (F.energy a * F.energy b - g a b) / (F.spatialNorm a * F.spatialNorm b) := by
+  rw [cosAngle_def, F.spatialPart_pairing_spatialPart hg, neg_sub]
+
+/-- For two massless momenta whose energies have the same sign,
+`1 - cos θ_ab = g a b / (E(a) E(b))`; that is, `2 a·b = 2 E_a E_b (1 - cos θ_ab)`. -/
 theorem one_sub_cosAngle_of_massless (hg : g.IsSymm) {a b : V} (ha : g a a = 0)
-    (hb : g b b = 0) (hEa : 0 < F.energy a) (hEb : 0 < F.energy b) :
+    (hb : g b b = 0) (hE : 0 < F.energy a * F.energy b) :
     1 - F.cosAngle a b = g a b / (F.energy a * F.energy b) := by
-  simp only [cosAngle_def, F.spatialNorm_eq_abs_energy_of_massless hg ha,
-    F.spatialNorm_eq_abs_energy_of_massless hg hb, abs_of_pos hEa, abs_of_pos hEb,
-    F.spatialPart_pairing_spatialPart hg]
-  field_simp
-  ring
+  rw [F.cosAngle_eq_energy_mul_sub_div hg, F.spatialNorm_eq_abs_energy_of_massless hg ha,
+    F.spatialNorm_eq_abs_energy_of_massless hg hb, ← abs_mul, abs_of_pos hE, sub_div,
+    div_self hE.ne', sub_sub_cancel]
+
+/-! ### Rescaling the frame vector -/
+
+/-- The energy is unchanged when the frame vector is rescaled by a positive factor. -/
+theorem energy_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : 0 < c) (h : F'.n = c • F.n) :
+    F'.energy = F.energy := by
+  ext p
+  simp only [energy_apply, h, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [← mul_assoc, Real.sqrt_mul (mul_self_nonneg c), Real.sqrt_mul_self hc.le,
+    mul_div_mul_left _ _ hc.ne']
+
+/-- The spatial part is unchanged when the frame vector is rescaled by a nonzero factor. -/
+theorem spatialPart_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :
+    F'.spatialPart = F.spatialPart := by
+  rw [spatialPart_def, spatialPart_def, h, g.projOrthogonal_smul hc]
+
+/-- The spatial norm is unchanged when the frame vector is rescaled by a nonzero factor. -/
+theorem spatialNorm_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :
+    F'.spatialNorm = F.spatialNorm := by
+  ext p
+  rw [spatialNorm_def, spatialNorm_def, F.spatialPart_eq_of_n_eq_smul F' hc h]
+
+/-- The opening angle is unchanged when the frame vector is rescaled by a nonzero factor. -/
+theorem cosAngle_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :
+    F'.cosAngle = F.cosAngle := by
+  ext a b
+  rw [cosAngle_def, cosAngle_def, F.spatialPart_eq_of_n_eq_smul F' hc h,
+    F.spatialNorm_eq_of_n_eq_smul F' hc h]
 
 end Frame
 

@@ -182,7 +182,7 @@ lemma q_sq_mul_pTransverse_self (g : Bilin V) (K : DisKinematics V)
     (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) :
     g K.q K.q * g (pTransverse g K) (pTransverse g K)
       = g K.q K.q * g K.p K.p - g K.p K.q ^ 2 := by
-  rw [pTransverse_def, g.projOrthogonal_pairing hQ2 K.p K.p,
+  rw [pTransverse_def, g.projOrthogonal_pairing K.q K.p K.p,
     hSymm.eq K.q K.p]
   field_simp
 
