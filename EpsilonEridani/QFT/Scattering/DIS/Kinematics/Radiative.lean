@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.AccessMethods
 
 /-!
@@ -41,7 +42,10 @@ the shift `ReconstructedInvariants.shiftXQ2` (or `ReconstructedInvariants.shiftX
   exact for final-state radiation, while after collinear final-state emission the electron method
   rescales the virtuality by the fraction `z` of the hard outgoing lepton momentum retained by the
   measured `k'`, `Q²_e = z Q²` for a massless incoming lepton
-  (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState`).
+  (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState`). Collinear final-state emission
+  is the condition `z ℓ = (1 - z) k'` on the measured momenta
+  (`RadiativeEvent.photon_eq_smul_kPrime_add_photon_iff`), under which the hard lepton leaves
+  with `k' / z` (`RadiativeEvent.leptonOut_of_collinear_finalState`).
 * `RadiativeEvent.sigmaMethod_y_eq_trueInvariants_y_initialState`: the Sigma method recovers the
   true inelasticity after any initial-state emission, and
   `RadiativeEvent.shiftXY_sigmaMethod_eq_zero_of_collinear_initialState` it is exact in `(x, y)`
@@ -309,9 +313,10 @@ theorem sigmaMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0)
       ← trueInvariants_eq_of_photon_eq_zero g .initialState h]
     exact sigmaMethod_y_eq_trueInvariants_y_initialState g
   ext
-  · rw [sigmaMethod_x_eq_div, sigmaMethod_Q2, hy, hQ, TrueInvariants.toReconstructedInvariants_Q2,
-      TrueInvariants.toReconstructedInvariants_x, trueInvariants_x_eq, trueInvariants_y_eq,
-      leptonIn_of_photon_eq_zero l h, mul_assoc, mul_div_cancel₀ _ hpk]
+  · rw [sigmaMethod_x_eq_Q2_div, sigmaMethod_Q2, hy, hQ,
+      TrueInvariants.toReconstructedInvariants_Q2, TrueInvariants.toReconstructedInvariants_x,
+      trueInvariants_x_eq, trueInvariants_y_eq, leptonIn_of_photon_eq_zero l h, mul_assoc,
+      mul_div_cancel₀ _ hpk]
   · exact hQ
   · exact hy
 
@@ -368,8 +373,9 @@ electron-method one. The on-shell photon forces `k² = 0`, so `Q² = z Q²_e - (
 theorem trueInvariants_Q2_of_collinear_initialState (hcol : e.photon = (1 - z) • e.k) :
     (e.trueInvariants g .initialState).Q2 = z * (electronMethod g e.k e.p e.kPrime).Q2 +
       (1 - z) * (z * g e.k e.k - g e.kPrime e.kPrime) := by
-  rw [trueInvariants_Q2_eq, pX_sub_p_of_collinear_initialState hcol, neg_apply_smul_sub,
-    electronMethod_Q2]
+  rw [trueInvariants_Q2_eq, pX_sub_p_of_collinear_initialState hcol,
+    LinearMap.BilinForm.apply_smul_sub_self, electronMethod_Q2]
+  ring
 
 /-- After exactly collinear initial-state emission of the fraction `1 - z` of the momentum of a
 massless lepton, the true Bjorken variable is `x = z Q²_e / (2 p·(z k - k'))` in terms of the
@@ -382,11 +388,12 @@ theorem trueInvariants_x_of_collinear_initialState (hk : g e.k e.k = 0)
     apply_pX_sub_p_of_collinear_initialState g hcol]
   ring
 
-/-- After exactly collinear initial-state emission, the electron method overestimates the
-virtuality, `Q² < Q²_e`, for a scattered lepton of nonnegative mass squared. -/
+/-- After exactly collinear initial-state emission of the fraction `1 - z > 0` of the momentum of
+a massless incoming lepton, the electron method overestimates the virtuality, `Q² < Q²_e`, for a
+scattered lepton of nonnegative mass squared and a positive electron-method virtuality `Q²_e`. -/
 theorem trueInvariants_Q2_lt_electronMethod_Q2_of_collinear_initialState (hk : g e.k e.k = 0)
-    (hk' : 0 ≤ g e.kPrime e.kPrime) (hcol : e.photon = (1 - z) • e.k) (hz0 : 0 < z)
-    (hz1 : z < 1) (hQ : 0 < (e.trueInvariants g .initialState).Q2) :
+    (hk' : 0 ≤ g e.kPrime e.kPrime) (hcol : e.photon = (1 - z) • e.k) (hz1 : z < 1)
+    (hQ : 0 < (electronMethod g e.k e.p e.kPrime).Q2) :
     (e.trueInvariants g .initialState).Q2 < (electronMethod g e.k e.p e.kPrime).Q2 := by
   have h := trueInvariants_Q2_of_collinear_initialState g hcol
   rw [hk] at h
@@ -462,7 +469,7 @@ one, `Q² = z Q²_e`. -/
 theorem sigmaMethod_x_eq_trueInvariants_x_of_collinear_initialState (hk : g e.k e.k = 0)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) (hpk : g e.p e.k ≠ 0) :
     (sigmaMethod g e.k e.p e.kPrime e.pX).x = (e.trueInvariants g .initialState).x := by
-  rw [sigmaMethod_x_eq_div, sigmaMethod_Q2, sigmaMethod_y_eq_trueInvariants_y_initialState g,
+  rw [sigmaMethod_x_eq_Q2_div, sigmaMethod_Q2, sigmaMethod_y_eq_trueInvariants_y_initialState g,
     trueInvariants_x_of_collinear_initialState g hk hk' hcol,
     trueInvariants_y_of_collinear_initialState g hcol]
   field_simp
@@ -480,26 +487,58 @@ end InitialState
 
 /-! ### Final-state radiation -/
 
+section FinalState
+
+variable {e} {z : ℝ}
+
+/-- Final-state emission of the fraction `1 - z` of the outgoing hard lepton momentum `k' + ℓ` is
+equivalently `z ℓ = (1 - z) k'`, a condition on the measured momenta alone. -/
+theorem photon_eq_smul_kPrime_add_photon_iff :
+    e.photon = (1 - z) • (e.kPrime + e.photon) ↔ z • e.photon = (1 - z) • e.kPrime := by
+  rw [smul_add, sub_smul 1 z e.photon, one_smul, add_sub_left_comm, left_eq_add, sub_eq_zero,
+    eq_comm]
+
+/-- After final-state emission of the fraction `1 - z` of the outgoing hard lepton momentum, the
+measured lepton keeps `k' = z (k' + ℓ)`. -/
+theorem kPrime_eq_smul_leptonOut_of_collinear_finalState
+    (hcol : e.photon = (1 - z) • (e.kPrime + e.photon)) :
+    e.kPrime = z • e.leptonOut .finalState := by
+  rw [leptonOut_finalState, smul_add, photon_eq_smul_kPrime_add_photon_iff.1 hcol, ← add_smul,
+    add_sub_cancel, one_smul]
+
+/-- After final-state emission of the fraction `1 - z ≠ 1` of the outgoing hard lepton momentum,
+the hard lepton leaves with `k' / z`. -/
+theorem leptonOut_of_collinear_finalState (hcol : e.photon = (1 - z) • (e.kPrime + e.photon))
+    (hz : z ≠ 0) : e.leptonOut .finalState = z⁻¹ • e.kPrime := by
+  rw [kPrime_eq_smul_leptonOut_of_collinear_finalState hcol, inv_smul_smul₀ hz]
+
+/-- After final-state emission of the fraction `1 - z ≠ 1` of the outgoing hard lepton momentum,
+the momentum transferred to the hadrons is `k - k' / z`. -/
+theorem pX_sub_p_of_collinear_finalState (hcol : e.photon = (1 - z) • (e.kPrime + e.photon))
+    (hz : z ≠ 0) : e.pX - e.p = e.k - z⁻¹ • e.kPrime := by
+  rw [← e.leptonIn_sub_leptonOut .finalState, leptonIn_finalState,
+    leptonOut_of_collinear_finalState hcol hz]
+
 /-- After exactly collinear final-state emission, in which the photon carries the fraction
 `1 - z` of the outgoing hard lepton momentum `k' + ℓ`, the electron method rescales the
 virtuality by `z`, up to the mass of the incoming lepton: `Q²_e = z Q² - (1 - z) k²`, and
 `Q²_e = z Q²` for a massless incoming lepton. -/
-theorem electronMethod_Q2_of_collinear_finalState (g : Bilin V) {z : ℝ}
+theorem electronMethod_Q2_of_collinear_finalState (g : Bilin V)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • (e.kPrime + e.photon))
     (hz : z ≠ 0) :
     (electronMethod g e.k e.p e.kPrime).Q2 =
       z * (e.trueInvariants g .finalState).Q2 - (1 - z) * g e.k e.k := by
-  have hq : e.pX - e.p = e.k - (e.kPrime + e.photon) := by rw [pX_sub_p]; abel
-  rw [electronMethod_Q2, trueInvariants_Q2_eq, hq]
-  generalize hw : e.kPrime + e.photon = w at hcol
-  have hkw : e.kPrime = z • w := by
-    rw [eq_sub_of_add_eq hw, hcol, sub_smul, one_smul, sub_sub_cancel]
-  have hww : g w w = 0 := by
-    simpa [hkw, hz] using hk'
-  rw [hkw, ← neg_sub (z • w), ← neg_sub w]
-  simp only [map_neg, LinearMap.neg_apply, neg_neg]
-  rw [neg_apply_smul_sub, hww]
+  have hkw := kPrime_eq_smul_leptonOut_of_collinear_finalState hcol
+  -- `k'² = z² (k' + ℓ)²` and `z ≠ 0`, so the hard outgoing lepton is massless too.
+  have hww : g (e.leptonOut .finalState) (e.leptonOut .finalState) = 0 := by
+    rw [hkw] at hk'
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at hk'
+    exact (mul_eq_zero.1 ((mul_eq_zero.1 hk').resolve_left hz)).resolve_left hz
+  rw [electronMethod_Q2, trueInvariants_Q2_eq, ← e.leptonIn_sub_leptonOut .finalState,
+    leptonIn_finalState, hkw, LinearMap.BilinForm.apply_sub_smul_self, hww]
   ring
+
+end FinalState
 
 end RadiativeEvent
 

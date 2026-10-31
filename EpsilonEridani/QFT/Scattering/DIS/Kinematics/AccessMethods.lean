@@ -29,7 +29,7 @@ the canonical `DisKinematics.Q2` directly; after initial-state radiation it does
   exactly the momenta it measures. The electron and hadronic methods are the invariants
   `ReconstructedInvariants.ofTransfer` of the lepton and of the hadronic momentum transfer. In
   the target rest frame `electronMethod` reduces to `ElectronMethodData`
-  (`ElectronMethodData.electronMethod_eq`).
+  (`electronMethod_eq_xBjElectron_q2Electron_yElectron`).
 - **True invariants and shifts**: `TrueInvariants` carries the invariants of the hard scattering,
   kept apart from `ReconstructedInvariants`; `ReconstructedInvariants.shiftXQ2` and
   `ReconstructedInvariants.shiftXY` are the shift of reconstructed from true invariants.
@@ -64,7 +64,7 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
     E_e' is final electron energy, and θ is the scattering angle. Its `yElectron` and
     `xBjElectron` are the target-rest-frame (fixed-target) expressions, which use
     `p·k = M_p E_e`; there the covariant `electronMethod` reduces to them
-    (`ElectronMethodData.electronMethod_eq`). -/
+    (`electronMethod_eq_xBjElectron_q2Electron_yElectron`). -/
 structure ElectronMethodData where
   /-- Initial electron energy. -/
   initialEnergy : ℝ
@@ -185,7 +185,7 @@ theorem ofTransfer_eq_xBj_Q2_yInel (g : Bilin V) (K : DisKinematics V) :
   ext <;> simp [DisKinematics.xBj, DisKinematics.Q2, DisKinematics.yInel]
 
 /-- The Bjorken variable of a momentum transfer is `Q² / (2 (p·k) y)` wherever `p·k ≠ 0`. -/
-theorem ofTransfer_x_eq (g : Bilin V) (k p q : V) (hpk : g p k ≠ 0) :
+theorem ofTransfer_x_eq_Q2_div (g : Bilin V) (k p q : V) (hpk : g p k ≠ 0) :
     (ofTransfer g k p q).x = (ofTransfer g k p q).Q2 / (2 * g p k * (ofTransfer g k p q).y) := by
   rw [ofTransfer_x, ofTransfer_Q2, ofTransfer_y, mul_assoc, mul_div_cancel₀ _ hpk]
 
@@ -195,17 +195,43 @@ end ReconstructedInvariants
 `k'`: the invariants of the lepton momentum transfer `q_e = k - k'`, that is `Q²_e = -q_e²`,
 `y_e = (p·q_e) / (p·k)` and `x_e = Q²_e / (2 p·q_e)`. In the target rest frame it reduces to the
 expressions of `ElectronMethodData` in terms of the beam energy, the scattered energy, the
-scattering angle and the target mass (`ElectronMethodData.electronMethod_eq`). -/
+scattering angle and the target mass (`electronMethod_eq_xBjElectron_q2Electron_yElectron`). -/
 @[simps (rhsMd := .default)]
 def electronMethod (g : Bilin V) (k p kPrime : V) : ReconstructedInvariants :=
   .ofTransfer g k p (k - kPrime)
 
 /-- The hadronic method of Jacquet and Blondel, from the incoming lepton `k`, the target `p` and
 the hadronic final state `p_X`: the invariants of the hadronic momentum transfer `q_h = p_X - p`,
-that is `Q²_h = -q_h²`, `y_h = (p·q_h) / (p·k)` and `x_h = Q²_h / (2 p·q_h)`. -/
+that is `Q²_h = -q_h²`, `y_h = (p·q_h) / (p·k)` and `x_h = Q²_h / (2 p·q_h)`. Jacquet and Blondel
+build their virtuality from the hadronic transverse momentum, `Q²_h = p²_{T,h} / (1 - y_h)`; the
+exact transfer `-q_h²` is used here, and the two agree at Born level for massless leptons. -/
 @[simps (rhsMd := .default)]
 def hadronicMethod (g : Bilin V) (k p pX : V) : ReconstructedInvariants :=
   .ofTransfer g k p (pX - p)
+
+/-- The electron method is the invariants of the lepton momentum transfer `k - k'`. -/
+theorem electronMethod_eq_ofTransfer (g : Bilin V) (k p kPrime : V) :
+    electronMethod g k p kPrime = .ofTransfer g k p (k - kPrime) := by
+  rw [electronMethod]
+
+/-- The hadronic method is the invariants of the hadronic momentum transfer `p_X - p`. -/
+theorem hadronicMethod_eq_ofTransfer (g : Bilin V) (k p pX : V) :
+    hadronicMethod g k p pX = .ofTransfer g k p (pX - p) := by
+  rw [hadronicMethod]
+
+/-- The electron-method Bjorken variable is `Q²_e / (2 (p·k) y_e)` wherever `p·k ≠ 0`. -/
+theorem electronMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime : V) (hpk : g p k ≠ 0) :
+    (electronMethod g k p kPrime).x =
+      (electronMethod g k p kPrime).Q2 / (2 * g p k * (electronMethod g k p kPrime).y) := by
+  rw [electronMethod_eq_ofTransfer]
+  exact ReconstructedInvariants.ofTransfer_x_eq_Q2_div g k p _ hpk
+
+/-- The hadronic-method Bjorken variable is `Q²_h / (2 (p·k) y_h)` wherever `p·k ≠ 0`. -/
+theorem hadronicMethod_x_eq_Q2_div (g : Bilin V) (k p pX : V) (hpk : g p k ≠ 0) :
+    (hadronicMethod g k p pX).x =
+      (hadronicMethod g k p pX).Q2 / (2 * g p k * (hadronicMethod g k p pX).y) := by
+  rw [hadronicMethod_eq_ofTransfer]
+  exact ReconstructedInvariants.ofTransfer_x_eq_Q2_div g k p _ hpk
 
 /-- The Sigma method, from all four measured momenta: the virtuality `Q²_e` of the electron
 method, the inelasticity `y_Σ = (p·q_h) / (p·q_h + p·k')` of Bassler and Bernardi
@@ -224,7 +250,7 @@ def sigmaMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants wher
 /-- The mixed method of Bentvelsen, Engelen and Kooijman, from all four measured momenta: the
 virtuality `Q²_e` of the electron method, the inelasticity `y_h` of the hadronic method, and
 `x = Q²_e / (2 p·q_h)`, which is `Q²_e / (2 (p·k) y_h)` wherever `p·k ≠ 0`
-(`mixedMethod_x_eq`). -/
+(`mixedMethod_x_eq_Q2_div`). -/
 @[simps]
 def mixedMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants where
   x := (electronMethod g k p kPrime).Q2 / (2 * g p (pX - p))
@@ -232,28 +258,28 @@ def mixedMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants wher
   y := (hadronicMethod g k p pX).y
 
 /-- The Sigma-method Bjorken variable is `x_Σ = Q²_e / (2 (p·k) y_Σ)`. -/
-theorem sigmaMethod_x_eq_div (g : Bilin V) (k p kPrime pX : V) :
+theorem sigmaMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime pX : V) :
     (sigmaMethod g k p kPrime pX).x =
       (sigmaMethod g k p kPrime pX).Q2 / (2 * g p k * (sigmaMethod g k p kPrime pX).y) := by
   rw [sigmaMethod_x, sigmaMethod_Q2, sigmaMethod_y]
 
 /-- The Sigma-method inelasticity in terms of the measured momenta,
 `y_Σ = (p·q_h) / (p·q_h + p·k')`. -/
-theorem sigmaMethod_y_eq (g : Bilin V) (k p kPrime pX : V) :
+theorem sigmaMethod_y_eq_div_add (g : Bilin V) (k p kPrime pX : V) :
     (sigmaMethod g k p kPrime pX).y = g p (pX - p) / (g p (pX - p) + g p kPrime) := by
   rw [sigmaMethod_y, SigmaMethodData.ySigma]
 
 /-- The Sigma-method Bjorken variable in terms of the measured momenta,
 `x_Σ = Q²_e (p·q_h + p·k') / (2 (p·k) (p·q_h))`. -/
-theorem sigmaMethod_x_eq (g : Bilin V) (k p kPrime pX : V) :
+theorem sigmaMethod_x_eq_mul_add_div (g : Bilin V) (k p kPrime pX : V) :
     (sigmaMethod g k p kPrime pX).x = (electronMethod g k p kPrime).Q2 *
       (g p (pX - p) + g p kPrime) / (2 * g p k * g p (pX - p)) := by
-  rw [sigmaMethod_x_eq_div, sigmaMethod_Q2, sigmaMethod_y_eq]
+  rw [sigmaMethod_x_eq_Q2_div, sigmaMethod_Q2, sigmaMethod_y_eq_div_add]
   simp only [div_eq_mul_inv, mul_inv, inv_inv]
   ring
 
 /-- The mixed-method Bjorken variable is `Q²_e / (2 (p·k) y_h)` wherever `p·k ≠ 0`. -/
-theorem mixedMethod_x_eq (g : Bilin V) (k p kPrime pX : V) (hpk : g p k ≠ 0) :
+theorem mixedMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime pX : V) (hpk : g p k ≠ 0) :
     (mixedMethod g k p kPrime pX).x =
       (mixedMethod g k p kPrime pX).Q2 / (2 * g p k * (mixedMethod g k p kPrime pX).y) := by
   rw [mixedMethod_x, mixedMethod_Q2, mixedMethod_y, hadronicMethod_y, mul_assoc,
@@ -263,13 +289,14 @@ theorem mixedMethod_x_eq (g : Bilin V) (k p kPrime pX : V) (hpk : g p k ≠ 0) :
 canonical invariants. -/
 theorem electronMethod_eq_xBj_Q2_yInel (g : Bilin V) (K : DisKinematics V) :
     electronMethod g K.k K.p K.kPrime = ⟨K.xBj g, K.Q2 g, K.yInel g⟩ := by
-  rw [electronMethod, ← K.hq, ReconstructedInvariants.ofTransfer_eq_xBj_Q2_yInel]
+  rw [electronMethod_eq_ofTransfer, ← K.hq, ReconstructedInvariants.ofTransfer_eq_xBj_Q2_yInel]
 
 /-- In the rest frame of a target of mass `M`, where `p·k = M E` and `p·k' = M E'` for the beam
 energy `E` and the scattered energy `E'`, and for massless leptons with `k·k' = E E' (1 - cos θ)`
 at the scattering angle `θ`, the covariant electron method returns the target-rest-frame
-expressions `xBjElectron`, `q2Electron` and `yElectron`. -/
-theorem ElectronMethodData.electronMethod_eq (d : ElectronMethodData) (g : Bilin V)
+expressions `ElectronMethodData.xBjElectron`, `ElectronMethodData.q2Electron` and
+`ElectronMethodData.yElectron`. -/
+theorem electronMethod_eq_xBjElectron_q2Electron_yElectron (d : ElectronMethodData) (g : Bilin V)
     (hg : g.IsSymm) {k p kPrime : V} {M : ℝ} (hM : M ≠ 0) (hk : g k k = 0)
     (hk' : g kPrime kPrime = 0)
     (hkk' : g k kPrime = d.initialEnergy * d.finalEnergy * (1 - Real.cos d.theta))
@@ -277,14 +304,15 @@ theorem ElectronMethodData.electronMethod_eq (d : ElectronMethodData) (g : Bilin
     electronMethod g k p kPrime = ⟨d.xBjElectron M, d.q2Electron, d.yElectron⟩ := by
   have hE : d.initialEnergy ≠ 0 := (d.energy_loss.1.trans d.energy_loss.2).ne'
   have hQ : -g (k - kPrime) (k - kPrime) = d.q2Electron := by
-    rw [q2Electron, Real.sin_sq_eq_half_sub, mul_div_cancel₀ _ two_ne_zero]
+    rw [ElectronMethodData.q2Electron, Real.sin_sq_eq_half_sub, mul_div_cancel₀ _ two_ne_zero]
     simp only [map_sub, LinearMap.sub_apply, hk, hk', hg.eq kPrime k, hkk']
     ring
   ext
-  · rw [electronMethod_x, hQ, map_sub, hpk, hpk', xBjElectron, yElectron]
+  · rw [electronMethod_x, hQ, map_sub, hpk, hpk', ElectronMethodData.xBjElectron,
+      ElectronMethodData.yElectron]
     field_simp
   · exact hQ
-  · rw [electronMethod_y, map_sub, hpk, hpk', yElectron]
+  · rw [electronMethod_y, map_sub, hpk, hpk', ElectronMethodData.yElectron]
     field_simp
 
 /-- The invariants of the hard lepton–hadron scattering of an event: the Bjorken variable `x`,
