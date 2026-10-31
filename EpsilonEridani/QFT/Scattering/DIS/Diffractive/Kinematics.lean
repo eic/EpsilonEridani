@@ -248,14 +248,6 @@ theorem le_tMinElastic_iff (M xiLC t : ℝ) :
     t ≤ tMinElastic M xiLC ↔ xiLC ^ 2 * M ^ 2 / (1 - xiLC) ≤ -t := by
   rw [← neg_tMinElastic, neg_le_neg_iff]
 
-/-- The boundary condition `t ≤ tMinElastic M ξ` for the momentum transfer of `i`, in terms of
-`Invariants.absT`: `|t| ≥ ξ²M²/(1-ξ)`. Here `M` and `xiLC` are arbitrary parameters unrelated to
-`i`; in particular `xiLC` is the light-cone fraction of `tMinElastic`, not `i.xi`. -/
-theorem Invariants.t_le_tMinElastic_iff (i : Invariants) (M xiLC : ℝ) :
-    i.t ≤ tMinElastic M xiLC ↔ xiLC ^ 2 * M ^ 2 / (1 - xiLC) ≤ i.absT := by
-  rw [Invariants.absT_eq_neg_t]
-  exact le_tMinElastic_iff M xiLC i.t
-
 /-- At vanishing momentum loss `ξ = 0` the target-elastic boundary degenerates to `t = 0`. -/
 @[simp]
 theorem tMinElastic_xiLC_zero (M : ℝ) : tMinElastic M 0 = 0 := by
