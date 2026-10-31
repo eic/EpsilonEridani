@@ -21,17 +21,19 @@ development.
 
 ## Main definitions
 
-* `EpsilonEridani.Nucleus`: a mass number `0 < A` together with a proton number `Z ≤ A`.
-* `EpsilonEridani.Nucleus.neutronNumber`: the neutron number `N = A - Z`.
-* `EpsilonEridani.Nucleus.IsIsoscalar`: the nucleus has as many protons as neutrons, `2 Z = A`.
-* `EpsilonEridani.Nucleus.proton`, `neutron`, `deuteron`, `carbon12`, `lead208`: the worked
-  instances.
+* `EpsilonEridani.Particles.Nuclei.Nucleus`: a mass number `0 < A` together with a proton
+  number `Z ≤ A`.
+* `EpsilonEridani.Particles.Nuclei.Nucleus.neutronNumber`: the neutron number `N = A - Z`.
+* `EpsilonEridani.Particles.Nuclei.Nucleus.IsIsoscalar`: the nucleus has as many protons as
+  neutrons, `2 Z = A`.
+* `EpsilonEridani.Particles.Nuclei.Nucleus.proton`, `neutron`, `deuteron`, `carbon12`,
+  `lead208`: the worked instances.
 
 ## Main statements
 
-* `EpsilonEridani.Nucleus.protonNumber_add_neutronNumber`: `Z + N = A`.
-* `EpsilonEridani.Nucleus.isIsoscalar_iff_protonNumber_eq_neutronNumber`: a nucleus is isoscalar
-  exactly when `Z = N`.
+* `EpsilonEridani.Particles.Nuclei.Nucleus.protonNumber_add_neutronNumber`: `Z + N = A`.
+* `EpsilonEridani.Particles.Nuclei.Nucleus.isIsoscalar_iff_protonNumber_eq_neutronNumber`: a
+  nucleus is isoscalar exactly when `Z = N`.
 
 ## References
 
@@ -41,6 +43,8 @@ development.
 public section
 
 namespace EpsilonEridani
+namespace Particles
+namespace Nuclei
 
 /-- A nucleus: a mass number `A` with `0 < A`, and a proton number `Z` with `Z ≤ A`. -/
 @[ext]
@@ -147,4 +151,6 @@ theorem not_isIsoscalar_lead208 : ¬lead208.IsIsoscalar := by decide
 
 end Nucleus
 
+end Nuclei
+end Particles
 end EpsilonEridani
