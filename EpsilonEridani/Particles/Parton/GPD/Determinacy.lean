@@ -129,7 +129,7 @@ moment sequence is used: the two models are not identified by the almost-everywh
 that all the moments do force. The last clause locates the disagreement in the DGLAP region at
 zero skewness, so the ambiguity is not an artefact of the central region of
 `GPD.InErblRegion`, where the D-term and the shadow GPDs of `GPD.Ambiguity` live. -/
-theorem exists_models_mellinMomentH_eq_and_H_not_ae_eq [Nonempty Flavor] (N : ℕ) :
+theorem exists_models_mellinMomentH_eq_and_H_not_ae_eq (N : ℕ) :
     ∃ M₁ M₂ : Model Flavor, Assumptions M₁ ∧ Assumptions M₂ ∧
       (∀ n ≤ N, ∀ (i : Flavor) (xi t : ℝ),
         mellinMomentH M₁ n i xi t = mellinMomentH M₂ n i xi t) ∧
