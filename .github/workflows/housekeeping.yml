@@ -48,4 +48,6 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+          STALE_DAYS: 21
+          CI_FAILED_DAYS: 21
         run: python3 scripts/housekeeping.py
