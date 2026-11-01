@@ -1,0 +1,130 @@
+name: PR review board
+
+# Keep a GitHub Projects board of the open PRs ranked by how close each is to passing every
+# rubric. The lifecycle labels say whose court a PR is in; this answers the other question a
+# maintainer asks -- which PRs are nearly through review, and what is left on each -- by reading
+# the per-rubric states off the scoreboard comments (the same newest-completed-current-head
+# selection Auto-merge uses) into a Status column of distance-to-merge bands plus the evidence
+# fields a sorted list view ranks on. See scripts/pr_status/board.py and scripts/pr_status/README.md.
+#
+# One-time setup (human): create an organization project, grant the epsiloneridani-review-bot App
+# the organization "Projects: read and write" permission (and accept it on the installation), and
+# set the repository variable PR_BOARD_PROJECT to the project's number. Until the variable is set
+# the sync only computes and prints the ranking (readable in the job summary), so a dry run here
+# previews the board before any of that exists. The script creates the custom fields and Status
+# options it needs on first contact; it never removes options or items a human added.
+#
+# Only trusted base code runs here; PR contents are API data. The App token is scoped to this
+# repository and to the project; nothing here comments on, labels or merges a PR.
+
+on:
+  # Hourly backstop and full reconciliation, offset from pr-labels (:05), housekeeping (:20),
+  # merge-sweep (:40) and stuck-alerts (:50).
+  schedule:
+    - cron: "35 * * * *"
+  # A scoreboard or in-progress marker changed: that PR's band may have moved.
+  issue_comment:
+    types: [created, edited, deleted]
+  # Opened: add it. Closed: archive it. New head / draft toggles: re-derive.
+  pull_request_target:
+    types: [opened, reopened, closed, synchronize, converted_to_draft, ready_for_review]
+  # Build finished: "Waiting on CI" may become "No review at head" (or the reverse).
+  workflow_run:
+    workflows: ["pr-build"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR number to sync, or all"
+        required: false
+        default: all
+        type: string
+      dry-run:
+        description: "Plan and print the ranking without writing to the board"
+        type: boolean
+        default: false
+
+# The default GITHUB_TOKEN only checks out; every GitHub read and write goes through the App token.
+permissions:
+  contents: read
+
+# One group for the whole board: a full sync and a single-PR sync mutate the same items, and
+# interleaving them could leave a field half-updated. Not cancelled: an interrupted run leaves
+# an item with mixed field values until the next pass. GitHub already collapses a burst to one
+# running plus one pending.
+concurrency:
+  group: pr-board
+  cancel-in-progress: false
+
+jobs:
+  board:
+    if: >
+      github.repository == 'eic/EpsilonEridani' && (
+        github.event_name == 'schedule'
+        || github.event_name == 'workflow_dispatch'
+        || github.event_name == 'pull_request_target'
+        || (github.event_name == 'workflow_run'
+            && github.event.workflow_run.event == 'pull_request_target'
+            && github.event.workflow_run.pull_requests[0] != null)
+        || (github.event_name == 'issue_comment'
+            && github.event.issue.pull_request != null
+            && (contains(github.event.comment.body, 'epsiloneridani-scoreboard')
+                || contains(github.event.comment.body, 'epsiloneridani-review-in-progress')
+                || contains(github.event.changes.body.from, 'epsiloneridani-scoreboard')
+                || contains(github.event.changes.body.from, 'epsiloneridani-review-in-progress')))
+      )
+    runs-on: ubuntu-slim
+    timeout-minutes: 20
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v2.2.1; v1 ignores permission-* inputs
+        id: app-token
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: eic
+          repositories: EpsilonEridani
+          permission-contents: read
+          permission-issues: read
+          permission-pull-requests: read
+          permission-organization-projects: write
+      # The trusted base checkout: the board script that runs is the one on the target branch,
+      # never the version proposed by a PR.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            scripts/pr_status
+            .github
+          persist-credentials: false
+      - name: Read the pinned merge policy commit
+        id: review-pin
+        uses: ./.github/actions/review-pin
+      - name: Checkout the pinned merge policy (read-only)
+        uses: actions/checkout@v7
+        with:
+          repository: eic/EpsilonEridaniReview
+          ref: ${{ steps.review-pin.outputs.sha }}
+          path: .epsiloneridani-review
+          sparse-checkout: runner
+          persist-credentials: false
+
+      - name: Sync the board
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_BOARD_PROJECT: ${{ vars.PR_BOARD_PROJECT }}
+          PR_BOARD_OWNER: eic
+          DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+          # The PR number from the event, when the event is about one PR. The dispatch input is an
+          # untrusted string: anything but digits means "all".
+          EVENT_PR: >-
+            ${{ github.event.pull_request.number
+                || github.event.issue.number
+                || github.event.workflow_run.pull_requests[0].number
+                || inputs.pr }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "$EVENT_PR" =~ ^[0-9]+$ ]]; then
+            args+=(--pr "$EVENT_PR")
+          fi
+          python3 scripts/pr_status/board.py sync "${args[@]}"
