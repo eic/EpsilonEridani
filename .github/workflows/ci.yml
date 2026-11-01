@@ -48,6 +48,7 @@ jobs:
           persist-credentials: false
 
       - run: python3 scripts/pr_status/test_readiness.py
+      - run: python3 scripts/pr_status/test_board.py
 
   # The fixtures use only Lean's sysroot, so run them beside the library build without
   # downloading Mathlib. Both jobs must pass before the publisher receives any credentials.
