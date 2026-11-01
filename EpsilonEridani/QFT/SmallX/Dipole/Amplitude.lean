@@ -142,7 +142,7 @@ def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y then 0 else 1
   simp [blackDisc, h]
 
 /-- The dipole S-matrix `1 - N` of the black disc is the identity kernel. -/
-lemma one_sub_blackDisc :
+@[simp] lemma one_sub_blackDisc :
     (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) => 1 - blackDisc x y) = 1 := by
   ext x y
   by_cases h : x = y <;> simp [h, Matrix.one_apply]
