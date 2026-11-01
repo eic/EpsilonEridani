@@ -30,6 +30,8 @@ For sesquilinear forms the analogue of the transformed Gram matrix `Λᵀ * g * 
 - `transpose_mul_mul_mul_inv_mul_transpose`: the contraction `X * g⁻¹ * Yᵀ` transforms as a
   tensor with two lower indices.
 - `trace_inv_mul_transpose_mul_mul`: the trace `trace (g⁻¹ * X)` is invariant.
+- `Matrix.IsSymm.trace_mul_transpose`: contracting with a symmetric `A`, `trace (A * X)` only
+  sees the symmetric part of `X`.
 - `LinearMap.sum_bilin_sum_smul_of_mem_orthogonalGroup`: invariance of `∑ a, B (x a) (y a)`
   under an orthogonal rotation of the families `x` and `y`.
 - `Matrix.star_mulVec_dotProduct_mulVec_mulVec`: transforming both arguments of the
@@ -112,6 +114,13 @@ theorem sum_bilin_sum_smul_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι]
 end LinearMap
 
 namespace Matrix
+
+/-- Contracting with a symmetric matrix sees only the symmetric part of a tensor:
+`trace (A * Xᵀ) = trace (A * X)` for `A` symmetric. -/
+theorem IsSymm.trace_mul_transpose {n R : Type*} [Fintype n] [AddCommMonoid R] [Mul R]
+    {A : Matrix n n R} (hA : A.IsSymm) (X : Matrix n n R) : trace (A * Xᵀ) = trace (A * X) := by
+  conv_lhs => rw [← hA.eq]
+  exact trace_transpose_mul A X
 
 variable {m n R : Type*} [Fintype m] [Fintype n] [NonUnitalSemiring R] [StarRing R]
 

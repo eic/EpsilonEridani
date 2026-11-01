@@ -126,6 +126,14 @@ index computations below. -/
 private lemma re_I_mul_ofReal_mul (r : ℝ) (z : ℂ) : (I * (r * z)).re = r * (I * z).re := by
   rw [mul_left_comm, re_ofReal_mul]
 
+/-- The real-linearity step shared by the index computations below: real coefficients `c α`
+common to both terms of `(i/2) (ψ‾ Γ χ - χ‾ Γ ψ)` come out of the real part. -/
+private lemma re_I_mul_sum_sub_sum_div_two {ι : Type*} [Fintype ι] (c : ι → ℝ) (a b : ι → ℂ) :
+    (I * (∑ α, (c α : ℂ) * a α - ∑ α, (c α : ℂ) * b α)).re / 2 =
+      ∑ α, c α * ((I * (a α - b α)).re / 2) := by
+  simp only [← Finset.sum_sub_distrib, ← mul_sub, Finset.mul_sum, re_sum, re_I_mul_ofReal_mul,
+    div_eq_mul_inv, Finset.sum_mul, mul_assoc]
+
 /-- When `β * γ μ` is Hermitian, `(i/2) (ψ‾ γ_μ D_ν ψ - (D_ν ψ)‾ γ_μ ψ)` is real, so taking
 the real part in `quarkKinetic` loses nothing. -/
 theorem ofReal_quarkKinetic_apply (ψ : m → ℂ) (Dψ : n → m → ℂ) (μ ν : n)
@@ -152,7 +160,7 @@ theorem quarkKinetic_apply_of_isHermitian (ψ : m → ℂ) (Dψ : n → m → �
 /-- The kinetic tensor is invariant under a transformation `U` of the field and its
 covariant derivatives that preserves the bilinears `ψ‾ γ_μ χ`. A colour gauge transformation,
 unitary and commuting with `β` and with the gamma matrices, is such a transformation
-(`conjTranspose_mul_mul_mul_eq_of_mem_unitaryGroup`). -/
+(`commute_unitary_iff_star_left_conjugate`). -/
 theorem quarkKinetic_mulVec {U : Matrix m m ℂ} (hU : ∀ μ, Uᴴ * (β * γ μ) * U = β * γ μ)
     (ψ : m → ℂ) (Dψ : n → m → ℂ) :
     quarkKinetic β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) = quarkKinetic β γ ψ Dψ := by
@@ -166,21 +174,14 @@ theorem quarkPart_mulVec {U : Matrix m m ℂ} (hU : ∀ μ, Uᴴ * (β * γ μ) 
     quarkPart β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) = quarkPart β γ ψ Dψ := by
   rw [quarkPart_def, quarkPart_def, quarkKinetic_mulVec hU]
 
-/-- A unitary `U` commuting with `β` and with the gamma matrices, such as a colour rotation,
-preserves the bilinears `ψ‾ γ_μ χ`: it satisfies the hypothesis of `quarkKinetic_mulVec`. -/
-theorem conjTranspose_mul_mul_mul_eq_of_mem_unitaryGroup [DecidableEq m] {U : Matrix m m ℂ}
-    (hU : U ∈ unitaryGroup m ℂ) (hβ : Commute U β) (hγ : ∀ μ, Commute U (γ μ)) (μ : n) :
-    Uᴴ * (β * γ μ) * U = β * γ μ := by
-  rw [Matrix.mul_assoc, ← (hβ.mul_right (hγ μ)).eq, ← Matrix.mul_assoc, ← star_eq_conjTranspose,
-    mem_unitaryGroup_iff'.mp hU, Matrix.one_mul]
-
 /-- The quark part is invariant under a colour rotation: a unitary `U` commuting with `β` and
 with the gamma matrices, acting on the field and its covariant derivatives. -/
 theorem quarkPart_mulVec_of_mem_unitaryGroup [DecidableEq m] {U : Matrix m m ℂ}
     (hU : U ∈ unitaryGroup m ℂ) (hβ : Commute U β) (hγ : ∀ μ, Commute U (γ μ)) (ψ : m → ℂ)
     (Dψ : n → m → ℂ) :
     quarkPart β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) = quarkPart β γ ψ Dψ :=
-  quarkPart_mulVec (conjTranspose_mul_mul_mul_eq_of_mem_unitaryGroup hU hβ hγ) ψ Dψ
+  quarkPart_mulVec (fun μ => (commute_unitary_iff_star_left_conjugate hU).mp
+    (hβ.mul_right (hγ μ))) ψ Dψ
 
 variable [Fintype n]
 
@@ -191,9 +192,8 @@ theorem quarkKinetic_sum_smul (ψ : m → ℂ) (Dψ : n → m → ℂ) (c : Matr
   ext μ ν
   simp only [quarkKinetic_apply, mul_apply, mulVec_sum, mulVec_smul, dotProduct_sum,
     dotProduct_smul, star_sum, star_smul, sum_dotProduct, smul_dotProduct, Complex.star_def,
-    conj_ofReal, smul_eq_mul, ← Finset.sum_sub_distrib, ← mul_sub, Finset.mul_sum, re_sum,
-    re_I_mul_ofReal_mul, div_eq_mul_inv, Finset.sum_mul]
-  exact Finset.sum_congr rfl fun _ _ => by ring
+    conj_ofReal, smul_eq_mul, re_I_mul_sum_sub_sum_div_two]
+  exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
 
 /-- When the bilinears `ψ‾ γ_μ χ` transform as a vector under `S`, `Sᴴ β γ_μ S = Λ_{αμ} β γ_α`,
 transforming the field and its covariant derivatives by `S` transforms the first index of the
@@ -205,9 +205,7 @@ theorem quarkKinetic_mulVec_eq_transpose_mul {S : Matrix m m ℂ} {Λ : Matrix n
   ext μ ν
   simp only [quarkKinetic_apply, mul_apply, transpose_apply, star_mulVec_dotProduct_mulVec_mulVec,
     hS, sum_mulVec, smul_mulVec, dotProduct_sum, dotProduct_smul, smul_eq_mul,
-    ← Finset.sum_sub_distrib, ← mul_sub, Finset.mul_sum, re_sum, re_I_mul_ofReal_mul,
-    div_eq_mul_inv, Finset.sum_mul]
-  exact Finset.sum_congr rfl fun _ _ => by ring
+    re_I_mul_sum_sub_sum_div_two]
 
 /-- The kinetic tensor transforms with two lower indices, `K ↦ Λᵀ * K * Λ`, when the
 field transforms by `S` and the bilinears `ψ‾ γ_μ χ` transform as a vector under `S`,
@@ -253,11 +251,8 @@ theorem trace_quarkKinetic (hγ : ∀ μ, (β * γ μ).IsHermitian) (g : Matrix 
 theorem trace_quarkPart {g : Matrix n n ℝ} (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian)
     (ψ : m → ℂ) (Dψ : n → m → ℂ) :
     trace (g⁻¹ * quarkPart β γ ψ Dψ) = (star ψ ⬝ᵥ β *ᵥ diracOpApply g γ Dψ).re := by
-  have hT : trace (g⁻¹ * (quarkKinetic β γ ψ Dψ)ᵀ) = trace (g⁻¹ * quarkKinetic β γ ψ Dψ) := by
-    rw [← trace_transpose, transpose_mul, transpose_transpose, transpose_nonsing_inv, hg.eq,
-      trace_mul_comm]
-  rw [quarkPart_def, Matrix.mul_smul, Matrix.mul_add, trace_smul, trace_add, hT,
-    trace_quarkKinetic hγ, smul_eq_mul]
+  rw [quarkPart_def, Matrix.mul_smul, Matrix.mul_add, trace_smul, trace_add,
+    hg.inv.trace_mul_transpose, trace_quarkKinetic hγ, smul_eq_mul]
   ring
 
 /-- On solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ` with mass matrix `M`, the trace of
