@@ -14,13 +14,17 @@ The trace of a unitary `n × n` matrix has norm at most `n`. The bound is attain
 identity.
 
 This is the bound behind the statement that a normalised trace `(1 / n) Re Tr U` of a unitary
-matrix lies in `[-1, 1]`, which is how the colour-dipole operator of a Wilson-line
-configuration is bounded.
+matrix lies in `[-1, 1]`, which is how the dipole and the higher Wilson-line correlators of a
+configuration are bounded. Those correlators are real parts of traces, and the real part of a
+trace is unchanged under conjugate transposition, which is how their symmetries under reversal
+are proved.
 
 ## Main results
 
 - `Matrix.norm_trace_le_card_of_mem_unitaryGroup`: `‖Tr U‖ ≤ n` for unitary `U`.
-- `Matrix.abs_inv_card_mul_re_trace_le_one`: `|(1 / n) Re Tr U| ≤ 1` for unitary `U`.
+- `Matrix.abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup`: `|(1 / n) Re Tr U| ≤ 1` for
+  unitary `U`.
+- `Matrix.re_trace_conjTranspose`: `Re Tr Aᴴ = Re Tr A`.
 -/
 
 public section
@@ -38,12 +42,18 @@ theorem norm_trace_le_card_of_mem_unitaryGroup {U : Matrix n n 𝕜}
 
 /-- The real part of the normalised trace `(1 / n) Tr U` of a unitary `n × n` matrix lies in
 `[-1, 1]`. For `n = 0` the normalised trace is `0`. -/
-theorem abs_inv_card_mul_re_trace_le_one {U : Matrix n n 𝕜} (hU : U ∈ unitaryGroup n 𝕜) :
+theorem abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup {U : Matrix n n 𝕜}
+    (hU : U ∈ unitaryGroup n 𝕜) :
     |(Fintype.card n : ℝ)⁻¹ * RCLike.re U.trace| ≤ 1 := by
   rcases isEmpty_or_nonempty n with h | h
   · simp
   · rw [abs_mul, abs_inv, Nat.abs_cast, inv_mul_le_iff₀ (by exact_mod_cast Fintype.card_pos),
       mul_one]
     exact (RCLike.abs_re_le_norm _).trans (norm_trace_le_card_of_mem_unitaryGroup hU)
+
+omit [DecidableEq n] in
+/-- The real part of the trace of a matrix is unchanged under conjugate transposition. -/
+theorem re_trace_conjTranspose (A : Matrix n n 𝕜) : RCLike.re Aᴴ.trace = RCLike.re A.trace := by
+  rw [trace_conjTranspose, RCLike.star_def, RCLike.conj_re]
 
 end Matrix

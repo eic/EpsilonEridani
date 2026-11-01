@@ -80,12 +80,14 @@ theorem dipoleS_comm (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin
   have h : ((U y).1 * star (U x).1 : Matrix (Fin Nc) (Fin Nc) ℂ) =
       ((U x).1 * star (U y).1)ᴴ := by
     simp only [← star_eq_conjTranspose, star_mul, star_star]
-  simp only [dipoleS_def, h, trace_conjTranspose, Complex.star_def, Complex.conj_re]
+  rw [dipoleS_def, dipoleS_def, h]
+  exact congrArg _ (re_trace_conjTranspose ((U x).1 * star (U y).1)).symm
 
 /-- **Unitarity bound** on the dipole operator of a single configuration: `|S U x y| ≤ 1`. -/
 theorem abs_dipoleS_le_one (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
     |dipoleS U x y| ≤ 1 := by
-  simpa [dipoleS_def] using abs_inv_card_mul_re_trace_le_one (U x * star (U y)).2
+  simpa [dipoleS_def] using
+    abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup (U x * star (U y)).2
 
 /-- The scattering amplitude `1 - S U x y` of a dipole in a single configuration lies in
 `[0, 2]`. The sharper bound `[0, 1]` holds only after averaging over a target ensemble whose

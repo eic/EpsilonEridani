@@ -40,9 +40,10 @@ configuration and uses only unitarity of the Wilson lines:
 * when two neighbouring Wilson lines in the trace sit at the same transverse position they
   cancel, so each coincidence limit of the quadrupole is a dipole;
 * the quadrupole is invariant under the cyclic shift of its two quark-antiquark pairs and under
-  reversal of the order of its four lines, and under every gauge transformation whose values at
-  the two ends of the light cone agree at each pair of positions whose Wilson lines stand next
-  to each other in the trace.
+  reversal of the order of its four arguments (the traced product at `w, z, y, x` is the
+  Hermitian conjugate of the one at `x, y, z, w`), and under every gauge transformation whose
+  values at the two ends of the light cone agree at each pair of positions whose Wilson lines
+  stand next to each other in the trace.
 
 ## Main definitions
 
@@ -51,9 +52,9 @@ configuration and uses only unitarity of the Wilson lines:
 
 ## Main results
 
-- `SmallX.multipoleS_one`: the `n = 1` correlator is the dipole operator.
+- `SmallX.multipoleS_fin_one`: the `n = 1` correlator is the dipole operator.
 - `SmallX.abs_multipoleS_le_one`: the unitarity bound for every correlator.
-- `SmallX.multipoleS_two`: the `n = 2` correlator is the quadrupole operator.
+- `SmallX.multipoleS_fin_two`: the `n = 2` correlator is the quadrupole operator.
 - `SmallX.quadrupoleS_def`: the explicit trace formula for the quadrupole.
 - `SmallX.quadrupoleS_self_left`, `SmallX.quadrupoleS_self_mid`, `SmallX.quadrupoleS_self_right`,
   `SmallX.quadrupoleS_self_outer`: the coincidence limits of the quadrupole.
@@ -101,7 +102,7 @@ theorem multipoleS_self [NeZero Nc] (U : WilsonConfiguration Nc) {n : ℕ}
 
 /-- The two-point correlator is the dipole operator. -/
 @[simp]
-theorem multipoleS_one (U : WilsonConfiguration Nc) (x y : Fin 1 → EuclideanSpace ℝ (Fin 2)) :
+theorem multipoleS_fin_one (U : WilsonConfiguration Nc) (x y : Fin 1 → EuclideanSpace ℝ (Fin 2)) :
     multipoleS U x y = dipoleS U (x 0) (y 0) := by
   simp [multipoleS_def, dipoleS_def]
 
@@ -109,7 +110,7 @@ theorem multipoleS_one (U : WilsonConfiguration Nc) (x y : Fin 1 → EuclideanSp
 its modulus is at most one. -/
 theorem abs_multipoleS_le_one (U : WilsonConfiguration Nc) {n : ℕ}
     (x y : Fin n → EuclideanSpace ℝ (Fin 2)) : |multipoleS U x y| ≤ 1 := by
-  simpa [multipoleS_def] using abs_inv_card_mul_re_trace_le_one
+  simpa [multipoleS_def] using abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup
     (List.ofFn fun i => U (x i) * star (U (y i))).prod.2
 
 /-! ### The quadrupole -/
@@ -128,7 +129,7 @@ lemma quadrupoleS_def (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ
 
 /-- The four-point correlator is the quadrupole operator. -/
 @[simp]
-theorem multipoleS_two (U : WilsonConfiguration Nc) (x y : Fin 2 → EuclideanSpace ℝ (Fin 2)) :
+theorem multipoleS_fin_two (U : WilsonConfiguration Nc) (x y : Fin 2 → EuclideanSpace ℝ (Fin 2)) :
     multipoleS U x y = quadrupoleS U (x 0) (y 0) (x 1) (y 1) := by
   simp [quadrupoleS_def, multipoleS_def, mul_assoc]
 
@@ -136,6 +137,11 @@ theorem multipoleS_two (U : WilsonConfiguration Nc) (x y : Fin 2 → EuclideanSp
 theorem abs_quadrupoleS_le_one (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
     |quadrupoleS U x y z w| ≤ 1 :=
   abs_multipoleS_le_one U _ _
+
+/-- The quadrupole is invariant under the cyclic exchange of its two quark-antiquark pairs. -/
+theorem quadrupoleS_cycle (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
+    quadrupoleS U x y z w = quadrupoleS U z w x y := by
+  rw [quadrupoleS_def, quadrupoleS_def, mul_assoc _ (U z).1, mul_assoc _ (U x).1, trace_mul_comm]
 
 /-- Coincidence limit of the quadrupole: when the first quark and the first antiquark coincide,
 the quadrupole is the dipole of the second pair. -/
@@ -148,8 +154,8 @@ theorem quadrupoleS_self_left (U : WilsonConfiguration Nc) (x z w : EuclideanSpa
 coincide, the quadrupole is the dipole of the first pair. -/
 @[simp]
 theorem quadrupoleS_self_right (U : WilsonConfiguration Nc) (x y z : EuclideanSpace ℝ (Fin 2)) :
-    quadrupoleS U x y z z = dipoleS U x y := by
-  simp [quadrupoleS_def, dipoleS_def, mul_assoc, Unitary.mul_star_self_of_mem (U z).2]
+    quadrupoleS U x y z z = dipoleS U x y :=
+  (quadrupoleS_cycle U x y z z).trans (quadrupoleS_self_left U z x y)
 
 /-- Coincidence limit of the quadrupole: when the first antiquark and the second quark
 coincide, the lines `U(y)† U(y)` cancel and the quadrupole is the dipole `S U x w`. -/
@@ -163,23 +169,20 @@ coincide, the lines `U(x)† U(x)`, adjacent through the cyclicity of the trace,
 quadrupole is the dipole `S U z y`. -/
 @[simp]
 theorem quadrupoleS_self_outer (U : WilsonConfiguration Nc) (x y z : EuclideanSpace ℝ (Fin 2)) :
-    quadrupoleS U x y z x = dipoleS U z y := by
-  rw [quadrupoleS_def, dipoleS_def, trace_mul_comm, ← mul_assoc, ← mul_assoc,
-    Unitary.star_mul_self_of_mem (U x).2, one_mul, trace_mul_comm]
+    quadrupoleS U x y z x = dipoleS U z y :=
+  (quadrupoleS_cycle U x y z x).trans (quadrupoleS_self_mid U z x y)
 
-/-- The quadrupole is invariant under the cyclic exchange of its two quark-antiquark pairs. -/
-theorem quadrupoleS_cycle (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
-    quadrupoleS U x y z w = quadrupoleS U z w x y := by
-  rw [quadrupoleS_def, quadrupoleS_def, mul_assoc _ (U z).1, mul_assoc _ (U x).1, trace_mul_comm]
-
-/-- The quadrupole is invariant under reversal of the order of its four Wilson lines, which
-exchanges the roles of quarks and antiquarks: `Q U x y z w = Q U w z y x`. -/
+/-- The quadrupole is invariant under reversal of the order of its four arguments, which
+exchanges the roles of quarks and antiquarks: `Q U x y z w = Q U w z y x`. The traced product
+`U(w) U(z)† U(y) U(x)†` at `w, z, y, x` is the Hermitian conjugate of the one at `x, y, z, w`,
+so their traces have the same real part. -/
 theorem quadrupoleS_reverse (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
     quadrupoleS U x y z w = quadrupoleS U w z y x := by
   have h : ((U w).1 * star (U z).1 * (U y).1 * star (U x).1 : Matrix (Fin Nc) (Fin Nc) ℂ) =
       ((U x).1 * star (U y).1 * (U z).1 * star (U w).1)ᴴ := by
     simp only [← star_eq_conjTranspose, star_mul, star_star, mul_assoc]
-  simp only [quadrupoleS_def, h, trace_conjTranspose, Complex.star_def, Complex.conj_re]
+  rw [quadrupoleS_def, quadrupoleS_def, h]
+  exact congrArg _ (re_trace_conjTranspose ((U x).1 * star (U y).1 * (U z).1 * star (U w).1)).symm
 
 /-- **Gauge invariance** of the quadrupole operator: under `U(v) ↦ Ω₊(v) U(v) Ω₋(v)†`, the
 quadrupole at `x, y, z, w` is unchanged as soon as `Ω₋` agrees at `x` and `y` and at `z` and
