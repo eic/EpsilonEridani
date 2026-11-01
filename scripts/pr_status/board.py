@@ -136,7 +136,7 @@ def graphql(query, variables=None):
     if core._rate_limited(out.stderr) or any(e.get("type") == "RATE_LIMITED" for e in errors):
         core._block_for(core.RATE_LIMIT_MAX_WAIT_SECONDS)
         raise core.RateLimited("GitHub rate limited the board sync; retry on the next run")
-    if out.returncode or errors or not payload.get("data"):
+    if out.returncode or errors or payload.get("data") is None:
         detail = "; ".join(e.get("message", "") for e in errors) or out.stderr.strip()
         raise RuntimeError(f"GraphQL failed: {detail}")
     return payload["data"]
@@ -365,9 +365,8 @@ def pull(repo, number):
             "labels": [label["name"] for label in d.get("labels") or []]}
 
 
-def completed_scoreboards(comments):
+def completed_scoreboards(comments, gate):
     """Every completed scoreboard (any head) as (comment, meta), oldest first by update time."""
-    gate = readiness.engine()
     out = []
     for index, comment in enumerate(comments):
         body = comment.get("body") or ""
@@ -382,8 +381,7 @@ def completed_scoreboards(comments):
     return [(comment, meta) for _, comment, meta in out]
 
 
-def _states(board, meta):
-    gate = readiness.engine()
+def _states(board, meta, gate):
     states = meta.get("states")
     if not isinstance(states, dict) or not states:
         states = gate.states_from_table(board.get("body"))
@@ -403,16 +401,16 @@ def review_summary(comments, head, merge_base):
     if latest and latest[1].get("mode") != "init" and merge_base \
             and latest[1].get("merge_base_sha") == merge_base:
         board, meta = latest
-        return _summary(board, meta, current=True)
-    boards = completed_scoreboards(comments)
+        return _summary(board, meta, gate, current=True)
+    boards = completed_scoreboards(comments, gate)
     if not boards:
         return None
     board, meta = boards[-1]
-    return _summary(board, meta, current=False)
+    return _summary(board, meta, gate, current=False)
 
 
-def _summary(board, meta, current):
-    states = _states(board, meta)
+def _summary(board, meta, gate, current):
+    states = _states(board, meta, gate)
     not_green = {r: s for r, s in states.items() if s != "green"}
     return {"current": current, "head": meta.get("head_sha") or "", "states": states,
             "green": len(states) - len(not_green), "total": len(states), "not_green": not_green,
@@ -588,9 +586,10 @@ def render_markdown(cards, failures=(), project=None):
     lines.append("")
     lines.append("| PR | Status | Green | Not green | Lifecycle | Roadmap | Review head |")
     lines.append("|---|---|---|---|---|---|---|")
+    total = len(readiness.engine().DEFAULT_RUBRICS)
     for a_card in sorted(cards, key=sort_key):
         v = a_card["values"]
-        green = "" if v["Rubrics green"] is None else f"{v['Rubrics green']}/{len(readiness.engine().DEFAULT_RUBRICS)}"
+        green = "" if v["Rubrics green"] is None else f"{v['Rubrics green']}/{total}"
         link = f"[#{a_card['number']}]({a_card['url']})" if a_card["url"] else f"#{a_card['number']}"
         lines.append(f"| {link} {_cell(a_card['title'])} | {v['Status']} | {green} | "
                      f"{_cell(v['Not green'])} | {v['Lifecycle'] or ''} | {_cell(v['Roadmap'])} | "
