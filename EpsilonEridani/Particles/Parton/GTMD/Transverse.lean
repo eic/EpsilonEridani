@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.MeasureTheory.Integral.CircleIntegral
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 /-!
 
 # The transverse plane
@@ -30,8 +30,8 @@ two-vectors, together with its polar parametrisation `circleMapTransverse`.
 
 The coordinates `Complex.orthonormalBasisOneI` carry the circle of radius `r` in `ℂ` onto the
 circle `‖w‖ = r` of the transverse plane; that translation is
-`LinearIsometryEquiv.norm_map_of_mem_sphere_zero`, in
-`EpsilonEridani.Mathematics.LinearAlgebra.LinearIsometry.Sphere`.
+`SemilinearIsometryClass.norm_map_of_mem_sphere_zero`, in
+`EpsilonEridani.Mathematics.Normed.Operator.LinearIsometry`.
 -/
 @[expose] public section
 
