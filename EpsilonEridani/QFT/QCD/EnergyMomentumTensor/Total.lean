@@ -30,7 +30,9 @@ strengths is as in `EpsilonEridani.QFT.QCD.EnergyMomentumTensor.GluonPart`.
 ## Main statements
 
 * `isSymm_total`: `T` is symmetric, as an identity and without equations of motion.
-* `total_mulVec_gaugeRotate`: `T` is gauge invariant.
+* `total_mulVec_gaugeRotate`: `T` is gauge invariant, concretely under a colour rotation of the
+  quark field together with an orthogonal rotation of the gluon multiplet
+  (`total_mulVec_gaugeRotate_of_mem_unitaryGroup`).
 * `total_equivariant`: `T` transforms as a tensor under a transformation preserving `g`.
 * `trace_total`: `T^μ{}_μ = Re (ψ‾ i γ^μ D_μ ψ) + (D / 4 - 1) F^a_{αβ} F^{a αβ}` in spacetime
   dimension `D`.
@@ -86,6 +88,17 @@ theorem total_mulVec_gaugeRotate [DecidableEq ι] {U : Matrix m m ℂ}
     (ψ : m → ℂ) (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
     total g β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) (gaugeRotate R F) = total g β γ ψ Dψ F := by
   rw [total_def, total_def, quarkPart_mulVec hU, gluonPart_gaugeRotate g hR]
+
+/-- The total energy-momentum tensor is invariant under a colour rotation: a unitary `U`
+commuting with `β` and with the gamma matrices, acting on the quark field and its covariant
+derivatives, together with an orthogonal rotation of the gluon multiplet. -/
+theorem total_mulVec_gaugeRotate_of_mem_unitaryGroup [DecidableEq ι] [DecidableEq m]
+    {U : Matrix m m ℂ} (hU : U ∈ unitaryGroup m ℂ) (hβ : Commute U β)
+    (hγ : ∀ μ, Commute U (γ μ)) {R : Matrix ι ι ℝ} (hR : R ∈ orthogonalGroup ι ℝ)
+    (ψ : m → ℂ) (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
+    total g β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) (gaugeRotate R F) = total g β γ ψ Dψ F :=
+  total_mulVec_gaugeRotate (fun μ => (commute_unitary_iff_star_left_conjugate hU).mp
+    (hβ.mul_right (hγ μ))) hR ψ Dψ F
 
 /-- The total energy-momentum tensor transforms as a tensor with two lower indices under a
 transformation `Λ` preserving the metric, when the quark field transforms by an `S` under which

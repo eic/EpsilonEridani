@@ -56,6 +56,11 @@ index of `D_ν ψ`.
 
 * `isSymm_quarkPart`: `T_q` is symmetric, for any field and without equations of motion.
 * `quarkKinetic_apply_of_isHermitian`: `(1/2) ψ‾ γ_μ i D↔_ν ψ = Re (ψ‾ γ_μ i D_ν ψ)`.
+* `ofReal_quarkPart_apply`: `(T_q{}_{μν} : ℂ) = (1/4) ψ‾ (γ_μ i D↔_ν + γ_ν i D↔_μ) ψ`, the formula
+  above, when `β * γ μ` and `β * γ ν` are Hermitian.
+* `quarkPart_apply_of_isHermitian`:
+  `T_q{}_{μν} = (Re (ψ‾ γ_μ i D_ν ψ) + Re (ψ‾ γ_ν i D_μ ψ)) / 2`, the Hermitian working form of
+  the same entries.
 * `quarkPart_equivariant`: `T_q` transforms as a tensor when `ψ‾ γ_μ ψ` transforms as a vector.
 * `quarkPart_mulVec`: `T_q` is invariant under a transformation `U` acting on `ψ` and on
   `D_ν ψ` that preserves the bilinears `ψ‾ γ_μ χ`. A colour rotation, unitary and commuting with
@@ -155,6 +160,33 @@ theorem quarkKinetic_apply_of_isHermitian (ψ : m → ℂ) (Dψ : n → m → �
   rw [quarkKinetic_apply, ← hγ.star_dotProduct_mulVec_comm ψ (Dψ ν), mulVec_smul,
     dotProduct_smul]
   simp only [RCLike.star_def, mul_re, I_re, sub_re, conj_re, I_im, sub_im, conj_im, smul_eq_mul]
+  ring
+
+/-- When `β * γ μ` and `β * γ ν` are Hermitian, the entries of `quarkPart` are the ℂ-valued
+Ji expression `(1/4) ψ‾ (γ_μ i D↔_ν + γ_ν i D↔_μ) ψ` of its docstring, so taking the real part
+in `quarkKinetic` loses nothing. -/
+theorem ofReal_quarkPart_apply (ψ : m → ℂ) (Dψ : n → m → ℂ) (μ ν : n)
+    (hγμ : (β * γ μ).IsHermitian) (hγν : (β * γ ν).IsHermitian) :
+    (quarkPart β γ ψ Dψ μ ν : ℂ) =
+      (I * (star ψ ⬝ᵥ (β * γ μ) *ᵥ Dψ ν - star (Dψ ν) ⬝ᵥ (β * γ μ) *ᵥ ψ) / 2 +
+        I * (star ψ ⬝ᵥ (β * γ ν) *ᵥ Dψ μ - star (Dψ μ) ⬝ᵥ (β * γ ν) *ᵥ ψ) / 2) / 2 := by
+  rw [quarkPart_def, Matrix.smul_apply, Matrix.add_apply, Matrix.transpose_apply,
+    smul_eq_mul, Complex.ofReal_mul, Complex.ofReal_add,
+    ofReal_quarkKinetic_apply ψ Dψ μ ν hγμ, ofReal_quarkKinetic_apply ψ Dψ ν μ hγν]
+  push_cast
+  ring
+
+/-- When `β * γ μ` and `β * γ ν` are Hermitian, the entries of `quarkPart` are the real
+symmetrized bilinears `(Re (ψ‾ γ_μ i D_ν ψ) + Re (ψ‾ γ_ν i D_μ ψ)) / 2`: the Hermitian
+working form of `ofReal_quarkPart_apply`. -/
+theorem quarkPart_apply_of_isHermitian (ψ : m → ℂ) (Dψ : n → m → ℂ) (μ ν : n)
+    (hγμ : (β * γ μ).IsHermitian) (hγν : (β * γ ν).IsHermitian) :
+    quarkPart β γ ψ Dψ μ ν =
+      ((star ψ ⬝ᵥ (β * γ μ) *ᵥ (I • Dψ ν)).re +
+        (star ψ ⬝ᵥ (β * γ ν) *ᵥ (I • Dψ μ)).re) / 2 := by
+  rw [quarkPart_def, Matrix.smul_apply, Matrix.add_apply, Matrix.transpose_apply,
+    smul_eq_mul, quarkKinetic_apply_of_isHermitian ψ Dψ μ ν hγμ,
+    quarkKinetic_apply_of_isHermitian ψ Dψ ν μ hγν]
   ring
 
 /-- The kinetic tensor is invariant under a transformation `U` of the field and its

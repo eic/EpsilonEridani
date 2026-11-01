@@ -105,8 +105,8 @@ lemma γ3_eq : γ3 = !![0, 0, 1, 0; 0, 0, 0, -1; -1, 0, 0, 0; 0, 1, 0, 0] := by
 /-- Each `γ⁰ γ_μ` is Hermitian, so the bilinears `ψ‾ γ_μ χ = ψ† γ⁰ γ_μ χ` are Hermitian
 forms. -/
 lemma isHermitian_γ0_mul_γDown (μ : Fin 4) : (γ0 * γDown μ).IsHermitian := by
-  rw [Matrix.IsHermitian]
-  fin_cases μ <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp [γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  refine Matrix.IsHermitian.ext fun i j => ?_
+  fin_cases μ <;> fin_cases i <;> fin_cases j <;> simp [γ0_eq, γ1_eq, γ2_eq, γ3_eq]
 
 /-- `γ μ` is the Dirac-representation matrix of the upstream gamma endomorphism. -/
 lemma γ_eq_endEquivMatrix (μ : Fin 4) :
