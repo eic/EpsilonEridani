@@ -13,7 +13,7 @@ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
 A diffractive deep-inelastic event `e(k) + p(P) → e(k') + X + Y(P')` is described by the
 inclusive kinematic record `DisKinematics`, whose field `pPrime` is the distinguished outgoing
 target-like momentum `P'` (the surviving target, or a low-mass dissociated system `Y`).
-With `q = k - k'` and `Δ = P - P'` the momentum lost by the target (`deltaTarget`; note the sign
+With `q = k - k'` and `Δ = P - P'` the momentum lost by the target (`deltaLost`; note the sign
 is opposite to the exclusive layer's `ExclKinematics.delta = P' - P`), this file defines
 
 * `t = Δ²`, the invariant momentum transfer to the target (`tMom`);
@@ -69,43 +69,43 @@ omit [Module ℝ V] in
 region, so that `ξ` and `β` are positive. This is the opposite sign to the exclusive layer's
 `Exclusive.Kinematics.ExclKinematics.delta = P' - P`; only `t = Δ²` agrees between the two
 conventions (`tMom_toExclKinematics`), while `Δ`-linear quantities such as `P·Δ` flip sign. -/
-def deltaTarget (K : DisKinematics V) : V :=
+def deltaLost (K : DisKinematics V) : V :=
   K.p - K.pPrime
 
 omit [Module ℝ V] in
-lemma deltaTarget_def (K : DisKinematics V) : deltaTarget K = K.p - K.pPrime := (rfl)
+lemma deltaLost_def (K : DisKinematics V) : deltaLost K = K.p - K.pPrime := (rfl)
 
 omit [Module ℝ V] in
 /-- The momentum of the diffractive system `X`, `p_X = q + Δ = P + q - P'`. -/
 def pX (K : DisKinematics V) : V :=
-  K.q + deltaTarget K
+  K.q + deltaLost K
 
 omit [Module ℝ V] in
-lemma pX_def (K : DisKinematics V) : pX K = K.q + deltaTarget K := (rfl)
+lemma pX_def (K : DisKinematics V) : pX K = K.q + deltaLost K := (rfl)
 
 /-- The invariant momentum transfer to the target, `t = Δ² = (P - P')²`. -/
 def tMom (g : Bilin V) (K : DisKinematics V) : ℝ :=
-  g (deltaTarget K) (deltaTarget K)
+  g (deltaLost K) (deltaLost K)
 
 lemma tMom_def (g : Bilin V) (K : DisKinematics V) :
-    tMom g K = g (deltaTarget K) (deltaTarget K) := (rfl)
+    tMom g K = g (deltaLost K) (deltaLost K) := (rfl)
 
 /-- The fraction of the target momentum carried by the exchange, `ξ = Δ·q / P·q`: the momentum
 fraction lost by the target, the `x_IP` of the diffraction literature. Despite the shared symbol
 `ξ`, this is not `ExclKinematics.xiSkew`, the skewness of the exclusive event that
 `toExclKinematics` bridges to. -/
 noncomputable def xi (g : Bilin V) (K : DisKinematics V) : ℝ :=
-  g (deltaTarget K) K.q / g K.p K.q
+  g (deltaLost K) K.q / g K.p K.q
 
 lemma xi_def (g : Bilin V) (K : DisKinematics V) :
-    xi g K = g (deltaTarget K) K.q / g K.p K.q := (rfl)
+    xi g K = g (deltaLost K) K.q / g K.p K.q := (rfl)
 
 /-- The fraction of the exchange momentum carried by the struck parton, `β = Q² / (2 Δ·q)`. -/
 noncomputable def beta (g : Bilin V) (K : DisKinematics V) : ℝ :=
-  K.Q2 g / (2 * g (deltaTarget K) K.q)
+  K.Q2 g / (2 * g (deltaLost K) K.q)
 
 lemma beta_def (g : Bilin V) (K : DisKinematics V) :
-    beta g K = K.Q2 g / (2 * g (deltaTarget K) K.q) := (rfl)
+    beta g K = K.Q2 g / (2 * g (deltaLost K) K.q) := (rfl)
 
 /-- The invariant mass squared of the diffractive system, `M_X² = (q + Δ)²`. -/
 def MX2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
@@ -120,25 +120,25 @@ def MY2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
 lemma MY2_def (g : Bilin V) (K : DisKinematics V) : MY2 g K = g K.pPrime K.pPrime := (rfl)
 
 /-- Products with `Δ` in the first slot, in terms of the momenta: `Δ·v = P·v - P'·v`. -/
-lemma apply_deltaTarget_left (g : Bilin V) (K : DisKinematics V) (v : V) :
-    g (deltaTarget K) v = g K.p v - g K.pPrime v := by
-  rw [deltaTarget, map_sub, LinearMap.sub_apply]
+lemma apply_deltaLost_left (g : Bilin V) (K : DisKinematics V) (v : V) :
+    g (deltaLost K) v = g K.p v - g K.pPrime v := by
+  rw [deltaLost, map_sub, LinearMap.sub_apply]
 
 /-- Products with `Δ` in the second slot, in terms of the momenta: `v·Δ = v·P - v·P'`. -/
-lemma apply_deltaTarget_right (g : Bilin V) (K : DisKinematics V) (v : V) :
-    g v (deltaTarget K) = g v K.p - g v K.pPrime := by
-  rw [deltaTarget, map_sub]
+lemma apply_deltaLost_right (g : Bilin V) (K : DisKinematics V) (v : V) :
+    g v (deltaLost K) = g v K.p - g v K.pPrime := by
+  rw [deltaLost, map_sub]
 
 /-- `ξ = 1 - P'·q / P·q` whenever `P·q ≠ 0`. -/
 lemma xi_eq_one_sub_div (g : Bilin V) (K : DisKinematics V) (hpq : g K.p K.q ≠ 0) :
     xi g K = 1 - g K.pPrime K.q / g K.p K.q := by
-  rw [xi, apply_deltaTarget_left, sub_div, div_self hpq]
+  rw [xi, apply_deltaLost_left, sub_div, div_self hpq]
 
 omit [Module ℝ V] in
 /-- `p_X` is defined as `q + Δ`, so momentum conservation `P + q = P' + p_X` at the hadronic
 vertex holds by construction. -/
 lemma p_add_q_eq_pPrime_add_pX (K : DisKinematics V) : K.p + K.q = K.pPrime + pX K := by
-  rw [pX, deltaTarget]
+  rw [pX, deltaLost]
   abel
 
 /-- A diffractive event as exclusive kinematics with the diffractive system `X` in the role of the
@@ -184,8 +184,8 @@ omit [Module ℝ V] in
 /-- The exclusive transfer `P' - P` of the bridged event is `-Δ`. -/
 @[simp]
 lemma delta_toExclKinematics (K : DisKinematics V) (phiL phiH : ℝ) :
-    (toExclKinematics K phiL phiH).delta = -deltaTarget K := by
-  rw [ExclKinematics.delta, toExclKinematics_pPrime, toExclKinematics_p, deltaTarget, neg_sub]
+    (toExclKinematics K phiL phiH).delta = -deltaLost K := by
+  rw [ExclKinematics.delta, toExclKinematics_pPrime, toExclKinematics_p, deltaLost, neg_sub]
 
 /-- The diffractive `t` is the exclusive `t` of the bridged event, `t = (P' - P)²`. -/
 @[simp]
@@ -197,42 +197,43 @@ lemma tMom_toExclKinematics (g : Bilin V) (K : DisKinematics V) (phiL phiH : ℝ
 /-- The exclusive hard scale of the bridged event is the inclusive `Q² = -q²`. -/
 @[simp]
 lemma Q2_toExclKinematics (g : Bilin V) (K : DisKinematics V) (phiL phiH : ℝ) :
-    (toExclKinematics K phiL phiH).Q2 g = K.Q2 g := (rfl)
+    (toExclKinematics K phiL phiH).Q2 g = K.Q2 g := by
+  rw [ExclKinematics.Q2, DisKinematics.Q2, toExclKinematics_q]
 
 /-- Expansion of the diffractive mass: `M_X² = 2 Δ·q - Q² + t`. -/
-lemma MX2_eq_two_mul_apply_deltaTarget_q_sub_Q2_add_tMom (g : Bilin V) (hg : g.IsSymm)
+lemma MX2_eq_two_mul_apply_deltaLost_q_sub_Q2_add_tMom (g : Bilin V) (hg : g.IsSymm)
     (K : DisKinematics V) :
-    MX2 g K = 2 * g (deltaTarget K) K.q - K.Q2 g + tMom g K := by
-  rw [MX2, pX, add_comm K.q, Bilin.apply_add_self g hg, tMom, DisKinematics.Q2]
+    MX2 g K = 2 * g (deltaLost K) K.q - K.Q2 g + tMom g K := by
+  rw [MX2, pX, add_comm K.q (deltaLost K), Bilin.apply_add_self g hg, tMom, DisKinematics.Q2]
   ring
 
 /-- The denominator of `β` in terms of the event invariants: `2 Δ·q = Q² + M_X² - t`. -/
-lemma two_mul_apply_deltaTarget_q_eq_Q2_add_MX2_sub_tMom (g : Bilin V) (hg : g.IsSymm)
+lemma two_mul_apply_deltaLost_q_eq_Q2_add_MX2_sub_tMom (g : Bilin V) (hg : g.IsSymm)
     (K : DisKinematics V) :
-    2 * g (deltaTarget K) K.q = K.Q2 g + MX2 g K - tMom g K := by
-  rw [MX2_eq_two_mul_apply_deltaTarget_q_sub_Q2_add_tMom g hg K]
+    2 * g (deltaLost K) K.q = K.Q2 g + MX2 g K - tMom g K := by
+  rw [MX2_eq_two_mul_apply_deltaLost_q_sub_Q2_add_tMom g hg K]
   ring
 
 /-- Expansion of the target-side mass: `M_Y² = M² - 2 P·Δ + t` with `M² = P²`. -/
-lemma MY2_eq_p_sq_sub_two_mul_apply_p_deltaTarget_add_tMom (g : Bilin V) (hg : g.IsSymm)
+lemma MY2_eq_p_sq_sub_two_mul_apply_p_deltaLost_add_tMom (g : Bilin V) (hg : g.IsSymm)
     (K : DisKinematics V) :
-    MY2 g K = g K.p K.p - 2 * g K.p (deltaTarget K) + tMom g K := by
-  have hpPrime : K.pPrime = K.p - deltaTarget K := by
-    rw [deltaTarget, sub_sub_cancel]
+    MY2 g K = g K.p K.p - 2 * g K.p (deltaLost K) + tMom g K := by
+  have hpPrime : K.pPrime = K.p - deltaLost K := by
+    rw [deltaLost, sub_sub_cancel]
   rw [MY2, hpPrime, Bilin.apply_sub_self g hg, tMom]
 
 /-- `t = M² - 2 P·P' + M_Y²` with `M² = P²`. -/
 lemma tMom_eq_p_sq_sub_two_mul_apply_p_pPrime_add_MY2 (g : Bilin V) (hg : g.IsSymm)
     (K : DisKinematics V) :
     tMom g K = g K.p K.p - 2 * g K.p K.pPrime + MY2 g K := by
-  rw [MY2_eq_p_sq_sub_two_mul_apply_p_deltaTarget_add_tMom g hg K, apply_deltaTarget_right]
+  rw [MY2_eq_p_sq_sub_two_mul_apply_p_deltaLost_add_tMom g hg K, apply_deltaLost_right]
   ring
 
 /-- **`x = ξ β`.** The Bjorken variable is the product of the momentum fraction `ξ` lost by
 the target and the fraction `β` of that momentum carried by the struck parton. The only
 hypothesis is `Δ·q ≠ 0`, without which `ξ = β = 0` by the convention `a / 0 = 0`. -/
 theorem xBj_eq_xi_mul_beta (g : Bilin V) (K : DisKinematics V)
-    (hΔq : g (deltaTarget K) K.q ≠ 0) :
+    (hΔq : g (deltaLost K) K.q ≠ 0) :
     K.xBj g = xi g K * beta g K := by
   rw [DisKinematics.xBj, ← mul_div_mul_left (K.Q2 g) (2 * g K.p K.q) hΔq, xi, beta]
   ring
@@ -241,7 +242,7 @@ theorem xBj_eq_xi_mul_beta (g : Bilin V) (K : DisKinematics V)
 diffractive system and the momentum transfer. -/
 theorem beta_eq_Q2_div (g : Bilin V) (hg : g.IsSymm) (K : DisKinematics V) :
     beta g K = K.Q2 g / (K.Q2 g + MX2 g K - tMom g K) := by
-  rw [beta, two_mul_apply_deltaTarget_q_eq_Q2_add_MX2_sub_tMom g hg K]
+  rw [beta, two_mul_apply_deltaLost_q_eq_Q2_add_MX2_sub_tMom g hg K]
 
 /-- The inverse of `beta_eq_Q2_div`: `M_X² = Q² (1/β - 1) + t` whenever `Q² ≠ 0`. -/
 theorem MX2_eq_Q2_mul_inv_beta_sub_one_add_tMom (g : Bilin V) (hg : g.IsSymm)
@@ -257,7 +258,7 @@ theorem xi_eq_Q2_add_MX2_sub_tMom_div (g : Bilin V) (hg : g.IsSymm) (K : DisKine
   have hden : K.Q2 g + K.W2 g - g K.p K.p = 2 * g K.p K.q := by
     rw [DisKinematics.W2_eq_with_Q2 g K hg]
     ring
-  rw [← two_mul_apply_deltaTarget_q_eq_Q2_add_MX2_sub_tMom g hg K, hden,
+  rw [← two_mul_apply_deltaLost_q_eq_Q2_add_MX2_sub_tMom g hg K, hden,
     mul_div_mul_left _ _ two_ne_zero, xi]
 
 /-! ### Independence of the lepton momenta
@@ -271,26 +272,26 @@ section congr
 variable {K K' : DisKinematics V}
 
 omit [Module ℝ V] in
-lemma deltaTarget_congr (hp : K.p = K'.p) (hpPrime : K.pPrime = K'.pPrime) :
-    deltaTarget K = deltaTarget K' := by
-  rw [deltaTarget, deltaTarget, hp, hpPrime]
+lemma deltaLost_congr (hp : K.p = K'.p) (hpPrime : K.pPrime = K'.pPrime) :
+    deltaLost K = deltaLost K' := by
+  rw [deltaLost, deltaLost, hp, hpPrime]
 
 omit [Module ℝ V] in
 lemma pX_congr (hp : K.p = K'.p) (hpPrime : K.pPrime = K'.pPrime) (hq : K.q = K'.q) :
     pX K = pX K' := by
-  rw [pX, pX, deltaTarget_congr hp hpPrime, hq]
+  rw [pX, pX, deltaLost_congr hp hpPrime, hq]
 
 lemma tMom_congr (g : Bilin V) (hp : K.p = K'.p) (hpPrime : K.pPrime = K'.pPrime) :
     tMom g K = tMom g K' := by
-  rw [tMom, tMom, deltaTarget_congr hp hpPrime]
+  rw [tMom, tMom, deltaLost_congr hp hpPrime]
 
 lemma xi_congr (g : Bilin V) (hp : K.p = K'.p) (hpPrime : K.pPrime = K'.pPrime)
     (hq : K.q = K'.q) : xi g K = xi g K' := by
-  rw [xi, xi, deltaTarget_congr hp hpPrime, hp, hq]
+  rw [xi, xi, deltaLost_congr hp hpPrime, hp, hq]
 
 lemma beta_congr (g : Bilin V) (hp : K.p = K'.p) (hpPrime : K.pPrime = K'.pPrime)
     (hq : K.q = K'.q) : beta g K = beta g K' := by
-  rw [beta, beta, DisKinematics.Q2, DisKinematics.Q2, deltaTarget_congr hp hpPrime, hq]
+  rw [beta, beta, DisKinematics.Q2, DisKinematics.Q2, deltaLost_congr hp hpPrime, hq]
 
 lemma MX2_congr (g : Bilin V) (hp : K.p = K'.p) (hpPrime : K.pPrime = K'.pPrime)
     (hq : K.q = K'.q) : MX2 g K = MX2 g K' := by
