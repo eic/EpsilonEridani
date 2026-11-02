@@ -34,11 +34,12 @@ distance `‖x‖` from the origin of `Space`, and proves each integrable and no
 * the Gaussian `A (π R²)^{-3/2} exp(-r²/R²)`;
 * the two-parameter Fermi, or Woods–Saxon, profile `ρ₀ / (1 + exp((r - R)/a))`, with
   half-density radius `R` (where the profile equals `ρ₀ / 2`) and surface thickness `a`. The
-  parameter `ρ₀`, conventionally called the central density, is the plateau value the profile
-  approaches deep inside the nucleus, `r - R ≪ -a`; it equals the density at the origin only in
-  the sharp-surface limit `a / R → 0`. It is fixed by the normalisation. The relevant integral
-  has no elementary closed form, so `ρ₀` is defined as `A` divided by the integral of the
-  profile with `ρ₀ = 1`, and shown to be the unique normalising value and positive.
+  parameter `ρ₀`, conventionally called the central density, is, for `0 < a`, the plateau value
+  the profile approaches deep inside the nucleus, `r - R ≪ -a`; it equals the density at the
+  origin only in the sharp-surface limit `a / R → 0`. It is fixed by the normalisation. The
+  relevant integral has no elementary closed form, so `ρ₀` is defined as `A` divided by the
+  integral of the profile with `ρ₀ = 1`, and shown to be the unique normalising value and
+  positive.
 
 All declarations live in the namespace `EpsilonEridani.Particles.Nuclei`.
 
@@ -117,8 +118,8 @@ end Nucleus
 
 /-! ### The hard sphere -/
 
-/-- The hard-sphere profile of radius `R` normalised to `m`: the constant `3m / (4π R³)` for
-`r ≤ R`, and zero beyond. -/
+/-- The hard-sphere profile of radius `R`: the constant `3m / (4π R³)` for `r ≤ R`, and zero
+beyond. For `0 < R` it is normalised to `m`. -/
 def hardSphereDensity (m R : ℝ) : ℝ → ℝ :=
   (Iic R).indicator fun _ => 3 * m / (4 * π * R ^ 3)
 
@@ -174,7 +175,8 @@ theorem integral_hardSphereDensity_norm (m : ℝ) {R : ℝ} (hR : 0 < R) :
 
 /-! ### The Gaussian profile -/
 
-/-- The Gaussian profile of range `R` normalised to `m`, `m (π R²)^{-3/2} exp(-r²/R²)`. -/
+/-- The Gaussian profile of range `R`, `m (π R²)^{-3/2} exp(-r²/R²)`. For `R ≠ 0` it is
+normalised to `m`. -/
 def gaussianDensity (m R r : ℝ) : ℝ :=
   m / (π * R ^ 2) ^ (3 / 2 : ℝ) * exp (-(r / R) ^ 2)
 
@@ -219,8 +221,9 @@ theorem integrable_gaussianDensity_norm (m R : ℝ) :
 /-- The two-parameter Fermi, or Woods–Saxon, profile `ρ₀ / (1 + exp((r - R)/a))`, written as
 `ρ₀` times the logistic function `Real.sigmoid`. Here `R` is the half-density radius, where the
 profile equals `ρ₀ / 2`, and `a` the surface thickness. The parameter `ρ₀`, conventionally called
-the central density, is the plateau value the profile approaches for `r - R ≪ -a`; it equals the
-density at the origin only in the sharp-surface limit `a / R → 0`. -/
+the central density, is, for `0 < a`, the plateau value the profile approaches for
+`r - R ≪ -a`; it equals the density at the origin only in the sharp-surface limit
+`a / R → 0`. -/
 def woodsSaxonDensity (ρ₀ R a r : ℝ) : ℝ :=
   ρ₀ * Real.sigmoid ((R - r) / a)
 
@@ -375,13 +378,16 @@ def woodsSaxon (R : ℝ) {a : ℝ} (ha : 0 < a) : DensityProfile nuc where
     (woodsSaxonCentralDensity_pos (by exact_mod_cast nuc.massNumber_pos) R ha).le _ _ _
   integral_density := integral_woodsSaxonDensity_norm_woodsSaxonCentralDensity _ R ha
 
-@[simp] lemma hardSphere_density {R : ℝ} (hR : 0 < R) (x : Space) :
+-- The pointwise projections are deliberately not simp lemmas: as post-order rewrites they
+-- would fire under the integral binder before the unconditional normalisation law
+-- `integral_density` can match at the root.
+lemma hardSphere_density {R : ℝ} (hR : 0 < R) (x : Space) :
     (hardSphere nuc hR).density x = hardSphereDensity nuc.massNumber R ‖x‖ := (rfl)
 
-@[simp] lemma gaussian_density {R : ℝ} (hR : R ≠ 0) (x : Space) :
+lemma gaussian_density {R : ℝ} (hR : R ≠ 0) (x : Space) :
     (gaussian nuc hR).density x = gaussianDensity nuc.massNumber R ‖x‖ := (rfl)
 
-@[simp] lemma woodsSaxon_density (R : ℝ) {a : ℝ} (ha : 0 < a) (x : Space) :
+lemma woodsSaxon_density (R : ℝ) {a : ℝ} (ha : 0 < a) (x : Space) :
     (woodsSaxon nuc R ha).density x =
       woodsSaxonDensity (woodsSaxonCentralDensity nuc.massNumber R a) R a ‖x‖ := (rfl)
 
