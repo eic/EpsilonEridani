@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.PDF.Positivity
+import TauCeti.Analysis.SpecialFunctions.Beta
 /-!
 
 # An explicit collinear PDF model
@@ -168,40 +169,19 @@ lemma mellinMoment_modelPdf_nonneg (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q
 
 /-! ### D. Moments in closed form -/
 
-/-- **The Euler Beta value of the shape**: `∫₀¹ x^a (1 - x)^b dx = a! b! / (a + b + 1)!`. The
-integration by parts that produces the factorials is here the recursion
-`∫ x^a (1-x)^(b+1) = ∫ x^a (1-x)^b - ∫ x^(a+1) (1-x)^b`, an induction on `b` over all `a`. -/
+/-- **The Euler Beta value of the shape**: `∫₀¹ x^a (1 - x)^b dx = a! b! / (a + b + 1)!`. This is
+Euler's beta integral `TauCeti.integral_rpow_mul_one_sub_rpow` at the parameters `a + 1` and
+`b + 1`, with `Β(a + 1, b + 1) = Γ(a + 1) Γ(b + 1) / Γ(a + b + 2)` evaluated by factorials. -/
 lemma integral_betaShape (a b : ℕ) :
     ∫ x in Set.Icc (0 : ℝ) 1, betaShape a b x = (a ! * b ! : ℝ) / (a + b + 1)! := by
-  induction b generalizing a with
-  | zero =>
-    have key : ∫ x in Set.Icc (0 : ℝ) 1, betaShape a 0 x = ∫ x in Set.Icc (0 : ℝ) 1, x ^ a :=
-      MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => by
-        rw [betaShape, pow_zero, mul_one]
-    have ha : (a ! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 a.factorial_ne_zero
-    rw [key, MeasureTheory.integral_Icc_eq_integral_Ioc,
-      ← intervalIntegral.integral_of_le zero_le_one, integral_pow, Nat.add_zero,
-      Nat.factorial_zero, Nat.factorial_succ, one_pow, zero_pow (Nat.succ_ne_zero a), sub_zero]
-    push_cast
-    field_simp
-  | succ b ih =>
-    have key : ∫ x in Set.Icc (0 : ℝ) 1, betaShape a (b + 1) x
-        = (∫ x in Set.Icc (0 : ℝ) 1, betaShape a b x)
-          - ∫ x in Set.Icc (0 : ℝ) 1, betaShape (a + 1) b x := by
-      rw [← MeasureTheory.integral_sub (continuous_betaShape a b).integrableOn_Icc
-        (continuous_betaShape (a + 1) b).integrableOn_Icc]
-      exact MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => by
-        rw [betaShape, betaShape, betaShape, pow_succ (1 - x) b, pow_succ x a]
-        ring
-    have h₁ : a + 1 + b + 1 = a + b + 1 + 1 := by omega
-    have h₂ : a + (b + 1) + 1 = a + b + 1 + 1 := by omega
-    have hf : ((a + b + 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _)
-    have hs : ((a : ℝ) + b + 1 + 1) ≠ 0 := by positivity
-    rw [key, ih a, ih (a + 1), h₁, h₂, Nat.factorial_succ (a + b + 1), Nat.factorial_succ a,
-      Nat.factorial_succ b]
-    push_cast
-    field_simp
-    ring
+  have h := TauCeti.integral_rpow_mul_one_sub_rpow (a := (a : ℝ) + 1) (b := (b : ℝ) + 1)
+    (by positivity) (by positivity)
+  simp only [add_sub_cancel_right, Real.rpow_natCast] at h
+  rw [MeasureTheory.integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
+  simp only [betaShape]
+  rw [h, ProbabilityTheory.beta, Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial,
+    show (a : ℝ) + 1 + (b + 1) = ((a + b + 1 : ℕ) : ℝ) + 1 by push_cast; ring,
+    Real.Gamma_nat_eq_factorial]
 
 /-- **The Mellin moments of the model in closed form**: `∫₀¹ xⁿ x^a (1 - x)^b dx` is the Euler
 Beta value `(n + a)! b! / (n + a + b + 1)!`, at every flavour and every scale. -/
