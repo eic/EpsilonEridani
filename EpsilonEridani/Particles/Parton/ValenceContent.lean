@@ -10,34 +10,41 @@ public import EpsilonEridani.Particles.Parton.Species
 /-!
 # The valence content of a hadron multiplet
 
-A multiplet of hadrons is described by `ValenceContent`: the antiparticle involution `conj` on the
-hadrons, the valence content `valence h` — the finite set of parton species that are valence
-constituents of `h` — and the compatibility of the two, that the valence constituents of the
-antiparticle are the antiparticles of the valence constituents. The valence assignment is explicit
+The valence content of a family of hadrons is a map `valence` sending a hadron `h` to the finite
+set of parton species that are valence constituents of `h`. The valence assignment is explicit
 data, so whatever is read off it is not a convention.
 
 A flavour for which exactly one of the quark and the antiquark is a valence constituent is a
 `IsValenceFlavor`. This holds for each flavour of a flavoured meson and fails for a flavour-neutral
 hadron.
 
-The pion triplet is worked out as an instance: `pionContent` is `π⁺ = u dbar`, `π⁻ = d ubar` and
+A multiplet of hadrons closed under taking the antiparticle is a `HadronMultiplet`: the
+antiparticle involution `conj` on the hadrons, the valence content, and the compatibility of the
+two, that the valence constituents of the antiparticle are the antiparticles of the valence
+constituents.
+
+The pion triplet is worked out as an instance: `pionMultiplet` is `π⁺ = u dbar`, `π⁻ = d ubar` and
 the flavour-neutral `π⁰`.
 
 ## Main definitions
 
-* `EpsilonEridani.Particles.Parton.ValenceContent`: a hadron multiplet with its antiparticle map
+* `EpsilonEridani.Particles.Parton.IsValenceFlavor`: exactly one of the quark and the antiquark of a
+  flavour is a valence constituent of a hadron.
+* `EpsilonEridani.Particles.Parton.HadronMultiplet`: a hadron multiplet with its antiparticle map
   and valence content.
-* `EpsilonEridani.Particles.Parton.ValenceContent.IsValenceFlavor`: exactly one of the quark and
-  the antiquark of a flavour is a valence constituent of a hadron.
 * `EpsilonEridani.Particles.Parton.Pion`, `EpsilonEridani.Particles.Parton.PionFlavor` and
-  `EpsilonEridani.Particles.Parton.pionContent`: the pion triplet.
+  `EpsilonEridani.Particles.Parton.pionMultiplet`: the pion triplet.
 
 ## Main statements
 
-* `ValenceContent.image_conj_valence`: conjugation carries the valence content of a hadron to that
+* `HadronMultiplet.image_conj_valence`: conjugation carries the valence content of a hadron to that
   of its antiparticle.
-* `ValenceContent.IsValenceFlavor.conj`: a valence flavour of a hadron is a valence flavour of its
-  antiparticle.
+* `HadronMultiplet.image_conj_inter_valence` and `HadronMultiplet.image_conj_sdiff_valence`:
+  conjugation carries the valence and the non-valence species of a flavour in a hadron to those in
+  its antiparticle.
+* `IsValenceFlavor.conj`: a valence flavour of a hadron is a valence flavour of its antiparticle.
+* `IsValenceFlavor.inter_valence_conj_eq_sdiff`: at a valence flavour, the valence species of the
+  antiparticle are the non-valence species of the hadron.
 * `isValenceFlavor_pion_plus` and `not_isValenceFlavor_pion_zero`: every light flavour is a valence
   flavour of the positive pion and none is a valence flavour of the neutral pion.
 -/
@@ -50,11 +57,53 @@ namespace Parton
 
 variable {Hadron Flavor : Type}
 
-/-- The discrete data of a multiplet of observed hadrons: the antiparticle map `conj` on the
-hadrons and the valence content `valence h`, the finite set of parton species that are valence
-constituents of `h`. The two are tied by `mem_valence_conj`: the valence constituents of the
-antiparticle are the antiparticles of the valence constituents. -/
-structure ValenceContent (Hadron Flavor : Type) where
+/-- The flavour `i` is a *valence flavour* of the hadron `h` for the valence content `valence` when
+exactly one of the quark and the antiquark of flavour `i` is a valence constituent of `h`. This
+holds for each flavour of a flavoured meson; it fails for a flavour whose quark and antiquark both
+occur, as in a flavour-neutral hadron, and for a flavour that does not occur at all. -/
+def IsValenceFlavor (valence : Hadron → Finset (Species Flavor)) (h : Hadron) (i : Flavor) :
+    Prop :=
+  Xor (Species.quark i ∈ valence h) (Species.antiquark i ∈ valence h)
+
+section IsValenceFlavor
+
+variable {valence : Hadron → Finset (Species Flavor)} {h : Hadron} {i : Flavor}
+
+theorem isValenceFlavor_iff : IsValenceFlavor valence h i ↔
+    Xor (Species.quark i ∈ valence h) (Species.antiquark i ∈ valence h) :=
+  Iff.rfl
+
+/-- A flavour whose quark, and not whose antiquark, is a valence constituent is a valence
+flavour. -/
+theorem isValenceFlavor_of_quark_mem (hq : Species.quark i ∈ valence h)
+    (hq' : Species.antiquark i ∉ valence h) : IsValenceFlavor valence h i :=
+  Or.inl ⟨hq, hq'⟩
+
+/-- A flavour whose antiquark, and not whose quark, is a valence constituent is a valence
+flavour. -/
+theorem isValenceFlavor_of_antiquark_mem (hq' : Species.antiquark i ∈ valence h)
+    (hq : Species.quark i ∉ valence h) : IsValenceFlavor valence h i :=
+  Or.inr ⟨hq', hq⟩
+
+/-- At a valence flavour, the antiquark is a valence constituent exactly when the quark is
+not. -/
+theorem IsValenceFlavor.antiquark_mem_iff (hi : IsValenceFlavor valence h i) :
+    Species.antiquark i ∈ valence h ↔ Species.quark i ∉ valence h :=
+  (xor_iff_not_iff'.1 hi).symm
+
+/-- At a valence flavour, the quark is a valence constituent exactly when the antiquark is
+not. -/
+theorem IsValenceFlavor.quark_mem_iff (hi : IsValenceFlavor valence h i) :
+    Species.quark i ∈ valence h ↔ Species.antiquark i ∉ valence h :=
+  xor_iff_iff_not.1 hi
+
+end IsValenceFlavor
+
+/-- The discrete data of a multiplet of observed hadrons closed under taking the antiparticle: the
+antiparticle map `conj` on the hadrons and the valence content `valence h`, the finite set of
+parton species that are valence constituents of `h`. The two are tied by `mem_valence_conj`: the
+valence constituents of the antiparticle are the antiparticles of the valence constituents. -/
+structure HadronMultiplet (Hadron Flavor : Type) where
   /-- The antiparticle of a hadron of the multiplet. -/
   conj : Hadron → Hadron
   /-- Taking the antiparticle twice returns the hadron. -/
@@ -66,9 +115,9 @@ structure ValenceContent (Hadron Flavor : Type) where
   mem_valence_conj (h : Hadron) (s : Species Flavor) :
     s ∈ valence (conj h) ↔ Species.conj s ∈ valence h
 
-namespace ValenceContent
+namespace HadronMultiplet
 
-variable (C : ValenceContent Hadron Flavor)
+variable (C : HadronMultiplet Hadron Flavor)
 
 @[simp]
 theorem conj_conj (h : Hadron) : C.conj (C.conj h) = h :=
@@ -79,56 +128,64 @@ theorem image_conj_valence [DecidableEq Flavor] (h : Hadron) :
     (C.valence h).image Species.conj = C.valence (C.conj h) := by
   ext s
   rw [C.mem_valence_conj, Finset.mem_image]
-  exact ⟨fun ⟨a, ha, hs⟩ => hs ▸ (Species.conj_conj a).symm ▸ ha,
-    fun hs => ⟨_, hs, Species.conj_conj s⟩⟩
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    rwa [Species.conj_conj]
+  · intro hs
+    exact ⟨Species.conj s, hs, Species.conj_conj s⟩
 
-/-- The flavour `i` is a *valence flavour* of the hadron `h` when exactly one of the quark and the
-antiquark of flavour `i` is a valence constituent of `h`. This holds for each flavour of a
-flavoured meson; it fails for a flavour whose quark and antiquark both occur, as in a
-flavour-neutral hadron, and for a flavour that does not occur at all. -/
-def IsValenceFlavor (h : Hadron) (i : Flavor) : Prop :=
-  Xor (Species.quark i ∈ C.valence h) (Species.antiquark i ∈ C.valence h)
+/-- Conjugation carries the valence species of a flavour in a hadron to the valence species of
+that flavour in its antiparticle. -/
+theorem image_conj_inter_valence [DecidableEq Flavor] (h : Hadron) (i : Flavor) :
+    (Species.flavorPair i ∩ C.valence h).image Species.conj
+      = Species.flavorPair i ∩ C.valence (C.conj h) := by
+  rw [Finset.image_inter _ _ Species.conj_involutive.injective, Species.image_conj_flavorPair,
+    C.image_conj_valence]
 
-variable {C} {h : Hadron} {i : Flavor}
+/-- Conjugation carries the non-valence species of a flavour in a hadron to the non-valence
+species of that flavour in its antiparticle. -/
+theorem image_conj_sdiff_valence [DecidableEq Flavor] (h : Hadron) (i : Flavor) :
+    (Species.flavorPair i \ C.valence h).image Species.conj
+      = Species.flavorPair i \ C.valence (C.conj h) := by
+  rw [Finset.image_sdiff _ _ Species.conj_involutive.injective, Species.image_conj_flavorPair,
+    C.image_conj_valence]
 
-theorem isValenceFlavor_iff : C.IsValenceFlavor h i ↔
-    Xor (Species.quark i ∈ C.valence h) (Species.antiquark i ∈ C.valence h) :=
-  Iff.rfl
+end HadronMultiplet
 
-/-- A flavour whose quark, and not whose antiquark, is a valence constituent is a valence
-flavour. -/
-theorem isValenceFlavor_of_quark_mem (hq : Species.quark i ∈ C.valence h)
-    (hq' : Species.antiquark i ∉ C.valence h) : C.IsValenceFlavor h i :=
-  Or.inl ⟨hq, hq'⟩
+namespace IsValenceFlavor
 
-/-- A flavour whose antiquark, and not whose quark, is a valence constituent is a valence
-flavour. -/
-theorem isValenceFlavor_of_antiquark_mem (hq' : Species.antiquark i ∈ C.valence h)
-    (hq : Species.quark i ∉ C.valence h) : C.IsValenceFlavor h i :=
-  Or.inr ⟨hq', hq⟩
-
-/-- At a valence flavour, the antiquark is a valence constituent exactly when the quark is
-not. -/
-theorem IsValenceFlavor.antiquark_mem_iff (hi : C.IsValenceFlavor h i) :
-    Species.antiquark i ∈ C.valence h ↔ Species.quark i ∉ C.valence h := by
-  rcases hi with ⟨hq, hq'⟩ | ⟨hq', hq⟩
-  · exact iff_of_false hq' (not_not_intro hq)
-  · exact iff_of_true hq' hq
-
-/-- At a valence flavour, the quark is a valence constituent exactly when the antiquark is
-not. -/
-theorem IsValenceFlavor.quark_mem_iff (hi : C.IsValenceFlavor h i) :
-    Species.quark i ∈ C.valence h ↔ Species.antiquark i ∉ C.valence h :=
-  iff_not_comm.1 hi.antiquark_mem_iff
+variable {C : HadronMultiplet Hadron Flavor} {h : Hadron} {i : Flavor}
 
 /-- A valence flavour of a hadron is a valence flavour of its antiparticle. -/
-theorem IsValenceFlavor.conj (hi : C.IsValenceFlavor h i) :
-    C.IsValenceFlavor (C.conj h) i := by
+theorem conj (hi : IsValenceFlavor C.valence h i) : IsValenceFlavor C.valence (C.conj h) i := by
   simp only [IsValenceFlavor, C.mem_valence_conj, Species.conj_quark, Species.conj_antiquark]
   rw [xor_comm]
   exact hi
 
-end ValenceContent
+variable [DecidableEq Flavor]
+
+/-- At a valence flavour, the valence species of that flavour in the antiparticle are the
+non-valence species of that flavour in the hadron. -/
+theorem inter_valence_conj_eq_sdiff (hi : IsValenceFlavor C.valence h i) :
+    Species.flavorPair i ∩ C.valence (C.conj h) = Species.flavorPair i \ C.valence h := by
+  ext s
+  simp only [Finset.mem_inter, Finset.mem_sdiff, C.mem_valence_conj, Species.mem_flavorPair]
+  refine and_congr_right fun hs => ?_
+  rcases hs with rfl | rfl
+  · rw [Species.conj_quark]
+    exact hi.antiquark_mem_iff
+  · rw [Species.conj_antiquark]
+    exact hi.quark_mem_iff
+
+/-- At a valence flavour, the non-valence species of that flavour in the antiparticle are the
+valence species of that flavour in the hadron. -/
+theorem sdiff_valence_conj_eq_inter (hi : IsValenceFlavor C.valence h i) :
+    Species.flavorPair i \ C.valence (C.conj h) = Species.flavorPair i ∩ C.valence h := by
+  have h' := inter_valence_conj_eq_sdiff hi.conj
+  rw [C.conj_conj] at h'
+  exact h'.symm
+
+end IsValenceFlavor
 
 /-! ### The pion triplet -/
 
@@ -212,7 +269,7 @@ theorem Pion.valence_minus : valence .minus = {.quark .down, .antiquark .up} :=
   (rfl)
 
 /-- The pion triplet as a hadron multiplet. -/
-def pionContent : ValenceContent Pion PionFlavor where
+def pionMultiplet : HadronMultiplet Pion PionFlavor where
   conj := Pion.conj
   conj_involutive := Pion.conj_involutive
   valence := Pion.valence
@@ -224,25 +281,24 @@ def pionContent : ValenceContent Pion PionFlavor where
       tauto
 
 @[simp]
-theorem pionContent_conj : pionContent.conj = Pion.conj :=
+theorem pionMultiplet_conj : pionMultiplet.conj = Pion.conj :=
   (rfl)
 
 @[simp]
-theorem pionContent_valence : pionContent.valence = Pion.valence :=
+theorem pionMultiplet_valence : pionMultiplet.valence = Pion.valence :=
   (rfl)
 
 /-- Both light flavours are valence flavours of the positive pion: the up quark and the down
 antiquark are its valence constituents, and the up antiquark and the down quark are not. -/
-theorem isValenceFlavor_pion_plus (i : PionFlavor) :
-    pionContent.IsValenceFlavor .plus i := by
+theorem isValenceFlavor_pion_plus (i : PionFlavor) : IsValenceFlavor Pion.valence .plus i := by
   cases i
-  · exact ValenceContent.isValenceFlavor_of_quark_mem (by simp) (by simp)
-  · exact ValenceContent.isValenceFlavor_of_antiquark_mem (by simp) (by simp)
+  · exact isValenceFlavor_of_quark_mem (by simp) (by simp)
+  · exact isValenceFlavor_of_antiquark_mem (by simp) (by simp)
 
 /-- No flavour is a valence flavour of the neutral pion: for each flavour both the quark and the
 antiquark are valence constituents, so a flavour-neutral hadron does not distinguish them. -/
 theorem not_isValenceFlavor_pion_zero (i : PionFlavor) :
-    ¬ pionContent.IsValenceFlavor .zero i := by
+    ¬ IsValenceFlavor Pion.valence .zero i := by
   rintro (⟨-, hq'⟩ | ⟨-, hq⟩)
   · exact hq' (by cases i <;> simp)
   · exact hq (by cases i <;> simp)
@@ -250,11 +306,10 @@ theorem not_isValenceFlavor_pion_zero (i : PionFlavor) :
 /-- The valence content of the pion triplet is compatible with the isospin reflection, which acts
 on the triplet as the antiparticle map. -/
 theorem pion_map_swap_mem_valence_conj_iff (h : Pion) (s : Species PionFlavor) :
-    Species.map PionFlavor.swap s ∈ pionContent.valence (Pion.conj h)
-      ↔ s ∈ pionContent.valence h := by
+    Species.map PionFlavor.swap s ∈ Pion.valence (Pion.conj h) ↔ s ∈ Pion.valence h := by
   cases h
   all_goals
-    simp only [pionContent_valence, Pion.conj, Pion.valence, Finset.mem_insert,
+    simp only [Pion.conj, Pion.valence, Finset.mem_insert,
       Finset.mem_singleton, (Species.map_involutive PionFlavor.swap_involutive).eq_iff,
       Species.map_quark, Species.map_antiquark, PionFlavor.swap_up, PionFlavor.swap_down]
     -- `simp only` already closes the two charged cases; the neutral one needs the reordering.

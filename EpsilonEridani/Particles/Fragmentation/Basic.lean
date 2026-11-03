@@ -193,6 +193,9 @@ def Invariant (τ : Hadron → Hadron) (σ : Flavor → Flavor) (D : Frag Hadron
 
 variable {τ : Hadron → Hadron} {σ σ' : Flavor → Flavor} {D : Frag Hadron Flavor}
 
+lemma invariant_def : Invariant τ σ D ↔ comap τ σ D = D :=
+  Iff.rfl
+
 lemma invariant_iff : Invariant τ σ D ↔ ∀ h i z Q2, D (τ h) (σ i) z Q2 = D h i z Q2 :=
   ⟨fun hD h i z Q2 => congr_fun (congr_fun (congr_fun (congr_fun hD h) i) z) Q2,
     fun hD => funext fun h => funext fun i => funext fun z => funext fun Q2 => hD h i z Q2⟩
@@ -207,19 +210,17 @@ lemma Invariant.apply_eq (hσ : Function.Involutive σ) (hD : Invariant τ σ D)
     (i : Flavor) (z Q2 : ℝ) : D (τ h) i z Q2 = D h (σ i) z Q2 := by
   rw [← hD.apply h (σ i) z Q2, hσ i]
 
-/-- A family invariant under two maps of the partons paired with the same involution of the
+/-- A family invariant under two maps of the partons paired with the same surjective map of the
 hadrons takes the same value on both images of a parton inside one hadron:
 `D_h^{σ' i} = D_h^{σ i}`. This is what reduces the number of independent fragmentation functions of
 a multiplet: for the pion triplet, charge conjugation and the exchange of the up and the down
 flavour act on the hadrons by the same involution, which turns the fragmentation of a down quark
 into the fragmentation of an up antiquark. -/
-lemma Invariant.apply_eq_apply (hτ : Function.Involutive τ)
+lemma Invariant.apply_eq_apply (hτ : Function.Surjective τ)
     (hσ : Invariant τ σ D) (hσ' : Invariant τ σ' D) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
     D h (σ' i) z Q2 = D h (σ i) z Q2 := by
-  have h₁ := hσ.apply (τ h) i z Q2
-  have h₂ := hσ'.apply (τ h) i z Q2
-  rw [hτ h] at h₁ h₂
-  rw [h₂, h₁]
+  obtain ⟨h₀, rfl⟩ := hτ h
+  rw [hσ'.apply h₀ i z Q2, hσ.apply h₀ i z Q2]
 
 end Comap
 
