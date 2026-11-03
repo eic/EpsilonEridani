@@ -43,8 +43,8 @@ whole real line need no domain hypothesis where `0` is harmless.
 * `EpsilonEridani.besselK_le_besselK`: `K_ν ≤ K_μ` when `|ν| ≤ |μ|`.
 * `EpsilonEridani.besselK_add_one_sub_besselK_sub_one`: `K_{ν+1} - K_{ν-1} = (2ν/x) K_ν`.
 * `EpsilonEridani.hasDerivAt_besselK`: `K_ν' = -(K_{ν-1} + K_{ν+1}) / 2`, and
-  `EpsilonEridani.hasDerivAt_besselK_sub_one`: `K_ν' = -K_{ν-1} - (ν/x) K_ν`, with its special
-  cases `EpsilonEridani.hasDerivAt_besselK_zero`: `K₀' = -K₁` and
+  `EpsilonEridani.hasDerivAt_besselK_neg_besselK_sub_one`: `K_ν' = -K_{ν-1} - (ν/x) K_ν`, with its
+  special cases `EpsilonEridani.hasDerivAt_besselK_zero`: `K₀' = -K₁` and
   `EpsilonEridani.hasDerivAt_besselK_one`: `K₁' = -K₀ - K₁/x`.
 * `EpsilonEridani.strictAntiOn_besselK`: `K_ν` is strictly decreasing on `(0, ∞)`.
 * `EpsilonEridani.besselK_le_exp_mul_besselK`: `K_ν(x) ≤ exp (-(x - x₀)) K_ν(x₀)` for
@@ -60,7 +60,7 @@ whole real line need no domain hypothesis where `0` is harmless.
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §10.25, §10.29 and §10.32.
+* NIST Digital Library of Mathematical Functions, §10.25, §10.29, §10.30 and §10.32.
 * G. N. Watson, *A Treatise on the Theory of Bessel Functions*, 2nd edition, Cambridge University
   Press (1944), §6.22.
 -/
@@ -85,6 +85,11 @@ theorem besselK_def (ν x : ℝ) :
 
 /-- The integral representation of `K₀(x)`, whose order factor `cosh (0 · t)` is `1`. -/
 theorem besselK_zero_eq (x : ℝ) : besselK 0 x = ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) := by
+  simp [besselK_def]
+
+/-- The integral representation of `K₁(x)`, whose order factor `cosh (1 · t)` is `cosh t`. -/
+theorem besselK_one_eq (x : ℝ) :
+    besselK 1 x = ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) * cosh t := by
   simp [besselK_def]
 
 /-- `K_ν` is even in the order. -/
@@ -135,11 +140,6 @@ theorem integrableOn_besselK_integrand (ν : ℝ) {x : ℝ} (hx : 0 < x) :
   refine (ae_restrict_mem measurableSet_Ioi).mono fun t ht ↦ ?_
   rw [Real.norm_of_nonneg (by positivity)]
   exact integrand_le hx ν (le_of_lt ht)
-
-/-- The integral of `besselK_zero_eq` converges for `x > 0`. -/
-theorem integrableOn_besselK_zero_integrand {x : ℝ} (hx : 0 < x) :
-    IntegrableOn (fun t ↦ exp (-(x * cosh t))) (Ioi 0) := by
-  simpa using integrableOn_besselK_integrand 0 hx
 
 /-- For `x ≤ 0` the integral defining `K_ν(x)` diverges, and `besselK ν x` is `0`. -/
 theorem besselK_of_nonpos (ν : ℝ) {x : ℝ} (hx : x ≤ 0) : besselK ν x = 0 := by
@@ -197,7 +197,8 @@ private theorem tendsto_sinh_mul_exp_neg_cosh_atTop {x : ℝ} (hx : 0 < x) (ν :
         exact (sinh_lt_cosh _).le
     _ ≤ exp ((|ν| + 1) ^ 2 / x) * exp (-t) := integrand_le hx ν ht
 
-/-- The recurrence in the order, `K_{ν+1}(x) - K_{ν-1}(x) = (2ν/x) K_ν(x)` (DLMF 10.29.1). -/
+/-- The recurrence in the order, `K_{ν+1}(x) - K_{ν-1}(x) = (2ν/x) K_ν(x)` (the first identity of
+DLMF 10.29.1). -/
 theorem besselK_add_one_sub_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     besselK (ν + 1) x - besselK (ν - 1) x = 2 * ν / x * besselK ν x := by
   -- Integrate `sinh (ν t) exp (-x cosh t)` over `(0, ∞)`: it vanishes at both ends, so its
@@ -242,7 +243,8 @@ theorem besselK_add_one_sub_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
 
 /-! ### The derivative -/
 
-/-- The derivative recurrence `K_ν'(x) = -(K_{ν-1}(x) + K_{ν+1}(x)) / 2` (DLMF 10.29.1). -/
+/-- The derivative recurrence `K_ν'(x) = -(K_{ν-1}(x) + K_{ν+1}(x)) / 2` (the second identity of
+DLMF 10.29.1). -/
 theorem hasDerivAt_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK ν) (-(besselK (ν - 1) x + besselK (ν + 1) x) / 2) x := by
   -- `cosh t cosh (ν t)` is the half-sum of the integrands of orders `ν - 1` and `ν + 1`.
@@ -279,22 +281,22 @@ theorem hasDerivAt_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
   · exact (((hasDerivAt_id y).mul_const (cosh t)).fun_neg.exp.mul_const
       (cosh (ν * t))).congr_deriv (by simp only [id, one_mul]; ring)
 
-/-- The derivative relation `K_ν'(x) = -K_{ν-1}(x) - (ν/x) K_ν(x)` (DLMF 10.29.2), the form in
-which only the order below `ν` appears. -/
-theorem hasDerivAt_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
+/-- The derivative relation `K_ν'(x) = -K_{ν-1}(x) - (ν/x) K_ν(x)` (the first identity of
+DLMF 10.29.2), the form in which only the order below `ν` appears. -/
+theorem hasDerivAt_besselK_neg_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK ν) (-besselK (ν - 1) x - ν / x * besselK ν x) x :=
   (hasDerivAt_besselK ν hx).congr_deriv
     (by linear_combination (-1 / 2 : ℝ) * besselK_add_one_sub_besselK_sub_one ν hx)
 
-/-- The derivative relation `K₀' = -K₁`, the case `ν = 0` of DLMF 10.29.2. -/
+/-- The derivative relation `K₀' = -K₁` (DLMF 10.29.3), the case `ν = 0` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_zero {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK 0) (-besselK 1 x) x :=
-  (hasDerivAt_besselK_sub_one 0 hx).congr_deriv (by rw [zero_sub, besselK_neg]; ring)
+  (hasDerivAt_besselK_neg_besselK_sub_one 0 hx).congr_deriv (by rw [zero_sub, besselK_neg]; ring)
 
 /-- The derivative relation `K₁'(x) = -K₀(x) - K₁(x)/x`, the case `ν = 1` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_one {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK 1) (-besselK 0 x - besselK 1 x / x) x :=
-  (hasDerivAt_besselK_sub_one 1 hx).congr_deriv (by rw [sub_self]; ring)
+  (hasDerivAt_besselK_neg_besselK_sub_one 1 hx).congr_deriv (by rw [sub_self]; ring)
 
 /-- `K_ν` is continuous on `(0, ∞)`. -/
 theorem continuousOn_besselK (ν : ℝ) : ContinuousOn (besselK ν) (Ioi 0) :=
@@ -334,7 +336,7 @@ private theorem integrableOn_besselK_one_remainder {x : ℝ} (hx : 0 ≤ x) :
   nlinarith [cosh_pos t]
 
 /-- `K₁(x)` is `exp (-x) / x` plus the remainder `∫₀^∞ exp (-x cosh t) exp (-t) dt`. -/
-private theorem besselK_one_eq {x : ℝ} (hx : 0 < x) :
+private theorem besselK_one_eq_add_integral {x : ℝ} (hx : 0 < x) :
     besselK 1 x = exp (-x) / x + ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) * exp (-t) := by
   have hrem := integrableOn_besselK_one_remainder hx.le
   -- `exp (-x cosh t) sinh t` has the antiderivative `-exp (-x cosh t) / x`.
@@ -363,8 +365,9 @@ private theorem besselK_one_eq {x : ℝ} (hx : 0 < x) :
 
 /-- The leading singular term of `K₁` is a strict lower bound: `exp (-x) / x < K₁(x)`. -/
 theorem exp_neg_div_lt_besselK_one {x : ℝ} (hx : 0 < x) : exp (-x) / x < besselK 1 x := by
-  rw [besselK_one_eq hx, lt_add_iff_pos_right, setIntegral_pos_iff_support_of_nonneg_ae
-      (ae_of_all _ fun t ↦ by positivity) (integrableOn_besselK_one_remainder hx.le),
+  rw [besselK_one_eq_add_integral hx, lt_add_iff_pos_right,
+    setIntegral_pos_iff_support_of_nonneg_ae (ae_of_all _ fun t ↦ by positivity)
+      (integrableOn_besselK_one_remainder hx.le),
     Function.support_eq_univ fun t ↦ by positivity, univ_inter, Real.volume_Ioi]
   exact ENNReal.zero_lt_top
 
@@ -372,7 +375,7 @@ theorem exp_neg_div_lt_besselK_one {x : ℝ} (hx : 0 < x) : exp (-x) / x < besse
 `K₁(x) ≤ exp (-x) (1 + 1 / x)`. -/
 theorem besselK_one_le_exp_neg_mul {x : ℝ} (hx : 0 < x) :
     besselK 1 x ≤ exp (-x) * (1 + 1 / x) := by
-  rw [besselK_one_eq hx]
+  rw [besselK_one_eq_add_integral hx]
   have : ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) * exp (-t) ≤ exp (-x) := by
     calc ∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)) * exp (-t)
         ≤ ∫ t in Ioi (0 : ℝ), exp (-x) * exp (-t) := by
@@ -451,7 +454,8 @@ theorem besselK_zero_le_log_two_div_add_exp_neg_one {x : ℝ} (hx : 0 < x) (hx2 
   -- `x cosh t ≥ 1 + (t - log (2/x))`, so the tail is at most `e⁻¹`.
   have hT0 : 0 ≤ log (2 / x) := log_nonneg ((one_le_div hx).2 hx2)
   have hexpT : exp (log (2 / x)) = 2 / x := exp_log (by positivity)
-  have hint := integrableOn_besselK_zero_integrand hx
+  have hint : IntegrableOn (fun t ↦ exp (-(x * cosh t))) (Ioi 0) := by
+    simpa using integrableOn_besselK_integrand 0 hx
   have hsplit : (∫ t in Ioi (0 : ℝ), exp (-(x * cosh t)))
       = (∫ t in Ioc (0 : ℝ) (log (2 / x)), exp (-(x * cosh t)))
         + ∫ t in Ioi (log (2 / x)), exp (-(x * cosh t)) := by
@@ -464,8 +468,8 @@ theorem besselK_zero_le_log_two_div_add_exp_neg_one {x : ℝ} (hx : 0 < x) (hx2 
             (integrableOn_const (by simp)) measurableSet_Ioc fun t _ ↦ ?_
           exact exp_le_one_iff.2 (neg_nonpos.2 (by positivity))
       _ = log (2 / x) := by
-          rw [setIntegral_const, Real.volume_real_Ioc, sub_zero, max_eq_left hT0, smul_eq_mul,
-            mul_one]
+          rw [setIntegral_const, Real.volume_real_Ioc]
+          simp [max_eq_left hT0]
   have htail : (∫ t in Ioi (log (2 / x)), exp (-(x * cosh t))) ≤ exp (-1) := by
     calc (∫ t in Ioi (log (2 / x)), exp (-(x * cosh t)))
         ≤ ∫ t in Ioi (log (2 / x)), exp (-1) * exp (log (2 / x)) * exp (-t) := by
@@ -481,8 +485,8 @@ theorem besselK_zero_le_log_two_div_add_exp_neg_one {x : ℝ} (hx : 0 < x) (hx2 
           rw [hsub] at hexp
           linarith
       _ = exp (-1) := by
-          rw [integral_const_mul, integral_exp_neg_Ioi, mul_assoc, ← exp_add, add_neg_cancel,
-            exp_zero, mul_one]
+          rw [integral_const_mul, integral_exp_neg_Ioi]
+          simp [← exp_add]
   rw [besselK_zero_eq, hsplit]
   linarith
 
@@ -494,7 +498,7 @@ theorem tendsto_besselK_nhdsGT_zero (ν : ℝ) : Tendsto (besselK ν) (𝓝[>] 0
   filter_upwards [self_mem_nhdsWithin, hlog.eventually_ge_atTop 2] with x (hx : 0 < x) hM
   linarith [neg_log_sub_one_le_besselK ν hx]
 
-/-- `K₀` is logarithmic at the origin: `K₀(x) ~ -log x` as `x → 0⁺`. -/
+/-- `K₀` is logarithmic at the origin: `K₀(x) ~ -log x` as `x → 0⁺` (DLMF 10.30.3). -/
 theorem isEquivalent_besselK_zero_neg_log :
     besselK 0 ~[𝓝[>] (0 : ℝ)] fun x ↦ -log x := by
   have hlog : Tendsto (fun x : ℝ ↦ -log x) (𝓝[>] 0) atTop :=

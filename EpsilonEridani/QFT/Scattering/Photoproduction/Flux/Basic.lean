@@ -25,22 +25,22 @@ This module defines the dimensionless bracket as `photonFluxProfile` and the spe
 `ChargedSource.integratedPhotonFlux`, and proves the positivity, the large-argument suppression
 and the small-argument logarithm of both.
 
-The organising identity is `photonFluxProfile_eq_integral`:
+The organising identity is `photonFluxProfile_eq_integral`: for `ξ > 0`,
 
   `photonFluxProfile ξ = ∫_ξ^∞ t K₁(t)² dt`,
 
 a consequence of `hasDerivAt_photonFluxProfile`, which says that the derivative of the bracket is
-`-ξ K₁(ξ)²`. Everything else follows: the profile is positive
-(`photonFluxProfile_pos`) and strictly decreasing (`strictAntiOn_photonFluxProfile`); it is
-suppressed like `exp (-2ξ)` at large `ξ` (`abs_photonFluxProfile_le_mul_exp_neg`, and
+`-ξ K₁(ξ)²`. Everything else follows: the profile is positive on `(0, ∞)`
+(`photonFluxProfile_pos`) and strictly decreasing there (`strictAntiOn_photonFluxProfile`); it is
+suppressed at least like `exp (-2ξ)` at large `ξ` (`abs_photonFluxProfile_le_mul_exp_neg`, and
 `ChargedSource.abs_integratedPhotonFlux_le_mul_exp_neg` for the spectrum), which is the coherence
-cutoff appearing as a decay rate rather than as a sharp edge; and it grows like `-log ξ` at small
+cutoff appearing as a decay rather than as a sharp edge; and it grows like `-log ξ` at small
 `ξ` (`isEquivalent_photonFluxProfile_neg_log`), so the spectrum behaves as the inverse photon
 energy times the logarithm of the ratio of the maximal photon energy `γ / b_min` to the actual one
 (`ChargedSource.isEquivalent_integratedPhotonFlux_mul_log_div`). The integrand `t K₁(t)²` of the
 organising identity is, up to normalisation, the impact-parameter differential flux, so that
 identity is also what fixes the relative normalisation of the two forms of the spectrum; it is
-integrable beyond any positive `ξ` (`integrableOn_mul_besselK_one_sq`).
+integrable beyond any positive `ξ` (`integrableOn_id_mul_besselK_one_sq`).
 
 The charge radius carried by `ChargedSource` plays no role here: this is the point-source
 spectrum, and `b_min` is an external cutoff on the impact parameter rather than a property of the
@@ -73,14 +73,20 @@ namespace Photoproduction
 
 /-- The dimensionless profile `ξ K₀(ξ) K₁(ξ) − (ξ²/2) (K₁(ξ)² − K₀(ξ)²)` of the integrated
 equivalent-photon flux, as a function of the scaling variable `ξ = k b_min / γ` built from the
-photon energy, the minimum impact parameter and the Lorentz factor of the source. By
-`photonFluxProfile_eq_integral` it is `∫_ξ^∞ t K₁(t)² dt`. -/
+photon energy, the minimum impact parameter and the Lorentz factor of the source. For `ξ > 0` it
+is `∫_ξ^∞ t K₁(t)² dt` (`photonFluxProfile_eq_integral`); for `ξ ≤ 0` both Bessel factors are `0`
+and so is the profile (`photonFluxProfile_of_nonpos`). -/
 def photonFluxProfile (ξ : ℝ) : ℝ :=
   ξ * besselK 0 ξ * besselK 1 ξ - ξ ^ 2 / 2 * (besselK 1 ξ ^ 2 - besselK 0 ξ ^ 2)
 
 /-- Defining expression for `photonFluxProfile`. -/
 theorem photonFluxProfile_def (ξ : ℝ) : photonFluxProfile ξ =
     ξ * besselK 0 ξ * besselK 1 ξ - ξ ^ 2 / 2 * (besselK 1 ξ ^ 2 - besselK 0 ξ ^ 2) := (rfl)
+
+/-- For `ξ ≤ 0` the profile is `0`, since both Bessel factors are. -/
+@[simp]
+theorem photonFluxProfile_of_nonpos {ξ : ℝ} (hξ : ξ ≤ 0) : photonFluxProfile ξ = 0 := by
+  simp [photonFluxProfile_def, besselK_of_nonpos _ hξ]
 
 /-- The derivative of the profile is the single term `-ξ K₁(ξ)²`. -/
 theorem hasDerivAt_photonFluxProfile {ξ : ℝ} (hξ : 0 < ξ) :
@@ -97,9 +103,9 @@ theorem hasDerivAt_photonFluxProfile {ξ : ℝ} (hξ : 0 < ξ) :
   rw [hprofile]
   exact (e₁.fun_sub e₂).congr_deriv (by field_simp; ring)
 
-/-- The profile is suppressed like `exp (-2ξ)` at large argument, at the rate set by the decay of
-the two Bessel functions. This is the coherence cutoff of the point-source spectrum in its exact
-form: a decay rate, not a sharp edge. -/
+/-- The profile is suppressed at least like `exp (-2ξ)` at large argument, at the rate set by the
+decay bound of the two Bessel functions. This upper bound is the coherence cutoff of the
+point-source spectrum: a decay, not a sharp edge. -/
 theorem abs_photonFluxProfile_le_mul_exp_neg {ξ : ℝ} (hξ : 0 < ξ) :
     |photonFluxProfile ξ| ≤ (1 + ξ) ^ 3 / ξ * exp (-(2 * ξ)) := by
   have hξne : ξ ≠ 0 := hξ.ne'
@@ -141,6 +147,10 @@ theorem tendsto_photonFluxProfile_atTop_nhds_zero : Tendsto photonFluxProfile at
       _ = 8 * (ξ ^ 2 * exp (-ξ)) := by ring
   · simpa using (Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 2).const_mul 8
 
+private theorem continuousWithinAt_neg_photonFluxProfile {ξ : ℝ} (hξ : 0 < ξ) :
+    ContinuousWithinAt (fun y ↦ -photonFluxProfile y) (Ici ξ) ξ :=
+  (hasDerivAt_photonFluxProfile hξ).continuousAt.fun_neg.continuousWithinAt
+
 private theorem hasDerivAt_neg_photonFluxProfile {t : ℝ} (ht : 0 < t) :
     HasDerivAt (fun y ↦ -photonFluxProfile y) (t * besselK 1 t ^ 2) t := by
   simpa using (hasDerivAt_photonFluxProfile ht).fun_neg
@@ -149,26 +159,26 @@ private theorem tendsto_neg_photonFluxProfile_atTop_nhds_zero :
     Tendsto (fun t ↦ -photonFluxProfile t) atTop (𝓝 0) := by
   simpa using tendsto_photonFluxProfile_atTop_nhds_zero.neg
 
+private theorem id_mul_besselK_one_sq_nonneg {ξ t : ℝ} (hξ : 0 < ξ) (ht : t ∈ Ioi ξ) :
+    0 ≤ t * besselK 1 t ^ 2 :=
+  mul_nonneg (hξ.trans ht).le (sq_nonneg _)
+
 /-- The tail integrand of `photonFluxProfile_eq_integral` is integrable beyond any positive
 argument, so that the tail integral may be split, rescaled or compared. -/
-theorem integrableOn_mul_besselK_one_sq {ξ : ℝ} (hξ : 0 < ξ) :
+theorem integrableOn_id_mul_besselK_one_sq {ξ : ℝ} (hξ : 0 < ξ) :
     IntegrableOn (fun t ↦ t * besselK 1 t ^ 2) (Ioi ξ) :=
-  integrableOn_Ioi_deriv_of_nonneg
-    ((hasDerivAt_photonFluxProfile hξ).continuousAt.fun_neg.continuousWithinAt)
+  integrableOn_Ioi_deriv_of_nonneg (continuousWithinAt_neg_photonFluxProfile hξ)
     (fun _ ht ↦ hasDerivAt_neg_photonFluxProfile (hξ.trans ht))
-    (fun _ ht ↦ mul_nonneg (hξ.trans ht).le (sq_nonneg _))
-    tendsto_neg_photonFluxProfile_atTop_nhds_zero
+    (fun _ ↦ id_mul_besselK_one_sq_nonneg hξ) tendsto_neg_photonFluxProfile_atTop_nhds_zero
 
-/-- **The profile is the tail integral of `t K₁(t)²`.** The integrand is, up to normalisation, the
-impact-parameter differential flux of the same point source, so this identity is what relates the
-integrated spectrum to its impact-parameter form. -/
+/-- **The profile is the tail integral of `t K₁(t)²`** on `(0, ∞)`. The integrand is, up to
+normalisation, the impact-parameter differential flux of the same point source, so this identity is
+what relates the integrated spectrum to its impact-parameter form. -/
 theorem photonFluxProfile_eq_integral {ξ : ℝ} (hξ : 0 < ξ) :
     photonFluxProfile ξ = ∫ t in Ioi ξ, t * besselK 1 t ^ 2 := by
-  rw [integral_Ioi_of_hasDerivAt_of_nonneg
-    ((hasDerivAt_photonFluxProfile hξ).continuousAt.fun_neg.continuousWithinAt)
+  rw [integral_Ioi_of_hasDerivAt_of_nonneg (continuousWithinAt_neg_photonFluxProfile hξ)
     (fun _ ht ↦ hasDerivAt_neg_photonFluxProfile (hξ.trans ht))
-    (fun _ ht ↦ mul_nonneg (hξ.trans ht).le (sq_nonneg _))
-    tendsto_neg_photonFluxProfile_atTop_nhds_zero]
+    (fun _ ↦ id_mul_besselK_one_sq_nonneg hξ) tendsto_neg_photonFluxProfile_atTop_nhds_zero]
   ring
 
 /-- The profile is strictly decreasing on `(0, ∞)`. -/
@@ -182,15 +192,19 @@ theorem strictAntiOn_photonFluxProfile : StrictAntiOn photonFluxProfile (Ioi 0) 
   have : 0 < ξ * besselK 1 ξ ^ 2 := by positivity
   linarith
 
+/-- The profile is nonnegative: on `(0, ∞)` it is a tail integral of a nonnegative function, and
+elsewhere it is `0`. -/
+theorem photonFluxProfile_nonneg (ξ : ℝ) : 0 ≤ photonFluxProfile ξ := by
+  rcases le_or_gt ξ 0 with hξ | hξ
+  · rw [photonFluxProfile_of_nonpos hξ]
+  rw [photonFluxProfile_eq_integral hξ]
+  exact setIntegral_nonneg measurableSet_Ioi fun _ ↦ id_mul_besselK_one_sq_nonneg hξ
+
 /-- The profile is positive on `(0, ∞)`. -/
 theorem photonFluxProfile_pos {ξ : ℝ} (hξ : 0 < ξ) : 0 < photonFluxProfile ξ := by
-  -- The profile is nonnegative, being a tail integral of a nonnegative function, and strictly
-  -- decreasing, so it is strictly above its value one unit to the right.
-  have hnonneg : ∀ {y : ℝ}, 0 < y → 0 ≤ photonFluxProfile y := fun {y} hy ↦ by
-    rw [photonFluxProfile_eq_integral hy]
-    exact setIntegral_nonneg measurableSet_Ioi fun t ht ↦
-      mul_nonneg (hy.trans ht).le (sq_nonneg _)
-  exact (hnonneg (show (0 : ℝ) < ξ + 1 by linarith)).trans_lt
+  -- The profile is nonnegative and strictly decreasing, so it is strictly above its value one
+  -- unit to the right.
+  exact (photonFluxProfile_nonneg (ξ + 1)).trans_lt
     (strictAntiOn_photonFluxProfile hξ (show (0 : ℝ) < ξ + 1 by linarith) (by linarith))
 
 /-- **The profile is logarithmic at the origin:** `photonFluxProfile ξ ~ -log ξ` as `ξ → 0⁺`. -/
@@ -205,13 +219,15 @@ theorem isEquivalent_photonFluxProfile_neg_log :
     (isEquivalent_const_iff_tendsto one_ne_zero).2 tendsto_mul_besselK_one_nhdsGT_zero
   have hlead : (fun ξ : ℝ ↦ ξ * besselK 1 ξ * besselK 0 ξ) ~[𝓝[>] (0 : ℝ)] fun ξ ↦ -log ξ :=
     ((hone.mul isEquivalent_besselK_zero_neg_log).congr_left
-      (Eventually.of_forall fun ξ ↦ rfl)).congr_right (Eventually.of_forall fun ξ ↦ one_mul _)
+      (Eventually.of_forall fun ξ ↦ by simp only [Pi.mul_apply])).congr_right
+      (Eventually.of_forall fun ξ ↦ by simp only [Pi.mul_apply, Function.const_apply, one_mul])
   have hzero : Tendsto (fun ξ : ℝ ↦ ξ * besselK 0 ξ) (𝓝[>] 0) (𝓝 0) := by
     have hmul : ∀ ξ : ℝ, -(log ξ * ξ ^ (1 : ℝ)) = ξ * -log ξ := fun ξ ↦ by
       rw [Real.rpow_one]; ring
     have heq : (fun ξ : ℝ ↦ ξ * besselK 0 ξ) ~[𝓝[>] (0 : ℝ)] fun ξ : ℝ ↦ ξ * -log ξ :=
       (((IsEquivalent.refl (u := fun ξ : ℝ ↦ ξ)).mul isEquivalent_besselK_zero_neg_log).congr_left
-        (Eventually.of_forall fun ξ ↦ rfl)).congr_right (Eventually.of_forall fun ξ ↦ rfl)
+        (Eventually.of_forall fun ξ ↦ by simp only [Pi.mul_apply])).congr_right
+        (Eventually.of_forall fun ξ ↦ by simp only [Pi.mul_apply])
     exact heq.tendsto_nhds_iff.2
       (by simpa only [hmul, neg_zero] using (tendsto_log_mul_rpow_nhdsGT_zero one_pos).neg)
   have hnorm : Tendsto (norm ∘ fun ξ : ℝ ↦ -log ξ) (𝓝[>] 0) atTop := by
@@ -256,8 +272,9 @@ theorem integratedPhotonFlux_pos (hZ : s.charge ≠ 0) (hγ : 0 < s.gamma) (hα 
   exact mul_pos hnum (photonFluxProfile_pos hξ)
 
 /-- **The flux is exponentially suppressed above the coherent energy.** At photon energy `k` the
-spectrum is bounded by `exp (-(2 k b_min / γ))` up to an algebraic prefactor, so the rate of the
-suppression is twice the inverse of the maximal coherent photon energy `γ / b_min`. -/
+spectrum is bounded by `exp (-(2 k b_min / γ))` up to an algebraic prefactor, so the suppression
+in `k` is at least at rate `2 b_min / γ`, twice the inverse of the maximal coherent photon energy
+`γ / b_min`. -/
 theorem abs_integratedPhotonFlux_le_mul_exp_neg (hα : 0 ≤ α) (hγ : 0 < s.gamma) (hb : 0 < bMin)
     (hk : 0 < k) : |s.integratedPhotonFlux α bMin k| ≤ 2 * s.charge ^ 2 * α / π / k *
       ((1 + k * bMin / s.gamma) ^ 3 / (k * bMin / s.gamma) *
