@@ -5,8 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Mathematics.DataStructures.Matrix.UnitaryTrace
-public import EpsilonEridani.QFT.SmallX.Dipole.WilsonLine
+public import EpsilonEridani.QFT.SmallX.Dipole.Multipole
 
 /-!
 # The colour-dipole operator
@@ -23,8 +22,9 @@ and `1 - S U x y` is its scattering amplitude in that field. Averaging over the 
 turns these into the dipole S-matrix and the dipole amplitude `N = 1 - S` of the colour-dipole
 picture (Nikolaev and Zakharov, *Z. Phys.* **C49** (1991) 607; Mueller, *Nucl. Phys.* **B415**
 (1994) 373; Kovchegov and Levin, *Quantum Chromodynamics at High Energy*, CUP 2012, ch. 4).
-The properties proved here hold configuration by configuration, before any averaging, and use
-only unitarity of the Wilson lines:
+The dipole operator is the two-point member `n = 1` of the `2n`-point Wilson-line correlators
+`SmallX.multipoleS`, and its properties are specialisations of theirs. They hold configuration
+by configuration, before any averaging, and use only unitarity of the Wilson lines:
 
 * a point-like dipole does not scatter, `S U x x = 1` (colour transparency of a single
   configuration);
@@ -39,6 +39,7 @@ only unitarity of the Wilson lines:
 ## Main results
 
 - `SmallX.dipoleS`: the dipole operator of a Wilson-line configuration.
+- `SmallX.multipoleS_fin_one`: the two-point correlator is the dipole operator.
 - `SmallX.dipoleS_self`: colour transparency, `S U x x = 1`.
 - `SmallX.dipoleS_comm`: endpoint symmetry.
 - `SmallX.abs_dipoleS_le_one` and `SmallX.one_sub_dipoleS_mem_Icc`: the unitarity bounds.
@@ -59,35 +60,40 @@ variable {Nc : ℕ}
 
 /-- The dipole operator `S U x y = (1 / N_c) Re Tr(U(x) U(y)†)` of a Wilson-line configuration
 `U`, for a quark at `x` and an antiquark at `y`: the eikonal S-matrix of a colour-singlet dipole
-in the target field `U`. -/
+in the target field `U`. It is the two-point Wilson-line correlator. -/
 def dipoleS (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) : ℝ :=
-  (Nc : ℝ)⁻¹ * (trace ((U x : Matrix (Fin Nc) (Fin Nc) ℂ) * star (U y).1)).re
+  multipoleS U ![x] ![y]
 
+/-- The dipole operator as an explicit normalised trace. -/
 lemma dipoleS_def (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
-    dipoleS U x y = (Nc : ℝ)⁻¹ * (trace ((U x : Matrix (Fin Nc) (Fin Nc) ℂ) * star (U y).1)).re :=
-  (rfl)
+    dipoleS U x y =
+      (Nc : ℝ)⁻¹ * (trace ((U x : Matrix (Fin Nc) (Fin Nc) ℂ) * star (U y).1)).re := by
+  simp [dipoleS, multipoleS_def]
+
+/-- The two-point correlator is the dipole operator. -/
+@[simp]
+theorem multipoleS_fin_one (U : WilsonConfiguration Nc) (x y : Fin 1 → EuclideanSpace ℝ (Fin 2)) :
+    multipoleS U x y = dipoleS U (x 0) (y 0) := by
+  rw [dipoleS]
+  congr 1 <;> funext i <;> rw [Subsingleton.elim i 0] <;> rfl
 
 /-- **Colour transparency** of a single configuration: a dipole of zero size does not
 scatter, `S U x x = 1`. -/
 @[simp]
 theorem dipoleS_self [NeZero Nc] (U : WilsonConfiguration Nc) (x : EuclideanSpace ℝ (Fin 2)) :
-    dipoleS U x x = 1 := by
-  simp [dipoleS_def, Unitary.mul_star_self_of_mem (U x).2, NeZero.ne Nc]
+    dipoleS U x x = 1 :=
+  multipoleS_self U _
 
 /-- The dipole operator is symmetric under exchange of the quark and antiquark positions. -/
 theorem dipoleS_comm (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
     dipoleS U x y = dipoleS U y x := by
-  have h : ((U y).1 * star (U x).1 : Matrix (Fin Nc) (Fin Nc) ℂ) =
-      ((U x).1 * star (U y).1)ᴴ := by
-    simp only [← star_eq_conjTranspose, star_mul, star_star]
-  rw [dipoleS_def, dipoleS_def, h]
-  exact congrArg _ (re_trace_conjTranspose ((U x).1 * star (U y).1)).symm
+  rw [dipoleS, multipoleS_reverse, multipoleS_fin_one]
+  rfl
 
 /-- **Unitarity bound** on the dipole operator of a single configuration: `|S U x y| ≤ 1`. -/
 theorem abs_dipoleS_le_one (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
-    |dipoleS U x y| ≤ 1 := by
-  simpa [dipoleS_def] using
-    abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup (U x * star (U y)).2
+    |dipoleS U x y| ≤ 1 :=
+  abs_multipoleS_le_one U _ _
 
 /-- The scattering amplitude `1 - S U x y` of a dipole in a single configuration lies in
 `[0, 2]`. The sharper bound `[0, 1]` holds only after averaging over a target ensemble whose
@@ -103,14 +109,8 @@ at `y`. In particular it is invariant under every global colour rotation `U ↦ 
 theorem dipoleS_gaugeTransform (Ωp Ωm : EuclideanSpace ℝ (Fin 2) → unitaryGroup (Fin Nc) ℂ)
     (U : WilsonConfiguration Nc) {x y : EuclideanSpace ℝ (Fin 2)} (hp : Ωp x = Ωp y)
     (hm : Ωm x = Ωm y) :
-    dipoleS (WilsonConfiguration.gaugeTransform Ωp Ωm U) x y = dipoleS U x y := by
-  have key : ((Ωp x * U x * star (Ωm x) : unitaryGroup (Fin Nc) ℂ) : Matrix (Fin Nc) (Fin Nc) ℂ) *
-      star (Ωp y * U y * star (Ωm y) : unitaryGroup (Fin Nc) ℂ).1 =
-      (Ωp y).1 * ((U x).1 * star (U y).1) * star (Ωp y).1 := by
-    rw [hp, hm]
-    simp only [Submonoid.coe_mul, Unitary.coe_star, star_mul, star_star, mul_assoc]
-    simp only [← mul_assoc (star (Ωm y).1), Unitary.star_mul_self_of_mem (Ωm y).2, one_mul]
-  simp only [dipoleS_def, WilsonConfiguration.gaugeTransform_apply, key, trace_unitary_conj]
+    dipoleS (WilsonConfiguration.gaugeTransform Ωp Ωm U) x y = dipoleS U x y :=
+  multipoleS_gaugeTransform Ωp Ωm U (fun _ => by simpa using hm) fun _ => by simpa using hp.symm
 
 end SmallX
 end QFT

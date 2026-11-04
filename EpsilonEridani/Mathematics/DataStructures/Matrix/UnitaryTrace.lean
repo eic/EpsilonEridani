@@ -15,16 +15,13 @@ identity.
 
 This is the bound behind the statement that a normalised trace `(1 / n) Re Tr U` of a unitary
 matrix lies in `[-1, 1]`, which is how the dipole and the higher Wilson-line correlators of a
-configuration are bounded. Those correlators are real parts of traces, and the real part of a
-trace is unchanged under conjugate transposition, which is how their symmetries under reversal
-are proved.
+configuration are bounded.
 
 ## Main results
 
 - `Matrix.norm_trace_le_card_of_mem_unitaryGroup`: `‖Tr U‖ ≤ n` for unitary `U`.
 - `Matrix.abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup`: `|(1 / n) Re Tr U| ≤ 1` for
   unitary `U`.
-- `Matrix.re_trace_conjTranspose`: `Re Tr Aᴴ = Re Tr A`.
 -/
 
 public section
@@ -50,10 +47,5 @@ theorem abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup {U : Matrix n n �
   · rw [abs_mul, abs_inv, Nat.abs_cast, inv_mul_le_iff₀ (by exact_mod_cast Fintype.card_pos),
       mul_one]
     exact (RCLike.abs_re_le_norm _).trans (norm_trace_le_card_of_mem_unitaryGroup hU)
-
-omit [DecidableEq n] in
-/-- The real part of the trace of a matrix is unchanged under conjugate transposition. -/
-theorem re_trace_conjTranspose (A : Matrix n n 𝕜) : RCLike.re Aᴴ.trace = RCLike.re A.trace := by
-  rw [trace_conjTranspose, RCLike.star_def, RCLike.conj_re]
 
 end Matrix
