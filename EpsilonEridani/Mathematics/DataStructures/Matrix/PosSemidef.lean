@@ -41,6 +41,9 @@ lets a complex positive-semidefinite matrix descend to a real one.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: the real specialisation of the arithmetic-mean bound.
 - `Matrix.re_star_dotProduct_mulVec_ofReal`: the real part of the quadratic form of a matrix over
   `𝕜` on a real vector is the quadratic form of its entrywise real part.
+- `Matrix.PosSemidef.of_forall_submatrix_support`: a hermitian matrix whose submatrices on the
+  supports of all vectors are positive semidefinite is positive semidefinite; the bridge from
+  the `Fintype` case to an arbitrary index type.
 - `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix.
 - `Matrix.re_star_dotProduct_map_ofReal_mulVec`: the real part of the quadratic form of a real
   matrix on a vector over `𝕜`, split along the real and imaginary parts of the vector.
@@ -57,6 +60,19 @@ for upstreaming to `Mathlib/Analysis/Matrix/PosDef.lean`.
 namespace Matrix
 
 variable {n : Type*}
+
+/-- A hermitian matrix whose submatrices on the supports of all vectors are positive semidefinite
+is positive semidefinite. The quadratic-form condition in the definition of `Matrix.PosSemidef`
+quantifies over finitely supported vectors, and the support of such a vector is a `Fintype`, so
+this lemma bridges the `Fintype` quadratic-form characterisation
+`Matrix.posSemidef_iff_dotProduct_mulVec` to an arbitrary index type. -/
+lemma PosSemidef.of_forall_submatrix_support {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    {M : Matrix n n R} (hM : M.IsHermitian)
+    (h : ∀ x : n →₀ R, (M.submatrix ((↑) : x.support → n) (↑)).PosSemidef) : M.PosSemidef := by
+  classical
+  refine ⟨hM, fun x => ?_⟩
+  simpa [Finsupp.sum, ← Finset.sum_attach x.support, ← Finset.subtype_mem_eq_attach,
+    ← Finsupp.subtypeDomain_apply, ← Finsupp.support_subtypeDomain] using (h x).2 _
 
 section RCLike
 
@@ -97,14 +113,11 @@ quadratic form on a real vector is the real part of the quadratic form of the ma
 (`Matrix.re_star_dotProduct_mulVec_ofReal`). -/
 lemma PosSemidef.map_re {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
     (M.map re).PosSemidef := by
-  classical
-  refine ⟨hM.1.map re fun z => by simp, fun x => ?_⟩
+  refine PosSemidef.of_forall_submatrix_support (hM.1.map re fun z => by simp) fun x => ?_
   have hM' := hM.submatrix ((↑) : x.support → n)
-  have h : ((M.submatrix ((↑) : x.support → n) (↑)).map re).PosSemidef := by
-    refine posSemidef_iff_dotProduct_mulVec.mpr ⟨hM'.1.map re fun z => by simp, fun y => ?_⟩
-    exact (hM'.re_dotProduct_nonneg _).trans_eq (re_star_dotProduct_mulVec_ofReal _ y)
-  simpa [Finsupp.sum, ← Finset.sum_attach x.support, ← Finset.subtype_mem_eq_attach,
-    ← Finsupp.subtypeDomain_apply, ← Finsupp.support_subtypeDomain] using h.2 _
+  rw [Matrix.submatrix_map]
+  refine posSemidef_iff_dotProduct_mulVec.mpr ⟨hM'.1.map re fun z => by simp, fun y => ?_⟩
+  exact (hM'.re_dotProduct_nonneg _).trans_eq (re_star_dotProduct_mulVec_ofReal _ y)
 
 /-- The real part of the quadratic form of a real matrix, coerced to `𝕜`, is the sum of its real
 quadratic forms on the real and imaginary parts of the vector. -/
@@ -123,18 +136,15 @@ lemma re_star_dotProduct_map_ofReal_mulVec [Fintype n] (M : Matrix n n ℝ) (x :
 lemma posSemidef_map_ofReal_iff {M : Matrix n n ℝ} :
     (M.map ((↑) : ℝ → 𝕜)).PosSemidef ↔ M.PosSemidef := by
   refine ⟨fun h => by simpa [Matrix.map_map, Function.comp_def] using h.map_re, fun h => ?_⟩
-  classical
-  refine ⟨h.1.map _ fun x => by simp, fun x => ?_⟩
+  refine PosSemidef.of_forall_submatrix_support (h.1.map _ fun x => by simp) fun x => ?_
   have hM' := h.submatrix ((↑) : x.support → n)
+  rw [Matrix.submatrix_map]
   have hH : ((M.submatrix ((↑) : x.support → n) (↑)).map ((↑) : ℝ → 𝕜)).IsHermitian :=
     hM'.1.map _ fun z => by simp
-  have h' : ((M.submatrix ((↑) : x.support → n) (↑)).map ((↑) : ℝ → 𝕜)).PosSemidef := by
-    refine posSemidef_iff_dotProduct_mulVec.mpr ⟨hH, fun y => ?_⟩
-    rw [RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
-    exact ⟨add_nonneg (by simpa using hM'.dotProduct_mulVec_nonneg _)
-      (by simpa using hM'.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self y⟩
-  simpa [Finsupp.sum, ← Finset.sum_attach x.support, ← Finset.subtype_mem_eq_attach,
-    ← Finsupp.subtypeDomain_apply, ← Finsupp.support_subtypeDomain] using h'.2 _
+  refine posSemidef_iff_dotProduct_mulVec.mpr ⟨hH, fun y => ?_⟩
+  rw [RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
+  exact ⟨add_nonneg (by simpa using hM'.dotProduct_mulVec_nonneg _)
+    (by simpa using hM'.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self y⟩
 
 end RCLike
 
