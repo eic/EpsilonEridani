@@ -185,6 +185,20 @@ theorem unfavored_nonneg {h : Hadron} {z Q2 : ℝ} (hD : ∀ s, 0 ≤ D h s z Q2
     0 ≤ unfavored valence D h i z Q2 :=
   Finset.sum_nonneg fun s _ => hD s
 
+/-- The favoured combinations of a fragmentation family satisfy the structural assumptions. -/
+theorem Assumptions.favored {D : Frag Hadron (Species Flavor)} (hD : Assumptions D)
+    (valence : Hadron → Finset (Species Flavor)) :
+    Assumptions (Fragmentation.favored valence D) where
+  support h _ z Q2 hz := Finset.sum_eq_zero fun s _ => hD.support h s z Q2 hz
+  nonneg h i z Q2 hz₀ hz₁ := favored_nonneg valence D (fun s => hD.nonneg h s z Q2 hz₀ hz₁) i
+
+/-- The unfavoured combinations of a fragmentation family satisfy the structural assumptions. -/
+theorem Assumptions.unfavored {D : Frag Hadron (Species Flavor)} (hD : Assumptions D)
+    (valence : Hadron → Finset (Species Flavor)) :
+    Assumptions (Fragmentation.unfavored valence D) where
+  support h _ z Q2 hz := Finset.sum_eq_zero fun s _ => hD.support h s z Q2 hz
+  nonneg h i z Q2 hz₀ hz₁ := unfavored_nonneg valence D (fun s => hD.nonneg h s z Q2 hz₀ hz₁) i
+
 variable {valence D} {h : Hadron} {i : Flavor}
 
 /-- When the quark of a flavour is its hadron's valence constituent and the antiquark is not,
@@ -285,23 +299,20 @@ theorem favored_sub_unfavored_eq_of_antiquark_mem (hq' : Species.antiquark i ∈
 
 /-! ### Reindexing the combinations by conjugation -/
 
-variable {C : HadronMultiplet Hadron Flavor}
-
 /-- On a valence flavour, conjugating the parton index carries the favoured combination to the
 unfavoured one. -/
-theorem favored_partonConj_eq_unfavored (hi : IsValenceFlavor C.valence h i) (z Q2 : ℝ) :
-    favored C.valence (partonConj D) h i z Q2 = unfavored C.valence D h i z Q2 := by
-  rw [favored_def, unfavored_def, ← hi.inter_valence_conj_eq_sdiff,
-    ← C.image_conj_inter_valence, Finset.sum_image Species.conj_involutive.injective.injOn]
+theorem favored_partonConj_eq_unfavored (hi : IsValenceFlavor valence h i) (z Q2 : ℝ) :
+    favored valence (partonConj D) h i z Q2 = unfavored valence D h i z Q2 := by
+  rw [favored_def, unfavored_def, ← hi.image_conj_inter_valence,
+    Finset.sum_image Species.conj_involutive.injective.injOn]
   exact Finset.sum_congr rfl fun s _ => partonConj_apply D h s z Q2
 
 /-- On a valence flavour, conjugating the parton index carries the unfavoured combination to the
 favoured one. -/
-theorem unfavored_partonConj_eq_favored (hi : IsValenceFlavor C.valence h i) (z Q2 : ℝ) :
-    unfavored C.valence (partonConj D) h i z Q2 = favored C.valence D h i z Q2 := by
-  rw [favored_def, unfavored_def, ← hi.sdiff_valence_conj_eq_inter,
-    ← C.image_conj_sdiff_valence, Finset.sum_image Species.conj_involutive.injective.injOn]
-  exact Finset.sum_congr rfl fun s _ => partonConj_apply D h s z Q2
+theorem unfavored_partonConj_eq_favored (hi : IsValenceFlavor valence h i) (z Q2 : ℝ) :
+    unfavored valence (partonConj D) h i z Q2 = favored valence D h i z Q2 := by
+  have := favored_partonConj_eq_unfavored (D := partonConj D) hi z Q2
+  rwa [partonConj_partonConj, eq_comm] at this
 
 /-- Under the charge-conjugation relation of a multiplet, a hadron and its antiparticle have the
 same favoured combination at every flavour. -/

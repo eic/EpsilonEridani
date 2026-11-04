@@ -204,12 +204,6 @@ lemma Invariant.apply (hD : Invariant τ σ D) (h : Hadron) (i : Flavor) (z Q2 :
     D (τ h) (σ i) z Q2 = D h i z Q2 :=
   invariant_iff.1 hD h i z Q2
 
-/-- Invariance under an involution of the partons, read with that involution on the right-hand
-side. -/
-lemma Invariant.apply_eq (hσ : Function.Involutive σ) (hD : Invariant τ σ D) (h : Hadron)
-    (i : Flavor) (z Q2 : ℝ) : D (τ h) i z Q2 = D h (σ i) z Q2 := by
-  rw [← hD.apply h (σ i) z Q2, hσ i]
-
 /-- A family invariant under two maps of the partons paired with the same surjective map of the
 hadrons takes the same value on both images of a parton inside one hadron:
 `D_h^{σ' i} = D_h^{σ i}`. This is what reduces the number of independent fragmentation functions of
