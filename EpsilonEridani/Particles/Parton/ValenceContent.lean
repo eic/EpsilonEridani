@@ -37,6 +37,8 @@ the flavour-neutral `π⁰`.
 
 ## Main statements
 
+* `IsValenceFlavor.image_conj_inter_valence`: at a valence flavour, conjugation carries the valence
+  species of that flavour in a hadron to its non-valence species.
 * `HadronMultiplet.image_conj_valence`: conjugation carries the valence content of a hadron to that
   of its antiparticle.
 * `HadronMultiplet.image_conj_inter_valence` and `HadronMultiplet.image_conj_sdiff_valence`:
@@ -96,6 +98,15 @@ not. -/
 theorem IsValenceFlavor.quark_mem_iff (hi : IsValenceFlavor valence h i) :
     Species.quark i ∈ valence h ↔ Species.antiquark i ∉ valence h :=
   xor_iff_iff_not.1 hi
+
+/-- At a valence flavour, conjugation carries the valence species of that flavour in a hadron to
+the non-valence species of that flavour in the same hadron. -/
+theorem IsValenceFlavor.image_conj_inter_valence [DecidableEq Flavor]
+    (hi : IsValenceFlavor valence h i) :
+    (Species.flavorPair i ∩ valence h).image Species.conj = Species.flavorPair i \ valence h := by
+  ext s
+  simp only [Finset.mem_image, Finset.mem_inter, Finset.mem_sdiff, Species.mem_flavorPair]
+  rcases hi with ⟨hq, hq'⟩ | ⟨hq', hq⟩ <;> grind [Species.conj_quark, Species.conj_antiquark]
 
 end IsValenceFlavor
 
@@ -176,14 +187,6 @@ theorem inter_valence_conj_eq_sdiff (hi : IsValenceFlavor C.valence h i) :
     exact hi.antiquark_mem_iff
   · rw [Species.conj_antiquark]
     exact hi.quark_mem_iff
-
-/-- At a valence flavour, the non-valence species of that flavour in the antiparticle are the
-valence species of that flavour in the hadron. -/
-theorem sdiff_valence_conj_eq_inter (hi : IsValenceFlavor C.valence h i) :
-    Species.flavorPair i \ C.valence (C.conj h) = Species.flavorPair i ∩ C.valence h := by
-  have h' := inter_valence_conj_eq_sdiff hi.conj
-  rw [C.conj_conj] at h'
-  exact h'.symm
 
 end IsValenceFlavor
 
