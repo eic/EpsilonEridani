@@ -26,8 +26,8 @@ file records the resulting entrywise bounds on the off-diagonal entries:
 
 (Nonnegativity of the diagonal is Mathlib's `Matrix.PosSemidef.diag_nonneg`.)
 
-Both bounds are stated multiplied out, with no division, so that they apply without field side
-conditions. This is the form in which positivity constraints are used in hadronic physics; see
+All three bounds are stated multiplied out, with no division, so that they apply without field
+side conditions. This is the form in which positivity constraints are used in hadronic physics; see
 `EpsilonEridani/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark
 transversity distribution, which is exactly the arithmetic-mean inequality applied to the
 parton spin-density matrix.
