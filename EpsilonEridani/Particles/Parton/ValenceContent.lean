@@ -47,8 +47,9 @@ the flavour-neutral `π⁰`.
 * `IsValenceFlavor.conj`: a valence flavour of a hadron is a valence flavour of its antiparticle.
 * `IsValenceFlavor.inter_valence_conj_eq_sdiff`: at a valence flavour, the valence species of the
   antiparticle are the non-valence species of the hadron.
-* `isValenceFlavor_pion_plus` and `not_isValenceFlavor_pion_zero`: every light flavour is a valence
-  flavour of the positive pion and none is a valence flavour of the neutral pion.
+* `isValenceFlavor_pion_plus`, `isValenceFlavor_pion_minus` and `not_isValenceFlavor_pion_zero`:
+  every light flavour is a valence flavour of each charged pion and none is a valence flavour of
+  the neutral pion.
 -/
 
 public section
@@ -178,15 +179,8 @@ variable [DecidableEq Flavor]
 /-- At a valence flavour, the valence species of that flavour in the antiparticle are the
 non-valence species of that flavour in the hadron. -/
 theorem inter_valence_conj_eq_sdiff (hi : IsValenceFlavor C.valence h i) :
-    Species.flavorPair i ∩ C.valence (C.conj h) = Species.flavorPair i \ C.valence h := by
-  ext s
-  simp only [Finset.mem_inter, Finset.mem_sdiff, C.mem_valence_conj, Species.mem_flavorPair]
-  refine and_congr_right fun hs => ?_
-  rcases hs with rfl | rfl
-  · rw [Species.conj_quark]
-    exact hi.antiquark_mem_iff
-  · rw [Species.conj_antiquark]
-    exact hi.quark_mem_iff
+    Species.flavorPair i ∩ C.valence (C.conj h) = Species.flavorPair i \ C.valence h :=
+  (C.image_conj_inter_valence h i).symm.trans hi.image_conj_inter_valence
 
 end IsValenceFlavor
 
@@ -297,6 +291,13 @@ theorem isValenceFlavor_pion_plus (i : PionFlavor) : IsValenceFlavor Pion.valenc
   cases i
   · exact isValenceFlavor_of_quark_mem (by simp) (by simp)
   · exact isValenceFlavor_of_antiquark_mem (by simp) (by simp)
+
+/-- Both light flavours are valence flavours of the negative pion: the down quark and the up
+antiquark are its valence constituents, and the down antiquark and the up quark are not. -/
+theorem isValenceFlavor_pion_minus (i : PionFlavor) : IsValenceFlavor Pion.valence .minus i := by
+  cases i
+  · exact isValenceFlavor_of_antiquark_mem (by simp) (by simp)
+  · exact isValenceFlavor_of_quark_mem (by simp) (by simp)
 
 /-- No flavour is a valence flavour of the neutral pion: for each flavour both the quark and the
 antiquark are valence constituents, so a flavour-neutral hadron does not distinguish them. -/

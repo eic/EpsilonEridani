@@ -66,6 +66,9 @@ from the two relations rather than assumed.
   index exchanges the two combinations.
 * `Fragmentation.favored_conj_of_chargeConjRelation`: under the charge-conjugation relation a
   hadron and its antiparticle have the same favoured combination.
+* `Fragmentation.favored_map_of_flavorSymmetryRelation`: under a flavour-symmetry relation the
+  favoured combination of a flavour in a hadron is that of the relabelled flavour in the image
+  hadron.
 * `Fragmentation.favored_valenceStepFrag_ne_unfavored`: the two combinations are not identified
   by the relations.
 * `Fragmentation.favored_pion_plus_down_eq_favored_pion_plus_up`: `D_u^{π⁺} = D_{dbar}^{π⁺}`.
@@ -334,6 +337,48 @@ theorem unfavored_conj_of_chargeConjRelation (C : HadronMultiplet Hadron Flavor)
     Finset.sum_image Species.conj_involutive.injective.injOn]
   exact Finset.sum_congr rfl fun s _ => hCC.apply h s z Q2
 
+/-- Under the flavour-symmetry relation of `(τ, ρ)`, for a valence assignment compatible with the
+symmetry, the favoured combination of the relabelled flavour in the image hadron is the favoured
+combination of the flavour in the hadron. -/
+theorem favored_map_of_flavorSymmetryRelation {τ : Hadron → Hadron} {ρ : Flavor → Flavor}
+    (hv : ∀ h s, Species.map ρ s ∈ valence (τ h) ↔ s ∈ valence h)
+    (hFS : FlavorSymmetryRelation τ ρ D) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
+    favored valence D (τ h) (ρ i) z Q2 = favored valence D h i z Q2 := by
+  have hs : Species.flavorPair (ρ i) ∩ valence (τ h)
+      = (Species.flavorPair i ∩ valence h).image (Species.map ρ) := by
+    rw [← Species.image_map_flavorPair]
+    ext s
+    simp only [Finset.mem_inter, Finset.mem_image]
+    constructor
+    · rintro ⟨⟨t, ht, rfl⟩, hs⟩
+      exact ⟨t, ⟨ht, (hv h t).1 hs⟩, rfl⟩
+    · rintro ⟨t, ⟨ht, hth⟩, rfl⟩
+      exact ⟨⟨t, ht, rfl⟩, (hv h t).2 hth⟩
+  rw [favored_def, favored_def, hs,
+    Finset.sum_image ((Species.injOn_map_flavorPair ρ i).mono (by simp))]
+  exact Finset.sum_congr rfl fun s _ => hFS.apply h s z Q2
+
+/-- Under the flavour-symmetry relation of `(τ, ρ)`, for a valence assignment compatible with the
+symmetry, the unfavoured combination of the relabelled flavour in the image hadron is the
+unfavoured combination of the flavour in the hadron. -/
+theorem unfavored_map_of_flavorSymmetryRelation {τ : Hadron → Hadron} {ρ : Flavor → Flavor}
+    (hv : ∀ h s, Species.map ρ s ∈ valence (τ h) ↔ s ∈ valence h)
+    (hFS : FlavorSymmetryRelation τ ρ D) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
+    unfavored valence D (τ h) (ρ i) z Q2 = unfavored valence D h i z Q2 := by
+  have hs : Species.flavorPair (ρ i) \ valence (τ h)
+      = (Species.flavorPair i \ valence h).image (Species.map ρ) := by
+    rw [← Species.image_map_flavorPair]
+    ext s
+    simp only [Finset.mem_sdiff, Finset.mem_image]
+    constructor
+    · rintro ⟨⟨t, ht, rfl⟩, hs⟩
+      exact ⟨t, ⟨ht, mt (hv h t).2 hs⟩, rfl⟩
+    · rintro ⟨t, ⟨ht, hth⟩, rfl⟩
+      exact ⟨⟨t, ht, rfl⟩, mt (hv h t).1 hth⟩
+  rw [unfavored_def, unfavored_def, hs,
+    Finset.sum_image ((Species.injOn_map_flavorPair ρ i).mono (by simp))]
+  exact Finset.sum_congr rfl fun s _ => hFS.apply h s z Q2
+
 /-! ### An explicit family -/
 
 /-- An explicit fragmentation family for a valence assignment: it takes the value `2 z` on the
@@ -359,13 +404,6 @@ theorem valenceStepFrag_apply_of_notMem (valence : Hadron → Finset (Species Fl
     {s : Species Flavor} {z : ℝ} (hz : z ∈ Set.Icc (0 : ℝ) 1) (hs : s ∉ valence h) (Q2 : ℝ) :
     valenceStepFrag valence h s z Q2 = 1 - z := by
   rw [valenceStepFrag_def, indicatorUnitInterval_of_mem _ hz, ite_eq_right hs]
-
-/-- `valenceStepFrag` vanishes outside the unit interval. -/
-@[simp]
-theorem valenceStepFrag_eq_zero (valence : Hadron → Finset (Species Flavor)) {z : ℝ}
-    (hz : z ∉ Set.Icc (0 : ℝ) 1) (h : Hadron) (s : Species Flavor) (Q2 : ℝ) :
-    valenceStepFrag valence h s z Q2 = 0 := by
-  rw [valenceStepFrag_def, indicatorUnitInterval_of_notMem _ hz]
 
 /-- `valenceStepFrag` is a fragmentation family: it is supported in, and non-negative on, the
 unit interval. -/
@@ -443,6 +481,30 @@ the down quark. -/
 theorem unfavored_pion_plus_down (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     unfavored Pion.valence D .plus .down z Q2 = D .plus (.quark .down) z Q2 :=
   unfavored_eq_apply_quark (by simp) (by simp) z Q2
+
+/-- The favoured combination of the negative pion at the up flavour is the fragmentation of the
+up antiquark. -/
+theorem favored_pion_minus_up (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
+    favored Pion.valence D .minus .up z Q2 = D .minus (.antiquark .up) z Q2 :=
+  favored_eq_apply_antiquark (by simp) (by simp) z Q2
+
+/-- The favoured combination of the negative pion at the down flavour is the fragmentation of
+the down quark. -/
+theorem favored_pion_minus_down (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
+    favored Pion.valence D .minus .down z Q2 = D .minus (.quark .down) z Q2 :=
+  favored_eq_apply_quark (by simp) (by simp) z Q2
+
+/-- The unfavoured combination of the negative pion at the up flavour is the fragmentation of
+the up quark. -/
+theorem unfavored_pion_minus_up (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
+    unfavored Pion.valence D .minus .up z Q2 = D .minus (.quark .up) z Q2 :=
+  unfavored_eq_apply_quark (by simp) (by simp) z Q2
+
+/-- The unfavoured combination of the negative pion at the down flavour is the fragmentation of
+the down antiquark. -/
+theorem unfavored_pion_minus_down (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
+    unfavored Pion.valence D .minus .down z Q2 = D .minus (.antiquark .down) z Q2 :=
+  unfavored_eq_apply_antiquark (by simp) (by simp) z Q2
 
 /-- Each light flavour of the flavour-neutral pion has both its quark and its antiquark as valence
 constituents, so its favoured combination is the total fragmentation of the flavour. -/
