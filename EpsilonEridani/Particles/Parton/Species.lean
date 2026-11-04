@@ -40,6 +40,8 @@ The two species of one flavour, its quark and its antiquark, form `Species.flavo
 * `Species.conj_involutive`: charge conjugation is an involution.
 * `Species.conj_map`: charge conjugation commutes with every flavour relabelling.
 * `Species.image_conj_flavorPair`: charge conjugation permutes the two species of a flavour.
+* `Species.image_map_flavorPair`: a flavour relabelling carries the two species of a flavour to
+  those of the relabelled flavour.
 
 ## References
 
@@ -206,6 +208,21 @@ theorem image_conj_flavorPair [DecidableEq Flavor] (i : Flavor) :
     (flavorPair i).image conj = flavorPair i := by
   rw [flavorPair_def, Finset.image_insert, Finset.image_singleton, conj_quark, conj_antiquark,
     Finset.pair_comm]
+
+/-- A relabelling of the quark flavours carries the two species of a flavour to the two species
+of the relabelled flavour. -/
+theorem image_map_flavorPair [DecidableEq Flavor] [DecidableEq Flavor'] (ρ : Flavor → Flavor')
+    (i : Flavor) : (flavorPair i).image (map ρ) = flavorPair (ρ i) := by
+  rw [flavorPair_def, flavorPair_def, Finset.image_insert, Finset.image_singleton, map_quark,
+    map_antiquark]
+
+/-- A relabelling of the quark flavours is injective on the two species of a flavour, since it
+keeps the quark and the antiquark apart. -/
+theorem injOn_map_flavorPair [DecidableEq Flavor] (ρ : Flavor → Flavor') (i : Flavor) :
+    Set.InjOn (map ρ) (flavorPair i : Set (Species Flavor)) := by
+  intro s hs t ht hst
+  simp only [Finset.mem_coe, mem_flavorPair] at hs ht
+  rcases hs with rfl | rfl <;> rcases ht with rfl | rfl <;> simp_all
 
 /-- A sum over the two species of a flavour. -/
 theorem sum_flavorPair [DecidableEq Flavor] {M : Type*} [AddCommMonoid M]
