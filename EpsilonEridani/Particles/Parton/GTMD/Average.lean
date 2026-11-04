@@ -164,6 +164,7 @@ open EpsilonEridani.Particles.Parton.GTMD in
 /-- The circle average of a continuous function is continuous in the radius: the transverse
     transport of Mathlib's `Continuous.circleAverage`, which is what carries continuity of the
     transverse-momentum slices of a `VectorTmd` to regularity of their azimuthal average. -/
+@[fun_prop]
 lemma Continuous.circleAverageTransverse {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {g : Transverse → E} (hg : Continuous g) : Continuous (circleAverageTransverse g) :=
   (((hg.comp Complex.orthonormalBasisOneI.repr.continuous).circleAverage (c := 0)).congr
@@ -183,6 +184,16 @@ variable {Flavor : Type} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     magnitude `kT`, it is set to zero at unphysical `kT < 0`. -/
 def azimuthalAverage (f : VectorTmd Flavor) : TMD.Tmd Flavor :=
   fun i x kT Q2 ζ => if kT < 0 then 0 else circleAverageTransverse (f i x · Q2 ζ) kT
+
+/-- The azimuthal average of a slice, as a function of the transverse-momentum magnitude: the
+    `kT < 0` cutoff applied to the transverse circle average. This whole-function form is what
+    measurability and continuity consumers need; `azimuthalAverage_of_neg` and
+    `azimuthalAverage_of_nonneg` are its pointwise counterparts. -/
+lemma azimuthalAverage_def (f : VectorTmd Flavor) (i : Flavor) (x Q2 ζ : ℝ) :
+    (fun kT => azimuthalAverage f i x kT Q2 ζ) =
+      fun kT => if kT < 0 then 0 else circleAverageTransverse (f i x · Q2 ζ) kT := (rfl)
+  -- `(rfl)`, not `rfl`: a syntactic `rfl` proof would implicitly tag the lemma `@[defeq]`,
+  -- which would let `dsimp` unfold `azimuthalAverage` downstream.
 
 /-- The azimuthal average vanishes at negative transverse-momentum magnitude. -/
 @[simp]
@@ -248,7 +259,8 @@ theorem regularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Regul
         if kT < 0 then (0 : ℝ) else circleAverageTransverse (f i x · Q2 ζ) kT) :=
       (Measurable.ite (measurableSet_lt measurable_id measurable_const)
         measurable_const hc.measurable).aestronglyMeasurable
-    simpa only [azimuthalAverage] using hite
+    rw [azimuthalAverage_def]
+    exact hite
 
 /-- The azimuthal average of a vector-argument TMD satisfying the full assumption bundle
     satisfies the full `TMD.Assumptions` bundle, so it can be used with every consumer that
