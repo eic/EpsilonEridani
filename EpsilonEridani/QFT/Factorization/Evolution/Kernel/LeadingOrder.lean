@@ -28,15 +28,15 @@ The colour factors `C_F`, `C_A`, `T_F` and the number of active flavours `n_f` a
 gauge group, or at points such as `C_F = C_A = 2 n_f T_F` that are not QCD.
 
 The familiar forms `C_F [(1 + z²)/(1 - z)]₊` of `P_qq` and `2 C_A z [1/(1-z)]₊ + …` of `P_gg`
-are theorems about the pairing with test functions (`pair_pqq`, `pair_pgg`), not definitions.
+are theorems about the pairing with test functions (`pairing_pqq`, `pairing_pgg`), not definitions.
 The Mellin moments are computed in closed form: at every real index in the half-line of
 convergence for the three kernels whose moments are rational functions of `N`, and at natural
 indices for `P_qq` and `P_gg`, whose moments involve the harmonic numbers. At `N = 1` and `N = 2`
 they give the conservation identities: quark number, `M[P_qq](1) = 0`, and momentum,
 `M[P_qq](2) + M[P_gq](2) = 0` and `M[P_gg](2) + M[2 n_f P_qg](2) = 0`. These are derived from the
 kernels and not imposed on them: the `n_f`-dependent delta coefficient of `P_gg`, which is half
-the one-loop beta-function coefficient `β₀` (`pgg_deltaCoeff_eq_beta0`), is what makes the second
-momentum identity hold.
+the one-loop beta-function coefficient `β₀` (`pgg_deltaCoeff_eq_beta0_div_two`), is what makes
+the second momentum identity hold.
 
 ## Main definitions
 
@@ -45,13 +45,13 @@ momentum identity hold.
 
 ## Main results
 
-* `pair_pqq`: `P_qq` is the plus distribution `C_F [(1 + z²)/(1 - z)]₊`.
-* `pair_pgg`: `P_gg` is `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)]` plus its delta term.
+* `pairing_pqq`: `P_qq` is the plus distribution `C_F [(1 + z²)/(1 - z)]₊`.
+* `pairing_pgg`: `P_gg` is `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)]` plus its delta term.
 * `moment_pgq`, `moment_pqg`, `moment_pqgSinglet`: the moments in closed form at every real
   index `N` for which the integral converges, as rational functions of `N`.
 * `moment_pqq`, `moment_pgg`: the moments in closed form at natural indices, in terms of the
   harmonic numbers `S₁(N) = H_N`.
-* `pgg_deltaCoeff_eq_beta0`: the delta coefficient of `P_gg` is `β₀ / 2`.
+* `pgg_deltaCoeff_eq_beta0_div_two`: the delta coefficient of `P_gg` is `β₀ / 2`.
 * `moment_pqq_one`: quark-number conservation.
 * `moment_pqq_two_add_moment_pgq_two`, `moment_pgg_two_add_moment_pqgSinglet_two`: momentum
   conservation in the quark and the gluon column.
@@ -105,7 +105,7 @@ noncomputable def pqgSinglet : KernelForm :=
 
 /-- The leading-order gluon-to-gluon kernel
 `P_gg(z) = 2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)] + ((11/6) C_A - (2/3) n_f T_F) δ(1-z)`,
-in normal form through `z [1/(1-z)]₊ = [1/(1-z)]₊ - 1` (`pair_pgg`). The `(1-z)/z` term of its
+in normal form through `z [1/(1-z)]₊ = [1/(1-z)]₊ - 1` (`pairing_pgg`). The `(1-z)/z` term of its
 regular part makes the integral defining the moments converge only for `N > 1`, as for `P_gq`;
 at smaller `N` the moment takes the junk value of the Bochner integral. -/
 noncomputable def pgg : KernelForm :=
@@ -193,7 +193,7 @@ theorem pgg_deltaCoeff : (pgg c).deltaCoeff = 11 / 6 * c.cA - 2 / 3 * c.nF * c.t
 `β₀ / 2 = (11/6) C_A - (2/3) n_f T_F`. This is what makes the gluon-column momentum identity
 `moment_pgg_two_add_moment_pqgSinglet_two` hold: the virtual term of `P_gg` carries the same
 gluon self-energy that drives the running of `α_s`. -/
-theorem pgg_deltaCoeff_eq_beta0 : (pgg c).deltaCoeff = beta0 c / 2 := by
+theorem pgg_deltaCoeff_eq_beta0_div_two : (pgg c).deltaCoeff = beta0 c / 2 := by
   rw [pgg_deltaCoeff, beta0]
   ring
 
@@ -203,51 +203,40 @@ theorem pgg_deltaCoeff_eq_beta0 : (pgg c).deltaCoeff = beta0 c / 2 := by
 function `φ` as the plus functional of `C_F (1 + z²)/(1 - z)`, for every `φ` whose pairing with
 `[1/(1-z)]₊` converges; such a `φ` is integrable on `[0, 1]` by
 `EpsilonEridani.intervalIntegrable_of_plusOneMinus_integrand`. -/
-theorem pair_pqq {φ : ℝ → ℝ}
+theorem pairing_pqq {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1) :
-    (pqq c).pair φ = c.cF * plusFunctional (fun z => (1 + z ^ 2) / (1 - z)) φ := by
+    (pqq c).pairing φ = c.cF * plusFunctional (fun z => (1 + z ^ 2) / (1 - z)) φ := by
   have hφ := intervalIntegrable_of_plusOneMinus_integrand hφ₁
-  have hlin : IntervalIntegrable (fun z => (1 + z) * φ z) volume 0 1 :=
-    hφ.continuousOn_mul (by fun_prop)
-  have hconst : IntervalIntegrable (fun z : ℝ => φ 1 * (1 + z)) volume 0 1 :=
-    (by fun_prop : Continuous fun z : ℝ => φ 1 * (1 + z)).intervalIntegrable 0 1
-  -- Off `z = 1`, `(1 + z²)/(1 - z) = 2/(1 - z) - (1 + z)`.
-  have hK : (fun z : ℝ => (1 + z ^ 2) / (1 - z)) =ᵐ[volume.restrict (Set.Ioc 0 1)]
-      fun z => 2 * (1 - z)⁻¹ + -(1 + z) := by
+  have hrφ : IntervalIntegrable (fun z => (pqq c).regular z * φ z) volume 0 1 := by
+    simpa only [pqq_regular] using hφ.continuousOn_mul (g := fun z => -c.cF * (1 + z)) (by fun_prop)
+  have hr : IntervalIntegrable (pqq c).regular volume 0 1 :=
+    (by fun_prop : Continuous fun z : ℝ => -c.cF * (1 + z)).intervalIntegrable 0 1
+  -- Off `z = 1`, `2 C_F / (1 - z) - C_F (1 + z) = C_F (1 + z²)/(1 - z)`.
+  have hK : (fun z => (pqq c).plusCoeff * (1 - z)⁻¹ + (pqq c).regular z) =ᵐ[volume.restrict
+      (Set.Ioc 0 1)] fun z => c.cF * ((1 + z ^ 2) / (1 - z)) := by
     filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (1 : ℝ))] with z hz
     have h1z : (1 : ℝ) - z ≠ 0 := sub_ne_zero.2 (Ne.symm hz)
+    simp only [pqq_plusCoeff, pqq_regular]
     field_simp
     ring
-  have hsing : IntervalIntegrable (fun z => 2 * (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1 := by
-    simpa only [mul_assoc] using hφ₁.const_mul 2
-  have hreg : IntervalIntegrable (fun z => -(1 + z) * (φ z - φ 1)) volume 0 1 :=
-    (hconst.sub hlin).congr fun z _ => by ring
+  -- The delta coefficient `(3/2) C_F` cancels against `∫₀¹ -C_F (1 + z) dz = -(3/2) C_F`.
   have h32 : ∫ z in (0 : ℝ)..1, (1 + z) = 3 / 2 := by
     rw [intervalIntegral.integral_add (intervalIntegrable_const (c := (1 : ℝ)))
       intervalIntegral.intervalIntegrable_id]
     norm_num
-  have hKφ : IntervalIntegrable (fun z => -(1 + z) * φ z) volume 0 1 :=
-    (hlin.const_mul (-1)).congr fun z _ => by ring
-  have hKint : IntervalIntegrable (fun z : ℝ => -(1 + z)) volume 0 1 :=
-    (by fun_prop : Continuous fun z : ℝ => -(1 + z)).intervalIntegrable 0 1
-  have hplus : plusFunctional (fun z => -(1 + z)) φ =
-      φ 1 * (3 / 2) - ∫ z in (0 : ℝ)..1, (1 + z) * φ z := by
-    rw [plusFunctional_of_intervalIntegrable hKφ hKint]
-    simp only [neg_mul, intervalIntegral.integral_neg, h32]
+  have hd : (pqq c).deltaCoeff + ∫ z in (0 : ℝ)..1, (pqq c).regular z = 0 := by
+    simp only [pqq_deltaCoeff, pqq_regular, intervalIntegral.integral_const_mul, h32]
     ring
-  rw [plusFunctional_congr_ae_left φ hK, plusFunctional_add_left hsing hreg,
-    plusFunctional_const_mul_left, hplus]
-  simp only [KernelForm.pair_def, pqq_regular, pqq_plusCoeff, pqq_deltaCoeff, plusOneMinus_def,
-    neg_mul, mul_assoc, intervalIntegral.integral_neg, intervalIntegral.integral_const_mul]
-  ring
+  rw [(pqq c).pairing_eq_plusFunctional hφ₁ hrφ hr, plusFunctional_congr_ae_left φ hK,
+    plusFunctional_const_mul_left, hd, zero_mul, add_zero]
 
 /-- **`P_gg` in its familiar form.** The normal form of `P_gg` pairs with a test function `φ` as
 `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)] + ((11/6) C_A - (2/3) n_f T_F) δ(1-z)`, for every `φ`
 whose pairing with `[1/(1-z)]₊` converges and against which the regular part converges. -/
-theorem pair_pgg {φ : ℝ → ℝ}
+theorem pairing_pgg {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1)
     (hreg : IntervalIntegrable (fun z => ((1 - z) / z + z * (1 - z)) * φ z) volume 0 1) :
-    (pgg c).pair φ =
+    (pgg c).pairing φ =
       2 * c.cA * (plusOneMinus (fun z => z * φ z) +
           ∫ z in (0 : ℝ)..1, ((1 - z) / z + z * (1 - z)) * φ z) +
         (11 / 6 * c.cA - 2 / 3 * c.nF * c.tF) * φ 1 := by
@@ -256,7 +245,7 @@ theorem pair_pgg {φ : ℝ → ℝ}
       fun z => 2 * c.cA * (-φ z + ((1 - z) / z + z * (1 - z)) * φ z) := by
     funext z
     ring
-  simp only [plusOneMinus_id_mul hφ₁, KernelForm.pair_def, pgg_regular, pgg_plusCoeff,
+  simp only [plusOneMinus_id_mul hφ₁, KernelForm.pairing_def, pgg_regular, pgg_plusCoeff,
     pgg_deltaCoeff, hsplit,
     intervalIntegral.integral_const_mul]
   rw [intervalIntegral.integral_add (f := fun z => -φ z) hφ.neg hreg, intervalIntegral.integral_neg]
@@ -273,7 +262,7 @@ theorem moment_pqq {N : ℕ} (hN : N ≠ 0) :
     (intervalIntegral.integral_congr fun z _ => by simp only [Real.rpow_natCast]; ring).trans
       (integral_cubic_mul_rpow _ _ _ _ (neg_one_lt_zero.trans_le n.cast_nonneg))
   rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
-    KernelForm.pair_pow]
+    KernelForm.pairing_pow]
   simp only [pqq_regular, hint, pqq_plusCoeff, pqq_deltaCoeff, harmonic_succ]
   push_cast
   field_simp
@@ -297,7 +286,7 @@ theorem moment_pgq {N : ℝ} (hN : 1 < N) :
   have h0 : N ≠ 0 := by intro h; linarith
   have h2 : N + 1 ≠ 0 := by intro h; linarith
   have h3 : N + 2 ≠ 0 := by intro h; linarith
-  rw [KernelForm.moment_def, KernelForm.pair_def]
+  rw [KernelForm.moment_def, KernelForm.pairing_def]
   simp only [pgq_regular, hint, pgq_plusCoeff, pgq_deltaCoeff, zero_mul, add_zero]
   rw [show N - 2 + 1 = N - 1 by ring, show N - 2 + 2 = N by ring, show N - 2 + 3 = N + 1 by ring,
     show N - 2 + 4 = N + 2 by ring]
@@ -317,7 +306,7 @@ theorem moment_pqg {N : ℝ} (hN : 0 < N) :
   have h1 : N + 1 ≠ 0 := by intro h; linarith
   have h2 : N + 2 ≠ 0 := by intro h; linarith
   have h3 : N + 3 ≠ 0 := by intro h; linarith
-  rw [KernelForm.moment_def, KernelForm.pair_def]
+  rw [KernelForm.moment_def, KernelForm.pairing_def]
   simp only [pqg_regular, hint, pqg_plusCoeff, pqg_deltaCoeff, zero_mul, add_zero]
   rw [show N - 1 + 1 = N by ring, show N - 1 + 2 = N + 1 by ring, show N - 1 + 3 = N + 2 by ring,
     show N - 1 + 4 = N + 3 by ring]
@@ -349,7 +338,7 @@ theorem moment_pgg {N : ℕ} (hN : 2 ≤ N) :
     field_simp
     ring
   rw [show ((2 + n : ℕ) : ℝ) = ((n + 1 : ℕ) : ℝ) + 1 by push_cast; ring,
-    KernelForm.moment_natCast_add_one, KernelForm.pair_pow, show 2 + n = n + 1 + 1 by omega]
+    KernelForm.moment_natCast_add_one, KernelForm.pairing_pow, show 2 + n = n + 1 + 1 by omega]
   simp only [pgg_regular, hint, pgg_plusCoeff, pgg_deltaCoeff, harmonic_succ (n + 1)]
   push_cast
   field_simp

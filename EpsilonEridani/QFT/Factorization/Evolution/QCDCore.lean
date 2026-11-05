@@ -58,7 +58,7 @@ def qcdRunningCouplingFromRepresentation
 -- The bundle has been removed rather than restated; a positivity contract for QCD kernels
 -- would be stated against the distributional kernel type
 -- `EpsilonEridani.QFT.Factorization.Evolution.KernelForm` (`Evolution/Kernel/NormalForm.lean`)
--- and its pairing `KernelForm.pair`, not against pointwise values of a function.
+-- and its pairing `KernelForm.pairing`, not against pointwise values of a function.
 
 /-- DGLAP equation schema specialized to QCD running-coupling input. -/
 def IsQCDDGLAPLogScaleEquation [Fintype Flavor]

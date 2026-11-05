@@ -47,10 +47,10 @@ object.
   `⟨[K]₊, g φ⟩ = g 1 ⟨[K]₊, φ⟩ + ∫₀¹ K z (g z - g 1) φ z dz`, which for `K z = 1 / (1 - z)`
   (`EpsilonEridani.plusOneMinus_mul`) is the distributional identity
   `g z [1 / (1 - z)]₊ = g 1 [1 / (1 - z)]₊ + (g z - g 1) / (1 - z)`.
+* `EpsilonEridani.plusOneMinus_id_mul`: the case `g z = z` of `EpsilonEridani.plusOneMinus_mul`,
+  `z [1 / (1 - z)]₊ = [1 / (1 - z)]₊ - 1`.
 * `EpsilonEridani.plusFunctional_of_intervalIntegrable`: for an integrable kernel,
   `⟨[K]₊, φ⟩ = ∫₀¹ K z φ z dz - φ 1 ∫₀¹ K z dz`.
-* `EpsilonEridani.plusOneMinus_id_mul`: its case `g z = z`,
-  `z [1 / (1 - z)]₊ = [1 / (1 - z)]₊ - 1`.
 * `EpsilonEridani.plusOneMinus_pow`: the moments of the plus distribution are harmonic numbers,
   `⟨[1 / (1 - z)]₊, z ^ n⟩ = -H_n`.
 
