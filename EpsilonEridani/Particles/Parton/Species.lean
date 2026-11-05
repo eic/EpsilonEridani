@@ -204,6 +204,7 @@ theorem mem_flavorPair [DecidableEq Flavor] {i : Flavor} {s : Species Flavor} :
   simp [flavorPair]
 
 /-- Charge conjugation exchanges the two species of a flavour, so it fixes the pair. -/
+@[simp]
 theorem image_conj_flavorPair [DecidableEq Flavor] (i : Flavor) :
     (flavorPair i).image conj = flavorPair i := by
   rw [flavorPair_def, Finset.image_insert, Finset.image_singleton, conj_quark, conj_antiquark,
@@ -211,6 +212,7 @@ theorem image_conj_flavorPair [DecidableEq Flavor] (i : Flavor) :
 
 /-- A relabelling of the quark flavours carries the two species of a flavour to the two species
 of the relabelled flavour. -/
+@[simp]
 theorem image_map_flavorPair [DecidableEq Flavor] [DecidableEq Flavor'] (ρ : Flavor → Flavor')
     (i : Flavor) : (flavorPair i).image (map ρ) = flavorPair (ρ i) := by
   rw [flavorPair_def, flavorPair_def, Finset.image_insert, Finset.image_singleton, map_quark,

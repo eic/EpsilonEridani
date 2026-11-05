@@ -460,60 +460,70 @@ theorem favored_valenceStepFrag_ne_unfavored (hi : IsValenceFlavor valence h i) 
 
 /-- The favoured combination of the positive pion at the up flavour is the fragmentation of the
 up quark. -/
+@[simp]
 theorem favored_pion_plus_up (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     favored Pion.valence D .plus .up z Q2 = D .plus (.quark .up) z Q2 :=
   favored_eq_apply_quark (by simp) (by simp) z Q2
 
 /-- The favoured combination of the positive pion at the down flavour is the fragmentation of
 the down antiquark. -/
+@[simp]
 theorem favored_pion_plus_down (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     favored Pion.valence D .plus .down z Q2 = D .plus (.antiquark .down) z Q2 :=
   favored_eq_apply_antiquark (by simp) (by simp) z Q2
 
 /-- The unfavoured combination of the positive pion at the up flavour is the fragmentation of
 the up antiquark. -/
+@[simp]
 theorem unfavored_pion_plus_up (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     unfavored Pion.valence D .plus .up z Q2 = D .plus (.antiquark .up) z Q2 :=
   unfavored_eq_apply_antiquark (by simp) (by simp) z Q2
 
 /-- The unfavoured combination of the positive pion at the down flavour is the fragmentation of
 the down quark. -/
+@[simp]
 theorem unfavored_pion_plus_down (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     unfavored Pion.valence D .plus .down z Q2 = D .plus (.quark .down) z Q2 :=
   unfavored_eq_apply_quark (by simp) (by simp) z Q2
 
 /-- The favoured combination of the negative pion at the up flavour is the fragmentation of the
 up antiquark. -/
+@[simp]
 theorem favored_pion_minus_up (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     favored Pion.valence D .minus .up z Q2 = D .minus (.antiquark .up) z Q2 :=
   favored_eq_apply_antiquark (by simp) (by simp) z Q2
 
 /-- The favoured combination of the negative pion at the down flavour is the fragmentation of
 the down quark. -/
+@[simp]
 theorem favored_pion_minus_down (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     favored Pion.valence D .minus .down z Q2 = D .minus (.quark .down) z Q2 :=
   favored_eq_apply_quark (by simp) (by simp) z Q2
 
 /-- The unfavoured combination of the negative pion at the up flavour is the fragmentation of
 the up quark. -/
+@[simp]
 theorem unfavored_pion_minus_up (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     unfavored Pion.valence D .minus .up z Q2 = D .minus (.quark .up) z Q2 :=
   unfavored_eq_apply_quark (by simp) (by simp) z Q2
 
 /-- The unfavoured combination of the negative pion at the down flavour is the fragmentation of
 the down antiquark. -/
+@[simp]
 theorem unfavored_pion_minus_down (D : Frag Pion (Species PionFlavor)) (z Q2 : ℝ) :
     unfavored Pion.valence D .minus .down z Q2 = D .minus (.antiquark .down) z Q2 :=
   unfavored_eq_apply_antiquark (by simp) (by simp) z Q2
 
 /-- Each light flavour of the flavour-neutral pion has both its quark and its antiquark as valence
 constituents, so its favoured combination is the total fragmentation of the flavour. -/
+@[simp]
 theorem favored_pion_zero (D : Frag Pion (Species PionFlavor)) (i : PionFlavor) (z Q2 : ℝ) :
     favored Pion.valence D .zero i z Q2
       = D .zero (.quark i) z Q2 + D .zero (.antiquark i) z Q2 :=
   favored_eq_add_of_quark_mem_of_antiquark_mem (by cases i <;> simp) (by cases i <;> simp) z Q2
 
 /-- The unfavoured combinations of the flavour-neutral pion vanish. -/
+@[simp]
 theorem unfavored_pion_zero (D : Frag Pion (Species PionFlavor)) (i : PionFlavor) (z Q2 : ℝ) :
     unfavored Pion.valence D .zero i z Q2 = 0 :=
   unfavored_eq_zero_of_quark_mem_of_antiquark_mem (by cases i <;> simp) (by cases i <;> simp) z Q2
