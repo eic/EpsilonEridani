@@ -47,7 +47,11 @@ quantities rather than by convention. The target has momentum `p` against the be
   `W² = M² + 2 x E_s (E + p)` (`minkowskiProduct_add_self_of_realPhoton_energyFraction`),
   `e^{2y} = (2 x E_s + E - p) / (E + p)` (`exp_two_mul_rapidity_of_realPhoton_energyFraction`)
   and `x = e^{y} (W² - M²) / (2 W E_s)`
-  (`energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_of_realPhoton`).
+  (`energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_of_realPhoton`). These real-photon forms
+  apply exactly to the photons with `γ.IsReal`: a photon with `q_∥ = γ.energy` is real
+  (`PhotonKinematics.isReal_of_spatialPart_eq_energy_smul`), and conversely a real photon of
+  momentum `a` along the beam axis with `0 < γ.energy + a` has `a = γ.energy`
+  (`PhotonKinematics.eq_energy_of_isReal_of_spatialPart_eq_smul`).
 
 For a massless target these reduce to the familiar `W² = 4 k E`, `e^{2y} = k / E`,
 `k = (W / 2) e^{y}` and `E = (W / 2) e^{-y}` (`minkowskiProduct_add_self_of_masslessTarget`,
@@ -218,6 +222,34 @@ theorem two_mul_photonEnergy_eq_exp_rapidity_mul_sub_div_sqrt_of_realPhoton
     2 * k * √⟪q + P, q + P⟫ₘ * he
 
 end RealPhoton
+
+/-! ### The real-photon point -/
+
+namespace PhotonKinematics
+
+variable (γ : PhotonKinematics) (hn : ‖n‖ = 1) (hγ : γ.virtuality = -⟪q, q⟫ₘ)
+  (hq : q.timeComponent = γ.energy)
+include hn hγ hq
+
+/-- **A photon along the beam axis with momentum equal to its energy is real.** A photon `γ` of
+four-momentum `q`, with `q⁰ = γ.energy`, virtuality `-q²` and spatial part `γ.energy • n` along the
+unit beam axis, satisfies `γ.IsReal`. -/
+theorem isReal_of_spatialPart_eq_energy_smul (hq' : q.spatialPart = γ.energy • n) : γ.IsReal := by
+  rw [isReal_iff, hγ, minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul hn hq
+    hq', neg_zero]
+
+/-- **A real photon along the beam axis has momentum equal to its energy.** A real photon `γ` of
+four-momentum `q`, with `q⁰ = γ.energy`, virtuality `-q²` and spatial part `a • n` along the unit
+beam axis, whose forward light-cone component `γ.energy + a` is positive, has `a = γ.energy`. -/
+theorem eq_energy_of_isReal_of_spatialPart_eq_smul (hq' : q.spatialPart = a • n)
+    (hreal : γ.IsReal) (ha : 0 < γ.energy + a) : a = γ.energy := by
+  rw [isReal_iff, hγ, minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hq', hq, neg_eq_zero,
+    mul_eq_zero] at hreal
+  rcases hreal with h | h
+  · exact absurd h ha.ne'
+  · linarith
+
+end PhotonKinematics
 
 /-! ### The energy fraction -/
 
