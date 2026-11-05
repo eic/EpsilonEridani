@@ -61,7 +61,7 @@ converges.
   plus distribution `[p / (1 - z) + r]₊` plus `(d + ∫₀¹ r z dz) δ(1 - z)`.
 * `KernelForm.pairing_congr_ae_left`, `KernelForm.pairing_congr_ae_right`,
   `KernelForm.moment_congr_ae`: the pairing sees only the almost-everywhere class of the regular
-  part and of the test function.
+  part on `(0, 1]` and of the test function there together with its value `φ 1`.
 * `KernelForm.pairing_smul`, `KernelForm.moment_smul`: the pairing is homogeneous in the kernel, for
   the action of `ℝ` on kernels.
 
@@ -163,7 +163,8 @@ theorem pairing_congr_ae_right (P : KernelForm) {φ ψ : ℝ → ℝ}
     exact h.mono fun z hz => by simp [hz]
   rw [pairing_def, pairing_def, hint, plusOneMinus_congr_ae h h1, h1]
 
-/-- The Mellin moments see only the almost-everywhere class of the regular part on `(0, 1]`. -/
+/-- Two kernels with the same coefficients whose regular parts agree almost everywhere on
+`(0, 1]` have the same Mellin moments. -/
 theorem moment_congr_ae {P Q : KernelForm}
     (hr : P.regular =ᵐ[volume.restrict (Ioc 0 1)] Q.regular) (hp : P.plusCoeff = Q.plusCoeff)
     (hd : P.deltaCoeff = Q.deltaCoeff) (N : ℝ) : P.moment N = Q.moment N :=
