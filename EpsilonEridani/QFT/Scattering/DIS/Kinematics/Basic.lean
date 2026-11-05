@@ -135,28 +135,11 @@ lemma projOrthogonal_smul (g : Bilin V) {c : ℝ} (hc : c ≠ 0) (u : V) :
   congr 2
   field_simp
 
-/-- Rank-one bilinear form `(v,w) ↦ g(a,v) g(b,w)` derived from a background bilinear form `g`. -/
-def rankOne (g : Bilin V) (a b : V) : Bilin V where
-  toFun := fun v =>
-    { toFun := fun w => g a v * g b w
-      map_add' := by
-        intro w₁ w₂
-        simp [mul_add, map_add]
-      map_smul' := by
-        intro c w
-        change g a v * g b (c • w) = c * (g a v * g b w)
-        rw [map_smul]
-        ring }
-  map_add' := by
-    intro v₁ v₂
-    ext w
-    simp [add_mul, map_add]
-  map_smul' := by
-    intro c v
-    ext w
-    change g a (c • v) * g b w = c * (g a v * g b w)
-    rw [map_smul]
-    ring
+/-- Rank-one bilinear form `(v,w) ↦ g(a,v) g(b,w)` derived from a background bilinear form
+`g`, as the Mathlib combinator `LinearMap.smulRight (g a) (g b)`, the map
+`v ↦ g a v • g b`. -/
+def rankOne (g : Bilin V) (a b : V) : Bilin V :=
+  (g a).smulRight (g b)
 
 @[simp] lemma rankOne_apply (g : Bilin V) (a b v w : V) :
     rankOne g a b v w = g a v * g b w := rfl

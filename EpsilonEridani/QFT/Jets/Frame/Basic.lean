@@ -188,10 +188,12 @@ theorem spatialNorm_def (p : V) :
     F.spatialNorm p = Real.sqrt (-g (F.spatialPart p) (F.spatialPart p)) :=
   (rfl)
 
+@[simp]
 theorem spatialNorm_nonneg (p : V) : 0 ≤ F.spatialNorm p := by
   rw [spatialNorm_def]
   exact Real.sqrt_nonneg _
 
+@[simp]
 theorem spatialNorm_pos_iff (p : V) :
     0 < F.spatialNorm p ↔ 0 < -g (F.spatialPart p) (F.spatialPart p) := by
   rw [spatialNorm_def, Real.sqrt_pos]
