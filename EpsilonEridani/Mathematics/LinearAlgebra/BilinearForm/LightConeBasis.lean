@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Nondegenerate
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Projection
@@ -421,12 +422,8 @@ theorem bilinForm_transverseEpsRaise_apply (u v : V) :
 /-- `E u` is the unique vector `w` with `B w v = ε(u, v, n₊, n₋)` for all `v`. -/
 theorem eq_transverseEpsRaise_iff {u w : V} :
     w = L.transverseEpsRaise ε hB u ↔ ∀ v, B w v = L.transverseEps ε u v := by
-  constructor
-  · rintro rfl v
-    exact L.bilinForm_transverseEpsRaise_apply ε hB u v
-  · intro h
-    refine (B.toDual hB).injective (LinearMap.ext fun v => ?_)
-    rw [toDual_def, toDual_def, h, bilinForm_transverseEpsRaise_apply]
+  rw [transverseEpsRaise_def]
+  exact eq_symmCompOfNondegenerate_iff _ hB
 
 theorem bilinForm_transverseEpsRaise_apply_swap (u v : V) :
     B (L.transverseEpsRaise ε hB u) v = -B (L.transverseEpsRaise ε hB v) u := by

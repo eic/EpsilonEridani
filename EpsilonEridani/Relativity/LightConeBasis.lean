@@ -42,7 +42,7 @@ transverse projector, `ε_T^{μν} ε_{Tν}{}^{ρ} = -g_T^{μρ}`
 (`transverseEpsRaise_minkowskiVolumeForm_transverseEpsRaise_minkowskiVolumeForm`): it is a
 rotation by a right angle of the transverse plane. For an alternating four-form with another
 normalisation `c = ε(e₀, e₁, e₂, e₃)` the square is `-c²` times the projector
-(`transverseEpsRaise_minkowskiProduct_comp_self`), so the identity is insensitive to the sign
+(`transverseEpsRaise_comp_self`), so the identity is insensitive to the sign
 convention chosen for the Levi-Civita tensor. This is the tensor in which the T-odd structures of
 transverse-momentum-dependent distributions are written.
 
@@ -67,7 +67,7 @@ transverse-momentum-dependent distributions are written.
   `⟪ε_T u, v⟫ₘ = ε_T(u, v)`.
 * `LightConeBasis.transverseEpsRaise_minkowskiVolumeForm_transverseEpsRaise_minkowskiVolumeForm`:
   the transverse antisymmetric tensor squares to minus the transverse projector.
-* `LightConeBasis.transverseEpsRaise_minkowskiProduct_comp_self`: the same for an alternating
+* `LightConeBasis.transverseEpsRaise_comp_self`: the same for an alternating
   four-form of any normalisation.
 
 ## References
@@ -247,7 +247,7 @@ theorem transverseEpsRaise_minkowskiVolumeForm_transverseEpsRaise_minkowskiVolum
 /-- For any alternating four-form `ε` on four-dimensional Minkowski space, with normalisation
 `c = ε(e₀, e₁, e₂, e₃)`, the raised transverse antisymmetric tensor squares to `-c²` times the
 transverse projector. In particular the square does not depend on the sign convention for `ε`. -/
-theorem transverseEpsRaise_minkowskiProduct_transverseEpsRaise (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem transverseEpsRaise_comp_self_apply (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (u : Vector 3) :
     L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct
       (L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct u) =
@@ -261,11 +261,11 @@ theorem transverseEpsRaise_minkowskiProduct_transverseEpsRaise (ε : Vector 3 [�
 
 /-- For any alternating four-form `ε` on four-dimensional Minkowski space, with normalisation
 `c = ε(e₀, e₁, e₂, e₃)`, `E ∘ E = -c² g_T`; for the volume form, `c = -1` and `ε_T ∘ ε_T = -g_T`. -/
-theorem transverseEpsRaise_minkowskiProduct_comp_self (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ) :
+theorem transverseEpsRaise_comp_self (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ) :
     L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct ∘ₗ
       L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct =
       -(ε minkowskiBasisFin4 ^ 2) • L.transverseProj :=
-  LinearMap.ext (L.transverseEpsRaise_minkowskiProduct_transverseEpsRaise ε)
+  LinearMap.ext (L.transverseEpsRaise_comp_self_apply ε)
 
 end TransverseEps
 

@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Nondegenerate
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import Mathlib.LinearAlgebra.Determinant
 public import Physlib.Mathematics.LeviCivita.Basic
@@ -215,13 +216,10 @@ theorem minkowskiProduct_minkowskiVolumeFormRaise (a b u v : Vector 3) :
 all `v`. -/
 theorem eq_minkowskiVolumeFormRaise_iff {a b u w : Vector 3} :
     w = minkowskiVolumeFormRaise a b u ↔ ∀ v, ⟪w, v⟫ₘ = minkowskiVolumeForm ![u, v, a, b] := by
-  constructor
-  · rintro rfl v
-    exact minkowskiProduct_minkowskiVolumeFormRaise a b u v
-  · intro h
-    rw [← sub_eq_zero, ← minkowskiProduct_eq_zero_forall_iff]
-    intro v
-    simp [h]
+  rw [minkowskiVolumeFormRaise_def]
+  refine (LinearMap.BilinForm.eq_symmCompOfNondegenerate_iff _
+    nondegenerate_toBilinForm_minkowskiProduct).trans (forall_congr' fun v => ?_)
+  simp only [ContinuousLinearMap.toBilinForm_apply, AlternatingMap.bilinMap_apply]
 
 /-! The next three lemmas have the same discrimination-tree keys as the more general
 `minkowskiProduct_minkowskiVolumeFormRaise`, which would otherwise rewrite first to a value of
