@@ -124,6 +124,11 @@ noncomputable def f2LO {Flavor : Type} [Fintype Flavor]
     (charge : Flavor → ℝ) (q : Flavor → ℝ → ℝ → ℝ) (x Q2 : ℝ) : ℝ :=
   x * ∑ f, (charge f) ^ 2 * q f x Q2
 
+/-- The defining formula of the leading-order structure function, `F₂ = x ∑_f e_f² q_f`. -/
+theorem f2LO_def {Flavor : Type} [Fintype Flavor] (charge : Flavor → ℝ)
+    (q : Flavor → ℝ → ℝ → ℝ) (x Q2 : ℝ) :
+    f2LO charge q x Q2 = x * ∑ f, charge f ^ 2 * q f x Q2 := (rfl)
+
 /-- `F₂` is non-negative wherever the parton densities are, which with `loNCdSigma_nonneg`
 gives a non-negative cross section. -/
 lemma f2LO_nonneg {Flavor : Type} [Fintype Flavor]
