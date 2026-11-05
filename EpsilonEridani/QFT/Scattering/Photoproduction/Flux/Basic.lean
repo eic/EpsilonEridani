@@ -40,7 +40,7 @@ energy times the logarithm of the ratio of the maximal photon energy `γ / b_min
 (`ChargedSource.isEquivalent_integratedPhotonFlux_mul_log_div`). The integrand `t K₁(t)²` of the
 organising identity is, up to normalisation, the impact-parameter differential flux, so that
 identity is also what fixes the relative normalisation of the two forms of the spectrum; it is
-integrable beyond any positive `ξ` (`integrableOn_id_mul_besselK_one_sq`).
+integrable beyond any positive `ξ` (`EpsilonEridani.integrableOn_id_mul_besselK_one_sq`).
 
 The charge radius carried by `ChargedSource` plays no role here: this is the point-source
 spectrum, and `b_min` is an external cutoff on the impact parameter rather than a property of the
@@ -162,14 +162,6 @@ private theorem tendsto_neg_photonFluxProfile_atTop_nhds_zero :
 private theorem id_mul_besselK_one_sq_nonneg {ξ t : ℝ} (hξ : 0 < ξ) (ht : t ∈ Ioi ξ) :
     0 ≤ t * besselK 1 t ^ 2 :=
   mul_nonneg (hξ.trans ht).le (sq_nonneg _)
-
-/-- The tail integrand of `photonFluxProfile_eq_integral` is integrable beyond any positive
-argument, so that the tail integral may be split, rescaled or compared. -/
-theorem integrableOn_id_mul_besselK_one_sq {ξ : ℝ} (hξ : 0 < ξ) :
-    IntegrableOn (fun t ↦ t * besselK 1 t ^ 2) (Ioi ξ) :=
-  integrableOn_Ioi_deriv_of_nonneg (continuousWithinAt_neg_photonFluxProfile hξ)
-    (fun _ ht ↦ hasDerivAt_neg_photonFluxProfile (hξ.trans ht))
-    (fun _ ↦ id_mul_besselK_one_sq_nonneg hξ) tendsto_neg_photonFluxProfile_atTop_nhds_zero
 
 /-- **The profile is the tail integral of `t K₁(t)²`** on `(0, ∞)`. The integrand is, up to
 normalisation, the impact-parameter differential flux of the same point source, so this identity is

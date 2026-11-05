@@ -43,15 +43,18 @@ whole real line need no domain hypothesis where `0` is harmless.
 * `EpsilonEridani.besselK_le_besselK`: `K_ν ≤ K_μ` when `|ν| ≤ |μ|`.
 * `EpsilonEridani.besselK_add_one_sub_besselK_sub_one`: `K_{ν+1} - K_{ν-1} = (2ν/x) K_ν`.
 * `EpsilonEridani.hasDerivAt_besselK`: `K_ν' = -(K_{ν-1} + K_{ν+1}) / 2`, and
-  `EpsilonEridani.hasDerivAt_besselK_neg_besselK_sub_one`: `K_ν' = -K_{ν-1} - (ν/x) K_ν`, with its
-  special cases `EpsilonEridani.hasDerivAt_besselK_zero`: `K₀' = -K₁` and
+  `EpsilonEridani.hasDerivAt_besselK_eq_neg_besselK_sub_one_sub_div`:
+  `K_ν' = -K_{ν-1} - (ν/x) K_ν`, with its special cases
+  `EpsilonEridani.hasDerivAt_besselK_zero`: `K₀' = -K₁` and
   `EpsilonEridani.hasDerivAt_besselK_one`: `K₁' = -K₀ - K₁/x`.
 * `EpsilonEridani.strictAntiOn_besselK`: `K_ν` is strictly decreasing on `(0, ∞)`.
 * `EpsilonEridani.besselK_le_exp_mul_besselK`: `K_ν(x) ≤ exp (-(x - x₀)) K_ν(x₀)` for
   `0 < x₀ ≤ x`.
 * `EpsilonEridani.exp_neg_div_lt_besselK_one`,
   `EpsilonEridani.besselK_one_le_exp_neg_mul`: `exp (-x) / x < K₁(x) ≤ exp (-x) (1 + 1 / x)`,
-  and hence `EpsilonEridani.tendsto_mul_besselK_one_nhdsGT_zero`: `x K₁(x) → 1` as `x → 0⁺`.
+  and hence `EpsilonEridani.tendsto_mul_besselK_one_nhdsGT_zero`: `x K₁(x) → 1` as `x → 0⁺`, and
+  `EpsilonEridani.integrableOn_id_mul_besselK_one_sq`: `t K₁(t)²` is integrable on `(ξ, ∞)` for
+  `ξ > 0`.
 * `EpsilonEridani.neg_log_sub_one_le_besselK`,
   `EpsilonEridani.besselK_zero_le_log_two_div_add_exp_neg_one`:
   `-log x - 1 ≤ K_ν(x)` for `x > 0` and `K₀(x) ≤ log (2/x) + e⁻¹` for `0 < x ≤ 2`, whence
@@ -283,7 +286,7 @@ theorem hasDerivAt_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
 
 /-- The derivative relation `K_ν'(x) = -K_{ν-1}(x) - (ν/x) K_ν(x)` (the first identity of
 DLMF 10.29.2), the form in which only the order below `ν` appears. -/
-theorem hasDerivAt_besselK_neg_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
+theorem hasDerivAt_besselK_eq_neg_besselK_sub_one_sub_div (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK ν) (-besselK (ν - 1) x - ν / x * besselK ν x) x :=
   (hasDerivAt_besselK ν hx).congr_deriv
     (by linear_combination (-1 / 2 : ℝ) * besselK_add_one_sub_besselK_sub_one ν hx)
@@ -291,12 +294,13 @@ theorem hasDerivAt_besselK_neg_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x)
 /-- The derivative relation `K₀' = -K₁` (DLMF 10.29.3), the case `ν = 0` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_zero {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK 0) (-besselK 1 x) x :=
-  (hasDerivAt_besselK_neg_besselK_sub_one 0 hx).congr_deriv (by rw [zero_sub, besselK_neg]; ring)
+  (hasDerivAt_besselK_eq_neg_besselK_sub_one_sub_div 0 hx).congr_deriv
+    (by rw [zero_sub, besselK_neg]; ring)
 
 /-- The derivative relation `K₁'(x) = -K₀(x) - K₁(x)/x`, the case `ν = 1` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_one {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK 1) (-besselK 0 x - besselK 1 x / x) x :=
-  (hasDerivAt_besselK_neg_besselK_sub_one 1 hx).congr_deriv (by rw [sub_self]; ring)
+  (hasDerivAt_besselK_eq_neg_besselK_sub_one_sub_div 1 hx).congr_deriv (by rw [sub_self]; ring)
 
 /-- `K_ν` is continuous on `(0, ∞)`. -/
 theorem continuousOn_besselK (ν : ℝ) : ContinuousOn (besselK ν) (Ioi 0) :=
@@ -386,6 +390,31 @@ theorem besselK_one_le_exp_neg_mul {x : ℝ} (hx : 0 < x) :
       _ = exp (-x) := by rw [integral_const_mul, integral_exp_neg_Ioi_zero, mul_one]
   rw [mul_add, mul_one_div]
   linarith
+
+/-- `t K₁(t)²` is integrable beyond any positive argument: by `besselK_one_le_exp_neg_mul` it is
+at most `exp (-2t) (t + 2 + 1/t)`, which is dominated by a multiple of `exp (-t)`. -/
+theorem integrableOn_id_mul_besselK_one_sq {ξ : ℝ} (hξ : 0 < ξ) :
+    IntegrableOn (fun t ↦ t * besselK 1 t ^ 2) (Ioi ξ) := by
+  refine ((integrableOn_exp_neg_Ioi ξ).const_mul (3 + 1 / ξ)).mono'
+    ((continuousOn_id.mul (((continuousOn_besselK 1).mono (Ioi_subset_Ioi hξ.le)).pow 2))
+      |>.aestronglyMeasurable measurableSet_Ioi)
+    ((ae_restrict_mem measurableSet_Ioi).mono fun t (ht : ξ < t) ↦ ?_)
+  have ht0 : 0 < t := hξ.trans ht
+  have he : exp (-t) * t ≤ 1 := by
+    have h1 : exp (-t) * exp t = 1 := by rw [← exp_add, neg_add_cancel, exp_zero]
+    nlinarith [add_one_le_exp t, exp_pos (-t)]
+  have he1 : exp (-t) ≤ 1 := exp_le_one_iff.2 (by linarith)
+  have hinv : 1 / t ≤ 1 / ξ := one_div_le_one_div_of_le hξ ht.le
+  rw [Real.norm_of_nonneg (by positivity)]
+  calc t * besselK 1 t ^ 2 ≤ t * (exp (-t) * (1 + 1 / t)) ^ 2 :=
+        mul_le_mul_of_nonneg_left
+          (pow_le_pow_left₀ (besselK_nonneg 1 t) (besselK_one_le_exp_neg_mul ht0) 2) ht0.le
+    _ = exp (-t) * (exp (-t) * t) + exp (-t) * (2 * exp (-t)) +
+        exp (-t) * (exp (-t) * (1 / t)) := by
+        field_simp
+        ring
+    _ ≤ exp (-t) * 1 + exp (-t) * (2 * 1) + exp (-t) * (1 * (1 / ξ)) := by gcongr
+    _ = (3 + 1 / ξ) * exp (-t) := by ring
 
 /-- `K₁` has a simple pole of unit residue at the origin: `x K₁(x) → 1` as `x → 0⁺`. -/
 theorem tendsto_mul_besselK_one_nhdsGT_zero :
