@@ -13,7 +13,7 @@ public import Mathlib
 This module introduces minimal fragmentation-function interfaces for
 semi-inclusive DIS extensions.
 
-It also provides basic lemmas about the `z`-moments `zMoment` (as interval integrals,
+It also provides basic lemmas about the `z`-moments `zMoment` (as interval integrals, congruence,
 non-negativity, and the moments of monomials `c zᵐ`), and the construction
 `indicatorUnitInterval`, which cuts a family off outside the unit interval and is used to build
 explicit fragmentation families satisfying `Assumptions`.
@@ -64,6 +64,14 @@ lemma zMoment_eq_intervalIntegral (D : Frag Hadron Flavor) (n : ℕ) (h : Hadron
 lemma zMoment_nonneg {D : Frag Hadron Flavor} {h : Hadron} {i : Flavor} {Q2 : ℝ}
     (hD : ∀ z ∈ Icc (0 : ℝ) 1, 0 ≤ D h i z Q2) (n : ℕ) : 0 ≤ zMoment D n h i Q2 :=
   setIntegral_nonneg measurableSet_Icc fun z hz => mul_nonneg (pow_nonneg hz.1 n) (hD z hz)
+
+/-- Two families that agree on the unit interval for one hadron and one flavour each have the
+same `z`-moments there. -/
+lemma zMoment_congr {Hadron' Flavor' : Type} {D : Frag Hadron Flavor} {D' : Frag Hadron' Flavor'}
+    {h : Hadron} {i : Flavor} {h' : Hadron'} {i' : Flavor'} {Q2 : ℝ}
+    (hD : Set.EqOn (D h i · Q2) (D' h' i' · Q2) (Icc 0 1)) (n : ℕ) :
+    zMoment D n h i Q2 = zMoment D' n h' i' Q2 :=
+  setIntegral_congr_fun measurableSet_Icc fun z hz => by simp only [hD hz]
 
 /-- The `k`-th moment over the unit interval of the monomial `c zᵐ` is `c / (k + m + 1)`. -/
 lemma integral_pow_mul_const_mul_pow (c : ℝ) (k m : ℕ) :
