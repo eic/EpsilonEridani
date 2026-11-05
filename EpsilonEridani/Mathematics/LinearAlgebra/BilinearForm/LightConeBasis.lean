@@ -33,10 +33,11 @@ antisymmetric tensor* `ε_{T μν} = ε_{μνρσ} n₊^ρ n₋^σ`, the bilinea
 `(u, v) ↦ ε(u, v, n₊, n₋)`. It is alternating, vanishes on the longitudinal subspace and only sees
 the transverse parts of its arguments. When `B` is nondegenerate its second index can be raised,
 giving the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
-`(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`; it kills `n₊` and `n₋`, takes
-values in the transverse subspace and is skew-adjoint. In four-dimensional Minkowski space, with
-`ε` the volume form, `E` is a rotation by a right angle of the transverse plane: it squares to minus
-the transverse projector (`EpsilonEridani.Relativity.LightConeBasis`).
+`(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`; it kills `n₊` and `n₋`, for a reflexive
+form it takes values in the transverse subspace, and for a symmetric form it is skew-adjoint. In
+four-dimensional Minkowski space, with `ε` the volume form, `E` is a rotation by a right angle
+of the transverse plane: it squares to minus the transverse projector
+(`EpsilonEridani.Relativity.LightConeBasis`).
 
 The material is stated for an arbitrary bilinear form over a commutative ring. The pairing is
 required in both orders, so no symmetry of `B` is needed for the decomposition itself; the
@@ -77,7 +78,8 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
   sees the transverse parts of its arguments.
 * `LightConeBasis.eq_transverseEpsRaise_iff`: `E u` is the unique vector `w` with
   `B w v = ε(u, v, n₊, n₋)` for all `v`.
-* `LightConeBasis.transverseEpsRaise_mem_transverse`: `E` takes values in the transverse subspace.
+* `LightConeBasis.transverseEpsRaise_mem_transverse`: for a reflexive form, `E` takes values in
+  the transverse subspace.
 * `LightConeBasis.isSkewAdjoint_transverseEpsRaise`: for a symmetric form `E` is skew-adjoint.
 
 ## References
