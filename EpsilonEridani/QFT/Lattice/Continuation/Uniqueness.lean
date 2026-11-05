@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Mathematics.Analysis.Analytic.Uniqueness
 public import EpsilonEridani.QFT.Lattice.Continuation.Basic
+public import EpsilonEridani.Relativity.Causality.BasicExtensions
 
 /-!
 # Uniqueness of the continuation from the Euclidean section
@@ -119,7 +120,7 @@ theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → 
     f (ofMinkowski v) = g (ofMinkowski v) := by
   -- The equal-time projection of `v` is a spacelike point of `U` on the Euclidean section.
   have hwE := ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection v
-  have hw := causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike hv
+  have hw := v.causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike hv
   exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace _ hw, hwE⟩ hfg (hspace v hv)
 
 end Continuation

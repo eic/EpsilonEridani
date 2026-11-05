@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import EpsilonEridani.Relativity.Causality.BasicExtensions
+public import Physlib.Relativity.Causality.Basic
 /-!
 
 # The Euclidean continuation of separations and the null-separation obstruction
@@ -52,9 +52,9 @@ so that the sign of the invariant square is never lost by rereading one as the o
   exactly those with vanishing time component; in particular a nonzero one is spacelike
   (`causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection`), and a nonzero vector that
   is not spacelike is not on it (`ofMinkowski_notMem_euclideanSection_of_ne_spaceLike`).
-* `causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike`: the equal-time projection of a
-  spacelike vector, which lies on the Euclidean section
-  (`ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection`), is again spacelike.
+* `ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection`: the equal-time projection of a
+  Minkowski vector lies on the Euclidean section. When the vector is spacelike the projection is
+  again spacelike (`Lorentz.Vector.causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike`).
 * `ofMinkowski_notMem_euclideanSection_of_lightLike`: a nonzero light-like Minkowski vector is not
   the continuation of any real Euclidean separation. This is the kinematic half of the statement
   that a matrix element at light-like separation, and so a parton distribution, is not the
@@ -337,17 +337,6 @@ component, lies on the Euclidean section. -/
 theorem ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection (v : Vector d) :
     ofMinkowski (v - v.timeComponent • basis (Sum.inl 0)) ∈ euclideanSection d :=
   ofMinkowski_mem_euclideanSection_iff.2 (by simp)
-
-/-- The equal-time projection `v - v⁰ e₀` of a spacelike vector is again spacelike. -/
-theorem causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike {v : Vector d}
-    (hv : causalCharacter v = .spaceLike) :
-    causalCharacter (v - v.timeComponent • basis (Sum.inl 0)) = .spaceLike := by
-  -- The projection is nonzero because the spatial part of a spacelike vector cannot vanish.
-  refine causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection
-    (ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection v) fun h => ?_
-  refine spatialPart_ne_zero_of_spaceLike v hv ?_
-  ext i
-  simpa [spatialPart_apply_eq_toCoord] using congrArg (fun u : Vector d => u (Sum.inr i)) h
 
 /-- A nonzero real Minkowski vector that is not spacelike is not the continuation of any real
 Euclidean separation. -/
