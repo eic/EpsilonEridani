@@ -31,9 +31,8 @@ evaluates them at the quantum numbers of one Standard Model generation: the weak
 weights `isospinWeight` of a doublet and the electric charges `Q = T³ + Y / 2` that the
 hypercharges of `GenerationAssignments.standardModel` give through `doubletElectricCharge` and
 `singletElectricCharge`, evaluated in `Electroweak.ElectricCharge`. The result is that the
-tabulated couplings `smTreeLevelCouplings` used by the parity-violating scattering interfaces
-are the values of the general coupling function at these quantum numbers, rather than
-independent data.
+tabulated couplings `smTreeLevelCouplings` of `Electroweak.Parameters` are the values of the
+general coupling function at these quantum numbers, rather than independent data.
 
 ## Main results
 
@@ -66,8 +65,8 @@ open GenerationAssignments FermionNeutralCurrentCouplings
 /-!
 ## The tabulated couplings are derived
 
-The couplings `smTreeLevelCouplings` of the parity-violating scattering interfaces were entered
-as data. They are the values of `ofQuantumNumbers` at the quantum numbers of one Standard Model
+The tabulated couplings `smTreeLevelCouplings` of `Electroweak.Parameters` were entered as
+data. They are the values of `ofQuantumNumbers` at the quantum numbers of one Standard Model
 generation: the weights `isospinWeight` and the charges of `Electroweak.ElectricCharge`.
 -/
 
@@ -76,30 +75,33 @@ component of the lepton doublet. -/
 theorem smTreeLevelCouplings_electron_eq_ofQuantumNumbers (s2 : ℝ) :
     (smTreeLevelCouplings s2).electron =
       ofQuantumNumbers (isospinWeight 1) (doubletElectricCharge (standardModel.YL : ℝ) 1) s2 := by
-  rw [isospinWeight_one, doubletElectricCharge_standardModel_YL_one, eq_ofQuantumNumbers_iff,
-    gL_def, gR_def, chiralCoupling_def, chiralCoupling_def]
-  simp only [smTreeLevelCouplings_electron]
-  constructor <;> ring
+  rw [isospinWeight_one, doubletElectricCharge_standardModel_YL_one]
+  ext
+  · rw [smTreeLevelCouplings_electron, ofQuantumNumbers_gV]
+    ring
+  · rw [smTreeLevelCouplings_electron, ofQuantumNumbers_gA]
 
 /-- The tabulated up-quark couplings are `ofQuantumNumbers` at the quantum numbers of the upper
 component of the quark doublet. -/
 theorem smTreeLevelCouplings_upType_eq_ofQuantumNumbers (s2 : ℝ) :
     (smTreeLevelCouplings s2).upType =
       ofQuantumNumbers (isospinWeight 0) (doubletElectricCharge (standardModel.YQ : ℝ) 0) s2 := by
-  rw [isospinWeight_zero, doubletElectricCharge_standardModel_YQ_zero, eq_ofQuantumNumbers_iff,
-    gL_def, gR_def, chiralCoupling_def, chiralCoupling_def]
-  simp only [smTreeLevelCouplings_upType]
-  constructor <;> ring
+  rw [isospinWeight_zero, doubletElectricCharge_standardModel_YQ_zero]
+  ext
+  · rw [smTreeLevelCouplings_upType, ofQuantumNumbers_gV]
+    ring
+  · rw [smTreeLevelCouplings_upType, ofQuantumNumbers_gA]
 
 /-- The tabulated down-quark couplings are `ofQuantumNumbers` at the quantum numbers of the lower
 component of the quark doublet. -/
 theorem smTreeLevelCouplings_downType_eq_ofQuantumNumbers (s2 : ℝ) :
     (smTreeLevelCouplings s2).downType =
       ofQuantumNumbers (isospinWeight 1) (doubletElectricCharge (standardModel.YQ : ℝ) 1) s2 := by
-  rw [isospinWeight_one, doubletElectricCharge_standardModel_YQ_one, eq_ofQuantumNumbers_iff,
-    gL_def, gR_def, chiralCoupling_def, chiralCoupling_def]
-  simp only [smTreeLevelCouplings_downType]
-  constructor <;> ring
+  rw [isospinWeight_one, doubletElectricCharge_standardModel_YQ_one]
+  ext
+  · rw [smTreeLevelCouplings_downType, ofQuantumNumbers_gV]
+    ring
+  · rw [smTreeLevelCouplings_downType, ofQuantumNumbers_gA]
 
 /-- **The tabulated neutral-current couplings are derived from the gauge quantum numbers.** At
 every `sin²θ_W`, the electron, up-quark and down-quark couplings of `smTreeLevelCouplings` are

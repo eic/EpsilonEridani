@@ -20,8 +20,8 @@ numbers: `chiralCoupling t3 q s2 = T³ - Q sin²θ_W` is the `Z` coupling of a c
 `FermionNeutralCurrentCouplings.ofQuantumNumbers t3 q s2` is the pair
 `g_V = T³ - 2 Q sin²θ_W`, `g_A = T³` of a fermion whose left-handed component has weak-isospin
 third component `t3`, whose right-handed component is a singlet, and whose electric charge is `q`.
-Its chiral couplings are `chiralCoupling t3 q s2` and `chiralCoupling 0 q s2`
-(`FermionNeutralCurrentCouplings.ofQuantumNumbers_gL`,
+Its chiral couplings are `chiralCoupling t3 q s2` and `-Q sin²θ_W`, the value
+`chiralCoupling 0 q s2` of a singlet (`FermionNeutralCurrentCouplings.ofQuantumNumbers_gL`,
 `FermionNeutralCurrentCouplings.ofQuantumNumbers_gR`), and
 `FermionNeutralCurrentCouplings.eq_ofQuantumNumbers_iff` characterises it by these two values.
 
@@ -54,6 +54,7 @@ structure Parameters where
   mW : ℝ
 
 /-- Effective vector/axial neutral-current couplings for one fermion species. -/
+@[ext]
 structure FermionNeutralCurrentCouplings where
   /-- Vector coupling. -/
   gV : ℝ
@@ -341,20 +342,18 @@ theorem ofQuantumNumbers_gL (t3 q s2 : ℝ) :
   rw [gL_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
   ring
 
-/-- The right-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a
-weak-isospin singlet of charge `q`. -/
+/-- The right-handed coupling of `ofQuantumNumbers t3 q s2` is `-Q sin²θ_W`, the `Z` coupling
+`chiralCoupling 0 q s2` of a weak-isospin singlet of charge `q` (`chiralCoupling_isospin_zero`). -/
 @[simp]
-theorem ofQuantumNumbers_gR (t3 q s2 : ℝ) :
-    (ofQuantumNumbers t3 q s2).gR = chiralCoupling 0 q s2 := by
-  rw [gR_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
+theorem ofQuantumNumbers_gR (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gR = -(q * s2) := by
+  rw [gR_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA]
   ring
 
 /-- A vector/axial coupling pair is that of the quantum numbers `(t3, q)` exactly when its
 left-handed coupling is the `Z` coupling of a field with these quantum numbers and its
-right-handed coupling is the `Z` coupling of a singlet of the same charge. -/
+right-handed coupling is `-Q sin²θ_W`, the `Z` coupling of a singlet of the same charge. -/
 theorem eq_ofQuantumNumbers_iff {c : FermionNeutralCurrentCouplings} {t3 q s2 : ℝ} :
-    c = ofQuantumNumbers t3 q s2 ↔
-      c.gL = chiralCoupling t3 q s2 ∧ c.gR = chiralCoupling 0 q s2 := by
+    c = ofQuantumNumbers t3 q s2 ↔ c.gL = chiralCoupling t3 q s2 ∧ c.gR = -(q * s2) := by
   rw [ext_gL_gR_iff, ofQuantumNumbers_gL, ofQuantumNumbers_gR]
 
 /-- An electrically neutral fermion couples to the `Z` only through its left-handed component:
@@ -367,7 +366,7 @@ theorem ofQuantumNumbers_charge_zero (t3 s2 : ℝ) :
 end FermionNeutralCurrentCouplings
 
 /-- Standard-model tree-level neutral-current couplings at a given `sin^2(theta_W)`. -/
-def smTreeLevelCouplings (s2 : ℝ) : NeutralCurrentCouplings where
+@[no_expose] def smTreeLevelCouplings (s2 : ℝ) : NeutralCurrentCouplings where
   electron := { gV := -1 / 2 + 2 * s2, gA := -1 / 2 }
   upType := { gV := 1 / 2 - 4 / 3 * s2, gA := 1 / 2 }
   downType := { gV := -1 / 2 + 2 / 3 * s2, gA := -1 / 2 }
@@ -401,13 +400,13 @@ def c1Down (s2 : ℝ) : ℝ :=
 lemma c1Up_eq_two_mul_gA_mul_gV (s2 : ℝ) :
     c1Up s2
       = 2 * (smTreeLevelCouplings s2).electron.gA * (smTreeLevelCouplings s2).upType.gV := by
-  simp only [c1Up, smTreeLevelCouplings]
+  simp only [c1Up, smTreeLevelCouplings_electron, smTreeLevelCouplings_upType]
   ring
 
 lemma c1Down_eq_two_mul_gA_mul_gV (s2 : ℝ) :
     c1Down s2
       = 2 * (smTreeLevelCouplings s2).electron.gA * (smTreeLevelCouplings s2).downType.gV := by
-  simp only [c1Down, smTreeLevelCouplings]
+  simp only [c1Down, smTreeLevelCouplings_electron, smTreeLevelCouplings_downType]
   ring
 
 /-- Weak charge of the electron, `Q_W^e = 1 - 4 sin^2(theta_W)`. -/
@@ -432,7 +431,7 @@ lemma electronWeakCharge_eq_four_mul_gA_mul_gV (s2 : ℝ) :
     electronWeakCharge s2
       = 4 * (smTreeLevelCouplings s2).electron.gA
           * (smTreeLevelCouplings s2).electron.gV := by
-  simp only [electronWeakCharge, smTreeLevelCouplings]
+  simp only [electronWeakCharge, smTreeLevelCouplings_electron]
   ring
 
 /-- At tree level the proton weak charge equals `1 - 4 sin^2(theta_W)`. -/
@@ -476,7 +475,7 @@ lemma electronWeakCharge_eq_zero_iff (s2 : ℝ) :
 
 lemma electron_gV_eq_zero_iff (s2 : ℝ) :
     (smTreeLevelCouplings s2).electron.gV = 0 ↔ s2 = 1 / 4 := by
-  simp only [smTreeLevelCouplings]
+  simp only [smTreeLevelCouplings_electron]
   constructor
   · intro h
     linarith
