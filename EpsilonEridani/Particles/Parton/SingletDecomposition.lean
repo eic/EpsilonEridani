@@ -144,6 +144,7 @@ theorem mem_singletSector_iff_exists_forall [DecidableEq Flavor] {v : Species Fl
     cases s <;> simp [ha]
 
 /-- Charge conjugation preserves the singlet sector. -/
+@[simp]
 theorem comp_conj_mem_singletSector [DecidableEq Flavor] {v : Species Flavor → R} :
     v ∘ conj ∈ singletSector ↔ v ∈ singletSector := by
   simp only [mem_singletSector_iff_exists_forall, Function.comp_apply, conj_quark, conj_antiquark]
@@ -180,6 +181,7 @@ theorem singlet_apply (v : Species Flavor → R) :
     singlet v = ∑ i, (v (quark i) + v (antiquark i)) := (rfl)
 
 /-- The quark singlet is invariant under charge conjugation of the vector. -/
+@[simp]
 theorem singlet_comp_conj (v : Species Flavor → R) : singlet (v ∘ conj) = singlet v := by
   simp only [singlet_apply, Function.comp_apply, conj_quark, conj_antiquark]
   exact Finset.sum_congr rfl fun i _ => add_comm _ _
