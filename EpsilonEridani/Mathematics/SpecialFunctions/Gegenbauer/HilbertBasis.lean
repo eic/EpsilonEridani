@@ -59,6 +59,8 @@ decouples into the independent evolution of its coefficients.
 * `EpsilonEridani.inner_normalizedGegenbauerThreeHalvesLp_eq_integral`: the inner product against
   the `n`-th mode — the `n`-th Gegenbauer coefficient — is the weighted integral.
 * `EpsilonEridani.orthonormal_normalizedGegenbauerThreeHalvesLp`: the modes are orthonormal.
+* `EpsilonEridani.integral_normalizedGegenbauerThreeHalves_mul_normalizedGegenbauerThreeHalves`:
+  the same orthonormality as a weighted integral of the real modes, read off the `L²` layer.
 * `EpsilonEridani.orthogonal_span_normalizedGegenbauerThreeHalvesLp_eq_bot`: completeness.
 * `EpsilonEridani.gegenbauerThreeHalvesHilbertBasis_repr_apply`: the `n`-th coordinate of the
   resulting isometry onto `ℓ²(ℕ)` is the inner product with the `n`-th mode.
@@ -73,6 +75,13 @@ decouples into the independent evolution of its coefficients.
   `TauCeti.Probability.Distributions.Gaussian.Hermite.Basis`, the instance of both at the Hermite
   family, which transports its basis onto a named measure by `cast` where this file uses
   `TauCeti.castLpₗᵢ`.
+* `TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Envelope`, the instance of the same
+  bridge at a compact weighted measure on `(-1, 1]` for an exact-degree family, whose lemma order
+  and proof plan this file adapts: the exponential moment of the weight
+  (`TauCeti.integrable_exp_mul_abs_chebyshevWeight`), the orthogonality relation restated against
+  the unweighted measure (`TauCeti.integral_eval_T_real_mul_eval_T_real_mul_chebyshevWeight`), the
+  private `MemLp` obligation (`TauCeti.memLp_normalizedChebyshevT_weighted`), the basis
+  (`TauCeti.chebyshevTEnvelopeHilbertBasis`) and its anti-vacuity pin.
 * `TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`, from which the shape of the
   mode layer — `TauCeti.normalizedChebyshevTLp` with its representative and inner-product lemmas —
   is adapted.
@@ -217,6 +226,20 @@ theorem inner_normalizedGegenbauerThreeHalvesLp {𝕜 : Type*} [RCLike 𝕜] (m 
     inner 𝕜 (normalizedGegenbauerThreeHalvesLp 𝕜 m) (normalizedGegenbauerThreeHalvesLp 𝕜 n) =
       if m = n then 1 else 0 :=
   orthonormal_iff_ite.mp orthonormal_normalizedGegenbauerThreeHalvesLp m n
+
+/-- **Orthonormality of the normalized Gegenbauer modes** as a weighted integral:
+`∫ C̃_m C̃_n d(gegenbauerThreeHalvesMeasure) = δ_{mn}`. This is the real case of
+`inner_normalizedGegenbauerThreeHalvesLp`, read through
+`inner_normalizedGegenbauerThreeHalvesLp_eq_integral`. -/
+@[simp]
+theorem integral_normalizedGegenbauerThreeHalves_mul_normalizedGegenbauerThreeHalves (m n : ℕ) :
+    ∫ x, normalizedGegenbauerThreeHalves m x * normalizedGegenbauerThreeHalves n x
+      ∂gegenbauerThreeHalvesMeasure = if m = n then 1 else 0 := by
+  rw [← inner_normalizedGegenbauerThreeHalvesLp (𝕜 := ℝ) m n,
+    inner_normalizedGegenbauerThreeHalvesLp_eq_integral]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_normalizedGegenbauerThreeHalvesLp (𝕜 := ℝ) n] with x hx
+  simp [hx]
 
 /-- **Completeness of the Gegenbauer family.** The orthogonal complement of the span of the
 normalized modes is trivial, because they are the vectors of a Hilbert basis, whose span is
