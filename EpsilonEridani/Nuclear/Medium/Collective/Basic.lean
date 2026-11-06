@@ -273,11 +273,10 @@ theorem anisotropyCoeff_neg (μ : Measure (AddCircle T)) (n : ℤ) :
 
 /-- The modulus of the anisotropy coefficient of harmonic `n` is at most the total mass of the
 distribution. -/
-theorem norm_anisotropyCoeff_le (μ : Measure (AddCircle T)) [IsFiniteMeasure μ] (n : ℤ) :
+theorem norm_anisotropyCoeff_le (μ : Measure (AddCircle T)) (n : ℤ) :
     ‖anisotropyCoeff μ n‖ ≤ μ.real Set.univ := by
   rw [anisotropyCoeff_def]
-  exact (norm_integral_le_of_norm_le_const (C := 1) (Filter.Eventually.of_forall
-    fun x => (norm_fourier_eval n x).le)).trans_eq (by simp)
+  exact (norm_integral_le_integral_norm _).trans_eq (by simp)
 
 /-- The coefficients of a probability distribution have modulus at most `1`. -/
 theorem norm_anisotropyCoeff_le_one (μ : Measure (AddCircle T)) [IsProbabilityMeasure μ]
