@@ -16,8 +16,8 @@ This module introduces tensor objects for inclusive DIS:
 - A leptonic tensor model built from incoming and outgoing lepton momenta, and its extension
   to a vector/axial-vector exchange, whose parity-odd part is the contraction
   `ε(·, ·, k, k')` of a supplied alternating four-form `ε`.
-- Reflections of a bilinear form, used as concrete elements of the stabilizer of the
-  kinematics inside the `g`-isometry group.
+- The reflections of `Kinematics.Bilin.reflect`, used as concrete elements of the stabilizer
+  of the kinematics inside the `g`-isometry group (`reflect_isKinematicStabilizer`).
 - An abstract hadronic tensor with explicit Lorentz-covariance, symmetry and
   current-conservation assumptions.
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
