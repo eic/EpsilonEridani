@@ -34,9 +34,10 @@ and proves, with no mass or high-energy approximation,
 * that `ξ`, `β`, `t` and `M_X²` depend on the event only through `q`, `P` and `P'`, and hence not
   on the inelasticity `y` (`xi_congr`, `beta_congr`, `tMom_congr`, `MX2_congr`).
 
-The event is also exclusive kinematics with `X` as the produced system (`toExclKinematics`), and
-`t` and `Q²` are the exclusive invariants `ExclKinematics.tMom` and `ExclKinematics.Q2` of that
-event (`tMom_toExclKinematics`, `Q2_toExclKinematics`).
+Read as exclusive kinematics through the inclusive-to-exclusive bridge
+`Exclusive.Kinematics.toExclKinematics`, the produced system is `X`
+(`toExclKinematics_qPrime_eq_pX`) and `t` is the exclusive invariant `ExclKinematics.tMom` of
+that event (`tMom_toExclKinematics`).
 
 As elsewhere in the DIS kinematics layer, Lorentz products are taken with respect to an abstract
 bilinear form `g`, assumed symmetric where needed, and real division follows Lean's convention
@@ -60,7 +61,8 @@ namespace Diffractive
 namespace Kinematics
 
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
-open EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics (ExclKinematics)
+open EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics (ExclKinematics toExclKinematics
+  toExclKinematics_p toExclKinematics_pPrime toExclKinematics_qPrime)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
@@ -141,44 +143,13 @@ lemma p_add_q_eq_pPrime_add_pX (K : DisKinematics V) : K.p + K.q = K.pPrime + pX
   rw [pX, deltaLost]
   abel
 
-/-- A diffractive event as exclusive kinematics with the diffractive system `X` in the role of the
-produced particle, `q' = p_X`, and given azimuthal angles `phiL`, `phiH` of the lepton and hadron
-planes. This is the bridge to the momentum-transfer layer of `Exclusive.Kinematics`. -/
-def toExclKinematics (K : DisKinematics V) (phiL phiH : ℝ) : ExclKinematics V where
-  p := K.p
-  pPrime := K.pPrime
-  k := K.k
-  kPrime := K.kPrime
-  q := K.q
-  qPrime := pX K
-  phiL := phiL
-  phiH := phiH
-  hqLepton := K.hq
-  hMomentum := p_add_q_eq_pPrime_add_pX K
-
-section toExclKinematics
-
-variable (K : DisKinematics V) (phiL phiH : ℝ)
-
-omit [Module ℝ V]
-
-@[simp] lemma toExclKinematics_p : (toExclKinematics K phiL phiH).p = K.p := (rfl)
-
-@[simp] lemma toExclKinematics_pPrime : (toExclKinematics K phiL phiH).pPrime = K.pPrime := (rfl)
-
-@[simp] lemma toExclKinematics_k : (toExclKinematics K phiL phiH).k = K.k := (rfl)
-
-@[simp] lemma toExclKinematics_kPrime : (toExclKinematics K phiL phiH).kPrime = K.kPrime := (rfl)
-
-@[simp] lemma toExclKinematics_q : (toExclKinematics K phiL phiH).q = K.q := (rfl)
-
-@[simp] lemma toExclKinematics_qPrime : (toExclKinematics K phiL phiH).qPrime = pX K := (rfl)
-
-@[simp] lemma toExclKinematics_phiL : (toExclKinematics K phiL phiH).phiL = phiL := (rfl)
-
-@[simp] lemma toExclKinematics_phiH : (toExclKinematics K phiL phiH).phiH = phiH := (rfl)
-
-end toExclKinematics
+omit [Module ℝ V] in
+/-- In the exclusive reading of a diffractive event (`toExclKinematics`), the produced system is
+the diffractive system `X`: `q' = p_X`. -/
+lemma toExclKinematics_qPrime_eq_pX (K : DisKinematics V) (phiL phiH : ℝ) :
+    (toExclKinematics K phiL phiH).qPrime = pX K := by
+  rw [toExclKinematics_qPrime, pX, deltaLost]
+  abel
 
 omit [Module ℝ V] in
 /-- The exclusive transfer `P' - P` of the bridged event is `-Δ`. -/
@@ -193,12 +164,6 @@ lemma tMom_toExclKinematics (g : Bilin V) (K : DisKinematics V) (phiL phiH : ℝ
     (toExclKinematics K phiL phiH).tMom g = tMom g K := by
   simp only [ExclKinematics.tMom, delta_toExclKinematics, map_neg, LinearMap.neg_apply, neg_neg,
     tMom]
-
-/-- The exclusive hard scale of the bridged event is the inclusive `Q² = -q²`. -/
-@[simp]
-lemma Q2_toExclKinematics (g : Bilin V) (K : DisKinematics V) (phiL phiH : ℝ) :
-    (toExclKinematics K phiL phiH).Q2 g = K.Q2 g := by
-  rw [ExclKinematics.Q2, DisKinematics.Q2, toExclKinematics_q]
 
 /-- Expansion of the diffractive mass: `M_X² = 2 Δ·q - Q² + t`. -/
 lemma MX2_eq_two_mul_apply_deltaLost_q_sub_Q2_add_tMom (g : Bilin V) (hg : g.IsSymm)
