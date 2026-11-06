@@ -749,7 +749,7 @@ lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinem
 
 /-- **Orthogonal splitting along `q` and `p_T`.** When `q` and `p_T` are non-null, every vector
 splits as `v = a p_T + b q + u` with `u` `g`-orthogonal to `q` and to `p_T`. This discharges the
-`SpectatorAssumptions.span` condition; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
+`SpectatorSplitting.span` condition; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
 `b = (q·v) / (q·q)`. -/
 lemma exists_orthogonal_spectator (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (hqq : g K.q K.q ≠ 0) (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) (v : V) :
