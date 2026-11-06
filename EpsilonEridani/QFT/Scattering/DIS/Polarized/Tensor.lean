@@ -50,8 +50,8 @@ linearly independent, `M² > 0` and `p·q ≠ 0`, then `fromG1G2` determines `g�
 An abstract `V` carrying only a bilinear form has no volume form, so the four-form `ε` is
 explicit data, as for `Tensors.Leptonic.lMuNuOdd`. Replacing `ε` by `-ε` flips the sign
 of both structures (`spinStructureOne_neg`, `spinStructureTwo_neg`) and of `fromG1G2`
-(`fromG1G2_neg`), hence of every asymmetry built from them, so these signs are meaningful only
-once `ε` is fixed.
+(`fromG1G2_neg`), hence of every asymmetry built from them (`IsG1G2Decomposition.neg`), so
+these signs are meaningful only once `ε` is fixed.
 
 ## Not included
 
@@ -334,6 +334,11 @@ theorem conserved_right (h : IsG1G2Decomposition ε K G W) (v : V) : W v K.q = 0
 decomposes with the same structure functions at the reversed kinematics. -/
 theorem reverse (h : IsG1G2Decomposition ε K G W) : IsG1G2Decomposition ε K.reverse G (-W) := by
   rw [IsG1G2Decomposition, fromG1G2_reverse, h.eq, PolarizedKinematics.reverse_toDisKinematics]
+
+/-- Under orientation reversal `ε ↦ -ε` a tensor decomposing on `E₁`, `E₂` is negated: `-W`
+decomposes with the same structure functions at the negated orientation. -/
+theorem neg (h : IsG1G2Decomposition ε K G W) : IsG1G2Decomposition (-ε) K G (-W) := by
+  rw [IsG1G2Decomposition, fromG1G2_neg, h.eq]
 
 end IsG1G2Decomposition
 
