@@ -320,15 +320,6 @@ lemma IsTimeReversalInvariant.map_re_map_ofReal {ρ : SpinDensityC}
   ext i j
   simp [Complex.ext_iff, (ρ.isTimeReversalInvariant_iff_forall_im_eq_zero.mp h) i j]
 
-/-- When transversity is real, the real `h1` of the real part is transversity itself.
-Transversity is real under time-reversal invariance
-(`IsTimeReversalInvariant.im_transversity`) and under parity invariance
-(`IsParityInvariant.im_transversity`). -/
-lemma ofReal_h1_re {ρ : SpinDensityC} (h : ρ.transversity.im = 0) :
-    (PDF.h1 ρ.re : ℂ) = ρ.transversity := by
-  rw [h1_re, Complex.ext_iff]
-  exact ⟨Complex.ofReal_re _, by simp [h]⟩
-
 end SpinDensityC
 
 namespace SpinDensity
