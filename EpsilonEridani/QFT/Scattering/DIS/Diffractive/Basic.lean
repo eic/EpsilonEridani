@@ -5,7 +5,7 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
-public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 /-!
 
 # Diffractive Deep Inelastic Scattering Kinematics
@@ -13,14 +13,13 @@ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
 This module introduces the kinematics of diffractive DIS: events in which the target either
 stays intact or dissociates into a low-mass system, identified by a large rapidity gap.
 
-A diffractive event `P + q = P' + X` has a distinguished outgoing target-like momentum `P'`.
-The variables `ξ`, `β` and `M_Y²` are functions of `q`, `P`, `P'` alone, so they are stated on the
-inclusive record `DisKinematics`, whose `pPrime` field carries `P'`; the identity `x = ξ β` is
-then a statement about the inclusive Bjorken variable `DisKinematics.xBj` of the same record. The
-mass `M_X²` of the remaining system `X` is stated on the exclusive-type record `ExclKinematics`,
-whose `qPrime` field carries the momentum of `X` and whose momentum-conservation law gives the
-defining form `M_X² = (q + Δ)²`. The invariant momentum transfer `t = Δ²` is
-`ExclKinematics.tMom`.
+A diffractive event `P + q = P' + X` has a distinguished outgoing target-like momentum `P'`;
+write `Δ = P - P'`. The variables `ξ`, `β`, `M_X²` and `M_Y²` are functions of `q`, `P`, `P'`
+alone, so they are all stated on the inclusive record `DisKinematics`, whose `pPrime` field
+carries `P'`; the identity `x = ξ β` is then a statement about the inclusive Bjorken variable
+`DisKinematics.xBj` of the same record. By the momentum conservation `P + q = P' + q_X` of the
+event, the remaining system `X` carries the momentum `q_X = q + Δ`, and its invariant mass
+squared `M_X² = (q + Δ)²` is stated on the same record.
 
 Following the conventions of [Wolf, *Rept. Prog. Phys.* **73** (2010) 116202] and
 the EIC Yellow Report §7.1.6.
@@ -31,11 +30,10 @@ the EIC Yellow Report §7.1.6.
   `Δ = P - P'`.
 * `Diffractive.beta`: the parton's fraction of the exchange, `β = Q² / (2 Δ·q)`.
 * `Diffractive.MY2`: the invariant mass squared `M_Y² = P'²` of the target-like system.
-* `Diffractive.MX2`: the invariant mass squared of the diffractive system `X`.
+* `Diffractive.MX2`: the invariant mass squared `M_X² = (q + Δ)²` of the diffractive system `X`.
 
 ## Main results
 
-* `Diffractive.MX2_eq_q_sub_delta_sq`: `M_X² = (q + Δ)²`.
 * `Diffractive.xBj_eq_xi_mul_beta`: the key identity `x = ξ β` relating the inclusive Bjorken
   variable to the diffractive variables, as an exact cancellation requiring no mass or
   high-energy approximation.
@@ -55,7 +53,6 @@ namespace DIS
 namespace Diffractive
 
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
-open EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics (ExclKinematics)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
@@ -92,19 +89,14 @@ def MY2 (g : Bilin V) (K : DisKinematics V) : ℝ := g K.pPrime K.pPrime
 lemma MY2_def (g : Bilin V) (K : DisKinematics V) :
     MY2 g K = g K.pPrime K.pPrime := (rfl)
 
-/-- The invariant mass squared of the diffractive system `X`, `M_X² = q'²`: by the momentum
-conservation `p + q = p' + q'` of `ExclKinematics.hMomentum` the remaining system carries the
-momentum `q' = q + Δ` (see `MX2_eq_q_sub_delta_sq`). -/
-def MX2 (g : Bilin V) (K : ExclKinematics V) : ℝ := g K.qPrime K.qPrime
+/-- The invariant mass squared of the diffractive system `X`, `M_X² = (q + Δ)²` with
+`Δ = P - P'`: by the momentum conservation `P + q = P' + q_X` of the diffractive event, the
+system `X` carries the momentum `q_X = q + Δ`. -/
+def MX2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
+  g (K.q + (K.p - K.pPrime)) (K.q + (K.p - K.pPrime))
 
-lemma MX2_def (g : Bilin V) (K : ExclKinematics V) :
-    MX2 g K = g K.qPrime K.qPrime := (rfl)
-
-/-- The invariant mass squared of the diffractive system in its defining form `M_X² = (q + Δ)²`,
-with `Δ = P - P' = -ExclKinematics.delta`. -/
-lemma MX2_eq_q_sub_delta_sq (g : Bilin V) (K : ExclKinematics V) :
-    MX2 g K = g (K.q - K.delta) (K.q - K.delta) := by
-  rw [MX2_def, ExclKinematics.delta_eq_q_sub_qPrime, sub_sub_cancel]
+lemma MX2_def (g : Bilin V) (K : DisKinematics V) :
+    MX2 g K = g (K.q + (K.p - K.pPrime)) (K.q + (K.p - K.pPrime)) := (rfl)
 
 /-!
 ### The key identity: `x = ξ β`
