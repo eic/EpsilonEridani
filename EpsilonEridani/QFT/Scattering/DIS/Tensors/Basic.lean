@@ -683,32 +683,9 @@ theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSy
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one
 pair does the reverse. -/
-structure UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
-  /-- First slot of the probe pair isolating `F1`. -/
-  vF1 : V
-  /-- Second slot of the probe pair isolating `F1`. -/
-  wF1 : V
-  /-- The `F1` probe pair sees the transverse projector. -/
-  transverse_nonzero : transverseMetric g K vF1 wF1 ≠ 0
-  /-- The `F1` probe pair does not see `p_T ⊗ p_T`. -/
-  pT_outer_zero : g (pTransverse g K) vF1 * g (pTransverse g K) wF1 = 0
-  /-- First slot of the probe pair isolating `F2`. -/
-  vF2 : V
-  /-- Second slot of the probe pair isolating `F2`. -/
-  wF2 : V
-  /-- The `F2` probe pair does not see the transverse projector. -/
-  transverse_zero : transverseMetric g K vF2 wF2 = 0
-  /-- The `F2` probe pair sees `p_T ⊗ p_T`. -/
-  pT_outer_nonzero : g (pTransverse g K) vF2 * g (pTransverse g K) wF2 ≠ 0
-
-/-- With probe vectors separating them, the transverse projector and `p_T ⊗ p_T` are linearly
-independent. -/
-private lemma linearIndependent_of_uniquenessAssumptions (g : Bilin V) (K : DisKinematics V)
-    (hU : UniquenessAssumptions g K) :
-    LinearIndependent ℝ
-      ![transverseMetric g K, Bilin.rankOne g (pTransverse g K) (pTransverse g K)] :=
-  LinearMap.linearIndependent_pair_of_probes hU.transverse_nonzero hU.pT_outer_zero
-    hU.transverse_zero hU.pT_outer_nonzero
+abbrev UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type _ :=
+  LinearMap.SeparatingProbes (transverseMetric g K)
+    (Bilin.rankOne g (pTransverse g K) (pTransverse g K))
 
 /-- With probe vectors separating the two basis structures, a decomposition with
 `(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this is the
@@ -718,14 +695,13 @@ lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
     fromF1F2 g K F1 F2 ≠ 0 := by
   intro hzero
   simp only [fromF1F2] at hzero
-  obtain ⟨h1, h2⟩ := (linearIndependent_of_uniquenessAssumptions g K hU).eq_of_pair
+  obtain ⟨h1, h2⟩ := hU.linearIndependent.eq_of_pair
     (s' := 0) (t' := 0) (hzero.trans (by simp))
   exact h.elim (· h1) (· h2)
 
 /-- **Uniqueness of the structure functions.** Given one probe pair that sees the transverse
 projector but not `p_T ⊗ p_T`, and one pair that does the reverse, the coefficients of a
-decomposition are pinned. Ported unchanged from the non-transverse basis: the argument only
-uses non-degeneracy of the two structures, so only the witness fields are renamed. -/
+decomposition are pinned. -/
 lemma decomposition_unique
     (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (F1 F2 F1' F2' : ℝ)
@@ -737,7 +713,7 @@ lemma decomposition_unique
     fun hab => LinearMap.ext₂ fun v w => by rw [hab, fromF1F2_apply]
   have h := (hfrom hW).symm.trans (hfrom hW')
   simp only [fromF1F2] at h
-  exact (linearIndependent_of_uniquenessAssumptions g K hU).eq_of_pair h
+  exact hU.linearIndependent.eq_of_pair h
 
 /-!
 
@@ -996,14 +972,14 @@ lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
 Without a witness of this kind, `decomposition_unique` and `fromF1F2_ne_zero` were
 conditioned on a structure not known to be inhabited. -/
 def uniquenessWit : UniquenessAssumptions gWit kWit where
-  vF1 := (0, 0, 1)
-  wF1 := (0, 0, 1)
-  transverse_nonzero := by rw [transverseMetric_apply]; norm_num
-  pT_outer_zero := by simp only [pTransverse_pairing]; norm_num
-  vF2 := (1, 0, 1)
-  wF2 := (1, 0, 1)
-  transverse_zero := by rw [transverseMetric_apply]; norm_num
-  pT_outer_nonzero := by simp only [pTransverse_pairing]; norm_num
+  v₁ := (0, 0, 1)
+  w₁ := (0, 0, 1)
+  apply₁_ne_zero := by rw [transverseMetric_apply]; norm_num
+  apply₂_eq_zero := by simp only [Bilin.rankOne_apply, pTransverse_pairing]; norm_num
+  v₂ := (1, 0, 1)
+  w₂ := (1, 0, 1)
+  apply₁_eq_zero := by rw [transverseMetric_apply]; norm_num
+  apply₂_ne_zero := by simp only [Bilin.rankOne_apply, pTransverse_pairing]; norm_num
 
 /-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
 already `gWit`-orthogonal to `q`. -/

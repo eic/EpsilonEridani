@@ -194,12 +194,12 @@ theorem isAlt_spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Polarize
 /-- Reversing the orientation `ε ↦ -ε` negates `E₁`. -/
 @[simp] theorem spinStructureOne_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
     spinStructureOne (-ε) K = -spinStructureOne ε K :=
-  ε.bilinMap_neg _
+  ε.neg_bilinMap _
 
 /-- Reversing the orientation `ε ↦ -ε` negates `E₂`. -/
 @[simp] theorem spinStructureTwo_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
     spinStructureTwo (-ε) K = -spinStructureTwo ε K :=
-  ε.bilinMap_neg _
+  ε.neg_bilinMap _
 
 /-! ### The tensor built from `g₁`, `g₂` -/
 
@@ -347,31 +347,15 @@ end IsG1G2Decomposition
 /-- Probe vectors separating the two covariant structures: one pair sees `E₁` but not `E₂`,
 and one pair does the reverse. This is the antisymmetric counterpart of
 `Tensors.Hadronic.UniquenessAssumptions`. -/
-structure SpinUniquenessAssumptions (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
-    Type where
-  /-- First slot of the probe pair isolating `E₁`. -/
-  vOne : V
-  /-- Second slot of the probe pair isolating `E₁`. -/
-  wOne : V
-  /-- The `E₁` probe pair sees `E₁`. -/
-  structureOne_ne_zero : spinStructureOne ε K vOne wOne ≠ 0
-  /-- The `E₁` probe pair does not see `E₂`. -/
-  structureTwo_eq_zero : spinStructureTwo ε K vOne wOne = 0
-  /-- First slot of the probe pair isolating `E₂`. -/
-  vTwo : V
-  /-- Second slot of the probe pair isolating `E₂`. -/
-  wTwo : V
-  /-- The `E₂` probe pair does not see `E₁`. -/
-  structureOne_eq_zero : spinStructureOne ε K vTwo wTwo = 0
-  /-- The `E₂` probe pair sees `E₂`. -/
-  structureTwo_ne_zero : spinStructureTwo ε K vTwo wTwo ≠ 0
+abbrev SpinUniquenessAssumptions (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    Type _ :=
+  LinearMap.SeparatingProbes (spinStructureOne ε K) (spinStructureTwo ε K)
 
 /-- With probe vectors separating them, `E₁` and `E₂` are linearly independent. -/
 theorem linearIndependent_spinStructure (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
     (hU : SpinUniquenessAssumptions ε K) :
     LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K] :=
-  LinearMap.linearIndependent_pair_of_probes hU.structureOne_ne_zero hU.structureTwo_eq_zero
-    hU.structureOne_eq_zero hU.structureTwo_ne_zero
+  hU.linearIndependent
 
 /-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, the
 tensor `fromG1G2` determines its structure-function values. -/
@@ -494,14 +478,14 @@ private lemma spinStructureTwo_probeTwo_eq_one :
 /-- **`SpinUniquenessAssumptions` is satisfiable.** The pair `(p + S, e₁)` sees only `E₁` and
 the pair `(e₁, S)` sees only `E₂`. -/
 def spinUniquenessWit : SpinUniquenessAssumptions detRowAlternating kWit4 where
-  vOne := probeOne.1
-  wOne := probeOne.2
-  structureOne_ne_zero := by rw [spinStructureOne_probeOne_eq_one]; exact one_ne_zero
-  structureTwo_eq_zero := spinStructureTwo_probeOne_eq_zero
-  vTwo := probeTwo.1
-  wTwo := probeTwo.2
-  structureOne_eq_zero := spinStructureOne_probeTwo_eq_zero
-  structureTwo_ne_zero := by rw [spinStructureTwo_probeTwo_eq_one]; exact one_ne_zero
+  v₁ := probeOne.1
+  w₁ := probeOne.2
+  apply₁_ne_zero := by rw [spinStructureOne_probeOne_eq_one]; exact one_ne_zero
+  apply₂_eq_zero := spinStructureTwo_probeOne_eq_zero
+  v₂ := probeTwo.1
+  w₂ := probeTwo.2
+  apply₁_eq_zero := spinStructureOne_probeTwo_eq_zero
+  apply₂_ne_zero := by rw [spinStructureTwo_probeTwo_eq_one]; exact one_ne_zero
 
 /-- On the witness, `E₁` and `E₂` are linearly independent. -/
 theorem linearIndependent_spinStructure_kWit4 :

@@ -28,7 +28,7 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
 - `AlternatingMap.isAlt_bilinMap`: `f.bilinMap m` is alternating.
 - `AlternatingMap.bilinMap_apply_left_eq_zero`, `AlternatingMap.bilinMap_apply_right_eq_zero`:
   it vanishes when either argument is one of the fixed vectors `m i`.
-- `AlternatingMap.bilinMap_neg`, `AlternatingMap.bilinMap_update_neg`,
+- `AlternatingMap.neg_bilinMap`, `AlternatingMap.bilinMap_update_neg`,
   `AlternatingMap.bilinMap_pair_neg_snd`: it changes sign when `f` or one fixed vector is negated.
 - `AlternatingMap.bilinMap_update_smul`, `AlternatingMap.bilinMap_update_sub`,
   `AlternatingMap.bilinMap_pair_smul_snd`, `AlternatingMap.bilinMap_pair_sub_snd`: it is linear in
@@ -112,7 +112,7 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- Negating the alternating map negates its bilinear map. -/
 @[simp]
-theorem bilinMap_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
+theorem neg_bilinMap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
     (-f).bilinMap m = -f.bilinMap m :=
   LinearMap.ext₂ fun v w => by
     simp only [bilinMap_apply, AlternatingMap.neg_apply, LinearMap.neg_apply]
