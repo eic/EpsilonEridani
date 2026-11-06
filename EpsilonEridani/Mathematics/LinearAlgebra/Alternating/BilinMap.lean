@@ -114,7 +114,8 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 @[simp]
 theorem bilinMap_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
     (-f).bilinMap m = -f.bilinMap m :=
-  LinearMap.ext₂ fun _ _ => rfl
+  LinearMap.ext₂ fun v w => by
+    simp only [bilinMap_apply, AlternatingMap.neg_apply, LinearMap.neg_apply]
 
 end AddCommGroupCodomain
 
@@ -155,6 +156,7 @@ theorem bilinMap_update_sub (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → 
     f.map_update_sub]
 
 /-- Subtracting in the second of two fixed vectors subtracts the bilinear maps. -/
+@[simp]
 theorem bilinMap_pair_sub_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b c : M) :
     f.bilinMap ![a, b - c] = f.bilinMap ![a, b] - f.bilinMap ![a, c] := by
   have h : ∀ x, ![a, x] = Function.update ![a, b] 1 x := fun x => by

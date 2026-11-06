@@ -30,8 +30,9 @@ either argument is `q`. Both are odd under spin reversal `PolarizedKinematics.re
 ```text
 (M / (p·q)) · g₁ · E₁ + (M / (p·q)²) · g₂ · E₂ = (M / (p·q)) · ε(·, ·, q, g₁ S + g₂ S_⊥),
 ```
-with `M = √(p·p)` the target mass and `S_⊥ = S − ((S·q)/(p·q)) p`. `IsG1G2Decomposition ε K G W`
-says that `W` is `fromG1G2` at the values of `G` at the kinematic point of `K`. These are the
+with `M = √(p·p)` the target mass and `S_⊥ = S − ((S·q)/(p·q)) p` (the second form is
+`fromG1G2_eq_bilinMap`). `IsG1G2Decomposition ε K G W` says that `W` is `fromG1G2` at the values
+of `G` at the kinematic point of `K`. These are the
 antisymmetric counterparts of `Tensors.Hadronic.IsF1F2Decomposition` and
 `Tensors.Hadronic.fromF1F2`.
 
@@ -207,8 +208,8 @@ theorem isAlt_spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Polarize
 (M / (p·q)) · g₁ · E₁ + (M / (p·q)²) · g₂ · E₂,
 ```
 where `M = √(p·p)` is the target mass. Equivalently it is
-`(M / (p·q)) · ε(·, ·, q, g₁ S + g₂ (S − ((S·q)/(p·q)) p))`, the standard form of the
-spin-dependent hadronic tensor for a spin vector normalised to `S·S = -1`. -/
+`(M / (p·q)) · ε(·, ·, q, g₁ S + g₂ (S − ((S·q)/(p·q)) p))` (`fromG1G2_eq_bilinMap`), the
+standard form of the spin-dependent hadronic tensor for a spin vector normalised to `S·S = -1`. -/
 def fromG1G2 (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) : Bilin V :=
   (√(K.M2 g) / g K.p K.q * g₁) • spinStructureOne ε K
     + (√(K.M2 g) / g K.p K.q ^ 2 * g₂) • spinStructureTwo ε K
@@ -219,6 +220,22 @@ lemma fromG1G2_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematic
     fromG1G2 ε K g₁ g₂ v w = √(K.M2 g) / g K.p K.q * g₁ * spinStructureOne ε K v w
       + √(K.M2 g) / g K.p K.q ^ 2 * g₂ * spinStructureTwo ε K v w := by
   simp only [fromG1G2, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
+
+/-- `fromG1G2` in standard form, as a single contraction of `ε` with `q` and a combination of
+the spin vector `S` and its projection `S − ((S·q)/(p·q)) p`:
+`(M / (p·q)) · ε(·, ·, q, g₁ S + g₂ (S − ((S·q)/(p·q)) p))`. Both sides vanish when `p·q = 0`, by
+the convention `x / 0 = 0`. -/
+theorem fromG1G2_eq_bilinMap (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) :
+    fromG1G2 ε K g₁ g₂ = (√(K.M2 g) / g K.p K.q) •
+      ε.bilinMap ![K.q, g₁ • K.S + g₂ • (K.S - (g K.S K.q / g K.p K.q) • K.p)] := by
+  have hvec : g₁ • K.S + g₂ • (K.S - (g K.S K.q / g K.p K.q) • K.p) =
+      (g₁ + g₂) • K.S - (g₂ * (g K.S K.q / g K.p K.q)) • K.p := by
+    module
+  rw [fromG1G2, spinStructureTwo_eq, hvec, ε.bilinMap_pair_sub_snd, ε.bilinMap_pair_smul_snd,
+    ε.bilinMap_pair_smul_snd, ← spinStructureOne]
+  rcases eq_or_ne (g K.p K.q) 0 with hpq | hpq
+  · simp [hpq]
+  · match_scalars <;> field_simp
 
 /-- `fromG1G2` vanishes when both structure-function values vanish. -/
 @[simp] lemma fromG1G2_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
@@ -359,6 +376,7 @@ theorem fromG1G2_inj (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematic
     {g₁ g₂ g₁' g₂' : ℝ} :
     fromG1G2 ε K g₁ g₂ = fromG1G2 ε K g₁' g₂' ↔ g₁ = g₁' ∧ g₂ = g₂' := by
   refine ⟨fun h => ?_, fun ⟨h1, h2⟩ => h1 ▸ h2 ▸ rfl⟩
+  simp only [fromG1G2] at h
   obtain ⟨h1, h2⟩ := hLI.eq_of_pair h
   have hs : √(K.M2 g) ≠ 0 := (Real.sqrt_pos.mpr hM).ne'
   exact ⟨mul_left_cancel₀ (div_ne_zero hs hpq) h1,
@@ -489,8 +507,8 @@ theorem linearIndependent_spinStructure_kWit4 :
 /-- On the witness, `fromG1G2` is non-zero unless both structure-function values vanish. -/
 theorem fromG1G2_kWit4_ne_zero (g₁ g₂ : ℝ) (h : g₁ ≠ 0 ∨ g₂ ≠ 0) :
     fromG1G2 detRowAlternating kWit4 g₁ g₂ ≠ 0 :=
-  fromG1G2_ne_zero detRowAlternating kWit4 g₁ g₂ linearIndependent_spinStructure_kWit4 (by simp)
-    (by simp) h
+  fromG1G2_ne_zero detRowAlternating kWit4 g₁ g₂ linearIndependent_spinStructure_kWit4
+    (by rw [kWit4_M2]; exact one_pos) (by rw [kWit4_p_q]; exact one_ne_zero) h
 
 end Witness
 

@@ -717,6 +717,7 @@ lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
     (hU : UniquenessAssumptions g K) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
     fromF1F2 g K F1 F2 ≠ 0 := by
   intro hzero
+  simp only [fromF1F2] at hzero
   obtain ⟨h1, h2⟩ := (linearIndependent_of_uniquenessAssumptions g K hU).eq_of_pair
     (s' := 0) (t' := 0) (hzero.trans (by simp))
   exact h.elim (· h1) (· h2)
@@ -734,8 +735,9 @@ lemma decomposition_unique
     F1 = F1' ∧ F2 = F2' := by
   have hfrom : ∀ {a b : ℝ}, IsF1F2Decomposition g K W a b → W = fromF1F2 g K a b :=
     fun hab => LinearMap.ext₂ fun v w => by rw [hab, fromF1F2_apply]
-  exact (linearIndependent_of_uniquenessAssumptions g K hU).eq_of_pair
-    ((hfrom hW).symm.trans (hfrom hW'))
+  have h := (hfrom hW).symm.trans (hfrom hW')
+  simp only [fromF1F2] at h
+  exact (linearIndependent_of_uniquenessAssumptions g K hU).eq_of_pair h
 
 /-!
 
