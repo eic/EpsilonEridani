@@ -29,8 +29,9 @@ other than up and down then drops out of the difference:
   `F₂^p - F₂^n = x (e_u² - e_d²) ((u + ubar) - (d + dbar))`  (`f2LO_sub_f2LO_comap_swap`),
 
 which for the light flavours, `e_u = 2/3` and `e_d = e_s = -1/3`, is the identity
-`F₂^p - F₂^n = (x / 3) (u + ubar - d - dbar)` (`f2LO_charge_sub_f2LO_charge_comap_swap`) whose
-`dx / x` integral is the Gottfried sum.
+`F₂^p - F₂^n = (x / 3) (u + ubar - d - dbar)`
+(`f2LO_lightFlavorCharge_sub_f2LO_lightFlavorCharge_comap_swap`) whose `dx / x` integral is the
+Gottfried sum.
 
 The ratio `F₂^p / F₂^n` at large `x` is not fixed by isospin. It is fixed by the limits of the
 density ratios: if, along a filter on which `x` and a common reference function are eventually
@@ -40,9 +41,11 @@ limiting denominator is non-zero (`tendsto_f2LO_div_f2LO`); the neutron is the c
 `e' = e ∘ τ`. When every density other than up is negligible against the up density this limit
 is `e_u² / e_d²` (`tendsto_f2LO_div_f2LO_comap_swap_of_tendsto_zero`). For the light flavours
 with `d/u → r` and `s/u → t` the ratio tends to `(4 + r + t) / (1 + 4 r + t)` provided
-`1 + 4 r + t ≠ 0` (`tendsto_f2LO_charge_div_f2LO_charge_comap_swap`), and the familiar value `4`
-as `x → 1` is the conditional statement that the down and strange densities are negligible
-against the up density there (`tendsto_f2LO_charge_div_f2LO_charge_comap_swap_nhdsLT_one`).
+`1 + 4 r + t ≠ 0`
+(`tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap`), and the familiar
+value `4` as `x → 1` is the conditional statement that the down and strange densities are
+negligible against the up density there
+(`tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap_nhdsLT_one`).
 Whether they are is an open experimental question, which is why the hypothesis is stated rather
 than assumed.
 
@@ -51,13 +54,17 @@ than assumed.
 * `f2LO_comap`: `F₂` of a density with relabelled flavours is `F₂` with the inverse relabelling
   of the charges.
 * `f2LO_sub_f2LO_comap_swap`: the proton-neutron difference `x (e_u² - e_d²) (q_u - q_d)`.
-* `f2LO_charge_sub_f2LO_charge_comap_swap`: the light-flavour difference `(x / 3) (q_u - q_d)`.
+* `f2LO_lightFlavorCharge_sub_f2LO_lightFlavorCharge_comap_swap`: the light-flavour difference
+  `(x / 3) (q_u - q_d)`.
 * `tendsto_f2LO_div_f2LO`: the limit of a ratio of two charge-weightings of `F₂` in terms of the
   limits of the density ratios.
 * `tendsto_f2LO_div_f2LO_comap_swap_of_tendsto_zero`: `F₂^p / F₂^n → e_u² / e_d²` when every
   other density is negligible against the up density.
-* `tendsto_f2LO_charge_div_f2LO_charge_comap_swap_nhdsLT_one`: `F₂^p / F₂^n → 4` as `x → 1⁻`
-  when the down and strange densities are negligible against the up density.
+* `tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap`: for the light
+  flavours with `d/u → r` and `s/u → t`, the limit `(4 + r + t) / (1 + 4 r + t)`.
+* `tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap_nhdsLT_one`:
+  `F₂^p / F₂^n → 4` as `x → 1⁻` when the down and strange densities are negligible against
+  the up density.
 
 ## References
 
@@ -74,7 +81,6 @@ namespace EpsilonEridani
 namespace QFT
 namespace Scattering
 namespace DIS
-namespace Inclusive
 
 open Filter Topology
 open Particles.Parton.PDF (Pdf comap comap_apply)
@@ -91,7 +97,6 @@ variable {ι κ : Type} [Fintype ι] [Fintype κ]
 /-- **Relabelling the flavours of a density is relabelling the charges the other way.** For a
 bijection `σ` of flavour types, the leading-order `F₂` of the density `q ∘ σ` with charges `e` is
 the `F₂` of `q` with charges `e ∘ σ⁻¹`. -/
-@[simp]
 theorem f2LO_comap (σ : κ ≃ ι) (e : κ → ℝ) (q : Pdf ι) (x Q2 : ℝ) :
     f2LO e (comap σ q) x Q2 = f2LO (e ∘ σ.symm) q x Q2 := by
   simp only [f2LO_def, comap_apply, Function.comp_apply]
@@ -154,6 +159,7 @@ theorem tendsto_f2LO_div_f2LO_comap_swap_of_tendsto_zero {e : ι → ℝ} {q : P
     · simpa [hi] using h i hi
   have hρ : ∑ i, (e ∘ Equiv.swap u d) i ^ 2 * (if i = u then 1 else 0) ≠ 0 := by
     simpa using hd
+  simp only [f2LO_comap, Equiv.symm_swap]
   simpa using tendsto_f2LO_div_f2LO hx hu hq hρ
 
 end General
@@ -169,7 +175,8 @@ open EpsilonEridani.Particles.Meson.LightFlavor
 /-- **The light-flavour proton-neutron difference of `F₂`.** With the light-quark charges,
 `F₂^p - F₂^n = (x / 3) (q_u - q_d)`: for `q_f` the quark plus antiquark density this is
 `(x / 3) (u + ubar - d - dbar)`, the integrand of the Gottfried sum after division by `x`. -/
-theorem f2LO_charge_sub_f2LO_charge_comap_swap (q : Pdf LightFlavor) (x Q2 : ℝ) :
+theorem f2LO_lightFlavorCharge_sub_f2LO_lightFlavorCharge_comap_swap (q : Pdf LightFlavor)
+    (x Q2 : ℝ) :
     f2LO charge q x Q2 - f2LO charge (comap (Equiv.swap u d) q) x Q2
       = x / 3 * (q u x Q2 - q d x Q2) := by
   rw [f2LO_sub_f2LO_comap_swap, charge_u, charge_d]
@@ -179,8 +186,9 @@ theorem f2LO_charge_sub_f2LO_charge_comap_swap (q : Pdf LightFlavor) (x Q2 : ℝ
 avoiding `x = 0` on which the up density is eventually non-zero, the down and strange densities
 are asymptotically `r` and `t` times the up density, and `1 + 4 r + t ≠ 0`, then
 `F₂^p / F₂^n → (4 + r + t) / (1 + 4 r + t)`. -/
-theorem tendsto_f2LO_charge_div_f2LO_charge_comap_swap {q : Pdf LightFlavor} {Q2 : ℝ}
-    {l : Filter ℝ} {r t : ℝ} (hx : ∀ᶠ x in l, x ≠ 0) (hu : ∀ᶠ x in l, q u x Q2 ≠ 0)
+theorem tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap
+    {q : Pdf LightFlavor} {Q2 : ℝ} {l : Filter ℝ} {r t : ℝ} (hx : ∀ᶠ x in l, x ≠ 0)
+    (hu : ∀ᶠ x in l, q u x Q2 ≠ 0)
     (hd : Tendsto (fun x => q d x Q2 / q u x Q2) l (𝓝 r))
     (hs : Tendsto (fun x => q s x Q2 / q u x Q2) l (𝓝 t)) (hrt : 1 + 4 * r + t ≠ 0) :
     Tendsto (fun x => f2LO charge q x Q2 / f2LO charge (comap (Equiv.swap u d) q) x Q2) l
@@ -210,8 +218,8 @@ theorem tendsto_f2LO_charge_div_f2LO_charge_comap_swap {q : Pdf LightFlavor} {Q2
 /-- **`F₂^p / F₂^n → 4` as `x → 1`, conditionally.** If, as `x → 1` from below, the up density is
 eventually non-zero and the down and strange densities are negligible against it, the
 proton-neutron ratio of `F₂` tends to `e_u² / e_d² = 4`. -/
-theorem tendsto_f2LO_charge_div_f2LO_charge_comap_swap_nhdsLT_one {q : Pdf LightFlavor}
-    {Q2 : ℝ} (hu : ∀ᶠ x in 𝓝[<] 1, q u x Q2 ≠ 0)
+theorem tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap_nhdsLT_one
+    {q : Pdf LightFlavor} {Q2 : ℝ} (hu : ∀ᶠ x in 𝓝[<] 1, q u x Q2 ≠ 0)
     (hd : Tendsto (fun x => q d x Q2 / q u x Q2) (𝓝[<] 1) (𝓝 0))
     (hs : Tendsto (fun x => q s x Q2 / q u x Q2) (𝓝[<] 1) (𝓝 0)) :
     Tendsto (fun x => f2LO charge q x Q2 / f2LO charge (comap (Equiv.swap u d) q) x Q2)
@@ -227,7 +235,6 @@ theorem tendsto_f2LO_charge_div_f2LO_charge_comap_swap_nhdsLT_one {q : Pdf Light
 
 end LightFlavor
 
-end Inclusive
 end DIS
 end Scattering
 end QFT
