@@ -116,13 +116,23 @@ class Columns(unittest.TestCase):
         self.assertEqual(board.column("awaiting-CI", self.summary(10), "pending"), "All rubrics green")
 
     def test_without_a_current_review_the_build_decides(self):
-        self.assertEqual(board.column("awaiting-review", None, "success"), "No review at head")
-        self.assertEqual(board.column("awaiting-review", self.summary(9, current=False), "success"),
-                         "No review at head")
+        self.assertEqual(board.column("awaiting-review", None, "success"), "Never reviewed")
         self.assertEqual(board.column("awaiting-CI", None, "pending"), "Waiting on CI")
         self.assertEqual(board.column("ci-failed", self.summary(9, current=False), "failure"),
                          "Waiting on CI")
         self.assertEqual(board.column("awaiting-CI", None, ""), "Waiting on CI")
+
+    def test_a_superseded_review_bands_the_re_review_by_its_score(self):
+        bands = {10: "Re-review: was ≤2 to go", 9: "Re-review: was ≤2 to go",
+                 8: "Re-review: was ≤2 to go", 7: "Re-review: was 3+ to go",
+                 0: "Re-review: was 3+ to go"}
+        for green, expected in bands.items():
+            with self.subTest(green=green):
+                self.assertEqual(board.column("awaiting-review", self.summary(green, current=False),
+                                              "success"), expected)
+        # A superseded block says nothing about the new head: the score alone bands it.
+        self.assertEqual(board.column("awaiting-review", self.summary(9, blocked=True, current=False),
+                                      "success"), "Re-review: was ≤2 to go")
 
     def test_a_hold_trumps_everything(self):
         self.assertEqual(board.column("on-hold", self.summary(10), "success"), "On hold")
@@ -134,7 +144,11 @@ class Columns(unittest.TestCase):
             for blocked in (False, True):
                 self.assertIn(board.column("awaiting-author", self.summary(green, blocked), "success"), names)
         self.assertIn(board.column("awaiting-review", None, "success"), names)
+        for green in range(11):
+            self.assertIn(board.column("awaiting-review", self.summary(green, current=False), "success"),
+                          names)
         self.assertIn(board.column("awaiting-CI", None, ""), names)
+        self.assertFalse(names & board.RETIRED_COLUMNS)
         self.assertIn(board.column("on-hold", None, ""), names)
         for name, _, _ in board.LIFECYCLE_OPTIONS:
             self.assertIn(name, board.labels.LABELS)
@@ -198,7 +212,7 @@ class Cards(unittest.TestCase):
         with patch.object(readiness, "evidence", return_value=(CURRENT, [], STATUSES)), \
                 patch.object(readiness, "assess_evidence", return_value=assessed("awaiting-review")):
             values = board.card(PR, "eic/EpsilonEridani")["values"]
-        self.assertEqual(values["Status"], "No review at head")
+        self.assertEqual(values["Status"], "Never reviewed")
         self.assertIsNone(values["Rubrics green"])
         self.assertIsNone(values["Prior green"])
         self.assertIsNone(values["Reviewed"])
@@ -210,7 +224,7 @@ class Cards(unittest.TestCase):
         with patch.object(readiness, "evidence", return_value=(CURRENT, comments, STATUSES)), \
                 patch.object(readiness, "assess_evidence", return_value=assessed("awaiting-CI", head="moved")):
             values = board.card(PR, "eic/EpsilonEridani")["values"]
-        self.assertEqual(values["Status"], "No review at head")
+        self.assertEqual(values["Status"], "Re-review: was ≤2 to go")
         self.assertEqual(values["Review head"], "33e6bc2 (superseded; was 10/10 green)")
         self.assertIsNone(values["Rubrics green"])
         self.assertEqual(values["Prior green"], 10)
@@ -343,10 +357,39 @@ class Writes(unittest.TestCase):
         updates = self.gql.mutations("updateProjectV2Field")
         self.assertEqual(len(updates), 1)
         names = [o["name"] for o in updates[0]["options"]]
-        self.assertEqual(names[:2], ["Todo", "Done"], "existing options are kept, in place")
-        self.assertEqual(names[2:], [n for n, _, _ in board.COLUMNS])
+        self.assertEqual(names, [n for n, _, _ in board.COLUMNS] + ["Todo", "Done"],
+                         "the board's columns in order, then the existing options kept")
         self.assertIn("1–2 to go", project["fields"]["Status"]["options"])
         self.assertEqual(set(project["fields"]), set(board.FIELDS))
+
+    def test_new_columns_go_in_place_and_a_retired_one_is_dropped(self):
+        old = [n for n, _, _ in board.COLUMNS if not n.startswith(("Re-review", "Never"))]
+        old.insert(old.index("Waiting on CI"), "No review at head")
+        status = field("Status", "SINGLE_SELECT", options=old + ["Parked"])
+        status["option_details"][0]["color"] = "PINK"   # a human recoloured a column
+        stored = {"Status": "No review at head", "Lifecycle": "awaiting-review"}
+        project = project_with(items={7: {"id": "I", "archived": False, "values": dict(stored)}},
+                               fields={**project_with()["fields"], "Status": status})
+        board.ensure_fields(project)
+        sent = self.gql.mutations("updateProjectV2Field")[0]["options"]
+        self.assertEqual([o["name"] for o in sent], [n for n, _, _ in board.COLUMNS] + ["Parked"])
+        self.assertEqual(sent[0]["color"], "PINK", "an existing option is re-sent as it is")
+        self.assertNotIn("No review at head", project["fields"]["Status"]["options"])
+        # The rewrite may have cleared the field, so the item's Status is written again.
+        self.assertNotIn("Status", project["items"][7]["values"])
+        self.assertEqual(project["items"][7]["values"]["Lifecycle"], "awaiting-review")
+        self.gql.calls.clear()
+        values = dict(stored, Status="Never reviewed")
+        board.apply_card(project, {"number": 7, "node_id": "N", "values": values})
+        self.assertEqual([v["field"] for v in self.gql.mutations("updateProjectV2ItemFieldValue")],
+                         ["F_Status"])
+
+    def test_dry_run_reports_a_retired_column_without_writing(self):
+        status = field("Status", "SINGLE_SELECT",
+                       options=[n for n, _, _ in board.COLUMNS] + ["No review at head"])
+        project = project_with(fields={**project_with()["fields"], "Status": status})
+        self.assertEqual(board.ensure_fields(project, dry_run=True), ["Status"])
+        self.assertEqual(self.gql.calls, [])
 
     def test_a_complete_project_needs_no_field_writes(self):
         board.ensure_fields(project_with())
@@ -370,10 +413,11 @@ class Ranking(unittest.TestCase):
     def test_sorted_by_column_then_score_then_prior_score_then_number(self):
         cards = [self.mk(5, "6+ to go", 2), self.mk(3, "All rubrics green", 10),
                  self.mk(9, "1–2 to go", 8), self.mk(4, "1–2 to go", 9),
-                 self.mk(7, "No review at head", None), self.mk(8, "No review at head", None, prior=3),
-                 self.mk(6, "No review at head", None, prior=9), self.mk(2, "On hold", None)]
+                 self.mk(7, "Never reviewed", None), self.mk(8, "Re-review: was 3+ to go", None, prior=3),
+                 self.mk(10, "Re-review: was 3+ to go", None, prior=6),
+                 self.mk(6, "Re-review: was ≤2 to go", None, prior=9), self.mk(2, "On hold", None)]
         order = [c["number"] for c in sorted(cards, key=board.sort_key)]
-        self.assertEqual(order, [3, 4, 9, 5, 6, 8, 7, 2])
+        self.assertEqual(order, [3, 4, 9, 5, 6, 10, 8, 7, 2])
 
     def test_markdown_escapes_pipes_and_lists_failures(self):
         text = board.render_markdown([self.mk(3, "All rubrics green", 10, title="a|b")],

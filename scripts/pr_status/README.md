@@ -77,7 +77,9 @@ the current head and merge base). It can therefore never show a PR as greener th
 Auto-merge would judge it.
 
 Each open PR is one item. Its **Status** column is a band of distance from merge,
-left to right:
+left to right. A review of an earlier head (or merge base) does not count, as it
+does not for the merge gate; such a PR waits in a Re-review column banded by how far
+that review had got, apart from the PRs no review has seen.
 
 | Status | Meaning |
 | --- | --- |
@@ -86,14 +88,16 @@ left to right:
 | `3–5 to go` | 5 to 7 approve; none blocked |
 | `6+ to go` | At most 4 approve; none blocked |
 | `Blocked` | An integrity rubric blocked the current head |
-| `No review at head` | The build is green but no completed review names the current head |
+| `Re-review: was ≤2 to go` | The build is green; the newest review judged an earlier head (or merge base) with 8 or more rubrics green |
+| `Re-review: was 3+ to go` | The same, with at most 7 green |
+| `Never reviewed` | The build is green but no review has completed on any head |
 | `Waiting on CI` | The build has not passed on the current head, so review cannot run |
 | `On hold` | Draft, held by a `keep`/`hold`/`wip`/`human`/`do-not-close` label, or stacked |
 
 The fields carry the evidence, so a list view sorted by **Rubrics green** is the
 flat ranking: `Rubrics green` (approving rubrics at the current head; empty when
-none reviewed it), `Prior green` (the count from a review of an earlier head, so
-`No review at head` still ranks by how far each PR had got), `Not green` (the
+none reviewed it), `Prior green` (the count from a review of an earlier head, which
+bands and ranks the Re-review columns), `Not green` (the
 rubrics left, each with its state: changes / BLOCK / stale / not run / error),
 `Lifecycle` (the label `labels.py` would apply), `Roadmap`, `Review head` (which
 commit the newest review judged and whether that is the current head) and
@@ -105,7 +109,10 @@ and every open PR hourly (`:35`) and on dispatch. Items are added for open PRs,
 fields written only where they differ (an unchanged board costs no mutations), and
 the item of a closed or merged PR is archived (unarchived if it reopens). The
 script creates the custom fields and Status options it needs on first contact and
-never removes options or items a human added. It writes only to the project: no
+never removes options or items a human added. When it has to rewrite a field's options
+(one is missing, or a retired column such as `No review at head` is still there), it
+re-sends them in board order with any human-added ones after, and writes that field
+again on every PR it syncs in the same run. It writes only to the project: no
 comment, label or merge, and no PR code runs.
 
 The ranking is always appended to the job summary, and `--dry-run` (or the
