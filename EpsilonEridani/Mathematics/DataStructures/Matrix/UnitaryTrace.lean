@@ -14,12 +14,14 @@ The trace of a unitary `n × n` matrix has norm at most `n`. The bound is attain
 identity.
 
 This is the bound behind the statement that a normalised trace `(1 / n) Re Tr U` of a unitary
-matrix lies in `[-1, 1]`, which is how the colour-dipole operator of a Wilson-line
-configuration is bounded.
+matrix lies in `[-1, 1]`, which is how the dipole and the higher Wilson-line correlators of a
+configuration are bounded.
 
 ## Main results
 
 - `Matrix.norm_trace_le_card_of_mem_unitaryGroup`: `‖Tr U‖ ≤ n` for unitary `U`.
+- `Matrix.abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup`: `|(1 / n) Re Tr U| ≤ 1` for
+  unitary `U`.
 -/
 
 public section
@@ -34,5 +36,16 @@ theorem norm_trace_le_card_of_mem_unitaryGroup {U : Matrix n n 𝕜}
   calc ‖U.trace‖ ≤ ∑ i, ‖U i i‖ := norm_sum_le _ _
     _ ≤ ∑ _i : n, (1 : ℝ) := Finset.sum_le_sum fun i _ => entry_norm_bound_of_unitary hU i i
     _ = Fintype.card n := by simp
+
+/-- The real part of the normalised trace `(1 / n) Tr U` of a unitary `n × n` matrix lies in
+`[-1, 1]`. For `n = 0` the normalised trace is `0`. -/
+theorem abs_inv_card_mul_re_trace_le_one_of_mem_unitaryGroup {U : Matrix n n 𝕜}
+    (hU : U ∈ unitaryGroup n 𝕜) :
+    |(Fintype.card n : ℝ)⁻¹ * RCLike.re U.trace| ≤ 1 := by
+  rcases isEmpty_or_nonempty n with h | h
+  · simp
+  · rw [abs_mul, abs_inv, Nat.abs_cast, inv_mul_le_iff₀ (by exact_mod_cast Fintype.card_pos),
+      mul_one]
+    exact (RCLike.abs_re_le_norm _).trans (norm_trace_le_card_of_mem_unitaryGroup hU)
 
 end Matrix
