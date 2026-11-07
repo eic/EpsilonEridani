@@ -190,6 +190,12 @@ def Model.zero (Flavor : Type) : Model Flavor where
 lemma Model.zero_H (Flavor : Type) (i : Flavor) (x xi t : ℝ) :
     (Model.zero Flavor).H i x xi t = 0 := rfl
 
+/-- The zero model satisfies the standing support and skewness assumptions. -/
+lemma Model.assumptions_zero (Flavor : Type) : Assumptions (Model.zero Flavor) where
+  supportH i x xi t _ := Model.zero_H Flavor i x xi t
+  supportE _ _ _ _ _ := rfl
+  skewnessBound i x xi t _ := ⟨Model.zero_H Flavor i x xi t, rfl⟩
+
 /-- A double-distribution representation of the `H` component of a GPD model, carried as
 data rather than asserted. This is the hypothesis that the reconstruction arguments of the
 GPD literature actually use: they invert a Radon transform, which presupposes that one is
