@@ -115,33 +115,33 @@ structure OffForwardKinematics (d : ℕ) (M : ℝ) where
   /-- The incoming hadron momentum. -/
   p : Vector d
   /-- The outgoing hadron momentum. -/
-  p' : Vector d
+  pPrime : Vector d
   /-- The light-like direction defining plus-momenta. -/
   n : Vector d
   /-- The incoming hadron is on its mass shell. -/
   minkowskiProduct_p_self : ⟪p, p⟫ₘ = M ^ 2
   /-- The outgoing hadron is on its mass shell. -/
-  minkowskiProduct_p'_self : ⟪p', p'⟫ₘ = M ^ 2
+  minkowskiProduct_pPrime_self : ⟪pPrime, pPrime⟫ₘ = M ^ 2
   /-- The direction `n` is light-like. -/
   minkowskiProduct_n_self : ⟪n, n⟫ₘ = 0
   /-- The incoming hadron has positive plus-momentum. -/
   minkowskiProduct_n_p_pos : 0 < ⟪n, p⟫ₘ
   /-- The outgoing hadron has positive plus-momentum. -/
-  minkowskiProduct_n_p'_pos : 0 < ⟪n, p'⟫ₘ
+  minkowskiProduct_n_pPrime_pos : 0 < ⟪n, pPrime⟫ₘ
 
 namespace OffForwardKinematics
 
 variable {d : ℕ} {M : ℝ} (K : OffForwardKinematics d M)
 
 /-- The average hadron momentum `P = (p + p') / 2`. -/
-def avgMomentum : Vector d := (2⁻¹ : ℝ) • (K.p + K.p')
+def avgMomentum : Vector d := (2⁻¹ : ℝ) • (K.p + K.pPrime)
 
-lemma avgMomentum_def : K.avgMomentum = (2⁻¹ : ℝ) • (K.p + K.p') := (rfl)
+lemma avgMomentum_def : K.avgMomentum = (2⁻¹ : ℝ) • (K.p + K.pPrime) := (rfl)
 
 /-- The momentum transfer `Δ = p' - p`. -/
-def delta : Vector d := K.p' - K.p
+def delta : Vector d := K.pPrime - K.p
 
-lemma delta_def : K.delta = K.p' - K.p := (rfl)
+lemma delta_def : K.delta = K.pPrime - K.p := (rfl)
 
 /-- The invariant momentum transfer `t = Δ²`. -/
 def tMom : ℝ := ⟪K.delta, K.delta⟫ₘ
@@ -166,19 +166,19 @@ lemma p_eq_avgMomentum_sub : K.p = K.avgMomentum - (2⁻¹ : ℝ) • K.delta :=
   simp only [avgMomentum_def, delta_def]
   module
 
-lemma p'_eq_avgMomentum_add : K.p' = K.avgMomentum + (2⁻¹ : ℝ) • K.delta := by
+lemma pPrime_eq_avgMomentum_add : K.pPrime = K.avgMomentum + (2⁻¹ : ℝ) • K.delta := by
   simp only [avgMomentum_def, delta_def]
   module
 
 lemma minkowskiProduct_n_avgMomentum_eq :
-    ⟪K.n, K.avgMomentum⟫ₘ = (⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ) / 2 := by
+    ⟪K.n, K.avgMomentum⟫ₘ = (⟪K.n, K.p⟫ₘ + ⟪K.n, K.pPrime⟫ₘ) / 2 := by
   simp only [avgMomentum_def, map_smul, map_add, smul_eq_mul]
   ring
 
 /-- The average hadron momentum has positive plus-momentum. -/
 lemma minkowskiProduct_n_avgMomentum_pos : 0 < ⟪K.n, K.avgMomentum⟫ₘ := by
   rw [minkowskiProduct_n_avgMomentum_eq]
-  linarith [K.minkowskiProduct_n_p_pos, K.minkowskiProduct_n_p'_pos]
+  linarith [K.minkowskiProduct_n_p_pos, K.minkowskiProduct_n_pPrime_pos]
 
 /-- The light-like direction is non-zero, since it gives the hadrons non-zero plus-momentum. -/
 lemma n_ne_zero : K.n ≠ 0 := by
@@ -188,22 +188,23 @@ lemma n_ne_zero : K.n ≠ 0 := by
 
 /-- The skewness in terms of the two plus-momenta, `ξ = (p⁺ - p'⁺) / (p⁺ + p'⁺)`. -/
 lemma skewness_eq_div :
-    K.skewness = (⟪K.n, K.p⟫ₘ - ⟪K.n, K.p'⟫ₘ) / (⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ) := by
+    K.skewness = (⟪K.n, K.p⟫ₘ - ⟪K.n, K.pPrime⟫ₘ) / (⟪K.n, K.p⟫ₘ + ⟪K.n, K.pPrime⟫ₘ) := by
   simp only [skewness_def, minkowskiProduct_n_avgMomentum_eq, delta_def, map_sub, neg_sub,
     mul_div_cancel₀ _ (two_ne_zero (α := ℝ))]
 
 /-- The incoming plus-momentum is `p⁺ = (1 + ξ) P⁺`. -/
 lemma minkowskiProduct_n_p_eq : ⟪K.n, K.p⟫ₘ = (1 + K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
-  have h : ⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ ≠ 0 :=
-    (add_pos K.minkowskiProduct_n_p_pos K.minkowskiProduct_n_p'_pos).ne'
+  have h : ⟪K.n, K.p⟫ₘ + ⟪K.n, K.pPrime⟫ₘ ≠ 0 :=
+    (add_pos K.minkowskiProduct_n_p_pos K.minkowskiProduct_n_pPrime_pos).ne'
   simp only [skewness_eq_div, minkowskiProduct_n_avgMomentum_eq]
   field_simp
   ring
 
 /-- The outgoing plus-momentum is `p'⁺ = (1 - ξ) P⁺`. -/
-lemma minkowskiProduct_n_p'_eq : ⟪K.n, K.p'⟫ₘ = (1 - K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
-  have h : ⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ ≠ 0 :=
-    (add_pos K.minkowskiProduct_n_p_pos K.minkowskiProduct_n_p'_pos).ne'
+lemma minkowskiProduct_n_pPrime_eq :
+    ⟪K.n, K.pPrime⟫ₘ = (1 - K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
+  have h : ⟪K.n, K.p⟫ₘ + ⟪K.n, K.pPrime⟫ₘ ≠ 0 :=
+    (add_pos K.minkowskiProduct_n_p_pos K.minkowskiProduct_n_pPrime_pos).ne'
   simp only [skewness_eq_div, minkowskiProduct_n_avgMomentum_eq]
   field_simp
   ring
@@ -211,8 +212,8 @@ lemma minkowskiProduct_n_p'_eq : ⟪K.n, K.p'⟫ₘ = (1 - K.skewness) * ⟪K.n,
 /-- Positivity of both plus-momenta bounds the skewness: `|ξ| < 1`. -/
 lemma abs_skewness_lt_one : |K.skewness| < 1 := by
   have hp := K.minkowskiProduct_n_p_pos
-  have hp' := K.minkowskiProduct_n_p'_pos
-  have h : 0 < ⟪K.n, K.p⟫ₘ + ⟪K.n, K.p'⟫ₘ := add_pos hp hp'
+  have hp' := K.minkowskiProduct_n_pPrime_pos
+  have h : 0 < ⟪K.n, K.p⟫ₘ + ⟪K.n, K.pPrime⟫ₘ := add_pos hp hp'
   simp only [skewness_eq_div, abs_lt]
   constructor
   · rw [lt_div_iff₀ h]
@@ -223,12 +224,12 @@ lemma abs_skewness_lt_one : |K.skewness| < 1 := by
 /-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
 @[simp]
 lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
-  have h : ⟪K.avgMomentum, K.delta⟫ₘ = (⟪K.p', K.p'⟫ₘ - ⟪K.p, K.p⟫ₘ) / 2 := by
+  have h : ⟪K.avgMomentum, K.delta⟫ₘ = (⟪K.pPrime, K.pPrime⟫ₘ - ⟪K.p, K.p⟫ₘ) / 2 := by
     simp only [avgMomentum_def, delta_def, map_smul, map_add, map_sub, _root_.smul_apply,
       _root_.add_apply, smul_eq_mul]
-    rw [minkowskiProduct_symm K.p' K.p]
+    rw [minkowskiProduct_symm K.pPrime K.p]
     ring
-  simp [h, K.minkowskiProduct_p_self, K.minkowskiProduct_p'_self]
+  simp [h, K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self]
 
 /-- For an elastic transition the transfer is orthogonal to the average momentum, `Δ · P = 0`. -/
 @[simp]
@@ -272,6 +273,27 @@ lemma minkowskiProduct_deltaOrthN_self_eq :
   simp only [deltaOrthN_def, minkowskiProduct_add_self, minkowskiProduct_smul_self,
     K.minkowskiProduct_avgMomentum_self_eq]
   simp only [map_smul, smul_eq_mul, K.minkowskiProduct_delta_avgMomentum_eq_zero, tMom_def]
+  ring
+
+/-- The average momentum paired with the vector `w = Δ + 2 ξ P` is `⟪P, w⟫ₘ = 2 ξ (M² - t / 4)`. -/
+lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
+    ⟪K.avgMomentum, K.deltaOrthN⟫ₘ = 2 * K.skewness * (M ^ 2 - K.tMom / 4) := by
+  simp only [deltaOrthN_def, map_add, map_smul, smul_eq_mul,
+    K.minkowskiProduct_avgMomentum_delta_eq_zero, K.minkowskiProduct_avgMomentum_self_eq]
+  ring
+
+/-- The vector `w = Δ + 2 ξ P` paired with the average momentum is `⟪w, P⟫ₘ = 2 ξ (M² - t / 4)`,
+which is in general non-zero, so `w` is not orthogonal to `P`. -/
+lemma minkowskiProduct_deltaOrthN_avgMomentum_eq :
+    ⟪K.deltaOrthN, K.avgMomentum⟫ₘ = 2 * K.skewness * (M ^ 2 - K.tMom / 4) := by
+  rw [minkowskiProduct_symm]
+  exact K.minkowskiProduct_avgMomentum_deltaOrthN_eq
+
+/-- The vector `w = Δ + 2 ξ P` paired with the momentum transfer is `⟪w, Δ⟫ₘ = t`. -/
+@[simp]
+lemma minkowskiProduct_deltaOrthN_delta_eq : ⟪K.deltaOrthN, K.delta⟫ₘ = K.tMom := by
+  simp only [deltaOrthN_def, map_add, _root_.add_apply, map_smul, _root_.smul_apply,
+    smul_eq_mul, K.minkowskiProduct_avgMomentum_delta_eq_zero, tMom_def]
   ring
 
 /-- The momentum transfer is bounded by the minimal momentum transfer, `t ≤ t₀(ξ)`. -/
@@ -343,7 +365,7 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
   let K₀ : OffForwardKinematics d M :=
     ⟨p₀, p₀', n₀, hp, hp', hnn, by rw [hnp]; linarith, by rw [hnp']; linarith⟩
   have hnpK : ⟪K₀.n, K₀.p⟫ₘ = 1 + ξ := hnp
-  have hnpK' : ⟪K₀.n, K₀.p'⟫ₘ = 1 - ξ := hnp'
+  have hnpK' : ⟪K₀.n, K₀.pPrime⟫ₘ = 1 - ξ := hnp'
   refine ⟨K₀, ?_, ?_⟩
   · simp only [K₀.skewness_eq_div, hnpK, hnpK']
     field_simp
