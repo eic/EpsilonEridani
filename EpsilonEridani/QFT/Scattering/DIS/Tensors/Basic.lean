@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearMap
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 /-!
 
@@ -635,6 +636,13 @@ lemma fromF1F2_isDecomposition
   intro v w
   rw [fromF1F2_apply]
 
+/-- A tensor decomposing on the transverse basis is the representative `fromF1F2` with the same
+coefficients. This is the bridge from the pointwise predicate to the canonical representative,
+the converse of `fromF1F2_isDecomposition`. -/
+theorem IsF1F2Decomposition.eq {g : Bilin V} {K : DisKinematics V} {W : Bilin V} {F1 F2 : ℝ}
+    (h : IsF1F2Decomposition g K W F1 F2) : W = fromF1F2 g K F1 F2 :=
+  LinearMap.ext₂ fun v w => by rw [h, fromF1F2_apply]
+
 /-- The transverse-basis representative is conserved in the first slot. -/
 lemma fromF1F2_conserved_left (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q K.q ≠ 0)
     (F1 F2 : ℝ) (v : V) :
@@ -735,99 +743,36 @@ lemma exists_apply_self_eq_of_isF1F2Decomposition (g : Bilin V) (K : DisKinemati
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one
 pair does the reverse. -/
-structure UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type where
-  /-- First slot of the probe pair isolating `F1`. -/
-  vF1 : V
-  /-- Second slot of the probe pair isolating `F1`. -/
-  wF1 : V
-  /-- The `F1` probe pair sees the transverse projector. -/
-  transverse_nonzero : transverseMetric g K vF1 wF1 ≠ 0
-  /-- The `F1` probe pair does not see `p_T ⊗ p_T`. -/
-  pT_outer_zero : g (pTransverse g K) vF1 * g (pTransverse g K) wF1 = 0
-  /-- First slot of the probe pair isolating `F2`. -/
-  vF2 : V
-  /-- Second slot of the probe pair isolating `F2`. -/
-  wF2 : V
-  /-- The `F2` probe pair does not see the transverse projector. -/
-  transverse_zero : transverseMetric g K vF2 wF2 = 0
-  /-- The `F2` probe pair sees `p_T ⊗ p_T`. -/
-  pT_outer_nonzero : g (pTransverse g K) vF2 * g (pTransverse g K) wF2 ≠ 0
+abbrev UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type _ :=
+  LinearMap.SeparatingProbes (transverseMetric g K)
+    (Bilin.rankOne g (pTransverse g K) (pTransverse g K))
 
-/-- With probe vectors separating the two basis structures, a decomposition with
+/-- With the two transverse basis structures linearly independent, a decomposition with
 `(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this is the
 non-triviality statement that the old, non-transverse basis could not support. -/
 lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
-    (hU : UniquenessAssumptions g K) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
+    (hLI : LinearIndependent ℝ ![transverseMetric g K,
+      Bilin.rankOne g (pTransverse g K) (pTransverse g K)]) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
     fromF1F2 g K F1 F2 ≠ 0 := by
   intro hzero
-  rcases h with hF1 | hF2
-  · have h0 : fromF1F2 g K F1 F2 hU.vF1 hU.wF1 = 0 := by rw [hzero]; simp
-    rw [fromF1F2_apply, hU.pT_outer_zero, mul_zero, add_zero] at h0
-    rcases mul_eq_zero.mp h0 with h | h
-    · exact hF1 h
-    · exact hU.transverse_nonzero h
-  · have h0 : fromF1F2 g K F1 F2 hU.vF2 hU.wF2 = 0 := by rw [hzero]; simp
-    rw [fromF1F2_apply, hU.transverse_zero, mul_zero, zero_add] at h0
-    rcases mul_eq_zero.mp h0 with h | h
-    · exact hF2 h
-    · exact hU.pT_outer_nonzero h
+  simp only [fromF1F2] at hzero
+  obtain ⟨h1, h2⟩ := hLI.eq_of_pair
+    (s' := 0) (t' := 0) (hzero.trans (by simp))
+  exact h.elim (· h1) (· h2)
 
-/-- **Uniqueness of the structure functions.** Given one probe pair that sees the transverse
-projector but not `p_T ⊗ p_T`, and one pair that does the reverse, the coefficients of a
-decomposition are pinned. Ported unchanged from the non-transverse basis: the argument only
-uses non-degeneracy of the two structures, so only the witness fields are renamed. -/
+/-- **Uniqueness of the structure functions.** Given linear independence of the transverse
+projector and `p_T ⊗ p_T`, the coefficients of a decomposition are pinned. -/
 lemma decomposition_unique
     (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (F1 F2 F1' F2' : ℝ)
     (hW : IsF1F2Decomposition g K W F1 F2)
     (hW' : IsF1F2Decomposition g K W F1' F2')
-    (hU : UniquenessAssumptions g K) :
+    (hLI : LinearIndependent ℝ ![transverseMetric g K,
+      Bilin.rankOne g (pTransverse g K) (pTransverse g K)]) :
     F1 = F1' ∧ F2 = F2' := by
-  have hEqF1 :
-      F1 * transverseMetric g K hU.vF1 hU.wF1
-          + F2 * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1)
-        = F1' * transverseMetric g K hU.vF1 hU.wF1
-          + F2' * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1) := by
-    calc
-      F1 * transverseMetric g K hU.vF1 hU.wF1
-          + F2 * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1)
-          = W hU.vF1 hU.wF1 := by simp [hW hU.vF1 hU.wF1]
-      _ = F1' * transverseMetric g K hU.vF1 hU.wF1
-          + F2' * (g (pTransverse g K) hU.vF1 * g (pTransverse g K) hU.wF1) := by
-          simp [hW' hU.vF1 hU.wF1]
-  have hEqF1' : F1 * transverseMetric g K hU.vF1 hU.wF1
-      = F1' * transverseMetric g K hU.vF1 hU.wF1 := by
-    simpa [hU.pT_outer_zero] using hEqF1
-  have hMulF1 : (F1 - F1') * transverseMetric g K hU.vF1 hU.wF1 = 0 := by
-    linarith [hEqF1']
-  have hF1 : F1 = F1' := by
-    have hSub : F1 - F1' = 0 :=
-      (mul_eq_zero.mp hMulF1).resolve_right hU.transverse_nonzero
-    exact sub_eq_zero.mp hSub
-  have hEqF2 :
-      F1 * transverseMetric g K hU.vF2 hU.wF2
-          + F2 * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2)
-        = F1' * transverseMetric g K hU.vF2 hU.wF2
-          + F2' * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) := by
-    calc
-      F1 * transverseMetric g K hU.vF2 hU.wF2
-          + F2 * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2)
-          = W hU.vF2 hU.wF2 := by simp [hW hU.vF2 hU.wF2]
-      _ = F1' * transverseMetric g K hU.vF2 hU.wF2
-          + F2' * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) := by
-          simp [hW' hU.vF2 hU.wF2]
-  have hEqF2' :
-      F2 * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2)
-        = F2' * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) := by
-    simpa [hU.transverse_zero, hF1] using hEqF2
-  have hMulF2 :
-      (F2 - F2') * (g (pTransverse g K) hU.vF2 * g (pTransverse g K) hU.wF2) = 0 := by
-    linarith [hEqF2']
-  have hF2 : F2 = F2' := by
-    have hSub : F2 - F2' = 0 :=
-      (mul_eq_zero.mp hMulF2).resolve_right hU.pT_outer_nonzero
-    exact sub_eq_zero.mp hSub
-  exact ⟨hF1, hF2⟩
+  have h := hW.eq.symm.trans hW'.eq
+  simp only [fromF1F2] at h
+  exact hLI.eq_of_pair h
 
 /-!
 
@@ -1084,16 +1029,17 @@ lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
 `-n₀² + n₂² ` vanishes while `g p_T n = 1`.
 
 Without a witness of this kind, `decomposition_unique` and `fromF1F2_ne_zero` were
-conditioned on a structure not known to be inhabited. -/
+conditioned on a structure not known to be inhabited; `uniquenessWit.linearIndependent` now
+supplies their linear-independence hypothesis. -/
 def uniquenessWit : UniquenessAssumptions gWit kWit where
-  vF1 := (0, 0, 1)
-  wF1 := (0, 0, 1)
-  transverse_nonzero := by rw [transverseMetric_apply]; norm_num
-  pT_outer_zero := by simp only [pTransverse_pairing]; norm_num
-  vF2 := (1, 0, 1)
-  wF2 := (1, 0, 1)
-  transverse_zero := by rw [transverseMetric_apply]; norm_num
-  pT_outer_nonzero := by simp only [pTransverse_pairing]; norm_num
+  v₁ := (0, 0, 1)
+  w₁ := (0, 0, 1)
+  apply₁_ne_zero := by rw [transverseMetric_apply]; norm_num
+  apply₂_eq_zero := by simp only [Bilin.rankOne_apply, pTransverse_pairing]; norm_num
+  v₂ := (1, 0, 1)
+  w₂ := (1, 0, 1)
+  apply₁_eq_zero := by rw [transverseMetric_apply]; norm_num
+  apply₂_ne_zero := by simp only [Bilin.rankOne_apply, pTransverse_pairing]; norm_num
 
 /-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
 already `gWit`-orthogonal to `q`. -/
