@@ -188,6 +188,16 @@ def assess(pr, repo=None, now=None):
     repo = repo or core.REPO
     number = int(pr)
     current, comments, statuses = evidence(number, repo)
+    return assess_evidence(current, comments, statuses, repo, now=now)
+
+
+def assess_evidence(current, comments, statuses, repo, now=None):
+    """Classify evidence already fetched by `evidence`, binding the decision to the current head.
+
+    Split from `assess` so a caller that also needs the raw evidence (the review board reads the
+    per-rubric states off the same scoreboard comments) fetches it once. The result additionally
+    carries `merge_base`, the merge base the gate required the scoreboard to have reviewed."""
+    number = current["number"]
     head = current["head"]["sha"]
     # The same compare the merge job asks, so the merge base is the one it will require;
     # core.gh_api keeps the rate-limit circuit breaker. A bare head SHA also resolves for fork
@@ -211,6 +221,7 @@ def assess(pr, repo=None, now=None):
     elif after.get("mergeable") is False and result["eligible"]:
         result.update(eligible=False, category="awaiting-author",
                       reason="GitHub reports a merge conflict with the base")
+    result["merge_base"] = merge_base
     result["checked_at"] = int(time.time()) if now is None else now
     return result
 

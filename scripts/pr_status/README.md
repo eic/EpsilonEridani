@@ -66,6 +66,68 @@ signals used for Zulip reactions. A green build/review reaction is not a claim
 that a PR passes all merge prerequisites. Destructive housekeeping continues to
 use its stricter OWNER/MEMBER/COLLABORATOR comment policy.
 
+## Review board
+
+[`board.py`](board.py) keeps a GitHub Projects board of the open PRs ranked by how
+close each is to passing every rubric. The lifecycle labels say whose court a PR is
+in; the board answers the other question — which PRs are nearly through review and
+what is left on each — by reading the per-rubric states off the scoreboard comment
+the merge gate itself selects (`readiness.py`: the newest completed scoreboard for
+the current head and merge base). It can therefore never show a PR as greener than
+Auto-merge would judge it.
+
+Each open PR is one item. Its **Status** column is a band of distance from merge,
+left to right:
+
+| Status | Meaning |
+| --- | --- |
+| `All rubrics green` | Every rubric approves the current head (Lifecycle shows the merge gate) |
+| `1–2 to go` | 8 or 9 of the 10 rubrics approve the current head; none blocked |
+| `3–5 to go` | 5 to 7 approve; none blocked |
+| `6+ to go` | At most 4 approve; none blocked |
+| `Blocked` | An integrity rubric blocked the current head |
+| `No review at head` | The build is green but no completed review names the current head |
+| `Waiting on CI` | The build has not passed on the current head, so review cannot run |
+| `On hold` | Draft, held by a `keep`/`hold`/`wip`/`human`/`do-not-close` label, or stacked |
+
+The fields carry the evidence, so a list view sorted by **Rubrics green** is the
+flat ranking: `Rubrics green` (approving rubrics at the current head; empty when
+none reviewed it), `Prior green` (the count from a review of an earlier head, so
+`No review at head` still ranks by how far each PR had got), `Not green` (the
+rubrics left, each with its state: changes / BLOCK / stale / not run / error),
+`Lifecycle` (the label `labels.py` would apply), `Roadmap`, `Review head` (which
+commit the newest review judged and whether that is the current head) and
+`Reviewed` (its date).
+
+[`pr-board.yml`](../../.github/workflows/pr-board.yml) syncs one PR on a scoreboard
+or marker comment, a PR open/close/push/draft change, or a finished `pr-build`,
+and every open PR hourly (`:35`) and on dispatch. Items are added for open PRs,
+fields written only where they differ (an unchanged board costs no mutations), and
+the item of a closed or merged PR is archived (unarchived if it reopens). The
+script creates the custom fields and Status options it needs on first contact and
+never removes options or items a human added. It writes only to the project: no
+comment, label or merge, and no PR code runs.
+
+The ranking is always appended to the job summary, and `--dry-run` (or the
+dispatch input) plans without writing, so the board can be previewed before it
+exists:
+
+```sh
+export TAUCETI_REVIEW_RUNNER=/path/to/EpsilonEridaniReview/runner
+PR_BOARD_PROJECT=12 python3 scripts/pr_status/board.py sync --dry-run
+python3 scripts/pr_status/board.py sync --pr 183
+```
+
+One-time setup, by a human: create an organization project (any template; the
+Status options are added, not replaced), grant the `epsiloneridani-review-bot` App
+the organization **Projects: read and write** permission and accept it on the
+installation (as for the merge-sweep `Workflows` grant in
+[EpsilonEridaniReview/docs/merge-sweep-permissions.md](https://github.com/eic/EpsilonEridaniReview/blob/main/docs/merge-sweep-permissions.md)),
+and set the repository variable `PR_BOARD_PROJECT` to the project's number.
+Without the variable the workflow only computes and prints the ranking. A board
+view worth saving: group by `Status`, sort by `Rubrics green` descending then
+`Prior green` descending.
+
 ## Mattermost reactions
 
 [`mattermost.py`](mattermost.py) finds-or-creates the PR's announcement post in the **ε Eri**
@@ -280,14 +342,17 @@ the Actions tab.
 
 ```bash
 cd scripts/pr_status
-python3 -m unittest test_pr_labels test_readiness test_zulip test_stuck_alerts
+python3 -m unittest test_pr_labels test_readiness test_board test_zulip test_stuck_alerts
 ```
 
 `test_pr_labels` covers the derivation (`core.review_state`, `core.inprogress_from`,
 `core.derive`), metadata plumbing, and label reconciliation. `test_readiness`
 runs the pinned merge gate on current/stale/incomplete reviews, live markers,
 human paths, CI and pin guards, and head-move races. It needs the pinned engine
-checkout described above. `test_zulip` covers review reactions, PR post
+checkout described above. `test_board` covers the rubric summary and
+Status bands against that same engine, and the Projects writes against a scripted
+GraphQL endpoint (fields created, options appended, only changed values written,
+closed PRs archived, dry runs silent); it needs the engine checkout too. `test_zulip` covers review reactions, PR post
 rendering, legacy-message rewriting, batch continuation, dry runs, and rate-limit
 retry. All GitHub and Zulip reads and writes are stubbed, so these need no
 network.

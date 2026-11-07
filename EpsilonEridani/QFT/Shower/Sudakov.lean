@@ -61,14 +61,19 @@ is usually justified with.  `vetoWeight_eq_ordered` below assembles it into the 
 weight and `sudakov_veto_ordered` sums the assembled terms to the true Sudakov factor, so
 the chain from the ordered rejection integrals to `Δ_K` is machine-checked end to end.
 
-Two things that chain does **not** establish, and neither should be read into it.  First,
-`orderedProdIntegral` is the *iterated* interval integral, smallest variable outermost;
-identifying it with the integral of the product over the ordered subset of `ℝ^n` is a Fubini
-argument that is not formalized.  Second, and more substantially, there is no probability
-space anywhere in this file: that the veto algorithm's output law *is* the ordered rejection
-integral remains arithmetic done on paper, because the sampler itself is not modelled in
-`Lean`.  What has changed is that the remaining step is now purely probabilistic — the
-analysis half of the gap is closed, the measure-theoretic and probabilistic halves are not.
+`orderedProdIntegral` is the *iterated* interval integral, smallest variable outermost; its
+identification with the Lebesgue integral of the product over the region displayed above,
+`T > t₁ > ⋯ > tₙ > t` with the largest coordinate first, is
+`EpsilonEridani.OrderedSimplex.setIntegral_descendingRegion_eq_orderedProdIntegral` (and, with
+the coordinates listed smallest first,
+`EpsilonEridani.OrderedSimplex.setIntegral_orderedRegion_eq_orderedProdIntegral`), proved in
+`OrderedSimplexIntegral.lean` by Fubini for `t ≤ T`, the physically relevant case; for `T < t`
+the region is empty when `n ≥ 1`, while the iterated integral is signed.  What the chain does
+**not** establish, and should not be read into it, is anything probabilistic: there is no
+probability space anywhere in this file, and that the veto algorithm's output law *is* the
+ordered rejection integral remains arithmetic done on paper, because the sampler itself is not
+modelled in `Lean`.  The analysis and measure-theoretic halves of the gap are closed; the
+probabilistic half is not.
 
 Everything here is real-valued.  The executable shower is a `Float` transcription and is
 not connected to these theorems by any proof; see the generator plan for why that bridge is
@@ -95,8 +100,9 @@ lemma real_exp_eq_tsum (x : ℝ) : Real.exp x = ∑' n : ℕ, x ^ n / n ! := by
 /-- The weight of the veto chain that rejects exactly `n` proposals, as a function of the
 integrated overestimate `b` and the integrated excess `d`.
 
-The `n!` is the symmetry factor of the ordered rejection scales; see the module docstring
-for the integral identity it comes from, which is the step not proved here. -/
+The `n!` is the symmetry factor of the ordered rejection scales; `vetoWeight_eq_ordered` below
+derives this weight from `EpsilonEridani.OrderedSimplex.orderedProdIntegral_eq`, the ordered
+integral identity stated in the module docstring. -/
 noncomputable def vetoWeight (b d : ℝ) (n : ℕ) : ℝ := d ^ n / n ! * Real.exp (-b)
 
 /-- **The veto identity.** Summing the veto chain over every number of rejections gives

@@ -453,6 +453,10 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+          # Record the memory the image provides: on ubuntu-26.04 the doc-gen4 step fails with
+          # `resource exhausted (error code: 12, not enough memory)` when Lake spawns processes.
+          free -h; swapon --show || true
+          echo "vm.overcommit_memory=$(cat /proc/sys/vm/overcommit_memory)"
       - uses: actions/checkout@v7
         with:
           # Same reasoning as build-data's checkout, and it matters more here: this job elaborates
@@ -609,9 +613,51 @@ jobs:
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
           # The restore above placed what this needs, so do not reach for a remote cache.
           LAKE_NO_CACHE: "true"
+        # Diagnostics for the ENOMEM failures on ubuntu-26.04 (`resource exhausted (error code: 12,
+        # not enough memory)` when Lake forks git and lean). Lean starts child processes with
+        # fork(), so the samples record Lake's own size and largest mappings alongside system
+        # memory, to tell a single oversized mapping apart from genuine exhaustion. The sampler
+        # only writes to a log file; the build and its exit status are unchanged.
         run: |
+          diag="$RUNNER_TEMP/docgen-memory.log"
+          cg="/sys/fs/cgroup$(sed -n 's/^0:://p' /proc/self/cgroup)"
+          {
+            echo "kernel $(uname -r), nproc $(nproc)"
+            echo "cgroup $cg memory.max=$(cat "$cg/memory.max" 2>/dev/null || echo n/a)"
+          } > "$diag"
+          (
+            set +e
+            while :; do
+              {
+                echo "=== $(date -u +%H:%M:%S)"
+                grep -E '^(MemAvailable|SwapFree|Committed_AS|CommitLimit):' /proc/meminfo \
+                  | tr -s ' ' | paste -sd ' '
+                ps -eo pid,rss,vsz,etimes,args --sort=-rss | head -6 | cut -c1-160
+                for pid in $(pgrep -x lake); do
+                  grep -E '^Vm(Peak|Size|HWM|RSS):' "/proc/$pid/status" \
+                    | tr -s ' \t' ' ' | paste -sd ' ' | sed "s/^/lake $pid: /"
+                  pmap -x "$pid" | sort -n -k2 | tail -3
+                done
+              } >> "$diag" 2>&1
+              sleep 10
+            done
+          ) &
+          sampler=$!
+          status=0
           rm -rf .lake/build/doc .lake/build/doc-data
-          lake build EpsilonEridaniDocs:docs
+          lake build EpsilonEridaniDocs:docs || status=$?
+          kill "$sampler" 2>/dev/null || true
+          echo "::group::doc-gen4 memory samples"
+          cat "$diag"
+          echo "::endgroup::"
+          echo "cgroup memory.peak=$(cat "$cg/memory.peak" 2>/dev/null || echo n/a)"
+          echo "cgroup memory.events: $(paste -sd ' ' "$cg/memory.events" 2>/dev/null || echo n/a)"
+          if [ "$status" != 0 ]; then
+            echo "::group::kernel log (tail)"
+            sudo -n dmesg -T 2>&1 | tail -60 || true
+            echo "::endgroup::"
+          fi
+          exit "$status"
 
       # Stamp the tree with the commit it was generated from, BEFORE it is cached, so the
       # provenance travels with the tree wherever it is later restored. This is what makes the
