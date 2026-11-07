@@ -69,6 +69,9 @@ singularity `x = 0`. The Rayleigh formula above supplies both directly.
   line but degenerate to `0 = 0` at the origin; `hasDerivAt_sphericalBesselJ` and
   `hasDerivAt_sphericalBesselJ_succ'` are their forms for `x ≠ 0`, and the derivative at the
   origin is `hasDerivAt_sphericalBesselJ_apply_zero`.
+* `hasDerivAt_sphericalBesselJ_succ_divPow` with `deriv_sphericalBesselJ_succ_divPow`: the
+  derivative of `j_{l + 1}` on the whole line, the origin included, by the product rule for
+  `j_{l + 1}(x) = x ^ (l + 1) * sphericalBesselJDivPow (l + 1) x`.
 * `hasDerivAt_sphericalBesselJ_apply_zero`: the derivative at the origin, `j_1'(0) = 1 / 3` and
   `j_l'(0) = 0` for `l ≠ 1`; `deriv_deriv_sphericalBesselJ_apply_zero`: the second derivative
   there, `j_0''(0) = -1 / 3`, `j_2''(0) = 2 / 15` and `j_l''(0) = 0` otherwise.
@@ -340,6 +343,31 @@ theorem sphericalBesselJ_add_two (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
 private lemma hasDerivAt_sphericalBesselJ_aux (l : ℕ) (x : ℝ) :
     HasDerivAt (sphericalBesselJ l) (l * x ^ (l - 1) * G l x + x ^ l * (-x * G (l + 1) x)) x :=
   (hasDerivAt_pow l x).mul (hasDerivAt_sphericalBesselJDivPow l x)
+
+/-- The derivative of `sphericalBesselJ (l + 1)` on the whole line, by the product rule for
+`j_{l + 1}(x) = x ^ (l + 1) * sphericalBesselJDivPow (l + 1) x` (`sphericalBesselJ_def`):
+`j_{l + 1}'(x) = (l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x -
+x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x`. Unlike `hasDerivAt_sphericalBesselJ` and
+`hasDerivAt_sphericalBesselJ_succ'`, which hold for `x ≠ 0` only, this holds at every point,
+the origin included. -/
+theorem hasDerivAt_sphericalBesselJ_succ_divPow (l : ℕ) (x : ℝ) :
+    HasDerivAt (sphericalBesselJ (l + 1))
+      ((l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x -
+        x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x) x := by
+  refine (hasDerivAt_sphericalBesselJ_aux (l + 1) x).congr_deriv ?_
+  have hl : (l + 1 : ℕ) - 1 = l := by omega
+  have h2 : (l : ℕ) + 1 + 1 = l + 2 := by omega
+  simp only [hl, h2, pow_add]
+  push_cast
+  ring
+
+/-- The derivative of `sphericalBesselJ (l + 1)` on the whole line, by the product rule for
+`j_{l + 1}(x) = x ^ (l + 1) * sphericalBesselJDivPow (l + 1) x`: the origin included. -/
+theorem deriv_sphericalBesselJ_succ_divPow (l : ℕ) (x : ℝ) :
+    deriv (sphericalBesselJ (l + 1)) x =
+      (l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x -
+        x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x :=
+  (hasDerivAt_sphericalBesselJ_succ_divPow l x).deriv
 
 /-- The derivative relation raising the order on the whole line,
 `x j_l'(x) = l j_l(x) - x j_{l + 1}(x)`. At the origin it degenerates to `0 = 0` and carries no
