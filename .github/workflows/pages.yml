@@ -432,6 +432,10 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+          # Record the memory the image provides: on ubuntu-26.04 the doc-gen4 step fails with
+          # `resource exhausted (error code: 12, not enough memory)` when Lake spawns processes.
+          free -h; swapon --show || true
+          echo "vm.overcommit_memory=$(cat /proc/sys/vm/overcommit_memory)"
       - uses: actions/checkout@v7
         with:
           # Same reasoning as build-data's checkout, and it matters more here: this job elaborates
