@@ -31,16 +31,19 @@ flavour. When the valence flavours coincide it is the vanishing of every valence
 (`hasValenceNumbers_iff_of_valenceQuark_eq_valenceAntiquark`). Against a density that carries the
 upstream sum-rule bundle, the assignment is a condition on the bundle's valence targets alone
 (`hasValenceNumbers_iff_valenceTarget`, the meson instance of the general
-`PDF.forall_valenceNumber_eq_iff_valenceTarget`), so it suffices to impose it at one scale
-(`PDF.valenceNumber_eq_of_forall_valenceNumber_eq_atScale`, through `hasValenceNumbers_iff`).
+`PDF.forall_valenceNumber_eq_iff_valenceTarget`), so it suffices to check it at one scale, the
+valence numbers being the scale-independent target differences of
+`PDF.valenceNumber_eq_sub_valenceTarget`.
 
-Two consequences fix what the assignment means. The charge-weighted valence numbers of the density
-are the charge difference of the valence pair (`HasValenceNumbers.sum_mul_pdfValenceNumber`), which
-recovers the meson's electric charge whenever the charge is the one carried by that pair
-(`HasValenceNumbers.sum_mul_pdfValenceNumber_eq_charge`), and the valence content of a flavoured
-meson is determined by any density carrying its valence numbers
-(`valenceQuark_eq_and_valenceAntiquark_eq_of_hasValenceNumbers`); the three sum rules themselves fix
-the valence integrals.
+Two consequences fix what the assignment means. Both are statements at a single scale, so they are
+stated for a density carrying the meson's valence numbers at that scale, with the forms for
+`HasValenceNumbers` as corollaries. The charge-weighted valence numbers of the density are the
+charge difference of the valence pair (`sum_mul_pdfValenceNumber`), which recovers the meson's
+electric charge whenever the charge is the one carried by that pair
+(`sum_mul_pdfValenceNumber_eq_charge`), and the valence content of a flavoured meson is determined
+by any density carrying its valence numbers
+(`valenceQuark_eq_and_valenceAntiquark_eq_of_pdfValenceNumber_eq`); the three sum rules themselves
+fix the valence integrals.
 
 That the assignment is consistent with the upstream sum-rule bundle — that the two can be imposed
 together — is exhibited rather than assumed. `PseudoscalarMeson.valenceModelPdf` is the upstream
@@ -54,8 +57,8 @@ model (`chargeConj_valenceModelPdf`).
 
 * `PseudoscalarMeson.HasValenceNumbers`: the density carries the meson's net valence numbers at
   every scale.
-* `PseudoscalarMeson.valenceModelWeight`, `PseudoscalarMeson.valenceModelPdf`: the valence model
-  density of a meson and the weight it gives each parton species.
+* `PseudoscalarMeson.valenceModelWeight`, `PseudoscalarMeson.valenceModelPdf`: the weight the
+  valence model gives each parton species, and the valence model density of a meson.
 * `PseudoscalarMeson.sumRuleAssumptionsValenceModelPdf`: the upstream sum-rule bundle of the
   valence model.
 
@@ -65,10 +68,11 @@ model (`chargeConj_valenceModelPdf`).
   sum rules of a flavoured meson.
 * `PseudoscalarMeson.hasValenceNumbers_iff_valenceTarget`: against the upstream sum-rule bundle,
   the valence assignment is a condition on the valence targets.
-* `PseudoscalarMeson.HasValenceNumbers.sum_mul_pdfValenceNumber_eq_charge`: the charge-weighted
-  valence numbers sum to the meson's charge.
-* `PseudoscalarMeson.valenceQuark_eq_and_valenceAntiquark_eq_of_hasValenceNumbers`: the valence
-  content of a flavoured meson is determined by any density carrying its valence numbers.
+* `PseudoscalarMeson.sum_mul_pdfValenceNumber_eq_charge`: the charge-weighted valence numbers at a
+  scale sum to the meson's charge.
+* `PseudoscalarMeson.valenceQuark_eq_and_valenceAntiquark_eq_of_pdfValenceNumber_eq`: the valence
+  content of a flavoured meson is determined by any density carrying its valence numbers at one
+  scale.
 * `PseudoscalarMeson.hasValenceNumbers_valenceModelPdf`,
   `PseudoscalarMeson.sum_mellinMoment_one_valenceModelPdf`: the valence model has the valence
   numbers of its meson and obeys the momentum sum rule.
@@ -136,8 +140,8 @@ theorem hasValenceNumbers_iff_of_valenceQuark_ne_valenceAntiquark (M : Pseudosca
 /-- **The valence assignment in terms of the bundle's valence targets.** For a density carrying
 the bundle, having the valence numbers of `M` is a condition on the bundle's valence targets
 alone: the target of the quark of each flavour minus that of its antiquark is the net valence
-number of that flavour. In particular the assignment constrains no other datum of the bundle, and
-holds at every scale as soon as it holds at one. That the two can be imposed together at all is
+number of that flavour. In particular the assignment constrains no other datum of the bundle. That
+the two can be imposed together at all is
 `sumRuleAssumptionsValenceModelPdf`. This is the meson instance of
 `PDF.forall_valenceNumber_eq_iff_valenceTarget`. -/
 theorem hasValenceNumbers_iff_valenceTarget [Fintype Flavor] (M : PseudoscalarMeson Flavor)
@@ -158,38 +162,70 @@ theorem hasValenceNumbers_chargeConj_iff (M : PseudoscalarMeson Flavor)
     Pi.neg_apply, Int.cast_neg, neg_inj]
 
 /-- **The charge-weighted valence integrals.** The valence numbers of any density carrying the
-meson's valence assignment, weighted by arbitrary flavour charges, sum to the charge of the valence
-quark minus that of the valence antiquark at every scale. -/
-theorem HasValenceNumbers.sum_mul_pdfValenceNumber [Fintype Flavor]
-    (hf : M.HasValenceNumbers f) (e : Flavor → ℝ) (Q2 : ℝ) :
+meson's net valence numbers at the scale `Q2`, weighted by arbitrary flavour charges, sum there to
+the charge of the valence quark minus that of the valence antiquark. -/
+theorem sum_mul_pdfValenceNumber [Fintype Flavor] {Q2 : ℝ}
+    (hf : ∀ i, PDF.valenceNumber f i Q2 = (M.valenceNumber i : ℝ)) (e : Flavor → ℝ) :
     ∑ i, e i * PDF.valenceNumber f i Q2 = e M.valenceQuark - e M.valenceAntiquark := by
-  simp only [hasValenceNumbers_iff.mp hf]
+  simp only [hf]
   exact_mod_cast M.sum_mul_valenceNumber e
 
 /-- **The meson charge from the valence integrals.** For a meson whose charge is the one carried
-by its valence pair, the valence numbers of any density carrying the meson's valence assignment,
-weighted by the quark charges, sum to the meson's charge at every scale. -/
+by its valence pair, the valence numbers of any density carrying the meson's net valence numbers at
+the scale `Q2`, weighted by the quark charges, sum there to the meson's charge. -/
+theorem sum_mul_pdfValenceNumber_eq_charge [Fintype Flavor] {e : Flavor → ℝ} {Q2 : ℝ}
+    (hf : ∀ i, PDF.valenceNumber f i Q2 = (M.valenceNumber i : ℝ)) (he : M.IsChargeConsistent e) :
+    ∑ i, e i * PDF.valenceNumber f i Q2 = M.charge :=
+  (sum_mul_pdfValenceNumber hf e).trans ((M.isChargeConsistent_iff e).1 he).symm
+
+/-- `sum_mul_pdfValenceNumber` at every scale, for a density carrying the meson's valence
+assignment. -/
+theorem HasValenceNumbers.sum_mul_pdfValenceNumber [Fintype Flavor]
+    (hf : M.HasValenceNumbers f) (e : Flavor → ℝ) (Q2 : ℝ) :
+    ∑ i, e i * PDF.valenceNumber f i Q2 = e M.valenceQuark - e M.valenceAntiquark :=
+  PseudoscalarMeson.sum_mul_pdfValenceNumber (hf · Q2) e
+
+/-- `sum_mul_pdfValenceNumber_eq_charge` at every scale, for a density carrying the meson's valence
+assignment. -/
 theorem HasValenceNumbers.sum_mul_pdfValenceNumber_eq_charge [Fintype Flavor] {e : Flavor → ℝ}
     (hf : M.HasValenceNumbers f) (he : M.IsChargeConsistent e) (Q2 : ℝ) :
     ∑ i, e i * PDF.valenceNumber f i Q2 = M.charge :=
-  (hf.sum_mul_pdfValenceNumber e Q2).trans ((M.isChargeConsistent_iff e).1 he).symm
+  PseudoscalarMeson.sum_mul_pdfValenceNumber_eq_charge (hf · Q2) he
 
 /-- **The net valence numbers of a meson are determined by any density carrying them.** Two mesons
-whose valence numbers one density carries have the same net valence numbers. -/
-theorem valenceNumber_eq_of_hasValenceNumbers (hM : M.HasValenceNumbers f)
-    (hM' : M'.HasValenceNumbers f) : M.valenceNumber = M'.valenceNumber := by
+whose net valence numbers one density carries at a common scale have the same net valence
+numbers. -/
+theorem valenceNumber_eq_of_pdfValenceNumber_eq {Q2 : ℝ}
+    (hM : ∀ i, PDF.valenceNumber f i Q2 = (M.valenceNumber i : ℝ))
+    (hM' : ∀ i, PDF.valenceNumber f i Q2 = (M'.valenceNumber i : ℝ)) :
+    M.valenceNumber = M'.valenceNumber := by
   funext i
-  exact Int.cast_injective ((hM i 0).symm.trans (hM' i 0))
+  exact Int.cast_injective ((hM i).symm.trans (hM' i))
 
 /-- **The valence content of a flavoured meson is determined by its densities.** Any density
-carrying the valence numbers of a flavoured meson and of a second meson forces the two to share
-their valence quark and valence antiquark. -/
+carrying, at a common scale, the net valence numbers of a flavoured meson and of a second meson
+forces the two to share their valence quark and valence antiquark. -/
+theorem valenceQuark_eq_and_valenceAntiquark_eq_of_pdfValenceNumber_eq {Q2 : ℝ}
+    (hM : ∀ i, PDF.valenceNumber f i Q2 = (M.valenceNumber i : ℝ))
+    (hM' : ∀ i, PDF.valenceNumber f i Q2 = (M'.valenceNumber i : ℝ))
+    (h : M.valenceQuark ≠ M.valenceAntiquark) :
+    M.valenceQuark = M'.valenceQuark ∧ M.valenceAntiquark = M'.valenceAntiquark :=
+  M.valenceQuark_eq_and_valenceAntiquark_eq_of_valenceNumber_eq M'
+    (valenceNumber_eq_of_pdfValenceNumber_eq hM hM') h
+
+/-- `valenceNumber_eq_of_pdfValenceNumber_eq` for two mesons whose valence assignments one density
+carries. -/
+theorem valenceNumber_eq_of_hasValenceNumbers (hM : M.HasValenceNumbers f)
+    (hM' : M'.HasValenceNumbers f) : M.valenceNumber = M'.valenceNumber :=
+  valenceNumber_eq_of_pdfValenceNumber_eq (hM · 0) (hM' · 0)
+
+/-- `valenceQuark_eq_and_valenceAntiquark_eq_of_pdfValenceNumber_eq` for two mesons whose valence
+assignments one density carries. -/
 theorem valenceQuark_eq_and_valenceAntiquark_eq_of_hasValenceNumbers
     (hM : M.HasValenceNumbers f) (hM' : M'.HasValenceNumbers f)
     (h : M.valenceQuark ≠ M.valenceAntiquark) :
     M.valenceQuark = M'.valenceQuark ∧ M.valenceAntiquark = M'.valenceAntiquark :=
-  M.valenceQuark_eq_and_valenceAntiquark_eq_of_valenceNumber_eq M'
-    (valenceNumber_eq_of_hasValenceNumbers hM hM') h
+  valenceQuark_eq_and_valenceAntiquark_eq_of_pdfValenceNumber_eq (hM · 0) (hM' · 0) h
 
 /-- **The flavour-neutral case.** A density has the valence numbers of a meson whose valence quark
 and valence antiquark share a flavour exactly when every valence integral vanishes, those valence
@@ -293,9 +329,9 @@ flavour-independent shape being invariant and the weight conjugating by
 `chargeConj_valenceModelWeight`. -/
 @[simp]
 theorem chargeConj_valenceModelPdf :
-    PDF.chargeConj M.valenceModelPdf = M.chargeConj.valenceModelPdf := by
-  rw [valenceModelPdf, PDF.chargeConj_weight, PDF.chargeConj_eq_comap, PDF.comap_modelPdf,
-    valenceModelPdf, chargeConj_valenceModelWeight]
+    M.chargeConj.valenceModelPdf = PDF.chargeConj M.valenceModelPdf := by
+  rw [valenceModelPdf, valenceModelPdf, PDF.chargeConj_weight, PDF.chargeConj_eq_comap,
+    PDF.comap_modelPdf, chargeConj_valenceModelWeight]
 
 /-- The Mellin moments of the valence model: the species weight times the moment
 `1 / ((n + 1) (n + 2))` of the shape `1 - x`. -/
