@@ -409,7 +409,12 @@ jobs:
     # this job wants from build-data is the artifact, and it copes with that being absent.
     needs: build-data
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
+    # Pinned rather than ubuntu-latest: from the ubuntu-26.04 image onward (first seen 2026-11-03)
+    # the doc-gen4 step fails ~14 minutes in with `resource exhausted (error code: 12, not enough
+    # memory)` when Lake spawns git and lean, while the same commit built on ubuntu-24.04 hours
+    # earlier. The memory/swap line in the first step records what each image provides, so
+    # moving to a newer image can be judged from that rather than retried blind.
+    runs-on: ubuntu-24.04
     outputs:
       # The commit the /docs actually being deployed were generated from, read from the tree itself.
       # This is what `advance-docgen-ref` follows; there is deliberately no output for whether a
@@ -432,6 +437,7 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+          free -h; swapon --show || true
       - uses: actions/checkout@v7
         with:
           # Same reasoning as build-data's checkout, and it matters more here: this job elaborates
