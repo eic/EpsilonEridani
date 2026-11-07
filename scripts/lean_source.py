@@ -41,7 +41,8 @@ MODIFIERS = {
     "local", "noncomputable", "nonrec", "partial", "private", "protected", "public", "scoped",
     "unsafe",
 }
-IDENTIFIER = re.compile(r"(?:_root_\.)?[\w']+(?:\.[\w']+)*")
+# Lean identifiers may also contain `!` and `?` after their first character (`get!`, `find?`).
+IDENTIFIER = re.compile(r"(?:_root_\.)?[\w'][\w'!?]*(?:\.[\w'][\w'!?]*)*")
 WORD = re.compile(r"[A-Za-z_][\w']*")
 PAIRS = {"(": ")", "[": "]", "{": "}", "⦃": "⦄"}
 OPENERS = set(PAIRS)
@@ -164,24 +165,31 @@ class VariableBinding:
     binder: str
 
 
-def strip_comments_and_strings(text: str) -> str:
-    """Blank comments and strings while preserving offsets and newlines."""
+def strip_comments_and_strings(text: str, *, keep_docs: bool = False) -> str:
+    """Blank comments and strings while preserving offsets and newlines.
+
+    With ``keep_docs``, doc comments (``/--`` and ``/-!``, including any comments nested in
+    them) are left in place, for callers that read the names a docstring mentions.
+    """
     chars = list(text)
     i = 0
     block_depth = 0
+    keep_block = False
     in_string = False
     while i < len(chars):
         if block_depth:
             if text.startswith("/-", i):
-                chars[i] = chars[i + 1] = " "
+                if not keep_block:
+                    chars[i] = chars[i + 1] = " "
                 block_depth += 1
                 i += 2
             elif text.startswith("-/", i):
-                chars[i] = chars[i + 1] = " "
+                if not keep_block:
+                    chars[i] = chars[i + 1] = " "
                 block_depth -= 1
                 i += 2
             else:
-                if chars[i] != "\n":
+                if chars[i] != "\n" and not keep_block:
                     chars[i] = " "
                 i += 1
         elif in_string:
@@ -201,7 +209,9 @@ def strip_comments_and_strings(text: str) -> str:
                 chars[i] = " "
                 i += 1
         elif text.startswith("/-", i):
-            chars[i] = chars[i + 1] = " "
+            keep_block = keep_docs and text.startswith(("/--", "/-!"), i)
+            if not keep_block:
+                chars[i] = chars[i + 1] = " "
             block_depth = 1
             i += 2
         elif chars[i] == '"':
@@ -360,7 +370,7 @@ def scopes(text: str) -> list[tuple[int, str, str | None]]:
     """
     code = strip_comments_and_strings(text)
     pattern = re.compile(
-        r"(?m)^(?:(?:public|private|protected|noncomputable)\s+)*"
+        r"(?m)^(?:@\[[^\]\n]*\][ \t]*)*(?:(?:public|private|protected|noncomputable)\s+)*"
         r"(?P<kind>namespace|section|mutual|end)(?:\s+(?P<name>[\w'.]+))?[ \t]*$"
     )
     return [(m.start(), m.group("kind"), m.group("name")) for m in pattern.finditer(code)]

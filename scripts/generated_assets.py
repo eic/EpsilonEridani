@@ -22,6 +22,7 @@ OTHER_ASSETS = [
     "loc-per-roadmap.svg",    # scripts/loc_roadmap_graph.py
     "participation.svg",      # scripts/participant_graph.py
     "progress.json",          # scripts/roadmap_progress.py
+    "module-graph.json",      # scripts/module_graph.py; read by static_files/module-graph.html
     "pipeline-health.json",   # scripts/pipeline_health.py
 ]
 

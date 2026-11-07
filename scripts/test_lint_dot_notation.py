@@ -410,6 +410,24 @@ end EpsilonEridani
         cleaned = lint.strip_comments_and_strings("Homeomorph.prodAssoc F F' G' ''\ndef next := 1\n")
         self.assertIn("def next", cleaned)
 
+    def test_keep_docs_keeps_doc_comments_only(self):
+        source = "/-- names `Foo.bar` -/\n/- plain `Foo.baz` -/\n-- line `Foo.qux`\ndef x := 1\n"
+        self.assertNotIn("Foo.bar", lint.strip_comments_and_strings(source))
+        kept = lint.strip_comments_and_strings(source, keep_docs=True)
+        self.assertIn("/-- names `Foo.bar` -/", kept)
+        self.assertNotIn("Foo.baz", kept)
+        self.assertNotIn("Foo.qux", kept)
+        self.assertEqual(len(kept), len(source))
+
+    def test_declaration_names_keep_trailing_bang_and_question_mark(self):
+        source = "namespace A\ndef find? : Nat := 0\ntheorem get!_eq : True := trivial\nend A\n"
+        self.assertEqual(lint.qualified_declarations(source), {"A.find?", "A.get!_eq"})
+
+    def test_attributed_section_is_a_scope(self):
+        source = ("namespace A\n@[expose] section\ndef x := 1\nend\n"
+                  "namespace B\ndef y := 1\nend B\nend A\n")
+        self.assertEqual(lint.qualified_declarations(source), {"A.x", "A.B.y"})
+
     def test_main_rejects_new_and_reports_ratchetable_findings(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
