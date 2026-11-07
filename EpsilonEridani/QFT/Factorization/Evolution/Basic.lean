@@ -54,8 +54,11 @@ a coupled system of integro-differential equations, one per flavor channel.
 - Splitting kernels here are ordinary functions. The physical leading-order kernels contain
   a `1 / (1 - y)` plus-distribution and a `δ (1 - y)` term, which `Convolution.convolveAt`
   cannot represent, since it integrates an ordinary function against Lebesgue measure.
-  Every statement in this module is therefore about integrable kernels; the distributional
-  case needs a distributional kernel type and is an open gap.
+  Every statement in this module is therefore about integrable kernels. The distributional
+  kernels live in `EpsilonEridani.QFT.Factorization.Evolution.KernelForm`
+  (`Evolution/Kernel/NormalForm.lean`), which pairs a kernel in normal form with test
+  functions; what remains open is a bridge from `KernelForm` to `SplittingKernel` and
+  `Convolution.convolveAt`, without which the operator of this module cannot act on them.
 
 ## iv. Table of contents
 
