@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Particles.Meson.Basic
+public import EpsilonEridani.Particles.Parton.Flavor
 public import EpsilonEridani.Particles.Parton.PDF.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.CrossSection
 
@@ -84,7 +84,7 @@ namespace DIS
 
 open Filter Topology
 open Particles.Parton.PDF (Pdf comap comap_apply)
-open Particles.Meson (LightFlavor)
+open Particles.Parton (LightFlavor)
 
 /-!
 ## Relabelling flavours, and the proton-neutron difference
@@ -97,6 +97,7 @@ variable {ι κ : Type} [Fintype ι] [Fintype κ]
 /-- **Relabelling the flavours of a density is relabelling the charges the other way.** For a
 bijection `σ` of flavour types, the leading-order `F₂` of the density `q ∘ σ` with charges `e` is
 the `F₂` of `q` with charges `e ∘ σ⁻¹`. -/
+@[simp]
 theorem f2LO_comap (σ : κ ≃ ι) (e : κ → ℝ) (q : Pdf ι) (x Q2 : ℝ) :
     f2LO e (comap σ q) x Q2 = f2LO (e ∘ σ.symm) q x Q2 := by
   simp only [f2LO_def, comap_apply, Function.comp_apply]
@@ -170,7 +171,7 @@ end General
 
 section LightFlavor
 
-open EpsilonEridani.Particles.Meson.LightFlavor
+open EpsilonEridani.Particles.Parton.LightFlavor
 
 /-- **The light-flavour proton-neutron difference of `F₂`.** With the light-quark charges,
 `F₂^p - F₂^n = (x / 3) (q_u - q_d)`: for `q_f` the quark plus antiquark density this is
@@ -226,12 +227,8 @@ theorem tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap_nhd
       (𝓝[<] 1) (𝓝 4) := by
   have hx : ∀ᶠ x in 𝓝[<] (1 : ℝ), x ≠ 0 :=
     eventually_nhdsWithin_of_eventually_nhds (eventually_ne_nhds one_ne_zero)
-  have h : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) (𝓝[<] 1) (𝓝 0) := by
-    rintro (_ | _ | _) hi
-    exacts [absurd rfl hi, hd, hs]
-  convert tendsto_f2LO_div_f2LO_comap_swap_of_tendsto_zero (e := charge) (d := d) hx hu
-    (by norm_num) h using 2
-  norm_num
+  simpa using tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_comap_swap hx hu hd hs
+    (by norm_num)
 
 end LightFlavor
 
