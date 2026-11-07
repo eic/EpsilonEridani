@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.Algebra.BigOperators.Group.List.Basic
 public import EpsilonEridani.Mathematics.DataStructures.Matrix.UnitaryTrace
 public import EpsilonEridani.QFT.SmallX.Dipole.WilsonLine
 
@@ -152,19 +153,6 @@ theorem multipoleS_reverse (U : WilsonConfiguration Nc) {n : ℕ}
   rw [multipoleS_def, multipoleS_def, h, Unitary.coe_star, star_eq_conjTranspose,
     trace_conjTranspose, Complex.star_def, Complex.conj_re]
 
-/-- Telescoping of a product `∏ᵢ aᵢ Aᵢ aᵢ₊₁⁻¹` in a group. -/
-private lemma prod_ofFn_mul_mul_inv {G : Type*} [Group G] :
-    ∀ {k : ℕ} (a : Fin (k + 1) → G) (A : Fin k → G),
-      (List.ofFn fun i => a i.castSucc * A i * (a i.succ)⁻¹).prod =
-        a 0 * (List.ofFn A).prod * (a (Fin.last k))⁻¹
-  | 0, a, A => by simp
-  | k + 1, a, A => by
-    rw [List.ofFn_succ, List.prod_cons, List.ofFn_succ, List.prod_cons]
-    simp only [← Fin.succ_castSucc]
-    rw [prod_ofFn_mul_mul_inv (fun j => a j.succ) (fun j => A j.succ)]
-    simp only [Fin.succ_zero_eq_one, Fin.succ_last, Fin.castSucc_zero, mul_assoc,
-      inv_mul_cancel_left]
-
 /-- **Gauge invariance** of the `2n`-point correlator: under `U(v) ↦ Ω₊(v) U(v) Ω₋(v)†`, the
 correlator is unchanged as soon as `Ω₋` agrees at each quark position `x i` and its antiquark
 partner `y i`, and `Ω₊` agrees at each antiquark position `y i` and the next quark position
@@ -179,7 +167,7 @@ theorem multipoleS_gaugeTransform (Ωp Ωm : EuclideanSpace ℝ (Fin 2) → unit
   · simp [multipoleS_def]
   let a : Fin (m + 2) → unitaryGroup (Fin Nc) ℂ := Fin.cons (Ωp (x 0)) fun i => Ωp (y i)
   have ha : ∀ i : Fin (m + 1), a i.castSucc = Ωp (x i) := by
-    refine Fin.cases rfl fun j => ?_
+    refine Fin.cases (by simp only [a, Fin.cons_zero, Fin.castSucc_zero]) fun j => ?_
     simp only [a, ← Fin.succ_castSucc, Fin.cons_succ, hp, finRotate_apply, Fin.coeSucc_eq_succ]
   have hlast : a (Fin.last (m + 1)) = Ωp (x 0) := by
     simp only [a, ← Fin.succ_last, Fin.cons_succ, hp, finRotate_last]
@@ -187,11 +175,11 @@ theorem multipoleS_gaugeTransform (Ωp Ωm : EuclideanSpace ℝ (Fin 2) → unit
       star (WilsonConfiguration.gaugeTransform Ωp Ωm U (y i))).prod =
       a 0 * (List.ofFn fun i => U (x i) * star (U (y i))).prod * star (a (Fin.last (m + 1))) := by
     rw [Unitary.star_eq_inv]
-    refine Eq.trans ?_ (prod_ofFn_mul_mul_inv a fun i => U (x i) * star (U (y i)))
+    refine Eq.trans ?_ (List.prod_ofFn_mul_mul_inv a fun i => U (x i) * star (U (y i)))
     refine congrArg List.prod (List.ofFn_inj.mpr (funext fun i => ?_))
     simp only [WilsonConfiguration.gaugeTransform_apply, ha, a, Fin.cons_succ, hm,
       Unitary.star_eq_inv, _root_.mul_inv_rev, inv_inv, mul_assoc, inv_mul_cancel_left]
-  rw [show a 0 = Ωp (x 0) from rfl, hlast] at key
+  rw [show a 0 = Ωp (x 0) by simp only [a, Fin.cons_zero], hlast] at key
   simp only [multipoleS_def, key, Submonoid.coe_mul, Unitary.coe_star, trace_unitary_conj]
 
 end SmallX
