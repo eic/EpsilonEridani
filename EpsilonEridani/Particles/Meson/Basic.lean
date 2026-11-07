@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Basic.Real.Basic
+public import EpsilonEridani.Particles.Parton.Flavor
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
@@ -53,7 +54,6 @@ built from quark masses, the limits are exactly the degeneracy of the correspond
 * `PseudoscalarMeson.valenceNumber`: the net valence number of each flavour.
 * `PseudoscalarMeson.IsChargeConsistent`: the charge is the valence quark charge minus the
   valence antiquark charge.
-* `LightFlavor`: the up, down and strange flavours, with their charges `LightFlavor.charge`.
 * `piPlus`, `piMinus`, `kPlus`, `kMinus`: the charged pions and kaons over `LightFlavor`.
 * `FlavorBreaking`: the isospin-breaking parameter and the strange-light mass splitting, with
   the limits `FlavorBreaking.IsIsospinLimit` and `FlavorBreaking.IsSU3Limit`.
@@ -287,47 +287,10 @@ theorem IsChargeConsistent.sum_mul_valenceNumber [DecidableEq Flavor] [Fintype F
 
 end PseudoscalarMeson
 
-/-! ### The light flavours and the charged pions and kaons -/
+/-! ### The charged pions and kaons -/
 
-/-- The three light quark flavours: up, down and strange. -/
-inductive LightFlavor where
-  /-- The up quark. -/
-  | u
-  /-- The down quark. -/
-  | d
-  /-- The strange quark. -/
-  | s
-  deriving DecidableEq, Repr
-
-namespace LightFlavor
-
-instance : Fintype LightFlavor where
-  elems := {u, d, s}
-  complete x := by cases x <;> simp
-
-/-- The sum of a function over the light flavours is the sum of its values on `u`, `d` and `s`,
-so that sums over `LightFlavor` can be evaluated flavour by flavour. -/
-@[simp]
-theorem sum_univ {M : Type*} [AddCommMonoid M] (f : LightFlavor → M) :
-    ∑ a, f a = f u + f d + f s := by
-  rw [← Finset.eq_univ_of_forall (s := {u, d, s}) fun a => by cases a <;> simp]
-  simp [Finset.sum_insert, add_assoc]
-
-/-- The electric charge of the quark of each light flavour, in units of the positron charge. -/
-noncomputable def charge : LightFlavor → ℝ
-  | u => 2 / 3
-  | d => -1 / 3
-  | s => -1 / 3
-
-@[simp] theorem charge_u : charge u = 2 / 3 := (rfl)
-
-@[simp] theorem charge_d : charge d = -1 / 3 := (rfl)
-
-@[simp] theorem charge_s : charge s = -1 / 3 := (rfl)
-
-end LightFlavor
-
-open LightFlavor
+open EpsilonEridani.Particles.Parton (LightFlavor)
+open EpsilonEridani.Particles.Parton.LightFlavor
 
 /-- The positive pion `π⁺ = u dbar`, with the Particle Data Group mass and decay constant in MeV. -/
 noncomputable def piPlus : PseudoscalarMeson LightFlavor where
