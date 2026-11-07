@@ -21,14 +21,22 @@ The case `g = 1` is the orthogonal group. Rotating a family `x : ι → M` of ve
 an orthogonal matrix `A`, `x a ↦ ∑ b, A a b • x b`, leaves every sum `∑ a, B (x a) (y a)` of a
 bilinear map `B` invariant.
 
+For sesquilinear forms the analogue of the transformed Gram matrix `Λᵀ * g * Λ` is
+`Sᴴ * A * S`: transforming both arguments of `star x ⬝ᵥ A *ᵥ y` by `S` replaces `A` by it.
+
 ## Main results
 
 - `mul_inv_mul_transpose_eq_inv`: `Λᵀ * g * Λ = g` implies `Λ * g⁻¹ * Λᵀ = g⁻¹`.
 - `transpose_mul_mul_mul_inv_mul_transpose`: the contraction `X * g⁻¹ * Yᵀ` transforms as a
   tensor with two lower indices.
 - `trace_inv_mul_transpose_mul_mul`: the trace `trace (g⁻¹ * X)` is invariant.
+- `Matrix.IsSymm.trace_mul_transpose`: contracting with a symmetric `A`, `trace (A * X)` only
+  sees the symmetric part of `X`.
 - `LinearMap.sum_bilin_sum_smul_of_mem_orthogonalGroup`: invariance of `∑ a, B (x a) (y a)`
   under an orthogonal rotation of the families `x` and `y`.
+- `Matrix.star_mulVec_dotProduct_mulVec_mulVec`: transforming both arguments of the
+  sesquilinear form `star x ⬝ᵥ A *ᵥ y` by a rectangular matrix `S` replaces its matrix `A` by
+  `Sᴴ * A * S`.
 -/
 
 public section
@@ -104,3 +112,22 @@ theorem sum_bilin_sum_smul_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι]
     _ = ∑ b, B (x b) (y b) := by simp [hδ]
 
 end LinearMap
+
+namespace Matrix
+
+/-- Contracting with a symmetric matrix sees only the symmetric part of a tensor:
+`trace (A * Xᵀ) = trace (A * X)` for `A` symmetric. -/
+theorem IsSymm.trace_mul_transpose {n R : Type*} [Fintype n] [AddCommMonoid R] [Mul R]
+    {A : Matrix n n R} (hA : A.IsSymm) (X : Matrix n n R) : trace (A * Xᵀ) = trace (A * X) := by
+  conv_lhs => rw [← hA.eq]
+  exact trace_transpose_mul A X
+
+variable {m n R : Type*} [Fintype m] [Fintype n] [NonUnitalSemiring R] [StarRing R]
+
+/-- Transforming both arguments of the sesquilinear form `star x ⬝ᵥ A *ᵥ y` by a rectangular
+matrix `S` replaces its matrix `A` by `Sᴴ * A * S`. -/
+theorem star_mulVec_dotProduct_mulVec_mulVec (S : Matrix m n R) (A : Matrix m m R) (x y : n → R) :
+    star (S *ᵥ x) ⬝ᵥ A *ᵥ (S *ᵥ y) = star x ⬝ᵥ (Sᴴ * A * S) *ᵥ y := by
+  simp only [star_mulVec, dotProduct_mulVec, vecMul_vecMul, Matrix.mul_assoc]
+
+end Matrix
