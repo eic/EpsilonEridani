@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Particles.Parton.PDF.Basic
 public import EpsilonEridani.QFT.Factorization.Convolution.Collinear
+public import Mathlib.Probability.Distributions.Beta
 /-!
 
 # The Mellin transform of a collinear convolution
@@ -65,6 +66,7 @@ transform. Extending the theorem to distributional kernels is a separate develop
 - C. Natural indices and the bridge to `mellinMoment`
 - D. The convolution theorem
 - E. Moment-space corollaries
+- F. The Beta density
 
 -/
 
@@ -394,6 +396,70 @@ theorem mellinMoment_convolveAt {Flavor : Type} (C : ℝ → ℝ)
   congr 1
   simp only [EpsilonEridani.Particles.Parton.PDF.mellinMoment]
   rw [MeasureTheory.integral_Icc_eq_integral_Ioc]
+
+/-!
+
+## F. The Beta density
+
+The density `x ^ (a - 1) (1 - x) ^ (b - 1) / Β(a, b)` of the Beta distribution,
+`ProbabilityTheory.betaPDFReal a b`, is the standard shape of a parton or lepton density at the
+endpoints of `(0,1]`. Its Mellin transform is a ratio of Gamma functions, on the half plane
+`1 - a < Re N` where it converges. At `N = 1` the ratio is one, which is the normalisation of the
+density.
+
+-/
+
+/-- On the open unit interval the Mellin integrand of the Beta density is the normalising constant
+times the integrand of Euler's beta integral `Complex.betaIntegral (N + a - 1) b`. -/
+private lemma cpow_mul_betaPDFReal_of_mem_Ioo (a b : ℝ) (N : ℂ) {x : ℝ}
+    (hx : x ∈ Set.Ioo (0 : ℝ) 1) :
+    (x : ℂ) ^ (N - 1) * (ProbabilityTheory.betaPDFReal a b x : ℂ) =
+      ((1 / ProbabilityTheory.beta a b : ℝ) : ℂ) *
+        ((x : ℂ) ^ (N + a - 1 - 1) * (1 - (x : ℂ)) ^ ((b : ℂ) - 1)) := by
+  have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.1.ne'
+  simp only [ProbabilityTheory.betaPDFReal, hx.1, hx.2, and_self, ↓reduceIte]
+  rw [Complex.ofReal_mul, Complex.ofReal_mul, Complex.ofReal_cpow hx.1.le,
+    Complex.ofReal_cpow (sub_nonneg.mpr hx.2.le), Complex.ofReal_sub, Complex.ofReal_one,
+    show N + a - 1 - 1 = (N - 1) + ((a : ℂ) - 1) by ring, Complex.cpow_add _ _ hx0]
+  push_cast
+  ring
+
+/-- The Mellin transform of the Beta density converges on the half plane `1 - a < Re N`. -/
+theorem mellinDisConvergent_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ}
+    (hN : 0 < N.re + a - 1) :
+    MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N := by
+  have h := (Complex.betaIntegral_convergent (u := N + a - 1) (v := b) (by simpa using hN)
+    (by simpa using hb)).const_mul ((1 / ProbabilityTheory.beta a b : ℝ) : ℂ)
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one,
+    integrableOn_Ioc_iff_integrableOn_Ioo] at h
+  unfold MellinDisConvergent
+  rw [integrableOn_Ioc_iff_integrableOn_Ioo]
+  exact h.congr_fun (fun x hx => (cpow_mul_betaPDFReal_of_mem_Ioo a b N hx).symm)
+    measurableSet_Ioo
+
+/-- **Mellin moments of the Beta density.** On the half plane `1 - a < Re N`,
+`∫_{(0,1]} x ^ (N - 1) x ^ (a - 1) (1 - x) ^ (b - 1) dx / Β(a, b)
+  = Γ(N + a - 1) Γ(a + b) / (Γ(a) Γ(N + a + b - 1))`,
+the ratio `Β(N + a - 1, b) / Β(a, b)` of Beta functions written through the Gamma function. -/
+theorem mellinDis_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ} (hN : 0 < N.re + a - 1) :
+    mellinDis (ProbabilityTheory.betaPDFReal a b) N =
+      Complex.Gamma (N + a - 1) * Complex.Gamma (a + b) /
+        (Complex.Gamma a * Complex.Gamma (N + a + b - 1)) := by
+  have hu : 0 < (N + a - 1).re := by simpa using hN
+  have hv : 0 < (b : ℂ).re := by simpa using hb
+  have hΓb : Complex.Gamma b ≠ 0 := Complex.Gamma_ne_zero_of_re_pos hv
+  have hB := Complex.betaIntegral_eq_Gamma_mul_div _ _ hu hv
+  rw [Complex.betaIntegral, intervalIntegral.integral_of_le zero_le_one,
+    MeasureTheory.integral_Ioc_eq_integral_Ioo] at hB
+  rw [mellinDis, MeasureTheory.integral_Ioc_eq_integral_Ioo,
+    MeasureTheory.setIntegral_congr_fun measurableSet_Ioo
+      (fun x hx => cpow_mul_betaPDFReal_of_mem_Ioo a b N hx),
+    MeasureTheory.integral_const_mul, hB, ProbabilityTheory.beta]
+  push_cast
+  rw [← Complex.Gamma_ofReal, ← Complex.Gamma_ofReal, ← Complex.Gamma_ofReal,
+    show N + a - 1 + b = N + a + b - 1 by ring]
+  push_cast
+  field_simp
 
 end Convolution
 end Factorization
