@@ -14,7 +14,7 @@ At momentum transfer small compared with the `Z` mass, `Z` exchange between a le
 fermion `f` contracts to a four-fermion contact interaction. Its parity-violating part is, in the
 normalisation of the Particle Data Group,
 
-`(G_F / √2) [C₁ (ℓ̄ γ^μ γ⁵ ℓ)(f̄ γ_μ f) + C₂ (ℓ̄ γ^μ ℓ)(f̄ γ_μ γ⁵ f)]`,
+`(G_F / √2) [C₁ (ℓbar γ^μ γ⁵ ℓ)(fbar γ_μ f) + C₂ (ℓbar γ^μ ℓ)(fbar γ_μ γ⁵ f)]`,
 
 with
 
