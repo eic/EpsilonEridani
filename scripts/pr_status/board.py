@@ -11,7 +11,7 @@ Each open PR is one item on a Projects (v2) board. Its **Status** column is a ba
 from merge, so the board reads left to right as "closest first":
 
     All rubrics green  >  1-2 to go  >  3-5 to go  >  6+ to go  >  Blocked  >
-    Re-review: was <=2 to go  >  Re-review: was 3+ to go  >  Never reviewed  >
+    Re-review: was ≤2 to go  >  Re-review: was 3+ to go  >  Never reviewed  >
     Waiting on CI  >  On hold
 
 A PR whose newest review judged an earlier head (or merge base) is not counted as reviewed, as the
