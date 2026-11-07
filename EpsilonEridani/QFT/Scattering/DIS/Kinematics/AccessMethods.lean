@@ -214,25 +214,6 @@ theorem electronMethod_eq_ofTransfer (g : Bilin V) (k p kPrime : V) :
     electronMethod g k p kPrime = .ofTransfer g k p (k - kPrime) := by
   rw [electronMethod]
 
-/-- The hadronic method is the invariants of the hadronic momentum transfer `p_X - p`. -/
-theorem hadronicMethod_eq_ofTransfer (g : Bilin V) (k p pX : V) :
-    hadronicMethod g k p pX = .ofTransfer g k p (pX - p) := by
-  rw [hadronicMethod]
-
-/-- The electron-method Bjorken variable is `Q²_e / (2 (p·k) y_e)` wherever `p·k ≠ 0`. -/
-theorem electronMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime : V) (hpk : g p k ≠ 0) :
-    (electronMethod g k p kPrime).x =
-      (electronMethod g k p kPrime).Q2 / (2 * g p k * (electronMethod g k p kPrime).y) := by
-  rw [electronMethod_eq_ofTransfer]
-  exact ReconstructedInvariants.ofTransfer_x_eq_Q2_div g k p _ hpk
-
-/-- The hadronic-method Bjorken variable is `Q²_h / (2 (p·k) y_h)` wherever `p·k ≠ 0`. -/
-theorem hadronicMethod_x_eq_Q2_div (g : Bilin V) (k p pX : V) (hpk : g p k ≠ 0) :
-    (hadronicMethod g k p pX).x =
-      (hadronicMethod g k p pX).Q2 / (2 * g p k * (hadronicMethod g k p pX).y) := by
-  rw [hadronicMethod_eq_ofTransfer]
-  exact ReconstructedInvariants.ofTransfer_x_eq_Q2_div g k p _ hpk
-
 /-- The Sigma method, from all four measured momenta: the virtuality `Q²_e` of the electron
 method, the inelasticity `y_Σ = (p·q_h) / (p·q_h + p·k')` of Bassler and Bernardi
 (`SigmaMethodData.ySigma`), in which the incoming lepton does not appear, and
@@ -262,21 +243,6 @@ theorem sigmaMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime pX : V) :
     (sigmaMethod g k p kPrime pX).x =
       (sigmaMethod g k p kPrime pX).Q2 / (2 * g p k * (sigmaMethod g k p kPrime pX).y) := by
   rw [sigmaMethod_x, sigmaMethod_Q2, sigmaMethod_y]
-
-/-- The Sigma-method inelasticity in terms of the measured momenta,
-`y_Σ = (p·q_h) / (p·q_h + p·k')`. -/
-theorem sigmaMethod_y_eq_div_add (g : Bilin V) (k p kPrime pX : V) :
-    (sigmaMethod g k p kPrime pX).y = g p (pX - p) / (g p (pX - p) + g p kPrime) := by
-  rw [sigmaMethod_y, SigmaMethodData.ySigma]
-
-/-- The Sigma-method Bjorken variable in terms of the measured momenta,
-`x_Σ = Q²_e (p·q_h + p·k') / (2 (p·k) (p·q_h))`. -/
-theorem sigmaMethod_x_eq_mul_add_div (g : Bilin V) (k p kPrime pX : V) :
-    (sigmaMethod g k p kPrime pX).x = (electronMethod g k p kPrime).Q2 *
-      (g p (pX - p) + g p kPrime) / (2 * g p k * g p (pX - p)) := by
-  rw [sigmaMethod_x_eq_Q2_div, sigmaMethod_Q2, sigmaMethod_y_eq_div_add]
-  simp only [div_eq_mul_inv, mul_inv, inv_inv]
-  ring
 
 /-- The mixed-method Bjorken variable is `Q²_e / (2 (p·k) y_h)` wherever `p·k ≠ 0`. -/
 theorem mixedMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime pX : V) (hpk : g p k ≠ 0) :
@@ -311,7 +277,8 @@ theorem electronMethod_eq_xBjElectron_q2Electron_yElectron (d : ElectronMethodDa
   · rw [electronMethod_x, hQ, map_sub, hpk, hpk', ElectronMethodData.xBjElectron,
       ElectronMethodData.yElectron]
     field_simp
-  · exact hQ
+  · rw [electronMethod_Q2]
+    exact hQ
   · rw [electronMethod_y, map_sub, hpk, hpk', ElectronMethodData.yElectron]
     field_simp
 

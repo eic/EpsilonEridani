@@ -231,8 +231,10 @@ theorem hadronicMethod_eq_trueInvariants_finalState :
     hadronicMethod g e.k e.p e.pX =
       (e.trueInvariants g .finalState).toReconstructedInvariants := by
   ext
-  · exact e.hadronicMethod_x_eq_trueInvariants_x g .finalState
-  · exact e.hadronicMethod_Q2_eq_trueInvariants_Q2 g .finalState
+  · rw [TrueInvariants.toReconstructedInvariants_x]
+    exact e.hadronicMethod_x_eq_trueInvariants_x g .finalState
+  · rw [TrueInvariants.toReconstructedInvariants_Q2]
+    exact e.hadronicMethod_Q2_eq_trueInvariants_Q2 g .finalState
   · rw [hadronicMethod_y, TrueInvariants.toReconstructedInvariants_y, trueInvariants_y_eq,
       leptonIn_finalState]
 
@@ -293,8 +295,15 @@ theorem trueInvariants_eq_of_photon_eq_zero (h : e.photon = 0) :
 theorem electronMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
     electronMethod g e.k e.p e.kPrime = (e.trueInvariants g l).toReconstructedInvariants := by
   have hK := electronMethod_eq_xBj_Q2_yInel g (e.hardKinematics l)
-  rwa [hardKinematics_k, hardKinematics_p, hardKinematics_kPrime, leptonIn_of_photon_eq_zero l h,
+  rw [hardKinematics_k, hardKinematics_p, hardKinematics_kPrime, leptonIn_of_photon_eq_zero l h,
     leptonOut_of_photon_eq_zero l h] at hK
+  ext
+  · rw [TrueInvariants.toReconstructedInvariants_x, trueInvariants_x]
+    exact congrArg ReconstructedInvariants.x hK
+  · rw [TrueInvariants.toReconstructedInvariants_Q2, trueInvariants_Q2]
+    exact congrArg ReconstructedInvariants.Q2 hK
+  · rw [TrueInvariants.toReconstructedInvariants_y, trueInvariants_y]
+    exact congrArg ReconstructedInvariants.y hK
 
 /-- Without a photon, the hadronic method returns the true invariants. -/
 theorem hadronicMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
@@ -317,8 +326,10 @@ theorem sigmaMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0)
       TrueInvariants.toReconstructedInvariants_Q2, TrueInvariants.toReconstructedInvariants_x,
       trueInvariants_x_eq, trueInvariants_y_eq, leptonIn_of_photon_eq_zero l h, mul_assoc,
       mul_div_cancel₀ _ hpk]
-  · exact hQ
-  · exact hy
+  · rw [sigmaMethod_Q2]
+    exact hQ
+  · rw [TrueInvariants.toReconstructedInvariants_y]
+    exact hy
 
 /-- Without a photon, the mixed method returns the true invariants. -/
 theorem mixedMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
@@ -330,8 +341,10 @@ theorem mixedMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
   ext
   · rw [mixedMethod_x, hQ, TrueInvariants.toReconstructedInvariants_x,
       TrueInvariants.toReconstructedInvariants_Q2, trueInvariants_x_eq]
-  · exact hQ
-  · exact hy
+  · rw [mixedMethod_Q2]
+    exact hQ
+  · rw [mixedMethod_y]
+    exact hy
 
 end BornLimit
 
@@ -495,16 +508,15 @@ variable {e} {z : ℝ}
 equivalently `z ℓ = (1 - z) k'`, a condition on the measured momenta alone. -/
 theorem photon_eq_smul_kPrime_add_photon_iff :
     e.photon = (1 - z) • (e.kPrime + e.photon) ↔ z • e.photon = (1 - z) • e.kPrime := by
-  rw [smul_add, sub_smul 1 z e.photon, one_smul, add_sub_left_comm, left_eq_add, sub_eq_zero,
-    eq_comm]
+  constructor <;> intro h <;> linear_combination (norm := module) h
 
 /-- After final-state emission of the fraction `1 - z` of the outgoing hard lepton momentum, the
 measured lepton keeps `k' = z (k' + ℓ)`. -/
 theorem kPrime_eq_smul_leptonOut_of_collinear_finalState
     (hcol : e.photon = (1 - z) • (e.kPrime + e.photon)) :
     e.kPrime = z • e.leptonOut .finalState := by
-  rw [leptonOut_finalState, smul_add, photon_eq_smul_kPrime_add_photon_iff.1 hcol, ← add_smul,
-    add_sub_cancel, one_smul]
+  rw [leptonOut_finalState, smul_add, photon_eq_smul_kPrime_add_photon_iff.1 hcol]
+  module
 
 /-- After final-state emission of the fraction `1 - z ≠ 1` of the outgoing hard lepton momentum,
 the hard lepton leaves with `k' / z`. -/
