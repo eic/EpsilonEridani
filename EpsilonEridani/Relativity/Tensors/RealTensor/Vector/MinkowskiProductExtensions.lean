@@ -20,10 +20,12 @@ vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the m
 in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
 energies above the mass and a prescribed angle between their spatial parts.
 
-It also records the symmetry of the Minkowski product as a bilinear form
-(`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
-the reflexive-form results about light-cone bases in
-`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
+It also records the symmetry (`isSymm_toBilinForm_minkowskiProduct`) and nondegeneracy
+(`nondegenerate_toBilinForm_minkowskiProduct`) of the Minkowski product as a bilinear form, the
+witnesses that supply the `IsRefl` and `Nondegenerate` hypotheses of the results about light-cone
+bases in `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`, and the components
+`(E u)^μ = η^{μμ} F(u, e_μ)` of a bilinear form `F` with its second index raised by the Minkowski
+metric (`symmCompOfNondegenerate_minkowskiProduct_apply`).
 -/
 
 public section
@@ -111,5 +113,25 @@ of `LightConeBasis.bilinForm_eq_plus_mul_minus_add` and
 theorem isSymm_toBilinForm_minkowskiProduct {d : ℕ} :
     (minkowskiProduct (d := d)).toBilinForm.IsSymm :=
   ⟨minkowskiProduct_symm⟩
+
+/-- The Minkowski product is a nondegenerate bilinear form: a vector orthogonal to every vector
+is zero. -/
+theorem nondegenerate_toBilinForm_minkowskiProduct {d : ℕ} :
+    (minkowskiProduct (d := d)).toBilinForm.Nondegenerate :=
+  (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+    isSymm_toBilinForm_minkowskiProduct.isRefl).2 fun p hp =>
+      (minkowskiProduct_eq_zero_forall_iff p).1 hp
+
+/-- A bilinear form `F` with its second index raised by the Minkowski metric, in components: the
+endomorphism `E` with `⟪E u, v⟫ₘ = F u v` has `(E u)^μ = η^{μμ} F(u, e_μ)`. -/
+theorem symmCompOfNondegenerate_minkowskiProduct_apply {d : ℕ}
+    (F : LinearMap.BilinForm ℝ (Lorentz.Vector d)) (u : Lorentz.Vector d) (μ : Fin 1 ⊕ Fin d) :
+    F.symmCompOfNondegenerate (minkowskiProduct (d := d)).toBilinForm
+        nondegenerate_toBilinForm_minkowskiProduct u μ =
+      minkowskiMatrix μ μ * F u (basis μ) := by
+  have h := LinearMap.BilinForm.symmCompOfNondegenerate_left_apply F
+    nondegenerate_toBilinForm_minkowskiProduct (basis μ) u
+  rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_basis_right] at h
+  rw [← h, ← _root_.mul_assoc, minkowskiMatrix.η_apply_mul_η_apply_diag, one_mul]
 
 end EpsilonEridani
