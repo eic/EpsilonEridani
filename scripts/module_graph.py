@@ -13,25 +13,34 @@ Three kinds of node go into the graph, in three bands from top to bottom:
   namespace (the `*Extensions.lean` mirrors, say) are flagged as PhyslibAlpha-eligible.
 
 * **Roadmap targets** (optional, `--roadmap-dir`): one node per `## Layer` section of each
-  roadmap's `Suggested.lean` in EpsilonEridaniRoadmaps. Those files import the empty
-  `EpsilonEridani` root, so their imports say nothing; an edge `M -> layer` instead means a
-  signature or docstring in that section names a declaration that module `M` defines. Names are
-  resolved textually against a declaration index built from the sources (tracking `namespace`
-  blocks and the section's `open`s), not by Lean, so it is a best-effort reading: a name the
-  index misses (a structure field, an auto-generated lemma) draws no edge.
+  roadmap's `Suggested.lean` in EpsilonEridaniRoadmaps, keyed by the same layer id
+  (`roadmap_progress.layer_id`) as the Progress page. An edge `M -> layer` means the layer
+  builds on module `M`, in one of two ways:
+
+  - a signature or docstring in that section names a declaration that `M` defines. Names are
+    resolved textually against a declaration index built from the sources with
+    `lean_source.qualified_declarations`, trying each name as written, under the file's `open`s
+    and under `EpsilonEridani`; a name with no indexed match falls back to its longest indexed
+    prefix of at least two components, so a field or constructor (`Kin.q`) links to the module
+    defining its type (`Kin`). A name with no indexed prefix either (an auto-generated lemma,
+    say) draws no edge. This is a best-effort reading, not checked by Lean.
+  - the roadmap file imports `M`. Most roadmap files import only the empty `EpsilonEridani`
+    root, but a file that imports library modules builds on all of them, so they are linked to
+    its first section.
 
 Everything is read from source text, so no build is needed and the Pages workflow can run it
 alongside the other chart generators. Outputs, into `--out-dir`:
 
-* `module-graph.json`: the nodes and edges, the data the other two are rendered from;
+* `module-graph.json`: the nodes and edges (see `build_graph`), the data the viewer and the
+  Graphviz source are drawn from;
 * `module-graph.dot`: Graphviz source, one cluster per package and per top-level directory, with
   import edges implied by transitivity left out;
-* `module-graph.html`: a self-contained interactive viewer (the JSON is inlined, so it opens from
-  `file://`) with search, collapsing by directory depth and package, and upstream/downstream
-  highlighting.
+* `module-graph.html`: a local preview of the viewer. The viewer itself is the committed
+  `web/static_files/module-graph.html`, which fetches `module-graph.json`; this copy inlines the
+  data and the site's `style.css` so that it also opens from `file://`.
 
 Pure stdlib, like the other generators, so CI needs no pip install. The viewer loads cytoscape.js
-and dagre from a CDN.
+and dagre from jsDelivr, pinned by subresource-integrity hashes.
 """
 
 from __future__ import annotations
@@ -39,14 +48,15 @@ from __future__ import annotations
 import argparse
 import collections
 import datetime as dt
-import html
 import json
 import pathlib
 import re
 import subprocess
 import sys
 
-from chart_style import BG, MUTED, PALETTE, PANEL, TEXT
+from chart_style import BAR_BG, BG, FONT_FAMILY, MUTED, PALETTE, PANEL, TEXT
+from lean_source import qualified_declarations, strip_comments_and_strings
+from roadmap_progress import git_head, layer_id
 
 LIB = "EpsilonEridani"
 REPO_URL = "https://github.com/eic/EpsilonEridani"
@@ -72,17 +82,13 @@ PACKAGES = {
 }
 PACKAGE_ORDER = ["Mathlib", "Physlib", "PhyslibAlpha", "QuantumInfo", "TauCeti"]
 
-IMPORT_RE = re.compile(r"^(public\s+|private\s+)?(meta\s+)?import\s+(all\s+)?([\w.'«»]+)\s*$")
-DECL_RE = re.compile(
-    r"^\s*(?:@\[[^\]]*\]\s*)*"
-    r"(?:(?:private|protected|noncomputable|partial|unsafe|nonrec|public|meta|scoped)\s+)*"
-    r"(def|theorem|lemma|abbrev|structure|class(?:\s+inductive)?|inductive|instance|opaque|"
-    r"axiom|irreducible_def|notation|macro|elab|syntax)\b"
-    r"(?:\s*\([^)]*\))?\s+([^\s:({\[⦃]+)")
-NAMESPACE_RE = re.compile(r"^\s*namespace\s+(\S+)")
-SECTION_RE = re.compile(
-    r"^\s*(?:@\[[^\]]*\]\s*)*(?:(?:noncomputable|public|private)\s+)*section\b(?:\s+(\S+))?")
-END_RE = re.compile(r"^\s*end\b(?:\s+(\S+))?\s*$")
+IMPORT_RE = re.compile(
+    r"^(?:(?:public|private)\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.'«»]+)\s*$")
+# Declaration commands outside `lean_source.DECLARATION_KEYWORDS`, passed to it as extra events
+# (as scripts/check-expired-upstream-shims.py does for `alias` and `axiom`).
+EXTRA_DECL_RE = re.compile(
+    r"(?m)^[ \t]*(?:@\[[^\]\n]*\][ \t]*)*(?:(?:private|protected|noncomputable|public)\s+)*"
+    r"(?:axiom|irreducible_def)\s+(?P<name>[\w'][\w'!?]*(?:\.[\w'][\w'!?]*)*)")
 OPEN_RE = re.compile(r"^\s*open\s+(.*)$")
 LAYER_RE = re.compile(r"^/-!\s*##\s+(.*)$")
 TITLE_RE = re.compile(r"/-!\s*\n?\s*#\s+(.+)")
@@ -93,74 +99,17 @@ TARGET_RE = re.compile(r"^\s*(?:@\[[^\]]*\]\s*)*(?:(?:private|protected|noncompu
 
 # --- Lean source handling --------------------------------------------------------------------
 
-def strip_comments(text: str, keep_docs: bool = False) -> str:
-    """Blank out comments, keeping every newline so line numbers survive.
-
-    Block comments nest in Lean. With `keep_docs`, doc comments (`/--`, `/-!`) are kept, since
-    a roadmap's docstrings name the upstream declarations a target builds on.
-    """
-    out = []
-    i, n, depth, keep = 0, len(text), 0, False
-    in_string = False
-    while i < n:
-        c = text[i]
-        if depth == 0:
-            if in_string:
-                out.append(c)
-                if c == "\\" and i + 1 < n:
-                    out.append(text[i + 1])
-                    i += 2
-                    continue
-                if c == '"':
-                    in_string = False
-                i += 1
-                continue
-            if c == '"':
-                in_string = True
-                out.append(c)
-                i += 1
-                continue
-            if text.startswith("--", i):
-                j = text.find("\n", i)
-                j = n if j < 0 else j
-                i = j
-                continue
-            if text.startswith("/-", i):
-                depth = 1
-                keep = keep_docs and i + 2 < n and text[i + 2] in "-!"
-                out.append(text[i:i + 2] if keep else "  ")
-                i += 2
-                continue
-            out.append(c)
-            i += 1
-            continue
-        if text.startswith("/-", i):
-            depth += 1
-            out.append(text[i:i + 2] if keep else "  ")
-            i += 2
-        elif text.startswith("-/", i):
-            depth -= 1
-            out.append(text[i:i + 2] if keep else "  ")
-            i += 2
-        else:
-            out.append(c if keep or c == "\n" else " ")
-            i += 1
-    return "".join(out)
-
-
-def parse_imports(text: str) -> list[dict]:
-    """The header imports of a Lean file, each with whether it is `public` and/or `meta`."""
+def parse_imports(text: str) -> list[str]:
+    """The modules a Lean file imports in its header."""
     imports = []
-    for line in strip_comments(text).splitlines():
+    for line in strip_comments_and_strings(text).splitlines():
         s = line.strip()
         if not s or s in ("module", "prelude"):
             continue
         m = IMPORT_RE.match(s)
         if not m:
             break
-        imports.append({"module": m.group(4).replace("«", "").replace("»", ""),
-                        "public": bool(m.group(1) and m.group(1).startswith("public")),
-                        "meta": bool(m.group(2))})
+        imports.append(m.group(1).replace("«", "").replace("»", ""))
     return imports
 
 
@@ -171,39 +120,22 @@ def module_title(text: str) -> str | None:
 
 
 def declarations(text: str) -> list[str]:
-    """Fully qualified names of the declarations in one file, tracking `namespace` blocks.
-
-    A textual approximation: it sees the declaration keywords at the start of a line and the
-    `namespace`/`section`/`end` structure, which is all a name lookup needs.
-    """
-    stack: list[list[str]] = []
-    names = []
-    for line in strip_comments(text).splitlines():
-        if m := NAMESPACE_RE.match(line):
-            stack.append(m.group(1).split("."))
-            continue
-        if SECTION_RE.match(line):
-            stack.append([])
-            continue
-        if m := END_RE.match(line):
-            if stack:
-                stack.pop()
-            continue
-        m = DECL_RE.match(line)
-        if not m or m.group(1) in ("notation", "macro", "elab", "syntax"):
-            continue
-        name = m.group(2)
-        if name.startswith("_root_."):
-            names.append(name[len("_root_."):])
-        else:
-            names.append(".".join([p for frame in stack for p in frame] + [name]))
-    return names
+    """Fully qualified names of the declarations in one file, by `lean_source`'s parser."""
+    extra = ((m.start(), m.group("name"))
+             for m in EXTRA_DECL_RE.finditer(strip_comments_and_strings(text)))
+    return sorted(qualified_declarations(text, extra_declarations=extra))
 
 
 def opened_namespaces(text: str) -> list[str]:
-    """Every namespace a file brings into scope with `open` (local `open ... in` included)."""
+    """The namespaces a file opens with `open` (local `open ... in` included), whose names can
+    then be written unqualified.
+
+    `open scoped X` is left out: it activates `X`'s scoped notation, instances and attributes but
+    does not make `X`'s declarations resolvable without the prefix, so it is no resolution
+    prefix.
+    """
     opened = []
-    for line in strip_comments(text).splitlines():
+    for line in strip_comments_and_strings(text).splitlines():
         m = OPEN_RE.match(line)
         if not m:
             continue
@@ -236,7 +168,7 @@ def read_library(root: pathlib.Path) -> dict[str, dict]:
         decls = declarations(text)
         own = [d for d in decls if d == LIB or d.startswith(LIB + ".")]
         modules[name] = {
-            "path": str(path.relative_to(root)),
+            "path": path.relative_to(root).as_posix(),
             "imports": parse_imports(text),
             "decls": decls,
             "lines": text.count("\n") + (0 if text.endswith("\n") else 1),
@@ -276,7 +208,9 @@ def layer_sections(text: str) -> list[tuple[str, int, str]]:
         m = LAYER_RE.match(lines[i])
         if m:
             title, start = m.group(1), i + 1
-            while "-/" not in title and i + 1 < len(lines):
+            # A heading may wrap onto further lines; it ends at the comment's close or at a
+            # blank line, after which the comment's prose begins.
+            while "-/" not in title and i + 1 < len(lines) and lines[i + 1].strip():
                 i += 1
                 title += " " + lines[i].strip()
             sections.append((title.split("-/")[0].strip(), start, []))
@@ -309,7 +243,14 @@ def resolve(names: set[str], opens: list[str], index: dict[str, str]) -> dict[st
 
 def read_roadmaps(roadmap_dir: pathlib.Path, index: dict[str, str],
                   modules: dict[str, dict]) -> list[dict]:
-    """One entry per layer section of each roadmap, with the library modules it builds on."""
+    """One entry per layer section of each roadmap, with the library modules it builds on.
+
+    A layer's id is `roadmap:<Area>#<layer id>`, the layer id being `roadmap_progress.layer_id`
+    of the section heading (`Layer 1` for `Layer 1: ...`), so that it names the same layer as the
+    Progress page; a heading without a layer lead keeps its whole title. A roadmap file other
+    than `Suggested.lean` adds its path: `roadmap:<Area>/<stem>#<layer id>`.
+    `uses` maps each module to the names that resolve into it and whether the file imports it.
+    """
     # Docstrings name modules as well as declarations (`EpsilonEridani.QFT.Shower.Sudakov`).
     index = {**{m: m for m in modules}, **index}
     layers = []
@@ -321,28 +262,36 @@ def read_roadmaps(roadmap_dir: pathlib.Path, index: dict[str, str],
             area = area_dir.name
             for path in sorted(area_dir.rglob("*.lean")):
                 raw = path.read_text(encoding="utf-8")
-                text = strip_comments(raw, keep_docs=True)
+                text = strip_comments_and_strings(raw, keep_docs=True)
                 opens = opened_namespaces(raw)
-                direct = [i["module"] for i in parse_imports(raw) if i["module"] in modules]
+                direct = {m for m in parse_imports(raw) if m in modules}
                 rel = path.relative_to(roadmap_dir)
                 stem = path.relative_to(area_dir).with_suffix("").as_posix()
-                file_label = "" if path.stem == "Suggested" else f"{path.stem}: "
+                suggested = path.stem == "Suggested"
+                file_label = "" if suggested else f"{path.stem}: "
+                prefix = f"roadmap:{area}#" if suggested else f"roadmap:{area}/{stem}#"
+                seen: collections.Counter[str] = collections.Counter()
                 for n, (title, start, body) in enumerate(layer_sections(text)):
                     hits = resolve(set(IDENT_RE.findall(body)), opens, index)
-                    uses = collections.defaultdict(set)
+                    names = collections.defaultdict(set)
                     for full in hits.values():
-                        uses[index[full]].add(full)
-                    for m in direct if n == 0 else []:
-                        uses[m]
+                        names[index[full]].add(full)
+                    imported = direct if n == 0 else set()
+                    key = layer_id(title)
+                    seen[key] += 1
+                    if seen[key] > 1:  # two sections under one lead keep distinct nodes
+                        key = f"{key} ({seen[key]})"
                     layers.append({
-                        "id": f"roadmap:{area}/{stem}#{n}",
+                        "id": prefix + key,
                         "area": area,
                         "completed": top == "Completed",
                         "title": file_label + title,
                         "targets": len(TARGET_RE.findall(body)),
                         "url": f"{ROADMAP_REPO_URL}/blob/main/{rel.as_posix()}#L{start}",
                         "readme": f"{ROADMAP_REPO_URL}/blob/main/{top}/{area}/README.md",
-                        "uses": {m: sorted(v) for m, v in sorted(uses.items())},
+                        "uses": {m: {"names": sorted(names.get(m, ())),
+                                     "imported": m in imported}
+                                 for m in sorted(set(names) | imported)},
                     })
     return layers
 
@@ -374,15 +323,30 @@ def transitive_reduction(edges: list[tuple[str, str]]) -> set[tuple[str, str]]:
     return redundant
 
 
-def git_head(root: pathlib.Path) -> str | None:
-    try:
-        return subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], check=True,
-                              capture_output=True, text=True).stdout.strip() or None
-    except (OSError, subprocess.CalledProcessError):
-        return None
-
-
 def build_graph(root: pathlib.Path, roadmap_dir: pathlib.Path | None) -> dict:
+    """The graph published as `module-graph.json`.
+
+    Top level: `generated_at`, `library_commit`, `roadmap_commit` (`null` without roadmaps),
+    `package_order` (the order the viewer lists upstream packages in), `style` (the viewer's
+    palette, from `chart_style`: `bg`, `panel`, `line`, `text`, `muted`, `sans`, `roadmap`, and
+    `dirs`, a colour per top-level library directory), `nodes` and `edges`.
+
+    Every node has `id`, `kind`, `package` and `label`; by kind it also carries
+      - `module`, a library module: `dir` (its top-level directory), `title` (the module
+        docstring's heading, or `null`), `lines`, `decls` (declaration count),
+        `upstream_namespace` (every declaration lies outside the `EpsilonEridani` namespace, so
+        the module is PhyslibAlpha-eligible), `url` (source) and `docs` (API docs);
+      - `external`, an upstream module the library imports directly: `url` (source at the
+        manifest's pin, or `null`) and, for Mathlib, `docs`;
+      - `roadmap`, a roadmap layer (see `read_roadmaps`): `area`, `completed`, `targets` (the
+        number of suggested declarations), `url` (the section) and `readme`.
+
+    Every edge has `source`, `target` and `kind`, and points downstream:
+      - `import`: `target` imports `source`; `redundant` is true when the import is implied by
+        the others (see `transitive_reduction`);
+      - `roadmap`: layer `target` builds on module `source`; `names` lists the declarations of
+        `source` the layer names, and `imported` is true when the roadmap file imports `source`.
+    """
     modules = read_library(root)
     manifest = read_manifest(root)
     index = {d: m for m, info in modules.items() for d in info["decls"]}
@@ -393,7 +357,7 @@ def build_graph(root: pathlib.Path, roadmap_dir: pathlib.Path | None) -> dict:
         nodes.append({
             "id": name, "kind": "module", "package": LIB,
             "dir": parts[1] if len(parts) > 2 else "(root)",
-            "label": parts[-1], "title": info["title"], "path": info["path"],
+            "label": parts[-1], "title": info["title"],
             "lines": info["lines"], "decls": len(info["decls"]),
             "upstream_namespace": info["upstream_namespace"],
             "url": f"{REPO_URL}/blob/main/{info['path']}",
@@ -402,12 +366,10 @@ def build_graph(root: pathlib.Path, roadmap_dir: pathlib.Path | None) -> dict:
 
     externals: dict[str, set[str]] = collections.defaultdict(set)
     for name, info in modules.items():
-        for imp in info["imports"]:
-            target = imp["module"]
+        for target in info["imports"]:
             if target not in modules:
                 externals[target].add(name)
-            edges.append({"source": target, "target": name, "kind": "import",
-                          "public": imp["public"], "meta": imp["meta"]})
+            edges.append({"source": target, "target": name, "kind": "import"})
     for ext in sorted(externals):
         pkg = package_of(ext)
         node = {"id": ext, "kind": "external", "package": pkg, "label": ext,
@@ -426,26 +388,20 @@ def build_graph(root: pathlib.Path, roadmap_dir: pathlib.Path | None) -> dict:
                       "area": layer["area"], "completed": layer["completed"],
                       "label": layer["title"], "targets": layer["targets"],
                       "url": layer["url"], "readme": layer["readme"]})
-        for m, names in layer["uses"].items():
-            edges.append({"source": m, "target": layer["id"], "kind": "roadmap",
-                          "names": names})
+        for m, use in layer["uses"].items():
+            edges.append({"source": m, "target": layer["id"], "kind": "roadmap", **use})
 
-    used = {e["source"] for e in edges if e["kind"] == "roadmap"}
-    for node in nodes:
-        if node["kind"] == "module":
-            node["used_by_roadmaps"] = node["id"] in used
-
-    manifest_revs = {PACKAGES[r][0]: manifest[PACKAGES[r][1]]["rev"]
-                     for r in PACKAGES if PACKAGES[r][1] in manifest}
-    return {
+    graph = {
         "generated_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "library_commit": git_head(root),
         "roadmap_commit": git_head(roadmap_dir) if roadmap_dir else None,
-        "pins": manifest_revs,
         "package_order": PACKAGE_ORDER,
         "nodes": nodes,
         "edges": edges,
     }
+    graph["style"] = {"bg": BG, "panel": PANEL, "line": BAR_BG, "text": TEXT, "muted": MUTED,
+                      "sans": FONT_FAMILY, "roadmap": ROADMAP_COLOR, "dirs": color_map(graph)}
+    return graph
 
 
 # --- Rendering -------------------------------------------------------------------------------
@@ -504,16 +460,17 @@ def to_dot(graph: dict) -> str:
     return "\n".join(out) + "\n"
 
 
-def to_html(graph: dict, home: str | None = None) -> str:
-    template = (pathlib.Path(__file__).parent / "module_graph.html").read_text(encoding="utf-8")
+def to_html(graph: dict, static_dir: pathlib.Path) -> str:
+    """A local preview: the committed viewer with the data and the site's stylesheet inlined,
+    so it opens from `file://`, where the viewer could not fetch `module-graph.json`."""
+    viewer = (static_dir / "module-graph.html").read_text(encoding="utf-8")
+    css = (static_dir / "style.css").read_text(encoding="utf-8")
     data = json.dumps(graph, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    style = {"bg": BG, "panel": PANEL, "text": TEXT, "muted": MUTED, "palette": PALETTE,
-             "dirs": color_map(graph)}
-    return (template.replace("/*GRAPH_DATA*/null", data)
-            .replace("/*STYLE_DATA*/null", json.dumps(style))
-            .replace("{{HOME}}", f'<a class="home" href="{html.escape(home)}">← Site</a>'
-                     if home else "")
-            .replace("{{LIB}}", html.escape(LIB)))
+    link = '<link rel="stylesheet" href="style.css">'
+    if viewer.count(link) != 1:
+        raise ValueError(f"expected one {link} in the viewer")
+    return viewer.replace(link, f"<style>\n{css}</style>\n"
+                                f"<script>window.MODULE_GRAPH = {data};</script>")
 
 
 def main(argv=None) -> int:
@@ -523,7 +480,6 @@ def main(argv=None) -> int:
     ap.add_argument("--roadmap-dir", type=pathlib.Path,
                     help="an EpsilonEridaniRoadmaps checkout; adds the roadmap target layers")
     ap.add_argument("--out-dir", type=pathlib.Path, default=pathlib.Path("build/module-graph"))
-    ap.add_argument("--home", help="a link back to the site, shown in the viewer's header")
     ap.add_argument("--svg", action="store_true",
                     help="also render module-graph.svg with Graphviz `dot` (must be on PATH)")
     args = ap.parse_args(argv)
@@ -533,8 +489,8 @@ def main(argv=None) -> int:
     (args.out_dir / "module-graph.json").write_text(json.dumps(graph, indent=1) + "\n")
     dot = to_dot(graph)
     (args.out_dir / "module-graph.dot").write_text(dot)
-    (args.out_dir / "module-graph.html").write_text(to_html(graph, args.home),
-                                                    encoding="utf-8")
+    static_dir = args.root.resolve() / "web" / "static_files"
+    (args.out_dir / "module-graph.html").write_text(to_html(graph, static_dir), encoding="utf-8")
     if args.svg:
         subprocess.run(["dot", "-Tsvg", "-o", str(args.out_dir / "module-graph.svg")],
                        input=dot, text=True, check=True)

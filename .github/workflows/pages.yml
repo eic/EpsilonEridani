@@ -40,8 +40,8 @@ on:
       - 'scripts/chart_style.py'
       - 'scripts/loc_graph.py'
       - 'scripts/loc_roadmap_graph.py'
+      - 'scripts/lean_source.py'
       - 'scripts/module_graph.py'
-      - 'scripts/module_graph.html'
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
@@ -338,19 +338,18 @@ jobs:
           }
 
       # The module graph is read from source text alone (imports, declarations, and the roadmap
-      # clone above), so it needs no build and no GitHub API. It is written to a scratch
-      # directory and only then copied over, so a failure keeps the restored previous pair in
-      # place rather than a half-written one. There is no committed fallback: the page is a
-      # few hundred kilobytes of generated data that would go stale with every merge.
+      # clone above), so it needs no build and no GitHub API. Only its data travels: the viewer,
+      # web/static_files/module-graph.html, is front end committed with the site and fetches
+      # module-graph.json. The data is written to a scratch directory and only then copied
+      # over, so a failure keeps the restored previous graph rather than a half-written one;
+      # with no graph at all, the viewer says the data is unavailable.
       - name: Regenerate the module graph into static_files
         working-directory: ${{ github.workspace }}
         run: |
           python3 scripts/module_graph.py \
             --roadmap-dir /tmp/roadmap \
-            --home ../ \
             --out-dir "$RUNNER_TEMP/module-graph" \
-          && cp "$RUNNER_TEMP/module-graph/module-graph.html" \
-                "$RUNNER_TEMP/module-graph/module-graph.json" web/static_files/ \
+          && cp "$RUNNER_TEMP/module-graph/module-graph.json" web/static_files/ \
           || {
             echo "::warning::module graph generation failed; keeping the last published graph"
             echo "module graph" >> "$RUNNER_TEMP/data-failures"

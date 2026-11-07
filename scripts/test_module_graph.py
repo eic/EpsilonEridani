@@ -8,10 +8,13 @@ Run with:
 
 import json
 import pathlib
+import re
 import tempfile
 import unittest
 
 import module_graph
+
+STATIC = pathlib.Path(__file__).resolve().parent.parent / "web" / "static_files"
 
 
 HEADER = """/-
@@ -34,10 +37,7 @@ import Also.Not.An.Import
 class ParseTest(unittest.TestCase):
     def test_imports_stop_at_the_header(self):
         self.assertEqual(module_graph.parse_imports(HEADER), [
-            {"module": "Mathlib.Analysis.Normed.Basic", "public": True, "meta": False},
-            {"module": "EpsilonEridani.A", "public": False, "meta": False},
-            {"module": "Physlib.Relativity.Basic", "public": False, "meta": True},
-        ])
+            "Mathlib.Analysis.Normed.Basic", "EpsilonEridani.A", "Physlib.Relativity.Basic"])
 
     def test_title(self):
         self.assertEqual(module_graph.module_title(HEADER), "The title")
@@ -54,13 +54,17 @@ end Inner
 instance : Inhabited Nat := ⟨0⟩
 instance named : Inhabited Nat := ⟨0⟩
 theorem _root_.Lorentz.extra : True := trivial
+def find? : Nat := 0
+axiom ax : True
+irreducible_def frozen : Nat := 0
 end EpsilonEridani.QFT
 structure Top where
 end
 """
         self.assertEqual(module_graph.declarations(text), [
-            "EpsilonEridani.QFT.foo", "EpsilonEridani.QFT.Bar.baz", "EpsilonEridani.QFT.qux",
-            "EpsilonEridani.QFT.named", "Lorentz.extra", "Top",
+            "EpsilonEridani.QFT.Bar.baz", "EpsilonEridani.QFT.ax", "EpsilonEridani.QFT.find?",
+            "EpsilonEridani.QFT.foo", "EpsilonEridani.QFT.frozen", "EpsilonEridani.QFT.named",
+            "EpsilonEridani.QFT.qux", "Lorentz.extra", "Top",
         ])
 
     def test_opened_namespaces(self):
@@ -73,6 +77,10 @@ end
         sections = module_graph.layer_sections(text)
         self.assertEqual([(t, line) for t, line, _ in sections],
                          [("Layer 0: first", 2), ("Layer 1: a heading that wraps", 4)])
+
+    def test_heading_stops_at_the_prose(self):
+        text = "/-! ## Open questions\n\nTwo statements, neither a milestone.\n-/\ndef a := 0\n"
+        self.assertEqual([t for t, _, _ in module_graph.layer_sections(text)], ["Open questions"])
 
 
 class ResolveTest(unittest.TestCase):
@@ -121,7 +129,12 @@ class BuildTest(unittest.TestCase):
             (roadmaps / "Suggested.lean").write_text(
                 "import EpsilonEridani\nopen EpsilonEridani.QFT\n"
                 "/-! ## Layer 0: uses sigma -/\n/-- Builds on `sigma`. -/\ndef t := sigma\n"
-                "/-! ## Layer 1: upstream only -/\ndef u := 1\n")
+                "/-! ## Layer 1: upstream only -/\ndef u := 1\n"
+                "/-! ## Layer 1: the same lead again -/\ndef v := 1\n")
+            other = pathlib.Path(tmp, "roadmaps", "EpsilonEridaniRoadmaps", "Other")
+            other.mkdir()
+            (other / "Suggested.lean").write_text(
+                "import EpsilonEridani.QFT.B\n/-! ## Layer 0: imports B -/\ndef w := 1\n")
             graph = module_graph.build_graph(root, pathlib.Path(tmp, "roadmaps"))
 
         nodes = {n["id"]: n for n in graph["nodes"]}
@@ -130,16 +143,39 @@ class BuildTest(unittest.TestCase):
                          "Mathlib/Data/Real/Basic.lean")
         self.assertTrue(nodes["EpsilonEridani.QFT.B"]["upstream_namespace"])
         self.assertFalse(nodes["EpsilonEridani.QFT.A"]["upstream_namespace"])
-        self.assertTrue(nodes["EpsilonEridani.QFT.A"]["used_by_roadmaps"])
+        # Layer ids are the Progress page's (`roadmap_progress.layer_id`), kept distinct.
+        self.assertEqual(sorted(i for i in nodes if i.startswith("roadmap:")), [
+            "roadmap:Area#Layer 0", "roadmap:Area#Layer 1", "roadmap:Area#Layer 1 (2)",
+            "roadmap:Other#Layer 0"])
         edges = {(e["source"], e["target"]): e for e in graph["edges"]}
         self.assertTrue(edges[("Mathlib.Data.Real.Basic", "EpsilonEridani.QFT.B")]["redundant"])
         self.assertFalse(edges[("EpsilonEridani.QFT.A", "EpsilonEridani.QFT.B")]["redundant"])
-        self.assertEqual(edges[("EpsilonEridani.QFT.A", "roadmap:Area/Suggested#0")]["names"],
-                         ["EpsilonEridani.QFT.sigma"])
-        self.assertFalse(any(e["target"] == "roadmap:Area/Suggested#1" for e in graph["edges"]))
+        self.assertEqual(edges[("EpsilonEridani.QFT.A", "roadmap:Area#Layer 0")],
+                         {"source": "EpsilonEridani.QFT.A", "target": "roadmap:Area#Layer 0",
+                          "kind": "roadmap", "names": ["EpsilonEridani.QFT.sigma"],
+                          "imported": False})
+        self.assertEqual(edges[("EpsilonEridani.QFT.B", "roadmap:Other#Layer 0")]["names"], [])
+        self.assertTrue(edges[("EpsilonEridani.QFT.B", "roadmap:Other#Layer 0")]["imported"])
+        self.assertFalse(any(e["target"] == "roadmap:Area#Layer 1" for e in graph["edges"]))
+        self.assertEqual(set(graph["style"]["dirs"]), {"QFT"})
         self.assertIn("Layer 0: uses sigma", module_graph.to_dot(graph))
         self.assertNotIn("Layer 1: upstream only", module_graph.to_dot(graph))
-        self.assertIn('"EpsilonEridani.QFT.A"', module_graph.to_html(graph))
+        preview = module_graph.to_html(graph, STATIC)
+        self.assertIn('"EpsilonEridani.QFT.A"', preview)
+        self.assertNotIn('href="style.css"', preview)
+        self.assertIn("--navy-1", preview)
+
+
+class ViewerTest(unittest.TestCase):
+    """The committed viewer, web/static_files/module-graph.html."""
+
+    def test_external_scripts_are_pinned_by_integrity(self):
+        viewer = (STATIC / "module-graph.html").read_text(encoding="utf-8")
+        scripts = re.findall(r"<script\b[^>]*\bsrc=[^>]*>", viewer)
+        self.assertEqual(len(scripts), 2)
+        for tag in scripts:
+            self.assertRegex(tag, r'integrity="sha384-[A-Za-z0-9+/]{64}"')
+            self.assertIn('crossorigin="anonymous"', tag)
 
 
 if __name__ == "__main__":
