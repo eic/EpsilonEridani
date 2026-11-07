@@ -24,7 +24,8 @@ out it is a real alternating bilinear form, decomposed on the two covariant stru
 built from an alternating four-form `ε`, the momentum transfer `q`, the hadron momentum `p` and
 the spin vector `S` of `PolarizedKinematics`. Both are alternating, so they satisfy
 `TensorAssumptions` by `tensorAssumptions_iff_isAlt`, and both are conserved: they vanish when
-either argument is `q`. Both are odd under spin reversal `PolarizedKinematics.reverse`.
+either argument is `q`; `E₁` also vanishes when either argument is `S`. Both are odd under spin
+reversal `PolarizedKinematics.reverse`.
 
 `fromG1G2 ε K g₁ g₂` is the tensor with structure-function values `g₁`, `g₂`, that is
 ```text
@@ -37,9 +38,9 @@ antisymmetric counterparts of `Tensors.Hadronic.IsF1F2Decomposition` and
 `Tensors.Hadronic.fromF1F2`.
 
 `SpinUniquenessAssumptions` collects two probe pairs separating `E₁` from `E₂`; under it the
-two structures are linearly independent (`linearIndependent_spinStructure`). If `E₁`, `E₂` are
-linearly independent, `M² > 0` and `p·q ≠ 0`, then `fromG1G2` determines `g₁`, `g₂`
-(`fromG1G2_inj`), so it is non-zero unless both structure-function values vanish
+two structures are linearly independent (`LinearMap.SeparatingProbes.linearIndependent`).
+If `E₁`, `E₂` are linearly independent, `M² > 0` and `p·q ≠ 0`, then `fromG1G2` determines
+`g₁`, `g₂` (`fromG1G2_inj`), so it is non-zero unless both structure-function values vanish
 (`fromG1G2_ne_zero`) and a decomposition fixes the structure-function values
 (`IsG1G2Decomposition.unique`).
 `Witness.kWit4` gives Minkowski kinematics on `ℝ⁴` where such probes exist for the volume form
@@ -56,14 +57,16 @@ these signs are meaningful only once `ε` is fixed.
 ## Not included
 
 On a four-dimensional `V` with `p`, `q`, `S` linearly independent, `Q² ≠ 0` and `S·q ≠ 0`, the
-alternating forms that are conserved in both slots *and linear in `S`* form a two-dimensional
-space spanned by `E₁` and `E₂`; the alternating, `S`-linear candidate `ε(v, w, p, S)` is excluded
-because it is not conserved. The hypothesis `S·q ≠ 0` is needed: at `S·q = 0` the two structures
-degenerate, `E₂ = (p·q) E₁` (`spinStructureTwo_eq_smul_spinStructureOne`). This uniqueness
-statement is not proved here; uniqueness of the coefficients `g₁`, `g₂` is proved only when `E₁`,
-`E₂` are linearly independent. Without the restriction
-to `S`-linear forms the count is wrong: the alternating forms vanishing on `q` already form a
-three-dimensional space.
+alternating forms that are conserved in both slots, linear in `S`, and covariant under the
+isometries fixing `p` and `q` — the spin-dependent analogue of
+`Tensors.Hadronic.IsLorentzCovariant`, with `S` transformed along with the arguments — form a
+two-dimensional space spanned by `E₁` and `E₂`; the alternating, `S`-linear candidate
+`ε(v, w, p, S)` is excluded because it is not conserved. The hypothesis `S·q ≠ 0` is needed:
+at `S·q = 0` the two structures degenerate, `E₂ = (p·q) E₁`
+(`spinStructureTwo_eq_smul_spinStructureOne`). This uniqueness statement is not proved here;
+uniqueness of the coefficients `g₁`, `g₂` is proved only when `E₁`, `E₂` are linearly
+independent. Without the restriction to `S`-linear forms the count is wrong: the alternating
+forms vanishing on `q` already form a three-dimensional space.
 
 ## References
 
@@ -160,6 +163,16 @@ theorem isAlt_spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Polarize
     (K : PolarizedKinematics g) (v : V) : spinStructureOne ε K v K.q = 0 := by
   simpa only [spinStructureOne, Matrix.cons_val_zero] using
     ε.bilinMap_apply_right_eq_zero ![K.q, K.S] 0 v
+
+/-- `E₁` annihilates the spin vector in its first slot. -/
+@[simp] theorem spinStructureOne_apply_S_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (w : V) : spinStructureOne ε K K.S w = 0 :=
+  ε.bilinMap_apply_left_eq_zero ![K.q, K.S] 1 w
+
+/-- `E₁` annihilates the spin vector in its second slot. -/
+@[simp] theorem spinStructureOne_apply_S_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (v : V) : spinStructureOne ε K v K.S = 0 :=
+  ε.bilinMap_apply_right_eq_zero ![K.q, K.S] 1 v
 
 /-- `E₂` is conserved in its first slot. -/
 @[simp] theorem spinStructureTwo_conserved_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
@@ -351,12 +364,6 @@ abbrev SpinUniquenessAssumptions (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Polari
     Type _ :=
   LinearMap.SeparatingProbes (spinStructureOne ε K) (spinStructureTwo ε K)
 
-/-- With probe vectors separating them, `E₁` and `E₂` are linearly independent. -/
-theorem linearIndependent_spinStructure (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
-    (hU : SpinUniquenessAssumptions ε K) :
-    LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K] :=
-  hU.linearIndependent
-
 /-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, the
 tensor `fromG1G2` determines its structure-function values. -/
 theorem fromG1G2_inj (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
@@ -491,7 +498,7 @@ def spinUniquenessWit : SpinUniquenessAssumptions detRowAlternating kWit4 where
 theorem linearIndependent_spinStructure_kWit4 :
     LinearIndependent ℝ
       ![spinStructureOne detRowAlternating kWit4, spinStructureTwo detRowAlternating kWit4] :=
-  linearIndependent_spinStructure detRowAlternating kWit4 spinUniquenessWit
+  spinUniquenessWit.linearIndependent
 
 /-- On the witness, `fromG1G2` is non-zero unless both structure-function values vanish. -/
 theorem fromG1G2_kWit4_ne_zero (g₁ g₂ : ℝ) (h : g₁ ≠ 0 ∨ g₂ ≠ 0) :

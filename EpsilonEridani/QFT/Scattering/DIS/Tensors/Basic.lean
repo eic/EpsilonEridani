@@ -636,6 +636,13 @@ lemma fromF1F2_isDecomposition
   intro v w
   rw [fromF1F2_apply]
 
+/-- A tensor decomposing on the transverse basis is the representative `fromF1F2` with the same
+coefficients. This is the bridge from the pointwise predicate to the canonical representative,
+the converse of `fromF1F2_isDecomposition`. -/
+theorem IsF1F2Decomposition.eq {g : Bilin V} {K : DisKinematics V} {W : Bilin V} {F1 F2 : ℝ}
+    (h : IsF1F2Decomposition g K W F1 F2) : W = fromF1F2 g K F1 F2 :=
+  LinearMap.ext₂ fun v w => by rw [h, fromF1F2_apply]
+
 /-- The transverse-basis representative is conserved in the first slot. -/
 lemma fromF1F2_conserved_left (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q K.q ≠ 0)
     (F1 F2 : ℝ) (v : V) :
@@ -687,33 +694,32 @@ abbrev UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type _ :=
   LinearMap.SeparatingProbes (transverseMetric g K)
     (Bilin.rankOne g (pTransverse g K) (pTransverse g K))
 
-/-- With probe vectors separating the two basis structures, a decomposition with
+/-- With the two transverse basis structures linearly independent, a decomposition with
 `(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this is the
 non-triviality statement that the old, non-transverse basis could not support. -/
 lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
-    (hU : UniquenessAssumptions g K) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
+    (hLI : LinearIndependent ℝ ![transverseMetric g K,
+      Bilin.rankOne g (pTransverse g K) (pTransverse g K)]) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
     fromF1F2 g K F1 F2 ≠ 0 := by
   intro hzero
   simp only [fromF1F2] at hzero
-  obtain ⟨h1, h2⟩ := hU.linearIndependent.eq_of_pair
+  obtain ⟨h1, h2⟩ := hLI.eq_of_pair
     (s' := 0) (t' := 0) (hzero.trans (by simp))
   exact h.elim (· h1) (· h2)
 
-/-- **Uniqueness of the structure functions.** Given one probe pair that sees the transverse
-projector but not `p_T ⊗ p_T`, and one pair that does the reverse, the coefficients of a
-decomposition are pinned. -/
+/-- **Uniqueness of the structure functions.** Given linear independence of the transverse
+projector and `p_T ⊗ p_T`, the coefficients of a decomposition are pinned. -/
 lemma decomposition_unique
     (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (F1 F2 F1' F2' : ℝ)
     (hW : IsF1F2Decomposition g K W F1 F2)
     (hW' : IsF1F2Decomposition g K W F1' F2')
-    (hU : UniquenessAssumptions g K) :
+    (hLI : LinearIndependent ℝ ![transverseMetric g K,
+      Bilin.rankOne g (pTransverse g K) (pTransverse g K)]) :
     F1 = F1' ∧ F2 = F2' := by
-  have hfrom : ∀ {a b : ℝ}, IsF1F2Decomposition g K W a b → W = fromF1F2 g K a b :=
-    fun hab => LinearMap.ext₂ fun v w => by rw [hab, fromF1F2_apply]
-  have h := (hfrom hW).symm.trans (hfrom hW')
+  have h := hW.eq.symm.trans hW'.eq
   simp only [fromF1F2] at h
-  exact hU.linearIndependent.eq_of_pair h
+  exact hLI.eq_of_pair h
 
 /-!
 
@@ -970,7 +976,8 @@ lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
 `-n₀² + n₂² ` vanishes while `g p_T n = 1`.
 
 Without a witness of this kind, `decomposition_unique` and `fromF1F2_ne_zero` were
-conditioned on a structure not known to be inhabited. -/
+conditioned on a structure not known to be inhabited; `uniquenessWit.linearIndependent` now
+supplies their linear-independence hypothesis. -/
 def uniquenessWit : UniquenessAssumptions gWit kWit where
   v₁ := (0, 0, 1)
   w₁ := (0, 0, 1)

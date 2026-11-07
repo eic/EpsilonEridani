@@ -30,8 +30,9 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
   it vanishes when either argument is one of the fixed vectors `m i`.
 - `AlternatingMap.neg_bilinMap`, `AlternatingMap.bilinMap_update_neg`,
   `AlternatingMap.bilinMap_pair_neg_snd`: it changes sign when `f` or one fixed vector is negated.
-- `AlternatingMap.bilinMap_update_smul`, `AlternatingMap.bilinMap_update_sub`,
-  `AlternatingMap.bilinMap_pair_smul_snd`, `AlternatingMap.bilinMap_pair_sub_snd`: it is linear in
+- `AlternatingMap.bilinMap_update_smul`, `AlternatingMap.bilinMap_update_add`,
+  `AlternatingMap.bilinMap_update_sub`, `AlternatingMap.bilinMap_pair_smul_snd`,
+  `AlternatingMap.bilinMap_pair_add_snd`, `AlternatingMap.bilinMap_pair_sub_snd`: it is linear in
   each fixed vector.
 -/
 
@@ -93,6 +94,18 @@ theorem bilinMap_update_smul (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n →
   simp only [bilinMap_apply, LinearMap.smul_apply, Matrix.vecCons, Fin.cons_update,
     f.map_update_smul]
 
+/-- Adding in one fixed vector adds the bilinear maps. -/
+@[simp]
+theorem bilinMap_update_add (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (i : Fin n)
+    (x y : M) :
+    f.bilinMap (Function.update m i (x + y)) =
+      f.bilinMap (Function.update m i x) + f.bilinMap (Function.update m i y) := by
+  ext v w
+  -- As in `bilinMap_update_smul`, `Matrix.vecCons` is unfolded so that `Fin.cons_update`
+  -- applies.
+  simp only [bilinMap_apply, LinearMap.add_apply, Matrix.vecCons, Fin.cons_update,
+    f.map_update_add]
+
 /-- Scaling the second of two fixed vectors scales the bilinear map. -/
 @[simp]
 theorem bilinMap_pair_smul_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b : M) (r : R) :
@@ -102,6 +115,16 @@ theorem bilinMap_pair_smul_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b : M) (r : R) 
     fin_cases i <;> simp
   have := f.bilinMap_update_smul ![a, b] 1 r b
   rwa [← h, ← h] at this
+
+/-- Adding in the second of two fixed vectors adds the bilinear maps. -/
+@[simp]
+theorem bilinMap_pair_add_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b c : M) :
+    f.bilinMap ![a, b + c] = f.bilinMap ![a, b] + f.bilinMap ![a, c] := by
+  have h : ∀ x, ![a, x] = Function.update ![a, b] 1 x := fun x => by
+    ext i
+    fin_cases i <;> simp
+  have := f.bilinMap_update_add ![a, b] 1 b c
+  rwa [← h, ← h, ← h] at this
 
 end CommSemiring
 
