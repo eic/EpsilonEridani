@@ -13,14 +13,16 @@ public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
 
 This module introduces the kinematics of diffractive DIS: the invariant scalar products of a
 diffractive event, from which the momentum fractions `x`, `ξ` and `β` are derived, and the
-target-elastic boundary of the physical region in `t`.
+target-elastic boundary of the physical region in `t`. That boundary, `tMinElastic`, is a function
+of the light-cone momentum fraction lost by the target, which is not the invariant `ξ = Δ·q / P·q`
+of `Invariants.xi`: the two agree only in the Bjorken limit.
 
 The kinematics are carried by the invariant scalar products rather than by the momentum
 fractions, so that the fundamental relation `x = ξ β` is a theorem about the definitions and not
 a definition that assumes itself. An event described by the exclusive kinematics of
 `EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic` enters through the bridge
-`Invariants.ofExcl`, on which the diffractive Bjorken variable `Invariants.x` agrees with the
-inclusive `DisKinematics.xBj` of the same momenta (`Invariants.ofExcl_x`).
+`Invariants.ofExclKinematics`, on which the diffractive Bjorken variable `Invariants.x` agrees
+with the inclusive `DisKinematics.xBj` of the same momenta (`Invariants.ofExclKinematics_x`).
 
 ## References
 
@@ -88,7 +90,9 @@ def x (i : Invariants) : ℝ := i.Q2 / (2 * i.Pq)
 /-- Defining expression for `Invariants.x`. -/
 theorem x_def (i : Invariants) : i.x = i.Q2 / (2 * i.Pq) := (rfl)
 
-/-- The momentum fraction lost by the target, `ξ = Δ·q / P·q`. -/
+/-- The momentum fraction lost by the target, `ξ = Δ·q / P·q`. This is the invariant fraction;
+it is not the light-cone fraction `xiLC` taken by `tMinElastic`, a different variable that agrees
+with it only in the Bjorken limit. -/
 def xi (i : Invariants) : ℝ := i.Dq / i.Pq
 
 /-- Defining expression for `Invariants.xi`. -/
@@ -100,12 +104,12 @@ def beta (i : Invariants) : ℝ := i.Q2 / (2 * i.Dq)
 /-- Defining expression for `Invariants.beta`. -/
 theorem beta_def (i : Invariants) : i.beta = i.Q2 / (2 * i.Dq) := (rfl)
 
-/-- The positive magnitude `|t| = -t` of the momentum transfer, non-negative by `t_nonpos`
-(`absT_nonneg`). -/
+/-- The non-negative magnitude `|t| = -t` of the momentum transfer (`absT_nonneg`, from
+`t_nonpos`). -/
 def absT (i : Invariants) : ℝ := -i.t
 
 /-- Defining expression for `Invariants.absT`. -/
-theorem absT_eq_neg_t (i : Invariants) : i.absT = -i.t := (rfl)
+theorem absT_def (i : Invariants) : i.absT = -i.t := (rfl)
 
 /-- The magnitude of the momentum transfer is non-negative. -/
 theorem absT_nonneg (i : Invariants) : 0 ≤ i.absT := neg_nonneg.mpr i.t_nonpos
@@ -149,7 +153,7 @@ incoming target momentum, `Dq = Δ · q` with `Δ = P - P'` the negative of the 
 positivity and sign hypotheses are the necessary sign conditions of the physical region under
 which the momentum fractions of `Invariants` are meaningful; see `Invariants` for the conditions
 of the physical region that are not imposed. -/
-def ofExcl (g : Bilin V) (K : ExclKinematics V)
+def ofExclKinematics (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) : Invariants where
   Pq := g K.p K.q
@@ -164,44 +168,69 @@ def ofExcl (g : Bilin V) (K : ExclKinematics V)
 /-- The `P · q` of an exclusive event is the scalar product of the incoming target momentum with
 the photon momentum. -/
 @[simp]
-theorem ofExcl_Pq (g : Bilin V) (K : ExclKinematics V)
+theorem ofExclKinematics_Pq (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
-    (ofExcl g K hPq hDq hQ2 ht).Pq = g K.p K.q := (rfl)
+    (ofExclKinematics g K hPq hDq hQ2 ht).Pq = g K.p K.q := (rfl)
 
 /-- The `Δ · q` of an exclusive event, with `Δ = P - P'` the negative of
 `ExclKinematics.delta = P' - P`. -/
 @[simp]
-theorem ofExcl_Dq (g : Bilin V) (K : ExclKinematics V)
+theorem ofExclKinematics_Dq (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
-    (ofExcl g K hPq hDq hQ2 ht).Dq = -g K.delta K.q := (rfl)
+    (ofExclKinematics g K hPq hDq hQ2 ht).Dq = -g K.delta K.q := (rfl)
 
 /-- The photon virtuality of an exclusive event is `ExclKinematics.Q2`. -/
 @[simp]
-theorem ofExcl_Q2 (g : Bilin V) (K : ExclKinematics V)
+theorem ofExclKinematics_Q2 (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
-    (ofExcl g K hPq hDq hQ2 ht).Q2 = K.Q2 g := (rfl)
+    (ofExclKinematics g K hPq hDq hQ2 ht).Q2 = K.Q2 g := (rfl)
 
 /-- The momentum transfer of an exclusive event is `ExclKinematics.tMom`: `t = Δ²` is insensitive
 to the sign of `Δ`. -/
 @[simp]
-theorem ofExcl_t (g : Bilin V) (K : ExclKinematics V)
+theorem ofExclKinematics_t (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
-    (ofExcl g K hPq hDq hQ2 ht).t = K.tMom g := (rfl)
+    (ofExclKinematics g K hPq hDq hQ2 ht).t = K.tMom g := (rfl)
 
 /-- The diffractive Bjorken variable of an exclusive event is the inclusive Bjorken variable of
 the same momenta: `Invariants.x` agrees with `DisKinematics.xBj` on
 `ExclKinematics.toDisKinematics`. -/
 @[simp]
-theorem ofExcl_x (g : Bilin V) (K : ExclKinematics V)
+theorem ofExclKinematics_x (g : Bilin V) (K : ExclKinematics V)
     (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
     (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
-    (ofExcl g K hPq hDq hQ2 ht).x = K.toDisKinematics.xBj g := by
-  rw [x_def, ofExcl_Q2, ofExcl_Pq, DisKinematics.xBj, ExclKinematics.Q2_toDisKinematics,
-    ExclKinematics.toDisKinematics_p, ExclKinematics.toDisKinematics_q]
+    (ofExclKinematics g K hPq hDq hQ2 ht).x = K.toDisKinematics.xBj g := by
+  simp [x_def, DisKinematics.xBj]
+
+/-- The momentum fraction lost by the target in an exclusive event, `ξ = Δ·q / P·q` with
+`Δ = P - P'` the negative of `ExclKinematics.delta = P' - P`. -/
+@[simp]
+theorem ofExclKinematics_xi (g : Bilin V) (K : ExclKinematics V)
+    (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
+    (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
+    (ofExclKinematics g K hPq hDq hQ2 ht).xi = -g K.delta K.q / g K.p K.q := by
+  rw [xi_def, ofExclKinematics_Dq, ofExclKinematics_Pq]
+
+/-- The parton's fraction of the exchanged momentum in an exclusive event,
+`β = Q² / (2 Δ·q)` with `Δ = P - P'`. -/
+@[simp]
+theorem ofExclKinematics_beta (g : Bilin V) (K : ExclKinematics V)
+    (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
+    (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
+    (ofExclKinematics g K hPq hDq hQ2 ht).beta = K.Q2 g / (2 * -g K.delta K.q) := by
+  rw [beta_def, ofExclKinematics_Q2, ofExclKinematics_Dq]
+
+/-- The magnitude of the momentum transfer of an exclusive event is `-ExclKinematics.tMom`. -/
+@[simp]
+theorem ofExclKinematics_absT (g : Bilin V) (K : ExclKinematics V)
+    (hPq : 0 < g K.p K.q) (hDq : 0 < -g K.delta K.q)
+    (hQ2 : 0 < K.Q2 g) (ht : K.tMom g ≤ 0) :
+    (ofExclKinematics g K hPq hDq hQ2 ht).absT = -K.tMom g := by
+  rw [absT_def, ofExclKinematics_t]
 
 end Invariants
 
@@ -237,7 +266,9 @@ def tMinElastic (M xiLC : ℝ) : ℝ := -(xiLC ^ 2 * M ^ 2) / (1 - xiLC)
 theorem tMinElastic_def (M xiLC : ℝ) :
     tMinElastic M xiLC = -(xiLC ^ 2 * M ^ 2) / (1 - xiLC) := (rfl)
 
-/-- The magnitude of the target-elastic boundary, `-tMinElastic M ξ = ξ²M²/(1-ξ)`. -/
+/-- The negated target-elastic boundary, `-tMinElastic M ξ = ξ²M²/(1-ξ)`. The identity is
+unconditional; `-tMinElastic M ξ` is a (non-negative) magnitude only for `ξ ≤ 1`
+(`tMinElastic_nonpos`). -/
 theorem neg_tMinElastic (M xiLC : ℝ) : -tMinElastic M xiLC = xiLC ^ 2 * M ^ 2 / (1 - xiLC) := by
   rw [tMinElastic_def, neg_div, neg_neg]
 
@@ -254,12 +285,12 @@ theorem tMinElastic_xiLC_zero (M : ℝ) : tMinElastic M 0 = 0 := by
   rw [tMinElastic_def]
   norm_num
 
-/-- The target-elastic boundary lies on the non-positive side of zero whenever `xiLC < 1`, in
+/-- The target-elastic boundary lies on the non-positive side of zero whenever `xiLC ≤ 1`, in
 particular throughout the physical range `ξ ∈ [0, 1)`: the boundary of the physical region is on
-the same side of zero as the region it bounds. -/
-theorem tMinElastic_nonpos (M xiLC : ℝ) (h : xiLC < 1) : tMinElastic M xiLC ≤ 0 := by
+the same side of zero as the region it bounds. At `xiLC = 1` the value is the division junk `0`. -/
+theorem tMinElastic_nonpos (M xiLC : ℝ) (h : xiLC ≤ 1) : tMinElastic M xiLC ≤ 0 := by
   rw [tMinElastic_def, neg_div, neg_nonpos]
-  exact div_nonneg (mul_nonneg (sq_nonneg xiLC) (sq_nonneg M)) (sub_nonneg.mpr h.le)
+  exact div_nonneg (mul_nonneg (sq_nonneg xiLC) (sq_nonneg M)) (sub_nonneg.mpr h)
 
 end Diffractive
 end DIS
