@@ -12,8 +12,10 @@ public import Physlib.Relativity.Causality.Basic
 
 Facts about `Physlib`'s causal character `Lorentz.Vector.causalCharacter` that go beyond
 `Physlib`'s own API: the spatial part of a spacelike vector does not vanish
-(`spatialPart_ne_zero_of_spaceLike`), and the equal-time projection of a spacelike vector is
-again spacelike (`causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike`).
+(`spatialPart_ne_zero_of_spaceLike`), a nonzero vector with vanishing time component is
+spacelike (`causalCharacter_eq_spaceLike_of_timeComponent_eq_zero`), and the equal-time
+projection of a vector with nonzero spatial part is again spacelike
+(`causalCharacter_sub_ofTemporalComponent_eq_spaceLike_of_spatialPart_ne_zero`).
 -/
 
 public section
@@ -32,22 +34,38 @@ lemma spatialPart_ne_zero_of_spaceLike {d : ℕ} (v : Vector d)
   rw [minkowskiProduct_self_eq_sq_sub, h, norm_zero] at h'
   nlinarith [sq_nonneg v.timeComponent]
 
-/-- The equal-time projection `v - v⁰ e₀` of a spacelike vector is again spacelike. -/
-lemma causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike {d : ℕ} (v : Vector d)
-    (hv : causalCharacter v = CausalCharacter.spaceLike) :
-    causalCharacter (v - v.timeComponent • basis (Sum.inl 0)) = CausalCharacter.spaceLike := by
-  -- The projection has vanishing time component and the same spatial part as `v`, so its
-  -- Minkowski square is `-‖v.spatialPart‖ ^ 2 < 0`.
-  have h₀ : (v - v.timeComponent • basis (Sum.inl 0)).timeComponent ^ 2 = 0 := by
-    simp [timeComponent]
-  have hsp : (v - v.timeComponent • basis (Sum.inl 0)).spatialPart = v.spatialPart := by
-    ext i
-    simp [basis_apply]
-  refine (spaceLike_iff_norm_sq_neg _).mpr ?_
-  rw [minkowskiProduct_self_eq_sq_sub, h₀, hsp]
-  have hpos : 0 < ‖v.spatialPart‖ ^ 2 :=
-    pow_pos (norm_pos_iff.mpr (spatialPart_ne_zero_of_spaceLike v hv)) 2
-  linarith
+/-- A nonzero Lorentz vector with vanishing time component is spacelike. -/
+lemma causalCharacter_eq_spaceLike_of_timeComponent_eq_zero {d : ℕ} {v : Vector d}
+    (h0 : v.timeComponent = 0) (hne : v ≠ 0) :
+    causalCharacter v = CausalCharacter.spaceLike := by
+  have hsp : spatialPart v ≠ 0 := fun h =>
+    hne (eq_zero_of_timeComponent_of_spatialPart h0 h)
+  refine (spaceLike_iff_norm_sq_neg v).mpr ?_
+  rw [minkowskiProduct_self_eq_sq_sub, h0, zero_pow two_ne_zero, zero_sub, neg_lt_zero]
+  exact pow_pos (norm_pos_iff.mpr hsp) 2
+
+/-- The equal-time projection `v - v⁰ e₀` has vanishing time component.
+
+This is not a `@[simp]` lemma: the reducible `timeComponent` head unfolds to an application of
+the subtraction, which `apply_sub` rewrites, so the simp-normal-form linter rejects it. -/
+lemma timeComponent_sub_ofTemporalComponent {d : ℕ} (v : Vector d) :
+    (v - ofTemporalComponent v.timeComponent).timeComponent = 0 := by
+  simp [timeComponent, ofTemporalComponent, basis_apply]
+
+/-- The equal-time projection `v - v⁰ e₀` has the same spatial part as `v`. -/
+@[simp]
+lemma spatialPart_sub_ofTemporalComponent {d : ℕ} (v : Vector d) :
+    (v - ofTemporalComponent v.timeComponent).spatialPart = v.spatialPart := by
+  ext i
+  simp [ofTemporalComponent, basis_apply]
+
+/-- The equal-time projection `v - v⁰ e₀` of a vector with nonzero spatial part is again
+spacelike. -/
+lemma causalCharacter_sub_ofTemporalComponent_eq_spaceLike_of_spatialPart_ne_zero {d : ℕ}
+    (v : Vector d) (hv : spatialPart v ≠ 0) :
+    causalCharacter (v - ofTemporalComponent v.timeComponent) = CausalCharacter.spaceLike :=
+  causalCharacter_eq_spaceLike_of_timeComponent_eq_zero (timeComponent_sub_ofTemporalComponent v)
+    (fun h => hv (by rw [← spatialPart_sub_ofTemporalComponent, h]; ext i; simp))
 
 end Vector
 end Lorentz

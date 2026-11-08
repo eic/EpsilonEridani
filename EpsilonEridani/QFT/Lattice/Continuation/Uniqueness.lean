@@ -101,12 +101,11 @@ theorem eqOn_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
     (hfg : EqOn f g (U ∩ (euclideanSection d : Set (ComplexSeparation d)))) :
     EqOn f g U := by
   obtain ⟨_, hzU, hzE⟩ := hne
-  rw [SetLike.mem_coe, euclideanSection_def] at hzE
-  obtain ⟨x₀, rfl⟩ := hzE
+  obtain ⟨x₀, rfl⟩ := mem_euclideanSection_iff_exists_continuation.1 hzE
   have hc : Continuous (continuation (d := d)) := LinearMap.continuous_of_finiteDimensional _
   refine eqOn_of_eventuallyEq_continuation hf hg hU hzU ?_
   filter_upwards [hc.continuousAt.preimage_mem_nhds (hUo.mem_nhds hzU)] with x hx
-  exact hfg ⟨hx, by rw [SetLike.mem_coe, euclideanSection_def]; exact LinearMap.mem_range_self _ x⟩
+  exact hfg ⟨hx, continuation_mem_euclideanSection x⟩
 
 /-- **The Euclidean values determine the spacelike values.** Two functions holomorphic on an
 open preconnected set `U` that contains every spacelike Minkowski separation, and that agree at
@@ -119,8 +118,9 @@ theorem eq_of_eqOn_euclideanSection_of_spaceLike {f g : ComplexSeparation d → 
     {v : Vector d} (hv : causalCharacter v = .spaceLike) :
     f (ofMinkowski v) = g (ofMinkowski v) := by
   -- The equal-time projection of `v` is a spacelike point of `U` on the Euclidean section.
-  have hwE := ofMinkowski_sub_timeComponent_smul_basis_mem_euclideanSection v
-  have hw := v.causalCharacter_sub_timeComponent_smul_basis_eq_spaceLike hv
+  have hwE := ofMinkowski_sub_ofTemporalComponent_mem_euclideanSection v
+  have hw := causalCharacter_sub_ofTemporalComponent_eq_spaceLike_of_spatialPart_ne_zero v
+    (spatialPart_ne_zero_of_spaceLike v hv)
   exact eqOn_of_eqOn_euclideanSection hf hg hUo hU ⟨_, hspace _ hw, hwE⟩ hfg (hspace v hv)
 
 end Continuation
