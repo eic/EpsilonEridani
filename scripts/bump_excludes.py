@@ -35,10 +35,21 @@ BOT = "epsiloneridani-review-bot[bot]"
 
 
 def gh(*args, raw=False):
+    """Run `gh`; stop the run on any failure, naming the command and gh's own error. Reading nothing
+    is not the same as reading "no failure": a permission, rate-limit or API error treated as empty
+    would silently drop the carried list (the refreshed body would lose it) or skip an exclusion, and
+    the daily job would keep re-offering a failing set with no signal. A failed job is the signal."""
     r = subprocess.run(["gh", *args], capture_output=True, text=True)
     if r.returncode != 0:
-        return None
-    return r.stdout if raw else json.loads(r.stdout or "null")
+        detail = (r.stderr or r.stdout or "").strip().splitlines()
+        raise SystemExit(f"bump_excludes: `gh {' '.join(args)}` failed ({r.returncode}): "
+                         f"{detail[-1] if detail else 'no output'}")
+    if raw:
+        return r.stdout
+    try:
+        return json.loads(r.stdout or "null")
+    except ValueError as e:
+        raise SystemExit(f"bump_excludes: `gh {' '.join(args)}` returned unparseable JSON: {e}") from None
 
 
 def read_marker(body):

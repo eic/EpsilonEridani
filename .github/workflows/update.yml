@@ -10,8 +10,9 @@ name: Update Dependencies
 #     PR. The PR changes only the two pin files, so bump-guard validates it and the review pipeline
 #     can auto-merge it once its sandboxed build is green.
 # PRs and commits use the epsiloneridani-review-bot App token so pr-build/review trigger normally.
-# Not yet: a set whose build fails inside a dependency is not recorded for `resolve_deps.py --exclude`;
-# such a PR stays red until upstream moves or a human closes it.
+# A set whose build fails inside a dependency is recorded by scripts/bump_excludes.py (carried in the
+# bump PR's body) and passed to `resolve_deps.py --exclude`, so the next feasible set is tried; a set
+# whose build fails in EpsilonEridani/ stays offered, for a worker's bump round to adapt.
 
 on:
   schedule:

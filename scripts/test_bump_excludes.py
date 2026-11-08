@@ -99,6 +99,30 @@ class Main(unittest.TestCase):
         self.assertEqual(self.run_main(pr), [])
 
 
+class GhFailures(unittest.TestCase):
+    def run_gh(self, rc, stdout="", stderr=""):
+        import subprocess
+        saved = be.subprocess.run
+        be.subprocess.run = lambda cmd, **kw: subprocess.CompletedProcess(cmd, rc, stdout, stderr)
+        try:
+            return be.gh("api", "repos/o/r/pulls")
+        finally:
+            be.subprocess.run = saved
+
+    def test_a_failure_stops_the_run_and_says_why(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.run_gh(1, stderr="HTTP 403: Resource not accessible by integration")
+        self.assertIn("`gh api repos/o/r/pulls` failed (1): HTTP 403", str(cm.exception))
+
+    def test_unparseable_json_stops_the_run(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.run_gh(0, stdout="<html>")
+        self.assertIn("unparseable JSON", str(cm.exception))
+
+    def test_success_parses(self):
+        self.assertEqual(self.run_gh(0, stdout='[{"a": 1}]'), [{"a": 1}])
+
+
 class ResolverHonoursIt(unittest.TestCase):
     def test_an_excluded_set_is_not_chosen_again(self):
         import test_resolve_deps as t
