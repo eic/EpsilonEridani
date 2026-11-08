@@ -35,7 +35,9 @@ collinear splittings of every momentum on which the scheme is exact
 when the scheme is exact on all of `V` (`RecombinationScheme.IsCollinearExact.isCollinearSafe`).
 On the infrared side, a scheme that leaves a pseudojet `a` unchanged when a vanishing momentum is
 merged into it, and is continuous there, lets the observable absorb a vanishingly soft momentum
-added next to `a` (`RecombinationScheme.tendsto_cons_of_merge_zero`).
+added next to `a` (`RecombinationScheme.tendsto_cons_of_merge_zero`), and for a unital scheme
+continuous at a vanishing momentum this makes the observable infrared safe
+(`RecombinationScheme.IsUnital.isInfraredSafe`).
 
 Additivity, homogeneity and symmetry do not by themselves give collinear exactness: on a
 nontrivial `V`, `smulScheme V c`, which adds the momenta and rescales the sum by a fixed factor
@@ -479,6 +481,22 @@ theorem RecombinationScheme.tendsto_cons_of_merge_zero [TopologicalSpace V] [Top
     Tendsto (fun p : V => J (p ::ₘ a ::ₘ t)) (𝓝 0) (𝓝 (J (a ::ₘ t))) := by
   refine Tendsto.congr' (hJ.mono fun p hp => hp.symm) ?_
   simpa [Function.comp_def, hR] using (hJc.comp_of_eq hRc hR).tendsto
+
+/-- For a unital scheme whose merge map is continuous at a vanishing momentum, an observable that
+is unchanged near `p = 0` when an added momentum `p` is merged into a pseudojet, that is continuous
+in the pseudojet it is merged into, and that absorbs a vanishingly soft momentum added to the empty
+final state, is infrared safe. -/
+theorem RecombinationScheme.IsUnital.isInfraredSafe [TopologicalSpace V] [TopologicalSpace X]
+    (hR : R.IsUnital) (hRc : ∀ a : V, ContinuousAt (R.merge a) 0) {J : Multiset V → X}
+    (hJc : ∀ (a : V) (t : Multiset V), ContinuousAt (fun v : V => J (v ::ₘ t)) a)
+    (hJ : ∀ (a : V) (t : Multiset V), ∀ᶠ p : V in 𝓝 0, J (p ::ₘ a ::ₘ t) = J (R.merge a p ::ₘ t))
+    (h0 : Tendsto (fun p : V => J (p ::ₘ 0)) (𝓝 0) (𝓝 (J 0))) : IsInfraredSafe J := by
+  refine isInfraredSafe_def.2 fun s => ?_
+  induction s using Multiset.induction_on with
+  | empty => exact h0
+  | cons a t _ =>
+    exact RecombinationScheme.tendsto_cons_of_merge_zero (hR.merge_zero a) (hRc a) (hJc a t)
+      (hJ a t)
 
 end InfraredSafety
 
