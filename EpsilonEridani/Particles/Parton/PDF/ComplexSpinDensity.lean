@@ -33,7 +33,7 @@ part `SpinDensityC.re`, a real `SpinDensity` with the same `f₁` and `Δq` and 
 `SpinDensity.toSpinDensityC` are mutually inverse on it and package into
 `SpinDensityC.timeReversalInvariantEquiv`. The specialisation is proper: the rank-one matrix
 `SpinDensityC.sofferSaturating` has transversity `i`
-(`SpinDensityC.exists_not_isTimeReversalInvariant`).
+(`SpinDensityC.not_isTimeReversalInvariant_sofferSaturating`).
 
 Parity, `SpinDensityC.IsParityInvariant`, is stated on the entries that angular-momentum
 conservation allows in the forward direction, and is exactly parity invariance of the real part
@@ -104,17 +104,28 @@ entry. -/
 lemma conj_mat_apply (i j : Fin 4) : conj (ρ.mat i j) = ρ.mat j i := by
   simpa using ρ.posSemidef.1.apply j i
 
+/-- The real spin-density matrix of a helicity-amplitude matrix: its entrywise real part, which
+is positive semidefinite (`Matrix.PosSemidef.map_re`). On time-reversal-invariant matrices it is
+the inverse of `SpinDensity.toSpinDensityC` (`timeReversalInvariantEquiv`). -/
+def re : SpinDensity where
+  mat := ρ.mat.map Complex.re
+  -- `Matrix.PosSemidef.map_re` is stated with `RCLike.re`, which on `ℂ` is `Complex.re` by
+  -- definition (`RCLike.re_to_complex`).
+  posSemidef := ρ.posSemidef.map_re
+
+@[simp]
+lemma mat_re : ρ.re.mat = ρ.mat.map Complex.re := rfl
+
+/-- The entries of the real part are the real parts of the entries. -/
+lemma mat_re_apply (i j : Fin 4) : ρ.re.mat i j = (ρ.mat i j).re := rfl
+
 /-- The unpolarized leading-twist density `f₁`, the helicity average of the diagonal number
 densities. At fixed `(x, Q²)`. -/
-def f1 : ℝ :=
-  ((ρ.mat idxPP idxPP).re + (ρ.mat idxPM idxPM).re + (ρ.mat idxMP idxMP).re
-    + (ρ.mat idxMM idxMM).re) / 2
+def f1 : ℝ := PDF.f1 ρ.re
 
 /-- The quark helicity density `Δq`, the helicity-weighted average of the diagonal number
 densities. At fixed `(x, Q²)`. This is the density called `g1` for the real `SpinDensity`. -/
-def deltaQ : ℝ :=
-  ((ρ.mat idxPP idxPP).re - (ρ.mat idxPM idxPM).re - (ρ.mat idxMP idxMP).re
-    + (ρ.mat idxMM idxMM).re) / 2
+def deltaQ : ℝ := PDF.g1 ρ.re
 
 /-- Transversity `h₁` in the Jaffe-Ji normalisation, the double-helicity-flip entry of the
 helicity-amplitude matrix. At fixed `(x, Q²)`. It is complex in general, and real under
@@ -139,27 +150,14 @@ lemma transversity_def : ρ.transversity = ρ.mat idxPP idxMM := rfl
 lemma ofReal_f1 :
     (ρ.f1 : ℂ) = (ρ.mat idxPP idxPP + ρ.mat idxPM idxPM + ρ.mat idxMP idxMP
       + ρ.mat idxMM idxMM) / 2 := by
-  simp [f1]
+  simp [f1_def]
 
 /-- `Δq` is real: the helicity-weighted average of the complex diagonal entries is the real
 number `deltaQ`. -/
 lemma ofReal_deltaQ :
     (ρ.deltaQ : ℂ) = (ρ.mat idxPP idxPP - ρ.mat idxPM idxPM - ρ.mat idxMP idxMP
       + ρ.mat idxMM idxMM) / 2 := by
-  simp [deltaQ]
-
-/-- The real spin-density matrix of a helicity-amplitude matrix: its entrywise real part, which
-is positive semidefinite (`Matrix.PosSemidef.map_re`). On time-reversal-invariant matrices it is
-the inverse of `SpinDensity.toSpinDensityC` (`timeReversalInvariantEquiv`). -/
-def re : SpinDensity where
-  mat := ρ.mat.map Complex.re
-  posSemidef := ρ.posSemidef.map_re
-
-@[simp]
-lemma mat_re : ρ.re.mat = ρ.mat.map Complex.re := rfl
-
-/-- The entries of the real part are the real parts of the entries. -/
-lemma mat_re_apply (i j : Fin 4) : ρ.re.mat i j = (ρ.mat i j).re := rfl
+  simp [deltaQ_def]
 
 /-- The real part is compatible with `f₁`. -/
 @[simp]
@@ -187,12 +185,12 @@ lemma f1_sub_deltaQ : ρ.f1 - ρ.deltaQ = (ρ.mat idxPM idxPM).re + (ρ.mat idxM
 /-- **Unpolarized positivity.** `f₁` is nonnegative at fixed `(x, Q²)`, from positive
 semidefiniteness alone. This is `PDF.f1_nonneg` for the real part. -/
 theorem f1_nonneg : 0 ≤ ρ.f1 :=
-  ρ.f1_re ▸ PDF.f1_nonneg ρ.re
+  PDF.f1_nonneg ρ.re
 
 /-- **Helicity dominance.** `|Δq| ≤ f₁` at fixed `(x, Q²)`, from positive semidefiniteness
 alone. This is `PDF.abs_g1_le_f1` for the real part. -/
 theorem abs_deltaQ_le_f1 : |ρ.deltaQ| ≤ ρ.f1 :=
-  ρ.f1_re ▸ ρ.g1_re ▸ PDF.abs_g1_le_f1 ρ.re
+  PDF.abs_g1_le_f1 ρ.re
 
 /-- The positive-semidefiniteness content of the Soffer bound, with the norm of the complex
 double-helicity-flip entry in place of an absolute value. This is
@@ -213,10 +211,13 @@ theorem soffer_bound : 2 * ‖ρ.transversity‖ ≤ ρ.f1 + ρ.deltaQ := by
 
 /-! ### Parity -/
 
-/-- Parity invariance of the helicity-amplitude matrix, `A_{Λλ,Λ'λ'} = A_{-Λ-λ,-Λ'-λ'}`, on the
-entries that angular-momentum conservation allows in the forward direction: the two aligned
-diagonal entries are equal, the two anti-aligned diagonal entries are equal, and the two
-double-helicity-flip entries are equal. As for the real `SpinDensity`, this is a hypothesis to be
+/-- Parity invariance of the helicity-amplitude matrix on the entries that angular-momentum
+conservation allows in the forward direction, those with `Λ - λ = Λ' - λ'`. Parity relates
+`A_{Λλ,Λ'λ'}` to `A_{-Λ-λ,-Λ'-λ'}` up to the phase `(-1)^{(Λ-λ)-(Λ'-λ')}`, which is `1` exactly on
+these entries, so on them it says `A_{Λλ,Λ'λ'} = A_{-Λ-λ,-Λ'-λ'}`: the two aligned diagonal
+entries are equal, the two anti-aligned diagonal entries are equal, and the two
+double-helicity-flip entries are equal. The entries forbidden in the forward direction are not
+constrained. As for the real `SpinDensity`, this is a hypothesis to be
 supplied, not a field, because the Soffer bound does not need it.
 
 On a real matrix the double-flip relation is automatic, and this is the real `IsParityInvariant`
@@ -328,6 +329,8 @@ namespace SpinDensity
 coercion `ℝ → ℂ`. It is time-reversal invariant (`isTimeReversalInvariant_toSpinDensityC`). -/
 def toSpinDensityC (ρ : SpinDensity) : SpinDensityC where
   mat := ρ.mat.map ((↑) : ℝ → ℂ)
+  -- `Matrix.posSemidef_map_ofReal_iff` is stated with the `RCLike` coercion `algebraMap ℝ 𝕜`,
+  -- which on `ℂ` is `Complex.ofReal` by definition (`Complex.coe_algebraMap`).
   posSemidef := (Matrix.posSemidef_map_ofReal_iff (𝕜 := ℂ)).mpr ρ.posSemidef
 
 variable (ρ : SpinDensity)
@@ -405,7 +408,10 @@ lemma mat_sofferSaturating :
 lemma transversity_sofferSaturating : sofferSaturating.transversity = Complex.I := by
   simp [transversity_def, idxPP, idxMM]
 
-/-- `sofferSaturating` is not time-reversal invariant: its transversity is not real. -/
+/-- **The real spin-density matrix is a proper specialisation.** `sofferSaturating` is not
+time-reversal invariant, because its transversity is not real, so it is not `ρ.toSpinDensityC`
+for any real `SpinDensity` `ρ`; it still saturates the Soffer bound
+(`two_mul_norm_transversity_sofferSaturating`). -/
 lemma not_isTimeReversalInvariant_sofferSaturating :
     ¬ sofferSaturating.IsTimeReversalInvariant := fun h => by
   simpa using h.im_transversity
@@ -415,15 +421,6 @@ lemma two_mul_norm_transversity_sofferSaturating :
     2 * ‖sofferSaturating.transversity‖ = sofferSaturating.f1 + sofferSaturating.deltaQ := by
   rw [transversity_sofferSaturating, f1_add_deltaQ]
   norm_num [idxPP, idxMM, vecMulVec_apply]
-
-/-- **The real spin-density matrix is a proper specialisation.** There is a positive-semidefinite
-helicity-amplitude matrix, `sofferSaturating`, that is not time-reversal invariant, so has no real
-counterpart, and saturates the Soffer bound. -/
-theorem exists_not_isTimeReversalInvariant :
-    ∃ ρ : SpinDensityC, ¬ ρ.IsTimeReversalInvariant ∧ ρ.transversity = Complex.I ∧
-      2 * ‖ρ.transversity‖ = ρ.f1 + ρ.deltaQ :=
-  ⟨sofferSaturating, not_isTimeReversalInvariant_sofferSaturating,
-    transversity_sofferSaturating, two_mul_norm_transversity_sofferSaturating⟩
 
 end SpinDensityC
 

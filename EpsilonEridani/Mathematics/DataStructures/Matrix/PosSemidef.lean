@@ -11,7 +11,11 @@ public import TauCeti.Analysis.Matrix.PosSemidef
 
 
 /-!
-# Entrywise bounds for positive-semidefinite matrices
+# Entrywise bounds and real/complex transfer for positive-semidefinite matrices
+
+This file proves entrywise bounds for positive-semidefinite matrices and transfers positive
+semidefiniteness between a matrix over `RCLike 𝕜` and its entrywise real part, and between a real
+matrix and its image under `ℝ → 𝕜`.
 
 A positive-semidefinite matrix `M` over `RCLike 𝕜` carries two entrywise bounds:
 
@@ -33,10 +37,14 @@ The entrywise real part of a positive-semidefinite matrix is positive semidefini
 matrix is positive semidefinite exactly when its image under the coercion `ℝ → 𝕜` is. This is what
 lets a complex positive-semidefinite matrix descend to a real one. Both statements follow from
 the quadratic-form characterisation of an arbitrary-index positive-semidefinite matrix,
-`TauCeti.posSemidef_iff_finite_sum` of `TauCeti.LinearAlgebra.Matrix.PosSemidef`.
+`TauCeti.posSemidef_iff_finite_sum` of `TauCeti.LinearAlgebra.Matrix.PosSemidef`, through its
+principal-submatrix form `Matrix.posSemidef_of_isHermitian_of_submatrix`.
 
 ## Main results
 
+- `Matrix.posSemidef_of_isHermitian_of_submatrix`: a hermitian matrix whose principal
+  submatrices on finite families of indices have nonnegative quadratic forms is positive
+  semidefinite.
 - `Matrix.PosSemidef.re_apply_self_nonneg`: nonnegativity of the real part of the diagonal.
 - `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound over `RCLike`.
 - `Matrix.PosSemidef.sq_apply_le`: the entrywise geometric-mean bound over `ℝ`.
@@ -59,6 +67,18 @@ for upstreaming to `Mathlib/Analysis/Matrix/PosDef.lean`.
 namespace Matrix
 
 variable {n : Type*}
+
+/-- A hermitian matrix over an arbitrary index type is positive semidefinite as soon as each of
+its principal submatrices on a finite family of indices (repeats allowed) has a nonnegative
+quadratic form. This is the dot-product form of `TauCeti.posSemidef_iff_finite_sum`. -/
+lemma posSemidef_of_isHermitian_of_submatrix {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    {M : Matrix n n R} (hM : M.IsHermitian)
+    (h : ∀ {ι : Type} [Fintype ι] (v : ι → n) (x : ι → R),
+      0 ≤ star x ⬝ᵥ (M.submatrix v v *ᵥ x)) :
+    M.PosSemidef :=
+  TauCeti.posSemidef_iff_finite_sum.mpr ⟨fun a b => hM.apply b a, fun v x => by
+    simpa only [dotProduct, mulVec, submatrix_apply, Pi.star_apply, Finset.mul_sum, mul_assoc]
+      using h v x⟩
 
 section RCLike
 
@@ -99,12 +119,9 @@ quadratic form on a real vector is the real part of the quadratic form of the ma
 (`Matrix.re_star_dotProduct_mulVec_ofReal`). -/
 lemma PosSemidef.map_re {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
     (M.map re).PosSemidef := by
-  refine TauCeti.posSemidef_iff_finite_sum.mpr ⟨fun a b => ?_, fun {ι : Type} _ v x => ?_⟩
-  · exact (hM.1.map re fun z => by simp).apply b a
-  · have h0 := (hM.submatrix v).re_dotProduct_nonneg (fun i => (x i : 𝕜))
-    rw [re_star_dotProduct_mulVec_ofReal] at h0
-    simpa [dotProduct, mulVec, Matrix.map_apply, Matrix.submatrix_apply, Finset.mul_sum,
-      mul_assoc] using h0
+  refine posSemidef_of_isHermitian_of_submatrix (hM.1.map re fun z => by simp) fun v x => ?_
+  have h0 := (hM.submatrix v).re_dotProduct_nonneg (fun i => (x i : 𝕜))
+  rwa [re_star_dotProduct_mulVec_ofReal] at h0
 
 /-- The real part of the quadratic form of a real matrix, coerced to `𝕜`, is the sum of its real
 quadratic forms on the real and imaginary parts of the vector. -/
@@ -123,17 +140,15 @@ lemma re_star_dotProduct_map_ofReal_mulVec [Fintype n] (M : Matrix n n ℝ) (x :
 lemma posSemidef_map_ofReal_iff {M : Matrix n n ℝ} :
     (M.map ((↑) : ℝ → 𝕜)).PosSemidef ↔ M.PosSemidef := by
   refine ⟨fun h => by simpa [Matrix.map_map, Function.comp_def] using h.map_re, fun h => ?_⟩
-  refine TauCeti.posSemidef_iff_finite_sum.mpr ⟨fun a b => ?_, fun {ι : Type} _ v x => ?_⟩
-  · exact (h.1.map ((↑) : ℝ → 𝕜) fun z => by simp).apply b a
-  · have hM' := h.submatrix v
-    have hH : ((M.submatrix v v).map ((↑) : ℝ → 𝕜)).IsHermitian :=
-      hM'.1.map _ fun z => by simp
-    have hpos : 0 ≤ star x ⬝ᵥ ((M.submatrix v v).map ((↑) : ℝ → 𝕜) *ᵥ x) := by
-      rw [RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
-      exact ⟨add_nonneg (by simpa using hM'.dotProduct_mulVec_nonneg _)
-        (by simpa using hM'.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self x⟩
-    simpa [dotProduct, mulVec, Matrix.map_apply, Matrix.submatrix_apply, Finset.mul_sum,
-      mul_assoc] using hpos
+  refine posSemidef_of_isHermitian_of_submatrix (h.1.map _ fun z => by simp) fun v x => ?_
+  have hM' := h.submatrix v
+  have hH : ((M.submatrix v v).map ((↑) : ℝ → 𝕜)).IsHermitian :=
+    hM'.1.map _ fun z => by simp
+  -- `(M.map (↑)).submatrix v v` and `(M.submatrix v v).map (↑)` are the same matrix.
+  change 0 ≤ star x ⬝ᵥ ((M.submatrix v v).map ((↑) : ℝ → 𝕜) *ᵥ x)
+  rw [RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
+  exact ⟨add_nonneg (by simpa using hM'.dotProduct_mulVec_nonneg _)
+    (by simpa using hM'.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self x⟩
 
 end RCLike
 
