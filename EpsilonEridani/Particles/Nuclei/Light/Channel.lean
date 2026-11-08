@@ -152,16 +152,16 @@ theorem parity_def : c.parity = (-1) ^ c.L := (rfl)
 /-! ### The generalised Pauli principle -/
 
 /-- The eigenvalue of the exchange of the two nucleons on a state in the channel `c` with isospin
-`T`: the product of `(-1)^L` on the orbital factor, `(-1)^(S + 1)` on the spin factor and
-`(-1)^(T + 1)` on the isospin factor. -/
-def exchangeSign : ℤˣ := (-1) ^ c.L * (-1) ^ (c.S + 1) * (-1) ^ (T + 1)
+`T`: the product of the channel's parity on the orbital factor, `(-1)^(S + 1)` on the spin factor
+and `(-1)^(T + 1)` on the isospin factor. -/
+def exchangeSign : ℤˣ := c.parity * (-1) ^ (c.S + 1) * (-1) ^ (T + 1)
 
 theorem exchangeSign_def :
-    c.exchangeSign T = (-1) ^ c.L * (-1) ^ (c.S + 1) * (-1) ^ (T + 1) := (rfl)
+    c.exchangeSign T = c.parity * (-1) ^ (c.S + 1) * (-1) ^ (T + 1) := (rfl)
 
 /-- The exchange sign depends on `L + S + T` only: it is `(-1)^(L + S + T)`. -/
 theorem exchangeSign_eq_neg_one_pow : c.exchangeSign T = (-1) ^ (c.L + c.S + T) := by
-  rw [exchangeSign_def, ← pow_add, ← pow_add,
+  rw [exchangeSign_def, parity_def, ← pow_add, ← pow_add,
     show c.L + (c.S + 1) + (T + 1) = c.L + c.S + T + 2 by omega, pow_add]
   simp
 
