@@ -162,6 +162,7 @@ jobs:
           python3 scripts/test_dependency_builds.py
           python3 scripts/test_mathlib_cache.py
           python3 scripts/test_resolve_deps.py
+          python3 scripts/test_bump_excludes.py
           python3 scripts/test_write_bump.py
 
       # The two-library split is build convenience, not a trust boundary.
