@@ -213,8 +213,8 @@ theorem soffer_bound : 2 * ‖ρ.transversity‖ ≤ ρ.f1 + ρ.deltaQ := by
 
 /-- Parity invariance of the helicity-amplitude matrix on the entries that angular-momentum
 conservation allows in the forward direction, those with `Λ - λ = Λ' - λ'`. Parity relates
-`A_{Λλ,Λ'λ'}` to `A_{-Λ-λ,-Λ'-λ'}` up to the phase `(-1)^{(Λ-λ)-(Λ'-λ')}`, which is `1` exactly on
-these entries, so on them it says `A_{Λλ,Λ'λ'} = A_{-Λ-λ,-Λ'-λ'}`: the two aligned diagonal
+`A_{Λλ,Λ'λ'}` to `A_{-Λ-λ,-Λ'-λ'}` up to the phase `(-1)^{(Λ-λ)-(Λ'-λ')}`, which is `1` on these
+entries, so on them it says `A_{Λλ,Λ'λ'} = A_{-Λ-λ,-Λ'-λ'}`: the two aligned diagonal
 entries are equal, the two anti-aligned diagonal entries are equal, and the two
 double-helicity-flip entries are equal. The entries forbidden in the forward direction are not
 constrained. As for the real `SpinDensity`, this is a hypothesis to be

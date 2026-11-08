@@ -144,9 +144,7 @@ lemma posSemidef_map_ofReal_iff {M : Matrix n n ℝ} :
   have hM' := h.submatrix v
   have hH : ((M.submatrix v v).map ((↑) : ℝ → 𝕜)).IsHermitian :=
     hM'.1.map _ fun z => by simp
-  -- `(M.map (↑)).submatrix v v` and `(M.submatrix v v).map (↑)` are the same matrix.
-  change 0 ≤ star x ⬝ᵥ ((M.submatrix v v).map ((↑) : ℝ → 𝕜) *ᵥ x)
-  rw [RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
+  rw [Matrix.submatrix_map, RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
   exact ⟨add_nonneg (by simpa using hM'.dotProduct_mulVec_nonneg _)
     (by simpa using hM'.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self x⟩
 
