@@ -228,12 +228,14 @@ def IsParityInvariant : Prop :=
     ρ.mat idxMM idxPP = ρ.mat idxPP idxMM
 
 /-- Under parity invariance the two aligned diagonal entries are equal. -/
-lemma IsParityInvariant.mat_idxMM_eq_mat_idxPP {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
+lemma IsParityInvariant.mat_idxMM_idxMM_eq_mat_idxPP_idxPP {ρ : SpinDensityC}
+    (h : ρ.IsParityInvariant) :
     ρ.mat idxMM idxMM = ρ.mat idxPP idxPP :=
   h.1
 
 /-- Under parity invariance the two anti-aligned diagonal entries are equal. -/
-lemma IsParityInvariant.mat_idxMP_eq_mat_idxPM {ρ : SpinDensityC} (h : ρ.IsParityInvariant) :
+lemma IsParityInvariant.mat_idxMP_idxMP_eq_mat_idxPM_idxPM {ρ : SpinDensityC}
+    (h : ρ.IsParityInvariant) :
     ρ.mat idxMP idxMP = ρ.mat idxPM idxPM :=
   h.2.1
 
@@ -294,7 +296,8 @@ lemma isParityInvariant_iff :
 with the standard phase conventions for the helicity states, acts on the forward amplitudes in
 the helicity basis by complex conjugation, so invariance says that the matrix equals its entrywise
 complex conjugate. Under it the double-flip entry is real
-and the matrix is the complex matrix of its real part (`toSpinDensityC_re`). -/
+and the matrix is the complex matrix of its real part
+(`IsTimeReversalInvariant.toSpinDensityC_re`). -/
 def IsTimeReversalInvariant : Prop :=
   ρ.mat.map (starRingEnd ℂ) = ρ.mat
 
@@ -376,7 +379,8 @@ namespace SpinDensityC
 /-- A time-reversal-invariant helicity-amplitude matrix is the complex matrix of its real
 part. -/
 @[simp]
-lemma toSpinDensityC_re {ρ : SpinDensityC} (h : ρ.IsTimeReversalInvariant) :
+lemma IsTimeReversalInvariant.toSpinDensityC_re {ρ : SpinDensityC}
+    (h : ρ.IsTimeReversalInvariant) :
     ρ.re.toSpinDensityC = ρ := by
   ext : 1
   exact h.map_re_map_ofReal
@@ -388,13 +392,13 @@ helicity-amplitude matrices and the real spin-density matrices. -/
 def timeReversalInvariantEquiv : {ρ : SpinDensityC // ρ.IsTimeReversalInvariant} ≃ SpinDensity where
   toFun ρ := ρ.1.re
   invFun ρ := ⟨ρ.toSpinDensityC, ρ.isTimeReversalInvariant_toSpinDensityC⟩
-  left_inv ρ := Subtype.ext (toSpinDensityC_re ρ.2)
+  left_inv ρ := Subtype.ext (ρ.2.toSpinDensityC_re)
   right_inv ρ := ρ.re_toSpinDensityC
 
 /-- The rank-one helicity-amplitude matrix `v vᴴ` with `v = (1, 0, 0, -i)`. Its transversity is
 `i` (`transversity_sofferSaturating`), so it is not time-reversal invariant
 (`not_isTimeReversalInvariant_sofferSaturating`), and it saturates the Soffer bound
-(`two_mul_norm_transversity_sofferSaturating`). -/
+(`two_mul_norm_transversity_eq_f1_add_deltaQ_sofferSaturating`). -/
 def sofferSaturating : SpinDensityC :=
   ⟨vecMulVec ![1, 0, 0, -Complex.I] (star ![1, 0, 0, -Complex.I]),
     posSemidef_vecMulVec_self_star _⟩
@@ -411,13 +415,13 @@ lemma transversity_sofferSaturating : sofferSaturating.transversity = Complex.I 
 /-- **The real spin-density matrix is a proper specialisation.** `sofferSaturating` is not
 time-reversal invariant, because its transversity is not real, so it is not `ρ.toSpinDensityC`
 for any real `SpinDensity` `ρ`; it still saturates the Soffer bound
-(`two_mul_norm_transversity_sofferSaturating`). -/
+(`two_mul_norm_transversity_eq_f1_add_deltaQ_sofferSaturating`). -/
 lemma not_isTimeReversalInvariant_sofferSaturating :
     ¬ sofferSaturating.IsTimeReversalInvariant := fun h => by
   simpa using h.im_transversity
 
 /-- `sofferSaturating` saturates the Soffer bound: `2 ‖h₁‖ = 2 = f₁ + Δq`. -/
-lemma two_mul_norm_transversity_sofferSaturating :
+lemma two_mul_norm_transversity_eq_f1_add_deltaQ_sofferSaturating :
     2 * ‖sofferSaturating.transversity‖ = sofferSaturating.f1 + sofferSaturating.deltaQ := by
   rw [transversity_sofferSaturating, f1_add_deltaQ]
   norm_num [idxPP, idxMM, vecMulVec_apply]
