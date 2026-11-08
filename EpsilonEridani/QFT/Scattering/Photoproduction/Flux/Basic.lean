@@ -39,8 +39,7 @@ cutoff appearing as a decay rather than as a sharp edge; and it grows like `-log
 energy times the logarithm of the ratio of the maximal photon energy `γ / b_min` to the actual one
 (`ChargedSource.isEquivalent_integratedPhotonFlux_mul_log_div`). The integrand `t K₁(t)²` of the
 organising identity is, up to normalisation, the impact-parameter differential flux, so that
-identity is also what fixes the relative normalisation of the two forms of the spectrum; it is
-integrable beyond any positive `ξ` (`EpsilonEridani.integrableOn_id_mul_besselK_one_sq`).
+identity is also what fixes the relative normalisation of the two forms of the spectrum.
 
 The charge radius carried by `ChargedSource` plays no role here: this is the point-source
 spectrum, and `b_min` is an external cutoff on the impact parameter rather than a property of the
@@ -103,6 +102,10 @@ theorem hasDerivAt_photonFluxProfile {ξ : ℝ} (hξ : 0 < ξ) :
   rw [hprofile]
   exact (e₁.fun_sub e₂).congr_deriv (by field_simp; ring)
 
+/-- The profile is continuous on `(0, ∞)`. -/
+theorem continuousOn_photonFluxProfile : ContinuousOn photonFluxProfile (Ioi 0) :=
+  fun _ hξ ↦ (hasDerivAt_photonFluxProfile hξ).continuousAt.continuousWithinAt
+
 /-- The profile is suppressed at least like `exp (-2ξ)` at large argument, at the rate set by the
 decay bound of the two Bessel functions. This upper bound is the coherence cutoff of the
 point-source spectrum: a decay, not a sharp edge. -/
@@ -149,7 +152,7 @@ theorem tendsto_photonFluxProfile_atTop_nhds_zero : Tendsto photonFluxProfile at
 
 private theorem continuousWithinAt_neg_photonFluxProfile {ξ : ℝ} (hξ : 0 < ξ) :
     ContinuousWithinAt (fun y ↦ -photonFluxProfile y) (Ici ξ) ξ :=
-  (hasDerivAt_photonFluxProfile hξ).continuousAt.fun_neg.continuousWithinAt
+  (continuousOn_photonFluxProfile.continuousAt (Ioi_mem_nhds hξ)).fun_neg.continuousWithinAt
 
 private theorem hasDerivAt_neg_photonFluxProfile {t : ℝ} (ht : 0 < t) :
     HasDerivAt (fun y ↦ -photonFluxProfile y) (t * besselK 1 t ^ 2) t := by
@@ -175,8 +178,7 @@ theorem photonFluxProfile_eq_integral {ξ : ℝ} (hξ : 0 < ξ) :
 
 /-- The profile is strictly decreasing on `(0, ∞)`. -/
 theorem strictAntiOn_photonFluxProfile : StrictAntiOn photonFluxProfile (Ioi 0) := by
-  refine strictAntiOn_of_deriv_neg (convex_Ioi 0)
-    (fun ξ hξ ↦ (hasDerivAt_photonFluxProfile hξ).continuousAt.continuousWithinAt) fun ξ hξ ↦ ?_
+  refine strictAntiOn_of_deriv_neg (convex_Ioi 0) continuousOn_photonFluxProfile fun ξ hξ ↦ ?_
   rw [interior_Ioi] at hξ
   have hξ' : 0 < ξ := hξ
   have hK₁ := besselK_pos 1 hξ'
