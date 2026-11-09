@@ -18,13 +18,15 @@ This module collects measurability and integrability facts for functions on the 
 
 ## Main results
 
-- `aestronglyMeasurable_of_integrableOn_cpow_mul`, `aestronglyMeasurable_of_integrableOn_rpow_mul`:
-  if `x ^ c * f x` is integrable on a measurable `s ⊆ (0, ∞)`, then `f` is
-  a.e.-strongly-measurable on `s`.
-- `locallyIntegrableOn_Ioi_indicator_Ioc`: the extension by zero of a function locally integrable
-  on `(a, b]` is locally integrable on `(a, ∞)`.
+- `aestronglyMeasurable_of_integrableOn_cpow_smul`,
+  `aestronglyMeasurable_of_integrableOn_rpow_smul`: if `x ^ c • g x` is integrable on a
+  measurable `s ⊆ (0, ∞)`, then `g` is a.e.-strongly-measurable on `s`.
 - `indicator_Ioc_eventuallyEq_zero_atTop`, `indicator_Ioc_eventuallyEq_nhdsGT`: the extension by
   zero from `(a, b]` vanishes near `+∞` and agrees with the function to the right of `a`.
+- `MeasureTheory.LocallyIntegrableOn.indicator_Ioi`: the extension by zero of a function locally
+  integrable on `(a, b]` is locally integrable on `(a, ∞)`.
+- `MeasureTheory.IntegrableOn.rpow_smul_of_le`: on `(0, 1]` the power weight `x ^ σ` decreases as
+  `σ` grows, so integrability of `x ^ σ₀ • g x` there gives that of `x ^ σ • g x` for `σ₀ ≤ σ`.
 
 Nothing in this file is physics-specific.
 -/
@@ -35,50 +37,31 @@ open MeasureTheory Set Filter Topology
 
 namespace EpsilonEridani
 
-variable {f : ℝ → ℝ}
+variable {E : Type*} [NormedAddCommGroup E] {g : ℝ → E} {s : Set ℝ}
 
-/-- Dividing out a power weight: if `x ^ c * f x` is integrable on a measurable `s ⊆ (0, ∞)`, then
-`f` is a.e.-strongly-measurable on `s`. -/
-theorem aestronglyMeasurable_of_integrableOn_cpow_mul {s : Set ℝ} (hs : MeasurableSet s)
-    (hs0 : s ⊆ Ioi 0) {c : ℂ} (h : IntegrableOn (fun x : ℝ => (x : ℂ) ^ c * (f x : ℂ)) s) :
-    AEStronglyMeasurable f (volume.restrict s) := by
+/-- Dividing out a power weight: if `x ^ c • g x` is integrable on a measurable `s ⊆ (0, ∞)`, then
+`g` is a.e.-strongly-measurable on `s`. -/
+theorem aestronglyMeasurable_of_integrableOn_cpow_smul [NormedSpace ℂ E] (hs : MeasurableSet s)
+    (hs0 : s ⊆ Ioi 0) {c : ℂ} (h : IntegrableOn (fun x : ℝ => (x : ℂ) ^ c • g x) s) :
+    AEStronglyMeasurable g (volume.restrict s) := by
   have hw : ContinuousOn (fun x : ℝ => (x : ℂ) ^ (-c)) s :=
     Complex.continuous_ofReal.continuousOn.cpow_const fun x hx =>
       Complex.ofReal_mem_slitPlane.mpr (hs0 hx)
-  refine (Complex.continuous_re.comp_aestronglyMeasurable
-    ((hw.aestronglyMeasurable hs).mul h.aestronglyMeasurable)).congr ?_
+  refine ((hw.aestronglyMeasurable hs).smul h.aestronglyMeasurable).congr ?_
   filter_upwards [ae_restrict_mem hs] with x hx
   have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (hs0 hx).ne'
-  simp only [Pi.mul_apply]
-  rw [← mul_assoc, ← Complex.cpow_add _ _ hx0, neg_add_cancel, Complex.cpow_zero, one_mul,
-    Complex.ofReal_re]
+  rw [Pi.smul_apply', smul_smul, ← Complex.cpow_add _ _ hx0, neg_add_cancel, Complex.cpow_zero,
+    one_smul]
 
-/-- Dividing out a real power weight: if `x ^ σ * f x` is integrable on a measurable
-`s ⊆ (0, ∞)`, then `f` is a.e.-strongly-measurable on `s`. -/
-theorem aestronglyMeasurable_of_integrableOn_rpow_mul {s : Set ℝ} (hs : MeasurableSet s)
-    (hs0 : s ⊆ Ioi 0) {σ : ℝ} (h : IntegrableOn (fun x => x ^ σ * f x) s) :
-    AEStronglyMeasurable f (volume.restrict s) := by
-  refine aestronglyMeasurable_of_integrableOn_cpow_mul hs hs0 (c := σ)
-    (h.ofReal.congr_fun (fun x hx => ?_) hs)
-  rw [← Complex.ofReal_cpow (hs0 hx).le]
-  exact Complex.ofReal_mul _ _
-
-/-- The extension by zero of a function locally integrable on `(a, b]` is locally integrable on
-`(a, ∞)`. -/
-theorem locallyIntegrableOn_Ioi_indicator_Ioc {E : Type*} [NormedAddCommGroup E] {a b : ℝ}
-    {g : ℝ → E} (hg : LocallyIntegrableOn g (Ioc a b)) :
-    LocallyIntegrableOn ((Ioc a b).indicator g) (Ioi a) := by
-  -- A compact `k ⊆ (a, ∞)` meets `(a, b]` inside the compact interval `[inf k, b] ⊆ (a, b]`, on
-  -- which `g` is integrable.
-  rw [locallyIntegrableOn_iff isOpen_Ioi.isLocallyClosed]
-  intro k hk hkc
-  rcases k.eq_empty_or_nonempty with rfl | hne
-  · exact integrableOn_empty
-  have hpos : a < sInf k := hk (hkc.sInf_mem hne)
-  have hIcc : IntegrableOn g (Icc (sInf k) b) :=
-    hg.integrableOn_compact_subset (fun x hx => ⟨hpos.trans_le hx.1, hx.2⟩) isCompact_Icc
-  rw [integrableOn_indicator_iff measurableSet_Ioc]
-  exact hIcc.mono_set fun x hx => ⟨csInf_le hkc.bddBelow hx.2, hx.1.2⟩
+/-- Dividing out a real power weight: if `x ^ σ • g x` is integrable on a measurable
+`s ⊆ (0, ∞)`, then `g` is a.e.-strongly-measurable on `s`. -/
+theorem aestronglyMeasurable_of_integrableOn_rpow_smul [NormedSpace ℝ E] (hs : MeasurableSet s)
+    (hs0 : s ⊆ Ioi 0) {σ : ℝ} (h : IntegrableOn (fun x => x ^ σ • g x) s) :
+    AEStronglyMeasurable g (volume.restrict s) := by
+  refine ((measurable_id.pow_const (-σ)).aestronglyMeasurable.smul h.aestronglyMeasurable).congr ?_
+  filter_upwards [ae_restrict_mem hs] with x hx
+  rw [Pi.smul_apply', smul_smul, id, ← Real.rpow_add (hs0 hx), neg_add_cancel, Real.rpow_zero,
+    one_smul]
 
 /-- The extension by zero of a function from `(a, b]` vanishes near `+∞`. -/
 theorem indicator_Ioc_eventuallyEq_zero_atTop {E : Type*} [Zero E] (a b : ℝ) (g : ℝ → E) :
@@ -93,3 +76,38 @@ theorem indicator_Ioc_eventuallyEq_nhdsGT {E : Type*} [Zero E] {a b : ℝ} (hab 
   exact indicator_of_mem (Ioo_subset_Ioc_self hx) g
 
 end EpsilonEridani
+
+namespace MeasureTheory
+
+variable {E : Type*} [NormedAddCommGroup E] {g : ℝ → E}
+
+/-- The extension by zero of a function locally integrable on `(a, b]` is locally integrable on
+`(a, ∞)`. -/
+theorem LocallyIntegrableOn.indicator_Ioi {a b : ℝ} (hg : LocallyIntegrableOn g (Ioc a b)) :
+    LocallyIntegrableOn ((Ioc a b).indicator g) (Ioi a) := by
+  -- A compact `k ⊆ (a, ∞)` meets `(a, b]` inside the compact interval `[inf k, b] ⊆ (a, b]`, on
+  -- which `g` is integrable.
+  rw [locallyIntegrableOn_iff isOpen_Ioi.isLocallyClosed]
+  intro k hk hkc
+  rcases k.eq_empty_or_nonempty with rfl | hne
+  · exact integrableOn_empty
+  have hpos : a < sInf k := hk (hkc.sInf_mem hne)
+  have hIcc : IntegrableOn g (Icc (sInf k) b) :=
+    hg.integrableOn_compact_subset (fun x hx => ⟨hpos.trans_le hx.1, hx.2⟩) isCompact_Icc
+  rw [integrableOn_indicator_iff measurableSet_Ioc]
+  exact hIcc.mono_set fun x hx => ⟨csInf_le hkc.bddBelow hx.2, hx.1.2⟩
+
+/-- On `(0, 1]` the power weight `x ^ σ` decreases as `σ` grows: integrability of `x ^ σ₀ • g x`
+on `(0, 1]` gives that of `x ^ σ • g x` for every `σ ≥ σ₀`. -/
+theorem IntegrableOn.rpow_smul_of_le [NormedSpace ℝ E] {σ₀ σ : ℝ}
+    (h : IntegrableOn (fun x => x ^ σ₀ • g x) (Ioc 0 1)) (hσ : σ₀ ≤ σ) :
+    IntegrableOn (fun x => x ^ σ • g x) (Ioc 0 1) := by
+  have hg := EpsilonEridani.aestronglyMeasurable_of_integrableOn_rpow_smul measurableSet_Ioc
+    Ioc_subset_Ioi_self h
+  refine Integrable.mono' h.norm ((measurable_id.pow_const σ).aestronglyMeasurable.smul hg) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
+  rw [norm_smul, norm_smul, Real.norm_of_nonneg (Real.rpow_pos_of_pos hx.1 _).le,
+    Real.norm_of_nonneg (Real.rpow_pos_of_pos hx.1 _).le]
+  exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_exponent_ge hx.1 hx.2 hσ) (norm_nonneg _)
+
+end MeasureTheory
