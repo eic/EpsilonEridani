@@ -22,7 +22,10 @@ This module collects measurability and integrability facts for functions on the 
   `aestronglyMeasurable_of_integrableOn_rpow_smul`: if `x ^ c • g x` is integrable on a
   measurable `s ⊆ (0, ∞)`, then `g` is a.e.-strongly-measurable on `s`.
 - `indicator_Ioc_eventuallyEq_zero_atTop`, `indicator_Ioc_eventuallyEq_nhdsGT`: the extension by
-  zero from `(a, b]` vanishes near `+∞` and agrees with the function to the right of `a`.
+  zero from `(a, b]` vanishes near `+∞` and agrees with the function to the right of `a`. Hence
+  `indicator_Ioc_isBigO_atTop`: it is `O` of anything near `+∞`, and
+  `Asymptotics.IsBigO.indicator_Ioc_nhdsGT`: it inherits a bound of the function to the right of
+  `a`.
 - `MeasureTheory.LocallyIntegrableOn.indicator_Ioc_Ioi`: the extension by zero of a function
   locally integrable on `(a, b]` is locally integrable on `(a, ∞)`.
 - `MeasureTheory.IntegrableOn.rpow_smul_Ioc_of_le`: on `(0, 1]` the power weight `x ^ σ` decreases
@@ -34,7 +37,7 @@ Nothing in this file is physics-specific.
 
 public section
 
-open MeasureTheory Set Filter Topology
+open MeasureTheory Set Filter Topology Asymptotics
 
 namespace EpsilonEridani
 
@@ -69,6 +72,11 @@ theorem indicator_Ioc_eventuallyEq_zero_atTop {E : Type*} [Zero E] (a b : ℝ) (
 theorem indicator_Ioc_eventuallyEq_nhdsGT {E : Type*} [Zero E] {a b : ℝ} (hab : a < b)
     (g : ℝ → E) : (Ioc a b).indicator g =ᶠ[𝓝[>] a] g :=
   eqOn_indicator.eventuallyEq_of_mem (Ioc_mem_nhdsGT hab)
+
+/-- The extension by zero of a function from `(a, b]` is `O` of any function near `+∞`. -/
+theorem indicator_Ioc_isBigO_atTop {E F : Type*} [SeminormedAddCommGroup E] [Norm F] (a b : ℝ)
+    (g : ℝ → E) (k : ℝ → F) : (Ioc a b).indicator g =O[atTop] k :=
+  (indicator_Ioc_eventuallyEq_zero_atTop a b g).trans_isBigO (isBigO_zero k atTop)
 
 end EpsilonEridani
 
@@ -106,3 +114,13 @@ theorem IntegrableOn.rpow_smul_Ioc_of_le [NormedSpace ℝ E] {σ₀ σ : ℝ}
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_exponent_ge hx.1 hx.2 hσ) (norm_nonneg _)
 
 end MeasureTheory
+
+namespace Asymptotics
+
+/-- A bound to the right of `a` on a function passes to its extension by zero from `(a, b]`. -/
+theorem IsBigO.indicator_Ioc_nhdsGT {E F : Type*} [Zero E] [Norm E] [Norm F] {a b : ℝ}
+    {g : ℝ → E} {k : ℝ → F} (h : g =O[𝓝[>] a] k) (hab : a < b) :
+    (Ioc a b).indicator g =O[𝓝[>] a] k :=
+  (EpsilonEridani.indicator_Ioc_eventuallyEq_nhdsGT hab g).trans_isBigO h
+
+end Asymptotics

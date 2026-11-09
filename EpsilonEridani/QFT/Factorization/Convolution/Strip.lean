@@ -74,10 +74,11 @@ variable {f : ℝ → ℝ}
 /-- Convergence of the Mellin transform on the unit interval forces `f` to be
 a.e.-strongly-measurable on `(0, 1]`. -/
 theorem MellinDisConvergent.aestronglyMeasurable {N : ℂ} (h : MellinDisConvergent f N) :
-    AEStronglyMeasurable f (volume.restrict (Ioc 0 1)) :=
-  Complex.continuous_re.comp_aestronglyMeasurable <| aestronglyMeasurable_of_integrableOn_cpow_smul
-    measurableSet_Ioc Ioc_subset_Ioi_self (c := N - 1) <| by
-      simpa only [smul_eq_mul] using mellinDisConvergent_def.mp h
+    AEStronglyMeasurable f (volume.restrict (Ioc 0 1)) := by
+  have h' : AEStronglyMeasurable (fun x => (f x : ℂ)) (volume.restrict (Ioc 0 1)) :=
+    aestronglyMeasurable_of_integrableOn_cpow_smul measurableSet_Ioc Ioc_subset_Ioi_self
+      (c := N - 1) (by simpa only [smul_eq_mul] using mellinDisConvergent_def.mp h)
+  simpa only [Complex.ofReal_re] using Complex.continuous_re.comp_aestronglyMeasurable h'
 
 /-- On `(0, 1]` the integrand of `mellinDis` is that of `mellin` for the extension of `f` by
 zero. -/
@@ -198,17 +199,6 @@ private theorem locallyIntegrableOn_indicator_ofReal (hf : LocallyIntegrableOn f
     LocallyIntegrableOn ((Ioc 0 1).indicator fun x => (f x : ℂ)) (Ioi 0) :=
   (Complex.ofRealCLM.locallyIntegrableOn_comp hf).indicator_Ioc_Ioi
 
-/-- The extension by zero of `f` from `(0, 1]` vanishes near `+∞`, so it is `O(x ^ (-a))` there
-for every `a`. -/
-private theorem indicator_ofReal_isBigO_atTop (f : ℝ → ℝ) (a : ℝ) :
-    (Ioc 0 1).indicator (fun x => (f x : ℂ)) =O[atTop] (· ^ (-a)) :=
-  (indicator_Ioc_eventuallyEq_zero_atTop 0 1 _).trans_isBigO (isBigO_zero _ _)
-
-/-- The small-`x` bound on `f` carries over to its complexified extension by zero. -/
-private theorem indicator_ofReal_isBigO_nhdsGT {b : ℝ} (hb : f =O[𝓝[>] 0] fun x => x ^ (-b)) :
-    (Ioc 0 1).indicator (fun x => (f x : ℂ)) =O[𝓝[>] 0] (· ^ (-b)) :=
-  (indicator_Ioc_eventuallyEq_nhdsGT one_pos _).trans_isBigO (Complex.isBigO_ofReal_left.mpr hb)
-
 /-- **Convergence from the small-`x` bound.** If `f` is locally integrable on `(0, 1]` and
 `f x = O(x ^ (-b))` as `x → 0⁺`, the Mellin transform on the unit interval converges on the
 half-plane `b < Re N`. For a density behaving like `x ^ (-1 - λ)` at small `x` this is the
@@ -218,7 +208,8 @@ theorem mellinDisConvergent_of_isBigO_rpow (hf : LocallyIntegrableOn f (Ioc 0 1)
     MellinDisConvergent f N :=
   mellinDisConvergent_iff_mellinConvergent_indicator.mpr <|
     mellinConvergent_of_isBigO_rpow (locallyIntegrableOn_indicator_ofReal hf)
-      (indicator_ofReal_isBigO_atTop f _) (lt_add_one N.re) (indicator_ofReal_isBigO_nhdsGT hb) hN
+      (indicator_Ioc_isBigO_atTop 0 1 _ _) (lt_add_one N.re)
+      ((Complex.isBigO_ofReal_left.mpr hb).indicator_Ioc_nhdsGT one_pos) hN
 
 /-- **Holomorphy from the small-`x` bound.** Under the hypotheses of
 `mellinDisConvergent_of_isBigO_rpow`, `mellinDis f` is complex differentiable at every `N` with
@@ -228,7 +219,8 @@ theorem mellinDis_differentiableAt_of_isBigO_rpow (hf : LocallyIntegrableOn f (I
     DifferentiableAt ℂ (mellinDis f) N := by
   rw [funext (mellinDis_eq_mellin_indicator f)]
   exact mellin_differentiableAt_of_isBigO_rpow (locallyIntegrableOn_indicator_ofReal hf)
-    (indicator_ofReal_isBigO_atTop f _) (lt_add_one N.re) (indicator_ofReal_isBigO_nhdsGT hb) hN
+    (indicator_Ioc_isBigO_atTop 0 1 _ _) (lt_add_one N.re)
+    ((Complex.isBigO_ofReal_left.mpr hb).indicator_Ioc_nhdsGT one_pos) hN
 
 /-- Holomorphy on the half-plane: `mellinDis f` is differentiable on `{N | b < N.re}`. -/
 theorem mellinDis_differentiableOn_of_isBigO_rpow (hf : LocallyIntegrableOn f (Ioc 0 1)) {b : ℝ}
