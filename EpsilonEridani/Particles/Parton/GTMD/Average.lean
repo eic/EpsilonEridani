@@ -47,11 +47,11 @@ over the polar angle at fixed radius. This module makes that average explicit.
 * `azimuthalAverage_of_neg`, `azimuthalAverage_of_nonneg`: the azimuthal average vanishes at
   negative transverse-momentum magnitude and is the circle average at nonnegative magnitude —
   the interface to the `kT < 0` cutoff of `azimuthalAverage`.
-* `azimuthalAverage_comp_norm`: averaging a function of the magnitude alone returns that
-  function at nonnegative transverse-momentum magnitude, so the average retracts the radial
-  inclusion on TMDs vanishing at negative magnitude, `TMD.IsTmdDensity` in particular.
-* `isTmdDensity_azimuthalAverage`, `regularity_azimuthalAverage`,
-  `assumptions_azimuthalAverage`: the azimuthal average of a vector-argument density is a
+* `azimuthalAverage_comp_norm_of_nonneg`: averaging a function of the magnitude alone returns
+  that function at nonnegative transverse-momentum magnitude, so the average retracts the
+  radial inclusion on TMDs vanishing at negative magnitude, `TMD.IsTmdDensity` in particular.
+* `isTmdDensity_azimuthalAverage`, `tmdRegularity_azimuthalAverage`,
+  `tmdAssumptions_azimuthalAverage`: the azimuthal average of a vector-argument density is a
   density in the sense of `TMD.IsTmdDensity`, is regular in the sense of `TMD.Regularity`, and
   satisfies the full `TMD.Assumptions` bundle, so it can be used with every consumer that
   takes one.
@@ -152,8 +152,12 @@ lemma circleAverageTransverse_eq_zero_of_odd {g : Transverse → E} {kT : ℝ}
   have h := circleAverageTransverse_neg_radius g kT
   rw [circleAverageTransverse_eq_integral, circleAverageTransverse_eq_integral] at h
   simp_rw [hodd, intervalIntegral.integral_neg, smul_neg] at h
-  rw [circleAverageTransverse_eq_integral]
-  linear_combination (norm := module) (-2⁻¹ : ℝ) • h
+  -- `h` says `-A = A` for `A` the averaged integral; taking the difference gives `2 • A = 0`,
+  -- and halving recovers `A = 0`.
+  have h2 : (2 : ℝ) • circleAverageTransverse g kT = 0 := by
+    rw [circleAverageTransverse_eq_integral]
+    linear_combination (norm := module) -h
+  simpa using h2
 
 end GTMD
 end Parton
@@ -227,7 +231,7 @@ lemma azimuthalAverage_zero_radius (f : VectorTmd Flavor) (i : Flavor) (x Q2 ζ 
     transverse-momentum magnitude. Together with vanishing at negative magnitude — which every
     `TMD.IsTmdDensity` guarantees — this says that the azimuthal average retracts the radial
     inclusion `g ↦ fun i x w Q2 ζ => g i x ‖w‖ Q2 ζ` of `TMD.Tmd` into `VectorTmd`. -/
-lemma azimuthalAverage_comp_norm (g : TMD.Tmd Flavor) (i : Flavor) {x kT Q2 ζ : ℝ}
+lemma azimuthalAverage_comp_norm_of_nonneg (g : TMD.Tmd Flavor) (i : Flavor) {x kT Q2 ζ : ℝ}
     (hkT : 0 ≤ kT) :
     azimuthalAverage (fun i x w Q2 ζ => g i x ‖w‖ Q2 ζ) i x kT Q2 ζ = g i x kT Q2 ζ := by
   rw [azimuthalAverage_of_nonneg _ i hkT]
@@ -250,7 +254,7 @@ theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDe
 /-- The azimuthal average of a regular vector-argument TMD is regular in the sense of
     `TMD.Regularity`: continuity of every transverse-momentum slice gives measurability of
     the averaged function in the transverse-momentum magnitude. -/
-theorem regularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Regularity f) :
+theorem tmdRegularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Regularity f) :
     TMD.Regularity (azimuthalAverage f) where
   measurableKT i x Q2 ζ := by
     have hc : Continuous (circleAverageTransverse (f i x · Q2 ζ)) :=
@@ -262,10 +266,10 @@ theorem regularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Regul
 /-- The azimuthal average of a vector-argument TMD satisfying the full assumption bundle
     satisfies the full `TMD.Assumptions` bundle, so it can be used with every consumer that
     takes one. -/
-theorem assumptions_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Assumptions f) :
+theorem tmdAssumptions_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Assumptions f) :
     TMD.Assumptions (azimuthalAverage f) :=
   TMD.assumptions_iff.mpr ⟨isTmdDensity_azimuthalAverage hf.toIsVectorTmdDensity,
-    regularity_azimuthalAverage hf.toRegularity⟩
+    tmdRegularity_azimuthalAverage hf.toRegularity⟩
 
 end GTMD
 end Parton

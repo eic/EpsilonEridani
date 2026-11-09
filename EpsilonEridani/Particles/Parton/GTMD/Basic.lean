@@ -69,7 +69,7 @@ support in `x` and nonnegativity on the physical region — and is what "vector-
 transverse-momentum-dependent parton density" means. `VectorTmd.Regularity` is the analytic
 half, continuity of the transverse-momentum slices; it is what transports to measurability of
 the azimuthal average in the transverse-momentum magnitude
-(`regularity_azimuthalAverage` in `EpsilonEridani.Particles.Parton.GTMD.Average`).
+(`tmdRegularity_azimuthalAverage` in `EpsilonEridani.Particles.Parton.GTMD.Average`).
 `VectorTmd.assumptions_iff` records that the split is exact.
 -/
 
