@@ -18,8 +18,9 @@ position `x` and its antiquark at `y`, at a fixed rapidity, is the target averag
 `1 - S U x y`, where `S U x y = (1 / N_c) Re Tr(U(x) U(y)†)` is the dipole operator of a
 light-cone Wilson-line configuration `U` with values in `U(N_c)`. Its dipole S-matrix is
 `S = 1 - N`. This file records two conditions that every such average satisfies, together with
-a non-negativity condition on the S-matrix carried as a hypothesis, and derives the unitarity
-bound `0 ≤ N x y ≤ 1` from them.
+a non-negativity condition on the S-matrix carried as a hypothesis: the first two conditions
+give the lower half `0 ≤ N x y` of the unitarity bound, and the non-negativity hypothesis is
+its upper half `N x y ≤ 1`.
 
 An amplitude `N` is *admissible* (`SmallX.IsAdmissible`) when
 
@@ -29,7 +30,12 @@ An amplitude `N` is *admissible* (`SmallX.IsAdmissible`) when
 
 The first two conditions hold configuration by configuration and are preserved by averaging, so
 they hold for every target ensemble: `S U x x = 1` by unitarity, and `S U` is the Gram kernel of
-the vectors `U(x)` for the real inner product `(A, B) ↦ (1 / N_c) Re Tr(A B†)`. The third does
+the vectors `U(x)` for the real inner product `(A, B) ↦ (1 / N_c) Re Tr(A B†)`. The dipole
+operator `S U` and its configuration-level properties — colour transparency, endpoint
+symmetry, and the configuration-level bound `1 - S U x y ∈ [0, 2]` — are formalized in
+`EpsilonEridani.QFT.SmallX.Dipole.Operator`; the positive semidefiniteness of the Gram kernel
+`S U`, and with it the passage from a target ensemble to an admissible amplitude, is not proved
+in this file. The third does
 not hold configuration by configuration: for `N_c = 1` the dipole
 operator is `cos (θ x - θ y)` for a phase `θ`, which takes negative values. In the
 McLerran-Venugopalan model the averaged S-matrix is an exponential and hence positive; in general
@@ -64,7 +70,8 @@ dipole amplitude and its unitarity bound.
 - `SmallX.mem_Icc_zero_two_of_posSemidef_one_sub`: colour transparency and a positive-semidefinite
   S-matrix give `N x y ∈ [0, 2]`, for a kernel on an arbitrary index type.
 - `SmallX.IsAdmissible.apply_comm`: an admissible amplitude is symmetric in its endpoints.
-- `SmallX.IsAdmissible.mem_Icc`: the unitarity bound `N x y ∈ [0, 1]`.
+- `SmallX.IsAdmissible.mem_Icc`: the unitarity bound `N x y ∈ [0, 1]`, whose lower half is
+  derived and whose upper half is the `le_one` field of admissibility.
 - `SmallX.isAdmissible_blackDisc` and `SmallX.isAdmissible_golecBiernatWusthoff`: the black disc
   and the Golec-Biernat-Wüsthoff amplitude are admissible.
 -/
@@ -118,7 +125,11 @@ theorem nonneg (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : 0 ≤ 
   (mem_Icc_zero_two_of_posSemidef_one_sub hN.posSemidef_one_sub (hN.apply_self x)
     (hN.apply_self y)).1
 
-/-- **Unitarity bound**: an admissible amplitude lies in the unit interval, `0 ≤ N x y ≤ 1`. -/
+/-- **Unitarity bound**: an admissible amplitude lies in the unit interval, `0 ≤ N x y ≤ 1`.
+The lower half is derived, from colour transparency and the positive semidefiniteness of the
+S-matrix (`IsAdmissible.nonneg`); the upper half is the `IsAdmissible.le_one` hypothesis of
+admissibility, since positive semidefiniteness alone gives only `N x y ≤ 2`
+(`mem_Icc_zero_two_of_posSemidef_one_sub`). -/
 theorem mem_Icc (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) :
     N x y ∈ Set.Icc (0 : ℝ) 1 :=
   ⟨hN.nonneg x y, hN.le_one x y⟩
