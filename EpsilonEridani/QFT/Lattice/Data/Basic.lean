@@ -10,6 +10,7 @@ public import EpsilonEridani.Mathematics.Probability.Moments.CovarianceMatrix
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 /-!
 
 # Euclidean datasets and their noise model
@@ -43,18 +44,20 @@ calculation determines can be made about it without any lattice construction.
   (`EuclideanDataset.variance_add_of_mem_determinedSubspace`).
 * `EuclideanDataset.IsNoiseModel.ae_eq_dotProduct_value_iff_mem_determinedSubspace`: under a noise
   model, `c ⬝ᵥ X` is almost surely `c ⬝ᵥ value` exactly when `c` is in the determined subspace.
-* `EuclideanDataset.hasContinuumLimit_ofTendsto`: if the central values and covariances of a family
-  converge, the limit covariance is again positive semidefinite, so the limits form a dataset
-  `EuclideanDataset.ofTendsto`, the continuum limit of the family; it is unique
+* `EuclideanDataset.hasContinuumLimit_ofTendsto`: if the covariances of a family converge, the
+  limit covariance is again positive semidefinite, so together with any central values it forms a
+  dataset `EuclideanDataset.ofTendsto`; when the central values converge as well, the limits form
+  the continuum limit of the family; it is unique
   (`EuclideanDataset.HasContinuumLimit.unique`), and covariances and variances converge with it.
 
 ## Implementation notes
 
-`covarianceForm` is `Matrix.toBilin'` of the covariance and `variance` is its quadratic form
-`LinearMap.BilinMap.toQuadraticMap`, so that linearity in each functional is Mathlib's `map_add`
-and `map_smul` and the polarisation identity is `LinearMap.BilinMap.polar_toQuadraticMap`. Both
-need a `DecidableEq ι` instance, which is taken classically: every use of the forms is
-propositional.
+`covarianceForm` is `Matrix.toBilin'` of the covariance and `variance` is
+`Matrix.toQuadraticForm'` of it, the quadratic form `LinearMap.BilinMap.toQuadraticMap` of the
+same matrix, so that linearity in each functional is Mathlib's `map_add` and `map_smul` and the
+polarisation identity is `LinearMap.BilinMap.polar_toQuadraticMap`. Both `Matrix.toBilin'` and
+`Matrix.toQuadraticForm'` are stated under a `DecidableEq ι` instance, which is taken classically:
+every use of the forms is propositional.
 
 ## References
 
@@ -139,40 +142,35 @@ section ofTendsto
 
 variable {F : ℝ → EuclideanDataset ι} {v : ι → ℝ} {S : Matrix ι ι ℝ}
 
-/-- The continuum limit of a family of datasets whose central values and covariances converge to
-`v` and `S` as `a → 0⁺`: the dataset with central values `v` and covariance `S`, the limit of
-positive semidefinite matrices being again positive semidefinite. Separate limits
-`hv` and `hS` of the central values and covariances combine to the hypothesis as
-`hv.prodMk_nhds hS`. -/
-def ofTendsto
-    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
+/-- The dataset with central values `v` and covariance `S`, where the covariances of a family of
+datasets converge to `S` as `a → 0⁺`: the limit of positive semidefinite matrices is again
+positive semidefinite. When the central values also converge to `v`, it is the continuum limit of
+the family (`hasContinuumLimit_ofTendsto`). -/
+def ofTendsto (v : ι → ℝ) (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
     EuclideanDataset ι where
   value := v
   covariance := S
   posSemidef_covariance :=
-    posSemidef_is_closed.mem_of_tendsto h.snd_nhds
-      (.of_forall fun a => (F a).posSemidef_covariance)
+    posSemidef_is_closed.mem_of_tendsto hS (.of_forall fun a => (F a).posSemidef_covariance)
 
-/-- The central values of `ofTendsto h` are the limit of the central values. -/
+/-- The central values of `ofTendsto v hS` are `v`. -/
 @[simp]
-theorem ofTendsto_value
-    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
-    (ofTendsto h).value = v :=
+theorem ofTendsto_value (v : ι → ℝ) (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
+    (ofTendsto v hS).value = v :=
   (rfl)
 
-/-- The covariance of `ofTendsto h` is the limit of the covariances. -/
+/-- The covariance of `ofTendsto v hS` is the limit of the covariances. -/
 @[simp]
-theorem ofTendsto_covariance
-    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
-    (ofTendsto h).covariance = S :=
+theorem ofTendsto_covariance (v : ι → ℝ) (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
+    (ofTendsto v hS).covariance = S :=
   (rfl)
 
 /-- If the central values and the covariances of a family of datasets converge as `a → 0⁺`, then
 the limits form the continuum limit of the family. -/
-theorem hasContinuumLimit_ofTendsto
-    (h : Tendsto (fun a => ((F a).value, (F a).covariance)) (𝓝[>] 0) (𝓝 (v, S))) :
-    HasContinuumLimit F (ofTendsto h) :=
-  ⟨h.fst_nhds, h.snd_nhds⟩
+theorem hasContinuumLimit_ofTendsto (hv : Tendsto (fun a => (F a).value) (𝓝[>] 0) (𝓝 v))
+    (hS : Tendsto (fun a => (F a).covariance) (𝓝[>] 0) (𝓝 S)) :
+    HasContinuumLimit F (ofTendsto v hS) :=
+  ⟨hv, hS⟩
 
 end ofTendsto
 
@@ -280,25 +278,30 @@ theorem covarianceForm_comm (c c' : ι → ℝ) : D.covarianceForm c c' = D.cova
   simpa [covarianceForm_apply] using
     D.posSemidef_covariance.isHermitian.star_dotProduct_mulVec_comm c c'
 
+open Classical in
 /-- The variance of the measured value of the linear functional `c` of the data: the quadratic
 form `c ⬝ᵥ covariance *ᵥ c` of the covariance matrix. Under any noise model `X` it is the
 variance of `c ⬝ᵥ X` (`IsNoiseModel.variance_dotProduct`). -/
 noncomputable def variance : QuadraticForm ℝ (ι → ℝ) :=
-  D.covarianceForm.toQuadraticMap
-
-/-- The covariance of a functional with itself is its variance. -/
-@[simp]
-theorem covarianceForm_self (c : ι → ℝ) : D.covarianceForm c c = D.variance c :=
-  (LinearMap.BilinMap.toQuadraticMap_apply _ _).symm
+  Matrix.toQuadraticForm' D.covariance
 
 /-- The variance of a functional is the quadratic form of the covariance. -/
 theorem variance_apply (c : ι → ℝ) : D.variance c = c ⬝ᵥ D.covariance *ᵥ c := by
-  rw [← covarianceForm_self, covarianceForm_apply]
+  classical
+  exact Matrix.toQuadraticForm'_apply _ _
+
+/-- The covariance of a functional with itself is its variance. -/
+@[simp]
+theorem covarianceForm_self (c : ι → ℝ) : D.covarianceForm c c = D.variance c := by
+  rw [covarianceForm_apply, variance_apply]
 
 /-- The polar form of the variance is twice the covariance. -/
 theorem polar_variance (c c' : ι → ℝ) :
     QuadraticMap.polar D.variance c c' = 2 * D.covarianceForm c c' := by
-  rw [variance, LinearMap.BilinMap.polar_toQuadraticMap, D.covarianceForm_comm c' c, two_mul]
+  classical
+  rw [variance, Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
+    Matrix.toLinearMap₂'_apply', Matrix.toLinearMap₂'_apply', ← covarianceForm_apply,
+    ← covarianceForm_apply, D.covarianceForm_comm c' c, two_mul]
 
 /-- The variance of a sum of functionals. -/
 theorem variance_add (c c' : ι → ℝ) :
@@ -341,7 +344,7 @@ def determinedSubspace : Submodule ℝ (ι → ℝ) :=
 /-- A functional is in the determined subspace when the covariance annihilates it. -/
 @[simp]
 theorem mem_determinedSubspace {c : ι → ℝ} : c ∈ D.determinedSubspace ↔ D.covariance *ᵥ c = 0 :=
-  LinearMap.mem_ker
+  by rw [determinedSubspace, LinearMap.mem_ker, Matrix.mulVecLin_apply]
 
 /-- The determined subspace consists of the functionals of zero variance. -/
 theorem mem_determinedSubspace_iff_variance_eq_zero {c : ι → ℝ} :
