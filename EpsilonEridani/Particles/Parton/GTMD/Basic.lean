@@ -6,7 +6,6 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.GTMD.Transverse
-public import EpsilonEridani.Particles.Parton.TMD.Basic
 /-!
 
 # GTMD Object Model
@@ -18,11 +17,10 @@ transverse-momentum argument is a genuine vector in the transverse plane, togeth
 structural assumptions. The azimuthal average that maps a `VectorTmd` into `TMD.Tmd` is
 defined in `EpsilonEridani.Particles.Parton.GTMD.Average`.
 
-The assumption bundle follows convention 9 of the WignerDistributions roadmap: what it
-*means* to be a vector-argument density is separated from the analytic regularity needed by
-the analysis, and the split is recorded by `VectorTmd.assumptions_iff`. The bundles are
-namespaced to `VectorTmd` so that the unqualified `GTMD.Regularity` and `GTMD.Assumptions`
-stay free for the correlator-level bundles of the roadmap's Layer 0.
+The assumption bundle separates what it *means* to be a vector-argument density from
+the analytic regularity the analysis needs; `VectorTmd.assumptions_iff` records that the
+split is exact. Both bundles are namespaced to `VectorTmd` because the unqualified
+`GTMD.Regularity` and `GTMD.Assumptions` are reserved for correlator-level bundles.
 
 ## Main definitions
 

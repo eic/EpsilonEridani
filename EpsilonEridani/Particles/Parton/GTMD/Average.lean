@@ -167,7 +167,7 @@ open EpsilonEridani.Particles.Parton.GTMD in
 @[fun_prop]
 lemma Continuous.circleAverageTransverse {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {g : Transverse → E} (hg : Continuous g) : Continuous (circleAverageTransverse g) :=
-  (((hg.comp Complex.orthonormalBasisOneI.repr.continuous).circleAverage (c := 0)).congr
+  (((hg.comp' Complex.orthonormalBasisOneI.repr.continuous).circleAverage (c := 0)).congr
     fun kT => (circleAverageTransverse_def g kT).symm)
 
 namespace EpsilonEridani
@@ -255,12 +255,9 @@ theorem regularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Regul
   measurableKT i x Q2 ζ := by
     have hc : Continuous (circleAverageTransverse (f i x · Q2 ζ)) :=
       (hf.continuousKT i x Q2 ζ).circleAverageTransverse
-    have hite : MeasureTheory.AEStronglyMeasurable (fun kT : ℝ =>
-        if kT < 0 then (0 : ℝ) else circleAverageTransverse (f i x · Q2 ζ) kT) :=
-      (Measurable.ite (measurableSet_lt measurable_id measurable_const)
-        measurable_const hc.measurable).aestronglyMeasurable
     rw [azimuthalAverage_def]
-    exact hite
+    exact (Measurable.ite (measurableSet_lt measurable_id measurable_const)
+      measurable_const hc.measurable).aestronglyMeasurable
 
 /-- The azimuthal average of a vector-argument TMD satisfying the full assumption bundle
     satisfies the full `TMD.Assumptions` bundle, so it can be used with every consumer that
