@@ -22,7 +22,7 @@ property of a scheme that a safety proof for an algorithm consumes.
 * `RecombinationScheme.IsAdditive`, `.IsPosHomogeneous` and `.IsUnital` are additivity of the
   merge map in the pair, positive homogeneity of degree one, and the normalisation that merging a
   vanishing momentum changes nothing. Additivity and homogeneity together say exactly that the
-  merge map is `ℝ`-linear on the pair (`RecombinationScheme.isLinearMap_uncurry_iff`).
+  merge map is `ℝ`-linear on the pair (`RecombinationScheme.isLinearMap_uncurry_merge_iff`).
 * `RecombinationScheme.IsCollinearExact` is the property that merging the two fragments
   `z • p`, `(1 - z) • p` of a collinear splitting returns `p`, and `.IsCollinearExactOn S` is the
   same property for the momenta `p` of a set `S` only.
@@ -33,10 +33,12 @@ jet algorithm whose distance measure vanishes on parallel pairs delivers, is inv
 collinear splittings of every momentum on which the scheme is exact
 (`RecombinationScheme.IsCollinearExactOn.apply_smul_cons_one_sub_smul_cons`), and collinear safe
 when the scheme is exact on all of `V` (`RecombinationScheme.IsCollinearExact.isCollinearSafe`).
-On the infrared side, a scheme that leaves a pseudojet `a` unchanged when a vanishing momentum is
-merged into it, and is continuous there, lets the observable absorb a vanishingly soft momentum
-added next to `a` (`RecombinationScheme.tendsto_cons_of_merge_zero`), and for a unital scheme
-continuous at a vanishing momentum this makes the observable infrared safe
+On the infrared side, for a scheme that leaves a pseudojet `a` unchanged when a vanishing momentum
+is merged into it and is continuous there, an observable that is unchanged near `p = 0` when the
+added momentum `p` is merged into `a`, and is continuous at `a`, absorbs a vanishingly soft
+momentum added next to `a` (`RecombinationScheme.tendsto_cons_of_merge_zero`). With a unital
+scheme continuous at a vanishing momentum, these hypotheses on the observable at every pseudojet,
+and the corresponding limit at the empty final state, the observable is infrared safe
 (`RecombinationScheme.IsUnital.isInfraredSafe`).
 
 Additivity, homogeneity and symmetry do not by themselves give collinear exactness: on a
@@ -47,11 +49,10 @@ additivity together with the normalisation `IsUnital`, and those two characteris
 (`RecombinationScheme.eq_eScheme_iff`). A scheme that is *not* additive can still be exact, and
 `RecombinationScheme.IsPosHomogeneous.isCollinearExactOn_iff` isolates what it takes: a homogeneous
 scheme is exact on a set closed under positive rescaling precisely when it merges parallel momenta
-of that set additively. As motivation only: the `p` and `E₀` schemes, which are not defined
-here because they depend on a choice of frame, rescale a merged pair to make it massless for a
-Minkowski bilinear form `g` (masslessness being `g p p = 0`, as in `invariantMassSq`), so they are
-not exact on all of `V`; the set is what is meant to let them meet the criterion, on the momenta
-that are massless for `g`.
+of that set additively. A scheme that rescales a merged pair to make it massless for a Minkowski
+bilinear form `g` cannot be exact on all of `V`, but can be exact on the momenta with `g p p = 0`
+(cf. `invariantMassSq`), a set closed under positive rescaling, which is what
+`IsCollinearExactOn` and `RecombinationScheme.IsPosHomogeneous.isCollinearExactOn_iff` are for.
 
 ## References
 
@@ -118,7 +119,7 @@ section AdditiveGroup
 variable [AddCommGroup V] {R : RecombinationScheme V}
 
 /-- An additive scheme merges the negatives of a pair into the negative of the merged momentum. -/
-theorem IsAdditive.merge_neg (hadd : R.IsAdditive) (a b : V) :
+theorem IsAdditive.merge_neg_neg (hadd : R.IsAdditive) (a b : V) :
     R.merge (-a) (-b) = -R.merge a b := by
   have h := hadd.merge_add_add a (-a) b (-b)
   rw [add_neg_cancel, add_neg_cancel, hadd.merge_zero_zero] at h
@@ -171,6 +172,12 @@ def IsCollinearExactOn (S : Set V) : Prop :=
 
 variable {R}
 
+/-- The second fragment of a collinear splitting is a rescaling of the first. -/
+private theorem one_sub_smul_eq_div_smul_smul {z : ℝ} (hz : 0 < z) (p : V) :
+    (1 - z) • p = ((1 - z) / z) • (z • p) := by
+  match_scalars
+  field_simp
+
 theorem isPosHomogeneous_def :
     R.IsPosHomogeneous ↔ ∀ c : ℝ, 0 < c → ∀ a b : V, R.merge (c • a) (c • b) = c • R.merge a b :=
   Iff.rfl
@@ -203,6 +210,16 @@ theorem IsCollinearExactOn.merge_smul_one_sub_smul {S : Set V} (hR : R.IsColline
     R.merge (z • p) ((1 - z) • p) = p :=
   hR p hp z hz
 
+/-- A scheme collinear exact on `S` leaves a member of `S` unchanged when a vanishing momentum is
+merged into it. -/
+theorem IsCollinearExactOn.merge_zero {S : Set V} (hR : R.IsCollinearExactOn S) {a : V}
+    (ha : a ∈ S) : R.merge a 0 = a := by
+  simpa using hR.merge_smul_one_sub_smul ha 1 ⟨zero_le_one, le_rfl⟩
+
+/-- A collinear exact scheme is unital. -/
+theorem IsCollinearExact.isUnital (hR : R.IsCollinearExact) : R.IsUnital := fun a => by
+  simpa using hR.merge_smul_one_sub_smul a 1 ⟨zero_le_one, le_rfl⟩
+
 /-- Collinear exactness on a set passes to its subsets. -/
 theorem IsCollinearExactOn.mono {S T : Set V} (hST : S ⊆ T) (hR : R.IsCollinearExactOn T) :
     R.IsCollinearExactOn S :=
@@ -221,20 +238,20 @@ theorem isCollinearExactOn_univ : R.IsCollinearExactOn Set.univ ↔ R.IsCollinea
 /-- Additivity and positive homogeneity of degree one together say exactly that the merge map is
 an `ℝ`-linear map of the pair of momenta: additivity extends the positive homogeneity to negative
 scalars. -/
-theorem isLinearMap_uncurry_iff :
-    IsLinearMap ℝ (fun x : V × V => R.merge x.1 x.2) ↔ R.IsAdditive ∧ R.IsPosHomogeneous := by
+theorem isLinearMap_uncurry_merge_iff :
+    IsLinearMap ℝ (Function.uncurry R.merge) ↔ R.IsAdditive ∧ R.IsPosHomogeneous := by
   refine ⟨fun h => ⟨fun a₁ a₂ b₁ b₂ => by simpa using h.map_add (a₁, b₁) (a₂, b₂),
     fun c _ a b => by simpa using h.map_smul c (a, b)⟩,
     fun ⟨hadd, hhom⟩ => ?_⟩
   refine ⟨fun x y => hadd.merge_add_add x.1 y.1 x.2 y.2, fun c x => ?_⟩
-  simp only [Prod.smul_fst, Prod.smul_snd]
+  simp only [Function.uncurry_def, Prod.smul_fst, Prod.smul_snd]
   rcases lt_trichotomy 0 c with hc | rfl | hc
   · exact hhom.merge_smul_smul hc x.1 x.2
   · simp [hadd.merge_zero_zero]
   · calc R.merge (c • x.1) (c • x.2)
         = R.merge (-c • -x.1) (-c • -x.2) := by rw [neg_smul_neg, neg_smul_neg]
       _ = -c • R.merge (-x.1) (-x.2) := hhom.merge_smul_smul (by linarith) _ _
-      _ = -c • -R.merge x.1 x.2 := by rw [hadd.merge_neg]
+      _ = -c • -R.merge x.1 x.2 := by rw [hadd.merge_neg_neg]
       _ = c • R.merge x.1 x.2 := neg_smul_neg c _
 
 /-- On a set closed under positive rescaling, a scheme collinear exact there merges parallel
@@ -245,8 +262,8 @@ theorem IsCollinearExactOn.merge_smul_eq_one_add_smul {S : Set V}
   have ht1 : (0 : ℝ) < 1 + t := by linarith
   have hz := hR.merge_smul_one_sub_smul (hS _ ht1 p hp) (1 + t)⁻¹
     ⟨inv_nonneg.2 ht1.le, inv_le_one_of_one_le₀ (by linarith)⟩
-  have hmul : (1 - (1 + t)⁻¹) * (1 + t) = t := by field_simp; ring
-  rwa [inv_smul_smul₀ ht1.ne', smul_smul, hmul] at hz
+  have hdiv : (1 - (1 + t)⁻¹) / (1 + t)⁻¹ = t := by field_simp; ring
+  rwa [one_sub_smul_eq_div_smul_smul (inv_pos.2 ht1), inv_smul_smul₀ ht1.ne', hdiv] at hz
 
 /-- A positively homogeneous scheme that merges parallel momenta of a set `S` additively is
 collinear exact on `S`. -/
@@ -259,12 +276,9 @@ theorem IsPosHomogeneous.isCollinearExactOn_of_merge_smul (hhom : R.IsPosHomogen
   · have h0 := hpar 0 le_rfl p hp
     simp only [zero_smul, add_zero, one_smul] at h0
     simpa [R.merge_comm 0 p] using h0
-  · have hsplit : (1 - z) • p = z • (((1 - z) / z) • p) := by
-      rw [smul_smul]
-      congr 1
-      field_simp
-    have hmul : z * (1 + (1 - z) / z) = 1 := by field_simp; ring
-    rw [hsplit, hhom.merge_smul_smul hzpos, hpar ((1 - z) / z) (div_nonneg (by linarith) hz0) p hp,
+  · have hmul : z * (1 + (1 - z) / z) = 1 := by field_simp; ring
+    rw [one_sub_smul_eq_div_smul_smul hzpos, smul_comm ((1 - z) / z) z p,
+      hhom.merge_smul_smul hzpos, hpar ((1 - z) / z) (div_nonneg (by linarith) hz0) p hp,
       smul_smul, hmul, one_smul]
 
 /-- A positively homogeneous scheme is collinear exact on a set closed under positive rescaling
@@ -339,20 +353,22 @@ section Rigidity
 variable [AddCommMonoid V] {R : RecombinationScheme V}
 
 /-- An additive unital scheme merges by adding momenta. -/
-theorem IsAdditive.merge_eq_add (hadd : R.IsAdditive) (hunit : R.IsUnital) (a b : V) :
-    R.merge a b = a + b := by
+theorem IsAdditive.merge_eq_add_of_isUnital (hadd : R.IsAdditive) (hunit : R.IsUnital)
+    (a b : V) : R.merge a b = a + b := by
   have h := hadd.merge_add_add a 0 0 b
   rwa [add_zero, zero_add, hunit a, hunit.zero_merge b] at h
 
 /-- The `E` scheme is the only additive unital scheme. -/
-theorem IsAdditive.eq_eScheme (hadd : R.IsAdditive) (hunit : R.IsUnital) : R = eScheme V := by
+theorem IsAdditive.eq_eScheme_of_isUnital (hadd : R.IsAdditive) (hunit : R.IsUnital) :
+    R = eScheme V := by
   ext a b
-  exact hadd.merge_eq_add hunit a b
+  exact hadd.merge_eq_add_of_isUnital hunit a b
 
 /-- Additivity and the normalisation that a vanishing momentum merges into nothing characterise
 the `E` scheme. -/
 theorem eq_eScheme_iff : R = eScheme V ↔ R.IsAdditive ∧ R.IsUnital :=
-  ⟨by rintro rfl; exact ⟨isAdditive_eScheme, isUnital_eScheme⟩, fun h => h.1.eq_eScheme h.2⟩
+  ⟨by rintro rfl; exact ⟨isAdditive_eScheme, isUnital_eScheme⟩,
+    fun h => h.1.eq_eScheme_of_isUnital h.2⟩
 
 end Rigidity
 
@@ -361,9 +377,9 @@ section RigidityModule
 variable [AddCommGroup V] [Module ℝ V] {R : RecombinationScheme V}
 
 /-- An additive unital scheme is collinear exact. -/
-theorem IsAdditive.isCollinearExact (hadd : R.IsAdditive) (hunit : R.IsUnital) :
+theorem IsAdditive.isCollinearExact_of_isUnital (hadd : R.IsAdditive) (hunit : R.IsUnital) :
     R.IsCollinearExact := by
-  rw [hadd.eq_eScheme hunit]
+  rw [hadd.eq_eScheme_of_isUnital hunit]
   exact isCollinearExact_eScheme
 
 end RigidityModule
@@ -383,7 +399,7 @@ nontrivial `V` it is not collinear exact, so those three conditions alone do not
 exactness. -/
 def smulScheme (c : ℝ) : RecombinationScheme V where
   merge a b := c • (a + b)
-  merge_comm a b := by rw [add_comm]
+  merge_comm a b := by rw [add_comm a b]
 
 @[simp]
 theorem smulScheme_merge (c : ℝ) (a b : V) : (smulScheme V c).merge a b = c • (a + b) := (rfl)
@@ -396,14 +412,14 @@ theorem smulScheme_one : smulScheme V 1 = eScheme V := by
 
 /-- Rescaling the sum by a fixed factor is additive. -/
 theorem isAdditive_smulScheme (c : ℝ) : (smulScheme V c).IsAdditive := fun a₁ a₂ b₁ b₂ => by
-  simp only [smulScheme_merge, ← smul_add]
-  congr 1
-  abel
+  simp only [smulScheme_merge]
+  module
 
 /-- Rescaling the sum by a fixed factor is positively homogeneous of degree one. -/
 theorem isPosHomogeneous_smulScheme (c : ℝ) : (smulScheme V c).IsPosHomogeneous :=
     fun d _ a b => by
-  simp only [smulScheme_merge, ← smul_add, smul_smul, mul_comm]
+  simp only [smulScheme_merge, ← smul_add]
+  exact smul_comm c d (a + b)
 
 /-- Rescaling by a factor other than one merges a collinear pair into the wrong momentum, so the
 scheme is not collinear exact although it is additive, homogeneous and symmetric. -/
@@ -420,7 +436,8 @@ theorem not_isCollinearExact_smulScheme [Nontrivial V] {c : ℝ} (hc : c ≠ 1) 
 nothing. -/
 theorem not_isUnital_smulScheme [Nontrivial V] {c : ℝ} (hc : c ≠ 1) :
     ¬ (smulScheme V c).IsUnital := fun hunit =>
-  not_isCollinearExact_smulScheme hc ((isAdditive_smulScheme c).isCollinearExact hunit)
+  not_isCollinearExact_smulScheme hc
+    ((isAdditive_smulScheme c).isCollinearExact_of_isUnital hunit)
 
 end SmulScheme
 
@@ -441,15 +458,10 @@ theorem RecombinationScheme.IsCollinearExactOn.apply_smul_cons_one_sub_smul_cons
     J (z • p ::ₘ (1 - z) • p ::ₘ s) = J (p ::ₘ s) := by
   obtain ⟨hz0, hz1⟩ := hz
   rcases hz0.eq_or_lt with rfl | hzpos
-  · have h1 := hR.merge_smul_one_sub_smul hp 1 ⟨zero_le_one, le_rfl⟩
-    simp only [one_smul, sub_self] at h1
-    rw [zero_smul, sub_zero, one_smul, Multiset.cons_swap, ← zero_smul ℝ p, hJ s p 0 le_rfl, h1]
-  · have hsplit : (1 - z) • p = ((1 - z) / z) • (z • p) := by
-      rw [smul_smul]
-      congr 1
-      field_simp
-    rw [hsplit, hJ s _ _ (div_nonneg (by linarith) hz0), ← hsplit,
-      hR.merge_smul_one_sub_smul hp z ⟨hz0, hz1⟩]
+  · rw [zero_smul, sub_zero, one_smul, Multiset.cons_swap, ← zero_smul ℝ p, hJ s p 0 le_rfl,
+      zero_smul, hR.merge_zero hp]
+  · rw [one_sub_smul_eq_div_smul_smul hzpos, hJ s _ _ (div_nonneg (by linarith) hz0),
+      ← one_sub_smul_eq_div_smul_smul hzpos, hR.merge_smul_one_sub_smul hp z ⟨hz0, hz1⟩]
 
 /-- For a collinear exact scheme, an observable that is unchanged when a pair of parallel momenta
 is replaced by its merged pseudojet is collinear safe. -/
