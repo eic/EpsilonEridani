@@ -17,7 +17,7 @@ For a finite family `X : ι → Ω → ℝ` of real random variables, `covarianc
 matrix of pairwise covariances `cov[X i, X j; μ]`. This file proves that it is the matrix of the
 covariance of linear combinations: the covariance of `c ⬝ᵥ X` and `c' ⬝ᵥ X` is
 `c ⬝ᵥ covarianceMatrix X μ *ᵥ c'`. Positive semidefiniteness and the characterisation of the
-linear combinations that are almost surely constant follow from this.
+linear combinations that are almost surely equal to their integral follow from this.
 
 Mathlib records the same object coordinate-free, as `ProbabilityTheory.covarianceBilin` of the law
 of `X` on `EuclideanSpace ℝ ι` (see `ProbabilityTheory.covarianceBilin_apply_pi`), and Tau Ceti
