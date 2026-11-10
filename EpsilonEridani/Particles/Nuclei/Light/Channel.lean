@@ -38,10 +38,9 @@ The deuteron has total angular momentum `1`, positive parity and isospin `0`. To
 momentum `1` and positive parity alone, with no input from the nucleon-nucleon interaction, admit
 exactly the two channels `³S₁` and `³D₁` (`ChannelLabel.eq_tripletS1_or_eq_tripletD1_iff`), so a
 deuteron wave function consists of the two radial amplitudes of these channels; the spin-singlet
-channel with `J = 1` is `¹P₁`, of negative parity. Both channels are allowed by the Pauli principle
-in isospin `0` (`ChannelLabel.pauliAllowed_zero_of_J_eq_one_of_parity_eq_one`), and no two-nucleon
-channel at all has total angular momentum `1`, positive parity and isospin `1`
-(`ChannelLabel.not_pauliAllowed_isospin_one_of_J_eq_one_of_parity_eq_one`): there is no
+channel with `J = 1` is `¹P₁`, of negative parity. Such a channel is allowed by the Pauli principle
+exactly in isospin `0`
+(`ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`): there is no
 isospin-one two-nucleon state, and so no proton-proton or neutron-neutron state, with the
 deuteron's spin and parity.
 
@@ -52,11 +51,11 @@ momentum, parity and isospin, but not orbital angular momentum, therefore couple
 in such pairs; the tensor force is the standard example, and the deuteron's `³S₁`-`³D₁` mixing is
 its case `J = 1`.
 
-Finally, the spin-triplet channels of even orbital angular momentum, among them the deuteron
-channels, are Pauli-allowed exactly in isospin `0`
-(`ChannelLabel.pauliAllowed_iff_isospin_eq_zero`). A proton-proton or neutron-neutron pair has
-isospin projection `±1`, hence isospin `1`, so these channels are available to a proton-neutron
-pair and forbidden to a like-species pair.
+The isospin-zero statement is a case of a general one: a channel with `L + S` odd, such as a spin
+triplet of even orbital angular momentum or a spin singlet of odd orbital angular momentum, is
+Pauli-allowed exactly in isospin `0` (`ChannelLabel.pauliAllowed_iff_isospin_eq_zero`). A
+proton-proton or neutron-neutron pair has isospin projection `±1`, hence isospin `1`, so these
+channels are available to a proton-neutron pair and forbidden to a like-species pair.
 
 ## Main definitions
 
@@ -72,20 +71,17 @@ pair and forbidden to a like-species pair.
 * `ChannelLabel.exchangeSign_eq_neg_one_pow`: the exchange sign is `(-1)^(L + S + T)`.
 * `ChannelLabel.pauliAllowed_iff_odd`: a channel of isospin `T` is Pauli-allowed exactly when
   `L + S + T` is odd.
+* `ChannelLabel.pauliAllowed_iff_isospin_eq_zero`: a channel with `L + S` odd is allowed exactly
+  in isospin `0`; the hypothesis `T ≤ 1` restricts the isospin to the two-nucleon range.
+* `ChannelLabel.pauliAllowed_iff_of_S_eq_of_parity_eq`: channels of equal spin and parity have the
+  same Pauli status in every isospin.
 * `ChannelLabel.eq_tripletS1_or_eq_tripletD1_iff`: the two-nucleon channels with `J = 1` and
   positive parity are exactly `³S₁` and `³D₁`.
-* `ChannelLabel.pauliAllowed_zero_of_J_eq_one_of_parity_eq_one`: every two-nucleon channel with
-  `J = 1` and positive parity is allowed in isospin `0`.
-* `ChannelLabel.not_pauliAllowed_isospin_one_of_J_eq_one_of_parity_eq_one`: no allowed
-  two-nucleon channel has `J = 1`, positive parity and isospin `1`.
+* `ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`: a two-nucleon
+  channel with `J = 1` and positive parity is allowed exactly in isospin `0`.
 * `ChannelLabel.eq_or_S_eq_one_and_L_add_one_eq_J`: allowed two-nucleon channels sharing `J`,
-  parity and isospin are equal or form the pair `³(J-1)_J`, `³(J+1)_J`; conversely, channels of
-  equal spin whose orbital angular momenta differ by two share parity
-  (`ChannelLabel.parity_eq_of_L_add_two`) and Pauli status
-  (`ChannelLabel.pauliAllowed_iff_of_L_add_two`).
-* `ChannelLabel.pauliAllowed_iff_isospin_eq_zero`: a spin-triplet channel of even orbital angular
-  momentum is allowed exactly in isospin `0`; the hypothesis `T ≤ 1` restricts the isospin to
-  the two-nucleon range.
+  parity and isospin are equal or form the pair `³(J-1)_J`, `³(J+1)_J`; conversely, such a pair
+  has equal parity (`ChannelLabel.parity_eq_iff`) and hence equal Pauli status.
 
 ## References
 
@@ -154,6 +150,13 @@ theorem parity_def : c.parity = (-1) ^ c.L := (rfl)
 @[simp] theorem parity_eq_neg_one_iff : c.parity = -1 ↔ Odd c.L :=
   neg_one_pow_eq_neg_one_iff_odd (by decide)
 
+/-- Two channels have the same parity exactly when their orbital angular momenta have the same
+parity. -/
+theorem parity_eq_iff {c c' : ChannelLabel} : c.parity = c'.parity ↔ (Even c.L ↔ Even c'.L) := by
+  rw [← parity_eq_one_iff, ← parity_eq_one_iff]
+  rcases Int.units_eq_one_or c.parity with h | h <;>
+    rcases Int.units_eq_one_or c'.parity with h' | h' <;> rw [h, h'] <;> decide
+
 /-! ### The generalised Pauli principle -/
 
 /-- The eigenvalue of the exchange of the two nucleons on a state in the channel `c` with isospin
@@ -185,6 +188,27 @@ theorem pauliAllowed_def : c.PauliAllowed T ↔ c.exchangeSign T = -1 := Iff.rfl
 /-- The Pauli principle is decided by the parity of `L + S + T`. -/
 instance : Decidable (c.PauliAllowed T) := decidable_of_iff' _ (c.pauliAllowed_iff_odd T)
 
+/-- A channel with `L + S` odd, such as a spin triplet of even orbital angular momentum (`³S₁`,
+`³D₁`) or a spin singlet of odd orbital angular momentum (`¹P₁`), is allowed by the Pauli principle
+exactly in isospin `0`. The isospin of two nucleons is `0` or `1`, and the hypothesis `T ≤ 1`
+restricts to this range; without it the statement fails, since `T = 2` makes `L + S + T` odd.
+Since a proton-proton or neutron-neutron pair has isospin `1`, these channels are available to a
+proton-neutron pair only. -/
+theorem pauliAllowed_iff_isospin_eq_zero {c : ChannelLabel} {T : ℕ} (h : Odd (c.L + c.S))
+    (hT : T ≤ 1) : c.PauliAllowed T ↔ T = 0 := by
+  rw [pauliAllowed_iff_odd, Nat.odd_iff]
+  rw [Nat.odd_iff] at h
+  constructor <;> intro <;> omega
+
+/-- Two channels with the same total spin and the same parity have the same Pauli status in every
+isospin. -/
+theorem pauliAllowed_iff_of_S_eq_of_parity_eq {c c' : ChannelLabel} {T : ℕ} (hS : c.S = c'.S)
+    (hP : c.parity = c'.parity) : c.PauliAllowed T ↔ c'.PauliAllowed T := by
+  have hL := parity_eq_iff.1 hP
+  rw [Nat.even_iff, Nat.even_iff] at hL
+  rw [pauliAllowed_iff_odd, pauliAllowed_iff_odd, ← hS, Nat.odd_iff, Nat.odd_iff]
+  omega
+
 /-! ### The deuteron channels -/
 
 /-- The channel `³S₁`: total spin one, orbital angular momentum zero, total angular momentum one.
@@ -213,18 +237,15 @@ theorem eq_tripletS1_or_eq_tripletD1_iff {c : ChannelLabel} (hS : c.S ≤ 1) :
   have := c.triangle
   omega
 
-/-- Every two-nucleon channel with total angular momentum `1` and positive parity is allowed by the
-Pauli principle in isospin `0`, the isospin of the deuteron. -/
-theorem pauliAllowed_zero_of_J_eq_one_of_parity_eq_one {c : ChannelLabel} (hS : c.S ≤ 1)
-    (hJ : c.J = 1) (hP : c.parity = 1) : c.PauliAllowed 0 := by
-  rcases (eq_tripletS1_or_eq_tripletD1_iff hS).2 ⟨hJ, hP⟩ with rfl | rfl <;> decide
-
-/-- No two-nucleon channel with total angular momentum `1` and positive parity is allowed by the
-Pauli principle in isospin `1`: the spin triplets of even `L` are forbidden, and the spin singlet
-with `J = 1` is `¹P₁`, of negative parity. -/
-theorem not_pauliAllowed_isospin_one_of_J_eq_one_of_parity_eq_one {c : ChannelLabel} (hS : c.S ≤ 1)
-    (hJ : c.J = 1) (hP : c.parity = 1) : ¬ c.PauliAllowed 1 := by
-  rcases (eq_tripletS1_or_eq_tripletD1_iff hS).2 ⟨hJ, hP⟩ with rfl | rfl <;> decide
+/-- A two-nucleon channel with total angular momentum `1` and positive parity is allowed by the
+Pauli principle exactly in isospin `0`, the isospin of the deuteron; in isospin `1` the spin
+triplets `³S₁` and `³D₁` are forbidden, and the spin singlet with `J = 1` is `¹P₁`, of negative
+parity. -/
+theorem pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one {c : ChannelLabel} {T : ℕ}
+    (hS : c.S ≤ 1) (hJ : c.J = 1) (hP : c.parity = 1) (hT : T ≤ 1) :
+    c.PauliAllowed T ↔ T = 0 := by
+  rcases (eq_tripletS1_or_eq_tripletD1_iff hS).2 ⟨hJ, hP⟩ with rfl | rfl <;>
+    exact pauliAllowed_iff_isospin_eq_zero (by decide) hT
 
 /-! ### Channels with the same conserved quantum numbers -/
 
@@ -237,7 +258,7 @@ theorem eq_or_S_eq_one_and_L_add_one_eq_J {c c' : ChannelLabel} {T : ℕ} (hS : 
     (h' : c'.PauliAllowed T) :
     c = c' ∨ c.S = 1 ∧ c'.S = 1 ∧
       (c.L + 1 = c.J ∧ c.J + 1 = c'.L ∨ c'.L + 1 = c.J ∧ c.J + 1 = c.L) := by
-  have hP' : Even c.L ↔ Even c'.L := by rw [← parity_eq_one_iff, ← parity_eq_one_iff, hP]
+  have hP' := parity_eq_iff.1 hP
   rw [Nat.even_iff, Nat.even_iff] at hP'
   rw [pauliAllowed_iff_odd, Nat.odd_iff] at h h'
   have h₁ := c.J_le_L_add_S
@@ -248,32 +269,6 @@ theorem eq_or_S_eq_one_and_L_add_one_eq_J {c c' : ChannelLabel} {T : ℕ} (hS : 
   -- equal parity and equal Pauli status force equal total spin, and then `|L - J|, |L' - J| ≤ S`
   -- with `S ≤ 1` leave `L = L'` or `{L, L'} = {J - 1, J + 1}`
   omega
-
-/-- Two channels whose orbital angular momenta differ by two have the same parity. -/
-theorem parity_eq_of_L_add_two {c c' : ChannelLabel} (hL : c.L + 2 = c'.L) :
-    c.parity = c'.parity := by
-  rw [parity_def, parity_def, ← hL, pow_add]
-  simp
-
-/-- Two channels with the same total spin whose orbital angular momenta differ by two have the
-same Pauli status in every isospin. -/
-theorem pauliAllowed_iff_of_L_add_two {c c' : ChannelLabel} {T : ℕ} (hS : c.S = c'.S)
-    (hL : c.L + 2 = c'.L) : c.PauliAllowed T ↔ c'.PauliAllowed T := by
-  rw [pauliAllowed_iff_odd, pauliAllowed_iff_odd, ← hS, ← hL, Nat.odd_iff, Nat.odd_iff]
-  omega
-
-/-! ### Availability of the spin-triplet channels by isospin -/
-
-/-- A spin-triplet channel of even orbital angular momentum, such as `³S₁` or `³D₁`, is allowed by
-the Pauli principle exactly in isospin `0`. The isospin of two nucleons is `0` or `1`, and the
-hypothesis `T ≤ 1` restricts to this range; without it the statement fails, since `T = 2` makes
-`L + S + T` odd. Since a proton-proton or neutron-neutron pair has isospin `1`, these channels
-are available to a proton-neutron pair only. -/
-theorem pauliAllowed_iff_isospin_eq_zero {c : ChannelLabel} {T : ℕ} (hS : c.S = 1)
-    (hL : Even c.L) (hT : T ≤ 1) : c.PauliAllowed T ↔ T = 0 := by
-  rw [pauliAllowed_iff_odd, hS, Nat.odd_iff]
-  rw [Nat.even_iff] at hL
-  constructor <;> intro <;> omega
 
 end ChannelLabel
 
