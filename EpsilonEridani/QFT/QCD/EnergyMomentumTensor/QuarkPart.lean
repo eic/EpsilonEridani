@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Isometry
+public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Trace
 
 /-!
 # The quark part of the symmetric energy-momentum tensor

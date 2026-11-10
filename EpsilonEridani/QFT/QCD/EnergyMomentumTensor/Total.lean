@@ -99,9 +99,9 @@ theorem total_mulVec_gaugeRotate_of_mem_unitaryGroup [DecidableEq ι] [Decidable
     {U : Matrix m m ℂ} (hU : U ∈ unitaryGroup m ℂ) (h : ∀ μ, Commute U (β * γ μ))
     {R : Matrix ι ι ℝ} (hR : R ∈ orthogonalGroup ι ℝ) (ψ : m → ℂ) (Dψ : n → m → ℂ)
     (F : ι → Matrix n n ℝ) :
-    total g β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) (gaugeRotate R F) = total g β γ ψ Dψ F := by
-  rw [total_def, total_def, quarkPart_mulVec_of_mem_unitaryGroup hU h,
-    gluonPart_gaugeRotate g hR]
+    total g β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) (gaugeRotate R F) = total g β γ ψ Dψ F :=
+  total_mulVec_gaugeRotate (fun μ => (commute_unitary_iff_star_left_conjugate hU).mp (h μ)) hR
+    ψ Dψ F
 
 /-- The total energy-momentum tensor transforms as a tensor with two lower indices under a
 transformation `Λ` preserving the metric, when the quark field transforms by an `S` under which
