@@ -212,19 +212,6 @@ theorem mem_euclideanSection_iff {z : ComplexSeparation d} :
       apply Complex.ext <;> simp [h₀]
     · apply Complex.ext <;> simp [h i]
 
-/-- The continuation of a real Euclidean separation lies on the Euclidean section.
-
-Not a `@[simp]` lemma: `simp` already proves it through `mem_euclideanSection_iff`. -/
-theorem continuation_mem_euclideanSection (x : EuclideanSeparation d) :
-    continuation x ∈ euclideanSection d :=
-  LinearMap.mem_range_self _ x
-
-/-- A point of the complexified separation space lies on the Euclidean section exactly when it
-is the continuation of a real Euclidean separation. -/
-theorem mem_euclideanSection_iff_exists_continuation {z : ComplexSeparation d} :
-    z ∈ euclideanSection d ↔ ∃ x, continuation x = z := by
-  rw [euclideanSection_def, LinearMap.mem_range]
-
 /-- The Minkowski section is closed. -/
 theorem isClosed_minkowskiSection : IsClosed (minkowskiSection d : Set (ComplexSeparation d)) :=
   Submodule.closed_of_finiteDimensional _

@@ -101,11 +101,12 @@ theorem eqOn_of_eqOn_euclideanSection {f g : ComplexSeparation d → F}
     (hfg : EqOn f g (U ∩ (euclideanSection d : Set (ComplexSeparation d)))) :
     EqOn f g U := by
   obtain ⟨_, hzU, hzE⟩ := hne
-  obtain ⟨x₀, rfl⟩ := mem_euclideanSection_iff_exists_continuation.1 hzE
+  rw [SetLike.mem_coe, euclideanSection_def] at hzE
+  obtain ⟨x₀, rfl⟩ := hzE
   have hc : Continuous (continuation (d := d)) := LinearMap.continuous_of_finiteDimensional _
   refine eqOn_of_eventuallyEq_continuation hf hg hU hzU ?_
   filter_upwards [hc.continuousAt.preimage_mem_nhds (hUo.mem_nhds hzU)] with x hx
-  exact hfg ⟨hx, continuation_mem_euclideanSection x⟩
+  exact hfg ⟨hx, by rw [SetLike.mem_coe, euclideanSection_def]; exact LinearMap.mem_range_self _ x⟩
 
 /-- **The Euclidean values determine the spacelike values.** Two functions holomorphic on an
 open preconnected set `U` that contains every spacelike Minkowski separation, and that agree at
