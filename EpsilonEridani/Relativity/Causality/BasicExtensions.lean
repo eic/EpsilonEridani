@@ -17,7 +17,7 @@ Facts about `Physlib`'s causal character `Lorentz.Vector.causalCharacter` that g
 spacelike (`causalCharacter_eq_spaceLike_of_timeComponent_eq_zero`), and the equal-time
 projection `v - ofTemporalComponent v.timeComponent` of a vector with nonzero spatial part is
 again spacelike
-(`causalCharacter_sub_ofTemporalComponent_eq_spaceLike_of_spatialPart_ne_zero`).
+(`causalCharacter_sub_ofTemporalComponent_timeComponent_eq_spaceLike_of_spatialPart_ne_zero`).
 -/
 
 public section
@@ -48,12 +48,12 @@ lemma causalCharacter_eq_spaceLike_of_timeComponent_eq_zero {d : ℕ} {v : Vecto
 
 /-- The equal-time projection `v - v⁰ e₀` of a vector with nonzero spatial part is again
 spacelike. -/
-lemma causalCharacter_sub_ofTemporalComponent_eq_spaceLike_of_spatialPart_ne_zero {d : ℕ}
-    (v : Vector d) (hv : spatialPart v ≠ 0) :
-    causalCharacter (v - ofTemporalComponent v.timeComponent) = CausalCharacter.spaceLike := by
-  rw [sub_ofTemporalComponent_timeComponent_eq_ofSpatialComponent_spatialPart]
-  exact causalCharacter_eq_spaceLike_of_timeComponent_eq_zero (timeComponent_ofSpatialComponent _)
-    (fun h => hv (by rw [← spatialPart_ofSpatialComponent v.spatialPart, h]; ext i; simp))
+lemma causalCharacter_sub_ofTemporalComponent_timeComponent_eq_spaceLike_of_spatialPart_ne_zero
+    {d : ℕ} (v : Vector d) (hv : spatialPart v ≠ 0) :
+    causalCharacter (v - ofTemporalComponent v.timeComponent) = CausalCharacter.spaceLike :=
+  causalCharacter_eq_spaceLike_of_timeComponent_eq_zero
+    (timeComponent_sub_ofTemporalComponent_timeComponent v)
+    (fun h => hv (by rw [← spatialPart_sub_ofTemporalComponent v v.timeComponent, h]; ext i; simp))
 
 end Vector
 end Lorentz

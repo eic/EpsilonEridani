@@ -63,7 +63,7 @@ lemma spatialPart_sub {d : ℕ} (v w : Vector d) :
 
 This is not a `@[simp]` lemma: `simp` proves it from `apply_sub` and
 `timeComponent_ofTemporalComponent`. -/
-lemma timeComponent_sub_ofTemporalComponent {d : ℕ} (v : Vector d) :
+lemma timeComponent_sub_ofTemporalComponent_timeComponent {d : ℕ} (v : Vector d) :
     (v - ofTemporalComponent v.timeComponent).timeComponent = 0 := by
   simp
 

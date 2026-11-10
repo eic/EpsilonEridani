@@ -53,8 +53,8 @@ so that the sign of the invariant square is never lost by rereading one as the o
   exactly those with vanishing time component; in particular a nonzero one is spacelike
   (`causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection`), and a nonzero vector that
   is not spacelike is not on it (`ofMinkowski_notMem_euclideanSection_of_ne_spaceLike`).
-* `ofMinkowski_sub_ofTemporalComponent_mem_euclideanSection`: the equal-time projection of a
-  Minkowski vector lies on the Euclidean section.
+* `ofMinkowski_sub_ofTemporalComponent_timeComponent_mem_euclideanSection`: the equal-time
+  projection of a Minkowski vector lies on the Euclidean section.
 * `ofMinkowski_notMem_euclideanSection_of_lightLike`: a nonzero light-like Minkowski vector is not
   the continuation of any real Euclidean separation. This is the kinematic half of the statement
   that a matrix element at light-like separation, and so a parton distribution, is not the
@@ -212,6 +212,19 @@ theorem mem_euclideanSection_iff {z : ComplexSeparation d} :
       apply Complex.ext <;> simp [h₀]
     · apply Complex.ext <;> simp [h i]
 
+/-- The continuation of a real Euclidean separation lies on the Euclidean section.
+
+Not a `@[simp]` lemma: `simp` already proves it through `mem_euclideanSection_iff`. -/
+theorem continuation_mem_euclideanSection (x : EuclideanSeparation d) :
+    continuation x ∈ euclideanSection d :=
+  LinearMap.mem_range_self _ x
+
+/-- A point of the complexified separation space lies on the Euclidean section exactly when it
+is the continuation of a real Euclidean separation. -/
+theorem mem_euclideanSection_iff_exists_continuation {z : ComplexSeparation d} :
+    z ∈ euclideanSection d ↔ ∃ x, continuation x = z := by
+  rw [euclideanSection_def, LinearMap.mem_range]
+
 /-- The Minkowski section is closed. -/
 theorem isClosed_minkowskiSection : IsClosed (minkowskiSection d : Set (ComplexSeparation d)) :=
   Submodule.closed_of_finiteDimensional _
@@ -327,9 +340,9 @@ theorem causalCharacter_eq_spaceLike_of_ofMinkowski_mem_euclideanSection {v : Ve
 
 /-- The equal-time projection `v - v⁰ e₀` of a real Minkowski vector, which removes its time
 component, lies on the Euclidean section. -/
-theorem ofMinkowski_sub_ofTemporalComponent_mem_euclideanSection (v : Vector d) :
+theorem ofMinkowski_sub_ofTemporalComponent_timeComponent_mem_euclideanSection (v : Vector d) :
     ofMinkowski (v - ofTemporalComponent v.timeComponent) ∈ euclideanSection d :=
-  ofMinkowski_mem_euclideanSection_iff.2 (timeComponent_sub_ofTemporalComponent v)
+  ofMinkowski_mem_euclideanSection_iff.2 (timeComponent_sub_ofTemporalComponent_timeComponent v)
 
 /-- A nonzero real Minkowski vector that is not spacelike is not the continuation of any real
 Euclidean separation. -/
