@@ -156,11 +156,13 @@ theorem comp_conj_mem_singletSector_iff [DecidableEq Flavor] {v : Species Flavor
     exact ⟨a, fun i => ⟨(h i).2, (h i).1⟩⟩
 
 /-- `singletVector` lies in the singlet sector. -/
+@[simp]
 theorem singletVector_mem_singletSector [DecidableEq Flavor] :
     (singletVector : Species Flavor → R) ∈ singletSector :=
   Submodule.subset_span (by simp)
 
 /-- Every vector supported on the gluon lies in the singlet sector. -/
+@[simp]
 theorem single_gluon_mem_singletSector [DecidableEq Flavor] (b : R) :
     (Pi.single gluon b : Species Flavor → R) ∈ singletSector :=
   mem_singletSector.2 ⟨0, b, by rw [zero_smul, zero_add, ← Pi.single_smul, smul_eq_mul, mul_one]⟩
@@ -217,11 +219,18 @@ theorem singlet_single_gluon [DecidableEq Flavor] (b : R) :
 def singletGluon : (Species Flavor → R) →ₗ[R] Fin 2 → R :=
   LinearMap.pi ![singlet, LinearMap.proj gluon]
 
-@[simp]
 theorem singletGluon_apply (v : Species Flavor → R) :
     singletGluon v = ![singlet v, v gluon] := by
   ext k
   fin_cases k <;> simp [singletGluon]
+
+@[simp]
+theorem singletGluon_apply_zero (v : Species Flavor → R) : singletGluon v 0 = singlet v := by
+  simp [singletGluon_apply]
+
+@[simp]
+theorem singletGluon_apply_one (v : Species Flavor → R) : singletGluon v 1 = v gluon := by
+  simp [singletGluon_apply]
 
 /-- As soon as there is a quark flavour, every pair `(Σ, g)` is the quark singlet and gluon
 component of some vector. -/
@@ -459,6 +468,14 @@ theorem singletGluonMatrix_one_zero (nf : ℕ) : singletGluonMatrix qq qg gq gg 
 
 @[simp]
 theorem singletGluonMatrix_one_one (nf : ℕ) : singletGluonMatrix qq qg gq gg nf 1 1 = gg := (rfl)
+
+/-- `singletGluonMatrix` acting on a pair `(a, b)`. -/
+@[simp]
+theorem singletGluonMatrix_mulVec (nf : ℕ) (a b : R) :
+    singletGluonMatrix qq qg gq gg nf *ᵥ ![a, b] =
+      ![qq * a + 2 * nf * qg * b, gq * a + gg * b] := by
+  ext k
+  fin_cases k <;> simp [mulVec, dotProduct, Fin.sum_univ_two]
 
 variable [Fintype Flavor]
 
