@@ -8,6 +8,7 @@ module
 public import EpsilonEridani.Particles.Parton.Species
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Matrix.Notation
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
@@ -145,7 +146,7 @@ theorem mem_singletSector_iff_exists_forall [DecidableEq Flavor] {v : Species Fl
 
 /-- Charge conjugation preserves the singlet sector. -/
 @[simp]
-theorem comp_conj_mem_singletSector [DecidableEq Flavor] {v : Species Flavor → R} :
+theorem comp_conj_mem_singletSector_iff [DecidableEq Flavor] {v : Species Flavor → R} :
     v ∘ conj ∈ singletSector ↔ v ∈ singletSector := by
   simp only [mem_singletSector_iff_exists_forall, Function.comp_apply, conj_quark, conj_antiquark]
   constructor
@@ -169,27 +170,24 @@ theorem single_gluon_mem_singletSector [DecidableEq Flavor] (b : R) :
 variable [Fintype Flavor]
 
 /-- The quark singlet `Σ v = ∑ᵢ (v (quark i) + v (antiquark i))` of a vector on the parton
-species, as a linear functional. -/
-def singlet : (Species Flavor → R) →ₗ[R] R where
-  toFun v := ∑ i, (v (quark i) + v (antiquark i))
-  map_add' v w := by
-    simp only [Pi.add_apply, add_add_add_comm, Finset.sum_add_distrib]
-  map_smul' c v := by
-    simp only [Pi.smul_apply, smul_eq_mul, ← mul_add, ← Finset.mul_sum, RingHom.id_apply]
+species, as a linear functional: the pairing with `singletVector`. -/
+def singlet : (Species Flavor → R) →ₗ[R] R :=
+  dotProductBilin R R singletVector
+
+/-- The quark singlet is the pairing with `singletVector`. -/
+@[simp]
+theorem singletVector_dotProduct (v : Species Flavor → R) : singletVector ⬝ᵥ v = singlet v :=
+  (rfl)
 
 theorem singlet_apply (v : Species Flavor → R) :
-    singlet v = ∑ i, (v (quark i) + v (antiquark i)) := (rfl)
+    singlet v = ∑ i, (v (quark i) + v (antiquark i)) := by
+  simp [← singletVector_dotProduct, dotProduct, sum_univ, Finset.sum_add_distrib]
 
 /-- The quark singlet is invariant under charge conjugation of the vector. -/
 @[simp]
 theorem singlet_comp_conj (v : Species Flavor → R) : singlet (v ∘ conj) = singlet v := by
   simp only [singlet_apply, Function.comp_apply, conj_quark, conj_antiquark]
   exact Finset.sum_congr rfl fun i _ => add_comm _ _
-
-/-- The quark singlet is the pairing with `singletVector`. -/
-@[simp]
-theorem singletVector_dotProduct (v : Species Flavor → R) : singletVector ⬝ᵥ v = singlet v := by
-  simp [singlet_apply, dotProduct, sum_univ, Finset.sum_add_distrib]
 
 /-- The quark singlet of `singletVector` is the number `2 n_f` of quark and antiquark species. -/
 @[simp]
@@ -225,6 +223,17 @@ theorem singletGluon_apply (v : Species Flavor → R) :
   ext k
   fin_cases k <;> simp [singletGluon]
 
+/-- As soon as there is a quark flavour, every pair `(Σ, g)` is the quark singlet and gluon
+component of some vector. -/
+theorem singletGluon_surjective [Nonempty Flavor] :
+    Function.Surjective (singletGluon : (Species Flavor → R) →ₗ[R] Fin 2 → R) := by
+  classical
+  obtain ⟨i⟩ := ‹Nonempty Flavor›
+  intro x
+  refine ⟨Pi.single (quark i) (x 0) + Pi.single gluon (x 1), ?_⟩
+  ext k
+  fin_cases k <;> simp
+
 /-- The non-singlet sector: the vectors with vanishing quark singlet and vanishing gluon
 component, the kernel of `singletGluon`. -/
 def nonSingletSector : Submodule R (Species Flavor → R) :=
@@ -241,7 +250,7 @@ theorem mem_nonSingletSector {v : Species Flavor → R} :
   simp [nonSingletSector_def, funext_iff, Fin.forall_fin_two]
 
 /-- Charge conjugation preserves the non-singlet sector. -/
-theorem comp_conj_mem_nonSingletSector {v : Species Flavor → R} :
+theorem comp_conj_mem_nonSingletSector_iff {v : Species Flavor → R} :
     v ∘ conj ∈ nonSingletSector ↔ v ∈ nonSingletSector := by
   simp only [mem_nonSingletSector, Function.comp_apply, conj_gluon, singlet_comp_conj]
 
@@ -302,17 +311,21 @@ theorem isCompl_singletSector_nonSingletSector [Fintype Flavor]
     exact Submodule.add_mem_sup (mem_singletSector.2 ⟨_, _, rfl⟩)
       (sub_smul_singletVector_add_smul_single_gluon_mem_nonSingletSector h v)
 
+/-- As soon as there is a quark flavour, `singletVector` and the gluon basis vector are linearly
+independent, so they form a basis of the singlet sector. -/
+theorem linearIndependent_singletVector_single_gluon [Nonempty Flavor] :
+    LinearIndependent R ![(singletVector : Species Flavor → R), Pi.single gluon 1] := by
+  obtain ⟨i⟩ := ‹Nonempty Flavor›
+  rw [LinearIndependent.pair_iff]
+  intro a b hab
+  exact ⟨by simpa using congrFun hab (quark i), by simpa using congrFun hab gluon⟩
+
 /-- Over a nontrivial ring, the singlet sector is two-dimensional as soon as there is a quark
 flavour. -/
 theorem finrank_singletSector [Nontrivial R] [Nonempty Flavor] :
     finrank R (singletSector : Submodule R (Species Flavor → R)) = 2 := by
-  obtain ⟨i⟩ := ‹Nonempty Flavor›
-  have hli : LinearIndependent R ![(singletVector : Species Flavor → R), Pi.single gluon 1] := by
-    rw [LinearIndependent.pair_iff]
-    intro a b hab
-    exact ⟨by simpa using congrFun hab (quark i), by simpa using congrFun hab gluon⟩
-  rw [singletSector_def, ← Matrix.range_cons_cons_empty, finrank_span_eq_card hli,
-    Fintype.card_fin]
+  rw [singletSector_def, ← Matrix.range_cons_cons_empty,
+    finrank_span_eq_card linearIndependent_singletVector_single_gluon, Fintype.card_fin]
 
 end Ring
 
@@ -327,7 +340,7 @@ theorem finrank_nonSingletSector [Fintype Flavor] :
     finrank K (nonSingletSector : Submodule K (Species Flavor → K)) =
       2 * Fintype.card Flavor - 1 := by
   classical
-  rcases isEmpty_or_nonempty Flavor with hF | ⟨⟨i⟩⟩
+  rcases isEmpty_or_nonempty Flavor with hF | hF
   · -- Without flavours the gluon is the only species, and its component vanishes.
     rw [Fintype.card_eq_zero, Submodule.finrank_eq_zero, eq_bot_iff]
     intro v hv
@@ -338,14 +351,9 @@ theorem finrank_nonSingletSector [Fintype Flavor] :
     | antiquark j => exact isEmptyElim j
     | gluon => exact (mem_nonSingletSector.1 hv).2
   · -- `singletGluon` is surjective, so rank-nullity leaves `2 n_f + 1 - 2` dimensions.
-    have hsurj : Function.Surjective (singletGluon : (Species Flavor → K) →ₗ[K] Fin 2 → K) := by
-      intro x
-      refine ⟨Pi.single (quark i) (x 0) + Pi.single gluon (x 1), ?_⟩
-      ext k
-      fin_cases k <;> simp
     have hsum := LinearMap.finrank_range_add_finrank_ker
       (singletGluon : (Species Flavor → K) →ₗ[K] Fin 2 → K)
-    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, finrank_fin_fun,
+    rw [LinearMap.range_eq_top.2 singletGluon_surjective, finrank_top, finrank_fin_fun,
       finrank_fintype_fun_eq_card, card] at hsum
     rw [nonSingletSector_def]
     omega
