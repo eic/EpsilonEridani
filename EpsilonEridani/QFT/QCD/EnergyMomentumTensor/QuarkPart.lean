@@ -64,7 +64,8 @@ index of `D_ν ψ`.
 * `quarkPart_equivariant`: `T_q` transforms as a tensor when `ψ‾ γ_μ ψ` transforms as a vector.
 * `quarkPart_mulVec`: `T_q` is invariant under a transformation `U` acting on `ψ` and on
   `D_ν ψ` that preserves the bilinears `ψ‾ γ_μ χ`. A colour rotation, unitary and commuting with
-  each `β * γ μ`, does this (`quarkPart_mulVec_of_mem_unitaryGroup`).
+  each `β * γ μ`, does this (`quarkPart_mulVec_of_mem_unitaryGroup`, and
+  `quarkKinetic_mulVec_of_mem_unitaryGroup` for the kinetic tensor).
 * `trace_quarkPart`: `T_q^μ{}_μ = Re (ψ‾ i γ^μ D_μ ψ)`.
 * `trace_quarkPart_of_diracEq`: on solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the
   trace is the classical value `Re (ψ‾ M ψ)`, in any spacetime dimension. For a mass matrix
@@ -209,6 +210,14 @@ theorem quarkKinetic_mulVec {U : Matrix m m ℂ} (hU : ∀ μ, Uᴴ * (β * γ �
     quarkKinetic β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) = quarkKinetic β γ ψ Dψ := by
   ext μ ν
   simp only [quarkKinetic_apply, star_mulVec_dotProduct_mulVec_mulVec, hU]
+
+/-- The kinetic tensor is invariant under a colour rotation: a unitary `U` commuting with each
+`β * γ μ` (for instance, commuting with `β` and with the gamma matrices), acting on the field and
+its covariant derivatives. -/
+theorem quarkKinetic_mulVec_of_mem_unitaryGroup [DecidableEq m] {U : Matrix m m ℂ}
+    (hU : U ∈ unitaryGroup m ℂ) (h : ∀ μ, Commute U (β * γ μ)) (ψ : m → ℂ) (Dψ : n → m → ℂ) :
+    quarkKinetic β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) = quarkKinetic β γ ψ Dψ :=
+  quarkKinetic_mulVec (fun μ => (commute_unitary_iff_star_left_conjugate hU).mp (h μ)) ψ Dψ
 
 /-- The quark part is gauge invariant: it is unchanged by a transformation `U` of the field and
 its covariant derivatives that preserves the bilinears `ψ‾ γ_μ χ`, such as a colour rotation. -/
