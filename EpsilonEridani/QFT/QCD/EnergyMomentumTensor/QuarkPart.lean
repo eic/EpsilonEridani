@@ -64,7 +64,7 @@ index of `D_ν ψ`.
 * `quarkPart_equivariant`: `T_q` transforms as a tensor when `ψ‾ γ_μ ψ` transforms as a vector.
 * `quarkPart_mulVec`: `T_q` is invariant under a transformation `U` acting on `ψ` and on
   `D_ν ψ` that preserves the bilinears `ψ‾ γ_μ χ`. A colour rotation, unitary and commuting with
-  `β` and with the gamma matrices, does this (`quarkPart_mulVec_of_mem_unitaryGroup`).
+  each `β * γ μ`, does this (`quarkPart_mulVec_of_mem_unitaryGroup`).
 * `trace_quarkPart`: `T_q^μ{}_μ = Re (ψ‾ i γ^μ D_μ ψ)`.
 * `trace_quarkPart_of_diracEq`: on solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the
   trace is the classical value `Re (ψ‾ M ψ)`, in any spacetime dimension. For a mass matrix
@@ -88,7 +88,7 @@ namespace QFT
 namespace QCD
 namespace EnergyMomentumTensor
 
-open Matrix Complex
+open Matrix Complex ComplexConjugate
 
 variable {n m : Type*} [Fintype m]
 
@@ -100,7 +100,6 @@ def quarkKinetic (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → �
     Matrix n n ℝ :=
   of fun μ ν => (I * (star ψ ⬝ᵥ (β * γ μ) *ᵥ Dψ ν - star (Dψ ν) ⬝ᵥ (β * γ μ) *ᵥ ψ)).re / 2
 
-@[simp]
 lemma quarkKinetic_apply (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → ℂ)
     (Dψ : n → m → ℂ) (μ ν : n) :
     quarkKinetic β γ ψ Dψ μ ν =
@@ -108,21 +107,43 @@ lemma quarkKinetic_apply (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ :
 
 /-- The quark part `T_q{}_{μν} = (1/4) ψ‾ (γ_μ i D↔_ν + γ_ν i D↔_μ) ψ` of the symmetric,
 gauge-invariant energy-momentum tensor, with lower indices: the symmetric part of the kinetic
-tensor `quarkKinetic`. -/
+tensor `quarkKinetic`. Its entries are the real part of this expression, which equals it when
+each `β * γ μ` is Hermitian (`ofReal_quarkPart_apply`). -/
 def quarkPart (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → ℂ) (Dψ : n → m → ℂ) :
     Matrix n n ℝ :=
   (1 / 2 : ℝ) • (quarkKinetic β γ ψ Dψ + (quarkKinetic β γ ψ Dψ)ᵀ)
 
-@[simp]
 lemma quarkPart_def (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → ℂ) (Dψ : n → m → ℂ) :
     quarkPart β γ ψ Dψ = (1 / 2 : ℝ) • (quarkKinetic β γ ψ Dψ + (quarkKinetic β γ ψ Dψ)ᵀ) :=
   (rfl)
 
+/-- The entries of the quark part are the symmetrized entries of the kinetic tensor. -/
+lemma quarkPart_apply (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → ℂ) (Dψ : n → m → ℂ)
+    (μ ν : n) :
+    quarkPart β γ ψ Dψ μ ν = (quarkKinetic β γ ψ Dψ μ ν + quarkKinetic β γ ψ Dψ ν μ) / 2 := by
+  rw [quarkPart_def, Matrix.smul_apply, Matrix.add_apply, Matrix.transpose_apply, smul_eq_mul]
+  ring
+
 /-- The quark part is symmetric. This is an identity: it uses neither the equations of motion
 nor any property of the gamma matrices. -/
+@[simp]
 theorem isSymm_quarkPart (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → ℂ)
     (Dψ : n → m → ℂ) : (quarkPart β γ ψ Dψ).IsSymm :=
   (isSymm_add_transpose_self _).smul _
+
+/-- For `z : ℂ`, `(i/2) (z - conj z)` has real part `Re (i z)`: the step in which the
+derivative acting to the left contributes the complex conjugate of the one acting to the
+right. -/
+private lemma re_I_mul_sub_conj_div_two (z : ℂ) : (I * (z - conj z)).re / 2 = (I * z).re := by
+  simp only [mul_re, I_re, I_im, sub_re, sub_im, conj_re, conj_im]
+  ring
+
+/-- For `z : ℂ`, `i (z - conj z)` is real. -/
+private lemma ofReal_re_I_mul_sub_conj (z : ℂ) :
+    ((I * (z - conj z)).re : ℂ) = I * (z - conj z) := by
+  rw [← conj_eq_iff_re]
+  simp only [map_mul, map_sub, conj_I, conj_conj]
+  ring
 
 variable {β : Matrix m m ℂ} {γ : n → Matrix m m ℂ}
 
@@ -145,11 +166,8 @@ theorem ofReal_quarkKinetic_apply (ψ : m → ℂ) (Dψ : n → m → ℂ) (μ �
     (hγ : (β * γ μ).IsHermitian) :
     (quarkKinetic β γ ψ Dψ μ ν : ℂ) =
       I * (star ψ ⬝ᵥ (β * γ μ) *ᵥ Dψ ν - star (Dψ ν) ⬝ᵥ (β * γ μ) *ᵥ ψ) / 2 := by
-  rw [quarkKinetic_apply, ofReal_div, ← hγ.star_dotProduct_mulVec_comm (Dψ ν) ψ]
-  congr 1
-  rw [← conj_eq_iff_re]
-  simp only [RCLike.star_def, map_mul, map_sub, conj_I, conj_conj]
-  ring
+  rw [quarkKinetic_apply, ofReal_div, ofReal_ofNat, ← hγ.star_dotProduct_mulVec_comm ψ (Dψ ν),
+    RCLike.star_def, ofReal_re_I_mul_sub_conj]
 
 /-- When `β * γ μ` is Hermitian, `(1/2) ψ‾ γ_μ i D↔_ν ψ = Re (ψ‾ γ_μ i D_ν ψ)`: the
 derivative acting to the left contributes the complex conjugate of the one acting to the
@@ -158,9 +176,7 @@ theorem quarkKinetic_apply_of_isHermitian (ψ : m → ℂ) (Dψ : n → m → �
     (hγ : (β * γ μ).IsHermitian) :
     quarkKinetic β γ ψ Dψ μ ν = (star ψ ⬝ᵥ (β * γ μ) *ᵥ (I • Dψ ν)).re := by
   rw [quarkKinetic_apply, ← hγ.star_dotProduct_mulVec_comm ψ (Dψ ν), mulVec_smul,
-    dotProduct_smul]
-  simp only [RCLike.star_def, mul_re, I_re, sub_re, conj_re, I_im, sub_im, conj_im, smul_eq_mul]
-  ring
+    dotProduct_smul, smul_eq_mul, RCLike.star_def, re_I_mul_sub_conj_div_two]
 
 /-- When `β * γ μ` and `β * γ ν` are Hermitian, the entries of `quarkPart` are the ℂ-valued
 Ji expression `(1/4) ψ‾ (γ_μ i D↔_ν + γ_ν i D↔_μ) ψ` of its docstring, so taking the real part
@@ -170,11 +186,8 @@ theorem ofReal_quarkPart_apply (ψ : m → ℂ) (Dψ : n → m → ℂ) (μ ν :
     (quarkPart β γ ψ Dψ μ ν : ℂ) =
       (I * (star ψ ⬝ᵥ (β * γ μ) *ᵥ Dψ ν - star (Dψ ν) ⬝ᵥ (β * γ μ) *ᵥ ψ) / 2 +
         I * (star ψ ⬝ᵥ (β * γ ν) *ᵥ Dψ μ - star (Dψ μ) ⬝ᵥ (β * γ ν) *ᵥ ψ) / 2) / 2 := by
-  rw [quarkPart_def, Matrix.smul_apply, Matrix.add_apply, Matrix.transpose_apply,
-    smul_eq_mul, Complex.ofReal_mul, Complex.ofReal_add,
+  rw [quarkPart_apply, ofReal_div, ofReal_add, ofReal_ofNat,
     ofReal_quarkKinetic_apply ψ Dψ μ ν hγμ, ofReal_quarkKinetic_apply ψ Dψ ν μ hγν]
-  push_cast
-  ring
 
 /-- When `β * γ μ` and `β * γ ν` are Hermitian, the entries of `quarkPart` are the real
 symmetrized bilinears `(Re (ψ‾ γ_μ i D_ν ψ) + Re (ψ‾ γ_ν i D_μ ψ)) / 2`: the Hermitian
@@ -184,10 +197,8 @@ theorem quarkPart_apply_of_isHermitian (ψ : m → ℂ) (Dψ : n → m → ℂ) 
     quarkPart β γ ψ Dψ μ ν =
       ((star ψ ⬝ᵥ (β * γ μ) *ᵥ (I • Dψ ν)).re +
         (star ψ ⬝ᵥ (β * γ ν) *ᵥ (I • Dψ μ)).re) / 2 := by
-  rw [quarkPart_def, Matrix.smul_apply, Matrix.add_apply, Matrix.transpose_apply,
-    smul_eq_mul, quarkKinetic_apply_of_isHermitian ψ Dψ μ ν hγμ,
+  rw [quarkPart_apply, quarkKinetic_apply_of_isHermitian ψ Dψ μ ν hγμ,
     quarkKinetic_apply_of_isHermitian ψ Dψ ν μ hγν]
-  ring
 
 /-- The kinetic tensor is invariant under a transformation `U` of the field and its
 covariant derivatives that preserves the bilinears `ψ‾ γ_μ χ`. A colour gauge transformation,
@@ -206,14 +217,13 @@ theorem quarkPart_mulVec {U : Matrix m m ℂ} (hU : ∀ μ, Uᴴ * (β * γ μ) 
     quarkPart β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) = quarkPart β γ ψ Dψ := by
   rw [quarkPart_def, quarkPart_def, quarkKinetic_mulVec hU]
 
-/-- The quark part is invariant under a colour rotation: a unitary `U` commuting with `β` and
-with the gamma matrices, acting on the field and its covariant derivatives. -/
+/-- The quark part is invariant under a colour rotation: a unitary `U` commuting with each
+`β * γ μ` (for instance, commuting with `β` and with the gamma matrices), acting on the field and
+its covariant derivatives. -/
 theorem quarkPart_mulVec_of_mem_unitaryGroup [DecidableEq m] {U : Matrix m m ℂ}
-    (hU : U ∈ unitaryGroup m ℂ) (hβ : Commute U β) (hγ : ∀ μ, Commute U (γ μ)) (ψ : m → ℂ)
-    (Dψ : n → m → ℂ) :
+    (hU : U ∈ unitaryGroup m ℂ) (h : ∀ μ, Commute U (β * γ μ)) (ψ : m → ℂ) (Dψ : n → m → ℂ) :
     quarkPart β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) = quarkPart β γ ψ Dψ :=
-  quarkPart_mulVec (fun μ => (commute_unitary_iff_star_left_conjugate hU).mp
-    (hβ.mul_right (hγ μ))) ψ Dψ
+  quarkPart_mulVec (fun μ => (commute_unitary_iff_star_left_conjugate hU).mp (h μ)) ψ Dψ
 
 variable [Fintype n]
 
@@ -266,7 +276,6 @@ covariant derivatives `Dψ`. -/
 def diracOpApply (g : Matrix n n ℝ) (γ : n → Matrix m m ℂ) (Dψ : n → m → ℂ) : m → ℂ :=
   I • ∑ μ, ∑ ν, (g⁻¹ μ ν : ℂ) • γ ν *ᵥ Dψ μ
 
-@[simp]
 lemma diracOpApply_def (g : Matrix n n ℝ) (γ : n → Matrix m m ℂ) (Dψ : n → m → ℂ) :
     diracOpApply g γ Dψ = I • ∑ μ, ∑ ν, (g⁻¹ μ ν : ℂ) • γ ν *ᵥ Dψ μ := (rfl)
 

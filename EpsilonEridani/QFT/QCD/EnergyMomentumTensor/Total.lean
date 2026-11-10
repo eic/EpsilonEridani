@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.QFT.QCD.EnergyMomentumTensor.GluonPart
 public import EpsilonEridani.QFT.QCD.EnergyMomentumTensor.QuarkPart
+public import EpsilonEridani.Relativity.CliffordAlgebraExtensions
 
 /-!
 # The total symmetric energy-momentum tensor
@@ -39,7 +40,8 @@ strengths is as in `EpsilonEridani.QFT.QCD.EnergyMomentumTensor.GluonPart`.
 * `trace_total_of_diracEq`: in four dimensions and on solutions of the Dirac equation
   `i γ^μ D_μ ψ = M ψ`, the trace is the classical value `Re (ψ‾ M ψ)`, which is
   `Σ_q m_q ψ‾_q ψ_q` for a mass matrix diagonal in flavour: classically only the quark masses
-  break tracelessness.
+  break tracelessness. `trace_total_γDown_of_diracEq` is this statement for Dirac-representation
+  gamma matrices acting on the spin index, with the Minkowski metric.
 
 ## References
 
@@ -57,6 +59,7 @@ namespace QCD
 namespace EnergyMomentumTensor
 
 open Matrix Complex
+open scoped Kronecker
 
 variable {n m ι : Type*} [Fintype n] [DecidableEq n] [Fintype m] [Fintype ι]
 
@@ -67,7 +70,6 @@ def total (g : Matrix n n ℝ) (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ)
     (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) : Matrix n n ℝ :=
   quarkPart β γ ψ Dψ + gluonPart g F
 
-@[simp]
 lemma total_def (g : Matrix n n ℝ) (β : Matrix m m ℂ) (γ : n → Matrix m m ℂ) (ψ : m → ℂ)
     (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
     total g β γ ψ Dψ F = quarkPart β γ ψ Dψ + gluonPart g F := (rfl)
@@ -76,6 +78,7 @@ variable {g : Matrix n n ℝ} {β : Matrix m m ℂ} {γ : n → Matrix m m ℂ}
 
 /-- The total energy-momentum tensor is symmetric for a symmetric metric. This is an identity:
 it uses no equation of motion. -/
+@[simp]
 theorem isSymm_total (hg : g.IsSymm) (ψ : m → ℂ) (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
     (total g β γ ψ Dψ F).IsSymm :=
   (isSymm_quarkPart β γ ψ Dψ).add (isSymm_gluonPart hg F)
@@ -90,15 +93,16 @@ theorem total_mulVec_gaugeRotate [DecidableEq ι] {U : Matrix m m ℂ}
   rw [total_def, total_def, quarkPart_mulVec hU, gluonPart_gaugeRotate g hR]
 
 /-- The total energy-momentum tensor is invariant under a colour rotation: a unitary `U`
-commuting with `β` and with the gamma matrices, acting on the quark field and its covariant
-derivatives, together with an orthogonal rotation of the gluon multiplet. -/
+commuting with each `β * γ μ` (for instance, commuting with `β` and with the gamma matrices),
+acting on the quark field and its covariant derivatives, together with an orthogonal rotation of
+the gluon multiplet. -/
 theorem total_mulVec_gaugeRotate_of_mem_unitaryGroup [DecidableEq ι] [DecidableEq m]
-    {U : Matrix m m ℂ} (hU : U ∈ unitaryGroup m ℂ) (hβ : Commute U β)
-    (hγ : ∀ μ, Commute U (γ μ)) {R : Matrix ι ι ℝ} (hR : R ∈ orthogonalGroup ι ℝ)
-    (ψ : m → ℂ) (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
-    total g β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) (gaugeRotate R F) = total g β γ ψ Dψ F :=
-  total_mulVec_gaugeRotate (fun μ => (commute_unitary_iff_star_left_conjugate hU).mp
-    (hβ.mul_right (hγ μ))) hR ψ Dψ F
+    {U : Matrix m m ℂ} (hU : U ∈ unitaryGroup m ℂ) (h : ∀ μ, Commute U (β * γ μ))
+    {R : Matrix ι ι ℝ} (hR : R ∈ orthogonalGroup ι ℝ) (ψ : m → ℂ) (Dψ : n → m → ℂ)
+    (F : ι → Matrix n n ℝ) :
+    total g β γ (U *ᵥ ψ) (fun ν => U *ᵥ Dψ ν) (gaugeRotate R F) = total g β γ ψ Dψ F := by
+  rw [total_def, total_def, quarkPart_mulVec_of_mem_unitaryGroup hU h,
+    gluonPart_gaugeRotate g hR]
 
 /-- The total energy-momentum tensor transforms as a tensor with two lower indices under a
 transformation `Λ` preserving the metric, when the quark field transforms by an `S` under which
@@ -127,8 +131,29 @@ theorem trace_total_of_diracEq (hn : Fintype.card n = 4) (hg : g.IsSymm)
     (hγ : ∀ μ, (β * γ μ).IsHermitian) {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ}
     (h : diracOpApply g γ Dψ = M *ᵥ ψ) (F : ι → Matrix n n ℝ) :
     trace (g⁻¹ * total g β γ ψ Dψ F) = (star ψ ⬝ᵥ (β * M) *ᵥ ψ).re := by
-  rw [trace_total hg hγ, h, mulVec_mulVec, hn]
+  rw [total_def, Matrix.mul_add, trace_add, trace_quarkPart_of_diracEq hg hγ h, trace_gluonPart,
+    hn]
   norm_num
+
+/-- `trace_total_of_diracEq` for the Dirac-representation gamma matrices: with the Minkowski
+metric on the index `Fin 4` of `spaceTime.γDown`, the Dirac conjugate `β = γ⁰ ⊗ 1` and the gamma
+matrices `γ_μ ⊗ 1` acting on the spin index of a quark field that also carries a colour and
+flavour index `c`, the trace on solutions of the Dirac equation is the classical value
+`Re (ψ‾ M ψ)`. The Hermiticity hypothesis is discharged by `spaceTime.isHermitian_γ0_mul_γDown`. -/
+theorem trace_total_γDown_of_diracEq {c : Type*} [Fintype c] [DecidableEq c]
+    {M : Matrix (Fin 4 × c) (Fin 4 × c) ℂ} {ψ : Fin 4 × c → ℂ} {Dψ : Fin 4 → Fin 4 × c → ℂ}
+    (h : diracOpApply (minkowskiMatrix.submatrix (@finSumFinEquiv 1 3).symm
+      (@finSumFinEquiv 1 3).symm) (fun μ => spaceTime.γDown μ ⊗ₖ 1) Dψ = M *ᵥ ψ)
+    (F : ι → Matrix (Fin 4) (Fin 4) ℝ) :
+    trace ((minkowskiMatrix.submatrix (@finSumFinEquiv 1 3).symm (@finSumFinEquiv 1 3).symm)⁻¹ *
+      total (minkowskiMatrix.submatrix (@finSumFinEquiv 1 3).symm (@finSumFinEquiv 1 3).symm)
+        (spaceTime.γ0 ⊗ₖ 1) (fun μ => spaceTime.γDown μ ⊗ₖ 1) ψ Dψ F) =
+      (star ψ ⬝ᵥ ((spaceTime.γ0 ⊗ₖ 1) * M) *ᵥ ψ).re := by
+  refine trace_total_of_diracEq (Fintype.card_fin 4)
+    (IsSymm.submatrix minkowskiMatrix.eq_transpose _) (fun μ => ?_) h F
+  rw [← mul_kronecker_mul, Matrix.mul_one]
+  exact (conjTranspose_kronecker _ _).trans <| by
+    rw [(spaceTime.isHermitian_γ0_mul_γDown μ).eq, conjTranspose_one]
 
 end EnergyMomentumTensor
 end QCD
