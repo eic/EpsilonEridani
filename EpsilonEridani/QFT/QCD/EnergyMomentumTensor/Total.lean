@@ -40,8 +40,8 @@ strengths is as in `EpsilonEridani.QFT.QCD.EnergyMomentumTensor.GluonPart`.
 * `trace_total_of_diracEq`: in four dimensions and on solutions of the Dirac equation
   `i γ^μ D_μ ψ = M ψ`, the trace is the classical value `Re (ψ‾ M ψ)`, which is
   `Σ_q m_q ψ‾_q ψ_q` for a mass matrix diagonal in flavour: classically only the quark masses
-  break tracelessness. `trace_total_γDown_of_diracEq` is this statement for Dirac-representation
-  gamma matrices acting on the spin index, with the Minkowski metric.
+  break tracelessness. `trace_total_γDown_of_diracEq` is this statement for the
+  Dirac-representation gamma matrices acting on the spin index.
 
 ## References
 
@@ -59,7 +59,6 @@ namespace QCD
 namespace EnergyMomentumTensor
 
 open Matrix Complex
-open scoped Kronecker
 
 variable {n m ι : Type*} [Fintype n] [DecidableEq n] [Fintype m] [Fintype ι]
 
@@ -135,25 +134,18 @@ theorem trace_total_of_diracEq (hn : Fintype.card n = 4) (hg : g.IsSymm)
     hn]
   norm_num
 
-/-- `trace_total_of_diracEq` for the Dirac-representation gamma matrices: with the Minkowski
-metric on the index `Fin 4` of `spaceTime.γDown`, the Dirac conjugate `β = γ⁰ ⊗ 1` and the gamma
-matrices `γ_μ ⊗ 1` acting on the spin index of a quark field that also carries a colour and
-flavour index `c`, the trace on solutions of the Dirac equation is the classical value
-`Re (ψ‾ M ψ)`. The Hermiticity hypothesis is discharged by `spaceTime.isHermitian_γ0_mul_γDown`. -/
-theorem trace_total_γDown_of_diracEq {c : Type*} [Fintype c] [DecidableEq c]
-    {M : Matrix (Fin 4 × c) (Fin 4 × c) ℂ} {ψ : Fin 4 × c → ℂ} {Dψ : Fin 4 → Fin 4 × c → ℂ}
-    (h : diracOpApply (minkowskiMatrix.submatrix (@finSumFinEquiv 1 3).symm
-      (@finSumFinEquiv 1 3).symm) (fun μ => spaceTime.γDown μ ⊗ₖ 1) Dψ = M *ᵥ ψ)
-    (F : ι → Matrix (Fin 4) (Fin 4) ℝ) :
-    trace ((minkowskiMatrix.submatrix (@finSumFinEquiv 1 3).symm (@finSumFinEquiv 1 3).symm)⁻¹ *
-      total (minkowskiMatrix.submatrix (@finSumFinEquiv 1 3).symm (@finSumFinEquiv 1 3).symm)
-        (spaceTime.γ0 ⊗ₖ 1) (fun μ => spaceTime.γDown μ ⊗ₖ 1) ψ Dψ F) =
-      (star ψ ⬝ᵥ ((spaceTime.γ0 ⊗ₖ 1) * M) *ᵥ ψ).re := by
-  refine trace_total_of_diracEq (Fintype.card_fin 4)
-    (IsSymm.submatrix minkowskiMatrix.eq_transpose _) (fun μ => ?_) h F
-  rw [← mul_kronecker_mul, Matrix.mul_one]
-  exact (conjTranspose_kronecker _ _).trans <| by
-    rw [(spaceTime.isHermitian_γ0_mul_γDown μ).eq, conjTranspose_one]
+/-- `trace_total_of_diracEq` for the Dirac-representation gamma matrices `β = γ⁰` and
+`γ_μ = spaceTime.γDown μ` acting on the spin index of a single quark, whose Hermiticity hypothesis
+is `spaceTime.isHermitian_γ0_mul_γDown`. The spacetime index is the `Fin 4` of `spaceTime.γDown`;
+the statement holds for every symmetric metric `g` on it, and `diracOpApply g` is `i γ^μ D_μ ψ`
+for the Minkowski metric `minkowskiMatrix.submatrix finSumFinEquiv.symm finSumFinEquiv.symm`
+that lowers `spaceTime.γDown`. -/
+theorem trace_total_γDown_of_diracEq {g : Matrix (Fin 4) (Fin 4) ℝ} (hg : g.IsSymm)
+    {M : Matrix (Fin 4) (Fin 4) ℂ} {ψ : Fin 4 → ℂ} {Dψ : Fin 4 → Fin 4 → ℂ}
+    (h : diracOpApply g spaceTime.γDown Dψ = M *ᵥ ψ) (F : ι → Matrix (Fin 4) (Fin 4) ℝ) :
+    trace (g⁻¹ * total g spaceTime.γ0 spaceTime.γDown ψ Dψ F) =
+      (star ψ ⬝ᵥ (spaceTime.γ0 * M) *ᵥ ψ).re :=
+  trace_total_of_diracEq (Fintype.card_fin 4) hg spaceTime.isHermitian_γ0_mul_γDown h F
 
 end EnergyMomentumTensor
 end QCD
