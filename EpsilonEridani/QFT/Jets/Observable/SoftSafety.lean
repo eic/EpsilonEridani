@@ -37,7 +37,7 @@ same definition.
   exactly when `f p = O(‖p‖ ^ k)` as `p → 0`. Consequently the total momentum
   (`isSoftSafe_one_multisetSum`) and every sum of a continuous linear function of the momenta,
   such as the total energy in a frame (`isSoftSafe_one_sum_map`), are soft safe of order `1`, and
-  so is the square `B P P` of the total momentum `P` under a continuous bilinear form `B`
+  so is the square `B P P` of the total momentum `P` under a continuous bilinear map `B`
   (`isSoftSafe_one_bilinear_multisetSum`), in particular the invariant mass squared on a
   finite-dimensional space (`isSoftSafe_one_invariantMassSq_of_finite`).
 * `not_isSoftSafe_particleMultiplicity_of_ne_zero`: the particle multiplicity is not soft safe of
@@ -48,8 +48,8 @@ same definition.
 * `isSoftSafe_leadingEnergy`: the leading-particle energy is soft safe of order `k` whenever the
   energy function is `O(‖p‖ ^ k)`; for a continuous linear energy it is soft safe of order `1`
   (`isSoftSafe_one_leadingEnergy`). Since for a nonzero energy functional it is not collinear safe
-  (`not_isCollinearSafe_leadingEnergy`), soft safety of any order says nothing about collinear
-  safety.
+  (`not_isCollinearSafe_leadingEnergy`), soft safety of order `1` (hence of order `0`) does not
+  imply collinear safety.
 
 ## References
 
@@ -189,9 +189,9 @@ total energy in a frame, is soft safe of order `1`. -/
 theorem isSoftSafe_one_sum_map (E : V →L[ℝ] X) : IsSoftSafe 1 (fun s => (s.map E).sum) :=
   isSoftSafe_sum_map_iff.2 <| by simpa using (E.isBigO_id _).norm_right
 
-/-- The square `B P P` of the total momentum `P` of a final state under a continuous bilinear form
+/-- The square `B P P` of the total momentum `P` of a final state under a continuous bilinear map
 `B` is soft safe of order `1`. -/
-theorem isSoftSafe_one_bilinear_multisetSum (B : V →L[ℝ] V →L[ℝ] ℝ) :
+theorem isSoftSafe_one_bilinear_multisetSum (B : V →L[ℝ] V →L[ℝ] X) :
     IsSoftSafe 1 (fun s => B s.sum s.sum) :=
   isSoftSafe_one_multisetSum.bilinear B isSoftSafe_one_multisetSum
 
