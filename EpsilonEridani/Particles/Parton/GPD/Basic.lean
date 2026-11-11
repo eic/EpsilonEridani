@@ -54,6 +54,26 @@ structure Assumptions (M : Model Flavor) : Prop where
   supportE : ∀ i x xi t, x < 0 ∨ 1 < x → M.E i x xi t = 0
   skewnessBound : ∀ i x xi t, 1 < |xi| → M.H i x xi t = 0 ∧ M.E i x xi t = 0
 
+/-- The identically vanishing GPD model, used as a reference point when a statement about
+a difference of models is recast as a statement about a single model. -/
+def Model.zero (Flavor : Type) : Model Flavor where
+  H := fun _ _ _ _ => 0
+  E := fun _ _ _ _ => 0
+
+@[simp]
+lemma Model.zero_H (Flavor : Type) (i : Flavor) (x xi t : ℝ) :
+    (Model.zero Flavor).H i x xi t = 0 := rfl
+
+@[simp]
+lemma Model.zero_E (Flavor : Type) (i : Flavor) (x xi t : ℝ) :
+    (Model.zero Flavor).E i x xi t = 0 := rfl
+
+/-- The zero model satisfies the standing support and skewness assumptions. -/
+lemma Model.assumptions_zero (Flavor : Type) : Assumptions (Model.zero Flavor) where
+  supportH i x xi t _ := Model.zero_H Flavor i x xi t
+  supportE i x xi t _ := Model.zero_E Flavor i x xi t
+  skewnessBound i x xi t _ := ⟨Model.zero_H Flavor i x xi t, Model.zero_E Flavor i x xi t⟩
+
 /-- Forward-limit relation at fixed scale `Q2`: `H(x,0,0) = f(x,Q2)`. -/
 def ForwardLimitToPdfAtScale
     (M : Model Flavor)

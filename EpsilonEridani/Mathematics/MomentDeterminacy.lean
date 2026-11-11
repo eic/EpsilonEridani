@@ -48,7 +48,8 @@ them.
 ## References
 
 * N. I. Akhiezer, *The Classical Moment Problem*, Hafner (1965), Chapter 2, for the Hausdorff
-  moment problem and the role of polynomial density, which is what the TauCeti engine supplies.
+  moment problem. The analytic input here is instead TauCeti's complex moment-generating-function
+  argument, not an approximation by polynomials.
 
 Nothing in this file is physics-specific.
 -/
