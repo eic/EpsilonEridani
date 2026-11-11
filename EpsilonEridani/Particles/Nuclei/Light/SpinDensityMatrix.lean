@@ -483,7 +483,7 @@ lemma tensorPolarization_spinOneMatrix_single_same (k : Fin 3) :
 
 /-- The pure state of zero spin projection along an axis `l` perpendicular to `k` has tensor
 polarization `Pₖₖ = 1`, so the bound `re_tensorPolarization_spinOneMatrix_le_one` is sharp. -/
-lemma tensorPolarization_spinOneMatrix_single_of_ne {k l : Fin 3} (h : l ≠ k) :
+lemma tensorPolarization_spinOneMatrix_single_same_of_ne {k l : Fin 3} (h : l ≠ k) :
     tensorPolarization spinOneMatrix (single l l 1) k k = 1 := by
   rw [tensorPolarization_spinOneMatrix_self, trace_single_eq_same]
   simp [h]
