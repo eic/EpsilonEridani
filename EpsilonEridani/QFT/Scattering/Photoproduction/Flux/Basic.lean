@@ -37,9 +37,12 @@ suppressed at least like `exp (-2ξ)` at large `ξ` (`abs_photonFluxProfile_le_m
 cutoff appearing as a decay rather than as a sharp edge; and it grows like `-log ξ` at small
 `ξ` (`isEquivalent_photonFluxProfile_neg_log`), so the spectrum behaves as the inverse photon
 energy times the logarithm of the ratio of the maximal photon energy `γ / b_min` to the actual one
-(`ChargedSource.isEquivalent_integratedPhotonFlux_mul_log_div`). The integrand `t K₁(t)²` of the
-organising identity is, up to normalisation, the impact-parameter differential flux, so that
-identity is also what fixes the relative normalisation of the two forms of the spectrum.
+(`ChargedSource.isEquivalent_integratedPhotonFlux_mul_log_div`). The charge enters only through
+the overall `Z²`, so two sources with the same Lorentz factor have spectra in the ratio of their
+squared charges (`ChargedSource.charge_sq_mul_integratedPhotonFlux_eq_charge_sq_mul`). The
+integrand `t K₁(t)²` of the organising identity is, up to normalisation, the impact-parameter
+differential flux, so that identity is also what fixes the relative normalisation of the two
+forms of the spectrum.
 
 The charge radius carried by `ChargedSource` plays no role here: this is the point-source
 spectrum, and `b_min` is an external cutoff on the impact parameter rather than a property of the
