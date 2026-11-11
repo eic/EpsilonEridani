@@ -31,7 +31,10 @@ The same shape carried by a diagonal spin-density matrix discharges
 
 Every Mellin moment of the model is available in closed form: the shape integrates to the Euler
 Beta value `a! b! / (a + b + 1)!` (`integral_betaShape`), so the `n`-th moment is
-`(n + a)! b! / (n + a + b + 1)!` (`mellinMoment_modelPdf`).
+`(n + a)! b! / (n + a + b + 1)!` (`mellinMoment_modelPdf`). For the shape `1 - x`, the moments
+are `1 / ((n + 1) (n + 2))`, so any rescaling of it parton by parton (`PDF.weight`) with weights
+summing to six obeys the momentum sum rule and carries the sum-rule bundle
+(`sumRuleAssumptionsWeightModelPdf`): a model with prescribed valence targets.
 
 ## ii. Key results
 
@@ -40,6 +43,7 @@ Beta value `a! b! / (a + b + 1)!` (`integral_betaShape`), so the `n`-th moment i
 - `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.mellinMoment_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.sumRuleAssumptionsWeightModelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
 
 ## iii. Table of contents
@@ -55,9 +59,11 @@ Beta value `a! b! / (a + b + 1)!` (`integral_betaShape`), so the `n`-th moment i
 The exponents are natural numbers, not reals. A realistic small-`x` fit wants `x^a` with
 `-1 < a < 0`, which is `Real.rpow` and needs the Beta-integral convergence argument in place
 of continuity on a compact set; that generalization is not attempted here. Every statement below
-is uniform in `a` and `b`, with one exception: `mellinMoment_modelPdf_zero_one` specializes the
-closed-form moment to `a = 0`, `b = 1` with the factorials evaluated, and is kept because it is
-the form in which `simp` evaluates the moments of the meson valence model built on that shape.
+is uniform in `a` and `b`, except for the shape `1 - x`, `a = 0`, `b = 1`:
+`mellinMoment_modelPdf_zero_one` specializes the closed-form moment to it with the factorials
+evaluated, the form in which `simp` evaluates the moments of the meson valence model built on that
+shape, and the sum-rule bundle of its rescalings (`sum_mellinMoment_one_weight_modelPdf_zero_one`,
+`sumRuleAssumptionsWeightModelPdf`) is stated for it, the total weight six being specific to it.
 
 -/
 
@@ -207,6 +213,33 @@ lemma mellinMoment_modelPdf_zero_one (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 
   push_cast
   field_simp
   ring
+
+/-- **The momentum sum rule for a rescaled shape `1 - x`.** Rescaling the model with exponents
+`a = 0` and `b = 1` by weights summing to six puts unit total momentum on the density, each unit
+of weight carrying the momentum fraction `1 / 6`. -/
+lemma sum_mellinMoment_one_weight_modelPdf_zero_one [Fintype Flavor] {w : Flavor → ℝ}
+    (hw : ∑ i, w i = 6) (Q2 : ℝ) :
+    ∑ i, mellinMoment (weight w (modelPdf Flavor 0 1)) 1 i Q2 = 1 := by
+  simp only [mellinMoment_weight, mellinMoment_modelPdf_zero_one, ← Finset.sum_mul, hw]
+  norm_num
+
+/-- **The sum-rule bundle of a rescaled shape `1 - x`**: the model with exponents `a = 0` and
+`b = 1`, rescaled by weights summing to six, carries the upstream sum-rule bundle, the valence
+target of each flavour being half its weight. -/
+def sumRuleAssumptionsWeightModelPdf [Fintype Flavor] {w : Flavor → ℝ} (hw : ∑ i, w i = 6) :
+    SumRuleAssumptions (weight w (modelPdf Flavor 0 1)) where
+  momentum := sum_mellinMoment_one_weight_modelPdf_zero_one hw
+  valenceTarget i := w i / 2
+  valence i Q2 := by
+    rw [mellinMoment_weight, mellinMoment_modelPdf_zero_one]
+    push_cast
+    ring
+
+@[simp]
+lemma sumRuleAssumptionsWeightModelPdf_valenceTarget [Fintype Flavor] {w : Flavor → ℝ}
+    (hw : ∑ i, w i = 6) (i : Flavor) :
+    (sumRuleAssumptionsWeightModelPdf hw).valenceTarget i = w i / 2 :=
+  rfl
 
 /-! ### E. The spin-density model -/
 
