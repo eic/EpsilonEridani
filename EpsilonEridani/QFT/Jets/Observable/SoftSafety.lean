@@ -6,8 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.Normed.Operator.Asymptotics
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import EpsilonEridani.QFT.Jets.Observable.Counterexamples
 
 /-!
@@ -20,30 +19,35 @@ order `k`* (`IsSoftSafe k O`) if, for every final state `s`,
 
 `O (p ::ₘ s) - O s = O(‖p‖ ^ k)` as `p → 0`,
 
-in the sense of Mathlib's `Asymptotics.IsBigO`. Momenta live in a seminormed group `V`; on a
-finite-dimensional `V` all norms are equivalent, so the condition does not depend on the norm
-chosen. Observables may take values in any seminormed group, so the vector-valued total momentum
-is covered by the same definition.
+in the sense of Mathlib's `Asymptotics.IsBigO`. Momenta live in a seminormed group `V`. When `V`
+is a finite-dimensional real normed space all norms on it are equivalent, so the condition does not
+depend on the norm chosen; for a general seminormed `V` it depends on the seminorm. Observables
+may take values in any seminormed group, so the vector-valued total momentum is covered by the
+same definition.
 
 ## Main results
 
 * `IsSoftSafe.isInfraredSafe`: soft safety of a positive order implies infrared safety.
 * `IsSoftSafe.of_le`: soft safety of order `k` implies soft safety of every lower order.
 * `isSoftSafe_const`, `IsSoftSafe.add`, `IsSoftSafe.neg`, `IsSoftSafe.sub`: closure under the
-  additive operations, and `IsSoftSafe.bilinear`, `IsSoftSafe.mul`: closure under a continuous
-  bilinear map and under multiplication.
+  additive operations, and `IsSoftSafe.map₂`, with its instances `IsSoftSafe.bilinear` and
+  `IsSoftSafe.mul`: closure under a bounded biadditive map, such as a continuous bilinear map or
+  multiplication.
 * `isSoftSafe_sum_map_iff`: a sum `∑_{q ∈ s} f q` over the particles is soft safe of order `k`
   exactly when `f p = O(‖p‖ ^ k)` as `p → 0`. Consequently the total momentum
   (`isSoftSafe_one_multisetSum`) and every sum of a continuous linear function of the momenta,
   such as the total energy in a frame (`isSoftSafe_one_sum_map`), are soft safe of order `1`, and
-  so is the invariant mass squared on a finite-dimensional space (`isSoftSafe_one_invariantMassSq`).
-* `not_isSoftSafe_particleMultiplicity`: the particle multiplicity is not soft safe of any positive
-  order, while `isSoftSafe_zero_particleMultiplicity` shows that it is soft safe of order `0`.
-  Order-`0` soft safety only bounds the jump caused by a soft momentum, so it does not imply
-  infrared safety, and the positivity hypothesis of `IsSoftSafe.isInfraredSafe` cannot be dropped.
+  so is the square `B P P` of the total momentum `P` under a continuous bilinear form `B`
+  (`isSoftSafe_one_bilinear`), in particular the invariant mass squared on a finite-dimensional
+  space (`isSoftSafe_one_invariantMassSq_of_finite`).
+* `not_isSoftSafe_particleMultiplicity_of_ne_zero`: the particle multiplicity is not soft safe of
+  any positive order, while `isSoftSafe_zero_particleMultiplicity` shows that it is soft safe of
+  order `0`. Order-`0` soft safety only bounds the jump caused by a soft momentum, so it does not
+  imply infrared safety, and the positivity hypothesis of `IsSoftSafe.isInfraredSafe` cannot be
+  dropped.
 * `isSoftSafe_leadingEnergy`: the leading-particle energy is soft safe of order `k` whenever the
   energy function is `O(‖p‖ ^ k)`; for a continuous linear energy it is soft safe of order `1`
-  (`isSoftSafe_one_leadingEnergy`). Since it is not collinear safe
+  (`isSoftSafe_one_leadingEnergy`). Since for a nonzero energy functional it is not collinear safe
   (`not_isCollinearSafe_leadingEnergy`), soft safety of any order says nothing about collinear
   safety.
 
@@ -56,13 +60,14 @@ public section
 
 namespace EpsilonEridani.QFT.Jets
 
-open Filter Topology Asymptotics Metric
+open Filter Topology Asymptotics
 
 variable {V X Y Z : Type*}
 
 section Basic
 
-variable [SeminormedAddCommGroup V] [SeminormedAddCommGroup X] {j k : ℕ}
+variable [SeminormedAddCommGroup V] [SeminormedAddCommGroup X] [SeminormedAddCommGroup Y]
+  [SeminormedAddCommGroup Z] {j k : ℕ}
 
 /-- An observable is *soft safe of order `k`* if adding a momentum `p` to any final state `s`
 changes its value by `O(‖p‖ ^ k)` as `p → 0`. For `k ≠ 0` this is a quantitative form of infrared
@@ -85,13 +90,9 @@ theorem IsSoftSafe.isInfraredSafe {O : Multiset V → X} (hO : IsSoftSafe k O) (
 /-- Soft safety of order `k` implies soft safety of every order `j ≤ k`, since `‖p‖ ^ k ≤ ‖p‖ ^ j`
 for `‖p‖ ≤ 1`. -/
 theorem IsSoftSafe.of_le {O : Multiset V → X} (hO : IsSoftSafe k O) (hjk : j ≤ k) :
-    IsSoftSafe j O := by
-  have h : (fun p : V => ‖p‖ ^ k) =O[𝓝 0] fun p => ‖p‖ ^ j := by
-    refine IsBigO.of_bound 1 ?_
-    filter_upwards [closedBall_mem_nhds (0 : V) zero_lt_one] with p hp
-    rw [mem_closedBall_zero_iff] at hp
-    simpa using pow_le_pow_of_le_one (norm_nonneg p) hp hjk
-  exact fun s => (hO s).trans h
+    IsSoftSafe j O :=
+  fun s => (hO s).trans <| hjk.eq_or_lt.elim (fun h => h ▸ isBigO_refl _ _) fun h =>
+    (isLittleO_norm_pow_norm_pow h).isBigO
 
 theorem isSoftSafe_const (k : ℕ) (x : X) : IsSoftSafe k (fun _ : Multiset V => x) :=
   fun _ => by simpa using isBigO_zero (fun p : V => ‖p‖ ^ k) (𝓝 0)
@@ -120,8 +121,8 @@ theorem isSoftSafe_sum_map_iff {f : V → X} :
 
 /-- The total momentum of a final state is soft safe of order `1`. -/
 theorem isSoftSafe_one_multisetSum : IsSoftSafe 1 (Multiset.sum : Multiset V → V) := by
-  simpa using isSoftSafe_sum_map_iff (k := 1) (f := id).2
-    (isBigO_norm_right.2 (isBigO_refl _ _) |>.congr_right fun p => (pow_one ‖p‖).symm)
+  simpa using (isSoftSafe_sum_map_iff (k := 1) (f := id)).2 <| by
+    simpa using (isBigO_refl (id : V → V) (𝓝 0)).norm_right
 
 /-- An observable soft safe of any order stays bounded under the addition of a soft momentum. -/
 theorem IsSoftSafe.isBigO_one_cons {O : Multiset V → X} (h : IsSoftSafe k O) (s : Multiset V) :
@@ -130,19 +131,32 @@ theorem IsSoftSafe.isBigO_one_cons {O : Multiset V → X} (h : IsSoftSafe k O) (
     ((continuous_norm.pow k).tendsto 0).isBigO_one ℝ
   simpa using ((h s).trans h₀).add (isBigO_const_const (O s) one_ne_zero (𝓝 (0 : V)))
 
+/-- A map `f` that is additive in each argument and bounded, `‖f a b‖ ≤ C * ‖a‖ * ‖b‖`, sends two
+observables soft safe of order `k` to an observable soft safe of order `k`. This is the common
+core of `IsSoftSafe.mul` and `IsSoftSafe.bilinear`. -/
+theorem IsSoftSafe.map₂ {O₁ : Multiset V → X} {O₂ : Multiset V → Y} {f : X → Y → Z} {C : ℝ}
+    (hf₁ : ∀ a a' b, f a' b - f a b = f (a' - a) b) (hf₂ : ∀ a b b', f a b' - f a b = f a (b' - b))
+    (hf : ∀ a b, ‖f a b‖ ≤ C * ‖a‖ * ‖b‖) (h₁ : IsSoftSafe k O₁) (h₂ : IsSoftSafe k O₂) :
+    IsSoftSafe k (fun s => f (O₁ s) (O₂ s)) := by
+  intro s
+  -- `f a' b' - f a b = f (a' - a) b' + f a (b' - b)`, and `b'` stays bounded as `p → 0`.
+  have e : ∀ p : V, f (O₁ (p ::ₘ s) - O₁ s) (O₂ (p ::ₘ s)) + f (O₁ s) (O₂ (p ::ₘ s) - O₂ s) =
+      f (O₁ (p ::ₘ s)) (O₂ (p ::ₘ s)) - f (O₁ s) (O₂ s) := fun p => by
+    rw [← hf₁, ← hf₂, sub_add_sub_cancel]
+  have hO (u : V → X) (v : V → Y) : (fun p => f (u p) (v p)) =O[𝓝 0] fun p => ‖u p‖ * ‖v p‖ :=
+    isBigO_of_le' (c := C) _ fun p => by
+      rw [norm_mul, norm_norm, norm_norm, ← mul_assoc]
+      exact hf _ _
+  refine (IsBigO.add ((hO _ _).trans ?_) ((hO _ _).trans ?_)).congr_left e
+  · simpa using (h₁ s).norm_left.mul (h₂.isBigO_one_cons s).norm_left
+  · simpa using (isBigO_const_const ‖O₁ s‖ one_ne_zero (𝓝 (0 : V))).mul (h₂ s).norm_left
+
 /-- The product of two observables soft safe of order `k` with values in a seminormed ring is soft
 safe of order `k`. -/
 theorem IsSoftSafe.mul {R : Type*} [SeminormedRing R] {O₁ O₂ : Multiset V → R}
-    (h₁ : IsSoftSafe k O₁) (h₂ : IsSoftSafe k O₂) : IsSoftSafe k (fun s => O₁ s * O₂ s) := by
-  intro s
-  -- `a' b' - a b = (a' - a) b' + a (b' - b)`, and `b'` stays bounded as `p → 0`.
-  have e : ∀ p : V, (O₁ (p ::ₘ s) - O₁ s) * O₂ (p ::ₘ s) + O₁ s * (O₂ (p ::ₘ s) - O₂ s) =
-      O₁ (p ::ₘ s) * O₂ (p ::ₘ s) - O₁ s * O₂ s := fun p => by
-    simp only [sub_mul, mul_sub]
-    abel
-  refine (IsBigO.add ?_ ?_).congr_left e
-  · simpa using (h₁ s).mul (h₂.isBigO_one_cons s)
-  · simpa using (isBigO_const_const (O₁ s) one_ne_zero (𝓝 (0 : V))).mul (h₂ s)
+    (h₁ : IsSoftSafe k O₁) (h₂ : IsSoftSafe k O₂) : IsSoftSafe k (fun s => O₁ s * O₂ s) :=
+  h₁.map₂ (C := 1) (fun a a' b => (sub_mul a' a b).symm) (fun a b b' => (mul_sub a b' b).symm)
+    (fun a b => by simpa using norm_mul_le a b) h₂
 
 end Basic
 
@@ -158,16 +172,9 @@ variable [SeminormedAddCommGroup V] [SeminormedAddCommGroup X] [NormedSpace ℝ 
 observable soft safe of order `k`. -/
 theorem IsSoftSafe.bilinear (B : X →L[ℝ] Y →L[ℝ] Z) {O₁ : Multiset V → X} {O₂ : Multiset V → Y}
     (h₁ : IsSoftSafe k O₁) (h₂ : IsSoftSafe k O₂) :
-    IsSoftSafe k (fun s => B (O₁ s) (O₂ s)) := by
-  intro s
-  -- `B a' b' - B a b = B (a' - a) b' + B a (b' - b)`, and `b'` stays bounded as `p → 0`.
-  have e : ∀ p : V, B (O₁ (p ::ₘ s) - O₁ s) (O₂ (p ::ₘ s)) + B (O₁ s) (O₂ (p ::ₘ s) - O₂ s) =
-      B (O₁ (p ::ₘ s)) (O₂ (p ::ₘ s)) - B (O₁ s) (O₂ s) := fun p => by
-    simp only [map_sub, sub_apply]
-    abel
-  refine (IsBigO.add ?_ ((B (O₁ s)).isBigO_comp _ _ |>.trans (h₂ s))).congr_left e
-  refine B.isBoundedBilinearMap.isBigO_comp.trans ?_
-  simpa using (h₁ s).norm_left.mul (h₂.isBigO_one_cons s).norm_left
+    IsSoftSafe k (fun s => B (O₁ s) (O₂ s)) :=
+  h₁.map₂ (f := fun a b => B a b) (fun _ _ _ => by simp) (fun _ _ _ => (map_sub _ _ _).symm)
+    B.le_opNorm₂ h₂
 
 end Bilinear
 
@@ -180,20 +187,21 @@ variable [SeminormedAddCommGroup V] [NormedSpace ℝ V] [SeminormedAddCommGroup 
 /-- The sum over the particles of a continuous linear function of their momenta, such as their
 total energy in a frame, is soft safe of order `1`. -/
 theorem isSoftSafe_one_sum_map (E : V →L[ℝ] X) : IsSoftSafe 1 (fun s => (s.map E).sum) :=
-  isSoftSafe_sum_map_iff.2 <|
-    (isBigO_norm_right.2 (E.isBigO_id _)).congr_right fun p => (pow_one ‖p‖).symm
+  isSoftSafe_sum_map_iff.2 <| by simpa using (E.isBigO_id _).norm_right
+
+/-- The square `B P P` of the total momentum `P` of a final state under a continuous bilinear form
+`B` is soft safe of order `1`. -/
+theorem isSoftSafe_one_bilinear (B : V →L[ℝ] V →L[ℝ] ℝ) : IsSoftSafe 1 (fun s => B s.sum s.sum) :=
+  isSoftSafe_one_multisetSum.bilinear B isSoftSafe_one_multisetSum
 
 end Linear
 
 /-- The invariant mass squared of a final state is soft safe of order `1` for every bilinear form
 on a finite-dimensional normed space of momenta. -/
-theorem isSoftSafe_one_invariantMassSq [NormedAddCommGroup V] [NormedSpace ℝ V]
+theorem isSoftSafe_one_invariantMassSq_of_finite [NormedAddCommGroup V] [NormedSpace ℝ V]
     [FiniteDimensional ℝ V] (g : LinearMap.BilinForm ℝ V) :
-    IsSoftSafe 1 (invariantMassSq g) := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ :=
-    LinearMap.toContinuousLinearMap (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ g)
-  rw [show invariantMassSq g = fun s => g s.sum s.sum from funext (invariantMassSq_def g)]
-  simpa [B] using isSoftSafe_one_multisetSum.bilinear B isSoftSafe_one_multisetSum
+    IsSoftSafe 1 (invariantMassSq g) := fun s => by
+  simpa [invariantMassSq_def] using isSoftSafe_one_bilinear g.toContinuousBilinearMap s
 
 /-! ### Particle multiplicity and the leading-particle energy -/
 
@@ -203,7 +211,7 @@ variable [SeminormedAddCommGroup V] {k : ℕ}
 
 /-- The particle multiplicity is not soft safe of any positive order: adding a momentum, however
 soft, adds one particle. -/
-theorem not_isSoftSafe_particleMultiplicity (hk : k ≠ 0) :
+theorem not_isSoftSafe_particleMultiplicity_of_ne_zero (hk : k ≠ 0) :
     ¬ IsSoftSafe k (particleMultiplicity : Observable V) :=
   fun h => not_isInfraredSafe_particleMultiplicity (h.isInfraredSafe hk)
 
@@ -225,11 +233,10 @@ theorem isSoftSafe_leadingEnergy {E : V → ℝ} (hE : E =O[𝓝 0] fun p => ‖
     ← Real.norm_eq_abs] at this
 
 /-- The leading-particle energy of a continuous linear energy functional is soft safe of order `1`,
-although it is not collinear safe (`not_isCollinearSafe_leadingEnergy`). -/
+although for a nonzero functional it is not collinear safe (`not_isCollinearSafe_leadingEnergy`). -/
 theorem isSoftSafe_one_leadingEnergy [NormedSpace ℝ V] (E : V →L[ℝ] ℝ) :
     IsSoftSafe 1 (leadingEnergy E) :=
-  isSoftSafe_leadingEnergy <|
-    (isBigO_norm_right.2 (E.isBigO_id _)).congr_right fun p => (pow_one ‖p‖).symm
+  isSoftSafe_leadingEnergy <| by simpa using (E.isBigO_id _).norm_right
 
 end Examples
 
