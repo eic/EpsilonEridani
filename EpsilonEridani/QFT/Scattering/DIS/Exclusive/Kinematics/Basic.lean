@@ -59,6 +59,7 @@ variable {V}
 def Q2 (g : Bilin V) (K : ExclKinematics V) : ℝ :=
   - g K.q K.q
 
+omit [Module ℝ V] in
 /-- The inclusive kinematics of the same event: the `DisKinematics` record of the momenta `p`,
 `p'`, `k`, `k'` and `q`, forgetting the produced particle `q'` and the azimuthal angles. -/
 @[simps]
