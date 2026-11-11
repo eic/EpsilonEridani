@@ -18,7 +18,9 @@ part of the tensor; in the real bilinear forms of `Tensors.Basic` it is represen
 antisymmetric form. This module proves that, under a `SpectatorPlane`, the antisymmetric,
 conserved, properly covariant tensors are exactly the multiples of a single non-zero structure
 `A`, the role played by `ε(·, ·, p, q)`, which on an abstract real vector space is supplied as
-data and on a space with a basis of four vectors is constructed canonically by `aOfBasis`.
+data — an alternating four-form `ε`, contracted with `K.p` and `K.q` by `aOfAlt`, the hadronic
+counterpart of `Leptonic.lMuNuOdd` — and is properly covariant on every space carrying a basis
+of four vectors (`parityOddAssumptions_aOfAlt`).
 
 ## Proper covariance
 
@@ -34,16 +36,18 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
 ## Main definitions
 
 - `ParityOddAssumptions g K W`: `W` is alternating, conserved and properly covariant.
-- `aOfBasis b K`: the parity-odd structure `ε_b(·, ·, p, q)`, the contraction of the volume
-  form `b.det` of a basis `b` of four vectors with `K.p` and `K.q`; it satisfies the
-  parity-odd assumptions for every bilinear form (`parityOddAssumptions_aOfBasis`).
+- `aOfAlt ε K`: the parity-odd structure `ε(·, ·, p, q)`, the contraction of an alternating
+  four-form `ε` with the hadron momentum `K.p` and the momentum transfer `K.q`; it is
+  alternating and conserved on every space, and properly covariant on every space with a basis
+  of four vectors (`parityOddAssumptions_aOfAlt`).
 
 The kinematic hypotheses come from `Tensors.Basic`: `SpectatorPair` (two non-null, mutually
 orthogonal spectator directions `e₁`, `e₂`), `SpectatorPlane` (a `SpectatorPair` completing
-`p_T`, `q` to a frame of `V`, the four-dimensionality input), `SpectatorSplitting` (every vector
-splits into `p_T`, `q` and spectator parts) and `SpectatorPartners` (a `SpectatorSplitting` in
-which every non-zero spectator is non-null with a non-null spectator orthogonal to it), together
-with the determinant-one half-turn `exists_half_turn`.
+`p_T`, `q` to a frame of `V`) and `SpectatorSplitting` (every vector splits into `p_T`, `q`
+and spectator parts), together with the determinant-one half-turn `exists_half_turn`. A
+`SpectatorPlane` is the only place where four-dimensionality enters the hypotheses on the
+tensor `W`; the canonical structure `A` needs an alternating four-form — and, for its proper
+covariance, a basis of four vectors — separately.
 
 ## Main results
 
@@ -55,25 +59,19 @@ with the determinant-one half-turn `exists_half_turn`.
 - `sub_flip_eq_div_smul`, `existsUnique_sub_flip_eq_smul`: under a `SpectatorPlane`, `W - Wᵀ`
   (twice the antisymmetric part) of any conserved, properly covariant tensor is a unique
   multiple of a non-zero parity-odd `A`.
-- `ParityOddAssumptions.apply_pTransverse_eq_zero`, `ParityOddAssumptions.apply_p_eq_zero`: a
-  parity-odd tensor annihilates `p_T` and `p` under `SpectatorPartners`, that is, when every
-  vector splits into `p_T`, `q` and spectator parts and every non-zero spectator is non-null
-  with a non-null spectator orthogonal to it. A `SpectatorPlane` whose non-zero spectators are
-  non-null supplies `SpectatorPartners` (`SpectatorPlane.spectatorPartners`).
 - `ParityOddAssumptions.apply_pTransverse_eq_zero_of_spectatorPlane`,
-  `ParityOddAssumptions.apply_p_eq_zero_of_spectatorPlane`: the same annihilation under a
-  `SpectatorPlane` alone, with no non-nullity hypothesis on the spectators.
+  `ParityOddAssumptions.apply_p_eq_zero_of_spectatorPlane`: a parity-odd tensor annihilates
+  `p_T` and `p` in both slots under a `SpectatorPlane`.
 - `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under a `SpectatorSplitting` in which
   non-zero spectators are non-null, the parity-odd part vanishes under
   full covariance. No four-dimensionality enters.
-- `Witness.aFour` and `Witness.parityOddAssumptions_aFour`: on `ℝ⁴`, `aFour` is `aOfBasis` at
-  the standard basis, and the contraction `ε(·, ·, p, q)` of the determinant is a parity-odd
-  tensor for every bilinear form `g` and kinematics `K`. On Minkowski space `ℝ⁴` at the witness
-  kinematics it is non-zero (`Witness.aFour_kFour_ne_zero`) and every parity-odd tensor there
-  is a unique multiple of it
-  (`Witness.existsUnique_eq_smul_aFour`), so the parity-odd sector is exactly
-  one-dimensional. `Witness.spectatorPartners_kFour` instantiates `SpectatorPartners` on the
-  same kinematics.
+- `Witness.aFour`: on Minkowski space `ℝ⁴` at the witness kinematics `kFour` — where
+  `p·q ≠ 0`, so the DIS invariants are non-degenerate — the determinant contraction
+  `ε(·, ·, p, q)` is a non-zero parity-odd tensor (`Witness.aFour_ne_zero`) and every
+  parity-odd tensor there is a unique multiple of it (`Witness.existsUnique_eq_smul_aFour`),
+  so the parity-odd sector is exactly one-dimensional. The same tensor is not
+  `IsLorentzCovariant` (`Witness.not_isLorentzCovariant_aFour`), so proper covariance is
+  strictly weaker than full covariance.
 -/
 
 public section
@@ -146,6 +144,15 @@ namespace ParityOddAssumptions
 
 variable {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
 
+/-- A parity-odd tensor annihilates `p_T` against any vector that a determinant-one
+stabilizer element reverses: the component is both invariant under the element and negated
+by it. -/
+lemma apply_pTransverse_eq_zero_of_apply_eq_neg (hW : ParityOddAssumptions g K W)
+    {f : V →ₗ[ℝ] V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
+    {u : V} (hfu : f u = -u) : W (pTransverse g K) u = 0 :=
+  Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hW.proper_covariant f hf hdet _ _)
+    (stabilizer_fixes_pTransverse g K hf) hfu
+
 /-- **A parity-odd tensor has a single component.** On the span of `p_T`, `q` and a
 `SpectatorPair` `e₁`, `e₂`, `W` is `W e₁ e₂` times the `2 × 2` determinant of the spectator
 coordinates of its arguments. -/
@@ -157,60 +164,14 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPair g K)
   obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := exists_half_turn hSymm hP.q_orthogonal_e₁
     hP.pT_orthogonal_e₁ hP.e₁_self_ne_zero hP.q_orthogonal_e₂ hP.pT_orthogonal_e₂
     hP.e₂_self_ne_zero hP.e₁_orthogonal_e₂
-  have hfW := hW.proper_covariant f hf hdet
-  have hfT := stabilizer_fixes_pTransverse g K hf
-  have h₁ := Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hfW _ _) hfT hf₁
-  have h₂ := Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hfW _ _) hfT hf₂
+  have h₁ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
+  have h₂ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
   have h₁' : W hP.e₁ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₁
   have h₂' : W hP.e₂ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₂
   have h₂₁ : W hP.e₂ hP.e₁ = -W hP.e₁ hP.e₂ := (hW.isAlt.neg_eq _ _).symm
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
     hW.conserved_left, hW.conserved_right, hW.isAlt.self_eq_zero, h₁, h₂, h₁', h₂', h₂₁]
   ring
-
-/-- **A parity-odd tensor annihilates the transverse hadron momentum `p_T`.** Under
-`SpectatorPartners`, every vector splits into a `p_T` part, a `q` part and a spectator part.
-No four-dimensionality enters: a definite spectator subspace of any dimension at least two
-qualifies. -/
-lemma apply_pTransverse_eq_zero (hSymm : g.IsSymm)
-    (hS : SpectatorPartners g K)
-    (hW : ParityOddAssumptions g K W) (v : V) :
-    W (pTransverse g K) v = 0 := by
-  obtain ⟨a, b, u, huq, huT, rfl⟩ := hS.span v
-  have hTu : W (pTransverse g K) u = 0 := by
-    by_cases hu : u = 0
-    · simp [hu]
-    obtain ⟨huu, u', hu'q, hu'T, huu', hu'u'⟩ := hS.partner u huq huT hu
-    obtain ⟨f, hf, hdet, hfu, -⟩ := exists_half_turn hSymm huq huT huu hu'q hu'T hu'u' huu'
-    exact Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg
-      (hW.proper_covariant f hf hdet _ _) (stabilizer_fixes_pTransverse g K hf) hfu
-  simp only [map_add, map_smul, smul_eq_mul, hW.isAlt.self_eq_zero, hW.conserved_right, hTu,
-    mul_zero, add_zero]
-
-/-- A parity-odd tensor annihilates the hadron momentum `p`, under the hypotheses of
-`apply_pTransverse_eq_zero`. -/
-lemma apply_p_eq_zero (hSymm : g.IsSymm)
-    (hS : SpectatorPartners g K)
-    (hW : ParityOddAssumptions g K W) (v : V) :
-    W K.p v = 0 := by
-  rw [apply_p_eq_apply_pTransverse (g := g) hW.conserved_left,
-    hW.apply_pTransverse_eq_zero hSymm hS]
-
-/-- A parity-odd tensor annihilates `p_T` in the second slot as well, under the hypotheses of
-`apply_pTransverse_eq_zero`. -/
-lemma apply_pTransverse_eq_zero_right (hSymm : g.IsSymm)
-    (hS : SpectatorPartners g K)
-    (hW : ParityOddAssumptions g K W) (v : V) :
-    W v (pTransverse g K) = 0 :=
-  hW.isAlt.isRefl.eq_zero (hW.apply_pTransverse_eq_zero hSymm hS v)
-
-/-- A parity-odd tensor annihilates `p` in the second slot as well, under the hypotheses of
-`apply_pTransverse_eq_zero`. -/
-lemma apply_p_eq_zero_right (hSymm : g.IsSymm)
-    (hS : SpectatorPartners g K)
-    (hW : ParityOddAssumptions g K W) (v : V) :
-    W v K.p = 0 :=
-  hW.isAlt.isRefl.eq_zero (hW.apply_p_eq_zero hSymm hS v)
 
 /-- **A parity-odd tensor annihilates `p_T` under a `SpectatorPlane`.** In the frame `p_T`, `q`,
 `e₁`, `e₂`, the vector `p_T` has no spectator coordinates. -/
@@ -289,7 +250,7 @@ theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm) (hS : SpectatorSplittin
   -- The reflection in a spectator `u` kills every component of `W` between `u` and `u^⊥`.
   have hperp : ∀ u v : V, g K.q u = 0 → g (pTransverse g K) u = 0 → g u v = 0 →
       W u v = 0 := fun u _ huq huT huv =>
-    covariant_offDiagonal_zero_of_spectator g K W hSymm hcov (hnull u huq huT) huq huT huv
+    covariant_spectator_offDiagonal_zero' g K W hSymm hcov (hnull u huq huT) huq huT huv
   -- Two spectators: split `u'` along `u` and its orthogonal complement.
   have hspec : ∀ u u' : V, g K.q u = 0 → g (pTransverse g K) u = 0 → W u u' = 0 := by
     intro u u' huq huT
@@ -333,54 +294,92 @@ theorem existsUnique_sub_flip_eq_smul {g : Bilin V} {K : DisKinematics V} {W A :
 /-!
 ## The canonical parity-odd structure
 
-On any real vector space carrying a basis of four vectors, the volume form of the basis
-supplies a canonical parity-odd structure: the contraction `ε_b(·, ·, p, q)` of the basis
-determinant with the hadron momentum and the momentum transfer. A stabilizer element of
-determinant one commutes with the volume form, so the structure is properly covariant for
-every bilinear form, and alternation and conservation are immediate.
+On any real vector space the parity-odd structure `ε(·, ·, p, q)` is the contraction of an
+alternating four-form with the hadron momentum and the momentum transfer; the form is supplied
+as data, exactly as on the leptonic side (`Leptonic.lMuNuOdd`). Alternation and conservation
+hold on every space, with no basis at all. On a space carrying a basis `b` of four vectors
+every alternating four-form is a multiple of the volume form `b.det`
+(`AlternatingMap.eq_smul_basis_det`), and a stabilizer element of determinant one commutes
+with the volume form, so the structure is properly covariant there for every bilinear form.
 -/
 
-/-- The parity-odd structure `ε_b(v, w, p, q)` of the kinematics `K` on a real vector space
-with a basis `b` of four vectors: the contraction of the volume form `b.det` with the hadron
-momentum `K.p` and the momentum transfer `K.q`. -/
-def aOfBasis (b : Module.Basis (Fin 4) ℝ V) (K : DisKinematics V) : Bilin V :=
-  b.det.bilinMap ![K.p, K.q]
+/-- The parity-odd structure `ε(v, w, p, q)` of the kinematics `K` on a real vector space: the
+contraction of an alternating four-form `ε` with the hadron momentum `K.p` and the momentum
+transfer `K.q`. This is the hadronic counterpart of `Leptonic.lMuNuOdd`. -/
+def aOfAlt (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V) : Bilin V :=
+  ε.bilinMap ![K.p, K.q]
 
-/-- `aOfBasis b K` as the determinant of its two arguments together with `K.p` and `K.q`. -/
-lemma aOfBasis_eq_det (b : Module.Basis (Fin 4) ℝ V) (K : DisKinematics V) (v w : V) :
-    aOfBasis b K v w = b.det ![v, w, K.p, K.q] :=
-  AlternatingMap.bilinMap_apply ..
+/-- Pointwise value of the parity-odd structure. -/
+lemma aOfAlt_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V) (v w : V) :
+    aOfAlt ε K v w = ε ![v, w, K.p, K.q] :=
+  ε.bilinMap_apply _ v w
 
-/-- **`ParityOddAssumptions` is satisfiable on every space with a basis of four vectors.**
-For any bilinear form `g`, such a basis `b` and any kinematics `K`, the structure
-`aOfBasis b K` is alternating, conserved and properly covariant: the proof uses nothing about
-`g` or `K`, only that a stabilizer element of determinant one fixes `p` and `q` and commutes
-with the volume form of the basis. -/
-lemma parityOddAssumptions_aOfBasis (g : Bilin V) (b : Module.Basis (Fin 4) ℝ V)
-    (K : DisKinematics V) :
-    ParityOddAssumptions g K (aOfBasis b K) where
+/-- The parity-odd structure is alternating. -/
+lemma isAlt_aOfAlt (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V) :
+    (aOfAlt ε K).IsAlt :=
+  ε.isAlt_bilinMap _
+
+/-- The parity-odd structure vanishes on the diagonal. -/
+@[simp] lemma aOfAlt_apply_self (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V) (v : V) :
+    aOfAlt ε K v v = 0 :=
+  ε.bilinMap_apply_self _ v
+
+/-- The parity-odd structure annihilates the hadron momentum in its first slot. -/
+@[simp] lemma aOfAlt_apply_p_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V)
+    (w : V) : aOfAlt ε K K.p w = 0 :=
+  ε.bilinMap_apply_left_eq_zero ![K.p, K.q] 0 w
+
+/-- The parity-odd structure annihilates the hadron momentum in its second slot. -/
+@[simp] lemma aOfAlt_apply_p_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V)
+    (v : V) : aOfAlt ε K v K.p = 0 :=
+  ε.bilinMap_apply_right_eq_zero ![K.p, K.q] 0 v
+
+/-- The parity-odd structure annihilates the momentum transfer in its first slot: it is
+conserved there. -/
+@[simp] lemma aOfAlt_apply_q_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V)
+    (w : V) : aOfAlt ε K K.q w = 0 :=
+  ε.bilinMap_apply_left_eq_zero ![K.p, K.q] 1 w
+
+/-- The parity-odd structure annihilates the momentum transfer in its second slot: it is
+conserved there. -/
+@[simp] lemma aOfAlt_apply_q_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : DisKinematics V)
+    (v : V) : aOfAlt ε K v K.q = 0 :=
+  ε.bilinMap_apply_right_eq_zero ![K.p, K.q] 1 v
+
+/-- **The contraction of an alternating four-form with `p` and `q` is parity-odd.** For any
+bilinear form `g`, any alternating four-form `ε` on a space carrying a basis `b` of four
+vectors, and any kinematics `K`, the structure `aOfAlt ε K` is alternating, conserved and
+properly covariant. Alternation and conservation use nothing but the alternating-map API;
+proper covariance uses that `ε` is a multiple of the volume form `b.det`, which a stabilizer
+element of determinant one commutes with. -/
+lemma parityOddAssumptions_aOfAlt (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (b : Module.Basis (Fin 4) ℝ V) (K : DisKinematics V) :
+    ParityOddAssumptions g K (aOfAlt ε K) where
   proper_covariant f hf hdet v w := by
-    have h : ![f v, f w, K.p, K.q] = f ∘ ![v, w, K.p, K.q] := by
+    have hvec : ![f v, f w, K.p, K.q] = f ∘ ![v, w, K.p, K.q] := by
       ext1 i
       fin_cases i <;> simp [hf.fixes_p, hf.fixes_q]
-    simp only [aOfBasis_eq_det, h, Module.Basis.det_comp, hdet, one_mul]
-  conserved_left v := AlternatingMap.bilinMap_apply_left_eq_zero _ ![K.p, K.q] 1 v
-  isAlt := AlternatingMap.isAlt_bilinMap _ _
+    obtain ⟨c, hc⟩ : ∃ c : ℝ, ε = c • b.det := ⟨ε b, ε.eq_smul_basis_det b⟩
+    simp only [aOfAlt_apply, hc, IsSMulApply.smul_apply, smul_eq_mul, hvec,
+      Module.Basis.det_comp, hdet, one_mul]
+  conserved_left v := aOfAlt_apply_q_left_eq_zero ε K v
+  isAlt := isAlt_aOfAlt ε K
 
 /-!
 ## A four-dimensional witness
 
-On Minkowski space `ℝ⁴` with `p = (1, 0, 0, 0)` and `q = (0, 0, 0, 1)`, the contraction
+On Minkowski space `ℝ⁴` with `p = (1, 0, 0, -4/5)` and `q = (0, 0, 0, 1)`, the contraction
 `ε(·, ·, p, q)` of the determinant is a non-zero parity-odd tensor, and the two remaining
-coordinate directions form a `SpectatorPlane`. So the hypotheses of
-`ParityOddAssumptions.existsUnique_eq_smul` are satisfiable, and the parity-odd sector is exactly
-one-dimensional on these kinematics (`existsUnique_eq_smul_aFour`). The same tensor is not
-`IsLorentzCovariant`, so proper covariance is strictly weaker than full covariance.
+coordinate directions form a `SpectatorPlane`. The kinematics are non-degenerate —
+`p·q = 4/5`, `Q² = 1` and `x_Bj = 5/8` — so the DIS invariants are defined there. The
+hypotheses of `ParityOddAssumptions.existsUnique_eq_smul` are satisfiable, and the parity-odd
+sector is exactly one-dimensional on these kinematics (`existsUnique_eq_smul_aFour`). The
+same tensor is not `IsLorentzCovariant`, so proper covariance is strictly weaker than full
+covariance.
 
-The structure `aFour`, the `Pi.basisFun` case of `aOfBasis`, and its satisfiability lemma
-`parityOddAssumptions_aFour` are stated for an arbitrary bilinear form and arbitrary
-kinematics on `ℝ⁴`; the remaining declarations of this section are specialized to the
-witness.
+The structure `aFour` is `aOfAlt` at the volume form of the standard basis
+`Pi.basisFun ℝ (Fin 4)`, specialized to the witness kinematics; the declarations of this
+section are stated about it directly.
 -/
 
 namespace Witness
@@ -400,54 +399,59 @@ def gFour : Bilin (Fin 4 → ℝ) :=
 lemma gFour_isSymm : gFour.IsSymm :=
   Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal _)
 
-/-- Witness kinematics on `ℝ⁴`: timelike `p = (1, 0, 0, 0)` and spacelike
-`q = (0, 0, 0, 1)`, with `Q² = 1`. Here `p` and `q` are `g`-orthogonal, so `p_T = p` and
-`p·q = 0`: the witness tests the linear-algebra hypotheses only, not the physical
-`1 / (2 p·q)` normalisation of `F₃` (nor `ν` or `x_Bj`, which are undefined here). The lepton
-momenta are placeholders. -/
-def kFour : DisKinematics (Fin 4 → ℝ) where
-  p := ![1, 0, 0, 0]
+/-- Witness kinematics on `ℝ⁴`: timelike `p = (1, 0, 0, -4/5)` and spacelike
+`q = (0, 0, 0, 1)`. The invariants are non-degenerate: `Q² = 1`, `p·q = 4/5` and `x_Bj = 5/8`,
+so the transverse hadron momentum is `p_T = (1, 0, 0, 0)` and the spectator plane is the
+coordinate `1`-`2` plane. The lepton momenta are placeholders. -/
+noncomputable def kFour : DisKinematics (Fin 4 → ℝ) where
+  p := ![1, 0, 0, -4/5]
   pPrime := 0
   k := ![0, 0, 0, 1]
   kPrime := 0
   q := ![0, 0, 0, 1]
   hq := by simp
 
-@[simp] lemma kFour_p : kFour.p = ![1, 0, 0, 0] := (rfl)
+@[simp] lemma kFour_p : kFour.p = ![1, 0, 0, -4/5] := (rfl)
 
 @[simp] lemma kFour_q : kFour.q = ![0, 0, 0, 1] := (rfl)
 
-/-- The transverse hadron momentum of the witness kinematics is `p` itself. -/
+@[simp] lemma kFour_k : kFour.k = ![0, 0, 0, 1] := (rfl)
+
+@[simp] lemma kFour_kPrime : kFour.kPrime = 0 := (rfl)
+
+@[simp] lemma kFour_pPrime : kFour.pPrime = 0 := (rfl)
+
+/-- The transverse hadron momentum of the witness kinematics is `(1, 0, 0, 0)`: the
+`q`-component of `p` is exactly cancelled. -/
 @[simp] lemma pTransverse_kFour : pTransverse gFour kFour = ![1, 0, 0, 0] := by
-  simp [pTransverse]
+  ext i
+  fin_cases i <;> simp [pTransverse]
 
-/-- The parity-odd structure `ε(v, w, p, q)` of the kinematics `K` on `ℝ⁴`: `aOfBasis` at the
-standard basis `Pi.basisFun ℝ (Fin 4)`, whose volume form is the determinant of `ℝ⁴`. -/
-noncomputable def aFour (K : DisKinematics (Fin 4 → ℝ)) : Bilin (Fin 4 → ℝ) :=
-  aOfBasis (Pi.basisFun ℝ (Fin 4)) K
+/-- The parity-odd structure `ε(v, w, p, q)` of the witness kinematics on `ℝ⁴`: `aOfAlt` at
+the volume form of the standard basis `Pi.basisFun ℝ (Fin 4)`, whose contraction with
+`kFour.p` and `kFour.q` is the determinant `ε(v, w, p, q) = det(v, w, p, q)`. -/
+noncomputable def aFour : Bilin (Fin 4 → ℝ) :=
+  aOfAlt (Pi.basisFun ℝ (Fin 4)).det kFour
 
-/-- `aFour K` as the determinant of its two arguments together with `K.p` and `K.q`. -/
-lemma aFour_eq_det (K : DisKinematics (Fin 4 → ℝ)) (v w : Fin 4 → ℝ) :
-    aFour K v w = (Pi.basisFun ℝ (Fin 4)).det ![v, w, K.p, K.q] :=
-  aOfBasis_eq_det ..
-
-/-- The closed form of `aFour kFour`: with `p` and `q` along the `0` and `3` axes,
+/-- The closed form of `aFour`: with `p_T` along the `0` axis and `q` along the `3` axis,
 `ε(v, w, p, q)` is the `2 × 2` determinant of the spectator components `1`, `2` of `v` and
-`w`. -/
-@[simp] lemma aFour_kFour_apply (v w : Fin 4 → ℝ) :
-    aFour kFour v w = v 1 * w 2 - v 2 * w 1 := by
-  rw [aFour_eq_det, Module.Basis.det_apply]
-  simp [Module.Basis.toMatrix_apply, Pi.basisFun_repr, Matrix.det_succ_row_zero,
-    Fin.sum_univ_succ, kFour_p, kFour_q, Fin.succAbove_of_le_castSucc,
-    Fin.succAbove_of_castSucc_lt]
+`w`; the components of `v` and `w` along `p_T` and `q` do not enter. -/
+@[simp] lemma aFour_apply (v w : Fin 4 → ℝ) :
+    aFour v w = v 1 * w 2 - v 2 * w 1 := by
+  simp only [aFour, aOfAlt_apply, Module.Basis.det_apply, Module.Basis.toMatrix_apply,
+    Pi.basisFun_repr, kFour_p, kFour_q, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
+    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_one,
+    Matrix.cons_val, Matrix.cons_val_succ, Matrix.submatrix_apply,
+    Matrix.submatrix_submatrix, Matrix.det_unique, Function.comp_apply, Fin.isValue,
+    Fin.succ_zero_eq_one, Fin.succ_one_eq_two, Fin.default_eq_zero, Fin.reduceSucc,
+    Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.succ_eq_add_one, Nat.reduceAdd, pow_zero,
+    one_mul, Fin.castSucc_zero, Fin.castSucc_one, Fin.reduceCastSucc, Fin.val_succ,
+    Fin.val_eq_zero, zero_add, pow_one, neg_mul, Fin.succ_pos, Fin.succAbove_of_le_castSucc,
+    Fin.succAbove_of_castSucc_lt, Finset.univ_unique, Finset.sum_neg_distrib,
+    Finset.sum_singleton, Fin.succ_succAbove_one, even_two, Even.neg_pow, one_pow, mul_one,
+    zero_mul, neg_zero, add_zero, mul_zero, zero_le, Std.le_refl, Fin.reduceLE,
+    Finset.sum_const_zero]
   ring
-
-/-- **`ParityOddAssumptions` is satisfiable.** For any bilinear form `g` and kinematics `K`
-on `ℝ⁴`, the tensor `aFour K` is alternating, conserved and properly covariant, being the
-`Pi.basisFun` case of `parityOddAssumptions_aOfBasis`. -/
-lemma parityOddAssumptions_aFour (g : Bilin (Fin 4 → ℝ)) (K : DisKinematics (Fin 4 → ℝ)) :
-    ParityOddAssumptions g K (aFour K) :=
-  parityOddAssumptions_aOfBasis g (Pi.basisFun ℝ (Fin 4)) K
 
 /-- The spectator plane of the witness kinematics, spanned by the coordinate directions
 `e₁ = (0, 1, 0, 0)` and `e₂ = (0, 0, 1, 0)`. -/
@@ -467,22 +471,23 @@ def spectatorPlaneFour : SpectatorPlane gFour kFour where
 
 @[simp] lemma spectatorPlaneFour_e₂ : spectatorPlaneFour.e₂ = ![0, 0, 1, 0] := (rfl)
 
-/-- The spectator component of the witness parity-odd tensor: `aFour kFour e₁ e₂ = 1` for
+/-- The spectator component of the witness parity-odd tensor: `aFour e₁ e₂ = 1` for
 the spectator directions `e₁ = (0, 1, 0, 0)` and `e₂ = (0, 0, 1, 0)` of `spectatorPlaneFour`.
 -/
-lemma aFour_kFour_e₁_e₂ : aFour kFour spectatorPlaneFour.e₁ spectatorPlaneFour.e₂ = 1 := by
+lemma aFour_e₁_e₂ : aFour spectatorPlaneFour.e₁ spectatorPlaneFour.e₂ = 1 := by
   simp
 
 /-- The witness parity-odd tensor is non-zero. -/
-lemma aFour_kFour_ne_zero : aFour kFour ≠ 0 := fun h => by
-  simpa [h] using aFour_kFour_e₁_e₂
+lemma aFour_ne_zero : aFour ≠ 0 := fun h => by
+  simpa [h] using aFour_e₁_e₂
 
 /-- **The parity-odd sector of the witness is one-dimensional.** Every parity-odd tensor on
-the witness kinematics is a unique multiple of `aFour kFour`. -/
+the witness kinematics is a unique multiple of `aFour`. -/
 theorem existsUnique_eq_smul_aFour {W : Bilin (Fin 4 → ℝ)}
-    (hW : ParityOddAssumptions gFour kFour W) : ∃! c : ℝ, W = c • aFour kFour :=
-  hW.existsUnique_eq_smul gFour_isSymm spectatorPlaneFour (parityOddAssumptions_aFour gFour kFour)
-    aFour_kFour_ne_zero
+    (hW : ParityOddAssumptions gFour kFour W) : ∃! c : ℝ, W = c • aFour :=
+  hW.existsUnique_eq_smul gFour_isSymm spectatorPlaneFour
+    (parityOddAssumptions_aOfAlt gFour (Pi.basisFun ℝ (Fin 4)).det (Pi.basisFun ℝ (Fin 4))
+      kFour) aFour_ne_zero
 
 /-- On the witness kinematics every non-zero spectator is non-null: the spectator subspace is
 the spacelike plane of the coordinates `1` and `2`. -/
@@ -504,18 +509,13 @@ lemma gFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, mul_zero, mul_one]
   rcases h₁₂ with h | h <;> nlinarith [sq_pos_of_ne_zero h]
 
-/-- **`SpectatorPartners` is satisfiable.** On the witness kinematics every non-zero spectator
-is non-null, so the spectator plane supplies partners. -/
-lemma spectatorPartners_kFour : SpectatorPartners gFour kFour :=
-  spectatorPlaneFour.spectatorPartners gFour_isSymm
-    fun _ hq hT hu => gFour_self_ne_zero_of_spectator hq hT hu
-
 /-- **Proper covariance is strictly weaker than full covariance.** The properly covariant,
-non-zero tensor `aFour kFour` is not `IsLorentzCovariant`. -/
-lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour (aFour kFour) := fun h =>
-  aFour_kFour_ne_zero ((parityOddAssumptions_aFour gFour kFour).eq_zero_of_isLorentzCovariant
-    gFour_isSymm spectatorPartners_kFour.toSpectatorSplitting
-    spectatorPartners_kFour.self_ne_zero_of_spectator h)
+non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
+lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour aFour := fun h =>
+  aFour_ne_zero ((parityOddAssumptions_aOfAlt gFour (Pi.basisFun ℝ (Fin 4)).det
+      (Pi.basisFun ℝ (Fin 4)) kFour).eq_zero_of_isLorentzCovariant gFour_isSymm
+    spectatorPlaneFour.toSpectatorSplitting
+    (fun _ hq hT hu => gFour_self_ne_zero_of_spectator hq hT hu) h)
 
 end Witness
 

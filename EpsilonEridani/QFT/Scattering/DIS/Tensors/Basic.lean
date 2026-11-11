@@ -23,8 +23,8 @@ This module introduces tensor objects for inclusive DIS:
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
   terms of structure functions `F1` and `F2` written against it.
 - A uniqueness theorem for decomposition coefficients under probe-vector assumptions.
-- Spectator frames (`SpectatorPair`, `SpectatorPlane`, `SpectatorPartners`) and the
-  determinant-one half-turn `exists_half_turn`, the kinematic inputs of `Tensors.ParityOdd`.
+- Spectator frames (`SpectatorPair`, `SpectatorPlane`) and the determinant-one half-turn
+  `exists_half_turn`, the kinematic inputs of `Tensors.ParityOdd`.
 - Pointwise contraction lemmas used by later cross-section derivations.
 
 ## Conventions
@@ -940,8 +940,11 @@ lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
   rw [hSymm.eq u K.p, huT]
 
 /-- A covariant tensor has no mixed component between a spectator `u` and any vector
-`g`-orthogonal to `u`, provided `u` is non-null whenever it is non-zero. -/
-theorem covariant_offDiagonal_zero_of_spectator (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+`g`-orthogonal to `u`, provided `u` is non-null whenever it is non-zero. This is the
+`SpectatorSplitting`-shaped variant of `covariant_spectator_offDiagonal_zero`: the spectator
+is recognized by orthogonality to `q` and `p_T`, and non-nullity is assumed only for
+`u ≠ 0`. -/
+theorem covariant_spectator_offDiagonal_zero' (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
     (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) {u v : V} (hu : u ≠ 0 → g u u ≠ 0)
     (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (huv : g u v = 0) :
     W u v = 0 := by
@@ -1008,7 +1011,7 @@ theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bili
   -- Conservation removes every `q` component. Reflections in spectator directions remove the
   -- mixed components between a spectator and `p_T`.
   have hWut : ∀ u, g K.q u = 0 → g t u = 0 → W u t = 0 := fun u huq huT =>
-    covariant_offDiagonal_zero_of_spectator g K W hSymm hA.covariant
+    covariant_spectator_offDiagonal_zero' g K W hSymm hA.covariant
       (hS.self_ne_zero_of_spectator u huq huT) huq huT (by rw [hSymm.eq, huT])
   -- By `transitive` and polarization, `W = F1 • (-g)` on the spectator subspace.
   obtain ⟨F1, hF1⟩ : ∃ F1 : ℝ, ∀ u u' : V, g K.q u = 0 → g t u = 0 → g K.q u' = 0 →
@@ -1122,43 +1125,18 @@ lemma SpectatorPair.pT_orthogonal_smul_add_smul {g : Bilin V} {K : DisKinematics
     g (pTransverse g K) (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
   simp only [map_add, map_smul, hP.pT_orthogonal_e₁, hP.pT_orthogonal_e₂, smul_zero, add_zero]
 
-/-- The spectator directions are `g`-orthogonal, so `g` is diagonal on their combinations. -/
-lemma SpectatorPair.apply_smul_add_smul {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
-    (hP : SpectatorPair g K) (c₁ c₂ d₁ d₂ : ℝ) :
-    g (c₁ • hP.e₁ + c₂ • hP.e₂) (d₁ • hP.e₁ + d₂ • hP.e₂) =
-      c₁ * d₁ * g hP.e₁ hP.e₁ + c₂ * d₂ * g hP.e₂ hP.e₂ := by
-  have h₂₁ : g hP.e₂ hP.e₁ = 0 := by rw [hSymm.eq, hP.e₁_orthogonal_e₂]
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    hP.e₁_orthogonal_e₂, h₂₁, mul_zero, add_zero, zero_add]
-  ring
-
 /-- An adapted frame for the kinematics: a `SpectatorPair` `e₁`, `e₂` such that `p_T`, `q`,
 `e₁`, `e₂` span `V`.
 
 For `V` Minkowski space with `p` timelike and `q` spacelike the spectator subspace
 `{p, q}^⊥` is a spacelike plane, and any orthogonal basis of it is such a frame. The frame
-is the only place where four-dimensionality enters. -/
+is the only place where four-dimensionality enters the hypotheses on the hadronic tensor
+`W` of `Tensors.ParityOdd`; constructing the canonical parity-odd structure `A` there needs
+an alternating four-form, and its proper covariance a basis of four vectors, separately. -/
 @[ext]
 structure SpectatorPlane (g : Bilin V) (K : DisKinematics V) : Type extends SpectatorPair g K where
   /-- The frame spans `V`. -/
   span : ∀ v : V, ∃ a b c₁ c₂ : ℝ, v = a • pTransverse g K + b • K.q + c₁ • e₁ + c₂ • e₂
-
-/-- A `SpectatorSplitting` in which every non-zero spectator `u` is non-null and has a non-null
-spectator `u'` orthogonal to it, so that `exists_half_turn` reverses `u`. A definite spectator
-subspace of any dimension at least two qualifies, and so does a `SpectatorPlane` whose non-zero
-spectators are non-null (`SpectatorPlane.spectatorPartners`). -/
-structure SpectatorPartners (g : Bilin V) (K : DisKinematics V) : Prop
-    extends SpectatorSplitting g K where
-  /-- Every non-zero spectator is non-null and has a non-null spectator orthogonal to it. -/
-  partner : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 →
-    g u u ≠ 0 ∧ ∃ u' : V, g K.q u' = 0 ∧ g (pTransverse g K) u' = 0 ∧ g u u' = 0 ∧
-      g u' u' ≠ 0
-
-/-- Under `SpectatorPartners` every non-zero spectator is non-null. -/
-lemma SpectatorPartners.self_ne_zero_of_spectator {g : Bilin V} {K : DisKinematics V}
-    (hS : SpectatorPartners g K) :
-    ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u ≠ 0 :=
-  fun u huq huT hu => (hS.partner u huq huT hu).1
 
 /-- The adapted frame of a `SpectatorPlane` splits every vector: the spectator part of
 `a • p_T + b • q + c₁ • e₁ + c₂ • e₂` is `c₁ • e₁ + c₂ • e₂`. -/
@@ -1168,44 +1146,6 @@ lemma SpectatorPlane.toSpectatorSplitting {g : Bilin V} {K : DisKinematics V}
     obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
     exact ⟨a, b, c₁ • hP.e₁ + c₂ • hP.e₂, hP.q_orthogonal_smul_add_smul c₁ c₂,
       hP.pT_orthogonal_smul_add_smul c₁ c₂, add_assoc _ _ _⟩
-
-/-- A `SpectatorPlane` whose non-zero spectators are non-null supplies `SpectatorPartners`: a
-spectator with frame coordinates `c₁`, `c₂` has the partner
-`(-(c₂ * g e₂ e₂)) • e₁ + (c₁ * g e₁ e₁) • e₂`, of norm `g e₁ e₁ * g e₂ e₂ * g u u`. -/
-lemma SpectatorPlane.spectatorPartners {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
-    (hP : SpectatorPlane g K)
-    (hnull : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u ≠ 0) :
-    SpectatorPartners g K where
-  toSpectatorSplitting := hP.toSpectatorSplitting
-  partner u huq huT hu := by
-    refine ⟨hnull u huq huT hu, ?_⟩
-    obtain ⟨a, b, c₁, c₂, hv⟩ := hP.span u
-    have hss := hP.apply_smul_add_smul hSymm c₁ c₂ c₁ c₂
-    have hsu' := hP.apply_smul_add_smul hSymm c₁ c₂ (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
-    have hu'u' := hP.apply_smul_add_smul hSymm (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
-      (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
-    have hsq := hP.q_orthogonal_smul_add_smul c₁ c₂
-    have hsT := hP.pT_orthogonal_smul_add_smul c₁ c₂
-    have hu'q := hP.q_orthogonal_smul_add_smul (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
-    have hu'T := hP.pT_orthogonal_smul_add_smul (-(c₂ * g hP.e₂ hP.e₂)) (c₁ * g hP.e₁ hP.e₁)
-    have hv' := hv.trans (add_assoc _ _ _)
-    generalize c₁ • hP.e₁ + c₂ • hP.e₂ = s at hss hsu' hsq hsT hv'
-    generalize (-(c₂ * g hP.e₂ hP.e₂)) • hP.e₁ + (c₁ * g hP.e₁ hP.e₁) • hP.e₂ = u'
-      at hsu' hu'u' hu'q hu'T
-    -- Against a spectator, `u` pairs as its spectator part `s`.
-    have hpair : ∀ w : V, g K.q w = 0 → g (pTransverse g K) w = 0 → g u w = g s w := by
-      intro w hwq hwT
-      rw [hv']
-      simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-        hwq, hwT, mul_zero, zero_add]
-    have huu : g u u = g s s := by rw [hpair u huq huT, hSymm.eq s, hpair s hsq hsT]
-    refine ⟨u', hu'q, hu'T, by rw [hpair u' hu'q hu'T, hsu']; ring, ?_⟩
-    have h : g u' u' = g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂ * g u u := by
-      rw [hu'u', huu, hss]
-      ring
-    rw [h]
-    exact mul_ne_zero (mul_ne_zero hP.e₁_self_ne_zero hP.e₂_self_ne_zero)
-      (hnull u huq huT hu)
 
 /-!
 
