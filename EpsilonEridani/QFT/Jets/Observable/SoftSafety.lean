@@ -38,8 +38,8 @@ same definition.
   (`isSoftSafe_one_multisetSum`) and every sum of a continuous linear function of the momenta,
   such as the total energy in a frame (`isSoftSafe_one_sum_map`), are soft safe of order `1`, and
   so is the square `B P P` of the total momentum `P` under a continuous bilinear form `B`
-  (`isSoftSafe_one_bilinear`), in particular the invariant mass squared on a finite-dimensional
-  space (`isSoftSafe_one_invariantMassSq_of_finite`).
+  (`isSoftSafe_one_bilinear_multisetSum`), in particular the invariant mass squared on a
+  finite-dimensional space (`isSoftSafe_one_invariantMassSq_of_finite`).
 * `not_isSoftSafe_particleMultiplicity_of_ne_zero`: the particle multiplicity is not soft safe of
   any positive order, while `isSoftSafe_zero_particleMultiplicity` shows that it is soft safe of
   order `0`. Order-`0` soft safety only bounds the jump caused by a soft momentum, so it does not
@@ -90,9 +90,10 @@ theorem IsSoftSafe.isInfraredSafe {O : Multiset V → X} (hO : IsSoftSafe k O) (
 /-- Soft safety of order `k` implies soft safety of every order `j ≤ k`, since `‖p‖ ^ k ≤ ‖p‖ ^ j`
 for `‖p‖ ≤ 1`. -/
 theorem IsSoftSafe.of_le {O : Multiset V → X} (hO : IsSoftSafe k O) (hjk : j ≤ k) :
-    IsSoftSafe j O :=
-  fun s => (hO s).trans <| hjk.eq_or_lt.elim (fun h => h ▸ isBigO_refl _ _) fun h =>
-    (isLittleO_norm_pow_norm_pow h).isBigO
+    IsSoftSafe j O := by
+  obtain rfl | h := hjk.eq_or_lt
+  · exact hO
+  · exact fun s => (hO s).trans (isLittleO_norm_pow_norm_pow h).isBigO
 
 theorem isSoftSafe_const (k : ℕ) (x : X) : IsSoftSafe k (fun _ : Multiset V => x) :=
   fun _ => by simpa using isBigO_zero (fun p : V => ‖p‖ ^ k) (𝓝 0)
@@ -145,8 +146,7 @@ theorem IsSoftSafe.map₂ {O₁ : Multiset V → X} {O₂ : Multiset V → Y} {f
     rw [← hf₁, ← hf₂, sub_add_sub_cancel]
   have hO (u : V → X) (v : V → Y) : (fun p => f (u p) (v p)) =O[𝓝 0] fun p => ‖u p‖ * ‖v p‖ :=
     isBigO_of_le' (c := C) _ fun p => by
-      rw [norm_mul, norm_norm, norm_norm, ← mul_assoc]
-      exact hf _ _
+      simpa only [norm_mul, norm_norm, mul_assoc] using hf (u p) (v p)
   refine (IsBigO.add ((hO _ _).trans ?_) ((hO _ _).trans ?_)).congr_left e
   · simpa using (h₁ s).norm_left.mul (h₂.isBigO_one_cons s).norm_left
   · simpa using (isBigO_const_const ‖O₁ s‖ one_ne_zero (𝓝 (0 : V))).mul (h₂ s).norm_left
@@ -191,7 +191,8 @@ theorem isSoftSafe_one_sum_map (E : V →L[ℝ] X) : IsSoftSafe 1 (fun s => (s.m
 
 /-- The square `B P P` of the total momentum `P` of a final state under a continuous bilinear form
 `B` is soft safe of order `1`. -/
-theorem isSoftSafe_one_bilinear (B : V →L[ℝ] V →L[ℝ] ℝ) : IsSoftSafe 1 (fun s => B s.sum s.sum) :=
+theorem isSoftSafe_one_bilinear_multisetSum (B : V →L[ℝ] V →L[ℝ] ℝ) :
+    IsSoftSafe 1 (fun s => B s.sum s.sum) :=
   isSoftSafe_one_multisetSum.bilinear B isSoftSafe_one_multisetSum
 
 end Linear
@@ -201,7 +202,7 @@ on a finite-dimensional normed space of momenta. -/
 theorem isSoftSafe_one_invariantMassSq_of_finite [NormedAddCommGroup V] [NormedSpace ℝ V]
     [FiniteDimensional ℝ V] (g : LinearMap.BilinForm ℝ V) :
     IsSoftSafe 1 (invariantMassSq g) := fun s => by
-  simpa [invariantMassSq_def] using isSoftSafe_one_bilinear g.toContinuousBilinearMap s
+  simpa [invariantMassSq_def] using isSoftSafe_one_bilinear_multisetSum g.toContinuousBilinearMap s
 
 /-! ### Particle multiplicity and the leading-particle energy -/
 
@@ -229,8 +230,8 @@ theorem isSoftSafe_leadingEnergy {E : V → ℝ} (hE : E =O[𝓝 0] fun p => ‖
     IsSoftSafe k (leadingEnergy E) := fun s => by
   refine (isBigO_of_le _ fun p => ?_).trans hE
   have := abs_max_sub_max_le_abs (E p) 0 (leadingEnergy E s)
-  rwa [max_eq_right (leadingEnergy_nonneg E s), sub_zero, ← leadingEnergy_cons, ← Real.norm_eq_abs,
-    ← Real.norm_eq_abs] at this
+  rw [max_eq_right (leadingEnergy_nonneg E s), sub_zero, ← leadingEnergy_cons] at this
+  simpa only [Real.norm_eq_abs] using this
 
 /-- The leading-particle energy of a continuous linear energy functional is soft safe of order `1`,
 although for a nonzero functional it is not collinear safe (`not_isCollinearSafe_leadingEnergy`). -/
