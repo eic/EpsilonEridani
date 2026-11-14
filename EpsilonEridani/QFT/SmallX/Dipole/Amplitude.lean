@@ -153,7 +153,7 @@ def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y then 0 else 1
   simp [blackDisc, h]
 
 /-- The dipole S-matrix `1 - N` of the black disc is the identity kernel. -/
-@[simp] lemma one_sub_blackDisc :
+@[simp] lemma of_one_sub_blackDisc_eq_one :
     (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) => 1 - blackDisc x y) = 1 := by
   ext x y
   by_cases h : x = y <;> simp [h, Matrix.one_apply]
@@ -161,7 +161,7 @@ def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y then 0 else 1
 /-- The **black disc** is admissible: its S-matrix is the identity kernel. -/
 theorem isAdmissible_blackDisc : IsAdmissible blackDisc := by
   refine ⟨fun x => blackDisc_apply_self x, ?_, fun x y => ?_⟩
-  · rw [one_sub_blackDisc]
+  · rw [of_one_sub_blackDisc_eq_one]
     exact PosSemidef.one
   · by_cases h : x = y <;> simp [h]
 
