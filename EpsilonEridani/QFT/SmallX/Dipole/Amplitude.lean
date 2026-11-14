@@ -144,24 +144,24 @@ decidable computably. -/
 def blackDisc (x y : EuclideanSpace ℝ (Fin 2)) : ℝ := if x = y then 0 else 1
 
 /-- The black disc is colour transparent: a dipole of zero size does not scatter. -/
-@[simp] lemma blackDisc_apply_self (x : EuclideanSpace ℝ (Fin 2)) : blackDisc x x = 0 := by
+@[simp] lemma blackDisc_self (x : EuclideanSpace ℝ (Fin 2)) : blackDisc x x = 0 := by
   simp [blackDisc]
 
 /-- The black disc scatters maximally for every nonzero dipole size. -/
-@[simp] lemma blackDisc_apply_ne {x y : EuclideanSpace ℝ (Fin 2)} (h : x ≠ y) :
+@[simp] lemma blackDisc_of_ne {x y : EuclideanSpace ℝ (Fin 2)} (h : x ≠ y) :
     blackDisc x y = 1 := by
   simp [blackDisc, h]
 
 /-- The dipole S-matrix `1 - N` of the black disc is the identity kernel. -/
-@[simp] lemma of_one_sub_blackDisc_eq_one :
+@[simp] lemma one_sub_blackDisc_matrix_eq_one :
     (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) => 1 - blackDisc x y) = 1 := by
   ext x y
   by_cases h : x = y <;> simp [h, Matrix.one_apply]
 
 /-- The **black disc** is admissible: its S-matrix is the identity kernel. -/
 theorem isAdmissible_blackDisc : IsAdmissible blackDisc := by
-  refine ⟨fun x => blackDisc_apply_self x, ?_, fun x y => ?_⟩
-  · rw [of_one_sub_blackDisc_eq_one]
+  refine ⟨fun x => blackDisc_self x, ?_, fun x y => ?_⟩
+  · rw [one_sub_blackDisc_matrix_eq_one]
     exact PosSemidef.one
   · by_cases h : x = y <;> simp [h]
 
@@ -186,7 +186,7 @@ dipole size `‖x - y‖`. -/
 
 /-- The Golec-Biernat-Wüsthoff amplitude is colour transparent: a dipole of zero size does not
 scatter. -/
-@[simp] lemma golecBiernatWusthoff_apply_self (Qs : ℝ) (x : EuclideanSpace ℝ (Fin 2)) :
+@[simp] lemma golecBiernatWusthoff_self (Qs : ℝ) (x : EuclideanSpace ℝ (Fin 2)) :
     golecBiernatWusthoff Qs x x = 0 := by
   simp [golecBiernatWusthoff]
 
@@ -195,7 +195,7 @@ its S-matrix is a Gaussian kernel in the dipole size `‖x - y‖`, hence positi
 and takes values in `(0, 1]`. -/
 theorem isAdmissible_golecBiernatWusthoff (Qs : ℝ) :
     IsAdmissible (golecBiernatWusthoff Qs) := by
-  refine ⟨fun x => golecBiernatWusthoff_apply_self Qs x, ?_, fun x y => ?_⟩
+  refine ⟨fun x => golecBiernatWusthoff_self Qs x, ?_, fun x y => ?_⟩
   · -- TauCeti's Gaussian kernel over `ℂ`; `Matrix.of` is the identity on the underlying
     -- function, so its positive semidefiniteness is that of this matrix.
     have hG : (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) =>
