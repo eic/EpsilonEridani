@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Joseph Tooby-Smith
+Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
@@ -37,19 +37,14 @@ DGLAP equation becomes, for each value of the Mellin index, an ordinary differen
 
 ## Which transform
 
-Mathlib's `mellin` (`Mathlib/Analysis/MellinTransform.lean`) integrates over `Set.Ioi 0` and would
-supply convergence and analyticity in the complex index for free, at the cost of extending each
-distribution by zero to `(0, ∞)`. No mathlib source was available in the environment in which this
-module was written, so its exact signature and hypotheses could not be checked; rather than guess
-them, the transform here is defined from scratch on the DIS domain. The intended bridge, to be
-added once the signature can be confirmed, is
-
-```
-mellinDis f N = mellin (fun t => if t ≤ 1 then (f t : ℂ) else 0) N
-```
-
-from which analyticity of `mellinDis` in `N` on the convergence strip would follow. Until then,
-analyticity in `N` is *not* available from this module.
+Mathlib's `mellin` (`Mathlib/Analysis/MellinTransform.lean`) integrates over `Set.Ioi 0`, at the
+cost of extending each distribution by zero to `(0, ∞)`. The transform here is defined directly on
+the DIS domain. `EpsilonEridani.QFT.Factorization.Convolution.Strip` supplies the bridge
+`mellinDis f N = mellin (Set.indicator (Set.Ioc 0 1) fun x => (f x : ℂ)) N`. It also
+characterises convergence at `N` as `f ∈ L¹((0, 1], x ^ (Re N - 1) dx)` and shows that it
+propagates to larger `Re N`, so that the real points of convergence form an upper set. For `f`
+locally integrable on `(0, 1]` with `f x = O(x ^ (-b))` as `x → 0⁺`, it proves convergence and
+holomorphy on the half-plane `b < Re N`.
 
 ## Scope
 
@@ -98,6 +93,17 @@ the convolution theorem is a genuine constraint and not a formality. -/
 def MellinDisConvergent (f : ℝ → ℝ) (N : ℂ) : Prop :=
   MeasureTheory.IntegrableOn
     (fun x : ℝ => (x : ℂ) ^ (N - 1) * (f x : ℂ)) (Set.Ioc (0 : ℝ) 1)
+
+/-- `MellinDisConvergent` unfolded: integrability of the complex integrand on `(0, 1]`. -/
+theorem mellinDisConvergent_def {f : ℝ → ℝ} {N : ℂ} :
+    MellinDisConvergent f N ↔
+      MeasureTheory.IntegrableOn (fun x : ℝ => (x : ℂ) ^ (N - 1) * (f x : ℂ)) (Set.Ioc (0 : ℝ) 1) :=
+  (Iff.rfl)
+
+/-- `mellinDis` unfolded: the integral of the complex integrand over `(0, 1]`. -/
+theorem mellinDis_def {f : ℝ → ℝ} {N : ℂ} :
+    mellinDis f N = ∫ x in Set.Ioc (0 : ℝ) 1, (x : ℂ) ^ (N - 1) * (f x : ℂ) :=
+  (rfl)
 
 /-- The Mellin transform of the zero distribution vanishes. -/
 lemma mellinDis_zero (N : ℂ) : mellinDis (fun _ => 0) N = 0 := by
@@ -156,10 +162,6 @@ lemma mellinDis_natCast_add_one (f : ℝ → ℝ) (n : ℕ) :
   have h : (fun x : ℝ => (x : ℂ) ^ (((n : ℂ) + 1) - 1) * (f x : ℂ))
       = fun x : ℝ => ((x ^ n * f x : ℝ) : ℂ) := by
     funext x
-    -- TODO(task/e1-mellin-convolution): `add_sub_cancel_right : a + b - b = a` and
-    -- `Complex.cpow_natCast : x ^ (n : ℂ) = x ^ n` are the two rewrites used here; both have had
-    -- different names in earlier mathlib versions (`add_sub_cancel`, `Complex.cpow_nat_cast`)
-    -- and neither could be checked against source at this pin.
     rw [add_sub_cancel_right, Complex.cpow_natCast]
     push_cast
     ring
@@ -170,10 +172,6 @@ lemma mellinDis_natCast_add_one_eq_ofReal (f : ℝ → ℝ) (n : ℕ) :
     mellinDis f ((n : ℂ) + 1)
       = ((∫ x in Set.Ioc (0 : ℝ) 1, x ^ n * f x : ℝ) : ℂ) := by
   rw [mellinDis_natCast_add_one]
-  -- TODO(task/e1-mellin-convolution): the lemma pulling `Complex.ofReal` out of a Bochner
-  -- integral is `integral_ofReal` (it is unconditional, both sides being `0` off
-  -- the integrable case); at some mathlib versions it is stated for `RCLike` and may need to be
-  -- reached as `RCLike.ofReal_integral` or with the target field supplied explicitly.
   exact integral_ofReal
 
 /-- **Bridge to the repository's integer moments.** `mellinMoment f n` is
@@ -233,9 +231,6 @@ lemma integral_mellinIntegrand_eq (C f : ℝ → ℝ) (N : ℂ) (x : ℝ) :
     (∫ z in Set.Ioc (0 : ℝ) 1, mellinIntegrand C f N x z)
       = (x : ℂ) ^ (N - 1) * ((convolveAt (collinearKernel C) f x : ℝ) : ℂ) := by
   simp only [mellinIntegrand]
-  -- TODO(task/e1-mellin-convolution): `MeasureTheory.integral_const_mul` is the `RCLike`-valued
-  -- lemma `∫ a, r * f a = r * ∫ a, f a`; if it is unavailable at this pin the same step is
-  -- `MeasureTheory.integral_smul` after `← smul_eq_mul`.
   rw [MeasureTheory.integral_const_mul, integral_complex_ofReal,
     convolveAt_eq_integral_Ioc]
 
@@ -250,14 +245,8 @@ assumption bundle is enough to state and use moment-space additivity downstream.
 lemma MellinConvolutionAssumptions.convolutionConvergent {C f : ℝ → ℝ} {N : ℂ}
     (h : MellinConvolutionAssumptions C f N) :
     MellinDisConvergent (convolveAt (collinearKernel C) f) N := by
-  change MeasureTheory.IntegrableOn
-    (fun x : ℝ => (x : ℂ) ^ (N - 1) * ((convolveAt (collinearKernel C) f x : ℝ) : ℂ))
-    (Set.Ioc (0 : ℝ) 1)
+  rw [mellinDisConvergent_def]
   rw [← funext (integral_mellinIntegrand_eq C f N)]
-  -- TODO(task/e1-mellin-convolution): `MeasureTheory.Integrable.integral_prod_left` of
-  -- `Mathlib/MeasureTheory/Constructions/Prod/Integral.lean` states that integrability of
-  -- `uncurry F` on `μ.prod ν` gives integrability of `fun x => ∫ y, F x y ∂ν` for `μ`; the name
-  -- could not be checked against source at this pin.
   exact h.jointIntegrable.integral_prod_left
 
 /-- The scaling step of the convolution theorem: for `z` in the physical region, substituting
@@ -338,9 +327,6 @@ theorem mellinDis_convolveAt (C f : ℝ → ℝ) (N : ℂ)
     (h : MellinConvolutionAssumptions C f N) :
     mellinDis (convolveAt (collinearKernel C) f) N = mellinDis C N * mellinDis f N := by
   rw [mellinDis_convolveAt_eq_iteratedIntegral]
-  -- TODO(task/e1-mellin-convolution): `MeasureTheory.integral_integral_swap` takes
-  -- `Integrable (Function.uncurry F) (μ.prod ν)`, which is exactly `h.jointIntegrable`; the name
-  -- could not be checked against source at this pin.
   rw [MeasureTheory.integral_integral_swap h.jointIntegrable]
   have hinner : ∀ z ∈ Set.Ioc (0 : ℝ) 1,
       (∫ x in Set.Ioc (0 : ℝ) 1, mellinIntegrand C f N x z)
@@ -348,8 +334,7 @@ theorem mellinDis_convolveAt (C f : ℝ → ℝ) (N : ℂ)
     fun z hz => integral_mellinIntegrand_of_mem C f N hz.1 hz.2
   rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioc hinner,
     MeasureTheory.integral_mul_const]
-  have hf : (∫ z in Set.Ioc (0 : ℝ) 1, (z : ℂ) ^ (N - 1) * (f z : ℂ)) = mellinDis f N := rfl
-  rw [hf, mul_comm]
+  rw [← mellinDis_def, mul_comm]
 
 /-!
 
