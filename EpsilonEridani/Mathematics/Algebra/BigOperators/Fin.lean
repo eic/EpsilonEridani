@@ -15,11 +15,12 @@ a telescoping product of factors `aᵢ Aᵢ aᵢ₊₁⁻¹`, and the inverse of
 the inverses in reversed order.
 
 Both are needed for traced products of Wilson lines. The telescoping identity turns a chain of
-gauge-transformed factors `Ωᵢ Aᵢ Ωᵢ₊₁⁻¹` into the single conjugation `Ω₀ (∏ᵢ Aᵢ) Ωₖ⁻¹` of the
-product of the `Aᵢ`, which gives the gauge invariance of the Wilson-line correlators. The reversal
-identity identifies the product at reversed indices with the inverse of the product, which for
-unitary factors is its Hermitian conjugate, and gives their invariance under reversal of the
-order of the arguments.
+gauge-transformed factors `Ωᵢ Aᵢ Ωᵢ₊₁⁻¹` into the single two-sided factor `Ω₀ (∏ᵢ Aᵢ) Ωₖ⁻¹`, a
+conjugation of the product of the `Aᵢ` when the two ends coincide, as they do for the cyclic
+Wilson-line trace; this gives the gauge invariance of the Wilson-line correlators. The reversal
+identity identifies the product of the inverses at reversed indices with the inverse of the
+product, which for unitary factors is its Hermitian conjugate, and gives their invariance under
+reversal of the order of the arguments.
 
 ## Main results
 

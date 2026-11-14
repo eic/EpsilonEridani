@@ -36,9 +36,12 @@ by configuration, before any averaging, and use only unitarity of the Wilson lin
   a gauge transformation that differs between `x` and `y` there, the two light-like lines would
   have to be joined by transverse gauge links at `x⁺ = ±∞`, which this operator omits.
 
-## Main results
+## Main definitions
 
 - `SmallX.dipoleS`: the dipole operator of a Wilson-line configuration.
+
+## Main results
+
 - `SmallX.dipoleS_eq_multipoleS`: the dipole operator is the two-point correlator.
 - `SmallX.multipoleS_fin_one`: the two-point correlator is the dipole operator.
 - `SmallX.dipoleS_self`: colour transparency, `S U x x = 1`.
