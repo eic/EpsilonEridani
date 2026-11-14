@@ -404,8 +404,13 @@ theorem mellinMoment_convolveAt {Flavor : Type} (C : ℝ → ℝ)
 The density `x ^ (a - 1) (1 - x) ^ (b - 1) / Β(a, b)` of the Beta distribution,
 `ProbabilityTheory.betaPDFReal a b`, is the standard shape of a parton or lepton density at the
 endpoints of `(0,1]`. Its Mellin transform is a ratio of Gamma functions, on the half plane
-`1 - a < Re N` where it converges. At `N = 1` the ratio is one, which is the normalisation of the
-density.
+`1 - a < Re N` where it converges (`mellinDis_betaPDFReal`). At `N = 1` the ratio is one, which
+is the normalisation of the density (`mellinDis_betaPDFReal_one`).
+
+`mellinDis_betaPDFReal` is the complex-index version of TauCeti's
+`TauCeti.Probability.integral_pow_betaMeasure`, which gives the natural raw moments of the Beta
+distribution as the same quotient of Gamma functions; the proof follows the same route through
+Euler's beta integral.
 
 -/
 
@@ -460,6 +465,15 @@ theorem mellinDis_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ} (hN : 0 < N.re 
     show N + a - 1 + b = N + a + b - 1 by ring]
   push_cast
   field_simp
+
+/-- **The Beta density is normalised**: its Mellin transform at `N = 1` is one. -/
+theorem mellinDis_betaPDFReal_one {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    mellinDis (ProbabilityTheory.betaPDFReal a b) 1 = 1 := by
+  have hΓa : Complex.Gamma a ≠ 0 := Complex.Gamma_ne_zero_of_re_pos (by simpa using ha)
+  have hΓab : Complex.Gamma (a + b) ≠ 0 :=
+    Complex.Gamma_ne_zero_of_re_pos (by simpa using add_pos ha hb)
+  rw [mellinDis_betaPDFReal hb (by simpa using ha), add_sub_cancel_left,
+    show (1 : ℂ) + a + b - 1 = a + b by ring, div_self (mul_ne_zero hΓa hΓab)]
 
 end Convolution
 end Factorization
