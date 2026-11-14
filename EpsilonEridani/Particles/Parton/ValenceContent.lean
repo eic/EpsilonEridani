@@ -5,6 +5,7 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
+public import EpsilonEridani.Particles.Meson.Basic
 public import EpsilonEridani.Particles.Parton.Species
 
 /-!
@@ -26,6 +27,15 @@ constituents.
 The pion triplet is worked out as an instance: `pionMultiplet` is `π⁺ = u dbar`, `π⁻ = d ubar` and
 the flavour-neutral `π⁰`.
 
+The pion triplet is indexed by its own two-flavour type `PionFlavor` rather than by the three light
+flavours `Meson.LightFlavor`, because the pions form an isospin multiplet of the up and the down
+flavour: the isospin reflection `PionFlavor.swap` is an involution exchanging the two, and every
+flavour of `PionFlavor` is a valence flavour of each charged pion, which fails for the strange
+flavour of `Meson.LightFlavor`. The hadron type `Pion` labels the three pions, including the
+neutral pion, which is not a `Meson.PseudoscalarMeson` with a single valence quark and antiquark.
+The two encodings are connected by `PionFlavor.toLightFlavor`, under which the valence content of
+the charged pions is that of `Meson.piPlus` and `Meson.piMinus`.
+
 ## Main definitions
 
 * `EpsilonEridani.Particles.Parton.IsValenceFlavor`: exactly one of the quark and the antiquark of a
@@ -34,6 +44,7 @@ the flavour-neutral `π⁰`.
   and valence content.
 * `EpsilonEridani.Particles.Parton.Pion`, `EpsilonEridani.Particles.Parton.PionFlavor` and
   `EpsilonEridani.Particles.Parton.pionMultiplet`: the pion triplet.
+* `EpsilonEridani.Particles.Parton.PionFlavor.toLightFlavor`: the pion flavours as light flavours.
 
 ## Main statements
 
@@ -50,6 +61,8 @@ the flavour-neutral `π⁰`.
 * `isValenceFlavor_pion_plus`, `isValenceFlavor_pion_minus` and `not_isValenceFlavor_pion_zero`:
   every light flavour is a valence flavour of each charged pion and none is a valence flavour of
   the neutral pion.
+* `Pion.image_map_valence_plus` and `Pion.image_map_valence_minus`: the valence content of the
+  charged pions, read as light flavours, is that of `Meson.piPlus` and `Meson.piMinus`.
 -/
 
 public section
@@ -115,6 +128,7 @@ end IsValenceFlavor
 antiparticle map `conj` on the hadrons and the valence content `valence h`, the finite set of
 parton species that are valence constituents of `h`. The two are tied by `mem_valence_conj`: the
 valence constituents of the antiparticle are the antiparticles of the valence constituents. -/
+@[ext]
 structure HadronMultiplet (Hadron Flavor : Type) where
   /-- The antiparticle of a hadron of the multiplet. -/
   conj : Hadron → Hadron
@@ -194,6 +208,10 @@ inductive PionFlavor where
   | down
   deriving DecidableEq
 
+instance : Fintype PionFlavor where
+  elems := {.up, .down}
+  complete i := by cases i <;> simp
+
 /-- The isospin reflection of the light flavours: it exchanges the up and the down flavour. -/
 def PionFlavor.swap : PionFlavor → PionFlavor
   | up => down
@@ -212,6 +230,24 @@ theorem PionFlavor.swap_involutive : Function.Involutive swap := by
   intro i
   cases i <;> rfl
 
+/-- The pion flavours as light flavours: the up and the down flavour, leaving out the strange
+flavour. -/
+def PionFlavor.toLightFlavor : PionFlavor → Meson.LightFlavor
+  | up => .u
+  | down => .d
+
+@[simp]
+theorem PionFlavor.toLightFlavor_up : toLightFlavor .up = .u :=
+  (rfl)
+
+@[simp]
+theorem PionFlavor.toLightFlavor_down : toLightFlavor .down = .d :=
+  (rfl)
+
+theorem PionFlavor.toLightFlavor_injective : Function.Injective toLightFlavor := by
+  intro i j h
+  cases i <;> cases j <;> first | rfl | cases h
+
 /-- The pion triplet. -/
 inductive Pion where
   /-- The positive pion `u dbar`. -/
@@ -220,6 +256,11 @@ inductive Pion where
   | zero
   /-- The negative pion `d ubar`. -/
   | minus
+  deriving DecidableEq
+
+instance : Fintype Pion where
+  elems := {.plus, .zero, .minus}
+  complete h := by cases h <;> simp
 
 /-- The antiparticle of a pion: the charged pions are exchanged and the neutral pion is its own
 antiparticle. -/
@@ -264,6 +305,20 @@ theorem Pion.valence_zero :
 @[simp]
 theorem Pion.valence_minus : valence .minus = {.quark .down, .antiquark .up} :=
   (rfl)
+
+/-- The valence content of the positive pion, read as light flavours, is the valence quark and the
+valence antiquark of `Meson.piPlus`. -/
+theorem Pion.image_map_valence_plus :
+    (valence .plus).image (Species.map PionFlavor.toLightFlavor)
+      = {.quark Meson.piPlus.valenceQuark, .antiquark Meson.piPlus.valenceAntiquark} := by
+  simp [Finset.image_insert, Species.map_quark, Species.map_antiquark]
+
+/-- The valence content of the negative pion, read as light flavours, is the valence quark and the
+valence antiquark of `Meson.piMinus`. -/
+theorem Pion.image_map_valence_minus :
+    (valence .minus).image (Species.map PionFlavor.toLightFlavor)
+      = {.quark Meson.piMinus.valenceQuark, .antiquark Meson.piMinus.valenceAntiquark} := by
+  simp [Finset.image_insert, Species.map_quark, Species.map_antiquark]
 
 /-- The pion triplet as a hadron multiplet. -/
 def pionMultiplet : HadronMultiplet Pion PionFlavor where
