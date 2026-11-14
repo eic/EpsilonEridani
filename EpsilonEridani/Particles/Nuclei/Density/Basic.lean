@@ -33,7 +33,7 @@ distance `‖x‖` from the origin of `Space`, and proves each integrable and no
 * the hard sphere `3A / (4π R³) · 1_{r ≤ R}`;
 * the Gaussian `A (π R²)^{-3/2} exp(-r²/R²)`;
 * the two-parameter Fermi, or Woods–Saxon, profile `ρ₀ / (1 + exp((r - R)/a))`, with
-  half-density radius `R` (where the profile equals `ρ₀ / 2`) and surface thickness `a`. The
+  half-density radius `R` (where the profile equals `ρ₀ / 2`) and surface diffuseness `a`. The
   parameter `ρ₀`, conventionally called the central density, is, for `0 < a`, the plateau value
   the profile approaches deep inside the nucleus, `r - R ≪ -a`; it equals the density at the
   origin only in the sharp-surface limit `a / R → 0`. It is fixed by the normalisation. The
@@ -57,7 +57,7 @@ All declarations live in the namespace `EpsilonEridani.Particles.Nuclei`.
 
 * `integrable_hardSphereDensity_norm`, `integrable_gaussianDensity_norm` and
   `integrable_woodsSaxonDensity_norm`: the three profiles are integrable over `ℝ³` (the last for
-  every positive surface thickness).
+  every positive surface diffuseness).
 * `integral_hardSphereDensity_norm` and `integral_gaussianDensity_norm`: the two closed-form
   profiles integrate to their normalisation parameter.
 * `integral_woodsSaxonDensity_norm_woodsSaxonCentralDensity`: for `0 < a`, the Woods–Saxon
@@ -87,6 +87,10 @@ open MeasureTheory Real Metric Set
 
 namespace Nucleus
 
+/-- The mass number of a nucleus is positive as a real number. -/
+lemma cast_massNumber_pos (nuc : Nucleus) : (0 : ℝ) < nuc.massNumber :=
+  Nat.cast_pos.2 nuc.massNumber_pos
+
 /-- A coordinate-space density profile of the nucleus `nuc`: a non-negative nucleon number density
 on physical space whose integral is the mass number. -/
 @[ext]
@@ -108,7 +112,7 @@ lemma integrable : Integrable ρ.density := by
   -- integrability.
   refine Integrable.of_integral_ne_zero ?_
   rw [ρ.integral_density]
-  exact_mod_cast nuc.massNumber_pos.ne'
+  exact nuc.cast_massNumber_pos.ne'
 
 -- The normalisation law is a simp normal form: `simp` reduces the integral of a profile's
 -- density to the mass number.
@@ -169,8 +173,7 @@ theorem integrable_hardSphereDensity_norm (m R : ℝ) :
 theorem integral_hardSphereDensity_norm (m : ℝ) {R : ℝ} (hR : 0 < R) :
     ∫ x : Space, hardSphereDensity m R ‖x‖ = m := by
   have hV : volume.real (closedBall (0 : Space) R) = R ^ 3 * (4 / 3 * π) := by
-    simp [measureReal_def, Measure.addHaar_closedBall _ _ hR.le, Space.finrank_eq_dim,
-      Space.volume_metricBall_three, ENNReal.toReal_ofReal, pow_nonneg hR.le, pi_pos.le]
+    simp [Measure.addHaar_real_closedBall _ _ hR.le, Space.finrank_eq_dim]
   rw [hardSphereDensity_norm_eq_indicator, integral_indicator_const _ measurableSet_closedBall, hV,
     smul_eq_mul]
   field_simp
@@ -224,10 +227,10 @@ theorem integrable_gaussianDensity_norm (m R : ℝ) :
 
 /-- The two-parameter Fermi, or Woods–Saxon, profile `ρ₀ / (1 + exp((r - R)/a))`, written as
 `ρ₀` times the logistic function `Real.sigmoid`. Here `R` is the half-density radius, where the
-profile equals `ρ₀ / 2`, and `a` the surface thickness. The parameter `ρ₀`, conventionally called
-the central density, is, for `0 < a`, the plateau value the profile approaches for
-`r - R ≪ -a`; it equals the density at the origin only in the sharp-surface limit
-`a / R → 0`. -/
+profile equals `ρ₀ / 2`, and `a` the surface diffuseness (the 90%–10% surface thickness is
+`4 a log 3`). The parameter `ρ₀`, conventionally called the central density, is, for `0 < a`, the
+plateau value the profile approaches for `r - R ≪ -a`; it equals the density at the origin only
+in the sharp-surface limit `a / R → 0`. -/
 def woodsSaxonDensity (ρ₀ R a r : ℝ) : ℝ :=
   ρ₀ * Real.sigmoid ((R - r) / a)
 
@@ -257,7 +260,7 @@ lemma woodsSaxonDensity_pos {ρ₀ : ℝ} (hρ₀ : 0 < ρ₀) (R a r : ℝ) :
   rw [woodsSaxonDensity_def]
   exact mul_pos hρ₀ (Real.sigmoid_pos _)
 
-/-- The Woods–Saxon profile is continuous in the radius, for every surface thickness. -/
+/-- The Woods–Saxon profile is continuous in the radius, for every surface diffuseness. -/
 lemma continuous_woodsSaxonDensity (ρ₀ R a : ℝ) : Continuous (woodsSaxonDensity ρ₀ R a) :=
   continuous_const.mul
     (continuous_sigmoid.comp ((continuous_const.sub continuous_id).div_const a))
@@ -274,7 +277,7 @@ lemma woodsSaxonDensity_le_mul_exp {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r :
   gcongr
   exact Real.sigmoid_le_exp _
 
-/-- The Woods–Saxon profile is integrable over space whenever the surface thickness is
+/-- The Woods–Saxon profile is integrable over space whenever the surface diffuseness is
 positive. -/
 theorem integrable_woodsSaxonDensity_norm (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a) :
     Integrable fun x : Space => woodsSaxonDensity ρ₀ R a ‖x‖ := by
@@ -327,7 +330,7 @@ lemma integral_woodsSaxonDensity_norm_eq_mul (ρ₀ R a : ℝ) :
   exact integral_const_mul _ _
 
 /-- For `0 < a`, the value of the parameter `ρ₀` (the central density) that normalises the
-Woods–Saxon profile with half-density radius `R` and surface thickness `a` to `m` (see
+Woods–Saxon profile with half-density radius `R` and surface diffuseness `a` to `m` (see
 `integral_woodsSaxonDensity_norm_eq_iff`); the value is junk otherwise. -/
 def woodsSaxonCentralDensity (m R a : ℝ) : ℝ :=
   m / woodsSaxonUnitDensityIntegral R a
@@ -367,36 +370,36 @@ namespace Nucleus.DensityProfile
 variable (nuc : Nucleus)
 
 /-- The hard-sphere density profile of `nuc` with radius `R > 0`. -/
-def hardSphere {R : ℝ} (hR : 0 < R) : DensityProfile nuc where
+def hardSphere (R : ℝ) (hR : 0 < R) : DensityProfile nuc where
   density x := hardSphereDensity nuc.massNumber R ‖x‖
   density_nonneg _ := hardSphereDensity_nonneg (Nat.cast_nonneg _) hR.le _
   integral_density := integral_hardSphereDensity_norm _ hR
 
 /-- The Gaussian density profile of `nuc` with range `R ≠ 0`. -/
-def gaussian {R : ℝ} (hR : R ≠ 0) : DensityProfile nuc where
+def gaussian (R : ℝ) (hR : R ≠ 0) : DensityProfile nuc where
   density x := gaussianDensity nuc.massNumber R ‖x‖
   density_nonneg _ := gaussianDensity_nonneg (Nat.cast_nonneg _) _ _
   integral_density := integral_gaussianDensity_norm _ hR
 
-/-- The Woods–Saxon density profile of `nuc` with half-density radius `R` and surface thickness
+/-- The Woods–Saxon density profile of `nuc` with half-density radius `R` and surface diffuseness
 `a > 0`, with its parameter `ρ₀` fixed by the normalisation. -/
-def woodsSaxon (R : ℝ) {a : ℝ} (ha : 0 < a) : DensityProfile nuc where
+def woodsSaxon (R a : ℝ) (ha : 0 < a) : DensityProfile nuc where
   density x := woodsSaxonDensity (woodsSaxonCentralDensity nuc.massNumber R a) R a ‖x‖
-  density_nonneg x := woodsSaxonDensity_nonneg
-    (woodsSaxonCentralDensity_pos (by exact_mod_cast nuc.massNumber_pos) R ha).le _ _ _
+  density_nonneg _ := woodsSaxonDensity_nonneg
+    (woodsSaxonCentralDensity_pos nuc.cast_massNumber_pos R ha).le _ _ _
   integral_density := integral_woodsSaxonDensity_norm_woodsSaxonCentralDensity _ R ha
 
 -- The pointwise projections are deliberately not simp lemmas: as post-order rewrites they
 -- would fire under the integral binder before the unconditional normalisation law
 -- `integral_density` can match at the root.
-lemma hardSphere_density {R : ℝ} (hR : 0 < R) (x : Space) :
-    (hardSphere nuc hR).density x = hardSphereDensity nuc.massNumber R ‖x‖ := (rfl)
+lemma hardSphere_density (R : ℝ) (hR : 0 < R) (x : Space) :
+    (hardSphere nuc R hR).density x = hardSphereDensity nuc.massNumber R ‖x‖ := (rfl)
 
-lemma gaussian_density {R : ℝ} (hR : R ≠ 0) (x : Space) :
-    (gaussian nuc hR).density x = gaussianDensity nuc.massNumber R ‖x‖ := (rfl)
+lemma gaussian_density (R : ℝ) (hR : R ≠ 0) (x : Space) :
+    (gaussian nuc R hR).density x = gaussianDensity nuc.massNumber R ‖x‖ := (rfl)
 
-lemma woodsSaxon_density (R : ℝ) {a : ℝ} (ha : 0 < a) (x : Space) :
-    (woodsSaxon nuc R ha).density x =
+lemma woodsSaxon_density (R a : ℝ) (ha : 0 < a) (x : Space) :
+    (woodsSaxon nuc R a ha).density x =
       woodsSaxonDensity (woodsSaxonCentralDensity nuc.massNumber R a) R a ‖x‖ := (rfl)
 
 end Nucleus.DensityProfile
