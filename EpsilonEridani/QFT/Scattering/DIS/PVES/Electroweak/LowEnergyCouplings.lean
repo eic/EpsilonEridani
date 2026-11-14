@@ -166,6 +166,7 @@ theorem leptonWeakCharge_def : ℓ.leptonWeakCharge = 2 * ℓ.c1 ℓ :=
   (rfl)
 
 /-- The lepton weak charge is four times the product of the lepton's axial and vector couplings. -/
+@[simp]
 theorem leptonWeakCharge_eq_four_mul_gA_mul_gV : ℓ.leptonWeakCharge = 4 * ℓ.gA * ℓ.gV := by
   rw [leptonWeakCharge_def, c1_def]
   ring
