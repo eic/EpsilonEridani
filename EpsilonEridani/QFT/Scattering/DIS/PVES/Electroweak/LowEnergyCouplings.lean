@@ -11,12 +11,13 @@ public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Couplings
 # The parity-violating lepton-fermion couplings `C₁` and `C₂` and the weak charges
 
 At momentum transfer small compared with the `Z` mass, `Z` exchange between a lepton `ℓ` and a
-fermion `f` contracts to a four-fermion contact interaction. Its parity-violating part is, in the
-normalisation of the Particle Data Group,
+fermion `f` contracts to a four-fermion contact interaction. In the normalisation of the Particle
+Data Group, its parity-violating part is
 
-`(G_F / √2) [C₁ (ℓ̄ γ^μ γ⁵ ℓ)(f̄ γ_μ f) + C₂ (ℓ̄ γ^μ ℓ)(f̄ γ_μ γ⁵ f)]`,
+`-L_PV = (G_F / √2) [C₁ (ℓ̄ γ^μ γ⁵ ℓ)(f̄ γ_μ f) + C₂ (ℓ̄ γ^μ ℓ)(f̄ γ_μ γ⁵ f)]`,
 
-with
+where `L_PV` is the parity-violating part of the effective Lagrangian density (so the right-hand
+side is the corresponding interaction Hamiltonian density), with
 
 `C₁ = 2 g_A^ℓ g_V^f` and `C₂ = 2 g_V^ℓ g_A^f`,
 
@@ -49,7 +50,8 @@ all are built from `C₁`.
   chiral basis, `C₁ + C₂ = 4 (g_L^ℓ g_L^f - g_R^ℓ g_R^f)` and
   `C₁ - C₂ = 4 (g_L^ℓ g_R^f - g_R^ℓ g_L^f)`.
 * `FermionNeutralCurrentCouplings.c1_ofQuantumNumbers_left`: `C₁` depends on the lepton only
-  through its weak isospin `T³`, not through its charge or `sin²θ_W`.
+  through its weak isospin `T³`, not through the lepton's charge or its `sin²θ_W` argument; any
+  `sin²θ_W` dependence of `C₁` comes from the fermion's vector coupling `g_V^f`.
 * `smTreeLevelCouplings_c1Up` and its three companions: the Standard Model
   values `C_{1u} = -1/2 + (4/3) sin²θ_W`, `C_{1d} = 1/2 - (2/3) sin²θ_W`,
   `C_{2u} = -1/2 + 2 sin²θ_W`, `C_{2d} = 1/2 - 2 sin²θ_W`.
@@ -121,16 +123,16 @@ theorem c1_sub_c2 : ℓ.c1 f - ℓ.c2 f = 4 * (ℓ.gL * f.gR - ℓ.gR * f.gL) :=
   ring
 
 /-- The coupling `C₁` of a lepton with quantum numbers `(t3, q)` is `2 T³ g_V^f`. It does not
-depend on the lepton's charge or on `sin²θ_W`, because the lepton enters through its axial
-coupling. -/
+depend on the lepton's charge `q` or on the lepton's `s2` argument, because the lepton enters
+through its axial coupling; the `sin²θ_W` dependence of `C₁` is entirely in `f.gV`. -/
 @[simp]
 theorem c1_ofQuantumNumbers_left (t3 q s2 : ℝ) :
     (ofQuantumNumbers t3 q s2).c1 f = 2 * t3 * f.gV := by
   rw [c1_def, ofQuantumNumbers_gA]
 
 /-- The coupling `C₂` of a fermion with quantum numbers `(t3, q)` is `2 g_V^ℓ T³`. It does not
-depend on the fermion's charge or on `sin²θ_W`, because the fermion enters through its axial
-coupling. -/
+depend on the fermion's charge `q` or on the fermion's `s2` argument, because the fermion enters
+through its axial coupling; the `sin²θ_W` dependence of `C₂` is entirely in `ℓ.gV`. -/
 @[simp]
 theorem c2_ofQuantumNumbers_right (t3 q s2 : ℝ) :
     ℓ.c2 (ofQuantumNumbers t3 q s2) = 2 * ℓ.gV * t3 := by
@@ -156,7 +158,7 @@ This `+2 C₁` convention is the lepton one only. It is the opposite sign to the
 hadronic charges `NeutralCurrentCouplings.protonWeakCharge` and
 `NeutralCurrentCouplings.neutronWeakCharge` follow, so for a quark coupling pair this is not the
 quark weak charge of that convention. With these conventions the tree-level electron and proton
-weak charges are equal. -/
+weak charges are equal (`smTreeLevelCouplings_protonWeakCharge_eq_electron_leptonWeakCharge`). -/
 def leptonWeakCharge : ℝ := 2 * ℓ.c1 ℓ
 
 /-- The lepton weak charge unfolded. -/
@@ -315,12 +317,19 @@ theorem smTreeLevelCouplings_electron_leptonWeakCharge (s2 : ℝ) :
     c1_ofQuantumNumbers_electron]
   ring
 
-/-- At tree level the proton weak charge is `1 - 4 sin²θ_W`, the same as the electron's. -/
+/-- At tree level the proton weak charge is `1 - 4 sin²θ_W`, the same as the electron's
+(`smTreeLevelCouplings_protonWeakCharge_eq_electron_leptonWeakCharge`). -/
 @[simp]
 theorem smTreeLevelCouplings_protonWeakCharge (s2 : ℝ) :
     (smTreeLevelCouplings s2).protonWeakCharge = 1 - 4 * s2 := by
   rw [protonWeakCharge_def, smTreeLevelCouplings_c1Up, smTreeLevelCouplings_c1Down]
   ring
+
+/-- At tree level the proton and electron weak charges coincide. -/
+theorem smTreeLevelCouplings_protonWeakCharge_eq_electron_leptonWeakCharge (s2 : ℝ) :
+    (smTreeLevelCouplings s2).protonWeakCharge =
+      (smTreeLevelCouplings s2).electron.leptonWeakCharge := by
+  rw [smTreeLevelCouplings_protonWeakCharge, smTreeLevelCouplings_electron_leptonWeakCharge]
 
 /-- **The neutron weak charge is `-1`, independently of the weak-mixing angle.** The
 `sin²θ_W` dependence of `C_{1u}` and `C_{1d}` cancels in the combination `C_{1u} + 2 C_{1d}`,
