@@ -5,22 +5,21 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
-# Products from lists
+# Products of lists of functions on `Fin n` in a group
 
-`Mathlib.Algebra.BigOperators.Group.List.Basic` proves the basic identities for `List.prod` in
-a group. This file sits at the path mirroring that module and extends it with the telescoping
-identity for a product of conjugations. Everything here is general algebra, mentioning no type
-of this repository, so the file is kept in the upstream `List` namespace with the upstream
-module as its first import: it is PhyslibAlpha-eligible, and the whole file can move once it
-has landed upstream.
+Two identities for the product of a list `List.ofFn f` in a (not necessarily commutative) group:
+a telescoping product of factors `aᵢ Aᵢ aᵢ₊₁⁻¹`, and the inverse of a product as the product of
+the inverses in reversed order.
 
 ## Main results
 
 - `List.prod_ofFn_mul_mul_inv`: a product `∏ᵢ aᵢ Aᵢ (aᵢ₊₁)⁻¹` telescopes to
   `a₀ (∏ᵢ Aᵢ) (a (Fin.last k))⁻¹`.
+- `List.prod_ofFn_inv_rev`: the product of the `(f i.rev)⁻¹` is the inverse of the product of
+  the `f i`.
 -/
 
 public section
@@ -41,5 +40,15 @@ lemma prod_ofFn_mul_mul_inv {G : Type*} [Group G] :
     rw [prod_ofFn_mul_mul_inv (fun j => a j.succ) (fun j => A j.succ)]
     simp only [Fin.succ_zero_eq_one, Fin.succ_last, Fin.castSucc_zero, mul_assoc,
       inv_mul_cancel_left]
+
+/-- The inverse of a product in a group is the product of the inverses in reversed order,
+stated for the list `List.ofFn f`. -/
+lemma prod_ofFn_inv_rev {G : Type*} [Group G] :
+    ∀ {n : ℕ} (f : Fin n → G), (List.ofFn fun i => (f i.rev)⁻¹).prod = (List.ofFn f).prod⁻¹
+  | 0, f => by simp
+  | n + 1, f => by
+    rw [List.ofFn_succ, List.prod_cons, List.ofFn_succ', List.prod_concat, _root_.mul_inv_rev]
+    simp only [Fin.rev_zero, Fin.rev_succ]
+    rw [← prod_ofFn_inv_rev (fun i => f i.castSucc)]
 
 end List

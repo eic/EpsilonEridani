@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Mathematics.Algebra.BigOperators.Group.List.Basic
+public import EpsilonEridani.Mathematics.Algebra.BigOperators.Fin
 public import EpsilonEridani.Mathematics.DataStructures.Matrix.UnitaryTrace
 public import EpsilonEridani.QFT.SmallX.Dipole.WilsonLine
 
@@ -49,11 +49,12 @@ Wilson lines:
 
 ## Main results
 
+- `SmallX.multipoleS_def`: the `2n`-point correlator as an explicit normalised trace.
 - `SmallX.multipoleS_self`: colour transparency, pairwise coincident endpoints give `1`.
 - `SmallX.multipoleS_fin_zero`: the correlator with no lines is `1`.
 - `SmallX.abs_multipoleS_le_one`: the unitarity bound.
-- `SmallX.multipoleS_cons_self_left`, `SmallX.multipoleS_cons_self_mid`: cancellation of two
-  adjacent coincident Wilson lines.
+- `SmallX.multipoleS_of_apply_zero_eq`, `SmallX.multipoleS_of_apply_zero_eq_apply_one`:
+  cancellation of two adjacent coincident Wilson lines.
 - `SmallX.multipoleS_cons_eq_snoc`: invariance under the cyclic shift of the pairs.
 - `SmallX.multipoleS_reverse`: invariance under reversal of the order of the arguments.
 - `SmallX.multipoleS_gaugeTransform`: gauge invariance.
@@ -81,6 +82,7 @@ def multipoleS (U : WilsonConfiguration Nc) {n : ℕ} (x y : Fin n → Euclidean
     (trace (((List.ofFn fun i => U (x i) * star (U (y i))).prod : unitaryGroup (Fin Nc) ℂ) :
       Matrix (Fin Nc) (Fin Nc) ℂ)).re
 
+/-- The `2n`-point correlator as an explicit normalised trace. -/
 lemma multipoleS_def (U : WilsonConfiguration Nc) {n : ℕ}
     (x y : Fin n → EuclideanSpace ℝ (Fin 2)) :
     multipoleS U x y = (Nc : ℝ)⁻¹ *
@@ -113,20 +115,20 @@ theorem abs_multipoleS_le_one (U : WilsonConfiguration Nc) {n : ℕ}
 their Wilson lines cancel and the `2(n + 1)`-point correlator is the `2n`-point correlator of the
 remaining pairs. -/
 @[simp]
-theorem multipoleS_cons_self_left (U : WilsonConfiguration Nc) {n : ℕ}
-    (x₀ : EuclideanSpace ℝ (Fin 2)) (x y : Fin n → EuclideanSpace ℝ (Fin 2)) :
-    multipoleS U (Fin.cons x₀ x) (Fin.cons x₀ y) = multipoleS U x y := by
-  simp [multipoleS_def, List.ofFn_succ]
+theorem multipoleS_of_apply_zero_eq (U : WilsonConfiguration Nc) {n : ℕ}
+    {x y : Fin (n + 1) → EuclideanSpace ℝ (Fin 2)} (h : x 0 = y 0) :
+    multipoleS U x y = multipoleS U (Fin.tail x) (Fin.tail y) := by
+  simp only [multipoleS_def, List.ofFn_succ, List.prod_cons, h, Unitary.mul_star_self, one_mul,
+    Fin.tail]
 
-/-- Coincidence limit: when the first antiquark and the second quark sit at the same position
-`z`, the lines `U(z)† U(z)` cancel and the first quark pairs with the second antiquark. -/
+/-- Coincidence limit: when the first antiquark and the second quark sit at the same position,
+the lines `U(y 0)† U(x 1)` cancel and the first quark pairs with the second antiquark. -/
 @[simp]
-theorem multipoleS_cons_self_mid (U : WilsonConfiguration Nc) {n : ℕ}
-    (x₀ z w : EuclideanSpace ℝ (Fin 2)) (x y : Fin n → EuclideanSpace ℝ (Fin 2)) :
-    multipoleS U (Fin.cons x₀ (Fin.cons z x)) (Fin.cons z (Fin.cons w y)) =
-      multipoleS U (Fin.cons x₀ x) (Fin.cons w y) := by
-  simp only [multipoleS_def, List.ofFn_succ, Fin.cons_zero, Fin.cons_succ, List.prod_cons]
-  rw [← mul_assoc, mul_assoc (U x₀), ← mul_assoc (star (U z)), Unitary.star_mul_self, one_mul]
+theorem multipoleS_of_apply_zero_eq_apply_one (U : WilsonConfiguration Nc) {n : ℕ}
+    {x y : Fin (n + 2) → EuclideanSpace ℝ (Fin 2)} (h : y 0 = x 1) :
+    multipoleS U x y = multipoleS U (Fin.cons (x 0) (Fin.tail (Fin.tail x))) (Fin.tail y) := by
+  simp only [multipoleS_def, List.ofFn_succ, Fin.cons_zero, Fin.cons_succ, Fin.tail,
+    List.prod_cons, Fin.succ_zero_eq_one, h, Unitary.star_eq_inv, mul_assoc, inv_mul_cancel_left]
 
 /-- The correlator is invariant under the cyclic shift of its quark-antiquark pairs, which moves
 the first pair to the end: this is the cyclicity of the trace. -/
@@ -147,9 +149,8 @@ theorem multipoleS_reverse (U : WilsonConfiguration Nc) {n : ℕ}
     multipoleS U x y = multipoleS U (y ∘ Fin.rev) (x ∘ Fin.rev) := by
   have h : (List.ofFn fun i => U ((y ∘ Fin.rev) i) * star (U ((x ∘ Fin.rev) i))).prod =
       star (List.ofFn fun i => U (x i) * star (U (y i))).prod := by
-    rw [Unitary.star_eq_inv, List.prod_inv_reverse, List.map_ofFn, List.ofFn_eq_map,
-      List.ofFn_eq_map, ← List.map_reverse, List.finRange_reverse, List.map_map]
-    simp [Function.comp_def, Unitary.star_eq_inv]
+    simp only [Unitary.star_eq_inv, ← List.prod_ofFn_inv_rev, Function.comp_apply,
+      _root_.mul_inv_rev, inv_inv]
   rw [multipoleS_def, multipoleS_def, h, Unitary.coe_star, star_eq_conjTranspose,
     trace_conjTranspose, Complex.star_def, Complex.conj_re]
 

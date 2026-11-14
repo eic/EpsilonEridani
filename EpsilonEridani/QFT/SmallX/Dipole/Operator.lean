@@ -39,6 +39,7 @@ by configuration, before any averaging, and use only unitarity of the Wilson lin
 ## Main results
 
 - `SmallX.dipoleS`: the dipole operator of a Wilson-line configuration.
+- `SmallX.dipoleS_eq_multipoleS`: the dipole operator is the two-point correlator.
 - `SmallX.multipoleS_fin_one`: the two-point correlator is the dipole operator.
 - `SmallX.dipoleS_self`: colour transparency, `S U x x = 1`.
 - `SmallX.dipoleS_comm`: endpoint symmetry.
@@ -64,18 +65,24 @@ in the target field `U`. It is the two-point Wilson-line correlator. -/
 def dipoleS (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   multipoleS U ![x] ![y]
 
+/-- The dipole operator is the two-point correlator `multipoleS U ![x] ![y]`. -/
+theorem dipoleS_eq_multipoleS (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
+    dipoleS U x y = multipoleS U ![x] ![y] :=
+  (rfl)
+
 /-- The dipole operator as an explicit normalised trace. -/
 lemma dipoleS_def (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
     dipoleS U x y =
       (Nc : ℝ)⁻¹ * (trace ((U x : Matrix (Fin Nc) (Fin Nc) ℂ) * star (U y).1)).re := by
-  simp [dipoleS, multipoleS_def]
+  simp [dipoleS_eq_multipoleS, multipoleS_def]
 
 /-- The two-point correlator is the dipole operator. -/
 @[simp]
 theorem multipoleS_fin_one (U : WilsonConfiguration Nc) (x y : Fin 1 → EuclideanSpace ℝ (Fin 2)) :
     multipoleS U x y = dipoleS U (x 0) (y 0) := by
-  rw [dipoleS]
-  congr 1 <;> funext i <;> rw [Subsingleton.elim i 0] <;> rfl
+  have hx : x = ![x 0] := funext fun i => by rw [Matrix.cons_val_fin_one, Subsingleton.elim i 0]
+  have hy : y = ![y 0] := funext fun i => by rw [Matrix.cons_val_fin_one, Subsingleton.elim i 0]
+  rw [dipoleS_eq_multipoleS, ← hx, ← hy]
 
 /-- **Colour transparency** of a single configuration: a dipole of zero size does not
 scatter, `S U x x = 1`. -/
@@ -87,8 +94,8 @@ theorem dipoleS_self [NeZero Nc] (U : WilsonConfiguration Nc) (x : EuclideanSpac
 /-- The dipole operator is symmetric under exchange of the quark and antiquark positions. -/
 theorem dipoleS_comm (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
     dipoleS U x y = dipoleS U y x := by
-  rw [dipoleS, multipoleS_reverse, multipoleS_fin_one]
-  rfl
+  rw [dipoleS_eq_multipoleS, multipoleS_reverse, multipoleS_fin_one]
+  simp
 
 /-- **Unitarity bound** on the dipole operator of a single configuration: `|S U x y| ≤ 1`. -/
 theorem abs_dipoleS_le_one (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :

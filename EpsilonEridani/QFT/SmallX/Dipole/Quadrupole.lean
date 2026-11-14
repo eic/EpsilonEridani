@@ -40,6 +40,7 @@ and hold configuration by configuration:
 
 ## Main results
 
+- `SmallX.quadrupoleS_eq_multipoleS`: the quadrupole is the four-point correlator.
 - `SmallX.quadrupoleS_def`: the explicit trace formula for the quadrupole.
 - `SmallX.multipoleS_fin_two`: the four-point correlator is the quadrupole operator.
 - `SmallX.abs_quadrupoleS_le_one`: the unitarity bound `|Q| ≤ 1`.
@@ -68,11 +69,16 @@ at `y`, `w`. -/
 def quadrupoleS (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   multipoleS U ![x, z] ![y, w]
 
+/-- The quadrupole operator is the four-point correlator `multipoleS U ![x, z] ![y, w]`. -/
+theorem quadrupoleS_eq_multipoleS (U : WilsonConfiguration Nc)
+    (x y z w : EuclideanSpace ℝ (Fin 2)) : quadrupoleS U x y z w = multipoleS U ![x, z] ![y, w] :=
+  (rfl)
+
 /-- The quadrupole operator as an explicit normalised trace. -/
 lemma quadrupoleS_def (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
     quadrupoleS U x y z w = (Nc : ℝ)⁻¹ * (trace ((U x : Matrix (Fin Nc) (Fin Nc) ℂ) *
       star (U y).1 * (U z).1 * star (U w).1)).re := by
-  simp [quadrupoleS, multipoleS_def, mul_assoc]
+  simp [quadrupoleS_eq_multipoleS, multipoleS_def, mul_assoc]
 
 /-- The four-point correlator is the quadrupole operator. -/
 @[simp]
@@ -88,16 +94,17 @@ theorem abs_quadrupoleS_le_one (U : WilsonConfiguration Nc) (x y z w : Euclidean
 /-- The quadrupole is invariant under the cyclic exchange of its two quark-antiquark pairs. -/
 theorem quadrupoleS_cycle (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
     quadrupoleS U x y z w = quadrupoleS U z w x y := by
-  rw [quadrupoleS, quadrupoleS]
-  refine (multipoleS_cons_eq_snoc U x y ![z] ![w]).trans ?_
-  congr 1 <;> funext i <;> fin_cases i <;> rfl
+  have h := multipoleS_cons_eq_snoc U x y ![z] ![w]
+  simp only [Fin.cons_vecCons, Fin.snoc_vecCons, Fin.snoc_vecEmpty] at h
+  rw [quadrupoleS_eq_multipoleS, quadrupoleS_eq_multipoleS, h]
 
 /-- Coincidence limit of the quadrupole: when the first quark and the first antiquark coincide,
 the quadrupole is the dipole of the second pair. -/
 @[simp]
 theorem quadrupoleS_self_left (U : WilsonConfiguration Nc) (x z w : EuclideanSpace ℝ (Fin 2)) :
-    quadrupoleS U x x z w = dipoleS U z w :=
-  (multipoleS_cons_self_left U x ![z] ![w]).trans (multipoleS_fin_one U _ _)
+    quadrupoleS U x x z w = dipoleS U z w := by
+  rw [quadrupoleS_eq_multipoleS, multipoleS_of_apply_zero_eq U (by simp), multipoleS_fin_one]
+  simp [Fin.tail]
 
 /-- Coincidence limit of the quadrupole: when the second quark and the second antiquark
 coincide, the quadrupole is the dipole of the first pair. -/
@@ -110,8 +117,10 @@ theorem quadrupoleS_self_right (U : WilsonConfiguration Nc) (x y z : EuclideanSp
 coincide, the lines `U(y)† U(y)` cancel and the quadrupole is the dipole `S U x w`. -/
 @[simp]
 theorem quadrupoleS_self_mid (U : WilsonConfiguration Nc) (x y w : EuclideanSpace ℝ (Fin 2)) :
-    quadrupoleS U x y y w = dipoleS U x w :=
-  (multipoleS_cons_self_mid U x y w ![] ![]).trans (multipoleS_fin_one U _ _)
+    quadrupoleS U x y y w = dipoleS U x w := by
+  rw [quadrupoleS_eq_multipoleS, multipoleS_of_apply_zero_eq_apply_one U (by simp),
+    multipoleS_fin_one]
+  simp [Fin.tail]
 
 /-- Coincidence limit of the quadrupole: when the second antiquark and the first quark
 coincide, the lines `U(x)† U(x)`, adjacent through the cyclicity of the trace, cancel and the
@@ -127,8 +136,8 @@ exchanges the roles of quarks and antiquarks: `Q U x y z w = Q U w z y x`. The t
 so their traces have the same real part. -/
 theorem quadrupoleS_reverse (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
     quadrupoleS U x y z w = quadrupoleS U w z y x := by
-  rw [quadrupoleS, quadrupoleS, multipoleS_reverse]
-  congr 1 <;> funext i <;> fin_cases i <;> rfl
+  rw [quadrupoleS_eq_multipoleS, quadrupoleS_eq_multipoleS, multipoleS_reverse]
+  simp
 
 /-- **Gauge invariance** of the quadrupole operator: under `U(v) ↦ Ω₊(v) U(v) Ω₋(v)†`, the
 quadrupole at `x, y, z, w` is unchanged as soon as `Ω₋` agrees at `x` and `y` and at `z` and
