@@ -14,6 +14,13 @@ Two identities for the product of a list `List.ofFn f` in a (not necessarily com
 a telescoping product of factors `aᵢ Aᵢ aᵢ₊₁⁻¹`, and the inverse of a product as the product of
 the inverses in reversed order.
 
+Both are needed for traced products of Wilson lines. The telescoping identity turns a chain of
+gauge-transformed factors `Ωᵢ Aᵢ Ωᵢ₊₁⁻¹` into the single conjugation `Ω₀ (∏ᵢ Aᵢ) Ωₖ⁻¹` of the
+product of the `Aᵢ`, which gives the gauge invariance of the Wilson-line correlators. The reversal
+identity identifies the product at reversed indices with the inverse of the product, which for
+unitary factors is its Hermitian conjugate, and gives their invariance under reversal of the
+order of the arguments.
+
 ## Main results
 
 - `List.prod_ofFn_mul_mul_inv`: a product `∏ᵢ aᵢ Aᵢ (aᵢ₊₁)⁻¹` telescopes to

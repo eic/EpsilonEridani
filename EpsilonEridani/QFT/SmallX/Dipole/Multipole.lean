@@ -55,7 +55,8 @@ Wilson lines:
 - `SmallX.abs_multipoleS_le_one`: the unitarity bound.
 - `SmallX.multipoleS_of_apply_zero_eq`, `SmallX.multipoleS_of_apply_zero_eq_apply_one`:
   cancellation of two adjacent coincident Wilson lines.
-- `SmallX.multipoleS_cons_eq_snoc`: invariance under the cyclic shift of the pairs.
+- `SmallX.multipoleS_cons_eq_snoc`, `SmallX.multipoleS_comp_finRotate`: invariance under the
+  cyclic shift of the pairs.
 - `SmallX.multipoleS_reverse`: invariance under reversal of the order of the arguments.
 - `SmallX.multipoleS_gaugeTransform`: gauge invariance.
 -/
@@ -140,6 +141,19 @@ theorem multipoleS_cons_eq_snoc (U : WilsonConfiguration Nc) {n : ℕ}
   simp only [Fin.cons_zero, Fin.cons_succ, Fin.snoc_castSucc, Fin.snoc_last, List.prod_cons,
     List.prod_concat, Submonoid.coe_mul]
   rw [trace_mul_comm]
+
+/-- The correlator is invariant under the cyclic shift `i ↦ i + 1` of the indices of its
+quark-antiquark pairs: this is the cyclicity of the trace, for arbitrary position tuples. -/
+theorem multipoleS_comp_finRotate (U : WilsonConfiguration Nc) {n : ℕ}
+    (x y : Fin n → EuclideanSpace ℝ (Fin 2)) :
+    multipoleS U (x ∘ finRotate n) (y ∘ finRotate n) = multipoleS U x y := by
+  rcases n with _ | n
+  · simp only [finRotate_zero, Equiv.coe_refl, Function.comp_id]
+  have hx : x ∘ finRotate (n + 1) = Fin.snoc (Fin.tail x) (x 0) := by
+    rw [Fin.snoc_eq_cons_rotate, Fin.cons_self_tail, Function.comp_def]
+  have hy : y ∘ finRotate (n + 1) = Fin.snoc (Fin.tail y) (y 0) := by
+    rw [Fin.snoc_eq_cons_rotate, Fin.cons_self_tail, Function.comp_def]
+  rw [hx, hy, ← multipoleS_cons_eq_snoc, Fin.cons_self_tail, Fin.cons_self_tail]
 
 /-- The correlator is invariant under reversal of the order of all its arguments, which
 exchanges the roles of quarks and antiquarks: the traced product at the reversed positions is
