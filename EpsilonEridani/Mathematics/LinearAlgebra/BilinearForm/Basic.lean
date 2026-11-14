@@ -18,7 +18,7 @@ field of characteristic not two.
 
 ## Main results
 
-* `LinearMap.BilinForm.IsSymm.apply_add_self`: the expansion
+* `LinearMap.BilinForm.IsSymm.apply_add_add_self`: the expansion
   `B (x + y) (x + y) = B x x + 2 * B x y + B y y`.
 -/
 
@@ -31,7 +31,7 @@ variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- The square of a sum under a symmetric bilinear form,
 `B (x + y) (x + y) = B x x + 2 * B x y + B y y`. -/
-theorem IsSymm.apply_add_self (hB : B.IsSymm) (x y : M) :
+theorem IsSymm.apply_add_add_self (hB : B.IsSymm) (x y : M) :
     B (x + y) (x + y) = B x x + 2 * B x y + B y y := by
   simp only [map_add, LinearMap.add_apply, hB.eq y x]
   ring

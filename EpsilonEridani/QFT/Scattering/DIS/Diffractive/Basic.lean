@@ -116,7 +116,7 @@ lemma MX2_def (g : Bilin V) (K : DisKinematics V) :
 lemma MX2_expand (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
     MX2 g K = g K.q K.q + 2 * g (K.p - K.pPrime) K.q
       + g (K.p - K.pPrime) (K.p - K.pPrime) := by
-  rw [MX2_def, add_comm K.q, hSymm.apply_add_self]
+  rw [MX2_def, add_comm K.q, hSymm.apply_add_add_self]
   ring
 
 /-- `MX2` in terms of the hard scale and the momentum transfer,

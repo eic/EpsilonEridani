@@ -65,12 +65,18 @@ lemma xBj_def (g : Bilin V) (K : DisKinematics V) : K.xBj g = K.Q2 g / (2 * g K.
 noncomputable def yInel (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g K.p K.q / g K.p K.k
 
+lemma yInel_def (g : Bilin V) (K : DisKinematics V) :
+    K.yInel g = g K.p K.q / g K.p K.k := (rfl)
+
 /-- The hadronic invariant mass squared `W2 := (p + q)^2`. -/
 def W2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (K.p + K.q) (K.p + K.q)
 
+lemma W2_def (g : Bilin V) (K : DisKinematics V) : K.W2 g = g (K.p + K.q) (K.p + K.q) := (rfl)
+
 /-- The momentum-transfer invariant `t := (p - p')²` between the incoming hadron `p` and the
-outgoing hadron `pPrime`. -/
+outgoing hadron `pPrime`. The square does not see the sign of the transfer, so this is the same
+invariant as `(p' - p)²`. -/
 def tMom (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (K.p - K.pPrime) (K.p - K.pPrime)
 
@@ -90,8 +96,9 @@ lemma kPrime_eq (K : DisKinematics V) : K.kPrime = K.k - K.q := by
 
 /-- A direct expansion of `W2` in terms of bilinear pieces. -/
 lemma W2_expand (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
-    K.W2 g = g K.p K.p + 2 * g K.p K.q + g K.q K.q :=
-  hSymm.apply_add_self K.p K.q
+    K.W2 g = g K.p K.p + 2 * g K.p K.q + g K.q K.q := by
+  rw [W2_def]
+  exact hSymm.apply_add_add_self K.p K.q
 
 /-- Rewrite `W2` using `Q2 = -q^2`. -/
 lemma W2_eq_with_Q2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
@@ -104,14 +111,14 @@ lemma pq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj 
     g K.p K.q ≠ 0 := by
   intro h
   apply hx
-  simp [xBj, h]
+  simp [xBj_def, h]
 
 /-- A non-zero Bjorken variable forces `q² ≠ 0`, since `x = Q² / (2 p·q)` and `Q² = -q²`. -/
 lemma q_sq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xBj g ≠ 0) :
     g K.q K.q ≠ 0 := by
   intro h
   apply hx
-  simp [xBj, Q2, h]
+  simp [xBj_def, Q2_def, h]
 
 end DisKinematics
 
