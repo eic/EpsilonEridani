@@ -68,11 +68,10 @@ familiar single-nucleon-helicity expressions `q_{+/+} ± q_{−/+}` (`f1_eq_of_p
 ## Implementation notes
 
 The matrix is taken over `ℝ`. The leading-twist unpolarized, helicity and transversity block
-is real: hermiticity plus time-reversal invariance make the double-flip entry real. A
-description that keeps the T-odd entries (Sivers and Boer-Mulders type, or the twist-3
-structure that the Wandzura-Wilczek relation concerns) needs `Matrix _ _ ℂ`; the general
-inequality this module rests on, `Matrix.PosSemidef.two_mul_abs_apply_le`, would then have to
-be restated with `‖·‖` in place of `|·|`. That is deliberately deferred.
+is real: hermiticity plus time-reversal invariance make the double-flip entry real. The
+complex generalisation of this matrix is `SpinDensityC` in
+`EpsilonEridani.Particles.Parton.PDF.ComplexSpinDensity`, of which `SpinDensity` is the
+time-reversal-invariant specialisation.
 
 ## Main results
 
@@ -117,6 +116,7 @@ The only field beyond the matrix itself is positive semidefiniteness, which is w
 probability interpretation of the forward helicity amplitudes provides. No further physics
 hypothesis is bundled here: the positivity constraints below are consequences of this one
 field. -/
+@[ext]
 structure SpinDensity where
   /-- The matrix of forward quark-nucleon helicity amplitudes, in the basis
   `idxPP, idxPM, idxMP, idxMM`. -/
@@ -151,13 +151,13 @@ lemma g1_def (ρ : SpinDensity) :
 /-- Defining expression for `h1`. -/
 lemma h1_def (ρ : SpinDensity) : h1 ρ = ρ.mat idxPP idxMM := rfl
 
-/-- `f₁ + g₁` is twice the aligned diagonal entry of the spin-density matrix. This is the
-combination the Soffer bound constrains. -/
+/-- `f₁ + g₁` is the sum of the two aligned diagonal entries of the spin-density matrix. This is
+the combination the Soffer bound constrains. -/
 lemma f1_add_g1 (ρ : SpinDensity) :
     f1 ρ + g1 ρ = ρ.mat idxPP idxPP + ρ.mat idxMM idxMM := by
   rw [f1_def, g1_def]; ring
 
-/-- `f₁ - g₁` is twice the anti-aligned diagonal entry of the spin-density matrix. -/
+/-- `f₁ - g₁` is the sum of the two anti-aligned diagonal entries of the spin-density matrix. -/
 lemma f1_sub_g1 (ρ : SpinDensity) :
     f1 ρ - g1 ρ = ρ.mat idxPM idxPM + ρ.mat idxMP idxMP := by
   rw [f1_def, g1_def]; ring
