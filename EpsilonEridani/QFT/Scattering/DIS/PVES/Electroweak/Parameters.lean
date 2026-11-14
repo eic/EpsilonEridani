@@ -289,12 +289,10 @@ lemma sin2ThetaW_eq_one_sub_massSqRatio (P : Parameters)
 
 /-!
 
-## Tree-level couplings and weak charges
+## Tree-level couplings
 
 Conventions follow the Particle Data Group review of the electroweak model:
-`g_V^f = T_3^f - 2 Q_f sin^2(theta_W)` and `g_A^f = T_3^f`, and the low-energy
-electron-quark couplings `C_{1q} = 2 g_A^e g_V^q`.  The weak charges below are the
-quantities parity-violating electron scattering actually reports.
+`g_V^f = T_3^f - 2 Q_f sin^2(theta_W)` and `g_A^f = T_3^f`.
 
 -/
 
@@ -392,90 +390,8 @@ theorem smTreeLevelCouplings_downType (s2 : ℝ) :
     (smTreeLevelCouplings s2).downType = { gV := -1 / 2 + 2 / 3 * s2, gA := -1 / 2 } :=
   (rfl)
 
-/-- Low-energy electron-up-quark coupling `C_{1u} = -1/2 + (4/3) sin^2(theta_W)`. -/
-def c1Up (s2 : ℝ) : ℝ :=
-  -1 / 2 + 4 / 3 * s2
-
-/-- Low-energy electron-down-quark coupling `C_{1d} = 1/2 - (2/3) sin^2(theta_W)`. -/
-def c1Down (s2 : ℝ) : ℝ :=
-  1 / 2 - 2 / 3 * s2
-
-lemma c1Up_eq_two_mul_gA_mul_gV (s2 : ℝ) :
-    c1Up s2
-      = 2 * (smTreeLevelCouplings s2).electron.gA * (smTreeLevelCouplings s2).upType.gV := by
-  simp only [c1Up, smTreeLevelCouplings_electron, smTreeLevelCouplings_upType]
-  ring
-
-lemma c1Down_eq_two_mul_gA_mul_gV (s2 : ℝ) :
-    c1Down s2
-      = 2 * (smTreeLevelCouplings s2).electron.gA * (smTreeLevelCouplings s2).downType.gV := by
-  simp only [c1Down, smTreeLevelCouplings_electron, smTreeLevelCouplings_downType]
-  ring
-
-/-- Weak charge of the electron, `Q_W^e = 1 - 4 sin^2(theta_W)`. -/
-def electronWeakCharge (s2 : ℝ) : ℝ :=
-  1 - 4 * s2
-
-/-- Weak charge of the proton, `Q_W^p = -2 (2 C_{1u} + C_{1d})`. -/
-def protonWeakCharge (s2 : ℝ) : ℝ :=
-  -2 * (2 * c1Up s2 + c1Down s2)
-
-/-- Weak charge of the neutron, `Q_W^n = -2 (C_{1u} + 2 C_{1d})`. -/
-def neutronWeakCharge (s2 : ℝ) : ℝ :=
-  -2 * (c1Up s2 + 2 * c1Down s2)
-
-/-- Weak charge of a nucleus with `Z` protons and `N` neutrons. -/
-def nuclearWeakCharge (Z N s2 : ℝ) : ℝ :=
-  Z * protonWeakCharge s2 + N * neutronWeakCharge s2
-
-/-- The electron weak charge is four times the product of its tree-level neutral-current
-couplings. -/
-lemma electronWeakCharge_eq_four_mul_gA_mul_gV (s2 : ℝ) :
-    electronWeakCharge s2
-      = 4 * (smTreeLevelCouplings s2).electron.gA
-          * (smTreeLevelCouplings s2).electron.gV := by
-  simp only [electronWeakCharge, smTreeLevelCouplings_electron]
-  ring
-
-/-- At tree level the proton weak charge equals `1 - 4 sin^2(theta_W)`. -/
-lemma protonWeakCharge_eq (s2 : ℝ) : protonWeakCharge s2 = 1 - 4 * s2 := by
-  simp only [protonWeakCharge, c1Up, c1Down]
-  ring
-
-/-- At tree level the proton and the electron carry the same weak charge. -/
-lemma protonWeakCharge_eq_electronWeakCharge (s2 : ℝ) :
-    protonWeakCharge s2 = electronWeakCharge s2 := by
-  rw [protonWeakCharge_eq, electronWeakCharge]
-
-/-- **The neutron weak charge is `-1`, independently of the weak-mixing angle.** The
-`sin^2(theta_W)` dependence of `C_{1u}` and `C_{1d}` cancels in the combination
-`C_{1u} + 2 C_{1d}`.  This is why a heavy nucleus, whose weak charge is dominated by `-N`,
-is a weak-mixing-angle probe only through its proton term. -/
-lemma neutronWeakCharge_eq_neg_one (s2 : ℝ) : neutronWeakCharge s2 = -1 := by
-  simp only [neutronWeakCharge, c1Up, c1Down]
-  ring
-
-/-- Nuclear weak charge in the form used by parity-violating electron-nucleus scattering,
-`Q_W(Z, N) = Z (1 - 4 sin^2(theta_W)) - N`. -/
-lemma nuclearWeakCharge_eq (Z N s2 : ℝ) :
-    nuclearWeakCharge Z N s2 = Z * (1 - 4 * s2) - N := by
-  rw [nuclearWeakCharge, protonWeakCharge_eq, neutronWeakCharge_eq_neg_one]
-  ring
-
-/-- The electron weak charge vanishes exactly at `sin^2(theta_W) = 1/4`.  Its accidental
-smallness at the physical value is the reason the Moller asymmetry is a sensitive
-weak-mixing-angle probe, and the reason the electron's tree-level *vector* coupling nearly
-vanishes there as well. -/
-lemma electronWeakCharge_eq_zero_iff (s2 : ℝ) :
-    electronWeakCharge s2 = 0 ↔ s2 = 1 / 4 := by
-  unfold electronWeakCharge
-  constructor
-  · intro h
-    linarith
-  · intro h
-    rw [h]
-    ring
-
+/-- The electron's tree-level vector coupling `g_V^e = -1/2 + 2 sin²θ_W` vanishes exactly at
+`sin²θ_W = 1/4`. -/
 lemma electron_gV_eq_zero_iff (s2 : ℝ) :
     (smTreeLevelCouplings s2).electron.gV = 0 ↔ s2 = 1 / 4 := by
   simp only [smTreeLevelCouplings_electron]
