@@ -51,6 +51,8 @@ All declarations live in the namespace `EpsilonEridani.Particles.Nuclei`.
 * `Nucleus.DensityProfile nuc`: a non-negative function on `Space` with integral the mass
   number of `nuc`.
 * `hardSphereDensity`, `gaussianDensity`, `woodsSaxonDensity`: the three radial profiles.
+* `woodsSaxonUnitDensityIntegral R a`: the integral over space of the Woods–Saxon profile with
+  `ρ₀ = 1`.
 * `woodsSaxonCentralDensity m R a`: the parameter `ρ₀` normalising the Woods–Saxon profile
   to `m`.
 * `Nucleus.DensityProfile.hardSphere`, `gaussian`, `woodsSaxon`: the bundled profiles of a
@@ -155,7 +157,8 @@ lemma hardSphereDensity_nonneg {m R : ℝ} (hm : 0 ≤ m) (hR : 0 ≤ R) (r : �
 lemma measurable_hardSphereDensity (m R : ℝ) : Measurable (hardSphereDensity m R) :=
   measurable_const.indicator measurableSet_Iic
 
-/-- On space, the hard-sphere profile is the indicator of the closed ball of radius `R`. -/
+/-- On space, the hard-sphere profile is the constant `3m / (4π R³)` times the indicator of the
+closed ball of radius `R`. -/
 lemma hardSphereDensity_norm_eq_indicator (m R : ℝ) :
     (fun x : Space => hardSphereDensity m R ‖x‖) =
       (closedBall (0 : Space) R).indicator fun _ => 3 * m / (4 * π * R ^ 3) := by
@@ -321,6 +324,8 @@ def woodsSaxonUnitDensityIntegral (R a : ℝ) : ℝ :=
 lemma woodsSaxonUnitDensityIntegral_def (R a : ℝ) :
     woodsSaxonUnitDensityIntegral R a = ∫ x : Space, woodsSaxonDensity 1 R a ‖x‖ := (rfl)
 
+/-- For `0 < a`, the Woods–Saxon profile with `ρ₀ = 1` has strictly positive integral over
+space, so dividing by it to normalise the profile is legitimate. -/
 lemma woodsSaxonUnitDensityIntegral_pos (R : ℝ) {a : ℝ} (ha : 0 < a) :
     0 < woodsSaxonUnitDensityIntegral R a := by
   rw [woodsSaxonUnitDensityIntegral_def, integral_pos_iff_support_of_nonneg
