@@ -28,7 +28,10 @@ power of `A`.
 
 Physical space is Physlib's `Space`. This file constructs the three spherically symmetric
 profiles of nuclear geometry, written as functions `ℝ → ℝ` of the radius and evaluated at the
-distance `‖x‖` from the origin of `Space`, and proves each integrable and normalisable:
+distance `‖x‖` from the origin of `Space`. It proves each integrable (the Woods–Saxon profile for
+positive surface diffuseness `0 < a`, the other two unconditionally) and normalisable under the
+stated parameter conditions (`0 < R` for the hard sphere, `R ≠ 0` for the Gaussian, `0 < a` for
+the Woods–Saxon profile):
 
 * the hard sphere `3A / (4π R³) · 1_{r ≤ R}`;
 * the Gaussian `A (π R²)^{-3/2} exp(-r²/R²)`;
@@ -59,7 +62,7 @@ All declarations live in the namespace `EpsilonEridani.Particles.Nuclei`.
   `integrable_woodsSaxonDensity_norm`: the three profiles are integrable over `ℝ³` (the last for
   every positive surface diffuseness).
 * `integral_hardSphereDensity_norm` and `integral_gaussianDensity_norm`: the two closed-form
-  profiles integrate to their normalisation parameter.
+  profiles integrate to their normalisation parameter, for `0 < R` and `R ≠ 0` respectively.
 * `integral_woodsSaxonDensity_norm_woodsSaxonCentralDensity`: for `0 < a`, the Woods–Saxon
   profile with `ρ₀ = woodsSaxonCentralDensity m R a` integrates to `m`.
 * `existsUnique_integral_woodsSaxonDensity_norm_eq`: for `0 < a`, exactly one value of `ρ₀`
@@ -86,10 +89,6 @@ namespace Nuclei
 open MeasureTheory Real Metric Set
 
 namespace Nucleus
-
-/-- The mass number of a nucleus is positive as a real number. -/
-lemma cast_massNumber_pos (nuc : Nucleus) : (0 : ℝ) < nuc.massNumber :=
-  Nat.cast_pos.2 nuc.massNumber_pos
 
 /-- A coordinate-space density profile of the nucleus `nuc`: a non-negative nucleon number density
 on physical space whose integral is the mass number. -/
@@ -245,6 +244,7 @@ lemma woodsSaxonDensity_eq_div (ρ₀ R a r : ℝ) :
 
 /-- At the half-density radius `r = R`, the Woods–Saxon profile equals half its parameter `ρ₀`,
 `ρ₀ / 2`. -/
+@[simp]
 lemma woodsSaxonDensity_self (ρ₀ R a : ℝ) :
     woodsSaxonDensity ρ₀ R a R = ρ₀ / 2 := by
   rw [woodsSaxonDensity_def, sub_self, zero_div, Real.sigmoid_zero]
@@ -392,13 +392,13 @@ def woodsSaxon (R a : ℝ) (ha : 0 < a) : DensityProfile nuc where
 -- The pointwise projections are deliberately not simp lemmas: as post-order rewrites they
 -- would fire under the integral binder before the unconditional normalisation law
 -- `integral_density` can match at the root.
-lemma hardSphere_density (R : ℝ) (hR : 0 < R) (x : Space) :
+lemma hardSphere_density_apply (R : ℝ) (hR : 0 < R) (x : Space) :
     (hardSphere nuc R hR).density x = hardSphereDensity nuc.massNumber R ‖x‖ := (rfl)
 
-lemma gaussian_density (R : ℝ) (hR : R ≠ 0) (x : Space) :
+lemma gaussian_density_apply (R : ℝ) (hR : R ≠ 0) (x : Space) :
     (gaussian nuc R hR).density x = gaussianDensity nuc.massNumber R ‖x‖ := (rfl)
 
-lemma woodsSaxon_density (R a : ℝ) (ha : 0 < a) (x : Space) :
+lemma woodsSaxon_density_apply (R a : ℝ) (ha : 0 < a) (x : Space) :
     (woodsSaxon nuc R a ha).density x =
       woodsSaxonDensity (woodsSaxonCentralDensity nuc.massNumber R a) R a ‖x‖ := (rfl)
 

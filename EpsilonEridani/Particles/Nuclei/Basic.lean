@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Data.Nat.Notation
+public import Mathlib.Data.Nat.Cast.Order.Ring
 
 /-!
 # Nuclei as explicit data
@@ -32,6 +33,8 @@ development.
 ## Main statements
 
 * `EpsilonEridani.Particles.Nuclei.Nucleus.protonNumber_add_neutronNumber`: `Z + N = A`.
+* `EpsilonEridani.Particles.Nuclei.Nucleus.cast_massNumber_pos`: `0 < A` after casting to an
+  ordered semiring such as `ℝ`.
 * `EpsilonEridani.Particles.Nuclei.Nucleus.isIsoscalar_iff_protonNumber_eq_neutronNumber`: a
   nucleus is isoscalar exactly when `Z = N`.
 
@@ -80,6 +83,12 @@ theorem neutronNumber_add_protonNumber : nuc.neutronNumber + nuc.protonNumber = 
 lemma neutronNumber_le_massNumber : nuc.neutronNumber ≤ nuc.massNumber :=
   Nat.sub_le _ _
 
+/-- The mass number of a nucleus is positive in any nontrivial ordered semiring, for instance
+as a real number. -/
+lemma cast_massNumber_pos {α : Type*} [Semiring α] [PartialOrder α] [IsOrderedRing α]
+    [Nontrivial α] : (0 : α) < nuc.massNumber :=
+  Nat.cast_pos.2 nuc.massNumber_pos
+
 /-- A nucleus is *isoscalar* when it has equally many protons and neutrons, `2 Z = A`. -/
 def IsIsoscalar : Prop := 2 * nuc.protonNumber = nuc.massNumber
 
@@ -123,11 +132,11 @@ def lead208 : Nucleus := ⟨208, 82, by decide, by decide⟩
 @[simp] lemma lead208_massNumber : lead208.massNumber = 208 := (rfl)
 @[simp] lemma lead208_protonNumber : lead208.protonNumber = 82 := (rfl)
 
-@[simp] lemma neutronNumber_proton : proton.neutronNumber = 0 := (rfl)
-@[simp] lemma neutronNumber_neutron : neutron.neutronNumber = 1 := (rfl)
-@[simp] lemma neutronNumber_deuteron : deuteron.neutronNumber = 1 := (rfl)
-@[simp] lemma neutronNumber_carbon12 : carbon12.neutronNumber = 6 := (rfl)
-@[simp] lemma neutronNumber_lead208 : lead208.neutronNumber = 126 := (rfl)
+@[simp] lemma proton_neutronNumber : proton.neutronNumber = 0 := (rfl)
+@[simp] lemma neutron_neutronNumber : neutron.neutronNumber = 1 := (rfl)
+@[simp] lemma deuteron_neutronNumber : deuteron.neutronNumber = 1 := (rfl)
+@[simp] lemma carbon12_neutronNumber : carbon12.neutronNumber = 6 := (rfl)
+@[simp] lemma lead208_neutronNumber : lead208.neutronNumber = 126 := (rfl)
 
 /-- The deuteron is isoscalar. -/
 @[simp]
