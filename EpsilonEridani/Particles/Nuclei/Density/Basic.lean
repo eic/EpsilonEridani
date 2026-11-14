@@ -151,8 +151,12 @@ lemma hardSphereDensity_nonneg {m R : ℝ} (hm : 0 ≤ m) (hR : 0 ≤ R) (r : �
   rw [hardSphereDensity_def]
   exact indicator_nonneg (fun _ _ => by positivity) r
 
+/-- The hard-sphere profile is measurable in the radius. -/
+lemma measurable_hardSphereDensity (m R : ℝ) : Measurable (hardSphereDensity m R) :=
+  measurable_const.indicator measurableSet_Iic
+
 /-- On space, the hard-sphere profile is the indicator of the closed ball of radius `R`. -/
-private lemma hardSphereDensity_norm_eq_indicator (m R : ℝ) :
+lemma hardSphereDensity_norm_eq_indicator (m R : ℝ) :
     (fun x : Space => hardSphereDensity m R ‖x‖) =
       (closedBall (0 : Space) R).indicator fun _ => 3 * m / (4 * π * R ^ 3) := by
   ext x
@@ -191,8 +195,12 @@ lemma gaussianDensity_nonneg {m : ℝ} (hm : 0 ≤ m) (R r : ℝ) : 0 ≤ gaussi
   rw [gaussianDensity_def]
   positivity
 
+/-- The Gaussian profile is continuous in the radius. -/
+lemma continuous_gaussianDensity (m R : ℝ) : Continuous (gaussianDensity m R) :=
+  continuous_const.mul (continuous_exp.comp ((continuous_id.div_const R).pow 2).neg)
+
 /-- On space, the Gaussian profile is a multiple of `exp (-b ‖x‖²)` with `b = (R²)⁻¹`. -/
-private lemma gaussianDensity_norm_eq (m R : ℝ) :
+lemma gaussianDensity_norm_eq (m R : ℝ) :
     (fun x : Space => gaussianDensity m R ‖x‖) =
       fun x => m / (π * R ^ 2) ^ (3 / 2 : ℝ) * exp (-(R ^ 2)⁻¹ * ‖x‖ ^ 2) := by
   ext x
