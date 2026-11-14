@@ -28,6 +28,12 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
 - `AlternatingMap.isAlt_bilinMap`: `f.bilinMap m` is alternating.
 - `AlternatingMap.bilinMap_apply_left_eq_zero`, `AlternatingMap.bilinMap_apply_right_eq_zero`:
   it vanishes when either argument is one of the fixed vectors `m i`.
+- `AlternatingMap.neg_bilinMap`, `AlternatingMap.bilinMap_update_neg`,
+  `AlternatingMap.bilinMap_pair_neg_snd`: it changes sign when `f` or one fixed vector is negated.
+- `AlternatingMap.bilinMap_update_smul`, `AlternatingMap.bilinMap_update_add`,
+  `AlternatingMap.bilinMap_update_sub`, `AlternatingMap.bilinMap_pair_smul_snd`,
+  `AlternatingMap.bilinMap_pair_add_snd`, `AlternatingMap.bilinMap_pair_sub_snd`: it is linear in
+  each fixed vector.
 -/
 
 public section
@@ -78,6 +84,110 @@ theorem bilinMap_apply_right_eq_zero (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : F
   f.map_eq_zero_of_eq _ (i := 1) (j := i.succ.succ) (by simp)
     (Fin.succ_zero_eq_one ▸ (Fin.succ_injective _ |>.ne (Fin.succ_ne_zero _).symm))
 
+/-- Scaling one fixed vector scales the bilinear map. -/
+theorem bilinMap_update_smul (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (i : Fin n)
+    (r : R) (x : M) :
+    f.bilinMap (Function.update m i (r • x)) = r • f.bilinMap (Function.update m i x) := by
+  ext v w
+  -- `Fin.cons_update` moves the update out through the two `vecCons` layers; Mathlib states it
+  -- only for `Fin.cons`, so `Matrix.vecCons` is unfolded to `Fin.cons`.
+  simp only [bilinMap_apply, LinearMap.smul_apply, Matrix.vecCons, Fin.cons_update,
+    f.map_update_smul]
+
+/-- Adding in one fixed vector adds the bilinear maps. -/
+@[simp]
+theorem bilinMap_update_add (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (i : Fin n)
+    (x y : M) :
+    f.bilinMap (Function.update m i (x + y)) =
+      f.bilinMap (Function.update m i x) + f.bilinMap (Function.update m i y) := by
+  ext v w
+  -- As in `bilinMap_update_smul`, `Matrix.vecCons` is unfolded so that `Fin.cons_update`
+  -- applies.
+  simp only [bilinMap_apply, LinearMap.add_apply, Matrix.vecCons, Fin.cons_update,
+    f.map_update_add]
+
+/-- Scaling the second of two fixed vectors scales the bilinear map. -/
+@[simp]
+theorem bilinMap_pair_smul_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b : M) (r : R) :
+    f.bilinMap ![a, r • b] = r • f.bilinMap ![a, b] := by
+  have h : ∀ x, ![a, x] = Function.update ![a, b] 1 x := fun x => by
+    ext i
+    fin_cases i <;> simp
+  have := f.bilinMap_update_smul ![a, b] 1 r b
+  rwa [← h, ← h] at this
+
+/-- Adding in the second of two fixed vectors adds the bilinear maps. -/
+@[simp]
+theorem bilinMap_pair_add_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b c : M) :
+    f.bilinMap ![a, b + c] = f.bilinMap ![a, b] + f.bilinMap ![a, c] := by
+  have h : ∀ x, ![a, x] = Function.update ![a, b] 1 x := fun x => by
+    ext i
+    fin_cases i <;> simp
+  have := f.bilinMap_update_add ![a, b] 1 b c
+  rwa [← h, ← h, ← h] at this
+
 end CommSemiring
+
+section AddCommGroupCodomain
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommGroup N] [Module R N] {n : ℕ}
+
+/-- Negating the alternating map negates its bilinear map. -/
+@[simp]
+theorem neg_bilinMap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
+    (-f).bilinMap m = -f.bilinMap m :=
+  LinearMap.ext₂ fun v w => by
+    simp only [bilinMap_apply, AlternatingMap.neg_apply, LinearMap.neg_apply]
+
+end AddCommGroupCodomain
+
+section AddCommGroupDomain
+
+variable {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {n : ℕ}
+
+/-- Negating one fixed vector negates the bilinear map. -/
+theorem bilinMap_update_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (i : Fin n) :
+    f.bilinMap (Function.update m i (-m i)) = -f.bilinMap m := by
+  ext v w
+  -- Write `m` as `update m i (m i)` so that both sides carry the update. `Fin.cons_update` then
+  -- moves it out through the two `vecCons` layers; Mathlib states it only for `Fin.cons`, so
+  -- `Matrix.vecCons` is unfolded to `Fin.cons`.
+  conv_rhs => rw [← Function.update_eq_self i m]
+  simp only [bilinMap_apply, LinearMap.neg_apply, Matrix.vecCons, Fin.cons_update,
+    f.map_update_neg]
+
+/-- Negating the second of two fixed vectors negates the bilinear map. -/
+@[simp]
+theorem bilinMap_pair_neg_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b : M) :
+    f.bilinMap ![a, -b] = -f.bilinMap ![a, b] := by
+  have h : ![a, -b] = Function.update ![a, b] 1 (-b) := by
+    ext i
+    fin_cases i <;> simp
+  rw [h]
+  exact f.bilinMap_update_neg ![a, b] 1
+
+/-- Subtracting in one fixed vector subtracts the bilinear maps. -/
+theorem bilinMap_update_sub (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) (i : Fin n)
+    (x y : M) :
+    f.bilinMap (Function.update m i (x - y)) =
+      f.bilinMap (Function.update m i x) - f.bilinMap (Function.update m i y) := by
+  ext v w
+  -- As in `bilinMap_update_smul`, `Matrix.vecCons` is unfolded so that `Fin.cons_update` applies.
+  simp only [bilinMap_apply, LinearMap.sub_apply, Matrix.vecCons, Fin.cons_update,
+    f.map_update_sub]
+
+/-- Subtracting in the second of two fixed vectors subtracts the bilinear maps. -/
+@[simp]
+theorem bilinMap_pair_sub_snd (f : M [⋀^Fin 4]→ₗ[R] N) (a b c : M) :
+    f.bilinMap ![a, b - c] = f.bilinMap ![a, b] - f.bilinMap ![a, c] := by
+  have h : ∀ x, ![a, x] = Function.update ![a, b] 1 x := fun x => by
+    ext i
+    fin_cases i <;> simp
+  have := f.bilinMap_update_sub ![a, b] 1 b c
+  rwa [← h, ← h, ← h] at this
+
+end AddCommGroupDomain
 
 end AlternatingMap

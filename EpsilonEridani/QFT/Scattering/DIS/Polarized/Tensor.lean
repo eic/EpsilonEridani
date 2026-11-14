@@ -1,0 +1,515 @@
+/-
+Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Joseph Tooby-Smith, Wouter Deconinck
+-/
+module
+
+public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Polarized.Kinematics
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.TargetMass
+public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Determinant
+
+/-!
+# The antisymmetric hadronic tensor of polarised DIS
+
+The spin-dependent part of the hadronic tensor is antisymmetric. With the factor `i` divided
+out it is a real alternating bilinear form, decomposed on the two covariant structures
+
+- `E₁(v, w) = ε(v, w, q, S)` (`spinStructureOne`),
+- `E₂(v, w) = ε(v, w, q, (p·q) S − (S·q) p)` (`spinStructureTwo`),
+
+built from an alternating four-form `ε`, the momentum transfer `q`, the hadron momentum `p` and
+the spin vector `S` of `PolarizedKinematics`. Both are alternating, so they satisfy
+`TensorAssumptions` by `tensorAssumptions_iff_isAlt`, and both are conserved: they vanish when
+either argument is `q`; `E₁` also vanishes when either argument is `S`. Both are odd under spin
+reversal `PolarizedKinematics.reverse`.
+
+`fromG1G2 ε K g₁ g₂` is the tensor with structure-function values `g₁`, `g₂`, that is
+```text
+(M / (p·q)) · g₁ · E₁ + (M / (p·q)²) · g₂ · E₂ = (M / (p·q)) · ε(·, ·, q, g₁ S + g₂ S_⊥),
+```
+with `M = √(p·p)` the target mass and `S_⊥ = S − ((S·q)/(p·q)) p` (the second form is
+`fromG1G2_eq_bilinMap`). `IsG1G2Decomposition ε K G W` says that `W` is `fromG1G2` at the values
+of `G` at the kinematic point of `K`. These are the
+antisymmetric counterparts of `Tensors.Hadronic.IsF1F2Decomposition` and
+`Tensors.Hadronic.fromF1F2`.
+
+`SpinUniquenessAssumptions` collects two probe pairs separating `E₁` from `E₂`; under it the
+two structures are linearly independent (`LinearMap.SeparatingProbes.linearIndependent`).
+If `E₁`, `E₂` are linearly independent, `M² > 0` and `p·q ≠ 0`, then `fromG1G2` determines
+`g₁`, `g₂` (`fromG1G2_inj`), so it is non-zero unless both structure-function values vanish
+(`fromG1G2_ne_zero`) and a decomposition fixes the structure-function values
+(`IsG1G2Decomposition.unique`).
+`Witness.kWit4` gives Minkowski kinematics on `ℝ⁴` where such probes exist for the volume form
+`ε = Matrix.detRowAlternating` (`Witness.spinUniquenessWit`).
+
+## Orientation
+
+An abstract `V` carrying only a bilinear form has no volume form, so the four-form `ε` is
+explicit data, as for `Tensors.Leptonic.lMuNuOdd`. Replacing `ε` by `-ε` flips the sign
+of both structures (`spinStructureOne_neg`, `spinStructureTwo_neg`) and of `fromG1G2`
+(`fromG1G2_neg`), hence of every asymmetry built from them (`IsG1G2Decomposition.neg`), so
+these signs are meaningful only once `ε` is fixed.
+
+## Not included
+
+On a four-dimensional `V` with `p`, `q`, `S` linearly independent, `Q² ≠ 0` and `S·q ≠ 0`, the
+alternating forms that are conserved in both slots, linear in `S`, and covariant under the
+isometries fixing `p` and `q` — the spin-dependent analogue of
+`Tensors.Hadronic.IsLorentzCovariant`, with `S` transformed along with the arguments — form a
+two-dimensional space spanned by `E₁` and `E₂`; the alternating, `S`-linear candidate
+`ε(v, w, p, S)` is excluded because it is not conserved. The hypothesis `S·q ≠ 0` is needed:
+at `S·q = 0` the two structures degenerate, `E₂ = (p·q) E₁`
+(`spinStructureTwo_eq_smul_spinStructureOne`). This uniqueness statement is not proved here;
+uniqueness of the coefficients `g₁`, `g₂` is proved only when `E₁`, `E₂` are linearly
+independent. Without the restriction to `S`-linear forms the count is wrong: the alternating
+forms vanishing on `q` already form a three-dimensional space.
+
+## References
+
+* M. Anselmino, A. Efremov and E. Leader, *The theory and phenomenology of polarized deep
+  inelastic scattering*, Phys. Rept. **261** (1995) 1; arXiv:hep-ph/9501369, §§2–3.
+* A. V. Manohar, *An introduction to spin dependent deep inelastic scattering*,
+  arXiv:hep-ph/9204208, §§2–3.
+* B. Lampe and E. Reya, *Spin physics and polarized structure functions*, Phys. Rept. **332**
+  (2000) 1; arXiv:hep-ph/9810270, §2.
+-/
+
+public section
+
+noncomputable section
+
+namespace EpsilonEridani
+namespace QFT
+namespace Scattering
+namespace DIS
+namespace Polarized
+
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
+
+variable {V : Type} [AddCommGroup V] [Module ℝ V] {g : Bilin V}
+
+/-! ### The two covariant structures -/
+
+/-- The first covariant structure of the antisymmetric hadronic tensor,
+`E₁(v, w) = ε(v, w, q, S)`. -/
+def spinStructureOne (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) : Bilin V :=
+  ε.bilinMap ![K.q, K.S]
+
+/-- Pointwise value of `E₁`. -/
+lemma spinStructureOne_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (v w : V) :
+    spinStructureOne ε K v w = ε ![v, w, K.q, K.S] :=
+  ε.bilinMap_apply _ _ _
+
+/-- The second covariant structure of the antisymmetric hadronic tensor,
+`E₂(v, w) = ε(v, w, q, (p·q) S − (S·q) p)`. -/
+def spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) : Bilin V :=
+  ε.bilinMap ![K.q, g K.p K.q • K.S - g K.S K.q • K.p]
+
+/-- Pointwise value of `E₂`. -/
+lemma spinStructureTwo_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (v w : V) :
+    spinStructureTwo ε K v w = ε ![v, w, K.q, g K.p K.q • K.S - g K.S K.q • K.p] :=
+  ε.bilinMap_apply _ _ _
+
+/-- `E₂ = (p·q) E₁ − (S·q) ε(·, ·, q, p)`. -/
+theorem spinStructureTwo_eq (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureTwo ε K =
+      g K.p K.q • spinStructureOne ε K - g K.S K.q • ε.bilinMap ![K.q, K.p] := by
+  rw [spinStructureTwo, spinStructureOne, ε.bilinMap_pair_sub_snd, ε.bilinMap_pair_smul_snd,
+    ε.bilinMap_pair_smul_snd]
+
+/-- At `S·q = 0` the two covariant structures degenerate: `E₂ = (p·q) E₁`. -/
+theorem spinStructureTwo_eq_smul_spinStructureOne (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (hSq : g K.S K.q = 0) :
+    spinStructureTwo ε K = g K.p K.q • spinStructureOne ε K := by
+  rw [spinStructureTwo_eq, hSq, zero_smul]
+  -- `rw [sub_zero]` cannot see the subtraction on `Bilin V = LinearMap.BilinForm ℝ V`, so the
+  -- group is named explicitly.
+  exact sub_zero (G := Bilin V) _
+
+/-! ### Alternation and conservation -/
+
+/-- The first covariant structure is alternating. -/
+theorem isAlt_spinStructureOne (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    (spinStructureOne ε K).IsAlt :=
+  ε.isAlt_bilinMap _
+
+/-- The second covariant structure is alternating. -/
+theorem isAlt_spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    (spinStructureTwo ε K).IsAlt :=
+  ε.isAlt_bilinMap _
+
+/-- `E₁` vanishes on the diagonal. -/
+@[simp] theorem spinStructureOne_apply_self (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (v : V) : spinStructureOne ε K v v = 0 :=
+  ε.bilinMap_apply_self _ v
+
+/-- `E₂` vanishes on the diagonal. -/
+@[simp] theorem spinStructureTwo_apply_self (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (v : V) : spinStructureTwo ε K v v = 0 :=
+  ε.bilinMap_apply_self _ v
+
+/-- `E₁` is conserved in its first slot. -/
+@[simp] theorem spinStructureOne_conserved_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (w : V) : spinStructureOne ε K K.q w = 0 := by
+  simpa only [spinStructureOne, Matrix.cons_val_zero] using
+    ε.bilinMap_apply_left_eq_zero ![K.q, K.S] 0 w
+
+/-- `E₁` is conserved in its second slot. -/
+@[simp] theorem spinStructureOne_conserved_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (v : V) : spinStructureOne ε K v K.q = 0 := by
+  simpa only [spinStructureOne, Matrix.cons_val_zero] using
+    ε.bilinMap_apply_right_eq_zero ![K.q, K.S] 0 v
+
+/-- `E₁` annihilates the spin vector in its first slot. -/
+@[simp] theorem spinStructureOne_apply_S_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (w : V) : spinStructureOne ε K K.S w = 0 :=
+  ε.bilinMap_apply_left_eq_zero ![K.q, K.S] 1 w
+
+/-- `E₁` annihilates the spin vector in its second slot. -/
+@[simp] theorem spinStructureOne_apply_S_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (v : V) : spinStructureOne ε K v K.S = 0 :=
+  ε.bilinMap_apply_right_eq_zero ![K.q, K.S] 1 v
+
+/-- `E₂` is conserved in its first slot. -/
+@[simp] theorem spinStructureTwo_conserved_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (w : V) : spinStructureTwo ε K K.q w = 0 := by
+  simpa only [spinStructureTwo, Matrix.cons_val_zero] using
+    ε.bilinMap_apply_left_eq_zero ![K.q, g K.p K.q • K.S - g K.S K.q • K.p] 0 w
+
+/-- `E₂` is conserved in its second slot. -/
+@[simp] theorem spinStructureTwo_conserved_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) (v : V) : spinStructureTwo ε K v K.q = 0 := by
+  simpa only [spinStructureTwo, Matrix.cons_val_zero] using
+    ε.bilinMap_apply_right_eq_zero ![K.q, g K.p K.q • K.S - g K.S K.q • K.p] 0 v
+
+/-! ### Spin reversal and orientation -/
+
+/-- `E₁` is odd under spin reversal `S ↦ -S`. -/
+@[simp] theorem spinStructureOne_reverse (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) : spinStructureOne ε K.reverse = -spinStructureOne ε K := by
+  simp only [spinStructureOne, PolarizedKinematics.reverse_S,
+    PolarizedKinematics.reverse_toDisKinematics, ε.bilinMap_pair_neg_snd]
+
+/-- `E₂` is odd under spin reversal `S ↦ -S`. -/
+@[simp] theorem spinStructureTwo_reverse (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
+    (K : PolarizedKinematics g) : spinStructureTwo ε K.reverse = -spinStructureTwo ε K := by
+  have h : g K.p K.q • -K.S - g (-K.S) K.q • K.p = -(g K.p K.q • K.S - g K.S K.q • K.p) := by
+    rw [map_neg, LinearMap.neg_apply]
+    module
+  simp only [spinStructureTwo, PolarizedKinematics.reverse_S,
+    PolarizedKinematics.reverse_toDisKinematics]
+  rw [h, ε.bilinMap_pair_neg_snd]
+
+/-- Reversing the orientation `ε ↦ -ε` negates `E₁`. -/
+@[simp] theorem spinStructureOne_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureOne (-ε) K = -spinStructureOne ε K :=
+  ε.neg_bilinMap _
+
+/-- Reversing the orientation `ε ↦ -ε` negates `E₂`. -/
+@[simp] theorem spinStructureTwo_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureTwo (-ε) K = -spinStructureTwo ε K :=
+  ε.neg_bilinMap _
+
+/-! ### The tensor built from `g₁`, `g₂` -/
+
+/-- The antisymmetric tensor with structure-function values `g₁`, `g₂`,
+```text
+(M / (p·q)) · g₁ · E₁ + (M / (p·q)²) · g₂ · E₂,
+```
+where `M = √(p·p)` is the target mass. Equivalently it is
+`(M / (p·q)) · ε(·, ·, q, g₁ S + g₂ (S − ((S·q)/(p·q)) p))` (`fromG1G2_eq_bilinMap`), the
+standard form of the spin-dependent hadronic tensor for a spin vector normalised to `S·S = -1`. -/
+def fromG1G2 (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) : Bilin V :=
+  (√(K.M2 g) / g K.p K.q * g₁) • spinStructureOne ε K
+    + (√(K.M2 g) / g K.p K.q ^ 2 * g₂) • spinStructureTwo ε K
+
+/-- Pointwise value of `fromG1G2`. -/
+lemma fromG1G2_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ)
+    (v w : V) :
+    fromG1G2 ε K g₁ g₂ v w = √(K.M2 g) / g K.p K.q * g₁ * spinStructureOne ε K v w
+      + √(K.M2 g) / g K.p K.q ^ 2 * g₂ * spinStructureTwo ε K v w := by
+  simp only [fromG1G2, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
+
+/-- `fromG1G2` in standard form, as a single contraction of `ε` with `q` and a combination of
+the spin vector `S` and its projection `S − ((S·q)/(p·q)) p`:
+`(M / (p·q)) · ε(·, ·, q, g₁ S + g₂ (S − ((S·q)/(p·q)) p))`. Both sides vanish when `p·q = 0`, by
+the convention `x / 0 = 0`. -/
+theorem fromG1G2_eq_bilinMap (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) :
+    fromG1G2 ε K g₁ g₂ = (√(K.M2 g) / g K.p K.q) •
+      ε.bilinMap ![K.q, g₁ • K.S + g₂ • (K.S - (g K.S K.q / g K.p K.q) • K.p)] := by
+  have hvec : g₁ • K.S + g₂ • (K.S - (g K.S K.q / g K.p K.q) • K.p) =
+      (g₁ + g₂) • K.S - (g₂ * (g K.S K.q / g K.p K.q)) • K.p := by
+    module
+  rw [fromG1G2, spinStructureTwo_eq, hvec, ε.bilinMap_pair_sub_snd, ε.bilinMap_pair_smul_snd,
+    ε.bilinMap_pair_smul_snd, ← spinStructureOne]
+  rcases eq_or_ne (g K.p K.q) 0 with hpq | hpq
+  · simp [hpq]
+  · match_scalars <;> field_simp
+
+/-- `fromG1G2` vanishes when both structure-function values vanish. -/
+@[simp] lemma fromG1G2_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    fromG1G2 ε K 0 0 = 0 := by
+  simp only [fromG1G2, mul_zero, zero_smul, add_zero]
+
+/-- `fromG1G2` is alternating. -/
+theorem isAlt_fromG1G2 (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) :
+    (fromG1G2 ε K g₁ g₂).IsAlt :=
+  ((isAlt_spinStructureOne ε K).smul _).add ((isAlt_spinStructureTwo ε K).smul _)
+
+/-- `fromG1G2` vanishes on the diagonal. -/
+@[simp] theorem fromG1G2_apply_self (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (g₁ g₂ : ℝ) (v : V) : fromG1G2 ε K g₁ g₂ v v = 0 :=
+  isAlt_fromG1G2 ε K g₁ g₂ v
+
+/-- `fromG1G2` satisfies the antisymmetry interface `TensorAssumptions`. -/
+theorem tensorAssumptions_fromG1G2 (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (g₁ g₂ : ℝ) : TensorAssumptions V (fromG1G2 ε K g₁ g₂) :=
+  tensorAssumptions_iff_isAlt.mpr (isAlt_fromG1G2 ε K g₁ g₂)
+
+/-- `fromG1G2` is conserved in its first slot. -/
+@[simp] theorem fromG1G2_conserved_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (g₁ g₂ : ℝ) (w : V) : fromG1G2 ε K g₁ g₂ K.q w = 0 := by
+  simp [fromG1G2_apply]
+
+/-- `fromG1G2` is conserved in its second slot. -/
+@[simp] theorem fromG1G2_conserved_right (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (g₁ g₂ : ℝ) (v : V) : fromG1G2 ε K g₁ g₂ v K.q = 0 := by
+  simp [fromG1G2_apply]
+
+/-- `fromG1G2` is odd under spin reversal `S ↦ -S`. -/
+@[simp] theorem fromG1G2_reverse (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (g₁ g₂ : ℝ) : fromG1G2 ε K.reverse g₁ g₂ = -fromG1G2 ε K g₁ g₂ := by
+  ext v w
+  simp only [fromG1G2_apply, LinearMap.neg_apply, spinStructureOne_reverse,
+    spinStructureTwo_reverse, PolarizedKinematics.reverse_toDisKinematics]
+  ring
+
+/-- Reversing the orientation `ε ↦ -ε` negates `fromG1G2`. -/
+@[simp] theorem fromG1G2_neg (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) :
+    fromG1G2 (-ε) K g₁ g₂ = -fromG1G2 ε K g₁ g₂ := by
+  ext v w
+  simp only [fromG1G2_apply, LinearMap.neg_apply, spinStructureOne_neg, spinStructureTwo_neg]
+  ring
+
+/-! ### The decomposition predicate -/
+
+/-- The antisymmetric hadronic tensor `W` decomposes on `E₁`, `E₂` with the structure functions
+of `G`:
+```text
+W = (M / (p·q)) · g₁(x, Q²) · E₁ + (M / (p·q)²) · g₂(x, Q²) · E₂
+```
+at the kinematic point `(x, Q²) = (x_B, -q²)` of `K`, where `M = √(p·p)` is the target mass.
+This is the antisymmetric counterpart of `Tensors.Hadronic.IsF1F2Decomposition`. -/
+def IsG1G2Decomposition (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (G : StructureFunctions) (W : Bilin V) : Prop :=
+  W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g))
+
+/-- `fromG1G2` at the values of `g₁`, `g₂` at the kinematic point decomposes with those
+structure functions. -/
+theorem fromG1G2_isDecomposition (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (G : StructureFunctions) :
+    IsG1G2Decomposition ε K G (fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g))) :=
+  (rfl)
+
+namespace IsG1G2Decomposition
+
+variable {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g} {G : StructureFunctions}
+  {W : Bilin V}
+
+/-- A tensor decomposing on `E₁`, `E₂` is `fromG1G2` at the values of `G`. -/
+theorem eq (h : IsG1G2Decomposition ε K G W) :
+    W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) :=
+  h
+
+/-- Pointwise value of a tensor decomposing on `E₁`, `E₂`. -/
+theorem apply (h : IsG1G2Decomposition ε K G W) (v w : V) :
+    W v w = √(K.M2 g) / g K.p K.q * G.g1 (K.xBj g) (K.Q2 g) * spinStructureOne ε K v w
+      + √(K.M2 g) / g K.p K.q ^ 2 * G.g2 (K.xBj g) (K.Q2 g) * spinStructureTwo ε K v w := by
+  rw [h.eq, fromG1G2_apply]
+
+/-- A tensor decomposing on `E₁`, `E₂` is alternating. -/
+theorem isAlt (h : IsG1G2Decomposition ε K G W) : W.IsAlt :=
+  h ▸ isAlt_fromG1G2 ε K _ _
+
+/-- A tensor decomposing on `E₁`, `E₂` is conserved in its first slot. -/
+theorem conserved_left (h : IsG1G2Decomposition ε K G W) (w : V) : W K.q w = 0 :=
+  h ▸ fromG1G2_conserved_left ε K _ _ w
+
+/-- A tensor decomposing on `E₁`, `E₂` is conserved in its second slot. -/
+theorem conserved_right (h : IsG1G2Decomposition ε K G W) (v : V) : W v K.q = 0 :=
+  h ▸ fromG1G2_conserved_right ε K _ _ v
+
+/-- Under spin reversal `S ↦ -S` a tensor decomposing on `E₁`, `E₂` is negated: `-W`
+decomposes with the same structure functions at the reversed kinematics. -/
+theorem reverse (h : IsG1G2Decomposition ε K G W) : IsG1G2Decomposition ε K.reverse G (-W) := by
+  rw [IsG1G2Decomposition, fromG1G2_reverse, h.eq, PolarizedKinematics.reverse_toDisKinematics]
+
+/-- Under orientation reversal `ε ↦ -ε` a tensor decomposing on `E₁`, `E₂` is negated: `-W`
+decomposes with the same structure functions at the negated orientation. -/
+theorem neg (h : IsG1G2Decomposition ε K G W) : IsG1G2Decomposition (-ε) K G (-W) := by
+  rw [IsG1G2Decomposition, fromG1G2_neg, h.eq]
+
+end IsG1G2Decomposition
+
+/-! ### Non-degeneracy -/
+
+/-- Probe vectors separating the two covariant structures: one pair sees `E₁` but not `E₂`,
+and one pair does the reverse. This is the antisymmetric counterpart of
+`Tensors.Hadronic.UniquenessAssumptions`. -/
+abbrev SpinUniquenessAssumptions (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    Type _ :=
+  LinearMap.SeparatingProbes (spinStructureOne ε K) (spinStructureTwo ε K)
+
+/-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, the
+tensor `fromG1G2` determines its structure-function values. -/
+theorem fromG1G2_inj (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
+    (hLI : LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K]) (hM : 0 < K.M2 g)
+    (hpq : g K.p K.q ≠ 0)
+    {g₁ g₂ g₁' g₂' : ℝ} :
+    fromG1G2 ε K g₁ g₂ = fromG1G2 ε K g₁' g₂' ↔ g₁ = g₁' ∧ g₂ = g₂' := by
+  refine ⟨fun h => ?_, fun ⟨h1, h2⟩ => h1 ▸ h2 ▸ rfl⟩
+  simp only [fromG1G2] at h
+  obtain ⟨h1, h2⟩ := hLI.eq_of_pair h
+  have hs : √(K.M2 g) ≠ 0 := (Real.sqrt_pos.mpr hM).ne'
+  exact ⟨mul_left_cancel₀ (div_ne_zero hs hpq) h1,
+    mul_left_cancel₀ (div_ne_zero hs (pow_ne_zero 2 hpq)) h2⟩
+
+/-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, the
+tensor `fromG1G2` with `(g₁, g₂) ≠ (0, 0)` is non-zero. -/
+theorem fromG1G2_ne_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ)
+    (hLI : LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K]) (hM : 0 < K.M2 g)
+    (hpq : g K.p K.q ≠ 0) (h : g₁ ≠ 0 ∨ g₂ ≠ 0) : fromG1G2 ε K g₁ g₂ ≠ 0 := by
+  rw [← fromG1G2_zero ε K, Ne, fromG1G2_inj ε K hLI hM hpq]
+  exact not_and_or.mpr h
+
+/-- If `E₁` and `E₂` are linearly independent, the target mass is positive and `p·q ≠ 0`, two
+decompositions of the same tensor have the same structure-function values at the kinematic
+point. -/
+theorem IsG1G2Decomposition.unique {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g}
+    {G G' : StructureFunctions} {W : Bilin V}
+    (hLI : LinearIndependent ℝ ![spinStructureOne ε K, spinStructureTwo ε K]) (hM : 0 < K.M2 g)
+    (hpq : g K.p K.q ≠ 0) (h : IsG1G2Decomposition ε K G W)
+    (h' : IsG1G2Decomposition ε K G' W) :
+    G.g1 (K.xBj g) (K.Q2 g) = G'.g1 (K.xBj g) (K.Q2 g) ∧
+      G.g2 (K.xBj g) (K.Q2 g) = G'.g2 (K.xBj g) (K.Q2 g) :=
+  (fromG1G2_inj ε K hLI hM hpq).mp (h.eq.symm.trans h'.eq)
+
+/-! ### A witness in four-dimensional Minkowski space -/
+
+namespace Witness
+
+open Matrix (detRowAlternating)
+
+/-- The Minkowski metric `diag(1, -1, -1, -1)` on `ℝ⁴`. -/
+def ηWit : Bilin (Fin 4 → ℝ) :=
+  Matrix.toBilin' (Matrix.diagonal ![1, -1, -1, -1])
+
+@[simp] lemma ηWit_apply (v w : Fin 4 → ℝ) :
+    ηWit v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := by
+  simp only [ηWit, Matrix.toBilin'_apply', dotProduct, Matrix.mulVec_diagonal, Fin.sum_univ_four,
+    Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, one_mul, neg_mul,
+    mul_neg]
+  ring
+
+/-- `ηWit` is symmetric, as a metric must be. -/
+lemma ηWit_isSymm : ηWit.IsSymm := by
+  refine { eq := ?_ }
+  intro v w
+  simp only [ηWit_apply]
+  ring
+
+/-- Witness kinematics on `ℝ⁴` with the metric `ηWit`: a target of unit mass at rest,
+`p = (1, 0, 0, 0)`, momentum transfer `q = (1, 0, 1, 1)` (so `p·q = 1`, `Q² = 1`) and spin
+`S = (0, 0, 0, 1)`, which has `S·q = -1 ≠ 0`. The lepton line is the placeholder `k = q`,
+`k' = 0` (and `p' = 0`), so this is an algebraic non-degeneracy witness, not a physical
+event. -/
+def kWit4 : PolarizedKinematics ηWit where
+  p := ![1, 0, 0, 0]
+  pPrime := 0
+  k := ![1, 0, 1, 1]
+  kPrime := 0
+  q := ![1, 0, 1, 1]
+  hq := (sub_zero _).symm
+  S := ![0, 0, 0, 1]
+  spin_orthogonal := by simp
+  spin_normalized := by simp
+
+@[simp] lemma kWit4_p : kWit4.p = ![1, 0, 0, 0] := (rfl)
+
+@[simp] lemma kWit4_q : kWit4.q = ![1, 0, 1, 1] := (rfl)
+
+@[simp] lemma kWit4_S : kWit4.S = ![0, 0, 0, 1] := (rfl)
+
+@[simp] lemma kWit4_M2 : kWit4.M2 ηWit = 1 := by simp [DisKinematics.M2_def]
+
+@[simp] lemma kWit4_Q2 : kWit4.Q2 ηWit = 1 := by simp [DisKinematics.Q2]
+
+@[simp] lemma kWit4_xBj : kWit4.xBj ηWit = 1 / 2 := by simp [DisKinematics.xBj]
+
+lemma kWit4_p_q : ηWit kWit4.p kWit4.q = 1 := by simp
+
+/-- The probe pair `(p + S, e₁)` on the witness, which sees `E₁` but not `E₂`. -/
+private def probeOne : (Fin 4 → ℝ) × (Fin 4 → ℝ) := (![1, 0, 0, 1], ![0, 1, 0, 0])
+
+/-- The probe pair `(e₁, S)` on the witness, which sees `E₂` but not `E₁`. -/
+private def probeTwo : (Fin 4 → ℝ) × (Fin 4 → ℝ) := (![0, 1, 0, 0], ![0, 0, 0, 1])
+
+/-- `E₁(p + S, e₁) = 1` on the witness. -/
+private lemma spinStructureOne_probeOne_eq_one :
+    spinStructureOne detRowAlternating kWit4 probeOne.1 probeOne.2 = 1 := by
+  rw [spinStructureOne_apply, Matrix.detRowAlternating_fin_four]
+  norm_num [probeOne]
+
+/-- `E₂(p + S, e₁) = 0` on the witness, since `(p·q) S − (S·q) p = p + S` there. -/
+private lemma spinStructureTwo_probeOne_eq_zero :
+    spinStructureTwo detRowAlternating kWit4 probeOne.1 probeOne.2 = 0 := by
+  rw [spinStructureTwo_apply, Matrix.detRowAlternating_fin_four]
+  norm_num [probeOne]
+
+/-- `E₁(e₁, S) = 0` on the witness. -/
+private lemma spinStructureOne_probeTwo_eq_zero :
+    spinStructureOne detRowAlternating kWit4 probeTwo.1 probeTwo.2 = 0 := by
+  rw [spinStructureOne_apply, Matrix.detRowAlternating_fin_four]
+  norm_num [probeTwo]
+
+/-- `E₂(e₁, S) = 1` on the witness. -/
+private lemma spinStructureTwo_probeTwo_eq_one :
+    spinStructureTwo detRowAlternating kWit4 probeTwo.1 probeTwo.2 = 1 := by
+  rw [spinStructureTwo_apply, Matrix.detRowAlternating_fin_four]
+  norm_num [probeTwo]
+
+/-- **`SpinUniquenessAssumptions` is satisfiable.** The pair `(p + S, e₁)` sees only `E₁` and
+the pair `(e₁, S)` sees only `E₂`. -/
+def spinUniquenessWit : SpinUniquenessAssumptions detRowAlternating kWit4 where
+  v₁ := probeOne.1
+  w₁ := probeOne.2
+  apply₁_ne_zero := by rw [spinStructureOne_probeOne_eq_one]; exact one_ne_zero
+  apply₂_eq_zero := spinStructureTwo_probeOne_eq_zero
+  v₂ := probeTwo.1
+  w₂ := probeTwo.2
+  apply₁_eq_zero := spinStructureOne_probeTwo_eq_zero
+  apply₂_ne_zero := by rw [spinStructureTwo_probeTwo_eq_one]; exact one_ne_zero
+
+/-- On the witness, `E₁` and `E₂` are linearly independent. -/
+theorem linearIndependent_spinStructure_kWit4 :
+    LinearIndependent ℝ
+      ![spinStructureOne detRowAlternating kWit4, spinStructureTwo detRowAlternating kWit4] :=
+  spinUniquenessWit.linearIndependent
+
+/-- On the witness, `fromG1G2` is non-zero unless both structure-function values vanish. -/
+theorem fromG1G2_kWit4_ne_zero (g₁ g₂ : ℝ) (h : g₁ ≠ 0 ∨ g₂ ≠ 0) :
+    fromG1G2 detRowAlternating kWit4 g₁ g₂ ≠ 0 :=
+  fromG1G2_ne_zero detRowAlternating kWit4 g₁ g₂ linearIndependent_spinStructure_kWit4
+    (by rw [kWit4_M2]; exact one_pos) (by rw [kWit4_p_q]; exact one_ne_zero) h
+
+end Witness
+
+end Polarized
+end DIS
+end Scattering
+end QFT
+end EpsilonEridani
