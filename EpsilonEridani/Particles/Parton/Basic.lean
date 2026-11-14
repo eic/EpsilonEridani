@@ -9,11 +9,12 @@ public import EpsilonEridani.Particles.Parton.PDF.Basic
 public import EpsilonEridani.Particles.Parton.PDF.Positivity
 public import EpsilonEridani.Particles.Parton.TMD.Reduction
 public import EpsilonEridani.Particles.Parton.GPD.Moments
+public import EpsilonEridani.Particles.Parton.GTMD.Average
 public import EpsilonEridani.Particles.Parton.Unified.Consistency
 /-!
 
 # Parton Formalisms
 
-This file exports the PDF, TMD, GPD, and unified APIs.
+This file exports the PDF, TMD, GPD, GTMD, and unified APIs.
 
 -/
