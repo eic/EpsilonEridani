@@ -32,7 +32,8 @@ The main results are:
   `w = deltaOrthN = Δ + 2 ξ P`. This vector is orthogonal to `n` but in general not to `P`, so it
   is not the transverse momentum transfer itself; only its Minkowski square is, `⟪w, w⟫ₘ = -Δ⊥²`
   in a frame where `P` has no transverse component.
-* `OffForwardKinematics.tMom_le_tZero`: the bound `t ≤ t₀(ξ) = -4 ξ² M² / (1 - ξ²) ≤ 0`.
+* `OffForwardKinematics.tMom_le_tZero`: the bound `t ≤ t₀(ξ) = -4 ξ² M² / (1 - ξ²) ≤ 0`, and
+  `OffForwardKinematics.tMom_neg`: `t < 0` at non-zero mass and skewness.
 * `OffForwardKinematics.range_skewness_tMom`: in at least two spatial dimensions the set of
   attainable pairs `(ξ, t)` is exactly `physicalRegion M = {(ξ, t) | |ξ| < 1 ∧ t ≤ t₀(ξ)}`; in
   particular `t₀(ξ)` is attained (`isGreatest_tZero`), and the region is non-empty.
@@ -85,6 +86,14 @@ lemma tZero_nonpos (M : ℝ) {ξ : ℝ} (hξ : |ξ| < 1) : tZero M ξ ≤ 0 := b
   have h : 0 < 1 - ξ ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one ξ).mpr hξ)
   rw [tZero]
   exact div_nonpos_of_nonpos_of_nonneg (by nlinarith [sq_nonneg (ξ * M)]) h.le
+
+/-- At non-zero mass and non-zero skewness `|ξ| < 1` the minimal momentum transfer is negative,
+`t₀(ξ) < 0`. -/
+lemma tZero_neg {M ξ : ℝ} (hM : M ≠ 0) (hξ0 : ξ ≠ 0) (hξ : |ξ| < 1) : tZero M ξ < 0 := by
+  have h : 0 < 1 - ξ ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one ξ).mpr hξ)
+  have hξM : 0 < ξ ^ 2 * M ^ 2 := by positivity
+  rw [tZero_def]
+  exact div_neg_of_neg_of_pos (by linarith) h
 
 /-- For `|ξ| < 1`, `t ≤ t₀(ξ)` is equivalent to `(1 - ξ²) t + 4 ξ² M² ≤ 0`. -/
 lemma le_tZero_iff (M : ℝ) {ξ : ℝ} (hξ : |ξ| < 1) (t : ℝ) :
@@ -238,6 +247,7 @@ lemma minkowskiProduct_delta_avgMomentum_eq_zero : ⟪K.delta, K.avgMomentum⟫�
   simp
 
 /-- The invariant mass of the average momentum, `P² = M² - t / 4`. -/
+@[simp]
 lemma minkowskiProduct_avgMomentum_self_eq :
     ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 := by
   have h := K.minkowskiProduct_p_self
@@ -267,6 +277,7 @@ lemma minkowskiProduct_deltaOrthN_n_eq_zero : ⟪K.deltaOrthN, K.n⟫ₘ = 0 := 
 
 /-- The covariant form of `t = -(4 ξ² M² + Δ⊥²) / (1 - ξ²)`: for `w = Δ + 2 ξ P`,
 `⟪w, w⟫ₘ = (1 - ξ²) t + 4 ξ² M²`. -/
+@[simp]
 lemma minkowskiProduct_deltaOrthN_self_eq :
     ⟪K.deltaOrthN, K.deltaOrthN⟫ₘ =
       (1 - K.skewness ^ 2) * K.tMom + 4 * K.skewness ^ 2 * M ^ 2 := by
@@ -276,6 +287,7 @@ lemma minkowskiProduct_deltaOrthN_self_eq :
   ring
 
 /-- The average momentum paired with the vector `w = Δ + 2 ξ P` is `⟪P, w⟫ₘ = 2 ξ (M² - t / 4)`. -/
+@[simp]
 lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
     ⟪K.avgMomentum, K.deltaOrthN⟫ₘ = 2 * K.skewness * (M ^ 2 - K.tMom / 4) := by
   simp only [deltaOrthN_def, map_add, map_smul, smul_eq_mul,
@@ -284,6 +296,7 @@ lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
 
 /-- The vector `w = Δ + 2 ξ P` paired with the average momentum is `⟪w, P⟫ₘ = 2 ξ (M² - t / 4)`,
 which is in general non-zero, so `w` is not orthogonal to `P`. -/
+@[simp]
 lemma minkowskiProduct_deltaOrthN_avgMomentum_eq :
     ⟪K.deltaOrthN, K.avgMomentum⟫ₘ = 2 * K.skewness * (M ^ 2 - K.tMom / 4) := by
   rw [minkowskiProduct_symm]
@@ -312,6 +325,11 @@ theorem tMom_le_tZero : K.tMom ≤ tZero M K.skewness := by
 /-- The momentum transfer of an elastic transition is non-positive, `t ≤ 0`. -/
 lemma tMom_nonpos : K.tMom ≤ 0 :=
   K.tMom_le_tZero.trans (tZero_nonpos M K.abs_skewness_lt_one)
+
+/-- At non-zero mass and non-zero skewness the momentum transfer is negative, `t < 0`: `|t|`
+cannot be taken to zero. -/
+lemma tMom_neg (hM : M ≠ 0) (hξ : K.skewness ≠ 0) : K.tMom < 0 :=
+  K.tMom_le_tZero.trans_lt (tZero_neg hM hξ K.abs_skewness_lt_one)
 
 /-- Every off-forward configuration lies in the physical region, in any dimension. -/
 lemma skewness_tMom_mem_physicalRegion : (K.skewness, K.tMom) ∈ physicalRegion M :=
