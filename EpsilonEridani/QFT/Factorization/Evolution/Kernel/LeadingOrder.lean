@@ -31,12 +31,12 @@ The familiar forms `C_F [(1 + z²)/(1 - z)]₊` of `P_qq` and `2 C_A z [1/(1-z)]
 are theorems about the pairing with test functions (`pairing_pqq`, `pairing_pgg`), not definitions.
 The Mellin moments are computed in closed form: at every real index in the half-line of
 convergence for the three kernels whose moments are rational functions of `N`, and at natural
-indices for `P_qq` and `P_gg`, whose moments involve the harmonic numbers. At `N = 1` and `N = 2`
-they give the conservation identities: quark number, `M[P_qq](1) = 0`, and momentum,
-`M[P_qq](2) + M[P_gq](2) = 0` and `M[P_gg](2) + M[2 n_f P_qg](2) = 0`. These are derived from the
-kernels and not imposed on them: the `n_f`-dependent delta coefficient of `P_gg`, which is half
-the one-loop beta-function coefficient `β₀` (`pgg_deltaCoeff_eq_beta0_div_two`), is what makes
-the second momentum identity hold.
+indices `N ≥ 1` for `P_qq` and `N ≥ 2` for `P_gg`, whose moments involve the harmonic numbers.
+At `N = 1` and `N = 2` they give the conservation identities: quark number, `M[P_qq](1) = 0`,
+and momentum, `M[P_qq](2) + M[P_gq](2) = 0` and `M[P_gg](2) + M[2 n_f P_qg](2) = 0`. These are
+derived from the kernels and not imposed on them: the `n_f`-dependent delta coefficient of `P_gg`,
+which is half the one-loop beta-function coefficient `β₀` (`pgg_deltaCoeff_eq_beta0_div_two`), is
+what makes the second momentum identity hold.
 
 ## Main definitions
 
@@ -49,8 +49,8 @@ the second momentum identity hold.
 * `pairing_pgg`: `P_gg` is `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)]` plus its delta term.
 * `moment_pgq`, `moment_pqg`, `moment_pqgSinglet`: the moments in closed form at every real
   index `N` for which the integral converges, as rational functions of `N`.
-* `moment_pqq`, `moment_pgg`: the moments in closed form at natural indices, in terms of the
-  harmonic numbers `S₁(N) = H_N`.
+* `moment_pqq`, `moment_pgg`: the moments in closed form at natural indices `N ≥ 1` for `P_qq`
+  and `N ≥ 2` for `P_gg`, in terms of the harmonic numbers `S₁(N) = H_N`.
 * `pgg_deltaCoeff_eq_beta0_div_two`: the delta coefficient of `P_gg` is `β₀ / 2`.
 * `moment_pqq_one`: quark-number conservation.
 * `moment_pqq_two_add_moment_pgq_two_eq_zero`,
