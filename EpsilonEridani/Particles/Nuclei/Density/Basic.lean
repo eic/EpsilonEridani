@@ -238,7 +238,7 @@ lemma woodsSaxonDensity_eq_div (ρ₀ R a r : ℝ) :
 
 /-- At the half-density radius `r = R`, the Woods–Saxon profile equals half its parameter `ρ₀`,
 `ρ₀ / 2`. -/
-lemma woodsSaxonDensity_eq_half (ρ₀ R a : ℝ) :
+lemma woodsSaxonDensity_self (ρ₀ R a : ℝ) :
     woodsSaxonDensity ρ₀ R a R = ρ₀ / 2 := by
   rw [woodsSaxonDensity_def, sub_self, zero_div, Real.sigmoid_zero]
   ring
