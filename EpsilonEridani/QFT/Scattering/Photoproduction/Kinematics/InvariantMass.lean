@@ -107,19 +107,6 @@ private theorem abs_sub_lt_add (hk : 0 < k) (hp : -E < p) (hpE : p ≤ E) : |k -
   rw [abs_lt]
   constructor <;> linarith
 
-/-- The photon and the target both move along the beam axis `n`, so their sum does too: the
-spatial part of the photon–target system is `(a - p) • n`. -/
-private theorem spatialPart_add_eq_sub_smul (hq' : q.spatialPart = a • n)
-    (hP' : P.spatialPart = -p • n) : (q + P).spatialPart = (a - p) • n := by
-  rw [spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP', sub_eq_add_neg]
-
-/-- Inside the forward light cone `|a - p| < k + E`, the photon–target system is inside the
-forward light cone along the beam axis: `|a - p| < (q + P)⁰`. -/
-private theorem abs_sub_lt_timeComponent_add (hq : q.timeComponent = k)
-    (hP : P.timeComponent = E) (h : |a - p| < k + E) : |a - p| < (q + P).timeComponent := by
-  rw [timeComponent_add, hq, hP]
-  exact h
-
 section CollinearPhoton
 
 variable (hn : ‖n‖ = 1) (hq : q.timeComponent = k) (hq' : q.spatialPart = a • n)
@@ -132,8 +119,10 @@ and momentum `p` against it, inside the forward light cone `|a - p| < k + E`, ha
 along the beam axis with `e^{2y} = (k + a + E - p) / (k - a + E + p)`. -/
 theorem exp_two_mul_rapidity_of_collinearPhoton (h : |a - p| < k + E) :
     exp (2 * (q + P).rapidity n) = (k + a + E - p) / (k - a + E + p) := by
-  rw [exp_two_mul_rapidity_of_spatialPart_eq_smul hn (spatialPart_add_eq_sub_smul hq' hP')
-    (abs_sub_lt_timeComponent_add hq hP h), timeComponent_add, hq, hP]
+  rw [exp_two_mul_rapidity_of_spatialPart_eq_smul hn
+    (spatialPart_add_eq_sub_smul_of_spatialPart_eq_smul hq' hP')
+    (by rwa [timeComponent_add, hq, hP]),
+    timeComponent_add, hq, hP]
   congr 1 <;> ring
 
 /-- **The forward light-cone component from the invariant mass and the rapidity.** For a photon
@@ -143,7 +132,8 @@ the beam axis is `W e^{y}`, where `W` and `y` are its invariant mass and rapidit
 theorem photonEnergy_add_photonMomentum_add_targetEnergy_sub_momentum_eq_sqrt_mul_exp_rapidity
     (h : |a - p| < k + E) : k + a + E - p = √⟪q + P, q + P⟫ₘ * exp ((q + P).rapidity n) := by
   have := timeComponent_add_eq_sqrt_minkowskiProduct_mul_exp_rapidity_of_spatialPart_eq_smul hn
-    (spatialPart_add_eq_sub_smul hq' hP') (abs_sub_lt_timeComponent_add hq hP h)
+    (spatialPart_add_eq_sub_smul_of_spatialPart_eq_smul hq' hP')
+    (by rwa [timeComponent_add, hq, hP])
   rw [timeComponent_add, hq, hP] at this
   linear_combination this
 
@@ -155,7 +145,8 @@ theorem photonEnergy_sub_photonMomentum_add_targetEnergy_add_momentum_eq_sqrt_mu
     (h : |a - p| < k + E) :
     k - a + E + p = √⟪q + P, q + P⟫ₘ * exp (-(q + P).rapidity n) := by
   have := timeComponent_sub_eq_sqrt_minkowskiProduct_mul_exp_neg_rapidity_of_spatialPart_eq_smul
-    hn (spatialPart_add_eq_sub_smul hq' hP') (abs_sub_lt_timeComponent_add hq hP h)
+    hn (spatialPart_add_eq_sub_smul_of_spatialPart_eq_smul hq' hP')
+    (by rwa [timeComponent_add, hq, hP])
   rw [timeComponent_add, hq, hP] at this
   linear_combination this
 
@@ -164,8 +155,9 @@ and a target of energy `E` and momentum `p` against it, with `|a - p| < k + E`, 
 invariant mass `W > 0`. -/
 theorem sqrt_minkowskiProduct_add_self_pos_of_collinearPhoton (h : |a - p| < k + E) :
     0 < √⟪q + P, q + P⟫ₘ :=
-  sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul hn (spatialPart_add_eq_sub_smul hq' hP')
-    (abs_sub_lt_timeComponent_add hq hP h)
+  sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul hn
+    (spatialPart_add_eq_sub_smul_of_spatialPart_eq_smul hq' hP')
+    (by rwa [timeComponent_add, hq, hP])
 
 end CollinearPhoton
 
