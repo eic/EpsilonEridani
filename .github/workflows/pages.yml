@@ -440,7 +440,7 @@ jobs:
         working-directory: web
     steps:
       # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
-      - name: Raise vm.max_map_count
+      - name: Raise vm.max_map_count and allow memory overcommit
         # the job's default working directory, web/, does not exist before checkout
         working-directory: ${{ github.workspace }}
         run: |
@@ -452,10 +452,18 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
-          # Record the memory the image provides: on ubuntu-26.04 the doc-gen4 step fails with
-          # `resource exhausted (error code: 12, not enough memory)` when Lake spawns processes.
+          # On ubuntu-26.04 (overcommit mode 0, 15 GiB RAM + 3 GiB swap) the doc-gen4 step failed
+          # with `resource exhausted (error code: 12, not enough memory)` whenever Lake spawned
+          # git or lean: the kernel logged `__vm_enough_memory: comm: lake, bytes: 89120911360`,
+          # a single ~83 GiB charge that mode 0's heuristic rejects because it exceeds RAM + swap,
+          # while MemAvailable was still ~12 GB and the cgroup recorded no OOM. Mode 1 skips that
+          # per-request check; genuine exhaustion then ends in an OOM kill instead of ENOMEM.
+          sudo -n sysctl -w vm.overcommit_memory=1 >/dev/null 2>&1 \
+            || sysctl -w vm.overcommit_memory=1 >/dev/null 2>&1 || true
           free -h; swapon --show || true
-          echo "vm.overcommit_memory=$(cat /proc/sys/vm/overcommit_memory)"
+          mode="$(cat /proc/sys/vm/overcommit_memory)"
+          echo "vm.overcommit_memory=$mode"
+          [ "$mode" = 1 ] || echo "::warning::vm.overcommit_memory is $mode, not 1; Lake may fail to spawn processes"
       - uses: actions/checkout@v7
         with:
           # Same reasoning as build-data's checkout, and it matters more here: this job elaborates
