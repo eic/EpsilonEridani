@@ -63,9 +63,19 @@ def mellinMomentH (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :
 def mellinMomentE (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :=
   mellinMomentGpd M.E n i xi t
 
+/-- Unfolding lemma for `mellinMomentGpd` as an explicit integral. -/
+lemma mellinMomentGpd_eq_integral (H : Gpd Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
+    mellinMomentGpd H n i xi t = ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * H i x xi t :=
+  rfl
+
 /-- Unfolding lemma for `mellinMomentH` as an explicit integral. -/
 lemma mellinMomentH_eq_integral (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
     mellinMomentH M n i xi t = ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * M.H i x xi t :=
+  rfl
+
+/-- Unfolding lemma for `mellinMomentE` as an explicit integral. -/
+lemma mellinMomentE_eq_integral (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
+    mellinMomentE M n i xi t = ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * M.E i x xi t :=
   rfl
 
 /-- Polynomiality schema for Mellin moments of `H`.
