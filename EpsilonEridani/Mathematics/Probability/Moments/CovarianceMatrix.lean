@@ -5,9 +5,9 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.Probability.Moments.Variance
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Moments.Covariance
 /-!
 
@@ -34,8 +34,6 @@ All declarations live in the namespace `EpsilonEridani.ProbabilityTheory`.
   and `variance_dotProduct` for the variance.
 * `posSemidef_covarianceMatrix`: the covariance matrix of square-integrable random variables is
   positive semidefinite.
-* `variance_eq_zero_iff`: a square-integrable random variable has zero variance exactly when it is
-  almost surely equal to its integral.
 * `ae_eq_integral_iff_covarianceMatrix_mulVec_eq_zero`: the linear combination `c ⬝ᵥ X` is almost
   surely equal to its integral exactly when `c` lies in the kernel of the covariance matrix.
 -/
@@ -81,11 +79,11 @@ theorem covarianceMatrix_eq_covMatrix_map [Countable ι] (hX : ∀ i, AEMeasurab
   have hmeas : AEMeasurable (fun ω => (WithLp.toLp 2 (X · ω) : EuclideanSpace ℝ ι)) μ :=
     (WithLp.measurable_toLp 2 _).comp_aemeasurable (aemeasurable_pi_iff.2 hX)
   ext i j
-  -- The coordinates of `WithLp.toLp 2 (X · ω)` are the `X i ω` by `PiLp.toLp_apply`, which is
-  -- `rfl`, so pulling the covariance back along the random vector gives `cov[X i, X j; μ]`.
-  have h : cov[fun z : EuclideanSpace ℝ ι => z i, fun z => z j;
-      μ.map fun ω => WithLp.toLp 2 (X · ω)] = cov[X i, X j; μ] :=
-    covariance_map_fun (by fun_prop) (by fun_prop) hmeas
+  have h := covariance_map_fun (X := fun z : EuclideanSpace ℝ ι => z i) (Y := fun z => z j)
+    (by fun_prop) (by fun_prop) hmeas
+  -- `WithLp` is a structure, so the coordinate `WithLp.ofLp (WithLp.toLp 2 (X · ω)) i` of the
+  -- pulled-back projection reduces to `X i ω` by projection reduction.
+  dsimp only at h
   rw [covarianceMatrix_apply, TauCeti.covMatrix_apply, h]
 
 /-- The covariance matrix is symmetric. -/
@@ -103,14 +101,6 @@ theorem memLp_dotProduct {p : ENNReal} (hX : ∀ i, MemLp (X i) p μ) (c : ι �
   exact memLp_finsetSum _ fun i _ => (hX i).const_mul (c i)
 
 variable [IsFiniteMeasure μ]
-
-omit [Fintype ι] in
-/-- A square-integrable random variable has zero variance exactly when it is almost surely equal
-to its integral `μ[·]`. -/
-theorem variance_eq_zero_iff {Y : Ω → ℝ} (hY : MemLp Y 2 μ) :
-    Var[Y; μ] = 0 ↔ Y =ᵐ[μ] fun _ => μ[Y] := by
-  rw [← evariance_eq_zero_iff hY.aemeasurable, variance, ENNReal.toReal_eq_zero_iff,
-    or_iff_left (evariance_lt_top hY).ne]
 
 /-- The covariance of two linear combinations of square-integrable random variables is the
 bilinear form of the covariance matrix. -/
