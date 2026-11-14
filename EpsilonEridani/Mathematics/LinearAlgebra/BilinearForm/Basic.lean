@@ -22,9 +22,9 @@ virtuality `-(k - k')²` computed from the lepton momenta before the emission.
 
 ## Main statements
 
-* `LinearMap.BilinForm.apply_smul_sub_self`:
+* `LinearMap.BilinForm.apply_smul_sub_self_eq`:
   `B (z u - v) (z u - v) = z B (u - v) (u - v) + (1 - z) (B v v - z B u u)`.
-* `LinearMap.BilinForm.apply_sub_smul_self`:
+* `LinearMap.BilinForm.apply_sub_smul_self_eq`:
   `B (u - z v) (u - z v) = z B (u - v) (u - v) + (1 - z) (B u u - z B v v)`.
 -/
 
@@ -37,13 +37,13 @@ open LinearMap (BilinForm)
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The expansion of `B (z u - v) (z u - v)` about `B (u - v) (u - v)`. -/
-theorem apply_smul_sub_self (B : BilinForm R M) (u v : M) (z : R) :
+theorem apply_smul_sub_self_eq (B : BilinForm R M) (u v : M) (z : R) :
     B (z • u - v) (z • u - v) = z * B (u - v) (u - v) + (1 - z) * (B v v - z * B u u) := by
   simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
   ring
 
 /-- The expansion of `B (u - z v) (u - z v)` about `B (u - v) (u - v)`. -/
-theorem apply_sub_smul_self (B : BilinForm R M) (u v : M) (z : R) :
+theorem apply_sub_smul_self_eq (B : BilinForm R M) (u v : M) (z : R) :
     B (u - z • v) (u - z • v) = z * B (u - v) (u - v) + (1 - z) * (B u u - z * B v v) := by
   simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
   ring
