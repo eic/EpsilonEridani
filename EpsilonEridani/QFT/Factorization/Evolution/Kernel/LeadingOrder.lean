@@ -233,15 +233,20 @@ theorem pairing_pqq {φ : ℝ → ℝ}
 
 /-- **`P_gg` in its familiar form.** The normal form of `P_gg` pairs with a test function `φ` as
 `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)] + ((11/6) C_A - (2/3) n_f T_F) δ(1-z)`, for every `φ`
-whose pairing with `[1/(1-z)]₊` converges and against which the regular part converges. -/
+whose pairing with `[1/(1-z)]₊` converges and against which the singular term `(1-z)/z` of the
+regular part converges. -/
 theorem pairing_pgg {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1)
-    (hreg : IntervalIntegrable (fun z => ((1 - z) / z + z * (1 - z)) * φ z) volume 0 1) :
+    (hsing : IntervalIntegrable (fun z => (1 - z) / z * φ z) volume 0 1) :
     (pgg c).pairing φ =
       2 * c.cA * (plusOneMinus (fun z => z * φ z) +
           ∫ z in (0 : ℝ)..1, ((1 - z) / z + z * (1 - z)) * φ z) +
         (11 / 6 * c.cA - 2 / 3 * c.nF * c.tF) * φ 1 := by
   have hφ := intervalIntegrable_of_plusOneMinus_integrand hφ₁
+  -- The polynomial term `z (1 - z) φ z` is integrable because `φ` is.
+  have hreg : IntervalIntegrable (fun z => ((1 - z) / z + z * (1 - z)) * φ z) volume 0 1 :=
+    (hsing.add (hφ.continuousOn_mul (g := fun z => z * (1 - z)) (by fun_prop))).congr
+      fun z _ => by ring
   have hsplit : (fun z => 2 * c.cA * (-1 + (1 - z) / z + z * (1 - z)) * φ z) =
       fun z => 2 * c.cA * (-φ z + ((1 - z) / z + z * (1 - z)) * φ z) := by
     funext z
