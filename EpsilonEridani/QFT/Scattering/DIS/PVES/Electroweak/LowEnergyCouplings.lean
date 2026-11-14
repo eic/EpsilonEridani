@@ -50,18 +50,18 @@ all are built from `C₁`.
   `C₁ - C₂ = 4 (g_L^ℓ g_R^f - g_R^ℓ g_L^f)`.
 * `FermionNeutralCurrentCouplings.c1_ofQuantumNumbers_left`: `C₁` depends on the lepton only
   through its weak isospin `T³`, not through its charge or `sin²θ_W`.
-* `NeutralCurrentCouplings.smTreeLevelCouplings_c1Up` and its three companions: the Standard Model
+* `smTreeLevelCouplings_c1Up` and its three companions: the Standard Model
   values `C_{1u} = -1/2 + (4/3) sin²θ_W`, `C_{1d} = 1/2 - (2/3) sin²θ_W`,
   `C_{2u} = -1/2 + 2 sin²θ_W`, `C_{2d} = 1/2 - 2 sin²θ_W`.
-* `NeutralCurrentCouplings.smTreeLevelCouplings_two_mul_c1Up_sub_c1Down` and
-  `NeutralCurrentCouplings.smTreeLevelCouplings_two_mul_c2Up_sub_c2Down`: the isoscalar
+* `smTreeLevelCouplings_two_mul_c1Up_sub_c1Down` and
+  `smTreeLevelCouplings_two_mul_c2Up_sub_c2Down`: the isoscalar
   combinations `2 C_{1u} - C_{1d} = -3/2 + (10/3) sin²θ_W` and
   `2 C_{2u} - C_{2d} = -3/2 + 6 sin²θ_W`, which the deuteron asymmetry measures.
 * `FermionNeutralCurrentCouplings.c1_electron_electron`: electron-electron (Møller) scattering
   has `C₁ = (1 - 4 sin²θ_W) / 2`, computed from the electron's quantum numbers alone. Here
   `C₂ = C₁` too, but only because both fermions are the electron: in general `C₂` is `C₁` with the
   fermions exchanged (`FermionNeutralCurrentCouplings.c2_eq_c1_swap`).
-* `NeutralCurrentCouplings.smTreeLevelCouplings_neutronWeakCharge`: the neutron weak charge is
+* `smTreeLevelCouplings_neutronWeakCharge`: the neutron weak charge is
   `-1` at every `sin²θ_W`.
 
 ## References
@@ -149,10 +149,14 @@ theorem c1_electron_electron (s2 : ℝ) :
   ring
 
 /-- The weak charge `Q_W = 2 C₁ = 4 g_A g_V` of a fermion, where `C₁` is the coupling of the
-fermion with itself. For the electron this is `Q_W^e`, whose sign convention makes it
-`1 - 4 sin²θ_W` at tree level (`NeutralCurrentCouplings.smTreeLevelCouplings_electron_weakCharge`);
-this is `+2 C_{1e}`, the opposite sign to the `-2 C₁` that the nucleon charges follow, so the
-tree-level electron and proton weak charges are equal. -/
+fermion with itself, in the sign convention of the lepton weak charge. For the electron this is
+`Q_W^e`, which is `1 - 4 sin²θ_W` at tree level (`smTreeLevelCouplings_electron_weakCharge`).
+
+This `+2 C₁` convention is the lepton one only. It is the opposite sign to the `-2 C_{1q}` that the
+hadronic charges `NeutralCurrentCouplings.protonWeakCharge` and
+`NeutralCurrentCouplings.neutronWeakCharge` follow, so for a quark coupling pair this is not the
+quark weak charge of that convention. With these conventions the tree-level electron and proton
+weak charges are equal. -/
 def weakCharge : ℝ := 2 * ℓ.c1 ℓ
 
 /-- The weak charge unfolded. -/
@@ -163,6 +167,11 @@ theorem weakCharge_def : ℓ.weakCharge = 2 * ℓ.c1 ℓ :=
 theorem weakCharge_eq_four_mul_gA_mul_gV : ℓ.weakCharge = 4 * ℓ.gA * ℓ.gV := by
   rw [weakCharge_def, c1_def]
   ring
+
+/-- The weak charge vanishes exactly when the axial or the vector coupling does. -/
+theorem weakCharge_eq_zero_iff : ℓ.weakCharge = 0 ↔ ℓ.gA = 0 ∨ ℓ.gV = 0 := by
+  rw [weakCharge_eq_four_mul_gA_mul_gV, mul_assoc, mul_eq_zero, mul_eq_zero]
+  norm_num
 
 end FermionNeutralCurrentCouplings
 
@@ -199,6 +208,43 @@ theorem c2Up_def : C.c2Up = C.electron.c2 C.upType :=
 /-- The coupling `C_{2d}` unfolded. -/
 theorem c2Down_def : C.c2Down = C.electron.c2 C.downType :=
   (rfl)
+
+/-!
+## Weak charges
+
+The weak charge of a target measures how strongly it couples, through its vector current, to the
+electron axial current by `Z` exchange at zero momentum transfer. For a nucleon it is `-2` times
+the sum of `C_{1q}` over its valence quarks.
+
+The electron weak charge `Q_W^e` is the weak charge `FermionNeutralCurrentCouplings.weakCharge` of
+the electron's own coupling pair, `C.electron.weakCharge`, and needs no quark couplings.
+-/
+
+/-- The weak charge of the proton, `Q_W^p = -2 (2 C_{1u} + C_{1d})`. -/
+def protonWeakCharge : ℝ := -2 * (2 * C.c1Up + C.c1Down)
+
+/-- The weak charge of the neutron, `Q_W^n = -2 (C_{1u} + 2 C_{1d})`. -/
+def neutronWeakCharge : ℝ := -2 * (C.c1Up + 2 * C.c1Down)
+
+/-- The weak charge `Z Q_W^p + N Q_W^n` of a nucleus with `Z` protons and `N` neutrons. -/
+def nuclearWeakCharge (Z N : ℝ) : ℝ := Z * C.protonWeakCharge + N * C.neutronWeakCharge
+
+/-- The proton weak charge unfolded. -/
+theorem protonWeakCharge_def : C.protonWeakCharge = -2 * (2 * C.c1Up + C.c1Down) :=
+  (rfl)
+
+/-- The neutron weak charge unfolded. -/
+theorem neutronWeakCharge_def : C.neutronWeakCharge = -2 * (C.c1Up + 2 * C.c1Down) :=
+  (rfl)
+
+/-- The nuclear weak charge unfolded. -/
+theorem nuclearWeakCharge_def (Z N : ℝ) :
+    C.nuclearWeakCharge Z N = Z * C.protonWeakCharge + N * C.neutronWeakCharge :=
+  (rfl)
+
+end NeutralCurrentCouplings
+
+open FermionNeutralCurrentCouplings NeutralCurrentCouplings
 
 /-!
 ## Standard Model values
@@ -261,39 +307,6 @@ theorem smTreeLevelCouplings_two_mul_c2Up_sub_c2Down (s2 : ℝ) :
   rw [smTreeLevelCouplings_c2Up, smTreeLevelCouplings_c2Down]
   ring
 
-/-!
-## Weak charges
-
-The weak charge of a target measures how strongly it couples, through its vector current, to the
-electron axial current by `Z` exchange at zero momentum transfer. For a nucleon it is `-2` times
-the sum of `C_{1q}` over its valence quarks.
-
-The electron weak charge `Q_W^e` is the weak charge `FermionNeutralCurrentCouplings.weakCharge` of
-the electron's own coupling pair, `C.electron.weakCharge`, and needs no quark couplings.
--/
-
-/-- The weak charge of the proton, `Q_W^p = -2 (2 C_{1u} + C_{1d})`. -/
-def protonWeakCharge : ℝ := -2 * (2 * C.c1Up + C.c1Down)
-
-/-- The weak charge of the neutron, `Q_W^n = -2 (C_{1u} + 2 C_{1d})`. -/
-def neutronWeakCharge : ℝ := -2 * (C.c1Up + 2 * C.c1Down)
-
-/-- The weak charge `Z Q_W^p + N Q_W^n` of a nucleus with `Z` protons and `N` neutrons. -/
-def nuclearWeakCharge (Z N : ℝ) : ℝ := Z * C.protonWeakCharge + N * C.neutronWeakCharge
-
-/-- The proton weak charge unfolded. -/
-theorem protonWeakCharge_def : C.protonWeakCharge = -2 * (2 * C.c1Up + C.c1Down) :=
-  (rfl)
-
-/-- The neutron weak charge unfolded. -/
-theorem neutronWeakCharge_def : C.neutronWeakCharge = -2 * (C.c1Up + 2 * C.c1Down) :=
-  (rfl)
-
-/-- The nuclear weak charge unfolded. -/
-theorem nuclearWeakCharge_def (Z N : ℝ) :
-    C.nuclearWeakCharge Z N = Z * C.protonWeakCharge + N * C.neutronWeakCharge :=
-  (rfl)
-
 /-- At tree level the electron weak charge is `1 - 4 sin²θ_W`. -/
 @[simp]
 theorem smTreeLevelCouplings_electron_weakCharge (s2 : ℝ) :
@@ -333,9 +346,7 @@ smallness at the physical value is the reason the Møller asymmetry is a sensiti
 weak-mixing angle. -/
 theorem smTreeLevelCouplings_electron_weakCharge_eq_zero_iff (s2 : ℝ) :
     (smTreeLevelCouplings s2).electron.weakCharge = 0 ↔ s2 = 1 / 4 := by
-  rw [smTreeLevelCouplings_electron_weakCharge]
-  constructor <;> intro h <;> linarith
-
-end NeutralCurrentCouplings
+  rw [weakCharge_eq_zero_iff, ← electron_gV_eq_zero_iff, smTreeLevelCouplings_electron]
+  norm_num
 
 end EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak
