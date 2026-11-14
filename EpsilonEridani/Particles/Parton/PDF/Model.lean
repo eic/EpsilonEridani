@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.PDF.Positivity
+import TauCeti.Analysis.SpecialFunctions.Beta
 /-!
 
 # An explicit collinear PDF model
@@ -28,11 +29,21 @@ The same shape carried by a diagonal spin-density matrix discharges
 `EpsilonEridani.Particles.Parton.PDF.SpinDensityAssumptions`
 (`spinDensityAssumptions_modelSpinDensity`), which likewise had no instance.
 
+Every Mellin moment of the model is available in closed form: the shape integrates to the Euler
+Beta value `a! b! / (a + b + 1)!` (`integral_betaShape`), so the `n`-th moment is
+`(n + a)! b! / (n + a + b + 1)!` (`mellinMoment_modelPdf`). For the shape `1 - x`, the moments
+are `1 / ((n + 1) (n + 2))`, so any rescaling of it parton by parton (`PDF.weight`) with weights
+summing to six obeys the momentum sum rule and carries the sum-rule bundle
+(`sumRuleAssumptionsWeightModelPdf`): a model with prescribed valence targets.
+
 ## ii. Key results
 
+- `EpsilonEridani.Particles.Parton.PDF.comap_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.mellinMoment_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.sumRuleAssumptionsWeightModelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
 
 ## iii. Table of contents
@@ -40,14 +51,19 @@ The same shape carried by a diagonal spin-density matrix discharges
 - A. The shape and the model
 - B. The physical half
 - C. The analytic half
-- D. The spin-density model
+- D. Moments in closed form
+- E. The spin-density model
 
 ## Implementation notes
 
 The exponents are natural numbers, not reals. A realistic small-`x` fit wants `x^a` with
 `-1 < a < 0`, which is `Real.rpow` and needs the Beta-integral convergence argument in place
-of continuity on a compact set; that generalization is not attempted here. Nothing in the
-statements below depends on the particular values of `a` and `b`.
+of continuity on a compact set; that generalization is not attempted here. Every statement below
+is uniform in `a` and `b`, except for the shape `1 - x`, `a = 0`, `b = 1`:
+`mellinMoment_modelPdf_zero_one` specializes the closed-form moment to it with the factorials
+evaluated, the form in which `simp` evaluates the moments of the meson valence model built on that
+shape, and the sum-rule bundle of its rescalings (`sum_mellinMoment_one_weight_modelPdf_zero_one`,
+`sumRuleAssumptionsWeightModelPdf`) is stated for it, the total weight six being specific to it.
 
 -/
 
@@ -55,7 +71,7 @@ statements below depends on the particular values of `a` and `b`.
 
 noncomputable section
 
-open scoped BigOperators
+open scoped BigOperators Nat
 
 namespace EpsilonEridani
 namespace Particles
@@ -86,6 +102,12 @@ def modelPdf (Flavor : Type) (a b : ℕ) : Pdf Flavor :=
 /-- Unfolding lemma for the model. -/
 lemma modelPdf_apply (Flavor : Type) (a b : ℕ) (i : Flavor) (x Q2 : ℝ) :
     modelPdf Flavor a b i x Q2 = Set.indicator (Set.Icc (0 : ℝ) 1) (betaShape a b) x := rfl
+
+/-- The model does not depend on the parton index, so reindexing it gives the model over the new
+index type. -/
+@[simp]
+lemma comap_modelPdf {ι κ : Type} (σ : κ → ι) (a b : ℕ) :
+    comap σ (modelPdf ι a b) = modelPdf κ a b := rfl
 
 /-! ### B. The physical half -/
 
@@ -151,7 +173,75 @@ lemma mellinMoment_modelPdf_nonneg (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q
   exact mul_nonneg (pow_nonneg hx.1 n)
     ((isPartonDensity_modelPdf Flavor a b).nonneg i x Q2 hx.1 hx.2)
 
-/-! ### D. The spin-density model -/
+/-! ### D. Moments in closed form -/
+
+/-- **The Euler Beta value of the shape**: `∫₀¹ x^a (1 - x)^b dx = a! b! / (a + b + 1)!`. This is
+Euler's beta integral `TauCeti.integral_rpow_mul_one_sub_rpow` at the parameters `a + 1` and
+`b + 1`, with `Β(a + 1, b + 1) = Γ(a + 1) Γ(b + 1) / Γ(a + b + 2)` evaluated by factorials. -/
+lemma integral_betaShape (a b : ℕ) :
+    ∫ x in Set.Icc (0 : ℝ) 1, betaShape a b x = (a ! * b ! : ℝ) / (a + b + 1)! := by
+  have h := TauCeti.integral_rpow_mul_one_sub_rpow (a := (a : ℝ) + 1) (b := (b : ℝ) + 1)
+    (by positivity) (by positivity)
+  simp only [add_sub_cancel_right, Real.rpow_natCast] at h
+  rw [MeasureTheory.integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
+  simp only [betaShape]
+  rw [h, ProbabilityTheory.beta, Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial,
+    show (a : ℝ) + 1 + (b + 1) = ((a + b + 1 : ℕ) : ℝ) + 1 by push_cast; ring,
+    Real.Gamma_nat_eq_factorial]
+
+/-- **The Mellin moments of the model in closed form**: `∫₀¹ xⁿ x^a (1 - x)^b dx` is the Euler
+Beta value `(n + a)! b! / (n + a + b + 1)!`, at every flavour and every scale. -/
+lemma mellinMoment_modelPdf (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor a b) n i Q2 = ((n + a)! * b ! : ℝ) / (n + a + b + 1)! := by
+  have key : mellinMoment (modelPdf Flavor a b) n i Q2
+      = ∫ x in Set.Icc (0 : ℝ) 1, betaShape (n + a) b x :=
+    MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x hx => by
+      rw [modelPdf_apply, Set.indicator_of_mem hx, betaShape, betaShape, pow_add]
+      ring
+  rw [key, integral_betaShape]
+
+/-- **The Mellin moments of the model with exponents `a = 0` and `b = 1`**, the shape `1 - x`:
+`∫₀¹ xⁿ (1 - x) dx = 1 / ((n + 1) (n + 2))`. In particular the model carries number density
+`1 / 2`, `n = 0`, and momentum fraction `1 / 6`, `n = 1`, at each of its flavours. This is the
+`a = 0`, `b = 1` case of `mellinMoment_modelPdf` with the factorials evaluated. -/
+@[simp]
+lemma mellinMoment_modelPdf_zero_one (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor 0 1) n i Q2 = (((n : ℝ) + 1) * ((n : ℝ) + 2))⁻¹ := by
+  have hn : (n ! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
+  rw [mellinMoment_modelPdf, Nat.add_zero, Nat.factorial_one,
+    Nat.factorial_succ (n + 1), Nat.factorial_succ n]
+  push_cast
+  field_simp
+  ring
+
+/-- **The momentum sum rule for a rescaled shape `1 - x`.** Rescaling the model with exponents
+`a = 0` and `b = 1` by weights summing to six puts unit total momentum on the density, each unit
+of weight carrying the momentum fraction `1 / 6`. -/
+lemma sum_mellinMoment_one_weight_modelPdf_zero_one [Fintype Flavor] {w : Flavor → ℝ}
+    (hw : ∑ i, w i = 6) (Q2 : ℝ) :
+    ∑ i, mellinMoment (weight w (modelPdf Flavor 0 1)) 1 i Q2 = 1 := by
+  simp only [mellinMoment_weight, mellinMoment_modelPdf_zero_one, ← Finset.sum_mul, hw]
+  norm_num
+
+/-- **The sum-rule bundle of a rescaled shape `1 - x`**: the model with exponents `a = 0` and
+`b = 1`, rescaled by weights summing to six, carries the upstream sum-rule bundle, the valence
+target of each flavour being half its weight. -/
+def sumRuleAssumptionsWeightModelPdf [Fintype Flavor] {w : Flavor → ℝ} (hw : ∑ i, w i = 6) :
+    SumRuleAssumptions (weight w (modelPdf Flavor 0 1)) where
+  momentum := sum_mellinMoment_one_weight_modelPdf_zero_one hw
+  valenceTarget i := w i / 2
+  valence i Q2 := by
+    rw [mellinMoment_weight, mellinMoment_modelPdf_zero_one]
+    push_cast
+    ring
+
+@[simp]
+lemma sumRuleAssumptionsWeightModelPdf_valenceTarget [Fintype Flavor] {w : Flavor → ℝ}
+    (hw : ∑ i, w i = 6) (i : Flavor) :
+    (sumRuleAssumptionsWeightModelPdf hw).valenceTarget i = w i / 2 :=
+  rfl
+
+/-! ### E. The spin-density model -/
 
 /-- A diagonal spin-density family whose induced unpolarized density is `modelPdf`: all four
 helicity-diagonal number densities equal `x^a (1-x)^b / 2` on `[0, 1]`. Positive
