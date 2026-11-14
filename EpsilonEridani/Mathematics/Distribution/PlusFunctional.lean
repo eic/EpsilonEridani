@@ -49,7 +49,7 @@ object.
   `g z [1 / (1 - z)]₊ = g 1 [1 / (1 - z)]₊ + (g z - g 1) / (1 - z)`.
 * `EpsilonEridani.plusOneMinus_id_mul`: the case `g z = z` of `EpsilonEridani.plusOneMinus_mul`,
   `z [1 / (1 - z)]₊ = [1 / (1 - z)]₊ - 1`.
-* `EpsilonEridani.plusFunctional_of_intervalIntegrable`: for an integrable kernel,
+* `EpsilonEridani.plusFunctional_eq_sub_of_intervalIntegrable`: for an integrable kernel,
   `⟨[K]₊, φ⟩ = ∫₀¹ K z φ z dz - φ 1 ∫₀¹ K z dz`.
 * `EpsilonEridani.plusOneMinus_pow`: the moments of the plus distribution are harmonic numbers,
   `⟨[1 / (1 - z)]₊, z ^ n⟩ = -H_n`.
@@ -238,7 +238,7 @@ theorem plusFunctional_add_right {K φ ψ : ℝ → ℝ}
 /-- **The plus functional of an integrable kernel splits.** If `K` and `K φ` are integrable on
 `[0, 1]`, the subtraction at `z = 1` can be carried out term by term:
 `⟨[K]₊, φ⟩ = ∫₀¹ K z φ z dz - φ 1 ∫₀¹ K z dz`. -/
-theorem plusFunctional_of_intervalIntegrable {K φ : ℝ → ℝ}
+theorem plusFunctional_eq_sub_of_intervalIntegrable {K φ : ℝ → ℝ}
     (hKφ : IntervalIntegrable (fun z => K z * φ z) volume 0 1)
     (hK : IntervalIntegrable K volume 0 1) :
     plusFunctional K φ = (∫ z in (0 : ℝ)..1, K z * φ z) - φ 1 * ∫ z in (0 : ℝ)..1, K z := by

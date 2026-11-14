@@ -57,7 +57,7 @@ converges.
   powers.
 * `KernelForm.mellinDis_regular_eq_moment`: for a kernel without plus and delta parts the moment
   is the Mellin transform `Convolution.mellinDis` of its regular part.
-* `KernelForm.pairing_eq_plusFunctional`: a kernel with an integrable regular part `r` is the
+* `KernelForm.pairing_eq_plusFunctional_add`: a kernel with an integrable regular part `r` is the
   plus distribution `[p / (1 - z) + r]₊` plus `(d + ∫₀¹ r z dz) δ(1 - z)`.
 * `KernelForm.pairing_congr_ae_left`, `KernelForm.pairing_congr_ae_right`,
   `KernelForm.moment_congr_ae`: the pairing sees only the almost-everywhere class of the regular
@@ -197,9 +197,11 @@ theorem pairing_pow (P : KernelForm) (n : ℕ) :
 regular part `r` and `r φ` are integrable on `[0, 1]` and the pairing of `φ` with
 `[1 / (1 - z)]₊` converges, then
 `⟨P, φ⟩ = ⟨[p / (1 - z) + r]₊, φ⟩ + (d + ∫₀¹ r z dz) φ 1`: moving the regular part under the
-plus prescription subtracts its integral from the delta coefficient. For the leading-order
-diagonal kernels the two cancel, and the kernel is a pure plus distribution (`pairing_pqq`). -/
-theorem pairing_eq_plusFunctional (P : KernelForm) {φ : ℝ → ℝ}
+plus prescription subtracts its integral from the delta coefficient. For `P_qq` the two cancel,
+and the kernel is a pure plus distribution (`pairing_pqq`). `P_gg`'s regular part is not
+integrable at `z = 0`, so this lemma does not apply to it and its delta term survives
+(`pairing_pgg`). -/
+theorem pairing_eq_plusFunctional_add (P : KernelForm) {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1)
     (hrφ : IntervalIntegrable (fun z => P.regular z * φ z) volume 0 1)
     (hr : IntervalIntegrable P.regular volume 0 1) :
@@ -210,7 +212,7 @@ theorem pairing_eq_plusFunctional (P : KernelForm) {φ : ℝ → ℝ}
   have hreg : IntervalIntegrable (fun z => P.regular z * (φ z - φ 1)) volume 0 1 :=
     (hrφ.sub (hr.mul_const (φ 1))).congr fun z _ => by ring
   rw [plusFunctional_add_left hsing hreg, plusFunctional_const_mul_left,
-    plusFunctional_of_intervalIntegrable hrφ hr, pairing_def, plusOneMinus_def]
+    plusFunctional_eq_sub_of_intervalIntegrable hrφ hr, pairing_def, plusOneMinus_def]
   ring
 
 /-- Scaling a kernel scales its regular part and both coefficients. -/

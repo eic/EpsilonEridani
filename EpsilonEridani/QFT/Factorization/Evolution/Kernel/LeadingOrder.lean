@@ -53,8 +53,9 @@ the second momentum identity hold.
   harmonic numbers `S₁(N) = H_N`.
 * `pgg_deltaCoeff_eq_beta0_div_two`: the delta coefficient of `P_gg` is `β₀ / 2`.
 * `moment_pqq_one`: quark-number conservation.
-* `moment_pqq_two_add_moment_pgq_two`, `moment_pgg_two_add_moment_pqgSinglet_two`: momentum
-  conservation in the quark and the gluon column.
+* `moment_pqq_two_add_moment_pgq_two_eq_zero`,
+  `moment_pgg_two_add_moment_pqgSinglet_two_eq_zero`: momentum conservation in the quark and the
+  gluon column.
 
 ## References
 
@@ -191,7 +192,7 @@ theorem pgg_deltaCoeff : (pgg c).deltaCoeff = 11 / 6 * c.cA - 2 / 3 * c.nF * c.t
 
 /-- The coefficient of `δ(1-z)` in `P_gg` is half the one-loop beta-function coefficient,
 `β₀ / 2 = (11/6) C_A - (2/3) n_f T_F`. This is what makes the gluon-column momentum identity
-`moment_pgg_two_add_moment_pqgSinglet_two` hold: the virtual term of `P_gg` carries the same
+`moment_pgg_two_add_moment_pqgSinglet_two_eq_zero` hold: the virtual term of `P_gg` carries the same
 gluon self-energy that drives the running of `α_s`. -/
 theorem pgg_deltaCoeff_eq_beta0_div_two : (pgg c).deltaCoeff = beta0 c / 2 := by
   rw [pgg_deltaCoeff, beta0]
@@ -227,7 +228,7 @@ theorem pairing_pqq {φ : ℝ → ℝ}
   have hd : (pqq c).deltaCoeff + ∫ z in (0 : ℝ)..1, (pqq c).regular z = 0 := by
     simp only [pqq_deltaCoeff, pqq_regular, intervalIntegral.integral_const_mul, h32]
     ring
-  rw [(pqq c).pairing_eq_plusFunctional hφ₁ hrφ hr, plusFunctional_congr_ae_left φ hK,
+  rw [(pqq c).pairing_eq_plusFunctional_add hφ₁ hrφ hr, plusFunctional_congr_ae_left φ hK,
     plusFunctional_const_mul_left, hd, zero_mul, add_zero]
 
 /-- **`P_gg` in its familiar form.** The normal form of `P_gg` pairs with a test function `φ` as
@@ -387,13 +388,13 @@ theorem moment_pgg_two : (pgg c).moment 2 = -(2 / 3 * c.nF * c.tF) := by
 
 /-- **Momentum conservation in the quark column.** `M[P_qq](2) + M[P_gq](2) = 0`: the momentum
 a quark loses to radiated gluons is the momentum they carry. -/
-theorem moment_pqq_two_add_moment_pgq_two : (pqq c).moment 2 + (pgq c).moment 2 = 0 := by
+theorem moment_pqq_two_add_moment_pgq_two_eq_zero : (pqq c).moment 2 + (pgq c).moment 2 = 0 := by
   rw [moment_pqq_two, moment_pgq_two]
   ring
 
 /-- **Momentum conservation in the gluon column.** `M[P_gg](2) + M[2 n_f P_qg](2) = 0`: the
 momentum a gluon loses to quark-antiquark pairs is the momentum they carry. -/
-theorem moment_pgg_two_add_moment_pqgSinglet_two :
+theorem moment_pgg_two_add_moment_pqgSinglet_two_eq_zero :
     (pgg c).moment 2 + (pqgSinglet c).moment 2 = 0 := by
   rw [moment_pgg_two, moment_pqgSinglet_two]
   ring
