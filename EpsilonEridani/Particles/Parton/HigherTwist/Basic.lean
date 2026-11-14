@@ -58,8 +58,8 @@ to the inclusive structure functions.
 * `LightConeField.twist_eq_massDimension_sub_lightConeSpin` and its operator version
   `FieldContent.twist_eq_massDimension_sub_lightConeSpin`: twist is dimension minus spin.
 * `FieldContent.twist_add`: twist is additive under products of operators.
-* `FieldContent.card_le_twist`: an operator has twist at least its number of fields, with
-  equality exactly when every field is a good component (`FieldContent.twist_eq_card_iff`).
+* `FieldContent.card_le_twist`: a derivative-free operator has twist at least its number of fields,
+  with equality exactly when every field is a good component (`FieldContent.twist_eq_card_iff`).
 * `FieldContent.twist_eq_one_iff`: a derivative-free operator has twist one exactly when it is a
   single twist-one field.
 * `FieldContent.twist_eq_two_iff`, `FieldContent.twist_eq_three_iff`: a derivative-free operator
@@ -74,8 +74,9 @@ to the inclusive structure functions.
   `F^{ij}`), a trilinear in good quark fields and one `F^{+i}` or in three `F^{+i}`, or a single
   `F^{-i}`.
 
-The single-field cases are colour octets and drop out of any gauge-invariant operator; they are
-kept in the classifications because colour is not recorded in the field content.
+The single field-strength cases (`F^{+-}`, `F^{ij}`, `F^{-i}`) are colour octets and drop out of
+any gauge-invariant operator; they are kept in the classifications because colour is not recorded
+in the field content.
 
 ## References
 
@@ -350,30 +351,31 @@ theorem twist_eq_massDimension_sub_lightConeSpin (O : FieldContent) :
     simp only [twist_cons, massDimension_cons, lightConeSpin_cons, Nat.cast_add, ih,
       f.twist_eq_massDimension_sub_lightConeSpin, add_sub_add_comm]
 
-/-- An operator has twist at least its number of fields. -/
+/-- A derivative-free operator has twist at least its number of fields. -/
 @[grind .] theorem card_le_twist (O : FieldContent) : Multiset.card O ≤ twist O := by
   simpa [twist_def] using Multiset.card_nsmul_le_sum (a := 1) (s := O.map LightConeField.twist)
     (by simp)
 
-/-- Each field of an operator has twist at most the twist of the operator. -/
+/-- Each field of a derivative-free operator has twist at most the twist of the operator. -/
 theorem le_twist_of_mem {f : LightConeField} {O : FieldContent} (h : f ∈ O) :
     f.twist ≤ twist O :=
   twist_def O ▸ Multiset.le_sum_of_mem (Multiset.mem_map_of_mem _ h)
 
-/-- Twist is monotone under inclusion of field content. -/
+/-- Twist of derivative-free operators is monotone under inclusion of field content. -/
 theorem twist_mono : Monotone twist := by
   intro O O' h
   obtain ⟨O'', rfl⟩ := exists_add_of_le h
   simp
 
-/-- Only the empty field content, the identity operator, has twist zero. -/
+/-- Among derivative-free operators, only the empty field content, the identity operator, has
+twist zero. -/
 @[simp] theorem twist_eq_zero_iff {O : FieldContent} : twist O = 0 ↔ O = 0 := by
   refine ⟨fun h ↦ ?_, by rintro rfl; rfl⟩
   have := card_le_twist O
   exact Multiset.card_eq_zero.1 (by omega)
 
-/-- An operator has twist equal to its number of fields exactly when all its fields are good
-components. -/
+/-- A derivative-free operator has twist equal to its number of fields exactly when all its fields
+are good components. -/
 @[simp] theorem twist_eq_card_iff {O : FieldContent} :
     twist O = Multiset.card O ↔ ∀ f ∈ O, f.twist = 1 := by
   induction O using Multiset.induction_on with
