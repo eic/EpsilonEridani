@@ -129,6 +129,17 @@ theorem f2LO_def {Flavor : Type} [Fintype Flavor] (charge : Flavor → ℝ)
     (q : Flavor → ℝ → ℝ → ℝ) (x Q2 : ℝ) :
     f2LO charge q x Q2 = x * ∑ f, charge f ^ 2 * q f x Q2 := (rfl)
 
+/-- **Relabelling the flavours of the densities is relabelling the charges the other way.** For a
+bijection `σ` of flavour types, `F₂` of the densities `q ∘ σ` with charges `charge` is `F₂` of
+`q` with charges `charge ∘ σ⁻¹`. -/
+@[simp]
+theorem f2LO_comp {ι κ : Type} [Fintype ι] [Fintype κ] (σ : κ ≃ ι) (charge : κ → ℝ)
+    (q : ι → ℝ → ℝ → ℝ) (x Q2 : ℝ) :
+    f2LO charge (q ∘ σ) x Q2 = f2LO (charge ∘ σ.symm) q x Q2 := by
+  simp only [f2LO_def, Function.comp_apply]
+  rw [← σ.sum_comp fun i => charge (σ.symm i) ^ 2 * q i x Q2]
+  simp
+
 /-- `F₂` is non-negative wherever the parton densities are, which with `loNCdSigma_nonneg`
 gives a non-negative cross section. -/
 lemma f2LO_nonneg {Flavor : Type} [Fintype Flavor]
