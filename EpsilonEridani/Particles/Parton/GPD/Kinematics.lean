@@ -296,12 +296,18 @@ lemma minkowskiProduct_deltaOrthN_delta_eq : ⟪K.deltaOrthN, K.delta⟫ₘ = K.
     smul_eq_mul, K.minkowskiProduct_avgMomentum_delta_eq_zero, tMom_def]
   ring
 
+/-- The momentum transfer paired with the vector `w = Δ + 2 ξ P` is `⟪Δ, w⟫ₘ = t`. -/
+@[simp]
+lemma minkowskiProduct_delta_deltaOrthN_eq : ⟪K.delta, K.deltaOrthN⟫ₘ = K.tMom := by
+  rw [minkowskiProduct_symm]
+  simp
+
 /-- The momentum transfer is bounded by the minimal momentum transfer, `t ≤ t₀(ξ)`. -/
 theorem tMom_le_tZero : K.tMom ≤ tZero M K.skewness := by
   simp only [le_tZero_iff M K.abs_skewness_lt_one K.tMom,
     ← minkowskiProduct_deltaOrthN_self_eq]
-  exact K.n.minkowskiProduct_self_nonpos_of_orthogonal_causal K.minkowskiProduct_n_self.ge
-    K.n_ne_zero K.minkowskiProduct_n_deltaOrthN_eq_zero
+  exact K.deltaOrthN.minkowskiProduct_self_nonpos_of_causal_of_orthogonal
+    K.minkowskiProduct_n_self.ge K.n_ne_zero K.minkowskiProduct_n_deltaOrthN_eq_zero
 
 /-- The momentum transfer of an elastic transition is non-positive, `t ≤ 0`. -/
 lemma tMom_nonpos : K.tMom ≤ 0 :=
@@ -338,30 +344,36 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
   have hAB : A - B = 1 := by rw [hA, hB]; ring
   have hA2B2 : A ^ 2 - B ^ 2 = m2 := by rw [hA, hB]; ring
   clear_value A B D m2
-  set p₀ : Vector d :=
-      EpsilonEridani.ofTimeAndTwoSpatial i j (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
-  set p₀' : Vector d :=
-      EpsilonEridani.ofTimeAndTwoSpatial i j (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'
-  set n₀ : Vector d := EpsilonEridani.ofTimeAndTwoSpatial i j 1 0 1 with hn₀
+  -- `v x y z = x e₀ + y eᵢ + z eⱼ`, on which the Minkowski product is `x x' - y y' - z z'`
+  let v (x y z : ℝ) : Vector d :=
+    ofTimeAndSpatial x (y • EuclideanSpace.basisFun (Fin d) ℝ i +
+      z • EuclideanSpace.basisFun (Fin d) ℝ j)
+  have hv (x y z x' y' z' : ℝ) : ⟪v x y z, v x' y' z'⟫ₘ = x * x' - y * y' - z * z' := by
+    simp [v, inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
+      EuclideanSpace.inner_single_left, hij, hij.symm]
+    ring
+  set p₀ : Vector d := v (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
+  set p₀' : Vector d := v (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'
+  set n₀ : Vector d := v 1 0 1 with hn₀
   have hp : ⟪p₀, p₀⟫ₘ = M ^ 2 := by
-    simp only [hp₀, minkowskiProduct_ofTimeAndTwoSpatial_eq hij]
+    simp only [hp₀, hv]
     linear_combination (1 - ξ ^ 2) * hA2B2 + (1 - ξ ^ 2) * hm2 - (1 / 4 : ℝ) * hD
   have hp' : ⟪p₀', p₀'⟫ₘ = M ^ 2 := by
-    simp only [hp₀', minkowskiProduct_ofTimeAndTwoSpatial_eq hij]
+    simp only [hp₀', hv]
     linear_combination (1 - ξ ^ 2) * hA2B2 + (1 - ξ ^ 2) * hm2 - (1 / 4 : ℝ) * hD
   have hnn : ⟪n₀, n₀⟫ₘ = 0 := by
-    simp only [hn₀, minkowskiProduct_ofTimeAndTwoSpatial_eq hij]
+    simp only [hn₀, hv]
     ring
   have hnp : ⟪n₀, p₀⟫ₘ = 1 + ξ := by
-    simp only [hn₀, hp₀, minkowskiProduct_ofTimeAndTwoSpatial_eq hij]
+    simp only [hn₀, hp₀, hv]
     linear_combination (1 + ξ) * hAB
   have hnp' : ⟪n₀, p₀'⟫ₘ = 1 - ξ := by
-    simp only [hn₀, hp₀', minkowskiProduct_ofTimeAndTwoSpatial_eq hij]
+    simp only [hn₀, hp₀', hv]
     linear_combination (1 - ξ) * hAB
   have hΔ : ⟪p₀' - p₀, p₀' - p₀⟫ₘ = t := by
-    simp only [hp₀, hp₀', EpsilonEridani.ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial_eq,
-      minkowskiProduct_ofTimeAndTwoSpatial_eq hij]
-    linear_combination -4 * ξ ^ 2 * hA2B2 - 4 * ξ ^ 2 * hm2 - hD
+    rw [minkowskiProduct_sub_self, hp, hp']
+    simp only [hp₀, hp₀', hv]
+    linear_combination -2 * (1 + ξ ^ 2) * hA2B2 - 2 * (1 + ξ ^ 2) * hm2 - (1 / 2 : ℝ) * hD
   let K₀ : OffForwardKinematics d M :=
     ⟨p₀, p₀', n₀, hp, hp', hnn, by rw [hnp]; linarith, by rw [hnp']; linarith⟩
   have hnpK : ⟪K₀.n, K₀.p⟫ₘ = 1 + ξ := hnp

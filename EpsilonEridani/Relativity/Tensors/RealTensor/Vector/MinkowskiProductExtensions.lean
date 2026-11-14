@@ -27,16 +27,15 @@ the reflexive-form results about light-cone bases in
 
 * The Minkowski orthogonal complement of a non-zero causal (time-like or light-like) vector `n`
   contains no time-like vector: every `w` with `⟪n, w⟫ₘ = 0` has `⟪w, w⟫ₘ ≤ 0`
-  (`minkowskiProduct_self_nonpos_of_orthogonal_causal`). For light-like `n`, in light-cone
+  (`minkowskiProduct_self_nonpos_of_causal_of_orthogonal`). For light-like `n`, in light-cone
   coordinates adapted to `n` the condition `⟪n, w⟫ₘ = 0` says that one light-cone component of
   `w` vanishes, so that `⟪w, w⟫ₘ = -‖w⊥‖²` is minus the square of the transverse part. This is
   the inequality behind lower bounds on momentum transfers at fixed light-cone momentum
   fractions, such as the minimal momentum transfer of off-forward parton kinematics.
-* For two distinct spatial directions `i ≠ j`, the vectors `ofTimeAndTwoSpatial i j x y z =
-  x e₀ + y eᵢ + z eⱼ` span a three-dimensional Minkowski subspace on which the Minkowski product
-  is the diagonal form `x x' - y y' - z z'` (`minkowskiProduct_ofTimeAndTwoSpatial_eq`). This
-  gives explicit configurations, such as light-cone frames, in any spacetime with at least two
-  spatial dimensions.
+* The vector `ofTimeAndSpatial x s` with time component `x` and spatial part `s` has Minkowski
+  product `⟪ofTimeAndSpatial x s, ofTimeAndSpatial x' s'⟫ₘ = x x' - ⟪s, s'⟫`
+  (`minkowskiProduct_ofTimeAndSpatial_eq`). This gives explicit configurations, such as
+  light-cone frames, in any spacetime with at least two spatial dimensions.
 -/
 
 public section
@@ -62,6 +61,32 @@ lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vecto
     ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - ⟪p, p⟫ₘ) := by
   rw [minkowskiProduct_self_eq_sq_sub, sub_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
 
+/-- The vector with time component `x` and spatial part `s`, assembled from Physlib's
+`ofTemporalComponent` and `ofSpatialComponent`. -/
+def ofTimeAndSpatial {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) : Vector d :=
+  ofTemporalComponent x + ofSpatialComponent s
+
+lemma ofTimeAndSpatial_def {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
+    ofTimeAndSpatial x s = ofTemporalComponent x + ofSpatialComponent s := (rfl)
+
+@[simp]
+lemma timeComponent_ofTimeAndSpatial_eq {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
+    (ofTimeAndSpatial x s).timeComponent = x := by
+  simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
+
+@[simp]
+lemma spatialPart_ofTimeAndSpatial_eq {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
+    (ofTimeAndSpatial x s).spatialPart = s := by
+  ext i
+  simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
+
+/-- The Minkowski product of two vectors given by their time components and spatial parts is
+`x x' - ⟪s, s'⟫`. -/
+@[simp]
+lemma minkowskiProduct_ofTimeAndSpatial_eq {d : ℕ} (x x' : ℝ) (s s' : EuclideanSpace ℝ (Fin d)) :
+    ⟪ofTimeAndSpatial x s, ofTimeAndSpatial x' s'⟫ₘ = x * x' - ⟪s, s'⟫_ℝ := by
+  simp [minkowskiProduct_eq_timeComponent_spatialPart]
+
 end Vector
 end Lorentz
 
@@ -69,50 +94,6 @@ namespace EpsilonEridani
 
 open Real InnerProductGeometry Lorentz.Vector
 open scoped InnerProductSpace Lorentz.Vector
-
-/-- The vector `x e₀ + y eᵢ + z eⱼ` built from the time direction and the spatial directions
-`i` and `j`. -/
-def ofTimeAndTwoSpatial {d : ℕ} (i j : Fin d) (x y z : ℝ) : Lorentz.Vector d :=
-  x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
-  z • Lorentz.Vector.basis (Sum.inr j)
-
-lemma ofTimeAndTwoSpatial_def {d : ℕ} (i j : Fin d) (x y z : ℝ) :
-    ofTimeAndTwoSpatial i j x y z =
-      x • Lorentz.Vector.basis (Sum.inl 0) + y • Lorentz.Vector.basis (Sum.inr i) +
-      z • Lorentz.Vector.basis (Sum.inr j) := (rfl)
-
-@[simp]
-lemma timeComponent_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d) (x y z : ℝ) :
-    (ofTimeAndTwoSpatial i j x y z).timeComponent = x := by
-  simp [ofTimeAndTwoSpatial_def]
-
-@[simp]
-lemma spatialPart_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d) (x y z : ℝ) :
-    (ofTimeAndTwoSpatial i j x y z).spatialPart =
-      y • EuclideanSpace.basisFun (Fin d) ℝ i + z • EuclideanSpace.basisFun (Fin d) ℝ j := by
-  ext k
-  simp [ofTimeAndTwoSpatial_def, basis_apply, eq_comm]
-
-/-- For distinct spatial directions the Minkowski product of two vectors
-`x e₀ + y eᵢ + z eⱼ` and `x' e₀ + y' eᵢ + z' eⱼ` is `x x' - y y' - z z'`. -/
-@[simp]
-lemma minkowskiProduct_ofTimeAndTwoSpatial_eq {d : ℕ} {i j : Fin d} (hij : i ≠ j)
-    (x y z x' y' z' : ℝ) :
-    ⟪ofTimeAndTwoSpatial i j x y z, ofTimeAndTwoSpatial i j x' y' z'⟫ₘ =
-      x * x' - y * y' - z * z' := by
-  simp only [ofTimeAndTwoSpatial_def, map_add, map_smul, add_apply, smul_apply,
-    minkowskiProduct_basis_left, minkowskiMatrix.inl_0_inl_0, basis_apply, ↓reduceIte, mul_one,
-    reduceCtorEq, mul_zero, add_zero, smul_eq_mul, minkowskiMatrix.inr_i_inr_i, zero_add,
-    Sum.inr.injEq, hij.symm, mul_neg, hij]
-  ring
-
-@[simp]
-lemma ofTimeAndTwoSpatial_sub_ofTimeAndTwoSpatial_eq {d : ℕ} (i j : Fin d)
-    (x y z x' y' z' : ℝ) :
-    ofTimeAndTwoSpatial i j x y z - ofTimeAndTwoSpatial i j x' y' z' =
-      ofTimeAndTwoSpatial i j (x - x') (y - y') (z - z') := by
-  simp only [ofTimeAndTwoSpatial_def, sub_smul]
-  abel
 
 /-- In at least two spatial dimensions, for energies `E`, `E'` above `|m|` and an angle
 `θ ∈ [0, π]`, there are two vectors on the mass shell `⟪p, p⟫ₘ = m²` with time components `E` and
@@ -146,14 +127,12 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
       simp only [u]
       nlinarith [sq_abs (cos θ), sq_abs (sin θ), sin_sq_add_cos_sq θ]
     nlinarith [norm_nonneg u]
-  let p := ofTimeAndTwoSpatial (⟨0, by omega⟩ : Fin d) ⟨1, by omega⟩ E P 0
-  let p' := ofTimeAndTwoSpatial (⟨0, by omega⟩ : Fin d) ⟨1, by omega⟩ E' (P' * cos θ) (P' * sin θ)
-  have hps : p.spatialPart = P • e₀ := by simp [p, e₀, b]
-  have hp's : p'.spatialPart = P' • u := by
-    simp only [p', spatialPart_ofTimeAndTwoSpatial_eq, u, e₀, e₁, b]
-    module
-  have hpt : p.timeComponent = E := timeComponent_ofTimeAndTwoSpatial_eq ..
-  have hp't : p'.timeComponent = E' := timeComponent_ofTimeAndTwoSpatial_eq ..
+  let p := ofTimeAndSpatial E (P • e₀)
+  let p' := ofTimeAndSpatial E' (P' • u)
+  have hps : p.spatialPart = P • e₀ := spatialPart_ofTimeAndSpatial_eq ..
+  have hp's : p'.spatialPart = P' • u := spatialPart_ofTimeAndSpatial_eq ..
+  have hpt : p.timeComponent = E := timeComponent_ofTimeAndSpatial_eq ..
+  have hp't : p'.timeComponent = E' := timeComponent_ofTimeAndSpatial_eq ..
   refine ⟨p, p', ?_, ?_, hpt, hp't, ?_⟩
   · rw [minkowskiProduct_self_eq_sq_sub, hps, hpt]
     simp [norm_smul, he₀, abs_of_pos hP, hPsq]
@@ -178,7 +157,7 @@ open InnerProductSpace
 
 /-- A vector Minkowski-orthogonal to a non-zero causal vector is space-like or light-like:
 if `0 ≤ ⟪n, n⟫ₘ`, `n ≠ 0` and `⟪n, w⟫ₘ = 0`, then `⟪w, w⟫ₘ ≤ 0`. -/
-lemma minkowskiProduct_self_nonpos_of_orthogonal_causal {d : ℕ} (n : Vector d) {w : Vector d}
+lemma minkowskiProduct_self_nonpos_of_causal_of_orthogonal {d : ℕ} (w : Vector d) {n : Vector d}
     (hn : 0 ≤ ⟪n, n⟫ₘ) (hn0 : n ≠ 0) (hnw : ⟪n, w⟫ₘ = 0) : ⟪w, w⟫ₘ ≤ 0 := by
   rw [minkowskiProduct_eq_timeComponent_spatialPart] at hn hnw ⊢
   have hs := real_inner_self_nonneg (x := n.spatialPart)
