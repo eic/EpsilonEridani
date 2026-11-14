@@ -11,10 +11,11 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 /-!
 # Gauge links along piecewise-linear paths
 
-A gauge-invariant definition of a transverse-momentum-dependent parton correlator joins the two
-quark fields `q̄(0)` and `q(ξ)` by a gauge link `W(0, ξ ; path)`, the path-ordered exponential
-`P exp(-i g ∫_path A · dz)` of the gauge field along a path from `0` to `ξ`. Which path is used is
-part of the definition of the distribution, so the path is explicit data here.
+A gauge-invariant definition of a transverse-momentum-dependent parton correlator joins the
+Dirac-adjoint quark field at `0` and the quark field `q(ξ)` by a gauge link `W(0, ξ; path)`, the
+path-ordered exponential `P exp(-i g ∫_path A · dz)` of the gauge field along a path from `0` to
+`ξ`. Which path is used is part of the definition of the distribution, so the path is explicit
+data here.
 
 The path-ordered exponential of a gauge field is not constructed analytically. A `GaugeLink V G`
 records the link `W x y` along each straight segment from `x` to `y` in a real vector space `V`
