@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Topology.Algebra.Order.Field
+import EpsilonEridani.Mathematics.Topology.Order.IntermediateValue.Extensions
 
 /-!
 # The one-loop running coupling
@@ -52,9 +53,11 @@ Eliminating `a₀` in favour of it turns the solution into the familiar
 The coupling here is `a₄` as a function of the evolution variable `t`, not `α_s` as a function of
 `Q²`; it is a different object from `EpsilonEridani.QFT.QCD.oneLoopAlphaS`, which is a regularised
 proxy, total in `Q²` and `Λ²` by construction and therefore not a solution of the equation above.
-For the same reason `oneLoopCoupling β₀ a₀` is not an `Evolution.RunningCoupling`, although both
-are functions `ℝ → ℝ`: that type is `α_s` as a function of `Q²`, so `oneLoopCoupling β₀ a₀` must
-not be supplied to `dglapRhsLogScale` or `IsDGLAPLogScaleEquation`.
+For the same reason `oneLoopCoupling β₀ a₀` is not meant as an `Evolution.RunningCoupling`. That
+type is an abbreviation for `ℝ → ℝ`, so `oneLoopCoupling β₀ a₀` typechecks as one, but a
+`RunningCoupling` means `α_s` as a function of `Q²`. Supplying `oneLoopCoupling β₀ a₀` to
+`dglapRhsLogScale` or `IsDGLAPLogScaleEquation` is wrong mathematics that the elaborator does
+not catch.
 
 ## References
 
@@ -93,6 +96,11 @@ theorem oneLoopCoupling_def (β₀ a₀ t : ℝ) :
 theorem oneLoopCoupling_zero (β₀ a₀ : ℝ) : oneLoopCoupling β₀ a₀ 0 = a₀ := by
   rw [oneLoopCoupling_def]
   norm_num
+
+/-- The one-loop coupling with zero reference value is identically zero. -/
+@[simp]
+theorem oneLoopCoupling_zero_reference (β₀ t : ℝ) : oneLoopCoupling β₀ 0 t = 0 := by
+  rw [oneLoopCoupling_def, zero_div]
 
 /-- The reciprocal of the one-loop coupling is affine in the evolution variable with slope `β₀`.
 At the Landau log-scale both sides are `0`. -/
@@ -145,8 +153,9 @@ theorem landauLogScale_lt_iff (h : 0 < β₀ * a₀) :
 `a(t) = 1 / (β₀ (t - t_Λ))`. -/
 theorem oneLoopCoupling_eq_inv (hβ : β₀ ≠ 0) (ha : a₀ ≠ 0) (t : ℝ) :
     oneLoopCoupling β₀ a₀ t = (β₀ * (t - landauLogScale β₀ a₀))⁻¹ := by
-  rw [← inv_inv (oneLoopCoupling β₀ a₀ t), inv_oneLoopCoupling β₀ ha, landauLogScale_def,
-    sub_neg_eq_add, mul_add, mul_inv, mul_inv_cancel_left₀ hβ, add_comm]
+  rw [← inv_inv (oneLoopCoupling β₀ a₀ t), inv_oneLoopCoupling β₀ ha, landauLogScale_def]
+  field_simp
+  ring
 
 /-! ### The renormalisation-group equation -/
 
@@ -195,26 +204,6 @@ theorem isOneLoopRGSolution_oneLoopCoupling_Ioi (h : 0 < β₀ * a₀) :
     (isOneLoopRGSolution_iff.1 (isOneLoopRGSolution_oneLoopCoupling β₀ a₀)).mono fun _ ht =>
       ((landauLogScale_lt_iff h).1 ht).ne'
 
-/-- An open connected subset of `ℝ` containing two points contains a compact interval whose
-interior contains both. -/
-theorem exists_Icc_subset_of_isOpen_isPreconnected {x y : ℝ} (hs : IsOpen s)
-    (hs' : IsPreconnected s) (hx : x ∈ s) (hy : y ∈ s) :
-    ∃ a b : ℝ, Icc a b ⊆ s ∧ x ∈ Ioo a b ∧ y ∈ Ioo a b := by
-  obtain ⟨a₁, b₁, -, hn₁, hsub₁⟩ := exists_Icc_mem_subset_of_mem_nhds (hs.mem_nhds hx)
-  obtain ⟨a₂, b₂, -, hn₂, hsub₂⟩ := exists_Icc_mem_subset_of_mem_nhds (hs.mem_nhds hy)
-  rw [← mem_interior_iff_mem_nhds, interior_Icc] at hn₁ hn₂
-  have hmin : min a₁ a₂ ∈ s := by
-    rcases min_choice a₁ a₂ with h | h <;> rw [h]
-    exacts [hsub₁ (left_mem_Icc.2 (hn₁.1.trans hn₁.2).le),
-      hsub₂ (left_mem_Icc.2 (hn₂.1.trans hn₂.2).le)]
-  have hmax : max b₁ b₂ ∈ s := by
-    rcases max_choice b₁ b₂ with h | h <;> rw [h]
-    exacts [hsub₁ (right_mem_Icc.2 (hn₁.1.trans hn₁.2).le),
-      hsub₂ (right_mem_Icc.2 (hn₂.1.trans hn₂.2).le)]
-  exact ⟨_, _, hs'.ordConnected.out hmin hmax,
-    ⟨(min_le_left _ _).trans_lt hn₁.1, hn₁.2.trans_le (le_max_left _ _)⟩,
-    ⟨(min_le_right _ _).trans_lt hn₂.1, hn₂.2.trans_le (le_max_right _ _)⟩⟩
-
 /-- On the closed ball `[-R, R]` the map `x ↦ c x²` is Lipschitz with constant `2 |c| R`; for
 `c = -β₀` it is the right-hand side of the one-loop renormalisation-group equation. -/
 theorem lipschitzOnWith_mul_sq {c R : ℝ} (hR : 0 ≤ R) :
@@ -240,7 +229,7 @@ theorem IsOneLoopRGSolution.ne_zero {t₀ : ℝ} (hf : IsOneLoopRGSolution β₀
   have hd : ∀ {x}, x ∈ s → HasDerivAt f (-β₀ * f x ^ 2) x := fun hx =>
     (isOneLoopRGSolution_iff.1 hf _ hx).hasDerivAt (hs.mem_nhds hx)
   -- Work on a compact interval `[a, b] ⊆ s` whose interior contains `t₀` and `t₁`.
-  obtain ⟨a, b, hsub, ht₀', ht₁'⟩ := exists_Icc_subset_of_isOpen_isPreconnected hs hs' ht₀ ht₁
+  obtain ⟨a, b, hsub, ht₀', ht₁'⟩ := hs.exists_Icc_subset hs' ht₀ ht₁
   have hcont : ContinuousOn f (Icc a b) := fun x hx =>
     (hd (hsub hx)).continuousAt.continuousWithinAt
   -- `f` is bounded on `[a, b]`, and on a bounded set `x ↦ -β₀ x²` is Lipschitz, so Mathlib's
@@ -286,7 +275,7 @@ theorem IsOneLoopRGSolution.eqOn_oneLoopCoupling {t₀ : ℝ} (hf : IsOneLoopRGS
     EqOn f (fun t => oneLoopCoupling β₀ (f t₀) (t - t₀)) s := by
   intro t ht
   rcases eq_or_ne (f t₀) 0 with h₀ | h₀
-  · simp only [h₀, oneLoopCoupling_def, zero_div]
+  · simp only [h₀, oneLoopCoupling_zero_reference]
     by_contra h
     exact hf.ne_zero hs hs' ht h t₀ ht₀ h₀
   · exact inv_injective ((hf.inv_eqOn hs hs' ht₀ h₀ ht).trans (inv_oneLoopCoupling β₀ h₀ _).symm)
@@ -419,8 +408,8 @@ of the scale axis: the coupling diverges at the same scale in both parametrisati
 @[simp]
 theorem add_landauLogScale_oneLoopCoupling (hβ : β₀ ≠ 0) (ha : a₀ ≠ 0) (u : ℝ) :
     u + landauLogScale β₀ (oneLoopCoupling β₀ a₀ u) = landauLogScale β₀ a₀ := by
-  rw [landauLogScale_def, landauLogScale_def, mul_inv, inv_oneLoopCoupling β₀ ha, mul_add,
-    inv_mul_cancel_left₀ hβ, mul_inv]
+  simp only [landauLogScale_def, mul_inv, inv_oneLoopCoupling β₀ ha]
+  field_simp
   ring
 
 /-! ### The scale form -/
@@ -445,7 +434,7 @@ scale `μ₀²`, the scale `Λ²` sits at `landauLogScale β₀ a₀`. -/
 @[simp]
 theorem log_landauScaleSq_div (β₀ a₀ : ℝ) (hμ : 0 < μ₀sq) :
     Real.log (landauScaleSq β₀ a₀ μ₀sq / μ₀sq) = landauLogScale β₀ a₀ := by
-  rw [landauScaleSq_def, mul_comm, mul_div_assoc, div_self hμ.ne', mul_one, Real.log_exp]
+  rw [landauScaleSq_def, mul_div_cancel_left₀ _ hμ.ne', Real.log_exp]
 
 /-- **The one-loop coupling in terms of its Landau scale.** Eliminating the reference value in
 favour of `Λ²` turns the solution into `a(Q²) = 1 / (β₀ log (Q² / Λ²))`. -/
