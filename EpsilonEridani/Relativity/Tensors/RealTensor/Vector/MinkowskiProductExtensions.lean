@@ -9,16 +9,21 @@ public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 
 /-!
 # Extensions of the Minkowski product on Lorentz vectors
 
 Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
-companion to `Lorentz.Vector.minkowskiProduct_add_self`; the length of the spatial part of a
-vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
-in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
-energies above the mass and a prescribed angle between their spatial parts.
+companion to `Lorentz.Vector.minkowskiProduct_add_self`; the factorisation
+`⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial part is `a • n`
+along a unit vector `n` into its light-cone components, its nullness when `v⁰ = a`, the positivity
+of `√⟪v, v⟫ₘ` when `|a| < v⁰`, and its form `(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component
+along `n`; the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is
+`√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and, in at least two spatial dimensions, the
+existence of two vectors on the mass shell with prescribed energies above the mass and a
+prescribed angle between their spatial parts.
 
 It also records the symmetry of the Minkowski product as a bilinear form
 (`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
@@ -46,6 +51,39 @@ this is `√((p⁰)² - m²)`. -/
 lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vector d) :
     ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - ⟪p, p⟫ₘ) := by
   rw [minkowskiProduct_self_eq_sq_sub, sub_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
+
+/-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
+the product `(v⁰ + a) (v⁰ - a)` of its light-cone components along `n`. -/
+theorem minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v, v⟫ₘ = (v.timeComponent + a) * (v.timeComponent - a) := by
+  rw [minkowskiProduct_self_eq_sq_sub, hv]
+  simp only [norm_smul, hn, Real.norm_eq_abs, mul_one, sq_abs]
+  ring
+
+/-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
+null: `⟪v, v⟫ₘ = 0`. -/
+theorem minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul {d : ℕ}
+    {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (ht : v.timeComponent = a)
+    (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
+  rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
+
+/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < v⁰` has positive
+invariant mass: `0 < √⟪v, v⟫ₘ`. -/
+theorem sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
+    (h : |a| < v.timeComponent) : 0 < √⟪v, v⟫ₘ := by
+  rw [Real.sqrt_pos, minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv]
+  exact mul_pos (by linarith [neg_abs_le a]) (by linarith [le_abs_self a])
+
+/-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
+`(v⁰)² - ⟪v.spatialPart, n⟫²`, the square of its time component minus the square of its
+component along `n`. -/
+theorem minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v, v⟫ₘ = v.timeComponent ^ 2 - ⟪v.spatialPart, n⟫_ℝ ^ 2 := by
+  rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv,
+    inner_spatialPart_eq_of_spatialPart_eq_smul hn hv, sq_sub_sq]
 
 end Vector
 end Lorentz
@@ -98,10 +136,10 @@ lemma exists_massShell_pair_angle_eq {d : ℕ} (hd : 2 ≤ d) {m E E' θ : ℝ} 
   have hpt : p.timeComponent = E := rfl
   have hp't : p'.timeComponent = E' := rfl
   refine ⟨p, p', ?_, ?_, hpt, hp't, ?_⟩
-  · rw [minkowskiProduct_self_eq_sq_sub, hps, hpt]
-    simp [norm_smul, he₀, abs_of_pos hP, hPsq]
-  · rw [minkowskiProduct_self_eq_sq_sub, hp's, hp't]
-    simp [norm_smul, hu, abs_of_pos hP', hP'sq]
+  · rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul he₀ hps, hpt]
+    linear_combination -hPsq
+  · rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hu hp's, hp't]
+    linear_combination -hP'sq
   · rw [hps, hp's, angle_smul_left_of_pos _ _ hP, angle_smul_right_of_pos _ _ hP']
     simp [angle, hu₀, he₀, hu, Real.arccos_cos h0 hπ]
 
