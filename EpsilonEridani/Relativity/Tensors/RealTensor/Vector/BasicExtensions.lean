@@ -14,8 +14,9 @@ Facts about `Physlib`'s elementary Lorentz-vector API, companions to
 `Physlib.Relativity.Tensors.RealTensor.Vector.Basic`: the additivity of the time component and
 of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and `(u + v).spatialPart = u.spatialPart + v.spatialPart`;
 the closure of collinearity under sums, `(u + v).spatialPart = (a + b) • n` when
-`u.spatialPart = a • n` and `v.spatialPart = b • n`; and the component `⟪v.spatialPart, n⟫ = a`
-along a unit vector `n` of the spatial part `a • n` of a four-vector.
+`u.spatialPart = a • n` and `v.spatialPart = b • n`, and its form `(a - b) • n` for a vector
+against `n`; and the component `⟪v.spatialPart, n⟫ = a` along a unit vector `n` of the spatial
+part `a • n` of a four-vector.
 -/
 
 public section
@@ -45,6 +46,14 @@ theorem spatialPart_add_eq_smul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d
     {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ} (hu : u.spatialPart = a • n)
     (hv : v.spatialPart = b • n) : (u + v).spatialPart = (a + b) • n := by
   rw [spatialPart_add, hu, hv, add_smul]
+
+/-- The spatial part of a sum of four-vectors whose spatial parts lie along and against `n` lies
+along `n`: if `u.spatialPart = a • n` and `v.spatialPart = -b • n`, then
+`(u + v).spatialPart = (a - b) • n`. -/
+theorem spatialPart_add_eq_sub_smul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ} (hu : u.spatialPart = a • n)
+    (hv : v.spatialPart = -b • n) : (u + v).spatialPart = (a - b) • n := by
+  rw [spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv, sub_eq_add_neg]
 
 /-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
 theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
