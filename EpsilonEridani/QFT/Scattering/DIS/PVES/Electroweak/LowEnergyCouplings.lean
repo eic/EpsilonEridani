@@ -309,7 +309,6 @@ theorem smTreeLevelCouplings_two_mul_c2Up_sub_c2Down (s2 : ℝ) :
   ring
 
 /-- At tree level the electron weak charge is `1 - 4 sin²θ_W`. -/
-@[simp]
 theorem smTreeLevelCouplings_electron_leptonWeakCharge (s2 : ℝ) :
     (smTreeLevelCouplings s2).electron.leptonWeakCharge = 1 - 4 * s2 := by
   rw [leptonWeakCharge_def, smTreeLevelCouplings_electron_eq_ofQuantumNumbers,
