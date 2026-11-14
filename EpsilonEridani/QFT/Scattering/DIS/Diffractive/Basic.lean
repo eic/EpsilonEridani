@@ -36,8 +36,13 @@ the EIC Yellow Report §7.1.6.
 
 * `Diffractive.MX2_expand`: the bilinear expansion of `M_X² = (q + Δ)²`, the diffractive
   counterpart of `DisKinematics.W2_expand`.
-* `Diffractive.beta_eq_of_MX2`: the exact relation `β = Q² / (Q² + M_X² - t)` between the parton
-  fraction and the invariant mass of the diffractive system, with `t = Δ²` written inline.
+* `Diffractive.MX2_eq_with_Q2`: `M_X² = -Q² + 2 Δ·q + t`, with `t = Δ²` the invariant
+  `DisKinematics.tMom`.
+* `Diffractive.beta_eq_Q2_div_MX2`: the exact relation `β = Q² / (Q² + M_X² - t)` between the
+  parton fraction and the invariant mass of the diffractive system, and its inverse
+  `Diffractive.MX2_eq_Q2_mul_inv_beta_sub_one`: `M_X² = Q² (1/β - 1) + t`.
+* `Diffractive.xi_congr`, `Diffractive.beta_congr`: `ξ` and `β` depend on the record only
+  through `q`, `P` and `P'`.
 * `Diffractive.xBj_eq_xi_mul_beta`: the key identity `x = ξ β` relating the inclusive Bjorken
   variable to the diffractive variables, as an exact cancellation requiring no mass or
   high-energy approximation.
@@ -105,45 +110,47 @@ lemma MX2_def (g : Bilin V) (K : DisKinematics V) :
     MX2 g K = g (K.q + (K.p - K.pPrime)) (K.q + (K.p - K.pPrime)) := (rfl)
 
 /-- A direct expansion of `MX2` in terms of bilinear pieces, the diffractive counterpart of
-`DisKinematics.W2_expand`: for a symmetric `g`, the cross term `2 q·Δ` is the denominator
-`2 Δ·q` of `beta`. -/
+`DisKinematics.W2_expand`: for a symmetric `g`, the cross term is the denominator `2 Δ·q` of
+`beta`. -/
 lemma MX2_expand (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
-    MX2 g K = g K.q K.q + 2 * g K.q (K.p - K.pPrime)
+    MX2 g K = g K.q K.q + 2 * g (K.p - K.pPrime) K.q
       + g (K.p - K.pPrime) (K.p - K.pPrime) := by
-  unfold MX2
-  calc
-    g (K.q + (K.p - K.pPrime)) (K.q + (K.p - K.pPrime))
-    = g (K.q + (K.p - K.pPrime)) K.q
-        + g (K.q + (K.p - K.pPrime)) (K.p - K.pPrime) := by
-        rw [(g (K.q + (K.p - K.pPrime))).map_add]
-    _ = g K.q K.q + g (K.p - K.pPrime) K.q
-        + (g K.q (K.p - K.pPrime) + g (K.p - K.pPrime) (K.p - K.pPrime)) := by
-        have hq : g (K.q + (K.p - K.pPrime)) K.q
-            = g K.q K.q + g (K.p - K.pPrime) K.q := by
-          rw [map_add, LinearMap.add_apply]
-        have hd : g (K.q + (K.p - K.pPrime)) (K.p - K.pPrime)
-            = g K.q (K.p - K.pPrime) + g (K.p - K.pPrime) (K.p - K.pPrime) := by
-          rw [map_add, LinearMap.add_apply]
-        rw [hq, hd]
-    _ = g K.q K.q + 2 * g K.q (K.p - K.pPrime)
-        + g (K.p - K.pPrime) (K.p - K.pPrime) := by
-        rw [hSymm.eq (K.p - K.pPrime) K.q]
-        ring
+  rw [MX2_def, add_comm K.q, g.apply_add_self hSymm]
+  ring
+
+/-- `MX2` in terms of the hard scale and the momentum transfer,
+`M_X² = -Q² + 2 Δ·q + t`, the diffractive counterpart of `DisKinematics.W2_eq_with_Q2`. -/
+lemma MX2_eq_with_Q2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
+    MX2 g K = -K.Q2 g + 2 * g (K.p - K.pPrime) K.q + K.tMom g := by
+  rw [MX2_expand g K hSymm, DisKinematics.Q2_def, DisKinematics.tMom_def]
+  ring
 
 /-- The exact relation `β = Q² / (Q² + M_X² - t)` between the parton fraction and the invariant
-mass of the diffractive system, with `t = Δ²` written inline as
-`g (K.p - K.pPrime) (K.p - K.pPrime)`. The denominator `Q² + M_X² - Δ²` equals the `2 Δ·q` of
-`beta` identically for a symmetric `g`, so no non-degeneracy hypothesis is needed. -/
-theorem beta_eq_of_MX2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
-    beta g K = K.Q2 g / (K.Q2 g + MX2 g K - g (K.p - K.pPrime) (K.p - K.pPrime)) := by
-  have hden : K.Q2 g + MX2 g K - g (K.p - K.pPrime) (K.p - K.pPrime)
-      = 2 * g (K.p - K.pPrime) K.q := by
-    rw [MX2_expand g K hSymm]
-    unfold DisKinematics.Q2
-    rw [hSymm.eq (K.p - K.pPrime) K.q]
-    ring
-  rw [hden]
-  exact beta_def g K
+mass of the diffractive system. The denominator `Q² + M_X² - t` equals the `2 Δ·q` of `beta`
+identically for a symmetric `g`, so no non-degeneracy hypothesis is needed. -/
+theorem beta_eq_Q2_div_MX2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
+    beta g K = K.Q2 g / (K.Q2 g + MX2 g K - K.tMom g) := by
+  rw [MX2_eq_with_Q2 g K hSymm, beta_def]
+  ring_nf
+
+/-- The invariant mass of the diffractive system in terms of `β`,
+`M_X² = Q² (1/β - 1) + t`, the inverse of `beta_eq_Q2_div_MX2`. It needs `Q² ≠ 0`; when
+`Δ·q = 0` both sides equal `-Q² + t` by the convention `0⁻¹ = 0`. -/
+theorem MX2_eq_Q2_mul_inv_beta_sub_one (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
+    (hQ2 : K.Q2 g ≠ 0) :
+    MX2 g K = K.Q2 g * ((beta g K)⁻¹ - 1) + K.tMom g := by
+  rw [MX2_eq_with_Q2 g K hSymm, beta_def, inv_div, mul_sub, mul_div_cancel₀ _ hQ2]
+  ring
+
+/-- `ξ` depends on the record only through `q`, `P` and `P'`. -/
+lemma xi_congr (g : Bilin V) {K₁ K₂ : DisKinematics V} (hp : K₁.p = K₂.p)
+    (hpPrime : K₁.pPrime = K₂.pPrime) (hq : K₁.q = K₂.q) : xi g K₁ = xi g K₂ := by
+  simp only [xi_def, hp, hpPrime, hq]
+
+/-- `β` depends on the record only through `q`, `P` and `P'`. -/
+lemma beta_congr (g : Bilin V) {K₁ K₂ : DisKinematics V} (hp : K₁.p = K₂.p)
+    (hpPrime : K₁.pPrime = K₂.pPrime) (hq : K₁.q = K₂.q) : beta g K₁ = beta g K₂ := by
+  simp only [beta_def, DisKinematics.Q2_def, hp, hpPrime, hq]
 
 /-!
 ### The key identity: `x = ξ β`
@@ -159,7 +166,7 @@ high-energy approximation. The cancellation needs the momentum lost by the targe
 theorem xBj_eq_xi_mul_beta (g : Bilin V) (K : DisKinematics V)
     (hDeltaq : g (K.p - K.pPrime) K.q ≠ 0) :
     K.xBj g = xi g K * beta g K := by
-  rw [DisKinematics.xBj, xi_def, beta_def]
+  rw [DisKinematics.xBj_def, xi_def, beta_def]
   rcases eq_or_ne (g K.p K.q) 0 with hPq | hPq
   · simp [hPq]
   · field_simp

@@ -28,6 +28,12 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
 /-- A bilinear form used to evaluate Lorentz-invariant scalar products in abstract form. -/
 abbrev Bilin (V : Type) [AddCommGroup V] [Module ℝ V] := LinearMap.BilinForm ℝ V
 
+/-- The square of a sum under a symmetric bilinear form,
+`(a + b)² = a² + 2 a·b + b²`. -/
+lemma Bilin.apply_add_self {V : Type} [AddCommGroup V] [Module ℝ V] (g : Bilin V)
+    (hSymm : g.IsSymm) (a b : V) : g (a + b) (a + b) = g a a + 2 * g a b + g b b := by
+  linarith [hSymm.polarization a b]
+
 /-- Minimal process-level kinematics for inclusive DIS. -/
 structure DisKinematics where
   /-- Incoming hadron momentum. -/
@@ -52,9 +58,13 @@ variable {V}
 def Q2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   - g K.q K.q
 
+lemma Q2_def (g : Bilin V) (K : DisKinematics V) : K.Q2 g = - g K.q K.q := (rfl)
+
 /-- The Bjorken scaling variable `xBj := Q2 / (2 p·q)`. -/
 noncomputable def xBj (g : Bilin V) (K : DisKinematics V) : ℝ :=
   K.Q2 g / (2 * g K.p K.q)
+
+lemma xBj_def (g : Bilin V) (K : DisKinematics V) : K.xBj g = K.Q2 g / (2 * g K.p K.q) := (rfl)
 
 /-- The inelasticity variable `y := (p·q)/(p·k)`. -/
 noncomputable def yInel (g : Bilin V) (K : DisKinematics V) : ℝ :=
@@ -63,6 +73,14 @@ noncomputable def yInel (g : Bilin V) (K : DisKinematics V) : ℝ :=
 /-- The hadronic invariant mass squared `W2 := (p + q)^2`. -/
 def W2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g (K.p + K.q) (K.p + K.q)
+
+/-- The momentum-transfer invariant `t := (p - p')²` between the incoming hadron `p` and the
+outgoing hadron `pPrime`. -/
+def tMom (g : Bilin V) (K : DisKinematics V) : ℝ :=
+  g (K.p - K.pPrime) (K.p - K.pPrime)
+
+lemma tMom_def (g : Bilin V) (K : DisKinematics V) :
+    K.tMom g = g (K.p - K.pPrime) (K.p - K.pPrime) := (rfl)
 
 omit [Module ℝ V] in
 lemma q_eq_sub (K : DisKinematics V) : K.q = K.k - K.kPrime := K.hq
@@ -77,22 +95,8 @@ lemma kPrime_eq (K : DisKinematics V) : K.kPrime = K.k - K.q := by
 
 /-- A direct expansion of `W2` in terms of bilinear pieces. -/
 lemma W2_expand (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
-    K.W2 g = g K.p K.p + 2 * g K.p K.q + g K.q K.q := by
-  unfold W2
-  calc
-    g (K.p + K.q) (K.p + K.q)
-    = g (K.p + K.q) K.p + g (K.p + K.q) K.q := by
-        rw [(g (K.p + K.q)).map_add]
-    _ = (g K.p K.p + g K.q K.p) + (g K.p K.q + g K.q K.q) := by
-      have hp : g (K.p + K.q) K.p = g K.p K.p + g K.q K.p := by
-        rw [map_add, LinearMap.add_apply]
-      have hq : g (K.p + K.q) K.q = g K.p K.q + g K.q K.q := by
-        rw [map_add, LinearMap.add_apply]
-      rw [hp, hq]
-    _ = g K.p K.p + g K.p K.q + (g K.q K.p + g K.q K.q) := by ring
-    _ = g K.p K.p + g K.p K.q + (g K.p K.q + g K.q K.q) := by
-      rw [hSymm.eq K.q K.p]
-    _ = g K.p K.p + 2 * g K.p K.q + g K.q K.q := by ring
+    K.W2 g = g K.p K.p + 2 * g K.p K.q + g K.q K.q :=
+  g.apply_add_self hSymm K.p K.q
 
 /-- Rewrite `W2` using `Q2 = -q^2`. -/
 lemma W2_eq_with_Q2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
