@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import Mathlib
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Basic
 /-!
 
 # Deep Inelastic Scattering Kinematics
@@ -27,12 +28,6 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
 /-- A bilinear form used to evaluate Lorentz-invariant scalar products in abstract form. -/
 abbrev Bilin (V : Type) [AddCommGroup V] [Module ℝ V] := LinearMap.BilinForm ℝ V
-
-/-- The square of a sum under a symmetric bilinear form,
-`(a + b)² = a² + 2 a·b + b²`. -/
-lemma Bilin.apply_add_self {V : Type} [AddCommGroup V] [Module ℝ V] (g : Bilin V)
-    (hSymm : g.IsSymm) (a b : V) : g (a + b) (a + b) = g a a + 2 * g a b + g b b := by
-  linarith [hSymm.polarization a b]
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
 structure DisKinematics where
@@ -96,13 +91,12 @@ lemma kPrime_eq (K : DisKinematics V) : K.kPrime = K.k - K.q := by
 /-- A direct expansion of `W2` in terms of bilinear pieces. -/
 lemma W2_expand (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
     K.W2 g = g K.p K.p + 2 * g K.p K.q + g K.q K.q :=
-  g.apply_add_self hSymm K.p K.q
+  hSymm.apply_add_self K.p K.q
 
 /-- Rewrite `W2` using `Q2 = -q^2`. -/
 lemma W2_eq_with_Q2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
     K.W2 g = g K.p K.p + 2 * g K.p K.q - K.Q2 g := by
-  rw [W2_expand g K hSymm]
-  unfold Q2
+  rw [W2_expand g K hSymm, Q2_def]
   ring
 
 /-- A non-zero Bjorken variable forces `p·q ≠ 0`, since `x = Q² / (2 p·q)`. -/

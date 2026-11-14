@@ -38,9 +38,10 @@ the EIC Yellow Report §7.1.6.
   counterpart of `DisKinematics.W2_expand`.
 * `Diffractive.MX2_eq_with_Q2`: `M_X² = -Q² + 2 Δ·q + t`, with `t = Δ²` the invariant
   `DisKinematics.tMom`.
-* `Diffractive.beta_eq_Q2_div_MX2`: the exact relation `β = Q² / (Q² + M_X² - t)` between the
-  parton fraction and the invariant mass of the diffractive system, and its inverse
-  `Diffractive.MX2_eq_Q2_mul_inv_beta_sub_one`: `M_X² = Q² (1/β - 1) + t`.
+* `Diffractive.beta_eq_Q2_div_Q2_add_MX2_sub_tMom`: the exact relation
+  `β = Q² / (Q² + M_X² - t)` between the parton fraction and the invariant mass of the
+  diffractive system, and its inverse `Diffractive.MX2_eq_Q2_mul_inv_beta_sub_one_add_tMom`:
+  `M_X² = Q² (1/β - 1) + t`.
 * `Diffractive.xi_congr`, `Diffractive.beta_congr`: `ξ` and `β` depend on the record only
   through `q`, `P` and `P'`.
 * `Diffractive.xBj_eq_xi_mul_beta`: the key identity `x = ξ β` relating the inclusive Bjorken
@@ -115,7 +116,7 @@ lemma MX2_def (g : Bilin V) (K : DisKinematics V) :
 lemma MX2_expand (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
     MX2 g K = g K.q K.q + 2 * g (K.p - K.pPrime) K.q
       + g (K.p - K.pPrime) (K.p - K.pPrime) := by
-  rw [MX2_def, add_comm K.q, g.apply_add_self hSymm]
+  rw [MX2_def, add_comm K.q, hSymm.apply_add_self]
   ring
 
 /-- `MX2` in terms of the hard scale and the momentum transfer,
@@ -128,19 +129,25 @@ lemma MX2_eq_with_Q2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
 /-- The exact relation `β = Q² / (Q² + M_X² - t)` between the parton fraction and the invariant
 mass of the diffractive system. The denominator `Q² + M_X² - t` equals the `2 Δ·q` of `beta`
 identically for a symmetric `g`, so no non-degeneracy hypothesis is needed. -/
-theorem beta_eq_Q2_div_MX2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm) :
+theorem beta_eq_Q2_div_Q2_add_MX2_sub_tMom (g : Bilin V) (K : DisKinematics V)
+    (hSymm : g.IsSymm) :
     beta g K = K.Q2 g / (K.Q2 g + MX2 g K - K.tMom g) := by
   rw [MX2_eq_with_Q2 g K hSymm, beta_def]
-  ring_nf
+  ring
 
 /-- The invariant mass of the diffractive system in terms of `β`,
-`M_X² = Q² (1/β - 1) + t`, the inverse of `beta_eq_Q2_div_MX2`. It needs `Q² ≠ 0`; when
-`Δ·q = 0` both sides equal `-Q² + t` by the convention `0⁻¹ = 0`. -/
-theorem MX2_eq_Q2_mul_inv_beta_sub_one (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
-    (hQ2 : K.Q2 g ≠ 0) :
+`M_X² = Q² (1/β - 1) + t`, the inverse of `beta_eq_Q2_div_Q2_add_MX2_sub_tMom`. It needs
+`Q² ≠ 0`; when `Δ·q = 0` both sides equal `-Q² + t` by the convention `0⁻¹ = 0`. -/
+theorem MX2_eq_Q2_mul_inv_beta_sub_one_add_tMom (g : Bilin V) (K : DisKinematics V)
+    (hSymm : g.IsSymm) (hQ2 : K.Q2 g ≠ 0) :
     MX2 g K = K.Q2 g * ((beta g K)⁻¹ - 1) + K.tMom g := by
-  rw [MX2_eq_with_Q2 g K hSymm, beta_def, inv_div, mul_sub, mul_div_cancel₀ _ hQ2]
-  ring
+  rw [MX2_eq_with_Q2 g K hSymm, beta_def]
+  rcases eq_or_ne (g (K.p - K.pPrime) K.q) 0 with hDq | hDq
+  · rw [hDq]
+    simp only [mul_zero, div_zero, inv_zero]
+    ring
+  · field_simp
+    ring
 
 /-- `ξ` depends on the record only through `q`, `P` and `P'`. -/
 lemma xi_congr (g : Bilin V) {K₁ K₂ : DisKinematics V} (hp : K₁.p = K₂.p)
