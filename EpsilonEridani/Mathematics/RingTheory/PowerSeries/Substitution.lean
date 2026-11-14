@@ -81,8 +81,10 @@ theorem coeff_two_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧)
 theorem coeff_three_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧) :
     coeff 3 (f.subst b) = coeff 1 f • coeff 3 b + coeff 2 f • (2 * coeff 1 b * coeff 2 b) +
       coeff 3 f • coeff 1 b ^ 3 := by
-  simp [coeff_subst_eq_sum_range hb, Finset.sum_range_succ, pow_succ, coeff_mul,
-    Finset.Nat.sum_antidiagonal_succ, hb, coeff_one, Algebra.smul_def]
+  simp only [coeff_subst_eq_sum_range hb, Algebra.smul_def, Finset.sum_range_succ,
+    Finset.range_one, Finset.sum_singleton, coeff_zero_eq_constantCoeff, pow_zero, coeff_one,
+    OfNat.ofNat_ne_zero, ↓reduceIte, pow_succ, coeff_mul, Finset.Nat.sum_antidiagonal_succ, hb,
+    Finset.HasAntidiagonal.antidiagonal_zero, mul_zero, zero_mul, one_mul, zero_add, add_zero]
   ring
 
 /-- The quartic coefficient of a substitution without constant term:
@@ -92,8 +94,10 @@ theorem coeff_four_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧
     coeff 4 (f.subst b) = coeff 1 f • coeff 4 b +
       coeff 2 f • (2 * coeff 1 b * coeff 3 b + coeff 2 b ^ 2) +
       coeff 3 f • (3 * coeff 1 b ^ 2 * coeff 2 b) + coeff 4 f • coeff 1 b ^ 4 := by
-  simp [coeff_subst_eq_sum_range hb, Finset.sum_range_succ, pow_succ, coeff_mul,
-    Finset.Nat.sum_antidiagonal_succ, hb, coeff_one, Algebra.smul_def]
+  simp only [coeff_subst_eq_sum_range hb, Algebra.smul_def, Finset.sum_range_succ,
+    Finset.range_one, Finset.sum_singleton, coeff_zero_eq_constantCoeff, pow_zero, coeff_one,
+    OfNat.ofNat_ne_zero, ↓reduceIte, pow_succ, coeff_mul, Finset.Nat.sum_antidiagonal_succ, hb,
+    Finset.HasAntidiagonal.antidiagonal_zero, mul_zero, zero_mul, one_mul, zero_add, add_zero]
   ring
 
 end PowerSeries
