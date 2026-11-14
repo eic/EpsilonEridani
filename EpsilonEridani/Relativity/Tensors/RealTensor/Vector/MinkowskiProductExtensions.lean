@@ -80,6 +80,40 @@ lemma spatialPart_ofTimeAndSpatial_eq {d : ℕ} (x : ℝ) (s : EuclideanSpace �
   ext i
   simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
 
+/-- Every vector is assembled from its time component and its spatial part. -/
+@[simp]
+lemma ofTimeAndSpatial_timeComponent_spatialPart_eq {d : ℕ} (v : Vector d) :
+    ofTimeAndSpatial v.timeComponent v.spatialPart = v := by
+  refine ext_of_apply fun μ => ?_
+  rcases μ with μ | i
+  · fin_cases μ
+    exact timeComponent_ofTimeAndSpatial_eq ..
+  · simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
+
+@[simp]
+lemma ofTimeAndSpatial_zero_zero_eq {d : ℕ} : ofTimeAndSpatial (d := d) 0 0 = 0 := by
+  simp [ofTimeAndSpatial_def]
+
+@[simp]
+lemma ofTimeAndSpatial_add_ofTimeAndSpatial_eq {d : ℕ} (x x' : ℝ)
+    (s s' : EuclideanSpace ℝ (Fin d)) :
+    ofTimeAndSpatial x s + ofTimeAndSpatial x' s' = ofTimeAndSpatial (x + x') (s + s') := by
+  simp only [ofTimeAndSpatial_def, map_add]
+  abel
+
+@[simp]
+lemma ofTimeAndSpatial_sub_ofTimeAndSpatial_eq {d : ℕ} (x x' : ℝ)
+    (s s' : EuclideanSpace ℝ (Fin d)) :
+    ofTimeAndSpatial x s - ofTimeAndSpatial x' s' = ofTimeAndSpatial (x - x') (s - s') := by
+  simp only [ofTimeAndSpatial_def, map_sub]
+  abel
+
+@[simp]
+lemma smul_ofTimeAndSpatial_eq {d : ℕ} (c x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
+    c • ofTimeAndSpatial x s = ofTimeAndSpatial (c * x) (c • s) := by
+  rw [ofTimeAndSpatial_def, ofTimeAndSpatial_def, _root_.smul_add, ← map_smul, ← map_smul,
+    smul_eq_mul]
+
 /-- The Minkowski product of two vectors given by their time components and spatial parts is
 `x x' - ⟪s, s'⟫`. -/
 @[simp]
