@@ -104,6 +104,8 @@ variable {nuc : Nucleus} (ρ : DensityProfile nuc)
 
 /-- The density of a density profile is integrable over space. -/
 lemma integrable : Integrable ρ.density := by
+  -- The Bochner integral of a non-integrable function is `0`, so a nonzero integral forces
+  -- integrability.
   refine Integrable.of_integral_ne_zero ?_
   rw [ρ.integral_density]
   exact_mod_cast nuc.massNumber_pos.ne'
@@ -212,6 +214,8 @@ theorem integrable_gaussianDensity_norm (m R : ℝ) :
   · simp [gaussianDensity_def]
   have hR2 : 0 < (R ^ 2)⁻¹ := by positivity
   rw [gaussianDensity_norm_eq]
+  -- The Bochner integral of a non-integrable function is `0`, so a nonzero integral forces
+  -- integrability.
   refine Integrable.const_mul (Integrable.of_integral_ne_zero ?_) _
   rw [GaussianFourier.integral_rexp_neg_mul_sq_norm hR2]
   positivity
@@ -253,6 +257,11 @@ lemma woodsSaxonDensity_pos {ρ₀ : ℝ} (hρ₀ : 0 < ρ₀) (R a r : ℝ) :
   rw [woodsSaxonDensity_def]
   exact mul_pos hρ₀ (Real.sigmoid_pos _)
 
+/-- The Woods–Saxon profile is continuous in the radius, for every surface thickness. -/
+lemma continuous_woodsSaxonDensity (ρ₀ R a : ℝ) : Continuous (woodsSaxonDensity ρ₀ R a) :=
+  continuous_const.mul
+    (continuous_sigmoid.comp ((continuous_const.sub continuous_id).div_const a))
+
 /-- The Woods–Saxon profile is linear in its parameter `ρ₀`. -/
 lemma woodsSaxonDensity_eq_mul (ρ₀ R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r = ρ₀ * woodsSaxonDensity 1 R a r := by
@@ -281,9 +290,8 @@ theorem integrable_woodsSaxonDensity_norm (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a)
       (inv_pos.2 ha)).congr_fun (fun r _ => ?_) measurableSet_Ioi
     simp [rpow_ofNat]
   refine hg.mono' ?_ (ae_restrict_of_forall_mem measurableSet_Ioi fun r _ => ?_)
-  · refine (Continuous.aestronglyMeasurable ?_).restrict
-    simp_rw [woodsSaxonDensity_def]
-    fun_prop (disch := intro r; positivity)
+  · exact ((continuous_pow 2).smul
+      (continuous_woodsSaxonDensity 1 R a)).aestronglyMeasurable.restrict
   · have h0 : 0 ≤ woodsSaxonDensity 1 R a r := woodsSaxonDensity_nonneg zero_le_one R a r
     rw [smul_eq_mul, Real.norm_of_nonneg (mul_nonneg (sq_nonneg r) h0)]
     calc r ^ 2 * woodsSaxonDensity 1 R a r ≤ r ^ 2 * (1 * exp (-((r - R) / a))) := by
