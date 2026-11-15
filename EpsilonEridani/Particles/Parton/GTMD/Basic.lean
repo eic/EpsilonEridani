@@ -18,9 +18,9 @@ structural assumptions. The azimuthal average that maps a `VectorTmd` into `TMD.
 defined in `EpsilonEridani.Particles.Parton.GTMD.Average`.
 
 The assumption bundle separates what it *means* to be a vector-argument density from
-the analytic regularity the analysis needs; `VectorTmd.assumptions_iff` records that the
-split is exact. Both bundles are namespaced to `VectorTmd` because the unqualified
-`GTMD.Regularity` and `GTMD.Assumptions` are reserved for correlator-level bundles.
+the analytic regularity the analysis needs, and is declared by extension of the two halves.
+Both bundles are namespaced to `VectorTmd` because they are conditions on a vector-argument
+TMD, not on a GTMD correlator.
 
 ## Main definitions
 
@@ -31,11 +31,6 @@ split is exact. Both bundles are namespaced to `VectorTmd` because the unqualifi
   half of the assumption bundle: continuity of every transverse-momentum slice.
 * `VectorTmd.Assumptions`: the full vector-argument assumption bundle, extending the physical
   conditions of `IsVectorTmdDensity` with the analytic condition of `VectorTmd.Regularity`.
-
-## Main results
-
-* `VectorTmd.assumptions_iff`: the split of the vector-argument assumption bundle into its
-  physical and analytic halves is exact.
 -/
 
 @[expose] public section
@@ -70,7 +65,7 @@ transverse-momentum-dependent parton density" means. `VectorTmd.Regularity` is t
 half, continuity of the transverse-momentum slices; it is what transports to measurability of
 the azimuthal average in the transverse-momentum magnitude
 (`tmdRegularity_azimuthalAverage` in `EpsilonEridani.Particles.Parton.GTMD.Average`).
-`VectorTmd.assumptions_iff` records that the split is exact.
+`VectorTmd.Assumptions` extends both halves, so the split is exact by construction.
 -/
 
 /-- **The analytic half of the vector-argument assumption bundle**: continuity of every
@@ -85,12 +80,6 @@ structure VectorTmd.Regularity (f : VectorTmd Flavor) : Prop where
     `VectorTmd.Assumptions.toIsVectorTmdDensity` and `VectorTmd.Assumptions.toRegularity`. -/
 structure VectorTmd.Assumptions (f : VectorTmd Flavor) : Prop extends
     IsVectorTmdDensity f, VectorTmd.Regularity f
-
-/-- The split is exact: `VectorTmd.Assumptions` is the conjunction of the physical and the
-    analytic half, with no residue. -/
-lemma VectorTmd.assumptions_iff {f : VectorTmd Flavor} :
-    VectorTmd.Assumptions f ↔ IsVectorTmdDensity f ∧ VectorTmd.Regularity f :=
-  ⟨fun h => ⟨h.1, h.2⟩, fun h => ⟨h.1, h.2⟩⟩
 
 end GTMD
 end Parton

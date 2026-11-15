@@ -28,10 +28,9 @@ two-vectors, together with its polar parametrisation `circleMapTransverse`.
 * `norm_circleMapTransverse`: the vector has norm `|kT|`.
 * `circleMapTransverse_neg_radius`: reversing the radius reverses the vector.
 
-The coordinates `Complex.orthonormalBasisOneI` carry the circle of radius `r` in `ℂ` onto the
-circle `‖w‖ = r` of the transverse plane; that translation is
-`SemilinearIsometryClass.norm_map_of_mem_sphere_zero`, in
-`EpsilonEridani.Mathematics.Normed.Operator.LinearIsometry`.
+The coordinates `Complex.orthonormalBasisOneI` are a linear isometry, so they carry the circle
+of radius `r` in `ℂ` onto the circle `‖w‖ = r` of the transverse plane
+(`LinearIsometryEquiv.norm_map`).
 -/
 @[expose] public section
 
