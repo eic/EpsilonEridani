@@ -20,7 +20,9 @@ Facts about `Physlib`'s elementary Lorentz-vector API, companions to
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
 * The additivity of the time component and of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and
-  `(u + v).spatialPart = u.spatialPart + v.spatialPart`; the closure of collinearity under sums,
+  `(u + v).spatialPart = u.spatialPart + v.spatialPart`, with the time component of a sum of
+  vectors of prescribed time components (`timeComponent_add_eq_add_of_timeComponent_eq`); the
+  closure of collinearity under sums,
   `(u + v).spatialPart = (a + b) • n` when `u.spatialPart = a • n` and `v.spatialPart = b • n`,
   and its form `(a - b) • n` for a vector against `n`; and the component
   `⟪v.spatialPart, n⟫ = a` along a unit vector `n` of the spatial part `a • n` of a four-vector.
@@ -69,18 +71,26 @@ lemma spatialPart_sub_ofTemporalComponent {d : ℕ} (v : Vector d) (t : ℝ) :
     (v - ofTemporalComponent t).spatialPart = v.spatialPart := by
   simp [spatialPart_sub]
 
-/-- The time component of a sum is the sum of the time components. -/
-@[simp]
+/-- The time component of a sum is the sum of the time components.
+
+This is not a `@[simp]` lemma: the reducible `timeComponent` head unfolds to a component, which
+`apply_add` already rewrites. -/
 lemma timeComponent_add {d : ℕ} (u v : Vector d) :
     (u + v).timeComponent = u.timeComponent + v.timeComponent :=
   apply_add u v (Sum.inl 0)
 
-/-- The spatial part of a sum is the sum of the spatial parts. -/
-@[simp]
+/-- The spatial part of a sum is the sum of the spatial parts.
+
+This is not a `@[simp]` lemma, for the reason given at `spatialPart_sub`. -/
 lemma spatialPart_add {d : ℕ} (u v : Vector d) :
     (u + v).spatialPart = u.spatialPart + v.spatialPart := by
   ext i
   simp
+
+/-- The time component of a sum of four-vectors with time components `a` and `b` is `a + b`. -/
+theorem timeComponent_add_eq_add_of_timeComponent_eq {d : ℕ} {u v : Vector d} {a b : ℝ}
+    (hu : u.timeComponent = a) (hv : v.timeComponent = b) : (u + v).timeComponent = a + b := by
+  rw [timeComponent_add, hu, hv]
 
 /-- The spatial part of a sum of four-vectors whose spatial parts lie along `n` lies along `n`
 too: if `u.spatialPart = a • n` and `v.spatialPart = b • n`, then
