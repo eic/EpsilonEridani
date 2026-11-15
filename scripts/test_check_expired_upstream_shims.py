@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for ``scripts/check-expired-mathlib-shims.py``."""
+"""Regression tests for ``scripts/check-expired-upstream-shims.py``."""
 
 from __future__ import annotations
 
@@ -12,15 +12,21 @@ import unittest
 from unittest import mock
 
 
-SCRIPT = pathlib.Path(__file__).with_name("check-expired-mathlib-shims.py")
-SPEC = importlib.util.spec_from_file_location("check_expired_mathlib_shims", SCRIPT)
+SCRIPT = pathlib.Path(__file__).with_name("check-expired-upstream-shims.py")
+SPEC = importlib.util.spec_from_file_location("check_expired_upstream_shims", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 check = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = check
 SPEC.loader.exec_module(check)
 
 
-class ExpiredMathlibShimTests(unittest.TestCase):
+def write_manifest(root: pathlib.Path, direct: tuple[str, ...], inherited: tuple[str, ...] = ()):
+    packages = [{"name": name, "inherited": False} for name in direct]
+    packages += [{"name": name, "inherited": True} for name in inherited]
+    (root / "lake-manifest.json").write_text(json.dumps({"packages": packages}), encoding="utf-8")
+
+
+class ExpiredUpstreamShimTests(unittest.TestCase):
     def self_declared(self, text: str) -> set[pathlib.Path]:
         with tempfile.TemporaryDirectory() as temporary:
             source_root = pathlib.Path(temporary) / "EpsilonEridani"
@@ -28,13 +34,45 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             (source_root / "New.lean").write_text(text, encoding="utf-8")
             return check.find_self_declared_shims(source_root)
 
-        self.assertFalse(groups[0].landing_sentinel)
-        self.assertTrue(groups[1].landing_sentinel)
-        unit = check.groups_by_source(groups)[pathlib.Path(
-            "EpsilonEridani/RingTheory/DedekindDomain/SInteger/Unit.lean")]
-        self.assertEqual(unit.declarations, ("Set.unit_fg",))
-        self.assertFalse(unit.landing_sentinel)
-        check.validate_registry_coverage(groups, root / "EpsilonEridani")
+    def test_registry_loads_targets_in_any_upstream_library(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            (root / "EpsilonEridani/Relativity").mkdir(parents=True)
+            (root / "EpsilonEridani/Relativity/Extensions.lean").touch()
+            (root / "EpsilonEridani/Unit.lean").touch()
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps([
+                {"sources": ["EpsilonEridani/Relativity/Extensions.lean"],
+                 "modules": ["PhyslibAlpha.Relativity.Extensions"],
+                 "declarations": ["Lorentz.Vector.newLemma"],
+                 "note": "mirrored into PhyslibAlpha"},
+                {"sources": ["EpsilonEridani/Unit.lean"],
+                 "declarations": ["Set.unit_fg"],
+                 "modules": ["Mathlib.RingTheory.New", "TauCeti.Analysis.New"],
+                 "note": "landing", "landing_sentinel": True},
+            ]), encoding="utf-8")
+            groups = check.load_registry(manifest, root)
+            self.assertFalse(groups[0].landing_sentinel)
+            self.assertTrue(groups[1].landing_sentinel)
+            unit = check.groups_by_source(groups)[pathlib.Path("EpsilonEridani/Unit.lean")]
+            self.assertEqual(unit.declarations, ("Set.unit_fg",))
+            self.assertEqual(unit.modules, ("Mathlib.RingTheory.New", "TauCeti.Analysis.New"))
+            check.validate_registry_coverage(groups, root / "EpsilonEridani")
+
+    def test_registry_rejects_own_and_malformed_module_targets(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            (root / "EpsilonEridani").mkdir()
+            (root / "EpsilonEridani/Old.lean").touch()
+            manifest = root / "manifest.json"
+            for module in ("EpsilonEridani.Relativity.Old", "Mathlib", "lowercase.Module"):
+                manifest.write_text(json.dumps([{
+                    "sources": ["EpsilonEridani/Old.lean"],
+                    "modules": [module],
+                    "note": "invalid module fixture",
+                }]), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "invalid upstream module name"):
+                    check.load_registry(manifest, root)
 
     def test_new_self_declaration_requires_registry_entry(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -42,7 +80,7 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             source_root = root / "EpsilonEridani"
             source_root.mkdir()
             (source_root / "New.lean").write_text(
-                "These declarations are a temporary shim pending Mathlib.", encoding="utf-8"
+                "These declarations are a temporary shim pending Physlib.", encoding="utf-8"
             )
             with self.assertRaisesRegex(ValueError, "EpsilonEridani/New.lean"):
                 check.validate_registry_coverage((), source_root)
@@ -52,19 +90,20 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             self.self_declared("This is new formalization rather than a temporary shim."), set()
         )
 
-    def test_explicit_mathlib_deletion_is_a_self_declaration(self):
-        self.assertEqual(self.self_declared(
-            "When Mathlib bumps past the upstream PR, this file is deleted outright."
-        ), {pathlib.Path("EpsilonEridani/New.lean")})
+    def test_explicit_upstream_deletion_is_a_self_declaration(self):
+        for library in ("Mathlib", "Physlib", "PhyslibAlpha", "TauCeti"):
+            self.assertEqual(self.self_declared(
+                f"When {library} bumps past the upstream PR, this file is deleted outright."
+            ), {pathlib.Path("EpsilonEridani/New.lean")}, library)
 
     def test_vendored_migrate_and_delete_is_a_self_declaration(self):
         self.assertEqual(self.self_declared(
-            "Vendored from mathlib4#1; migrate to Mathlib and delete this file when it merges."
+            "Vendored from physlib#1; migrate to PhyslibAlpha and delete this file when it merges."
         ), {pathlib.Path("EpsilonEridani/New.lean")})
 
-    def test_ported_copy_deleted_for_mathlib_is_a_self_declaration(self):
+    def test_ported_copy_deleted_for_upstream_is_a_self_declaration(self):
         self.assertEqual(self.self_declared(
-            "This copy is deleted in favour of the Mathlib declarations once the PR lands."
+            "This copy is deleted in favour of the TauCeti declarations once the PR lands."
         ), {pathlib.Path("EpsilonEridani/New.lean")})
 
     def test_upstream_refactor_obligation_is_a_self_declaration(self):
@@ -72,6 +111,14 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             "Coordinated with the upstream Mathlib effort. Should a canonical theorem land "
             "upstream, this file should be refactored onto it."
         ), {pathlib.Path("EpsilonEridani/New.lean")})
+
+    def test_not_yet_upstreamed_is_not_a_self_declaration(self):
+        # The `*Extensions.lean` modules say they are "not yet upstreamed to Physlib": eligible
+        # for PhyslibAlpha, but not an obligation until an entry names a replacement.
+        self.assertEqual(self.self_declared(
+            "Local extensions to `Physlib.Mathematics.KroneckerDelta.Basic`, not yet upstreamed "
+            "to Physlib."
+        ), set())
 
     def test_bold_negation_is_not_a_self_declaration(self):
         self.assertEqual(self.self_declared("This is **not** a temporary shim."), set())
@@ -171,38 +218,98 @@ class ExpiredMathlibShimTests(unittest.TestCase):
 
     def test_probe_round_trip(self):
         source = check.render_declaration_probe(["Foo.bar", "Alpha", "Foo.bar"])
+        self.assertTrue(source.startswith("import Mathlib\n"))
         self.assertEqual(source.count("env.contains `Foo.bar"), 1)
         self.assertIn("env.contains `Alpha", source)
         output = "noise\n" + check.PROBE_PREFIX + "Foo.bar\n"
         self.assertEqual(check.parse_probe_output(output), {"Foo.bar"})
+
+    def test_probe_imports_mathlib_and_the_built_modules_of_other_direct_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            packages = root / ".lake/packages"
+            write_manifest(root, ("mathlib", "Physlib", "TauCeti"), ("batteries",))
+            lib = packages / "Physlib" / check.PACKAGE_BUILD_LIB
+            (lib / "Physlib/Relativity").mkdir(parents=True)
+            (lib / "PhyslibAlpha").mkdir()
+            (lib / "Physlib/Relativity/Vector.olean").touch()
+            (lib / "Physlib/Relativity/Vector.olean.private").touch()
+            (lib / "Physlib/Relativity/Vector.ilean").touch()
+            (lib / "PhyslibAlpha/Basic.olean").touch()
+            (lib / "Physlib.olean").touch()
+            battery = packages / "batteries" / check.PACKAGE_BUILD_LIB
+            battery.mkdir(parents=True)
+            (battery / "Batteries.olean").touch()
+            # TauCeti is direct but not built yet: contributes nothing rather than failing.
+            imports = check.probe_imports(root, packages)
+            self.assertEqual(imports, (
+                "Mathlib", "Physlib", "Physlib.Relativity.Vector", "PhyslibAlpha.Basic",
+            ))
+            source = check.render_declaration_probe(["Lorentz.Vector.new"], imports)
+            self.assertIn("import PhyslibAlpha.Basic\nopen Lean", source)
+            self.assertNotIn("Batteries", source)
+
+    def test_probe_imports_require_a_readable_manifest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            with self.assertRaisesRegex(RuntimeError, "Lake manifest"):
+                check.probe_imports(root, root / ".lake/packages")
 
     def test_empty_declaration_probe_does_not_launch_lean(self):
         with mock.patch.object(check.subprocess, "run") as run:
             self.assertEqual(check.probe_declarations((), pathlib.Path(".")), set())
         run.assert_not_called()
 
+    def test_module_targets_resolve_through_the_providing_package(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            packages = pathlib.Path(temporary)
+            (packages / "mathlib/Mathlib/Topology").mkdir(parents=True)
+            (packages / "Physlib/Physlib").mkdir(parents=True)
+            (packages / "Physlib/PhyslibAlpha/Relativity").mkdir(parents=True)
+            (packages / "Physlib/PhyslibAlpha/Relativity/New.lean").touch()
+            self.assertEqual(
+                check.module_path(packages, "PhyslibAlpha.Relativity.New"),
+                packages / "Physlib/PhyslibAlpha/Relativity/New.lean",
+            )
+            self.assertEqual(
+                check.module_path(packages, "Mathlib.Topology.New"),
+                packages / "mathlib/Mathlib/Topology/New.lean",
+            )
+            with self.assertRaisesRegex(RuntimeError, "provides the library TauCeti"):
+                check.module_path(packages, "TauCeti.Analysis.New")
+            (packages / "TauCeti/TauCeti").mkdir(parents=True)
+            (packages / "mathlib/TauCeti").mkdir()
+            with self.assertRaisesRegex(RuntimeError, "several dependencies provide"):
+                check.module_path(packages, "TauCeti.Analysis.New")
+
     def test_declaration_and_module_replacements_render_report_and_gate(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = pathlib.Path(temporary)
-            module = root / "Mathlib/Topology/NewThing.lean"
+            packages = pathlib.Path(temporary)
+            module = packages / "mathlib/Mathlib/Topology/NewThing.lean"
             module.parent.mkdir(parents=True)
             module.touch()
+            alpha = packages / "Physlib/PhyslibAlpha/Relativity/Landed.lean"
+            alpha.parent.mkdir(parents=True)
+            alpha.touch()
             group = check.ShimGroup(
                 (pathlib.Path("EpsilonEridani/One.lean"), pathlib.Path("EpsilonEridani/Two.lean")),
                 ("New.theorem", "Still.missing"),
-                ("Mathlib.Topology.NewThing", "Mathlib.Topology.Missing"),
+                ("Mathlib.Topology.NewThing", "Mathlib.Topology.Missing",
+                 "PhyslibAlpha.Relativity.Landed", "PhyslibAlpha.Relativity.Missing"),
                 "test group",
             )
-            available = check.available_replacements((group,), {"New.theorem"}, root)
+            available = check.available_replacements((group,), {"New.theorem"}, packages)
             self.assertEqual(len(available), 2)
             self.assertEqual(available[0].targets, (
-                "declaration New.theorem", "module Mathlib.Topology.NewThing"))
+                "declaration New.theorem", "module Mathlib.Topology.NewThing",
+                "module PhyslibAlpha.Relativity.Landed"))
             summary = check.markdown_summary((group,), available)
             self.assertIn("report does not fail the build", summary)
             blocking = check.markdown_summary((group,), available, blocking=True)
             self.assertIn("Sources with exact replacements block this PR", blocking)
             self.assertIn("EpsilonEridani/One.lean", summary)
             self.assertIn("test group", summary)
+            self.assertIn("pinned dependencies now provide", check.warning_message(available[0]))
 
     def test_speculative_target_is_labeled(self):
         group = check.ShimGroup(
@@ -242,13 +349,13 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         self.assertIn("landing-sentinel rows remain audit-only", mixed)
         self.assertNotIn("migrates each affected source", mixed)
 
-    def test_missing_mathlib_tree_rejects_module_checks(self):
+    def test_missing_packages_reject_module_checks(self):
         group = check.ShimGroup(
             (pathlib.Path("EpsilonEridani/One.lean"),), (), ("Mathlib.Topology.NewThing",), "test"
         )
         with tempfile.TemporaryDirectory() as temporary:
             missing = pathlib.Path(temporary) / "missing"
-            with self.assertRaisesRegex(RuntimeError, "Mathlib source tree does not exist"):
+            with self.assertRaisesRegex(RuntimeError, "dependency packages do not exist"):
                 check.available_replacements((group,), set(), missing)
 
     def test_fail_on_available_is_the_bump_worker_gate(self):
@@ -256,21 +363,26 @@ class ExpiredMathlibShimTests(unittest.TestCase):
             root = pathlib.Path(temporary)
             source_root = root / "EpsilonEridani"
             source_root.mkdir()
+            write_manifest(root, ("mathlib", "Physlib"))
+            (root / ".lake/packages/Physlib/Physlib").mkdir(parents=True)
             (source_root / "Old.lean").write_text(
-                "This is a temporary Mathlib shim.\n"
+                "This is a temporary Physlib shim.\n"
                 "lemma oldShim : True := by trivial\n",
                 encoding="utf-8",
             )
-            manifest = source_root / "mathlib-shims.json"
+            manifest = source_root / "upstream-shims.json"
             manifest.write_text(json.dumps([{
                 "sources": ["EpsilonEridani/Old.lean"],
                 "declarations": ["Upstream.done"],
                 "note": "exact replacement",
             }]), encoding="utf-8")
             common = ["--repo-root", str(root), "--manifest", str(manifest)]
-            with mock.patch.object(check, "probe_declarations", return_value={"Upstream.done"}):
+            with mock.patch.object(check, "probe_declarations", return_value={"Upstream.done"}) \
+                    as probe:
                 self.assertEqual(check.main(common), 0)
                 self.assertEqual(check.main([*common, "--fail-on-available"]), 3)
+            self.assertEqual(probe.call_args.args[0], ["Upstream.done"])
+            self.assertEqual(probe.call_args.args[2], ("Mathlib",))
 
     def test_unexpected_checker_failure_is_infrastructure_not_migration(self):
         with mock.patch.object(check, "load_registry", side_effect=OSError("bad bytes")):
@@ -278,11 +390,18 @@ class ExpiredMathlibShimTests(unittest.TestCase):
 
     def test_workflow_uses_merge_base_and_scopes_feature_probes(self):
         workflow = (SCRIPT.parent.parent / ".github/workflows/pr-build.yml").read_text()
-        self.assertIn("cp mergebase/EpsilonEridani/mathlib-shims.json", workflow)
-        self.assertNotIn("cp base/EpsilonEridani/mathlib-shims.json", workflow)
+        self.assertIn("cp mergebase/EpsilonEridani/upstream-shims.json", workflow)
+        self.assertNotIn("cp base/EpsilonEridani/upstream-shims.json", workflow)
+        self.assertNotIn("mathlib-shims", workflow)
         self.assertIn('[ "${BUMP:-0}" = "1" ] || args+=(--only-new)', workflow)
         self.assertIn('--base-root "$BASE_SHIM_ROOT"', workflow)
         self.assertIn("env.SHIM_CHECK == '1'", workflow)
+
+    def test_tree_has_no_unregistered_self_declarations(self):
+        source_root = SCRIPT.parent.parent / "EpsilonEridani"
+        registry = check.load_registry(source_root / "upstream-shims.json", SCRIPT.parent.parent)
+        check.validate_registry_coverage(registry, source_root)
+
 
 if __name__ == "__main__":
     unittest.main()

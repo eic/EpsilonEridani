@@ -151,6 +151,8 @@ variable {V : Type} [AddCommGroup V] [Module ℝ V]
 variable and the two transverse structure functions. -/
 def FL (x F1 F2 : ℝ) : ℝ := F2 - 2 * x * F1
 
+lemma FL_def (x F1 F2 : ℝ) : FL x F1 F2 = F2 - 2 * x * F1 := (rfl)
+
 /-- The Callan-Gross relation, as a predicate on a pair of structure functions at a given
 value of the Bjorken variable: the longitudinal structure function vanishes. -/
 def IsCallanGross (x F1 F2 : ℝ) : Prop := FL x F1 F2 = 0
@@ -170,6 +172,9 @@ variable `x`, the hard scale `Q²` and the two transverse structure functions. T
 the massless `FL`, is the combination that measures longitudinal absorption at finite target
 mass (`two_xBj_mul_apply_pTransverse`); the two agree at `M = 0` (`FLExact_zero_mass`). -/
 def FLExact (M x Q2 F1 F2 : ℝ) : ℝ := (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1
+
+lemma FLExact_def (M x Q2 F1 F2 : ℝ) :
+    FLExact M x Q2 F1 F2 = (1 + 4 * M ^ 2 * x ^ 2 / Q2) * F2 - 2 * x * F1 := (rfl)
 
 /-- At zero target mass the target-mass-exact longitudinal structure function is the massless
 one. -/
@@ -198,6 +203,12 @@ lemma FLExact_eq_targetMassTerm_of_isCallanGross (M x Q2 F1 F2 : ℝ) (h : IsCal
     FLExact M x Q2 F1 F2 = 4 * M ^ 2 * x ^ 2 / Q2 * F2 := by
   unfold IsCallanGross at h
   rw [FLExact_eq_FL_add, h, zero_add]
+
+/-- At non-negative virtuality the factor `√(1 + γ²)`, with `γ² = 4 M² x² / Q²`, is at
+least `1`. -/
+lemma one_le_sqrt_one_add_gammaSq (M x : ℝ) {Q2 : ℝ} (hQ2 : 0 ≤ Q2) :
+    1 ≤ Real.sqrt (1 + 4 * M ^ 2 * x ^ 2 / Q2) :=
+  Real.one_le_sqrt.mpr (le_add_of_nonneg_right (by positivity))
 
 /-- The physical second structure function. `Tensors.Hadronic.IsF1F2Decomposition` carries
 `F₂/(p·q)` in its last slot, so the physical `F₂` is that coefficient times `p·q`. -/
