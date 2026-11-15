@@ -18,12 +18,13 @@ Facts about `Physlib`'s Minkowski product that the kinematics of an emission pro
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
 companion to `Lorentz.Vector.minkowskiProduct_add_self`; the factorisation
 `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial part is `a • n`
-along a unit vector `n` into its light-cone components, its nullness when `v⁰ = a`, the positivity
-of `√⟪v, v⟫ₘ` when `|a| < v⁰`, and its form `(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component
-along `n`; the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is
-`√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and, in at least two spatial dimensions, the
-existence of two vectors on the mass shell with prescribed energies above the mass and a
-prescribed angle between their spatial parts.
+along a unit vector `n` into its light-cone components, its nullness when `v⁰ = a`, and its form
+`(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component along `n`; the positivity of `√⟪v, v⟫ₘ`
+inside the forward light cone `‖v.spatialPart‖ < v⁰`, so in particular when `|a| < v⁰`; the
+length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass
+shell `⟪p, p⟫ₘ = m²`; and, in at least two spatial dimensions, the existence of two vectors on the
+mass shell with prescribed energies above the mass and a prescribed angle between their spatial
+parts.
 
 It also records the symmetry of the Minkowski product as a bilinear form
 (`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
@@ -68,13 +69,19 @@ theorem minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul
     (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
   rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
 
+/-- A four-vector inside the forward light cone, `‖v.spatialPart‖ < v⁰`, has positive invariant
+mass: `0 < √⟪v, v⟫ₘ`. -/
+theorem sqrt_minkowskiProduct_self_pos {d : ℕ} {v : Vector d}
+    (h : ‖v.spatialPart‖ < v.timeComponent) : 0 < √⟪v, v⟫ₘ := by
+  rw [Real.sqrt_pos, minkowskiProduct_self_eq_sq_sub, sub_pos]
+  exact pow_lt_pow_left₀ h (norm_nonneg _) two_ne_zero
+
 /-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < v⁰` has positive
 invariant mass: `0 < √⟪v, v⟫ₘ`. -/
 theorem sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
-    (h : |a| < v.timeComponent) : 0 < √⟪v, v⟫ₘ := by
-  rw [Real.sqrt_pos, minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv]
-  exact mul_pos (by linarith [neg_abs_le a]) (by linarith [le_abs_self a])
+    (h : |a| < v.timeComponent) : 0 < √⟪v, v⟫ₘ :=
+  sqrt_minkowskiProduct_self_pos (by rwa [hv, norm_smul, hn, mul_one, Real.norm_eq_abs])
 
 /-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
 `(v⁰)² - ⟪v.spatialPart, n⟫²`, the square of its time component minus the square of its
