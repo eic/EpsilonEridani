@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import EpsilonEridani.Mathematics.Analysis.Real.Sqrt
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 
@@ -121,13 +122,6 @@ theorem rapidity_eq_half_log {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
   rw [← exp_two_mul_rapidity h, log_exp]
   ring
 
-/-- `x = √(x y) (√x / √y)` for `x ≥ 0` and `y > 0`: the algebra shared by the forward and the
-backward light-cone component below. -/
-private theorem eq_sqrt_mul_mul_sqrt_div {x y : ℝ} (hx : 0 ≤ x) (hy : 0 < y) :
-    x = √(x * y) * (√x / √y) := by
-  rw [Real.sqrt_mul hx, mul_div_left_comm, mul_div_cancel_right₀ _ (Real.sqrt_pos.2 hy).ne',
-    Real.mul_self_sqrt hx]
-
 /-- **A four-vector from its transverse mass and rapidity, forward component.** Inside the
 forward light cone along `n`, `v⁰ + v_∥ = m_T e^{y}`, with `m_T = √((v⁰)² - v_∥²)` and `y` the
 rapidity along `n`. -/
@@ -136,8 +130,8 @@ theorem timeComponent_add_inner_spatialPart_eq_sqrt_mul_exp_rapidity {v : Vector
     v.timeComponent + ⟪v.spatialPart, n⟫_ℝ =
       √(v.timeComponent ^ 2 - ⟪v.spatialPart, n⟫_ℝ ^ 2) * exp (v.rapidity n) := by
   rw [exp_rapidity h, sq_sub_sq]
-  exact eq_sqrt_mul_mul_sqrt_div (by linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ])
-    (by linarith [le_abs_self ⟪v.spatialPart, n⟫_ℝ])
+  exact (sqrt_mul_mul_sqrt_div_sqrt (by linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ])
+    (by linarith [le_abs_self ⟪v.spatialPart, n⟫_ℝ])).symm
 
 /-- **A four-vector from its transverse mass and rapidity, backward component.** Inside the
 forward light cone along `n`, `v⁰ - v_∥ = m_T e^{-y}`, with `m_T = √((v⁰)² - v_∥²)` and `y` the
@@ -148,8 +142,8 @@ theorem timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity {v : Ve
       √(v.timeComponent ^ 2 - ⟪v.spatialPart, n⟫_ℝ ^ 2) * exp (-v.rapidity n) := by
   -- `e^{-y} = √(v⁰ - v_∥) / √(v⁰ + v_∥)`, the forward computation with the two components swapped
   rw [exp_neg, exp_rapidity h, inv_div, sq_sub_sq, mul_comm (v.timeComponent + _)]
-  exact eq_sqrt_mul_mul_sqrt_div (by linarith [le_abs_self ⟪v.spatialPart, n⟫_ℝ])
-    (by linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ])
+  exact (sqrt_mul_mul_sqrt_div_sqrt (by linarith [le_abs_self ⟪v.spatialPart, n⟫_ℝ])
+    (by linarith [neg_abs_le ⟪v.spatialPart, n⟫_ℝ])).symm
 
 /-- Inside the forward light cone along `n`, the energy of a four-vector is `m_T cosh y`, with
 `m_T = √((v⁰)² - v_∥²)` its transverse mass and `y` its rapidity along `n`. -/

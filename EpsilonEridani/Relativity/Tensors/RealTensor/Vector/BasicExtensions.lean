@@ -113,7 +113,7 @@ lemma ofTimeAndSpatial_timeComponent_spatialPart_eq {d : ℕ} (v : Vector d) :
 @[simp]
 lemma timeComponent_add {d : ℕ} (u v : Vector d) :
     (u + v).timeComponent = u.timeComponent + v.timeComponent :=
-  rfl
+  apply_add u v (Sum.inl 0)
 
 /-- The spatial part of a sum is the sum of the spatial parts. -/
 @[simp]
