@@ -172,7 +172,8 @@ theorem exp_two_mul_rapidity_of_spatialPart_eq_smul {v : Vector d}
     (h : |a| < v.timeComponent) :
     exp (2 * v.rapidity n) = (v.timeComponent + a) / (v.timeComponent - a) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
-  rw [exp_two_mul_rapidity (hpar ▸ h), hpar]
+  have h' : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent := by rwa [hpar]
+  rw [exp_two_mul_rapidity h', hpar]
 
 /-- **A collinear four-vector from its invariant mass and rapidity, forward component.** If the
 spatial part of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then
@@ -182,7 +183,8 @@ theorem timeComponent_add_eq_sqrt_minkowskiProduct_mul_exp_rapidity_of_spatialPa
     (hv : v.spatialPart = a • n) (h : |a| < v.timeComponent) :
     v.timeComponent + a = √⟪v, v⟫ₘ * exp (v.rapidity n) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
-  have := timeComponent_add_inner_spatialPart_eq_sqrt_mul_exp_rapidity (hpar ▸ h)
+  have h' : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent := by rwa [hpar]
+  have := timeComponent_add_inner_spatialPart_eq_sqrt_mul_exp_rapidity h'
   rwa [← minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv, hpar] at this
 
 /-- **A collinear four-vector from its invariant mass and rapidity, backward component.** If the
@@ -193,7 +195,8 @@ theorem timeComponent_sub_eq_sqrt_minkowskiProduct_mul_exp_neg_rapidity_of_spati
     (hv : v.spatialPart = a • n) (h : |a| < v.timeComponent) :
     v.timeComponent - a = √⟪v, v⟫ₘ * exp (-v.rapidity n) := by
   have hpar := inner_spatialPart_eq_of_spatialPart_eq_smul hn hv
-  have := timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity (hpar ▸ h)
+  have h' : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent := by rwa [hpar]
+  have := timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity h'
   rwa [← minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv, hpar] at this
 
 end Vector
