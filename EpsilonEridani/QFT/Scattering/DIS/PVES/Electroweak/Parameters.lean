@@ -135,13 +135,11 @@ theorem helicityCoupling_def (h : Bool) :
   (rfl)
 
 /-- A right-handed fermion couples to the `Z` with `2 g_R`. -/
-@[simp]
 theorem helicityCoupling_true : c.helicityCoupling true = 2 * c.gR := by
   rw [helicityCoupling_def, gR_def, helicitySign_true]
   ring
 
 /-- A left-handed fermion couples to the `Z` with `2 g_L`. -/
-@[simp]
 theorem helicityCoupling_false : c.helicityCoupling false = 2 * c.gL := by
   rw [helicityCoupling_def, gL_def, helicitySign_false]
   ring
