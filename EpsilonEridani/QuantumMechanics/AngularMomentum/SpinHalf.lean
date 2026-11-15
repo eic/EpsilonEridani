@@ -26,7 +26,10 @@ For two spin-`1/2` systems the exchange identity `σ(1) · σ(2) = 2 P₁₂ - 1
 TensorProduct.comm` swaps the two tensor factors, gives the scalar product of their spins:
 `S(1) · S(2) = (2 P₁₂ - 1) / 4`. Their total spin squared is then
 `S² = S(1)² + S(2)² + 2 S(1) · S(2) = 1 + P₁₂`, twice the symmetrizer `TensorProduct.symmetrizer`
-of `ℂ² ⊗ ℂ²`.
+of `ℂ² ⊗ ℂ²`. The total spin acts on a tensor square through the diagonal action
+`diagEnd X X = X ⊗ 1 + 1 ⊗ X`, which commutes with the symmetrizer and the antisymmetrizer of the
+tensor square of any vector space (`PhyslibAlpha.Sl2.commute_diagEnd_symmetrizer`,
+`PhyslibAlpha.Sl2.commute_diagEnd_antisymmetrizer`).
 
 ## Implementation notes
 
@@ -48,6 +51,9 @@ states or rewrites with them must enable it with
   `PhyslibAlpha.Sl2.lie_spinGen_two_zero`: the su(2) commutation relations.
 * `PhyslibAlpha.Sl2.Jsq_spinHalfRep`: `J² = 3/4` for spin `1/2`.
 * `PhyslibAlpha.Sl2.dot_spinHalfRep_spinHalfRep`: `S(1) · S(2) = (2 P₁₂ - 1) / 4` on `ℂ² ⊗ ℂ²`.
+* `PhyslibAlpha.Sl2.commute_diagEnd_symmetrizer`,
+  `PhyslibAlpha.Sl2.commute_diagEnd_antisymmetrizer`: the diagonal action of an endomorphism
+  commutes with the two projectors of a tensor square.
 * `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`: the total spin squared of two spin-`1/2` systems is
   twice the symmetrizer of `ℂ² ⊗ ℂ²`.
 -/
@@ -75,16 +81,10 @@ theorem spinGen_apply (i : Fin 3) (v : EuclideanSpace ℂ (Fin 2)) :
     spinGen i v = (2 : ℂ)⁻¹ • toEuclideanLin (pauliMatrix (Sum.inr i)) v := by
   simp [spinGen_def]
 
-/-- `Matrix.toEuclideanLin` is multiplicative on square matrices: it is the algebra equivalence
-`Matrix.toLpLinAlgEquiv 2`. -/
-private theorem toEuclideanLin_mul_toEuclideanLin (A B : Matrix (Fin 2) (Fin 2) ℂ) :
-    toEuclideanLin A * toEuclideanLin B = toEuclideanLin (A * B) :=
-  (map_mul (toLpLinAlgEquiv 2) A B).symm
-
 /-- The spin Casimir of a single spin-`1/2` particle:
 `S₁ S₁ + S₂ S₂ + S₃ S₃ = s (s + 1) = 3/4`. -/
 theorem sum_spinGen_mul_self : ∑ i : Fin 3, spinGen i * spinGen i = (3 / 4 : ℂ) • 1 := by
-  simp only [spinGen_def, smul_mul_smul_comm, toEuclideanLin_mul_toEuclideanLin,
+  simp only [spinGen_def, smul_mul_smul_comm, Module.End.mul_eq_comp, ← toLpLin_mul_same,
     ← Finset.smul_sum, ← map_sum, sum_pauliMatrix_inr_mul_self, map_smul,
     toLpLin_one, ← Module.End.one_eq_id, smul_smul]
   norm_num
@@ -103,7 +103,7 @@ private theorem lie_spinGen_of_commutator {i j k : Fin 3}
         (2 * Complex.I) • pauliMatrix (Sum.inr k)) :
     ⁅spinGen i, spinGen j⁆ = Complex.I • spinGen k := by
   simp only [LieRing.of_associative_ring_bracket, spinGen_def, smul_mul_smul_comm, ← smul_sub,
-    toEuclideanLin_mul_toEuclideanLin, ← map_sub, h, map_smul, smul_smul]
+    Module.End.mul_eq_comp, ← toLpLin_mul_same, ← map_sub, h, map_smul, smul_smul]
   congr 1
   ring
 
@@ -157,6 +157,30 @@ theorem dot_spinHalfRep_spinHalfRep :
     spinHalfRep_Jz, spinGen_def, TensorProduct.map_smul_left, TensorProduct.map_smul_right,
     smul_smul]
   module
+
+/-! ### Two spin-`1/2` systems -/
+
+section Diagonal
+
+variable {K M : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup M] [Module K M]
+
+/-- The diagonal action `f ⊗ 1 + 1 ⊗ f` of an endomorphism `f` of `M`, in the `diagEnd` form in
+which `AngularMomentumRepresentation.tensor` builds the total angular momentum, commutes with the
+symmetrizer of `M ⊗ M`. -/
+theorem commute_diagEnd_symmetrizer (f : Module.End K M) :
+    Commute (diagEnd f f) (TensorProduct.symmetrizer K M) := by
+  rw [diagEnd]
+  exact TensorProduct.commute_rTensor_add_lTensor_symmetrizer f
+
+/-- The diagonal action `f ⊗ 1 + 1 ⊗ f` of an endomorphism `f` of `M`, in the `diagEnd` form in
+which `AngularMomentumRepresentation.tensor` builds the total angular momentum, commutes with the
+antisymmetrizer of `M ⊗ M`. -/
+theorem commute_diagEnd_antisymmetrizer (f : Module.End K M) :
+    Commute (diagEnd f f) (TensorProduct.antisymmetrizer K M) := by
+  rw [diagEnd]
+  exact TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer f
+
+end Diagonal
 
 /-- The total spin squared `S² = Σᵢ Sᵢ Sᵢ` of two spin-`1/2` systems is twice the symmetrizer of
 `ℂ² ⊗ ℂ²`: `S² = 1 + P₁₂ = 2 • symmetrizer`, where `P₁₂` exchanges the two spins. -/

@@ -103,7 +103,7 @@ lemma su2TraceStatement : SU2TraceStatement := by
 /-- The fundamental `su(2)` Casimir: `Σₐ (σᵃ/2)(σᵃ/2) = (3/4) · 1`. -/
 lemma su2FundamentalStatement : SU2FundamentalStatement := by
   intro i j
-  have h := congrFun (congrFun sum_pauliMatrix_inr_mul_self i) j
+  have h := Matrix.ext_iff.mpr sum_pauliMatrix_inr_mul_self i j
   simp only [Matrix.sum_apply, Matrix.mul_apply, Matrix.smul_apply, Matrix.one_apply,
     smul_eq_mul] at h
   have hquarter : ∀ a k, su2GenEntry a i k * su2GenEntry a k j =
