@@ -12,10 +12,11 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 This module implements reconstruction methods for DIS invariants from experimental measurements.
 The electron method reconstructs Q², y and xBj and carries positivity and range lemmas. The Sigma
-method reconstructs y, which is `DisKinematics.yInel` under energy-momentum conservation. Without
-radiation the Sigma method needs no Q² of its own, since the lepton momentum transfer then gives
-the canonical `DisKinematics.Q2` directly; after initial-state radiation it does not
-(`Kinematics.Radiative`).
+method reconstructs y, which is `DisKinematics.yInel` under energy-momentum conservation. The
+covariant `sigmaMethod` takes its virtuality from the electron method, `Q²_Σ := Q²_e`. This
+coincides with the canonical `DisKinematics.Q2` only without initial-state radiation; after
+collinear initial-state radiation the virtuality is rescaled (`Kinematics.Radiative`), so the
+Sigma-method shift is stated there in `(x, y)`.
 
 ## Access Methods
 
@@ -203,25 +204,25 @@ def electronMethod (g : Bilin V) (k p kPrime : V) : ReconstructedInvariants :=
 /-- The hadronic method of Jacquet and Blondel, from the incoming lepton `k`, the target `p` and
 the hadronic final state `p_X`: the invariants of the hadronic momentum transfer `q_h = p_X - p`,
 that is `Q²_h = -q_h²`, `y_h = (p·q_h) / (p·k)` and `x_h = Q²_h / (2 p·q_h)`. Jacquet and Blondel
-build their virtuality from the hadronic transverse momentum, `Q²_h = p²_{T,h} / (1 - y_h)`; the
-exact transfer `-q_h²` is used here, and the two agree at Born level for massless leptons. -/
+build their virtuality from the hadronic transverse momentum in the collider frame,
+`Q²_h = p²_{T,h} / (1 - y_h)`; the invariant transfer `-q_h²` is used here instead. -/
 @[simps (rhsMd := .default)]
 def hadronicMethod (g : Bilin V) (k p pX : V) : ReconstructedInvariants :=
   .ofTransfer g k p (pX - p)
 
-/-- The electron method is the invariants of the lepton momentum transfer `k - k'`. -/
-theorem electronMethod_eq_ofTransfer (g : Bilin V) (k p kPrime : V) :
-    electronMethod g k p kPrime = .ofTransfer g k p (k - kPrime) := by
-  rw [electronMethod]
-
-/-- The Sigma method, from all four measured momenta: the virtuality `Q²_e` of the electron
-method, the inelasticity `y_Σ = (p·q_h) / (p·q_h + p·k')` of Bassler and Bernardi
+/-- The Sigma method, from all four measured momenta: the virtuality `Q²_Σ := Q²_e` of the
+electron method, the inelasticity `y_Σ = (p·q_h) / (p·q_h + p·k')` of Bassler and Bernardi
 (`SigmaMethodData.ySigma`), in which the incoming lepton does not appear, and
 `x_Σ = Q²_e / (2 (p·k) y_Σ)`. Bassler and Bernardi build their own virtuality from the
-transverse momentum of the scattered lepton; it is not used here. Initial-state radiation shifts
-this virtuality even where `x_Σ` and `y_Σ` are exact
-(`RadiativeEvent.trueInvariants_Q2_of_collinear_initialState`,
-`RadiativeEvent.shiftXY_sigmaMethod_eq_zero_of_collinear_initialState`). -/
+transverse momentum of the scattered lepton in the collider frame, `Q²_Σ = p²_{T,e} / (1 - y_Σ)`,
+which is unaffected by collinear initial-state radiation; it is not used here. With the
+electron-method virtuality used instead, `x_Σ` and `y_Σ` are exact after collinear initial-state
+radiation (`RadiativeEvent.shiftXY_sigmaMethod_eq_zero_of_collinear_initialState`), while
+`Q²_Σ = Q²_e` is not: for massless leptons the true virtuality is `Q² = z Q²_e`
+(`RadiativeEvent.trueInvariants_Q2_of_collinear_initialState`), which is below `Q²_e` for `z < 1`
+and `Q²_e > 0` (`RadiativeEvent.trueInvariants_Q2_lt_electronMethod_Q2_of_collinear_initialState`).
+That failure is an artifact of the choice `Q²_Σ := Q²_e`, not of the method of Bassler and
+Bernardi. -/
 @[simps]
 def sigmaMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants where
   x := (electronMethod g k p kPrime).Q2 / (2 * g p k * SigmaMethodData.ySigma ⟨pX, kPrime, p⟩ g)
@@ -237,6 +238,20 @@ def mixedMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants wher
   x := (electronMethod g k p kPrime).Q2 / (2 * g p (pX - p))
   Q2 := (electronMethod g k p kPrime).Q2
   y := (hadronicMethod g k p pX).y
+
+/-- The electron-method Bjorken variable is `Q²_e / (2 (p·k) y_e)` wherever `p·k ≠ 0`. -/
+theorem electronMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime : V) (hpk : g p k ≠ 0) :
+    (electronMethod g k p kPrime).x =
+      (electronMethod g k p kPrime).Q2 / (2 * g p k * (electronMethod g k p kPrime).y) := by
+  rw [electronMethod]
+  exact ReconstructedInvariants.ofTransfer_x_eq_Q2_div g k p _ hpk
+
+/-- The hadronic-method Bjorken variable is `Q²_h / (2 (p·k) y_h)` wherever `p·k ≠ 0`. -/
+theorem hadronicMethod_x_eq_Q2_div (g : Bilin V) (k p pX : V) (hpk : g p k ≠ 0) :
+    (hadronicMethod g k p pX).x =
+      (hadronicMethod g k p pX).Q2 / (2 * g p k * (hadronicMethod g k p pX).y) := by
+  rw [hadronicMethod]
+  exact ReconstructedInvariants.ofTransfer_x_eq_Q2_div g k p _ hpk
 
 /-- The Sigma-method Bjorken variable is `x_Σ = Q²_e / (2 (p·k) y_Σ)`. -/
 theorem sigmaMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime pX : V) :
@@ -255,7 +270,7 @@ theorem mixedMethod_x_eq_Q2_div (g : Bilin V) (k p kPrime pX : V) (hpk : g p k �
 canonical invariants. -/
 theorem electronMethod_eq_xBj_Q2_yInel (g : Bilin V) (K : DisKinematics V) :
     electronMethod g K.k K.p K.kPrime = ⟨K.xBj g, K.Q2 g, K.yInel g⟩ := by
-  rw [electronMethod_eq_ofTransfer, ← K.hq, ReconstructedInvariants.ofTransfer_eq_xBj_Q2_yInel]
+  rw [electronMethod, ← K.hq, ReconstructedInvariants.ofTransfer_eq_xBj_Q2_yInel]
 
 /-- In the rest frame of a target of mass `M`, where `p·k = M E` and `p·k' = M E'` for the beam
 energy `E` and the scattered energy `E'`, and for massless leptons with `k·k' = E E' (1 - cos θ)`
@@ -326,6 +341,22 @@ def shiftXY (r : ReconstructedInvariants) (t : TrueInvariants) : ℝ × ℝ :=
   simp [Prod.ext_iff, sub_eq_zero]
 
 end ReconstructedInvariants
+
+namespace TrueInvariants
+
+/-- The `(x, Q²)` shift of an exact measurement of the true invariants vanishes. -/
+@[simp] theorem shiftXQ2_toReconstructedInvariants (t : TrueInvariants) :
+    t.toReconstructedInvariants.shiftXQ2 t = 0 :=
+  ReconstructedInvariants.shiftXQ2_eq_zero_iff.2
+    ⟨toReconstructedInvariants_x t, toReconstructedInvariants_Q2 t⟩
+
+/-- The `(x, y)` shift of an exact measurement of the true invariants vanishes. -/
+@[simp] theorem shiftXY_toReconstructedInvariants (t : TrueInvariants) :
+    t.toReconstructedInvariants.shiftXY t = 0 :=
+  ReconstructedInvariants.shiftXY_eq_zero_iff.2
+    ⟨toReconstructedInvariants_x t, toReconstructedInvariants_y t⟩
+
+end TrueInvariants
 
 end Covariant
 
