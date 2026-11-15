@@ -592,6 +592,19 @@ jobs:
         working-directory: docbuild
         run: lake exe cache get
 
+      # Physlib is in neither Mathlib's cache nor EpsilonEridani's artifact cache, so without this
+      # the docs build compiles the Physlib modules EpsilonEridani imports from source (~6 min).
+      # Its oleans depend only on the toolchain and the locked dependency revisions, so key on
+      # exactly those. A stale or partial restore is harmless: Lake's traces rebuild whatever does
+      # not match. Restore-only, so a hit is not re-uploaded; the save follows the docs build.
+      - name: Restore Physlib's oleans
+        id: physlib-cache
+        if: steps.docs-plan.outputs.build == 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: .lake/packages/Physlib/.lake/build
+          key: physlib-build-v1-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+
       # The generated docbuild/lean-toolchain symlink resolves to EpsilonEridani's root toolchain, so
       # there is no second independently pinned copy to drift. The pinned doc-gen4 source still
       # uses Lean internals, though, and may need updating after a Lean bump. Compile it on its own
@@ -608,11 +621,53 @@ jobs:
         working-directory: docbuild
         run: python3 mk_docs_root.py
 
-      # Render pages for only the EpsilonEridani.* modules; references to Mathlib (and Lean core) link
-      # out to the hosted mathlib4_docs via its /find resolver. Start from a clean doc tree so
-      # pages for deleted modules do not linger (this step never runs on the web-only reuse
-      # path, which keeps the restored cache).
-      - name: Build the API documentation (doc-gen4)
+      # doc-gen4's `docInfo` facet indexes every module in the import closure into
+      # docbuild/.lake/build/api-docs.db, leaving a Lake-traced marker per module in doc-data/.
+      # DOCGEN_LOCAL_MODULE_ROOTS only filters the HTML rendered from that database, so without a
+      # cache every build re-indexes all of Mathlib, which took ~1h30m of the ~1h45m doc step.
+      #
+      # The database is therefore built in two phases. Phase 1 indexes Mathlib's closure only, and
+      # that state is cached under a key naming everything it depends on: the toolchain, the locked
+      # revisions of every docs dependency except EpsilonEridani and the two packages outside
+      # Mathlib's closure (Physlib, TauCeti), and the docs project's own sources (doc-gen4 reads
+      # its references from docbuild/docs). Mathlib moves far less often than this workflow runs,
+      # so phase 1 is normally a restore plus a no-op build. Phase 2 then adds EpsilonEridani and
+      # Physlib on top. The snapshot is saved between the phases, so it never holds EpsilonEridani
+      # rows and pages of deleted modules cannot linger through it. Correctness does not rest on
+      # the key: Lake re-runs any module whose marker trace does not match.
+      - name: Compute the Mathlib doc-database cache key
+        id: docdb-key
+        if: steps.docs-plan.outputs.build == 'true'
+        working-directory: ${{ github.workspace }}
+        env:
+          DOCS_HASH: ${{ hashFiles('docbuild/lakefile.toml', 'docbuild/docs/**') }}
+        run: |
+          set -euo pipefail
+          pins=$(jq -r '.packages[]
+                          | select(.name != "EpsilonEridani" and .name != "Physlib" and .name != "TauCeti")
+                          | "\(.name)@\(.rev // "")"' docbuild/lake-manifest.json | sort)
+          echo "Pins in the key:"; echo "$pins"
+          hash=$(printf '%s\n%s\n%s\n' "$(cat lean-toolchain)" "$pins" "$DOCS_HASH" | sha256sum | cut -d' ' -f1)
+          echo "key=docs-db-mathlib-v1-${RUNNER_OS}-${hash}" >> "$GITHUB_OUTPUT"
+
+      # Start from a clean HTML tree so pages for deleted modules do not linger (these steps never
+      # run on the web-only reuse path, which keeps the restored tree).
+      - name: Start the API docs from a clean HTML tree
+        if: steps.docs-plan.outputs.build == 'true'
+        working-directory: docbuild
+        run: rm -rf .lake/build/doc
+
+      - name: Restore the Mathlib doc database
+        id: docdb-cache
+        if: steps.docs-plan.outputs.build == 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            docbuild/.lake/build/api-docs.db
+            docbuild/.lake/build/doc-data
+          key: ${{ steps.docdb-key.outputs.key }}
+
+      - name: Index Mathlib into the doc database (doc-gen4, phase 1)
         if: steps.docs-plan.outputs.build == 'true'
         working-directory: docbuild
         env:
@@ -620,51 +675,46 @@ jobs:
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
           # The restore above placed what this needs, so do not reach for a remote cache.
           LAKE_NO_CACHE: "true"
-        # Diagnostics for the ENOMEM failures on ubuntu-26.04 (`resource exhausted (error code: 12,
-        # not enough memory)` when Lake forks git and lean). Lean starts child processes with
-        # fork(), so the samples record Lake's own size and largest mappings alongside system
-        # memory, to tell a single oversized mapping apart from genuine exhaustion. The sampler
-        # only writes to a log file; the build and its exit status are unchanged.
+        # doc-gen4's bibPrepass target writes doc/references.bib as a side effect, but Lake tracks
+        # only its doc-data/references.json output. With that output up to date (as after a
+        # snapshot restore) Lake replays the target without rewriting the .bib that the clean
+        # step deleted, and the final `docs` target then fails on the missing file. Removing the
+        # tracked output makes the sub-second prepass rerun; its trace depends only on its inputs,
+        # so nothing downstream is rebuilt.
         run: |
-          diag="$RUNNER_TEMP/docgen-memory.log"
-          cg="/sys/fs/cgroup$(sed -n 's/^0:://p' /proc/self/cgroup)"
-          {
-            echo "kernel $(uname -r), nproc $(nproc)"
-            echo "cgroup $cg memory.max=$(cat "$cg/memory.max" 2>/dev/null || echo n/a)"
-          } > "$diag"
-          (
-            set +e
-            while :; do
-              {
-                echo "=== $(date -u +%H:%M:%S)"
-                grep -E '^(MemAvailable|SwapFree|Committed_AS|CommitLimit):' /proc/meminfo \
-                  | tr -s ' ' | paste -sd ' '
-                ps -eo pid,rss,vsz,etimes,args --sort=-rss | head -6 | cut -c1-160
-                for pid in $(pgrep -x lake); do
-                  grep -E '^Vm(Peak|Size|HWM|RSS):' "/proc/$pid/status" \
-                    | tr -s ' \t' ' ' | paste -sd ' ' | sed "s/^/lake $pid: /"
-                  pmap -x "$pid" | sort -n -k2 | tail -3
-                done
-              } >> "$diag" 2>&1
-              sleep 10
-            done
-          ) &
-          sampler=$!
-          status=0
-          rm -rf .lake/build/doc .lake/build/doc-data
-          lake build EpsilonEridaniDocs:docs || status=$?
-          kill "$sampler" 2>/dev/null || true
-          echo "::group::doc-gen4 memory samples"
-          cat "$diag"
-          echo "::endgroup::"
-          echo "cgroup memory.peak=$(cat "$cg/memory.peak" 2>/dev/null || echo n/a)"
-          echo "cgroup memory.events: $(paste -sd ' ' "$cg/memory.events" 2>/dev/null || echo n/a)"
-          if [ "$status" != 0 ]; then
-            echo "::group::kernel log (tail)"
-            sudo -n dmesg -T 2>&1 | tail -60 || true
-            echo "::endgroup::"
-          fi
-          exit "$status"
+          rm -f .lake/build/doc-data/references.json
+          bash ../scripts/run-with-memory-sampler.sh mathlib lake build +Mathlib:docInfo
+
+      - name: Save the Mathlib doc database
+        if: steps.docs-plan.outputs.build == 'true' && steps.docdb-cache.outputs.cache-hit != 'true'
+        # A cache is an optimisation and must not be able to break the deploy.
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            docbuild/.lake/build/api-docs.db
+            docbuild/.lake/build/doc-data
+          key: ${{ steps.docdb-key.outputs.key }}
+
+      # Render pages for only the EpsilonEridani.* modules; references to Mathlib (and Lean core) link
+      # out to the hosted mathlib4_docs via its /find resolver.
+      - name: Build the API documentation (doc-gen4, phase 2)
+        if: steps.docs-plan.outputs.build == 'true'
+        working-directory: docbuild
+        env:
+          DOCGEN_LOCAL_MODULE_ROOTS: EpsilonEridani
+          DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
+          # The restore above placed what this needs, so do not reach for a remote cache.
+          LAKE_NO_CACHE: "true"
+        run: bash ../scripts/run-with-memory-sampler.sh docs lake build EpsilonEridaniDocs:docs
+
+      - name: Save Physlib's oleans
+        if: steps.docs-plan.outputs.build == 'true' && steps.physlib-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: .lake/packages/Physlib/.lake/build
+          key: physlib-build-v1-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
 
       # Stamp the tree with the commit it was generated from, BEFORE it is cached, so the
       # provenance travels with the tree wherever it is later restored. This is what makes the
