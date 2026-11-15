@@ -650,6 +650,13 @@ jobs:
           hash=$(printf '%s\n%s\n%s\n' "$(cat lean-toolchain)" "$pins" "$DOCS_HASH" | sha256sum | cut -d' ' -f1)
           echo "key=docs-db-mathlib-v1-${RUNNER_OS}-${hash}" >> "$GITHUB_OUTPUT"
 
+      # Start from a clean HTML tree so pages for deleted modules do not linger (these steps never
+      # run on the web-only reuse path, which keeps the restored tree).
+      - name: Start the API docs from a clean HTML tree
+        if: steps.docs-plan.outputs.build == 'true'
+        working-directory: docbuild
+        run: rm -rf .lake/build/doc
+
       - name: Restore the Mathlib doc database
         id: docdb-cache
         if: steps.docs-plan.outputs.build == 'true'
@@ -668,7 +675,15 @@ jobs:
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
           # The restore above placed what this needs, so do not reach for a remote cache.
           LAKE_NO_CACHE: "true"
-        run: bash ../scripts/run-with-memory-sampler.sh mathlib lake build +Mathlib:docInfo
+        # doc-gen4's bibPrepass target writes doc/references.bib as a side effect, but Lake tracks
+        # only its doc-data/references.json output. With that output up to date (as after a
+        # snapshot restore) Lake replays the target without rewriting the .bib that the clean
+        # step deleted, and the final `docs` target then fails on the missing file. Removing the
+        # tracked output makes the sub-second prepass rerun; its trace depends only on its inputs,
+        # so nothing downstream is rebuilt.
+        run: |
+          rm -f .lake/build/doc-data/references.json
+          bash ../scripts/run-with-memory-sampler.sh mathlib lake build +Mathlib:docInfo
 
       - name: Save the Mathlib doc database
         if: steps.docs-plan.outputs.build == 'true' && steps.docdb-cache.outputs.cache-hit != 'true'
@@ -682,10 +697,7 @@ jobs:
           key: ${{ steps.docdb-key.outputs.key }}
 
       # Render pages for only the EpsilonEridani.* modules; references to Mathlib (and Lean core) link
-      # out to the hosted mathlib4_docs via its /find resolver. Start from a clean HTML tree so
-      # pages for deleted modules do not linger (this step never runs on the web-only reuse
-      # path, which keeps the restored cache). doc-data and api-docs.db are kept: on this fresh
-      # runner they hold only phase 1's Mathlib index.
+      # out to the hosted mathlib4_docs via its /find resolver.
       - name: Build the API documentation (doc-gen4, phase 2)
         if: steps.docs-plan.outputs.build == 'true'
         working-directory: docbuild
@@ -694,9 +706,7 @@ jobs:
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
           # The restore above placed what this needs, so do not reach for a remote cache.
           LAKE_NO_CACHE: "true"
-        run: |
-          rm -rf .lake/build/doc
-          bash ../scripts/run-with-memory-sampler.sh docs lake build EpsilonEridaniDocs:docs
+        run: bash ../scripts/run-with-memory-sampler.sh docs lake build EpsilonEridaniDocs:docs
 
       - name: Save Physlib's oleans
         if: steps.docs-plan.outputs.build == 'true' && steps.physlib-cache.outputs.cache-hit != 'true'
