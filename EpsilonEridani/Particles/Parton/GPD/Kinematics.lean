@@ -27,8 +27,10 @@ variables are
 The Minkowski pairings among these vectors are stated once, with the arguments in the order
 `n`, `p`, `p'`, `P`, `Δ`, `w` (for instance `minkowskiProduct_p_delta_eq` and
 `minkowskiProduct_delta_deltaOrthN_eq`); the other order follows from
-`Lorentz.Vector.minkowskiProduct_symm`. The one exception is `P · Δ = 0`, which is stated in both
-orders because both are used.
+`Lorentz.Vector.minkowskiProduct_symm`. Since `simp` cannot reorient a pairing, these one-sided
+pairings are rewrite lemmas, not `@[simp]`. The exceptions are the squares, such as
+`⟪P, P⟫ₘ = M² - t / 4`, and `P · Δ = 0`, which is stated in both orders because both are used;
+these are `@[simp]`.
 
 The main results are:
 
@@ -51,8 +53,8 @@ the impact-parameter interpretation of a generalized parton distribution is clea
 The variables `skewness` and `tMom` are the arguments `ξ` and `t` of the GPDs `GPD.Gpd` and
 `GPD.Model.H` (variables `(x, ξ, t)`) of `EpsilonEridani.Particles.Parton.GPD.Basic`, in the same
 namespace, and `physicalRegion M` is the domain over which those two arguments are to be read.
-`abs_skewness_lt_one` is the kinematic fact that physical skewness lies in `|ξ| < 1`, outside of
-which `Assumptions.skewnessBound` asks the GPDs to vanish.
+`abs_skewness_lt_one` is the kinematic fact that physical skewness lies in `|ξ| < 1`; for
+`|ξ| > 1`, `Assumptions.skewnessBound` asks the GPDs to vanish.
 
 The skewness here is the light-cone variable of the hadronic transition alone. The variable
 `ExclKinematics.xiSkew` of `EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic` is a
@@ -281,7 +283,6 @@ lemma minkowskiProduct_avgMomentum_self_eq :
   linarith
 
 /-- The product of the two hadron momenta is `p · p' = M² - t / 2`. -/
-@[simp]
 lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2 := by
   have h := minkowskiProduct_sub_self K.pPrime K.p
   rw [← delta_def, ← tMom_def, K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self,
@@ -289,13 +290,11 @@ lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2
   linarith
 
 /-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
-@[simp]
 lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 := by
   simp only [delta_def, map_sub, minkowskiProduct_p_pPrime_eq, K.minkowskiProduct_p_self]
   ring
 
 /-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
-@[simp]
 lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 := by
   simp only [delta_def, map_sub, minkowskiProduct_symm K.pPrime K.p, minkowskiProduct_p_pPrime_eq,
     K.minkowskiProduct_pPrime_self]
@@ -309,7 +308,6 @@ lemma minkowskiProduct_n_delta_eq :
   field_simp
 
 /-- The vector `w = Δ + 2 ξ P` has vanishing plus-component. -/
-@[simp]
 lemma minkowskiProduct_n_deltaOrthN_eq_zero : ⟪K.n, K.deltaOrthN⟫ₘ = 0 := by
   simp only [deltaOrthN_def, map_add, map_smul, smul_eq_mul, minkowskiProduct_n_delta_eq]
   ring
@@ -327,7 +325,6 @@ lemma minkowskiProduct_deltaOrthN_self_eq :
 
 /-- The average momentum paired with the vector `w = Δ + 2 ξ P` is `⟪P, w⟫ₘ = 2 ξ (M² - t / 4)`,
 which is in general non-zero, so `w` is not orthogonal to `P`. -/
-@[simp]
 lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
     ⟪K.avgMomentum, K.deltaOrthN⟫ₘ = 2 * K.skewness * (M ^ 2 - K.tMom / 4) := by
   simp only [deltaOrthN_def, map_add, map_smul, smul_eq_mul,
@@ -335,7 +332,6 @@ lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
   ring
 
 /-- The momentum transfer paired with the vector `w = Δ + 2 ξ P` is `⟪Δ, w⟫ₘ = t`. -/
-@[simp]
 lemma minkowskiProduct_delta_deltaOrthN_eq : ⟪K.delta, K.deltaOrthN⟫ₘ = K.tMom := by
   simp only [deltaOrthN_def, map_add, map_smul, smul_eq_mul,
     K.minkowskiProduct_delta_avgMomentum_eq_zero, tMom_def]
