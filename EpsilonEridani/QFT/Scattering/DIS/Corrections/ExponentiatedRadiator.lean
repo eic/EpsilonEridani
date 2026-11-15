@@ -54,8 +54,8 @@ the Beta density, has zeroth moment one; that is Mathlib's
 ## Main results
 
 * `exponentiatedRadiator_of_mem_Ioo`: the closed form on `0 < z < 1`.
-* `measurable_exponentiatedRadiator`, `integrableOn_exponentiatedRadiator`: it is measurable, and
-  integrable on `(0,1]`.
+* `measurable_exponentiatedRadiator`, `integrableOn_exponentiatedRadiator`,
+  `integrable_exponentiatedRadiator`: it is measurable, and integrable on `(0,1]` and on `ℝ`.
 * `mellinDis_exponentiatedRadiator`: its Mellin moments, a ratio of Gamma functions.
 * `integral_exponentiatedRadiator`: its zeroth moment.
 * `one_lt_integral_exponentiatedRadiator`: the zeroth moment exceeds one for `0 < β ≤ 1`.
@@ -133,6 +133,12 @@ theorem mellinDisConvergent_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) {N :
 lemma integrableOn_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
     IntegrableOn (exponentiatedRadiator β) (Ioc 0 1) :=
   mellinDisConvergent_one_iff.mp (mellinDisConvergent_exponentiatedRadiator hβ (by simp))
+
+/-- The exponentiated radiator is integrable on `ℝ`: it vanishes off `(0,1)`. -/
+lemma integrable_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
+    Integrable (exponentiatedRadiator β) :=
+  (integrableOn_exponentiatedRadiator hβ).integrable_of_forall_notMem_eq_zero fun _ hz =>
+    exponentiatedRadiator_of_notMem_Ioo fun h => hz (Ioo_subset_Ioc_self h)
 
 /-- **Mellin moments of the exponentiated radiator.** On the half plane `0 < Re N`,
 `∫_{(0,1]} z ^ (N - 1) D(z) dz = exp (β (3/4 - γ_E)) Γ(N) / Γ(N + β)`. -/
