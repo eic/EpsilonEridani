@@ -128,14 +128,14 @@ lemma add {W' : Bilin V} (hW : ParityOddAssumptions g K W) (hW' : ParityOddAssum
   conserved_left v := by
     rw [LinearMap.add_apply, LinearMap.add_apply, hW.conserved_left v, hW'.conserved_left v,
       add_zero]
-  isAlt v := by simp [hW.isAlt v, hW'.isAlt v]
+  isAlt := hW.isAlt.add hW'.isAlt
 
 /-- The parity-odd assumptions are preserved by negation. -/
 lemma neg (hW : ParityOddAssumptions g K W) : ParityOddAssumptions g K (-W) where
   proper_covariant := hW.proper_covariant.neg
   conserved_left v := by
     rw [LinearMap.neg_apply, LinearMap.neg_apply, hW.conserved_left v, neg_zero]
-  isAlt v := by simp [hW.isAlt v]
+  isAlt := hW.isAlt.neg
 
 /-- The parity-odd assumptions are preserved by differences. -/
 lemma sub {W' : Bilin V} (hW : ParityOddAssumptions g K W) (hW' : ParityOddAssumptions g K W') :
