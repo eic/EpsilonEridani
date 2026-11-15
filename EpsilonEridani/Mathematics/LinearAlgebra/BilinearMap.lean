@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wouter Deconinck
+Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
@@ -15,7 +15,10 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 Two bilinear maps `B₁`, `B₂` are linearly independent as soon as one pair of arguments sees `B₁`
 but not `B₂`, and another pair sees `B₂` but not `B₁`. This is the non-degeneracy argument
 behind the uniqueness of the structure-function coefficients of the hadronic tensors of
-deep-inelastic scattering.
+deep-inelastic scattering. `LinearMap.SeparatingProbes` generalises the probe-separation
+structure of the unpolarised hadronic tensor;
+`EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.UniquenessAssumptions` is its specialisation
+to the transverse basis.
 
 ## Main results
 

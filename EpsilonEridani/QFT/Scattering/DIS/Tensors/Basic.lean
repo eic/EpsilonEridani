@@ -23,7 +23,8 @@ This module introduces tensor objects for inclusive DIS:
   current-conservation assumptions.
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
   terms of structure functions `F1` and `F2` written against it.
-- A uniqueness theorem for decomposition coefficients under probe-vector assumptions.
+- A uniqueness theorem for decomposition coefficients under linear independence of the two
+  transverse structures.
 - Pointwise contraction lemmas used by later cross-section derivations.
 
 ## Conventions
@@ -890,12 +891,11 @@ space directions, `ℝ × ℝ × ℝ` with `g (v₀,v₁,v₂) (w₀,w₁,w₂) 
 the smallest space carrying a timelike `p`, a spacelike `q` orthogonal to it, and one
 spectator direction — the minimum needed for `covariant_spectator_offDiagonal_zero` to bite.
 
-The same construction settles a second open question at no extra cost: `uniquenessWit`
-instantiates `UniquenessAssumptions`, which nothing in the repository previously did. Until
-now `decomposition_unique` and `fromF1F2_ne_zero` were conditioned on a hypothesis not known
-to be satisfiable; had it been empty, both would have been vacuously true statements about
-nothing. `spectatorAssumptions_kWit` does the same for `SpectatorAssumptions`, the hypothesis
-of `exists_isF1F2Decomposition`.
+The same construction supplies `uniquenessWit`, a `LinearMap.SeparatingProbes` witness
+(`UniquenessAssumptions gWit kWit`) whose `.linearIndependent` discharges the
+linear-independence hypothesis of `decomposition_unique` and `fromF1F2_ne_zero`, and
+`spectatorAssumptions_kWit`, which instantiates `SpectatorAssumptions`, the hypothesis of
+`exists_isF1F2Decomposition`.
 
 -/
 
@@ -975,9 +975,8 @@ lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
 `F2` probe is the null pair `(n, n)` with `n = (1,0,1)`, for which the projector value
 `-n₀² + n₂² ` vanishes while `g p_T n = 1`.
 
-Without a witness of this kind, `decomposition_unique` and `fromF1F2_ne_zero` were
-conditioned on a structure not known to be inhabited; `uniquenessWit.linearIndependent` now
-supplies their linear-independence hypothesis. -/
+`uniquenessWit.linearIndependent` discharges the linear-independence hypothesis of
+`decomposition_unique` and `fromF1F2_ne_zero`. -/
 def uniquenessWit : UniquenessAssumptions gWit kWit where
   v₁ := (0, 0, 1)
   w₁ := (0, 0, 1)

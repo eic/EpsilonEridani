@@ -8,7 +8,7 @@ module
 public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 /-!
 
-# Polarized DIS Interfaces (Stage 10)
+# Polarized DIS Interfaces
 
 This module introduces polarized DIS interfaces: a structure-function container for
 `g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, the fixed-point
