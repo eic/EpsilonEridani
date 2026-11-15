@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import EpsilonEridani.Mathematics.RingTheory.PowerSeries.Basic
 public import EpsilonEridani.Mathematics.RingTheory.PowerSeries.Substitution
 import Mathlib.Tactic.LinearCombination
 
@@ -138,6 +139,7 @@ scoped instance : MulAction (SubstGroup R) R⟦X⟧ where
   one_smul := transformBeta_one
   mul_smul := transformBeta_mul
 
+@[simp]
 lemma smul_eq_transformBeta (F : SubstGroup R) (β : R⟦X⟧) : F • β = transformBeta F β := rfl
 
 /-- Redefining the coupling by `F` and then back by `F⁻¹` recovers the original beta function. -/
@@ -167,15 +169,6 @@ theorem X_pow_dvd_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (n : ℕ) (h�
     subst_X F⁻¹.hasSubst]
   exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr F⁻¹.constantCoeff_toPowerSeries) n).mul_right _
 
-/-- The coefficient of `a^{n+2}` in `f'(a) β(a)`, for `β` divisible by `a²`, as a Cauchy product
-`∑_{i+j=n} (i+1) [a^{i+1}] f [a^{j+2}] β`: the coefficients of `a⁰` and `a¹` of `β` vanish. -/
-private theorem coeff_add_two_derivative_mul (f : R⟦X⟧) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) (n : ℕ) :
-    coeff (n + 2) (d⁄dX f * β) =
-      ∑ p ∈ Finset.antidiagonal n, coeff (p.1 + 1) f * (p.1 + 1) * coeff (p.2 + 2) β := by
-  obtain ⟨γ, rfl⟩ := hβ
-  rw [mul_left_comm, coeff_X_pow_mul, coeff_mul]
-  simp only [coeff_derivative, coeff_X_pow_mul]
-
 /-- The one-loop coefficient under a redefinition of the coupling: `u β₀' = β₀`, where
 `u = F'(0)`; the coefficient of `a²` in `β'(F(a)) = F'(a) β(a)`. -/
 private theorem coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta (F : SubstGroup R)
@@ -184,9 +177,9 @@ private theorem coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta (F : Su
   have h := congrArg (coeff 2) (subst_transformBeta F β)
   rw [coeff_two_subst F.constantCoeff_toPowerSeries,
     X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
-    coeff_add_two_derivative_mul _ hβ 0] at h
-  simp only [Finset.HasAntidiagonal.antidiagonal_zero, Finset.sum_singleton, smul_eq_mul,
-    zero_add, Nat.cast_zero] at h
+    coeff_add_mul_of_X_pow_dvd hβ _ 0] at h
+  simp only [Finset.HasAntidiagonal.antidiagonal_zero, Finset.sum_singleton, coeff_derivative,
+    smul_eq_mul, zero_add, Nat.cast_zero] at h
   rw [betaCoeff_def, betaCoeff_def]
   exact F.isUnit_coeff_one_toPowerSeries.mul_left_cancel (by linear_combination -h)
 
@@ -198,9 +191,9 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta (F :
   have h := congrArg (coeff 3) (subst_transformBeta F β)
   rw [coeff_three_subst F.constantCoeff_toPowerSeries,
     X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
-    coeff_add_two_derivative_mul _ hβ 1] at h
+    coeff_add_mul_of_X_pow_dvd hβ _ 1] at h
   simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
-    Finset.sum_singleton, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one] at h
+    Finset.sum_singleton, coeff_derivative, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one] at h
   have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
   simp only [betaCoeff_def, Nat.reduceAdd] at h₀ ⊢
   exact F.isUnit_coeff_one_toPowerSeries.mul_left_cancel
@@ -219,9 +212,9 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta (F :
   have h := congrArg (coeff 4) (subst_transformBeta F β)
   rw [coeff_four_subst F.constantCoeff_toPowerSeries,
     X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
-    coeff_add_two_derivative_mul _ hβ 2] at h
+    coeff_add_mul_of_X_pow_dvd hβ _ 2] at h
   simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
-    Finset.sum_singleton, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one,
+    Finset.sum_singleton, coeff_derivative, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one,
     Nat.cast_add] at h
   have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
   have h₁ := coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ

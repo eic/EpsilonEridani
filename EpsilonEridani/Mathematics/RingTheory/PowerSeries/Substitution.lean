@@ -35,7 +35,6 @@ as a `finsum` over all powers of `b`; when `b` has no constant term only the pow
 * `PowerSeries.coeff_one_subst`: the chain rule `[X] f(b) = [X] f • [X] b`.
 * `PowerSeries.coeff_two_subst`, `PowerSeries.coeff_three_subst`, `PowerSeries.coeff_four_subst`:
   the coefficients of `X²`, `X³`, `X⁴` in `f(b)` in terms of those of `f` and `b`.
-* `PowerSeries.subst_C_mul_X`: substituting `X ↦ r X` is `PowerSeries.rescale r`.
 
 ## References
 
@@ -101,10 +100,6 @@ theorem coeff_four_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧
     OfNat.ofNat_ne_zero, ↓reduceIte, pow_succ, coeff_mul, Finset.Nat.sum_antidiagonal_succ, hb,
     Finset.HasAntidiagonal.antidiagonal_zero, mul_zero, zero_mul, one_mul, zero_add, add_zero]
   ring
-
-/-- Substituting `X ↦ r X` is `PowerSeries.rescale r`. -/
-theorem subst_C_mul_X (r : R) (f : R⟦X⟧) : f.subst (C r * X) = rescale r f := by
-  rw [← smul_eq_C_mul, ← rescale_eq_subst]
 
 end PowerSeries
 
@@ -227,23 +222,23 @@ lemma mem_ker_linearCoeff_iff {F : SubstGroup R} :
 /-- The linear substitution `X ↦ u X`, whose action by substitution is `PowerSeries.rescale u`:
 a homomorphism `Rˣ →* SubstGroup R` splitting `linearCoeff`. -/
 def rescale : Rˣ →* SubstGroup R where
-  toFun u := ⟨C (u : R) * X, by simp, by simp⟩
+  toFun u := ⟨(u : R) • X, by simp, by simp⟩
   map_one' := by
     ext1
-    simp only [Units.val_one, map_one, one_mul, toPowerSeries_one]
+    simp only [Units.val_one, one_smul, toPowerSeries_one]
   map_mul' u v := by
     ext1
-    simp only [toPowerSeries_mul, subst_C_mul_X]
-    rw [← rescale_X (u : R), rescale_rescale, rescale_X, Units.val_mul]
+    simp only [toPowerSeries_mul, ← rescale_eq_subst]
+    simp only [smul_eq_C_mul, ← rescale_X, rescale_rescale, Units.val_mul]
 
 @[simp]
-lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = C (u : R) * X := by
+lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = (u : R) • X := by
   simp [rescale]
 
 /-- Substituting `X ↦ u X` is `PowerSeries.rescale u`. -/
 lemma subst_toPowerSeries_rescale (u : Rˣ) (f : R⟦X⟧) :
     f.subst (rescale u).toPowerSeries = PowerSeries.rescale (u : R) f := by
-  rw [toPowerSeries_rescale, subst_C_mul_X]
+  rw [toPowerSeries_rescale, ← rescale_eq_subst]
 
 @[simp]
 lemma linearCoeff_rescale (u : Rˣ) : linearCoeff (rescale u) = u := by
