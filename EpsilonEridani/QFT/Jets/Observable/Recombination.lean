@@ -37,8 +37,10 @@ On the infrared side, for a scheme that leaves a pseudojet `a` unchanged when a 
 is merged into it and is continuous there, an observable that is unchanged near `p = 0` when the
 added momentum `p` is merged into `a`, and is continuous at `a`, absorbs a vanishingly soft
 momentum added next to `a` (`RecombinationScheme.tendsto_cons_of_merge_zero`). With a unital
-scheme continuous at a vanishing momentum, these hypotheses on the observable at every pseudojet,
-and the corresponding limit at the empty final state, the observable is infrared safe
+scheme continuous at a vanishing momentum, an observable for which, near `p = 0`, an added
+momentum `p` is absorbed by merging it into some pseudojet of the final state at which the
+observable is continuous, the pseudojet being allowed to depend on `p`, and which has the
+corresponding limit at the empty final state, is infrared safe
 (`RecombinationScheme.IsUnital.isInfraredSafe`).
 
 Additivity, homogeneity and symmetry do not by themselves give collinear exactness: on a
@@ -49,10 +51,11 @@ additivity together with the normalisation `IsUnital`, and those two characteris
 (`RecombinationScheme.eq_eScheme_iff`). A scheme that is *not* additive can still be exact, and
 `RecombinationScheme.IsPosHomogeneous.isCollinearExactOn_iff` isolates what it takes: a homogeneous
 scheme is exact on a set closed under positive rescaling precisely when it merges parallel momenta
-of that set additively. A scheme that rescales a merged pair to make it massless for a Minkowski
-bilinear form `g` cannot be exact on all of `V`, but can be exact on the momenta with `g p p = 0`
-(cf. `invariantMassSq`), a set closed under positive rescaling, which is what
-`IsCollinearExactOn` and `RecombinationScheme.IsPosHomogeneous.isCollinearExactOn_iff` are for.
+of that set additively. A scheme that rescales the energy, or the spatial part, of a merged pair
+to make it massless for a Minkowski bilinear form `g` cannot be exact on all of `V`, but can be
+exact on the momenta with `g p p = 0` (cf. `invariantMassSq`), a set closed under positive
+rescaling, which is what `IsCollinearExactOn` and
+`RecombinationScheme.IsPosHomogeneous.isCollinearExactOn_iff` are for.
 
 ## References
 
@@ -216,10 +219,6 @@ theorem IsCollinearExactOn.merge_zero {S : Set V} (hR : R.IsCollinearExactOn S) 
     (ha : a ∈ S) : R.merge a 0 = a := by
   simpa using hR.merge_smul_one_sub_smul ha 1 ⟨zero_le_one, le_rfl⟩
 
-/-- A collinear exact scheme is unital. -/
-theorem IsCollinearExact.isUnital (hR : R.IsCollinearExact) : R.IsUnital := fun a => by
-  simpa using hR.merge_smul_one_sub_smul a 1 ⟨zero_le_one, le_rfl⟩
-
 /-- Collinear exactness on a set passes to its subsets. -/
 theorem IsCollinearExactOn.mono {S T : Set V} (hST : S ⊆ T) (hR : R.IsCollinearExactOn T) :
     R.IsCollinearExactOn S :=
@@ -229,6 +228,10 @@ theorem IsCollinearExactOn.mono {S T : Set V} (hST : S ⊆ T) (hR : R.IsCollinea
 theorem IsCollinearExact.isCollinearExactOn (hR : R.IsCollinearExact) (S : Set V) :
     R.IsCollinearExactOn S :=
   fun p _ => hR.merge_smul_one_sub_smul p
+
+/-- A collinear exact scheme is unital. -/
+theorem IsCollinearExact.isUnital (hR : R.IsCollinearExact) : R.IsUnital := fun a =>
+  (hR.isCollinearExactOn Set.univ).merge_zero (Set.mem_univ a)
 
 /-- Collinear exactness is collinear exactness on the whole momentum space. -/
 @[simp]
@@ -254,13 +257,12 @@ theorem isLinearMap_uncurry_merge_iff :
       _ = -c • -R.merge x.1 x.2 := by rw [hadd.merge_neg_neg]
       _ = c • R.merge x.1 x.2 := neg_smul_neg c _
 
-/-- On a set closed under positive rescaling, a scheme collinear exact there merges parallel
-momenta of the set additively. -/
-theorem IsCollinearExactOn.merge_smul_eq_one_add_smul {S : Set V}
-    (hS : ∀ c : ℝ, 0 < c → ∀ p ∈ S, c • p ∈ S) (hR : R.IsCollinearExactOn S) {t : ℝ} (ht : 0 ≤ t)
-    {p : V} (hp : p ∈ S) : R.merge p (t • p) = (1 + t) • p := by
+/-- A scheme collinear exact on `S` merges a pair of parallel momenta `p`, `t • p` additively
+when their sum `(1 + t) • p` lies in `S`. -/
+theorem IsCollinearExactOn.merge_smul_eq_one_add_smul {S : Set V} (hR : R.IsCollinearExactOn S)
+    {t : ℝ} (ht : 0 ≤ t) {p : V} (hp : (1 + t) • p ∈ S) : R.merge p (t • p) = (1 + t) • p := by
   have ht1 : (0 : ℝ) < 1 + t := by linarith
-  have hz := hR.merge_smul_one_sub_smul (hS _ ht1 p hp) (1 + t)⁻¹
+  have hz := hR.merge_smul_one_sub_smul hp (1 + t)⁻¹
     ⟨inv_nonneg.2 ht1.le, inv_le_one_of_one_le₀ (by linarith)⟩
   have hdiv : (1 - (1 + t)⁻¹) / (1 + t)⁻¹ = t := by field_simp; ring
   rwa [one_sub_smul_eq_div_smul_smul (inv_pos.2 ht1), inv_smul_smul₀ ht1.ne', hdiv] at hz
@@ -287,7 +289,7 @@ that is not additive has to meet. -/
 theorem IsPosHomogeneous.isCollinearExactOn_iff (hhom : R.IsPosHomogeneous) {S : Set V}
     (hS : ∀ c : ℝ, 0 < c → ∀ p ∈ S, c • p ∈ S) :
     R.IsCollinearExactOn S ↔ ∀ t : ℝ, 0 ≤ t → ∀ p ∈ S, R.merge p (t • p) = (1 + t) • p :=
-  ⟨fun hR _ ht _ hp => hR.merge_smul_eq_one_add_smul hS ht hp,
+  ⟨fun hR _ ht _ hp => hR.merge_smul_eq_one_add_smul ht (hS _ (by linarith) _ hp),
     hhom.isCollinearExactOn_of_merge_smul⟩
 
 /-- A positively homogeneous scheme is collinear exact exactly when it merges parallel momenta
@@ -451,16 +453,17 @@ variable [AddCommGroup V] [Module ℝ V] {R : RecombinationScheme V}
 its merged pseudojet is invariant under the collinear splittings of every momentum on which the
 scheme is collinear exact. -/
 theorem RecombinationScheme.IsCollinearExactOn.apply_smul_cons_one_sub_smul_cons {S : Set V}
-    (hR : R.IsCollinearExactOn S) {J : Multiset V → X}
-    (hJ : ∀ (s : Multiset V) (a : V) (t : ℝ), 0 ≤ t →
-      J (a ::ₘ t • a ::ₘ s) = J (R.merge a (t • a) ::ₘ s))
-    (s : Multiset V) {p : V} (hp : p ∈ S) {z : ℝ} (hz : z ∈ Set.Icc (0 : ℝ) 1) :
+    (hR : R.IsCollinearExactOn S) {J : Multiset V → X} (s : Multiset V)
+    (hJ : ∀ (a : V) (t : ℝ), 0 ≤ t → J (a ::ₘ t • a ::ₘ s) = J (R.merge a (t • a) ::ₘ s))
+    {p : V} (hp : p ∈ S) {z : ℝ} (hz : z ∈ Set.Icc (0 : ℝ) 1) :
     J (z • p ::ₘ (1 - z) • p ::ₘ s) = J (p ::ₘ s) := by
   obtain ⟨hz0, hz1⟩ := hz
   rcases hz0.eq_or_lt with rfl | hzpos
-  · rw [zero_smul, sub_zero, one_smul, Multiset.cons_swap, ← zero_smul ℝ p, hJ s p 0 le_rfl,
-      zero_smul, hR.merge_zero hp]
-  · rw [one_sub_smul_eq_div_smul_smul hzpos, hJ s _ _ (div_nonneg (by linarith) hz0),
+  · have h := hJ p 0 le_rfl
+    rw [zero_smul, hR.merge_zero hp] at h
+    rw [zero_smul, sub_zero, one_smul, Multiset.cons_swap]
+    exact h
+  · rw [one_sub_smul_eq_div_smul_smul hzpos, hJ _ _ (div_nonneg (by linarith) hz0),
       ← one_sub_smul_eq_div_smul_smul hzpos, hR.merge_smul_one_sub_smul hp z ⟨hz0, hz1⟩]
 
 /-- For a collinear exact scheme, an observable that is unchanged when a pair of parallel momenta
@@ -471,7 +474,7 @@ theorem RecombinationScheme.IsCollinearExact.isCollinearSafe (hR : R.IsCollinear
       J (a ::ₘ t • a ::ₘ s) = J (R.merge a (t • a) ::ₘ s)) :
     IsCollinearSafe J :=
   isCollinearSafe_def.2 fun s p _ hz =>
-    (hR.isCollinearExactOn Set.univ).apply_smul_cons_one_sub_smul_cons hJ s (Set.mem_univ p) hz
+    (hR.isCollinearExactOn Set.univ).apply_smul_cons_one_sub_smul_cons s (hJ s) (Set.mem_univ p) hz
 
 end CollinearSafety
 
@@ -494,21 +497,37 @@ theorem RecombinationScheme.tendsto_cons_of_merge_zero [TopologicalSpace V] [Top
   refine Tendsto.congr' (hJ.mono fun p hp => hp.symm) ?_
   simpa [Function.comp_def, hR] using (hJc.comp_of_eq hRc hR).tendsto
 
-/-- For a unital scheme whose merge map is continuous at a vanishing momentum, an observable that
-is unchanged near `p = 0` when an added momentum `p` is merged into a pseudojet, that is continuous
-in the pseudojet it is merged into, and that absorbs a vanishingly soft momentum added to the empty
-final state, is infrared safe. -/
+/-- For a unital scheme whose merge map is continuous at a vanishing momentum, an observable is
+infrared safe if it absorbs a vanishingly soft momentum added to the empty final state and if, at
+every nonempty final state `s`, near `p = 0` the added momentum `p` can be merged into some
+pseudojet `a` of `s` without changing the observable, the observable being continuous at `a` in
+that pseudojet. The pseudojet `a` may depend on `p`, as it does for a jet algorithm, where the
+direction of a soft momentum decides which jet absorbs it. -/
 theorem RecombinationScheme.IsUnital.isInfraredSafe [TopologicalSpace V] [TopologicalSpace X]
     (hR : R.IsUnital) (hRc : ∀ a : V, ContinuousAt (R.merge a) 0) {J : Multiset V → X}
-    (hJc : ∀ (a : V) (t : Multiset V), ContinuousAt (fun v : V => J (v ::ₘ t)) a)
-    (hJ : ∀ (a : V) (t : Multiset V), ∀ᶠ p : V in 𝓝 0, J (p ::ₘ a ::ₘ t) = J (R.merge a p ::ₘ t))
+    (hJ : ∀ s : Multiset V, s ≠ 0 → ∀ᶠ p : V in 𝓝 0, ∃ (a : V) (t : Multiset V), s = a ::ₘ t ∧
+      ContinuousAt (fun v : V => J (v ::ₘ t)) a ∧ J (p ::ₘ s) = J (R.merge a p ::ₘ t))
     (h0 : Tendsto (fun p : V => J (p ::ₘ 0)) (𝓝 0) (𝓝 (J 0))) : IsInfraredSafe J := by
   refine isInfraredSafe_def.2 fun s => ?_
-  induction s using Multiset.induction_on with
-  | empty => exact h0
-  | cons a t _ =>
-    exact RecombinationScheme.tendsto_cons_of_merge_zero (hR.merge_zero a) (hRc a) (hJc a t)
-      (hJ a t)
+  rcases eq_or_ne s 0 with rfl | hs
+  · exact h0
+  refine tendsto_iff_forall_eventually_mem.2 fun U hU => ?_
+  have hmem : ∀ a ∈ s, ∀ᶠ p : V in 𝓝 0, ∀ t : Multiset V, s = a ::ₘ t →
+      ContinuousAt (fun v : V => J (v ::ₘ t)) a → J (R.merge a p ::ₘ t) ∈ U := by
+    intro a ha
+    obtain ⟨t, rfl⟩ := Multiset.exists_cons_of_mem ha
+    by_cases hc : ContinuousAt (fun v : V => J (v ::ₘ t)) a
+    · have hT : Tendsto (fun p : V => J (R.merge a p ::ₘ t)) (𝓝 0) (𝓝 (J (a ::ₘ t))) := by
+        simpa [Function.comp_def, hR.merge_zero a] using
+          (hc.comp_of_eq (hRc a) (hR.merge_zero a)).tendsto
+      filter_upwards [hT.eventually_mem hU] with p hp t' ht' _
+      rwa [← (Multiset.cons_inj_right a).1 ht']
+    · exact Eventually.of_forall fun _ t' ht' hc' =>
+        absurd ((Multiset.cons_inj_right a).1 ht' ▸ hc') hc
+  filter_upwards [(eventually_all_finite s.finite_toSet).2 hmem, hJ s hs] with p hp hp'
+  obtain ⟨a, t, rfl, hc, h⟩ := hp'
+  rw [h]
+  exact hp a (Multiset.mem_cons_self a t) t rfl hc
 
 end InfraredSafety
 
