@@ -1,7 +1,7 @@
 # formalization.yaml (v0.2): repo-root metadata for formalization projects.
 # [required] fields should be filled; everything else is optional.
 #
-# NOTE: Tau Ceti is an open-ended, continuously evolving library, not the
+# NOTE: Epsilon Eridani is an open-ended, continuously evolving library, not the
 # formalization of a fixed target. Many fields below therefore describe an ongoing
 # process and an aspiration rather than a finished artifact. They are filled in as
 # best we can and will drift as the library grows.
@@ -10,19 +10,19 @@ version: "v0.2"
 
 # project - the formalization itself (not the source).
 project:
-  name: "Tau Ceti"     # [required]
+  name: "Epsilon Eridani"     # [required]
   authors:                     # [required] who did the formalization
     - "AI author agents (the Lean code under EpsilonEridani/)"
     - "Human stewards (roadmaps, CI, review), eic"
   license: "Apache-2.0"        # [required]
 
 # sources - what was formalized.
-# Tau Ceti has no single fixed source. Its specification is its own
+# Epsilon Eridani has no single fixed source. Its specification is its own
 # human-authored, human-reviewed roadmaps in the EpsilonEridaniRoadmaps repo, which play the role
 # of blueprints and themselves cite the mathematical literature.
 sources:                       # [required] list of sources
-  - title: "Tau Ceti roadmaps (human-curated)"   # [required]
-    authors: ["Tau Ceti human stewards"]         # [required]
+  - title: "Epsilon Eridani roadmaps (human-curated)"   # [required]
+    authors: ["Epsilon Eridani human stewards"]         # [required]
     id: "https://github.com/eic/EpsilonEridaniRoadmaps"  # [required]
     type: "blueprint"
     license: "Apache-2.0"
@@ -49,7 +49,7 @@ automation:
 # project status
 status:
   scope: >
-    All of mathematics: past, present, and emerging. Tau Ceti is an
+    All of mathematics: past, present, and emerging. Epsilon Eridani is an
     open-ended, continuously evolving library downstream of Mathlib, not the
     formalization of a fixed target.
   sorry_count: 0               # the code library (EpsilonEridani/) forbids sorry; CI enforces this
