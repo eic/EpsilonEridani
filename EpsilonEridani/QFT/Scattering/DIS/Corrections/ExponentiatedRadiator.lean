@@ -25,10 +25,10 @@ where `γ_E` is the Euler-Mascheroni constant. Here `β` is the exponent appeari
 of mass `m` probed at virtuality `Q²`, leading logarithmic evolution in `ln (Q²/m²)` gives
 `β = (α/π) ln (Q²/m²)`, and conventions differ in the non-logarithmic constant added to the
 logarithm. Kuraev-Fadin and Skrzypek write the same radiator with exponent `β_ref/2` in place of
-`β`, where `β_ref = (2α/π) (ln (Q²/m²) - 1)`, and the roadmap's `β = 2α(L-1)/π` is that `β_ref`;
-so `β = β_ref/2`, a factor of two that must be taken into account when comparing. The profile
-`β (1 - z) ^ (β - 1)` is the density of the Beta distribution with shape parameters `1` and `β`,
-so the radiator is a constant multiple of `ProbabilityTheory.betaPDFReal 1 β`.
+`β`, where `β_ref = (2α/π) (ln (Q²/m²) - 1)`; so `β = β_ref/2`, a factor of two that must be
+taken into account when comparing. The profile `β (1 - z) ^ (β - 1)` is the density of the Beta
+distribution with shape parameters `1` and `β`, so the radiator is a constant multiple of
+`ProbabilityTheory.betaPDFReal 1 β`.
 
 The Mellin moments of the radiator are a ratio of Gamma functions
 (`mellinDis_exponentiatedRadiator`):
@@ -54,6 +54,8 @@ the Beta density, has zeroth moment one; that is Mathlib's
 ## Main results
 
 * `exponentiatedRadiator_of_mem_Ioo`: the closed form on `0 < z < 1`.
+* `measurable_exponentiatedRadiator`, `integrableOn_exponentiatedRadiator`: it is measurable, and
+  integrable on `(0,1]`.
 * `mellinDis_exponentiatedRadiator`: its Mellin moments, a ratio of Gamma functions.
 * `integral_exponentiatedRadiator`: its zeroth moment.
 * `one_lt_integral_exponentiatedRadiator`: the zeroth moment exceeds one for `0 < β ≤ 1`.
@@ -100,7 +102,8 @@ lemma exponentiatedRadiator_of_mem_Ioo {β z : ℝ} (hβ : 0 < β) (hz : z ∈ I
     exponentiatedRadiator β z =
       Real.exp (β * (3 / 4 - eulerMascheroniConstant)) / Real.Gamma (1 + β) *
         (β * (1 - z) ^ (β - 1)) := by
-  simp [exponentiatedRadiator_def, betaPDFReal, hz.1, hz.2, beta_comm, beta_one_right hβ]
+  have hB : ProbabilityTheory.beta 1 β = 1 / β := by rw [beta_comm, beta_one_right hβ]
+  simp [exponentiatedRadiator_def, betaPDFReal, hz.1, hz.2, hB]
 
 /-- The exponentiated radiator vanishes outside the open unit interval. -/
 lemma exponentiatedRadiator_of_notMem_Ioo {β z : ℝ} (hz : z ∉ Ioo (0 : ℝ) 1) :
@@ -114,16 +117,24 @@ lemma exponentiatedRadiator_nonneg {β : ℝ} (hβ : 0 < β) (z : ℝ) :
   mul_nonneg (div_nonneg (Real.exp_pos _).le (Real.Gamma_pos_of_pos (by linarith)).le)
     (TauCeti.Probability.betaPDFReal_nonneg one_pos hβ z)
 
+/-- The exponentiated radiator is measurable. -/
+@[fun_prop]
+lemma measurable_exponentiatedRadiator (β : ℝ) : Measurable (exponentiatedRadiator β) := by
+  rw [exponentiatedRadiator_def]
+  exact (measurable_betaPDFReal 1 β).const_mul _
+
 /-- The Mellin transform of the exponentiated radiator converges on the half plane `0 < Re N`. -/
 theorem mellinDisConvergent_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) {N : ℂ}
     (hN : 0 < N.re) : MellinDisConvergent (exponentiatedRadiator β) N := by
-  have h : IntegrableOn (fun x : ℝ =>
-      ((exp (β * (3 / 4 - eulerMascheroniConstant)) / Gamma (1 + β) : ℝ) : ℂ) *
-        ((x : ℂ) ^ (N - 1) * (betaPDFReal 1 β x : ℂ))) (Ioc 0 1) :=
-    (mellinDisConvergent_betaPDFReal (a := 1) hβ (N := N) (by simpa using hN)).const_mul _
-  refine h.congr_fun (fun x _ => ?_) measurableSet_Ioc
-  simp only [exponentiatedRadiator_def, Complex.ofReal_mul]
-  ring
+  rw [exponentiatedRadiator_def]
+  exact (mellinDisConvergent_betaPDFReal (a := 1) hβ (by simpa using hN)).const_mul _
+
+/-- The exponentiated radiator is integrable on `(0,1]`. -/
+lemma integrableOn_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
+    IntegrableOn (exponentiatedRadiator β) (Ioc 0 1) := by
+  have h := mellinDisConvergent_exponentiatedRadiator hβ (N := 1) (by simp)
+  rw [mellinDisConvergent_iff] at h
+  simpa using h.re
 
 /-- **Mellin moments of the exponentiated radiator.** On the half plane `0 < Re N`,
 `∫_{(0,1]} z ^ (N - 1) D(z) dz = exp (β (3/4 - γ_E)) Γ(N) / Γ(N + β)`. -/
@@ -146,15 +157,14 @@ theorem mellinDis_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) {N : ℂ} (hN 
 theorem integral_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
     ∫ z in Ioc (0 : ℝ) 1, exponentiatedRadiator β z =
       exp (β * (3 / 4 - eulerMascheroniConstant)) / Gamma (1 + β) := by
-  have h := mellinDis_exponentiatedRadiator hβ (N := (0 : ℕ) + 1) (by simp)
-  rw [mellinDis_natCast_add_one_eq_ofReal] at h
-  simp only [pow_zero, one_mul, Nat.cast_zero, zero_add, Complex.Gamma_one, mul_one] at h
+  have h := mellinDis_exponentiatedRadiator hβ (N := 1) (by simp)
+  rw [mellinDis_one, Complex.Gamma_one, mul_one] at h
   apply Complex.ofReal_injective
   rw [h, Complex.ofReal_div, ← Complex.Gamma_ofReal, Complex.ofReal_add, Complex.ofReal_one]
 
-/-- **The exponentiated radiator is not normalised.** For `0 < β ≤ 1` its zeroth moment
-`exp (β (3/4 - γ_E)) / Γ(1 + β)` is strictly larger than one, so it is not a probability density
-on `(0, 1]`. -/
+/-- **The zeroth moment exceeds one for `0 < β ≤ 1`.** In that range the zeroth moment
+`exp (β (3/4 - γ_E)) / Γ(1 + β)` is strictly larger than one, so there the radiator is not a
+probability density on `(0, 1]`. -/
 theorem one_lt_integral_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) (hβ1 : β ≤ 1) :
     1 < ∫ z in Ioc (0 : ℝ) 1, exponentiatedRadiator β z := by
   rw [integral_exponentiatedRadiator hβ]
