@@ -71,8 +71,12 @@ dependency that fits nothing stall mathlib on an older commit.
 
 These rules only predict. The bump PR's build is the arbiter. A set whose build fails inside
 a dependency (not something EpsilonEridani can fix) is meant to be passed back with
-`--exclude` so the next feasible set is tried; today only the flag exists: `update.yml` opens
-the bump PR but does not yet record a failed set (see the Status table below).
+`--exclude` so the next feasible set is tried. `update.yml` does that: before resolving,
+`scripts/bump_excludes.py` reads the excluded sets carried in the open bump PR's body (a hidden
+marker), adds that PR's own set when its `build` failed and every module Lake reports as failed is
+outside EpsilonEridani, and passes the list to `resolve_deps.py --exclude`; the refreshed body carries it
+on. A closed bump PR takes its list with it, so a set offered again later costs one more failed
+build before it is excluded again.
 
 ### Example: 2026-10-03
 
@@ -149,6 +153,6 @@ expected and are reported informationally, never as stuck automation. Alerts are
 | bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib's newer-toolchain release tags and master commits (cache signal for a tag: `release_cache.yml`), and the inherited packages Lake derives from all three | done |
 | writer (`scripts/write_bump.py`): writes the resolver's answer into `lake-manifest.json` and `lean-toolchain`, deriving the inherited entries as `bump_manifest.py` requires and refusing any result it rejects | done |
 | `update.yml` runs the resolver daily, reporting in the job summary, and opens, refreshes or closes one rolling `bump-mathlib/resolved` PR from its answer | done |
-| failed sets recorded and passed back to the resolver with `--exclude` | planned |
+| failed sets recorded and passed back to the resolver with `--exclude` (`scripts/bump_excludes.py`) | done |
 | `scripts/pr_status/stuck_alerts.py`: `stale-pin` replaced by "a feasible set is not landing"; holds reported as information | planned |
 | EpsilonEridaniWorker's `bump` stage hands back a PR whose build fails inside a dependency | planned |
