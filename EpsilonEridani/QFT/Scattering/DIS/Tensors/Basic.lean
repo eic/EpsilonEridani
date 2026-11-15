@@ -523,7 +523,7 @@ lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q 
 
 /-- A form conserved in its first slot does not distinguish `p` from `p_T` there. -/
 lemma apply_p_eq_apply_pTransverse {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
-    (hleft : ∀ v : V, W K.q v = 0) (v : V) : W K.p v = W (pTransverse g K) v := by
+    {v : V} (hleft : W K.q v = 0) : W K.p v = W (pTransverse g K) v := by
   have hp : K.p = pTransverse g K + (g K.p K.q / g K.q K.q) • K.q := by
     rw [pTransverse, sub_add_cancel]
   rw [hp, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hleft, smul_zero,
@@ -578,6 +578,19 @@ lemma IsProperLorentzCovariant.smul {g : Bilin V} {K : DisKinematics V} {W : Bil
   intro f hf hdet v w
   simp only [LinearMap.smul_apply, hW f hf hdet v w]
 
+/-- Proper covariance is preserved by sums. -/
+lemma IsProperLorentzCovariant.add {g : Bilin V} {K : DisKinematics V} {W W' : Bilin V}
+    (hW : IsProperLorentzCovariant g K W) (hW' : IsProperLorentzCovariant g K W') :
+    IsProperLorentzCovariant g K (W + W') := by
+  intro f hf hdet v w
+  simp only [LinearMap.add_apply, hW f hf hdet v w, hW' f hf hdet v w]
+
+/-- Proper covariance is preserved by negation. -/
+lemma IsProperLorentzCovariant.neg {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
+    (hW : IsProperLorentzCovariant g K W) : IsProperLorentzCovariant g K (-W) := by
+  intro f hf hdet v w
+  simp only [LinearMap.neg_apply, hW f hf hdet v w]
+
 /-- Proper covariance is preserved by differences. -/
 lemma IsProperLorentzCovariant.sub {g : Bilin V} {K : DisKinematics V} {W W' : Bilin V}
     (hW : IsProperLorentzCovariant g K W) (hW' : IsProperLorentzCovariant g K W') :
@@ -631,21 +644,32 @@ lemma reflect_isKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (hSymm :
   fixes_p := Bilin.reflect_apply_of_orthogonal g u K.p hup
   fixes_q := Bilin.reflect_apply_of_orthogonal g u K.q huq
 
+/-- A spectator vector — one `g`-orthogonal to `q` and to `p_T` — is `g`-orthogonal to `p`. -/
+lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
+    (hSymm : g.IsSymm) {u : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) :
+    g u K.p = 0 := by
+  rw [pTransverse_pairing, huq, mul_zero, sub_zero] at huT
+  rw [hSymm.eq u K.p, huT]
+
 /-- **Covariance has content.** A Lorentz-covariant tensor has no mixed component between a
-non-null spectator direction `u` and any vector `g`-orthogonal to `u`: the reflection in `u`
-is a stabilizer element that reverses `u` and fixes `v`, so covariance forces
-`W u v = - W u v`. This is the step that removes the `p^μ u^ν` and off-diagonal spectator
-structures from a general symmetric conserved tensor. -/
+spectator direction `u` — one `g`-orthogonal to `q` and to `p_T`, and non-null when non-zero —
+and any vector `g`-orthogonal to `u`: the reflection in `u` is a stabilizer element that
+reverses `u` and fixes `v`, so covariance forces `W u v = - W u v`. This is the step that
+removes the `p^μ u^ν` and off-diagonal spectator structures from a general symmetric
+conserved tensor. -/
 theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
-    (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) (u v : V) (hu : g u u ≠ 0)
-    (hup : g u K.p = 0) (huq : g u K.q = 0) (huv : g u v = 0) :
+    (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) {u v : V} (hu : u ≠ 0 → g u u ≠ 0)
+    (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (huv : g u v = 0) :
     W u v = 0 := by
-  have hf := reflect_isKinematicStabilizer g K hSymm u hu hup huq
+  by_cases hu0 : u = 0
+  · simp [hu0]
+  have hf := reflect_isKinematicStabilizer g K hSymm u (hu hu0)
+    (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
   rw [← LinearMap.BilinForm.flip_apply W v u]
   exact Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (W := W.flip)
     (by simp only [LinearMap.BilinForm.flip_apply]; exact hW _ hf u v)
     (Bilin.reflect_apply_of_orthogonal g u v huv)
-    (Bilin.reflect_apply_self g u hu)
+    (Bilin.reflect_apply_self g u (hu hu0))
 
 /-!
 
@@ -932,27 +956,6 @@ lemma SpectatorAssumptions.self_ne_zero_of_spectator {g : Bilin V} {K : DisKinem
     ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u ≠ 0 :=
   fun u huq huT hu => (hS.definite u huq huT hu).ne
 
-/-- A spectator vector — one `g`-orthogonal to `q` and to `p_T` — is `g`-orthogonal to `p`. -/
-lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
-    (hSymm : g.IsSymm) {u : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) :
-    g u K.p = 0 := by
-  rw [pTransverse_pairing, huq, mul_zero, sub_zero] at huT
-  rw [hSymm.eq u K.p, huT]
-
-/-- A covariant tensor has no mixed component between a spectator `u` and any vector
-`g`-orthogonal to `u`, provided `u` is non-null whenever it is non-zero. This is the
-`SpectatorSplitting`-shaped variant of `covariant_spectator_offDiagonal_zero`: the spectator
-is recognized by orthogonality to `q` and `p_T`, and non-nullity is assumed only for
-`u ≠ 0`. -/
-theorem covariant_spectator_offDiagonal_zero' (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
-    (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) {u v : V} (hu : u ≠ 0 → g u u ≠ 0)
-    (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (huv : g u v = 0) :
-    W u v = 0 := by
-  by_cases hu0 : u = 0
-  · simp [hu0]
-  exact covariant_spectator_offDiagonal_zero g K W hSymm hW u v (hu hu0)
-    (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq]) huv
-
 /-- On the spectator subspace a covariant tensor has the same diagonal ratio to `g` in every
 direction. -/
 private lemma covariant_spectator_apply_self (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
@@ -1011,7 +1014,7 @@ theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bili
   -- Conservation removes every `q` component. Reflections in spectator directions remove the
   -- mixed components between a spectator and `p_T`.
   have hWut : ∀ u, g K.q u = 0 → g t u = 0 → W u t = 0 := fun u huq huT =>
-    covariant_spectator_offDiagonal_zero' g K W hSymm hA.covariant
+    covariant_spectator_offDiagonal_zero g K W hSymm hA.covariant
       (hS.self_ne_zero_of_spectator u huq huT) huq huT (by rw [hSymm.eq, huT])
   -- By `transitive` and polarization, `W = F1 • (-g)` on the spectator subspace.
   obtain ⟨F1, hF1⟩ : ∃ F1 : ℝ, ∀ u u' : V, g K.q u = 0 → g t u = 0 → g K.q u' = 0 →
@@ -1245,8 +1248,9 @@ bundle critique raised about `Assumptions.covariant`: the field asserts somethin
 lemma not_isLorentzCovariant_wWit : ¬ IsLorentzCovariant gWit kWit wWit := by
   intro hW
   have h : wWit ((0, 0, 1) : ℝ × ℝ × ℝ) ((1, 0, 0) : ℝ × ℝ × ℝ) = 0 :=
-    covariant_spectator_offDiagonal_zero gWit kWit wWit gWit_isSymm hW (0, 0, 1) (1, 0, 0)
-      (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+    covariant_spectator_offDiagonal_zero gWit kWit wWit gWit_isSymm hW
+      (u := (0, 0, 1)) (v := (1, 0, 0)) (fun _ => by norm_num) (by simp) (by simp [pTransverse])
+      (by norm_num)
   norm_num at h
 
 /-- Corollary: `Hadronic.Assumptions` is not satisfied by every symmetric conserved tensor,

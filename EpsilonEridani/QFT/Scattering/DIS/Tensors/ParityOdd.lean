@@ -121,6 +121,22 @@ lemma smul (hW : ParityOddAssumptions g K W) (c : ℝ) : ParityOddAssumptions g 
     rw [LinearMap.smul_apply, LinearMap.smul_apply, hW.conserved_left v, smul_zero]
   isAlt := hW.isAlt.smul c
 
+/-- The parity-odd assumptions are preserved by sums. -/
+lemma add {W' : Bilin V} (hW : ParityOddAssumptions g K W) (hW' : ParityOddAssumptions g K W') :
+    ParityOddAssumptions g K (W + W') where
+  proper_covariant := hW.proper_covariant.add hW'.proper_covariant
+  conserved_left v := by
+    rw [LinearMap.add_apply, LinearMap.add_apply, hW.conserved_left v, hW'.conserved_left v,
+      add_zero]
+  isAlt v := by simp [hW.isAlt v, hW'.isAlt v]
+
+/-- The parity-odd assumptions are preserved by negation. -/
+lemma neg (hW : ParityOddAssumptions g K W) : ParityOddAssumptions g K (-W) where
+  proper_covariant := hW.proper_covariant.neg
+  conserved_left v := by
+    rw [LinearMap.neg_apply, LinearMap.neg_apply, hW.conserved_left v, neg_zero]
+  isAlt v := by simp [hW.isAlt v]
+
 end ParityOddAssumptions
 
 /-- The zero tensor satisfies the parity-odd assumptions. -/
@@ -187,7 +203,7 @@ lemma apply_pTransverse_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : Spect
 lemma apply_p_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     (hW : ParityOddAssumptions g K W) (v : V) :
     W K.p v = 0 := by
-  rw [apply_p_eq_apply_pTransverse (g := g) hW.conserved_left,
+  rw [apply_p_eq_apply_pTransverse (g := g) (hW.conserved_left v),
     hW.apply_pTransverse_eq_zero_of_spectatorPlane hSymm hP]
 
 /-- A parity-odd tensor annihilates `p_T` in the second slot under a `SpectatorPlane`. -/
@@ -252,7 +268,7 @@ theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm) (hS : SpectatorSplittin
   -- The reflection in a spectator `u` kills every component of `W` between `u` and `u^⊥`.
   have hperp : ∀ u v : V, g K.q u = 0 → g (pTransverse g K) u = 0 → g u v = 0 →
       W u v = 0 := fun u _ huq huT huv =>
-    covariant_spectator_offDiagonal_zero' g K W hSymm hcov (hnull u huq huT) huq huT huv
+    covariant_spectator_offDiagonal_zero g K W hSymm hcov (hnull u huq huT) huq huT huv
   -- Two spectators: split `u'` along `u` and its orthogonal complement.
   have hspec : ∀ u u' : V, g K.q u = 0 → g (pTransverse g K) u = 0 → W u u' = 0 := by
     intro u u' huq huT
