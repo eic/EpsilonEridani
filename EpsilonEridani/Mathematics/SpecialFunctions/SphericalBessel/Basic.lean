@@ -69,7 +69,7 @@ singularity `x = 0`. The Rayleigh formula above supplies both directly.
 * `mul_deriv_sphericalBesselJ` and `mul_deriv_sphericalBesselJ_succ'`: the two derivative
   relations, which raise and lower the order. They form a ladder pair. They hold on the whole
   line but degenerate to `0 = 0` at the origin; `hasDerivAt_sphericalBesselJ_of_ne_zero` and
-  `hasDerivAt_sphericalBesselJ_succ_of_ne_zero` are their forms for `x ≠ 0`, and the derivative
+  `hasDerivAt_sphericalBesselJ_succ'_of_ne_zero` are their forms for `x ≠ 0`, and the derivative
   at the origin is `hasDerivAt_sphericalBesselJ_apply_zero`.
 * `hasDerivAt_sphericalBesselJ` with `deriv_sphericalBesselJ`: the derivative of `j_l` on the
   whole line, the origin included, by the product rule for
@@ -80,6 +80,10 @@ singularity `x = 0`. The Rayleigh formula above supplies both directly.
 * `hasDerivAt_sphericalBesselJ_apply_zero`: the derivative at the origin, `j_1'(0) = 1 / 3` and
   `j_l'(0) = 0` for `l ≠ 1`; `deriv_deriv_sphericalBesselJ_apply_zero`: the second derivative
   there, `j_0''(0) = -1 / 3`, `j_2''(0) = 2 / 15` and `j_l''(0) = 0` otherwise.
+* `hasDerivAt_deriv_sphericalBesselJ` with `deriv_deriv_sphericalBesselJ`: the second derivative
+  of `j_l` on the whole line, the origin included, by the product rule; for `x ≠ 0`,
+  `hasDerivAt_deriv_sphericalBesselJ_of_ne_zero` and `deriv_deriv_sphericalBesselJ_of_ne_zero`
+  give it as `j_l'' = -(2 / x) j_l' + (l (l + 1) / x ^ 2 - 1) j_l`.
 * `sphericalBesselJ_equation`: `j_l` solves the spherical Bessel equation
   `x ^ 2 y'' + 2 x y' + (x ^ 2 - l (l + 1)) y = 0` on the whole line; at the origin it
   degenerates to `0 = 0`.
@@ -232,7 +236,8 @@ private lemma sphericalBesselJDivPow_add_two_zero (x : ℝ) :
         (.of_forall sphericalBesselJDivPow_zero_sub_eq_cos)) +
       y * sphericalBesselJDivPow_zero y + mul_sinc y
   -- the bracket vanishes off the origin, hence everywhere by continuity
-  exact congrFun ((by fun_prop : Continuous _).eq_zero_of_id_mul_eq_zero (funext h2)) x
+  exact (by fun_prop : Continuous fun y => y ^ 2 * G 2 y - 3 * G 1 y + G 0 y).eq_zero_of_mul_eq_zero
+    h2 x
 
 /-- The three-term recurrence of the functions `sphericalBesselJDivPow l`, which equal
 `j_l(x) / x ^ l` for `x ≠ 0`, on the whole line:
@@ -259,7 +264,8 @@ theorem sphericalBesselJDivPow_add_two (l : ℕ) (x : ℝ) :
       push_cast
       linear_combination -hstep
     -- the bracket vanishes off the origin, hence everywhere by continuity
-    exact congrFun ((by fun_prop : Continuous _).eq_zero_of_id_mul_eq_zero (funext h)) x
+    exact (by fun_prop : Continuous fun y => y ^ 2 * G (l + 3) y -
+      (2 * (l + 1 : ℕ) + 3) * G (l + 2) y + G (l + 1) y).eq_zero_of_mul_eq_zero h x
 
 /-- The value of `sphericalBesselJDivPow l` at the origin, the limiting value `1 / (2 l + 1)‼`
 of `j_l(x) / x ^ l` as `x → 0`. -/
@@ -370,7 +376,7 @@ theorem deriv_sphericalBesselJ (l : ℕ) (x : ℝ) :
 `j_{l + 1}'(x) = (l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x -
 x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x`, the successor-order form of
 `hasDerivAt_sphericalBesselJ` without the truncated subtraction. Unlike
-`hasDerivAt_sphericalBesselJ_of_ne_zero` and `hasDerivAt_sphericalBesselJ_succ_of_ne_zero`,
+`hasDerivAt_sphericalBesselJ_of_ne_zero` and `hasDerivAt_sphericalBesselJ_succ'_of_ne_zero`,
 which hold for `x ≠ 0` only, this holds at every point, the origin included. -/
 theorem hasDerivAt_sphericalBesselJ_succ (l : ℕ) (x : ℝ) :
     HasDerivAt (sphericalBesselJ (l + 1))
@@ -439,7 +445,7 @@ theorem hasDerivAt_sphericalBesselJ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0
 
 /-- The derivative relation lowering the order,
 `j_{l + 1}' = j_l - (l + 2) / x * j_{l + 1}` for `x ≠ 0`. -/
-theorem hasDerivAt_sphericalBesselJ_succ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
+theorem hasDerivAt_sphericalBesselJ_succ'_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     HasDerivAt (sphericalBesselJ (l + 1))
       (sphericalBesselJ l x - (l + 2) / x * sphericalBesselJ (l + 1) x) x := by
   refine (differentiable_sphericalBesselJ (l + 1) x).hasDerivAt.congr_deriv ?_
@@ -452,10 +458,10 @@ theorem deriv_sphericalBesselJ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
   (hasDerivAt_sphericalBesselJ_of_ne_zero l hx).deriv
 
 /-- The derivative of `j_{l + 1}` for `x ≠ 0`, `j_{l + 1}' = j_l - (l + 2) / x * j_{l + 1}`. -/
-theorem deriv_sphericalBesselJ_succ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
+theorem deriv_sphericalBesselJ_succ'_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     deriv (sphericalBesselJ (l + 1)) x =
       sphericalBesselJ l x - (l + 2) / x * sphericalBesselJ (l + 1) x :=
-  (hasDerivAt_sphericalBesselJ_succ_of_ne_zero l hx).deriv
+  (hasDerivAt_sphericalBesselJ_succ'_of_ne_zero l hx).deriv
 
 /-- The derivative at the origin: `j_1'(0) = 1 / 3`, and `j_l'(0) = 0` for every `l ≠ 1`. -/
 theorem hasDerivAt_sphericalBesselJ_apply_zero (l : ℕ) :
@@ -483,55 +489,78 @@ theorem sphericalBesselJ_one (x : ℝ) : sphericalBesselJ 1 x = sin x / x ^ 2 - 
     field_simp at h ⊢
     linear_combination -h
 
+/-- The second derivative of `sphericalBesselJ l` on the whole line, by the product rule applied to
+`deriv_sphericalBesselJ`: `j_l''(x) = l (l - 1) x ^ (l - 2) * sphericalBesselJDivPow l x -
+(2 l + 1) x ^ l * sphericalBesselJDivPow (l + 1) x +
+x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x`, with `l - 1` and `l - 2` truncated
+`ℕ`-subtraction as in Mathlib's `hasDerivAt_pow`. Unlike
+`hasDerivAt_deriv_sphericalBesselJ_of_ne_zero`, which holds for `x ≠ 0` only, this holds at every
+point, the origin included. -/
+theorem hasDerivAt_deriv_sphericalBesselJ (l : ℕ) (x : ℝ) :
+    HasDerivAt (deriv (sphericalBesselJ l))
+      (l * (l - 1 : ℕ) * x ^ (l - 2) * sphericalBesselJDivPow l x -
+        (2 * l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x +
+        x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x) x := by
+  have hd : deriv (sphericalBesselJ l) =
+      fun y => l * y ^ (l - 1) * G l y - y ^ (l + 1) * G (l + 1) y :=
+    funext fun y => deriv_sphericalBesselJ l y
+  rw [hd]
+  refine ((((hasDerivAt_pow (l - 1) x).const_mul (l : ℝ)).mul
+    (hasDerivAt_sphericalBesselJDivPow l x)).sub ((hasDerivAt_pow (l + 1) x).mul
+      (hasDerivAt_sphericalBesselJDivPow (l + 1) x))).congr_deriv ?_
+  rcases l with _ | _ | l
+  · simp
+    ring
+  · simp
+    ring
+  · simp only [Nat.add_sub_cancel, show l + 1 + 1 + 1 = l + 3 by omega,
+      show l + 1 + 1 = l + 2 by omega]
+    push_cast
+    ring
+
+/-- The second derivative of `sphericalBesselJ l` on the whole line, the origin included. -/
+theorem deriv_deriv_sphericalBesselJ (l : ℕ) (x : ℝ) :
+    deriv (deriv (sphericalBesselJ l)) x =
+      l * (l - 1 : ℕ) * x ^ (l - 2) * sphericalBesselJDivPow l x -
+        (2 * l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x +
+        x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x :=
+  (hasDerivAt_deriv_sphericalBesselJ l x).deriv
+
 /-- The second derivative of `j_l` for `x ≠ 0`, as a `HasDerivAt` statement:
 `j_l'' = -(2 / x) j_l' + (l (l + 1) / x ^ 2 - 1) j_l`. -/
-theorem hasDerivAt_deriv_sphericalBesselJ (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
+theorem hasDerivAt_deriv_sphericalBesselJ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     HasDerivAt (deriv (sphericalBesselJ l))
       (-(2 / x) * deriv (sphericalBesselJ l) x +
         (l * (l + 1) / x ^ 2 - 1) * sphericalBesselJ l x) x := by
-  have hev : deriv (sphericalBesselJ l) =ᶠ[𝓝 x]
-      fun y => l * y⁻¹ * sphericalBesselJ l y - sphericalBesselJ (l + 1) y := by
-    filter_upwards [isOpen_ne.mem_nhds hx] with y hy
-    rw [deriv_sphericalBesselJ_of_ne_zero l hy, div_eq_mul_inv]
-  have hd : HasDerivAt (fun y => l * y⁻¹ * sphericalBesselJ l y - sphericalBesselJ (l + 1) y)
-      (l * -(x ^ 2)⁻¹ * sphericalBesselJ l x +
-          l * x⁻¹ * (l / x * sphericalBesselJ l x - sphericalBesselJ (l + 1) x) -
-        (sphericalBesselJ l x - (l + 2) / x * sphericalBesselJ (l + 1) x)) x :=
-    (((hasDerivAt_inv hx).const_mul (l : ℝ)).mul
-      (hasDerivAt_sphericalBesselJ_of_ne_zero l hx)).sub
-        (hasDerivAt_sphericalBesselJ_succ_of_ne_zero l hx)
-  refine ((hev.hasDerivAt_iff).mpr hd).congr_deriv ?_
-  rw [deriv_sphericalBesselJ_of_ne_zero l hx]
-  field_simp
-  ring
+  refine (hasDerivAt_deriv_sphericalBesselJ l x).congr_deriv ?_
+  rw [deriv_sphericalBesselJ, sphericalBesselJ_def]
+  have h := sphericalBesselJDivPow_add_two l x
+  rcases l with _ | _ | l
+  · field_simp
+    linear_combination x ^ 2 * h
+  · field_simp
+    linear_combination x ^ 3 * h
+  · simp only [Nat.add_sub_cancel, show l + 1 + 1 + 1 = l + 3 by omega,
+      show l + 1 + 1 = l + 2 by omega] at h ⊢
+    field_simp
+    push_cast at h ⊢
+    linear_combination x ^ (l + 4) * h
 
 /-- The second derivative of `j_l` for `x ≠ 0`:
 `j_l'' = -(2 / x) j_l' + (l (l + 1) / x ^ 2 - 1) j_l`. -/
 @[grind =]
-theorem deriv_deriv_sphericalBesselJ (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
+theorem deriv_deriv_sphericalBesselJ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     deriv (deriv (sphericalBesselJ l)) x =
       -(2 / x) * deriv (sphericalBesselJ l) x +
         (l * (l + 1) / x ^ 2 - 1) * sphericalBesselJ l x :=
-  (hasDerivAt_deriv_sphericalBesselJ l hx).deriv
+  (hasDerivAt_deriv_sphericalBesselJ_of_ne_zero l hx).deriv
 
 /-- The second derivative at the origin, as a `HasDerivAt` statement: `j_0''(0) = -1 / 3`,
 `j_2''(0) = 2 / 15`, and `j_l''(0) = 0` for every other `l`. -/
 theorem hasDerivAt_deriv_sphericalBesselJ_apply_zero (l : ℕ) :
     HasDerivAt (deriv (sphericalBesselJ l))
       (if l = 0 then -3⁻¹ else if l = 2 then 2 / 15 else 0) 0 := by
-  have hd : deriv (sphericalBesselJ l) =
-      fun y => l * y ^ (l - 1) * G l y - y ^ (l + 1) * G (l + 1) y :=
-    funext fun y => deriv_sphericalBesselJ l y
-  -- the product rule at the origin
-  have h : HasDerivAt (fun y => l * y ^ (l - 1) * G l y - y ^ (l + 1) * G (l + 1) y)
-      (l * ((l - 1 : ℕ) * 0 ^ (l - 1 - 1)) * G l 0 + l * 0 ^ (l - 1) * (-0 * G (l + 1) 0) -
-        ((l + 1 : ℕ) * 0 ^ (l + 1 - 1) * G (l + 1) 0 + 0 ^ (l + 1) * (-0 * G (l + 1 + 1) 0)))
-      0 :=
-    (((hasDerivAt_pow (l - 1) 0).const_mul (l : ℝ)).mul
-      (hasDerivAt_sphericalBesselJDivPow l 0)).sub
-        ((hasDerivAt_pow (l + 1) 0).mul (hasDerivAt_sphericalBesselJDivPow (l + 1) 0))
-  rw [hd]
-  refine h.congr_deriv ?_
+  refine (hasDerivAt_deriv_sphericalBesselJ l 0).congr_deriv ?_
   rcases l with _ | _ | _ | l <;> norm_num [Nat.doubleFactorial]
 
 /-- The second derivative at the origin: `j_0''(0) = -1 / 3`, `j_2''(0) = 2 / 15`, and
@@ -550,7 +579,7 @@ theorem sphericalBesselJ_equation (l : ℕ) (x : ℝ) :
       (x ^ 2 - l * (l + 1)) * sphericalBesselJ l x = 0 := by
   rcases eq_or_ne x 0 with rfl | hx
   · rcases l with _ | l <;> simp
-  · rw [deriv_deriv_sphericalBesselJ l hx]
+  · rw [deriv_deriv_sphericalBesselJ_of_ne_zero l hx]
     field_simp
     ring
 
