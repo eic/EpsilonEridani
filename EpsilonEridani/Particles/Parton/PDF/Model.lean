@@ -34,7 +34,7 @@ Beta value `a! b! / (a + b + 1)!` (`integral_betaShape`), so the `n`-th moment i
 `(n + a)! b! / (n + a + b + 1)!` (`mellinMoment_modelPdf`). For the shape `1 - x`, the moments
 are `1 / ((n + 1) (n + 2))`, so any rescaling of it parton by parton (`PDF.weight`) with weights
 summing to six obeys the momentum sum rule and carries the sum-rule bundle
-(`sumRuleAssumptionsWeightModelPdf`): a model with prescribed valence targets.
+(`sumRuleAssumptionsWeightModelPdfZeroOne`): a model with prescribed valence targets.
 
 ## ii. Key results
 
@@ -43,7 +43,7 @@ summing to six obeys the momentum sum rule and carries the sum-rule bundle
 - `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.mellinMoment_modelPdf`
-- `EpsilonEridani.Particles.Parton.PDF.sumRuleAssumptionsWeightModelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.sumRuleAssumptionsWeightModelPdfZeroOne`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
 
 ## iii. Table of contents
@@ -63,7 +63,8 @@ is uniform in `a` and `b`, except for the shape `1 - x`, `a = 0`, `b = 1`:
 `mellinMoment_modelPdf_zero_one` specializes the closed-form moment to it with the factorials
 evaluated, the form in which `simp` evaluates the moments of the meson valence model built on that
 shape, and the sum-rule bundle of its rescalings (`sum_mellinMoment_one_weight_modelPdf_zero_one`,
-`sumRuleAssumptionsWeightModelPdf`) is stated for it, the total weight six being specific to it.
+`sumRuleAssumptionsWeightModelPdfZeroOne`) is stated for it, the total weight six being specific
+to it.
 
 -/
 
@@ -226,7 +227,8 @@ lemma sum_mellinMoment_one_weight_modelPdf_zero_one [Fintype Flavor] {w : Flavor
 /-- **The sum-rule bundle of a rescaled shape `1 - x`**: the model with exponents `a = 0` and
 `b = 1`, rescaled by weights summing to six, carries the upstream sum-rule bundle, the valence
 target of each flavour being half its weight. -/
-def sumRuleAssumptionsWeightModelPdf [Fintype Flavor] {w : Flavor → ℝ} (hw : ∑ i, w i = 6) :
+def sumRuleAssumptionsWeightModelPdfZeroOne [Fintype Flavor] {w : Flavor → ℝ}
+    (hw : ∑ i, w i = 6) :
     SumRuleAssumptions (weight w (modelPdf Flavor 0 1)) where
   momentum := sum_mellinMoment_one_weight_modelPdf_zero_one hw
   valenceTarget i := w i / 2
@@ -236,9 +238,9 @@ def sumRuleAssumptionsWeightModelPdf [Fintype Flavor] {w : Flavor → ℝ} (hw :
     ring
 
 @[simp]
-lemma sumRuleAssumptionsWeightModelPdf_valenceTarget [Fintype Flavor] {w : Flavor → ℝ}
+lemma sumRuleAssumptionsWeightModelPdfZeroOne_valenceTarget [Fintype Flavor] {w : Flavor → ℝ}
     (hw : ∑ i, w i = 6) (i : Flavor) :
-    (sumRuleAssumptionsWeightModelPdf hw).valenceTarget i = w i / 2 :=
+    (sumRuleAssumptionsWeightModelPdfZeroOne hw).valenceTarget i = w i / 2 :=
   rfl
 
 /-! ### E. The spin-density model -/

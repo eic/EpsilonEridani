@@ -111,6 +111,7 @@ theorem sum_mellinMoment_chargeConj [Fintype Flavor] (f : Pdf (Species Flavor)) 
 
 /-- Charge conjugation commutes with a species-wise rescaling: the conjugate of a rescaled
 density is the conjugate density rescaled by the conjugated weight. -/
+@[simp]
 theorem chargeConj_weight (w : Species Flavor → ℝ) (f : Pdf (Species Flavor)) :
     chargeConj (weight w f) = weight (w ∘ conj) (chargeConj f) := by
   rw [chargeConj_eq_comap, comap_weight, chargeConj_eq_comap]

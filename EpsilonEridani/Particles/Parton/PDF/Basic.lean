@@ -254,6 +254,7 @@ lemma mellinMoment_weight (w : ι → ℝ) (f : Pdf ι) (n : ℕ) (i : ι) (Q2 :
     rw [weight_apply]; ring
 
 /-- Pulling back a rescaled density rescales the pullback, by the pulled-back weight. -/
+@[simp]
 lemma comap_weight (σ : κ → ι) (w : ι → ℝ) (f : Pdf ι) :
     comap σ (weight w f) = weight (w ∘ σ) (comap σ f) :=
   rfl

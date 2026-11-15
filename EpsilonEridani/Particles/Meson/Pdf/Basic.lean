@@ -53,8 +53,8 @@ together — is exhibited rather than assumed. `PseudoscalarMeson.valenceModelPd
 antiquark and on the gluon and vanishes on every other species; it satisfies `PDF.Assumptions`, it
 has the valence numbers of its meson, and its three populated species carry a third of the momentum
 each, so the momentum sum rule holds with the gluon included. Its sum-rule bundle is the upstream
-one of a rescaled shape `1 - x`, `PDF.sumRuleAssumptionsWeightModelPdf`. Conjugating the meson
-conjugates the model (`chargeConj_valenceModelPdf`).
+one of a rescaled shape `1 - x`, `PDF.sumRuleAssumptionsWeightModelPdfZeroOne`. Conjugating the
+meson conjugates the model (`chargeConj_valenceModelPdf`).
 
 ## Main definitions
 
@@ -377,10 +377,11 @@ theorem sum_mellinMoment_one_valenceModelPdf [Fintype Flavor] (Q2 : ℝ) :
 /-- **The valence assignment and the upstream sum-rule bundle are consistent**: the valence model
 of `M` carries the bundle, each species' valence target being half its weight, and has the valence
 numbers of `M` by `hasValenceNumbers_valenceModelPdf`. This is the bundle
-`PDF.sumRuleAssumptionsWeightModelPdf` of the rescaled shape at the valence model's weight. -/
+`PDF.sumRuleAssumptionsWeightModelPdfZeroOne` of the rescaled shape at the valence model's
+weight. -/
 def sumRuleAssumptionsValenceModelPdf [Fintype Flavor] :
     PDF.SumRuleAssumptions M.valenceModelPdf :=
-  PDF.sumRuleAssumptionsWeightModelPdf M.sum_valenceModelWeight
+  PDF.sumRuleAssumptionsWeightModelPdfZeroOne M.sum_valenceModelWeight
 
 @[simp]
 theorem sumRuleAssumptionsValenceModelPdf_valenceTarget [Fintype Flavor] (s : Species Flavor) :
