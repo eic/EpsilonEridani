@@ -32,7 +32,8 @@ By the chain rule the coupling `a' = F(a)` runs with `da'/dt = F'(a) β(a)`, so 
   `β'(F(a)) = F'(a) β(a)`        (`subst_transformBeta`, `transformBeta_eq_iff`),
 
 and `transformBeta` is an action of the substitution group (`transformBeta_one`,
-`transformBeta_mul`). Comparing the coefficients of `a²`, `a³` and `a⁴` gives
+`transformBeta_mul`), registered as a scoped `MulAction`. Comparing the coefficients of `a²`,
+`a³` and `a⁴` gives
 
   `β₀' = β₀`,  `β₁' = β₁`,  `β₂' = β₂ - c₁ β₁ + (c₂ - c₁²) β₀`
 
@@ -52,14 +53,14 @@ and the third is not, unless `β₀ = β₁ = 0`.
   redefinition of the coupling; in particular a beta function stays one.
 * `transformBeta_inv_transformBeta`, `transformBeta_injective`: the original beta function is
   recovered by the inverse redefinition.
-* `betaCoeff_transformBeta_zero`, `betaCoeff_transformBeta_one`,
-  `betaCoeff_transformBeta_two`: the transformation of `β₀`, `β₁`, `β₂` under any redefinition
+* `betaCoeff_zero_transformBeta`, `betaCoeff_one_transformBeta`,
+  `betaCoeff_two_transformBeta`: the transformation of `β₀`, `β₁`, `β₂` under any redefinition
   `F(a) = u a + ⋯`, with `u = SubstGroup.linearCoeff F`.
-* `betaCoeff_transformBeta_zero_of_coeff_one_eq_one`,
-  `betaCoeff_transformBeta_one_of_coeff_one_eq_one`: `β₀` and `β₁` are invariant under a change
+* `betaCoeff_zero_transformBeta_of_coeff_one_eq_one`,
+  `betaCoeff_one_transformBeta_of_coeff_one_eq_one`: `β₀` and `β₁` are invariant under a change
   of scheme.
-* `betaCoeff_transformBeta_two_of_coeff_one_eq_one`: `β₂' = β₂ - c₁ β₁ + (c₂ - c₁²) β₀`.
-* `forall_coeff_one_eq_one_betaCoeff_transformBeta_two_eq_iff`: `β₂` is invariant under every
+* `betaCoeff_two_transformBeta_of_coeff_one_eq_one`: `β₂' = β₂ - c₁ β₁ + (c₂ - c₁²) β₀`.
+* `forall_coeff_one_eq_one_betaCoeff_two_transformBeta_eq_iff`: `β₂` is invariant under every
   change of scheme exactly when `β₀ = β₁ = 0`.
 * `transformBeta_substGroupRescale`, `betaCoeff_transformBeta_substGroupRescale`: under
   `a ↦ u a` the coefficients scale as `βₙ' = u^{-(n+1)} βₙ`; for the original coupling
@@ -129,21 +130,31 @@ theorem transformBeta_mul (F G : SubstGroup R) (β : R⟦X⟧) :
     ← subst_comp_subst_apply F.hasSubst G.hasSubst, subst_transformBeta, subst_mul G.hasSubst,
     subst_transformBeta, derivative_subst G.hasSubst, mul_assoc]
 
+/-- The action of the substitution group on beta functions by redefinition of the coupling,
+`F • β = transformBeta F β`. It is scoped: it is the action on vector fields `β(a) d/da`, not the
+action `f ↦ f ∘ F⁻¹` on functions of the coupling. -/
+scoped instance : MulAction (SubstGroup R) R⟦X⟧ where
+  smul := transformBeta
+  one_smul := transformBeta_one
+  mul_smul := transformBeta_mul
+
+lemma smul_eq_transformBeta (F : SubstGroup R) (β : R⟦X⟧) : F • β = transformBeta F β := rfl
+
 /-- Redefining the coupling by `F` and then back by `F⁻¹` recovers the original beta function. -/
 @[simp]
 theorem transformBeta_inv_transformBeta (F : SubstGroup R) (β : R⟦X⟧) :
-    transformBeta F⁻¹ (transformBeta F β) = β := by
-  rw [← transformBeta_mul, inv_mul_cancel, transformBeta_one]
+    transformBeta F⁻¹ (transformBeta F β) = β :=
+  inv_smul_smul F β
 
 /-- Redefining the coupling by `F⁻¹` and then by `F` recovers the original beta function. -/
 @[simp]
 theorem transformBeta_transformBeta_inv (F : SubstGroup R) (β : R⟦X⟧) :
-    transformBeta F (transformBeta F⁻¹ β) = β := by
-  rw [← transformBeta_mul, mul_inv_cancel, transformBeta_one]
+    transformBeta F (transformBeta F⁻¹ β) = β :=
+  smul_inv_smul F β
 
 /-- A redefinition of the coupling determines the original beta function from the new one. -/
 theorem transformBeta_injective (F : SubstGroup R) : Function.Injective (transformBeta F) :=
-  Function.LeftInverse.injective (transformBeta_inv_transformBeta F)
+  MulAction.injective F
 
 /-! ### The first three coefficients -/
 
@@ -156,36 +167,41 @@ theorem X_pow_dvd_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (n : ℕ) (h�
     subst_X F⁻¹.hasSubst]
   exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr F⁻¹.constantCoeff_toPowerSeries) n).mul_right _
 
+/-- The coefficient of `a^{n+2}` in `f'(a) β(a)`, for `β` divisible by `a²`, as a Cauchy product
+`∑_{i+j=n} (i+1) [a^{i+1}] f [a^{j+2}] β`: the coefficients of `a⁰` and `a¹` of `β` vanish. -/
+private theorem coeff_add_two_derivative_mul (f : R⟦X⟧) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) (n : ℕ) :
+    coeff (n + 2) (d⁄dX f * β) =
+      ∑ p ∈ Finset.antidiagonal n, coeff (p.1 + 1) f * (p.1 + 1) * coeff (p.2 + 2) β := by
+  obtain ⟨γ, rfl⟩ := hβ
+  rw [mul_left_comm, coeff_X_pow_mul, coeff_mul]
+  simp only [coeff_derivative, coeff_X_pow_mul]
+
 /-- The one-loop coefficient under a redefinition of the coupling: `u β₀' = β₀`, where
 `u = F'(0)`; the coefficient of `a²` in `β'(F(a)) = F'(a) β(a)`. -/
-private theorem coeff_one_toPowerSeries_mul_betaCoeff_transformBeta_zero (F : SubstGroup R)
+private theorem coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta (F : SubstGroup R)
     {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     coeff 1 F.toPowerSeries * betaCoeff (transformBeta F β) 0 = betaCoeff β 0 := by
-  have hβ' := X_pow_dvd_iff.mp hβ
   have h := congrArg (coeff 2) (subst_transformBeta F β)
-  -- Expand `[a²] F'(a) β(a)` as a Cauchy product; the coefficients of `a⁰` and `a¹` of `β` and
-  -- `β'` vanish.
   rw [coeff_two_subst F.constantCoeff_toPowerSeries,
-    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num)] at h
-  simp only [coeff_mul, Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
-    Finset.sum_singleton, hβ' 0 (by norm_num), hβ' 1 (by norm_num), mul_zero, add_zero,
-    coeff_derivative, smul_eq_mul, zero_mul, zero_add, Nat.cast_zero] at h
+    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
+    coeff_add_two_derivative_mul _ hβ 0] at h
+  simp only [Finset.HasAntidiagonal.antidiagonal_zero, Finset.sum_singleton, smul_eq_mul,
+    zero_add, Nat.cast_zero] at h
   rw [betaCoeff_def, betaCoeff_def]
   exact F.isUnit_coeff_one_toPowerSeries.mul_left_cancel (by linear_combination -h)
 
 /-- The two-loop coefficient under a redefinition of the coupling: `u² β₁' = β₁`, where
 `u = F'(0)`; the coefficient of `a³` in `β'(F(a)) = F'(a) β(a)`. -/
-private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_one (F : SubstGroup R)
+private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta (F : SubstGroup R)
     {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     coeff 1 F.toPowerSeries ^ 2 * betaCoeff (transformBeta F β) 1 = betaCoeff β 1 := by
-  have hβ' := X_pow_dvd_iff.mp hβ
   have h := congrArg (coeff 3) (subst_transformBeta F β)
   rw [coeff_three_subst F.constantCoeff_toPowerSeries,
-    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num)] at h
-  simp only [coeff_mul, Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
-    Finset.sum_singleton, hβ' 0 (by norm_num), hβ' 1 (by norm_num), mul_zero, add_zero,
-    coeff_derivative, smul_eq_mul, zero_mul, zero_add, Nat.cast_zero, Nat.cast_one] at h
-  have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_transformBeta_zero F hβ
+    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
+    coeff_add_two_derivative_mul _ hβ 1] at h
+  simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
+    Finset.sum_singleton, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one] at h
+  have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
   simp only [betaCoeff_def, Nat.reduceAdd] at h₀ ⊢
   exact F.isUnit_coeff_one_toPowerSeries.mul_left_cancel
     (by linear_combination -h - 2 * coeff 2 F.toPowerSeries * h₀)
@@ -193,23 +209,22 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_one (F :
 /-- The three-loop coefficient under a redefinition `F(a) = u a + c₁ a² + c₂ a³ + ⋯` of the
 coupling: `u⁵ β₂' = u² β₂ - u c₁ β₁ + (u c₂ - c₁²) β₀`; the coefficient of `a⁴` in
 `β'(F(a)) = F'(a) β(a)`. -/
-private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_two (F : SubstGroup R)
+private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta (F : SubstGroup R)
     {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     coeff 1 F.toPowerSeries ^ 5 * betaCoeff (transformBeta F β) 2 =
       coeff 1 F.toPowerSeries ^ 2 * betaCoeff β 2 -
         coeff 1 F.toPowerSeries * coeff 2 F.toPowerSeries * betaCoeff β 1 +
         (coeff 1 F.toPowerSeries * coeff 3 F.toPowerSeries - coeff 2 F.toPowerSeries ^ 2) *
           betaCoeff β 0 := by
-  have hβ' := X_pow_dvd_iff.mp hβ
   have h := congrArg (coeff 4) (subst_transformBeta F β)
   rw [coeff_four_subst F.constantCoeff_toPowerSeries,
-    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num)] at h
-  simp only [coeff_mul, Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
-    Finset.sum_singleton, hβ' 0 (by norm_num), hβ' 1 (by norm_num), mul_zero, add_zero,
-    coeff_derivative, smul_eq_mul, zero_mul, zero_add, Nat.cast_zero, Nat.cast_one,
+    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
+    coeff_add_two_derivative_mul _ hβ 2] at h
+  simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
+    Finset.sum_singleton, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one,
     Nat.cast_add] at h
-  have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_transformBeta_zero F hβ
-  have h₁ := coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_one F hβ
+  have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
+  have h₁ := coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
   simp only [betaCoeff_def, Nat.reduceAdd] at h₀ h₁ ⊢
   linear_combination -coeff 1 F.toPowerSeries * h -
     (coeff 2 F.toPowerSeries ^ 2 + 2 * coeff 1 F.toPowerSeries * coeff 3 F.toPowerSeries) * h₀ -
@@ -217,57 +232,52 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_two (F :
 
 /-- The one-loop coefficient under a redefinition of the coupling: `β₀' = u⁻¹ β₀`, where
 `u = F'(0)`. -/
-theorem betaCoeff_transformBeta_zero (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
-    betaCoeff (transformBeta F β) 0 = ↑(SubstGroup.linearCoeff F)⁻¹ * betaCoeff β 0 := by
-  refine (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F)).mpr ?_
-  rw [SubstGroup.coe_linearCoeff F]
-  exact coeff_one_toPowerSeries_mul_betaCoeff_transformBeta_zero F hβ
+theorem betaCoeff_zero_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
+    betaCoeff (transformBeta F β) 0 = ↑(SubstGroup.linearCoeff F)⁻¹ * betaCoeff β 0 :=
+  (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F)).mpr
+    (coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ)
 
 /-- The two-loop coefficient under a redefinition of the coupling: `β₁' = u⁻² β₁`, where
 `u = F'(0)`. -/
-theorem betaCoeff_transformBeta_one (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
-    betaCoeff (transformBeta F β) 1 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 2 * betaCoeff β 1 := by
-  rw [← Units.inv_pow_eq_pow_inv]
-  refine (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F ^ 2)).mpr ?_
-  rw [Units.val_pow_eq_pow_val, SubstGroup.coe_linearCoeff F]
-  exact coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_one F hβ
+theorem betaCoeff_one_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
+    betaCoeff (transformBeta F β) 1 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 2 * betaCoeff β 1 :=
+  (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F ^ 2)).mpr
+    (coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ)
 
 /-- The three-loop coefficient under a redefinition `F(a) = u a + c₁ a² + c₂ a³ + ⋯` of the
 coupling: `β₂' = u⁻⁵ (u² β₂ - u c₁ β₁ + (u c₂ - c₁²) β₀)`. -/
-theorem betaCoeff_transformBeta_two (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
+theorem betaCoeff_two_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta F β) 2 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 5 *
       (coeff 1 F.toPowerSeries ^ 2 * betaCoeff β 2 -
         coeff 1 F.toPowerSeries * coeff 2 F.toPowerSeries * betaCoeff β 1 +
         (coeff 1 F.toPowerSeries * coeff 3 F.toPowerSeries - coeff 2 F.toPowerSeries ^ 2) *
-          betaCoeff β 0) := by
-  rw [← Units.inv_pow_eq_pow_inv]
-  refine (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F ^ 5)).mpr ?_
-  rw [Units.val_pow_eq_pow_val, SubstGroup.coe_linearCoeff F]
-  exact coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_two F hβ
+          betaCoeff β 0) :=
+  (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F ^ 5)).mpr
+    (coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ)
 
 /-! ### Scheme independence -/
 
 /-- **`β₀` is scheme independent**: a change of renormalisation scheme, `F'(0) = 1`, leaves the
 one-loop coefficient of a beta function unchanged. -/
-theorem betaCoeff_transformBeta_zero_of_coeff_one_eq_one {F : SubstGroup R}
+theorem betaCoeff_zero_transformBeta_of_coeff_one_eq_one {F : SubstGroup R}
     (hF : coeff 1 F.toPowerSeries = 1) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta F β) 0 = betaCoeff β 0 := by
-  simpa [hF] using coeff_one_toPowerSeries_mul_betaCoeff_transformBeta_zero F hβ
+  simpa [hF] using coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
 
 /-- **`β₁` is scheme independent**: a change of renormalisation scheme, `F'(0) = 1`, leaves the
 two-loop coefficient of a beta function unchanged. -/
-theorem betaCoeff_transformBeta_one_of_coeff_one_eq_one {F : SubstGroup R}
+theorem betaCoeff_one_transformBeta_of_coeff_one_eq_one {F : SubstGroup R}
     (hF : coeff 1 F.toPowerSeries = 1) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta F β) 1 = betaCoeff β 1 := by
-  simpa [hF] using coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_one F hβ
+  simpa [hF] using coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
 
 /-- The three-loop coefficient under the change of scheme `a ↦ a + c₁ a² + c₂ a³ + ⋯`:
 `β₂' = β₂ - c₁ β₁ + (c₂ - c₁²) β₀`. -/
-theorem betaCoeff_transformBeta_two_of_coeff_one_eq_one {F : SubstGroup R}
+theorem betaCoeff_two_transformBeta_of_coeff_one_eq_one {F : SubstGroup R}
     (hF : coeff 1 F.toPowerSeries = 1) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta F β) 2 = betaCoeff β 2 - coeff 2 F.toPowerSeries * betaCoeff β 1 +
       (coeff 3 F.toPowerSeries - coeff 2 F.toPowerSeries ^ 2) * betaCoeff β 0 := by
-  simpa [hF] using coeff_one_toPowerSeries_pow_mul_betaCoeff_transformBeta_two F hβ
+  simpa [hF] using coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ
 
 /-- The change of scheme `a ↦ a + c₁ a² + c₂ a³`. -/
 def cubicSchemeChange (c₁ c₂ : R) : SubstGroup R :=
@@ -293,27 +303,27 @@ lemma coeff_three_toPowerSeries_cubicSchemeChange (c₁ c₂ : R) :
 
 /-- Under `a ↦ a + c₁ a² + c₂ a³` the three-loop coefficient becomes
 `β₂ - c₁ β₁ + (c₂ - c₁²) β₀`. -/
-theorem betaCoeff_transformBeta_cubicSchemeChange_two (c₁ c₂ : R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
+theorem betaCoeff_two_transformBeta_cubicSchemeChange (c₁ c₂ : R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta (cubicSchemeChange c₁ c₂) β) 2 =
       betaCoeff β 2 - c₁ * betaCoeff β 1 + (c₂ - c₁ ^ 2) * betaCoeff β 0 := by
   simpa using
-    betaCoeff_transformBeta_two_of_coeff_one_eq_one
+    betaCoeff_two_transformBeta_of_coeff_one_eq_one
       (coeff_one_toPowerSeries_cubicSchemeChange c₁ c₂) hβ
 
 /-- **`β₂` is scheme dependent**: the three-loop coefficient is invariant under every change of
 renormalisation scheme exactly when the first two coefficients vanish. -/
-theorem forall_coeff_one_eq_one_betaCoeff_transformBeta_two_eq_iff {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
+theorem forall_coeff_one_eq_one_betaCoeff_two_transformBeta_eq_iff {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     (∀ F : SubstGroup R, coeff 1 F.toPowerSeries = 1 →
         betaCoeff (transformBeta F β) 2 = betaCoeff β 2) ↔
       betaCoeff β 0 = 0 ∧ betaCoeff β 1 = 0 := by
   refine ⟨fun h => ?_, fun ⟨h₀, h₁⟩ F hF => ?_⟩
   · have h₀ := h (cubicSchemeChange 0 1) (coeff_one_toPowerSeries_cubicSchemeChange 0 1)
     have h₁ := h (cubicSchemeChange 1 1) (coeff_one_toPowerSeries_cubicSchemeChange 1 1)
-    rw [betaCoeff_transformBeta_cubicSchemeChange_two _ _ hβ] at h₀ h₁
+    rw [betaCoeff_two_transformBeta_cubicSchemeChange _ _ hβ] at h₀ h₁
     constructor
     · linear_combination h₀
     · linear_combination -h₁
-  · rw [betaCoeff_transformBeta_two_of_coeff_one_eq_one hF hβ, h₀, h₁]
+  · rw [betaCoeff_two_transformBeta_of_coeff_one_eq_one hF hβ, h₀, h₁]
     ring
 
 /-! ### Changes of normalisation -/
@@ -340,11 +350,9 @@ private theorem pow_mul_betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β 
 `a' = 2a = α_s/(2π)`, `u = 2`, so `β₀` halves. -/
 theorem betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β : R⟦X⟧) (n : ℕ) :
     betaCoeff (transformBeta (SubstGroup.rescale u) β) n =
-      (↑u⁻¹ : R) ^ (n + 1) * betaCoeff β n := by
-  rw [← Units.inv_pow_eq_pow_inv]
-  refine (Units.eq_inv_mul_iff_mul_eq (u ^ (n + 1))).mpr ?_
-  rw [Units.val_pow_eq_pow_val]
-  exact pow_mul_betaCoeff_transformBeta_substGroupRescale u β n
+      (↑u⁻¹ : R) ^ (n + 1) * betaCoeff β n :=
+  (Units.eq_inv_mul_iff_mul_eq (u ^ (n + 1))).mpr
+    (pow_mul_betaCoeff_transformBeta_substGroupRescale u β n)
 
 end Evolution
 end Factorization

@@ -35,6 +35,7 @@ as a `finsum` over all powers of `b`; when `b` has no constant term only the pow
 * `PowerSeries.coeff_one_subst`: the chain rule `[X] f(b) = [X] f • [X] b`.
 * `PowerSeries.coeff_two_subst`, `PowerSeries.coeff_three_subst`, `PowerSeries.coeff_four_subst`:
   the coefficients of `X²`, `X³`, `X⁴` in `f(b)` in terms of those of `f` and `b`.
+* `PowerSeries.subst_C_mul_X`: substituting `X ↦ r X` is `PowerSeries.rescale r`.
 
 ## References
 
@@ -65,6 +66,7 @@ theorem coeff_subst_eq_sum_range {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : 
 
 /-- The linear coefficient of a substitution without constant term is the product of the linear
 coefficients: `[X] f(b) = [X] f • [X] b`. -/
+@[simp]
 theorem coeff_one_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧) :
     coeff 1 (f.subst b) = coeff 1 f • coeff 1 b := by
   simp [coeff_subst_eq_sum_range hb, Finset.sum_range_succ, coeff_one]
@@ -99,6 +101,10 @@ theorem coeff_four_subst {b : S⟦X⟧} (hb : constantCoeff b = 0) (f : R⟦X⟧
     OfNat.ofNat_ne_zero, ↓reduceIte, pow_succ, coeff_mul, Finset.Nat.sum_antidiagonal_succ, hb,
     Finset.HasAntidiagonal.antidiagonal_zero, mul_zero, zero_mul, one_mul, zero_add, add_zero]
   ring
+
+/-- Substituting `X ↦ r X` is `PowerSeries.rescale r`. -/
+theorem subst_C_mul_X (r : R) (f : R⟦X⟧) : f.subst (C r * X) = rescale r f := by
+  rw [← smul_eq_C_mul, ← rescale_eq_subst]
 
 end PowerSeries
 
@@ -154,6 +160,13 @@ lemma toPowerSeries_inv (F : SubstGroup R) :
     F⁻¹.toPowerSeries =
       F.toPowerSeries.substInvOfIsUnit F.isUnit_coeff_one_toPowerSeries := rfl
 
+/-- The chain rule: the linear coefficient of `F(G(X))` is the product of those of `F` and `G`.
+Not `@[simp]`: `simp` reaches the right-hand side through `toPowerSeries_mul` and
+`PowerSeries.coeff_one_subst`. -/
+lemma coeff_one_toPowerSeries_mul (F G : SubstGroup R) :
+    coeff 1 (F * G).toPowerSeries = coeff 1 F.toPowerSeries * coeff 1 G.toPowerSeries := by
+  rw [toPowerSeries_mul, coeff_one_subst G.constantCoeff_toPowerSeries, smul_eq_mul]
+
 /-- `F⁻¹(F(X)) = X`. -/
 @[simp]
 lemma subst_toPowerSeries_inv_left (F : SubstGroup R) :
@@ -191,7 +204,7 @@ def linearCoeff : SubstGroup R →* Rˣ where
     simp [coeff_X]
   map_mul' F G := by
     ext
-    simp [coeff_one_subst G.constantCoeff_toPowerSeries]
+    simp only [IsUnit.unit_spec, Units.val_mul, coeff_one_toPowerSeries_mul]
 
 @[simp]
 lemma coe_linearCoeff (F : SubstGroup R) :
@@ -220,9 +233,8 @@ def rescale : Rˣ →* SubstGroup R where
     simp only [Units.val_one, map_one, one_mul, toPowerSeries_one]
   map_mul' u v := by
     ext1
-    simp only [toPowerSeries_mul]
-    rw [← smul_eq_C_mul X (v : R), ← PowerSeries.rescale_eq_subst, ← rescale_X ((u * v : Rˣ) : R),
-      ← rescale_X (u : R), rescale_rescale, Units.val_mul]
+    simp only [toPowerSeries_mul, subst_C_mul_X]
+    rw [← rescale_X (u : R), rescale_rescale, rescale_X, Units.val_mul]
 
 @[simp]
 lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = C (u : R) * X := by
@@ -231,7 +243,7 @@ lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = C (u : R) * 
 /-- Substituting `X ↦ u X` is `PowerSeries.rescale u`. -/
 lemma subst_toPowerSeries_rescale (u : Rˣ) (f : R⟦X⟧) :
     f.subst (rescale u).toPowerSeries = PowerSeries.rescale (u : R) f := by
-  rw [toPowerSeries_rescale, ← smul_eq_C_mul, ← rescale_eq_subst]
+  rw [toPowerSeries_rescale, subst_C_mul_X]
 
 @[simp]
 lemma linearCoeff_rescale (u : Rˣ) : linearCoeff (rescale u) = u := by
