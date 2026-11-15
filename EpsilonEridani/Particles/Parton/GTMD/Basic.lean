@@ -27,7 +27,10 @@ conditions on a vector-argument TMD, not on a GTMD correlator.
 
 * `VectorTmd`: a transverse-momentum dependent distribution whose transverse-momentum
   argument is a vector in `Transverse`.
-* `VectorTmd.IsDensity`: the vector-argument analogue of `TMD.IsTmdDensity`.
+* `VectorTmd.IsDensity`: the vector-argument analogue of `TMD.IsTmdDensity`: support in
+  `x ∈ [0, 1]` and nonnegativity there. It has no counterpart of `TMD.IsTmdDensity.supportKT`,
+  since a transverse-momentum vector has no unphysical negative magnitude; the azimuthal average
+  supplies that support condition by its `kT < 0` cutoff.
 * `VectorTmd.Regularity`: the vector-argument analogue of `TMD.Regularity`, the analytic
   half of the assumption bundle: measurability of every transverse-momentum slice.
 * `VectorTmd.Assumptions`: the full vector-argument assumption bundle, extending the physical

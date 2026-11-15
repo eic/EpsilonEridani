@@ -24,17 +24,20 @@ transverse circle average `circleAverageTransverse` of
 
 * `azimuthalAverage`: the per-flavour circle average of a `VectorTmd`, a `TMD.Tmd`. The value
   is set to `0` at unphysical `kT < 0`, which is the only reason the average satisfies
-  `TMD.IsTmdDensity.supportKT`; since the circle average is even in `kT`, this cutoff is a
-  deliberate break of that symmetry, and `azimuthalAverage_eq_zero_of_kT_neg`/
-  `azimuthalAverage_of_kT_nonneg` are the interface for it. The average also inherits the junk
-  value `0` of `circleAverageTransverse` on non-integrable slices, which is why
-  `VectorTmd.IsDensity` needs no measurability or integrability condition.
+  `TMD.IsTmdDensity.supportKT`; since the circle average is even in the radius
+  (`Real.circleAverage_neg_radius`), this cutoff is a deliberate break of that symmetry, and
+  `azimuthalAverage_eq_zero_of_kT_neg`/`azimuthalAverage_of_kT_nonneg` are the interface for
+  it. The average also inherits the junk value `0` of `circleAverageTransverse` on
+  non-integrable slices, which is why `VectorTmd.IsDensity` needs no measurability or
+  integrability condition.
 
 ## Main results
 
 * `azimuthalAverage_eq_zero_of_kT_neg`, `azimuthalAverage_of_kT_nonneg`: the azimuthal average
   vanishes at negative transverse-momentum magnitude and is the circle average at nonnegative
   magnitude — the interface to the `kT < 0` cutoff of `azimuthalAverage`.
+* `azimuthalAverage_zero_radius`: the azimuthal average at zero transverse momentum is the
+  value at the origin.
 * `azimuthalAverage_eq_zero_of_odd`: the azimuthal average annihilates every vector-argument
   TMD that is odd in its transverse-momentum argument on the circle.
 * `azimuthalAverage_comp_norm_of_kT_nonneg`: averaging a function of the magnitude alone returns
@@ -158,7 +161,7 @@ theorem tmdRegularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Re
     TMD.Regularity (azimuthalAverage f) where
   measurableKT i x Q2 ζ := by
     have hc : MeasureTheory.StronglyMeasurable (circleAverageTransverse (f i x · Q2 ζ)) :=
-      stronglyMeasurable_circleAverageTransverse (hf.measurableKT i x Q2 ζ).stronglyMeasurable
+      (hf.measurableKT i x Q2 ζ).stronglyMeasurable.circleAverageTransverse
     simp only [azimuthalAverage_def]
     exact (Measurable.ite (measurableSet_lt measurable_id measurable_const)
       measurable_const hc.measurable).aestronglyMeasurable

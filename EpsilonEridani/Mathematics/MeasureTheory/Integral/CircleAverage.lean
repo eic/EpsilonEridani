@@ -21,6 +21,8 @@ transverse-momentum magnitude.
 
 ## Main results
 
+* `Real.circleAverage_comp_reflection`: reflecting the function through the centre does not
+  change its circle average.
 * `Real.circleAverage_eq_zero_of_odd`: the circle average about `c` of a function that is odd
   about `c` on the circle vanishes.
 * `MeasureTheory.StronglyMeasurable.circleAverage`: the circle average of a strongly measurable
@@ -33,23 +35,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace Real
 
+/-- Reflecting the function through the centre, `z ↦ 2 * c - z`, does not change its circle
+    average about `c`. -/
+theorem circleAverage_comp_reflection {f : ℂ → E} {c : ℂ} {R : ℝ} :
+    circleAverage (fun z => f (2 * c - z)) c R = circleAverage f c R := by
+  -- Pointwise, the reflected circle of radius `R` is the circle of radius `-R`.
+  have h : ∀ θ, 2 * c - circleMap c R θ = circleMap c (-R) θ := fun θ => by
+    simp only [circleMap]
+    push_cast
+    ring
+  rw [← circleAverage_neg_radius (R := R) (f := f), circleAverage_def, circleAverage_def]
+  simp only [h]
+
 /-- The circle average about `c` of a function that is odd about `c` on the circle of radius `|R|`
     — `f (2 * c - z) = -f z` there — vanishes. -/
 theorem circleAverage_eq_zero_of_odd {f : ℂ → E} {c : ℂ} {R : ℝ}
     (hf : ∀ z ∈ Metric.sphere c |R|, f (2 * c - z) = -f z) :
     circleAverage f c R = 0 := by
-  -- The radius `-R` traces the circle reflected through `c`, so the average equals its own
-  -- negative.
+  -- Reflection through `c` fixes the average and negates the function, so the average equals
+  -- its own negative.
   have h : circleAverage f c R = -circleAverage f c R := calc
-    circleAverage f c R = circleAverage f c (-R) := circleAverage_neg_radius.symm
-    _ = circleAverage (fun z => f (2 * c - z)) c R := by
-      rw [circleAverage_def, circleAverage_def]
-      congr 1
-      refine intervalIntegral.integral_congr fun θ _ => ?_
-      simp only [circleMap]
-      congr 1
-      push_cast
-      ring
+    circleAverage f c R = circleAverage (fun z => f (2 * c - z)) c R :=
+      circleAverage_comp_reflection.symm
     _ = circleAverage (fun z => -f z) c R := circleAverage_congr_sphere fun z hz => hf z hz
     _ = -circleAverage f c R := by
       simpa using circleAverage_fun_smul (a := (-1 : ℝ)) (f := f) (c := c) (R := R)
@@ -63,10 +70,11 @@ theorem circleAverage_eq_zero_of_odd {f : ℂ → E} {c : ℂ} {R : ℝ}
 end Real
 
 /-- The circle average of a strongly measurable function is strongly measurable as a function of
-    the radius: the average is the parametric integral of the jointly strongly measurable
-    `(R, θ) ↦ f (circleMap c R θ)` over the angle. -/
+    the radius. -/
 theorem MeasureTheory.StronglyMeasurable.circleAverage {f : ℂ → E} (hf : StronglyMeasurable f)
     (c : ℂ) : StronglyMeasurable (Real.circleAverage f c) := by
+  -- The average is `(2π)⁻¹` times the parametric integral over the angle of the jointly
+  -- strongly measurable `(R, θ) ↦ f (circleMap c R θ)`.
   have heq : Real.circleAverage f c =
       fun R => (2 * Real.pi)⁻¹ • ∫ θ in Set.Ioc 0 (2 * Real.pi), f (circleMap c R θ) :=
     funext fun R => by
