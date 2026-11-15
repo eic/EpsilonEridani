@@ -30,6 +30,8 @@ and its companions, as for charge conjugation (`PDF.chargeConj`).
 
 * `PDF.isospinConj_apply`: `isospinConj u d f i = f (swap u d i)`.
 * `PDF.isospinConj_isospinConj`: isospin conjugation is an involution.
+* `PDF.isospinConj_comm`, `PDF.isospinConj_self`: the order of the exchanged indices does not
+  matter, and exchanging an index with itself is the identity.
 * `PDF.IsPartonDensity.isospinConj`, `PDF.Regularity.isospinConj`, `PDF.Assumptions.isospinConj`,
   `PDF.SumRuleAssumptions.isospinConj`: it preserves the density assumptions and the sum-rule
   bundle.
@@ -67,6 +69,15 @@ theorem isospinConj_eq_comap (u d : ι) (f : Pdf ι) :
 theorem isospinConj_apply (u d : ι) (f : Pdf ι) (i : ι) (x Q2 : ℝ) :
     isospinConj u d f i x Q2 = f (Equiv.swap u d i) x Q2 := by
   rw [isospinConj_eq_comap, comap_apply]
+
+/-- The order of the two exchanged indices does not matter. -/
+theorem isospinConj_comm (u d : ι) (f : Pdf ι) : isospinConj u d f = isospinConj d u f := by
+  rw [isospinConj_eq_comap, isospinConj_eq_comap, Equiv.swap_comm]
+
+/-- Exchanging an index with itself is the identity. -/
+@[simp]
+theorem isospinConj_self (u : ι) (f : Pdf ι) : isospinConj u u f = f := by
+  rw [isospinConj_eq_comap, Equiv.swap_self, Equiv.coe_refl, comap_id]
 
 @[simp]
 theorem isospinConj_isospinConj (u d : ι) (f : Pdf ι) :

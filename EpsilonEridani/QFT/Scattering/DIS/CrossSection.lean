@@ -157,6 +157,31 @@ lemma loNCdSigma_f2LO_nonneg {Flavor : Type} [Fintype Flavor]
     0 ≤ loNCdSigma α x Q2 y (f2LO charge q x Q2) :=
   loNCdSigma_nonneg hx hQ (f2LO_nonneg charge hx.le hq)
 
+open Filter Topology in
+/-- **The limiting ratio of `F₂` under two charge assignments.** If, along a filter `l` on which
+`x` and a reference function `w` are eventually non-zero, every density `q i` is asymptotically
+`ρ i` times `w`, then `F₂` with charges `e` over `F₂` with charges `e'` tends to
+`Σ e_i² ρ_i / Σ e'_i² ρ_i`, provided the limiting denominator does not vanish. With `f2LO_comp`
+this also gives the limiting ratio of `F₂` for two targets whose densities differ by a relabelling
+of the flavours. -/
+theorem tendsto_f2LO_div_f2LO {Flavor : Type} [Fintype Flavor] {e e' : Flavor → ℝ}
+    {q : Flavor → ℝ → ℝ → ℝ} {Q2 : ℝ} {l : Filter ℝ} {w : ℝ → ℝ} {ρ : Flavor → ℝ}
+    (hx : ∀ᶠ x in l, x ≠ 0) (hw : ∀ᶠ x in l, w x ≠ 0)
+    (hq : ∀ i, Tendsto (fun x => q i x Q2 / w x) l (𝓝 (ρ i)))
+    (hρ : ∑ i, e' i ^ 2 * ρ i ≠ 0) :
+    Tendsto (fun x => f2LO e q x Q2 / f2LO e' q x Q2) l
+      (𝓝 ((∑ i, e i ^ 2 * ρ i) / ∑ i, e' i ^ 2 * ρ i)) := by
+  have hlim (c : Flavor → ℝ) :
+      Tendsto (fun x => ∑ i, c i ^ 2 * (q i x Q2 / w x)) l (𝓝 (∑ i, c i ^ 2 * ρ i)) :=
+    tendsto_finsetSum _ fun i _ => (hq i).const_mul (c i ^ 2)
+  refine ((hlim e).div (hlim e') hρ).congr' ?_
+  filter_upwards [hx, hw] with x hx hw
+  have h (c : Flavor → ℝ) : f2LO c q x Q2 = x * w x * ∑ i, c i ^ 2 * (q i x Q2 / w x) := by
+    rw [f2LO_def, mul_assoc, Finset.mul_sum (a := w x)]
+    refine congrArg (x * ·) (Finset.sum_congr rfl fun i _ => ?_)
+    field_simp
+  rw [Pi.div_apply, h, h, mul_div_mul_left _ _ (mul_ne_zero hx hw)]
+
 end DIS
 end Scattering
 end QFT

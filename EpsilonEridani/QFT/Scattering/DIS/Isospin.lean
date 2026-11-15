@@ -37,7 +37,7 @@ The ratio `F₂^p / F₂^n` at large `x` is not fixed by isospin. It is fixed by
 density ratios: if, along a filter on which `x` and a common reference function are eventually
 non-zero, every `q_f + qbar_f` is asymptotically `ρ_f` times that reference function, then `F₂`
 with charges `e` over `F₂` with charges `e'` tends to `Σ e_f² ρ_f / Σ e'_f² ρ_f` whenever the
-limiting denominator is non-zero (`tendsto_f2LO_div_f2LO`). For the neutron the reference
+limiting denominator is non-zero (`DIS.tendsto_f2LO_div_f2LO`). For the neutron the reference
 function is the up density: along a filter on which `x` and the up density are eventually
 non-zero and every other density over the up density tends to `ρ_f`, the ratio tends to
 `Σ e_f² ρ_f / Σ e_{τ f}² ρ_f` with `ρ_u = 1` (`tendsto_f2LO_div_f2LO_isospinConj`). When every
@@ -58,8 +58,6 @@ which is why the hypothesis is stated rather than assumed.
 * `f2LO_sub_f2LO_isospinConj`: the proton-neutron difference `x (e_u² - e_d²) (q_u - q_d)`.
 * `f2LO_lightFlavorCharge_sub_f2LO_lightFlavorCharge_isospinConj`: the light-flavour difference
   `(x / 3) (q_u - q_d)`.
-* `tendsto_f2LO_div_f2LO`: the limit of a ratio of two charge-weightings of `F₂` in terms of the
-  limits of the density ratios.
 * `tendsto_f2LO_div_f2LO_isospinConj`: the limit of `F₂^p / F₂^n` in terms of the limits `ρ_f` of
   the density ratios against the up density.
 * `tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_zero`: `F₂^p / F₂^n → e_u² / e_d²` when the up
@@ -107,33 +105,10 @@ theorem f2LO_comap {κ : Type} [Fintype κ] (σ : κ ≃ ι) (e : κ → ℝ) (q
     f2LO e (comap σ q) x Q2 = f2LO (e ∘ σ.symm) q x Q2 := by
   rw [comap_eq_comp, f2LO_comp]
 
-/-- **The limiting ratio of `F₂` under two charge assignments.** If, along a filter `l` on which
-`x` and a reference function `w` are eventually non-zero, every density `q i` is asymptotically
-`ρ i` times `w`, then `F₂` with charges `e` over `F₂` with charges `e'` tends to
-`Σ e_i² ρ_i / Σ e'_i² ρ_i`, provided the limiting denominator does not vanish. With
-`e' = e ∘ swap u d` this is the limit of `F₂^p / F₂^n`, by `f2LO_isospinConj`. -/
-theorem tendsto_f2LO_div_f2LO {e e' : ι → ℝ} {q : Pdf ι} {Q2 : ℝ} {l : Filter ℝ} {w : ℝ → ℝ}
-    {ρ : ι → ℝ} (hx : ∀ᶠ x in l, x ≠ 0) (hw : ∀ᶠ x in l, w x ≠ 0)
-    (hq : ∀ i, Tendsto (fun x => q i x Q2 / w x) l (𝓝 (ρ i)))
-    (hρ : ∑ i, e' i ^ 2 * ρ i ≠ 0) :
-    Tendsto (fun x => f2LO e q x Q2 / f2LO e' q x Q2) l
-      (𝓝 ((∑ i, e i ^ 2 * ρ i) / ∑ i, e' i ^ 2 * ρ i)) := by
-  have hlim (c : ι → ℝ) :
-      Tendsto (fun x => ∑ i, c i ^ 2 * (q i x Q2 / w x)) l (𝓝 (∑ i, c i ^ 2 * ρ i)) :=
-    tendsto_finsetSum _ fun i _ => (hq i).const_mul (c i ^ 2)
-  refine ((hlim e).div (hlim e') hρ).congr' ?_
-  filter_upwards [hx, hw] with x hx hw
-  have h (c : ι → ℝ) : f2LO c q x Q2 = x * w x * ∑ i, c i ^ 2 * (q i x Q2 / w x) := by
-    rw [f2LO_def, mul_assoc, Finset.mul_sum (a := w x)]
-    refine congrArg (x * ·) (Finset.sum_congr rfl fun i _ => ?_)
-    field_simp
-  rw [Pi.div_apply, h, h, mul_div_mul_left _ _ (mul_ne_zero hx hw)]
-
 variable [DecidableEq ι]
 
 /-- **The neutron is the proton with the up and down charges exchanged.** `F₂` of the isospin
 conjugate density with charges `e` is `F₂` of the density with charges `e ∘ swap u d`. -/
-@[simp]
 theorem f2LO_isospinConj (e : ι → ℝ) (q : Pdf ι) (u d : ι) (x Q2 : ℝ) :
     f2LO e (isospinConj u d q) x Q2 = f2LO (e ∘ Equiv.swap u d) q x Q2 := by
   rw [isospinConj_eq_comap, f2LO_comap, Equiv.symm_swap]
