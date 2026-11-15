@@ -24,6 +24,12 @@ variables are
 * the invariant `tMom = t = Δ²`,
 * the skewness `ξ = -Δ⁺ / (2 P⁺)`, so that `p⁺ = (1 + ξ) P⁺` and `p'⁺ = (1 - ξ) P⁺`.
 
+The Minkowski pairings among these vectors are stated once, with the arguments in the order
+`n`, `p`, `p'`, `P`, `Δ`, `w` (for instance `minkowskiProduct_p_delta_eq` and
+`minkowskiProduct_delta_deltaOrthN_eq`); the other order follows from
+`Lorentz.Vector.minkowskiProduct_symm`. The one exception is `P · Δ = 0`, which is stated in both
+orders because both are used.
+
 The main results are:
 
 * `OffForwardKinematics.abs_skewness_lt_one`: positivity of both plus-momenta gives `|ξ| < 1`.
@@ -31,7 +37,7 @@ The main results are:
   `t = -(4 ξ² M² + Δ⊥²) / (1 - ξ²)`, namely `⟪w, w⟫ₘ = (1 - ξ²) t + 4 ξ² M²` for the vector
   `w = deltaOrthN = Δ + 2 ξ P`. This vector is orthogonal to `n` but in general not to `P`, so it
   is not the transverse momentum transfer itself; only its Minkowski square is, `⟪w, w⟫ₘ = -Δ⊥²`
-  in a frame where `P` has no transverse component.
+  in a light-cone frame adapted to `n` in which `P` has no transverse component.
 * `OffForwardKinematics.tMom_le_tZero`: the bound `t ≤ t₀(ξ) = -4 ξ² M² / (1 - ξ²) ≤ 0`, and
   `OffForwardKinematics.tMom_neg`: `t < 0` at non-zero mass and skewness.
 * `OffForwardKinematics.range_skewness_tMom`: in at least two spatial dimensions the set of
@@ -70,6 +76,7 @@ namespace Parton
 namespace GPD
 
 open Lorentz Lorentz.Vector
+open scoped InnerProductSpace
 
 /-- The minimal momentum transfer `t₀(ξ) = -4 ξ² M² / (1 - ξ²)` of an elastic transition of a
 hadron of mass `M` at skewness `ξ`. For `|ξ| < 1` and in at least two spatial dimensions it is
@@ -179,9 +186,10 @@ def skewness : ℝ := -⟪K.n, K.delta⟫ₘ / (2 * ⟪K.n, K.avgMomentum⟫ₘ)
 lemma skewness_def : K.skewness = -⟪K.n, K.delta⟫ₘ / (2 * ⟪K.n, K.avgMomentum⟫ₘ) := (rfl)
 
 /-- The momentum transfer made orthogonal to `n` along `P`, `w = Δ + 2 ξ P`, which has vanishing
-plus-component (`minkowskiProduct_n_deltaOrthN_eq_zero`). It is not orthogonal to `P`, so it is
-not the transverse momentum transfer `Δ⊥`; its Minkowski square is `-Δ⊥²` in a frame where `P`
-has no transverse component. -/
+plus-component (`minkowskiProduct_n_deltaOrthN_eq_zero`). It is in general not orthogonal to `P`
+(`minkowskiProduct_avgMomentum_deltaOrthN_eq`), so it is not the transverse momentum transfer
+`Δ⊥`; its Minkowski square is `-Δ⊥²` in a light-cone frame adapted to `n` in which `P` has no
+transverse component. -/
 def deltaOrthN : Vector d := K.delta + (2 * K.skewness) • K.avgMomentum
 
 lemma deltaOrthN_def : K.deltaOrthN = K.delta + (2 * K.skewness) • K.avgMomentum :=
@@ -326,11 +334,11 @@ lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
     K.minkowskiProduct_avgMomentum_delta_eq_zero, K.minkowskiProduct_avgMomentum_self_eq]
   ring
 
-/-- The vector `w = Δ + 2 ξ P` paired with the momentum transfer is `⟪w, Δ⟫ₘ = t`. -/
+/-- The momentum transfer paired with the vector `w = Δ + 2 ξ P` is `⟪Δ, w⟫ₘ = t`. -/
 @[simp]
-lemma minkowskiProduct_deltaOrthN_delta_eq : ⟪K.deltaOrthN, K.delta⟫ₘ = K.tMom := by
-  simp only [deltaOrthN_def, map_add, _root_.add_apply, map_smul, _root_.smul_apply,
-    smul_eq_mul, K.minkowskiProduct_avgMomentum_delta_eq_zero, tMom_def]
+lemma minkowskiProduct_delta_deltaOrthN_eq : ⟪K.delta, K.deltaOrthN⟫ₘ = K.tMom := by
+  simp only [deltaOrthN_def, map_add, map_smul, smul_eq_mul,
+    K.minkowskiProduct_delta_avgMomentum_eq_zero, tMom_def]
   ring
 
 /-- The momentum transfer is bounded by the minimal momentum transfer, `t ≤ t₀(ξ)`. -/
@@ -381,15 +389,15 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
   have hA2B2 : A ^ 2 - B ^ 2 = m2 := by rw [hA, hB]; ring
   clear_value A B D m2
   -- `v x y z = x e₀ + y eᵢ + z eⱼ`, on which the Minkowski product is `x x' - y y' - z z'`
-  let v (x y z : ℝ) : Vector d :=
-    ofTimeAndSpatial x (y • EuclideanSpace.basisFun (Fin d) ℝ i +
-      z • EuclideanSpace.basisFun (Fin d) ℝ j)
+  let e := EuclideanSpace.basisFun (Fin d) ℝ
+  have hi : ‖e i‖ = 1 := e.orthonormal.1 i
+  have hj : ‖e j‖ = 1 := e.orthonormal.1 j
+  have hij' : ⟪e i, e j⟫_ℝ = 0 := e.orthonormal.2 hij
+  have hji : ⟪e j, e i⟫_ℝ = 0 := e.orthonormal.2 hij.symm
+  let v (x y z : ℝ) : Vector d := ofTimeAndSpatial x (y • e i + z • e j)
   have hv (x y z x' y' z' : ℝ) : ⟪v x y z, v x' y' z'⟫ₘ = x * x' - y * y' - z * z' := by
-    simp only [v, EuclideanSpace.basisFun_apply, minkowskiProduct_ofTimeAndSpatial_eq,
-      inner_add_right, inner_smul_right, inner_add_left, inner_smul_left, conj_trivial,
-      inner_self_eq_norm_sq_to_K, PiLp.norm_single, norm_one, RCLike.ofReal_real_eq_id, id_eq,
-      one_pow, mul_one, EuclideanSpace.inner_single_left, ne_eq, hij, hij.symm, not_false_eq_true,
-      PiLp.single_eq_of_ne, mul_zero, add_zero, zero_add]
+    simp only [v, minkowskiProduct_ofTimeAndSpatial_eq, inner_add_left, inner_add_right,
+      real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq, hi, hj, hij', hji]
     ring
   set p₀ : Vector d := v (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
   set p₀' : Vector d := v (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'

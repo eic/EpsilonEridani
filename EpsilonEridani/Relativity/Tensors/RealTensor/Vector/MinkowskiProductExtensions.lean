@@ -84,10 +84,14 @@ lemma minkowskiProduct_self_nonpos_of_causal_of_orthogonal {d : ℕ} (w : Vector
     refine hn0 (eq_zero_of_timeComponent_of_spatialPart ha ?_)
     simp only [ha, mul_zero, zero_sub, neg_nonneg] at hn
     exact inner_self_eq_zero.mp (le_antisymm hn hs)
+  -- Cauchy–Schwarz on the spatial parts, `⟪n⃗, w⃗⟫ * ⟪n⃗, w⃗⟫ ≤ ⟪n⃗, n⃗⟫ * ⟪w⃗, w⃗⟫`, where
+  -- orthogonality `n⁰ w⁰ - ⟪n⃗, w⃗⟫ = 0` lets us replace `⟪n⃗, w⃗⟫` by `n⁰ w⁰`
   have hcs := real_inner_mul_inner_self_le n.spatialPart w.spatialPart
   have hw := real_inner_self_nonneg (x := w.spatialPart)
   rw [← sub_eq_zero.mp hnw] at hcs
   have ha2 : 0 < n.timeComponent ^ 2 := by positivity
+  -- `(n⁰)² (w⁰)² ≤ ⟪n⃗, n⃗⟫ ⟪w⃗, w⃗⟫ ≤ (n⁰)² ⟪w⃗, w⃗⟫` by causality `⟪n⃗, n⃗⟫ ≤ (n⁰)²`; dividing
+  -- by `(n⁰)² > 0` gives `(w⁰)² ≤ ⟪w⃗, w⃗⟫`
   nlinarith [mul_le_mul_of_nonneg_right hn hw]
 
 end Vector
