@@ -594,9 +594,8 @@ lemma IsProperLorentzCovariant.neg {g : Bilin V} {K : DisKinematics V} {W : Bili
 /-- Proper covariance is preserved by differences. -/
 lemma IsProperLorentzCovariant.sub {g : Bilin V} {K : DisKinematics V} {W W' : Bilin V}
     (hW : IsProperLorentzCovariant g K W) (hW' : IsProperLorentzCovariant g K W') :
-    IsProperLorentzCovariant g K (W - W') := by
-  intro f hf hdet v w
-  simp only [LinearMap.sub_apply, hW f hf hdet v w, hW' f hf hdet v w]
+    IsProperLorentzCovariant g K (W - W') :=
+  sub_eq_add_neg W W' ▸ hW.add hW'.neg
 
 /-- Proper covariance is preserved by exchanging the two slots. -/
 lemma IsProperLorentzCovariant.flip {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
@@ -617,6 +616,16 @@ lemma stabilizer_fixes_pTransverse (g : Bilin V) (K : DisKinematics V) {f : V �
     (hf : IsKinematicStabilizer g K f) :
     f (pTransverse g K) = pTransverse g K := by
   simp only [pTransverse, map_sub, map_smul, hf.fixes_p, hf.fixes_q]
+
+/-- A properly covariant tensor annihilates `p_T` against any vector that a determinant-one
+stabilizer element reverses: the component is both invariant under the element and negated
+by it. -/
+lemma IsProperLorentzCovariant.apply_pTransverse_eq_zero_of_apply_eq_neg {g : Bilin V}
+    {K : DisKinematics V} {W : Bilin V} (hW : IsProperLorentzCovariant g K W)
+    {f : V →ₗ[ℝ] V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
+    {u : V} (hfu : f u = -u) : W (pTransverse g K) u = 0 :=
+  Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hW f hf hdet _ _)
+    (stabilizer_fixes_pTransverse g K hf) hfu
 
 /-- The transverse metric projector is Lorentz covariant. -/
 lemma transverseMetric_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :

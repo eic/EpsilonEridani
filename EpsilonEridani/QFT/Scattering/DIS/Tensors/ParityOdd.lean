@@ -137,6 +137,11 @@ lemma neg (hW : ParityOddAssumptions g K W) : ParityOddAssumptions g K (-W) wher
     rw [LinearMap.neg_apply, LinearMap.neg_apply, hW.conserved_left v, neg_zero]
   isAlt v := by simp [hW.isAlt v]
 
+/-- The parity-odd assumptions are preserved by differences. -/
+lemma sub {W' : Bilin V} (hW : ParityOddAssumptions g K W) (hW' : ParityOddAssumptions g K W') :
+    ParityOddAssumptions g K (W - W') :=
+  sub_eq_add_neg W W' ▸ hW.add hW'.neg
+
 end ParityOddAssumptions
 
 /-- The zero tensor satisfies the parity-odd assumptions. -/
@@ -156,16 +161,6 @@ lemma parityOddAssumptions_sub_flip {g : Bilin V} {K : DisKinematics V} {W : Bil
   proper_covariant := hcov.sub hcov.flip
   conserved_left v := by simp [hleft v, hright v]
   isAlt v := by simp
-
-/-- A properly covariant tensor annihilates `p_T` against any vector that a determinant-one
-stabilizer element reverses: the component is both invariant under the element and negated
-by it. -/
-lemma IsProperLorentzCovariant.apply_pTransverse_eq_zero_of_apply_eq_neg {g : Bilin V}
-    {K : DisKinematics V} {W : Bilin V} (hW : IsProperLorentzCovariant g K W)
-    {f : V →ₗ[ℝ] V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
-    {u : V} (hfu : f u = -u) : W (pTransverse g K) u = 0 :=
-  Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hW f hf hdet _ _)
-    (stabilizer_fixes_pTransverse g K hf) hfu
 
 namespace ParityOddAssumptions
 
