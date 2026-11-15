@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Inclusive.CrossSection
-public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.PropagatorRatio
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
 
 /-!
@@ -16,10 +15,11 @@ A charged lepton scatters off a nucleon by exchanging a photon or a `Z` boson. T
 the sum of the two exchange amplitudes, so the cross section is a quadratic form in them: a
 pure-photon term, a photon-`Z` interference term and a pure-`Z` term. This file writes the
 neutral-current cross section of a massless lepton of definite helicity in that form, each term
-the product of a propagator factor, a coupling factor and the contraction
-`Inclusive.dSigmaDxDQ2` of the leptonic tensor with the hadronic structure functions of the
-corresponding pair of currents, and proves how each term behaves under reversal of the beam
-helicity.
+the product of a propagator factor, a coupling factor and the inclusive cross section
+`Inclusive.dSigmaDxDQ2` evaluated on the hadronic structure functions of the corresponding pair
+of currents, and proves how each term behaves under reversal of the beam helicity. Reading
+`Inclusive.dSigmaDxDQ2` as the contraction of the helicity-projected leptonic tensor with the
+hadronic tensor is the intended interpretation; it is not derived here.
 
 ## The beam coupling
 
@@ -40,10 +40,9 @@ parity-odd term `-λ Y₋ x F₃` is `+Y₋ x F₃` for a left-handed beam, the 
 An antilepton beam is described by the same formulas with the charge-conjugate couplings: charge
 `-q`, vector coupling `-g_V` and axial coupling `g_A`.
 
-The relative normalisation of the two exchanges is the real number `η`, the ratio of the
-`Z`-exchange to the photon-exchange propagator-and-coupling factor
-(`Electroweak.zToPhotonRatio`); at tree level `η = Q² / (4 sin²θ_W cos²θ_W (Q² + M_Z²))`
-(`Electroweak.zToPhotonRatio_eq`).
+The relative normalisation of the two exchanges is a free real parameter `η`, the ratio of the
+`Z`-exchange to the photon-exchange propagator-and-coupling factor. Its tree-level value is not
+used in this file.
 
 ## Main results
 
@@ -56,9 +55,8 @@ The relative normalisation of the two exchanges is the real number `η`, the rat
 * `CrossSection.photonTerm_eq_sq_mul_loNCdSigma`: at zero target mass and with the Callan-Gross
   relation, the pure-photon term is `q²` times the one-photon-exchange cross section
   `loNCdSigma` of `EpsilonEridani.QFT.Scattering.DIS.CrossSection`; for a beam of unit charge
-  there is no residual factor (`CrossSection.photonTerm_eq_loNCdSigma`), and
-  `CrossSection.neutralCurrent_eq_loNCdSigma_of_eta_zero` recovers it from the full cross
-  section when the `Z` exchange is switched off.
+  there is no residual factor (`CrossSection.photonTerm_eq_loNCdSigma`). Without `Z` exchange
+  the full cross section is its pure-photon term (`CrossSection.neutralCurrent_eta_zero`).
 * `CrossSection.neutralCurrent_true_sub_false`: the pure-photon term does not depend on the
   helicity, so the helicity difference `σ_R - σ_L` is carried by the interference and pure-`Z`
   terms alone. `CrossSection.gammaZTerm_true_sub_false` and
@@ -81,7 +79,7 @@ The relative normalisation of the two exchanges is the real number `η`, the rat
 
 The kinematic variables, the target mass `M`, the inelasticity factors `Y₊`, `Y₋` and the flux
 factor `K = 2π α² / Q²` are those of `Inclusive.CrossSection`. The helicity is a `Bool`, read
-through `Interference.helicitySign`: `true` is right-handed (`λ = 1`) and `false` left-handed
+through `Electroweak.helicitySign`: `true` is right-handed (`λ = 1`) and `false` left-handed
 (`λ = -1`). The couplings `g_V`, `g_A` are in the normalisation of
 `Electroweak.FermionNeutralCurrentCouplings.ofQuantumNumbers`. The interference structure
 functions `F_i^{γZ}` are those of the full interference term of the squared amplitude, so they
@@ -138,9 +136,11 @@ variable (α M x Q2 y q η : ℝ) (ℓ : FermionNeutralCurrentCouplings)
 
 /-- The neutral-current cross section `d²σ/dx dQ²` of a massless lepton of charge `q`,
 neutral-current couplings `ℓ` and helicity `helicitySign h`, at `Z`-to-photon propagator ratio
-`η`. It is the contraction `Inclusive.dSigmaDxDQ2` of the helicity-projected leptonic tensor
-with the structure functions of the summed amplitude,
-`F_i = q² F_i^γ + q (η c_Z) F_i^{γZ} + (η c_Z)² F_i^Z` with `c_Z = g_V - λ g_A`. -/
+`η`. It is defined as the inclusive cross section `Inclusive.dSigmaDxDQ2`, with the helicity
+sign in the slot of the parity-odd sign, evaluated on the coupling-weighted structure functions
+`F_i = q² F_i^γ + q (η c_Z) F_i^{γZ} + (η c_Z)² F_i^Z` with `c_Z = g_V - λ g_A`. Its reading as
+the contraction of the helicity-projected leptonic tensor with the hadronic tensor of the summed
+amplitude is the intended interpretation, not established here. -/
 def neutralCurrent : ℝ :=
   dSigmaDxDQ2 (2 * Real.pi * α ^ 2 / Q2) M (helicitySign h) x Q2 y
     (q ^ 2 * H.photonF1 + q * (η * ℓ.helicityCoupling h) * H.gammaZF1
@@ -225,18 +225,46 @@ theorem neutralCurrent_eq_add :
 
 /-- The three terms of the neutral-current cross section at a fixed coupling, propagator ratio
 and helicity, as the `photon`, `zBoson` and `gammaZInterference` fields of an
-`Electroweak.NeutralCurrentDecomposition` over the Bjorken variable and the inelasticity. -/
-def neutralCurrentDecomposition : NeutralCurrentDecomposition where
-  photon x y := photonTerm α M x Q2 y q H
-  zBoson x y := zBosonTerm α M x Q2 y η ℓ H h
-  gammaZInterference x y := gammaZTerm α M x Q2 y q η ℓ H h
+`Electroweak.NeutralCurrentDecomposition` over the Bjorken variable `x` and the inelasticity `y`,
+for structure functions `HF x y` given at each such point. -/
+def neutralCurrentDecomposition (HF : ℝ → ℝ → NeutralCurrentStructureFunctions) :
+    NeutralCurrentDecomposition where
+  photon x y := photonTerm α M x Q2 y q (HF x y)
+  zBoson x y := zBosonTerm α M x Q2 y η ℓ (HF x y) h
+  gammaZInterference x y := gammaZTerm α M x Q2 y q η ℓ (HF x y) h
+
+section neutralCurrentDecomposition
+
+variable (HF : ℝ → ℝ → NeutralCurrentStructureFunctions)
+
+@[simp]
+theorem neutralCurrentDecomposition_photon :
+    (neutralCurrentDecomposition α M Q2 q η ℓ h HF).photon x y =
+      photonTerm α M x Q2 y q (HF x y) :=
+  (rfl)
+
+@[simp]
+theorem neutralCurrentDecomposition_zBoson :
+    (neutralCurrentDecomposition α M Q2 q η ℓ h HF).zBoson x y =
+      zBosonTerm α M x Q2 y η ℓ (HF x y) h :=
+  (rfl)
+
+@[simp]
+theorem neutralCurrentDecomposition_gammaZInterference :
+    (neutralCurrentDecomposition α M Q2 q η ℓ h HF).gammaZInterference x y =
+      gammaZTerm α M x Q2 y q η ℓ (HF x y) h :=
+  (rfl)
 
 /-- The total of `neutralCurrentDecomposition` is the neutral-current cross section. -/
+@[simp]
 theorem totalNeutralCurrent_neutralCurrentDecomposition :
-    totalNeutralCurrent (neutralCurrentDecomposition α M Q2 q η ℓ H h) x y =
-      neutralCurrent α M x Q2 y q η ℓ H h := by
-  rw [totalNeutralCurrent_decompose, neutralCurrent_eq_add]
-  exact add_right_comm _ _ _
+    totalNeutralCurrent (neutralCurrentDecomposition α M Q2 q η ℓ h HF) x y =
+      neutralCurrent α M x Q2 y q η ℓ (HF x y) h := by
+  rw [totalNeutralCurrent_decompose, neutralCurrentDecomposition_photon,
+    neutralCurrentDecomposition_zBoson, neutralCurrentDecomposition_gammaZInterference,
+    neutralCurrent_eq_add, add_right_comm]
+
+end neutralCurrentDecomposition
 
 /-- At zero target mass and with electromagnetic structure functions obeying the Callan-Gross
 relation, the pure-photon term is `q²` times the one-photon-exchange cross section
@@ -270,14 +298,6 @@ theorem zBosonTerm_eta_zero : zBosonTerm α M x Q2 y 0 ℓ H h = 0 := by
 theorem neutralCurrent_eta_zero :
     neutralCurrent α M x Q2 y q 0 ℓ H h = photonTerm α M x Q2 y q H := by
   rw [neutralCurrent_eq_add, gammaZTerm_eta_zero, zBosonTerm_eta_zero, add_zero, add_zero]
-
-/-- **The electromagnetic limit.** Switching off the `Z` exchange, a beam of unit charge at zero
-target mass and with Callan-Gross structure functions has the one-photon-exchange cross section
-`loNCdSigma`, whatever its helicity and its neutral-current couplings. -/
-theorem neutralCurrent_eq_loNCdSigma_of_eta_zero {q : ℝ} (hq : q ^ 2 = 1)
-    (hCG : Tensors.Longitudinal.IsCallanGross x H.photonF1 H.photonF2) :
-    neutralCurrent α 0 x Q2 y q 0 ℓ H h = loNCdSigma α x Q2 y H.photonF2 := by
-  rw [neutralCurrent_eta_zero, photonTerm_eq_loNCdSigma _ _ _ _ _ hq hCG]
 
 /-- The helicity difference of the interference term. The parity-even structure functions enter
 through the axial coupling and the parity-odd one through the vector coupling:
