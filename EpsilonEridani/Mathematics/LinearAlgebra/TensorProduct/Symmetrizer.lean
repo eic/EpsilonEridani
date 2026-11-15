@@ -6,7 +6,6 @@ Authors: The EpsilonEridani contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
-public import Mathlib.Algebra.Lie.TensorProduct
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.Idempotents
 public import TauCeti.LinearAlgebra.TensorProduct.Symmetric
@@ -23,36 +22,43 @@ factors is an involution, `P * P = 1` (`TensorProduct.comm_mul_comm`). When `2` 
 `R` it is therefore a square root of one in the algebra `Module.End R (M ⊗[R] M)`, and cuts out the
 complementary orthogonal pair of idempotents `TauCeti.halfOneAdd R (± P)`:
 
-* `TensorProduct.symmProj R M = ⅟2 • (1 + P)`, the projector onto the symmetric tensors
+* `TensorProduct.symmetrizer R M = ⅟2 • (1 + P)`, the projector onto the symmetric tensors
   `TauCeti.symmetricTensors R M`, fixed by `P`;
-* `TensorProduct.antisymmProj R M = ⅟2 • (1 - P)`, the projector onto the antisymmetric tensors
+* `TensorProduct.antisymmetrizer R M = ⅟2 • (1 - P)`, the projector onto the antisymmetric tensors
   `TauCeti.antisymmetricTensors R M`, negated by `P`.
 
 This file specialises the general results on `TauCeti.halfOneAdd` to `P`, discharging the
 hypothesis `P * P = 1`, and connects the two projectors to the eigenspaces of `P`: their ranges are
 `TauCeti.symmetricTensors R M` and `TauCeti.antisymmetricTensors R M`, whose complementarity is
 `TauCeti.isCompl_symmetricTensors_antisymmetricTensors`. The exchange operator commutes with the
-action `x ↦ x ⊗ 1 + 1 ⊗ x` of every element `x` of a Lie algebra acting on `M`, so both parts are
-invariant under it. For `M` finite free of rank `n`, the trace of the exchange operator is `n`, so
-the symmetric and antisymmetric parts have ranks `n (n + 1) / 2` and `n (n - 1) / 2`.
+diagonal action `f ⊗ 1 + 1 ⊗ f` of every endomorphism `f` of `M`, so both parts are invariant
+under it; this is the form in which an element of a Lie algebra acting on `M` acts on the tensor
+square. For `M` finite free of rank `n`, the trace of the exchange operator is `n`, and the traces
+of the symmetrizer and the antisymmetrizer are `n (n + 1) / 2` and `n (n - 1) / 2` as elements of
+`R`. Over a field of characteristic zero these traces are the dimensions of the symmetric and
+antisymmetric parts; that rank statement is not formalised here.
 
 ## Main definitions
 
-* `TensorProduct.symmProj`, `TensorProduct.antisymmProj`: the projectors onto the symmetric and
-  antisymmetric parts of `M ⊗[R] M`.
+* `TensorProduct.symmetrizer`, `TensorProduct.antisymmetrizer`: the projectors onto the symmetric
+  and antisymmetric parts of `M ⊗[R] M`.
 
 ## Main results
 
 * `TensorProduct.comm_mul_comm`: the exchange operator is an involution.
 * `TensorProduct.trace_comm`: its trace is `Module.finrank R M`.
-* `TensorProduct.completeOrthogonalIdempotents_antisymmProj_symmProj`: the two projectors are
-  complete orthogonal idempotents.
-* `TensorProduct.comm_eq_symmProj_sub_antisymmProj`: the spectral decomposition of the exchange
-  operator.
-* `TensorProduct.range_symmProj`, `TensorProduct.range_antisymmProj`: the projectors project onto
-  the symmetric and antisymmetric tensors.
-* `TensorProduct.trace_symmProj`, `TensorProduct.trace_antisymmProj`: the traces of the projectors.
-* `TensorProduct.commute_toEnd_comm`: the exchange commutes with the action of a Lie algebra.
+* `TensorProduct.completeOrthogonalIdempotents_antisymmetrizer_symmetrizer`: the two projectors
+  are complete orthogonal idempotents.
+* `TensorProduct.comm_eq_symmetrizer_sub_antisymmetrizer`: the spectral decomposition of the
+  exchange operator.
+* `TensorProduct.range_symmetrizer`, `TensorProduct.range_antisymmetrizer`: the projectors project
+  onto the symmetric and antisymmetric tensors.
+* `TensorProduct.trace_symmetrizer`, `TensorProduct.trace_antisymmetrizer`: the traces of the
+  projectors.
+* `TensorProduct.commute_rTensor_add_lTensor_comm`,
+  `TensorProduct.commute_rTensor_add_lTensor_symmetrizer`,
+  `TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer`: the exchange and the two projectors
+  commute with the diagonal action `f ⊗ 1 + 1 ⊗ f` of an endomorphism `f` of `M`.
 -/
 
 @[expose] public section
@@ -75,36 +81,28 @@ theorem comm_mul_comm :
     (TensorProduct.comm R M M).toLinearMap * (TensorProduct.comm R M M).toLinearMap = 1 :=
   comm_comp_comm R M M
 
+variable {R M}
+
+/-- For every endomorphism `f` of `M`, the diagonal action `f ⊗ 1 + 1 ⊗ f` of `f` on `M ⊗[R] M`
+commutes with the exchange of the two factors. -/
+theorem commute_rTensor_add_lTensor_comm (f : Module.End R M) :
+    Commute (f.rTensor M + f.lTensor M) (TensorProduct.comm R M M).toLinearMap := by
+  rw [Commute, SemiconjBy, Module.End.mul_eq_comp, Module.End.mul_eq_comp]
+  refine TensorProduct.ext' fun a b ↦ ?_
+  simp [add_comm]
+
 end Semiring
 
 variable (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
 
-/-- The trace of the exchange operator on the tensor square of a finite free module is its rank:
-it is the case `f = id` of `LinearMap.trace_map_self_comp_comm`. -/
+/-- The trace of the exchange operator on the tensor square of a finite free module is its
+rank. -/
 @[simp]
 theorem trace_comm [Module.Free R M] [Module.Finite R M] :
     LinearMap.trace R (M ⊗[R] M) (TensorProduct.comm R M M).toLinearMap = Module.finrank R M := by
+  -- The case `f = id` of `LinearMap.trace_map_self_comp_comm`.
   have h := LinearMap.trace_map_self_comp_comm (LinearMap.id : M →ₗ[R] M)
   rwa [TensorProduct.map_id, LinearMap.id_comp, LinearMap.id_comp, LinearMap.trace_id] at h
-
-/-! ### The action of a Lie algebra
-
-An element `x` of a Lie algebra `L` acting on `M` acts on `M ⊗[R] M` through the tensor-product
-Lie module, `⁅x, a ⊗ b⁆ = ⁅x, a⁆ ⊗ b + a ⊗ ⁅x, b⁆`. This action commutes with the exchange of
-the two factors. -/
-
-section Lie
-
-variable {R M} {L : Type*} [LieRing L] [LieAlgebra R L] [LieRingModule L M] [LieModule R L M]
-
-/-- For every element `x` of a Lie algebra acting on `M`, the action `x ⊗ 1 + 1 ⊗ x` of `x` on
-`M ⊗[R] M` commutes with the exchange of the two factors. -/
-theorem commute_toEnd_comm (x : L) :
-    Commute (LieModule.toEnd R L (M ⊗[R] M) x) (TensorProduct.comm R M M).toLinearMap := by
-  refine TensorProduct.ext' fun a b ↦ ?_
-  simp [LieModule.lie_tmul_right, add_comm]
-
-end Lie
 
 /-! ### The two projectors -/
 
@@ -114,209 +112,213 @@ variable [Invertible (2 : R)]
 
 /-- The projector `⅟2 • (1 + P)` onto the symmetric part of `M ⊗[R] M`, where `P` exchanges the
 two factors: the idempotent `TauCeti.halfOneAdd` cut out by the square root of one `P`. -/
-def symmProj : Module.End R (M ⊗[R] M) :=
+def symmetrizer : Module.End R (M ⊗[R] M) :=
   halfOneAdd R (TensorProduct.comm R M M).toLinearMap
 
 /-- The projector `⅟2 • (1 - P)` onto the antisymmetric part of `M ⊗[R] M`, where `P` exchanges
 the two factors: the idempotent `TauCeti.halfOneAdd` cut out by the square root of one `-P`. -/
-def antisymmProj : Module.End R (M ⊗[R] M) :=
+def antisymmetrizer : Module.End R (M ⊗[R] M) :=
   halfOneAdd R (-(TensorProduct.comm R M M).toLinearMap)
 
 /-- The defining formula `S = ⅟2 • (1 + P)` of the symmetrizer. -/
-theorem symmProj_def :
-    symmProj R M = ⅟(2 : R) • (1 + (TensorProduct.comm R M M).toLinearMap) :=
+theorem symmetrizer_def :
+    symmetrizer R M = ⅟(2 : R) • (1 + (TensorProduct.comm R M M).toLinearMap) :=
   halfOneAdd_def R _
 
 /-- The defining formula `A = ⅟2 • (1 - P)` of the antisymmetrizer. -/
-theorem antisymmProj_def :
-    antisymmProj R M = ⅟(2 : R) • (1 - (TensorProduct.comm R M M).toLinearMap) := by
-  rw [antisymmProj, halfOneAdd_def, sub_eq_add_neg]
+theorem antisymmetrizer_def :
+    antisymmetrizer R M = ⅟(2 : R) • (1 - (TensorProduct.comm R M M).toLinearMap) := by
+  rw [antisymmetrizer, halfOneAdd_def, sub_eq_add_neg]
 
 variable {R M}
 
 /-- The symmetrizer is the symmetric part: `S x = ⅟2 • (x + P x)`. -/
 @[simp]
-theorem symmProj_apply (x : M ⊗[R] M) :
-    symmProj R M x = ⅟(2 : R) • (x + TensorProduct.comm R M M x) := by
-  simp [symmProj_def]
+theorem symmetrizer_apply (x : M ⊗[R] M) :
+    symmetrizer R M x = ⅟(2 : R) • (x + TensorProduct.comm R M M x) := by
+  simp [symmetrizer_def]
 
 /-- The antisymmetrizer is the antisymmetric part: `A x = ⅟2 • (x - P x)`. -/
 @[simp]
-theorem antisymmProj_apply (x : M ⊗[R] M) :
-    antisymmProj R M x = ⅟(2 : R) • (x - TensorProduct.comm R M M x) := by
-  simp [antisymmProj_def]
+theorem antisymmetrizer_apply (x : M ⊗[R] M) :
+    antisymmetrizer R M x = ⅟(2 : R) • (x - TensorProduct.comm R M M x) := by
+  simp [antisymmetrizer_def]
 
 variable (R M)
 
 /-- The symmetric and antisymmetric parts exhaust the tensor square. -/
 @[simp]
-theorem symmProj_add_antisymmProj : symmProj R M + antisymmProj R M = 1 :=
+theorem symmetrizer_add_antisymmetrizer : symmetrizer R M + antisymmetrizer R M = 1 :=
   halfOneAdd_add_halfOneAdd_neg R _
 
 /-- The symmetric and antisymmetric parts exhaust the tensor square, in the reversed addition
 order. -/
 @[simp]
-theorem antisymmProj_add_symmProj : antisymmProj R M + symmProj R M = 1 := by
-  rw [add_comm, symmProj_add_antisymmProj]
+theorem antisymmetrizer_add_symmetrizer : antisymmetrizer R M + symmetrizer R M = 1 := by
+  rw [add_comm, symmetrizer_add_antisymmetrizer]
 
 /-- The antisymmetrizer is the complement of the symmetrizer. -/
-theorem antisymmProj_eq_one_sub : antisymmProj R M = 1 - symmProj R M :=
+theorem antisymmetrizer_eq_one_sub : antisymmetrizer R M = 1 - symmetrizer R M :=
   halfOneAdd_neg_eq_one_sub R _
 
 /-- The symmetrizer is the complement of the antisymmetrizer. -/
-theorem symmProj_eq_one_sub : symmProj R M = 1 - antisymmProj R M :=
-  eq_sub_of_add_eq (symmProj_add_antisymmProj R M)
+theorem symmetrizer_eq_one_sub : symmetrizer R M = 1 - antisymmetrizer R M :=
+  eq_sub_of_add_eq (symmetrizer_add_antisymmetrizer R M)
 
 /-- The spectral decomposition of the exchange operator: `P = S - A`. -/
-theorem comm_eq_symmProj_sub_antisymmProj :
-    (TensorProduct.comm R M M).toLinearMap = symmProj R M - antisymmProj R M :=
+theorem comm_eq_symmetrizer_sub_antisymmetrizer :
+    (TensorProduct.comm R M M).toLinearMap = symmetrizer R M - antisymmetrizer R M :=
   (halfOneAdd_sub_halfOneAdd_neg R _).symm
 
 /-- The symmetrizer is idempotent. -/
-theorem isIdempotentElem_symmProj : IsIdempotentElem (symmProj R M) :=
+theorem isIdempotentElem_symmetrizer : IsIdempotentElem (symmetrizer R M) :=
   isIdempotentElem_halfOneAdd R (comm_mul_comm R M)
 
 /-- The antisymmetrizer is idempotent. -/
-theorem isIdempotentElem_antisymmProj : IsIdempotentElem (antisymmProj R M) :=
+theorem isIdempotentElem_antisymmetrizer : IsIdempotentElem (antisymmetrizer R M) :=
   isIdempotentElem_halfOneAdd_neg R (comm_mul_comm R M)
 
 /-- The antisymmetrizer squares to itself. -/
 @[simp]
-theorem antisymmProj_mul_self : antisymmProj R M * antisymmProj R M = antisymmProj R M :=
-  (isIdempotentElem_antisymmProj R M).eq
+theorem antisymmetrizer_mul_self :
+    antisymmetrizer R M * antisymmetrizer R M = antisymmetrizer R M :=
+  (isIdempotentElem_antisymmetrizer R M).eq
 
 /-- The symmetrizer squares to itself. -/
 @[simp]
-theorem symmProj_mul_self : symmProj R M * symmProj R M = symmProj R M :=
-  (isIdempotentElem_symmProj R M).eq
+theorem symmetrizer_mul_self : symmetrizer R M * symmetrizer R M = symmetrizer R M :=
+  (isIdempotentElem_symmetrizer R M).eq
 
 /-- The antisymmetric and symmetric parts are orthogonal. -/
 @[simp]
-theorem antisymmProj_mul_symmProj : antisymmProj R M * symmProj R M = 0 :=
+theorem antisymmetrizer_mul_symmetrizer : antisymmetrizer R M * symmetrizer R M = 0 :=
   halfOneAdd_neg_mul_halfOneAdd R (comm_mul_comm R M)
 
 /-- The symmetric and antisymmetric parts are orthogonal. -/
 @[simp]
-theorem symmProj_mul_antisymmProj : symmProj R M * antisymmProj R M = 0 :=
+theorem symmetrizer_mul_antisymmetrizer : symmetrizer R M * antisymmetrizer R M = 0 :=
   halfOneAdd_mul_halfOneAdd_neg R (comm_mul_comm R M)
 
 /-- The antisymmetrizer and the symmetrizer are complete orthogonal idempotents: the tensor
 square is the direct sum of its antisymmetric and symmetric parts. In submodule form this is
-`TauCeti.isCompl_symmetricTensors_antisymmetricTensors`, through `TensorProduct.range_symmProj`
-and `TensorProduct.range_antisymmProj`. -/
-theorem completeOrthogonalIdempotents_antisymmProj_symmProj :
-    CompleteOrthogonalIdempotents ![antisymmProj R M, symmProj R M] := by
-  rw [symmProj_eq_one_sub]
-  exact .of_isIdempotentElem (isIdempotentElem_antisymmProj R M)
+`TauCeti.isCompl_symmetricTensors_antisymmetricTensors`, through `TensorProduct.range_symmetrizer`
+and `TensorProduct.range_antisymmetrizer`. -/
+theorem completeOrthogonalIdempotents_antisymmetrizer_symmetrizer :
+    CompleteOrthogonalIdempotents ![antisymmetrizer R M, symmetrizer R M] := by
+  rw [symmetrizer_eq_one_sub]
+  exact .of_isIdempotentElem (isIdempotentElem_antisymmetrizer R M)
 
 /-- The exchange operator acts by `-1` on the antisymmetric part: `P * A = -A`. -/
 @[simp]
-theorem comm_mul_antisymmProj :
-    (TensorProduct.comm R M M).toLinearMap * antisymmProj R M = -antisymmProj R M := by
-  rw [antisymmProj_def, mul_smul_comm, mul_sub, mul_one, comm_mul_comm]
+theorem comm_mul_antisymmetrizer :
+    (TensorProduct.comm R M M).toLinearMap * antisymmetrizer R M = -antisymmetrizer R M := by
+  rw [antisymmetrizer_def, mul_smul_comm, mul_sub, mul_one, comm_mul_comm]
   match_scalars <;> simp
 
 /-- The exchange operator acts by `-1` on the antisymmetric part: `A * P = -A`. -/
 @[simp]
-theorem antisymmProj_mul_comm :
-    antisymmProj R M * (TensorProduct.comm R M M).toLinearMap = -antisymmProj R M := by
-  rw [antisymmProj_def, smul_mul_assoc, sub_mul, one_mul, comm_mul_comm]
+theorem antisymmetrizer_mul_comm :
+    antisymmetrizer R M * (TensorProduct.comm R M M).toLinearMap = -antisymmetrizer R M := by
+  rw [antisymmetrizer_def, smul_mul_assoc, sub_mul, one_mul, comm_mul_comm]
   match_scalars <;> simp
 
 /-- The exchange operator acts by `1` on the symmetric part: `P * S = S`. -/
 @[simp]
-theorem comm_mul_symmProj :
-    (TensorProduct.comm R M M).toLinearMap * symmProj R M = symmProj R M := by
-  rw [symmProj_def, mul_smul_comm, mul_add, mul_one, comm_mul_comm, add_comm]
+theorem comm_mul_symmetrizer :
+    (TensorProduct.comm R M M).toLinearMap * symmetrizer R M = symmetrizer R M := by
+  rw [symmetrizer_def, mul_smul_comm, mul_add, mul_one, comm_mul_comm, add_comm]
 
 /-- The exchange operator acts by `1` on the symmetric part: `S * P = S`. -/
 @[simp]
-theorem symmProj_mul_comm :
-    symmProj R M * (TensorProduct.comm R M M).toLinearMap = symmProj R M := by
-  rw [symmProj_def, smul_mul_assoc, add_mul, one_mul, comm_mul_comm, add_comm]
+theorem symmetrizer_mul_comm :
+    symmetrizer R M * (TensorProduct.comm R M M).toLinearMap = symmetrizer R M := by
+  rw [symmetrizer_def, smul_mul_assoc, add_mul, one_mul, comm_mul_comm, add_comm]
 
 /-! ### The ranges of the projectors -/
 
 variable {R M}
 
 /-- The antisymmetrizer fixes exactly the antisymmetric tensors. -/
-theorem antisymmProj_apply_eq_self_iff (x : M ⊗[R] M) :
-    antisymmProj R M x = x ↔ x ∈ antisymmetricTensors R M := by
+theorem antisymmetrizer_apply_eq_self_iff (x : M ⊗[R] M) :
+    antisymmetrizer R M x = x ↔ x ∈ antisymmetricTensors R M := by
   rw [mem_antisymmetricTensors]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have := congr($(comm_mul_antisymmProj R M) x)
+  · have := congr($(comm_mul_antisymmetrizer R M) x)
     rwa [Module.End.mul_apply, LinearMap.neg_apply, h, LinearEquiv.coe_coe] at this
-  · rw [antisymmProj_apply, h, sub_neg_eq_add, ← two_smul R x, invOf_smul_smul]
+  · rw [antisymmetrizer_apply, h, sub_neg_eq_add, ← two_smul R x, invOf_smul_smul]
 
 /-- The symmetrizer fixes exactly the symmetric tensors. -/
-theorem symmProj_apply_eq_self_iff (x : M ⊗[R] M) :
-    symmProj R M x = x ↔ x ∈ symmetricTensors R M := by
+theorem symmetrizer_apply_eq_self_iff (x : M ⊗[R] M) :
+    symmetrizer R M x = x ↔ x ∈ symmetricTensors R M := by
   rw [mem_symmetricTensors]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have := congr($(comm_mul_symmProj R M) x)
+  · have := congr($(comm_mul_symmetrizer R M) x)
     rwa [Module.End.mul_apply, h, LinearEquiv.coe_coe] at this
-  · rw [symmProj_apply, h, ← two_smul R x, invOf_smul_smul]
+  · rw [symmetrizer_apply, h, ← two_smul R x, invOf_smul_smul]
 
 variable (R M)
 
 /-- The antisymmetrizer projects onto the antisymmetric tensors. -/
-theorem range_antisymmProj : LinearMap.range (antisymmProj R M) = antisymmetricTensors R M := by
+theorem range_antisymmetrizer :
+    LinearMap.range (antisymmetrizer R M) = antisymmetricTensors R M := by
   ext x
-  rw [LinearMap.IsIdempotentElem.mem_range_iff (isIdempotentElem_antisymmProj R M),
-    antisymmProj_apply_eq_self_iff]
+  rw [LinearMap.IsIdempotentElem.mem_range_iff (isIdempotentElem_antisymmetrizer R M),
+    antisymmetrizer_apply_eq_self_iff]
 
 /-- The symmetrizer projects onto the symmetric tensors. -/
-theorem range_symmProj : LinearMap.range (symmProj R M) = symmetricTensors R M := by
+theorem range_symmetrizer : LinearMap.range (symmetrizer R M) = symmetricTensors R M := by
   ext x
-  rw [LinearMap.IsIdempotentElem.mem_range_iff (isIdempotentElem_symmProj R M),
-    symmProj_apply_eq_self_iff]
+  rw [LinearMap.IsIdempotentElem.mem_range_iff (isIdempotentElem_symmetrizer R M),
+    symmetrizer_apply_eq_self_iff]
 
 /-! ### Traces -/
 
 /-- The trace of the symmetrizer on the tensor square of a finite free module of rank `n` is
-`n (n + 1) / 2`, the rank of the symmetric part. -/
-theorem trace_symmProj [Module.Free R M] [Module.Finite R M] :
-    LinearMap.trace R (M ⊗[R] M) (symmProj R M) =
+`n (n + 1) / 2`. Over a field of characteristic zero this is the dimension of the symmetric part,
+which is not formalised here. -/
+theorem trace_symmetrizer [Module.Free R M] [Module.Finite R M] :
+    LinearMap.trace R (M ⊗[R] M) (symmetrizer R M) =
       ⅟(2 : R) * (Module.finrank R M * (Module.finrank R M + 1)) := by
+  -- `Module.finrank_tensorProduct` needs `StrongRankCondition R`, which `Nontrivial R` supplies;
+  -- over a trivial ring both sides are equal.
   cases subsingleton_or_nontrivial R
   · exact Subsingleton.elim _ _
-  rw [symmProj_def, map_smul, map_add, LinearMap.trace_one, trace_comm,
+  rw [symmetrizer_def, map_smul, map_add, LinearMap.trace_one, trace_comm,
     Module.finrank_tensorProduct, smul_eq_mul]
   push_cast
   ring
 
 /-- The trace of the antisymmetrizer on the tensor square of a finite free module of rank `n` is
-`n (n - 1) / 2`, the rank of the antisymmetric part. -/
-theorem trace_antisymmProj [Module.Free R M] [Module.Finite R M] :
-    LinearMap.trace R (M ⊗[R] M) (antisymmProj R M) =
+`n (n - 1) / 2`. Over a field of characteristic zero this is the dimension of the antisymmetric
+part, which is not formalised here. -/
+theorem trace_antisymmetrizer [Module.Free R M] [Module.Finite R M] :
+    LinearMap.trace R (M ⊗[R] M) (antisymmetrizer R M) =
       ⅟(2 : R) * (Module.finrank R M * (Module.finrank R M - 1)) := by
+  -- `Module.finrank_tensorProduct` needs `StrongRankCondition R`, which `Nontrivial R` supplies;
+  -- over a trivial ring both sides are equal.
   cases subsingleton_or_nontrivial R
   · exact Subsingleton.elim _ _
-  rw [antisymmProj_def, map_smul, map_sub, LinearMap.trace_one, trace_comm,
+  rw [antisymmetrizer_def, map_smul, map_sub, LinearMap.trace_one, trace_comm,
     Module.finrank_tensorProduct, smul_eq_mul]
   push_cast
   ring
 
-/-! ### Invariance under a Lie algebra -/
+/-! ### Invariance under the diagonal action -/
 
-section Lie
+variable {R M}
 
-variable {R M} {L : Type*} [LieRing L] [LieAlgebra R L] [LieRingModule L M] [LieModule R L M]
-
-/-- For every element `x` of a Lie algebra acting on `M`, the action `x ⊗ 1 + 1 ⊗ x` of `x` on
+/-- For every endomorphism `f` of `M`, the diagonal action `f ⊗ 1 + 1 ⊗ f` of `f` on
 `M ⊗[R] M` commutes with the antisymmetrizer, so the antisymmetric part is an invariant
 subspace. -/
-theorem commute_toEnd_antisymmProj (x : L) :
-    Commute (LieModule.toEnd R L (M ⊗[R] M) x) (antisymmProj R M) :=
-  (commute_halfOneAdd R (commute_toEnd_comm x).symm.neg_left).symm
+theorem commute_rTensor_add_lTensor_antisymmetrizer (f : Module.End R M) :
+    Commute (f.rTensor M + f.lTensor M) (antisymmetrizer R M) :=
+  (commute_halfOneAdd R (commute_rTensor_add_lTensor_comm f).symm.neg_left).symm
 
-/-- For every element `x` of a Lie algebra acting on `M`, the action `x ⊗ 1 + 1 ⊗ x` of `x` on
+/-- For every endomorphism `f` of `M`, the diagonal action `f ⊗ 1 + 1 ⊗ f` of `f` on
 `M ⊗[R] M` commutes with the symmetrizer, so the symmetric part is an invariant subspace. -/
-theorem commute_toEnd_symmProj (x : L) :
-    Commute (LieModule.toEnd R L (M ⊗[R] M) x) (symmProj R M) :=
-  (commute_halfOneAdd R (commute_toEnd_comm x).symm).symm
-
-end Lie
+theorem commute_rTensor_add_lTensor_symmetrizer (f : Module.End R M) :
+    Commute (f.rTensor M + f.lTensor M) (symmetrizer R M) :=
+  (commute_halfOneAdd R (commute_rTensor_add_lTensor_comm f).symm).symm
 
 end Projectors
 
