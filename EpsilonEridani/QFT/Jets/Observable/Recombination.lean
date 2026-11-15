@@ -482,6 +482,15 @@ section InfraredSafety
 
 variable [Zero V] {R : RecombinationScheme V}
 
+/-- For a scheme that leaves the pseudojet `a` unchanged when a vanishing momentum is merged into it
+and whose merge map is continuous there, the observable `J` evaluated on the final state with `p`
+merged into `a` tends to `J (a ::ₘ t)` as `p` tends to `0`, provided `J` is continuous at `a`. -/
+theorem RecombinationScheme.tendsto_merge_cons [TopologicalSpace V] [TopologicalSpace X]
+    {J : Multiset V → X} {a : V} {t : Multiset V} (hR : R.merge a 0 = a)
+    (hRc : ContinuousAt (R.merge a) 0) (hJc : ContinuousAt (fun v : V => J (v ::ₘ t)) a) :
+    Tendsto (fun p : V => J (R.merge a p ::ₘ t)) (𝓝 0) (𝓝 (J (a ::ₘ t))) := by
+  simpa [Function.comp_def, hR] using (hJc.comp_of_eq hRc hR).tendsto
+
 /-- An observable `J` that is unchanged near `p = 0` when the added momentum `p` of the final state
 `p ::ₘ a ::ₘ t` is merged into the pseudojet `a` tends to `J (a ::ₘ t)` as `p` tends to `0`, for a
 scheme that leaves `a` unchanged when a vanishing momentum is merged into it and whose merge map
@@ -493,9 +502,8 @@ theorem RecombinationScheme.tendsto_cons_of_merge_zero [TopologicalSpace V] [Top
     {J : Multiset V → X} {a : V} {t : Multiset V} (hR : R.merge a 0 = a)
     (hRc : ContinuousAt (R.merge a) 0) (hJc : ContinuousAt (fun v : V => J (v ::ₘ t)) a)
     (hJ : ∀ᶠ p : V in 𝓝 0, J (p ::ₘ a ::ₘ t) = J (R.merge a p ::ₘ t)) :
-    Tendsto (fun p : V => J (p ::ₘ a ::ₘ t)) (𝓝 0) (𝓝 (J (a ::ₘ t))) := by
-  refine Tendsto.congr' (hJ.mono fun p hp => hp.symm) ?_
-  simpa [Function.comp_def, hR] using (hJc.comp_of_eq hRc hR).tendsto
+    Tendsto (fun p : V => J (p ::ₘ a ::ₘ t)) (𝓝 0) (𝓝 (J (a ::ₘ t))) :=
+  (tendsto_merge_cons hR hRc hJc).congr' (hJ.mono fun _ hp => hp.symm)
 
 /-- For a unital scheme whose merge map is continuous at a vanishing momentum, an observable is
 infrared safe if it absorbs a vanishingly soft momentum added to the empty final state and if, at
@@ -512,18 +520,20 @@ theorem RecombinationScheme.IsUnital.isInfraredSafe [TopologicalSpace V] [Topolo
   rcases eq_or_ne s 0 with rfl | hs
   · exact h0
   refine tendsto_iff_forall_eventually_mem.2 fun U hU => ?_
+  -- The pseudojet absorbing `p` depends on `p`, so the limit is taken for each of the finitely
+  -- many `a ∈ s` and every decomposition `s = a ::ₘ t`, and the results are intersected.
   have hmem : ∀ a ∈ s, ∀ᶠ p : V in 𝓝 0, ∀ t : Multiset V, s = a ::ₘ t →
       ContinuousAt (fun v : V => J (v ::ₘ t)) a → J (R.merge a p ::ₘ t) ∈ U := by
     intro a ha
     obtain ⟨t, rfl⟩ := Multiset.exists_cons_of_mem ha
     by_cases hc : ContinuousAt (fun v : V => J (v ::ₘ t)) a
-    · have hT : Tendsto (fun p : V => J (R.merge a p ::ₘ t)) (𝓝 0) (𝓝 (J (a ::ₘ t))) := by
-        simpa [Function.comp_def, hR.merge_zero a] using
-          (hc.comp_of_eq (hRc a) (hR.merge_zero a)).tendsto
-      filter_upwards [hT.eventually_mem hU] with p hp t' ht' _
-      rwa [← (Multiset.cons_inj_right a).1 ht']
-    · exact Eventually.of_forall fun _ t' ht' hc' =>
-        absurd ((Multiset.cons_inj_right a).1 ht' ▸ hc') hc
+    · filter_upwards [(tendsto_merge_cons (hR.merge_zero a) (hRc a) hc).eventually_mem hU]
+        with p hp t' ht' _
+      obtain rfl := (Multiset.cons_inj_right a).1 ht'
+      exact hp
+    · refine Eventually.of_forall fun _ t' ht' hc' => ?_
+      obtain rfl := (Multiset.cons_inj_right a).1 ht'
+      exact absurd hc' hc
   filter_upwards [(eventually_all_finite s.finite_toSet).2 hmem, hJ s hs] with p hp hp'
   obtain ⟨a, t, rfl, hc, h⟩ := hp'
   rw [h]
