@@ -14,8 +14,10 @@ This module implements reconstruction methods for DIS invariants from experiment
 The electron method reconstructs Q², y and xBj and carries positivity and range lemmas. The Sigma
 method reconstructs y, which is `DisKinematics.yInel` under energy-momentum conservation. The
 covariant `sigmaMethod` takes its virtuality from the electron method, `Q²_Σ := Q²_e`. This
-coincides with the canonical `DisKinematics.Q2` only without initial-state radiation; after
-collinear initial-state radiation the virtuality is rescaled (`Kinematics.Radiative`), so the
+coincides with the canonical `DisKinematics.Q2` only without radiation; after collinear radiation
+from either lepton line the virtuality is rescaled
+(`RadiativeEvent.trueInvariants_Q2_of_collinear_initialState`,
+`RadiativeEvent.electronMethod_Q2_of_collinear_finalState` in `Kinematics.Radiative`), so the
 Sigma-method shift is stated there in `(x, y)`.
 
 ## Access Methods
@@ -64,8 +66,8 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
     Q² = 4 * E_e * E_e' * sin²(θ/2), where E_e is initial electron energy,
     E_e' is final electron energy, and θ is the scattering angle. Its `yElectron` and
     `xBjElectron` are the target-rest-frame (fixed-target) expressions, which use
-    `p·k = M_p E_e`; there the covariant `electronMethod` reduces to them
-    (`electronMethod_eq_xBjElectron_q2Electron_yElectron`). -/
+    `p·k = M_p E_e`; there, for massless leptons and a symmetric form, the covariant
+    `electronMethod` reduces to them (`electronMethod_eq_xBjElectron_q2Electron_yElectron`). -/
 structure ElectronMethodData where
   /-- Initial electron energy. -/
   initialEnergy : ℝ
@@ -194,9 +196,10 @@ end ReconstructedInvariants
 
 /-- The electron method, from the incoming lepton `k`, the target `p` and the scattered lepton
 `k'`: the invariants of the lepton momentum transfer `q_e = k - k'`, that is `Q²_e = -q_e²`,
-`y_e = (p·q_e) / (p·k)` and `x_e = Q²_e / (2 p·q_e)`. In the target rest frame it reduces to the
-expressions of `ElectronMethodData` in terms of the beam energy, the scattered energy, the
-scattering angle and the target mass (`electronMethod_eq_xBjElectron_q2Electron_yElectron`). -/
+`y_e = (p·q_e) / (p·k)` and `x_e = Q²_e / (2 p·q_e)`. In the target rest frame, for massless
+leptons and a symmetric form `g`, it reduces to the expressions of `ElectronMethodData` in terms of
+the beam energy, the scattered energy, the scattering angle and the target mass
+(`electronMethod_eq_xBjElectron_q2Electron_yElectron`). -/
 @[simps (rhsMd := .default)]
 def electronMethod (g : Bilin V) (k p kPrime : V) : ReconstructedInvariants :=
   .ofTransfer g k p (k - kPrime)
@@ -228,6 +231,11 @@ def sigmaMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants wher
   x := (electronMethod g k p kPrime).Q2 / (2 * g p k * SigmaMethodData.ySigma ⟨pX, kPrime, p⟩ g)
   Q2 := (electronMethod g k p kPrime).Q2
   y := SigmaMethodData.ySigma ⟨pX, kPrime, p⟩ g
+
+/-- The Sigma-method inelasticity is `y_Σ = p·(p_X - p) / (p·(p_X - p) + p·k')`. -/
+theorem sigmaMethod_y_eq (g : Bilin V) (k p kPrime pX : V) :
+    (sigmaMethod g k p kPrime pX).y = g p (pX - p) / (g p (pX - p) + g p kPrime) := by
+  rw [sigmaMethod_y, SigmaMethodData.ySigma]
 
 /-- The mixed method of Bentvelsen, Engelen and Kooijman, from all four measured momenta: the
 virtuality `Q²_e` of the electron method, the inelasticity `y_h` of the hadronic method, and
@@ -272,6 +280,18 @@ theorem electronMethod_eq_xBj_Q2_yInel (g : Bilin V) (K : DisKinematics V) :
     electronMethod g K.k K.p K.kPrime = ⟨K.xBj g, K.Q2 g, K.yInel g⟩ := by
   rw [electronMethod, ← K.hq, ReconstructedInvariants.ofTransfer_eq_xBj_Q2_yInel]
 
+/-- For massless leptons with `k·k' = E E' (1 - cos θ)` at the scattering angle `θ`, for the beam
+energy `E` and the scattered energy `E'`, and a symmetric form `g`, the electron-method virtuality
+is `ElectronMethodData.q2Electron`, `Q²_e = 4 E E' sin²(θ/2)`. -/
+theorem electronMethod_Q2_eq_q2Electron (d : ElectronMethodData) (g : Bilin V) (hg : g.IsSymm)
+    {k p kPrime : V} (hk : g k k = 0) (hk' : g kPrime kPrime = 0)
+    (hkk' : g k kPrime = d.initialEnergy * d.finalEnergy * (1 - Real.cos d.theta)) :
+    (electronMethod g k p kPrime).Q2 = d.q2Electron := by
+  rw [electronMethod_Q2, ElectronMethodData.q2Electron, Real.sin_sq_eq_half_sub,
+    mul_div_cancel₀ _ two_ne_zero]
+  simp only [map_sub, LinearMap.sub_apply, hk, hk', hg.eq kPrime k, hkk']
+  ring
+
 /-- In the rest frame of a target of mass `M`, where `p·k = M E` and `p·k' = M E'` for the beam
 energy `E` and the scattered energy `E'`, and for massless leptons with `k·k' = E E' (1 - cos θ)`
 at the scattering angle `θ`, the covariant electron method returns the target-rest-frame
@@ -284,16 +304,12 @@ theorem electronMethod_eq_xBjElectron_q2Electron_yElectron (d : ElectronMethodDa
     (hpk : g p k = M * d.initialEnergy) (hpk' : g p kPrime = M * d.finalEnergy) :
     electronMethod g k p kPrime = ⟨d.xBjElectron M, d.q2Electron, d.yElectron⟩ := by
   have hE : d.initialEnergy ≠ 0 := (d.energy_loss.1.trans d.energy_loss.2).ne'
-  have hQ : -g (k - kPrime) (k - kPrime) = d.q2Electron := by
-    rw [ElectronMethodData.q2Electron, Real.sin_sq_eq_half_sub, mul_div_cancel₀ _ two_ne_zero]
-    simp only [map_sub, LinearMap.sub_apply, hk, hk', hg.eq kPrime k, hkk']
-    ring
+  have hQ := electronMethod_Q2_eq_q2Electron d g hg (p := p) hk hk' hkk'
   ext
-  · rw [electronMethod_x, hQ, map_sub, hpk, hpk', ElectronMethodData.xBjElectron,
-      ElectronMethodData.yElectron]
+  · rw [electronMethod_x, ← electronMethod_Q2 g k p kPrime, hQ, map_sub, hpk, hpk',
+      ElectronMethodData.xBjElectron, ElectronMethodData.yElectron]
     field_simp
-  · rw [electronMethod_Q2]
-    exact hQ
+  · exact hQ
   · rw [electronMethod_y, map_sub, hpk, hpk', ElectronMethodData.yElectron]
     field_simp
 
@@ -341,22 +357,6 @@ def shiftXY (r : ReconstructedInvariants) (t : TrueInvariants) : ℝ × ℝ :=
   simp [Prod.ext_iff, sub_eq_zero]
 
 end ReconstructedInvariants
-
-namespace TrueInvariants
-
-/-- The `(x, Q²)` shift of an exact measurement of the true invariants vanishes. -/
-@[simp] theorem shiftXQ2_toReconstructedInvariants (t : TrueInvariants) :
-    t.toReconstructedInvariants.shiftXQ2 t = 0 :=
-  ReconstructedInvariants.shiftXQ2_eq_zero_iff.2
-    ⟨toReconstructedInvariants_x t, toReconstructedInvariants_Q2 t⟩
-
-/-- The `(x, y)` shift of an exact measurement of the true invariants vanishes. -/
-@[simp] theorem shiftXY_toReconstructedInvariants (t : TrueInvariants) :
-    t.toReconstructedInvariants.shiftXY t = 0 :=
-  ReconstructedInvariants.shiftXY_eq_zero_iff.2
-    ⟨toReconstructedInvariants_x t, toReconstructedInvariants_y t⟩
-
-end TrueInvariants
 
 end Covariant
 

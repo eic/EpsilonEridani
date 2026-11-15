@@ -159,7 +159,7 @@ whichever line radiates (`leptonIn_sub_leptonOut_eq_pX_sub_p`). -/
 def trueMomentumTransfer : V := e.pX - e.p
 
 omit [Module ℝ V] in
-@[simp] theorem trueMomentumTransfer_eq : e.trueMomentumTransfer = e.pX - e.p := (rfl)
+theorem trueMomentumTransfer_eq : e.trueMomentumTransfer = e.pX - e.p := (rfl)
 
 omit [Module ℝ V] in
 /-- The momentum transferred to the hadrons, `p_X - p`, is what the leptons lose besides the
@@ -309,7 +309,7 @@ theorem hardKinematics_eq_of_photon_eq_zero (h : e.photon = 0) :
 /-- Without a photon, the true invariants do not depend on the emission line. -/
 theorem trueInvariants_eq_of_photon_eq_zero (h : e.photon = 0) :
     e.trueInvariants g l = e.trueInvariants g .finalState := by
-  rw [trueInvariants, trueInvariants, hardKinematics_eq_of_photon_eq_zero l h]
+  simp only [trueInvariants, hardKinematics_eq_of_photon_eq_zero l h]
 
 /-- Without a photon, the electron method returns the true invariants. -/
 theorem electronMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
@@ -317,6 +317,12 @@ theorem electronMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
   rw [trueInvariants_toReconstructedInvariants, ← electronMethod_eq_xBj_Q2_yInel, hardKinematics_k,
     hardKinematics_p, hardKinematics_kPrime, leptonIn_of_photon_eq_zero l h,
     leptonOut_of_photon_eq_zero l h]
+
+/-- Without a photon, the electron method returns the true virtuality. -/
+theorem electronMethod_Q2_eq_trueInvariants_Q2_of_photon_eq_zero (h : e.photon = 0) :
+    (electronMethod g e.k e.p e.kPrime).Q2 = (e.trueInvariants g l).Q2 := by
+  rw [electronMethod_eq_trueInvariants_of_photon_eq_zero g l h,
+    TrueInvariants.toReconstructedInvariants_Q2]
 
 /-- Without a photon, the hadronic method returns the true invariants. -/
 theorem hadronicMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
@@ -328,9 +334,7 @@ theorem hadronicMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
 theorem sigmaMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0)
     (hpk : g e.p e.k ≠ 0) :
     sigmaMethod g e.k e.p e.kPrime e.pX = (e.trueInvariants g l).toReconstructedInvariants := by
-  have hQ : (electronMethod g e.k e.p e.kPrime).Q2 = (e.trueInvariants g l).Q2 := by
-    rw [electronMethod_eq_trueInvariants_of_photon_eq_zero g l h,
-      TrueInvariants.toReconstructedInvariants_Q2]
+  have hQ := electronMethod_Q2_eq_trueInvariants_Q2_of_photon_eq_zero g l h
   have hy : (sigmaMethod g e.k e.p e.kPrime e.pX).y = (e.trueInvariants g l).y := by
     rw [trueInvariants_eq_of_photon_eq_zero g l h,
       ← trueInvariants_eq_of_photon_eq_zero g .initialState h]
@@ -345,9 +349,7 @@ theorem sigmaMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0)
 /-- Without a photon, the mixed method returns the true invariants. -/
 theorem mixedMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
     mixedMethod g e.k e.p e.kPrime e.pX = (e.trueInvariants g l).toReconstructedInvariants := by
-  have hQ : (electronMethod g e.k e.p e.kPrime).Q2 = (e.trueInvariants g l).Q2 := by
-    rw [electronMethod_eq_trueInvariants_of_photon_eq_zero g l h,
-      TrueInvariants.toReconstructedInvariants_Q2]
+  have hQ := electronMethod_Q2_eq_trueInvariants_Q2_of_photon_eq_zero g l h
   have hy : (hadronicMethod g e.k e.p e.pX).y = (e.trueInvariants g l).y := by
     rw [hadronicMethod_eq_trueInvariants_of_photon_eq_zero g l h,
       TrueInvariants.toReconstructedInvariants_y]
