@@ -6,7 +6,7 @@ Authors: The EpsilonEridani contributors
 module
 
 public import Mathlib.Algebra.Ring.Parity
-public import PhyslibAlpha.QuantumMechanics.AngularMomentum.SelectionRules
+public import EpsilonEridani.QuantumMechanics.AngularMomentum.SelectionRulesExtensions
 
 /-!
 # Two-nucleon partial-wave channels and the deuteron channels
@@ -79,8 +79,9 @@ channels are available to a proton-neutron pair and forbidden to a like-species 
   equal parity have equal total spin.
 * `ChannelLabel.eq_tripletS1_or_eq_tripletD1_iff`: the two-nucleon channels with `J = 1` and
   positive parity are exactly `³S₁` and `³D₁`.
-* `ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`: a two-nucleon
-  channel with `J = 1` and positive parity is allowed exactly in isospin `0`.
+* `ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_odd_J_of_parity_eq_one`: a two-nucleon channel
+  of odd `J` and positive parity is allowed exactly in isospin `0`; its case `J = 1` is
+  `ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`.
 * `ChannelLabel.eq_or_S_eq_one_and_L_add_one_eq_J_of_pauliAllowed`: allowed two-nucleon channels
   sharing `J`, parity and isospin are equal or form the pair `³(J-1)_J`, `³(J+1)_J`; conversely,
   such a pair has equal parity (`ChannelLabel.parity_eq_iff`).
@@ -122,15 +123,15 @@ namespace ChannelLabel
 variable (c : ChannelLabel) (T : ℕ)
 
 theorem J_le_L_add_S : c.J ≤ c.L + c.S := by
-  have := c.triangle.1
+  obtain ⟨hJ, -, -⟩ := PhyslibAlpha.Sl2.triangleRule_two_mul_iff.1 c.triangle
   omega
 
 theorem L_le_J_add_S : c.L ≤ c.J + c.S := by
-  have := c.triangle.2.2.1
+  obtain ⟨-, -, hL⟩ := PhyslibAlpha.Sl2.triangleRule_two_mul_iff.1 c.triangle
   omega
 
 theorem S_le_J_add_L : c.S ≤ c.J + c.L := by
-  have := c.triangle.2.1
+  obtain ⟨-, hS, -⟩ := PhyslibAlpha.Sl2.triangleRule_two_mul_iff.1 c.triangle
   omega
 
 /-- The orbital angular momentum of a two-nucleon channel is `J` or, in a spin triplet, `J ∓ 1`. -/
@@ -250,15 +251,26 @@ theorem eq_tripletS1_or_eq_tripletD1_iff {c : ChannelLabel} :
   have := c.L_eq_J_or_S_eq_one
   omega
 
+/-- A two-nucleon channel of odd total angular momentum and positive parity is a spin triplet of
+even orbital angular momentum `J ∓ 1`, so it is allowed by the Pauli principle exactly in isospin
+`0`; the spin singlet of odd `J` has `L = J` odd, hence negative parity. -/
+theorem pauliAllowed_iff_isospin_eq_zero_of_odd_J_of_parity_eq_one {c : ChannelLabel} {T : ℕ}
+    (hJ : Odd c.J) (hP : c.parity = 1) (hT : T ≤ 1) :
+    c.PauliAllowed T ↔ T = 0 := by
+  refine pauliAllowed_iff_isospin_eq_zero ?_ hT
+  have := c.L_eq_J_or_S_eq_one
+  rw [parity_eq_one_iff, Nat.even_iff] at hP
+  rw [Nat.odd_iff] at hJ ⊢
+  omega
+
 /-- A two-nucleon channel with total angular momentum `1` and positive parity is allowed by the
 Pauli principle exactly in isospin `0`, the isospin of the deuteron; in isospin `1` the spin
 triplets `³S₁` and `³D₁` are forbidden, and the spin singlet with `J = 1` is `¹P₁`, of negative
 parity. -/
 theorem pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one {c : ChannelLabel} {T : ℕ}
     (hJ : c.J = 1) (hP : c.parity = 1) (hT : T ≤ 1) :
-    c.PauliAllowed T ↔ T = 0 := by
-  rcases eq_tripletS1_or_eq_tripletD1_iff.2 ⟨hJ, hP⟩ with rfl | rfl <;>
-    exact pauliAllowed_iff_isospin_eq_zero (by decide) hT
+    c.PauliAllowed T ↔ T = 0 :=
+  pauliAllowed_iff_isospin_eq_zero_of_odd_J_of_parity_eq_one (hJ ▸ odd_one) hP hT
 
 /-! ### Channels with the same conserved quantum numbers -/
 
