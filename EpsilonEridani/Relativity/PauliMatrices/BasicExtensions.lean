@@ -14,9 +14,9 @@ import Mathlib.LinearAlgebra.TensorProduct.Matrix
 # The spatial Pauli matrices: completeness and the exchange identity
 
 The Pauli matrices act on the Hilbert space `ℂ² = EuclideanSpace ℂ (Fin 2)` through
-`Matrix.toEuclideanLin`, and each squares to the identity there. The three spatial Pauli matrices
-`σ1, σ2, σ3`, which are `pauliMatrix (Sum.inr i)` for `i = 0, 1, 2`, satisfy
-`σ1 σ1 + σ2 σ2 + σ3 σ3 = 3`, and the completeness relation
+`Matrix.toEuclideanLin`. The three spatial Pauli matrices `σ1, σ2, σ3`, which are
+`pauliMatrix (Sum.inr i)` for `i = 0, 1, 2`, satisfy `σ1 σ1 + σ2 σ2 + σ3 σ3 = 3`, and the
+completeness relation
 
 `Σᵢ (σᵢ)_{αβ} (σᵢ)_{α'β'} = 2 δ_{α'β} δ_{β'α} - δ_{αβ} δ_{α'β'}`,
 
@@ -32,7 +32,6 @@ identity as `PauliMatrix.pauliCo_contr_pauliContr`.
 
 ## Main results
 
-* `PauliMatrix.toEuclideanLin_pauliMatrix_mul_self`: each Pauli matrix is an involution on `ℂ²`.
 * `PauliMatrix.sum_pauliMatrix_inr_mul_self`: `σ1 σ1 + σ2 σ2 + σ3 σ3 = 3`.
 * `PauliMatrix.sum_pauliMatrix_inr_apply_mul_pauliMatrix_inr_apply`: the completeness relation of
   the spatial Pauli matrices.
@@ -51,18 +50,11 @@ open Matrix TensorProduct
 
 namespace PauliMatrix
 
-/-- Each Pauli matrix squares to the identity as an operator on `ℂ²`. -/
-@[simp]
-theorem toEuclideanLin_pauliMatrix_mul_self (μ : Fin 1 ⊕ Fin 3) :
-    toEuclideanLin (pauliMatrix μ) * toEuclideanLin (pauliMatrix μ) = 1 := by
-  rw [Module.End.mul_eq_comp, ← toLpLin_mul_same, pauliMatrix_mul_self, toLpLin_one,
-    Module.End.one_eq_id]
-
 /-- The sum of the squares of the three spatial Pauli matrices: `σ1 σ1 + σ2 σ2 + σ3 σ3 = 3`. -/
 theorem sum_pauliMatrix_inr_mul_self :
     ∑ i : Fin 3, pauliMatrix (Sum.inr i) * pauliMatrix (Sum.inr i) = (3 : ℂ) • 1 := by
-  rw [Finset.sum_congr rfl fun i _ ↦ pauliMatrix_mul_self (Sum.inr i), Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, ← Nat.cast_smul_eq_nsmul ℂ, Nat.cast_ofNat]
+  simp only [pauliMatrix_mul_self, Finset.sum_const, Finset.card_univ, Fintype.card_fin]
+  module
 
 /-- The completeness relation of the spatial Pauli matrices:
 `Σᵢ (σᵢ)_{αβ} (σᵢ)_{α'β'} = 2 δ_{α'β} δ_{β'α} - δ_{αβ} δ_{α'β'}`. -/

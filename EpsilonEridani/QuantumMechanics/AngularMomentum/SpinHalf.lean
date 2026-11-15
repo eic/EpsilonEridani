@@ -7,23 +7,26 @@ module
 
 public import PhyslibAlpha.QuantumMechanics.AngularMomentum.SpinOrbit
 public import EpsilonEridani.Relativity.PauliMatrices.BasicExtensions
+public import EpsilonEridani.Mathematics.LinearAlgebra.TensorProduct.Symmetrizer
 
 /-!
 # The spin-`1/2` angular momentum representation
 
 The spin operators of a spin-`1/2` particle act on its spin space `ℂ² = EuclideanSpace ℂ (Fin 2)`
 as half the spatial Pauli matrices: `S₁, S₂, S₃ = σ1 / 2, σ2 / 2, σ3 / 2`. In Lean the index is
-`i : Fin 3`, and `PauliMatrix.spinGen i = pauliMatrix (Sum.inr i) / 2`, so `spinGen 0 = σ1 / 2`
+`i : Fin 3`, and `PhyslibAlpha.Sl2.spinGen i = pauliMatrix (Sum.inr i) / 2`, so `spinGen 0 = σ1 / 2`
 is `S₁`. They satisfy `S₁ S₁ + S₂ S₂ + S₃ S₃ = 3/4` and the su(2) commutation relations
 `[S₁, S₂] = i S₃` (cyclically), and so form the angular momentum representation
-`PauliMatrix.spinHalfRep` of PhyslibAlpha, to which its general results on angular momentum, such
-as `J² = J₁² + J₂² + 2 J₁ · J₂` on a tensor product
+`PhyslibAlpha.Sl2.spinHalfRep` of PhyslibAlpha, to which its general results on angular momentum,
+such as `J² = J₁² + J₂² + 2 J₁ · J₂` on a tensor product
 (`PhyslibAlpha.Sl2.AngularMomentumRepresentation.Jsq_tensor`), apply.
 
 For two spin-`1/2` systems the exchange identity `σ(1) · σ(2) = 2 P₁₂ - 1` of the Pauli matrices
 (`PauliMatrix.sum_tensorProductMap_toEuclideanLin_pauliMatrix_inr`), where `P₁₂ =
 TensorProduct.comm` swaps the two tensor factors, gives the scalar product of their spins:
-`S(1) · S(2) = (2 P₁₂ - 1) / 4`.
+`S(1) · S(2) = (2 P₁₂ - 1) / 4`. Their total spin squared is then
+`S² = S(1)² + S(2)² + 2 S(1) · S(2) = 1 + P₁₂`, twice the symmetrizer `TensorProduct.symmetrizer`
+of `ℂ² ⊗ ℂ²`.
 
 ## Implementation notes
 
@@ -35,23 +38,25 @@ states or rewrites with them must enable it with
 
 ## Main definitions
 
-* `PauliMatrix.spinGen i`: the spin operator `pauliMatrix (Sum.inr i) / 2` on `ℂ²`.
-* `PauliMatrix.spinHalfRep`: the spin-`1/2` angular momentum representation on `ℂ²`.
+* `PhyslibAlpha.Sl2.spinGen i`: the spin operator `pauliMatrix (Sum.inr i) / 2` on `ℂ²`.
+* `PhyslibAlpha.Sl2.spinHalfRep`: the spin-`1/2` angular momentum representation on `ℂ²`.
 
 ## Main results
 
-* `PauliMatrix.sum_spinGen_mul_self`: `S₁ S₁ + S₂ S₂ + S₃ S₃ = 3/4` on `ℂ²`.
-* `PauliMatrix.lie_spinGen_zero_one`, `PauliMatrix.lie_spinGen_one_two`,
-  `PauliMatrix.lie_spinGen_two_zero`: the su(2) commutation relations.
-* `PauliMatrix.Jsq_spinHalfRep`: `J² = 3/4` for spin `1/2`.
-* `PauliMatrix.dot_spinHalfRep_spinHalfRep`: `S(1) · S(2) = (2 P₁₂ - 1) / 4` on `ℂ² ⊗ ℂ²`.
+* `PhyslibAlpha.Sl2.sum_spinGen_mul_self`: `S₁ S₁ + S₂ S₂ + S₃ S₃ = 3/4` on `ℂ²`.
+* `PhyslibAlpha.Sl2.lie_spinGen_zero_one`, `PhyslibAlpha.Sl2.lie_spinGen_one_two`,
+  `PhyslibAlpha.Sl2.lie_spinGen_two_zero`: the su(2) commutation relations.
+* `PhyslibAlpha.Sl2.Jsq_spinHalfRep`: `J² = 3/4` for spin `1/2`.
+* `PhyslibAlpha.Sl2.dot_spinHalfRep_spinHalfRep`: `S(1) · S(2) = (2 P₁₂ - 1) / 4` on `ℂ² ⊗ ℂ²`.
+* `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`: the total spin squared of two spin-`1/2` systems is
+  twice the symmetrizer of `ℂ² ⊗ ℂ²`.
 -/
 
 @[expose] public section
 
-open Matrix TensorProduct
+open Matrix TensorProduct PauliMatrix
 
-namespace PauliMatrix
+namespace PhyslibAlpha.Sl2
 
 /-- The spin operator `pauliMatrix (Sum.inr i) / 2` of a spin-`1/2` particle, acting on its spin
 space `ℂ²`; `spinGen 0`, `spinGen 1`, `spinGen 2` are `S₁ = σ1 / 2`, `S₂ = σ2 / 2`,
@@ -70,12 +75,18 @@ theorem spinGen_apply (i : Fin 3) (v : EuclideanSpace ℂ (Fin 2)) :
     spinGen i v = (2 : ℂ)⁻¹ • toEuclideanLin (pauliMatrix (Sum.inr i)) v := by
   simp [spinGen_def]
 
+/-- `Matrix.toEuclideanLin` is multiplicative on square matrices: it is the algebra equivalence
+`Matrix.toLpLinAlgEquiv 2`. -/
+private theorem toEuclideanLin_mul_toEuclideanLin (A B : Matrix (Fin 2) (Fin 2) ℂ) :
+    toEuclideanLin A * toEuclideanLin B = toEuclideanLin (A * B) :=
+  (map_mul (toLpLinAlgEquiv 2) A B).symm
+
 /-- The spin Casimir of a single spin-`1/2` particle:
 `S₁ S₁ + S₂ S₂ + S₃ S₃ = s (s + 1) = 3/4`. -/
 theorem sum_spinGen_mul_self : ∑ i : Fin 3, spinGen i * spinGen i = (3 / 4 : ℂ) • 1 := by
-  simp only [spinGen_def, smul_mul_smul_comm, Module.End.mul_eq_comp, ← toLpLin_mul_same,
-    ← Finset.smul_sum, ← map_sum, sum_pauliMatrix_inr_mul_self, map_smul, toLpLin_one,
-    Module.End.one_eq_id, smul_smul]
+  simp only [spinGen_def, smul_mul_smul_comm, toEuclideanLin_mul_toEuclideanLin,
+    ← Finset.smul_sum, ← map_sum, sum_pauliMatrix_inr_mul_self, map_smul,
+    toLpLin_one, ← Module.End.one_eq_id, smul_smul]
   norm_num
 
 /-! ### The su(2) commutation relations -/
@@ -91,10 +102,8 @@ private theorem lie_spinGen_of_commutator {i j k : Fin 3}
       pauliMatrix (Sum.inr j) * pauliMatrix (Sum.inr i) =
         (2 * Complex.I) • pauliMatrix (Sum.inr k)) :
     ⁅spinGen i, spinGen j⁆ = Complex.I • spinGen k := by
-  rw [LieRing.of_associative_ring_bracket, spinGen_def, spinGen_def, spinGen_def,
-    smul_mul_smul_comm, smul_mul_smul_comm, ← smul_sub, Module.End.mul_eq_comp,
-    Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, ← map_sub, h, map_smul,
-    smul_smul, smul_smul]
+  simp only [LieRing.of_associative_ring_bracket, spinGen_def, smul_mul_smul_comm, ← smul_sub,
+    toEuclideanLin_mul_toEuclideanLin, ← map_sub, h, map_smul, smul_smul]
   congr 1
   ring
 
@@ -115,7 +124,7 @@ end Lie
 /-- The spin-`1/2` angular momentum representation on `ℂ²`, with components
 `Jx, Jy, Jz = spinGen 0, spinGen 1, spinGen 2`, that is `σ1 / 2, σ2 / 2, σ3 / 2`. -/
 noncomputable def spinHalfRep :
-    PhyslibAlpha.Sl2.AngularMomentumRepresentation (EuclideanSpace ℂ (Fin 2)) where
+    AngularMomentumRepresentation (EuclideanSpace ℂ (Fin 2)) where
   Jx := spinGen 0
   Jy := spinGen 1
   Jz := spinGen 2
@@ -134,19 +143,30 @@ noncomputable def spinHalfRep :
 
 /-- The angular momentum squared of spin `1/2`: `J² = s (s + 1) = 3/4`. -/
 theorem Jsq_spinHalfRep : spinHalfRep.Jsq = (3 / 4 : ℂ) • 1 := by
-  rw [PhyslibAlpha.Sl2.AngularMomentumRepresentation.Jsq, ← sum_spinGen_mul_self,
+  rw [AngularMomentumRepresentation.Jsq, ← sum_spinGen_mul_self,
     Fin.sum_univ_three, spinHalfRep_Jx, spinHalfRep_Jy, spinHalfRep_Jz]
 
 /-- The scalar product of the spins of two spin-`1/2` systems, through the exchange identity:
 `S(1) · S(2) = (σ(1) · σ(2)) / 4 = (2 P₁₂ - 1) / 4`. -/
 theorem dot_spinHalfRep_spinHalfRep :
-    PhyslibAlpha.Sl2.AngularMomentumRepresentation.dot spinHalfRep spinHalfRep =
+    AngularMomentumRepresentation.dot spinHalfRep spinHalfRep =
       (4 : ℂ)⁻¹ • ((2 : ℂ) • (TensorProduct.comm ℂ (EuclideanSpace ℂ (Fin 2))
         (EuclideanSpace ℂ (Fin 2))).toLinearMap - 1) := by
-  rw [← sum_tensorProductMap_toEuclideanLin_pauliMatrix_inr, Fin.sum_univ_three,
-    PhyslibAlpha.Sl2.AngularMomentumRepresentation.dot, spinHalfRep_Jx, spinHalfRep_Jy,
-    spinHalfRep_Jz]
-  simp only [spinGen_def, TensorProduct.map_smul_left, TensorProduct.map_smul_right, smul_smul]
+  rw [← sum_tensorProductMap_toEuclideanLin_pauliMatrix_inr]
+  simp only [AngularMomentumRepresentation.dot, Fin.sum_univ_three, spinHalfRep_Jx, spinHalfRep_Jy,
+    spinHalfRep_Jz, spinGen_def, TensorProduct.map_smul_left, TensorProduct.map_smul_right,
+    smul_smul]
   module
 
-end PauliMatrix
+/-- The total spin squared `S² = Σᵢ Sᵢ Sᵢ` of two spin-`1/2` systems is twice the symmetrizer of
+`ℂ² ⊗ ℂ²`: `S² = 1 + P₁₂ = 2 • symmetrizer`, where `P₁₂` exchanges the two spins. -/
+theorem Jsq_tensor_spinHalfRep :
+    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq =
+      (2 : ℂ) • TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) := by
+  rw [AngularMomentumRepresentation.Jsq_tensor, Jsq_spinHalfRep, dot_spinHalfRep_spinHalfRep,
+    TensorProduct.symmetrizer_def]
+  simp only [LinearMap.rTensor_smul, LinearMap.lTensor_smul, Module.End.one_eq_id,
+    LinearMap.rTensor_id, LinearMap.lTensor_id, invOf_eq_inv]
+  module
+
+end PhyslibAlpha.Sl2

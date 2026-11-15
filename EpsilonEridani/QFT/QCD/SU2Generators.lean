@@ -100,8 +100,7 @@ lemma su2TraceStatement : SU2TraceStatement := by
     simp [su2GenEntry, su2DeltaAdj, Fin.sum_univ_two, pauliMatrix, Complex.ext_iff] <;>
     norm_num
 
-/-- The fundamental `su(2)` Casimir: `Σₐ (σᵃ/2)(σᵃ/2) = (3/4) · 1`, the entrywise form of
-`PauliMatrix.sum_pauliMatrix_inr_mul_self`. -/
+/-- The fundamental `su(2)` Casimir: `Σₐ (σᵃ/2)(σᵃ/2) = (3/4) · 1`. -/
 lemma su2FundamentalStatement : SU2FundamentalStatement := by
   intro i j
   have h := congrFun (congrFun sum_pauliMatrix_inr_mul_self i) j

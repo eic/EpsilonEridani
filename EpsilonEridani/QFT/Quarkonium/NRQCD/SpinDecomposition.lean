@@ -13,8 +13,8 @@ public import Mathlib.LinearAlgebra.Trace
 # The spin singlet and triplet channels of a heavy quark-antiquark pair
 
 The heavy quark and the heavy antiquark each carry spin `1/2`, with spin space `ℂ²` on which the
-spin operators are `spinGen i = pauliMatrix (Sum.inr i) / 2` (`PauliMatrix.spinGen`, so
-`spinGen 0 = σ1 / 2`), forming the angular momentum representation `PauliMatrix.spinHalfRep`.
+spin operators are `spinGen i = pauliMatrix (Sum.inr i) / 2` (`PhyslibAlpha.Sl2.spinGen`, so
+`spinGen 0 = σ1 / 2`), forming the angular momentum representation `PhyslibAlpha.Sl2.spinHalfRep`.
 The spin space of the pair is `ℂ² ⊗ ℂ²`, on which the total spin, with components
 `spinGen i ⊗ 1 + 1 ⊗ spinGen i`, is the coupled representation
 `PhyslibAlpha.Sl2.AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep`.
@@ -26,9 +26,10 @@ projector is the antisymmetrizer `(1 - P₁₂) / 2` and the triplet projector t
 `TensorProduct.symmetrizer` apply to them: they are complete orthogonal idempotents onto the
 antisymmetric and symmetric tensors, and the exchange acts on them by `-1` and `1`. Both commute
 with the diagonal action `diagEnd X X = X ⊗ 1 + 1 ⊗ X` of every operator `X` on `ℂ²`
-(`TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer`), the form in which the total spin
-acts, so they commute with each component of the total spin (`commute_tensor_Jx_spinSingletProj`
-and its companions). Specific to spin `1/2` are
+(`commute_diagEnd_spinSingletProj`, `commute_diagEnd_spinTripletProj`). This is the form in
+which the total spin acts: the component `(tensor spinHalfRep spinHalfRep).Jx` is by definition
+`diagEnd spinHalfRep.Jx spinHalfRep.Jx`, and likewise for `Jy` and `Jz`. Specific to spin `1/2`
+are
 
 * the traces `1` and `3` of the two projectors, the dimensions of the two channels;
 * the total spin squared `S² = Σᵢ Sᵢ Sᵢ` of the pair, which is `1 + P₁₂`, that is twice the
@@ -37,10 +38,11 @@ and its companions). Specific to spin `1/2` are
 
 The computation of `S²` is the decomposition `S² = S₁² + S₂² + 2 S(1) · S(2)`
 (`PhyslibAlpha.Sl2.AngularMomentumRepresentation.Jsq_tensor`) with `S₁² = S₂² = 3/4`
-(`PauliMatrix.Jsq_spinHalfRep`) and the exchange identity `S(1) · S(2) = (2 P₁₂ - 1) / 4` of the
-Pauli matrices (`PauliMatrix.dot_spinHalfRep_spinHalfRep`), which give `S² = 1 + P₁₂`.
-Consequently the exchange operator acts on the channel of total spin `S` by `(-1)^(S + 1)`: this
-is the spin factor in the charge-conjugation eigenvalue of a quark-antiquark pair.
+(`PhyslibAlpha.Sl2.Jsq_spinHalfRep`) and the exchange identity `S(1) · S(2) = (2 P₁₂ - 1) / 4`
+of the Pauli matrices (`PhyslibAlpha.Sl2.dot_spinHalfRep_spinHalfRep`), which give
+`S² = 1 + P₁₂ = 2 • spinTripletProj` (`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`). Consequently the
+exchange operator acts on the channel of total spin `S` by `(-1)^(S + 1)`: this is the spin factor
+in the charge-conjugation eigenvalue of a quark-antiquark pair.
 
 The abstract counterpart of this decomposition is the Clebsch-Gordan rule
 `V(1) ⊗ V(1) ≅ V(2) ⊕ V(0)` for `sl₂` (`TauCeti.Sl2Std.isInternal_cgSummand`); this file gives
@@ -57,12 +59,9 @@ symmetry that distinguishes them. Its colour counterpart, whose structure this f
 
 * `commute_diagEnd_spinSingletProj`, `commute_diagEnd_spinTripletProj`: both projectors commute
   with the diagonal action of every operator on `ℂ²`.
-* `commute_tensor_Jx_spinSingletProj`, `commute_tensor_Jx_spinTripletProj` and their `Jy`, `Jz`
-  companions: both projectors commute with every component of the total spin.
 * `trace_spinSingletProj`, `trace_spinTripletProj`: the traces `1` and `3`.
-* `Jsq_tensor_spinHalfRep`, `Jsq_tensor_spinHalfRep_mul_spinSingletProj`,
-  `Jsq_tensor_spinHalfRep_mul_spinTripletProj`: the total spin squared is `0` on the singlet channel
-  and `2` on the triplet channel.
+* `Jsq_tensor_spinHalfRep_mul_spinSingletProj`, `Jsq_tensor_spinHalfRep_mul_spinTripletProj`:
+  the total spin squared is `0` on the singlet channel and `2` on the triplet channel.
 
 ## Implementation notes
 
@@ -105,46 +104,22 @@ abbrev spinTripletProj : Module.End ℂ (ℂ² ⊗[ℂ] ℂ²) :=
 /-! ### Invariance under the total spin -/
 
 /-- The singlet projector commutes with the diagonal action `X ⊗ 1 + 1 ⊗ X` of every operator `X`
-on `ℂ²`. -/
+on `ℂ²`. This restates the general `TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer`,
+which holds on the tensor square of any module, in the `diagEnd` form in which
+`AngularMomentumRepresentation.tensor` builds the total spin. -/
 theorem commute_diagEnd_spinSingletProj (X : Module.End ℂ ℂ²) :
-    Commute (diagEnd X X) spinSingletProj :=
-  commute_rTensor_add_lTensor_antisymmetrizer X
+    Commute (diagEnd X X) spinSingletProj := by
+  rw [diagEnd]
+  exact commute_rTensor_add_lTensor_antisymmetrizer X
 
 /-- The triplet projector commutes with the diagonal action `X ⊗ 1 + 1 ⊗ X` of every operator `X`
-on `ℂ²`. -/
+on `ℂ²`. This restates the general `TensorProduct.commute_rTensor_add_lTensor_symmetrizer`,
+which holds on the tensor square of any module, in the `diagEnd` form in which
+`AngularMomentumRepresentation.tensor` builds the total spin. -/
 theorem commute_diagEnd_spinTripletProj (X : Module.End ℂ ℂ²) :
-    Commute (diagEnd X X) spinTripletProj :=
-  commute_rTensor_add_lTensor_symmetrizer X
-
-/-- The singlet projector commutes with the `x`-component of the total spin. -/
-theorem commute_tensor_Jx_spinSingletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinSingletProj :=
-  commute_diagEnd_spinSingletProj _
-
-/-- The singlet projector commutes with the `y`-component of the total spin. -/
-theorem commute_tensor_Jy_spinSingletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinSingletProj :=
-  commute_diagEnd_spinSingletProj _
-
-/-- The singlet projector commutes with the `z`-component of the total spin. -/
-theorem commute_tensor_Jz_spinSingletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinSingletProj :=
-  commute_diagEnd_spinSingletProj _
-
-/-- The triplet projector commutes with the `x`-component of the total spin. -/
-theorem commute_tensor_Jx_spinTripletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinTripletProj :=
-  commute_diagEnd_spinTripletProj _
-
-/-- The triplet projector commutes with the `y`-component of the total spin. -/
-theorem commute_tensor_Jy_spinTripletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinTripletProj :=
-  commute_diagEnd_spinTripletProj _
-
-/-- The triplet projector commutes with the `z`-component of the total spin. -/
-theorem commute_tensor_Jz_spinTripletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinTripletProj :=
-  commute_diagEnd_spinTripletProj _
+    Commute (diagEnd X X) spinTripletProj := by
+  rw [diagEnd]
+  exact commute_rTensor_add_lTensor_symmetrizer X
 
 /-! ### Traces -/
 
@@ -163,17 +138,6 @@ theorem trace_spinTripletProj :
   norm_num
 
 /-! ### The total spin squared -/
-
-/-- The total spin squared `S² = Σᵢ Sᵢ Sᵢ` of the pair is twice the triplet projector:
-`S² = 1 + P₁₂ = 2 • spinTripletProj`. -/
-theorem Jsq_tensor_spinHalfRep :
-    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq =
-      (2 : ℂ) • spinTripletProj := by
-  rw [AngularMomentumRepresentation.Jsq_tensor, Jsq_spinHalfRep, dot_spinHalfRep_spinHalfRep,
-    spinTripletProj, symmetrizer_def, LinearMap.rTensor_smul, LinearMap.lTensor_smul,
-    Module.End.one_eq_id, LinearMap.rTensor_id, LinearMap.lTensor_id, ← Module.End.one_eq_id,
-    invOf_eq_inv]
-  module
 
 /-- The total spin squared vanishes on the singlet channel: `S (S + 1) = 0` for `S = 0`. -/
 @[simp]
