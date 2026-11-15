@@ -7,15 +7,17 @@ module
 
 public import EpsilonEridani.Mathematics.MeasureTheory.Integral.CircleAverage
 public import EpsilonEridani.Particles.Parton.GTMD.Transverse
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 /-!
 
 # The circle average on the transverse plane
 
 This module transports Mathlib's `Real.circleAverage` about the origin of `ℂ` to the transverse
-plane `Transverse` along the coordinates `Complex.orthonormalBasisOneI`. It is the averaging
-operation behind the azimuthal average of a vector-argument TMD
-(`EpsilonEridani.Particles.Parton.GTMD.Average`), and depends on nothing beyond the
-transverse plane itself.
+plane `Transverse` along the coordinates `Complex.orthonormalBasisOneI`, a linear isometry, so the
+circle of radius `r` in `ℂ` is carried onto the circle `‖w‖ = r` of the transverse plane. It is the
+averaging operation behind the azimuthal average of a vector-argument TMD
+(`EpsilonEridani.Particles.Parton.GTMD.Average`); it depends only on the transverse plane and
+Mathlib's circle average, with no parton-physics content.
 
 ## Main definitions
 
@@ -26,21 +28,20 @@ transverse plane itself.
 
 ## Main results
 
-* `circleAverageTransverse_eq_integral`: the average is
-  `(2π)⁻¹ • ∫₀^{2π} g (circleMapTransverse kT θ) dθ`.
 * `circleAverageTransverse_const_on_circle`: the average of a function that is constant on
   the circle `‖w‖ = |kT|` is that constant.
+* `circleAverageTransverse_comp_norm`: the average of a radial function `w ↦ g ‖w‖` is
+  `g |kT|`.
 * `circleAverageTransverse_eq_zero_of_odd`: the average of a function that is odd on the
   circle `‖w‖ = |kT|` vanishes; the transport of `Real.circleAverage_eq_zero_of_odd`.
-* `Continuous.circleAverageTransverse`: the average of a continuous function is continuous in
-  the radius.
+* `stronglyMeasurable_circleAverageTransverse`: the average of a strongly measurable function is
+  strongly measurable in the radius; the transport of
+  `MeasureTheory.StronglyMeasurable.circleAverage`.
 -/
 
 @[expose] public section
 
 noncomputable section
-
-open Real
 
 namespace EpsilonEridani
 namespace Particles
@@ -66,28 +67,6 @@ lemma circleAverageTransverse_def (g : Transverse → E) (kT : ℝ) :
   -- `(rfl)`, not `rfl`: a syntactic `rfl` proof would implicitly tag the lemma `@[defeq]`,
   -- which would let `dsimp` unfold `circleAverageTransverse` downstream.
 
-/-- The circle average is `(2π)⁻¹` times the integral of `g` along `circleMapTransverse kT`
-    over the polar angle `θ ∈ [0, 2π]`. -/
-lemma circleAverageTransverse_eq_integral (g : Transverse → E) (kT : ℝ) :
-    circleAverageTransverse g kT =
-      (2 * π)⁻¹ • ∫ θ in (0 : ℝ)..(2 * π), g (circleMapTransverse kT θ) := by
-  rw [circleAverageTransverse_def, Real.circleAverage_def]
-  simp only [circleMapTransverse]
-
-/-- The circle average does not change when the radius is replaced by its negative. -/
-@[simp]
-lemma circleAverageTransverse_neg_radius (g : Transverse → E) (kT : ℝ) :
-    circleAverageTransverse g (-kT) = circleAverageTransverse g kT := by
-  simp only [circleAverageTransverse_def]
-  exact Real.circleAverage_neg_radius
-
-/-- The circle average does not change when the radius is replaced by its absolute value. -/
-@[simp]
-lemma circleAverageTransverse_abs_radius (g : Transverse → E) (kT : ℝ) :
-    circleAverageTransverse g |kT| = circleAverageTransverse g kT := by
-  simp only [circleAverageTransverse_def]
-  exact Real.circleAverage_abs_radius
-
 /-- The circle average at zero radius is the value at the origin. -/
 @[simp]
 lemma circleAverageTransverse_zero_radius [CompleteSpace E] (g : Transverse → E) :
@@ -101,14 +80,20 @@ lemma circleAverageTransverse_const_on_circle [CompleteSpace E] {g : Transverse 
     circleAverageTransverse g kT = c := by
   rw [circleAverageTransverse_def]
   exact Real.circleAverage_const_on_circle fun z hz =>
-    h _ (by simpa using hz)
+    h _ ((LinearIsometryEquiv.norm_map _ z).trans (mem_sphere_zero_iff_norm.mp hz))
+
+/-- The circle average of a radial function `w ↦ g ‖w‖` over the circle of radius `kT` is
+    `g |kT|`. -/
+lemma circleAverageTransverse_comp_norm [CompleteSpace E] (g : ℝ → E) (kT : ℝ) :
+    circleAverageTransverse (fun w => g ‖w‖) kT = g |kT| :=
+  circleAverageTransverse_const_on_circle fun w hw => by rw [hw]
 
 /-- The circle average of a function nonnegative on the circle `‖w‖ = |kT|` is nonnegative. -/
 lemma circleAverageTransverse_nonneg_of_nonneg {g : Transverse → ℝ} {kT : ℝ}
     (hg : ∀ w, ‖w‖ = |kT| → 0 ≤ g w) : 0 ≤ circleAverageTransverse g kT := by
   rw [circleAverageTransverse_def]
   exact Real.circleAverage_nonneg_of_nonneg fun z hz =>
-    hg _ (by simpa using hz)
+    hg _ ((LinearIsometryEquiv.norm_map _ z).trans (mem_sphere_zero_iff_norm.mp hz))
 
 /-- The circle average of a function odd on the circle `‖w‖ = |kT|` vanishes: the transverse
     transport of `Real.circleAverage_eq_zero_of_odd`. -/
@@ -116,20 +101,23 @@ lemma circleAverageTransverse_eq_zero_of_odd {g : Transverse → E} {kT : ℝ}
     (hg : ∀ w, ‖w‖ = |kT| → g (-w) = -g w) :
     circleAverageTransverse g kT = 0 := by
   rw [circleAverageTransverse_def]
-  exact Real.circleAverage_eq_zero_of_odd fun z hz => by
-    simpa using hg _ (by simpa using hz)
+  refine Real.circleAverage_eq_zero_of_odd fun z hz => ?_
+  rw [mul_zero, zero_sub, map_neg]
+  exact hg _ ((LinearIsometryEquiv.norm_map _ z).trans (mem_sphere_zero_iff_norm.mp hz))
+
+/-- The circle average of a strongly measurable function is strongly measurable in the radius:
+    the transverse transport of `MeasureTheory.StronglyMeasurable.circleAverage`, which is what
+    carries measurability of the transverse-momentum slices of a `VectorTmd` to regularity of
+    their azimuthal average. -/
+lemma stronglyMeasurable_circleAverageTransverse {g : Transverse → E}
+    (hg : MeasureTheory.StronglyMeasurable g) :
+    MeasureTheory.StronglyMeasurable (circleAverageTransverse g) := by
+  rw [show circleAverageTransverse g = Real.circleAverage
+      (fun z => g (Complex.orthonormalBasisOneI.repr z)) 0 from
+    funext (circleAverageTransverse_def g)]
+  exact (hg.comp_measurable Complex.orthonormalBasisOneI.repr.continuous.measurable).circleAverage 0
 
 end GTMD
 end Parton
 end Particles
 end EpsilonEridani
-
-open EpsilonEridani.Particles.Parton.GTMD in
-/-- The circle average of a continuous function is continuous in the radius: the transverse
-    transport of Mathlib's `Continuous.circleAverage`, which is what carries continuity of the
-    transverse-momentum slices of a `VectorTmd` to regularity of their azimuthal average. -/
-@[fun_prop]
-lemma Continuous.circleAverageTransverse {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {g : Transverse → E} (hg : Continuous g) : Continuous (circleAverageTransverse g) :=
-  (((hg.comp' Complex.orthonormalBasisOneI.repr.continuous).circleAverage (c := 0)).congr
-    fun kT => (circleAverageTransverse_def g kT).symm)

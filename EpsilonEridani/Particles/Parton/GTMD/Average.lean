@@ -28,7 +28,7 @@ transverse circle average `circleAverageTransverse` of
   deliberate break of that symmetry, and `azimuthalAverage_eq_zero_of_kT_neg`/
   `azimuthalAverage_of_kT_nonneg` are the interface for it. The average also inherits the junk
   value `0` of `circleAverageTransverse` on non-integrable slices, which is why
-  `IsVectorTmdDensity` needs no measurability or integrability condition.
+  `VectorTmd.IsDensity` needs no measurability or integrability condition.
 
 ## Main results
 
@@ -38,11 +38,12 @@ transverse circle average `circleAverageTransverse` of
 * `azimuthalAverage_eq_zero_of_odd`: the azimuthal average annihilates every vector-argument
   TMD that is odd in its transverse-momentum argument on the circle.
 * `azimuthalAverage_comp_norm_of_kT_nonneg`: averaging a function of the magnitude alone returns
-  that function at nonnegative transverse-momentum magnitude.
+  that function at nonnegative transverse-momentum magnitude; the TMD form of
+  `circleAverageTransverse_comp_norm`.
 * `azimuthalAverage_comp_norm`: the azimuthal average retracts the radial inclusion
   `g ↦ fun i x w Q2 ζ => g i x ‖w‖ Q2 ζ` on TMDs vanishing at negative magnitude,
   `TMD.IsTmdDensity` in particular.
-* `isTmdDensity_azimuthalAverage`: the azimuthal average of an `IsVectorTmdDensity` is a
+* `isTmdDensity_azimuthalAverage`: the azimuthal average of a `VectorTmd.IsDensity` is a
   `TMD.IsTmdDensity`.
 * `tmdRegularity_azimuthalAverage`: the azimuthal average of a `VectorTmd.Regularity` TMD is
   `TMD.Regularity`.
@@ -78,13 +79,12 @@ variable {Flavor : Type}
 def azimuthalAverage (f : VectorTmd Flavor) : TMD.Tmd Flavor :=
   fun i x kT Q2 ζ => if kT < 0 then 0 else circleAverageTransverse (f i x · Q2 ζ) kT
 
-/-- The azimuthal average of a slice, as a function of the transverse-momentum magnitude: the
-    `kT < 0` cutoff applied to the transverse circle average. This whole-function form is what
-    measurability and continuity consumers need; `azimuthalAverage_eq_zero_of_kT_neg` and
-    `azimuthalAverage_of_kT_nonneg` are its pointwise counterparts. -/
-lemma azimuthalAverage_def (f : VectorTmd Flavor) (i : Flavor) (x Q2 ζ : ℝ) :
-    (fun kT => azimuthalAverage f i x kT Q2 ζ) =
-      fun kT => if kT < 0 then 0 else circleAverageTransverse (f i x · Q2 ζ) kT := (rfl)
+/-- The azimuthal average is the `kT < 0` cutoff applied to the transverse circle average;
+    `azimuthalAverage_eq_zero_of_kT_neg` and `azimuthalAverage_of_kT_nonneg` are its two
+    branches. -/
+lemma azimuthalAverage_def (f : VectorTmd Flavor) (i : Flavor) (x kT Q2 ζ : ℝ) :
+    azimuthalAverage f i x kT Q2 ζ =
+      if kT < 0 then 0 else circleAverageTransverse (f i x · Q2 ζ) kT := (rfl)
   -- `(rfl)`, not `rfl`: a syntactic `rfl` proof would implicitly tag the lemma `@[defeq]`,
   -- which would let `dsimp` unfold `azimuthalAverage` downstream.
 
@@ -122,8 +122,8 @@ lemma azimuthalAverage_zero_radius (f : VectorTmd Flavor) (i : Flavor) (x Q2 ζ 
 lemma azimuthalAverage_comp_norm_of_kT_nonneg (g : TMD.Tmd Flavor) (i : Flavor) {x kT Q2 ζ : ℝ}
     (hkT : 0 ≤ kT) :
     azimuthalAverage (fun i x w Q2 ζ => g i x ‖w‖ Q2 ζ) i x kT Q2 ζ = g i x kT Q2 ζ := by
-  rw [azimuthalAverage_of_kT_nonneg _ i hkT]
-  exact circleAverageTransverse_const_on_circle fun w hw => by rw [hw, abs_of_nonneg hkT]
+  rw [azimuthalAverage_of_kT_nonneg _ i hkT,
+    circleAverageTransverse_comp_norm (fun r => g i x r Q2 ζ), abs_of_nonneg hkT]
 
 /-- The azimuthal average retracts the radial inclusion `g ↦ fun i x w Q2 ζ => g i x ‖w‖ Q2 ζ`
     of `TMD.Tmd` into `VectorTmd` on every TMD vanishing at negative transverse-momentum
@@ -139,7 +139,7 @@ lemma azimuthalAverage_comp_norm {g : TMD.Tmd Flavor}
 
 /-- The azimuthal average of a vector-argument density is a density in the sense of
     `TMD.IsTmdDensity`. -/
-theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDensity f) :
+theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.IsDensity f) :
     TMD.IsTmdDensity (azimuthalAverage f) where
   supportX i x kT Q2 ζ hx := by
     rcases lt_or_ge kT 0 with hkT | hkT
@@ -152,14 +152,14 @@ theorem isTmdDensity_azimuthalAverage {f : VectorTmd Flavor} (hf : IsVectorTmdDe
     exact circleAverageTransverse_nonneg_of_nonneg fun w _ => hf.nonneg i x w Q2 ζ hx0 hx1
 
 /-- The azimuthal average of a regular vector-argument TMD is regular in the sense of
-    `TMD.Regularity`: continuity of every transverse-momentum slice gives measurability of
+    `TMD.Regularity`: measurability of every transverse-momentum slice gives measurability of
     the averaged function in the transverse-momentum magnitude. -/
 theorem tmdRegularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Regularity f) :
     TMD.Regularity (azimuthalAverage f) where
   measurableKT i x Q2 ζ := by
-    have hc : Continuous (circleAverageTransverse (f i x · Q2 ζ)) :=
-      (hf.continuousKT i x Q2 ζ).circleAverageTransverse
-    rw [azimuthalAverage_def]
+    have hc : MeasureTheory.StronglyMeasurable (circleAverageTransverse (f i x · Q2 ζ)) :=
+      stronglyMeasurable_circleAverageTransverse (hf.measurableKT i x Q2 ζ).stronglyMeasurable
+    simp only [azimuthalAverage_def]
     exact (Measurable.ite (measurableSet_lt measurable_id measurable_const)
       measurable_const hc.measurable).aestronglyMeasurable
 
@@ -168,8 +168,8 @@ theorem tmdRegularity_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Re
     takes one. -/
 theorem tmdAssumptions_azimuthalAverage {f : VectorTmd Flavor} (hf : VectorTmd.Assumptions f) :
     TMD.Assumptions (azimuthalAverage f) :=
-  TMD.assumptions_iff.mpr ⟨isTmdDensity_azimuthalAverage hf.toIsVectorTmdDensity,
-    tmdRegularity_azimuthalAverage hf.toRegularity⟩
+  let h := VectorTmd.assumptions_iff.mp hf
+  TMD.assumptions_iff.mpr ⟨isTmdDensity_azimuthalAverage h.1, tmdRegularity_azimuthalAverage h.2⟩
 
 end GTMD
 end Parton

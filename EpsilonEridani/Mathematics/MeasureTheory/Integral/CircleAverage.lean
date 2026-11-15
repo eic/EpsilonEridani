@@ -6,45 +6,71 @@ Authors: Joseph Tooby-Smith
 module
 
 public import Mathlib.MeasureTheory.Integral.CircleAverage
+public import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
-# Circle averages of odd functions
+# Circle averages of odd and of measurable functions
 
-Reversing the radius of a circle about the origin reverses every point of it, while Mathlib's
-`Real.circleAverage_neg_radius` says that the circle average does not see the sign of the radius.
-For a function that is odd on the circle the two facts together force the average to equal its
-own negative, so it vanishes.
+This module supplies two facts about Mathlib's `Real.circleAverage` that Mathlib does not state:
+the circle average of a function that is odd about the centre on the circle vanishes, and the
+circle average of a strongly measurable function is strongly measurable in the radius. They are
+consumed by the transverse circle average of `EpsilonEridani.Particles.Parton.GTMD.CircleAverage`,
+which carries them to the azimuthal average of a vector-argument TMD: the first is why that
+average annihilates azimuthally odd amplitudes, the second why it is measurable in the
+transverse-momentum magnitude.
 
 ## Main results
 
-* `Real.circleAverage_eq_zero_of_odd`: the circle average about the origin of a function that is
-  odd on the circle vanishes.
+* `Real.circleAverage_eq_zero_of_odd`: the circle average about `c` of a function that is odd
+  about `c` on the circle vanishes.
+* `MeasureTheory.StronglyMeasurable.circleAverage`: the circle average of a strongly measurable
+  function is strongly measurable as a function of the radius.
 -/
 
 @[expose] public section
 
-namespace Real
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The circle average about the origin of a function that is odd on the circle of radius `|R|`
-    vanishes. -/
-theorem circleAverage_eq_zero_of_odd {f : ℂ → E} {R : ℝ}
-    (hf : ∀ z ∈ Metric.sphere (0 : ℂ) |R|, f (-z) = -f z) :
-    circleAverage f 0 R = 0 := by
-  -- The radius `-R` traces the reversed circle, so the average equals its own negative.
-  have h : circleAverage f 0 R = -circleAverage f 0 R := by
-    conv_lhs => rw [← circleAverage_neg_radius]
-    rw [circleAverage_def, circleAverage_def, ← smul_neg, ← intervalIntegral.integral_neg]
-    congr 1
-    refine intervalIntegral.integral_congr fun θ _ => ?_
-    have hc : circleMap 0 (-R) θ = -circleMap 0 R θ := by simp [circleMap_zero]
-    rw [hc, hf _ (circleMap_mem_sphere' 0 R θ)]
-  -- Adding the two sides gives `2 • circleAverage f 0 R = 0`; halving recovers the claim.
-  have h2 : (2 : ℝ) • circleAverage f 0 R = 0 := by
+namespace Real
+
+/-- The circle average about `c` of a function that is odd about `c` on the circle of radius `|R|`
+    — `f (2 * c - z) = -f z` there — vanishes. -/
+theorem circleAverage_eq_zero_of_odd {f : ℂ → E} {c : ℂ} {R : ℝ}
+    (hf : ∀ z ∈ Metric.sphere c |R|, f (2 * c - z) = -f z) :
+    circleAverage f c R = 0 := by
+  -- The radius `-R` traces the circle reflected through `c`, so the average equals its own
+  -- negative.
+  have h : circleAverage f c R = -circleAverage f c R := calc
+    circleAverage f c R = circleAverage f c (-R) := circleAverage_neg_radius.symm
+    _ = circleAverage (fun z => f (2 * c - z)) c R := by
+      rw [circleAverage_def, circleAverage_def]
+      congr 1
+      refine intervalIntegral.integral_congr fun θ _ => ?_
+      simp only [circleMap]
+      congr 1
+      push_cast
+      ring
+    _ = circleAverage (fun z => -f z) c R := circleAverage_congr_sphere fun z hz => hf z hz
+    _ = -circleAverage f c R := by
+      simpa using circleAverage_fun_smul (a := (-1 : ℝ)) (f := f) (c := c) (R := R)
+  -- Adding the two sides gives `2 • circleAverage f c R = 0`; halving recovers the claim.
+  have h2 : (2 : ℝ) • circleAverage f c R = 0 := by
     rw [two_smul]
     nth_rewrite 1 [h]
     exact neg_add_cancel _
   simpa using h2
 
 end Real
+
+/-- The circle average of a strongly measurable function is strongly measurable as a function of
+    the radius: the average is the parametric integral of the jointly strongly measurable
+    `(R, θ) ↦ f (circleMap c R θ)` over the angle. -/
+theorem MeasureTheory.StronglyMeasurable.circleAverage {f : ℂ → E} (hf : StronglyMeasurable f)
+    (c : ℂ) : StronglyMeasurable (Real.circleAverage f c) := by
+  have heq : Real.circleAverage f c =
+      fun R => (2 * Real.pi)⁻¹ • ∫ θ in Set.Ioc 0 (2 * Real.pi), f (circleMap c R θ) :=
+    funext fun R => by
+      rw [Real.circleAverage_def, intervalIntegral.integral_of_le Real.two_pi_pos.le]
+  rw [heq]
+  exact ((hf.comp_measurable (Real.circleMap.continuous (c := c)).measurable).integral_prod_right'
+    (ν := volume.restrict (Set.Ioc 0 (2 * Real.pi)))).const_smul _
