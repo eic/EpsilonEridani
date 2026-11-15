@@ -61,7 +61,7 @@ singularity `x = 0`. The Rayleigh formula above supplies both directly.
   limiting value `1 / (2 l + 1)‼` of `j_l(x) / x ^ l` as `x → 0`, and
   `hasDerivAt_sphericalBesselJDivPow` with `deriv_sphericalBesselJDivPow`: its Rayleigh step, the
   derivative of `sphericalBesselJDivPow l` is `-x` times `sphericalBesselJDivPow (l + 1)`.
-* `sphericalBesselJDivPow_add_two`: the three-term recurrence of the factors
+* `sq_mul_sphericalBesselJDivPow_add_two`: the three-term recurrence of the factors
   `sphericalBesselJDivPow l`, which equal `j_l(x) / x ^ l` for `x ≠ 0`, on the whole line; it is
   the even factor of `mul_sphericalBesselJ_add_two` and stays informative at the origin.
 * `mul_sphericalBesselJ_add_two`: the three-term recurrence in the order on the whole line, and
@@ -224,9 +224,9 @@ private lemma sphericalBesselJDivPow_zero_sub_eq_cos (x : ℝ) : G 0 x - x ^ 2 *
   linear_combination ((hasDerivAt_id' x).mul (hasDerivAt_sphericalBesselJDivPow 0 x)).unique
     ((hasDerivAt_sin x).congr_of_eventuallyEq (.of_forall h))
 
-/-- The base case of the recurrence: `x ^ 2 G 2 - 3 G 1 + G 0 = 0`. -/
-private lemma sphericalBesselJDivPow_add_two_zero (x : ℝ) :
-    x ^ 2 * G 2 x - 3 * G 1 x + G 0 x = 0 := by
+/-- The base case of the recurrence: `x ^ 2 G 2 = 3 G 1 - G 0`. -/
+private lemma sq_mul_sphericalBesselJDivPow_two (x : ℝ) :
+    x ^ 2 * G 2 x = 3 * G 1 x - G 0 x := by
   -- second derivative: `x (x ^ 2 G 2 - 3 G 1 + G 0) = 0`
   have h2 : ∀ y, y * (y ^ 2 * G 2 y - 3 * G 1 y + G 0 y) = 0 := by
     intro y
@@ -236,36 +236,38 @@ private lemma sphericalBesselJDivPow_add_two_zero (x : ℝ) :
         (.of_forall sphericalBesselJDivPow_zero_sub_eq_cos)) +
       y * sphericalBesselJDivPow_zero y + mul_sinc y
   -- the bracket vanishes off the origin, hence everywhere by continuity
-  exact (by fun_prop : Continuous fun y => y ^ 2 * G 2 y - 3 * G 1 y + G 0 y).eq_zero_of_mul_eq_zero
-    h2 x
+  linear_combination (by fun_prop : Continuous fun y => y ^ 2 * G 2 y - 3 * G 1 y +
+    G 0 y).continuousAt.eq_zero_of_forall_id_mul_eq_zero h2 x
 
 /-- The three-term recurrence of the functions `sphericalBesselJDivPow l`, which equal
 `j_l(x) / x ^ l` for `x ≠ 0`, on the whole line:
-`x ^ 2 * sphericalBesselJDivPow (l + 2) x - (2 * l + 3) * sphericalBesselJDivPow (l + 1) x
-+ sphericalBesselJDivPow l x = 0`. Unlike `mul_sphericalBesselJ_add_two`, which multiplies it
-by `x ^ (l + 1)`, it does not degenerate to `0 = 0` at the origin. -/
-theorem sphericalBesselJDivPow_add_two (l : ℕ) (x : ℝ) :
-    x ^ 2 * sphericalBesselJDivPow (l + 2) x - (2 * l + 3) * sphericalBesselJDivPow (l + 1) x +
-      sphericalBesselJDivPow l x = 0 := by
+`x ^ 2 * sphericalBesselJDivPow (l + 2) x =
+(2 * l + 3) * sphericalBesselJDivPow (l + 1) x - sphericalBesselJDivPow l x`. Unlike
+`mul_sphericalBesselJ_add_two`, which multiplies it by `x ^ (l + 1)`, it does not degenerate to
+`0 = 0` at the origin. -/
+theorem sq_mul_sphericalBesselJDivPow_add_two (l : ℕ) (x : ℝ) :
+    x ^ 2 * sphericalBesselJDivPow (l + 2) x =
+      (2 * l + 3) * sphericalBesselJDivPow (l + 1) x - sphericalBesselJDivPow l x := by
   induction l generalizing x with
-  | zero => simpa using sphericalBesselJDivPow_add_two_zero x
+  | zero => simpa using sq_mul_sphericalBesselJDivPow_two x
   | succ l ih =>
     -- differentiating the recurrence of order `l` gives `-x` times the one of order `l + 1`
     have h : ∀ y, y * (y ^ 2 * G (l + 3) y - (2 * (l + 1 : ℕ) + 3) * G (l + 2) y
         + G (l + 1) y) = 0 := by
       intro y
       have hsq : HasDerivAt (fun y : ℝ => y ^ 2) (2 * y) y := by simpa using hasDerivAt_pow 2 y
-      have hd := ((hsq.mul (hasDerivAt_sphericalBesselJDivPow (l + 2) y)).sub
-        ((hasDerivAt_sphericalBesselJDivPow (l + 1) y).const_mul (2 * (l : ℝ) + 3))).add
-        (hasDerivAt_sphericalBesselJDivPow l y)
-      have hstep : 2 * y * G (l + 2) y + y ^ 2 * (-y * G (l + 3) y) -
-          (2 * l + 3) * (-y * G (l + 2) y) + -y * G (l + 1) y = 0 :=
-        hd.unique ((hasDerivAt_const y 0).congr_of_eventuallyEq (.of_forall ih))
+      have hstep : 2 * y * G (l + 2) y + y ^ 2 * (-y * G (l + 3) y) =
+          (2 * l + 3) * (-y * G (l + 2) y) - -y * G (l + 1) y :=
+        (hsq.mul (hasDerivAt_sphericalBesselJDivPow (l + 2) y)).unique
+          ((((hasDerivAt_sphericalBesselJDivPow (l + 1) y).const_mul (2 * (l : ℝ) + 3)).sub
+            (hasDerivAt_sphericalBesselJDivPow l y)).congr_of_eventuallyEq (.of_forall ih))
       push_cast
       linear_combination -hstep
     -- the bracket vanishes off the origin, hence everywhere by continuity
-    exact (by fun_prop : Continuous fun y => y ^ 2 * G (l + 3) y -
-      (2 * (l + 1 : ℕ) + 3) * G (l + 2) y + G (l + 1) y).eq_zero_of_mul_eq_zero h x
+    have hc : Continuous fun y => y ^ 2 * G (l + 3) y - (2 * (l + 1 : ℕ) + 3) * G (l + 2) y +
+        G (l + 1) y := by fun_prop
+    push_cast at hc h ⊢
+    linear_combination hc.continuousAt.eq_zero_of_forall_id_mul_eq_zero h x
 
 /-- The value of `sphericalBesselJDivPow l` at the origin, the limiting value `1 / (2 l + 1)‼`
 of `j_l(x) / x ^ l` as `x → 0`. -/
@@ -275,7 +277,7 @@ theorem sphericalBesselJDivPow_apply_zero (l : ℕ) :
   induction l with
   | zero => simp
   | succ l ih =>
-    have h := sphericalBesselJDivPow_add_two l 0
+    have h := sq_mul_sphericalBesselJDivPow_add_two l 0
     have hl : 2 * (l + 1) + 1 = 2 * l + 1 + 2 := by ring
     rw [hl, Nat.doubleFactorial_add_two, Nat.cast_mul, mul_inv, ← ih]
     push_cast
@@ -339,7 +341,7 @@ theorem mul_sphericalBesselJ_add_two (l : ℕ) (x : ℝ) :
     x * sphericalBesselJ (l + 2) x =
       (2 * l + 3) * sphericalBesselJ (l + 1) x - x * sphericalBesselJ l x := by
   simp only [sphericalBesselJ_def]
-  linear_combination x ^ (l + 1) * sphericalBesselJDivPow_add_two l x
+  linear_combination x ^ (l + 1) * sq_mul_sphericalBesselJDivPow_add_two l x
 
 /-- The three-term recurrence in the order:
 `j_{l + 2}(x) = (2 l + 3) / x * j_{l + 1}(x) - j_l(x)` for `x ≠ 0`. -/
@@ -509,9 +511,11 @@ theorem hasDerivAt_deriv_sphericalBesselJ (l : ℕ) (x : ℝ) :
     (hasDerivAt_sphericalBesselJDivPow l x)).sub ((hasDerivAt_pow (l + 1) x).mul
       (hasDerivAt_sphericalBesselJDivPow (l + 1) x))).congr_deriv ?_
   rcases l with _ | _ | l
-  · simp
+  · simp only [zero_tsub, zero_add, tsub_self]
+    push_cast
     ring
-  · simp
+  · simp only [zero_add, tsub_self, zero_tsub, Nat.reduceAdd, Nat.add_one_sub_one]
+    push_cast
     ring
   · simp only [Nat.add_sub_cancel, show l + 1 + 1 + 1 = l + 3 by omega,
       show l + 1 + 1 = l + 2 by omega]
@@ -534,7 +538,7 @@ theorem hasDerivAt_deriv_sphericalBesselJ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x
         (l * (l + 1) / x ^ 2 - 1) * sphericalBesselJ l x) x := by
   refine (hasDerivAt_deriv_sphericalBesselJ l x).congr_deriv ?_
   rw [deriv_sphericalBesselJ, sphericalBesselJ_def]
-  have h := sphericalBesselJDivPow_add_two l x
+  have h := sq_mul_sphericalBesselJDivPow_add_two l x
   rcases l with _ | _ | l
   · field_simp
     linear_combination x ^ 2 * h
