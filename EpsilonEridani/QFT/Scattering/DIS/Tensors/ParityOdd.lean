@@ -67,7 +67,8 @@ covariance, a basis of four vectors — separately.
   full covariance. No four-dimensionality enters.
 - `Witness.aFour`: on Minkowski space `ℝ⁴` at the witness kinematics `kFour` — where
   `p·q ≠ 0`, so the DIS invariants are non-degenerate — the determinant contraction
-  `ε(·, ·, p, q)` is a non-zero parity-odd tensor (`Witness.aFour_ne_zero`) and every
+  `ε(·, ·, p, q)` is a non-zero parity-odd tensor (`Witness.parityOddAssumptions_aFour`,
+  `Witness.aFour_ne_zero`) and every
   parity-odd tensor there is a unique multiple of it (`Witness.existsUnique_eq_smul_aFour`),
   so the parity-odd sector is exactly one-dimensional. The same tensor is not
   `IsLorentzCovariant` (`Witness.not_isLorentzCovariant_aFour`), so proper covariance is
@@ -140,18 +141,19 @@ lemma parityOddAssumptions_sub_flip {g : Bilin V} {K : DisKinematics V} {W : Bil
   conserved_left v := by simp [hleft v, hright v]
   isAlt v := by simp
 
+/-- A properly covariant tensor annihilates `p_T` against any vector that a determinant-one
+stabilizer element reverses: the component is both invariant under the element and negated
+by it. -/
+lemma IsProperLorentzCovariant.apply_pTransverse_eq_zero_of_apply_eq_neg {g : Bilin V}
+    {K : DisKinematics V} {W : Bilin V} (hW : IsProperLorentzCovariant g K W)
+    {f : V →ₗ[ℝ] V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
+    {u : V} (hfu : f u = -u) : W (pTransverse g K) u = 0 :=
+  Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hW f hf hdet _ _)
+    (stabilizer_fixes_pTransverse g K hf) hfu
+
 namespace ParityOddAssumptions
 
 variable {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
-
-/-- A parity-odd tensor annihilates `p_T` against any vector that a determinant-one
-stabilizer element reverses: the component is both invariant under the element and negated
-by it. -/
-lemma apply_pTransverse_eq_zero_of_apply_eq_neg (hW : ParityOddAssumptions g K W)
-    {f : V →ₗ[ℝ] V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
-    {u : V} (hfu : f u = -u) : W (pTransverse g K) u = 0 :=
-  Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hW.proper_covariant f hf hdet _ _)
-    (stabilizer_fixes_pTransverse g K hf) hfu
 
 /-- **A parity-odd tensor has a single component.** On the span of `p_T`, `q` and a
 `SpectatorPair` `e₁`, `e₂`, `W` is `W e₁ e₂` times the `2 × 2` determinant of the spectator
@@ -164,8 +166,8 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPair g K)
   obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := exists_half_turn hSymm hP.q_orthogonal_e₁
     hP.pT_orthogonal_e₁ hP.e₁_self_ne_zero hP.q_orthogonal_e₂ hP.pT_orthogonal_e₂
     hP.e₂_self_ne_zero hP.e₁_orthogonal_e₂
-  have h₁ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
-  have h₂ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
+  have h₁ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
+  have h₂ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
   have h₁' : W hP.e₁ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₁
   have h₂' : W hP.e₂ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₂
   have h₂₁ : W hP.e₂ hP.e₁ = -W hP.e₁ hP.e₂ := (hW.isAlt.neg_eq _ _).symm
@@ -433,6 +435,11 @@ the volume form of the standard basis `Pi.basisFun ℝ (Fin 4)`, whose contracti
 noncomputable def aFour : Bilin (Fin 4 → ℝ) :=
   aOfAlt (Pi.basisFun ℝ (Fin 4)).det kFour
 
+/-- The witness structure `aFour` is parity-odd: alternating, conserved and properly
+covariant. -/
+lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour :=
+  parityOddAssumptions_aOfAlt gFour (Pi.basisFun ℝ (Fin 4)).det (Pi.basisFun ℝ (Fin 4)) kFour
+
 /-- The closed form of `aFour`: with `p_T` along the `0` axis and `q` along the `3` axis,
 `ε(v, w, p, q)` is the `2 × 2` determinant of the spectator components `1`, `2` of `v` and
 `w`; the components of `v` and `w` along `p_T` and `q` do not enter. -/
@@ -485,9 +492,8 @@ lemma aFour_ne_zero : aFour ≠ 0 := fun h => by
 the witness kinematics is a unique multiple of `aFour`. -/
 theorem existsUnique_eq_smul_aFour {W : Bilin (Fin 4 → ℝ)}
     (hW : ParityOddAssumptions gFour kFour W) : ∃! c : ℝ, W = c • aFour :=
-  hW.existsUnique_eq_smul gFour_isSymm spectatorPlaneFour
-    (parityOddAssumptions_aOfAlt gFour (Pi.basisFun ℝ (Fin 4)).det (Pi.basisFun ℝ (Fin 4))
-      kFour) aFour_ne_zero
+  hW.existsUnique_eq_smul gFour_isSymm spectatorPlaneFour parityOddAssumptions_aFour
+    aFour_ne_zero
 
 /-- On the witness kinematics every non-zero spectator is non-null: the spectator subspace is
 the spacelike plane of the coordinates `1` and `2`. -/
@@ -512,8 +518,7 @@ lemma gFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
 /-- **Proper covariance is strictly weaker than full covariance.** The properly covariant,
 non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
 lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour aFour := fun h =>
-  aFour_ne_zero ((parityOddAssumptions_aOfAlt gFour (Pi.basisFun ℝ (Fin 4)).det
-      (Pi.basisFun ℝ (Fin 4)) kFour).eq_zero_of_isLorentzCovariant gFour_isSymm
+  aFour_ne_zero (parityOddAssumptions_aFour.eq_zero_of_isLorentzCovariant gFour_isSymm
     spectatorPlaneFour.toSpectatorSplitting
     (fun _ hq hT hu => gFour_self_ne_zero_of_spectator hq hT hu) h)
 
