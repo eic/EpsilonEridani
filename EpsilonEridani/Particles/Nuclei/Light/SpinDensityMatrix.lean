@@ -62,7 +62,7 @@ projection along a perpendicular axis, which has `Pₖₖ = 1`.
 
 ## Main results
 
-* `EpsilonEridani.Spin.spinOneMatrix_commutator_zero_one` (and its cyclic partners) and
+* `EpsilonEridani.Spin.spinOneMatrix_commutator` and
   `EpsilonEridani.Spin.sum_spinOneMatrix_mul_self`: `spinOneMatrix` is a spin-one
   representation.
 * `EpsilonEridani.Spin.spinOneMatrix_decomposition`: completeness of the decomposition.
@@ -75,7 +75,8 @@ projection along a perpendicular axis, which has `Pₖₖ = 1`.
 * `EpsilonEridani.Spin.neg_two_le_re_tensorPolarization_spinOneMatrix`,
   `EpsilonEridani.Spin.re_tensorPolarization_spinOneMatrix_le_one`,
   `EpsilonEridani.Spin.three_mul_norm_vectorPolarization_spinOneMatrix_le`: the positivity
-  bounds.
+  bounds, sharp by `EpsilonEridani.Spin.tensorPolarization_spinOneMatrix_single_same` and
+  `EpsilonEridani.Spin.tensorPolarization_spinOneMatrix_single_same_of_ne`.
 
 ## References
 
@@ -167,10 +168,10 @@ lemma isHermitian_spinTensorOperator (hS : ∀ k, (S k).IsHermitian) (i j : Fin 
   rw [IsHermitian, conjTranspose_smul, hanti.eq, star_div₀, star_ofNat, star_ofNat]
 
 /-- The vector polarization of a hermitian `ρ` for hermitian spin matrices is real. -/
-lemma vectorPolarization_im (hS : ∀ k, (S k).IsHermitian) {ρ : Matrix n n ℂ}
-    (hρ : ρ.IsHermitian) (k : Fin 3) : (vectorPolarization S ρ k).im = 0 := by
+lemma vectorPolarization_im {k : Fin 3} (hS : (S k).IsHermitian) {ρ : Matrix n n ℂ}
+    (hρ : ρ.IsHermitian) : (vectorPolarization S ρ k).im = 0 := by
   rw [vectorPolarization_def, ← conj_eq_iff_im, ← star_def, ← trace_conjTranspose,
-    conjTranspose_mul, hρ.eq, (hS k).eq, trace_mul_comm]
+    conjTranspose_mul, hρ.eq, hS.eq, trace_mul_comm]
 
 /-- The tensor polarization of a hermitian `ρ` for hermitian spin matrices is real. -/
 lemma tensorPolarization_im (hS : ∀ k, (S k).IsHermitian) {ρ : Matrix n n ℂ}
@@ -225,31 +226,18 @@ lemma isHermitian_spinOneMatrix (k : Fin 3) : (spinOneMatrix k).IsHermitian := b
   ext a b
   fin_cases k <;> fin_cases a <;> fin_cases b <;> simp [spinOneMatrix_apply, epsilon3]
 
-/-- The spin-one matrices obey the angular-momentum algebra: `[S₀, S₁] = i S₂`. -/
-lemma spinOneMatrix_commutator_zero_one :
-    spinOneMatrix 0 * spinOneMatrix 1 - spinOneMatrix 1 * spinOneMatrix 0 =
-      I • spinOneMatrix 2 := by
+/-- The spin-one matrices obey the angular-momentum algebra: `[Sᵢ, Sⱼ] = i ∑ₖ εᵢⱼₖ Sₖ`. -/
+lemma spinOneMatrix_commutator (i j : Fin 3) :
+    spinOneMatrix i * spinOneMatrix j - spinOneMatrix j * spinOneMatrix i =
+      I • ∑ k, (epsilon3 i j k : ℂ) • spinOneMatrix k := by
   ext a b
-  fin_cases a <;> fin_cases b <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_three, spinOneMatrix_apply, epsilon3]
-
-/-- The spin-one matrices obey the angular-momentum algebra: `[S₁, S₂] = i S₀`. -/
-lemma spinOneMatrix_commutator_one_two :
-    spinOneMatrix 1 * spinOneMatrix 2 - spinOneMatrix 2 * spinOneMatrix 1 =
-      I • spinOneMatrix 0 := by
-  ext a b
-  fin_cases a <;> fin_cases b <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_three, spinOneMatrix_apply, epsilon3]
-
-/-- The spin-one matrices obey the angular-momentum algebra: `[S₂, S₀] = i S₁`. -/
-lemma spinOneMatrix_commutator_two_zero :
-    spinOneMatrix 2 * spinOneMatrix 0 - spinOneMatrix 0 * spinOneMatrix 2 =
-      I • spinOneMatrix 1 := by
-  ext a b
-  fin_cases a <;> fin_cases b <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_three, spinOneMatrix_apply, epsilon3]
+  simp only [Matrix.sub_apply, spinOneMatrix_mul_spinOneMatrix_apply, Matrix.smul_apply,
+    Matrix.sum_apply, smul_eq_mul]
+  fin_cases i <;> fin_cases j <;> fin_cases a <;> fin_cases b <;>
+    simp [Fin.sum_univ_three, spinOneMatrix_apply, epsilon3]
 
 /-- The Casimir of the spin-one matrices is `s (s + 1) = 2`. -/
+@[simp]
 lemma sum_spinOneMatrix_mul_self : ∑ k, spinOneMatrix k * spinOneMatrix k = (2 : ℂ) • 1 := by
   ext a b
   simp only [Matrix.sum_apply, spinOneMatrix_mul_spinOneMatrix_apply, Fin.sum_univ_three,
@@ -262,6 +250,7 @@ lemma trace_spinOneMatrix (k : Fin 3) : (spinOneMatrix k).trace = 0 := by
   simp [trace_fin_three]
 
 /-- The spin-one matrices are orthogonal for the trace form: `tr (Sᵢ Sⱼ) = 2 δᵢⱼ`. -/
+@[simp]
 lemma trace_spinOneMatrix_mul_spinOneMatrix (i j : Fin 3) :
     (spinOneMatrix i * spinOneMatrix j).trace = if i = j then 2 else 0 := by
   fin_cases i <;> fin_cases j <;>
@@ -284,35 +273,38 @@ lemma trace_spinTensorOperator_spinOneMatrix (i j : Fin 3) :
   fin_cases i <;> fin_cases j <;>
     norm_num [trace_fin_three, spinTensorOperator_spinOneMatrix_apply]
 
+/-- The trace of a `3 × 3` matrix against a spin-one matrix:
+`tr (M Sₖ) = i ∑ₐᵦ εₖₐᵦ Mₐᵦ`. -/
+lemma trace_mul_spinOneMatrix (M : Matrix (Fin 3) (Fin 3) ℂ) (k : Fin 3) :
+    (M * spinOneMatrix k).trace = I * ∑ a, ∑ b, (epsilon3 k a b : ℂ) * M a b := by
+  simp only [trace, diag_apply, Matrix.mul_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
+  rw [spinOneMatrix_apply_swap, spinOneMatrix_apply]
+  ring
+
+/-- The vector polarization of a spin-one state in terms of the entries of its density matrix:
+`Pₖ = i ∑ₐᵦ εₖₐᵦ ρₐᵦ`. -/
+lemma vectorPolarization_spinOneMatrix (ρ : Matrix (Fin 3) (Fin 3) ℂ) (k : Fin 3) :
+    vectorPolarization spinOneMatrix ρ k = I * ∑ a, ∑ b, (epsilon3 k a b : ℂ) * ρ a b :=
+  trace_mul_spinOneMatrix ρ k
+
 /-- The vector polarization of a spin-one state along the first axis:
 `P₀ = i (ρ₁₂ - ρ₂₁)`. -/
 lemma vectorPolarization_spinOneMatrix_zero (ρ : Matrix (Fin 3) (Fin 3) ℂ) :
     vectorPolarization spinOneMatrix ρ 0 = I * (ρ 1 2 - ρ 2 1) := by
-  simp only [vectorPolarization_def, trace_fin_three, Matrix.mul_apply, Fin.sum_univ_three,
-    spinOneMatrix_apply, epsilon3, Fin.isValue, cons_val', cons_val_fin_one, cons_val_zero,
-    cons_val_one, cons_val, ofReal_zero, ofReal_one, ofReal_neg, neg_mul, mul_neg, neg_neg,
-    neg_zero, mul_zero, mul_one, zero_add, add_zero]
-  ring
+  simp [vectorPolarization_spinOneMatrix, Fin.sum_univ_three, epsilon3, sub_eq_add_neg]
 
 /-- The vector polarization of a spin-one state along the second axis:
 `P₁ = i (ρ₂₀ - ρ₀₂)`. -/
 lemma vectorPolarization_spinOneMatrix_one (ρ : Matrix (Fin 3) (Fin 3) ℂ) :
     vectorPolarization spinOneMatrix ρ 1 = I * (ρ 2 0 - ρ 0 2) := by
-  simp only [vectorPolarization_def, trace_fin_three, Matrix.mul_apply, Fin.sum_univ_three,
-    spinOneMatrix_apply, epsilon3, Fin.isValue, cons_val', cons_val_fin_one, cons_val_zero,
-    cons_val_one, cons_val, ofReal_zero, ofReal_one, ofReal_neg, neg_mul, mul_neg, neg_neg,
-    neg_zero, mul_zero, mul_one, zero_add, add_zero]
-  ring
+  simp [vectorPolarization_spinOneMatrix, Fin.sum_univ_three, epsilon3, sub_eq_add_neg, add_comm]
 
 /-- The vector polarization of a spin-one state along the third axis:
 `P₂ = i (ρ₀₁ - ρ₁₀)`. -/
 lemma vectorPolarization_spinOneMatrix_two (ρ : Matrix (Fin 3) (Fin 3) ℂ) :
     vectorPolarization spinOneMatrix ρ 2 = I * (ρ 0 1 - ρ 1 0) := by
-  simp only [vectorPolarization_def, trace_fin_three, Matrix.mul_apply, Fin.sum_univ_three,
-    spinOneMatrix_apply, epsilon3, Fin.isValue, cons_val', cons_val_fin_one, cons_val_zero,
-    cons_val_one, cons_val, ofReal_zero, ofReal_one, ofReal_neg, neg_mul, mul_neg, neg_neg,
-    neg_zero, mul_zero, mul_one, zero_add, add_zero]
-  ring
+  simp [vectorPolarization_spinOneMatrix, Fin.sum_univ_three, epsilon3, sub_eq_add_neg]
 
 /-- The trace of a `3 × 3` matrix against a spin-one tensor operator:
 `tr (M Σᵢⱼ) = δᵢⱼ tr M - (3/2) (Mᵢⱼ + Mⱼᵢ)`. -/
@@ -348,6 +340,7 @@ lemma trace_spinOneMatrix_mul_spinTensorOperator_spinOneMatrix (k i j : Fin 3) :
 
 /-- The Gram matrix of the spin-one tensor operators for the trace form:
 `tr (Σᵢⱼ Σₖₗ) = (9/2) (δᵢₖ δⱼₗ + δᵢₗ δⱼₖ) - 3 δᵢⱼ δₖₗ`. -/
+@[simp]
 lemma trace_spinTensorOperator_mul_spinTensorOperator_spinOneMatrix (i j k l : Fin 3) :
     (spinTensorOperator spinOneMatrix i j * spinTensorOperator spinOneMatrix k l).trace =
       (9 / 2 : ℂ) * ((if i = k ∧ j = l then 1 else 0) + (if i = l ∧ j = k then 1 else 0)) -
@@ -413,31 +406,33 @@ open scoped ComplexOrder
 
 variable {ρ : Matrix (Fin 3) (Fin 3) ℂ}
 
+/-- The real part of the diagonal tensor polarization of a spin-one state:
+`re Pᵢᵢ = re (tr ρ) - 3 re ρᵢᵢ`. -/
+lemma re_tensorPolarization_spinOneMatrix_self (ρ : Matrix (Fin 3) (Fin 3) ℂ) (i : Fin 3) :
+    (tensorPolarization spinOneMatrix ρ i i).re = ρ.trace.re - 3 * (ρ i i).re := by
+  simp [tensorPolarization_spinOneMatrix_self]
+
+/-- The real parts of the diagonal entries of a unit-trace spin-one density matrix, the
+populations of the three Cartesian states, sum to one. -/
+lemma re_add_re_add_re_of_trace_eq_one (htr : ρ.trace = 1) :
+    (ρ 0 0).re + (ρ 1 1).re + (ρ 2 2).re = 1 := by
+  simpa [trace_fin_three] using congrArg re htr
+
 /-- The tensor polarization of a spin-one state is at most one: `Pᵢᵢ ≤ 1`. -/
 theorem re_tensorPolarization_spinOneMatrix_le_one (hρ : ρ.PosSemidef) (htr : ρ.trace = 1)
     (i : Fin 3) : (tensorPolarization spinOneMatrix ρ i i).re ≤ 1 := by
   have := (Complex.nonneg_iff.mp (hρ.diag_nonneg (i := i))).1
-  simp only [tensorPolarization_spinOneMatrix_self, htr, sub_re, one_re, mul_re, re_ofNat,
-    im_ofNat, zero_mul, sub_zero]
+  rw [re_tensorPolarization_spinOneMatrix_self, htr, one_re]
   linarith
 
 /-- The tensor polarization of a spin-one state is at least minus two: `-2 ≤ Pᵢᵢ`. -/
 theorem neg_two_le_re_tensorPolarization_spinOneMatrix (hρ : ρ.PosSemidef) (htr : ρ.trace = 1)
     (i : Fin 3) : -2 ≤ (tensorPolarization spinOneMatrix ρ i i).re := by
-  have h0 := (Complex.nonneg_iff.mp (hρ.diag_nonneg (i := 0))).1
-  have h1 := (Complex.nonneg_iff.mp (hρ.diag_nonneg (i := 1))).1
-  have h2 := (Complex.nonneg_iff.mp (hρ.diag_nonneg (i := 2))).1
-  have : (ρ 0 0).re + (ρ 1 1).re + (ρ 2 2).re = 1 := by
-    simpa [trace_fin_three] using congrArg re htr
-  simp only [tensorPolarization_spinOneMatrix_self, htr, sub_re, one_re, mul_re, re_ofNat,
-    im_ofNat, zero_mul, sub_zero]
-  fin_cases i
-  · simp only [Fin.zero_eta]
-    linarith
-  · simp only [Fin.mk_one]
-    linarith
-  · simp only [Fin.reduceFinMk]
-    linarith
+  have h (j : Fin 3) := (Complex.nonneg_iff.mp (hρ.diag_nonneg (i := j))).1
+  have := re_add_re_add_re_of_trace_eq_one htr
+  rw [re_tensorPolarization_spinOneMatrix_self, htr, one_re]
+  fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue] <;>
+    linarith [h 0, h 1, h 2]
 
 /-- **The vector polarization of a spin-one state is bounded by its tensor polarization**:
 `3 |Pₖ| ≤ 2 + Pₖₖ`. Since `Pₖₖ ≤ 1`, this gives `|Pₖ| ≤ 1`; and a state with the extreme
@@ -452,20 +447,13 @@ theorem three_mul_norm_vectorPolarization_spinOneMatrix_le (hρ : ρ.PosSemidef)
     have hba := hρ.two_mul_norm_apply_le b a
     simp only [RCLike.re_to_complex] at hab hba
     linarith [norm_sub_le (ρ a b) (ρ b a)]
-  have : (ρ 0 0).re + (ρ 1 1).re + (ρ 2 2).re = 1 := by
-    simpa [trace_fin_three] using congrArg re htr
-  simp only [tensorPolarization_spinOneMatrix_self, htr, sub_re, one_re, mul_re, re_ofNat,
-    im_ofNat, zero_mul, sub_zero]
-  fin_cases k
-  · have := key 1 2
-    simp only [Fin.zero_eta, vectorPolarization_spinOneMatrix_zero]
-    linarith
-  · have := key 2 0
-    simp only [Fin.mk_one, vectorPolarization_spinOneMatrix_one]
-    linarith
-  · have := key 0 1
-    simp only [Fin.reduceFinMk, vectorPolarization_spinOneMatrix_two]
-    linarith
+  have := re_add_re_add_re_of_trace_eq_one htr
+  rw [re_tensorPolarization_spinOneMatrix_self, htr, one_re]
+  fin_cases k <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
+      vectorPolarization_spinOneMatrix_zero, vectorPolarization_spinOneMatrix_one,
+      vectorPolarization_spinOneMatrix_two] <;>
+    linarith [key 1 2, key 2 0, key 0 1]
 
 /-- The pure state of zero spin projection along axis `k`, the projector onto the `k`-th
 Cartesian basis vector, has no vector polarization. -/
@@ -475,14 +463,17 @@ lemma vectorPolarization_spinOneMatrix_single_same (k l : Fin 3) :
   simp [vectorPolarization_def, trace_single_mul]
 
 /-- The pure state of zero spin projection along axis `k` has the extreme tensor polarization
-`Pₖₖ = -2`, so the bound `neg_two_le_re_tensorPolarization_spinOneMatrix` is sharp. -/
+`Pₖₖ = -2`. It is a density matrix (`Matrix.PosSemidef.single_self`, `trace_single_eq_same`), so
+the bound `neg_two_le_re_tensorPolarization_spinOneMatrix` is sharp. -/
+@[simp]
 lemma tensorPolarization_spinOneMatrix_single_same (k : Fin 3) :
     tensorPolarization spinOneMatrix (single k k 1) k k = -2 := by
   rw [tensorPolarization_spinOneMatrix_self, trace_single_eq_same, single_apply_same]
   norm_num
 
 /-- The pure state of zero spin projection along an axis `l` perpendicular to `k` has tensor
-polarization `Pₖₖ = 1`, so the bound `re_tensorPolarization_spinOneMatrix_le_one` is sharp. -/
+polarization `Pₖₖ = 1`. It is a density matrix (`Matrix.PosSemidef.single_self`,
+`trace_single_eq_same`), so the bound `re_tensorPolarization_spinOneMatrix_le_one` is sharp. -/
 lemma tensorPolarization_spinOneMatrix_single_same_of_ne {k l : Fin 3} (h : l ≠ k) :
     tensorPolarization spinOneMatrix (single l l 1) k k = 1 := by
   rw [tensorPolarization_spinOneMatrix_self, trace_single_eq_same]
@@ -501,11 +492,18 @@ lemma spinHalfMatrix_def (k : Fin 3) :
 
 /-- The entries of the spin-one-half matrices are those of the fundamental `su(2)` generators
 `su2GenEntry`. -/
-lemma spinHalfMatrix_apply (k : Fin 3) (a b : Fin 2) : spinHalfMatrix k a b = su2GenEntry k a b :=
-  (rfl)
+lemma spinHalfMatrix_apply (k : Fin 3) (a b : Fin 2) :
+    spinHalfMatrix k a b = su2GenEntry k a b := by
+  rw [spinHalfMatrix_def, su2GenEntry, Matrix.smul_apply, smul_eq_mul]
+
+/-- The spin-one-half matrices are hermitian. -/
+lemma isHermitian_spinHalfMatrix (k : Fin 3) : (spinHalfMatrix k).IsHermitian := by
+  rw [IsHermitian, spinHalfMatrix_def, conjTranspose_smul, PauliMatrix.pauliMatrix_selfAdjoint,
+    star_div₀, star_one, star_ofNat]
 
 /-- The Casimir of the spin-one-half matrices is `s (s + 1) = 3/4`: the matrix form of the
 fundamental `su(2)` Casimir `su2FundamentalStatement`. -/
+@[simp]
 lemma sum_spinHalfMatrix_mul_self :
     ∑ k, spinHalfMatrix k * spinHalfMatrix k = (3 / 4 : ℂ) • 1 := by
   ext a b

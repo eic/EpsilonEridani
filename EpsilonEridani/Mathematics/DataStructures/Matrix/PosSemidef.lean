@@ -24,6 +24,9 @@ file records the resulting entrywise bounds on the off-diagonal entries:
 * `Matrix.PosSemidef.two_mul_abs_apply_le`: `2 * |M i j| ≤ M i i + M j j` for real `M`, the real
   case of `two_mul_norm_apply_le`.
 
+It also records that a diagonal matrix unit `single i i r` with `0 ≤ r` is positive semidefinite
+(`Matrix.PosSemidef.single_self`), the density matrix of a pure basis state.
+
 (Nonnegativity of the diagonal is Mathlib's `Matrix.PosSemidef.diag_nonneg`.)
 
 All three bounds are stated multiplied out, with no division, so that they apply without field
@@ -37,6 +40,7 @@ parton spin-density matrix.
 - `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound.
 - `Matrix.PosSemidef.sq_apply_le`: the real entrywise geometric-mean bound.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: the real entrywise arithmetic-mean bound.
+- `Matrix.PosSemidef.single_self`: diagonal matrix units are positive semidefinite.
 
 ## Implementation notes
 
@@ -85,5 +89,13 @@ Stated multiplied out, without a division, so that it applies with no field side
 lemma PosSemidef.two_mul_abs_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
     2 * |M i j| ≤ M i i + M j j := by
   simpa using hM.two_mul_norm_apply_le i j
+
+/-- A diagonal matrix unit `single i i r` with `0 ≤ r` is positive semidefinite; for `r = 1` it is
+the projector onto the `i`-th basis vector, a pure state. -/
+protected lemma PosSemidef.single_self {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [DecidableEq n] (i : n) {r : R} (hr : 0 ≤ r) :
+    (single i i r).PosSemidef := by
+  rw [← diagonal_single]
+  exact .diagonal (Pi.single_nonneg.mpr hr)
 
 end Matrix
