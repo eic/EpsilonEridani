@@ -182,6 +182,42 @@ theorem tendsto_f2LO_div_f2LO {Flavor : Type} [Fintype Flavor] {e e' : Flavor �
     field_simp
   rw [Pi.div_apply, h, h, mul_div_mul_left _ _ (mul_ne_zero hx hw)]
 
+open Filter Topology in
+/-- **The limiting ratio of `F₂` against a reference density.** If, along a filter `l` on which `x`
+and the density `q u` are eventually non-zero, every other density `q i` is asymptotically `ρ i`
+times `q u`, then with `ρ u = 1` the ratio of `F₂` with charges `e` to `F₂` with charges `e'`
+tends to `Σ e_i² ρ_i / Σ e'_i² ρ_i`, provided the limiting denominator does not vanish. This is
+`tendsto_f2LO_div_f2LO` with `q u` as the reference function. -/
+theorem tendsto_f2LO_div_f2LO_of_tendsto_div {Flavor : Type} [Fintype Flavor]
+    {e e' : Flavor → ℝ} {q : Flavor → ℝ → ℝ → ℝ} {Q2 : ℝ} {l : Filter ℝ} {ρ : Flavor → ℝ}
+    (u : Flavor) (hx : ∀ᶠ x in l, x ≠ 0) (hu : ∀ᶠ x in l, q u x Q2 ≠ 0)
+    (hq : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 (ρ i))) (hρu : ρ u = 1)
+    (hρ : ∑ i, e' i ^ 2 * ρ i ≠ 0) :
+    Tendsto (fun x => f2LO e q x Q2 / f2LO e' q x Q2) l
+      (𝓝 ((∑ i, e i ^ 2 * ρ i) / ∑ i, e' i ^ 2 * ρ i)) := by
+  have hq' (i : Flavor) : Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 (ρ i)) := by
+    rcases eq_or_ne i u with rfl | hi
+    · rw [hρu]
+      exact tendsto_const_nhds.congr' (hu.mono fun x hx => (div_self hx).symm)
+    · exact hq i hi
+  exact tendsto_f2LO_div_f2LO hx hu hq' hρ
+
+open Filter Topology in
+/-- **The limiting ratio of `F₂` when one density dominates.** If, along a filter `l` on which `x`
+and the density `q u` are eventually non-zero, every other density is negligible against `q u`,
+then the ratio of `F₂` with charges `e` to `F₂` with charges `e'` tends to `e_u² / e'_u²`, provided
+`e'_u ≠ 0`. -/
+theorem tendsto_f2LO_div_f2LO_of_tendsto_zero {Flavor : Type} [Fintype Flavor]
+    {e e' : Flavor → ℝ} {q : Flavor → ℝ → ℝ → ℝ} {Q2 : ℝ} {l : Filter ℝ} (u : Flavor)
+    (hx : ∀ᶠ x in l, x ≠ 0) (hu : ∀ᶠ x in l, q u x Q2 ≠ 0) (he' : e' u ≠ 0)
+    (h : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 0)) :
+    Tendsto (fun x => f2LO e q x Q2 / f2LO e' q x Q2) l (𝓝 (e u ^ 2 / e' u ^ 2)) := by
+  classical
+  have hρ : ∑ i, e' i ^ 2 * (if i = u then 1 else 0) ≠ 0 := by
+    simpa using he'
+  simpa using tendsto_f2LO_div_f2LO_of_tendsto_div (ρ := fun i => if i = u then 1 else 0) u hx hu
+    (fun i hi => by simpa [hi] using h i hi) (by simp) hρ
+
 end DIS
 end Scattering
 end QFT

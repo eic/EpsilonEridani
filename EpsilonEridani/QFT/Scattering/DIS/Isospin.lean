@@ -37,9 +37,11 @@ The ratio `F₂^p / F₂^n` at large `x` is not fixed by isospin. It is fixed by
 density ratios: if, along a filter on which `x` and a common reference function are eventually
 non-zero, every `q_f + qbar_f` is asymptotically `ρ_f` times that reference function, then `F₂`
 with charges `e` over `F₂` with charges `e'` tends to `Σ e_f² ρ_f / Σ e'_f² ρ_f` whenever the
-limiting denominator is non-zero (`DIS.tendsto_f2LO_div_f2LO`). For the neutron the reference
-function is the up density: along a filter on which `x` and the up density are eventually
-non-zero and every other density over the up density tends to `ρ_f`, the ratio tends to
+limiting denominator is non-zero (`DIS.tendsto_f2LO_div_f2LO`, and
+`DIS.tendsto_f2LO_div_f2LO_of_tendsto_div` with a density as the reference function). For the
+neutron the reference function is the up density: along a filter on which `x` and the up density
+are eventually non-zero and every other density over the up density tends to `ρ_f`, the ratio
+tends to
 `Σ e_f² ρ_f / Σ e_{τ f}² ρ_f` with `ρ_u = 1` (`tendsto_f2LO_div_f2LO_isospinConj`). When every
 other density is negligible against the up density this limit is `e_u² / e_d²` provided `e_d ≠ 0`
 (`tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_zero`). For the light flavours, with `d/u → r` and
@@ -140,13 +142,8 @@ theorem tendsto_f2LO_div_f2LO_isospinConj {e : ι → ℝ} {q : Pdf ι} {u d : �
     (hρ : ∑ i, e (Equiv.swap u d i) ^ 2 * ρ i ≠ 0) :
     Tendsto (fun x => f2LO e q x Q2 / f2LO e (isospinConj u d q) x Q2) l
       (𝓝 ((∑ i, e i ^ 2 * ρ i) / ∑ i, e (Equiv.swap u d i) ^ 2 * ρ i)) := by
-  have hq' (i : ι) : Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 (ρ i)) := by
-    rcases eq_or_ne i u with rfl | hi
-    · rw [hρu]
-      exact tendsto_const_nhds.congr' (hu.mono fun x hx => (div_self hx).symm)
-    · exact hq i hi
   simp only [f2LO_isospinConj]
-  exact tendsto_f2LO_div_f2LO (e' := e ∘ Equiv.swap u d) hx hu hq' hρ
+  exact tendsto_f2LO_div_f2LO_of_tendsto_div (e' := e ∘ Equiv.swap u d) u hx hu hq hρu hρ
 
 /-- **`F₂^p / F₂^n → e_u² / e_d²` when the up density dominates.** If, along a filter `l` on which
 `x` and the density `q u` are eventually non-zero, every other density is negligible against
@@ -157,10 +154,9 @@ theorem tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_zero {e : ι → ℝ} {q : 
     (hd : e d ≠ 0) (h : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 0)) :
     Tendsto (fun x => f2LO e q x Q2 / f2LO e (isospinConj u d q) x Q2) l
       (𝓝 (e u ^ 2 / e d ^ 2)) := by
-  have hρ : ∑ i, e (Equiv.swap u d i) ^ 2 * (if i = u then 1 else 0) ≠ 0 := by
-    simpa using hd
-  simpa using tendsto_f2LO_div_f2LO_isospinConj (ρ := fun i => if i = u then 1 else 0) hx hu
-    (fun i hi => by simpa [hi] using h i hi) (by simp) hρ
+  simp only [f2LO_isospinConj]
+  simpa using tendsto_f2LO_div_f2LO_of_tendsto_zero (e' := e ∘ Equiv.swap u d) u hx hu
+    (by simpa using hd) h
 
 end General
 
