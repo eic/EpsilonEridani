@@ -14,6 +14,10 @@ This module introduces helicity-resolved parity-even/parity-odd decomposition
 interfaces for PVES and bridges that isolate helicity-odd dependence to the
 `gamma-Z` interference contribution.
 
+It also defines `Electroweak.FermionNeutralCurrentCouplings.helicityCoupling`, the `Z` coupling
+`g_V - λ g_A` of a massless fermion of definite helicity `λ = helicitySign h`, which is `2 g_R`
+for a right-handed and `2 g_L` for a left-handed fermion.
+
 -/
 
 @[expose] public section
@@ -32,6 +36,10 @@ open Electroweak
 /-- Helicity sign convention for right/left polarized beam labels. -/
 def helicitySign (h : Bool) : ℝ :=
   if h then 1 else -1
+
+@[simp] lemma helicitySign_true : helicitySign true = 1 := by simp [helicitySign]
+
+@[simp] lemma helicitySign_false : helicitySign false = -1 := by simp [helicitySign]
 
 lemma helicitySign_sq (h : Bool) : helicitySign h ^ 2 = 1 := by
   by_cases hh : h
@@ -148,6 +156,40 @@ lemma canonicalParityOdd_eq_gammaZInterference
     x y
 
 end Interference
+
+namespace Electroweak
+
+namespace FermionNeutralCurrentCouplings
+
+open Interference
+
+variable (c : FermionNeutralCurrentCouplings)
+
+/-- The `Z` coupling `g_V - λ g_A` of a massless fermion of helicity `λ = helicitySign h`: the
+vertex `γ^μ (g_V - g_A γ⁵)` acting on its single chiral component, whose chirality equals its
+helicity. It is `2 g_R` for `h = true` and `2 g_L` for `h = false`. -/
+def helicityCoupling (h : Bool) : ℝ := c.gV - helicitySign h * c.gA
+
+theorem helicityCoupling_def (h : Bool) :
+    c.helicityCoupling h = c.gV - helicitySign h * c.gA :=
+  (rfl)
+
+/-- A right-handed fermion couples to the `Z` with `2 g_R`. -/
+@[simp]
+theorem helicityCoupling_true : c.helicityCoupling true = 2 * c.gR := by
+  rw [helicityCoupling_def, gR_def, helicitySign_true]
+  ring
+
+/-- A left-handed fermion couples to the `Z` with `2 g_L`. -/
+@[simp]
+theorem helicityCoupling_false : c.helicityCoupling false = 2 * c.gL := by
+  rw [helicityCoupling_def, gL_def, helicitySign_false]
+  ring
+
+end FermionNeutralCurrentCouplings
+
+end Electroweak
+
 end PVES
 end DIS
 end Scattering
