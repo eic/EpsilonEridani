@@ -17,16 +17,9 @@ scattering angle `θ` hands the photon the virtuality `emissionVirtuality m E E'
 The explicit data of the subject are a `ChargedSource` (charge, mass, charge radius and Lorentz
 factor in the collider frame), the photon variables `PhotonKinematics` (energy in the collider
 frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`), and the photon energy
-fraction `PhotonKinematics.energyFraction`. For a photon whose four-momentum `q` has `q⁰` equal to
-its energy, virtuality `-q²` and spatial part `a • n` along a unit beam axis `n`, being real means
-`a` equals its energy: such a photon with `a = γ.energy` is real
-(`PhotonKinematics.isReal_of_spatialPart_eq_energy_smul`), and conversely a real one with
-`0 < γ.energy + a` has `a = γ.energy`
-(`PhotonKinematics.eq_energy_of_isReal_of_spatialPart_eq_smul`).
-
-The kinematic minimum of the virtuality is strictly positive for a massive source
-(`ChargedSource.photonVirtualityMin_pos`) and strictly exceeds the familiar `m² x² / (1 - x)` in
-terms of the energy fraction `x` carried by the photon
+fraction `PhotonKinematics.energyFraction`. The kinematic minimum of the virtuality is strictly
+positive for a massive source (`ChargedSource.photonVirtualityMin_pos`) and strictly exceeds the
+familiar `m² x² / (1 - x)` in terms of the energy fraction `x` carried by the photon
 (`ChargedSource.sq_mul_sq_div_one_sub_lt_photonVirtualityMin`). The set
 `ChargedSource.photonRegion s θmax` of photon variables allowed by the bounds is exactly the set of
 photons emitted by `s` with scattering angle at most `θmax`
@@ -101,33 +94,6 @@ def IsReal (k : PhotonKinematics) : Prop := k.virtuality = 0
 /-- A photon is real exactly at zero virtuality. -/
 @[simp]
 theorem isReal_iff (k : PhotonKinematics) : k.IsReal ↔ k.virtuality = 0 := (Iff.rfl)
-
-section CollinearFourMomentum
-
-variable {d : ℕ} (γ : PhotonKinematics) {q : Lorentz.Vector d} {n : EuclideanSpace ℝ (Fin d)}
-  (hn : ‖n‖ = 1) (hγ : γ.virtuality = -⟪q, q⟫ₘ) (hq : q.timeComponent = γ.energy)
-include hn hγ hq
-
-/-- **A photon along the beam axis with momentum equal to its energy is real.** A photon `γ` of
-four-momentum `q`, with `q⁰ = γ.energy`, virtuality `-q²` and spatial part `γ.energy • n` along the
-unit beam axis, satisfies `γ.IsReal`. -/
-theorem isReal_of_spatialPart_eq_energy_smul (hq' : q.spatialPart = γ.energy • n) : γ.IsReal := by
-  rw [isReal_iff, hγ,
-    Lorentz.Vector.minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul hn hq
-      hq', neg_zero]
-
-/-- **A real photon along the beam axis has momentum equal to its energy.** A real photon `γ` of
-four-momentum `q`, with `q⁰ = γ.energy`, virtuality `-q²` and spatial part `a • n` along the unit
-beam axis, whose forward light-cone component `γ.energy + a` is positive, has `a = γ.energy`. -/
-theorem eq_energy_of_isReal_of_spatialPart_eq_smul {a : ℝ} (hq' : q.spatialPart = a • n)
-    (hreal : γ.IsReal) (ha : 0 < γ.energy + a) : a = γ.energy := by
-  rw [isReal_iff, hγ, Lorentz.Vector.minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hq', hq,
-    neg_eq_zero, mul_eq_zero] at hreal
-  rcases hreal with h | h
-  · exact absurd h ha.ne'
-  · linarith
-
-end CollinearFourMomentum
 
 /-- The fraction `x = k / E` of the source energy carried by the photon. -/
 def energyFraction (k : PhotonKinematics) (s : ChargedSource) : ℝ := k.energy / s.energy
