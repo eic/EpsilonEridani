@@ -285,6 +285,11 @@ lemma coeff_one_toPowerSeries_cubicSchemeChange (c₁ c₂ : R) :
   simp [toPowerSeries_cubicSchemeChange, coeff_X]
 
 @[simp]
+lemma linearCoeff_cubicSchemeChange (c₁ c₂ : R) :
+    SubstGroup.linearCoeff (cubicSchemeChange c₁ c₂) = 1 :=
+  Units.ext (by simp)
+
+@[simp]
 lemma coeff_two_toPowerSeries_cubicSchemeChange (c₁ c₂ : R) :
     coeff 2 (cubicSchemeChange c₁ c₂).toPowerSeries = c₁ := by
   simp [toPowerSeries_cubicSchemeChange, coeff_X]
@@ -327,7 +332,7 @@ theorem transformBeta_substGroupRescale (u : Rˣ) (β : R⟦X⟧) :
     transformBeta (SubstGroup.rescale u) β = C (u : R) * rescale (↑u⁻¹ : R) β := by
   rw [transformBeta_eq_iff, ← smul_eq_C_mul, PowerSeries.subst_smul (SubstGroup.rescale u).hasSubst,
     SubstGroup.subst_toPowerSeries_rescale, rescale_rescale]
-  simp [smul_eq_C_mul]
+  simp [SubstGroup.toPowerSeries_rescale, smul_eq_C_mul]
 
 /-- Under the change of normalisation `a' = u a` the coefficients of the beta function scale as
 `u^{n+1} βₙ' = βₙ`. -/

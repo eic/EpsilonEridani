@@ -231,14 +231,18 @@ def rescale : Rˣ →* SubstGroup R where
     simp only [toPowerSeries_mul, ← rescale_eq_subst]
     simp only [smul_eq_C_mul, ← rescale_X, rescale_rescale, Units.val_mul]
 
-@[simp]
 lemma toPowerSeries_rescale (u : Rˣ) : (rescale u).toPowerSeries = (u : R) • X := by
   simp [rescale]
 
 /-- Substituting `X ↦ u X` is `PowerSeries.rescale u`. -/
+@[simp]
 lemma subst_toPowerSeries_rescale (u : Rˣ) (f : R⟦X⟧) :
     f.subst (rescale u).toPowerSeries = PowerSeries.rescale (u : R) f := by
   rw [toPowerSeries_rescale, ← rescale_eq_subst]
+
+@[simp]
+lemma coeff_one_toPowerSeries_rescale (u : Rˣ) : coeff 1 (rescale u).toPowerSeries = u := by
+  simp [toPowerSeries_rescale]
 
 @[simp]
 lemma linearCoeff_rescale (u : Rˣ) : linearCoeff (rescale u) = u := by
