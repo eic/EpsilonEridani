@@ -128,7 +128,7 @@ theorem spinStructureTwo_eq_smul_sub_smul (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (K : PolarizedKinematics g) :
     spinStructureTwo ε K =
       g K.p K.q • spinStructureOne ε K - g K.S K.q • ε.bilinMap ![K.q, K.p] := by
-  rw [spinStructureTwo, spinStructureOne, ε.bilinMap_pair_sub_snd, ε.bilinMap_pair_smul_snd,
+  rw [spinStructureTwo_def, spinStructureOne_def, ε.bilinMap_pair_sub_snd, ε.bilinMap_pair_smul_snd,
     ε.bilinMap_pair_smul_snd]
 
 /-- At `S·q = 0` the two covariant structures degenerate: `E₂ = (p·q) E₁`. -/
@@ -264,8 +264,8 @@ theorem fromG1G2_eq_smul_bilinMap (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Polar
   have hvec : g₁ • K.S + g₂ • (K.S - (g K.S K.q / g K.p K.q) • K.p) =
       (g₁ + g₂) • K.S - (g₂ * (g K.S K.q / g K.p K.q)) • K.p := by
     module
-  rw [fromG1G2, spinStructureTwo_eq_smul_sub_smul, hvec, ε.bilinMap_pair_sub_snd,
-    ε.bilinMap_pair_smul_snd, ε.bilinMap_pair_smul_snd, ← spinStructureOne]
+  rw [fromG1G2_def, spinStructureTwo_eq_smul_sub_smul, hvec, ε.bilinMap_pair_sub_snd,
+    ε.bilinMap_pair_smul_snd, ε.bilinMap_pair_smul_snd, ← spinStructureOne_def]
   rcases eq_or_ne (g K.p K.q) 0 with hpq | hpq
   · simp [hpq]
   · match_scalars <;> field_simp
@@ -328,29 +328,30 @@ def IsG1G2Decomposition (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinema
     (G : StructureFunctions) (W : Bilin V) : Prop :=
   W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g))
 
+/-- Characteristic property of `IsG1G2Decomposition`: `W` is `fromG1G2` at the values of `G` at
+the kinematic point. -/
+theorem isG1G2Decomposition_iff {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g}
+    {G : StructureFunctions} {W : Bilin V} :
+    IsG1G2Decomposition ε K G W ↔
+      W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) :=
+  Iff.rfl
+
 /-- `fromG1G2` at the values of `g₁`, `g₂` at the kinematic point decomposes with those
 structure functions. -/
 theorem fromG1G2_isDecomposition (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
     (G : StructureFunctions) :
     IsG1G2Decomposition ε K G (fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g))) :=
-  (rfl)
+  isG1G2Decomposition_iff.mpr rfl
 
 namespace IsG1G2Decomposition
 
 variable {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g} {G : StructureFunctions}
   {W : Bilin V}
 
-/-- Characteristic property of `IsG1G2Decomposition`: `W` is `fromG1G2` at the values of `G` at
-the kinematic point. -/
-theorem _root_.EpsilonEridani.QFT.Scattering.DIS.Polarized.isG1G2Decomposition_iff :
-    IsG1G2Decomposition ε K G W ↔
-      W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) :=
-  Iff.rfl
-
 /-- A tensor decomposing on `E₁`, `E₂` is `fromG1G2` at the values of `G`. -/
 theorem eq (h : IsG1G2Decomposition ε K G W) :
     W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) :=
-  h
+  isG1G2Decomposition_iff.mp h
 
 /-- Pointwise value of a tensor decomposing on `E₁`, `E₂`. -/
 theorem apply (h : IsG1G2Decomposition ε K G W) (v w : V) :
@@ -386,7 +387,9 @@ end IsG1G2Decomposition
 
 /-- Probe vectors separating the two covariant structures: one pair sees `E₁` but not `E₂`,
 and one pair does the reverse. This is the antisymmetric counterpart of
-`Tensors.Hadronic.UniquenessAssumptions`. -/
+`Tensors.Hadronic.UniquenessAssumptions`. Its `.linearIndependent` discharges the
+linear-independence hypothesis of `fromG1G2_inj`, `fromG1G2_ne_zero` and
+`IsG1G2Decomposition.unique`. -/
 abbrev SpinUniquenessAssumptions (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
     Type _ :=
   LinearMap.SeparatingProbes (spinStructureOne ε K) (spinStructureTwo ε K)

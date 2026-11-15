@@ -151,12 +151,10 @@ structure TensorAssumptions (A : Bilin V) : Prop where
 
 /-! ### `TensorAssumptions` is antisymmetry, and antisymmetry is `IsAlt`
 
-`TensorAssumptions` had no consumer anywhere in the repository when this lane started: no
-bridge produced one and no declaration took one. It is connected here rather than deleted,
-because the physics content — that the polarized hadronic tensor is antisymmetric — is worth
-naming, and because the connection is what shows the bundle is not a physics postulate at
-all: over `ℝ` it is exactly Mathlib's `LinearMap.BilinForm.IsAlt`, an algebraic condition
-with a standard consequence.
+`TensorAssumptions` names the physics content that the polarized hadronic tensor is
+antisymmetric. Over `ℝ` it is exactly Mathlib's `LinearMap.BilinForm.IsAlt`
+(`tensorAssumptions_iff_isAlt`), an algebraic condition rather than a physics postulate; the
+covariant decomposition `Polarized.fromG1G2` satisfies it (`Polarized.tensorAssumptions_fromG1G2`).
 -/
 
 /-- An antisymmetric bilinear form has vanishing diagonal. Over `ℝ` this needs no further

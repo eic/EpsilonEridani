@@ -690,14 +690,15 @@ theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSy
 
 /-- Assumptions that separate `F1` and `F2` coefficients via probe vectors, stated against
 the transverse basis: one pair of vectors sees the projector but not `p_T ⊗ p_T`, and one
-pair does the reverse. -/
+pair does the reverse. Its `.linearIndependent` discharges the linear-independence hypothesis
+of `decomposition_unique` and `fromF1F2_ne_zero`. -/
 abbrev UniquenessAssumptions (g : Bilin V) (K : DisKinematics V) : Type _ :=
   LinearMap.SeparatingProbes (transverseMetric g K)
     (Bilin.rankOne g (pTransverse g K) (pTransverse g K))
 
 /-- With the two transverse basis structures linearly independent, a decomposition with
-`(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this is the
-non-triviality statement that the old, non-transverse basis could not support. -/
+`(F1, F2) ≠ (0, 0)` is a non-zero tensor. Together with `assumptions_fromF1F2` this shows
+that the transverse decomposition is a non-trivial conserved hadronic tensor. -/
 lemma fromF1F2_ne_zero (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ)
     (hLI : LinearIndependent ℝ ![transverseMetric g K,
       Bilin.rankOne g (pTransverse g K) (pTransverse g K)]) (h : F1 ≠ 0 ∨ F2 ≠ 0) :
