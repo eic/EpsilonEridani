@@ -225,8 +225,8 @@ lemma sum_mellinMoment_one_weight_modelPdf_zero_one [Fintype Flavor] {w : Flavor
   norm_num
 
 /-- **The sum-rule bundle of a rescaled shape `1 - x`**: the model with exponents `a = 0` and
-`b = 1`, rescaled by weights summing to six, carries the upstream sum-rule bundle, the valence
-target of each flavour being half its weight. -/
+`b = 1`, rescaled by weights summing to six, carries the sum-rule bundle `SumRuleAssumptions`,
+the valence target of each flavour being half its weight. -/
 def sumRuleAssumptionsWeightModelPdfZeroOne [Fintype Flavor] {w : Flavor → ℝ}
     (hw : ∑ i, w i = 6) :
     SumRuleAssumptions (weight w (modelPdf Flavor 0 1)) where

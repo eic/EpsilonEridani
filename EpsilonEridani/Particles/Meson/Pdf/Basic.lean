@@ -15,10 +15,10 @@ public import EpsilonEridani.Particles.Parton.PDF.Model
 A parton density of a pseudoscalar meson is a collinear density
 `EpsilonEridani.Particles.Parton.PDF.Pdf` over the parton species
 `EpsilonEridani.Particles.Parton.Species Flavor` of the meson's flavour type, satisfying the
-upstream `PDF.Assumptions`; the support condition, the non-negativity on the unit interval and
-the integrability of the Mellin moments are then the upstream statements and are not restated
-here. The momentum sum rule and the sum rule for each species are likewise the upstream bundle
-`PDF.SumRuleAssumptions`, instantiated rather than restated.
+general `PDF.Assumptions`; the support condition, the non-negativity on the unit interval and
+the integrability of the Mellin moments are then the statements of that bundle and are not
+restated here. The momentum sum rule and the sum rule for each species are likewise the
+species-level bundle `PDF.SumRuleAssumptions`, instantiated rather than restated.
 
 What is specific to a meson is the *valence assignment*. The net number of quarks of flavour `i`
 that a density carries at a scale is `PDF.valenceNumber`, and `PseudoscalarMeson.valenceNumber` is
@@ -31,10 +31,10 @@ flavour. When the valence flavours coincide it is the vanishing of every valence
 (`hasValenceNumbers_iff_of_valenceQuark_eq_valenceAntiquark`), as for any density whose quark and
 antiquark densities of each flavour agree on the unit interval
 (`hasValenceNumbers_of_valenceQuark_eq_valenceAntiquark_of_quark_eq_antiquark`). Against a density
-that carries the upstream sum-rule bundle, the assignment is a condition on the bundle's valence
-targets alone (`hasValenceNumbers_iff_valenceTarget`, the meson instance of the general
-`PDF.forall_valenceNumber_eq_iff_valenceTarget`), so it suffices to check it at one scale, the
-valence numbers being the scale-independent target differences of
+that carries the sum-rule bundle `PDF.SumRuleAssumptions`, the assignment is a condition on the
+bundle's valence targets alone (`hasValenceNumbers_iff_valenceTarget`, the meson instance of the
+general `PDF.forall_valenceNumber_eq_iff_valenceTarget`), so it suffices to check it at one scale,
+the valence numbers being the scale-independent target differences of
 `PDF.valenceNumber_eq_sub_valenceTarget`.
 
 Two consequences fix what the assignment means. Both are statements at a single scale, so they are
@@ -47,12 +47,12 @@ by any density carrying its valence numbers
 (`valenceQuark_eq_and_valenceAntiquark_eq_of_pdfValenceNumber_eq`); the three sum rules themselves
 fix the valence integrals.
 
-That the assignment is consistent with the upstream sum-rule bundle — that the two can be imposed
-together — is exhibited rather than assumed. `PseudoscalarMeson.valenceModelPdf` is the upstream
+That the assignment is consistent with the sum-rule bundle — that the two can be imposed
+together — is exhibited rather than assumed. `PseudoscalarMeson.valenceModelPdf` is the
 `PDF.weight` rescaling that carries the shape `2 (1 - x)` on the valence quark, on the valence
 antiquark and on the gluon and vanishes on every other species; it satisfies `PDF.Assumptions`, it
 has the valence numbers of its meson, and its three populated species carry a third of the momentum
-each, so the momentum sum rule holds with the gluon included. Its sum-rule bundle is the upstream
+each, so the momentum sum rule holds with the gluon included. Its sum-rule bundle is the general
 one of a rescaled shape `1 - x`, `PDF.sumRuleAssumptionsWeightModelPdfZeroOne`. Conjugating the
 meson conjugates the model (`chargeConj_valenceModelPdf`).
 
@@ -62,14 +62,14 @@ meson conjugates the model (`chargeConj_valenceModelPdf`).
   every scale.
 * `PseudoscalarMeson.valenceModelWeight`, `PseudoscalarMeson.valenceModelPdf`: the weight the
   valence model gives each parton species, and the valence model density of a meson.
-* `PseudoscalarMeson.sumRuleAssumptionsValenceModelPdf`: the upstream sum-rule bundle of the
-  valence model.
+* `PseudoscalarMeson.sumRuleAssumptionsValenceModelPdf`: the sum-rule bundle
+  `PDF.SumRuleAssumptions` of the valence model.
 
 ## Main results
 
 * `PseudoscalarMeson.hasValenceNumbers_iff_of_valenceQuark_ne_valenceAntiquark`: the three valence
   sum rules of a flavoured meson.
-* `PseudoscalarMeson.hasValenceNumbers_iff_valenceTarget`: against the upstream sum-rule bundle,
+* `PseudoscalarMeson.hasValenceNumbers_iff_valenceTarget`: against the sum-rule bundle,
   the valence assignment is a condition on the valence targets.
 * `PseudoscalarMeson.sum_mul_pdfValenceNumber_eq_charge`: the charge-weighted valence numbers at a
   scale sum to the meson's charge.
@@ -264,7 +264,8 @@ theorem hasValenceNumbers_of_valenceQuark_eq_valenceAntiquark_of_chargeConj_eq
 
 /-! ### A valence model density
 
-The valence assignment and the upstream sum-rule bundle can be imposed on one density at once.
+The valence assignment and the sum-rule bundle `PDF.SumRuleAssumptions` can be imposed on one
+density at once.
 `valenceModelPdf` is the witness: the `EpsilonEridani.Particles.Parton.PDF.weight` rescaling of the
 shape `1 - x` of `EpsilonEridani.Particles.Parton.PDF.modelPdf` that carries `2 (1 - x)` on the
 valence quark, the valence antiquark and the gluon, and nothing on any other species. -/
@@ -320,8 +321,8 @@ theorem sum_valenceModelWeight [Fintype Flavor] : ∑ s, M.valenceModelWeight s 
 
 /-- **A valence model density of the meson `M`**: the shape `2 (1 - x)` on the quark of the valence
 quark's flavour, on the antiquark of the valence antiquark's flavour and on the gluon, and zero on
-every other species, at every scale. It satisfies the upstream density assumptions
-(`assumptions_valenceModelPdf`), has the valence numbers of `M`
+every other species, at every scale. It satisfies the density assumptions
+`PDF.Assumptions` (`assumptions_valenceModelPdf`), has the valence numbers of `M`
 (`hasValenceNumbers_valenceModelPdf`) and obeys the momentum sum rule
 (`sum_mellinMoment_one_valenceModelPdf`), its three populated species carrying a third of the
 momentum each. -/
@@ -333,8 +334,8 @@ theorem valenceModelPdf_apply (s : Species Flavor) (x Q2 : ℝ) :
     M.valenceModelPdf s x Q2 = M.valenceModelWeight s * PDF.modelPdf (Species Flavor) 0 1 s x Q2 :=
   (rfl)
 
-/-- The valence model satisfies the upstream density assumptions: it is a non-negative weighting,
-species by species, of a density that does. -/
+/-- The valence model satisfies the density assumptions `PDF.Assumptions`: it is a non-negative
+weighting, species by species, of a density that does. -/
 theorem assumptions_valenceModelPdf : PDF.Assumptions M.valenceModelPdf :=
   (PDF.assumptions_modelPdf (Species Flavor) 0 1).weight M.valenceModelWeight_nonneg
 
@@ -374,7 +375,7 @@ theorem sum_mellinMoment_one_valenceModelPdf [Fintype Flavor] (Q2 : ℝ) :
     ∑ s, PDF.mellinMoment M.valenceModelPdf 1 s Q2 = 1 :=
   PDF.sum_mellinMoment_one_weight_modelPdf_zero_one M.sum_valenceModelWeight Q2
 
-/-- **The valence assignment and the upstream sum-rule bundle are consistent**: the valence model
+/-- **The valence assignment and the sum-rule bundle are consistent**: the valence model
 of `M` carries the bundle, each species' valence target being half its weight, and has the valence
 numbers of `M` by `hasValenceNumbers_valenceModelPdf`. This is the bundle
 `PDF.sumRuleAssumptionsWeightModelPdfZeroOne` of the rescaled shape at the valence model's
