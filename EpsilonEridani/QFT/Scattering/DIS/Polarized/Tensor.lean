@@ -98,6 +98,11 @@ variable {V : Type} [AddCommGroup V] [Module ℝ V] {g : Bilin V}
 def spinStructureOne (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) : Bilin V :=
   ε.bilinMap ![K.q, K.S]
 
+/-- `E₁` unfolded to its definition. -/
+lemma spinStructureOne_def (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureOne ε K = ε.bilinMap ![K.q, K.S] :=
+  (rfl)
+
 /-- Pointwise value of `E₁`. -/
 lemma spinStructureOne_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (v w : V) :
     spinStructureOne ε K v w = ε ![v, w, K.q, K.S] :=
@@ -107,6 +112,11 @@ lemma spinStructureOne_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedK
 `E₂(v, w) = ε(v, w, q, (p·q) S − (S·q) p)`. -/
 def spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) : Bilin V :=
   ε.bilinMap ![K.q, g K.p K.q • K.S - g K.S K.q • K.p]
+
+/-- `E₂` unfolded to its definition. -/
+lemma spinStructureTwo_def (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) :
+    spinStructureTwo ε K = ε.bilinMap ![K.q, g K.p K.q • K.S - g K.S K.q • K.p] :=
+  (rfl)
 
 /-- Pointwise value of `E₂`. -/
 lemma spinStructureTwo_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (v w : V) :
@@ -166,13 +176,15 @@ theorem isAlt_spinStructureTwo (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Polarize
 
 /-- `E₁` annihilates the spin vector in its first slot. -/
 @[simp] theorem spinStructureOne_apply_S_left_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
-    (K : PolarizedKinematics g) (w : V) : spinStructureOne ε K K.S w = 0 :=
-  ε.bilinMap_apply_left_eq_zero ![K.q, K.S] 1 w
+    (K : PolarizedKinematics g) (w : V) : spinStructureOne ε K K.S w = 0 := by
+  simpa only [spinStructureOne, Matrix.cons_val_one, Matrix.cons_val_fin_one] using
+    ε.bilinMap_apply_left_eq_zero ![K.q, K.S] 1 w
 
 /-- `E₁` annihilates the spin vector in its second slot. -/
 @[simp] theorem spinStructureOne_apply_S_right_eq_zero (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
-    (K : PolarizedKinematics g) (v : V) : spinStructureOne ε K v K.S = 0 :=
-  ε.bilinMap_apply_right_eq_zero ![K.q, K.S] 1 v
+    (K : PolarizedKinematics g) (v : V) : spinStructureOne ε K v K.S = 0 := by
+  simpa only [spinStructureOne, Matrix.cons_val_one, Matrix.cons_val_fin_one] using
+    ε.bilinMap_apply_right_eq_zero ![K.q, K.S] 1 v
 
 /-- `E₂` is conserved in its first slot. -/
 @[simp] theorem spinStructureTwo_conserved_left (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
@@ -227,6 +239,12 @@ the standard form of the spin-dependent hadronic tensor for a spin vector normal
 def fromG1G2 (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) : Bilin V :=
   (√(K.M2 g) / g K.p K.q * g₁) • spinStructureOne ε K
     + (√(K.M2 g) / g K.p K.q ^ 2 * g₂) • spinStructureTwo ε K
+
+/-- `fromG1G2` unfolded to its definition. -/
+lemma fromG1G2_def (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ) :
+    fromG1G2 ε K g₁ g₂ = (√(K.M2 g) / g K.p K.q * g₁) • spinStructureOne ε K
+      + (√(K.M2 g) / g K.p K.q ^ 2 * g₂) • spinStructureTwo ε K :=
+  (rfl)
 
 /-- Pointwise value of `fromG1G2`. -/
 lemma fromG1G2_apply (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g) (g₁ g₂ : ℝ)
@@ -321,6 +339,13 @@ namespace IsG1G2Decomposition
 
 variable {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g} {G : StructureFunctions}
   {W : Bilin V}
+
+/-- Characteristic property of `IsG1G2Decomposition`: `W` is `fromG1G2` at the values of `G` at
+the kinematic point. -/
+theorem _root_.EpsilonEridani.QFT.Scattering.DIS.Polarized.isG1G2Decomposition_iff :
+    IsG1G2Decomposition ε K G W ↔
+      W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) :=
+  Iff.rfl
 
 /-- A tensor decomposing on `E₁`, `E₂` is `fromG1G2` at the values of `G`. -/
 theorem eq (h : IsG1G2Decomposition ε K G W) :
@@ -449,7 +474,7 @@ def spinUniquenessWit : SpinUniquenessAssumptions detRowAlternating kWit4 where
   apply₂_ne_zero := by rw [spinStructureTwo_probeTwo_eq_one]; exact one_ne_zero
 
 /-- On the witness, `E₁` and `E₂` are linearly independent. -/
-theorem linearIndependent_spinStructure_kWit4 :
+theorem linearIndependent_spinStructureOne_spinStructureTwo_kWit4 :
     LinearIndependent ℝ
       ![spinStructureOne detRowAlternating kWit4, spinStructureTwo detRowAlternating kWit4] :=
   spinUniquenessWit.linearIndependent
@@ -457,8 +482,9 @@ theorem linearIndependent_spinStructure_kWit4 :
 /-- On the witness, `fromG1G2` is non-zero unless both structure-function values vanish. -/
 theorem fromG1G2_kWit4_ne_zero (g₁ g₂ : ℝ) (h : g₁ ≠ 0 ∨ g₂ ≠ 0) :
     fromG1G2 detRowAlternating kWit4 g₁ g₂ ≠ 0 :=
-  fromG1G2_ne_zero detRowAlternating kWit4 g₁ g₂ linearIndependent_spinStructure_kWit4
-    (by rw [kWit4_M2]; exact one_pos) (by rw [kWit4_p_q]; exact one_ne_zero) h
+  fromG1G2_ne_zero detRowAlternating kWit4 g₁ g₂
+    linearIndependent_spinStructureOne_spinStructureTwo_kWit4 (by rw [kWit4_M2]; exact one_pos)
+    (by rw [kWit4_p_q]; exact one_ne_zero) h
 
 end Witness
 

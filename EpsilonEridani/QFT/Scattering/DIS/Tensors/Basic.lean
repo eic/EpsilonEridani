@@ -893,7 +893,8 @@ spectator direction — the minimum needed for `covariant_spectator_offDiagonal_
 
 The same construction supplies `uniquenessWit`, a `LinearMap.SeparatingProbes` witness
 (`UniquenessAssumptions gWit kWit`) whose `.linearIndependent` discharges the
-linear-independence hypothesis of `decomposition_unique` and `fromF1F2_ne_zero`, and
+linear-independence hypothesis of `decomposition_unique` and `fromF1F2_ne_zero`
+(`linearIndependent_transverseMetric_rankOne_kWit`), and
 `spectatorAssumptions_kWit`, which instantiates `SpectatorAssumptions`, the hypothesis of
 `exists_isF1F2Decomposition`.
 
@@ -986,6 +987,12 @@ def uniquenessWit : UniquenessAssumptions gWit kWit where
   w₂ := (1, 0, 1)
   apply₁_eq_zero := by rw [transverseMetric_apply]; norm_num
   apply₂_ne_zero := by simp only [Bilin.rankOne_apply, pTransverse_pairing]; norm_num
+
+/-- On the witness, the two transverse basis structures are linearly independent. -/
+theorem linearIndependent_transverseMetric_rankOne_kWit :
+    LinearIndependent ℝ ![transverseMetric gWit kWit,
+      Bilin.rankOne gWit (pTransverse gWit kWit) (pTransverse gWit kWit)] :=
+  uniquenessWit.linearIndependent
 
 /-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
 already `gWit`-orthogonal to `q`. -/
