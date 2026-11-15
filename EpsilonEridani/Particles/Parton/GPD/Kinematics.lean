@@ -42,6 +42,12 @@ The bound `t ≤ t₀(ξ)` is why `|t|` cannot be taken to zero at non-zero skew
 the impact-parameter interpretation of a generalized parton distribution is clean only at
 `ξ = 0`.
 
+The variables `skewness` and `tMom` are the arguments `ξ` and `t` of the GPDs `GPD.Gpd` and
+`GPD.Model.H` (variables `(x, ξ, t)`) of `EpsilonEridani.Particles.Parton.GPD.Basic`, in the same
+namespace, and `physicalRegion M` is the domain over which those two arguments are to be read.
+`abs_skewness_lt_one` is the kinematic fact that physical skewness lies in `|ξ| < 1`, outside of
+which `Assumptions.skewnessBound` asks the GPDs to vanish.
+
 The skewness here is the light-cone variable of the hadronic transition alone. The variable
 `ExclKinematics.xiSkew` of `EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic` is a
 different invariant, built from the photon momenta of the exclusive process.
@@ -79,6 +85,14 @@ lemma tZero_zero_right (M : ℝ) : tZero M 0 = 0 := by
 
 @[simp]
 lemma tZero_neg_right (M ξ : ℝ) : tZero M (-ξ) = tZero M ξ := by
+  simp [tZero]
+
+@[simp]
+lemma tZero_zero_left (ξ : ℝ) : tZero 0 ξ = 0 := by
+  simp [tZero]
+
+@[simp]
+lemma tZero_neg_left (M ξ : ℝ) : tZero (-M) ξ = tZero M ξ := by
   simp [tZero]
 
 /-- The minimal momentum transfer is non-positive in the physical range `|ξ| < 1`. -/
@@ -139,6 +153,8 @@ structure OffForwardKinematics (d : ℕ) (M : ℝ) where
   minkowskiProduct_n_pPrime_pos : 0 < ⟪n, pPrime⟫ₘ
 
 namespace OffForwardKinematics
+
+attribute [simp] minkowskiProduct_p_self minkowskiProduct_pPrime_self minkowskiProduct_n_self
 
 variable {d : ℕ} {M : ℝ} (K : OffForwardKinematics d M)
 
@@ -246,7 +262,7 @@ lemma minkowskiProduct_delta_avgMomentum_eq_zero : ⟪K.delta, K.avgMomentum⟫�
   rw [minkowskiProduct_symm]
   simp
 
-/-- The invariant mass of the average momentum, `P² = M² - t / 4`. -/
+/-- The invariant mass squared of the average momentum, `P² = M² - t / 4`. -/
 @[simp]
 lemma minkowskiProduct_avgMomentum_self_eq :
     ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 := by
@@ -256,10 +272,31 @@ lemma minkowskiProduct_avgMomentum_self_eq :
   rw [tMom_def]
   linarith
 
+/-- The product of the two hadron momenta is `p · p' = M² - t / 2`. -/
+@[simp]
+lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2 := by
+  have h := minkowskiProduct_sub_self K.pPrime K.p
+  rw [← delta_def, ← tMom_def, K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self,
+    minkowskiProduct_symm K.pPrime K.p] at h
+  linarith
+
+/-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
+@[simp]
+lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 := by
+  simp only [delta_def, map_sub, minkowskiProduct_p_pPrime_eq, K.minkowskiProduct_p_self]
+  ring
+
+/-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
+@[simp]
+lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 := by
+  simp only [delta_def, map_sub, minkowskiProduct_symm K.pPrime K.p, minkowskiProduct_p_pPrime_eq,
+    K.minkowskiProduct_pPrime_self]
+  ring
+
 /-- The plus-component of the momentum transfer is `Δ⁺ = -2 ξ P⁺`. -/
 lemma minkowskiProduct_n_delta_eq :
     ⟪K.n, K.delta⟫ₘ = -(2 * K.skewness) * ⟪K.n, K.avgMomentum⟫ₘ := by
-  have h := K.minkowskiProduct_n_avgMomentum_pos
+  have h : ⟪K.n, K.avgMomentum⟫ₘ ≠ 0 := K.minkowskiProduct_n_avgMomentum_pos.ne'
   rw [skewness_def]
   field_simp
 
@@ -268,12 +305,6 @@ lemma minkowskiProduct_n_delta_eq :
 lemma minkowskiProduct_n_deltaOrthN_eq_zero : ⟪K.n, K.deltaOrthN⟫ₘ = 0 := by
   simp only [deltaOrthN_def, map_add, map_smul, smul_eq_mul, minkowskiProduct_n_delta_eq]
   ring
-
-/-- The vector `w = Δ + 2 ξ P` is Minkowski-orthogonal to `n`. -/
-@[simp]
-lemma minkowskiProduct_deltaOrthN_n_eq_zero : ⟪K.deltaOrthN, K.n⟫ₘ = 0 := by
-  rw [minkowskiProduct_symm]
-  simp
 
 /-- The covariant form of `t = -(4 ξ² M² + Δ⊥²) / (1 - ξ²)`: for `w = Δ + 2 ξ P`,
 `⟪w, w⟫ₘ = (1 - ξ²) t + 4 ξ² M²`. -/
@@ -286,7 +317,8 @@ lemma minkowskiProduct_deltaOrthN_self_eq :
   simp only [map_smul, smul_eq_mul, K.minkowskiProduct_delta_avgMomentum_eq_zero, tMom_def]
   ring
 
-/-- The average momentum paired with the vector `w = Δ + 2 ξ P` is `⟪P, w⟫ₘ = 2 ξ (M² - t / 4)`. -/
+/-- The average momentum paired with the vector `w = Δ + 2 ξ P` is `⟪P, w⟫ₘ = 2 ξ (M² - t / 4)`,
+which is in general non-zero, so `w` is not orthogonal to `P`. -/
 @[simp]
 lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
     ⟪K.avgMomentum, K.deltaOrthN⟫ₘ = 2 * K.skewness * (M ^ 2 - K.tMom / 4) := by
@@ -294,26 +326,12 @@ lemma minkowskiProduct_avgMomentum_deltaOrthN_eq :
     K.minkowskiProduct_avgMomentum_delta_eq_zero, K.minkowskiProduct_avgMomentum_self_eq]
   ring
 
-/-- The vector `w = Δ + 2 ξ P` paired with the average momentum is `⟪w, P⟫ₘ = 2 ξ (M² - t / 4)`,
-which is in general non-zero, so `w` is not orthogonal to `P`. -/
-@[simp]
-lemma minkowskiProduct_deltaOrthN_avgMomentum_eq :
-    ⟪K.deltaOrthN, K.avgMomentum⟫ₘ = 2 * K.skewness * (M ^ 2 - K.tMom / 4) := by
-  rw [minkowskiProduct_symm]
-  exact K.minkowskiProduct_avgMomentum_deltaOrthN_eq
-
 /-- The vector `w = Δ + 2 ξ P` paired with the momentum transfer is `⟪w, Δ⟫ₘ = t`. -/
 @[simp]
 lemma minkowskiProduct_deltaOrthN_delta_eq : ⟪K.deltaOrthN, K.delta⟫ₘ = K.tMom := by
   simp only [deltaOrthN_def, map_add, _root_.add_apply, map_smul, _root_.smul_apply,
     smul_eq_mul, K.minkowskiProduct_avgMomentum_delta_eq_zero, tMom_def]
   ring
-
-/-- The momentum transfer paired with the vector `w = Δ + 2 ξ P` is `⟪Δ, w⟫ₘ = t`. -/
-@[simp]
-lemma minkowskiProduct_delta_deltaOrthN_eq : ⟪K.delta, K.deltaOrthN⟫ₘ = K.tMom := by
-  rw [minkowskiProduct_symm]
-  simp
 
 /-- The momentum transfer is bounded by the minimal momentum transfer, `t ≤ t₀(ξ)`. -/
 theorem tMom_le_tZero : K.tMom ≤ tZero M K.skewness := by
@@ -367,8 +385,11 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
     ofTimeAndSpatial x (y • EuclideanSpace.basisFun (Fin d) ℝ i +
       z • EuclideanSpace.basisFun (Fin d) ℝ j)
   have hv (x y z x' y' z' : ℝ) : ⟪v x y z, v x' y' z'⟫ₘ = x * x' - y * y' - z * z' := by
-    simp [v, inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
-      EuclideanSpace.inner_single_left, hij, hij.symm]
+    simp only [v, EuclideanSpace.basisFun_apply, minkowskiProduct_ofTimeAndSpatial_eq,
+      inner_add_right, inner_smul_right, inner_add_left, inner_smul_left, conj_trivial,
+      inner_self_eq_norm_sq_to_K, PiLp.norm_single, norm_one, RCLike.ofReal_real_eq_id, id_eq,
+      one_pow, mul_one, EuclideanSpace.inner_single_left, ne_eq, hij, hij.symm, not_false_eq_true,
+      PiLp.single_eq_of_ne, mul_zero, add_zero, zero_add]
     ring
   set p₀ : Vector d := v (A - ξ * B) (-D / 2) (B - ξ * A) with hp₀
   set p₀' : Vector d := v (A + ξ * B) (D / 2) (B + ξ * A) with hp₀'

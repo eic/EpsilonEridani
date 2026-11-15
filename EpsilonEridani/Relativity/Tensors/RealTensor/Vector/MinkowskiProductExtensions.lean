@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
@@ -13,29 +14,33 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 /-!
 # Extensions of the Minkowski product on Lorentz vectors
 
-Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
-expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
-companion to `Lorentz.Vector.minkowskiProduct_add_self`; the length of the spatial part of a
-vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass shell `⟪p, p⟫ₘ = m²`; and,
-in at least two spatial dimensions, the existence of two vectors on the mass shell with prescribed
-energies above the mass and a prescribed angle between their spatial parts.
+General facts about `Physlib`'s Minkowski product on `Lorentz.Vector d`, used downstream by the
+kinematics of emission processes and of off-forward (generalized parton) kinematics. In
+declaration order, the file contains:
 
-It also records the symmetry of the Minkowski product as a bilinear form
-(`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
-the reflexive-form results about light-cone bases in
-`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
-
-* The Minkowski orthogonal complement of a non-zero causal (time-like or light-like) vector `n`
-  contains no time-like vector: every `w` with `⟪n, w⟫ₘ = 0` has `⟪w, w⟫ₘ ≤ 0`
-  (`minkowskiProduct_self_nonpos_of_causal_of_orthogonal`). For light-like `n`, in light-cone
-  coordinates adapted to `n` the condition `⟪n, w⟫ₘ = 0` says that one light-cone component of
-  `w` vanishes, so that `⟪w, w⟫ₘ = -‖w⊥‖²` is minus the square of the transverse part. This is
-  the inequality behind lower bounds on momentum transfers at fixed light-cone momentum
-  fractions, such as the minimal momentum transfer of off-forward parton kinematics.
-* The vector `ofTimeAndSpatial x s` with time component `x` and spatial part `s` has Minkowski
-  product `⟪ofTimeAndSpatial x s, ofTimeAndSpatial x' s'⟫ₘ = x x' - ⟪s, s'⟫`
-  (`minkowskiProduct_ofTimeAndSpatial_eq`). This gives explicit configurations, such as
-  light-cone frames, in any spacetime with at least two spatial dimensions.
+* the expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`
+  (`minkowskiProduct_sub_self`), companion to `Lorentz.Vector.minkowskiProduct_add_self`;
+* the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on
+  the mass shell `⟪p, p⟫ₘ = m²` (`norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self`);
+* the Minkowski product of the vector `ofTimeAndSpatial x s` with time component `x` and spatial
+  part `s` (defined in `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions`),
+  `⟪ofTimeAndSpatial x s, ofTimeAndSpatial x' s'⟫ₘ = x x' - ⟪s, s'⟫`
+  (`minkowskiProduct_ofTimeAndSpatial_eq`);
+* the causal-orthogonality bound: the Minkowski orthogonal complement of a non-zero causal
+  (time-like or light-like) vector `n` contains no time-like vector, i.e. every `w` with
+  `⟪n, w⟫ₘ = 0` has `⟪w, w⟫ₘ ≤ 0` (`minkowskiProduct_self_nonpos_of_causal_of_orthogonal`). For
+  light-like `n`, in light-cone coordinates adapted to `n` the condition `⟪n, w⟫ₘ = 0` says that
+  one light-cone component of `w` vanishes, so that `⟪w, w⟫ₘ = -‖w⊥‖²` is minus the square of the
+  transverse part. This is the inequality behind lower bounds on momentum transfers at fixed
+  light-cone momentum fractions, such as the minimal momentum transfer of off-forward parton
+  kinematics;
+* in at least two spatial dimensions, the existence of two vectors on the mass shell with
+  prescribed energies above the mass and a prescribed angle between their spatial parts
+  (`exists_massShell_pair_angle_eq`);
+* the symmetry of the Minkowski product as a bilinear form
+  (`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
+  the reflexive-form results about light-cone bases in
+  `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
 -/
 
 public section
@@ -61,65 +66,29 @@ lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vecto
     ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - ⟪p, p⟫ₘ) := by
   rw [minkowskiProduct_self_eq_sq_sub, sub_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
 
-/-- The vector with time component `x` and spatial part `s`, assembled from Physlib's
-`ofTemporalComponent` and `ofSpatialComponent`. -/
-def ofTimeAndSpatial {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) : Vector d :=
-  ofTemporalComponent x + ofSpatialComponent s
-
-lemma ofTimeAndSpatial_def {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
-    ofTimeAndSpatial x s = ofTemporalComponent x + ofSpatialComponent s := (rfl)
-
-@[simp]
-lemma timeComponent_ofTimeAndSpatial_eq {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
-    (ofTimeAndSpatial x s).timeComponent = x := by
-  simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
-
-@[simp]
-lemma spatialPart_ofTimeAndSpatial_eq {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
-    (ofTimeAndSpatial x s).spatialPart = s := by
-  ext i
-  simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
-
-/-- Every vector is assembled from its time component and its spatial part. -/
-@[simp]
-lemma ofTimeAndSpatial_timeComponent_spatialPart_eq {d : ℕ} (v : Vector d) :
-    ofTimeAndSpatial v.timeComponent v.spatialPart = v := by
-  refine ext_of_apply fun μ => ?_
-  rcases μ with μ | i
-  · fin_cases μ
-    exact timeComponent_ofTimeAndSpatial_eq ..
-  · simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
-
-@[simp]
-lemma ofTimeAndSpatial_zero_zero_eq {d : ℕ} : ofTimeAndSpatial (d := d) 0 0 = 0 := by
-  simp [ofTimeAndSpatial_def]
-
-@[simp]
-lemma ofTimeAndSpatial_add_ofTimeAndSpatial_eq {d : ℕ} (x x' : ℝ)
-    (s s' : EuclideanSpace ℝ (Fin d)) :
-    ofTimeAndSpatial x s + ofTimeAndSpatial x' s' = ofTimeAndSpatial (x + x') (s + s') := by
-  simp only [ofTimeAndSpatial_def, map_add]
-  abel
-
-@[simp]
-lemma ofTimeAndSpatial_sub_ofTimeAndSpatial_eq {d : ℕ} (x x' : ℝ)
-    (s s' : EuclideanSpace ℝ (Fin d)) :
-    ofTimeAndSpatial x s - ofTimeAndSpatial x' s' = ofTimeAndSpatial (x - x') (s - s') := by
-  simp only [ofTimeAndSpatial_def, map_sub]
-  abel
-
-@[simp]
-lemma smul_ofTimeAndSpatial_eq {d : ℕ} (c x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
-    c • ofTimeAndSpatial x s = ofTimeAndSpatial (c * x) (c • s) := by
-  rw [ofTimeAndSpatial_def, ofTimeAndSpatial_def, _root_.smul_add, ← map_smul, ← map_smul,
-    smul_eq_mul]
-
 /-- The Minkowski product of two vectors given by their time components and spatial parts is
 `x x' - ⟪s, s'⟫`. -/
 @[simp]
 lemma minkowskiProduct_ofTimeAndSpatial_eq {d : ℕ} (x x' : ℝ) (s s' : EuclideanSpace ℝ (Fin d)) :
     ⟪ofTimeAndSpatial x s, ofTimeAndSpatial x' s'⟫ₘ = x * x' - ⟪s, s'⟫_ℝ := by
   simp [minkowskiProduct_eq_timeComponent_spatialPart]
+
+/-- A vector Minkowski-orthogonal to a non-zero causal vector is space-like or light-like:
+if `0 ≤ ⟪n, n⟫ₘ`, `n ≠ 0` and `⟪n, w⟫ₘ = 0`, then `⟪w, w⟫ₘ ≤ 0`. -/
+lemma minkowskiProduct_self_nonpos_of_causal_of_orthogonal {d : ℕ} (w : Vector d) {n : Vector d}
+    (hn : 0 ≤ ⟪n, n⟫ₘ) (hn0 : n ≠ 0) (hnw : ⟪n, w⟫ₘ = 0) : ⟪w, w⟫ₘ ≤ 0 := by
+  rw [minkowskiProduct_eq_timeComponent_spatialPart] at hn hnw ⊢
+  have hs := real_inner_self_nonneg (x := n.spatialPart)
+  have ha : n.timeComponent ≠ 0 := by
+    intro ha
+    refine hn0 (eq_zero_of_timeComponent_of_spatialPart ha ?_)
+    simp only [ha, mul_zero, zero_sub, neg_nonneg] at hn
+    exact inner_self_eq_zero.mp (le_antisymm hn hs)
+  have hcs := real_inner_mul_inner_self_le n.spatialPart w.spatialPart
+  have hw := real_inner_self_nonneg (x := w.spatialPart)
+  rw [← sub_eq_zero.mp hnw] at hcs
+  have ha2 : 0 < n.timeComponent ^ 2 := by positivity
+  nlinarith [mul_le_mul_of_nonneg_right hn hw]
 
 end Vector
 end Lorentz
@@ -183,28 +152,3 @@ theorem isSymm_toBilinForm_minkowskiProduct {d : ℕ} :
   ⟨minkowskiProduct_symm⟩
 
 end EpsilonEridani
-
-namespace Lorentz
-namespace Vector
-
-open InnerProductSpace
-
-/-- A vector Minkowski-orthogonal to a non-zero causal vector is space-like or light-like:
-if `0 ≤ ⟪n, n⟫ₘ`, `n ≠ 0` and `⟪n, w⟫ₘ = 0`, then `⟪w, w⟫ₘ ≤ 0`. -/
-lemma minkowskiProduct_self_nonpos_of_causal_of_orthogonal {d : ℕ} (w : Vector d) {n : Vector d}
-    (hn : 0 ≤ ⟪n, n⟫ₘ) (hn0 : n ≠ 0) (hnw : ⟪n, w⟫ₘ = 0) : ⟪w, w⟫ₘ ≤ 0 := by
-  rw [minkowskiProduct_eq_timeComponent_spatialPart] at hn hnw ⊢
-  have hs := real_inner_self_nonneg (x := n.spatialPart)
-  have ha : n.timeComponent ≠ 0 := by
-    intro ha
-    refine hn0 (eq_zero_of_timeComponent_of_spatialPart ha ?_)
-    simp only [ha, mul_zero, zero_sub, neg_nonneg] at hn
-    exact inner_self_eq_zero.mp (le_antisymm hn hs)
-  have hcs := real_inner_mul_inner_self_le n.spatialPart w.spatialPart
-  have hw := real_inner_self_nonneg (x := w.spatialPart)
-  rw [← sub_eq_zero.mp hnw] at hcs
-  have ha2 : 0 < n.timeComponent ^ 2 := by positivity
-  nlinarith [mul_le_mul_of_nonneg_right hn hw]
-
-end Vector
-end Lorentz
