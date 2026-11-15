@@ -201,6 +201,13 @@ lemma mellinDis_one (f : ℝ → ℝ) :
     mellinDis f 1 = ((∫ x in Set.Ioc (0 : ℝ) 1, f x : ℝ) : ℂ) := by
   simpa using mellinDis_natCast_add_one_eq_ofReal f 0
 
+/-- At index `1` convergence of the Mellin transform is integrability of `f` on `(0,1]`. -/
+lemma mellinDisConvergent_one_iff {f : ℝ → ℝ} :
+    MellinDisConvergent f 1 ↔ MeasureTheory.IntegrableOn f (Set.Ioc (0 : ℝ) 1) := by
+  rw [mellinDisConvergent_iff, sub_self]
+  simp_rw [Complex.cpow_zero, one_mul]
+  exact MeasureTheory.Integrable.iff_ofReal.symm
+
 /-- **Bridge to the repository's integer moments.** `mellinMoment f n` is
 `∫_{[0,1]} x ^ n * f x dx`, so it is the Mellin transform at index `n + 1`, *not* at index `n`.
 Note that no assumption on the PDF is needed: the two domains `[0,1]` and `(0,1]` differ by a
@@ -275,9 +282,7 @@ assumption bundle is enough to state and use moment-space additivity downstream.
 lemma MellinConvolutionAssumptions.convolutionConvergent {C f : ℝ → ℝ} {N : ℂ}
     (h : MellinConvolutionAssumptions C f N) :
     MellinDisConvergent (convolveAt (collinearKernel C) f) N := by
-  change MeasureTheory.IntegrableOn
-    (fun x : ℝ => (x : ℂ) ^ (N - 1) * ((convolveAt (collinearKernel C) f x : ℝ) : ℂ))
-    (Set.Ioc (0 : ℝ) 1)
+  rw [mellinDisConvergent_iff]
   rw [← funext (integral_mellinIntegrand_eq C f N)]
   -- TODO(task/e1-mellin-convolution): `MeasureTheory.Integrable.integral_prod_left` of
   -- `Mathlib/MeasureTheory/Constructions/Prod/Integral.lean` states that integrability of
@@ -437,6 +442,17 @@ Euler's beta integral.
 
 -/
 
+/-- The Beta density on the open unit interval. -/
+lemma betaPDFReal_of_mem_Ioo (a b : ℝ) {x : ℝ} (hx : x ∈ Set.Ioo (0 : ℝ) 1) :
+    ProbabilityTheory.betaPDFReal a b x =
+      1 / ProbabilityTheory.beta a b * x ^ (a - 1) * (1 - x) ^ (b - 1) :=
+  ite_eq_left hx
+
+/-- The Beta density vanishes off the open unit interval. -/
+lemma betaPDFReal_of_notMem_Ioo (a b : ℝ) {x : ℝ} (hx : x ∉ Set.Ioo (0 : ℝ) 1) :
+    ProbabilityTheory.betaPDFReal a b x = 0 :=
+  ite_eq_right hx
+
 /-- On the open unit interval the Mellin integrand of the Beta density is the normalising constant
 times the integrand of Euler's beta integral `Complex.betaIntegral (N + a - 1) b`. -/
 private lemma cpow_mul_betaPDFReal_of_mem_Ioo (a b : ℝ) (N : ℂ) {x : ℝ}
@@ -445,9 +461,9 @@ private lemma cpow_mul_betaPDFReal_of_mem_Ioo (a b : ℝ) (N : ℂ) {x : ℝ}
       ((1 / ProbabilityTheory.beta a b : ℝ) : ℂ) *
         ((x : ℂ) ^ (N + a - 1 - 1) * (1 - (x : ℂ)) ^ ((b : ℂ) - 1)) := by
   have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.1.ne'
-  simp only [ProbabilityTheory.betaPDFReal, hx.1, hx.2, and_self, ↓reduceIte]
-  rw [Complex.ofReal_mul, Complex.ofReal_mul, Complex.ofReal_cpow hx.1.le,
-    Complex.ofReal_cpow (sub_nonneg.mpr hx.2.le), Complex.ofReal_sub, Complex.ofReal_one,
+  rw [betaPDFReal_of_mem_Ioo a b hx, Complex.ofReal_mul, Complex.ofReal_mul,
+    Complex.ofReal_cpow hx.1.le, Complex.ofReal_cpow (sub_nonneg.mpr hx.2.le), Complex.ofReal_sub,
+    Complex.ofReal_one,
     show N + a - 1 - 1 = (N - 1) + ((a : ℂ) - 1) by ring, Complex.cpow_add _ _ hx0]
   push_cast
   ring

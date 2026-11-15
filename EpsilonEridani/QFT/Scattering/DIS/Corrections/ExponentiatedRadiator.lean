@@ -103,13 +103,13 @@ lemma exponentiatedRadiator_of_mem_Ioo {β z : ℝ} (hβ : 0 < β) (hz : z ∈ I
       Real.exp (β * (3 / 4 - eulerMascheroniConstant)) / Real.Gamma (1 + β) *
         (β * (1 - z) ^ (β - 1)) := by
   have hB : ProbabilityTheory.beta 1 β = 1 / β := by rw [beta_comm, beta_one_right hβ]
-  simp [exponentiatedRadiator_def, betaPDFReal, hz.1, hz.2, hB]
+  simp only [exponentiatedRadiator_def]
+  rw [betaPDFReal_of_mem_Ioo 1 β hz, hB, sub_self, Real.rpow_zero, one_div_one_div, mul_one]
 
 /-- The exponentiated radiator vanishes outside the open unit interval. -/
 lemma exponentiatedRadiator_of_notMem_Ioo {β z : ℝ} (hz : z ∉ Ioo (0 : ℝ) 1) :
     exponentiatedRadiator β z = 0 := by
-  rw [mem_Ioo] at hz
-  simp only [exponentiatedRadiator_def, betaPDFReal, hz, ↓reduceIte, mul_zero]
+  simp only [exponentiatedRadiator_def, betaPDFReal_of_notMem_Ioo 1 β hz, mul_zero]
 
 /-- The exponentiated radiator is nonnegative. -/
 lemma exponentiatedRadiator_nonneg {β : ℝ} (hβ : 0 < β) (z : ℝ) :
@@ -131,10 +131,8 @@ theorem mellinDisConvergent_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) {N :
 
 /-- The exponentiated radiator is integrable on `(0,1]`. -/
 lemma integrableOn_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
-    IntegrableOn (exponentiatedRadiator β) (Ioc 0 1) := by
-  have h := mellinDisConvergent_exponentiatedRadiator hβ (N := 1) (by simp)
-  rw [mellinDisConvergent_iff] at h
-  simpa using h.re
+    IntegrableOn (exponentiatedRadiator β) (Ioc 0 1) :=
+  mellinDisConvergent_one_iff.mp (mellinDisConvergent_exponentiatedRadiator hβ (by simp))
 
 /-- **Mellin moments of the exponentiated radiator.** On the half plane `0 < Re N`,
 `∫_{(0,1]} z ^ (N - 1) D(z) dz = exp (β (3/4 - γ_E)) Γ(N) / Γ(N + β)`. -/
