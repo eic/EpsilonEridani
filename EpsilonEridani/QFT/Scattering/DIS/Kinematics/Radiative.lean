@@ -548,6 +548,15 @@ theorem pX_sub_p_of_collinear_finalState (hcol : e.photon = (1 - z) • (e.kPrim
   rw [← e.leptonIn_sub_leptonOut_eq_pX_sub_p .finalState, leptonIn_finalState,
     leptonOut_of_collinear_finalState hcol hz]
 
+/-- After exactly collinear final-state emission of the fraction `1 - z ≠ 1` of the outgoing hard
+lepton momentum from a massless measured lepton (`k'² = 0`), the hard outgoing lepton is massless
+too. -/
+theorem leptonOut_sq_eq_zero_of_collinear_finalState (g : Bilin V)
+    (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • (e.kPrime + e.photon))
+    (hz : z ≠ 0) : g (e.leptonOut .finalState) (e.leptonOut .finalState) = 0 := by
+  rw [kPrime_eq_smul_leptonOut_of_collinear_finalState hcol] at hk'
+  simpa only [map_smul, LinearMap.smul_apply, smul_eq_mul, mul_eq_zero, hz, false_or] using hk'
+
 /-- After exactly collinear final-state emission, in which the photon carries the fraction
 `1 - z` of the outgoing hard lepton momentum `k' + ℓ`, the electron method rescales the
 virtuality by `z`, up to the mass of the incoming lepton: `Q²_e = z Q² - (1 - z) k²`, and
@@ -557,15 +566,11 @@ theorem electronMethod_Q2_of_collinear_finalState (g : Bilin V)
     (hz : z ≠ 0) :
     (electronMethod g e.k e.p e.kPrime).Q2 =
       z * (e.trueInvariants g .finalState).Q2 - (1 - z) * g e.k e.k := by
-  have hkw := kPrime_eq_smul_leptonOut_of_collinear_finalState hcol
-  -- `k'² = z² (k' + ℓ)²` and `z ≠ 0`, so the hard outgoing lepton is massless too.
-  have hww : g (e.leptonOut .finalState) (e.leptonOut .finalState) = 0 := by
-    rw [hkw] at hk'
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at hk'
-    exact (mul_eq_zero.1 ((mul_eq_zero.1 hk').resolve_left hz)).resolve_left hz
+  have hww := leptonOut_sq_eq_zero_of_collinear_finalState g hk' hcol hz
   rw [electronMethod_Q2, trueInvariants_Q2_eq, trueMomentumTransfer_eq,
     ← e.leptonIn_sub_leptonOut_eq_pX_sub_p .finalState,
-    leptonIn_finalState, hkw, LinearMap.BilinForm.apply_sub_smul_self_eq, hww]
+    leptonIn_finalState, kPrime_eq_smul_leptonOut_of_collinear_finalState hcol,
+    LinearMap.BilinForm.apply_sub_smul_self_eq, hww]
   ring
 
 end FinalState

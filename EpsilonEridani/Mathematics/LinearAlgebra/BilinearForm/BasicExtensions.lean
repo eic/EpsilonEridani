@@ -56,7 +56,7 @@ theorem apply_sub_smul_self_eq (B : BilinForm R M) (u v : M) (z : R) :
 /-- The expansion of `B (z u - v) (z u - v)` about `B (u - v) (u - v)`. -/
 theorem apply_smul_sub_self_eq (B : BilinForm R M) (u v : M) (z : R) :
     B (z • u - v) (z • u - v) = z * B (u - v) (u - v) + (1 - z) * (B v v - z * B u u) := by
-  rw [← neg_sub v, ← neg_sub v u]
+  rw [← neg_sub v (z • u), ← neg_sub v u]
   simp only [map_neg, LinearMap.neg_apply, neg_neg]
   exact apply_sub_smul_self_eq B v u z
 
