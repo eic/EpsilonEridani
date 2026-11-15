@@ -456,19 +456,8 @@ lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour :=
 `w`; the components of `v` and `w` along `p_T` and `q` do not enter. -/
 @[simp] lemma aFour_apply (v w : Fin 4 → ℝ) :
     aFour v w = v 1 * w 2 - v 2 * w 1 := by
-  simp only [aFour, aOfAlt_apply, Module.Basis.det_apply, Module.Basis.toMatrix_apply,
-    Pi.basisFun_repr, kFour_p, kFour_q, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
-    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_one,
-    Matrix.cons_val, Matrix.cons_val_succ, Matrix.submatrix_apply,
-    Matrix.submatrix_submatrix, Matrix.det_unique, Function.comp_apply, Fin.isValue,
-    Fin.succ_zero_eq_one, Fin.succ_one_eq_two, Fin.default_eq_zero, Fin.reduceSucc,
-    Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.succ_eq_add_one, Nat.reduceAdd, pow_zero,
-    one_mul, Fin.castSucc_zero, Fin.castSucc_one, Fin.reduceCastSucc, Fin.val_succ,
-    Fin.val_eq_zero, zero_add, pow_one, neg_mul, Fin.succ_pos, Fin.succAbove_of_le_castSucc,
-    Fin.succAbove_of_castSucc_lt, Finset.univ_unique, Finset.sum_neg_distrib,
-    Finset.sum_singleton, Fin.succ_succAbove_one, even_two, Even.neg_pow, one_pow, mul_one,
-    zero_mul, neg_zero, add_zero, mul_zero, zero_le, Std.le_refl, Fin.reduceLE,
-    Finset.sum_const_zero]
+  rw [aFour, aOfAlt_apply, Pi.basisFun_det_apply]
+  simp [Matrix.det_succ_row_zero, Fin.sum_univ_succ, Fin.succAbove]
   ring
 
 /-- The spectator plane of the witness kinematics, spanned by the coordinate directions
