@@ -171,6 +171,10 @@ lemma comap_apply (σ : κ → ι) (f : Pdf ι) (k : κ) (x Q2 : ℝ) :
     comap σ f k x Q2 = f (σ k) x Q2 :=
   rfl
 
+/-- The pullback of a density along `σ` is its composition with `σ`. -/
+lemma comap_eq_comp (σ : κ → ι) (f : Pdf ι) : comap σ f = f ∘ σ :=
+  rfl
+
 @[simp]
 lemma comap_id (f : Pdf ι) : comap id f = f :=
   rfl
