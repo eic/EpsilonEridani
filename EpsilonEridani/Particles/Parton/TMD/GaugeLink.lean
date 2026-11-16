@@ -37,17 +37,20 @@ reversed path giving the inverse link (`pathLink_reverse`), conjugation by the g
 transformation at the two endpoints (`pathLink_smul`), and independence of how a segment is
 subdivided (`pathLink_insert_of_mem_segment`).
 
-The staple `GaugeLink.staple v x y` runs from `x` along the direction `v` to `x + v`, across to
-`y + v`, and back to `y`. For `v = L • n` with `n` the light-like direction `n₋` along which
-the two quark fields are separated and `L > 0` it is the future-pointing staple of semi-inclusive
-deep-inelastic scattering, cut off at light-cone distance `L`; with `L < 0` it is the
-past-pointing staple of the Drell-Yan process. The segment at the far end is the transverse link,
-`GaugeLink.transverseLink`. In light-cone gauge (`IsLightConeGauge`), where the links along `n` are
-trivial, the whole staple link is carried by the transverse link
-(`pathLink_staple_of_isLightConeGauge`). The transverse link cannot be dropped there: the link of
-a linear abelian gauge potential (`GaugeLink.ofBilin`) gives a gauge link in light-cone gauge
-whose staple link differs from the product of its two longitudinal legs
-(`exists_isLightConeGauge_pathLink_staple_ne_one`).
+The staple path `GaugeLink.staplePath v w x y` runs from `x` along `v` to the far corner `x + v`,
+along `w` to `x + v + w`, and back to `y`. For a light-like direction `n` (`n₋`), a separation
+`y - x = s • n + w` with longitudinal part `s` and transverse part `w`, and `v = L • n`, both legs
+run along `n` and the far segment is the transverse displacement `w` at light-cone distance `L`:
+`L > 0` gives the future-pointing staple of semi-inclusive deep-inelastic scattering, cut off at
+light-cone distance `L`, and `L < 0` the past-pointing staple of the Drell-Yan process. The link
+along the far segment is the transverse link, `GaugeLink.transverseLink`. When both legs have
+trivial links, the whole staple link is carried by the transverse link
+(`pathLink_staplePath_of_legs_eq_one`); in light-cone gauge (`IsLightConeGauge`), where the links
+along `n` are trivial, this holds for every staple of the above shape
+(`pathLink_staplePath_of_isLightConeGauge`). The transverse link cannot be dropped there: the
+link of a linear abelian gauge potential (`GaugeLink.ofBilin`) gives a gauge link in light-cone
+gauge whose staple link differs from the product of its two longitudinal legs
+(`exists_isLightConeGauge_pathLink_staplePath_ne_one`).
 
 ## Main definitions
 
@@ -56,7 +59,8 @@ whose staple link differs from the product of its two longitudinal legs
 * `GaugeLink.pathLink`: the link along a piecewise-linear path given by its corners.
 * The action of gauge transformations `Ω : V → G` on gauge links, `(Ω • W) x y = Ω x * W x y *
   (Ω y)⁻¹`, as a `MulAction`.
-* `GaugeLink.staple`, `GaugeLink.transverseLink`: the staple path and the link of its rung.
+* `GaugeLink.staplePath`, `GaugeLink.transverseLink`: the staple path and the link along its far
+  segment.
 * `GaugeLink.IsLightConeGauge`: the links along a direction `n` are trivial.
 * `GaugeLink.ofBilin`: the gauge link of the linear abelian gauge potential `A(z) · w = B z w`.
 
@@ -111,14 +115,14 @@ theorem apply_swap (W : GaugeLink V G) (x y : V) : W y x = (W x y)⁻¹ :=
   W.toFun_swap' x y
 
 /-- The link is multiplicative under subdivision of a segment. -/
-theorem mul_apply_of_mem_segment (W : GaugeLink V G) {x y m : V} (hm : m ∈ segment ℝ x y) :
+theorem apply_mul_apply_of_mem_segment (W : GaugeLink V G) {x y m : V} (hm : m ∈ segment ℝ x y) :
     W x m * W m y = W x y :=
   W.toFun_mul_toFun' x y m hm
 
 /-- The link along a degenerate segment is trivial. -/
 @[simp]
 theorem apply_self (W : GaugeLink V G) (x : V) : W x x = 1 := by
-  simpa using W.mul_apply_of_mem_segment (left_mem_segment ℝ x x)
+  simpa using W.apply_mul_apply_of_mem_segment (left_mem_segment ℝ x x)
 
 /-! ### Gauge transformations -/
 
@@ -129,7 +133,7 @@ instance : SMul (V → G) (GaugeLink V G) where
     { toFun x y := Ω x * W x y * (Ω y)⁻¹
       toFun_swap' x y := by simp [W.apply_swap x y, mul_assoc]
       toFun_mul_toFun' x y m hm := by
-        simp only [mul_assoc, inv_mul_cancel_left, ← W.mul_apply_of_mem_segment hm] }
+        simp only [mul_assoc, inv_mul_cancel_left, ← W.apply_mul_apply_of_mem_segment hm] }
 
 @[simp]
 theorem smul_apply (Ω : V → G) (W : GaugeLink V G) (x y : V) :
@@ -187,10 +191,9 @@ theorem pathLink_reverse (W : GaugeLink V G) (l : List V) :
     cases l with
     | nil => simp
     | cons b l =>
-      rw [List.reverse_cons, List.reverse_cons, List.append_assoc, List.singleton_append,
-        pathLink_append, ← List.reverse_cons, ih]
-      simp only [pathLink_cons_cons, pathLink_singleton, mul_one, W.apply_swap b a, mul_inv_rev,
-        inv_inv]
+      simp only [List.reverse_cons, List.append_assoc, List.singleton_append] at ih ⊢
+      rw [pathLink_append, ih]
+      simp [W.apply_swap b a]
 
 /-- **Gauge covariance**: under a gauge transformation the link along a path is conjugated by the
 gauge transformation at its two endpoints. -/
@@ -210,55 +213,71 @@ theorem pathLink_insert_of_mem_segment (W : GaugeLink V G) (l₁ l₂ : List V) 
     (hm : m ∈ segment ℝ x y) :
     W.pathLink (l₁ ++ x :: m :: y :: l₂) = W.pathLink (l₁ ++ x :: y :: l₂) := by
   rw [pathLink_append, pathLink_append W l₁ (y :: l₂), pathLink_cons_cons, pathLink_cons_cons,
-    pathLink_cons_cons, ← mul_assoc (W x m), W.mul_apply_of_mem_segment hm]
+    pathLink_cons_cons, ← mul_assoc (W x m), W.apply_mul_apply_of_mem_segment hm]
 
 /-! ### Staples and the transverse link -/
 
 omit [Module ℝ V] in
-/-- The staple from `x` to `y` with displacement `v`: the path with corners `x`, `x + v`,
-`y + v`, `y`. For `v = L • n` with `n` a light-like direction it runs out along `n` to light-cone
-distance `L`, across, and back; `L > 0` gives the future-pointing staple and `L < 0` the
-past-pointing staple. -/
-def staple (v x y : V) : List V := [x, x + v, y + v, y]
+/-- The staple path from `x` to `y` with leg `v` and far segment `w`: the path with corners `x`,
+`x + v`, `x + v + w`, `y`. For a light-like direction `n`, `v = L • n` and `y - x = s • n + w` it
+runs out along `n` to light-cone distance `L`, along the transverse separation `w`, and back along
+`n`; `L > 0` gives the future-pointing staple and `L < 0` the past-pointing staple. -/
+def staplePath (v w x y : V) : List V := [x, x + v, x + v + w, y]
 
 omit [Module ℝ V] in
-/-- The staple from `y` to `x` is the reverse of the staple from `x` to `y` with the same
-displacement. -/
-@[simp]
-theorem reverse_staple (v x y : V) : (staple v x y).reverse = staple v y x := by
-  simp [staple]
+theorem staplePath_def (v w x y : V) : staplePath v w x y = [x, x + v, x + v + w, y] := (rfl)
 
-/-- The transverse link of the staple from `x` to `y` with displacement `v`: the link along its
-far segment, from `x + v` to `y + v`. -/
-def transverseLink (W : GaugeLink V G) (v x y : V) : G := W (x + v) (y + v)
+omit [Module ℝ V] in
+/-- The reverse of a staple path is the staple path from `y` to `x` whose first leg ends at the
+far corner `x + v + w` and whose far segment is `-w`. -/
+theorem reverse_staplePath (v w x y : V) :
+    (staplePath v w x y).reverse = staplePath (x + v + w - y) (-w) y x := by
+  simp [staplePath_def]
 
-theorem transverseLink_def (W : GaugeLink V G) (v x y : V) :
-    W.transverseLink v x y = W (x + v) (y + v) := (rfl)
+/-- The transverse link of the staple path with leg `v` and far segment `w` starting at `x`: the
+link along its far segment, from `x + v` to `x + v + w`. It is the transverse link at light-cone
+distance `L` when `v = L • n` and `w` is the transverse separation. -/
+def transverseLink (W : GaugeLink V G) (v w x : V) : G := W (x + v) (x + v + w)
+
+theorem transverseLink_def (W : GaugeLink V G) (v w x : V) :
+    W.transverseLink v w x = W (x + v) (x + v + w) := (rfl)
 
 /-- The staple link is the product of the outgoing leg, the transverse link, and the returning
 leg. -/
-theorem pathLink_staple (W : GaugeLink V G) (v x y : V) :
-    W.pathLink (staple v x y) = W x (x + v) * W.transverseLink v x y * W (y + v) y := by
-  simp [staple, transverseLink_def, mul_assoc]
+theorem pathLink_staplePath (W : GaugeLink V G) (v w x y : V) :
+    W.pathLink (staplePath v w x y) = W x (x + v) * W.transverseLink v w x * W (x + v + w) y := by
+  simp [staplePath_def, transverseLink_def, mul_assoc]
 
-/-- The staple links from `x` to `y` and from `y` to `x` with the same displacement are inverse
-to each other. -/
-theorem pathLink_staple_swap (W : GaugeLink V G) (v x y : V) :
-    W.pathLink (staple v y x) = (W.pathLink (staple v x y))⁻¹ := by
-  rw [← reverse_staple, pathLink_reverse]
+/-- The link along the reverse of a staple path is the inverse of the staple link. -/
+theorem pathLink_staplePath_swap (W : GaugeLink V G) (v w x y : V) :
+    W.pathLink (staplePath (x + v + w - y) (-w) y x) = (W.pathLink (staplePath v w x y))⁻¹ := by
+  rw [← reverse_staplePath, pathLink_reverse]
+
+/-- **A staple with trivial legs carries its link on the far segment**: if the links of both
+legs are trivial, the staple link is the transverse link. -/
+theorem pathLink_staplePath_of_legs_eq_one (W : GaugeLink V G) {v w x y : V}
+    (hx : W x (x + v) = 1) (hy : W (x + v + w) y = 1) :
+    W.pathLink (staplePath v w x y) = W.transverseLink v w x := by
+  simp [pathLink_staplePath, hx, hy]
 
 /-- A gauge link is in light-cone gauge for the direction `n` when its links along `n` are
 trivial, which for the link of a gauge potential is the condition `n · A = 0`. -/
 def IsLightConeGauge (W : GaugeLink V G) (n : V) : Prop :=
   ∀ x : V, ∀ t : ℝ, W x (x + t • n) = 1
 
-/-- **In light-cone gauge the staple link is the transverse link**: the two legs along the
-light-cone direction contribute nothing, and the whole gauge link of the staple sits at
-light-cone distance `L`. -/
-theorem pathLink_staple_of_isLightConeGauge {W : GaugeLink V G} {n : V}
-    (hW : W.IsLightConeGauge n) (L : ℝ) (x y : V) :
-    W.pathLink (staple (L • n) x y) = W.transverseLink (L • n) x y := by
-  rw [pathLink_staple, hW x L, W.apply_swap, hW y L, inv_one, one_mul, mul_one]
+theorem isLightConeGauge_iff {W : GaugeLink V G} {n : V} :
+    W.IsLightConeGauge n ↔ ∀ (x : V) (t : ℝ), W x (x + t • n) = 1 := Iff.rfl
+
+/-- **In light-cone gauge the staple link is the transverse link**: for the staple from `x` to
+`x + s • n + w` with legs along `n` to light-cone distance `L`, the two legs contribute nothing,
+and the whole gauge link of the staple sits on the transverse segment `w` at light-cone
+distance `L`. -/
+theorem pathLink_staplePath_of_isLightConeGauge {W : GaugeLink V G} {n : V}
+    (hW : W.IsLightConeGauge n) (L s : ℝ) (x w : V) :
+    W.pathLink (staplePath (L • n) w x (x + s • n + w)) = W.transverseLink (L • n) w x := by
+  refine W.pathLink_staplePath_of_legs_eq_one (hW x L) ?_
+  rw [show x + s • n + w = x + L • n + w + (s - L) • n by module]
+  exact hW _ _
 
 /-! ### The gauge link of a linear abelian gauge potential -/
 
@@ -278,13 +297,15 @@ private theorem bilinPhase_add_of_mem_segment (B : V →ₗ[ℝ] V →ₗ[ℝ] �
 /-- The gauge link of the linear abelian gauge potential `A(z) · w = B z w`, valued in the circle
 group `U(1)` and with the coupling absorbed into `B`: the straight link from `x` to `y` is
 `exp(-i ∫ A · dz)` along the segment from `x` to `y`, whose phase is `½ B (x + y) (x - y)`.
-Its field strength is the antisymmetric part of `B`; when `B` is symmetric the potential is a
-pure gauge. -/
+Its field strength is `F u w = B u w - B w u`; when `B` is symmetric the potential is a pure
+gauge. -/
 def ofBilin (B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) : GaugeLink V Circle where
   toFun x y := Circle.exp (bilinPhase B x y)
   toFun_swap' x y := by
-    rw [← Circle.exp_neg, bilinPhase, bilinPhase, add_comm y x, ← neg_sub x y, map_neg]
-    ring_nf
+    rw [← Circle.exp_neg]
+    congr 1
+    simp only [bilinPhase, map_add, map_sub, LinearMap.add_apply]
+    ring
   toFun_mul_toFun' x y m hm := by
     rw [← Circle.exp_add, bilinPhase_add_of_mem_segment B hm]
 
@@ -296,16 +317,17 @@ gauge for `n`. -/
 theorem isLightConeGauge_ofBilin {B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ} {n : V} (hB : ∀ z, B z n = 0) :
     (ofBilin B).IsLightConeGauge n := by
   intro x t
-  rw [ofBilin_apply, sub_add_cancel_left, map_neg, map_smul, hB, smul_zero, neg_zero, zero_div,
-    Circle.exp_zero]
+  simp [ofBilin_apply, hB]
 
-/-- The staple link of a linear abelian potential is the straight link times the flux
-`exp(i (B v (x - y) - B (x - y) v))` of the field strength through the parallelogram enclosed by
-the staple and the straight segment. -/
-theorem pathLink_staple_ofBilin (B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (v x y : V) :
-    (ofBilin B).pathLink (staple v x y) =
-      ofBilin B x y * Circle.exp (B v (x - y) - B (x - y) v) := by
-  simp only [pathLink_staple, transverseLink_def, ofBilin_apply, ← Circle.exp_add]
+/-- The staple link of a linear abelian potential is the straight link times `exp(-Φ)`, where
+`Φ = ½ (F v w + F v (y - x) + F w (y - x))` is the flux of the field strength
+`F u u' = B u u' - B u' u` through the quadrilateral with corners `x`, `x + v`, `x + v + w`, `y`
+enclosed by the staple path and the straight segment. -/
+theorem pathLink_staplePath_ofBilin (B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (v w x y : V) :
+    (ofBilin B).pathLink (staplePath v w x y) =
+      ofBilin B x y * Circle.exp (-((B v w - B w v + (B v (y - x) - B (y - x) v) +
+        (B w (y - x) - B (y - x) w)) / 2)) := by
+  simp only [pathLink_staplePath, transverseLink_def, ofBilin_apply, ← Circle.exp_add]
   congr 1
   simp only [map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply]
   ring
@@ -313,19 +335,27 @@ theorem pathLink_staple_ofBilin (B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (v x y : V
 /-- **The transverse link cannot be omitted.** There is a gauge link in light-cone gauge whose
 staple link is non-trivial, so it differs from the product of the two longitudinal legs of the
 staple, which is trivial in that gauge. -/
-theorem exists_isLightConeGauge_pathLink_staple_ne_one :
+theorem exists_isLightConeGauge_pathLink_staplePath_ne_one :
     ∃ W : GaugeLink (ℝ × ℝ) Circle, W.IsLightConeGauge (1, 0) ∧
-      W.pathLink (staple (1, 0) 0 (0, 1)) ≠ 1 := by
+      W.pathLink (staplePath (1, 0) (0, 1) 0 (0, 1)) ≠ 1 := by
   set B : (ℝ × ℝ) →ₗ[ℝ] (ℝ × ℝ) →ₗ[ℝ] ℝ :=
     (LinearMap.mul ℝ ℝ).compl₁₂ (LinearMap.fst ℝ ℝ ℝ) (LinearMap.snd ℝ ℝ ℝ)
-  have hB (z w : ℝ × ℝ) : B z w = z.1 * w.2 := (rfl)
-  refine ⟨ofBilin B, isLightConeGauge_ofBilin fun z => by simp [hB], fun h => ?_⟩
-  rw [pathLink_staple_ofBilin, ofBilin_apply, ← Circle.exp_add] at h
-  norm_num [hB] at h
-  rw [← Circle.exp_zero] at h
-  have hπ := Real.two_le_pi
-  have := Circle.exp_injOn_Icc (a := 0) (b := 1) (by linarith) (by norm_num) (by norm_num) h
-  norm_num at this
+  have hB (z w : ℝ × ℝ) : B z w = z.1 * w.2 := by simp [B]
+  have hW : (ofBilin B).IsLightConeGauge (1, 0) := isLightConeGauge_ofBilin fun z => by simp [hB]
+  refine ⟨ofBilin B, hW, fun h => ?_⟩
+  -- The legs along `(1, 0)` are trivial, so the staple link is the transverse link, from
+  -- `(1, 0)` to `(1, 1)`, whose phase is `½ B (2, 1) (0, -1) = -1`.
+  have hstaple := pathLink_staplePath_of_isLightConeGauge hW 1 0 0 (0, 1)
+  simp only [one_smul, zero_smul, zero_add, add_zero] at hstaple
+  have hphase : ((1, 0) + ((1, 0) + (0, 1)) : ℝ × ℝ) = (2, 1) ∧
+      ((1, 0) - ((1, 0) + (0, 1)) : ℝ × ℝ) = (0, -1) := by norm_num
+  rw [hstaple, transverseLink_def, ofBilin_apply, zero_add, hphase.1, hphase.2, hB] at h
+  have h1 : Circle.exp (-1) = Circle.exp 0 := by
+    rw [Circle.exp_zero, ← h]
+    norm_num
+  have h2 := Circle.exp_injOn_Icc (a := -1) (b := 0) (by linarith [Real.two_le_pi])
+    (by norm_num) (by norm_num) h1
+  norm_num at h2
 
 end GaugeLink
 
