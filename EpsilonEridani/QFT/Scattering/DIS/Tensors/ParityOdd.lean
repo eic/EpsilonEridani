@@ -60,8 +60,10 @@ covariance, a basis of four vectors — separately.
   (twice the antisymmetric part) of any conserved, properly covariant tensor is a unique
   multiple of a non-zero parity-odd `A`.
 - `ParityOddAssumptions.apply_pTransverse_eq_zero_of_spectatorPlane`,
-  `ParityOddAssumptions.apply_p_eq_zero_of_spectatorPlane`: a parity-odd tensor annihilates
-  `p_T` and `p` in both slots under a `SpectatorPlane`.
+  `ParityOddAssumptions.apply_p_eq_zero_of_spectatorPlane` (first slot) and
+  `ParityOddAssumptions.apply_pTransverse_right_eq_zero_of_spectatorPlane`,
+  `ParityOddAssumptions.apply_p_right_eq_zero_of_spectatorPlane` (second slot): a parity-odd
+  tensor annihilates `p_T` and `p` in both slots under a `SpectatorPlane`.
 - `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under a `SpectatorSplitting` in which
   non-zero spectators are non-null, the parity-odd part vanishes under
   full covariance. No four-dimensionality enters.
