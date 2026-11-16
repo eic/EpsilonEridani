@@ -18,7 +18,7 @@ The density `D_ee(z, β)` of a lepton carrying momentum fraction `z` of a parent
 the parent has radiated photons, is concentrated at the soft-photon endpoint `z → 1`. There, the
 sum of the leading logarithms to all orders has the closed form of Gribov and Lipatov,
 
-  `D(z) = exp (β (3/4 - γ_E)) / Γ(1 + β) · β (1 - z) ^ (β - 1)`,  `0 < z < 1`,
+  `D(z) = exp (β (3/4 - γ_E)) / Γ(1 + β) · β (1 - z) ^ (β - 1)`,  `0 < β`, `0 < z < 1`,
 
 where `γ_E` is the Euler-Mascheroni constant. Here `β` is the exponent appearing in
 `(1 - z) ^ (β - 1)`, the QED coupling times the collinear logarithm. For a single lepton line of
@@ -83,9 +83,10 @@ namespace Corrections
 
 open Set MeasureTheory ProbabilityTheory Factorization.Convolution Real
 
-/-- The Gribov-Lipatov **exponentiated radiator** with exponent `β`:
-`exp (β (3/4 - γ_E)) / Γ(1 + β) · β (1 - z) ^ (β - 1)` for `0 < z < 1`, and `0` otherwise
-(`exponentiatedRadiator_of_mem_Ioo`, `exponentiatedRadiator_of_notMem_Ioo`). It is defined as
+/-- The Gribov-Lipatov **exponentiated radiator** with exponent `β`: for `0 < β` it is
+`exp (β (3/4 - γ_E)) / Γ(1 + β) · β (1 - z) ^ (β - 1)` for `0 < z < 1`
+(`exponentiatedRadiator_of_mem_Ioo`), and for every `β` it is `0` off `(0,1)`
+(`exponentiatedRadiator_of_notMem_Ioo`). It is defined as
 that constant times the density `ProbabilityTheory.betaPDFReal 1 β` of the Beta distribution
 with shape parameters `1` and `β`. -/
 def exponentiatedRadiator (β z : ℝ) : ℝ :=
@@ -98,7 +99,7 @@ lemma exponentiatedRadiator_def (β : ℝ) :
       Real.exp (β * (3 / 4 - eulerMascheroniConstant)) / Real.Gamma (1 + β) *
         betaPDFReal 1 β z := (rfl)
 
-/-- The closed form of the exponentiated radiator on the open unit interval. -/
+/-- For `0 < β`, the closed form of the exponentiated radiator on the open unit interval. -/
 lemma exponentiatedRadiator_of_mem_Ioo {β z : ℝ} (hβ : 0 < β) (hz : z ∈ Ioo (0 : ℝ) 1) :
     exponentiatedRadiator β z =
       Real.exp (β * (3 / 4 - eulerMascheroniConstant)) / Real.Gamma (1 + β) *
