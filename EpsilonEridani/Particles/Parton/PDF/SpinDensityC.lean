@@ -140,12 +140,14 @@ def transversity : ℂ := ρ.mat idxPP idxMM
 /-- Defining expression for `f1`. -/
 lemma f1_def :
     ρ.f1 = ((ρ.mat idxPP idxPP).re + (ρ.mat idxPM idxPM).re + (ρ.mat idxMP idxMP).re
-      + (ρ.mat idxMM idxMM).re) / 2 := (rfl)
+      + (ρ.mat idxMM idxMM).re) / 2 := by
+  simp only [f1, PDF.f1_def, mat_re_apply]
 
 /-- Defining expression for `deltaQ`. -/
 lemma deltaQ_def :
     ρ.deltaQ = ((ρ.mat idxPP idxPP).re - (ρ.mat idxPM idxPM).re - (ρ.mat idxMP idxMP).re
-      + (ρ.mat idxMM idxMM).re) / 2 := (rfl)
+      + (ρ.mat idxMM idxMM).re) / 2 := by
+  simp only [deltaQ, PDF.g1_def, mat_re_apply]
 
 /-- Defining expression for `transversity`. -/
 lemma transversity_def : ρ.transversity = ρ.mat idxPP idxMM := (rfl)
@@ -175,7 +177,8 @@ lemma g1_re : PDF.g1 ρ.re = ρ.deltaQ := (rfl)
 /-- The real part is compatible with transversity: the real `h1` is the real part of the
 double-flip entry. -/
 @[simp]
-lemma h1_re : PDF.h1 ρ.re = ρ.transversity.re := (rfl)
+lemma h1_re : PDF.h1 ρ.re = ρ.transversity.re := by
+  simp only [PDF.h1_def, mat_re_apply, transversity_def]
 
 /-- When transversity is real, it is the real `h1` of the real part. This applies under parity
 invariance (`IsParityInvariant.im_transversity`) and under time-reversal invariance
@@ -299,7 +302,7 @@ def IsTimeReversalInvariant : Prop :=
 /-- Time-reversal invariance says exactly that every entry of the matrix is real. -/
 lemma isTimeReversalInvariant_iff_forall_im_eq_zero :
     ρ.IsTimeReversalInvariant ↔ ∀ i j, (ρ.mat i j).im = 0 := by
-  simp [IsTimeReversalInvariant, ← Matrix.ext_iff, Complex.conj_eq_iff_im, -conj_mat_apply]
+  simp only [IsTimeReversalInvariant, ← Matrix.ext_iff, map_apply, Complex.conj_eq_iff_im]
 
 /-- For the hermitian helicity-amplitude matrix, time-reversal invariance is the same as
 symmetry of the matrix. -/
