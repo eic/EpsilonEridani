@@ -62,9 +62,11 @@ symmetry that distinguishes them. Its colour counterpart, whose structure this f
 
 ## Main results
 
+* `spinSingletProj_def`, `spinTripletProj_def`: the two projectors are the antisymmetrizer and
+  the symmetrizer of `ℂ² ⊗ ℂ²`.
 * `trace_spinSingletProj`, `trace_spinTripletProj`: the traces `1` and `3`.
-* `commute_diagEnd_spinSingletProj`, `commute_diagEnd_spinTripletProj`: both channels are
-  invariant under the diagonal action of every operator on `ℂ²`, so under the total spin.
+* `commute_Jx_tensor_spinHalfRep_spinSingletProj`, `commute_Jx_tensor_spinHalfRep_spinTripletProj`
+  and their `Jy`, `Jz` analogues: both channels are invariant under the total spin.
 * `Jsq_tensor_spinHalfRep_mul_spinSingletProj`, `Jsq_tensor_spinHalfRep_mul_spinTripletProj`:
   the total spin squared is `0` on the singlet channel and `2` on the triplet channel.
 * `Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
@@ -109,6 +111,14 @@ particles, where `P₁₂` exchanges the two spins: the symmetrizer of `ℂ² �
 abbrev spinTripletProj : Module.End ℂ (ℂ² ⊗[ℂ] ℂ²) :=
   symmetrizer ℂ ℂ²
 
+/-- The singlet projector is the antisymmetrizer of `ℂ² ⊗ ℂ²`. -/
+theorem spinSingletProj_def : spinSingletProj = antisymmetrizer ℂ ℂ² :=
+  (rfl)
+
+/-- The triplet projector is the symmetrizer of `ℂ² ⊗ ℂ²`. -/
+theorem spinTripletProj_def : spinTripletProj = symmetrizer ℂ ℂ² :=
+  (rfl)
+
 /-! ### Traces -/
 
 /-- The singlet projector has trace `1`, which over `ℂ` is the dimension of the singlet channel;
@@ -129,17 +139,41 @@ theorem trace_spinTripletProj :
 
 /-! ### Invariance under the total spin -/
 
-/-- The singlet channel is invariant under the diagonal action `X ⊗ 1 + 1 ⊗ X` of every operator
-`X` on `ℂ²`, in particular under each component of the total spin. -/
-theorem commute_diagEnd_spinSingletProj (X : Module.End ℂ ℂ²) :
-    Commute (diagEnd X X) spinSingletProj :=
-  commute_diagEnd_antisymmetrizer X
+/-- The singlet channel is invariant under the `x`-component of the total spin. -/
+theorem commute_Jx_tensor_spinHalfRep_spinSingletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinSingletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jx]
+  exact commute_diagEnd_antisymmetrizer _
 
-/-- The triplet channel is invariant under the diagonal action `X ⊗ 1 + 1 ⊗ X` of every operator
-`X` on `ℂ²`, in particular under each component of the total spin. -/
-theorem commute_diagEnd_spinTripletProj (X : Module.End ℂ ℂ²) :
-    Commute (diagEnd X X) spinTripletProj :=
-  commute_diagEnd_symmetrizer X
+/-- The singlet channel is invariant under the `y`-component of the total spin. -/
+theorem commute_Jy_tensor_spinHalfRep_spinSingletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinSingletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jy]
+  exact commute_diagEnd_antisymmetrizer _
+
+/-- The singlet channel is invariant under the `z`-component of the total spin. -/
+theorem commute_Jz_tensor_spinHalfRep_spinSingletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinSingletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jz]
+  exact commute_diagEnd_antisymmetrizer _
+
+/-- The triplet channel is invariant under the `x`-component of the total spin. -/
+theorem commute_Jx_tensor_spinHalfRep_spinTripletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinTripletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jx]
+  exact commute_diagEnd_symmetrizer _
+
+/-- The triplet channel is invariant under the `y`-component of the total spin. -/
+theorem commute_Jy_tensor_spinHalfRep_spinTripletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinTripletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jy]
+  exact commute_diagEnd_symmetrizer _
+
+/-- The triplet channel is invariant under the `z`-component of the total spin. -/
+theorem commute_Jz_tensor_spinHalfRep_spinTripletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinTripletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jz]
+  exact commute_diagEnd_symmetrizer _
 
 /-! ### The total spin squared -/
 

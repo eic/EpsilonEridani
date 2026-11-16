@@ -46,6 +46,7 @@ states or rewrites with them must enable it with
 
 ## Main results
 
+* `PhyslibAlpha.Sl2.sum_spinGen_mul_self`: `S₁ S₁ + S₂ S₂ + S₃ S₃ = 3/4` on `ℂ²`.
 * `PhyslibAlpha.Sl2.lie_spinGen_zero_one`, `PhyslibAlpha.Sl2.lie_spinGen_one_two`,
   `PhyslibAlpha.Sl2.lie_spinGen_two_zero`: the su(2) commutation relations.
 * `PhyslibAlpha.Sl2.Jsq_spinHalfRep`: `J² = 3/4` for spin `1/2`.
@@ -79,7 +80,7 @@ theorem spinGen_apply (i : Fin 3) (v : EuclideanSpace ℂ (Fin 2)) :
 
 /-- The spin Casimir of a single spin-`1/2` particle:
 `S₁ S₁ + S₂ S₂ + S₃ S₃ = s (s + 1) = 3/4`. -/
-private theorem sum_spinGen_mul_self : ∑ i : Fin 3, spinGen i * spinGen i = (3 / 4 : ℂ) • 1 := by
+theorem sum_spinGen_mul_self : ∑ i : Fin 3, spinGen i * spinGen i = (3 / 4 : ℂ) • 1 := by
   simp only [spinGen_def, smul_mul_smul_comm, Module.End.mul_eq_comp, ← toLpLin_mul_same,
     ← Finset.smul_sum, ← map_sum, sum_pauliMatrix_inr_mul_self, map_smul,
     toLpLin_one, ← Module.End.one_eq_id, smul_smul]
