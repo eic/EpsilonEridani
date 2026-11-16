@@ -70,7 +70,7 @@ familiar single-nucleon-helicity expressions `q_{+/+} ± q_{−/+}` (`f1_eq_of_p
 The matrix is taken over `ℝ`. The leading-twist unpolarized, helicity and transversity block
 is real: hermiticity plus time-reversal invariance make the double-flip entry real. The
 complex generalisation of this matrix is `SpinDensityC` in
-`EpsilonEridani.Particles.Parton.PDF.ComplexSpinDensity`, of which `SpinDensity` is the
+`EpsilonEridani.Particles.Parton.PDF.SpinDensityC`, of which `SpinDensity` is the
 time-reversal-invariant specialisation.
 
 ## Main results

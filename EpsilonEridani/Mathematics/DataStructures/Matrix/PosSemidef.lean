@@ -69,7 +69,11 @@ needs it: the off-diagonal entries of a spin density matrix carry the vector pol
 their imaginary parts.
 
 These lemmas are stated for a general index type rather than for `Fin n`, and are candidates
-for upstreaming to `Mathlib/Analysis/Matrix/PosDef.lean`.
+for upstreaming: the `RCLike` lemmas (`re_apply_self_nonneg`, `two_mul_norm_apply_le`, the
+quadratic-form identities, `map_re`, `posSemidef_map_ofReal_iff`) and their real specialisations
+`sq_apply_le` and `two_mul_abs_apply_le` to `Mathlib/Analysis/Matrix/PosDef.lean`, and the
+ring-level lemmas (`of_submatrix_dotProduct_mulVec_nonneg`, `apply_self_le_trace`,
+`posSemidef_single_self_iff`) to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
 -/
 
 @[expose] public section
