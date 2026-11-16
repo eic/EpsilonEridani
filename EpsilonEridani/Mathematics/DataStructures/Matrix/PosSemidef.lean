@@ -15,7 +15,10 @@ public import TauCeti.Analysis.Matrix.PosSemidef
 
 This file proves entrywise bounds for positive-semidefinite matrices and transfers positive
 semidefiniteness between a matrix over `RCLike 𝕜` and its entrywise real part, and between a real
-matrix and its image under `ℝ → 𝕜`.
+matrix and its image under `ℝ → 𝕜`. It also records that a diagonal entry of a
+positive-semidefinite matrix is at most its trace, and that a diagonal matrix unit `single i i r`
+is positive semidefinite exactly when `0 ≤ r`; `single i i 1` is the density matrix of a pure
+basis state.
 
 A positive-semidefinite matrix `M` over `RCLike 𝕜` carries two entrywise bounds:
 
@@ -55,8 +58,14 @@ principal-submatrix form `Matrix.PosSemidef.of_submatrix_dotProduct_mulVec_nonne
 - `Matrix.re_star_dotProduct_map_ofReal_mulVec`: the real part of the quadratic form of a real
   matrix on a vector over `𝕜`, split along the real and imaginary parts of the vector.
 - `Matrix.posSemidef_map_ofReal_iff`: positive semidefiniteness is unchanged by `ℝ → 𝕜`.
+- `Matrix.PosSemidef.apply_self_le_trace`: a diagonal entry is at most the trace.
+- `Matrix.posSemidef_single_self_iff`: positive semidefiniteness of diagonal matrix units.
 
 ## Implementation notes
+
+The arithmetic-mean bound is stated over `RCLike 𝕜` because a genuinely complex density matrix
+needs it: the off-diagonal entries of a spin density matrix carry the vector polarization in
+their imaginary parts.
 
 These lemmas are stated for a general index type rather than for `Fin n`, and are candidates
 for upstreaming to `Mathlib/Analysis/Matrix/PosDef.lean`.
@@ -65,6 +74,8 @@ for upstreaming to `Mathlib/Analysis/Matrix/PosDef.lean`.
 @[expose] public section
 
 namespace Matrix
+
+open scoped ComplexOrder
 
 variable {n : Type*}
 
@@ -171,5 +182,21 @@ Stated multiplied out, without a division, so that it applies with no field side
 lemma PosSemidef.two_mul_abs_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
     2 * |M i j| ≤ M i i + M j j := by
   simpa using hM.two_mul_norm_apply_le i j
+
+/-- **The diagonal of a positive-semidefinite matrix is dominated by its trace**, since the other
+diagonal entries are nonnegative; this refines Mathlib's `Matrix.PosSemidef.trace_nonneg`. -/
+lemma PosSemidef.apply_self_le_trace [Fintype n] {R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [AddLeftMono R] {M : Matrix n n R} (hM : M.PosSemidef) (i : n) :
+    M i i ≤ M.trace :=
+  Finset.single_le_sum (f := fun j ↦ M j j) (fun _ _ ↦ hM.diag_nonneg) (Finset.mem_univ i)
+
+/-- A diagonal matrix unit `single i i r` is positive semidefinite exactly when `0 ≤ r`; for
+`r = 1` it is the projector onto the `i`-th basis vector, a pure state. -/
+@[simp]
+lemma posSemidef_single_self_iff {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [DecidableEq n] {i : n} {r : R} :
+    (single i i r).PosSemidef ↔ 0 ≤ r := by
+  rw [← diagonal_single, posSemidef_diagonal_iff]
+  exact Pi.single_nonneg
 
 end Matrix
