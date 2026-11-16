@@ -457,8 +457,7 @@ lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour :=
 @[simp] lemma aFour_apply (v w : Fin 4 → ℝ) :
     aFour v w = v 1 * w 2 - v 2 * w 1 := by
   rw [aFour, aOfAlt_apply, Pi.basisFun_det_apply]
-  simp [Matrix.det_succ_row_zero, Fin.sum_univ_succ, Fin.succAbove]
-  ring
+  simp [Matrix.det_succ_row_zero, Fin.sum_univ_succ, Fin.succAbove, sub_eq_add_neg]
 
 /-- The spectator plane of the witness kinematics, spanned by the coordinate directions
 `e₁ = (0, 1, 0, 0)` and `e₂ = (0, 0, 1, 0)`. -/
