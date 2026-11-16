@@ -10,8 +10,9 @@ name: Update Dependencies
 #     PR. The PR changes only the two pin files, so bump-guard validates it and the review pipeline
 #     can auto-merge it once its sandboxed build is green.
 # PRs and commits use the epsiloneridani-review-bot App token so pr-build/review trigger normally.
-# Not yet: a set whose build fails inside a dependency is not recorded for `resolve_deps.py --exclude`;
-# such a PR stays red until upstream moves or a human closes it.
+# A set whose build fails inside a dependency is recorded by scripts/bump_excludes.py (carried in the
+# bump PR's body) and passed to `resolve_deps.py --exclude`, so the next feasible set is tried; a set
+# whose build fails in EpsilonEridani/ stays offered, for a worker's bump round to adapt.
 
 on:
   schedule:
@@ -32,10 +33,24 @@ jobs:
     timeout-minutes: 30  # about 8 minutes of GitHub API calls
     permissions:
       contents: read
+      actions: read        # the failed bump build's log (scripts/bump_excludes.py)
+      statuses: read       # the bump head's `build` status
+      pull-requests: read  # the excluded sets carried in the bump PR's body
     outputs:
       changed: ${{ steps.resolve.outputs.changed }}
     steps:
       - uses: actions/checkout@v7
+
+      # Sets whose bump build failed inside a dependency go back to the resolver as --exclude, so the
+      # next feasible set is tried instead of the same failing one (docs/dependency-bumps.md).
+      - name: Collect the excluded pin sets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python3 scripts/bump_excludes.py --repo "$REPO" --branch "$BUMP_BRANCH" --out exclude.json \
+            | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Resolve the newest compatible pins
         id: resolve
@@ -43,13 +58,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 scripts/resolve_deps.py --summary --out resolved.json | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 scripts/resolve_deps.py --summary --exclude exclude.json --out resolved.json | tee -a "$GITHUB_STEP_SUMMARY"
           echo "changed=$(jq -r .changed resolved.json)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v7
         with:
           name: resolved
-          path: resolved.json
+          path: |
+            resolved.json
+            exclude.json
           if-no-files-found: error
           retention-days: 7
 
@@ -168,6 +185,8 @@ jobs:
             cat summary.md
             echo
             echo "Roadmap: none"
+            # The excluded sets, carried to the next run (scripts/bump_excludes.py).
+            python3 -c 'import json, sys; sys.path.insert(0, "scripts"); import bump_excludes as b; print(b.render_marker(json.load(open("exclude.json"))))'
           } > body.md
           if [ -n "$existing" ]; then
             gh pr edit "$existing" -R "$REPO" --title "$title" --body-file body.md
