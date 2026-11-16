@@ -24,7 +24,7 @@ of `g` from `X ^ k` on.
 
 namespace PowerSeries
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- The coefficient of `X ^ (n + k)` in `f * g`, for `g` divisible by `X ^ k`, as a Cauchy
 product `∑_{i+j=n} [X^i] f [X^{j+k}] g`: the coefficients of `X⁰, …, X^{k-1}` of `g` vanish. -/
@@ -32,7 +32,7 @@ theorem coeff_mul_of_X_pow_dvd {k : ℕ} {g : R⟦X⟧} (hg : X ^ k ∣ g) (f : 
     coeff (n + k) (f * g) =
       ∑ p ∈ Finset.antidiagonal n, coeff p.1 f * coeff (p.2 + k) g := by
   obtain ⟨γ, rfl⟩ := hg
-  rw [mul_left_comm, coeff_X_pow_mul, coeff_mul]
+  rw [← mul_assoc, (commute_X_pow f k).eq, mul_assoc, coeff_X_pow_mul, coeff_mul]
   simp only [coeff_X_pow_mul]
 
 end PowerSeries
