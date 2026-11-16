@@ -197,7 +197,7 @@ lemma mellinDis_natCast_add_one_eq_ofReal (f : ℝ → ℝ) (n : ℕ) :
   exact integral_ofReal
 
 /-- At index `1` the Mellin transform is the complexified integral of `f` over `(0,1]`. -/
-lemma mellinDis_one (f : ℝ → ℝ) :
+lemma mellinDis_one_eq_ofReal (f : ℝ → ℝ) :
     mellinDis f 1 = ((∫ x in Set.Ioc (0 : ℝ) 1, f x : ℝ) : ℂ) := by
   simpa using mellinDis_natCast_add_one_eq_ofReal f 0
 

@@ -21,12 +21,13 @@ sum of the leading logarithms to all orders has the closed form of Gribov and Li
   `D(z) = exp (β (3/4 - γ_E)) / Γ(1 + β) · β (1 - z) ^ (β - 1)`,  `0 < z < 1`,
 
 where `γ_E` is the Euler-Mascheroni constant. Here `β` is the exponent appearing in
-`(1 - z) ^ (β - 1)`. It is the QED coupling times the collinear logarithm: for a single lepton line
-of mass `m` probed at virtuality `Q²`, leading logarithmic evolution in `ln (Q²/m²)` gives
-`β = (α/π) ln (Q²/m²)`, and conventions differ in the non-logarithmic constant added to the
-logarithm. Kuraev-Fadin and Skrzypek write the same radiator with exponent `β_ref/2` in place of
-`β`, where `β_ref = (2α/π) (ln (Q²/m²) - 1)`; so `β = β_ref/2`, a factor of two that must be
-taken into account when comparing. The profile `β (1 - z) ^ (β - 1)` is the density of the Beta
+`(1 - z) ^ (β - 1)`, the QED coupling times the collinear logarithm. For a single lepton line of
+mass `m` probed at virtuality `Q²`, in the Kuraev-Fadin normalisation that goes with the prefactor
+above, `β = (α/π) (ln (Q²/m²) - 1)`. Kuraev-Fadin and Skrzypek name this quantity `β_ref/2`, with
+`β_ref = (2α/π) (ln (Q²/m²) - 1)`, a factor of two to take into account when comparing. The theorems
+below hold for any `0 < β`, so a different definition of the exponent, such as the strictly
+leading-logarithmic `(α/π) ln (Q²/m²)` that drops the `- 1`, is a different choice of the
+argument `β`, not a second value of it. The profile `β (1 - z) ^ (β - 1)` is the density of the Beta
 distribution with shape parameters `1` and `β`, so the radiator is a constant multiple of
 `ProbabilityTheory.betaPDFReal 1 β`.
 
@@ -163,7 +164,7 @@ theorem integral_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
     ∫ z in Ioc (0 : ℝ) 1, exponentiatedRadiator β z =
       exp (β * (3 / 4 - eulerMascheroniConstant)) / Gamma (1 + β) := by
   have h := mellinDis_exponentiatedRadiator hβ (N := 1) (by simp)
-  rw [mellinDis_one, Complex.Gamma_one, mul_one] at h
+  rw [mellinDis_one_eq_ofReal, Complex.Gamma_one, mul_one] at h
   apply Complex.ofReal_injective
   rw [h, Complex.ofReal_div, ← Complex.Gamma_ofReal, Complex.ofReal_add, Complex.ofReal_one]
 
