@@ -132,11 +132,11 @@ lemma re_star_ofReal_dotProduct_mulVec_ofReal [Fintype n] (M : Matrix n n 𝕜) 
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   simp only [mul_re, ofReal_re, ofReal_im, zero_mul, mul_zero, sub_zero]
 
-/-- The entrywise real part of a positive-semidefinite matrix is positive semidefinite: its
-quadratic form on a real vector is the real part of the quadratic form of the matrix
-(`Matrix.re_star_ofReal_dotProduct_mulVec_ofReal`). -/
+/-- The entrywise real part of a positive-semidefinite matrix is positive semidefinite. -/
 lemma PosSemidef.map_re {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
     (M.map re).PosSemidef := by
+  -- On a real vector, the quadratic form of `M.map re` is the real part of that of `M`
+  -- (`Matrix.re_star_ofReal_dotProduct_mulVec_ofReal`).
   refine PosSemidef.of_submatrix_dotProduct_mulVec_nonneg (hM.1.map re fun z => by simp)
     fun {ι : Type} _ v x => ?_
   have h0 := (hM.submatrix v).re_dotProduct_nonneg (fun i => (x i : 𝕜))
