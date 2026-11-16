@@ -7,7 +7,6 @@ module
 
 public import EpsilonEridani.Mathematics.DataStructures.Matrix.PosSemidef
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Bochner.Gaussian.Basic
 public import TauCeti.Analysis.Matrix.PosSemidef
 
 /-!
@@ -69,6 +68,8 @@ dipole amplitude and its unitarity bound.
 
 - `SmallX.mem_Icc_zero_two_of_posSemidef_one_sub`: colour transparency and a positive-semidefinite
   S-matrix give `N x y ∈ [0, 2]`, for a kernel on an arbitrary index type.
+- `SmallX.apply_comm_of_posSemidef_one_sub`: a positive-semidefinite S-matrix `1 - N` forces the
+  kernel `N` to be symmetric, for a kernel on an arbitrary index type.
 - `SmallX.IsAdmissible.apply_comm`: an admissible amplitude is symmetric in its endpoints.
 - `SmallX.IsAdmissible.mem_Icc`: the unitarity bound `N x y ∈ [0, 1]`, whose lower half is
   derived and whose upper half is the `le_one` field of admissibility.
@@ -110,15 +111,24 @@ theorem mem_Icc_zero_two_of_posSemidef_one_sub {α : Type*} {N : α → α → �
   rw [of_apply, Real.norm_eq_abs, abs_le] at h
   constructor <;> linarith [h.1, h.2]
 
+/-- A positive-semidefinite S-matrix `1 - N` forces the kernel `N` to be symmetric: `1 - N` is
+Hermitian, hence symmetric over `ℝ`. The kernel may live on an arbitrary index type; no
+structure of the transverse plane enters. -/
+theorem apply_comm_of_posSemidef_one_sub {α : Type*} {N : α → α → ℝ}
+    (hS : (Matrix.of fun x y => 1 - N x y).PosSemidef) (x y : α) : N x y = N y x := by
+  have h := hS.isHermitian.apply x y
+  simp only [of_apply, star_trivial] at h
+  linarith
+
 variable {N : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) → ℝ}
 
 namespace IsAdmissible
 
-/-- An admissible amplitude is symmetric under exchange of the quark and antiquark positions. -/
-theorem apply_comm (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : N x y = N y x := by
-  have h := hN.posSemidef_one_sub.isHermitian.apply x y
-  simp only [of_apply, star_trivial] at h
-  linarith
+/-- An admissible amplitude is symmetric under exchange of the quark and antiquark positions.
+This needs only the positive semidefiniteness of the S-matrix, not the other admissibility
+conditions (`apply_comm_of_posSemidef_one_sub`). -/
+theorem apply_comm (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : N x y = N y x :=
+  apply_comm_of_posSemidef_one_sub hN.posSemidef_one_sub x y
 
 /-- An admissible amplitude is non-negative. -/
 theorem nonneg (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : 0 ≤ N x y :=
@@ -196,18 +206,14 @@ and takes values in `(0, 1]`. -/
 theorem isAdmissible_golecBiernatWusthoff (Qs : ℝ) :
     IsAdmissible (golecBiernatWusthoff Qs) := by
   refine ⟨fun x => golecBiernatWusthoff_self Qs x, ?_, fun x y => ?_⟩
-  · -- TauCeti's Gaussian kernel over `ℂ`; `Matrix.of` is the identity on the underlying
-    -- function, so its positive semidefiniteness is that of this matrix.
-    have hG : (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) =>
-        Complex.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2 : ℝ))).PosSemidef :=
-      TauCeti.posSemidef_cexp_neg_mul_sq_norm (by positivity)
-    have e : (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) =>
-        Complex.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2 : ℝ))).map RCLike.re =
-        Matrix.of fun x y => 1 - golecBiernatWusthoff Qs x y := by
+  · -- The S-matrix is the real Gaussian kernel in the dipole size, positive semidefinite by
+    -- `Matrix.posSemidef_rexp_neg_mul_sq_norm` at `c = Q_s ^ 2 / 4`.
+    have h : (Matrix.of fun x y : EuclideanSpace ℝ (Fin 2) =>
+        1 - golecBiernatWusthoff Qs x y) =
+        Matrix.of fun x y => Real.exp (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2)) := by
       ext x y
-      simp only [map_apply, of_apply, ← Complex.ofReal_neg, ← Complex.ofReal_exp,
-        RCLike.re_to_complex, Complex.ofReal_re, one_sub_golecBiernatWusthoff]
-    exact e ▸ hG.map_re
+      simp
+    exact h ▸ posSemidef_rexp_neg_mul_sq_norm (c := Qs ^ 2 / 4) (by positivity)
   · rw [golecBiernatWusthoff_def]
     linarith [Real.exp_pos (-(Qs ^ 2 / 4 * ‖x - y‖ ^ 2))]
 
