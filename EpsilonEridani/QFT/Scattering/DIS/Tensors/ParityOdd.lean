@@ -460,6 +460,8 @@ lemma parityOddAssumptions_aFour : ParityOddAssumptions gFour kFour aFour :=
 @[simp] lemma aFour_apply (v w : Fin 4 → ℝ) :
     aFour v w = v 1 * w 2 - v 2 * w 1 := by
   rw [aFour, aOfAlt_apply, Pi.basisFun_det_apply]
+  -- `Fin.succAbove` is unfolded because no simp lemma or simproc evaluates it at numerals
+  -- such as `Fin.succAbove 3 2`, which the Laplace expansion of the `4 × 4` determinant produces.
   simp [Matrix.det_succ_row_zero, Fin.sum_univ_succ, Fin.succAbove, sub_eq_add_neg]
 
 /-- The spectator plane of the witness kinematics, spanned by the coordinate directions

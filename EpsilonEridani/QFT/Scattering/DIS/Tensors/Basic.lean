@@ -675,11 +675,11 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
   · simp [hu0]
   have hf := reflect_isKinematicStabilizer g K hSymm u (hu hu0)
     (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
-  rw [← LinearMap.BilinForm.flip_apply W v u]
-  exact Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (W := W.flip)
-    (by simp only [LinearMap.BilinForm.flip_apply]; exact hW _ hf u v)
-    (Bilin.reflect_apply_of_orthogonal g u v huv)
-    (Bilin.reflect_apply_self g u (hu hu0))
+  have h := hW _ hf u v
+  rw [Bilin.reflect_apply_self g u (hu hu0), Bilin.reflect_apply_of_orthogonal g u v huv,
+    map_neg, LinearMap.neg_apply] at h
+  -- `h : -W u v = W u v`
+  linarith
 
 /-!
 
