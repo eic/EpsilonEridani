@@ -27,6 +27,16 @@ positive for every real `y`*, with no kinematic hypothesis at all, which is what
 positivity of the cross section reduce to the positivity of `F₂`.  `yFactor_pos` proves it by
 completing the square, and `two_mul_yFactor` recovers the `1 + (1-y)²` form usually quoted.
 
+## Relabelling flavours and limiting ratios of `F₂`
+
+`f2LO_comp` says that relabelling the flavours of the densities by a bijection is the same as
+relabelling the charges the other way. The limiting-ratio theorems `tendsto_f2LO_div_f2LO`,
+`tendsto_f2LO_div_f2LO_of_tendsto_div` and `tendsto_f2LO_div_f2LO_of_tendsto_div_zero` give the
+limit of `F₂` with one charge assignment over `F₂` with another along a filter, such as `x → 1⁻`,
+on which the densities have known limiting ratios against a reference function. The limit depends
+on those density ratios and not on the charges alone. Together with `f2LO_comp` they give the
+large-`x` ratio `F₂^p / F₂^n` of the proton and the neutron in `DIS.Isospin`.
+
 ## Why this file is at the `ℝ` level
 
 The generator samples this distribution in `Float` (`Physlib.Generator.CrossSection`).  The
@@ -207,7 +217,7 @@ open Filter Topology in
 and the density `q u` are eventually non-zero, every other density is negligible against `q u`,
 then the ratio of `F₂` with charges `e` to `F₂` with charges `e'` tends to `e_u² / e'_u²`, provided
 `e'_u ≠ 0`. -/
-theorem tendsto_f2LO_div_f2LO_of_tendsto_zero {Flavor : Type} [Fintype Flavor]
+theorem tendsto_f2LO_div_f2LO_of_tendsto_div_zero {Flavor : Type} [Fintype Flavor]
     {e e' : Flavor → ℝ} {q : Flavor → ℝ → ℝ → ℝ} {Q2 : ℝ} {l : Filter ℝ} (u : Flavor)
     (hx : ∀ᶠ x in l, x ≠ 0) (hu : ∀ᶠ x in l, q u x Q2 ≠ 0) (he' : e' u ≠ 0)
     (h : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 0)) :

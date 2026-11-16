@@ -23,7 +23,8 @@ Since `F₂` sees only the combination `q_f + qbar_f`, relabelling the flavours 
 is all the neutron needs.
 
 Relabelling the flavours of a density is the same as relabelling the charges the other way
-(`DIS.f2LO_comap`), so the neutron is the proton with the up and down charges exchanged
+(`DIS.f2LO_comp`, with `PDF.comap_eq_comp` identifying the pulled-back density `comap σ q` with
+`q ∘ σ`), so the neutron is the proton with the up and down charges exchanged
 (`DIS.f2LO_isospinConj`). Every flavour other than up and down then drops out of the difference:
 
   `F₂^p - F₂^n = x (e_u² - e_d²) ((u + ubar) - (d + dbar))`  (`f2LO_sub_f2LO_isospinConj`),
@@ -44,8 +45,8 @@ are eventually non-zero and every other density over the up density tends to `ρ
 tends to
 `Σ e_f² ρ_f / Σ e_{τ f}² ρ_f` with `ρ_u = 1` (`tendsto_f2LO_div_f2LO_isospinConj`). When every
 other density is negligible against the up density this limit is `e_u² / e_d²` provided `e_d ≠ 0`
-(`tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_zero`). For the light flavours, with `d/u → r` and
-`s/u → t`, the ratio tends to `(4 + r + t) / (1 + 4 r + t)` provided `1 + 4 r + t ≠ 0`
+(`tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_div_zero`). For the light flavours, with
+`d/u → r` and `s/u → t`, the ratio tends to `(4 + r + t) / (1 + 4 r + t)` provided `1 + 4 r + t ≠ 0`
 (`tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_isospinConj`), and the familiar
 value `4` as `x → 1⁻` is the conditional statement that the up density is eventually non-zero
 there and the down and strange densities are negligible against it
@@ -55,14 +56,13 @@ which is why the hypothesis is stated rather than assumed.
 
 ## Main results
 
-* `f2LO_comap`, `f2LO_isospinConj`: relabelling the flavours of the density relabels the charges
-  the other way; the neutron is the proton with the up and down charges exchanged.
+* `f2LO_isospinConj`: the neutron is the proton with the up and down charges exchanged.
 * `f2LO_sub_f2LO_isospinConj`: the proton-neutron difference `x (e_u² - e_d²) (q_u - q_d)`.
 * `f2LO_lightFlavorCharge_sub_f2LO_lightFlavorCharge_isospinConj`: the light-flavour difference
   `(x / 3) (q_u - q_d)`.
 * `tendsto_f2LO_div_f2LO_isospinConj`: the limit of `F₂^p / F₂^n` in terms of the limits `ρ_f` of
   the density ratios against the up density.
-* `tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_zero`: `F₂^p / F₂^n → e_u² / e_d²` when the up
+* `tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_div_zero`: `F₂^p / F₂^n → e_u² / e_d²` when the up
   density is eventually non-zero, every other density is negligible against it, and `e_d ≠ 0`.
 * `tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_isospinConj`: for the light
   flavours with the up density eventually non-zero, `d/u → r`, `s/u → t` and
@@ -88,7 +88,7 @@ namespace Scattering
 namespace DIS
 
 open Filter Topology
-open Particles.Parton.PDF (Pdf comap comap_eq_comp isospinConj isospinConj_eq_comap)
+open Particles.Parton.PDF (Pdf comap_eq_comp isospinConj isospinConj_eq_comap)
 open Particles.Parton (LightFlavor)
 
 /-!
@@ -99,21 +99,13 @@ section General
 
 variable {ι : Type} [Fintype ι]
 
-/-- **Relabelling the flavours of a density is relabelling the charges the other way.** For a
-bijection `σ` of flavour types, `F₂` of the pulled-back density `comap σ q` with charges `e` is `F₂`
-of `q` with charges `e ∘ σ⁻¹`. -/
-@[simp]
-theorem f2LO_comap {κ : Type} [Fintype κ] (σ : κ ≃ ι) (e : κ → ℝ) (q : Pdf ι) (x Q2 : ℝ) :
-    f2LO e (comap σ q) x Q2 = f2LO (e ∘ σ.symm) q x Q2 := by
-  rw [comap_eq_comp, f2LO_comp]
-
 variable [DecidableEq ι]
 
 /-- **The neutron is the proton with the up and down charges exchanged.** `F₂` of the isospin
 conjugate density with charges `e` is `F₂` of the density with charges `e ∘ swap u d`. -/
 theorem f2LO_isospinConj (e : ι → ℝ) (q : Pdf ι) (u d : ι) (x Q2 : ℝ) :
     f2LO e (isospinConj u d q) x Q2 = f2LO (e ∘ Equiv.swap u d) q x Q2 := by
-  rw [isospinConj_eq_comap, f2LO_comap, Equiv.symm_swap]
+  rw [isospinConj_eq_comap, comap_eq_comp, f2LO_comp, Equiv.symm_swap]
 
 /-- **The proton-neutron difference of `F₂`.** Under the isospin involution `τ = swap u d` every
 flavour other than `u` and `d` drops out of `F₂^p - F₂^n`, which is
@@ -149,13 +141,13 @@ theorem tendsto_f2LO_div_f2LO_isospinConj {e : ι → ℝ} {q : Pdf ι} {u d : �
 `x` and the density `q u` are eventually non-zero, every other density is negligible against
 `q u`, then `F₂^p / F₂^n` tends to `e_u² / e_d²`, where the neutron is the proton under the
 isospin involution `swap u d`, provided `e_d ≠ 0`. -/
-theorem tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_zero {e : ι → ℝ} {q : Pdf ι} {u d : ι}
+theorem tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_div_zero {e : ι → ℝ} {q : Pdf ι} {u d : ι}
     {Q2 : ℝ} {l : Filter ℝ} (hx : ∀ᶠ x in l, x ≠ 0) (hu : ∀ᶠ x in l, q u x Q2 ≠ 0)
     (hd : e d ≠ 0) (h : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 0)) :
     Tendsto (fun x => f2LO e q x Q2 / f2LO e (isospinConj u d q) x Q2) l
       (𝓝 (e u ^ 2 / e d ^ 2)) := by
   simp only [f2LO_isospinConj]
-  simpa using tendsto_f2LO_div_f2LO_of_tendsto_zero (e' := e ∘ Equiv.swap u d) u hx hu
+  simpa using tendsto_f2LO_div_f2LO_of_tendsto_div_zero (e' := e ∘ Equiv.swap u d) u hx hu
     (by simpa using hd) h
 
 end General
