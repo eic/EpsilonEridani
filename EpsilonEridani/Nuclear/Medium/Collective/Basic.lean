@@ -44,10 +44,12 @@ mutual independence, and the product measure `Measure.pi` is the canonical model
 A common rotation `φⱼ ↦ φⱼ + ψ` of all angles multiplies `Q_n` and `V_n` by the phase
 `e^{i n ψ}`, so their moduli and `⟨2⟩` are invariant (`norm_qVector_add_const`,
 `twoParticleCorrelation_add_const`, `norm_anisotropyCoeff_map_add_const`). The coefficient
-itself is not: it is unchanged exactly when it vanishes or `e^{i n ψ} = 1`
-(`anisotropyCoeff_map_add_const_eq_self_iff`). An anisotropy coefficient is therefore only defined
-relative to a reference angle, and the modulus is the only rotation-invariant function of `V_n`
-alone.
+itself is unchanged exactly when it vanishes or `e^{i n ψ} = 1`
+(`anisotropyCoeff_map_add_const_eq_self_iff`); the zeroth coefficient, the total mass
+(`anisotropyCoeff_zero`), is therefore rotation invariant. For `0 < T` and `n ≠ 0` the
+phases `ψ ↦ e^{i n ψ}` cover the unit circle, so the orbit of `V_n` under rotations is the
+full circle of radius `|V_n|`: an anisotropy coefficient is then only defined relative to a
+reference angle, and every rotation-invariant function of `V_n` factors through its modulus.
 
 ## Main definitions
 
@@ -326,8 +328,9 @@ theorem norm_anisotropyCoeff_map_add_const (μ : Measure (AddCircle T)) (n : ℤ
     ‖anisotropyCoeff (μ.map (· + ψ)) n‖ = ‖anisotropyCoeff μ n‖ := by
   rw [anisotropyCoeff_map_add_const, norm_mul, norm_fourier_eval, one_mul]
 
-/-- The anisotropy coefficient itself is not rotation invariant: rotating by `ψ` leaves it
-unchanged exactly when it vanishes or `e^{i n ψ} = 1`. -/
+/-- Rotating by `ψ` leaves the anisotropy coefficient unchanged exactly when it vanishes or
+`e^{i n ψ} = 1`. In particular the zeroth coefficient, the total mass (`anisotropyCoeff_zero`),
+is unchanged by every rotation. -/
 theorem anisotropyCoeff_map_add_const_eq_self_iff (μ : Measure (AddCircle T)) (n : ℤ)
     (ψ : AddCircle T) :
     anisotropyCoeff (μ.map (· + ψ)) n = anisotropyCoeff μ n ↔
