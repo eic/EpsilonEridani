@@ -6,9 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
-public import Mathlib.Algebra.Order.Ring.Defs
-public import Mathlib.Data.Nat.Cast.Order.Basic
-public import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 
 /-!
 # Off-diagonal sums of a constant
@@ -18,8 +15,6 @@ Continues `TauCeti.Algebra.BigOperators.Finset.OffDiagonal`, which treats the of
 The off-diagonal sum of a constant is the number `#s * (#s - 1)` of such pairs times the constant
 (`Finset.sum_sum_erase_const`); in a not-necessarily-associative ring this is `M (M - 1)` times
 the constant with the subtraction in the ring, where `M = #s` (`Finset.sum_sum_erase_const'`).
-When `M ≥ 2` the pair count `M (M - 1)` is positive in any strictly ordered ring
-(`Nat.cast_mul_cast_sub_one_pos`).
 -/
 
 public section
@@ -49,10 +44,3 @@ theorem sum_sum_erase_const' {ι : Type*} [DecidableEq ι] {R : Type*}
   · rw [Nat.cast_mul, Nat.cast_pred h]
 
 end Finset
-
-/-- For `m ≥ 2` the number `m (m - 1)` of ordered pairs of distinct elements of an `m`-element
-set is positive, with the subtraction taken in a strictly ordered ring. -/
-theorem Nat.cast_mul_cast_sub_one_pos {R : Type*} [Ring R] [PartialOrder R]
-    [IsStrictOrderedRing R] {m : ℕ} (h : 1 < m) : (0 : R) < m * (m - 1) := by
-  have h1 : (1 : R) < m := Nat.one_lt_cast.2 h
-  exact mul_pos (zero_lt_one.trans h1) (sub_pos.2 h1)

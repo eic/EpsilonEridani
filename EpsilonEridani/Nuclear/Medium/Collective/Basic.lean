@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.Algebra.BigOperators.Finset.OffDiagonal
+public import EpsilonEridani.Mathematics.Data.Nat.Cast.Order.Basic
 public import EpsilonEridani.Mathematics.Probability.Fourier.AddCircle
 
 /-!
@@ -34,17 +35,19 @@ distinct particles gives the two-particle correlation `⟨2⟩` (`twoParticleCor
 expectation is exactly `|V_n|²` at every multiplicity `M ≥ 2` (`integral_twoParticleCorrelation`).
 This is the sense in which `|V_n|` is well posed at finite multiplicity.
 
-Independence enters only through pairs of particles, so the expectations are stated under
-pairwise independence. `iIndepFun.indepFun` supplies that from mutual independence, and the
-product measure `Measure.pi` is the canonical model (`integral_twoParticleCorrelation_pi`).
+The first moment is an exception: `E Q_n = M V_n` holds for any finite measure, with no
+independence (`integral_qVector`). Independence enters only through pairs of particles, so the
+expectations are stated under pairwise independence. `iIndepFun.indepFun` supplies that from
+mutual independence, and the product measure `Measure.pi` is the canonical model
+(`integral_twoParticleCorrelation_pi`).
 
 A common rotation `φⱼ ↦ φⱼ + ψ` of all angles multiplies `Q_n` and `V_n` by the phase
 `e^{i n ψ}`, so their moduli and `⟨2⟩` are invariant (`norm_qVector_add_const`,
 `twoParticleCorrelation_add_const`, `norm_anisotropyCoeff_map_add_const`). The coefficient
 itself is not: it is unchanged exactly when it vanishes or `e^{i n ψ} = 1`
 (`anisotropyCoeff_map_add_const_eq_self_iff`). An anisotropy coefficient is therefore only defined
-relative to a reference angle, and only its modulus is a rotation-invariant property of the
-distribution.
+relative to a reference angle, and the modulus is the only rotation-invariant function of `V_n`
+alone.
 
 ## Main definitions
 
@@ -57,6 +60,7 @@ distribution.
 ## Main statements
 
 * `ofReal_norm_qVector_sq`: `|Q_n|² = M + ∑_{j ≠ k} e^{i n φⱼ} conj (e^{i n φₖ})`.
+* `integral_qVector`: `E Q_n = M V_n`, for a finite measure, no independence needed.
 * `integral_norm_qVector_sq`: `E |Q_n|² = M + M (M - 1) |V_n|²` for independent draws.
 * `integral_twoParticleCorrelation`: `E ⟨2⟩ = |V_n|²` for independent draws and `M ≥ 2`.
 * `anisotropyCoeff_map_add_const`: rotating the distribution by `ψ` multiplies `V_n` by `e^{i n ψ}`.
@@ -105,7 +109,7 @@ theorem qVector_neg (n : ℤ) (φ : ι → AddCircle T) : qVector (-n) φ = conj
 /-- A common rotation of all angles by `ψ` multiplies the `Q`-vector by `e^{i n ψ}`. -/
 theorem qVector_add_const (n : ℤ) (φ : ι → AddCircle T) (ψ : AddCircle T) :
     qVector n (fun j => φ j + ψ) = fourier n ψ * qVector n φ := by
-  rw [mul_comm]
+  rw [mul_comm (fourier n ψ) (qVector n φ)]
   simp only [qVector_def, Finset.sum_mul, fourier_eval_add]
 
 /-- The modulus of the `Q`-vector is invariant under a common rotation of all angles. -/
@@ -290,16 +294,22 @@ theorem anisotropyCoeff_withDensity_eq_fourierCoeff_neg [Fact (0 < T)]
     (hf_lt_top : ∀ᵐ x ∂haarAddCircle, f x < ⊤) (n : ℤ) :
     anisotropyCoeff (haarAddCircle.withDensity f) n =
       fourierCoeff (fun x => ((f x).toReal : ℂ)) (-n) := by
-  simp [anisotropyCoeff_def, integral_withDensity_eq_integral_toReal_smul₀ hf hf_lt_top,
-    fourierCoeff, Complex.real_smul, mul_comm]
+  simp only [anisotropyCoeff_def, integral_withDensity_eq_integral_toReal_smul₀ hf hf_lt_top,
+    Complex.real_smul, fourierCoeff, neg_neg, smul_eq_mul]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => mul_comm _ _)
 
 /-- The isotropic distribution, the normalised Haar measure, has no anisotropy: its coefficient
 of harmonic `n` is `1` for `n = 0` and `0` otherwise. -/
 @[simp]
 theorem anisotropyCoeff_haarAddCircle [Fact (0 < T)] (n : ℤ) :
     anisotropyCoeff (haarAddCircle (T := T)) n = if n = 0 then 1 else 0 := by
-  simpa [anisotropyCoeff_def, fourierCoeff, Pi.single_apply, eq_comm] using
-    congrFun (fourierCoeff_fourier (T := T) n) 0
+  have h : anisotropyCoeff (haarAddCircle (T := T)) n =
+      fourierCoeff (T := T) (E := ℂ) (fourier n) 0 := by
+    simp only [anisotropyCoeff_def, fourierCoeff, neg_zero, fourier_zero, one_smul]
+  rw [h, fourierCoeff_fourier, Pi.single_apply]
+  by_cases h0 : n = 0
+  · rw [ite_eq_left h0.symm, ite_eq_left h0]
+  · rw [ite_eq_right (Ne.symm h0), ite_eq_right h0]
 
 /-- Rotating a distribution by `ψ` multiplies its anisotropy coefficient by `e^{i n ψ}`. -/
 theorem anisotropyCoeff_map_add_const (μ : Measure (AddCircle T)) (n : ℤ) (ψ : AddCircle T) :
@@ -308,7 +318,7 @@ theorem anisotropyCoeff_map_add_const (μ : Measure (AddCircle T)) (n : ℤ) (ψ
   rw [integral_map (measurable_add_const ψ).aemeasurable
     (fourier n).continuous.aestronglyMeasurable]
   congr 1 with x
-  rw [fourier_eval_add, mul_comm]
+  rw [fourier_eval_add, mul_comm (fourier n x) (fourier n ψ)]
 
 /-- The modulus of the anisotropy coefficient is invariant under rotations. -/
 @[simp]
@@ -324,7 +334,7 @@ theorem anisotropyCoeff_map_add_const_eq_self_iff (μ : Measure (AddCircle T)) (
       anisotropyCoeff μ n = 0 ∨ fourier n ψ = 1 := by
   simp [anisotropyCoeff_map_add_const, mul_left_eq_self₀, or_comm]
 
-/-! ### Measurability and integrability of the event observables -/
+/-! ### Measurability, integrability and the first moment of the event observables -/
 
 section Expectation
 
@@ -400,7 +410,7 @@ theorem integral_norm_qVector_sq (n : ℤ) :
   classical
   have hpair : ∀ j, ∀ k ∈ univ.erase j,
       Integrable (fun ω => fourier n (φ j ω) * conj (fourier n (φ k ω))) P := fun j k _ =>
-    integrable_fourier_mul_conj_fourier (hφ j).aemeasurable (hφ k).aemeasurable n
+    integrable_fourier_mul_conj_fourier (hφ j).aemeasurable (hφ k).aemeasurable n n
   apply Complex.ofReal_injective
   rw [← integral_complex_ofReal]
   push_cast
@@ -413,7 +423,7 @@ theorem integral_norm_qVector_sq (n : ℤ) :
       ∫ ω, fourier n (φ j ω) * conj (fourier n (φ k ω)) ∂P =
         (‖anisotropyCoeff μ n‖ : ℂ) ^ 2 := fun j k hk => by
     rw [integral_fourier_mul_conj_fourier (hind (Finset.ne_of_mem_erase hk).symm) (hφ j)
-      (hφ k) n, ← anisotropyCoeff_def, Complex.mul_conj']
+      (hφ k) n n, ← anisotropyCoeff_def, Complex.mul_conj']
   -- each of the `M (M - 1)` ordered pairs of distinct particles contributes `|V_n|²`
   rw [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl (hjk j), sum_sum_erase_const',
     Finset.card_univ, integral_const, probReal_univ, one_smul]
