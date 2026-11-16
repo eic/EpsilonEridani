@@ -49,9 +49,12 @@ used in this file.
 * `CrossSection.neutralCurrent_eq_add`: by the linearity of `Inclusive.dSigmaDxDQ2` in the
   structure functions, the defining expression of `neutralCurrent` regroups into the sum of
   `photonTerm`, `gammaZTerm` and `zBosonTerm`, with coupling factors `q²`, `q (g_V - λ g_A)` and
-  `(g_V - λ g_A)²` and propagator factors `1`, `η` and `η²`. The three terms are the
-  `photon`, `gammaZInterference` and `zBoson` fields of
-  `CrossSection.neutralCurrentDecomposition`, an `Electroweak.NeutralCurrentDecomposition`.
+  `(g_V - λ g_A)²` and propagator factors `1`, `η` and `η²`.
+* `CrossSection.parityOddFromInterferenceOnly_neutralCurrentDecomposition`: the cross section
+  as an `Electroweak.NeutralCurrentDecomposition` in the helicity-resolved reading
+  `photon + zBoson + λ gammaZInterference` (`CrossSection.neutralCurrentDecomposition`), whose
+  `photon` field is the pure-photon term, `zBoson` the helicity-even part of the `Z`-exchange
+  terms and `gammaZInterference` their helicity-odd part.
 * `CrossSection.photonTerm_eq_sq_mul_loNCdSigma`: at the photon flux factor `K = 2π α² / Q²`,
   zero target mass and with the Callan-Gross relation, the pure-photon term is `q²` times the
   one-photon-exchange cross section `loNCdSigma` of
@@ -231,19 +234,24 @@ theorem neutralCurrent_eq_add :
     ← dSigmaDxDQ2_add, ← dSigmaDxDQ2_add, neutralCurrent_def]
   congr 1 <;> ring
 
-/-- The three terms of the neutral-current cross section at a fixed coupling, propagator ratio
-and helicity, as the `photon`, `zBoson` and `gammaZInterference` fields of an
+/-- The neutral-current cross section at a fixed coupling and propagator ratio as an
 `Electroweak.NeutralCurrentDecomposition` over the Bjorken variable `x` and the inelasticity `y`,
-for structure functions `HF x y` given at each such point. All three fields are evaluated at the
-same helicity `h`, so `gammaZInterference` here is not the helicity-odd coefficient that
-`Interference.helicityResolvedTotal` and `Interference.HelicityInterferenceIsolationAssumptions`
-assume: the interference term is not odd in general (`gammaZTerm_true_add_false`), and the
-actual helicity difference is `neutralCurrent_true_sub_false`. -/
+for structure functions `HF x y` given at each such point, in the helicity-resolved reading of
+`Interference.helicityResolvedTotal`: the cross section at helicity `λ` is
+`photon + zBoson + λ gammaZInterference` (`neutralCurrent_eq_neutralCurrentDecomposition`).
+The `photon` field is the pure-photon term. The `zBoson` field is the helicity-even part of the
+`Z`-exchange terms, which includes the even part of the interference term
+(`gammaZTerm_true_add_false`). The `gammaZInterference` field is the helicity-odd part, which
+includes the odd part of the pure-`Z` term (`zBosonTerm_true_sub_false`). -/
 def neutralCurrentDecomposition (HF : ℝ → ℝ → NeutralCurrentStructureFunctions) :
     NeutralCurrentDecomposition where
   photon x y := photonTerm K M x Q2 y q (HF x y)
-  zBoson x y := zBosonTerm K M x Q2 y η ℓ (HF x y) h
-  gammaZInterference x y := gammaZTerm K M x Q2 y q η ℓ (HF x y) h
+  zBoson x y :=
+    ((gammaZTerm K M x Q2 y q η ℓ (HF x y) true + gammaZTerm K M x Q2 y q η ℓ (HF x y) false)
+      + (zBosonTerm K M x Q2 y η ℓ (HF x y) true + zBosonTerm K M x Q2 y η ℓ (HF x y) false)) / 2
+  gammaZInterference x y :=
+    ((gammaZTerm K M x Q2 y q η ℓ (HF x y) true - gammaZTerm K M x Q2 y q η ℓ (HF x y) false)
+      + (zBosonTerm K M x Q2 y η ℓ (HF x y) true - zBosonTerm K M x Q2 y η ℓ (HF x y) false)) / 2
 
 section neutralCurrentDecomposition
 
@@ -251,30 +259,58 @@ variable (HF : ℝ → ℝ → NeutralCurrentStructureFunctions)
 
 @[simp]
 theorem neutralCurrentDecomposition_photon :
-    (neutralCurrentDecomposition K M Q2 q η ℓ h HF).photon x y =
+    (neutralCurrentDecomposition K M Q2 q η ℓ HF).photon x y =
       photonTerm K M x Q2 y q (HF x y) :=
   (rfl)
 
 @[simp]
 theorem neutralCurrentDecomposition_zBoson :
-    (neutralCurrentDecomposition K M Q2 q η ℓ h HF).zBoson x y =
-      zBosonTerm K M x Q2 y η ℓ (HF x y) h :=
+    (neutralCurrentDecomposition K M Q2 q η ℓ HF).zBoson x y =
+      ((gammaZTerm K M x Q2 y q η ℓ (HF x y) true + gammaZTerm K M x Q2 y q η ℓ (HF x y) false)
+        + (zBosonTerm K M x Q2 y η ℓ (HF x y) true + zBosonTerm K M x Q2 y η ℓ (HF x y) false))
+        / 2 :=
   (rfl)
 
 @[simp]
 theorem neutralCurrentDecomposition_gammaZInterference :
-    (neutralCurrentDecomposition K M Q2 q η ℓ h HF).gammaZInterference x y =
-      gammaZTerm K M x Q2 y q η ℓ (HF x y) h :=
+    (neutralCurrentDecomposition K M Q2 q η ℓ HF).gammaZInterference x y =
+      ((gammaZTerm K M x Q2 y q η ℓ (HF x y) true - gammaZTerm K M x Q2 y q η ℓ (HF x y) false)
+        + (zBosonTerm K M x Q2 y η ℓ (HF x y) true - zBosonTerm K M x Q2 y η ℓ (HF x y) false))
+        / 2 :=
   (rfl)
 
-/-- The total of `neutralCurrentDecomposition` is the neutral-current cross section. -/
+/-- The neutral-current cross section at helicity `λ = helicitySign h` is
+`photon + zBoson + λ gammaZInterference` of `neutralCurrentDecomposition`. -/
+theorem neutralCurrent_eq_neutralCurrentDecomposition :
+    neutralCurrent K M x Q2 y q η ℓ (HF x y) h =
+      (neutralCurrentDecomposition K M Q2 q η ℓ HF).photon x y
+        + (neutralCurrentDecomposition K M Q2 q η ℓ HF).zBoson x y
+        + helicitySign h *
+          (neutralCurrentDecomposition K M Q2 q η ℓ HF).gammaZInterference x y := by
+  rw [neutralCurrentDecomposition_photon, neutralCurrentDecomposition_zBoson,
+    neutralCurrentDecomposition_gammaZInterference, neutralCurrent_eq_add]
+  cases h <;> simp only [helicitySign_true, helicitySign_false] <;> ring
+
+/-- The total of `neutralCurrentDecomposition` is the neutral-current cross section of a
+right-handed beam. -/
 @[simp]
 theorem totalNeutralCurrent_neutralCurrentDecomposition :
-    totalNeutralCurrent (neutralCurrentDecomposition K M Q2 q η ℓ h HF) x y =
-      neutralCurrent K M x Q2 y q η ℓ (HF x y) h := by
-  rw [totalNeutralCurrent_decompose, neutralCurrentDecomposition_photon,
-    neutralCurrentDecomposition_zBoson, neutralCurrentDecomposition_gammaZInterference,
-    neutralCurrent_eq_add, add_right_comm]
+    totalNeutralCurrent (neutralCurrentDecomposition K M Q2 q η ℓ HF) x y =
+      neutralCurrent K M x Q2 y q η ℓ (HF x y) true := by
+  rw [totalNeutralCurrent_decompose, neutralCurrent_eq_neutralCurrentDecomposition,
+    helicitySign_true, one_mul]
+
+/-- **The helicity split of the neutral-current cross section.** Against
+`neutralCurrentDecomposition`, the helicity average of the neutral-current cross section is
+`photon + zBoson` and half the helicity difference is `gammaZInterference`. -/
+theorem parityOddFromInterferenceOnly_neutralCurrentDecomposition :
+    ParityOddFromInterferenceOnly (neutralCurrentDecomposition K M Q2 q η ℓ HF)
+      fun h x y => neutralCurrent K M x Q2 y q η ℓ (HF x y) h := fun x y => by
+  beta_reduce
+  rw [neutralCurrent_eq_neutralCurrentDecomposition (h := true),
+    neutralCurrent_eq_neutralCurrentDecomposition (h := false), helicitySign_true,
+    helicitySign_false]
+  constructor <;> ring
 
 end neutralCurrentDecomposition
 
