@@ -59,14 +59,14 @@ structure Parameters where
   mW : ℝ
 
 /-- Helicity sign convention for right/left polarized beam labels. -/
-def helicitySign (h : Bool) : ℝ :=
+@[no_expose] def helicitySign (h : Bool) : ℝ :=
   if h then 1 else -1
 
 @[simp] lemma helicitySign_true : helicitySign true = 1 := by simp [helicitySign]
 
 @[simp] lemma helicitySign_false : helicitySign false = -1 := by simp [helicitySign]
 
-lemma helicitySign_sq (h : Bool) : helicitySign h ^ 2 = 1 := by
+@[simp] lemma helicitySign_sq (h : Bool) : helicitySign h ^ 2 = 1 := by
   by_cases hh : h
   · simp [helicitySign, hh]
   · simp [helicitySign, hh]
