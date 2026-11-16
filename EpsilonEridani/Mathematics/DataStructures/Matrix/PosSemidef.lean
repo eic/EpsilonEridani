@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Matrix.PosSemidef
 # Entrywise bounds and real/complex transfer for positive-semidefinite matrices
 
 This file proves entrywise bounds for positive-semidefinite matrices and transfers positive
-semidefiniteness between a matrix over `RCLike 𝕜` and its entrywise real part, and between a real
+semidefiniteness from a matrix over `RCLike 𝕜` to its entrywise real part, and between a real
 matrix and its image under `ℝ → 𝕜`. It also records that a diagonal entry of a
 positive-semidefinite matrix is at most its trace, and that a diagonal matrix unit `single i i r`
 is positive semidefinite exactly when `0 ≤ r`; `single i i 1` is the density matrix of a pure
@@ -52,9 +52,10 @@ principal-submatrix form `Matrix.PosSemidef.of_submatrix_dotProduct_mulVec_nonne
 - `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound over `RCLike`.
 - `Matrix.PosSemidef.sq_apply_le`: the entrywise geometric-mean bound over `ℝ`.
 - `Matrix.PosSemidef.two_mul_abs_apply_le`: the real specialisation of the arithmetic-mean bound.
-- `Matrix.re_star_dotProduct_mulVec_ofReal`: the real part of the quadratic form of a matrix over
-  `𝕜` on a real vector is the quadratic form of its entrywise real part.
-- `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix.
+- `Matrix.re_star_ofReal_dotProduct_mulVec_ofReal`: the real part of the quadratic form of a
+  matrix over `𝕜` on a real vector is the quadratic form of its entrywise real part.
+- `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix is
+  positive semidefinite.
 - `Matrix.re_star_dotProduct_map_ofReal_mulVec`: the real part of the quadratic form of a real
   matrix on a vector over `𝕜`, split along the real and imaginary parts of the vector.
 - `Matrix.posSemidef_map_ofReal_iff`: positive semidefiniteness is unchanged by `ℝ → 𝕜`.
@@ -86,7 +87,7 @@ quadratic form. This is the arbitrary-index generalisation of
 `TauCeti.posSemidef_iff_finite_sum`. -/
 lemma PosSemidef.of_submatrix_dotProduct_mulVec_nonneg {R : Type*} [Ring R] [PartialOrder R]
     [StarRing R] {M : Matrix n n R} (hM : M.IsHermitian)
-    (h : ∀ {ι : Type} [Fintype ι] (v : ι → n) (x : ι → R),
+    (h : ∀ {ι : Type*} [Fintype ι] (v : ι → n) (x : ι → R),
       0 ≤ star x ⬝ᵥ (M.submatrix v v *ᵥ x)) :
     M.PosSemidef :=
   TauCeti.posSemidef_iff_finite_sum.mpr ⟨fun a b => hM.apply b a, fun v x => by
@@ -120,7 +121,7 @@ lemma PosSemidef.two_mul_norm_apply_le {M : Matrix n n 𝕜} (hM : M.PosSemidef)
 
 /-- The real part of the quadratic form of a matrix over `𝕜` on a real vector, coerced to `𝕜`,
 is the quadratic form of the entrywise real part of the matrix on that vector. -/
-lemma re_star_dotProduct_mulVec_ofReal [Fintype n] (M : Matrix n n 𝕜) (x : n → ℝ) :
+lemma re_star_ofReal_dotProduct_mulVec_ofReal [Fintype n] (M : Matrix n n 𝕜) (x : n → ℝ) :
     re (star (fun i => (x i : 𝕜)) ⬝ᵥ (M *ᵥ fun i => (x i : 𝕜))) = x ⬝ᵥ (M.map re *ᵥ x) := by
   simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, RCLike.conj_ofReal,
     map_sum, Finset.mul_sum]
@@ -129,13 +130,13 @@ lemma re_star_dotProduct_mulVec_ofReal [Fintype n] (M : Matrix n n 𝕜) (x : n 
 
 /-- The entrywise real part of a positive-semidefinite matrix is positive semidefinite: its
 quadratic form on a real vector is the real part of the quadratic form of the matrix
-(`Matrix.re_star_dotProduct_mulVec_ofReal`). -/
+(`Matrix.re_star_ofReal_dotProduct_mulVec_ofReal`). -/
 lemma PosSemidef.map_re {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
     (M.map re).PosSemidef := by
   refine PosSemidef.of_submatrix_dotProduct_mulVec_nonneg (hM.1.map re fun z => by simp)
-    fun v x => ?_
+    fun {ι : Type} _ v x => ?_
   have h0 := (hM.submatrix v).re_dotProduct_nonneg (fun i => (x i : 𝕜))
-  rwa [re_star_dotProduct_mulVec_ofReal] at h0
+  rwa [re_star_ofReal_dotProduct_mulVec_ofReal] at h0
 
 /-- The real part of the quadratic form of a real matrix, coerced to `𝕜`, is the sum of its real
 quadratic forms on the real and imaginary parts of the vector. -/
@@ -155,7 +156,7 @@ lemma posSemidef_map_ofReal_iff {M : Matrix n n ℝ} :
     (M.map ((↑) : ℝ → 𝕜)).PosSemidef ↔ M.PosSemidef := by
   refine ⟨fun h => by simpa [Matrix.map_map, Function.comp_def] using h.map_re, fun h => ?_⟩
   refine PosSemidef.of_submatrix_dotProduct_mulVec_nonneg (h.1.map _ fun z => by simp)
-    fun v x => ?_
+    fun {ι : Type} _ v x => ?_
   have hM' := h.submatrix v
   have hH : ((M.submatrix v v).map ((↑) : ℝ → 𝕜)).IsHermitian :=
     hM'.1.map _ fun z => by simp
