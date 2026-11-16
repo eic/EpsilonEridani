@@ -15,7 +15,7 @@ public import Physlib.Relativity.Fermions.Dirac.GammaMatrices
 
 Fix a light-cone basis `(n₊, n₋)` of four-dimensional Minkowski space, `n₊² = n₋² = 0`,
 `n₊ · n₋ = 1`, so that `v⁺ = n₋ · v` and `v⁻ = n₊ · v`. Clifford multiplication by the two
-light-like vectors gives `γ⁺ = n̸₋` and `γ⁻ = n̸₊` (here `v̸` is Physlib's
+light-like vectors gives `γ⁺ = /n₋` and `γ⁻ = /n₊` (here `/v` is Physlib's
 `Fermion.Dirac.gammaMatrix v`), which square to zero and anticommute to `γ⁺γ⁻ + γ⁻γ⁺ = 2`. The
 light-cone projectors
 
@@ -28,10 +28,10 @@ dimension two, and both projectors commute with `γ⁵` and with Clifford multip
 transverse vectors, so the good/bad label is compatible with chirality.
 
 The bad component is not an independent degree of freedom. Writing
-`p̸ = p⁺ γ⁻ + p⁻ γ⁺ + p̸_T`, the Dirac equation `(p̸ - m) ψ = 0` for a momentum mode is
+`/p = p⁺ γ⁻ + p⁻ γ⁺ + /p_T`, the Dirac equation `(/p - m) ψ = 0` for a momentum mode is
 equivalent to the pair of projected equations
 
-  `2 p⁺ ψ₋ = (p̸_T + m) γ⁺ ψ₊`,  `2 p⁻ ψ₊ = (p̸_T + m) γ⁻ ψ₋`.
+  `2 p⁺ ψ₋ = (/p_T + m) γ⁺ ψ₊`,  `2 p⁻ ψ₊ = (/p_T + m) γ⁻ ψ₋`.
 
 The first contains no `p⁻`: it is the light-cone *constraint* equation, and for `p⁺ ≠ 0` it
 determines `ψ₋` from `ψ₊`. On the mass shell `p² = m²` with `p⁺ ≠ 0` the projection `P₊` maps the
@@ -61,7 +61,7 @@ from eliminating the bad components through the constraint equation.
 * `LightConeBasis.gammaMatrix_sub_smul_one_apply_eq_zero_iff`: the Dirac equation is equivalent
   to the constraint equation together with the dynamical equation.
 * `LightConeBasis.badProjector_apply_eq_of_apply_eq_zero`: the constraint equation solved for
-  the bad component, `ψ₋ = (2p⁺)⁻¹ (p̸_T + m) γ⁺ ψ₊`.
+  the bad component, `ψ₋ = (2p⁺)⁻¹ (/p_T + m) γ⁺ ψ₊`.
 * `LightConeBasis.finrank_ker_gammaMatrix_sub_smul_one`: on the mass shell with `p⁺ ≠ 0` the
   solutions of the Dirac equation form a two-dimensional space, mapped isomorphically onto the
   good spinors by `P₊`.
@@ -88,13 +88,13 @@ variable (L : LightConeBasis (minkowskiProduct (d := 3)).toBilinForm)
 
 /-! ### Clifford multiplication by the light-cone vectors -/
 
-/-- `γ⁻ = n̸₊` squares to zero. -/
+/-- `γ⁻ = /n₊` squares to zero. -/
 @[simp]
 theorem gammaMatrix_nPlus_mul_self : gammaMatrix L.nPlus * gammaMatrix L.nPlus = 0 := by
   rw [gammaMatrix_mul_self, ← ContinuousLinearMap.toBilinForm_apply, L.nPlus_nPlus_eq_zero,
     zero_smul]
 
-/-- `γ⁺ = n̸₋` squares to zero. -/
+/-- `γ⁺ = /n₋` squares to zero. -/
 @[simp]
 theorem gammaMatrix_nMinus_mul_self : gammaMatrix L.nMinus * gammaMatrix L.nMinus = 0 := by
   simpa only [swap_nPlus] using L.swap.gammaMatrix_nPlus_mul_self
@@ -106,7 +106,7 @@ theorem gammaMatrix_nPlus_mul_gammaMatrix_nMinus_add :
   rw [gammaMatrix_anticomm, ← ContinuousLinearMap.toBilinForm_apply, L.nPlus_nMinus_eq_one,
     mul_one, two_smul, one_add_one_eq_two]
 
-/-- Clifford multiplication by a transverse vector anticommutes with `γ⁻ = n̸₊`. -/
+/-- Clifford multiplication by a transverse vector anticommutes with `γ⁻ = /n₊`. -/
 theorem gammaMatrix_nPlus_mul_gammaMatrix_of_mem_transverse {t : Lorentz.Vector}
     (ht : t ∈ L.transverse) :
     gammaMatrix L.nPlus * gammaMatrix t = -(gammaMatrix t * gammaMatrix L.nPlus) := by
@@ -115,14 +115,14 @@ theorem gammaMatrix_nPlus_mul_gammaMatrix_of_mem_transverse {t : Lorentz.Vector}
     mul_zero, zero_smul] at h
   exact eq_neg_of_add_eq_zero_left h
 
-/-- Clifford multiplication by a transverse vector anticommutes with `γ⁺ = n̸₋`. -/
+/-- Clifford multiplication by a transverse vector anticommutes with `γ⁺ = /n₋`. -/
 theorem gammaMatrix_nMinus_mul_gammaMatrix_of_mem_transverse {t : Lorentz.Vector}
     (ht : t ∈ L.transverse) :
     gammaMatrix L.nMinus * gammaMatrix t = -(gammaMatrix t * gammaMatrix L.nMinus) := by
   simpa only [swap_nPlus] using
     L.swap.gammaMatrix_nPlus_mul_gammaMatrix_of_mem_transverse (by rwa [transverse_swap])
 
-/-- The light-cone decomposition of Clifford multiplication, `p̸ = p⁺ γ⁻ + p⁻ γ⁺ + p̸_T`. -/
+/-- The light-cone decomposition of Clifford multiplication, `/p = p⁺ γ⁻ + p⁻ γ⁺ + /p_T`. -/
 theorem gammaMatrix_eq_plus_smul_add_minus_smul_add (p : Lorentz.Vector) :
     gammaMatrix p = L.plus p • gammaMatrix L.nPlus + L.minus p • gammaMatrix L.nMinus +
       gammaMatrix (L.transverseProj p) := by
@@ -131,11 +131,11 @@ theorem gammaMatrix_eq_plus_smul_add_minus_smul_add (p : Lorentz.Vector) :
 
 /-! ### The good and bad projectors -/
 
-/-- The good projector `P₊ = ½ γ⁻ γ⁺ = ½ n̸₊ n̸₋` on Dirac spinors. -/
+/-- The good projector `P₊ = ½ γ⁻ γ⁺ = ½ /n₊ /n₋` on Dirac spinors. -/
 def goodProjector : Module.End ℂ Dirac :=
   (2 : ℂ)⁻¹ • (gammaMatrix L.nPlus * gammaMatrix L.nMinus)
 
-/-- The bad projector `P₋ = ½ γ⁺ γ⁻ = ½ n̸₋ n̸₊` on Dirac spinors. -/
+/-- The bad projector `P₋ = ½ γ⁺ γ⁻ = ½ /n₋ /n₊` on Dirac spinors. -/
 def badProjector : Module.End ℂ Dirac :=
   (2 : ℂ)⁻¹ • (gammaMatrix L.nMinus * gammaMatrix L.nPlus)
 
@@ -258,7 +258,7 @@ theorem badProjector_mul_gammaMatrix_nPlus : L.badProjector * gammaMatrix L.nPlu
 
 /-! ### The good and bad subspaces -/
 
-/-- The good spinors are the kernel of `γ⁻ = n̸₊`. -/
+/-- The good spinors are the kernel of `γ⁻ = /n₊`. -/
 theorem ker_gammaMatrix_nPlus : ker (gammaMatrix L.nPlus) = range L.goodProjector := by
   ext ψ
   refine ⟨fun h => ⟨ψ, ?_⟩, ?_⟩
@@ -271,7 +271,7 @@ theorem ker_gammaMatrix_nPlus : ker (gammaMatrix L.nPlus) = range L.goodProjecto
     rw [mem_ker, ← Module.End.mul_apply, gammaMatrix_nPlus_mul_goodProjector,
       LinearMap.zero_apply]
 
-/-- The bad spinors are the kernel of `γ⁺ = n̸₋`. -/
+/-- The bad spinors are the kernel of `γ⁺ = /n₋`. -/
 theorem ker_gammaMatrix_nMinus : ker (gammaMatrix L.nMinus) = range L.badProjector := by
   simpa only [goodProjector_swap, badProjector_swap, swap_nPlus, swap_nMinus] using
     L.swap.ker_gammaMatrix_nPlus
@@ -356,7 +356,7 @@ section DiracEquation
 variable (p : Lorentz.Vector) (m : ℝ)
 
 /-- The Dirac operator of a momentum mode projected with `γ⁺`,
-`γ⁺ (p̸ - m) = 2 p⁺ P₋ - (p̸_T + m) γ⁺ P₊`. -/
+`γ⁺ (/p - m) = 2 p⁺ P₋ - (/p_T + m) γ⁺ P₊`. -/
 theorem gammaMatrix_nMinus_mul_gammaMatrix_sub_smul_one :
     gammaMatrix L.nMinus * (gammaMatrix p - m • 1) =
       (2 * L.plus p) • L.badProjector -
@@ -370,7 +370,7 @@ theorem gammaMatrix_nMinus_mul_gammaMatrix_sub_smul_one :
   module
 
 /-- The Dirac operator of a momentum mode projected with `γ⁻`,
-`γ⁻ (p̸ - m) = 2 p⁻ P₊ - (p̸_T + m) γ⁻ P₋`. -/
+`γ⁻ (/p - m) = 2 p⁻ P₊ - (/p_T + m) γ⁻ P₋`. -/
 theorem gammaMatrix_nPlus_mul_gammaMatrix_sub_smul_one :
     gammaMatrix L.nPlus * (gammaMatrix p - m • 1) =
       (2 * L.minus p) • L.goodProjector -
@@ -378,9 +378,9 @@ theorem gammaMatrix_nPlus_mul_gammaMatrix_sub_smul_one :
   simpa only [swap_nMinus, plus_swap, badProjector_swap, goodProjector_swap,
     transverseProj_swap] using L.swap.gammaMatrix_nMinus_mul_gammaMatrix_sub_smul_one p m
 
-/-- The Dirac equation `(p̸ - m) ψ = 0` in light-cone components: it holds iff both the
-constraint equation `2 p⁺ ψ₋ = (p̸_T + m) γ⁺ ψ₊` and the dynamical equation
-`2 p⁻ ψ₊ = (p̸_T + m) γ⁻ ψ₋` hold. -/
+/-- The Dirac equation `(/p - m) ψ = 0` in light-cone components: it holds iff both the
+constraint equation `2 p⁺ ψ₋ = (/p_T + m) γ⁺ ψ₊` and the dynamical equation
+`2 p⁻ ψ₊ = (/p_T + m) γ⁻ ψ₋` hold. -/
 theorem gammaMatrix_sub_smul_one_apply_eq_zero_iff (ψ : Dirac) :
     (gammaMatrix p - m • 1) ψ = 0 ↔
       (2 * L.plus p) • L.badProjector ψ =
@@ -403,7 +403,7 @@ theorem gammaMatrix_sub_smul_one_apply_eq_zero_iff (ψ : Dirac) :
 variable {p m}
 
 /-- The constraint equation solved for the bad component: for `p⁺ ≠ 0` a solution of the Dirac
-equation has `ψ₋ = (2 p⁺)⁻¹ (p̸_T + m) γ⁺ ψ₊`. -/
+equation has `ψ₋ = (2 p⁺)⁻¹ (/p_T + m) γ⁺ ψ₊`. -/
 theorem badProjector_apply_eq_of_apply_eq_zero (hp : L.plus p ≠ 0) {ψ : Dirac}
     (h : (gammaMatrix p - m • 1) ψ = 0) :
     L.badProjector ψ = (2 * L.plus p)⁻¹ •
@@ -420,7 +420,7 @@ theorem injOn_goodProjector (hp : L.plus p ≠ 0) :
   rw [← L.goodProjector_apply_add_badProjector_apply ψ₁, h, e,
     goodProjector_apply_add_badProjector_apply]
 
-/-- `(t̸ + m) γ⁻ (t̸ + m) γ⁺ = 2 (m² - t²) P₊` for a transverse vector `t`. -/
+/-- `(/t + m) γ⁻ (/t + m) γ⁺ = 2 (m² - t²) P₊` for a transverse vector `t`. -/
 private theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus {t : Lorentz.Vector}
     (ht : t ∈ L.transverse) (m : ℝ) :
     (gammaMatrix t + m • 1) * gammaMatrix L.nPlus *
@@ -446,7 +446,7 @@ private theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus {t : Lorentz.Ve
       module
 
 /-- On the mass shell `p² = m²` with `p⁺ ≠ 0`, every good spinor `χ` is the good component of a
-solution of the Dirac equation, namely of `χ + (2 p⁺)⁻¹ (p̸_T + m) γ⁺ χ`. -/
+solution of the Dirac equation, namely of `χ + (2 p⁺)⁻¹ (/p_T + m) γ⁺ χ`. -/
 theorem exists_apply_eq_zero_and_goodProjector_apply_eq (hshell : ⟪p, p⟫ₘ = m ^ 2)
     (hp : L.plus p ≠ 0) {χ : Dirac} (hχ : χ ∈ range L.goodProjector) :
     ∃ ψ, (gammaMatrix p - m • 1) ψ = 0 ∧ L.goodProjector ψ = χ := by
@@ -488,7 +488,7 @@ theorem exists_apply_eq_zero_and_goodProjector_apply_eq (hshell : ⟪p, p⟫ₘ 
   field_simp
 
 /-- On the mass shell `p² = m²` with `p⁺ ≠ 0`, the solutions of the Dirac equation
-`(p̸ - m) ψ = 0` form a two-dimensional space: `P₊` maps it isomorphically onto the good
+`(/p - m) ψ = 0` form a two-dimensional space: `P₊` maps it isomorphically onto the good
 spinors. -/
 theorem finrank_ker_gammaMatrix_sub_smul_one (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp : L.plus p ≠ 0) :
     finrank ℂ (ker (gammaMatrix p - m • 1)) = 2 := by
