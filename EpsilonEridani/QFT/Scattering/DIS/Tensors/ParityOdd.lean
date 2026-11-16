@@ -174,9 +174,7 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPair g K)
     W (a • pTransverse g K + b • K.q + c₁ • hP.e₁ + c₂ • hP.e₂)
         (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
       (c₁ * d₂ - c₂ * d₁) * W hP.e₁ hP.e₂ := by
-  obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := exists_half_turn hSymm hP.q_orthogonal_e₁
-    hP.pT_orthogonal_e₁ hP.e₁_self_ne_zero hP.q_orthogonal_e₂ hP.pT_orthogonal_e₂
-    hP.e₂_self_ne_zero hP.e₁_orthogonal_e₂
+  obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_half_turn hSymm
   have h₁ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
   have h₂ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
   have h₁' : W hP.e₁ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₁
@@ -202,13 +200,13 @@ lemma apply_p_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane 
     hW.apply_pTransverse_eq_zero_of_spectatorPlane hSymm hP]
 
 /-- A parity-odd tensor annihilates `p_T` in the second slot under a `SpectatorPlane`. -/
-lemma apply_pTransverse_eq_zero_right_of_spectatorPlane (hSymm : g.IsSymm)
+lemma apply_pTransverse_right_eq_zero_of_spectatorPlane (hSymm : g.IsSymm)
     (hP : SpectatorPlane g K) (hW : ParityOddAssumptions g K W) (v : V) :
     W v (pTransverse g K) = 0 :=
   hW.isAlt.isRefl.eq_zero (hW.apply_pTransverse_eq_zero_of_spectatorPlane hSymm hP v)
 
 /-- A parity-odd tensor annihilates `p` in the second slot under a `SpectatorPlane`. -/
-lemma apply_p_eq_zero_right_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+lemma apply_p_right_eq_zero_of_spectatorPlane (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     (hW : ParityOddAssumptions g K W) (v : V) :
     W v K.p = 0 :=
   hW.isAlt.isRefl.eq_zero (hW.apply_p_eq_zero_of_spectatorPlane hSymm hP v)

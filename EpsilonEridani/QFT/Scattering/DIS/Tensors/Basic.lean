@@ -1138,6 +1138,15 @@ lemma SpectatorPair.pT_orthogonal_smul_add_smul {g : Bilin V} {K : DisKinematics
     g (pTransverse g K) (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
   simp only [map_add, map_smul, hP.pT_orthogonal_e₁, hP.pT_orthogonal_e₂, smul_zero, add_zero]
 
+/-- The half-turn of a `SpectatorPair`: a kinematic stabilizer element of determinant one
+reversing both spectator directions (`exists_half_turn` applied to `e₁`, `e₂`). -/
+lemma SpectatorPair.exists_half_turn {g : Bilin V} {K : DisKinematics V}
+    (hP : SpectatorPair g K) (hSymm : g.IsSymm) :
+    ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
+      f hP.e₁ = -hP.e₁ ∧ f hP.e₂ = -hP.e₂ :=
+  Hadronic.exists_half_turn hSymm hP.q_orthogonal_e₁ hP.pT_orthogonal_e₁ hP.e₁_self_ne_zero
+    hP.q_orthogonal_e₂ hP.pT_orthogonal_e₂ hP.e₂_self_ne_zero hP.e₁_orthogonal_e₂
+
 /-- An adapted frame for the kinematics: a `SpectatorPair` `e₁`, `e₂` such that `p_T`, `q`,
 `e₁`, `e₂` span `V`.
 
