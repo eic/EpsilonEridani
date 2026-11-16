@@ -38,6 +38,8 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 
 * `LinearMap.BilinForm.LightConeBasis B`: a light-cone basis `(n₊, n₋)` for `B`.
 * `LightConeBasis.plus`, `LightConeBasis.minus`: the light-cone components `v⁺`, `v⁻`.
+* `LightConeBasis.swap`: the light-cone basis `(n₋, n₊)` with the two vectors exchanged, which
+  exchanges `v⁺` and `v⁻` and has the same transverse projector.
 * `LightConeBasis.longitudinal`: the span of `n₊` and `n₋`.
 * `LightConeBasis.transverse`: the transverse subspace `{v | n₊ · v = n₋ · v = 0}`, the
   (right) orthogonal complement of the longitudinal subspace.
@@ -244,6 +246,52 @@ theorem linearIndependent : LinearIndependent R ![L.nPlus, L.nMinus] := by
   refine LinearIndependent.pair_iff.2 fun a b h => ⟨?_, ?_⟩
   · simpa using congrArg L.plus h
   · simpa using congrArg L.minus h
+
+/-! ### Exchanging `n₊` and `n₋` -/
+
+/-- The light-cone basis `(n₋, n₊)` obtained by exchanging the two light-like vectors. It
+exchanges the plus and minus components and leaves the transverse projector unchanged. -/
+def swap : LightConeBasis B where
+  nPlus := L.nMinus
+  nMinus := L.nPlus
+  nPlus_nPlus_eq_zero := L.nMinus_nMinus_eq_zero
+  nMinus_nMinus_eq_zero := L.nPlus_nPlus_eq_zero
+  nPlus_nMinus_eq_one := L.nMinus_nPlus_eq_one
+  nMinus_nPlus_eq_one := L.nPlus_nMinus_eq_one
+
+@[simp]
+theorem swap_nPlus : L.swap.nPlus = L.nMinus :=
+  (rfl)
+
+@[simp]
+theorem swap_nMinus : L.swap.nMinus = L.nPlus :=
+  (rfl)
+
+@[simp]
+theorem swap_swap : L.swap.swap = L :=
+  (rfl)
+
+@[simp]
+theorem plus_swap : L.swap.plus = L.minus :=
+  (rfl)
+
+@[simp]
+theorem minus_swap : L.swap.minus = L.plus :=
+  (rfl)
+
+@[simp]
+theorem transverseProj_swap : L.swap.transverseProj = L.transverseProj := by
+  ext v
+  simp only [transverseProj_apply, plus_swap, minus_swap, swap_nPlus, swap_nMinus]
+  abel
+
+@[simp]
+theorem longitudinal_swap : L.swap.longitudinal = L.longitudinal := by
+  simp only [longitudinal_def, swap_nPlus, swap_nMinus, Set.pair_comm]
+
+@[simp]
+theorem transverse_swap : L.swap.transverse = L.transverse := by
+  simp only [transverse_def, longitudinal_swap]
 
 /-! ### The scalar product in light-cone components -/
 
