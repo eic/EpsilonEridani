@@ -28,7 +28,9 @@ up and down quarks but leave their antiquarks in place.
 The operation is an involution, and it preserves `PDF.IsPartonDensity`, `PDF.Regularity`,
 `PDF.Assumptions`, every moment (relabelled) and every flavour-summed moment; these are instances
 of the general results `PDF.Assumptions.comap` and its companions, as for charge conjugation
-(`PDF.chargeConj`).
+(`PDF.chargeConj`). Unlike charge conjugation, no `PDF.SumRuleAssumptions` transport is provided:
+`ι` is a quark-flavour index rather than `Species Flavor`, and the momentum sum rule holds only
+summed over all parton species, including the gluon, so it is not available for such a density.
 
 ## Main definitions
 

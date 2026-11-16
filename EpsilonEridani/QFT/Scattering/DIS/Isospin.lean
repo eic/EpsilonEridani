@@ -43,7 +43,8 @@ limiting denominator is non-zero (`DIS.tendsto_f2LO_div_f2LO`, and
 neutron the reference function is the up density: along a filter on which `x` and the up density
 are eventually non-zero and every other density over the up density tends to `ρ_f`, the ratio
 tends to
-`Σ e_f² ρ_f / Σ e_{τ f}² ρ_f` with `ρ_u = 1` (`tendsto_f2LO_div_f2LO_isospinConj`). When every
+`Σ e_f² ρ_f / Σ e_{τ f}² ρ_f` with `ρ_u = 1`, provided the limiting denominator is non-zero
+(`tendsto_f2LO_div_f2LO_isospinConj`). When every
 other density is negligible against the up density this limit is `e_u² / e_d²` provided `e_d ≠ 0`
 (`tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_div_zero`). For the light flavours, with
 `d/u → r` and `s/u → t`, the ratio tends to `(4 + r + t) / (1 + 4 r + t)` provided `1 + 4 r + t ≠ 0`
@@ -61,7 +62,7 @@ which is why the hypothesis is stated rather than assumed.
 * `f2LO_lightFlavorCharge_sub_f2LO_lightFlavorCharge_isospinConj`: the light-flavour difference
   `(x / 3) (q_u - q_d)`.
 * `tendsto_f2LO_div_f2LO_isospinConj`: the limit of `F₂^p / F₂^n` in terms of the limits `ρ_f` of
-  the density ratios against the up density.
+  the density ratios against the up density, provided the limiting denominator is non-zero.
 * `tendsto_f2LO_div_f2LO_isospinConj_of_tendsto_div_zero`: `F₂^p / F₂^n → e_u² / e_d²` when the up
   density is eventually non-zero, every other density is negligible against it, and `e_d ≠ 0`.
 * `tendsto_f2LO_lightFlavorCharge_div_f2LO_lightFlavorCharge_isospinConj`: for the light
