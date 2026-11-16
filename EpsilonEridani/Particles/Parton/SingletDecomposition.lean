@@ -149,11 +149,7 @@ theorem mem_singletSector_iff_exists_forall [DecidableEq Flavor] {v : Species Fl
 theorem comp_conj_mem_singletSector_iff [DecidableEq Flavor] {v : Species Flavor → R} :
     v ∘ conj ∈ singletSector ↔ v ∈ singletSector := by
   simp only [mem_singletSector_iff_exists_forall, Function.comp_apply, conj_quark, conj_antiquark]
-  constructor
-  · rintro ⟨a, h⟩
-    exact ⟨a, fun i => ⟨(h i).2, (h i).1⟩⟩
-  · rintro ⟨a, h⟩
-    exact ⟨a, fun i => ⟨(h i).2, (h i).1⟩⟩
+  constructor <;> rintro ⟨a, h⟩ <;> exact ⟨a, fun i => ⟨(h i).2, (h i).1⟩⟩
 
 /-- `singletVector` lies in the singlet sector. -/
 @[simp]
@@ -178,8 +174,8 @@ def singlet : (Species Flavor → R) →ₗ[R] R :=
 
 /-- The quark singlet is the pairing with `singletVector`. -/
 @[simp]
-theorem singletVector_dotProduct (v : Species Flavor → R) : singletVector ⬝ᵥ v = singlet v :=
-  (rfl)
+theorem singletVector_dotProduct (v : Species Flavor → R) : singletVector ⬝ᵥ v = singlet v := by
+  rw [singlet, dotProductBilin_apply_apply]
 
 theorem singlet_apply (v : Species Flavor → R) :
     singlet v = ∑ i, (v (quark i) + v (antiquark i)) := by
@@ -565,13 +561,8 @@ theorem flavorBlindMatrix_mulVec_mem_singletSector {v : Species Flavor → R}
   obtain ⟨a, b, rfl⟩ := mem_singletSector.1 hv
   rw [mulVec_add, mulVec_smul, mulVec_smul, flavorBlindMatrix_mulVec_singletVector,
     flavorBlindMatrix_mulVec_single_gluon]
-  have h₁ := singletVector_mem_singletSector (R := R) (Flavor := Flavor)
-  have h₂ := single_gluon_mem_singletSector (Flavor := Flavor) (1 : R)
-  exact Submodule.add_mem _
-    (Submodule.smul_mem _ _ (Submodule.add_mem _ (Submodule.smul_mem _ _ h₁)
-      (Submodule.smul_mem _ _ h₂)))
-    (Submodule.smul_mem _ _ (Submodule.add_mem _ (Submodule.smul_mem _ _ h₁)
-      (Submodule.smul_mem _ _ h₂)))
+  exact Submodule.add_mem _ (Submodule.smul_mem _ _ (mem_singletSector.2 ⟨_, _, rfl⟩))
+    (Submodule.smul_mem _ _ (mem_singletSector.2 ⟨_, _, rfl⟩))
 
 end Matrix
 
