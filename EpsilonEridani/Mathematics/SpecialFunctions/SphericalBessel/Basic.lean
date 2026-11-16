@@ -73,9 +73,7 @@ singularity `x = 0`. The Rayleigh formula above supplies both directly.
   at the origin is `hasDerivAt_sphericalBesselJ_apply_zero`.
 * `hasDerivAt_sphericalBesselJ` with `deriv_sphericalBesselJ`: the derivative of `j_l` on the
   whole line, the origin included, by the product rule for
-  `j_l(x) = x ^ l * sphericalBesselJDivPow l x`, and its successor-order form
-  `hasDerivAt_sphericalBesselJ_succ` with `deriv_sphericalBesselJ_succ`, which avoids the
-  truncated subtraction of the general form. At order zero it is the ladder relation
+  `j_l(x) = x ^ l * sphericalBesselJDivPow l x`. At order zero it is the ladder relation
   `j_0' = -j_1` on the whole line, `hasDerivAt_sphericalBesselJ_zero`.
 * `hasDerivAt_sphericalBesselJ_apply_zero`: the derivative at the origin, `j_1'(0) = 1 / 3` and
   `j_l'(0) = 0` for `l ≠ 1`; `deriv_deriv_sphericalBesselJ_apply_zero`: the second derivative
@@ -372,32 +370,6 @@ theorem deriv_sphericalBesselJ (l : ℕ) (x : ℝ) :
       l * x ^ (l - 1) * sphericalBesselJDivPow l x -
         x ^ (l + 1) * sphericalBesselJDivPow (l + 1) x :=
   (hasDerivAt_sphericalBesselJ l x).deriv
-
-/-- The derivative of `sphericalBesselJ (l + 1)` on the whole line, by the product rule for
-`j_{l + 1}(x) = x ^ (l + 1) * sphericalBesselJDivPow (l + 1) x` (`sphericalBesselJ_def`):
-`j_{l + 1}'(x) = (l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x -
-x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x`, the successor-order form of
-`hasDerivAt_sphericalBesselJ` without the truncated subtraction. Unlike
-`hasDerivAt_sphericalBesselJ_of_ne_zero` and `hasDerivAt_sphericalBesselJ_succ'_of_ne_zero`,
-which hold for `x ≠ 0` only, this holds at every point, the origin included. -/
-theorem hasDerivAt_sphericalBesselJ_succ (l : ℕ) (x : ℝ) :
-    HasDerivAt (sphericalBesselJ (l + 1))
-      ((l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x -
-        x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x) x := by
-  refine (hasDerivAt_sphericalBesselJ (l + 1) x).congr_deriv ?_
-  have hl : (l + 1 : ℕ) - 1 = l := by omega
-  have h2 : (l : ℕ) + 1 + 1 = l + 2 := by omega
-  simp only [hl, h2]
-  push_cast
-  ring
-
-/-- The derivative of `sphericalBesselJ (l + 1)` on the whole line, by the product rule for
-`j_{l + 1}(x) = x ^ (l + 1) * sphericalBesselJDivPow (l + 1) x`: the origin included. -/
-theorem deriv_sphericalBesselJ_succ (l : ℕ) (x : ℝ) :
-    deriv (sphericalBesselJ (l + 1)) x =
-      (l + 1) * x ^ l * sphericalBesselJDivPow (l + 1) x -
-        x ^ (l + 2) * sphericalBesselJDivPow (l + 2) x :=
-  (hasDerivAt_sphericalBesselJ_succ l x).deriv
 
 /-- The ladder relation at order zero, `j_0' = -j_1`, on the whole line, the origin included: the
 order-zero case of `hasDerivAt_sphericalBesselJ` (DLMF 10.51.2 at `l = 0`). -/
