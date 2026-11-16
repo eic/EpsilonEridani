@@ -13,14 +13,22 @@ public import EpsilonEridani.Particles.Parton.PDF.Basic
 Exact isospin symmetry relates the neutron to the proton: the neutron's densities are the
 proton's with the up and down flavours exchanged, `q^n_f = q^p_{τ f}`, where
 `τ = Equiv.swap u d` is the isospin involution, which fixes every other flavour. This file names
-that pullback, `PDF.isospinConj u d f = PDF.comap (Equiv.swap u d) f`, for any two parton
-indices `u` and `d`; whether the two nucleons are related this way is the assumption of exact
-isospin symmetry, and its violation is not modelled here.
+that pullback, `PDF.isospinConj u d f = PDF.comap (Equiv.swap u d) f`, for a density `f` indexed
+by quark flavour, with `u` and `d` the up and down flavours; whether the two nucleons are related
+this way is the assumption of exact isospin symmetry, and its violation is not modelled here.
+
+The index type `ι` is the quark-flavour index, such as `LightFlavor`, of a density whose component
+`f i` is one density per flavour, for instance the quark-plus-antiquark combination `q_i + qbar_i`
+that the leading-order structure function `DIS.f2LO` consumes. It is not the parton species
+index `Species Flavor`: on a species-indexed density the isospin involution is the species map
+induced by `Equiv.swap u d` (quark `i ↦ quark (swap u d i)`, antiquark `i ↦ antiquark
+(swap u d i)`, gluon fixed), not a single `Equiv.swap` of two species, which would exchange the
+up and down quarks but leave their antiquarks in place.
 
 The operation is an involution, and it preserves `PDF.IsPartonDensity`, `PDF.Regularity`,
-`PDF.Assumptions`, every moment (relabelled) and every species-summed moment, and the sum-rule
-bundle `PDF.SumRuleAssumptions`; these are instances of the general results `PDF.Assumptions.comap`
-and its companions, as for charge conjugation (`PDF.chargeConj`).
+`PDF.Assumptions`, every moment (relabelled) and every flavour-summed moment; these are instances
+of the general results `PDF.Assumptions.comap` and its companions, as for charge conjugation
+(`PDF.chargeConj`).
 
 ## Main definitions
 
@@ -30,13 +38,12 @@ and its companions, as for charge conjugation (`PDF.chargeConj`).
 
 * `PDF.isospinConj_apply`: `isospinConj u d f i = f (swap u d i)`.
 * `PDF.isospinConj_isospinConj`: isospin conjugation is an involution.
-* `PDF.isospinConj_comm`, `PDF.isospinConj_self`: the order of the exchanged indices does not
-  matter, and exchanging an index with itself is the identity.
-* `PDF.IsPartonDensity.isospinConj`, `PDF.Regularity.isospinConj`, `PDF.Assumptions.isospinConj`,
-  `PDF.SumRuleAssumptions.isospinConj`: it preserves the density assumptions and the sum-rule
-  bundle.
+* `PDF.isospinConj_comm`, `PDF.isospinConj_self`: the order of the exchanged flavours does not
+  matter, and exchanging a flavour with itself is the identity.
+* `PDF.IsPartonDensity.isospinConj`, `PDF.Regularity.isospinConj`, `PDF.Assumptions.isospinConj`:
+  it preserves the density assumptions.
 * `PDF.mellinMoment_isospinConj`, `PDF.sum_mellinMoment_isospinConj`: it relabels every moment and
-  preserves every summed moment.
+  preserves every flavour-summed moment.
 
 ## References
 
@@ -54,10 +61,11 @@ namespace PDF
 
 variable {ι : Type} [DecidableEq ι]
 
-/-- The isospin-conjugate density: the density of parton `i` is the density of `swap u d i` in
-`f`, so the up and down densities are exchanged and every other density is kept. With `f` the
-proton's densities and `u`, `d` the up and down flavours, this is the neutron's density under exact
-isospin symmetry. -/
+/-- The isospin-conjugate density: the density of flavour `i` is the density of `swap u d i` in
+`f`, so the up and down densities are exchanged and every other density is kept. Here `ι` is a
+quark-flavour index, not the species index `Species Flavor`; with `f` the proton's per-flavour
+densities and `u`, `d` the up and down flavours, this is the neutron's density under exact isospin
+symmetry. -/
 def isospinConj (u d : ι) (f : Pdf ι) : Pdf ι :=
   comap (Equiv.swap u d) f
 
@@ -70,11 +78,11 @@ theorem isospinConj_apply (u d : ι) (f : Pdf ι) (i : ι) (x Q2 : ℝ) :
     isospinConj u d f i x Q2 = f (Equiv.swap u d i) x Q2 := by
   rw [isospinConj_eq_comap, comap_apply]
 
-/-- The order of the two exchanged indices does not matter. -/
+/-- The order of the two exchanged flavours does not matter. -/
 theorem isospinConj_comm (u d : ι) (f : Pdf ι) : isospinConj u d f = isospinConj d u f := by
   rw [isospinConj_eq_comap, isospinConj_eq_comap, Equiv.swap_comm]
 
-/-- Exchanging an index with itself is the identity. -/
+/-- Exchanging a flavour with itself is the identity. -/
 @[simp]
 theorem isospinConj_self (u : ι) (f : Pdf ι) : isospinConj u u f = f := by
   rw [isospinConj_eq_comap, Equiv.swap_self, Equiv.coe_refl, comap_id]
@@ -94,8 +102,9 @@ theorem mellinMoment_isospinConj (u d : ι) (f : Pdf ι) (n : ℕ) (i : ι) (Q2 
     mellinMoment (isospinConj u d f) n i Q2 = mellinMoment f n (Equiv.swap u d i) Q2 := by
   rw [isospinConj_eq_comap, mellinMoment_comap]
 
-/-- Isospin conjugation preserves every moment summed over all partons; for `n = 1` this is the
-statement that the momentum sum of the conjugate density is that of the density. -/
+/-- Isospin conjugation preserves every moment summed over all flavours; for `n = 1` and the
+quark-plus-antiquark densities this is the statement that the conjugate carries the same total
+quark momentum fraction. -/
 theorem sum_mellinMoment_isospinConj [Fintype ι] (u d : ι) (f : Pdf ι) (n : ℕ) (Q2 : ℝ) :
     ∑ i, mellinMoment (isospinConj u d f) n i Q2 = ∑ i, mellinMoment f n i Q2 := by
   rw [isospinConj_eq_comap]
@@ -118,18 +127,6 @@ theorem Assumptions.isospinConj {f : Pdf ι} (h : Assumptions f) (u d : ι) :
     Assumptions (isospinConj u d f) := by
   rw [isospinConj_eq_comap]
   exact h.comap _
-
-/-- Isospin conjugation preserves the sum-rule bundle, with the target values of each parton
-taken from its isospin conjugate. -/
-def SumRuleAssumptions.isospinConj [Fintype ι] {f : Pdf ι} (h : SumRuleAssumptions f)
-    (u d : ι) : SumRuleAssumptions (isospinConj u d f) :=
-  h.comap (Equiv.swap u d).bijective
-
-@[simp]
-theorem SumRuleAssumptions.isospinConj_valenceTarget [Fintype ι] {f : Pdf ι}
-    (h : SumRuleAssumptions f) (u d i : ι) :
-    (h.isospinConj u d).valenceTarget i = h.valenceTarget (Equiv.swap u d i) :=
-  (rfl)
 
 end PDF
 
