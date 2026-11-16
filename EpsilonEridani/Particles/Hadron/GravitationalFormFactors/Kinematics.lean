@@ -397,8 +397,8 @@ def ofLiteratureT (f : ℝ → ℝ) : ℝ≥0 → ℝ := fun q => f (-(q : ℝ))
 lemma ofLiteratureT_apply (f : ℝ → ℝ) (q : ℝ≥0) : ofLiteratureT f q = f (-(q : ℝ)) := (rfl)
 
 /-- On an elastic transition, the translated function evaluated at `Q²` is the original evaluated
-at `t`. -/
-@[simp]
+at `t`. This is deliberately not a `simp` lemma: the rewrite is already performed by
+`ofLiteratureT_apply`, `ElasticKinematics.coe_qSq` and `neg_neg`. -/
 lemma ofLiteratureT_qSq {T : Target} {d : ℕ} (f : ℝ → ℝ) (K : ElasticKinematics T d) :
     ofLiteratureT f K.qSq = f K.tMom := by
   simp
