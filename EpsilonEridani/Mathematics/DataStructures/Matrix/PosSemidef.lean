@@ -5,15 +5,13 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Tactic.Linarith
-public import TauCeti.Analysis.Bochner.Gaussian.Basic
 public import TauCeti.Analysis.Matrix.PosSemidef
 
 
 /-!
-# Entrywise bounds for positive-semidefinite matrices
+# Entrywise bounds and real parts of positive-semidefinite matrices
 
 The principal `2 × 2` minors of a positive-semidefinite matrix `M` are nonnegative. This
 file records the resulting entrywise bounds on the off-diagonal entries:
@@ -41,10 +39,12 @@ parton spin-density matrix.
 
 Real positive-semidefinite matrices also arise as real parts of complex ones: for a Hermitian
 `M` and a real vector `x`, `xᵀ (Re M) x = Re (xᴴ M x)`, so `Matrix.PosSemidef.map_re` passes from
-a positive-semidefinite matrix over an `RCLike` field to its entrywise real part. This is how a
-real Gaussian kernel `(a, b) ↦ exp (-c ‖a - b‖²)` inherits positivity from its complex
-counterpart: `Matrix.posSemidef_rexp_neg_mul_sq_norm` records it on any real inner-product
-space, for every `c ≥ 0`.
+a positive-semidefinite matrix over an `RCLike` field to its entrywise real part. This is how
+a real Gaussian kernel `(a, b) ↦ exp (-c ‖a - b‖²)` on a real inner-product space inherits
+positivity from its complex counterpart; that kernel lemma is recorded in
+`EpsilonEridani/Mathematics/DataStructures/Matrix/GaussianKernel.lean`, where it feeds the
+admissibility of the Golec-Biernat-Wüsthoff dipole amplitude of
+`EpsilonEridani/QFT/SmallX/Dipole/Amplitude.lean`.
 
 ## Main results
 
@@ -55,8 +55,6 @@ space, for every `c ≥ 0`.
 - `Matrix.posSemidef_single_self_iff`: positive semidefiniteness of diagonal matrix units.
 - `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix over an
   `RCLike` field is positive semidefinite.
-- `Matrix.posSemidef_rexp_neg_mul_sq_norm`: the real Gaussian kernel
-  `(a, b) ↦ exp (-c ‖a - b‖²)` on a real inner-product space is positive semidefinite, `c ≥ 0`.
 
 ## Implementation notes
 
@@ -65,8 +63,8 @@ The geometric-mean bound over `RCLike 𝕜` is Tau Ceti's `Matrix.PosSemidef.nor
 genuinely complex density matrix needs it: the off-diagonal entries of a spin density matrix
 carry the vector polarization in their imaginary parts.
 
-These lemmas are stated for a general index type rather than for `Fin n`, and are candidates
-for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
+The entrywise bounds are stated for a general index type rather than for `Fin n`, and are
+candidates for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
 -/
 
 @[expose] public section
@@ -140,22 +138,5 @@ theorem PosSemidef.map_re {𝕜 : Type*} [RCLike 𝕜] {M : Matrix n n 𝕜} (hM
   simp only [inner, map_finsuppSum RCLike.re, RCLike.star_def, RCLike.conj_ofReal,
     RCLike.re_ofReal_mul, RCLike.re_mul_ofReal] at h
   simpa only [map_apply, star_trivial] using h
-
-/-- The real Gaussian kernel `(a, b) ↦ exp (-c ‖a - b‖²)` on a real inner-product space is
-positive semidefinite for every `c ≥ 0`: it is the entrywise real part of the complex Gaussian
-kernel, whose positive semidefiniteness is `TauCeti.posSemidef_cexp_neg_mul_sq_norm`, and the
-real part of a positive-semidefinite matrix is positive semidefinite
-(`Matrix.PosSemidef.map_re`). The index space is arbitrary. -/
-theorem posSemidef_rexp_neg_mul_sq_norm {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] {c : ℝ} (hc : 0 ≤ c) :
-    (Matrix.of fun a b : V => Real.exp (-(c * ‖a - b‖ ^ 2))).PosSemidef := by
-  have hG : (Matrix.of fun a b : V => Complex.exp (-(c * ‖a - b‖ ^ 2 : ℝ))).PosSemidef :=
-    TauCeti.posSemidef_cexp_neg_mul_sq_norm hc
-  have e : (Matrix.of fun a b : V => Complex.exp (-(c * ‖a - b‖ ^ 2 : ℝ))).map RCLike.re =
-      Matrix.of fun a b => Real.exp (-(c * ‖a - b‖ ^ 2)) := by
-    ext a b
-    simp only [map_apply, of_apply, ← Complex.ofReal_neg, ← Complex.ofReal_exp,
-      RCLike.re_to_complex, Complex.ofReal_re]
-  exact e ▸ hG.map_re
 
 end Matrix

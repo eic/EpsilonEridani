@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Mathematics.DataStructures.Matrix.PosSemidef
+public import EpsilonEridani.Mathematics.DataStructures.Matrix.GaussianKernel
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Matrix.PosSemidef
 
