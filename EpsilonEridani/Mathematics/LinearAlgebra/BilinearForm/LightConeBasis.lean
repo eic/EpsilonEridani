@@ -54,6 +54,7 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 * `LightConeBasis.smul_add_smul_add_eq_iff`: uniqueness of the decomposition
   `v = v⁺ n₊ + v⁻ n₋ + v_T`.
 * `LightConeBasis.bilinForm_eq_plus_mul_minus_add`: `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
+* `LightConeBasis.bilinForm_self_eq_two_mul_plus_mul_minus_add`: `v · v = 2 v⁺ v⁻ + v_T · v_T`.
 * `LightConeBasis.isSelfAdjoint_transverseProj`: for a reflexive form the transverse projector is
   self-adjoint.
 * `LightConeBasis.finrank_transverse_add_two_eq`: the transverse subspace has codimension two.
@@ -271,6 +272,12 @@ theorem bilinForm_eq_plus_mul_minus_add (u v : V) :
     ((L.mem_transverse_iff_bilinForm_right_eq_zero hB).1
       (L.isProj_transverseProj.map_mem _)).2,
     ← plus_apply, ← minus_apply]
+
+/-- The square of a vector in light-cone components, `v · v = 2 v⁺ v⁻ + v_T · v_T`. -/
+theorem bilinForm_self_eq_two_mul_plus_mul_minus_add (v : V) :
+    B v v = 2 * L.plus v * L.minus v + B (L.transverseProj v) (L.transverseProj v) := by
+  rw [L.bilinForm_eq_plus_mul_minus_add hB]
+  ring
 
 /-- The transverse projector is self-adjoint. -/
 theorem isSelfAdjoint_transverseProj : B.IsSelfAdjoint L.transverseProj := by
