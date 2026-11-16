@@ -120,13 +120,13 @@ theorem comp_covariance (D : EuclideanDataset ι) (e : κ → ι) :
 /-- Reindexing along the identity does nothing. -/
 @[simp]
 theorem comp_id (D : EuclideanDataset ι) : D.comp id = D :=
-  (rfl)
+  EuclideanDataset.ext (Function.comp_id _) (Matrix.submatrix_id_id _)
 
 /-- Reindexing twice is reindexing along the composite. -/
 @[simp]
 theorem comp_comp (D : EuclideanDataset ι) (e : κ → ι) (e' : ν → κ) :
     (D.comp e).comp e' = D.comp (e ∘ e') :=
-  (rfl)
+  EuclideanDataset.ext (Function.comp_assoc _ _ _) (Matrix.submatrix_submatrix _ _ _ _ _)
 
 /-! ### Continuum limits -/
 

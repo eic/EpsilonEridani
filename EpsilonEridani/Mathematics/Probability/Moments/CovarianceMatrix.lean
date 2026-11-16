@@ -81,7 +81,9 @@ theorem covarianceMatrix_eq_covMatrix_map [Countable ι] (hX : ∀ i, AEMeasurab
   ext i j
   have h := covariance_map_fun (X := fun z : EuclideanSpace ℝ ι => z i) (Y := fun z => z j)
     (by fun_prop) (by fun_prop) hmeas
-  rw [covarianceMatrix_apply, TauCeti.covMatrix_apply, h]
+  have hcoord (k : ι) : (fun ω => (WithLp.toLp 2 (X · ω) : EuclideanSpace ℝ ι) k) = X k :=
+    funext fun ω => PiLp.toLp_apply ..
+  rw [covarianceMatrix_apply, TauCeti.covMatrix_apply, h, hcoord, hcoord]
 
 /-- The covariance matrix is symmetric. -/
 theorem isHermitian_covarianceMatrix (X : ι → Ω → ℝ) (μ : Measure Ω) :
