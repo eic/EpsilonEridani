@@ -37,8 +37,9 @@ truncation is used for: the coupling decreases with the scale and tends to zero
 (`strictAntiOn_oneLoopCouplingLogScale`, `tendsto_oneLoopCouplingLogScale_atTop_zero`) at the
 rate `a(t) = 1/(β₀ t) + O(t⁻²)` (`isBigO_oneLoopCouplingLogScale_sub_inv`), and it blows up at the
 finite value `landauLogScale β₀ a₀ = -(β₀ a₀)⁻¹` of the evolution variable
-(`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`). For `β₀ ≠ 0`, no nonzero solution has
-its own Landau log-scale in its domain, so this solution does not continue through it
+(`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`). For `β₀ ≠ 0`, no nonzero solution on
+an open connected set has its own Landau log-scale in its domain, so this solution does not
+continue through it
 (`IsOneLoopRGSolution.add_landauLogScale_notMem`,
 `IsOneLoopRGSolution.subset_Ioi_add_landauLogScale`). The last is a property of the truncation,
 not of QCD.
@@ -285,11 +286,12 @@ theorem IsOneLoopRGSolution.eqOn_oneLoopCouplingLogScale {t₀ : ℝ}
   · exact inv_injective
       ((hf.inv_eqOn hs hs' ht₀ h₀ ht).trans (inv_oneLoopCouplingLogScale β₀ h₀ _).symm)
 
-/-- **The one-loop solution does not extend past its Landau log-scale.** A solution of
-`da/dt = -β₀ a²` on an open connected set, nonzero at a point `t₀` of the set, does not have the
-Landau log-scale of its value at `t₀` in that set: a solution's domain stops short of its own
-Landau log-scale, so the divergence of `tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`
-cannot be removed by continuing the solution differently. -/
+/-- **The one-loop solution does not extend past its Landau log-scale.** For `β₀ ≠ 0`, a
+solution of `da/dt = -β₀ a²` on an open connected set, nonzero at a point `t₀` of the set, does
+not have the Landau log-scale of its value at `t₀` in that set: a solution's domain stops short
+of its own Landau log-scale, so the divergence of
+`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale` cannot be removed by continuing the
+solution differently. -/
 theorem IsOneLoopRGSolution.add_landauLogScale_notMem {t₀ : ℝ} (hf : IsOneLoopRGSolution β₀ s f)
     (hs : IsOpen s) (hs' : IsPreconnected s) (hβ : β₀ ≠ 0) (ht₀ : t₀ ∈ s) (h₀ : f t₀ ≠ 0) :
     t₀ + landauLogScale β₀ (f t₀) ∉ s := by
