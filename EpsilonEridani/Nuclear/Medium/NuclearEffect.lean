@@ -23,8 +23,8 @@ fraction and scale is part of its type. Its final-state factor depends on all fo
 The split is only meaningful if an observable determines it. This file proves that it does,
 under three conditions: the observable is the product of the two factors
 (`NuclearEffect.FactorizationHypothesis`), the final-state factor tends to one along a nontrivial
-filter `l` of energy transfers (`NuclearEffect.IsNormalized`), and the initial-state factor vanishes
-nowhere. Physically `l` is `Filter.atTop`: at large
+filter `l` of energy transfers (`NuclearEffect.IsNormalized`; one hadron momentum fraction
+suffices), and the initial-state factor vanishes nowhere. Physically `l` is `Filter.atTop`: at large
 energy transfer the hadron forms outside the nucleus and the final-state effects disappear. A
 reference energy transfer `ν₀` at which the final-state factor is one by convention is
 `l = pure ν₀`. Without the normalisation the split is determined only up to a factor depending on
@@ -58,13 +58,15 @@ one along `l`, and this family has more than one member.
 * `NuclearEffect.FactorizationHypothesis.finalState_eq_mul`: where the initial-state factor of the
   second split does not vanish, two splits of one observable have final-state factors that differ
   by a factor depending only on `x` and `Q2`.
-* `NuclearEffect.FactorizationHypothesis.unique`: two normalised nuclear effects factorising one
-  observable, one with a nowhere-vanishing initial-state factor, are equal.
+* `NuclearEffect.FactorizationHypothesis.unique`: two nuclear effects factorising one observable,
+  whose final-state factors tend to one along `l` at one hadron momentum fraction, one with a
+  nowhere-vanishing initial-state factor, are equal.
 * `IsNormalizedSplit.mul_div`: multiplying the first factor of a normalised split by a nowhere-zero
   `g` tending to one along `l`, and dividing the second by it, gives another normalised split.
 * `IsNormalizedSplit.isNormalizedSplit_iff_exists`: without the independence assumption, the
-  normalised splits of a nowhere-vanishing observable are exactly `(I * g, F / g)` for
-  nowhere-zero `g` tending to one along `l`.
+  normalised splits with nowhere-vanishing second factor (for instance, all normalised splits of a
+  nowhere-vanishing observable) are exactly `(I * g, F / g)` for nowhere-zero `g` tending to one
+  along `l`.
 * `IsNormalizedSplit.exists_isNormalizedSplit_ne`: without the independence assumption, for a
   filter eventually avoiding some energy transfer `ν₁` (e.g. `atTop`), a normalised split whose
   first factor is nonzero at `ν₁` admits a second split with a different first factor.
@@ -125,6 +127,18 @@ theorem isNormalized_def :
     E.IsNormalized l ↔ ∀ x Q2 z, Tendsto (fun ν => E.finalState x Q2 ν z) l (𝓝 1) :=
   (Iff.rfl)
 
+/-- Under the factorisation hypothesis, the observable is the product of the two factors at every
+point. -/
+theorem FactorizationHypothesis.obs_eq (h : E.FactorizationHypothesis obs) (x Q2 ν z : ℝ) :
+    obs x Q2 ν z = E.initialState x Q2 * E.finalState x Q2 ν z :=
+  h x Q2 ν z
+
+/-- A normalised final-state factor tends to one along `l` at every momentum fraction, scale and
+hadron momentum fraction. -/
+theorem IsNormalized.tendsto_one (h : E.IsNormalized l) (x Q2 z : ℝ) :
+    Tendsto (fun ν => E.finalState x Q2 ν z) l (𝓝 1) :=
+  h x Q2 z
+
 namespace FactorizationHypothesis
 
 /-- Under the factorisation hypothesis, if the final-state factor tends to one along `l`, the
@@ -133,7 +147,7 @@ off the observable. -/
 theorem tendsto_initialState (h : E.FactorizationHypothesis obs) {x Q2 z : ℝ}
     (hF : Tendsto (fun ν => E.finalState x Q2 ν z) l (𝓝 1)) :
     Tendsto (fun ν => obs x Q2 ν z) l (𝓝 (E.initialState x Q2)) := by
-  simpa [h x Q2] using hF.const_mul (E.initialState x Q2)
+  simpa [h.obs_eq x Q2] using hF.const_mul (E.initialState x Q2)
 
 /-- Two splits of one observable whose final-state factors tend to one along a nontrivial filter
 have the same initial-state factor. -/
@@ -149,7 +163,7 @@ final-state factor is the observable divided by the initial-state factor. -/
 theorem finalState_eq_div (h : E.FactorizationHypothesis obs) {x Q2 : ℝ}
     (hI : E.initialState x Q2 ≠ 0) (ν z : ℝ) :
     E.finalState x Q2 ν z = obs x Q2 ν z / E.initialState x Q2 := by
-  rw [h, mul_div_cancel_left₀ _ hI]
+  rw [h.obs_eq, mul_div_cancel_left₀ _ hI]
 
 /-- Under the factorisation hypothesis, where the initial-state factor does not vanish, the ratio
 of the observable at two energy transfers and hadron momentum fractions equals the ratio of the
@@ -158,9 +172,10 @@ final-state factor alone. -/
 theorem div_eq_finalState_div (h : E.FactorizationHypothesis obs) {x Q2 : ℝ}
     (hI : E.initialState x Q2 ≠ 0) (ν z ν' z' : ℝ) :
     obs x Q2 ν z / obs x Q2 ν' z' = E.finalState x Q2 ν z / E.finalState x Q2 ν' z' := by
-  rw [h, h, mul_div_mul_left _ _ hI]
+  rw [h.obs_eq, h.obs_eq, mul_div_mul_left _ _ hI]
 
-/-- Two splits of one observable whose initial-state factors do not vanish at `(x, Q2)` have
+/-- Two splits of one observable, the second of whose initial-state factors does not vanish at
+`(x, Q2)`, have
 final-state factors that differ there by the factor `E.initialState x Q2 / E'.initialState x Q2`,
 which depends neither on the energy transfer nor on the hadron momentum fraction. -/
 theorem finalState_eq_mul (h : E.FactorizationHypothesis obs)
@@ -168,22 +183,28 @@ theorem finalState_eq_mul (h : E.FactorizationHypothesis obs)
     (ν z : ℝ) :
     E'.finalState x Q2 ν z =
       E.initialState x Q2 / E'.initialState x Q2 * E.finalState x Q2 ν z := by
-  rw [h'.finalState_eq_div hI', h, div_mul_eq_mul_div]
+  rw [h'.finalState_eq_div hI', h.obs_eq, div_mul_eq_mul_div]
 
 /-- **Uniqueness of the initial-state / final-state decomposition.** Two nuclear effects that
-factorise the same observable, whose final-state factors are normalised along the same nontrivial
-filter, and one of whose initial-state factors vanishes nowhere, are equal.
+factorise the same observable, whose final-state factors tend to one along the same nontrivial
+filter at one hadron momentum fraction `z₀`, and one of whose initial-state factors vanishes
+nowhere, are equal. Normalised effects (`IsNormalized`) satisfy the hypothesis at every `z₀`, via
+`IsNormalized.tendsto_one`.
 
 The non-vanishing is needed: where the initial-state factor vanishes the observable vanishes
 identically in the energy transfer, and the observable leaves the final-state factor there
 undetermined (only the normalisation constrains it). -/
 theorem unique [l.NeBot] (h : E.FactorizationHypothesis obs) (h' : E'.FactorizationHypothesis obs)
-    (hE : E.IsNormalized l) (hE' : E'.IsNormalized l) (hI : ∀ x Q2, E.initialState x Q2 ≠ 0) :
+    {z₀ : ℝ} (hE : ∀ x Q2, Tendsto (fun ν => E.finalState x Q2 ν z₀) l (𝓝 1))
+    (hE' : ∀ x Q2, Tendsto (fun ν => E'.finalState x Q2 ν z₀) l (𝓝 1))
+    (hI : ∀ x Q2, E.initialState x Q2 ≠ 0) :
     E = E' := by
   have hII' : E.initialState = E'.initialState := by
     ext x Q2
-    exact h.initialState_eq h' (hE x Q2 0) (hE' x Q2 0)
-  have hI' (x Q2 : ℝ) : E'.initialState x Q2 ≠ 0 := hII' ▸ hI x Q2
+    exact h.initialState_eq h' (hE x Q2) (hE' x Q2)
+  have hI' (x Q2 : ℝ) : E'.initialState x Q2 ≠ 0 := by
+    rw [← hII']
+    exact hI x Q2
   ext x Q2 ν z
   · rw [hII']
   · rw [h.finalState_eq_div (hI x Q2), h'.finalState_eq_div (hI' x Q2), hII']
@@ -204,24 +225,31 @@ def IsNormalizedSplit (obs I F : ℝ → ℝ → ℝ → ℝ → ℝ) (l : Filte
 
 variable {obs I F I' F' : ℝ → ℝ → ℝ → ℝ → ℝ} {l : Filter ℝ}
 
-/-- The pointwise quotient of two functions tending to one tends to one. -/
-private theorem tendsto_div_one {f g : ℝ → ℝ} (hf : Tendsto f l (𝓝 1)) (hg : Tendsto g l (𝓝 1)) :
-    Tendsto (fun ν => f ν / g ν) l (𝓝 1) := by
-  simpa only [Pi.div_def, div_one] using hf.div hg one_ne_zero
-
 /-- Restates the sealed definition `IsNormalizedSplit`. -/
 theorem isNormalizedSplit_def :
     IsNormalizedSplit obs I F l ↔ (∀ x Q2 ν z, obs x Q2 ν z = I x Q2 ν z * F x Q2 ν z) ∧
       ∀ x Q2 z, Tendsto (fun ν => F x Q2 ν z) l (𝓝 1) :=
   (Iff.rfl)
 
+/-- In a normalised split the observable is the product of the two factors at every point. -/
+theorem IsNormalizedSplit.obs_eq (h : IsNormalizedSplit obs I F l) (x Q2 ν z : ℝ) :
+    obs x Q2 ν z = I x Q2 ν z * F x Q2 ν z :=
+  h.1 x Q2 ν z
+
+/-- In a normalised split the second factor tends to one along `l` at every momentum fraction,
+scale and hadron momentum fraction. -/
+theorem IsNormalizedSplit.tendsto_one (h : IsNormalizedSplit obs I F l) (x Q2 z : ℝ) :
+    Tendsto (fun ν => F x Q2 ν z) l (𝓝 1) :=
+  h.2 x Q2 z
+
 /-- A nuclear effect, read as a pair of functions of all four variables, is a normalised split of an
 observable exactly when it factorises the observable and is normalised. -/
 theorem NuclearEffect.isNormalizedSplit_iff_factorizationHypothesis_and_isNormalized
     (E : NuclearEffect) :
     IsNormalizedSplit obs (fun x Q2 _ _ => E.initialState x Q2) E.finalState l ↔
-      E.FactorizationHypothesis obs ∧ E.IsNormalized l :=
-  (Iff.rfl)
+      E.FactorizationHypothesis obs ∧ E.IsNormalized l := by
+  rw [isNormalizedSplit_def, NuclearEffect.factorizationHypothesis_def,
+    NuclearEffect.isNormalized_def]
 
 /-- Multiplying the first factor of a normalised split by a nowhere-zero `g` that tends to one
 along `l` in the energy transfer, and dividing the second factor by it, gives another normalised
@@ -231,38 +259,36 @@ theorem IsNormalizedSplit.mul_div (h : IsNormalizedSplit obs I F l)
     (hg : ∀ x Q2 z, Tendsto (fun ν => g x Q2 ν z) l (𝓝 1)) :
     IsNormalizedSplit obs (fun x Q2 ν z => I x Q2 ν z * g x Q2 ν z)
       (fun x Q2 ν z => F x Q2 ν z / g x Q2 ν z) l := by
-  refine ⟨fun x Q2 ν z => ?_, fun x Q2 z => tendsto_div_one (h.2 x Q2 z) (hg x Q2 z)⟩
-  rw [h.1]
-  field_simp [hg₀ x Q2 ν z]
+  refine ⟨fun x Q2 ν z => ?_, fun x Q2 z => ?_⟩
+  · rw [h.obs_eq]
+    field_simp [hg₀ x Q2 ν z]
+  · simpa only [Pi.div_def, div_one] using (h.tendsto_one x Q2 z).div (hg x Q2 z) one_ne_zero
 
 /-- **The normalised splits without the independence assumption.** Let `(I, F)` be a normalised
-split of an observable that vanishes nowhere. Then `(I', F')` is another normalised split of it
-exactly when `I' = I * g` and `F' = F / g` for some nowhere-zero `g` that tends to one along `l` in
-the energy transfer. Any `g` that depends on the energy transfer gives an `I'` that does too. -/
+split whose second factor vanishes nowhere, as it does when the observable vanishes nowhere. Then
+`(I', F')` is another normalised split with nowhere-vanishing second factor exactly when
+`I' = I * g` and `F' = F / g` for some nowhere-zero `g` that tends to one along `l` in the energy
+transfer. -/
 theorem IsNormalizedSplit.isNormalizedSplit_iff_exists (h : IsNormalizedSplit obs I F l)
-    (hobs : ∀ x Q2 ν z, obs x Q2 ν z ≠ 0) :
-    IsNormalizedSplit obs I' F' l ↔
+    (hF₀ : ∀ x Q2 ν z, F x Q2 ν z ≠ 0) :
+    (IsNormalizedSplit obs I' F' l ∧ ∀ x Q2 ν z, F' x Q2 ν z ≠ 0) ↔
       ∃ g : ℝ → ℝ → ℝ → ℝ → ℝ, (∀ x Q2 ν z, g x Q2 ν z ≠ 0) ∧
         (∀ x Q2 z, Tendsto (fun ν => g x Q2 ν z) l (𝓝 1)) ∧
         (∀ x Q2 ν z, I' x Q2 ν z = I x Q2 ν z * g x Q2 ν z) ∧
         ∀ x Q2 ν z, F' x Q2 ν z = F x Q2 ν z / g x Q2 ν z := by
-  obtain ⟨hprod, hF⟩ := h
-  have hF₀ (x Q2 ν z : ℝ) : F x Q2 ν z ≠ 0 :=
-    right_ne_zero_of_mul (hprod x Q2 ν z ▸ hobs x Q2 ν z)
   constructor
-  · rintro ⟨hprod', hF'⟩
-    have hF'₀ (x Q2 ν z : ℝ) : F' x Q2 ν z ≠ 0 :=
-      right_ne_zero_of_mul (hprod' x Q2 ν z ▸ hobs x Q2 ν z)
+  · rintro ⟨h', hF'₀⟩
     refine ⟨fun x Q2 ν z => F x Q2 ν z / F' x Q2 ν z, fun x Q2 ν z => ?_, fun x Q2 z => ?_,
       fun x Q2 ν z => ?_, fun x Q2 ν z => ?_⟩
     · exact div_ne_zero (hF₀ x Q2 ν z) (hF'₀ x Q2 ν z)
-    · exact tendsto_div_one (hF x Q2 z) (hF' x Q2 z)
-    · rw [mul_div_assoc', ← hprod, hprod', mul_div_cancel_right₀ _ (hF'₀ x Q2 ν z)]
+    · simpa only [Pi.div_def, div_one] using
+        (h.tendsto_one x Q2 z).div (h'.tendsto_one x Q2 z) one_ne_zero
+    · rw [mul_div_assoc', ← h.obs_eq, h'.obs_eq, mul_div_cancel_right₀ _ (hF'₀ x Q2 ν z)]
     · rw [div_div_cancel₀ (hF₀ x Q2 ν z)]
   · rintro ⟨g, hg₀, hg, hI', hF'⟩
     obtain rfl : I' = fun x Q2 ν z => I x Q2 ν z * g x Q2 ν z := by ext; exact hI' ..
     obtain rfl : F' = fun x Q2 ν z => F x Q2 ν z / g x Q2 ν z := by ext; exact hF' ..
-    exact IsNormalizedSplit.mul_div ⟨hprod, hF⟩ hg₀ hg
+    exact ⟨h.mul_div hg₀ hg, fun x Q2 ν z => div_ne_zero (hF₀ x Q2 ν z) (hg₀ x Q2 ν z)⟩
 
 /-- **The split is not unique without the independence assumption.** Let `l` eventually avoid the
 energy transfer `ν₁`; for `l = atTop` this holds for every `ν₁`. Every normalised split `(I, F)`
