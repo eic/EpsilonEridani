@@ -183,7 +183,8 @@ theorem singletVector_dotProduct (v : Species Flavor → R) : singletVector ⬝�
 
 theorem singlet_apply (v : Species Flavor → R) :
     singlet v = ∑ i, (v (quark i) + v (antiquark i)) := by
-  simp [← singletVector_dotProduct, dotProduct, sum_univ, Finset.sum_add_distrib]
+  rw [← singletVector_dotProduct, dotProduct]
+  simp [sum_univ, Finset.sum_add_distrib]
 
 /-- The quark singlet is invariant under charge conjugation of the vector. -/
 @[simp]
