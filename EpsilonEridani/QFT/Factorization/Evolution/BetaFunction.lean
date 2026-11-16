@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import EpsilonEridani.Mathematics.Algebra.Group.Units.Basic
 public import EpsilonEridani.Mathematics.RingTheory.PowerSeries.Basic
 public import EpsilonEridani.Mathematics.RingTheory.PowerSeries.Substitution
 import Mathlib.Tactic.LinearCombination
@@ -177,7 +178,7 @@ private theorem coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta (F : Su
   have h := congrArg (coeff 2) (subst_transformBeta F β)
   rw [coeff_two_subst F.constantCoeff_toPowerSeries,
     X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
-    coeff_add_mul_of_X_pow_dvd hβ _ 0] at h
+    coeff_mul_of_X_pow_dvd hβ _ 0] at h
   simp only [Finset.HasAntidiagonal.antidiagonal_zero, Finset.sum_singleton, coeff_derivative,
     smul_eq_mul, zero_add, Nat.cast_zero] at h
   rw [betaCoeff_def, betaCoeff_def]
@@ -191,7 +192,7 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta (F :
   have h := congrArg (coeff 3) (subst_transformBeta F β)
   rw [coeff_three_subst F.constantCoeff_toPowerSeries,
     X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
-    coeff_add_mul_of_X_pow_dvd hβ _ 1] at h
+    coeff_mul_of_X_pow_dvd hβ _ 1] at h
   simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
     Finset.sum_singleton, coeff_derivative, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one] at h
   have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
@@ -212,7 +213,7 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta (F :
   have h := congrArg (coeff 4) (subst_transformBeta F β)
   rw [coeff_four_subst F.constantCoeff_toPowerSeries,
     X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
-    coeff_add_mul_of_X_pow_dvd hβ _ 2] at h
+    coeff_mul_of_X_pow_dvd hβ _ 2] at h
   simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
     Finset.sum_singleton, coeff_derivative, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one,
     Nat.cast_add] at h
@@ -227,15 +228,17 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta (F :
 `u = F'(0)`. -/
 theorem betaCoeff_zero_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta F β) 0 = ↑(SubstGroup.linearCoeff F)⁻¹ * betaCoeff β 0 :=
-  (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F)).mpr
-    (coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ)
+  (Units.eq_inv_mul_iff_mul_eq _).mpr <| by
+    rw [SubstGroup.coe_linearCoeff]
+    exact coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
 
 /-- The two-loop coefficient under a redefinition of the coupling: `β₁' = u⁻² β₁`, where
 `u = F'(0)`. -/
 theorem betaCoeff_one_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
     betaCoeff (transformBeta F β) 1 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 2 * betaCoeff β 1 :=
-  (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F ^ 2)).mpr
-    (coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ)
+  (Units.eq_inv_pow_mul_iff_pow_mul_eq _ 2).mpr <| by
+    rw [SubstGroup.coe_linearCoeff]
+    exact coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
 
 /-- The three-loop coefficient under a redefinition `F(a) = u a + c₁ a² + c₂ a³ + ⋯` of the
 coupling: `β₂' = u⁻⁵ (u² β₂ - u c₁ β₁ + (u c₂ - c₁²) β₀)`. -/
@@ -245,8 +248,9 @@ theorem betaCoeff_two_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X 
         coeff 1 F.toPowerSeries * coeff 2 F.toPowerSeries * betaCoeff β 1 +
         (coeff 1 F.toPowerSeries * coeff 3 F.toPowerSeries - coeff 2 F.toPowerSeries ^ 2) *
           betaCoeff β 0) :=
-  (Units.eq_inv_mul_iff_mul_eq (SubstGroup.linearCoeff F ^ 5)).mpr
-    (coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ)
+  (Units.eq_inv_pow_mul_iff_pow_mul_eq _ 5).mpr <| by
+    rw [SubstGroup.coe_linearCoeff]
+    exact coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ
 
 /-! ### Scheme independence -/
 
@@ -349,7 +353,7 @@ private theorem pow_mul_betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β 
 theorem betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β : R⟦X⟧) (n : ℕ) :
     betaCoeff (transformBeta (SubstGroup.rescale u) β) n =
       (↑u⁻¹ : R) ^ (n + 1) * betaCoeff β n :=
-  (Units.eq_inv_mul_iff_mul_eq (u ^ (n + 1))).mpr
+  (Units.eq_inv_pow_mul_iff_pow_mul_eq u (n + 1)).mpr
     (pow_mul_betaCoeff_transformBeta_substGroupRescale u β n)
 
 end Evolution
