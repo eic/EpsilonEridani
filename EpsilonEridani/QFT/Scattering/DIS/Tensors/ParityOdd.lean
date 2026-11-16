@@ -147,8 +147,8 @@ end ParityOddAssumptions
 /-- The zero tensor satisfies the parity-odd assumptions. -/
 lemma parityOddAssumptions_zero (g : Bilin V) (K : DisKinematics V) :
     ParityOddAssumptions g K 0 where
-  proper_covariant _ _ _ _ _ := rfl
-  conserved_left _ := rfl
+  proper_covariant _ _ _ _ _ := by simp
+  conserved_left _ := by simp
   isAlt := LinearMap.BilinForm.isAlt_zero
 
 /-- **The antisymmetric part of a conserved covariant tensor is parity-odd.** For any hadronic
@@ -229,15 +229,19 @@ lemma eq_zero_iff (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
   ⟨fun h => by simp [h],
     fun h => hW.eq_of_apply_e₁_e₂_eq hSymm hP (parityOddAssumptions_zero g K) h⟩
 
+/-- A non-zero parity-odd tensor has non-zero spectator component `W e₁ e₂`. -/
+lemma apply_e₁_e₂_ne_zero (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
+    (hW : ParityOddAssumptions g K W) (hW0 : W ≠ 0) : W hP.e₁ hP.e₂ ≠ 0 :=
+  fun h => hW0 ((hW.eq_zero_iff hSymm hP).mpr h)
+
 /-- **The parity-odd sector is at most one-dimensional.** Under a `SpectatorPlane`, every
 parity-odd tensor is the multiple `W e₁ e₂ / A e₁ e₂` of a fixed non-zero one `A`. -/
 theorem eq_div_smul (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     (hW : ParityOddAssumptions g K W) {A : Bilin V} (hA : ParityOddAssumptions g K A)
     (hA0 : A ≠ 0) : W = (W hP.e₁ hP.e₂ / A hP.e₁ hP.e₂) • A := by
-  have hAe : A hP.e₁ hP.e₂ ≠ 0 := fun h => hA0 ((hA.eq_zero_iff hSymm hP).mpr h)
   refine hW.eq_of_apply_e₁_e₂_eq hSymm hP (hA.smul _) ?_
   simp only [LinearMap.smul_apply, smul_eq_mul]
-  field_simp
+  field_simp [hA.apply_e₁_e₂_ne_zero hSymm hP hA0]
 
 /-- Under a `SpectatorPlane`, every parity-odd tensor is a multiple of a fixed non-zero one
 `A`, with a unique coefficient. The coefficient is relative to the chosen normalisation of
@@ -247,11 +251,10 @@ the real model. -/
 theorem existsUnique_eq_smul (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
     (hW : ParityOddAssumptions g K W) {A : Bilin V} (hA : ParityOddAssumptions g K A)
     (hA0 : A ≠ 0) : ∃! c : ℝ, W = c • A := by
-  have hAe : A hP.e₁ hP.e₂ ≠ 0 := fun h => hA0 ((hA.eq_zero_iff hSymm hP).mpr h)
   refine ⟨_, hW.eq_div_smul hSymm hP hA hA0, ?_⟩
   rintro c rfl
   simp only [LinearMap.smul_apply, smul_eq_mul]
-  field_simp
+  field_simp [hA.apply_e₁_e₂_ne_zero hSymm hP hA0]
 
 /-- **Parity conservation removes the parity-odd sector.** Under a `SpectatorSplitting` in
 which every non-zero spectator is non-null, a parity-odd tensor

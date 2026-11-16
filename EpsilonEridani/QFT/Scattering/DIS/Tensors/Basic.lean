@@ -200,7 +200,8 @@ lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u �
     LinearMap.det (reflect g u) = -1 := by
   have h : reflect g u = LinearMap.transvection (-(2 * (g u u)⁻¹) • g u) u := by
     ext v
-    simp [LinearMap.transvection.apply, sub_eq_add_neg, neg_smul, mul_assoc]
+    rw [reflect_apply, LinearMap.transvection.apply, LinearMap.smul_apply, smul_eq_mul]
+    module
   rw [h, LinearMap.transvection.det, LinearMap.smul_apply, smul_eq_mul]
   field_simp
   ring
