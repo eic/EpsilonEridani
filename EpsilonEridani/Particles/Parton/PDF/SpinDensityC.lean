@@ -100,8 +100,8 @@ variable (ρ : SpinDensityC)
 
 /-- The diagonal entries of the helicity-amplitude matrix are real: they are number densities. -/
 @[simp]
-lemma coe_re_mat_apply_self (i : Fin 4) : ((ρ.mat i i).re : ℂ) = ρ.mat i i :=
-  ρ.posSemidef.1.coe_re_apply_self i
+lemma coe_re_mat_apply_self (i : Fin 4) : ((ρ.mat i i).re : ℂ) = ρ.mat i i := by
+  simpa using ρ.posSemidef.1.coe_re_apply_self i
 
 /-- The helicity-amplitude matrix is hermitian: conjugating an entry gives the transposed
 entry. -/
