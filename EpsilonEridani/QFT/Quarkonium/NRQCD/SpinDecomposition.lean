@@ -6,6 +6,7 @@ Authors: The EpsilonEridani contributors
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.TensorProduct.Symmetrizer
+public import EpsilonEridani.QuantumMechanics.AngularMomentum.AdditionExtensions
 public import EpsilonEridani.QuantumMechanics.AngularMomentum.SpinHalf
 public import Mathlib.LinearAlgebra.Trace
 
@@ -25,12 +26,13 @@ projector is the antisymmetrizer `(1 - P₁₂) / 2` and the triplet projector t
 `(1 + P₁₂) / 2` of `ℂ² ⊗ ℂ²`, so the general results on `TensorProduct.antisymmetrizer` and
 `TensorProduct.symmetrizer` apply to them: they are complete orthogonal idempotents onto the
 antisymmetric and symmetric tensors, and the exchange acts on them by `-1` and `1`. Both commute
-with the diagonal action `diagEnd X X = X ⊗ 1 + 1 ⊗ X` of every operator `X` on `ℂ²`
-(`PhyslibAlpha.Sl2.commute_diagEnd_antisymmetrizer`, `PhyslibAlpha.Sl2.commute_diagEnd_symmetrizer`,
-stated for the tensor square of any vector space). This is the form in
-which the total spin acts: the component `(tensor spinHalfRep spinHalfRep).Jx` is by definition
-`diagEnd spinHalfRep.Jx spinHalfRep.Jx`, and likewise for `Jy` and `Jz`. Specific to spin `1/2`
-are
+with the diagonal action `X ⊗ 1 + 1 ⊗ X` of every operator `X` on `ℂ²`
+(`TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer`,
+`TensorProduct.commute_rTensor_add_lTensor_symmetrizer`, stated for the tensor square of any
+module). This is the form in which the total spin acts: the component
+`(tensor spinHalfRep spinHalfRep).Jx` is `diagEnd spinHalfRep.Jx spinHalfRep.Jx`
+(`PhyslibAlpha.Sl2.AngularMomentumRepresentation.tensor_Jx`), and likewise for `Jy` and `Jz`, so
+both channels are invariant under the total spin. Specific to spin `1/2` are
 
 * the traces `1` and `3` of the two projectors, which over `ℂ` are the dimensions of the two
   channels (that rank statement is not formalised here);
@@ -60,6 +62,8 @@ symmetry that distinguishes them. Its colour counterpart, whose structure this f
 ## Main results
 
 * `trace_spinSingletProj`, `trace_spinTripletProj`: the traces `1` and `3`.
+* `commute_Jx_tensor_spinHalfRep_spinSingletProj`, `commute_Jx_tensor_spinHalfRep_spinTripletProj`
+  and their `Jy`, `Jz` analogues: both channels are invariant under the total spin.
 * `Jsq_tensor_spinHalfRep_mul_spinSingletProj`, `Jsq_tensor_spinHalfRep_mul_spinTripletProj`:
   the total spin squared is `0` on the singlet channel and `2` on the triplet channel.
 * `Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
@@ -121,6 +125,44 @@ theorem trace_spinTripletProj :
     LinearMap.trace ℂ (ℂ² ⊗[ℂ] ℂ²) spinTripletProj = 3 := by
   rw [spinTripletProj, trace_symmetrizer, finrank_euclideanSpace_fin, invOf_eq_inv]
   norm_num
+
+/-! ### Invariance under the total spin -/
+
+/-- The singlet channel is invariant under the `x`-component of the total spin. -/
+theorem commute_Jx_tensor_spinHalfRep_spinSingletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinSingletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jx, diagEnd]
+  exact commute_rTensor_add_lTensor_antisymmetrizer _
+
+/-- The singlet channel is invariant under the `y`-component of the total spin. -/
+theorem commute_Jy_tensor_spinHalfRep_spinSingletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinSingletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jy, diagEnd]
+  exact commute_rTensor_add_lTensor_antisymmetrizer _
+
+/-- The singlet channel is invariant under the `z`-component of the total spin. -/
+theorem commute_Jz_tensor_spinHalfRep_spinSingletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinSingletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jz, diagEnd]
+  exact commute_rTensor_add_lTensor_antisymmetrizer _
+
+/-- The triplet channel is invariant under the `x`-component of the total spin. -/
+theorem commute_Jx_tensor_spinHalfRep_spinTripletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinTripletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jx, diagEnd]
+  exact commute_rTensor_add_lTensor_symmetrizer _
+
+/-- The triplet channel is invariant under the `y`-component of the total spin. -/
+theorem commute_Jy_tensor_spinHalfRep_spinTripletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinTripletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jy, diagEnd]
+  exact commute_rTensor_add_lTensor_symmetrizer _
+
+/-- The triplet channel is invariant under the `z`-component of the total spin. -/
+theorem commute_Jz_tensor_spinHalfRep_spinTripletProj :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinTripletProj := by
+  rw [AngularMomentumRepresentation.tensor_Jz, diagEnd]
+  exact commute_rTensor_add_lTensor_symmetrizer _
 
 /-! ### The total spin squared -/
 

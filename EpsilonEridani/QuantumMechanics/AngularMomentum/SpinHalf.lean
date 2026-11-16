@@ -28,8 +28,8 @@ TensorProduct.comm` swaps the two tensor factors, gives the scalar product of th
 `S² = S(1)² + S(2)² + 2 S(1) · S(2) = 1 + P₁₂`, twice the symmetrizer `TensorProduct.symmetrizer`
 of `ℂ² ⊗ ℂ²`. The total spin acts on a tensor square through the diagonal action
 `diagEnd X X = X ⊗ 1 + 1 ⊗ X`, which commutes with the symmetrizer and the antisymmetrizer of the
-tensor square of any vector space (`PhyslibAlpha.Sl2.commute_diagEnd_symmetrizer`,
-`PhyslibAlpha.Sl2.commute_diagEnd_antisymmetrizer`).
+tensor square of any module (`TensorProduct.commute_rTensor_add_lTensor_symmetrizer`,
+`TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer`).
 
 ## Implementation notes
 
@@ -51,9 +51,6 @@ states or rewrites with them must enable it with
   `PhyslibAlpha.Sl2.lie_spinGen_two_zero`: the su(2) commutation relations.
 * `PhyslibAlpha.Sl2.Jsq_spinHalfRep`: `J² = 3/4` for spin `1/2`.
 * `PhyslibAlpha.Sl2.dot_spinHalfRep_spinHalfRep`: `S(1) · S(2) = (2 P₁₂ - 1) / 4` on `ℂ² ⊗ ℂ²`.
-* `PhyslibAlpha.Sl2.commute_diagEnd_symmetrizer`,
-  `PhyslibAlpha.Sl2.commute_diagEnd_antisymmetrizer`: the diagonal action of an endomorphism
-  commutes with the two projectors of a tensor square.
 * `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`: the total spin squared of two spin-`1/2` systems is
   twice the symmetrizer of `ℂ² ⊗ ℂ²`.
 -/
@@ -159,28 +156,6 @@ theorem dot_spinHalfRep_spinHalfRep :
   module
 
 /-! ### Two spin-`1/2` systems -/
-
-section Diagonal
-
-variable {K M : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup M] [Module K M]
-
-/-- The diagonal action `f ⊗ 1 + 1 ⊗ f` of an endomorphism `f` of `M`, in the `diagEnd` form in
-which `AngularMomentumRepresentation.tensor` builds the total angular momentum, commutes with the
-symmetrizer of `M ⊗ M`. -/
-theorem commute_diagEnd_symmetrizer (f : Module.End K M) :
-    Commute (diagEnd f f) (TensorProduct.symmetrizer K M) := by
-  rw [diagEnd]
-  exact TensorProduct.commute_rTensor_add_lTensor_symmetrizer f
-
-/-- The diagonal action `f ⊗ 1 + 1 ⊗ f` of an endomorphism `f` of `M`, in the `diagEnd` form in
-which `AngularMomentumRepresentation.tensor` builds the total angular momentum, commutes with the
-antisymmetrizer of `M ⊗ M`. -/
-theorem commute_diagEnd_antisymmetrizer (f : Module.End K M) :
-    Commute (diagEnd f f) (TensorProduct.antisymmetrizer K M) := by
-  rw [diagEnd]
-  exact TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer f
-
-end Diagonal
 
 /-- The total spin squared `S² = Σᵢ Sᵢ Sᵢ` of two spin-`1/2` systems is twice the symmetrizer of
 `ℂ² ⊗ ℂ²`: `S² = 1 + P₁₂ = 2 • symmetrizer`, where `P₁₂` exchanges the two spins. -/

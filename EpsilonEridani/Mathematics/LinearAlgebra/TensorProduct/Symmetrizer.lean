@@ -87,9 +87,8 @@ variable {R M}
 commutes with the exchange of the two factors. -/
 theorem commute_rTensor_add_lTensor_comm (f : Module.End R M) :
     Commute (f.rTensor M + f.lTensor M) (TensorProduct.comm R M M).toLinearMap := by
-  rw [Commute, SemiconjBy, Module.End.mul_eq_comp, Module.End.mul_eq_comp]
-  refine TensorProduct.ext' fun a b ↦ ?_
-  simp [add_comm]
+  rw [Commute, SemiconjBy, Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.add_comp,
+    LinearMap.comp_add, LinearMap.rTensor_comp_comm, LinearMap.lTensor_comp_comm, add_comm]
 
 end Semiring
 
