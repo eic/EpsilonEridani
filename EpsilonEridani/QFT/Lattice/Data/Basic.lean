@@ -277,6 +277,11 @@ theorem covarianceForm_apply (c c' : ι → ℝ) :
   classical
   exact Matrix.toBilin'_apply' _ _ _
 
+/-- The covariance form is the bilinear form `Matrix.toBilin'` of the covariance matrix, for any
+choice of decidable equality on the index type. -/
+theorem covarianceForm_def [DecidableEq ι] : D.covarianceForm = Matrix.toBilin' D.covariance :=
+  LinearMap.ext₂ fun c c' => by rw [covarianceForm_apply, Matrix.toBilin'_apply']
+
 /-- The covariance of two functionals is symmetric. -/
 theorem covarianceForm_comm (c c' : ι → ℝ) : D.covarianceForm c c' = D.covarianceForm c' c := by
   simpa [covarianceForm_apply] using
@@ -293,6 +298,11 @@ noncomputable def variance : QuadraticForm ℝ (ι → ℝ) :=
 theorem variance_apply (c : ι → ℝ) : D.variance c = c ⬝ᵥ D.covariance *ᵥ c := by
   classical
   exact Matrix.toQuadraticForm'_apply _ _
+
+/-- The variance is the quadratic form `Matrix.toQuadraticForm'` of the covariance matrix, for any
+choice of decidable equality on the index type. -/
+theorem variance_def [DecidableEq ι] : D.variance = Matrix.toQuadraticForm' D.covariance :=
+  QuadraticMap.ext fun c => by rw [variance_apply, Matrix.toQuadraticForm'_apply]
 
 /-- The covariance of a functional with itself is its variance. -/
 @[simp]

@@ -81,9 +81,6 @@ theorem covarianceMatrix_eq_covMatrix_map [Countable ι] (hX : ∀ i, AEMeasurab
   ext i j
   have h := covariance_map_fun (X := fun z : EuclideanSpace ℝ ι => z i) (Y := fun z => z j)
     (by fun_prop) (by fun_prop) hmeas
-  -- `WithLp` is a structure, so the coordinate `WithLp.ofLp (WithLp.toLp 2 (X · ω)) i` of the
-  -- pulled-back projection reduces to `X i ω` by projection reduction.
-  dsimp only at h
   rw [covarianceMatrix_apply, TauCeti.covMatrix_apply, h]
 
 /-- The covariance matrix is symmetric. -/
