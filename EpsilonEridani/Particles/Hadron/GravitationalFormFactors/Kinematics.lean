@@ -352,7 +352,7 @@ theorem exists_isBreitFrame :
     have h := LorentzGroup.generalizedBoost_apply_fst ⟨m⁻¹ • P, hu⟩ 0
     rw [← hΛ, smul_comm] at h
     rw [← h, smul_smul, mul_inv_cancel₀ hm0.ne', one_smul]
-  -- the rest velocity has no spatial part, by `‖u⃗‖² = (u⁰)² - 1`
+  -- the rest velocity has no spatial part, by `‖u.spatialPart‖² = (u⁰)² - 1`
   have hz : (0 : Velocity d).1.spatialPart = 0 := by
     have h := Velocity.norm_spatialPart_sq_eq (0 : Velocity d)
     have h1 : (0 : Velocity d).1 (Sum.inl 0) = 1 := Velocity.zero_timeComponent
