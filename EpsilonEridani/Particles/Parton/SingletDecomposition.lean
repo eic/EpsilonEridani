@@ -352,7 +352,7 @@ theorem finrank_nonSingletSector [Fintype Flavor] :
   classical
   rcases isEmpty_or_nonempty Flavor with hF | hF
   · -- Without flavours the gluon is the only species, and its component vanishes.
-    rw [Fintype.card_eq_zero, Submodule.finrank_eq_zero, eq_bot_iff]
+    rw [Fintype.card_eq_zero, Nat.mul_zero, Nat.zero_sub, Submodule.finrank_eq_zero, eq_bot_iff]
     intro v hv
     rw [Submodule.mem_bot]
     ext s
@@ -516,9 +516,7 @@ theorem singletGluon_flavorBlindMatrix_mulVec (v : Species Flavor → R) :
     singletGluon (flavorBlindMatrix qq qg gq gg *ᵥ v) =
       singletGluonMatrix qq qg gq gg (Fintype.card Flavor) *ᵥ singletGluon v := by
   rw [singletGluon_apply, singletGluon_apply, singlet_flavorBlindMatrix_mulVec,
-    flavorBlindMatrix_mulVec_gluon]
-  ext k
-  fin_cases k <;> simp [mulVec, dotProduct, Fin.sum_univ_two]
+    flavorBlindMatrix_mulVec_gluon, singletGluonMatrix_mulVec]
 
 /-- **Non-singlet vectors are eigenvectors.** A flavour-blind kernel acts on the non-singlet
 sector as multiplication by its quark-quark entry: the gluon does not mix with it. -/
