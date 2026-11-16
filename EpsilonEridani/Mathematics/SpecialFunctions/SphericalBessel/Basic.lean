@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import EpsilonEridani.Mathematics.Calculus.EvenFunction
 public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Sinc
-public import EpsilonEridani.Mathematics.Topology.Instances.Real
+public import EpsilonEridani.Mathematics.Topology.Algebra.GroupWithZero
 
 /-!
 # Spherical Bessel functions of the first kind
@@ -29,7 +29,8 @@ value `-f''(0)`, the limit of `-f' x / x` as `x → 0`.
 
 Mathlib's `Complex.besselJ` is the Bessel function of the first kind of complex order and
 argument. The spherical functions are its half-integer-order special case: `j_l(x)` is
-`√(π / (2 * x)) * Complex.besselJ (l + 1 / 2) x` away from the origin (DLMF §10.47). That
+`√(π / (2 * x)) * Complex.besselJ (l + 1 / 2) x` for `x > 0` (DLMF §10.47); on the negative
+half-line the principal branches of the two half-integer powers make that product `-j_l(x)`. That
 development is not the basis here: its analyticity is available on the slit plane
 `Complex.slitPlane` (`Complex.analyticAt_besselJ`), with the whole-plane form
 (`Complex.analyticAt_besselJ_int`) restricted to integer order, and it is complex-valued, so it
