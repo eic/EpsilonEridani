@@ -256,6 +256,13 @@ theorem IsNoiseModel.comp (h : D.IsNoiseModel X μ) (e : κ → ι) :
   ⟨h.isProbabilityMeasure, fun k => h.memLp (e k), fun k => h.integral_eq_value (e k), by
     rw [covarianceMatrix_comp, h.covarianceMatrix_eq, comp_covariance]⟩
 
+/-- A random vector is a noise model for at most one dataset: its means and covariance matrix
+determine the central values and the covariance. -/
+theorem IsNoiseModel.unique {D' : EuclideanDataset ι} (h : D.IsNoiseModel X μ)
+    (h' : D'.IsNoiseModel X μ) : D = D' :=
+  EuclideanDataset.ext (funext fun i => (h.integral_eq_value i).symm.trans (h'.integral_eq_value i))
+    (h.covarianceMatrix_eq.symm.trans h'.covarianceMatrix_eq)
+
 end NoiseModel
 
 end Finite
@@ -304,21 +311,26 @@ choice of decidable equality on the index type. -/
 theorem variance_def [DecidableEq ι] : D.variance = Matrix.toQuadraticForm' D.covariance :=
   QuadraticMap.ext fun c => by rw [variance_apply, Matrix.toQuadraticForm'_apply]
 
+/-- The variance is the quadratic form associated to the covariance form. -/
+theorem variance_eq_toQuadraticMap : D.variance = D.covarianceForm.toQuadraticMap :=
+  QuadraticMap.ext fun c => by
+    rw [variance_apply, LinearMap.BilinMap.toQuadraticMap_apply, covarianceForm_apply]
+
 /-- The covariance of a functional with itself is its variance. -/
 @[simp]
 theorem covarianceForm_self (c : ι → ℝ) : D.covarianceForm c c = D.variance c := by
-  rw [covarianceForm_apply, variance_apply]
-
-/-- The variance of a sum of functionals. -/
-theorem variance_add (c c' : ι → ℝ) :
-    D.variance (c + c') = D.variance c + 2 * D.covarianceForm c c' + D.variance c' := by
-  simp only [← covarianceForm_self, map_add, LinearMap.add_apply, D.covarianceForm_comm c' c]
-  ring
+  rw [variance_eq_toQuadraticMap, LinearMap.BilinMap.toQuadraticMap_apply]
 
 /-- The polar form of the variance is twice the covariance. -/
 theorem polar_variance (c c' : ι → ℝ) :
     QuadraticMap.polar D.variance c c' = 2 * D.covarianceForm c c' := by
-  rw [QuadraticMap.polar, variance_add]
+  rw [variance_eq_toQuadraticMap, LinearMap.BilinMap.polar_toQuadraticMap,
+    D.covarianceForm_comm c' c, two_mul]
+
+/-- The variance of a sum of functionals. -/
+theorem variance_add (c c' : ι → ℝ) :
+    D.variance (c + c') = D.variance c + 2 * D.covarianceForm c c' + D.variance c' := by
+  rw [← polar_variance, QuadraticMap.polar]
   ring
 
 /-- The variance of a multiple of a functional. -/
@@ -362,6 +374,14 @@ theorem mem_determinedSubspace {c : ι → ℝ} : c ∈ D.determinedSubspace ↔
 theorem mem_determinedSubspace_iff_variance_eq_zero {c : ι → ℝ} :
     c ∈ D.determinedSubspace ↔ D.variance c = 0 := by
   rw [mem_determinedSubspace, variance_eq_zero_iff]
+
+/-- A functional of a dataset reindexed along an injection is exactly determined when its extension
+by zero to the whole dataset is. -/
+theorem mem_comp_determinedSubspace [Fintype κ] {e : κ → ι} (he : Function.Injective e)
+    {c : κ → ℝ} :
+    c ∈ (D.comp e).determinedSubspace ↔ Function.extend e c 0 ∈ D.determinedSubspace := by
+  rw [mem_determinedSubspace_iff_variance_eq_zero, mem_determinedSubspace_iff_variance_eq_zero,
+    D.comp_variance he]
 
 /-- The covariance of an exactly determined functional with any functional is zero. -/
 theorem covarianceForm_eq_zero_of_mem_determinedSubspace {c : ι → ℝ}
