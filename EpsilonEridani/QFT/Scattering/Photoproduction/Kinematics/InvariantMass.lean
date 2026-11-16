@@ -18,9 +18,10 @@ photon:
 * its energy fraction `x = k / E_s` relative to the source (`PhotonKinematics.energyFraction`);
 * the invariant mass `W` of the photon–target system, `W² = (q + P)²`, which is the energy at
   which the photon–target cross section is evaluated;
-* the rapidity `y = (q + P).rapidity n` of the photon–target system along the beam axis, which is
-  the rapidity of whatever the photon and the target produce, and the rapidity the literature
-  attaches to the photon when it writes `k = (W / 2) e^{y}`.
+* the rapidity `y = (q + P).rapidity n` of the total photon–target four-momentum along the beam
+  axis, which is the rapidity of whatever the photon and the target produce. For a real photon and
+  a massless target it is the rapidity of the literature's `k = (W / 2) e^{y}`; for a target of
+  mass `M` the factor `(W² - M²) / W²` enters, `k = (W / 2) e^{y} (W² - M²) / W²`.
 
 This module relates the three by equalities between four-vector quantities rather than by
 convention.
@@ -31,8 +32,10 @@ convention.
 * For a photon of momentum `a` along the beam axis, of any virtuality, with `|a - p| < k + E`, the
   energy fraction is `x = (W cosh y - E) / E_s`
   (`PhotonKinematics.energyFraction_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_sub_div`).
-* A photon of energy `k > 0` and momentum `0 ≤ a` along the beam axis is real exactly when
-  `a = k` (`PhotonKinematics.isReal_iff_eq_energy_of_spatialPart_eq_smul`). For such a photon,
+* A photon of energy `k ≥ 0` and momentum `a` along the beam axis is real exactly when `|a| = k`
+  (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`, in
+  `EpsilonEridani.QFT.Scattering.Photoproduction.Kinematics.Basic`). For a photon null along the
+  beam axis, `a = k`,
   `W² = M² + 2 k (E + p)`
   (`PhotonKinematics.minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add`) and, with
   `|k - p| < k + E`, the energy fraction is `x = e^{y} (W² - M²) / (2 W E_s)`
@@ -92,26 +95,12 @@ theorem minkowskiProduct_add_self_eq_sub_virtuality (hq : q.timeComponent = γ.e
   rw [minkowskiProduct_add_self_of_spatialPart_eq_smul hP', hq, hP, hγ]
   ring
 
-/-- **A photon along the beam axis is real exactly when its momentum equals its energy.** A photon
-`γ` of four-momentum `q`, with `q⁰ = γ.energy > 0`, virtuality `Q² = -q²` and momentum `0 ≤ a`
-along the unit beam axis `n`, is real, `Q² = 0`, exactly when `a = γ.energy`, that is when `q` is
-null along `n`. -/
-theorem isReal_iff_eq_energy_of_spatialPart_eq_smul (hn : ‖n‖ = 1)
-    (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = a • n)
-    (hγ : γ.virtuality = -⟪q, q⟫ₘ) (ha : 0 ≤ a) (hk : 0 < γ.energy) :
-    γ.IsReal ↔ a = γ.energy := by
-  rw [isReal_iff, hγ, minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul hn hq', hq,
-    neg_eq_zero, mul_eq_zero]
-  constructor
-  · rintro (h | h) <;> linarith
-  · intro h
-    exact Or.inr (by rw [h, sub_self])
-
-/-- **The invariant mass of a real photon and a target.** A photon `γ` whose four-momentum `q` is
-null along the unit beam axis `n`, `q⁰ = γ.energy` and `q.spatialPart = γ.energy • n` (a real
-photon, by `isReal_iff_eq_energy_of_spatialPart_eq_smul`), and a target of energy `E` and momentum
+/-- **The invariant mass of a photon null along the beam axis and a target.** A photon `γ` whose
+four-momentum `q` is null along the unit beam axis `n`, `q⁰ = γ.energy` and
+`q.spatialPart = γ.energy • n`, and a target of energy `E` and momentum
 `p` against it form a system of invariant mass `W² = P² + 2 γ.energy (E + p)`, with `P² = M²` for a
-target of mass `M`. -/
+target of mass `M`. When moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real
+photon (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`). -/
 theorem minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add (hn : ‖n‖ = 1)
     (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n) :
@@ -132,17 +121,18 @@ theorem energyFraction_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_sub_d
     γ.energyFraction s = (√⟪q + P, q + P⟫ₘ * cosh ((q + P).rapidity n) - E) / s.energy := by
   -- the energy of the system is `γ.energy + E = W cosh y`
   rw [energyFraction_def,
-    ← add_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_of_spatialPart_eq_smul hn hq' hP'
-      (by rwa [hq, hP, ← sub_eq_add_neg]),
-    hq, hP, add_sub_cancel_right]
+    ← timeComponent_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_of_spatialPart_eq_smul hn
+      hq' hP' (by rwa [hq, hP, ← sub_eq_add_neg]),
+    timeComponent_add, hq, hP, add_sub_cancel_right]
 
-/-- **The energy fraction of a real photon from the invariant mass and the rapidity.** A photon
-`γ` whose four-momentum `q` is null along the unit beam axis `n`, `q⁰ = γ.energy` and
-`q.spatialPart = γ.energy • n` (a real photon, by `isReal_iff_eq_energy_of_spatialPart_eq_smul`),
-and a target of energy `E` and momentum `p` against it, with
-`|γ.energy - p| < γ.energy + E`, form a system of invariant mass `W` and rapidity `y` along `n`
-with `x = e^{y} (W² - P²) / (2 W E_s)`, where `x` is the fraction of the energy `E_s` of the source
-`s` carried by the photon and `P² = M²` for a target of mass `M`. -/
+/-- **The energy fraction of a photon null along the beam axis from the invariant mass and the
+rapidity.** A photon `γ` whose four-momentum `q` is null along the unit beam axis `n`,
+`q⁰ = γ.energy` and `q.spatialPart = γ.energy • n`, and a target of energy `E` and momentum `p`
+against it, with `|γ.energy - p| < γ.energy + E`, form a system of invariant mass `W` and rapidity
+`y` along `n` with `x = e^{y} (W² - P²) / (2 W E_s)`, where `x` is the fraction of the energy
+`E_s` of the source `s` carried by the photon and `P² = M²` for a target of mass `M`. When
+moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real photon
+(`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`). -/
 theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_self
     (hn : ‖n‖ = 1) (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n)
@@ -154,9 +144,9 @@ theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_sel
   have hW := minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add hn hq hq' hP hP'
   -- `E + p = W e^{-y}`
   have hB :=
-    add_sub_eq_sqrt_minkowskiProduct_add_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul hn hq'
-      hP' h'
-  rw [hq, hP] at hB
+    timeComponent_sub_eq_sqrt_minkowskiProduct_add_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul
+      hn hq' hP' h'
+  rw [timeComponent_add, hq, hP] at hB
   have hpos := sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul hn hq' hP' h'
   have he : exp ((q + P).rapidity n) * exp (-(q + P).rapidity n) = 1 := by
     rw [← exp_add, add_neg_cancel, exp_zero]

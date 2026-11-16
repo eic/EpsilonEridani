@@ -21,9 +21,11 @@ companion to `Lorentz.Vector.minkowskiProduct_add_self`; the product
 `u.spatialPart = a • n` and a unit vector `n` is `u⁰ v⁰ - a b`, and the resulting square
 `⟪u + v, u + v⟫ₘ = ⟪u, u⟫ₘ + ⟪v, v⟫ₘ + 2 (u⁰ v⁰ - b ⟪u.spatialPart, n⟫)` of a sum; the factorisation
 `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial part is `a • n`
-along a unit vector `n` into its light-cone components, its nullness when `v⁰ = a`, and its form
+along a unit vector `n` into its light-cone components, its nullness exactly when `|a| = |v⁰|`,
+and its form
 `(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component along `n`; the positivity of `√⟪v, v⟫ₘ`
-inside the forward light cone `‖v.spatialPart‖ < v⁰`, so in particular when `|a| < v⁰`; the
+inside the forward light cone `‖v.spatialPart‖ < v⁰`, so in particular when `|a| < v⁰`, also for
+a sum of two such vectors; the
 length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass
 shell `⟪p, p⟫ₘ = m²`; and, in at least two spatial dimensions, the existence of two vectors on the
 mass shell with prescribed energies above the mass and a prescribed angle between their spatial
@@ -90,6 +92,14 @@ theorem minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul {d : ℕ} {v
   rw [minkowskiProduct_eq_mul_sub_mul_of_spatialPart_eq_smul hn hv hv]
   ring
 
+/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, is null exactly when
+`|a| = |v⁰|`. -/
+theorem minkowskiProduct_self_eq_zero_iff_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v, v⟫ₘ = 0 ↔ |a| = |v.timeComponent| := by
+  rw [minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul hn hv, ← sq_sub_sq, sub_eq_zero,
+    sq_eq_sq_iff_abs_eq_abs, eq_comm]
+
 /-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
 null: `⟪v, v⟫ₘ = 0`. -/
 theorem minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul {d : ℕ}
@@ -110,6 +120,16 @@ theorem sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul {d : ℕ} {v : Vec
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
     (h : |a| < v.timeComponent) : 0 < √⟪v, v⟫ₘ :=
   sqrt_minkowskiProduct_self_pos (by rwa [hv, norm_smul, hn, mul_one, Real.norm_eq_abs])
+
+/-- Two four-vectors whose spatial parts are `a • n` and `b • n`, for a unit vector `n`, with
+`|a + b| < u⁰ + v⁰` form a system of positive invariant mass: `0 < √⟪u + v, u + v⟫ₘ`. -/
+theorem sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a b : ℝ} (hu : u.spatialPart = a • n)
+    (hv : v.spatialPart = b • n) (h : |a + b| < u.timeComponent + v.timeComponent) :
+    0 < √⟪u + v, u + v⟫ₘ := by
+  rw [← timeComponent_add] at h
+  exact sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul hn
+    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) h
 
 /-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
 `(v⁰)² - ⟪v.spatialPart, n⟫²`, the square of its time component minus the square of its
