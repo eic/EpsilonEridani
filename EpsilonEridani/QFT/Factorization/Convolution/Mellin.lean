@@ -442,7 +442,8 @@ Euler's beta integral.
 
 -/
 
-/-- The Mellin transform of the Beta density converges on the half plane `1 - a < Re N`. -/
+/-- For `0 < b`, the Mellin transform of the Beta density converges on the half plane
+`1 - a < Re N`. -/
 theorem mellinDisConvergent_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ}
     (hN : 0 < N.re + a - 1) :
     MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N := by

@@ -33,7 +33,7 @@ distribution with shape parameters `1` and `β`, so the radiator is a constant m
 The Mellin moments of the radiator are a ratio of Gamma functions
 (`mellinDis_exponentiatedRadiator`):
 
-  `∫_{(0,1]} z ^ (N - 1) D(z) dz = exp (β (3/4 - γ_E)) Γ(N) / Γ(N + β)`,  `0 < Re N`.
+  `∫_{(0,1]} z ^ (N - 1) D(z) dz = exp (β (3/4 - γ_E)) Γ(N) / Γ(N + β)`,  `0 < β`, `0 < Re N`.
 
 Since `Γ(N) / Γ(N + β) ~ N ^ (-β)` as `N → ∞`, these moments agree at large `N` with those of the
 leading-logarithmic solution of the QED evolution equation, whose diagonal anomalous dimension
@@ -123,7 +123,8 @@ lemma measurable_exponentiatedRadiator (β : ℝ) : Measurable (exponentiatedRad
   rw [exponentiatedRadiator_def]
   exact (measurable_betaPDFReal 1 β).const_mul _
 
-/-- The Mellin transform of the exponentiated radiator converges on the half plane `0 < Re N`. -/
+/-- For `0 < β`, the Mellin transform of the exponentiated radiator converges on the half plane
+`0 < Re N`. -/
 theorem mellinDisConvergent_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) {N : ℂ}
     (hN : 0 < N.re) : MellinDisConvergent (exponentiatedRadiator β) N := by
   rw [exponentiatedRadiator_def]
@@ -140,7 +141,7 @@ lemma integrable_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
   (integrableOn_exponentiatedRadiator hβ).integrable_of_forall_notMem_eq_zero fun _ hz =>
     exponentiatedRadiator_of_notMem_Ioo fun h => hz (Ioo_subset_Ioc_self h)
 
-/-- **Mellin moments of the exponentiated radiator.** On the half plane `0 < Re N`,
+/-- **Mellin moments of the exponentiated radiator.** For `0 < β`, on the half plane `0 < Re N`,
 `∫_{(0,1]} z ^ (N - 1) D(z) dz = exp (β (3/4 - γ_E)) Γ(N) / Γ(N + β)`. -/
 theorem mellinDis_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) {N : ℂ} (hN : 0 < N.re) :
     mellinDis (exponentiatedRadiator β) N =
@@ -156,7 +157,7 @@ theorem mellinDis_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) {N : ℂ} (hN 
   rw [Complex.Gamma_one, add_sub_cancel_right, show N + 1 + (β : ℂ) - 1 = N + β by ring]
   field_simp
 
-/-- **The zeroth moment of the exponentiated radiator.**
+/-- **The zeroth moment of the exponentiated radiator.** For `0 < β`,
 `∫_{(0,1]} D(z) dz = exp (β (3/4 - γ_E)) / Γ(1 + β)`. -/
 theorem integral_exponentiatedRadiator {β : ℝ} (hβ : 0 < β) :
     ∫ z in Ioc (0 : ℝ) 1, exponentiatedRadiator β z =
