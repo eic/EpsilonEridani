@@ -16,10 +16,14 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtension
 
 Facts about `Physlib`'s Minkowski product that the kinematics of an emission process uses: the
 expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`,
-companion to `Lorentz.Vector.minkowskiProduct_add_self`; the factorisation
+companion to `Lorentz.Vector.minkowskiProduct_add_self`; the product
+`⟪u, v⟫ₘ = u⁰ v⁰ - b ⟪u.spatialPart, n⟫` with a vector whose spatial part is `b • n`, which for
+`u.spatialPart = a • n` and a unit vector `n` is `u⁰ v⁰ - a b`; the factorisation
 `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial part is `a • n`
 along a unit vector `n` into its light-cone components, its nullness when `v⁰ = a`, and its form
-`(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component along `n`; the positivity of `√⟪v, v⟫ₘ`
+`(v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component along `n`; the square
+`⟪u + v, u + v⟫ₘ = 4 u⁰ v⁰` of the sum of two null vectors, one along and one against `n`; the
+positivity of `√⟪v, v⟫ₘ`
 inside the forward light cone `‖v.spatialPart‖ < v⁰`, so in particular when `|a| < v⁰`; the
 length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on the mass
 shell `⟪p, p⟫ₘ = m²`; and, in at least two spatial dimensions, the existence of two vectors on the
@@ -53,13 +57,29 @@ lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vecto
     ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - ⟪p, p⟫ₘ) := by
   rw [minkowskiProduct_self_eq_sq_sub, sub_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
 
+/-- The Minkowski product with a four-vector whose spatial part is `b • n` sees only the
+component of the other spatial part along `n`: `⟪u, v⟫ₘ = u⁰ v⁰ - b ⟪u.spatialPart, n⟫`, for any
+`n`. -/
+theorem minkowskiProduct_eq_sub_mul_inner_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} {b : ℝ} (hv : v.spatialPart = b • n) :
+    ⟪u, v⟫ₘ = u.timeComponent * v.timeComponent - b * ⟪u.spatialPart, n⟫_ℝ := by
+  rw [minkowskiProduct_eq_timeComponent_spatialPart, hv, real_inner_smul_right]
+
+/-- The Minkowski product of two four-vectors whose spatial parts are `a • n` and `b • n`, for a
+unit vector `n`, is `⟪u, v⟫ₘ = u⁰ v⁰ - a b`. -/
+theorem minkowskiProduct_eq_mul_sub_mul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a b : ℝ} (hu : u.spatialPart = a • n)
+    (hv : v.spatialPart = b • n) :
+    ⟪u, v⟫ₘ = u.timeComponent * v.timeComponent - a * b := by
+  rw [minkowskiProduct_eq_sub_mul_inner_of_spatialPart_eq_smul hv,
+    inner_spatialPart_eq_of_spatialPart_eq_smul hn hu, mul_comm b a]
+
 /-- The Minkowski square of a four-vector whose spatial part is `a • n`, for a unit vector `n`, is
 the product `(v⁰ + a) (v⁰ - a)` of its light-cone components along `n`. -/
 theorem minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
     ⟪v, v⟫ₘ = (v.timeComponent + a) * (v.timeComponent - a) := by
-  rw [minkowskiProduct_self_eq_sq_sub, hv]
-  simp only [norm_smul, hn, Real.norm_eq_abs, mul_one, sq_abs]
+  rw [minkowskiProduct_eq_mul_sub_mul_of_spatialPart_eq_smul hn hv hv]
   ring
 
 /-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
@@ -91,6 +111,18 @@ theorem minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul {d : ℕ
     ⟪v, v⟫ₘ = v.timeComponent ^ 2 - ⟪v.spatialPart, n⟫_ℝ ^ 2 := by
   rw [minkowskiProduct_self_eq_mul_of_spatialPart_eq_smul hn hv,
     inner_spatialPart_eq_of_spatialPart_eq_smul hn hv, sq_sub_sq]
+
+/-- Two null four-vectors, one along and one against a unit vector `n`, have
+`⟪u + v, u + v⟫ₘ = 4 u⁰ v⁰`: the invariant mass of two massless particles colliding head-on is
+`√(4 u⁰ v⁰)`. -/
+theorem minkowskiProduct_add_self_eq_four_mul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) (hu : u.spatialPart = u.timeComponent • n)
+    (hv : v.spatialPart = -v.timeComponent • n) :
+    ⟪u + v, u + v⟫ₘ = 4 * u.timeComponent * v.timeComponent := by
+  rw [minkowskiProduct_add_self, minkowskiProduct_eq_mul_sub_mul_of_spatialPart_eq_smul hn hu hu,
+    minkowskiProduct_eq_mul_sub_mul_of_spatialPart_eq_smul hn hu hv,
+    minkowskiProduct_eq_mul_sub_mul_of_spatialPart_eq_smul hn hv hv]
+  ring
 
 end Vector
 end Lorentz

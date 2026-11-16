@@ -20,12 +20,10 @@ Facts about `Physlib`'s elementary Lorentz-vector API, companions to
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
 * The additivity of the time component and of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and
-  `(u + v).spatialPart = u.spatialPart + v.spatialPart`, with the time component of a sum of
-  vectors of prescribed time components (`timeComponent_add_eq_add_of_timeComponent_eq`); the
-  closure of collinearity under sums,
-  `(u + v).spatialPart = (a + b) • n` when `u.spatialPart = a • n` and `v.spatialPart = b • n`,
-  and its form `(a - b) • n` for a vector against `n`; and the component
-  `⟪v.spatialPart, n⟫ = a` along a unit vector `n` of the spatial part `a • n` of a four-vector.
+  `(u + v).spatialPart = u.spatialPart + v.spatialPart`; the closure of collinearity under sums,
+  `(u + v).spatialPart = (a + b) • n` when `u.spatialPart = a • n` and `v.spatialPart = b • n`;
+  and the component `⟪v.spatialPart, n⟫ = a` along a unit vector `n` of the spatial part `a • n`
+  of a four-vector.
 -/
 
 public section
@@ -87,11 +85,6 @@ lemma spatialPart_add {d : ℕ} (u v : Vector d) :
   ext i
   simp
 
-/-- The time component of a sum of four-vectors with time components `a` and `b` is `a + b`. -/
-theorem timeComponent_add_eq_add_of_timeComponent_eq {d : ℕ} {u v : Vector d} {a b : ℝ}
-    (hu : u.timeComponent = a) (hv : v.timeComponent = b) : (u + v).timeComponent = a + b := by
-  rw [timeComponent_add, hu, hv]
-
 /-- The spatial part of a sum of four-vectors whose spatial parts lie along `n` lies along `n`
 too: if `u.spatialPart = a • n` and `v.spatialPart = b • n`, then
 `(u + v).spatialPart = (a + b) • n`. -/
@@ -99,14 +92,6 @@ theorem spatialPart_add_eq_smul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d
     {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ} (hu : u.spatialPart = a • n)
     (hv : v.spatialPart = b • n) : (u + v).spatialPart = (a + b) • n := by
   rw [spatialPart_add, hu, hv, add_smul]
-
-/-- The spatial part of a sum of four-vectors whose spatial parts lie along and against `n` lies
-along `n`: if `u.spatialPart = a • n` and `v.spatialPart = -b • n`, then
-`(u + v).spatialPart = (a - b) • n`. -/
-theorem spatialPart_add_eq_sub_smul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ} (hu : u.spatialPart = a • n)
-    (hv : v.spatialPart = -b • n) : (u + v).spatialPart = (a - b) • n := by
-  rw [spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv, sub_eq_add_neg]
 
 /-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
 theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
