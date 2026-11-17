@@ -33,9 +33,10 @@ which is the definition of `Kinematics.tMom`. That this is `Δ²` is a theorem a
 `Kinematics.tMom_ofMomenta_eq_minkowskiProduct_sub_self`: for on-shell hadron momenta with positive
 plus components, the kinematics `Kinematics.ofMomenta p p' k` read off from the momenta has
 `tMom M = ⟪p' - p, p' - p⟫ₘ`. Such momenta form off-forward kinematics in the sense of
-`EpsilonEridani.Particles.Parton.GPD.Kinematics` (`lightFrontOffForwardKinematics`), with the
-light-like direction `ofLightFront 0 1 0` that defines the light-front plus component. For any
-`OffForwardKinematics` whose light-like direction is a non-zero multiple of that one, the skewness,
+`EpsilonEridani.Particles.Parton.GPD.Kinematics`, `GPD.OffForwardKinematics.ofLightFrontMomenta`,
+with the light-like direction `ofLightFront 0 1 0` that defines the light-front plus component.
+For any `OffForwardKinematics` whose light-like direction is a non-zero multiple of that one,
+`⟪n, q⟫ₘ = c q⁺`, the skewness,
 the transverse momentum transfer and the momentum transfer are those of the GTMD kinematics
 (`Kinematics.skewness_ofMomenta_eq_skewness`,
 `Kinematics.deltaT_ofMomenta_eq_transversePart_deltaOrthN` and `Kinematics.tMom_ofMomenta_eq_tMom`);
@@ -53,13 +54,13 @@ Consequences of the formula for `t`:
   (`Kinematics.tMom_eq_tZero_iff`), where `t₀` is `GPD.tZero`.
 * `Kinematics.tMom_eq_neg_norm_deltaT_sq_of_mem_zeroSkewness`: at zero skewness `t = -ΔT²`, which
   is what makes `ΔT` Fourier conjugate to a transverse position there.
-* `Kinematics.tMom_eq_zero_iff`: for a massive hadron and `|ξ| < 1`, `t = 0` exactly at `ξ = 0`
+* `Kinematics.tMom_eq_zero_iff`: for a massive hadron and `|ξ| ≠ 1`, `t = 0` exactly at `ξ = 0`
   and `ΔT = 0`.
 * `Kinematics.exists_ofMomenta_eq_iff`: a value of `Kinematics` is realised by on-shell hadron
   momenta with positive plus components exactly when `|ξ| < 1`.
 
 The two distinguished subsets `Kinematics.zeroSkewness` (`ξ = 0`) and
-`Kinematics.zeroTransverseTransfer` (`ΔT = 0`) are named, since the reductions of a GTMD are
+`Kinematics.zeroDeltaT` (`ΔT = 0`) are named, since the reductions of a GTMD are
 restrictions to them. The physical domain, `|x| ≤ 1` and `|ξ| < 1`, is the predicate
 `Kinematics.IsPhysical`; `Kinematics.isPhysical_iff` shows it is equivalent to `|x| ≤ 1` together
 with membership of `(ξ, t)` in `GPD.physicalRegion M`, so the bound `t ≤ t₀(ξ)` is a consequence,
@@ -80,6 +81,67 @@ noncomputable section
 namespace EpsilonEridani
 namespace Particles
 namespace Parton
+
+/-! ### Off-forward kinematics of light-front momenta -/
+
+namespace GPD.OffForwardKinematics
+
+open Lorentz Lorentz.Vector EpsilonEridani.LightFront
+
+variable {M : ℝ}
+
+/-- The off-forward kinematics of two on-shell hadron momenta `p`, `p'` of mass `M` with positive
+plus components, with the light-like direction `ofLightFront 0 1 0`, which defines the light-front
+plus component, `⟪ofLightFront 0 1 0, q⟫ₘ = q⁺` (`minkowskiProduct_ofLightFront`). -/
+def ofLightFrontMomenta {p p' : Lorentz.Vector 3} (hp : ⟪p, p⟫ₘ = M ^ 2)
+    (hp' : ⟪p', p'⟫ₘ = M ^ 2) (hpos : 0 < plusComponent p) (hpos' : 0 < plusComponent p') :
+    OffForwardKinematics 3 M where
+  p := p
+  pPrime := p'
+  n := ofLightFront 0 1 0
+  minkowskiProduct_p_self := hp
+  minkowskiProduct_pPrime_self := hp'
+  minkowskiProduct_n_self := by simp
+  minkowskiProduct_n_p_pos := by simpa using hpos
+  minkowskiProduct_n_pPrime_pos := by simpa using hpos'
+
+section
+
+variable {p p' : Lorentz.Vector 3} (hp : ⟪p, p⟫ₘ = M ^ 2) (hp' : ⟪p', p'⟫ₘ = M ^ 2)
+  (hpos : 0 < plusComponent p) (hpos' : 0 < plusComponent p')
+
+@[simp]
+lemma p_ofLightFrontMomenta : (ofLightFrontMomenta hp hp' hpos hpos').p = p := (rfl)
+
+@[simp]
+lemma pPrime_ofLightFrontMomenta : (ofLightFrontMomenta hp hp' hpos hpos').pPrime = p' := (rfl)
+
+@[simp]
+lemma n_ofLightFrontMomenta : (ofLightFrontMomenta hp hp' hpos hpos').n = ofLightFront 0 1 0 :=
+  (rfl)
+
+end
+
+variable (F : OffForwardKinematics 3 M) {c : ℝ}
+
+/-- If the light-like direction `n` defines the light-front plus component up to a scale `c`,
+`⟪n, q⟫ₘ = c q⁺`, the scale is non-zero. -/
+lemma ne_zero_of_minkowskiProduct_n_eq_mul (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
+    c ≠ 0 := by
+  have h := F.minkowskiProduct_n_avgMomentum_pos
+  rw [hn] at h
+  exact left_ne_zero_of_mul h.ne'
+
+/-- If the light-like direction `n` defines the light-front plus component up to a scale `c`,
+`⟪n, q⟫ₘ = c q⁺`, the vector `w = Δ + 2 ξ P` has vanishing light-front plus component. -/
+lemma plusComponent_deltaOrthN_eq_zero (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
+    plusComponent F.deltaOrthN = 0 := by
+  have h := F.minkowskiProduct_n_deltaOrthN_eq_zero
+  rw [hn, mul_eq_zero] at h
+  exact h.resolve_left (F.ne_zero_of_minkowskiProduct_n_eq_mul hn)
+
+end GPD.OffForwardKinematics
+
 namespace GTMD
 
 open Lorentz Lorentz.Vector EpsilonEridani.LightFront
@@ -147,11 +209,13 @@ theorem tMom_le_tZero (hξ : |K.skewness| < 1) : K.tMom M ≤ tZero M K.skewness
   rw [tMom_eq_tZero_sub, sub_le_self_iff]
   positivity
 
-/-- In the physical range `|ξ| < 1`, the bound `t ≤ t₀(ξ)` is attained exactly when `ΔT = 0`. -/
-theorem tMom_eq_tZero_iff (hξ : |K.skewness| < 1) :
+/-- Away from `|ξ| = 1`, the momentum transfer is the minimal one, `t = t₀(ξ)`, exactly when
+`ΔT = 0`; in the physical range `|ξ| < 1` this is where the bound `t ≤ t₀(ξ)` is attained. -/
+theorem tMom_eq_tZero_iff (hξ : |K.skewness| ≠ 1) :
     K.tMom M = tZero M K.skewness ↔ K.deltaT = 0 := by
-  have h : 0 < 1 - K.skewness ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one _).mpr hξ)
-  rw [tMom_eq_tZero_sub, sub_eq_self, div_eq_zero_iff, or_iff_left h.ne']
+  have h : 1 - K.skewness ^ 2 ≠ 0 := fun h0 => hξ (by
+    rcases sq_eq_one_iff.mp (by linarith : K.skewness ^ 2 = 1) with h1 | h1 <;> simp [h1])
+  rw [tMom_eq_tZero_sub, sub_eq_self, div_eq_zero_iff, or_iff_left h]
   simp
 
 /-- In the physical range `|ξ| < 1` the momentum transfer is non-positive, `t ≤ 0`. -/
@@ -173,10 +237,10 @@ def zeroSkewness : Set Kinematics := {K | K.skewness = 0}
 lemma mem_zeroSkewness_iff : K ∈ zeroSkewness ↔ K.skewness = 0 := Iff.rfl
 
 /-- The kinematics at zero transverse momentum transfer, `ΔT = 0`. -/
-def zeroTransverseTransfer : Set Kinematics := {K | K.deltaT = 0}
+def zeroDeltaT : Set Kinematics := {K | K.deltaT = 0}
 
 @[simp]
-lemma mem_zeroTransverseTransfer_iff : K ∈ zeroTransverseTransfer ↔ K.deltaT = 0 := Iff.rfl
+lemma mem_zeroDeltaT_iff : K ∈ zeroDeltaT ↔ K.deltaT = 0 := Iff.rfl
 
 /-- At zero skewness the momentum transfer is purely transverse, `t = -ΔT²`. -/
 lemma tMom_eq_neg_norm_deltaT_sq_of_mem_zeroSkewness {K : Kinematics} (hK : K ∈ zeroSkewness) :
@@ -186,20 +250,21 @@ lemma tMom_eq_neg_norm_deltaT_sq_of_mem_zeroSkewness {K : Kinematics} (hK : K �
 
 /-- At zero transverse momentum transfer the momentum transfer is the minimal one,
 `t = t₀(ξ)`. -/
-lemma tMom_eq_tZero_of_mem_zeroTransverseTransfer {K : Kinematics}
-    (hK : K ∈ zeroTransverseTransfer) :
+lemma tMom_eq_tZero_of_mem_zeroDeltaT {K : Kinematics}
+    (hK : K ∈ zeroDeltaT) :
     K.tMom M = tZero M K.skewness := by
-  rw [mem_zeroTransverseTransfer_iff] at hK
+  rw [mem_zeroDeltaT_iff] at hK
   simp [tMom_eq_tZero_sub, hK]
 
-/-- For a hadron of non-zero mass and `|ξ| < 1`, the momentum transfer vanishes exactly at zero
+/-- For a hadron of non-zero mass and `|ξ| ≠ 1`, the momentum transfer vanishes exactly at zero
 skewness and zero transverse momentum transfer. -/
-theorem tMom_eq_zero_iff (hM : M ≠ 0) (hξ : |K.skewness| < 1) :
-    K.tMom M = 0 ↔ K ∈ zeroSkewness ∩ zeroTransverseTransfer := by
-  have h : 0 < 1 - K.skewness ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one _).mpr hξ)
+theorem tMom_eq_zero_iff (hM : M ≠ 0) (hξ : |K.skewness| ≠ 1) :
+    K.tMom M = 0 ↔ K ∈ zeroSkewness ∩ zeroDeltaT := by
+  have h : 1 - K.skewness ^ 2 ≠ 0 := fun h0 => hξ (by
+    rcases sq_eq_one_iff.mp (by linarith : K.skewness ^ 2 = 1) with h1 | h1 <;> simp [h1])
   have h₁ : 0 ≤ 4 * K.skewness ^ 2 * M ^ 2 := by positivity
   have h₂ : 0 ≤ ‖K.deltaT‖ ^ 2 := by positivity
-  rw [tMom_def, div_eq_zero_iff, or_iff_left h.ne', neg_eq_zero,
+  rw [tMom_def, div_eq_zero_iff, or_iff_left h, neg_eq_zero,
     add_eq_zero_iff_of_nonneg h₁ h₂]
   simp [hM]
 
@@ -319,9 +384,8 @@ kinematics. -/
 lemma skewness_ofMomenta_eq_skewness (F : OffForwardKinematics 3 M) {c : ℝ}
     (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
     (ofMomenta F.p F.pPrime k).skewness = F.skewness := by
-  have hc : c ≠ 0 :=
-    left_ne_zero_of_mul (hn F.avgMomentum ▸ F.minkowskiProduct_n_avgMomentum_pos).ne'
-  rw [F.skewness_eq_div, skewness_ofMomenta, hn, hn, ← mul_sub, ← mul_add, mul_div_mul_left _ _ hc]
+  rw [F.skewness_eq_div, skewness_ofMomenta, hn, hn, ← mul_sub, ← mul_add,
+    mul_div_mul_left _ _ (F.ne_zero_of_minkowskiProduct_n_eq_mul hn)]
 
 /-- For off-forward kinematics whose light-like direction `n` defines the light-front plus
 component up to a scale `c`, `⟪n, q⟫ₘ = c q⁺`, the GTMD transverse momentum transfer is the
@@ -329,12 +393,12 @@ transverse part of `Δ + 2 ξ P`. -/
 lemma deltaT_ofMomenta_eq_transversePart_deltaOrthN (F : OffForwardKinematics 3 M) {c : ℝ}
     (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
     (ofMomenta F.p F.pPrime k).deltaT = transversePart F.deltaOrthN := by
-  have hpos := hn F.avgMomentum ▸ F.minkowskiProduct_n_avgMomentum_pos
-  have hw : plusComponent F.deltaOrthN = 0 := by
-    simpa [hn, left_ne_zero_of_mul hpos.ne'] using F.minkowskiProduct_n_deltaOrthN_eq_zero
+  have hP := F.minkowskiProduct_n_avgMomentum_pos
+  rw [hn] at hP
   rw [deltaT_ofMomenta, ← F.delta_def, ← F.avgMomentum_def,
-    ← relativeTransverse_of_plusComponent_eq_zero hw F.avgMomentum, F.deltaOrthN_def]
-  simp [right_ne_zero_of_mul hpos.ne']
+    ← relativeTransverse_of_plusComponent_eq_zero (F.plusComponent_deltaOrthN_eq_zero hn)
+      F.avgMomentum, F.deltaOrthN_def]
+  simp [right_ne_zero_of_mul hP.ne']
 
 /-- For off-forward kinematics whose light-like direction `n` defines the light-front plus
 component up to a scale `c`, `⟪n, q⟫ₘ = c q⁺`, the GTMD momentum transfer is the invariant
@@ -342,56 +406,12 @@ component up to a scale `c`, `⟪n, q⟫ₘ = c q⁺`, the GTMD momentum transfe
 theorem tMom_ofMomenta_eq_tMom (F : OffForwardKinematics 3 M) {c : ℝ}
     (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
     (ofMomenta F.p F.pPrime k).tMom M = F.tMom := by
-  have hc : c ≠ 0 :=
-    left_ne_zero_of_mul (hn F.avgMomentum ▸ F.minkowskiProduct_n_avgMomentum_pos).ne'
-  have hw : plusComponent F.deltaOrthN = 0 := by
-    simpa [hn, hc] using F.minkowskiProduct_n_deltaOrthN_eq_zero
   have hξ := skewness_ofMomenta_eq_skewness M k F hn
   have h := F.minkowskiProduct_deltaOrthN_self_eq
-  rw [minkowskiProduct_self_eq_lightFront, hw,
+  rw [minkowskiProduct_self_eq_lightFront, F.plusComponent_deltaOrthN_eq_zero hn,
     ← deltaT_ofMomenta_eq_transversePart_deltaOrthN M k F hn] at h
-  rw [tMom_eq_iff _ _ (hξ ▸ F.abs_skewness_lt_one.ne), hξ]
+  rw [tMom_eq_iff _ _ (by rw [hξ]; exact F.abs_skewness_lt_one.ne), hξ]
   linarith
-
-end Kinematics
-
-/-- The off-forward kinematics of two on-shell hadron momenta `p`, `p'` of mass `M` with positive
-plus components, with the light-like direction `ofLightFront 0 1 0` that defines the light-front
-plus component (`minkowskiProduct_ofLightFront_zero_one_zero`). -/
-def lightFrontOffForwardKinematics {M : ℝ} {p p' : Lorentz.Vector 3} (hp : ⟪p, p⟫ₘ = M ^ 2)
-    (hp' : ⟪p', p'⟫ₘ = M ^ 2) (hpos : 0 < plusComponent p) (hpos' : 0 < plusComponent p') :
-    OffForwardKinematics 3 M where
-  p := p
-  pPrime := p'
-  n := ofLightFront 0 1 0
-  minkowskiProduct_p_self := hp
-  minkowskiProduct_pPrime_self := hp'
-  minkowskiProduct_n_self := by simp [minkowskiProduct_ofLightFront_zero_one_zero]
-  minkowskiProduct_n_p_pos := by rwa [minkowskiProduct_ofLightFront_zero_one_zero]
-  minkowskiProduct_n_pPrime_pos := by rwa [minkowskiProduct_ofLightFront_zero_one_zero]
-
-section
-
-variable {M : ℝ} {p p' : Lorentz.Vector 3} (hp : ⟪p, p⟫ₘ = M ^ 2) (hp' : ⟪p', p'⟫ₘ = M ^ 2)
-  (hpos : 0 < plusComponent p) (hpos' : 0 < plusComponent p')
-
-@[simp]
-lemma lightFrontOffForwardKinematics_p :
-    (lightFrontOffForwardKinematics hp hp' hpos hpos').p = p := (rfl)
-
-@[simp]
-lemma lightFrontOffForwardKinematics_pPrime :
-    (lightFrontOffForwardKinematics hp hp' hpos hpos').pPrime = p' := (rfl)
-
-@[simp]
-lemma lightFrontOffForwardKinematics_n :
-    (lightFrontOffForwardKinematics hp hp' hpos hpos').n = ofLightFront 0 1 0 := (rfl)
-
-end
-
-namespace Kinematics
-
-variable (K : Kinematics) (M : ℝ) (k : Lorentz.Vector 3)
 
 /-- **The momentum transfer of on-shell momenta.** For hadron momenta `p`, `p'` on the mass
 shell `M²` with positive plus components, the momentum transfer of the GTMD kinematics is the
@@ -401,8 +421,8 @@ theorem tMom_ofMomenta_eq_minkowskiProduct_sub_self {p p' : Lorentz.Vector 3}
     (hpos' : 0 < plusComponent p') :
     (ofMomenta p p' k).tMom M = ⟪p' - p, p' - p⟫ₘ := by
   simpa [OffForwardKinematics.tMom_def, OffForwardKinematics.delta_def] using
-    tMom_ofMomenta_eq_tMom M k (lightFrontOffForwardKinematics hp hp' hpos hpos') (c := 1)
-      (by simp [minkowskiProduct_ofLightFront_zero_one_zero])
+    tMom_ofMomenta_eq_tMom M k (OffForwardKinematics.ofLightFrontMomenta hp hp' hpos hpos') (c := 1)
+      (by simp)
 
 /-- **Realisability.** A value of the GTMD kinematics is realised by a parton momentum and two
 on-shell hadron momenta of mass `M` with positive plus components exactly when `|ξ| < 1`. -/
@@ -423,8 +443,7 @@ theorem exists_ofMomenta_eq_iff :
       rw [minkowskiProduct_ofLightFront_self, hw, mul_div_cancel₀ _ (by positivity), hm]
       ring
     have hhalf : ‖(2⁻¹ : ℝ) • K.deltaT‖ ^ 2 = ‖K.deltaT‖ ^ 2 / 4 := by
-      rw [norm_smul]
-      norm_num
+      rw [norm_smul, mul_pow, norm_inv, Real.norm_two]
       ring
     set p₀ := ofLightFront (1 + K.skewness) (m / (2 * (1 + K.skewness)))
       (-((2⁻¹ : ℝ) • K.deltaT)) with hp₀
@@ -436,7 +455,8 @@ theorem exists_ofMomenta_eq_iff :
       simp only [hp₀, hp₀', plusComponent_smul, plusComponent_add, plusComponent_ofLightFront]
       ring
     refine ⟨p₀, p₀', ofLightFront K.x 0 K.kT, hshell _ (by linarith) _ (by rw [norm_neg, hhalf]),
-      hshell _ (by linarith) _ hhalf, by simp [hp₀]; linarith, by simp [hp₀']; linarith, ?_⟩
+      hshell _ (by linarith) _ hhalf, by rw [hp₀, plusComponent_ofLightFront]; linarith,
+      by rw [hp₀', plusComponent_ofLightFront]; linarith, ?_⟩
     apply Kinematics.ext
     · rw [x_ofMomenta, hplus, div_one, plusComponent_ofLightFront]
     · simp only [skewness_ofMomenta, hp₀, hp₀', plusComponent_ofLightFront]

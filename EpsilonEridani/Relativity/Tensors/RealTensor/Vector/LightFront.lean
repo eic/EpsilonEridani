@@ -403,18 +403,23 @@ lemma ofLightFront_smul (c a b : ℝ) (kT : E²) :
 lemma ofLightFront_zero : ofLightFront 0 0 (0 : E²) = 0 :=
   map_zero lightFrontEquiv.symm
 
+/-- The Minkowski product with the four-vector of light-front components `(a, b, kT)`:
+`⟪ofLightFront a b kT, q⟫ₘ = a q⁻ + b q⁺ - kT · q_T`. In particular the light-like vector
+`ofLightFront 0 c 0` pairs to `c q⁺`. -/
+@[simp]
+lemma minkowskiProduct_ofLightFront (a b : ℝ) (kT : E²) (q : Lorentz.Vector 3) :
+    ⟪ofLightFront a b kT, q⟫ₘ =
+      a * minusComponent q + b * plusComponent q - inner ℝ kT (transversePart q) := by
+  rw [minkowskiProduct_eq_lightFront, plusComponent_ofLightFront, minusComponent_ofLightFront,
+    transversePart_ofLightFront]
+
 /-- The Minkowski square of the four-vector with light-front components `(a, b, kT)` is
 `2 a b - ‖kT‖²`. -/
 lemma minkowskiProduct_ofLightFront_self (a b : ℝ) (kT : E²) :
     ⟪ofLightFront a b kT, ofLightFront a b kT⟫ₘ = 2 * a * b - ‖kT‖ ^ 2 := by
-  rw [minkowskiProduct_self_eq_lightFront, plusComponent_ofLightFront, minusComponent_ofLightFront,
-    transversePart_ofLightFront]
-
-/-- The light-like vector with minus component `1` picks out the plus component:
-`⟪ofLightFront 0 1 0, q⟫ₘ = q⁺`. -/
-lemma minkowskiProduct_ofLightFront_zero_one_zero (q : Lorentz.Vector 3) :
-    ⟪ofLightFront 0 1 0, q⟫ₘ = plusComponent q := by
-  simp [minkowskiProduct_eq_lightFront]
+  rw [minkowskiProduct_ofLightFront, plusComponent_ofLightFront, minusComponent_ofLightFront,
+    transversePart_ofLightFront, real_inner_self_eq_norm_sq]
+  ring
 
 /-! ### Transverse boosts -/
 
