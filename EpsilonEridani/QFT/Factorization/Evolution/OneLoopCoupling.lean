@@ -11,9 +11,9 @@ public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import EpsilonEridani.QFT.QCD.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Algebra.Order.Field
+import EpsilonEridani.Mathematics.Analysis.ODE.ExistUnique.Extensions
 import EpsilonEridani.Mathematics.Topology.Order.IntermediateValue.Extensions
 
 /-!
@@ -39,10 +39,9 @@ rate `a(t) = 1/(β₀ t) + O(t⁻²)` (`isBigO_oneLoopCouplingLogScale_sub_inv`)
 finite value `landauLogScale β₀ a₀ = -(β₀ a₀)⁻¹` of the evolution variable
 (`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`). For `β₀ ≠ 0`, no nonzero solution on
 an open connected set has its own Landau log-scale in its domain, so this solution does not
-continue through it
-(`IsOneLoopRGSolution.add_landauLogScale_notMem`,
-`IsOneLoopRGSolution.subset_Ioi_add_landauLogScale`). The last is a property of the truncation,
-not of QCD.
+continue through it (`IsOneLoopRGSolution.add_landauLogScale_notMem`); for `0 < β₀ f(t₀)` the
+domain lies strictly above it (`IsOneLoopRGSolution.subset_Ioi_add_landauLogScale`). The last is
+a property of the truncation, not of QCD.
 
 `landauLogScale` is the `Λ` parameter of the one-loop coupling, expressed in the evolution
 variable: it is a derived quantity, not an independent one. Re-referencing the coupling at
@@ -88,13 +87,18 @@ variable {β₀ a₀ t u μ₀sq μ₁sq Q2 : ℝ} {s : Set ℝ} {f : ℝ → �
 
 /-- The one-loop running coupling `a₀ / (1 + β₀ a₀ t)`: the solution of `da/dt = -β₀ a²` taking
 the value `a₀` at `t = 0`, where `t = log (Q² / μ₀²)` and the coupling is normalised as
-`a = α_s / (4π)`. -/
+`a = α_s / (4π)`. It is a solution on `{t | 1 + β₀ a₀ t ≠ 0}`
+(`isOneLoopRGSolution_oneLoopCouplingLogScale`); at the Landau log-scale the division is by zero
+and the value `0` is junk (`oneLoopCouplingLogScale_landauLogScale`, cf.
+`inv_oneLoopCouplingLogScale`). -/
 def oneLoopCouplingLogScale (β₀ a₀ t : ℝ) : ℝ := a₀ / (1 + β₀ * a₀ * t)
 
 theorem oneLoopCouplingLogScale_def (β₀ a₀ t : ℝ) :
     oneLoopCouplingLogScale β₀ a₀ t = a₀ / (1 + β₀ * a₀ * t) :=
   (rfl)
 
+/-- The one-loop coupling takes the reference value `a₀` at `t = 0`: the initial condition of the
+solution. -/
 @[simp]
 theorem oneLoopCouplingLogScale_zero (β₀ a₀ : ℝ) : oneLoopCouplingLogScale β₀ a₀ 0 = a₀ := by
   rw [oneLoopCouplingLogScale_def]
@@ -129,6 +133,14 @@ theorem one_add_mul_landauLogScale_eq_zero (h : β₀ * a₀ ≠ 0) :
     1 + β₀ * a₀ * landauLogScale β₀ a₀ = 0 := by
   rw [landauLogScale_def, mul_neg, mul_inv_cancel₀ h]
   norm_num
+
+/-- At the Landau log-scale the one-loop coupling divides by zero, so it takes the junk value
+`0` there, although it diverges as the Landau log-scale is approached
+(`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`). -/
+@[simp]
+theorem oneLoopCouplingLogScale_landauLogScale (h : β₀ * a₀ ≠ 0) :
+    oneLoopCouplingLogScale β₀ a₀ (landauLogScale β₀ a₀) = 0 := by
+  rw [oneLoopCouplingLogScale_def, one_add_mul_landauLogScale_eq_zero h, div_zero]
 
 /-- For `β₀ a₀ ≠ 0` the denominator of the one-loop coupling vanishes exactly at the Landau
 log-scale. -/
@@ -209,21 +221,6 @@ theorem isOneLoopRGSolution_oneLoopCouplingLogScale_Ioi (h : 0 < β₀ * a₀) :
     (isOneLoopRGSolution_iff.1 (isOneLoopRGSolution_oneLoopCouplingLogScale β₀ a₀)).mono fun _ ht =>
       ((landauLogScale_lt_iff h).1 ht).ne'
 
-/-- On the closed ball `[-R, R]` the map `x ↦ c x²` is Lipschitz with constant `2 |c| R`; for
-`c = -β₀` it is the right-hand side of the one-loop renormalisation-group equation. -/
-theorem lipschitzOnWith_mul_sq {c R : ℝ} (hR : 0 ≤ R) :
-    LipschitzOnWith (Real.toNNReal (2 * |c| * R)) (fun x : ℝ => c * x ^ 2) (Icc (-R) R) := by
-  have hderiv : ∀ x : ℝ, HasDerivAt (fun y : ℝ => c * y ^ 2) (2 * c * x) x := fun x =>
-    ((hasDerivAt_pow 2 x).const_mul c).congr_deriv (by push_cast; ring)
-  refine (convex_Icc (-R) R).lipschitzOnWith_of_nnnorm_deriv_le
-    (fun x _ => (hderiv x).differentiableAt) fun x hx => ?_
-  have hx' : |x| ≤ R := abs_le.2 ⟨hx.1, hx.2⟩
-  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ (mul_nonneg (by positivity) hR),
-    (hderiv x).deriv]
-  calc ‖2 * c * x‖ = 2 * |c| * |x| := by
-        rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_two]
-    _ ≤ 2 * |c| * R := by gcongr
-
 /-- A solution of the one-loop renormalisation-group equation on an open connected set that is
 nonzero somewhere on the set is nonzero everywhere on it: a coupling obeying the one-loop equation
 cannot reach zero at a finite scale. The other case is `isOneLoopRGSolution_zero`. -/
@@ -235,21 +232,15 @@ theorem IsOneLoopRGSolution.ne_zero {t₀ : ℝ} (hf : IsOneLoopRGSolution β₀
     (isOneLoopRGSolution_iff.1 hf _ hx).hasDerivAt (hs.mem_nhds hx)
   -- Work on a compact interval `[a, b] ⊆ s` whose interior contains `t₀` and `t₁`.
   obtain ⟨a, b, hsub, ht₀', ht₁'⟩ := hs.exists_Icc_subset hs' ht₀ ht₁
-  have hcont : ContinuousOn f (Icc a b) := fun x hx =>
-    (hd (hsub hx)).continuousAt.continuousWithinAt
-  -- `f` is bounded on `[a, b]`, and on a bounded set `x ↦ -β₀ x²` is Lipschitz, so Mathlib's
-  -- uniqueness for Lipschitz right-hand sides applies with the zero solution.
-  obtain ⟨R, hR⟩ := isCompact_Icc.exists_bound_of_continuousOn hcont
-  have hR0 : 0 ≤ R := le_trans (norm_nonneg _) (hR t₀ (Ioo_subset_Icc_self ht₀'))
-  have hmem : ∀ x ∈ Icc a b, f x ∈ Icc (-R) R := fun x hx =>
-    mem_Icc.2 (abs_le.1 (by simpa only [Real.norm_eq_abs] using hR x hx))
-  have heq := ODE_solution_unique_of_mem_Icc (v := fun _ x => -β₀ * x ^ 2)
-    (s := fun _ => Icc (-R) R) (f := f) (g := fun _ => 0)
-    (fun _ _ => lipschitzOnWith_mul_sq hR0) ht₁' hcont
-    (fun x hx => hd (hsub (Ioo_subset_Icc_self hx)))
-    (fun x hx => hmem x (Ioo_subset_Icc_self hx)) continuousOn_const
-    (fun x _ => by simpa using hasDerivAt_const x (0 : ℝ))
-    (fun _ _ => mem_Icc.2 ⟨by linarith, hR0⟩) (by simpa using hzero)
+  -- On a ball `x ↦ -β₀ x²` is Lipschitz, being `C¹`, so uniqueness applies with the zero solution.
+  have hv : ContDiff ℝ 1 fun x : ℝ => -β₀ * x ^ 2 := by fun_prop
+  have heq := ODE_solution_unique_of_mem_Icc_of_lipschitzOnWith_closedBall
+    (v := fun _ x => -β₀ * x ^ 2) (g := fun _ => 0)
+    (fun R _ => (hv.contDiffOn.exists_lipschitzOnWith one_ne_zero (convex_closedBall 0 R)
+      (isCompact_closedBall 0 R)).imp fun _ hK _ _ => hK)
+    ht₁' (fun x hx => (hd (hsub hx)).continuousAt.continuousWithinAt)
+    (fun x hx => hd (hsub (Ioo_subset_Icc_self hx))) continuousOn_const
+    (fun x _ => by simpa using hasDerivAt_const x (0 : ℝ)) (by simpa using hzero)
   exact h₀ (heq (Ioo_subset_Icc_self ht₀'))
 
 /-- The reciprocal of a solution of the one-loop renormalisation-group equation on an open
@@ -360,24 +351,32 @@ theorem oneLoopCouplingLogScale_sub_inv (hβ : β₀ ≠ 0) (ht : t ≠ 0) (h : 
   field_simp
   ring
 
-/-- **The rate of asymptotic freedom.** For `β₀ > 0` and a positive reference value the one-loop
-coupling is `1 / (β₀ t) + O(t⁻²)`: the leading behaviour is independent of the reference value,
-which enters first at second order. -/
-theorem isBigO_oneLoopCouplingLogScale_sub_inv (hβ : 0 < β₀) (ha : 0 < a₀) :
+/-- **The rate of asymptotic freedom.** For `β₀ a₀ ≠ 0` the one-loop coupling is
+`1 / (β₀ t) + O(t⁻²)`: the leading behaviour is independent of the reference value, which enters
+first at second order. -/
+theorem isBigO_oneLoopCouplingLogScale_sub_inv (h : β₀ * a₀ ≠ 0) :
     (fun t => oneLoopCouplingLogScale β₀ a₀ t - (β₀ * t)⁻¹) =O[atTop] fun t : ℝ => (t ^ 2)⁻¹ := by
+  have hβ : 0 < |β₀| := abs_pos.2 (left_ne_zero_of_mul h)
+  have hc : 0 < |β₀ * a₀| := abs_pos.2 h
   rw [isBigO_iff]
-  refine ⟨(β₀ ^ 2 * a₀)⁻¹, ?_⟩
-  filter_upwards [eventually_gt_atTop 0] with t ht
-  have hβt : 0 < β₀ * t := mul_pos hβ ht
-  have hD : 0 < 1 + β₀ * a₀ * t := by
-    have := mul_pos (mul_pos hβ ha) ht
+  refine ⟨2 * (|β₀| * |β₀ * a₀|)⁻¹, ?_⟩
+  filter_upwards [eventually_gt_atTop (2 / |β₀ * a₀|), eventually_gt_atTop 0] with t ht ht0
+  -- For large `t` the denominator `1 + β₀ a₀ t` is at least half its leading term.
+  have hct : 2 < |β₀ * a₀| * t := by rwa [div_lt_iff₀' hc] at ht
+  have hD : |β₀ * a₀| * t / 2 ≤ |1 + β₀ * a₀ * t| := by
+    have := abs_sub_abs_le_abs_sub (β₀ * a₀ * t) (-1)
+    rw [abs_mul _ t, abs_of_pos ht0, abs_neg, abs_one, sub_neg_eq_add, add_comm] at this
     linarith
-  have hpos : (0 : ℝ) < β₀ ^ 2 * a₀ * t ^ 2 :=
-    mul_pos (mul_pos (pow_pos hβ 2) ha) (pow_pos ht 2)
-  rw [oneLoopCouplingLogScale_sub_inv hβ.ne' ht.ne' hD.ne']
-  simp only [Real.norm_eq_abs, abs_neg, abs_of_nonneg (inv_nonneg.2 (mul_pos hβt hD).le),
-    abs_of_nonneg (inv_nonneg.2 (sq_nonneg t)), ← mul_inv]
-  exact (inv_le_inv₀ (mul_pos hβt hD) hpos).2 (by nlinarith)
+  have hpos : 0 < |β₀| * |β₀ * a₀| * t ^ 2 / 2 := by positivity
+  have hD0 : 1 + β₀ * a₀ * t ≠ 0 := abs_pos.1 (by linarith)
+  rw [oneLoopCouplingLogScale_sub_inv (left_ne_zero_of_mul h) ht0.ne' hD0, norm_neg, norm_inv,
+    Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (inv_pos.2 (pow_pos ht0 2)), abs_mul, abs_mul,
+    abs_of_pos ht0]
+  calc (|β₀| * t * |1 + β₀ * a₀ * t|)⁻¹ ≤ (|β₀| * |β₀ * a₀| * t ^ 2 / 2)⁻¹ := by
+        refine inv_anti₀ hpos ?_
+        calc |β₀| * |β₀ * a₀| * t ^ 2 / 2 = |β₀| * t * (|β₀ * a₀| * t / 2) := by ring
+          _ ≤ |β₀| * t * |1 + β₀ * a₀ * t| := by gcongr
+    _ = 2 * (|β₀| * |β₀ * a₀|)⁻¹ * (t ^ 2)⁻¹ := by field_simp
 
 /-- **The Landau pole of the one-loop coupling.** For `β₀ > 0` and a nonzero reference value the
 one-loop coupling diverges as the Landau log-scale is approached from above. -/
