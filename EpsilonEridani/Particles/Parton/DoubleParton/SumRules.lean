@@ -24,7 +24,8 @@ Gaunt and Stirling proposed two families of sum rules that tie `F` to the single
 
 * the **number sum rule**: for every quark flavour `i`, with `N i` the number of valence quarks of
   flavour `i`,
-  `∫_0^{1-x₂} dx₁ (F_{q_i a₂} - F_{q̄_i a₂})(x₁, x₂) = (N i + δ_{a₂ q̄_i} - δ_{a₂ q_i}) f_{a₂}(x₂)`:
+  `∫_0^{1-x₂} dx₁ (F_{q_i a₂} - F_{qbar_i a₂})(x₁, x₂)
+  = (N i + δ_{a₂ qbar_i} - δ_{a₂ q_i}) f_{a₂}(x₂)`:
   once a parton `a₂` has been found, the rest of the hadron carries `N i` valence quarks of flavour
   `i`, one fewer if `a₂` was a quark of that flavour and one more if it was its antiquark;
 * the **momentum sum rule**:
@@ -42,7 +43,7 @@ symmetric under exchange of the two partons, integrating the number sum rule aga
 momentum sum rule of a quark and its antiquark over `x₂` computes one double integral over the
 triangle in two ways, and the comparison gives
 
-`N i * ∑ₐ ∫₀¹ x fₐ(x) dx = ∫₀¹ (f_{q_i} - f_{q̄_i})(x) dx`,
+`N i * ∑ₐ ∫₀¹ x fₐ(x) dx = ∫₀¹ (f_{q_i} - f_{qbar_i})(x) dx`,
 
 the main theorem `mul_sum_mellinMoment_one_eq_valenceNumber`. So the constants `N i` of the
 number sum rule are the valence numbers of `f` exactly when `f` carries the full momentum of the
@@ -86,7 +87,8 @@ variable {Flavor : Type}
 
 /-- The **number sum rules** of the double parton distribution `F` at the scale `Q2`, with
 valence numbers `N`: for every quark flavour `i`, every species `a`, and every `0 < x₂ < 1`,
-`∫_0^{1-x₂} dx₁ (F_{q_i a} - F_{q̄_i a})(x₁, x₂) = (N i + δ_{a q̄_i} - δ_{a q_i}) f_a(x₂, Q2)`. -/
+`∫_0^{1-x₂} dx₁ (F_{q_i a} - F_{qbar_i a})(x₁, x₂)
+= (N i + δ_{a qbar_i} - δ_{a q_i}) f_a(x₂, Q2)`. -/
 def NumberSumRule [DecidableEq Flavor] (F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ)
     (f : Pdf (Species Flavor)) (Q2 : ℝ) (N : Flavor → ℝ) : Prop :=
   ∀ i a x₂, 0 < x₂ → x₂ < 1 →
@@ -117,7 +119,8 @@ theorem momentumSumRule_iff [Fintype Flavor] {F : Species Flavor → Species Fla
 
 /-- The number sum rule, weighted with the second momentum fraction and integrated over the unit
 triangle:
-`∫_{triangle} x₂ (F_{q_i a} - F_{q̄_i a})(x₁, x₂) = (N i + δ_{a q̄_i} - δ_{a q_i}) ∫₀¹ x f_a(x)`.
+`∫_{triangle} x₂ (F_{q_i a} - F_{qbar_i a})(x₁, x₂)
+= (N i + δ_{a qbar_i} - δ_{a q_i}) ∫₀¹ x f_a(x)`.
 -/
 theorem setIntegral_unitTriangle_mul_sub_eq [DecidableEq Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
@@ -156,10 +159,10 @@ theorem sum_setIntegral_unitTriangle_eq [Fintype Flavor]
 /-- **The consistency of the double-parton sum rules.** If a double parton distribution `F`,
 symmetric under exchange of its two partons, satisfies the number sum rules with valence numbers
 `N` and the momentum sum rules against the single-parton densities `f`, then for every flavour `i`
-`N i * ∑ₐ ∫₀¹ x fₐ(x) dx = ∫₀¹ (f_{q_i} - f_{q̄_i})(x) dx`.
+`N i * ∑ₐ ∫₀¹ x fₐ(x) dx = ∫₀¹ (f_{q_i} - f_{qbar_i})(x) dx`.
 
 The integrability hypotheses are those of the momentum-weighted distributions `x₁ F_{a q_i}` and
-`x₁ F_{a q̄_i}` on the unit triangle, and of `f_{q_i}` and `f_{q̄_i}` on `[0, 1]`. -/
+`x₁ F_{a qbar_i}` on the unit triangle, and of `f_{q_i}` and `f_{qbar_i}` on `[0, 1]`. -/
 theorem mul_sum_mellinMoment_one_eq_valenceNumber [Fintype Flavor] [DecidableEq Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
     {N : Flavor → ℝ} (hN : NumberSumRule F f Q2 N) (hM : MomentumSumRule F f Q2)
@@ -187,7 +190,7 @@ theorem mul_sum_mellinMoment_one_eq_valenceNumber [Fintype Flavor] [DecidableEq 
     refine setIntegral_unitTriangle_mul_sub_eq hN i a ?_
     rw [← hswap]
     exact integrableOn_unitTriangle_comp_swap_iff.2 (hGint a)
-  -- Second evaluation: through the momentum sum rules of `q_i` and `q̄_i`.
+  -- Second evaluation: through the momentum sum rules of `q_i` and `qbar_i`.
   have hmomentum : ∑ a, ∫ p in unitTriangle, G a p =
       (∫ x in Icc (0 : ℝ) 1, (1 - x) * f (.quark i) x Q2) -
         ∫ x in Icc (0 : ℝ) 1, (1 - x) * f (.antiquark i) x Q2 := by
@@ -233,7 +236,7 @@ theorem sum_mellinMoment_one_eq_one [Fintype Flavor] [DecidableEq Flavor]
 /-- **The constants of the number sum rule are the valence numbers.** If `F` satisfies the number
 and momentum sum rules, and the single-parton densities satisfy the momentum sum rule
 `∑ₐ ∫₀¹ x fₐ(x) dx = 1`, then the constant `N i` of the number sum rule is the valence number
-`∫₀¹ (f_{q_i} - f_{q̄_i})` of the single-parton densities. -/
+`∫₀¹ (f_{q_i} - f_{qbar_i})` of the single-parton densities. -/
 theorem valenceNumber_eq [Fintype Flavor] [DecidableEq Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
     {N : Flavor → ℝ} (hN : NumberSumRule F f Q2 N) (hM : MomentumSumRule F f Q2)
