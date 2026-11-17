@@ -36,16 +36,34 @@ analogue of the projection, along a light-cone pair, is
   `ker_projOrthogonal`, `range_projOrthogonal`: for `g u u ≠ 0` the projection is an idempotent
   with kernel `ℝ ∙ u` and range `g.flip.orthogonal (ℝ ∙ u)`.
 * `LinearMap.BilinForm.projOrthogonal_pairing`: `g (P v) (P w) = g v w - g v u * g u w / g u u`.
-* `LinearMap.BilinForm.reflect_isometry`, `det_reflect`: for symmetric `g` and `g u u ≠ 0` the
-  reflection is a `g`-isometry (`LinearMap.IsOrthogonal`), of determinant `-1` in finite
-  dimension.
+* `LinearMap.BilinForm.reflect_reflect`, `reflect_isometry`, `det_reflect`: for `g u u ≠ 0` the
+  reflection is an involution and, for symmetric `g`, a `g`-isometry (`LinearMap.IsOrthogonal`),
+  of determinant `-1` in finite dimension.
+* `LinearMap.isOrthogonal_id`, `LinearMap.IsOrthogonal.comp`: the isometries of a bilinear form
+  contain the identity and are closed under composition.
 -/
 
-@[expose] public section
+public section
 
 namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
+
+section IsOrthogonal
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+
+/-- The identity is an isometry of every bilinear form. -/
+lemma _root_.LinearMap.isOrthogonal_id (B : BilinForm R M) :
+    B.IsOrthogonal (LinearMap.id : M →ₗ[R] M) := fun x y ↦ by
+  rw [LinearMap.id_apply, LinearMap.id_apply]
+
+/-- A composite of isometries of `B` is an isometry of `B`. -/
+lemma _root_.LinearMap.IsOrthogonal.comp {f f' : M →ₗ[R] M} (hf : B.IsOrthogonal f)
+    (hf' : B.IsOrthogonal f') : B.IsOrthogonal (f ∘ₗ f') := fun x y ↦ by
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, hf, hf']
+
+end IsOrthogonal
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
@@ -143,7 +161,7 @@ def rankOne (g : BilinForm ℝ V) (a b : V) : BilinForm ℝ V :=
   (g a).smulRight (g b)
 
 @[simp] lemma rankOne_apply (g : BilinForm ℝ V) (a b v w : V) :
-    rankOne g a b v w = g a v * g b w := rfl
+    rankOne g a b v w = g a v * g b w := (rfl)
 
 /-- A rank-one form built from a single vector is symmetric. -/
 lemma rankOne_isSymm (g : BilinForm ℝ V) (a : V) : (rankOne g a a).IsSymm := by
@@ -173,6 +191,17 @@ lemma reflect_apply_self (g : BilinForm ℝ V) (u : V) (hu : g u u ≠ 0) :
 lemma reflect_apply_of_orthogonal (g : BilinForm ℝ V) (u v : V) (h : g u v = 0) :
     reflect g u v = v := by
   rw [reflect_apply, h, mul_zero, zero_smul, sub_zero]
+
+/-- A reflection in a non-null direction is an involution. Not `@[simp]`: `reflect_apply`
+already rewrites its left-hand side. -/
+lemma reflect_reflect (g : BilinForm ℝ V) {u : V} (hu : g u u ≠ 0) (v : V) :
+    reflect g u (reflect g u v) = v := by
+  have h : g u (reflect g u v) = -g u v := by
+    simp only [reflect_apply, map_sub, map_smul, smul_eq_mul]
+    field_simp
+    ring
+  rw [reflect_apply g u (reflect g u v), h, reflect_apply]
+  module
 
 /-- A reflection in a non-null direction is a `g`-isometry when `g` is symmetric. -/
 lemma reflect_isometry (g : BilinForm ℝ V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0) :

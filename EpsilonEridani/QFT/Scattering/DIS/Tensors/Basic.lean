@@ -983,7 +983,7 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
   refine ⟨g.reflect u ∘ₗ g.reflect u',
-    ⟨fun v w => by simp only [LinearMap.comp_apply, h₁.isometry _ _, h₂.isometry _ _],
+    ⟨h₁.isometry.comp h₂.isometry,
       by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
       by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩, ?_, ?_, ?_⟩
   · by_cases hfin : Module.Finite ℝ V
@@ -1102,25 +1102,7 @@ of `exists_isF1F2Decomposition`.
 
 namespace Witness
 
-/-- The `+--` Minkowski form on `ℝ × ℝ × ℝ`, one time and two space directions:
-`g v w = v₀w₀ - v₁w₁ - v₂w₂`. This is the `Kinematics` sign convention, restricted to the
-smallest dimension that admits a spectator direction. -/
-def gWit : Bilin (ℝ × ℝ × ℝ) :=
-  LinearMap.mk₂ ℝ (fun v w => v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2)
-    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
-    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
-    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
-    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
-
-@[simp] lemma gWit_apply (v w : ℝ × ℝ × ℝ) :
-    gWit v w = v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2 := rfl
-
-/-- `gWit` is symmetric, as a metric must be. -/
-lemma gWit_isSymm : gWit.IsSymm := by
-  refine { eq := ?_ }
-  intro v w
-  simp only [gWit_apply]
-  ring
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness (gWit gWit_apply gWit_isSymm)
 
 /-- Witness kinematics: timelike hadron momentum `p = (1,0,0)` and spacelike momentum
 transfer `q = (0,1,0)`, orthogonal to `p`, which leaves `(0,0,1)` as a spectator direction
@@ -1215,7 +1197,7 @@ lemma spectatorAssumptions_kWit : SpectatorAssumptions gWit kWit where
     simp only [kWit_q, gWit_apply, pTransverse_kWit] at hq hT hq' hT' huu
     rcases mul_self_eq_mul_self_iff.mp (by nlinarith : u.2.2 * u.2.2 = u'.2.2 * u'.2.2) with
       h | h
-    · refine ⟨LinearMap.id, ⟨fun _ _ => rfl, rfl, rfl⟩, ?_⟩
+    · refine ⟨LinearMap.id, ⟨LinearMap.isOrthogonal_id gWit, rfl, rfl⟩, ?_⟩
       ext <;> simp <;> linarith
     · refine ⟨gWit.reflect (0, 0, 1),
         reflect_isKinematicStabilizer gWit kWit gWit_isSymm (0, 0, 1)

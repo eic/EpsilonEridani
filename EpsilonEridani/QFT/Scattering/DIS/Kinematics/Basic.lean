@@ -20,6 +20,9 @@ Since `Bilin V` is an abbreviation for `LinearMap.BilinForm ℝ V`, the generic 
 notation: the projection `g.projOrthogonal u` onto the `g`-orthogonal complement of a non-null
 vector, the reflections `g.reflect u` and the rank-one forms `g.rankOne a b`.
 
+`Kinematics.Witness.gWit` is the `+--` Minkowski form on `ℝ × ℝ × ℝ`, the concrete form on which
+the DIS tensor, polarized-kinematics and jet-frame witnesses are evaluated.
+
 -/
 
 @[expose] public section
@@ -136,6 +139,30 @@ lemma q_sq_ne_zero_of_xBj_ne_zero (g : Bilin V) (K : DisKinematics V) (hx : K.xB
   simp [xBj, Q2, h]
 
 end DisKinematics
+
+namespace Witness
+
+/-- The `+--` Minkowski form on `ℝ × ℝ × ℝ`, one time and two space directions:
+`g v w = v₀w₀ - v₁w₁ - v₂w₂`. This is the `Kinematics` sign convention, restricted to the
+smallest dimension that admits a spectator direction. -/
+noncomputable def gWit : Bilin (ℝ × ℝ × ℝ) :=
+  LinearMap.mk₂ ℝ (fun v w => v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2)
+    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+    (fun _ _ _ => by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+
+@[simp] lemma gWit_apply (v w : ℝ × ℝ × ℝ) :
+    gWit v w = v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2 := rfl
+
+/-- `gWit` is symmetric, as a metric must be. -/
+lemma gWit_isSymm : gWit.IsSymm := by
+  refine { eq := ?_ }
+  intro v w
+  simp only [gWit_apply]
+  ring
+
+end Witness
 
 end Kinematics
 end DIS

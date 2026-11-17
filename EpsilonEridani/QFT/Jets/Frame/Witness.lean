@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Jets.Frame.Basic
-public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 
 /-!
 # A witness for reference frames
@@ -31,7 +30,7 @@ namespace Jets
 namespace Frame
 namespace Witness
 
-open EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.Witness (gWit gWit_isSymm)
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness (gWit gWit_isSymm)
 
 /-- The rest frame `n = (1, 0, 0)` of the Minkowski form `gWit`. -/
 def restFrameWit : Frame gWit where
