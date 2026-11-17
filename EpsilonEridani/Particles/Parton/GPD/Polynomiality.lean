@@ -7,6 +7,8 @@ module
 
 public import EpsilonEridani.Particles.Parton.GPD.Moments
 public import EpsilonEridani.Particles.Parton.GPD.DoubleDistribution
+public import EpsilonEridani.Mathematics.MeasureTheory.Shear
+public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 /-!
 
 # Polynomiality of GPD Moments from the Double-Distribution Representation
@@ -47,27 +49,18 @@ Two structural facts then give the physics content:
 * M. Diehl, *Generalized parton distributions*, Phys. Rept. **388** (2003) 41, §4.3.
 * A. V. Belitsky and A. V. Radyushkin, Phys. Rept. **418** (2005) 1, §3.
 
-## Status
+## Main results
 
-The algebraic and polynomial-bookkeeping content is proved, including both parity inputs
-(`ddMoment_eq_zero_of_odd` and `dtMoment_eq_zero_of_even`). Exactly **one** statement is
-left as a marked `sorry`: the Fubini/change-of-variables core
-`mellinMomentGpd_ofDoubleDistribution`, whose `TODO` names the intended argument.
+* `mellinMomentGpd_ofDoubleDistribution`: the moment formula above, for `|ξ| ≤ 1`.
+* `mellinMomentGpd_polynomial`, `mellinMomentH_polynomial`: the moment is an even polynomial in
+  `ξ` of degree at most `n + 1`.
+* `polynomialityAssumptionsOfDoubleDistribution`: every GPD model built from double
+  distributions satisfies `GPD.PolynomialityAssumptions`.
 
-Four declarations inherit that `sorry` and are tagged accordingly:
-`mellinMomentGpd_polynomial`, `mellinMomentH_polynomial`,
-`polynomialityAssumptionsOfDoubleDistribution` and
-`mellinMomentH_n0_eq_at_zero_ofDoubleDistribution`. Under `#print axioms` each of the five
-reports `sorryAx`, while every other declaration in this module reports only
-`[propext, Classical.choice, Quot.sound]`.
-
-**Consequence for the assumption bundle.** `polynomialityAssumptionsOfDoubleDistribution`
-is advertised in `GPD.Moments` as discharging `PolynomialityAssumptions`, and it is the
-only bridge offered. Because it rests on the `sorry` above, that discharge is not real at
-the kernel level: "polynomiality holds for double-distribution models" is currently
-*assumed*, in the same sense that the bundle itself assumes it, rather than established.
-The bridge is retained because its reduction to a single analytic statement is genuine
-content, but it must not be read as retiring the bundle.
+For `ξ ≠ 0` the change of variables is the scaled shear `(β, α) ↦ (β, β + ξ α)` of
+`EpsilonEridani.Mathematics.MeasureTheory.Shear`, whose Jacobian `|ξ|` cancels the prefactor
+`1/|ξ|` of the double-distribution term. At `ξ = 0` the induced GPD is the `α`-integral of the
+double distribution and the formula is Fubini's theorem; only the `k = 0` term survives.
 
 -/
 
@@ -76,6 +69,8 @@ content, but it must not be read as retiring the bundle.
 noncomputable section
 
 open scoped BigOperators
+
+open MeasureTheory
 
 namespace EpsilonEridani
 namespace Particles
@@ -211,65 +206,147 @@ lemma momentPolynomial_eval (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
       = ∑ k ∈ Finset.range (n + 2), momentCoeff dd dt n i k t * xi ^ k := by
   simp [momentPolynomial, Polynomial.eval_finsetSum]
 
-/- **The analytic core.** The `n`-th moment of a GPD built from a double distribution and
-a D-term is the explicit sum of `(β, α)` moments and the D-term moment, for physical
-skewness `|ξ| ≤ 1`. -/
-/- @[sorryful]
+/-- The binomial expansion of `(β + ξ α)^n F(β, α, t)` into the monomials whose integrals are
+the form factors `ddMoment`. -/
+private lemma add_mul_pow_mul_eq_sum (dd : DoubleDistribution Flavor) (i : Flavor) (n : ℕ)
+    (xi t : ℝ) (p : ℝ × ℝ) :
+    (p.1 + xi * p.2) ^ n * dd.F i p.1 p.2 t = ∑ k ∈ Finset.range (n + 1),
+      (n.choose k : ℝ) * xi ^ k * (p.1 ^ (n - k) * p.2 ^ k * dd.F i p.1 p.2 t) := by
+  rw [add_comm, add_pow, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  ring
+
+/-- The moment of a double distribution along the lines `x = β + ξ α`,
+`(β, α) ↦ (β + ξ α)^n F(β, α, t)`, is integrable on the `(β, α)` plane. -/
+lemma integrable_add_mul_pow_mul (dd : DoubleDistribution Flavor) (i : Flavor) (n : ℕ)
+    (xi t : ℝ) :
+    Integrable fun p : ℝ × ℝ => (p.1 + xi * p.2) ^ n * dd.F i p.1 p.2 t := by
+  simp_rw [add_mul_pow_mul_eq_sum]
+  exact integrable_finsetSum _ fun k _ => (dd.momentIntegrable i (n - k) k t).const_mul _
+
+/-- The moment of a double distribution along the lines `x = β + ξ α` is the binomial sum
+of its form factors: `∫∫ (β + ξ α)^n F = ∑_{k ≤ n} C(n, k) ξ^k ∫∫ β^(n-k) α^k F`. -/
+lemma integral_add_mul_pow_mul (dd : DoubleDistribution Flavor) (i : Flavor) (n : ℕ)
+    (xi t : ℝ) :
+    ∫ p : ℝ × ℝ, (p.1 + xi * p.2) ^ n * dd.F i p.1 p.2 t = ∑ k ∈ Finset.range (n + 1),
+      (n.choose k : ℝ) * ddMoment dd i (n - k) k t * xi ^ k := by
+  simp_rw [add_mul_pow_mul_eq_sum]
+  rw [integral_finsetSum _ fun k _ => (dd.momentIntegrable i (n - k) k t).const_mul _]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [integral_const_mul, ddMoment]
+  ring
+
+/-- The double-distribution integrand of the moment, written on the `(β, x)` plane, is
+integrable for `ξ ≠ 0`: it is the composite of the integrable moment along the lines
+`x = β + ξ α` with the inverse of the scaled shear. -/
+private lemma integrable_pow_mul_F_div (dd : DoubleDistribution Flavor) (i : Flavor) (n : ℕ)
+    {xi : ℝ} (hxi : xi ≠ 0) (t : ℝ) :
+    Integrable fun q : ℝ × ℝ => q.2 ^ n * dd.F i q.1 ((q.2 - q.1) / xi) t := by
+  rw [← integrable_comp_prod_add_mul_iff _ hxi]
+  convert integrable_add_mul_pow_mul dd i n xi t using 3 with p
+  rw [add_sub_cancel_left, mul_div_cancel_left₀ _ hxi]
+
+/-- For `ξ ≠ 0` the double-distribution term of the GPD, weighted by `x^n`, is integrable
+in `x`. -/
+private lemma integrable_pow_mul_ddTerm (dd : DoubleDistribution Flavor) (i : Flavor) (n : ℕ)
+    {xi : ℝ} (hxi : xi ≠ 0) (t : ℝ) :
+    Integrable fun x : ℝ => x ^ n * ((|xi|)⁻¹ * ∫ β : ℝ, dd.F i β ((x - β) / xi) t) := by
+  refine (((integrable_pow_mul_F_div dd i n hxi t).integral_prod_right).const_mul
+    (|xi|)⁻¹).congr (Filter.Eventually.of_forall fun x => ?_)
+  simp only
+  rw [integral_const_mul]
+  ring
+
+/-- For `ξ ≠ 0` the `n`-th moment of the double-distribution term of the GPD is the moment of
+the double distribution along the lines `x = β + ξ α`: the Jacobian `|ξ|` of the scaled shear
+cancels the prefactor `1/|ξ|`. -/
+private lemma integral_pow_mul_ddTerm (dd : DoubleDistribution Flavor) (i : Flavor) (n : ℕ)
+    {xi : ℝ} (hxi : xi ≠ 0) (t : ℝ) :
+    ∫ x : ℝ, x ^ n * ((|xi|)⁻¹ * ∫ β : ℝ, dd.F i β ((x - β) / xi) t)
+      = ∫ p : ℝ × ℝ, (p.1 + xi * p.2) ^ n * dd.F i p.1 p.2 t := by
+  have hcomp := integral_comp_prod_add_mul
+    (fun q : ℝ × ℝ => q.2 ^ n * dd.F i q.1 ((q.2 - q.1) / xi) t) xi
+  simp only [add_sub_cancel_left, mul_div_cancel_left₀ _ hxi, smul_eq_mul] at hcomp
+  rw [hcomp, Measure.volume_eq_prod,
+    integral_prod_symm _ (integrable_pow_mul_F_div dd i n hxi t), abs_inv, ← smul_eq_mul,
+    ← integral_smul]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [smul_eq_mul]
+  rw [integral_const_mul]
+  ring
+
+/-- For `ξ ≠ 0` the D-term contribution to the GPD, weighted by `x^n`, is integrable in `x`. -/
+private lemma integrable_pow_mul_dTerm (dt : DTerm Flavor) (i : Flavor) (n : ℕ) {xi : ℝ}
+    (hxi : xi ≠ 0) (t : ℝ) :
+    Integrable fun x : ℝ => x ^ n * (xi / |xi| * dt.D i (x / xi) t) := by
+  refine (((dt.momentIntegrable i n t).comp_div hxi).const_mul (xi / |xi| * xi ^ n)).congr
+    (Filter.Eventually.of_forall fun x => ?_)
+  have hx : x ^ n = xi ^ n * (x / xi) ^ n := by rw [← mul_pow, mul_div_cancel₀ x hxi]
+  simp only
+  rw [hx]
+  ring
+
+/-- For `ξ ≠ 0` the `n`-th moment of the D-term contribution to the GPD is
+`ξ^(n+1) ∫ du u^n D(u, t)`: the rescaling `x = ξ u` contributes `|ξ| ξ^n`, and the prefactor
+`ξ/|ξ|` turns `|ξ|` into `ξ`. -/
+private lemma integral_pow_mul_dTerm (dt : DTerm Flavor) (i : Flavor) (n : ℕ) {xi : ℝ}
+    (hxi : xi ≠ 0) (t : ℝ) :
+    ∫ x : ℝ, x ^ n * (xi / |xi| * dt.D i (x / xi) t) = xi ^ (n + 1) * dtMoment dt i n t := by
+  have h : ∀ x : ℝ, x ^ n * (xi / |xi| * dt.D i (x / xi) t)
+      = xi / |xi| * xi ^ n * ((x / xi) ^ n * dt.D i (x / xi) t) := by
+    intro x
+    have hx : x ^ n = xi ^ n * (x / xi) ^ n := by rw [← mul_pow, mul_div_cancel₀ x hxi]
+    rw [hx]
+    ring
+  simp_rw [h]
+  rw [integral_const_mul, Measure.integral_comp_div (fun u => u ^ n * dt.D i u t), smul_eq_mul,
+    dtMoment]
+  field_simp
+  ring
+
+/-- **The moment formula.** The `n`-th moment of a GPD built from a double distribution and
+a D-term is, for physical skewness `|ξ| ≤ 1`, the sum of the binomially weighted `(β, α)`
+moments of the double distribution and the D-term moment:
+`∫_{-1}^{1} dx x^n H(x, ξ, t) = ∑_{k ≤ n} C(n, k) ξ^k ∫∫ β^(n-k) α^k F + ξ^(n+1) ∫ u^n D`. -/
 theorem mellinMomentGpd_ofDoubleDistribution
     (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
     (n : ℕ) (i : Flavor) (xi t : ℝ) (hxi : |xi| ≤ 1) :
     mellinMomentGpd (gpdOfDoubleDistribution dd dt) n i xi t
       = ∑ k ∈ Finset.range (n + 2), momentCoeff dd dt n i k t * xi ^ k := by
-  -- TODO(task/p3-gpd-polynomiality): this is the measure-theoretic heart of the target and
-  -- is left open. Intended argument, in five steps:
-  --   1. Replace `∫ x in Set.Icc (-1) 1` by `∫ x` over all of `ℝ`. The integrand vanishes
-  --      off `[-1, 1]` by `gpdOfDoubleDistribution_eq_zero_of_one_lt_abs` (which is proved,
-  --      and is where `hxi` is used). The lemma is
-  --      `MeasureTheory.setIntegral_eq_integral_of_forall_compl_eq_zero`, CONFIRMED present
-  --      at this pin (Integral/Bochner/Set.lean:489), taking `(h : ∀ x, x ∉ s → f x = 0)`.
-  --   2. Split the integral over the two summands of `gpdOfDoubleDistribution`. This needs
-  --      integrability of each piece separately; the `ξ ≠ 0` branch should get it from
-  --      `dd.momentIntegrable` and `dt.momentIntegrable` after the change of variables of
-  --      step 3, so the split is best done after, or via `MeasureTheory.integral_add` with
-  --      integrability transported backwards.
-  --   3. For the `F` piece, change variables `(x, β) ↦ (β, α)` with `α = (x - β)/ξ`. The
-  --      Jacobian `|ξ|` cancels the `(|ξ|)⁻¹` prefactor. Then exchange the order of
-  --      integration with `MeasureTheory.integral_integral_swap`, using `dd.integrable`
-  --      and `dd.momentIntegrable`, to reach `∫∫ dβ dα (β + αξ)^n F(β, α, t)`.
-  --   4. Expand `(β + αξ)^n` with `add_pow` and integrate term by term
-  --      (`MeasureTheory.integral_finset_sum`), giving
-  --      `∑ k ∈ range (n+1), (n.choose k) * ξ^k * ddMoment dd i (n-k) k t`.
-  --   5. For the D-term piece, rescale `x = ξ u`; the Lebesgue Jacobian `|ξ|` times the
-  --      prefactor `ξ/|ξ|` gives `ξ`, and `x^n = ξ^n u^n`, so the piece is
-  --      `ξ^(n+1) * dtMoment dt i n t`, which is the `k = n + 1` term.
-  --   The `ξ = 0` branch must be handled separately: there the D-term is absent and only
-  --   the `k = 0` term survives, since `momentCoeff … 0 …` is `ddMoment dd i n 0 t` and
-  --   `∫ x x^n ∫ α F(x, α, t)` is that same double integral by Fubini.
-  --
-  -- Status (2026-09-19). The two parity inputs this consumes, `ddMoment_eq_zero_of_odd` and
-  -- `dtMoment_eq_zero_of_even`, are now PROVED, so the prerequisites are in place. Every
-  -- name the plan needs has been checked against the pinned mathlib and exists:
-  -- `setIntegral_eq_integral_of_forall_compl_eq_zero` (step 1, above),
-  -- `integral_image_eq_integral_abs_det_fderiv_smul` (step 3's Jacobian change of
-  -- variables, Function/Jacobian.lean:1213), `MeasureTheory.integral_integral_swap`
-  -- (step 3's exchange, Integral/Prod.lean:482) and `add_pow` (step 4).
-  --
-  -- It is nevertheless left open deliberately, and the honest reason is effort rather than
-  -- a missing ingredient: step 3 is a two-dimensional change of variables with a Jacobian
-  -- whose integrability hypotheses must be transported across the substitution before
-  -- Fubini can be applied, step 4 integrates a binomial expansion term by term, and the
-  -- `ξ = 0` degenerate branch is a separate argument. That is a project on the scale of a
-  -- PR of its own, not a proof step, and attempting it inside a sorry-reduction pass would
-  -- have meant claiming progress without a compiler behind it. The five other sorries in
-  -- this pass were each discharged and verified; this one is reported as open.
-  sorry -/
+  -- the integrand vanishes off `[-1, 1]`, so the moment is an integral over `ℝ`
+  rw [mellinMomentGpd, setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+    rw [gpdOfDoubleDistribution_eq_zero_of_one_lt_abs dd dt i x xi t hxi, mul_zero]
+    rw [Set.mem_Icc, not_and_or, not_le, not_le] at hx
+    rcases hx with hx | hx
+    · rw [abs_of_neg (by linarith)]
+      linarith
+    · rw [abs_of_pos (by linarith)]
+      exact hx]
+  -- split off the D-term slot and recognise the rest as the moment along `x = β + ξ α`
+  rw [Finset.sum_range_succ, momentCoeff, ite_eq_right (by omega : ¬ n + 1 ≤ n), ite_eq_left rfl]
+  have hlow : ∀ k ∈ Finset.range (n + 1), momentCoeff dd dt n i k t * xi ^ k
+      = (n.choose k : ℝ) * ddMoment dd i (n - k) k t * xi ^ k := fun k hk => by
+    rw [momentCoeff, ite_eq_left (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))]
+  rw [Finset.sum_congr rfl hlow, ← integral_add_mul_pow_mul]
+  by_cases hxi0 : xi = 0
+  · -- forward limit: the GPD is the `α`-integral of `F`, and the formula is Fubini
+    subst hxi0
+    simp only [gpdOfDoubleDistribution, ite_true, zero_mul, add_zero,
+      zero_pow n.succ_ne_zero]
+    have hI := integrable_add_mul_pow_mul dd i n 0 t
+    simp only [zero_mul, add_zero] at hI
+    rw [mul_zero, add_zero, Measure.volume_eq_prod, integral_prod _ hI]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only
+    rw [integral_const_mul]
+  · simp only [gpdOfDoubleDistribution, hxi0, ite_false, mul_add]
+    rw [integral_add (integrable_pow_mul_ddTerm dd i n hxi0 t)
+      (integrable_pow_mul_dTerm dt i n hxi0 t), integral_pow_mul_ddTerm dd i n hxi0 t,
+      integral_pow_mul_dTerm dt i n hxi0 t]
+    ring
 
-/- **Polynomiality.** For a GPD built from a double distribution and a D-term, the `n`-th
-`x`-moment is, at physical skewness, an even polynomial in `ξ` of degree at most `n + 1`.
-
-Inherits the `sorry` of `mellinMomentGpd_ofDoubleDistribution`, which supplies the
-`polynomial` clause; the evenness clause and the degree bound are proved outright. -/
-/- @[sorryful]
+/-- **Polynomiality.** For a GPD built from a double distribution and a D-term, the `n`-th
+`x`-moment is, at physical skewness, an even polynomial in `ξ` of degree at most `n + 1`. -/
 theorem mellinMomentGpd_polynomial
     (dd : DoubleDistribution Flavor) (dt : DTerm Flavor) (n : ℕ) (i : Flavor) (t : ℝ) :
     ∃ p : Polynomial ℝ, p.natDegree ≤ n + 1 ∧ (∀ k, Odd k → p.coeff k = 0) ∧
@@ -281,20 +358,16 @@ theorem mellinMomentGpd_polynomial
     exact momentCoeff_eq_zero_of_odd dd dt n i k t hk
   · intro xi hxi
     rw [momentPolynomial_eval]
-    exact mellinMomentGpd_ofDoubleDistribution dd dt n i xi t hxi -/
+    exact mellinMomentGpd_ofDoubleDistribution dd dt n i xi t hxi
 
-/- Polynomiality for a full GPD model built from double distributions.
-
-Inherits the `sorry` of `mellinMomentGpd_ofDoubleDistribution` through
-`mellinMomentGpd_polynomial`. -/
-/- @[sorryful]
+/-- Polynomiality of the `H` moments of a GPD model built from double distributions. -/
 theorem mellinMomentH_polynomial
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
     (n : ℕ) (i : Flavor) (t : ℝ) :
     ∃ p : Polynomial ℝ, p.natDegree ≤ n + 1 ∧ (∀ k, Odd k → p.coeff k = 0) ∧
       ∀ xi, |xi| ≤ 1 →
-        mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) n i xi t = p.eval xi := by
-  exact mellinMomentGpd_polynomial ddH dtH n i t -/
+        mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) n i xi t = p.eval xi :=
+  mellinMomentGpd_polynomial ddH dtH n i t
 
 /-- Below the top slot the coefficients are pure double-distribution form factors. -/
 lemma momentPolynomial_coeff_of_le (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
@@ -320,38 +393,24 @@ lemma momentPolynomial_coeff_top_eq_zero_of_even (dd : DoubleDistribution Flavor
   rw [momentPolynomial_coeff_top]
   exact dtMoment_eq_zero_of_even dt i n t hn
 
-/- **The bridge to the assumption bundle — not yet a discharge.** Any GPD model built
-from double distributions satisfies `PolynomialityAssumptions`, *conditionally on*
-`mellinMomentGpd_ofDoubleDistribution`, which is a tagged `sorry`.
-
-The `coeff` and `coeff_eq_zero_of_odd` fields are supplied by proved results; the
-`polynomial` field is exactly the open analytic core. So what this definition achieves is
-a reduction — the whole bundle is now pinned to one measure-theoretic statement instead of
-three — and **not** the retirement of the bundle. `#print axioms` on it reports `sorryAx`
-Until that `sorry` is closed, a caller who
-obtains `PolynomialityAssumptions` this way has assumed polynomiality, not proved it. -/
-/- @[sorryful]
+/-- **The bridge to the assumption bundle.** Every GPD model built from double distributions
+satisfies `PolynomialityAssumptions`, with the coefficients `momentCoeff` of its `H` moments. -/
 def polynomialityAssumptionsOfDoubleDistribution
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor) :
     PolynomialityAssumptions (Model.ofDoubleDistribution ddH dtH ddE dtE) where
   coeff := fun n i k t => momentCoeff ddH dtH n i k t
   coeff_eq_zero_of_odd := fun n i k t hk => momentCoeff_eq_zero_of_odd ddH dtH n i k t hk
-  polynomial := fun n i xi t hxi => by
-    exact mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi -/
+  polynomial := fun n i xi t hxi => mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi
 
-/- The `n = 0` corollary of `GPD.Moments`, with its hypothesis supplied by the bridge
-above rather than by the caller.
-
-Since that bridge rests on `mellinMomentGpd_ofDoubleDistribution`, so does this: the
-hypothesis has been *relocated*, not discharged. -/
-/- @[sorryful]
+/-- The zeroth moment of `H` for a GPD model built from double distributions does not depend
+on the skewness. -/
 lemma mellinMomentH_n0_eq_at_zero_ofDoubleDistribution
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
     (i : Flavor) (xi t : ℝ) (hxi : |xi| ≤ 1) :
     mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) 0 i xi t
       = mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) 0 i 0 t :=
   mellinMomentH_n0_eq_at_zero _
-    (polynomialityAssumptionsOfDoubleDistribution ddH ddE dtH dtE) i xi t hxi -/
+    (polynomialityAssumptionsOfDoubleDistribution ddH ddE dtH dtE) i xi t hxi
 
 end GPD
 end Parton

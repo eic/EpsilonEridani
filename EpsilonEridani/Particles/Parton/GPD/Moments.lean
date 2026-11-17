@@ -75,14 +75,9 @@ of degree at most `n + 1` containing only even powers. The `ξ^(n+1)` coefficien
 D-term contribution and is nonzero only for odd `n` (equivalently, for even literature
 index `n + 1`).
 
-This bundle is retained for models that are not built from a double distribution. For
-models that are, `GPD.polynomialityAssumptionsOfDoubleDistribution` constructs it — but
-**that bridge is not a discharge**: its `polynomial` field is
-`GPD.mellinMomentGpd_ofDoubleDistribution`, which is a tagged `sorry`, so `#print axioms`
-on the bridge reports `sorryAx`. A reader deciding whether this
-assumption is "handled" should read it as: handled *modulo* one open measure-theoretic
-statement, and otherwise assumed. No unconditional discharge of this bundle exists
-anywhere in the repository at present. -/
+This bundle is the hypothesis for models that are not built from a double distribution.
+For models that are, `GPD.polynomialityAssumptionsOfDoubleDistribution` constructs it from
+the moment formula `GPD.mellinMomentGpd_ofDoubleDistribution`. -/
 structure PolynomialityAssumptions (M : Model Flavor) : Type where
   /-- The coefficient of `ξ^k` in the `n`-th moment for flavor `i` at momentum transfer `t`. -/
   coeff : ℕ → Flavor → ℕ → ℝ → ℝ
