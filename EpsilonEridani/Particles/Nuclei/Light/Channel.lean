@@ -83,8 +83,9 @@ channels are available to a proton-neutron pair and forbidden to a like-species 
   in isospin `0`; the hypothesis `T ≤ 1` restricts the isospin to the two-nucleon range.
 * `ChannelLabel.S_eq_of_parity_eq_of_pauliAllowed`: two channels allowed in the same isospin and of
   equal parity have equal total spin.
-* `ChannelLabel.S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one`: a
-  channel of odd `J` and positive parity is a spin triplet with `L = J ∓ 1`.
+* `ChannelLabel.S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_L_add_J`: a channel whose
+  `L` and `J` have opposite parity, that is of parity `-(-1)^J`, is a spin triplet with
+  `L = J ∓ 1`.
 * `ChannelLabel.eq_tripletS1_or_eq_tripletD1_iff`: the two-nucleon channels with `J = 1` and
   positive parity are exactly `³S₁` and `³D₁`.
 * `ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_odd_J_of_parity_eq_one`: a two-nucleon channel
@@ -170,6 +171,17 @@ theorem L_eq_J_or_S_eq_one : c.L = c.J ∨ c.S = 1 ∧ (c.L + 1 = c.J ∨ c.L = 
 /-- A spin-singlet channel has `L = J`. -/
 theorem L_eq_J_of_S_eq_zero {c : ChannelLabel} (h : c.S = 0) : c.L = c.J :=
   c.L_eq_J_or_S_eq_one.resolve_right (by omega)
+
+/-- A two-nucleon channel whose orbital and total angular momenta `L` and `J` have opposite parity
+is a spin triplet with `L = J ∓ 1`, of `³(J-1)_J` or `³(J+1)_J`: the other case of
+`ChannelLabel.L_eq_J_or_S_eq_one` has `L = J`. These are the channels of parity `-(-1)^J`, such as
+`³S₁` and `³D₁` of odd `J` and positive parity, or `³P₂` and `³F₂` of even `J` and negative
+parity. -/
+theorem S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_L_add_J {c : ChannelLabel}
+    (h : Odd (c.L + c.J)) : c.S = 1 ∧ (c.L + 1 = c.J ∨ c.L = c.J + 1) := by
+  have := c.L_eq_J_or_S_eq_one
+  rw [Nat.odd_iff] at h
+  omega
 
 /-! ### Parity -/
 
@@ -288,16 +300,6 @@ deuteron. -/
 @[simp] theorem tripletD1_ne_tripletS1 : tripletD1 ≠ tripletS1 :=
   tripletS1_ne_tripletD1.symm
 
-/-- A two-nucleon channel of odd total angular momentum `J` and positive parity is a spin triplet
-with `L = J ∓ 1`, of `³(J-1)_J` or `³(J+1)_J`: the spin singlet has `L = J`, of odd `L` and hence
-negative parity, and in a spin triplet `L = J` is odd as well. -/
-theorem S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one {c : ChannelLabel}
-    (hJ : Odd c.J) (hP : c.parity = 1) : c.S = 1 ∧ (c.L + 1 = c.J ∨ c.L = c.J + 1) := by
-  have := c.L_eq_J_or_S_eq_one
-  rw [parity_eq_one_iff, Nat.even_iff] at hP
-  rw [Nat.odd_iff] at hJ
-  omega
-
 /-- The two-nucleon channels with total angular momentum `1` and positive parity are exactly `³S₁`
 and `³D₁`; the spin singlet with `J = 1` is `¹P₁`, of negative parity. These are the deuteron's
 spin and parity, so a deuteron wave function lives in these two channels; the derivation uses no
@@ -305,7 +307,8 @@ property of the nucleon-nucleon interaction. -/
 theorem eq_tripletS1_or_eq_tripletD1_iff {c : ChannelLabel} :
     c = tripletS1 ∨ c = tripletD1 ↔ c.J = 1 ∧ c.parity = 1 := by
   refine ⟨by rintro (rfl | rfl) <;> simp, fun ⟨hJ, hP⟩ => ?_⟩
-  have := S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one (hJ ▸ odd_one) hP
+  have := S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_L_add_J
+    ((c.parity_eq_one_iff.1 hP).add_odd (hJ ▸ odd_one))
   simp only [ChannelLabel.ext_iff, tripletS1_S, tripletS1_L, tripletS1_J, tripletD1_S, tripletD1_L,
     tripletD1_J]
   omega
@@ -317,7 +320,8 @@ theorem pauliAllowed_iff_isospin_eq_zero_of_odd_J_of_parity_eq_one {c : ChannelL
     (hJ : Odd c.J) (hP : c.parity = 1) (hT : T ≤ 1) :
     c.PauliAllowed T ↔ T = 0 := by
   refine pauliAllowed_iff_isospin_eq_zero ?_ hT
-  have := S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one hJ hP
+  have := S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_L_add_J
+    ((c.parity_eq_one_iff.1 hP).add_odd hJ)
   rw [Nat.odd_iff] at hJ ⊢
   omega
 
