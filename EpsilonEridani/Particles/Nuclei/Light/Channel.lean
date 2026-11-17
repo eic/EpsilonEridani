@@ -41,10 +41,10 @@ exactly the two channels `³S₁` and `³D₁` (`ChannelLabel.eq_tripletS1_or_eq
 Pauli-allowed in isospin `0` (`ChannelLabel.pauliAllowed_tripletS1`,
 `ChannelLabel.pauliAllowed_tripletD1`), so a deuteron wave function consists of the two radial
 amplitudes of these channels; the spin-singlet channel with `J = 1` is `¹P₁`, of negative parity.
-Such a channel is allowed by the Pauli principle exactly in isospin `0`
-(`ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`): there is no
-isospin-one two-nucleon state, and so no proton-proton or neutron-neutron state, with the
-deuteron's spin and parity.
+A two-nucleon channel with `J = 1` and positive parity is allowed by the Pauli principle exactly
+in isospin `0` (`ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`):
+there is no isospin-one two-nucleon state, and so no proton-proton or neutron-neutron state, with
+the deuteron's spin and parity.
 
 More generally, two Pauli-allowed channels with the same total angular momentum, parity and isospin
 coincide unless they are the spin-triplet pair `³(J-1)_J` and `³(J+1)_J`
@@ -261,11 +261,11 @@ theorem S_eq_of_parity_eq_of_pauliAllowed {c c' : ChannelLabel} {T : ℕ}
 
 /-- The channel `³S₁`: total spin one, orbital angular momentum zero, total angular momentum one.
 It is the dominant channel of the deuteron. -/
-def tripletS1 : ChannelLabel := ⟨1, 0, 1, le_rfl, by decide⟩
+def tripletS1 : ChannelLabel := mk' 1 0 1 le_rfl (by omega) (by omega) (by omega)
 
 /-- The channel `³D₁`: total spin one, orbital angular momentum two, total angular momentum one.
 It is the channel admixed into the deuteron by the tensor force. -/
-def tripletD1 : ChannelLabel := ⟨1, 2, 1, le_rfl, by decide⟩
+def tripletD1 : ChannelLabel := mk' 1 2 1 le_rfl (by omega) (by omega) (by omega)
 
 @[simp] theorem tripletS1_S : tripletS1.S = 1 := (rfl)
 @[simp] theorem tripletS1_L : tripletS1.L = 0 := (rfl)

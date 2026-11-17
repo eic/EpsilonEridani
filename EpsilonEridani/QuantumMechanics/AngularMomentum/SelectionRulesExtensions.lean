@@ -14,11 +14,14 @@ public import PhyslibAlpha.QuantumMechanics.AngularMomentum.SelectionRules
 that half-integral angular momenta are natural numbers. When the doubled values have even sum, the
 rule reduces to the three triangle inequalities `|k - m| ≤ p ≤ k + m`
 (`PhyslibAlpha.Sl2.triangleRule_iff_of_even`). The even-sum case covers every coupling of two
-integral angular momenta to an integral one, and also every coupling of a half-integral and an
-integral angular momentum to a half-integral one, such as a half-integral spin and an orbital
-angular momentum. For three integral angular momenta `a`, `b`, `c` the doubled values are
-`2 * a`, `2 * b`, `2 * c` (`PhyslibAlpha.Sl2.triangleRule_two_mul_iff`); this is the form in which
-orbital angular momenta and the total spin of two spin-`1/2` particles couple.
+integral angular momenta to an integral one, every coupling of two half-integral angular momenta
+to an integral one, such as the two nucleon spins to the total spin, and every coupling of a
+half-integral and an integral angular momentum to a half-integral one, such as a half-integral
+spin and an orbital angular momentum; it is the parity condition `(k + m + p) % 2 = 0` that every
+coupling allowed by the triangle rule satisfies. For three integral angular momenta `a`, `b`, `c`
+the doubled values are `2 * a`, `2 * b`, `2 * c` (`PhyslibAlpha.Sl2.triangleRule_two_mul_iff`);
+this is the form in which orbital angular momenta and the total spin of two spin-`1/2` particles
+couple.
 -/
 
 public section
