@@ -289,6 +289,26 @@ lemma Assumptions.weight {f : Pdf ι} (h : Assumptions f) {w : ι → ℝ} (hw :
 
 end Weight
 
+/-! ### Domination by a regular density
+
+A polarized distribution such as a helicity or a transversity density is not a `Pdf` in the
+probabilistic sense, but positivity bounds it in absolute value by the unpolarized density. Such a
+bound transfers the analytic half of the assumptions from the unpolarized density to the
+polarized one, leaving only measurability to supply. -/
+
+/-- A measurable distribution bounded in absolute value by a regular density is regular: every
+Mellin-moment integrand is dominated by the corresponding integrand of the density. -/
+lemma Regularity.of_abs_le {f g : Pdf Flavor} (hf : Regularity f)
+    (hm : ∀ i Q2, MeasureTheory.AEStronglyMeasurable (fun x : ℝ => g i x Q2))
+    (hle : ∀ i x Q2, |g i x Q2| ≤ f i x Q2) : Regularity g where
+  measurable := hm
+  momentIntegrable n i Q2 := by
+    refine (hf.momentIntegrable n i Q2).mono
+      ((continuous_pow n).aestronglyMeasurable.mul (hm i Q2)) (Filter.Eventually.of_forall
+        fun x => ?_)
+    simp only [norm_mul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_left ((hle i x Q2).trans (le_abs_self _)) (abs_nonneg _)
+
 end PDF
 end Parton
 end Particles

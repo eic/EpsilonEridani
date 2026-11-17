@@ -81,6 +81,7 @@ time-reversal-invariant specialisation.
 - `EpsilonEridani.Particles.Parton.PDF.pdfOfSpinDensity_nonneg`
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_pdfOfSpinDensity`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_iff_assumptions`
+- `EpsilonEridani.Particles.Parton.PDF.regularity_helicityPdfOfSpinDensity`
 
 -/
 
@@ -315,6 +316,25 @@ lemma spinDensityAssumptions_iff_assumptions (ρ : Flavor → ℝ → ℝ → Sp
   exact { support := fun i x Q2 hx => h.support i x Q2 hx
           measurable := fun i Q2 => h.measurable i Q2
           momentIntegrable := fun n i Q2 => h.momentIntegrable n i Q2 }
+
+/-- The helicity distribution of a spin-density family satisfying the structural assumptions
+vanishes outside the physical support: helicity dominance `|g₁| ≤ f₁` squeezes it to zero
+wherever the unpolarized density vanishes. -/
+theorem helicityPdfOfSpinDensity_eq_zero {ρ : Flavor → ℝ → ℝ → SpinDensity}
+    (h : SpinDensityAssumptions ρ) (i : Flavor) (x Q2 : ℝ) (hx : x < 0 ∨ 1 < x) :
+    helicityPdfOfSpinDensity ρ i x Q2 = 0 := by
+  have hle := abs_helicityPdf_le_pdf ρ i x Q2
+  rw [pdfOfSpinDensity, h.support i x Q2 hx] at hle
+  exact abs_nonpos_iff.mp hle
+
+/-- The helicity distribution of a spin-density family satisfying the structural assumptions
+inherits the analytic half of `PDF.Assumptions` from the unpolarized density, through helicity
+dominance `|g₁| ≤ f₁`; only its measurability in `x` has to be supplied. -/
+theorem regularity_helicityPdfOfSpinDensity {ρ : Flavor → ℝ → ℝ → SpinDensity}
+    (h : SpinDensityAssumptions ρ)
+    (hm : ∀ i Q2, MeasureTheory.AEStronglyMeasurable (fun x : ℝ => g1 (ρ i x Q2))) :
+    Regularity (helicityPdfOfSpinDensity ρ) :=
+  (assumptions_pdfOfSpinDensity ρ h).regularity.of_abs_le hm (abs_helicityPdf_le_pdf ρ)
 
 /-- The analytic/physical split for a spin-density family. The physical half is the support
 postulate on the induced density — its nonnegativity is a theorem here, not a hypothesis —
