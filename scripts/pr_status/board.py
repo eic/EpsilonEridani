@@ -11,14 +11,20 @@ Each open PR is one item on a Projects (v2) board. Its **Status** column is a ba
 from merge, so the board reads left to right as "closest first":
 
     All rubrics green  >  1-2 to go  >  3-5 to go  >  6+ to go  >  Blocked  >
-    No review at head  >  Waiting on CI  >  On hold
+    Re-review: was ≤2 to go  >  Re-review: was 3+ to go  >  Never reviewed  >
+    Waiting on CI  >  On hold
+
+A PR whose newest review judged an earlier head (or merge base) is not counted as reviewed, as the
+merge gate does not count it either; the two Re-review columns band it by how far that review had
+got, so the PRs nearest to merge once re-reviewed stand apart from the ones with work left, and
+both stand apart from the PRs no review has looked at yet.
 
 and its fields carry the evidence the band was read from, so a list view sorted by
 **Rubrics green** is the same ranking as a flat score:
 
     Rubrics green   how many of the rubrics approve the CURRENT head (empty: no review at head)
     Prior green     for a PR whose newest review is of an earlier head: how many rubrics approved
-                    then, so the "No review at head" column still ranks by how far each had got
+                    then, the count the Re-review columns are banded and ranked by
     Not green       the rubrics still to satisfy, each with its state (changes / BLOCK / stale /
                     not run / error) -- what is left to do on this PR
     Lifecycle       the readiness category labels.py would apply (whose court it is)
@@ -74,11 +80,18 @@ COLUMNS = [
     ("3\u20135 to go", "ORANGE", "5 to 7 of the rubrics approve the current head; none blocked"),
     ("6+ to go", "RED", "At most 4 of the rubrics approve the current head; none blocked"),
     ("Blocked", "PURPLE", "An integrity rubric blocked the current head; it needs rework, not polish"),
-    ("No review at head", "BLUE", "The build is green but no completed review names the current head"),
+    ("Re-review: was \u22642 to go", "BLUE",
+     "The build is green; the newest review judged an earlier head with 8 or more rubrics green"),
+    ("Re-review: was 3+ to go", "PINK",
+     "The build is green; the newest review judged an earlier head with at most 7 rubrics green"),
+    ("Never reviewed", "GRAY", "The build is green but no review has completed on any head"),
     ("Waiting on CI", "GRAY", "The build has not passed on the current head, so review cannot run"),
     ("On hold", "GRAY", "A draft, held by a keep/hold/wip/human/do-not-close label, or stacked on another branch"),
 ]
 COLUMN_ORDER = {name: index for index, (name, _, _) in enumerate(COLUMNS)}
+# Status options this script once created and no longer uses. They are dropped the next time the
+# Status options are rewritten; every open PR's item is re-set in the same run.
+RETIRED_COLUMNS = {"No review at head"}
 
 # Lifecycle options mirror labels.LABELS (same names, same descriptions) so the board and the PR
 # list agree; only the colours differ, since Projects has a fixed palette.
@@ -228,10 +241,14 @@ def load_project(owner, number, owner_type="organization"):
 def ensure_fields(project, dry_run=False):
     """Create the fields the board needs and give each single-select field the options it lacks.
 
-    Options are added, never removed or recoloured: `updateProjectV2Field` replaces the whole option
-    list, so the existing options are re-sent as they are (name, colour, description) with the
-    missing ones appended. A human-added option therefore survives, and an item parked in it is left
-    where it is. Returns the names of fields that could not be made ready (dry run only)."""
+    `updateProjectV2Field` replaces the whole option list, so when an option is missing (or a
+    retired one is still there) the list is re-sent in full: this script's options in board order,
+    an existing one exactly as it is (name, colour, description), then every other existing option
+    in its current order. A human-added option therefore survives (an item parked in it stays
+    there), and new columns land in their place rather than after "On hold". Only options in
+    `RETIRED_COLUMNS` are dropped. Because the rewrite may clear the field on existing items, their
+    loaded values of that field are forgotten, so this run writes it again for every PR it syncs.
+    Returns the names of fields that could not be made ready (dry run only)."""
     missing = []
     for name, (data_type, options) in FIELDS.items():
         field = project["fields"].get(name)
@@ -246,15 +263,21 @@ def ensure_fields(project, dry_run=False):
             project["fields"][name] = field
             log(f"created field {name!r}")
         if options:
-            wanted = [(n, c, d) for n, c, d in options if n not in field["options"]]
-            if not wanted:
+            wanted = [n for n, _, _ in options if n not in field["options"]]
+            retired = [n for n in field["options"] if name == "Status" and n in RETIRED_COLUMNS]
+            if not wanted and not retired:
                 continue
+            what = "; ".join(filter(None, [wanted and "add " + ", ".join(wanted),
+                                           retired and "drop " + ", ".join(retired)]))
             if dry_run:
-                log(f"would add options to {name!r}: {', '.join(n for n, _, _ in wanted)}")
+                log(f"would update options of {name!r}: {what}")
                 missing.append(name)
                 continue
-            field["options"] = add_options(field, wanted)
-            log(f"added options to {name!r}: {', '.join(n for n, _, _ in wanted)}")
+            keep = [o for o in field["option_details"] if o["name"] not in set(retired)]
+            field["options"] = set_options(field, ordered_options(options, keep))
+            for item in project["items"].values():
+                item["values"].pop(name, None)
+            log(f"updated options of {name!r}: {what}")
     return missing
 
 
@@ -283,18 +306,33 @@ mutation($project: ID!, $name: String!, $type: ProjectV2CustomFieldType!,
             "option_details": node.get("options") or []}
 
 
-def add_options(field, wanted):
-    """Append `wanted` options to a single-select field, keeping every existing option as it is.
-    Returns the new name -> id map."""
-    existing = [{"name": o["name"], "color": o.get("color") or "GRAY",
-                 "description": o.get("description") or ""} for o in field["option_details"]]
+def ordered_options(ours, existing):
+    """The option list to send: `ours` (name, colour, description) in order, each one that already
+    exists sent exactly as it is, then the remaining `existing` options in their current order."""
+    by_name = {o["name"]: o for o in existing}
+    out = []
+    for name, color, description in ours:
+        o = by_name.get(name)
+        out.append({"name": name, "color": o.get("color") or "GRAY",
+                    "description": o.get("description") or ""} if o else
+                   {"name": name, "color": color, "description": description})
+    mine = {name for name, _, _ in ours}
+    out.extend({"name": o["name"], "color": o.get("color") or "GRAY",
+                "description": o.get("description") or ""}
+               for o in existing if o["name"] not in mine)
+    return out
+
+
+def set_options(field, options):
+    """Replace a single-select field's options with `options` (see `ordered_options`). Returns the
+    new name -> id map."""
     query = """
 mutation($field: ID!, $options: [ProjectV2SingleSelectFieldOptionInput!]!) {
   updateProjectV2Field(input: {fieldId: $field, singleSelectOptions: $options}) {
     projectV2Field { ... on ProjectV2SingleSelectField { options { id name color description } } }
   }
 }"""
-    node = graphql(query, {"field": field["id"], "options": existing + _option_inputs(wanted)})
+    node = graphql(query, {"field": field["id"], "options": options})
     details = node["updateProjectV2Field"]["projectV2Field"]["options"]
     field["option_details"] = details
     return {o["name"]: o["id"] for o in details}
@@ -420,7 +458,8 @@ def _summary(board, meta, gate, current):
 
 def column(category, review, build):
     """The Status column for a PR. A current review decides the band; without one, the build
-    decides whether review could even run; a hold trumps both."""
+    decides whether review could even run, and a superseded review's score which Re-review band it
+    waits in; a hold trumps all of them."""
     if category in {"on-hold", "awaiting-dependency"}:
         return "On hold"
     if review and review["current"]:
@@ -434,9 +473,13 @@ def column(category, review, build):
         if green >= HALFWAY_FLOOR:
             return "3\u20135 to go"
         return "6+ to go"
-    if (build or "").lower() == "success":
-        return "No review at head"
-    return "Waiting on CI"
+    if (build or "").lower() != "success":
+        return "Waiting on CI"
+    if review is None:
+        return "Never reviewed"
+    if review["green"] >= NEARLY_GREEN_FLOOR:
+        return "Re-review: was \u22642 to go"
+    return "Re-review: was 3+ to go"
 
 
 def roadmap_of(label_names):

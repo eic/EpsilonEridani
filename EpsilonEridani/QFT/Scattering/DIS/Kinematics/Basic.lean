@@ -191,6 +191,26 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
   rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
+/-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`. -/
+@[simp]
+lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u ≠ 0) :
+    LinearMap.det (reflect g u) = -1 := by
+  have h : reflect g u = LinearMap.transvection (-(2 * (g u u)⁻¹) • g u) u := by
+    ext v
+    rw [reflect_apply, LinearMap.transvection.apply, LinearMap.smul_apply, smul_eq_mul]
+    module
+  rw [h, LinearMap.transvection.det, LinearMap.smul_apply, smul_eq_mul]
+  field_simp
+  ring
+
+/-- A bilinear form has no component between a vector `v` fixed by a linear map `f` and a
+vector `u` reversed by `f`, provided the component `W v u` is invariant under `f`. -/
+lemma apply_eq_zero_of_apply_eq_self_of_apply_eq_neg {W : Bilin V} {f : V →ₗ[ℝ] V} {v u : V}
+    (hf : W (f v) (f u) = W v u) (hfv : f v = v) (hfu : f u = -u) :
+    W v u = 0 := by
+  rw [hfv, hfu, map_neg] at hf
+  linarith
+
 end Bilin
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
