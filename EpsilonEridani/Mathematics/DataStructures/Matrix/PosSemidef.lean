@@ -11,60 +11,76 @@ public import TauCeti.Analysis.Matrix.PosSemidef
 
 
 /-!
-# Entrywise bounds and real parts of positive-semidefinite matrices
+# Entrywise bounds and real/complex transfer for positive-semidefinite matrices
 
-The principal `2 × 2` minors of a positive-semidefinite matrix `M` are nonnegative. This
-file records the resulting entrywise bounds on the off-diagonal entries:
+This file proves entrywise bounds for positive-semidefinite matrices and transfers positive
+semidefiniteness from a matrix over `RCLike 𝕜` to its entrywise real part, and between a real
+matrix and its image under `ℝ → 𝕜`. It also records that a diagonal entry of a
+positive-semidefinite matrix is at most its trace, and that a diagonal matrix unit `single i i r`
+is positive semidefinite exactly when `0 ≤ r`; `single i i 1` is the density matrix of a pure
+basis state.
 
-* `Matrix.PosSemidef.two_mul_norm_apply_le`: `2 * ‖M i j‖ ≤ re (M i i) + re (M j j)` over any
-  `RCLike` field, the arithmetic-mean form of Tau Ceti's scalar Cauchy-Schwarz inequality
-  `Matrix.PosSemidef.normSq_le`;
-* `Matrix.PosSemidef.sq_apply_le`: `(M i j) ^ 2 ≤ M i i * M j j` for real `M`, the real case of
-  `Matrix.PosSemidef.normSq_le`;
-* `Matrix.PosSemidef.two_mul_abs_apply_le`: `2 * |M i j| ≤ M i i + M j j` for real `M`, the real
-  case of `two_mul_norm_apply_le`.
+A positive-semidefinite matrix `M` over `RCLike 𝕜` carries two entrywise bounds:
 
-It also records that a diagonal entry of a positive-semidefinite matrix is at most its trace
-(`Matrix.PosSemidef.apply_self_le_trace`), and that a diagonal matrix
-unit `single i i r` is positive semidefinite exactly when `0 ≤ r`
-(`Matrix.posSemidef_single_self_iff`); `single i i 1` is the density matrix of a pure basis state.
+* `Matrix.PosSemidef.re_apply_self_nonneg`: `0 ≤ re (M i i)`;
+* `Matrix.PosSemidef.two_mul_norm_apply_le`: `2 * ‖M i j‖ ≤ re (M i i) + re (M j j)`.
 
-(Nonnegativity of the diagonal is Mathlib's `Matrix.PosSemidef.diag_nonneg`.)
+The second is the arithmetic-mean form of the Cauchy-Schwarz bound `Matrix.PosSemidef.normSq_le`
+of `TauCeti.Analysis.Matrix.PosSemidef`. It is stated multiplied out, with no division, so that it
+applies without field side conditions. Its specialisation to `𝕜 = ℝ` is
+`Matrix.PosSemidef.two_mul_abs_apply_le`, `2 * |M i j| ≤ M i i + M j j`; over `ℝ` the first bound
+is Mathlib's `Matrix.PosSemidef.diag_nonneg`, and the real case of `normSq_le` is
+`Matrix.PosSemidef.sq_apply_le`, `(M i j) ^ 2 ≤ M i i * M j j`. This is the form in which
+positivity constraints are used in hadronic physics; see
+`EpsilonEridani/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark transversity
+distribution, which is exactly the arithmetic-mean inequality applied to the parton spin-density
+matrix.
 
-All three bounds are stated multiplied out, with no division, so that they apply without field
-side conditions. This is the form in which positivity constraints are used in hadronic physics; see
-`EpsilonEridani/Particles/Parton/PDF/Positivity.lean` for the Soffer bound on the quark
-transversity distribution, which is exactly the arithmetic-mean inequality applied to the
-parton spin-density matrix.
+The entrywise real part of a positive-semidefinite matrix is positive semidefinite, and a real
+matrix is positive semidefinite exactly when its image under the coercion `ℝ → 𝕜` is. This is what
+lets a complex positive-semidefinite matrix descend to a real one. Both statements follow from
+the quadratic-form characterisation of an arbitrary-index positive-semidefinite matrix,
+`TauCeti.posSemidef_iff_finite_sum` of `TauCeti.LinearAlgebra.Matrix.PosSemidef`, through its
+principal-submatrix form `Matrix.PosSemidef.of_submatrix_dotProduct_mulVec_nonneg`.
 
-Real positive-semidefinite matrices also arise as real parts of complex ones: for a Hermitian
-`M` and a real vector `x`, `xᵀ (Re M) x = Re (xᴴ M x)`, so `Matrix.PosSemidef.map_re` passes from
-a positive-semidefinite matrix over an `RCLike` field to its entrywise real part. This is how
-a real Gaussian kernel `(a, b) ↦ exp (-c ‖a - b‖²)` on a real inner-product space inherits
-positivity from its complex counterpart; that kernel lemma is recorded in
+For a Hermitian `M` and a real vector `x`, `xᵀ (Re M) x = Re (xᴴ M x)`. This is how a real
+Gaussian kernel `(a, b) ↦ exp (-c ‖a - b‖²)` on a real inner-product space inherits positivity
+from its complex counterpart through `Matrix.PosSemidef.map_re`; that kernel lemma is recorded in
 `EpsilonEridani/Mathematics/DataStructures/Matrix/GaussianKernel.lean`, where it feeds the
 admissibility of the Golec-Biernat-Wüsthoff dipole amplitude of
 `EpsilonEridani/QFT/SmallX/Dipole/Amplitude.lean`.
 
 ## Main results
 
-- `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound.
-- `Matrix.PosSemidef.sq_apply_le`: the real entrywise geometric-mean bound.
-- `Matrix.PosSemidef.two_mul_abs_apply_le`: the real entrywise arithmetic-mean bound.
+- `Matrix.PosSemidef.of_submatrix_dotProduct_mulVec_nonneg`: a hermitian matrix whose principal
+  submatrices on finite families of indices have nonnegative quadratic forms is positive
+  semidefinite.
+- `Matrix.PosSemidef.re_apply_self_nonneg`: nonnegativity of the real part of the diagonal.
+- `Matrix.PosSemidef.two_mul_norm_apply_le`: the entrywise arithmetic-mean bound over `RCLike`.
+- `Matrix.PosSemidef.sq_apply_le`: the entrywise geometric-mean bound over `ℝ`.
+- `Matrix.PosSemidef.two_mul_abs_apply_le`: the real specialisation of the arithmetic-mean bound.
+- `Matrix.re_star_ofReal_dotProduct_mulVec_ofReal`: the real part of the quadratic form of a
+  matrix over `𝕜` on a real vector is the quadratic form of its entrywise real part.
+- `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix is
+  positive semidefinite.
+- `Matrix.re_star_dotProduct_map_ofReal_mulVec`: the real part of the quadratic form of a real
+  matrix on a vector over `𝕜`, split along the real and imaginary parts of the vector.
+- `Matrix.posSemidef_map_ofReal_iff`: positive semidefiniteness is unchanged by `ℝ → 𝕜`.
 - `Matrix.PosSemidef.apply_self_le_trace`: a diagonal entry is at most the trace.
 - `Matrix.posSemidef_single_self_iff`: positive semidefiniteness of diagonal matrix units.
-- `Matrix.PosSemidef.map_re`: the entrywise real part of a positive-semidefinite matrix over an
-  `RCLike` field is positive semidefinite.
 
 ## Implementation notes
 
-The geometric-mean bound over `RCLike 𝕜` is Tau Ceti's `Matrix.PosSemidef.normSq_le`, of which
-`sq_apply_le` is the real case. The arithmetic-mean bound is stated over `RCLike 𝕜` because a
-genuinely complex density matrix needs it: the off-diagonal entries of a spin density matrix
-carry the vector polarization in their imaginary parts.
+The arithmetic-mean bound is stated over `RCLike 𝕜` because a genuinely complex density matrix
+needs it: the off-diagonal entries of a spin density matrix carry the vector polarization in
+their imaginary parts.
 
-The entrywise bounds are stated for a general index type rather than for `Fin n`, and are
-candidates for upstreaming to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
+These lemmas are stated for a general index type rather than for `Fin n`, and are candidates
+for upstreaming: the `RCLike` lemmas (`re_apply_self_nonneg`, `two_mul_norm_apply_le`, the
+quadratic-form identities, `map_re`, `posSemidef_map_ofReal_iff`) and their real specialisations
+`sq_apply_le` and `two_mul_abs_apply_le` to `Mathlib/Analysis/Matrix/PosDef.lean`, and the
+ring-level lemmas (`of_submatrix_dotProduct_mulVec_nonneg`, `apply_self_le_trace`,
+`posSemidef_single_self_iff`) to `Mathlib/LinearAlgebra/Matrix/PosDef.lean`.
 -/
 
 @[expose] public section
@@ -75,18 +91,91 @@ open scoped ComplexOrder
 
 variable {n : Type*}
 
+/-- A hermitian matrix over an arbitrary index type is positive semidefinite as soon as each of
+its principal submatrices on a finite family of indices (repeats allowed) has a nonnegative
+quadratic form. This is the arbitrary-index generalisation of
+`Matrix.PosSemidef.of_dotProduct_mulVec_nonneg`, in the dot-product form of
+`TauCeti.posSemidef_iff_finite_sum`. -/
+lemma PosSemidef.of_submatrix_dotProduct_mulVec_nonneg {R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] {M : Matrix n n R} (hM : M.IsHermitian)
+    (h : ∀ {ι : Type*} [Fintype ι] (v : ι → n) (x : ι → R),
+      0 ≤ star x ⬝ᵥ (M.submatrix v v *ᵥ x)) :
+    M.PosSemidef :=
+  TauCeti.posSemidef_iff_finite_sum.mpr ⟨fun a b => hM.apply b a, fun v x => by
+    simpa only [dotProduct, mulVec, submatrix_apply, Pi.star_apply, Finset.mul_sum, mul_assoc]
+      using h v x⟩
+
+section RCLike
+
+open RCLike
+open scoped ComplexOrder
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- The diagonal entries of a positive-semidefinite matrix have nonnegative real part. -/
+lemma PosSemidef.re_apply_self_nonneg {M : Matrix n n 𝕜} (hM : M.PosSemidef) (i : n) :
+    0 ≤ re (M i i) :=
+  (RCLike.nonneg_iff.mp hM.diag_nonneg).1
+
 /-- **Entrywise arithmetic-mean bound for a positive-semidefinite matrix.**
-Twice the norm of an entry is bounded by the sum of the real parts of the two diagonal entries
-of its row and column: the principal `2 × 2` minor on `{i, j}` is nonnegative, in the
-arithmetic-mean form of the scalar Cauchy-Schwarz inequality `Matrix.PosSemidef.normSq_le`. -/
-lemma PosSemidef.two_mul_norm_apply_le {𝕜 : Type*} [RCLike 𝕜] {M : Matrix n n 𝕜}
-    (hM : M.PosSemidef) (i j : n) :
-    2 * ‖M i j‖ ≤ RCLike.re (M i i) + RCLike.re (M j j) := by
-  have h := hM.normSq_le i j
-  rw [RCLike.normSq_eq_def'] at h
-  have hi := (RCLike.nonneg_iff.mp (hM.diag_nonneg (i := i))).1
-  have hj := (RCLike.nonneg_iff.mp (hM.diag_nonneg (i := j))).1
-  nlinarith [norm_nonneg (M i j), sq_nonneg (RCLike.re (M i i) - RCLike.re (M j j))]
+Twice the norm of an entry is bounded by the sum of the (real) diagonal entries of its row and
+column. This is the arithmetic-mean form of the Cauchy-Schwarz bound
+`Matrix.PosSemidef.normSq_le`. Stated multiplied out, without a division, so that it applies with
+no field side conditions. -/
+lemma PosSemidef.two_mul_norm_apply_le {M : Matrix n n 𝕜} (hM : M.PosSemidef)
+    (i j : n) : 2 * ‖M i j‖ ≤ re (M i i) + re (M j j) := by
+  have hi := hM.re_apply_self_nonneg i
+  have hj := hM.re_apply_self_nonneg j
+  have hcs := hM.normSq_le i j
+  rw [RCLike.normSq_eq_def'] at hcs
+  nlinarith [sq_nonneg (re (M i i) - re (M j j)), norm_nonneg (M i j)]
+
+/-- The real part of the quadratic form of a matrix over `𝕜` on a real vector, coerced to `𝕜`,
+is the quadratic form of the entrywise real part of the matrix on that vector. -/
+lemma re_star_ofReal_dotProduct_mulVec_ofReal [Fintype n] (M : Matrix n n 𝕜) (x : n → ℝ) :
+    re (star (fun i => (x i : 𝕜)) ⬝ᵥ (M *ᵥ fun i => (x i : 𝕜))) = x ⬝ᵥ (M.map re *ᵥ x) := by
+  simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, RCLike.conj_ofReal,
+    map_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  simp only [mul_re, ofReal_re, ofReal_im, zero_mul, mul_zero, sub_zero]
+
+/-- The entrywise real part of a positive-semidefinite matrix is positive semidefinite. -/
+lemma PosSemidef.map_re {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
+    (M.map re).PosSemidef := by
+  -- On a real vector, the quadratic form of `M.map re` is the real part of that of `M`
+  -- (`Matrix.re_star_ofReal_dotProduct_mulVec_ofReal`).
+  refine PosSemidef.of_submatrix_dotProduct_mulVec_nonneg (hM.1.map re fun z => by simp)
+    fun {ι : Type} _ v x => ?_
+  have h0 := (hM.submatrix v).re_dotProduct_nonneg (fun i => (x i : 𝕜))
+  rwa [re_star_ofReal_dotProduct_mulVec_ofReal] at h0
+
+/-- The real part of the quadratic form of a real matrix, coerced to `𝕜`, is the sum of its real
+quadratic forms on the real and imaginary parts of the vector. -/
+lemma re_star_dotProduct_map_ofReal_mulVec [Fintype n] (M : Matrix n n ℝ) (x : n → 𝕜) :
+    re (star x ⬝ᵥ (M.map ((↑) : ℝ → 𝕜) *ᵥ x)) =
+      (fun i => re (x i)) ⬝ᵥ (M *ᵥ fun i => re (x i)) +
+        (fun i => im (x i)) ⬝ᵥ (M *ᵥ fun i => im (x i)) := by
+  simp only [dotProduct, mulVec, map_apply, Pi.star_apply, RCLike.star_def, map_sum,
+    Finset.mul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  simp only [mul_re, mul_im, conj_re, conj_im, ofReal_re, ofReal_im]
+  ring
+
+/-- A real matrix is positive semidefinite if and only if its image under the coercion
+`ℝ → 𝕜` is. -/
+lemma posSemidef_map_ofReal_iff {M : Matrix n n ℝ} :
+    (M.map ((↑) : ℝ → 𝕜)).PosSemidef ↔ M.PosSemidef := by
+  refine ⟨fun h => by simpa [Matrix.map_map, Function.comp_def] using h.map_re, fun h => ?_⟩
+  refine PosSemidef.of_submatrix_dotProduct_mulVec_nonneg (h.1.map _ fun z => by simp)
+    fun {ι : Type} _ v x => ?_
+  have hM' := h.submatrix v
+  have hH : ((M.submatrix v v).map ((↑) : ℝ → 𝕜)).IsHermitian :=
+    hM'.1.map _ fun z => by simp
+  rw [Matrix.submatrix_map, RCLike.nonneg_iff, re_star_dotProduct_map_ofReal_mulVec]
+  exact ⟨add_nonneg (by simpa using hM'.dotProduct_mulVec_nonneg _)
+    (by simpa using hM'.dotProduct_mulVec_nonneg _), hH.im_star_dotProduct_mulVec_self x⟩
+
+end RCLike
 
 /-- **Entrywise geometric-mean bound for a real positive-semidefinite matrix.**
 The square of an entry is bounded by the product of the two diagonal entries of its row and
@@ -97,7 +186,9 @@ lemma PosSemidef.sq_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) 
 
 /-- **Entrywise arithmetic-mean bound for a real positive-semidefinite matrix.**
 Twice the absolute value of an entry is bounded by the sum of the two diagonal entries of its
-row and column: the real case of `Matrix.PosSemidef.two_mul_norm_apply_le`.
+row and column. This is the arithmetic-mean consequence (via AM-GM) of nonnegativity of the
+principal `2 × 2` minor on `{i, j}`. It is the case `𝕜 = ℝ` of
+`Matrix.PosSemidef.two_mul_norm_apply_le`.
 
 Stated multiplied out, without a division, so that it applies with no field side conditions. -/
 lemma PosSemidef.two_mul_abs_apply_le {M : Matrix n n ℝ} (hM : M.PosSemidef) (i j : n) :
@@ -119,24 +210,5 @@ lemma posSemidef_single_self_iff {R : Type*} [Ring R] [PartialOrder R] [StarRing
     (single i i r).PosSemidef ↔ 0 ≤ r := by
   rw [← diagonal_single, posSemidef_diagonal_iff]
   exact Pi.single_nonneg
-
-/-- The entrywise real part of a positive-semidefinite matrix over an `RCLike` field is a real
-positive-semidefinite matrix: on a real vector its quadratic form is the real part of the
-quadratic form of `M`. The index type is arbitrary. -/
-theorem PosSemidef.map_re {𝕜 : Type*} [RCLike 𝕜] {M : Matrix n n 𝕜} (hM : M.PosSemidef) :
-    (M.map RCLike.re).PosSemidef := by
-  refine ⟨hM.isHermitian.map RCLike.re fun z => by simp [RCLike.star_def], fun x => ?_⟩
-  -- `h` is nonnegativity of `re (yᴴ M y)` for the vector `y` over `𝕜` underlying `x`.
-  set y : n →₀ 𝕜 := x.mapRange ((↑) : ℝ → 𝕜) RCLike.ofReal_zero
-  have h := (RCLike.nonneg_iff.mp (hM.2 y)).1
-  -- Strip the coercion from the outer `Finsupp.sum`, then from the inner one.
-  rw [Finsupp.sum_mapRange_index fun _ => by simp] at h
-  have inner (a : n) (b : 𝕜) : (y.sum fun j yj => b * M a j * yj) =
-      x.sum fun j xj => b * M a j * xj :=
-    Finsupp.sum_mapRange_index fun _ => mul_zero _
-  -- `re` passes through both sums as an additive map.
-  simp only [inner, map_finsuppSum RCLike.re, RCLike.star_def, RCLike.conj_ofReal,
-    RCLike.re_ofReal_mul, RCLike.re_mul_ofReal] at h
-  simpa only [map_apply, star_trivial] using h
 
 end Matrix

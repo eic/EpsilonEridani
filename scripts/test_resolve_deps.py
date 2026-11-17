@@ -109,8 +109,8 @@ def manifest(mathlib_rev):
     return json.dumps({"packages": [{"name": "mathlib", "rev": mathlib_rev}]})
 
 
-def resolve(g, pins, toolchain, exclude=()):
-    return rd.Resolver(g, REQUIRES, pins, toolchain).resolve(exclude)
+def resolve(g, pins, toolchain, exclude=(), cross_line=()):
+    return rd.Resolver(g, REQUIRES, pins, toolchain, cross_line).resolve(exclude)
 
 
 def mathlib_line(g):
@@ -124,6 +124,54 @@ def mathlib_line(g):
     g.commit(ML, "s1", "m0", branch="stable", lean_toolchain=lean("v4.34.1"))
     g.tags = {"s1": "v4.34.1"}
     g.cached = "m3"
+
+
+def physlib_behind_a_line(g):
+    """Physlib stays on the 4.34 line (p1 on m1; p2 on the v4.34.1 tag), TauCeti pins m3 on 4.35."""
+    mathlib_line(g)
+    g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+    g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("s1"), lean_toolchain=lean("v4.34.1"))
+    g.commit(TC, "t1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+    g.commit(TC, "t2", "t1", branch="main", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+    return {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}
+
+
+class CrossLine(unittest.TestCase):
+    def test_off_by_default(self):
+        g = Graph()
+        r = resolve(g, physlib_behind_a_line(g), lean("v4.34.0"))
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "s1")
+        self.assertNotIn("cross", {p["fit"] for p in r["pins"].values()})
+
+    def test_a_named_dependency_may_cross_to_a_newer_line(self):
+        # p2 pins the v4.34.1 tag, which diverged from master, so only p1 (on m1, an ancestor of m3)
+        # can cross; TauCeti's exact pin of m3 is what makes m3 the choice.
+        g = Graph()
+        r = resolve(g, physlib_behind_a_line(g), lean("v4.34.0"), cross_line=["Physlib"])
+        self.assertEqual({n: (p["rev"], p["fit"]) for n, p in r["pins"].items()},
+                         {"mathlib": ("m3", "descendant"), "Physlib": ("p1", "cross"), "TauCeti": ("t2", "exact")})
+        self.assertEqual(r["toolchain"]["chosen"], lean("v4.35.0-rc1"))
+
+    def test_only_the_named_dependency_crosses(self):
+        g = Graph()
+        r = resolve(g, physlib_behind_a_line(g), lean("v4.34.0"), cross_line=["TauCeti"])
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "s1")
+
+    def test_a_failed_cross_pin_blocks_its_line_not_just_its_set(self):
+        # m2 is on the 4.34 line, so only m3 is a cross candidate; add m4 on 4.35 to show the block
+        # carries over to a different set on the same line.
+        g = Graph()
+        pins = physlib_behind_a_line(g)
+        g.commit(ML, "m4", "m3", branch="master")
+        g.cached = "m4"
+        first = resolve(g, pins, lean("v4.34.0"), cross_line=["Physlib"])
+        failed = {n: p["rev"] for n, p in first["pins"].items()}
+        r = resolve(g, pins, lean("v4.34.0"), exclude=[failed], cross_line=["Physlib"])
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "s1")
+        blocked = {b["mathlib"]: [x["dependency"] for x in b["blockers"]] for b in r["blocked"]}
+        self.assertEqual(blocked[failed["mathlib"]], ["*"])
+        other = "m4" if failed["mathlib"] == "m3" else "m3"
+        self.assertEqual(blocked[other], ["Physlib"])
 
 
 class Toolchains(unittest.TestCase):

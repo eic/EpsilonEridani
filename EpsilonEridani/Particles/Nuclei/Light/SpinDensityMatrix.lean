@@ -414,7 +414,8 @@ lemma re_tensorPolarization_spinOneMatrix_self (ρ : Matrix (Fin 3) (Fin 3) ℂ)
 /-- The tensor polarization of a spin-one state is at most one: `Pᵢᵢ ≤ 1`. -/
 theorem re_tensorPolarization_spinOneMatrix_le_one (hρ : ρ.PosSemidef) (htr : ρ.trace = 1)
     (i : Fin 3) : (tensorPolarization spinOneMatrix ρ i i).re ≤ 1 := by
-  have := (Complex.nonneg_iff.mp (hρ.diag_nonneg (i := i))).1
+  have := hρ.re_apply_self_nonneg i
+  simp only [RCLike.re_to_complex] at this
   rw [re_tensorPolarization_spinOneMatrix_self, htr, one_re]
   linarith
 
