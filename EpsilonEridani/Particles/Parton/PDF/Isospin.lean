@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Particles.Parton.PDF.Basic
+public import EpsilonEridani.Particles.Parton.PDF.ChargeConjugation
 
 /-!
 # The isospin conjugate of a collinear density
@@ -23,7 +23,10 @@ that the leading-order structure function `DIS.f2LO` consumes. It is not the par
 index `Species Flavor`: on a species-indexed density the isospin involution is the species map
 induced by `Equiv.swap u d` (quark `i ↦ quark (swap u d i)`, antiquark `i ↦ antiquark
 (swap u d i)`, gluon fixed), not a single `Equiv.swap` of two species, which would exchange the
-up and down quarks but leave their antiquarks in place.
+up and down quarks but leave their antiquarks in place. That species-level operation is
+`PDF.speciesIsospinConj u d f = PDF.comap (Species.map (Equiv.swap u d)) f`; it commutes with
+charge conjugation (`PDF.chargeConj_speciesIsospinConj`), and their composite is the symmetry
+that relates the quark and antiquark densities within a charged pion in the isospin limit.
 
 The operation is an involution, and it preserves `PDF.IsPartonDensity`, `PDF.Regularity`,
 `PDF.Assumptions`, every moment (relabelled) and every flavour-summed moment; these are instances
@@ -35,6 +38,8 @@ summed over all parton species, including the gluon, so it is not available for 
 ## Main definitions
 
 * `EpsilonEridani.Particles.Parton.PDF.isospinConj`: the isospin-conjugate density.
+* `EpsilonEridani.Particles.Parton.PDF.speciesIsospinConj`: the isospin-conjugate density over
+  the parton species.
 
 ## Main statements
 
@@ -46,6 +51,9 @@ summed over all parton species, including the gluon, so it is not available for 
   it preserves the density assumptions.
 * `PDF.mellinMoment_isospinConj`, `PDF.sum_mellinMoment_isospinConj`: it relabels every moment and
   preserves every flavour-summed moment.
+* `PDF.chargeConj_speciesIsospinConj`: on species-indexed densities, isospin conjugation commutes
+  with charge conjugation.
+* `PDF.valenceNumber_speciesIsospinConj`: it relabels the valence numbers.
 
 ## References
 
@@ -129,6 +137,107 @@ theorem Assumptions.isospinConj {f : Pdf ι} (h : Assumptions f) (u d : ι) :
     Assumptions (isospinConj u d f) := by
   rw [isospinConj_eq_comap]
   exact h.comap _
+
+/-! ### Isospin conjugation over the parton species -/
+
+section Species
+
+variable {Flavor : Type} [DecidableEq Flavor]
+
+/-- The isospin-conjugate density over the parton species: the density of species `s` is the
+density, in `f`, of `s` with the up and down flavours exchanged, `s.map (Equiv.swap u d)`, so the
+up and down quark densities are exchanged, so are the up and down antiquark densities, and every
+other species is kept. With `f` the densities of a hadron, this is the densities of its isospin
+partner under exact isospin symmetry. -/
+def speciesIsospinConj (u d : Flavor) (f : Pdf (Species Flavor)) : Pdf (Species Flavor) :=
+  comap (Species.map (Equiv.swap u d)) f
+
+theorem speciesIsospinConj_eq_comap (u d : Flavor) (f : Pdf (Species Flavor)) :
+    speciesIsospinConj u d f = comap (Species.map (Equiv.swap u d)) f :=
+  (rfl)
+
+@[simp]
+theorem speciesIsospinConj_apply (u d : Flavor) (f : Pdf (Species Flavor)) (s : Species Flavor)
+    (x Q2 : ℝ) : speciesIsospinConj u d f s x Q2 = f (s.map (Equiv.swap u d)) x Q2 := by
+  rw [speciesIsospinConj_eq_comap, comap_apply]
+
+theorem speciesIsospinConj_comm (u d : Flavor) (f : Pdf (Species Flavor)) :
+    speciesIsospinConj u d f = speciesIsospinConj d u f := by
+  rw [speciesIsospinConj_eq_comap, speciesIsospinConj_eq_comap, Equiv.swap_comm]
+
+@[simp]
+theorem speciesIsospinConj_speciesIsospinConj (u d : Flavor) (f : Pdf (Species Flavor)) :
+    speciesIsospinConj u d (speciesIsospinConj u d f) = f := by
+  rw [speciesIsospinConj_eq_comap, speciesIsospinConj_eq_comap, comap_comap,
+    Function.Involutive.comp_self (Species.map_involutive (Equiv.swap_apply_self u d)), comap_id]
+
+theorem speciesIsospinConj_involutive (u d : Flavor) :
+    Function.Involutive (speciesIsospinConj u d : Pdf (Species Flavor) → Pdf (Species Flavor)) :=
+  speciesIsospinConj_speciesIsospinConj u d
+
+/-- **Isospin conjugation commutes with charge conjugation**: exchanging the up and down flavours
+and exchanging quarks with antiquarks are independent relabellings of the species. -/
+theorem chargeConj_speciesIsospinConj (u d : Flavor) (f : Pdf (Species Flavor)) :
+    chargeConj (speciesIsospinConj u d f) = speciesIsospinConj u d (chargeConj f) := by
+  ext s x Q2
+  rw [chargeConj_apply, speciesIsospinConj_apply, speciesIsospinConj_apply, chargeConj_apply,
+    Species.conj_map]
+
+/-- Isospin conjugation commutes with a species-wise rescaling: the conjugate of a rescaled
+density is the conjugate density rescaled by the conjugated weight. -/
+@[simp]
+theorem speciesIsospinConj_weight (u d : Flavor) (w : Species Flavor → ℝ)
+    (f : Pdf (Species Flavor)) :
+    speciesIsospinConj u d (weight w f)
+      = weight (w ∘ Species.map (Equiv.swap u d)) (speciesIsospinConj u d f) := by
+  rw [speciesIsospinConj_eq_comap, comap_weight, speciesIsospinConj_eq_comap]
+
+@[simp]
+theorem mellinMoment_speciesIsospinConj (u d : Flavor) (f : Pdf (Species Flavor)) (n : ℕ)
+    (s : Species Flavor) (Q2 : ℝ) :
+    mellinMoment (speciesIsospinConj u d f) n s Q2
+      = mellinMoment f n (s.map (Equiv.swap u d)) Q2 := by
+  rw [speciesIsospinConj_eq_comap, mellinMoment_comap]
+
+/-- Isospin conjugation preserves every moment summed over all species; for `n = 1` this is the
+statement that the conjugate carries the same total momentum. -/
+theorem sum_mellinMoment_speciesIsospinConj [Fintype Flavor] (u d : Flavor)
+    (f : Pdf (Species Flavor)) (n : ℕ) (Q2 : ℝ) :
+    ∑ s, mellinMoment (speciesIsospinConj u d f) n s Q2 = ∑ s, mellinMoment f n s Q2 := by
+  rw [speciesIsospinConj_eq_comap]
+  exact sum_mellinMoment_comap (Species.map_involutive (Equiv.swap_apply_self u d)).bijective f n
+    Q2
+
+/-- Isospin conjugation relabels the valence numbers: the valence number of flavour `i` in the
+conjugate is that of `swap u d i` in the density. -/
+@[simp]
+theorem valenceNumber_speciesIsospinConj (u d : Flavor) (f : Pdf (Species Flavor)) (i : Flavor)
+    (Q2 : ℝ) :
+    valenceNumber (speciesIsospinConj u d f) i Q2 = valenceNumber f (Equiv.swap u d i) Q2 := by
+  rw [valenceNumber_def, valenceNumber_def, mellinMoment_speciesIsospinConj,
+    mellinMoment_speciesIsospinConj, Species.map_quark, Species.map_antiquark]
+
+/-- Isospin conjugation over the species preserves the physical half of the density
+assumptions. -/
+theorem IsPartonDensity.speciesIsospinConj {f : Pdf (Species Flavor)} (h : IsPartonDensity f)
+    (u d : Flavor) : IsPartonDensity (speciesIsospinConj u d f) := by
+  rw [speciesIsospinConj_eq_comap]
+  exact h.comap _
+
+/-- Isospin conjugation over the species preserves the analytic half of the density
+assumptions. -/
+theorem Regularity.speciesIsospinConj {f : Pdf (Species Flavor)} (h : Regularity f)
+    (u d : Flavor) : Regularity (speciesIsospinConj u d f) := by
+  rw [speciesIsospinConj_eq_comap]
+  exact h.comap _
+
+/-- Isospin conjugation over the species preserves the density assumptions. -/
+theorem Assumptions.speciesIsospinConj {f : Pdf (Species Flavor)} (h : Assumptions f)
+    (u d : Flavor) : Assumptions (speciesIsospinConj u d f) := by
+  rw [speciesIsospinConj_eq_comap]
+  exact h.comap _
+
+end Species
 
 end PDF
 

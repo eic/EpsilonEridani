@@ -18,19 +18,24 @@ densities, TMDs, fragmentation functions) are indexed by one type, and a species
 momentum sum rule `∑ₛ ∫₀¹ x fₛ(x) dx = 1` runs over all of them, the gluon included.
 
 Charge conjugation exchanges the quark and the antiquark of each flavour and fixes the gluon
-(`Species.conj`); it is an involution.
+(`Species.conj`); it is an involution. A map of flavours induces a map of species
+(`Species.map`), which relabels the flavour of each quark and antiquark and fixes the gluon; it
+commutes with charge conjugation, and the flavour exchanges of isospin and SU(3) symmetry act on
+the species through it.
 
 ## Main definitions
 
 * `EpsilonEridani.Particles.Parton.Species Flavor`: a quark or antiquark of a flavour, or the gluon.
 * `EpsilonEridani.Particles.Parton.Species.equivSum`: `Species Flavor ≃ (Flavor ⊕ Flavor) ⊕ Unit`.
 * `EpsilonEridani.Particles.Parton.Species.conj`: charge conjugation of species.
+* `EpsilonEridani.Particles.Parton.Species.map`: the species map induced by a map of flavours.
 
 ## Main statements
 
 * `Species.card`: there are `2 * Fintype.card Flavor + 1` species.
 * `Species.sum_univ`: a sum over all species is the quark sum, the antiquark sum and the gluon term.
 * `Species.conj_involutive`: charge conjugation is an involution.
+* `Species.conj_map`: relabelling the flavours commutes with charge conjugation.
 
 ## References
 
@@ -130,6 +135,50 @@ theorem conj_conj (s : Species Flavor) : s.conj.conj = s := by
 
 theorem conj_involutive : Function.Involutive (conj : Species Flavor → Species Flavor) :=
   conj_conj
+
+/-! ### Relabelling the flavours -/
+
+/-- The species map induced by a map of flavours: the quark and the antiquark of flavour `i` go to
+the quark and the antiquark of flavour `σ i`, and the gluon is fixed. -/
+def map {Flavor' : Type} (σ : Flavor → Flavor') : Species Flavor → Species Flavor'
+  | quark i => quark (σ i)
+  | antiquark i => antiquark (σ i)
+  | gluon => gluon
+
+section Map
+
+variable {Flavor' Flavor'' : Type}
+
+@[simp]
+theorem map_quark (σ : Flavor → Flavor') (i : Flavor) : (quark i).map σ = quark (σ i) := (rfl)
+
+@[simp]
+theorem map_antiquark (σ : Flavor → Flavor') (i : Flavor) :
+    (antiquark i).map σ = antiquark (σ i) := (rfl)
+
+@[simp]
+theorem map_gluon (σ : Flavor → Flavor') : (gluon : Species Flavor).map σ = gluon := (rfl)
+
+@[simp]
+theorem map_id (s : Species Flavor) : s.map id = s := by
+  cases s <;> rfl
+
+@[simp]
+theorem map_map (σ : Flavor → Flavor') (τ : Flavor' → Flavor'') (s : Species Flavor) :
+    (s.map σ).map τ = s.map (τ ∘ σ) := by
+  cases s <;> rfl
+
+/-- Relabelling the flavours commutes with charge conjugation. -/
+@[simp]
+theorem conj_map (σ : Flavor → Flavor') (s : Species Flavor) : (s.map σ).conj = s.conj.map σ := by
+  cases s <;> rfl
+
+/-- The species map of an involution of the flavours is an involution. -/
+theorem map_involutive {σ : Flavor → Flavor} (hσ : Function.Involutive σ) :
+    Function.Involutive (map σ) := fun s => by
+  rw [map_map, hσ.comp_self, map_id]
+
+end Map
 
 end Species
 
