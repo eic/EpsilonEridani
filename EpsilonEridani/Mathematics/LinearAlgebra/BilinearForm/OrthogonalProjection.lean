@@ -24,10 +24,9 @@ For a real bilinear form `g` on `V` and a vector `u` with `g u u ≠ 0`, this fi
   `g`-orthogonal hyperplane of `u`,
 
 both as `Module.preReflection u f` for the appropriate functional `f`, together with the
-rank-one forms `LinearMap.BilinForm.rankOne g a b : (v, w) ↦ g a v * g b w` and the expansion
-`LinearMap.BilinForm.apply_sub_smul_pair` of `g` on two vectors shifted along `u`. The two-vector
-analogue of the projection, along a light-cone pair, is
-`LinearMap.BilinForm.LightConeBasis.transverseProj` in
+expansion `LinearMap.BilinForm.apply_sub_smul_pair` of `g` on two vectors shifted along `u` that
+their pairings reduce to. The two-vector analogue of the projection, along a light-cone pair,
+is `LinearMap.BilinForm.LightConeBasis.transverseProj` in
 `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
 
 ## Main statements
@@ -39,8 +38,6 @@ analogue of the projection, along a light-cone pair, is
 * `LinearMap.BilinForm.reflect_reflect`, `reflect_isometry`, `det_reflect`: for `g u u ≠ 0` the
   reflection is an involution and, for symmetric `g`, a `g`-isometry (`LinearMap.IsOrthogonal`),
   of determinant `-1` in finite dimension.
-* `LinearMap.isOrthogonal_id`, `LinearMap.IsOrthogonal.comp`: the isometries of a bilinear form
-  contain the identity and are closed under composition.
 -/
 
 public section
@@ -48,22 +45,6 @@ public section
 namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
-
-section IsOrthogonal
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
-
-/-- The identity is an isometry of every bilinear form. -/
-lemma _root_.LinearMap.isOrthogonal_id (B : BilinForm R M) :
-    B.IsOrthogonal (LinearMap.id : M →ₗ[R] M) := fun x y ↦ by
-  rw [LinearMap.id_apply, LinearMap.id_apply]
-
-/-- A composite of isometries of `B` is an isometry of `B`. -/
-lemma _root_.LinearMap.IsOrthogonal.comp {f f' : M →ₗ[R] M} (hf : B.IsOrthogonal f)
-    (hf' : B.IsOrthogonal f') : B.IsOrthogonal (f ∘ₗ f') := fun x y ↦ by
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, hf, hf']
-
-end IsOrthogonal
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
@@ -154,21 +135,6 @@ lemma projOrthogonal_smul (g : BilinForm ℝ V) {c : ℝ} (hc : c ≠ 0) (u : V)
   congr 2
   field_simp
 
-/-- Rank-one bilinear form `(v,w) ↦ g(a,v) g(b,w)` derived from a background bilinear form
-`g`, as the Mathlib combinator `LinearMap.smulRight (g a) (g b)`, the map
-`v ↦ g a v • g b`. -/
-def rankOne (g : BilinForm ℝ V) (a b : V) : BilinForm ℝ V :=
-  (g a).smulRight (g b)
-
-@[simp] lemma rankOne_apply (g : BilinForm ℝ V) (a b v w : V) :
-    rankOne g a b v w = g a v * g b w := (rfl)
-
-/-- A rank-one form built from a single vector is symmetric. -/
-lemma rankOne_isSymm (g : BilinForm ℝ V) (a : V) : (rankOne g a a).IsSymm := by
-  refine { eq := ?_ }
-  intro v w
-  simp [rankOne_apply, mul_comm]
-
 /-- Reflection of `V` in the `g`-orthogonal hyperplane to `u`, `v ↦ v - 2 (g u v / g u u) u`:
 `Module.preReflection u f` for the functional `f = 2 g u · / g u u`, which satisfies `f u = 2`
 when `g u u ≠ 0`. The definition is unconditional; it is a `g`-isometry
@@ -177,23 +143,25 @@ degenerates to the identity when `g u u = 0`, since `(0 : ℝ)⁻¹ = 0`. -/
 noncomputable def reflect (g : BilinForm ℝ V) (u : V) : V →ₗ[ℝ] V :=
   Module.preReflection u ((2 * (g u u)⁻¹) • g u)
 
-@[simp] lemma reflect_apply (g : BilinForm ℝ V) (u v : V) :
+lemma reflect_apply (g : BilinForm ℝ V) (u v : V) :
     reflect g u v = v - (2 * (g u u)⁻¹ * g u v) • u := by
   simp only [reflect, Module.preReflection_apply, LinearMap.smul_apply, smul_eq_mul]
 
 /-- The reflection in `u` reverses `u`. -/
+@[simp]
 lemma reflect_apply_self (g : BilinForm ℝ V) (u : V) (hu : g u u ≠ 0) :
     reflect g u u = -u :=
   Module.preReflection_apply_self <| by
     rw [LinearMap.smul_apply, smul_eq_mul, mul_assoc, inv_mul_cancel₀ hu, mul_one]
 
 /-- The reflection in `u` fixes every vector `g`-orthogonal to `u`. -/
+@[simp]
 lemma reflect_apply_of_orthogonal (g : BilinForm ℝ V) (u v : V) (h : g u v = 0) :
     reflect g u v = v := by
   rw [reflect_apply, h, mul_zero, zero_smul, sub_zero]
 
-/-- A reflection in a non-null direction is an involution. Not `@[simp]`: `reflect_apply`
-already rewrites its left-hand side. -/
+/-- A reflection in a non-null direction is an involution. -/
+@[simp]
 lemma reflect_reflect (g : BilinForm ℝ V) {u : V} (hu : g u u ≠ 0) (v : V) :
     reflect g u (reflect g u v) = v := by
   have h : g u (reflect g u v) = -g u v := by

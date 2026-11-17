@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.SesquilinearForm.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 /-!
 
@@ -16,8 +17,10 @@ This module introduces tensor objects for inclusive DIS:
 - A leptonic tensor model built from incoming and outgoing lepton momenta, and its extension
   to a vector/axial-vector exchange, whose parity-odd part is the contraction
   `ε(·, ·, k, k')` of a supplied alternating four-form `ε`.
-- The reflections `LinearMap.BilinForm.reflect`, used as concrete elements of the stabilizer
-  of the kinematics inside the `g`-isometry group (`reflect_isKinematicStabilizer`).
+- Uses the reflections `LinearMap.BilinForm.reflect` of
+  `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection` as concrete
+  elements of the stabilizer of the kinematics inside the `g`-isometry group
+  (`reflect_isKinematicStabilizer`).
 - An abstract hadronic tensor with explicit Lorentz-covariance, symmetry and
   current-conservation assumptions.
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
@@ -983,7 +986,7 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
   refine ⟨g.reflect u ∘ₗ g.reflect u',
-    ⟨h₁.isometry.comp h₂.isometry,
+    ⟨by rw [LinearMap.coe_comp]; exact h₁.isometry.comp h₂.isometry,
       by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
       by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩, ?_, ?_, ?_⟩
   · by_cases hfin : Module.Finite ℝ V
@@ -1197,12 +1200,13 @@ lemma spectatorAssumptions_kWit : SpectatorAssumptions gWit kWit where
     simp only [kWit_q, gWit_apply, pTransverse_kWit] at hq hT hq' hT' huu
     rcases mul_self_eq_mul_self_iff.mp (by nlinarith : u.2.2 * u.2.2 = u'.2.2 * u'.2.2) with
       h | h
-    · refine ⟨LinearMap.id, ⟨LinearMap.isOrthogonal_id gWit, rfl, rfl⟩, ?_⟩
+    · refine ⟨LinearMap.id,
+        ⟨by rw [LinearMap.id_coe]; exact LinearMap.isOrthogonal_id gWit, rfl, rfl⟩, ?_⟩
       ext <;> simp <;> linarith
     · refine ⟨gWit.reflect (0, 0, 1),
         reflect_isKinematicStabilizer gWit kWit gWit_isSymm (0, 0, 1)
           (by norm_num) (by norm_num) (by norm_num), ?_⟩
-      ext <;> simp <;> linarith
+      ext <;> simp [LinearMap.BilinForm.reflect_apply] <;> linarith
 
 /-!
 
