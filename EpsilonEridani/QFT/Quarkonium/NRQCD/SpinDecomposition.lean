@@ -45,7 +45,10 @@ The computation of `S²` is the decomposition `S² = S₁² + S₂² + 2 S(1) ·
 (`PhyslibAlpha.Sl2.AngularMomentumRepresentation.Jsq_tensor`) with `S₁² = S₂² = 3/4`
 (`PhyslibAlpha.Sl2.Jsq_spinHalfRep`) and the exchange identity `S(1) · S(2) = (2 P₁₂ - 1) / 4`
 of the Pauli matrices (`PhyslibAlpha.Sl2.dot_spinHalfRep_spinHalfRep`), which give
-`S² = 1 + P₁₂ = 2 • spinTripletProj` (`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`). Consequently the
+`S² = 1 + P₁₂ = 2 • spinTripletProj` (`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`); on states,
+`S² x = 0` for an antisymmetric `x` and `S² x = 2 x` for a symmetric `x`
+(`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
+`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors`). Consequently the
 exchange operator acts on the channel of total spin `S` by `(-1)^(S + 1)`: this is the spin factor
 in the charge-conjugation eigenvalue of a quark-antiquark pair.
 
@@ -62,16 +65,11 @@ symmetry that distinguishes them. Its colour counterpart, whose structure this f
 
 ## Main results
 
-* `spinSingletProj_def`, `spinTripletProj_def`: the two projectors are the antisymmetrizer and
-  the symmetrizer of `ℂ² ⊗ ℂ²`.
 * `trace_spinSingletProj`, `trace_spinTripletProj`: the traces `1` and `3`.
 * `commute_Jx_tensor_spinHalfRep_spinSingletProj`, `commute_Jx_tensor_spinHalfRep_spinTripletProj`
   and their `Jy`, `Jz` analogues: both channels are invariant under the total spin.
 * `Jsq_tensor_spinHalfRep_mul_spinSingletProj`, `Jsq_tensor_spinHalfRep_mul_spinTripletProj`:
   the total spin squared is `0` on the singlet channel and `2` on the triplet channel.
-* `Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
-  `Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors`: the same on states, `S² x = 0` for an
-  antisymmetric `x` and `S² x = 2 x` for a symmetric `x`.
 
 ## Implementation notes
 
@@ -110,14 +108,6 @@ abbrev spinSingletProj : Module.End ℂ (ℂ² ⊗[ℂ] ℂ²) :=
 particles, where `P₁₂` exchanges the two spins: the symmetrizer of `ℂ² ⊗ ℂ²`. -/
 abbrev spinTripletProj : Module.End ℂ (ℂ² ⊗[ℂ] ℂ²) :=
   symmetrizer ℂ ℂ²
-
-/-- The singlet projector is the antisymmetrizer of `ℂ² ⊗ ℂ²`. -/
-theorem spinSingletProj_def : spinSingletProj = antisymmetrizer ℂ ℂ² :=
-  (rfl)
-
-/-- The triplet projector is the symmetrizer of `ℂ² ⊗ ℂ²`. -/
-theorem spinTripletProj_def : spinTripletProj = symmetrizer ℂ ℂ² :=
-  (rfl)
 
 /-! ### Traces -/
 
@@ -204,21 +194,5 @@ theorem spinTripletProj_mul_Jsq_tensor_spinHalfRep :
     spinTripletProj * (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq =
       (2 : ℂ) • spinTripletProj := by
   rw [Jsq_tensor_spinHalfRep, mul_smul_comm, symmetrizer_mul_self]
-
-/-- The total spin squared vanishes on an antisymmetric state, which lies in the singlet
-channel: `S² x = 0`. -/
-theorem Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors {x : ℂ² ⊗[ℂ] ℂ²}
-    (hx : x ∈ TauCeti.antisymmetricTensors ℂ ℂ²) :
-    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq x = 0 := by
-  rw [← (antisymmetrizer_apply_eq_self_iff x).mpr hx, ← Module.End.mul_apply,
-    Jsq_tensor_spinHalfRep_mul_spinSingletProj, LinearMap.zero_apply]
-
-/-- The total spin squared takes the value `2` on a symmetric state, which lies in the triplet
-channel: `S² x = 2 x`. -/
-theorem Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors {x : ℂ² ⊗[ℂ] ℂ²}
-    (hx : x ∈ TauCeti.symmetricTensors ℂ ℂ²) :
-    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq x = (2 : ℂ) • x := by
-  rw [← (symmetrizer_apply_eq_self_iff x).mpr hx, ← Module.End.mul_apply,
-    Jsq_tensor_spinHalfRep_mul_spinTripletProj, LinearMap.smul_apply]
 
 end EpsilonEridani.QFT.Quarkonium

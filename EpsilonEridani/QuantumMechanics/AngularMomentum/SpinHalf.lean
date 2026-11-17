@@ -53,6 +53,9 @@ states or rewrites with them must enable it with
 * `PhyslibAlpha.Sl2.dot_spinHalfRep_spinHalfRep`: `S(1) · S(2) = (2 P₁₂ - 1) / 4` on `ℂ² ⊗ ℂ²`.
 * `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`: the total spin squared of two spin-`1/2` systems is
   twice the symmetrizer of `ℂ² ⊗ ℂ²`.
+* `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
+  `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors`: the total spin squared
+  is `0` on an antisymmetric state and `2` on a symmetric state of `ℂ² ⊗ ℂ²`.
 -/
 
 @[expose] public section
@@ -167,5 +170,24 @@ theorem Jsq_tensor_spinHalfRep :
   simp only [LinearMap.rTensor_smul, LinearMap.lTensor_smul, Module.End.one_eq_id,
     LinearMap.rTensor_id, LinearMap.lTensor_id, invOf_eq_inv]
   module
+
+/-- The total spin squared of two spin-`1/2` systems vanishes on an antisymmetric state, which lies
+in the singlet channel: `S² x = 0`. -/
+theorem Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors
+    {x : EuclideanSpace ℂ (Fin 2) ⊗[ℂ] EuclideanSpace ℂ (Fin 2)}
+    (hx : x ∈ TauCeti.antisymmetricTensors ℂ (EuclideanSpace ℂ (Fin 2))) :
+    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq x = 0 := by
+  rw [← (antisymmetrizer_apply_eq_self_iff x).mpr hx, ← Module.End.mul_apply,
+    Jsq_tensor_spinHalfRep, smul_mul_assoc, symmetrizer_mul_antisymmetrizer, smul_zero,
+    LinearMap.zero_apply]
+
+/-- The total spin squared of two spin-`1/2` systems takes the value `2` on a symmetric state,
+which lies in the triplet channel: `S² x = 2 x`. -/
+theorem Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors
+    {x : EuclideanSpace ℂ (Fin 2) ⊗[ℂ] EuclideanSpace ℂ (Fin 2)}
+    (hx : x ∈ TauCeti.symmetricTensors ℂ (EuclideanSpace ℂ (Fin 2))) :
+    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq x = (2 : ℂ) • x := by
+  rw [← (symmetrizer_apply_eq_self_iff x).mpr hx, ← Module.End.mul_apply,
+    Jsq_tensor_spinHalfRep, smul_mul_assoc, symmetrizer_mul_self, LinearMap.smul_apply]
 
 end PhyslibAlpha.Sl2
