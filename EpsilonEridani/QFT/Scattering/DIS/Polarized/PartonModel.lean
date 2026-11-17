@@ -17,7 +17,7 @@ In the parton model at leading order a longitudinally polarized nucleon is an in
 free, massless quarks and antiquarks moving collinearly with it, and the spin-dependent structure
 function `g₁` is the charge-weighted sum of their helicity densities,
 
-`g₁(x, Q²) = (1/2) ∑_q e_q² (Δq(x, Q²) + Δq̄(x, Q²))`,
+`g₁(x, Q²) = (1/2) ∑_q e_q² (Δq(x, Q²) + Δqbar(x, Q²))`,
 
 while `g₂` vanishes. This file builds that structure-function pair, `Polarized.partonModel`, from
 a charge assignment `charge : Flavor → ℝ` on an arbitrary finite flavour type and a helicity
@@ -36,10 +36,10 @@ parton-model `g₁` integrals of integrable functions. A complex helicity-amplit
 whose entries are `(ρ s x Q2).deltaQ`.
 
 The first moment of the parton-model `g₁` is the charge-weighted sum of the helicity charges
-`∫₀¹ dx (Δq + Δq̄)` (`firstMomentG1_partonModel`). For the light flavours this is the leading-order
-form of the flavour decomposition carried by `Polarized.EllisJaffeSumRule`, so the parton model
-discharges its `moment_decomposition` field with vanishing perturbative correction, and the
-Ellis–Jaffe sum rule holds for it exactly when the strange helicity charge vanishes
+`∫₀¹ dx (Δq + Δqbar)` (`firstMomentG1_partonModel`). For the light flavours this is the
+leading-order form of the flavour decomposition carried by `Polarized.EllisJaffeSumRule`, so the
+parton model discharges its `moment_decomposition` field with vanishing perturbative correction,
+and the Ellis–Jaffe sum rule holds for it exactly when the strange helicity charge vanishes
 (`ellisJaffeSumRule_partonModel_iff`).
 
 ## Main definitions
@@ -48,12 +48,12 @@ Ellis–Jaffe sum rule holds for it exactly when the strange helicity charge van
 
 ## Main statements
 
-* `Polarized.partonModel_g1`: `g₁ = (1/2) ∑_q e_q² (Δq + Δq̄)`.
+* `Polarized.partonModel_g1`: `g₁ = (1/2) ∑_q e_q² (Δq + Δqbar)`.
 * `Polarized.assumptions_partonModel`: support and regularity of the helicity distribution give
   `Polarized.Assumptions`.
 * `Polarized.assumptions_partonModel_helicityPdfOfSpinDensity`: the same, discharged from the
   structural assumptions of a spin-density family and measurability of its helicity density.
-* `Polarized.firstMomentG1_partonModel`: `Γ₁ = (1/2) ∑_q e_q² ∫₀¹ dx (Δq + Δq̄)`.
+* `Polarized.firstMomentG1_partonModel`: `Γ₁ = (1/2) ∑_q e_q² ∫₀¹ dx (Δq + Δqbar)`.
 * `Polarized.ellisJaffeSumRule_partonModel_iff`: the light-flavour parton model satisfies the
   Ellis–Jaffe sum rule, with zero correction, exactly when the strange helicity charge vanishes.
 
@@ -88,7 +88,7 @@ variable {Flavor : Type} [Fintype Flavor]
 flavours carry the electric charges `charge` (in units of the positron charge) and whose
 species carry the helicity distribution `Δ`:
 
-`g₁(x, Q²) = (1/2) ∑_q e_q² (Δq(x, Q²) + Δq̄(x, Q²))`, `g₂ = 0`.
+`g₁(x, Q²) = (1/2) ∑_q e_q² (Δq(x, Q²) + Δqbar(x, Q²))`, `g₂ = 0`.
 
 This is the naive parton model of free, massless quarks collinear with the target, in which the
 transverse-spin structure function `g₂` vanishes. -/
@@ -163,7 +163,7 @@ theorem assumptions_partonModel_helicityPdfOfSpinDensity (charge : Flavor → �
   simpa only [pow_zero, one_mul] using hr.momentIntegrable 0 s Q2
 
 /-- **The first moment of the parton-model `g₁`** is half the charge-weighted sum of the helicity
-charges `∫₀¹ dx (Δq + Δq̄)`, written as the zeroth Mellin moments of the quark and antiquark
+charges `∫₀¹ dx (Δq + Δqbar)`, written as the zeroth Mellin moments of the quark and antiquark
 helicity densities. -/
 theorem firstMomentG1_partonModel (charge : Flavor → ℝ) {Δ : Pdf (Species Flavor)} {Q2 : ℝ}
     (hi : ∀ s, IntegrableOn (fun x : ℝ => Δ s x Q2) (Set.Icc 0 1)) :
@@ -179,7 +179,7 @@ theorem firstMomentG1_partonModel (charge : Flavor → ℝ) {Δ : Pdf (Species F
 
 /-- For the light flavours with their physical charges, the first moment of the parton-model
 `g₁` is `(1/2) ((4/9) Δu + (1/9) Δd + (1/9) Δs)` in the helicity charges
-`Δq = ∫₀¹ dx (Δq + Δq̄)`. -/
+`Δq = ∫₀¹ dx (Δq + Δqbar)`. -/
 theorem firstMomentG1_partonModel_lightFlavor {Δ : Pdf (Species LightFlavor)} {Q2 : ℝ}
     (hi : ∀ s, IntegrableOn (fun x : ℝ => Δ s x Q2) (Set.Icc 0 1)) :
     firstMomentG1 (partonModel LightFlavor.charge Δ) Q2 =
@@ -193,7 +193,7 @@ theorem firstMomentG1_partonModel_lightFlavor {Δ : Pdf (Species LightFlavor)} {
 
 /-- **The parton model and the Ellis–Jaffe sum rule.** For the light flavours, the leading-order
 parton-model `g₁` carries the flavour decomposition of `EllisJaffeSumRule` with vanishing
-perturbative correction, its helicity charges being `∫₀¹ dx (Δq + Δq̄)`. The sum rule therefore
+perturbative correction, its helicity charges being `∫₀¹ dx (Δq + Δqbar)`. The sum rule therefore
 holds if and only if the strange helicity charge vanishes at every scale: that is the one
 hypothesis the parton model does not supply. -/
 theorem ellisJaffeSumRule_partonModel_iff {Δ : Pdf (Species LightFlavor)}
