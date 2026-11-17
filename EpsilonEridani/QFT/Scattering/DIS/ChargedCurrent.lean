@@ -14,9 +14,9 @@ public import Mathlib.Data.Matrix.Diagonal
 # Charged-current structure functions in the quark-parton model
 
 In charged-current deep-inelastic scattering the target absorbs a `W` boson. A `W⁻` (emitted by an
-incoming electron, `e⁻ p → ν X`, or by an incoming antineutrino, `ν̄ p → e⁺ X`) turns an up-type
+incoming electron, `e⁻ p → ν X`, or by an incoming antineutrino, `νbar p → e⁺ X`) turns an up-type
 quark into a down-type quark and a down-type antiquark into an up-type antiquark. A `W⁺` (from
-`e⁺ p → ν̄ X` or `ν p → e⁻ X`) does the reverse. The vertex joining the up-type flavour `i` to the
+`e⁺ p → νbar X` or `ν p → e⁻ X`) does the reverse. The vertex joining the up-type flavour `i` to the
 down-type flavour `j` carries the mixing-matrix entry `V i j`, so at leading order each channel
 `i ↔ j` enters with the weight `‖V i j‖²`, and the structure functions of a target with parton
 densities `f` are
@@ -94,7 +94,7 @@ variable {Flavor ι κ : Type} [Fintype ι] [Fintype κ]
 /-- The leading-order charged-current structure function `F₂` for absorption of a `W⁻` by a
 target with parton densities `f`: `F₂^{W⁻} = 2 x Σᵢⱼ ‖V i j‖² (u_i + dbar_j)`. The `W⁻` is absorbed
 on the up-type quark `up i` and on the down-type antiquark `down j`, each channel `i ↔ j` weighted
-by the squared modulus of the mixing-matrix entry `V i j`. This is `F₂` for `e⁻ p` and `ν̄ p`
+by the squared modulus of the mixing-matrix entry `V i j`. This is `F₂` for `e⁻ p` and `νbar p`
 scattering. -/
 def f2CCMinus (V : Matrix ι κ ℂ) (up : ι → Flavor) (down : κ → Flavor)
     (f : Pdf (Species Flavor)) (x Q2 : ℝ) : ℝ :=
@@ -347,7 +347,7 @@ variable {V} (f x Q2)
 /-- **The Adler integrand.** With unit-norm rows and columns of the mixing matrix,
 `F₂^{W⁻} - F₂^{W⁺} = 2 x (Σᵢ (u_i - ubar_i) - Σⱼ (d_j - dbar_j))`: a difference of valence
 densities, whose `dx / x` integral is fixed by the valence content of the target. For a proton,
-`F₂^{W⁻} - F₂^{W⁺} = F₂^{ν̄p} - F₂^{νp}`. -/
+`F₂^{W⁻} - F₂^{W⁺} = F₂^{νbar p} - F₂^{ν p}`. -/
 theorem f2CCMinus_sub_f2CCPlus_of_sum_norm_sq_eq_one (hrow : ∀ i, ∑ j, ‖V i j‖ ^ 2 = 1)
     (hcol : ∀ j, ∑ i, ‖V i j‖ ^ 2 = 1) :
     f2CCMinus V up down f x Q2 - f2CCPlus V up down f x Q2 =
@@ -361,7 +361,7 @@ theorem f2CCMinus_sub_f2CCPlus_of_sum_norm_sq_eq_one (hrow : ∀ i, ∑ j, ‖V 
 /-- **The valence sum `x F₃^{W⁻} + x F₃^{W⁺}`.** With unit-norm rows and columns of the mixing
 matrix, `x F₃^{W⁻} + x F₃^{W⁺} = 2 x (Σᵢ (u_i - ubar_i) + Σⱼ (d_j - dbar_j))`, the sum of the
 valence densities of all the active flavours. For a proton this is
-`x F₃^{ν̄p} + x F₃^{νp}`. -/
+`x F₃^{νbar p} + x F₃^{ν p}`. -/
 theorem xf3CCMinus_add_xf3CCPlus_of_sum_norm_sq_eq_one (hrow : ∀ i, ∑ j, ‖V i j‖ ^ 2 = 1)
     (hcol : ∀ j, ∑ i, ‖V i j‖ ^ 2 = 1) :
     xf3CCMinus V up down f x Q2 + xf3CCPlus V up down f x Q2 =
