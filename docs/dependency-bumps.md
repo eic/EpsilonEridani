@@ -56,6 +56,14 @@ A dependency commit **fits** a mathlib commit M when
   line. The release-tag case is the weakest: a dependency built on master after the release
   branched may use API the tag lacks, and only the build will tell. A dependency commit whose
   manifest pins no mathlib fits on the toolchain line alone.
+- `cross` (only for a dependency `update.yml` names with `--cross-line`; today Physlib): its
+  toolchain is on an **older** Lean line than M's and its mathlib is an ancestor of M. Physlib
+  bumps only to stable mathlib tags, so without this it holds the whole project on its Lean line
+  until the next release even when its source builds on newer mathlib. Lake builds a dependency
+  with the root's toolchain and mathlib whatever the dependency pins, so this is the same
+  bet as `near`, one Lean line further. When a set with a `cross` pin is excluded, every set
+  pinning that dependency commit `cross` onto the same Lean line is blocked as well, so a
+  dependency commit that does not build costs at most one failed bump build per line.
 
 For each M every dependency takes its newest fitting commit. A dependency with none may stay
 on its current pin (`carried`) only while M stays on the Lean line main is already on: main
