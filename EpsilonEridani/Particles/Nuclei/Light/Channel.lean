@@ -48,9 +48,11 @@ deuteron's spin and parity.
 
 More generally, two Pauli-allowed channels with the same total angular momentum, parity and isospin
 coincide unless they are the spin-triplet pair `³(J-1)_J` and `³(J+1)_J`
-(`ChannelLabel.eq_or_S_eq_one_and_L_add_one_eq_J_or_J_add_one_eq_L_of_pauliAllowed`); without the
-Pauli principle the same holds for channels of equal total spin
-(`ChannelLabel.eq_or_S_eq_one_and_L_add_one_eq_J_or_J_add_one_eq_L`).
+(`ChannelLabel.eq_or_isTensorPair_of_pauliAllowed`, with the pair `ChannelLabel.IsTensorPair`);
+without the Pauli principle the same holds for channels of equal total spin
+(`ChannelLabel.eq_or_isTensorPair`). Conversely, the two channels of such a pair have equal parity
+and the same Pauli status (`ChannelLabel.IsTensorPair.parity_eq`,
+`ChannelLabel.IsTensorPair.pauliAllowed_iff`).
 An interaction that conserves total angular momentum, parity and isospin, but not orbital angular
 momentum, therefore couples channels only in such pairs; the tensor force is the standard example,
 and the deuteron's `³S₁`-`³D₁` mixing is its case `J = 1`.
@@ -68,7 +70,9 @@ channels are available to a proton-neutron pair and forbidden to a like-species 
 * `ChannelLabel.parity`: the parity `(-1)^L` of a channel.
 * `ChannelLabel.exchangeSign`: the eigenvalue of nucleon exchange in a channel of given isospin.
 * `ChannelLabel.PauliAllowed`: the generalised Pauli principle, exchange sign `-1`.
+* `ChannelLabel.mk'`: a channel from the three triangle inequalities.
 * `ChannelLabel.tripletS1`, `ChannelLabel.tripletD1`: the deuteron channels `³S₁` and `³D₁`.
+* `ChannelLabel.IsTensorPair`: two channels forming the spin-triplet pair `³(J-1)_J`, `³(J+1)_J`.
 
 ## Main results
 
@@ -79,14 +83,17 @@ channels are available to a proton-neutron pair and forbidden to a like-species 
   in isospin `0`; the hypothesis `T ≤ 1` restricts the isospin to the two-nucleon range.
 * `ChannelLabel.S_eq_of_parity_eq_of_pauliAllowed`: two channels allowed in the same isospin and of
   equal parity have equal total spin.
+* `ChannelLabel.S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one`: a
+  channel of odd `J` and positive parity is a spin triplet with `L = J ∓ 1`.
 * `ChannelLabel.eq_tripletS1_or_eq_tripletD1_iff`: the two-nucleon channels with `J = 1` and
   positive parity are exactly `³S₁` and `³D₁`.
 * `ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_odd_J_of_parity_eq_one`: a two-nucleon channel
   of odd `J` and positive parity is allowed exactly in isospin `0`; its case `J = 1` is
   `ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`.
-* `ChannelLabel.eq_or_S_eq_one_and_L_add_one_eq_J_or_J_add_one_eq_L_of_pauliAllowed`: allowed
-  two-nucleon channels sharing `J`, parity and isospin are equal or form the pair `³(J-1)_J`,
-  `³(J+1)_J`; conversely, such a pair has equal parity (`ChannelLabel.parity_eq_iff`).
+* `ChannelLabel.eq_or_isTensorPair_of_pauliAllowed`: allowed two-nucleon channels sharing `J`,
+  parity and isospin are equal or form the pair `³(J-1)_J`, `³(J+1)_J`; conversely, such a pair has
+  equal parity and the same Pauli status (`ChannelLabel.IsTensorPair.parity_eq`,
+  `ChannelLabel.IsTensorPair.pauliAllowed_iff`).
 
 ## References
 
@@ -135,6 +142,23 @@ theorem L_le_J_add_S : c.L ≤ c.J + c.S := by
 theorem S_le_J_add_L : c.S ≤ c.J + c.L := by
   obtain ⟨-, hS, -⟩ := PhyslibAlpha.Sl2.triangleRule_two_mul_iff.1 c.triangle
   omega
+
+/-- The channel of total spin `S ≤ 1`, orbital angular momentum `L` and total angular momentum `J`,
+built from the three triangle inequalities `J ≤ L + S`, `L ≤ J + S` and `S ≤ J + L` instead of the
+triangle rule in doubled units. -/
+def mk' (S L J : ℕ) (hS : S ≤ 1) (hJ : J ≤ L + S) (hL : L ≤ J + S) (hS' : S ≤ J + L) :
+    ChannelLabel :=
+  ⟨S, L, J, hS, PhyslibAlpha.Sl2.triangleRule_two_mul_iff.2 ⟨by omega, by omega, by omega⟩⟩
+
+section mk'
+
+variable {S L J : ℕ} {hS : S ≤ 1} {hJ : J ≤ L + S} {hL : L ≤ J + S} {hS' : S ≤ J + L}
+
+@[simp] theorem mk'_S : (mk' S L J hS hJ hL hS').S = S := (rfl)
+@[simp] theorem mk'_L : (mk' S L J hS hJ hL hS').L = L := (rfl)
+@[simp] theorem mk'_J : (mk' S L J hS hJ hL hS').J = J := (rfl)
+
+end mk'
 
 /-- The orbital angular momentum of a two-nucleon channel is `J` or, in a spin triplet, `J ∓ 1`. -/
 theorem L_eq_J_or_S_eq_one : c.L = c.J ∨ c.S = 1 ∧ (c.L + 1 = c.J ∨ c.L = c.J + 1) := by
@@ -248,17 +272,31 @@ def tripletD1 : ChannelLabel := ⟨1, 2, 1, le_rfl, by decide⟩
 
 /-- The channel `³S₁` is allowed by the Pauli principle in isospin `0`, the isospin of the
 deuteron. -/
-theorem pauliAllowed_tripletS1 : tripletS1.PauliAllowed 0 := by
+@[simp high] theorem pauliAllowed_tripletS1 : tripletS1.PauliAllowed 0 := by
   simp
 
 /-- The channel `³D₁` is allowed by the Pauli principle in isospin `0`, the isospin of the
 deuteron. -/
-theorem pauliAllowed_tripletD1 : tripletD1.PauliAllowed 0 := by
+@[simp high] theorem pauliAllowed_tripletD1 : tripletD1.PauliAllowed 0 := by
   simp [Nat.odd_iff]
 
 /-- The two deuteron channels are distinct. -/
 @[simp] theorem tripletS1_ne_tripletD1 : tripletS1 ≠ tripletD1 := by
   simp [ChannelLabel.ext_iff]
+
+/-- The two deuteron channels are distinct, in the reverse order. -/
+@[simp] theorem tripletD1_ne_tripletS1 : tripletD1 ≠ tripletS1 :=
+  tripletS1_ne_tripletD1.symm
+
+/-- A two-nucleon channel of odd total angular momentum `J` and positive parity is a spin triplet
+with `L = J ∓ 1`, of `³(J-1)_J` or `³(J+1)_J`: the spin singlet has `L = J`, of odd `L` and hence
+negative parity, and in a spin triplet `L = J` is odd as well. -/
+theorem S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one {c : ChannelLabel}
+    (hJ : Odd c.J) (hP : c.parity = 1) : c.S = 1 ∧ (c.L + 1 = c.J ∨ c.L = c.J + 1) := by
+  have := c.L_eq_J_or_S_eq_one
+  rw [parity_eq_one_iff, Nat.even_iff] at hP
+  rw [Nat.odd_iff] at hJ
+  omega
 
 /-- The two-nucleon channels with total angular momentum `1` and positive parity are exactly `³S₁`
 and `³D₁`; the spin singlet with `J = 1` is `¹P₁`, of negative parity. These are the deuteron's
@@ -266,9 +304,10 @@ spin and parity, so a deuteron wave function lives in these two channels; the de
 property of the nucleon-nucleon interaction. -/
 theorem eq_tripletS1_or_eq_tripletD1_iff {c : ChannelLabel} :
     c = tripletS1 ∨ c = tripletD1 ↔ c.J = 1 ∧ c.parity = 1 := by
-  simp only [parity_eq_one_iff, Nat.even_iff, ChannelLabel.ext_iff, tripletS1_S, tripletS1_L,
-    tripletS1_J, tripletD1_S, tripletD1_L, tripletD1_J]
-  have := c.L_eq_J_or_S_eq_one
+  refine ⟨by rintro (rfl | rfl) <;> simp, fun ⟨hJ, hP⟩ => ?_⟩
+  have := S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one (hJ ▸ odd_one) hP
+  simp only [ChannelLabel.ext_iff, tripletS1_S, tripletS1_L, tripletS1_J, tripletD1_S, tripletD1_L,
+    tripletD1_J]
   omega
 
 /-- A two-nucleon channel of odd total angular momentum and positive parity is a spin triplet of
@@ -278,8 +317,7 @@ theorem pauliAllowed_iff_isospin_eq_zero_of_odd_J_of_parity_eq_one {c : ChannelL
     (hJ : Odd c.J) (hP : c.parity = 1) (hT : T ≤ 1) :
     c.PauliAllowed T ↔ T = 0 := by
   refine pauliAllowed_iff_isospin_eq_zero ?_ hT
-  have := c.L_eq_J_or_S_eq_one
-  rw [parity_eq_one_iff, Nat.even_iff] at hP
+  have := S_eq_one_and_L_add_one_eq_J_or_L_eq_J_add_one_of_odd_J_of_parity_eq_one hJ hP
   rw [Nat.odd_iff] at hJ ⊢
   omega
 
@@ -294,17 +332,60 @@ theorem pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one {c : Chann
 
 /-! ### Channels with the same conserved quantum numbers -/
 
+/-- The channels `c` and `c'` are the spin-triplet pair `³(J-1)_J`, `³(J+1)_J` of a common total
+angular momentum `J`, in either order: both are spin triplets of total angular momentum `J`, and
+their orbital angular momenta are `J - 1` and `J + 1`. These are the pairs of channels that the
+tensor force mixes. -/
+def IsTensorPair (c c' : ChannelLabel) : Prop :=
+  c.S = 1 ∧ c'.S = 1 ∧ c.J = c'.J ∧
+    (c.L + 1 = c.J ∧ c'.L = c.J + 1 ∨ c'.L + 1 = c.J ∧ c.L = c.J + 1)
+
+theorem isTensorPair_def {c c' : ChannelLabel} :
+    c.IsTensorPair c' ↔ c.S = 1 ∧ c'.S = 1 ∧ c.J = c'.J ∧
+      (c.L + 1 = c.J ∧ c'.L = c.J + 1 ∨ c'.L + 1 = c.J ∧ c.L = c.J + 1) :=
+  (Iff.rfl)
+
+theorem IsTensorPair.symm {c c' : ChannelLabel} (h : c.IsTensorPair c') : c'.IsTensorPair c := by
+  rw [isTensorPair_def] at h ⊢
+  omega
+
+theorem isTensorPair_comm {c c' : ChannelLabel} : c.IsTensorPair c' ↔ c'.IsTensorPair c :=
+  ⟨IsTensorPair.symm, IsTensorPair.symm⟩
+
+/-- The two channels of a tensor pair are distinct. -/
+theorem IsTensorPair.ne {c c' : ChannelLabel} (h : c.IsTensorPair c') : c ≠ c' := by
+  rintro rfl
+  rw [isTensorPair_def] at h
+  omega
+
+/-- The two channels of a tensor pair have the same parity: their orbital angular momenta differ
+by two. -/
+theorem IsTensorPair.parity_eq {c c' : ChannelLabel} (h : c.IsTensorPair c') :
+    c.parity = c'.parity := by
+  rw [parity_eq_iff, Nat.even_iff, Nat.even_iff]
+  rw [isTensorPair_def] at h
+  omega
+
+/-- The two channels of a tensor pair are allowed by the Pauli principle in the same isospins. -/
+theorem IsTensorPair.pauliAllowed_iff {c c' : ChannelLabel} {T : ℕ} (h : c.IsTensorPair c') :
+    c.PauliAllowed T ↔ c'.PauliAllowed T := by
+  rw [pauliAllowed_iff_odd, pauliAllowed_iff_odd, Nat.odd_iff, Nat.odd_iff]
+  rw [isTensorPair_def] at h
+  omega
+
+/-- The deuteron channels `³S₁` and `³D₁` form the tensor pair of total angular momentum `1`. -/
+theorem isTensorPair_tripletS1_tripletD1 : tripletS1.IsTensorPair tripletD1 := by
+  simp [isTensorPair_def]
+
 /-- Two channels with the same total spin, total angular momentum and parity are either equal or the
 spin-triplet pair `³(J-1)_J`, `³(J+1)_J`. -/
-theorem eq_or_S_eq_one_and_L_add_one_eq_J_or_J_add_one_eq_L {c c' : ChannelLabel}
-    (hSS' : c.S = c'.S) (hJ : c.J = c'.J) (hP : c.parity = c'.parity) :
-    c = c' ∨ c.S = 1 ∧ c'.S = 1 ∧
-      (c.L + 1 = c.J ∧ c.J + 1 = c'.L ∨ c'.L + 1 = c.J ∧ c.J + 1 = c.L) := by
+theorem eq_or_isTensorPair {c c' : ChannelLabel} (hSS' : c.S = c'.S) (hJ : c.J = c'.J)
+    (hP : c.parity = c'.parity) : c = c' ∨ c.IsTensorPair c' := by
   have hP' := parity_eq_iff.1 hP
   have := c.L_eq_J_or_S_eq_one
   have := c'.L_eq_J_or_S_eq_one
   simp only [Nat.even_iff] at hP'
-  rw [ChannelLabel.ext_iff]
+  rw [ChannelLabel.ext_iff, isTensorPair_def]
   -- `L, L' ∈ {J - 1, J, J + 1}` with `J - 1` and `J + 1` only in a triplet, and `L ≡ L' (mod 2)`
   omega
 
@@ -313,13 +394,10 @@ are either equal or the spin-triplet pair `³(J-1)_J`, `³(J+1)_J`: equal parity
 status force equal total spin (`ChannelLabel.S_eq_of_parity_eq_of_pauliAllowed`). An interaction
 conserving these quantum numbers can therefore mix channels only in such pairs, as the tensor force
 mixes `³S₁` and `³D₁` in the deuteron. -/
-theorem eq_or_S_eq_one_and_L_add_one_eq_J_or_J_add_one_eq_L_of_pauliAllowed {c c' : ChannelLabel}
-    {T : ℕ} (hJ : c.J = c'.J) (hP : c.parity = c'.parity) (h : c.PauliAllowed T)
-    (h' : c'.PauliAllowed T) :
-    c = c' ∨ c.S = 1 ∧ c'.S = 1 ∧
-      (c.L + 1 = c.J ∧ c.J + 1 = c'.L ∨ c'.L + 1 = c.J ∧ c.J + 1 = c.L) :=
-  eq_or_S_eq_one_and_L_add_one_eq_J_or_J_add_one_eq_L (S_eq_of_parity_eq_of_pauliAllowed hP h h') hJ
-    hP
+theorem eq_or_isTensorPair_of_pauliAllowed {c c' : ChannelLabel} {T : ℕ} (hJ : c.J = c'.J)
+    (hP : c.parity = c'.parity) (h : c.PauliAllowed T) (h' : c'.PauliAllowed T) :
+    c = c' ∨ c.IsTensorPair c' :=
+  eq_or_isTensorPair (S_eq_of_parity_eq_of_pauliAllowed hP h h') hJ hP
 
 end ChannelLabel
 
