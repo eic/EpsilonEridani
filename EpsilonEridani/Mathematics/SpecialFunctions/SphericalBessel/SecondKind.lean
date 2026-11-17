@@ -180,7 +180,7 @@ theorem hasDerivAt_sphericalBesselYMulPow_zero (x : ℝ) :
   simpa only [Pi.neg_def, neg_neg] using (hasDerivAt_cos x).neg
 
 /-- The derivative of `sphericalBesselYMulPow 0 = -cos` is `sin`. -/
-@[simp]
+@[simp, grind =]
 theorem deriv_sphericalBesselYMulPow_zero (x : ℝ) :
     deriv (sphericalBesselYMulPow 0) x = sin x :=
   (hasDerivAt_sphericalBesselYMulPow_zero x).deriv
