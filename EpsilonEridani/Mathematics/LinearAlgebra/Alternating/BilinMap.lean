@@ -135,7 +135,7 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 theorem neg_bilinMap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M) :
     (-f).bilinMap m = -f.bilinMap m :=
   LinearMap.ext₂ fun v w => by
-    simp only [bilinMap_apply, AlternatingMap.neg_apply, LinearMap.neg_apply]
+    simp only [bilinMap_apply, neg_apply, LinearMap.neg_apply]
 
 end AddCommGroupCodomain
 

@@ -11,7 +11,8 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 # Exclusive DIS Kinematics Interfaces
 
 This module extends the inclusive kinematics layer with off-forward variables used by
-DVCS and DVMP interfaces.
+DVCS and DVMP interfaces. An inclusive event `DisKinematics` is read as exclusive kinematics by
+`toExclKinematics`, whose produced system carries the momentum fixed by momentum conservation.
 
 -/
 
@@ -26,7 +27,7 @@ namespace Kinematics
 
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
-open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin DisKinematics)
 
 /-- Minimal off-forward exclusive kinematics container. -/
 structure ExclKinematics where
@@ -58,6 +59,23 @@ variable {V}
 /-- Hard scale in the exclusive channel. -/
 def Q2 (g : Bilin V) (K : ExclKinematics V) : ℝ :=
   - g K.q K.q
+
+omit [Module ℝ V] in
+/-- The inclusive kinematics of the same event: the `DisKinematics` record of the momenta `p`,
+`p'`, `k`, `k'` and `q`, forgetting the produced particle `q'` and the azimuthal angles. -/
+@[simps]
+def toDisKinematics (K : ExclKinematics V) : DisKinematics V where
+  p := K.p
+  pPrime := K.pPrime
+  k := K.k
+  kPrime := K.kPrime
+  q := K.q
+  hq := K.hqLepton
+
+/-- The inclusive hard scale of the same momenta is the exclusive one: both are `Q² = -q²`. -/
+@[simp]
+lemma Q2_toDisKinematics (g : Bilin V) (K : ExclKinematics V) :
+    K.toDisKinematics.Q2 g = K.Q2 g := (rfl)
 
 omit [Module ℝ V] in
 /-- Momentum transfer to the hadron, `Δ = p' - p`. -/
@@ -164,6 +182,58 @@ lemma xiSkew_eq_xB_form
     div_div_div_cancel_right₀ h2pq]
 
 end ExclKinematics
+
+/-! ### Inclusive events as exclusive kinematics -/
+
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics (DisKinematics)
+
+variable {V}
+
+/-- An inclusive event as exclusive kinematics: the produced system carries the momentum
+`q' = p + q - p'` fixed by momentum conservation at the hadronic vertex, and `phiL`, `phiH` are
+the azimuthal angles of the lepton and hadron planes. -/
+def toExclKinematics (K : DisKinematics V) (phiL phiH : ℝ) : ExclKinematics V where
+  p := K.p
+  pPrime := K.pPrime
+  k := K.k
+  kPrime := K.kPrime
+  q := K.q
+  qPrime := K.p + K.q - K.pPrime
+  phiL := phiL
+  phiH := phiH
+  hqLepton := K.hq
+  hMomentum := by abel
+
+section toExclKinematics
+
+variable (K : DisKinematics V) (phiL phiH : ℝ)
+
+omit [Module ℝ V]
+
+@[simp] lemma toExclKinematics_p : (toExclKinematics K phiL phiH).p = K.p := (rfl)
+
+@[simp] lemma toExclKinematics_pPrime : (toExclKinematics K phiL phiH).pPrime = K.pPrime := (rfl)
+
+@[simp] lemma toExclKinematics_k : (toExclKinematics K phiL phiH).k = K.k := (rfl)
+
+@[simp] lemma toExclKinematics_kPrime : (toExclKinematics K phiL phiH).kPrime = K.kPrime := (rfl)
+
+@[simp] lemma toExclKinematics_q : (toExclKinematics K phiL phiH).q = K.q := (rfl)
+
+@[simp] lemma toExclKinematics_qPrime :
+    (toExclKinematics K phiL phiH).qPrime = K.p + K.q - K.pPrime := (rfl)
+
+@[simp] lemma toExclKinematics_phiL : (toExclKinematics K phiL phiH).phiL = phiL := (rfl)
+
+@[simp] lemma toExclKinematics_phiH : (toExclKinematics K phiL phiH).phiH = phiH := (rfl)
+
+end toExclKinematics
+
+/-- The exclusive hard scale of the bridged event is the inclusive `Q² = -q²`. -/
+@[simp]
+lemma Q2_toExclKinematics (g : Bilin V) (K : DisKinematics V) (phiL phiH : ℝ) :
+    (toExclKinematics K phiL phiH).Q2 g = K.Q2 g := by
+  rw [ExclKinematics.Q2, DisKinematics.Q2, toExclKinematics_q]
 
 end Kinematics
 end Exclusive

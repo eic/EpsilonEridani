@@ -40,6 +40,8 @@ on:
       - 'scripts/chart_style.py'
       - 'scripts/loc_graph.py'
       - 'scripts/loc_roadmap_graph.py'
+      - 'scripts/lean_source.py'
+      - 'scripts/module_graph.py'
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
@@ -90,7 +92,8 @@ jobs:
   # will not compile can no longer make the published data stale by itself, and a data outage
   # shows up in minutes rather than after the whole doc build has run.
   build-data:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     outputs:
       # Which of the generated data assets could not be regenerated this run. The steps that
       # produce them are deliberately non-fatal -- a GitHub hiccup should cost a stale chart, not
@@ -262,13 +265,19 @@ jobs:
       # requests and the dominant cost of this job. Publishing the result means
       # anything asking "where is the queue stuck" reads a file instead of
       # repeating the fetch.
+      - name: Read the pinned merge policy commit
+        id: review-pin
+        continue-on-error: true
+        uses: ./.github/actions/review-pin
       - name: Checkout the pinned merge policy (read-only)
         id: merge-policy
+        # Never fall back to an unpinned checkout: without a pin, skip and degrade as below.
+        if: steps.review-pin.outcome == 'success'
         continue-on-error: true
         uses: actions/checkout@v7
         with:
           repository: eic/EpsilonEridaniReview
-          ref: 73f61deb51cad9d881cd0f6f6f418afc78302499
+          ref: ${{ steps.review-pin.outputs.sha }}
           path: .epsiloneridani-review
           sparse-checkout: runner
           persist-credentials: false
@@ -326,6 +335,24 @@ jobs:
           || {
             echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
             echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+          }
+
+      # The module graph is read from source text alone (imports, declarations, and the roadmap
+      # clone above), so it needs no build and no GitHub API. Only its data travels: the viewer,
+      # web/static_files/module-graph.html, is front end committed with the site and fetches
+      # module-graph.json. The data is written to a scratch directory and only then copied
+      # over, so a failure keeps the restored previous graph rather than a half-written one;
+      # with no graph at all, the viewer says the data is unavailable.
+      - name: Regenerate the module graph into static_files
+        working-directory: ${{ github.workspace }}
+        run: |
+          python3 scripts/module_graph.py \
+            --roadmap-dir /tmp/roadmap \
+            --out-dir "$RUNNER_TEMP/module-graph" \
+          && cp "$RUNNER_TEMP/module-graph/module-graph.json" web/static_files/ \
+          || {
+            echo "::warning::module graph generation failed; keeping the last published graph"
+            echo "module graph" >> "$RUNNER_TEMP/data-failures"
           }
 
       # An explicit allowlist of GENERATED assets, not the whole directory. static_files also
@@ -413,7 +440,7 @@ jobs:
         working-directory: web
     steps:
       # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
-      - name: Raise vm.max_map_count
+      - name: Raise vm.max_map_count and allow memory overcommit
         # the job's default working directory, web/, does not exist before checkout
         working-directory: ${{ github.workspace }}
         run: |
@@ -425,6 +452,18 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+          # On ubuntu-26.04 (overcommit mode 0, 15 GiB RAM + 3 GiB swap) the doc-gen4 step failed
+          # with `resource exhausted (error code: 12, not enough memory)` whenever Lake spawned
+          # git or lean: the kernel logged `__vm_enough_memory: comm: lake, bytes: 89120911360`,
+          # a single ~83 GiB charge that mode 0's heuristic rejects because it exceeds RAM + swap,
+          # while MemAvailable was still ~12 GB and the cgroup recorded no OOM. Mode 1 skips that
+          # per-request check; genuine exhaustion then ends in an OOM kill instead of ENOMEM.
+          sudo -n sysctl -w vm.overcommit_memory=1 >/dev/null 2>&1 \
+            || sysctl -w vm.overcommit_memory=1 >/dev/null 2>&1 || true
+          free -h; swapon --show || true
+          mode="$(cat /proc/sys/vm/overcommit_memory)"
+          echo "vm.overcommit_memory=$mode"
+          [ "$mode" = 1 ] || echo "::warning::vm.overcommit_memory is $mode, not 1; Lake may fail to spawn processes"
       - uses: actions/checkout@v7
         with:
           # Same reasoning as build-data's checkout, and it matters more here: this job elaborates
@@ -553,6 +592,19 @@ jobs:
         working-directory: docbuild
         run: lake exe cache get
 
+      # Physlib is in neither Mathlib's cache nor EpsilonEridani's artifact cache, so without this
+      # the docs build compiles the Physlib modules EpsilonEridani imports from source (~6 min).
+      # Its oleans depend only on the toolchain and the locked dependency revisions, so key on
+      # exactly those. A stale or partial restore is harmless: Lake's traces rebuild whatever does
+      # not match. Restore-only, so a hit is not re-uploaded; the save follows the docs build.
+      - name: Restore Physlib's oleans
+        id: physlib-cache
+        if: steps.docs-plan.outputs.build == 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: .lake/packages/Physlib/.lake/build
+          key: physlib-build-v1-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+
       # The generated docbuild/lean-toolchain symlink resolves to EpsilonEridani's root toolchain, so
       # there is no second independently pinned copy to drift. The pinned doc-gen4 source still
       # uses Lean internals, though, and may need updating after a Lean bump. Compile it on its own
@@ -569,11 +621,53 @@ jobs:
         working-directory: docbuild
         run: python3 mk_docs_root.py
 
-      # Render pages for only the EpsilonEridani.* modules; references to Mathlib (and Lean core) link
-      # out to the hosted mathlib4_docs via its /find resolver. Start from a clean doc tree so
-      # pages for deleted modules do not linger (this step never runs on the web-only reuse
-      # path, which keeps the restored cache).
-      - name: Build the API documentation (doc-gen4)
+      # doc-gen4's `docInfo` facet indexes every module in the import closure into
+      # docbuild/.lake/build/api-docs.db, leaving a Lake-traced marker per module in doc-data/.
+      # DOCGEN_LOCAL_MODULE_ROOTS only filters the HTML rendered from that database, so without a
+      # cache every build re-indexes all of Mathlib, which took ~1h30m of the ~1h45m doc step.
+      #
+      # The database is therefore built in two phases. Phase 1 indexes Mathlib's closure only, and
+      # that state is cached under a key naming everything it depends on: the toolchain, the locked
+      # revisions of every docs dependency except EpsilonEridani and the two packages outside
+      # Mathlib's closure (Physlib, TauCeti), and the docs project's own sources (doc-gen4 reads
+      # its references from docbuild/docs). Mathlib moves far less often than this workflow runs,
+      # so phase 1 is normally a restore plus a no-op build. Phase 2 then adds EpsilonEridani and
+      # Physlib on top. The snapshot is saved between the phases, so it never holds EpsilonEridani
+      # rows and pages of deleted modules cannot linger through it. Correctness does not rest on
+      # the key: Lake re-runs any module whose marker trace does not match.
+      - name: Compute the Mathlib doc-database cache key
+        id: docdb-key
+        if: steps.docs-plan.outputs.build == 'true'
+        working-directory: ${{ github.workspace }}
+        env:
+          DOCS_HASH: ${{ hashFiles('docbuild/lakefile.toml', 'docbuild/docs/**') }}
+        run: |
+          set -euo pipefail
+          pins=$(jq -r '.packages[]
+                          | select(.name != "EpsilonEridani" and .name != "Physlib" and .name != "TauCeti")
+                          | "\(.name)@\(.rev // "")"' docbuild/lake-manifest.json | sort)
+          echo "Pins in the key:"; echo "$pins"
+          hash=$(printf '%s\n%s\n%s\n' "$(cat lean-toolchain)" "$pins" "$DOCS_HASH" | sha256sum | cut -d' ' -f1)
+          echo "key=docs-db-mathlib-v1-${RUNNER_OS}-${hash}" >> "$GITHUB_OUTPUT"
+
+      # Start from a clean HTML tree so pages for deleted modules do not linger (these steps never
+      # run on the web-only reuse path, which keeps the restored tree).
+      - name: Start the API docs from a clean HTML tree
+        if: steps.docs-plan.outputs.build == 'true'
+        working-directory: docbuild
+        run: rm -rf .lake/build/doc
+
+      - name: Restore the Mathlib doc database
+        id: docdb-cache
+        if: steps.docs-plan.outputs.build == 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            docbuild/.lake/build/api-docs.db
+            docbuild/.lake/build/doc-data
+          key: ${{ steps.docdb-key.outputs.key }}
+
+      - name: Index Mathlib into the doc database (doc-gen4, phase 1)
         if: steps.docs-plan.outputs.build == 'true'
         working-directory: docbuild
         env:
@@ -581,9 +675,46 @@ jobs:
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
           # The restore above placed what this needs, so do not reach for a remote cache.
           LAKE_NO_CACHE: "true"
+        # doc-gen4's bibPrepass target writes doc/references.bib as a side effect, but Lake tracks
+        # only its doc-data/references.json output. With that output up to date (as after a
+        # snapshot restore) Lake replays the target without rewriting the .bib that the clean
+        # step deleted, and the final `docs` target then fails on the missing file. Removing the
+        # tracked output makes the sub-second prepass rerun; its trace depends only on its inputs,
+        # so nothing downstream is rebuilt.
         run: |
-          rm -rf .lake/build/doc .lake/build/doc-data
-          lake build EpsilonEridaniDocs:docs
+          rm -f .lake/build/doc-data/references.json
+          bash ../scripts/run-with-memory-sampler.sh mathlib lake build +Mathlib:docInfo
+
+      - name: Save the Mathlib doc database
+        if: steps.docs-plan.outputs.build == 'true' && steps.docdb-cache.outputs.cache-hit != 'true'
+        # A cache is an optimisation and must not be able to break the deploy.
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            docbuild/.lake/build/api-docs.db
+            docbuild/.lake/build/doc-data
+          key: ${{ steps.docdb-key.outputs.key }}
+
+      # Render pages for only the EpsilonEridani.* modules; references to Mathlib (and Lean core) link
+      # out to the hosted mathlib4_docs via its /find resolver.
+      - name: Build the API documentation (doc-gen4, phase 2)
+        if: steps.docs-plan.outputs.build == 'true'
+        working-directory: docbuild
+        env:
+          DOCGEN_LOCAL_MODULE_ROOTS: EpsilonEridani
+          DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
+          # The restore above placed what this needs, so do not reach for a remote cache.
+          LAKE_NO_CACHE: "true"
+        run: bash ../scripts/run-with-memory-sampler.sh docs lake build EpsilonEridaniDocs:docs
+
+      - name: Save Physlib's oleans
+        if: steps.docs-plan.outputs.build == 'true' && steps.physlib-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: .lake/packages/Physlib/.lake/build
+          key: physlib-build-v1-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
 
       # Stamp the tree with the commit it was generated from, BEFORE it is cached, so the
       # provenance travels with the tree wherever it is later restored. This is what makes the
@@ -821,7 +952,8 @@ jobs:
     # an unexplained skip must not authorize publishing an old site over the live one. And
     # `!cancelled()`, so cancelling the run stops here rather than deploying on the way out.
     if: ${{ !cancelled() && needs.build-site.result == 'failure' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     outputs:
       # Which cached site was republished. report-data-freshness compares it against this run's
       # own key, because "the site could not be built" and "the site built and then the upload
@@ -907,7 +1039,8 @@ jobs:
     # Skipped only when neither produced anything, which is the case where there is genuinely
     # nothing to publish.
     if: ${{ !cancelled() && (needs.build-site.result == 'success' || needs.fallback-site.result == 'success') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 15  # deploy-pages itself waits up to 10 min for the deployment
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -942,7 +1075,8 @@ jobs:
     # there is anything worth reporting is a question for the step, which can see the deploy result.
     # It is not a question the `if:` has the information to answer.
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     steps:
       - name: Report what is serving stale data
         env:
@@ -1009,10 +1143,21 @@ jobs:
   # the fallback restored THIS run's own cache, the published docs are newer than the branch and
   # it lags by one run -- which the best-effort note above already covers, and which the next
   # successful deploy repairs.
+  #
+  # The condition names its status checks explicitly. A bare `if:` gets an implicit `success()`,
+  # which requires EVERY upstream job in the graph to have succeeded -- including `fallback-site`
+  # (an ancestor through `deploy`), which is skipped on every healthy run. With the implicit check
+  # this job was skipped on every run, so `docgen` was never created.
   advance-docgen-ref:
     needs: [build-site, deploy]
-    if: needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    if: >-
+      ${{ !cancelled()
+      && needs.build-site.result == 'success'
+      && needs.deploy.result == 'success'
+      && needs.build-site.outputs.docs-source-sha != ''
+      && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:

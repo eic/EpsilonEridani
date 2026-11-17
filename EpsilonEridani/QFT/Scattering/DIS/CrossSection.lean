@@ -27,6 +27,16 @@ positive for every real `y`*, with no kinematic hypothesis at all, which is what
 positivity of the cross section reduce to the positivity of `F₂`.  `yFactor_pos` proves it by
 completing the square, and `two_mul_yFactor` recovers the `1 + (1-y)²` form usually quoted.
 
+## Relabelling flavours and limiting ratios of `F₂`
+
+`f2LO_comp` says that relabelling the flavours of the densities by a bijection is the same as
+relabelling the charges the other way. The limiting-ratio theorems `tendsto_f2LO_div_f2LO`,
+`tendsto_f2LO_div_f2LO_of_tendsto_div` and `tendsto_f2LO_div_f2LO_of_tendsto_div_zero` give the
+limit of `F₂` with one charge assignment over `F₂` with another along a filter, such as `x → 1⁻`,
+on which the densities have known limiting ratios against a reference function. The limit depends
+on those density ratios and not on the charges alone. Together with `f2LO_comp` they give the
+large-`x` ratio `F₂^p / F₂^n` of the proton and the neutron in `DIS.Isospin`.
+
 ## Why this file is at the `ℝ` level
 
 The generator samples this distribution in `Float` (`Physlib.Generator.CrossSection`).  The
@@ -124,6 +134,22 @@ noncomputable def f2LO {Flavor : Type} [Fintype Flavor]
     (charge : Flavor → ℝ) (q : Flavor → ℝ → ℝ → ℝ) (x Q2 : ℝ) : ℝ :=
   x * ∑ f, (charge f) ^ 2 * q f x Q2
 
+/-- The defining formula of the leading-order structure function, `F₂ = x ∑_f e_f² q_f`. -/
+theorem f2LO_def {Flavor : Type} [Fintype Flavor] (charge : Flavor → ℝ)
+    (q : Flavor → ℝ → ℝ → ℝ) (x Q2 : ℝ) :
+    f2LO charge q x Q2 = x * ∑ f, charge f ^ 2 * q f x Q2 := (rfl)
+
+/-- **Relabelling the flavours of the densities is relabelling the charges the other way.** For a
+bijection `σ` of flavour types, `F₂` of the densities `q ∘ σ` with charges `charge` is `F₂` of
+`q` with charges `charge ∘ σ⁻¹`. -/
+@[simp]
+theorem f2LO_comp {ι κ : Type} [Fintype ι] [Fintype κ] (σ : κ ≃ ι) (charge : κ → ℝ)
+    (q : ι → ℝ → ℝ → ℝ) (x Q2 : ℝ) :
+    f2LO charge (q ∘ σ) x Q2 = f2LO (charge ∘ σ.symm) q x Q2 := by
+  simp only [f2LO_def, Function.comp_apply]
+  rw [← σ.sum_comp fun i => charge (σ.symm i) ^ 2 * q i x Q2]
+  simp
+
 /-- `F₂` is non-negative wherever the parton densities are, which with `loNCdSigma_nonneg`
 gives a non-negative cross section. -/
 lemma f2LO_nonneg {Flavor : Type} [Fintype Flavor]
@@ -140,6 +166,67 @@ lemma loNCdSigma_f2LO_nonneg {Flavor : Type} [Fintype Flavor]
     (hx : 0 < x) (hQ : 0 < Q2) (hq : ∀ f, 0 ≤ q f x Q2) :
     0 ≤ loNCdSigma α x Q2 y (f2LO charge q x Q2) :=
   loNCdSigma_nonneg hx hQ (f2LO_nonneg charge hx.le hq)
+
+open Filter Topology in
+/-- **The limiting ratio of `F₂` under two charge assignments.** If, along a filter `l` on which
+`x` and a reference function `w` are eventually non-zero, every density `q i` is asymptotically
+`ρ i` times `w`, then `F₂` with charges `e` over `F₂` with charges `e'` tends to
+`Σ e_i² ρ_i / Σ e'_i² ρ_i`, provided the limiting denominator does not vanish. With `f2LO_comp`
+this also gives the limiting ratio of `F₂` for two targets whose densities differ by a relabelling
+of the flavours. -/
+theorem tendsto_f2LO_div_f2LO {Flavor : Type} [Fintype Flavor] {e e' : Flavor → ℝ}
+    {q : Flavor → ℝ → ℝ → ℝ} {Q2 : ℝ} {l : Filter ℝ} {w : ℝ → ℝ} {ρ : Flavor → ℝ}
+    (hx : ∀ᶠ x in l, x ≠ 0) (hw : ∀ᶠ x in l, w x ≠ 0)
+    (hq : ∀ i, Tendsto (fun x => q i x Q2 / w x) l (𝓝 (ρ i)))
+    (hρ : ∑ i, e' i ^ 2 * ρ i ≠ 0) :
+    Tendsto (fun x => f2LO e q x Q2 / f2LO e' q x Q2) l
+      (𝓝 ((∑ i, e i ^ 2 * ρ i) / ∑ i, e' i ^ 2 * ρ i)) := by
+  have hlim (c : Flavor → ℝ) :
+      Tendsto (fun x => ∑ i, c i ^ 2 * (q i x Q2 / w x)) l (𝓝 (∑ i, c i ^ 2 * ρ i)) :=
+    tendsto_finsetSum _ fun i _ => (hq i).const_mul (c i ^ 2)
+  refine ((hlim e).div (hlim e') hρ).congr' ?_
+  filter_upwards [hx, hw] with x hx hw
+  have h (c : Flavor → ℝ) : f2LO c q x Q2 = x * w x * ∑ i, c i ^ 2 * (q i x Q2 / w x) := by
+    rw [f2LO_def, mul_assoc, Finset.mul_sum (a := w x)]
+    refine congrArg (x * ·) (Finset.sum_congr rfl fun i _ => ?_)
+    field_simp
+  rw [Pi.div_apply, h, h, mul_div_mul_left _ _ (mul_ne_zero hx hw)]
+
+open Filter Topology in
+/-- **The limiting ratio of `F₂` against a reference density.** If, along a filter `l` on which `x`
+and the density `q u` are eventually non-zero, every other density `q i` is asymptotically `ρ i`
+times `q u`, then with `ρ u = 1` the ratio of `F₂` with charges `e` to `F₂` with charges `e'`
+tends to `Σ e_i² ρ_i / Σ e'_i² ρ_i`, provided the limiting denominator does not vanish. This is
+`tendsto_f2LO_div_f2LO` with `q u` as the reference function. -/
+theorem tendsto_f2LO_div_f2LO_of_tendsto_div {Flavor : Type} [Fintype Flavor]
+    {e e' : Flavor → ℝ} {q : Flavor → ℝ → ℝ → ℝ} {Q2 : ℝ} {l : Filter ℝ} {ρ : Flavor → ℝ}
+    (u : Flavor) (hx : ∀ᶠ x in l, x ≠ 0) (hu : ∀ᶠ x in l, q u x Q2 ≠ 0)
+    (hq : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 (ρ i))) (hρu : ρ u = 1)
+    (hρ : ∑ i, e' i ^ 2 * ρ i ≠ 0) :
+    Tendsto (fun x => f2LO e q x Q2 / f2LO e' q x Q2) l
+      (𝓝 ((∑ i, e i ^ 2 * ρ i) / ∑ i, e' i ^ 2 * ρ i)) := by
+  have hq' (i : Flavor) : Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 (ρ i)) := by
+    rcases eq_or_ne i u with rfl | hi
+    · rw [hρu]
+      exact tendsto_const_nhds.congr' (hu.mono fun x hx => (div_self hx).symm)
+    · exact hq i hi
+  exact tendsto_f2LO_div_f2LO hx hu hq' hρ
+
+open Filter Topology in
+/-- **The limiting ratio of `F₂` when one density dominates.** If, along a filter `l` on which `x`
+and the density `q u` are eventually non-zero, every other density is negligible against `q u`,
+then the ratio of `F₂` with charges `e` to `F₂` with charges `e'` tends to `e_u² / e'_u²`, provided
+`e'_u ≠ 0`. -/
+theorem tendsto_f2LO_div_f2LO_of_tendsto_div_zero {Flavor : Type} [Fintype Flavor]
+    {e e' : Flavor → ℝ} {q : Flavor → ℝ → ℝ → ℝ} {Q2 : ℝ} {l : Filter ℝ} (u : Flavor)
+    (hx : ∀ᶠ x in l, x ≠ 0) (hu : ∀ᶠ x in l, q u x Q2 ≠ 0) (he' : e' u ≠ 0)
+    (h : ∀ i, i ≠ u → Tendsto (fun x => q i x Q2 / q u x Q2) l (𝓝 0)) :
+    Tendsto (fun x => f2LO e q x Q2 / f2LO e' q x Q2) l (𝓝 (e u ^ 2 / e' u ^ 2)) := by
+  classical
+  have hρ : ∑ i, e' i ^ 2 * (if i = u then 1 else 0) ≠ 0 := by
+    simpa using he'
+  simpa using tendsto_f2LO_div_f2LO_of_tendsto_div (ρ := fun i => if i = u then 1 else 0) u hx hu
+    (fun i hi => by simpa [hi] using h i hi) (by simp) hρ
 
 end DIS
 end Scattering

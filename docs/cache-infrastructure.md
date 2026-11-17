@@ -162,10 +162,9 @@ keys are `artifacts/eic/EpsilonEridani/<hash>.art` and
 `revisions/eic/EpsilonEridani/tc/<toolchain>/<revision>.jsonl`, where the toolchain is the elan
 name with `/` written as `--` and `:` as `---`.
 
-Lake signs uploads with curl's `--aws-sigv4 aws:amz:auto:s3`, so the SigV4 region is the
-literal `auto` and cannot be configured. Ceph accepts that; a plain AWS S3 bucket would not, so
-moving this cache to AWS would also mean replacing the `lake cache put-staged` step with a
-copy of the staged tree.
+Uploads are signed as Lake signs them, with curl's `--aws-sigv4 aws:amz:auto:s3`, so the SigV4
+region is the literal `auto`. Ceph accepts that; a plain AWS S3 bucket would not, so moving this
+cache to AWS would also mean giving the upload step's curl a real region.
 
 ## Publisher credential
 
@@ -214,33 +213,38 @@ So `build` runs `lake cache stage`, which needs no credential and touches no net
 the staging directory to `publish-lake-cache` as a workflow artifact: about 60 MB, one flat
 directory of `.ltar` files plus the mappings. That job checks out exactly one file and has no Lake
 workspace and no dependencies, so no code from this repository or from Mathlib runs anywhere in
-it, and it takes no `GITHUB_TOKEN` scopes. `lake cache put-staged` is the command for exactly
-this: it does not configure the workspace and so does not execute arbitrary user code.
+it, and it takes no `GITHUB_TOKEN` scopes. It does not run Lake either: it `PUT`s each staged file
+with curl, one object at a time, under the object keys above, and the revision map last.
 
-Nothing the build job reports is trusted there. The one file `publish-lake-cache` checks out is
-`lean-toolchain`, because which toolchain it installs decides which `lake` binary handles the key,
-and `elan toolchain install owner/repo:tag` fetches from that repository's releases. Taking that
-name from the build job would hand the choice straight back to code that landed on `main`, which
-can rewrite `lean-toolchain` on disk or poison the reporting step through `$GITHUB_ENV`. The pin
-is read from the repository instead, its shape is re-checked against `leanprover/lean4:` releases,
-and it must equal what the build job reports it built with.
+`lake cache put-staged` would do the same job, but it sends every artifact in one parallel curl
+batch, fails the whole batch on any single bad response, and resends all of them on the next
+call. The endpoint answers about 1% of `PUT`s with a bare `302` or an HTTP/2 stream error, so a
+batch of ~165 artifacts rarely got through and retrying it did not converge. The workflow instead
+retries each object until it answers `200`, over HTTP/1.1.
 
-Because it does not configure the workspace, `put-staged` cannot derive the toolchain and platform
-halves of the upload scope, so the job passes `--rev` and `--toolchain` explicitly and relies on
-the default of no platform. That reproduces the scope `lake cache put` derived, verified by
-comparing the revision URLs the two commands emit, which are identical:
+Nothing the build job reports is trusted there. `publish-lake-cache` reads `lean-toolchain` from
+the repository at the revision it publishes, because the toolchain names the revision map's key.
+Taking that name from the build job would hand the choice straight back to code that landed on
+`main`, which can rewrite `lean-toolchain` on disk or poison the reporting step through
+`$GITHUB_ENV`. Its shape is re-checked against `leanprover/lean4:` releases, and it must equal
+what the build job reports it built with.
+
+With no workspace, the publisher cannot derive the toolchain and platform halves of the upload
+scope, so it writes the map under the toolchain and no platform. That is the scope `lake cache put`
+derived, verified by comparing the revision URLs the two emit, which are identical:
 `revisions/eic/EpsilonEridani/tc/leanprover--lean4---<version>/<rev>.jsonl`. The platform is
 absent because `lakefile.toml` sets `platformIndependent = true`; the staging step fails loudly if
 that ever stops being true, since a silent mismatch would publish under a scope `pr-build` never
 reads.
 
 The staged tree arrives from a job that ran code that landed on main, so `publish-lake-cache`
-checks it before pointing Lake at it: the tree must be a flat directory of regular files, and
-every string in the mappings must be a plain `<hash>.<ext>` artifact name. Lake parses an artifact
-name as everything after the first dot and joins it to the staging directory without checking that
-the result stays inside, so an unchecked name like `0.art/../../../proc/self/environ` would
-otherwise have Lake read the publishing job's environment and `PUT` it into a publicly readable
-bucket.
+checks it before uploading it: the tree must be a flat directory of regular files, and
+every string in the mappings must be a plain `<hash>.<ext>` artifact name. The upload step
+itself re-checks each staged file name against `<hash>[.<ext>]`. The mappings check matters
+downstream: Lake parses an artifact name as everything after the first dot and joins it to a local
+directory without checking that the result stays inside, so a published map with a name like
+`0.art/../../../proc/self/environ` would steer every `lake cache get` that reads it outside its
+cache.
 
 ## Cost
 
