@@ -24,8 +24,8 @@ definition therefore splits off that power: `x ^ (l + 1) y_l(x)` is the function
 which involves no division. It is real analytic and even, its value at the origin is
 `-(2 l - 1)‼`, and its derivative obeys `G_{l + 1}' = x G_l`, the counterpart of the Rayleigh step
 of `sphericalBesselJDivPow`. Then `y_l(x) = G_l(x) / x ^ (l + 1)`. At `x = 0` this is Lean's
-junk value `0`; every statement about `y_l` that is not a pure algebraic identity carries the
-hypothesis `x ≠ 0`.
+junk value `0` (`sphericalBesselY_apply_zero`); every statement about `y_l` that is not a pure
+algebraic identity carries the hypothesis `x ≠ 0`.
 
 Mathlib has no Bessel function of the second kind, and its `Complex.besselJ` is of the first kind
 only.
@@ -175,9 +175,9 @@ theorem sphericalBesselYMulPow_apply_zero (l : ℕ) :
 /-- The derivative of `sphericalBesselYMulPow 0 = -cos` is `sin`. -/
 theorem hasDerivAt_sphericalBesselYMulPow_zero (x : ℝ) :
     HasDerivAt (sphericalBesselYMulPow 0) (sin x) x := by
-  have h : G 0 = -cos := funext sphericalBesselYMulPow_zero
+  have h : G 0 = fun y => -cos y := funext sphericalBesselYMulPow_zero
   rw [h]
-  simpa using (hasDerivAt_cos x).neg
+  simpa only [Pi.neg_def, neg_neg] using (hasDerivAt_cos x).neg
 
 /-- The derivative of `sphericalBesselYMulPow 0 = -cos` is `sin`. -/
 @[simp]
@@ -190,8 +190,8 @@ private lemma hasDerivAt_sphericalBesselYMulPow_one (x : ℝ) :
     HasDerivAt (G 1) (x * G 0 x) x := by
   have h : G 1 = fun y => -cos y - y * sin y := funext sphericalBesselYMulPow_one
   rw [h]
-  refine ((hasDerivAt_cos x).neg.sub ((hasDerivAt_id x).mul (hasDerivAt_sin x))).congr_deriv ?_
-  simp only [id, sphericalBesselYMulPow_zero]
+  refine ((hasDerivAt_cos x).neg.sub ((hasDerivAt_id' x).mul (hasDerivAt_sin x))).congr_deriv ?_
+  simp only [sphericalBesselYMulPow_zero]
   ring
 
 /-- The counterpart of the Rayleigh step, on the whole line: the derivative of
@@ -222,7 +222,7 @@ theorem hasDerivAt_sphericalBesselYMulPow_succ (l : ℕ) (x : ℝ) :
 
 /-- The derivative of `sphericalBesselYMulPow (l + 1)` is `x` times `sphericalBesselYMulPow l`,
 on the whole line. -/
-@[simp]
+@[simp, grind =]
 theorem deriv_sphericalBesselYMulPow_succ (l : ℕ) (x : ℝ) :
     deriv (sphericalBesselYMulPow (l + 1)) x = x * sphericalBesselYMulPow l x :=
   (hasDerivAt_sphericalBesselYMulPow_succ l x).deriv
@@ -241,6 +241,12 @@ theorem sphericalBesselY_def (l : ℕ) (x : ℝ) :
     sphericalBesselY l x = sphericalBesselYMulPow l x / x ^ (l + 1) :=
   (rfl)
 
+/-- The value at the origin is Lean's junk value `0`, where `y_l` itself diverges
+(`tendsto_sphericalBesselY_nhdsGT_zero`). -/
+@[simp]
+theorem sphericalBesselY_apply_zero (l : ℕ) : sphericalBesselY l 0 = 0 := by
+  rw [sphericalBesselY_def, zero_pow (Nat.succ_ne_zero l), div_zero]
+
 /-- For `x ≠ 0`, the even analytic factor `sphericalBesselYMulPow l x` is `x ^ (l + 1) y_l(x)`. -/
 theorem sphericalBesselYMulPow_eq_mul_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     sphericalBesselYMulPow l x = x ^ (l + 1) * sphericalBesselY l x := by
@@ -257,22 +263,31 @@ theorem sphericalBesselY_zero (x : ℝ) : sphericalBesselY 0 x = -cos x / x := b
 theorem sphericalBesselY_one (x : ℝ) :
     sphericalBesselY 1 x = -cos x / x ^ 2 - sin x / x := by
   rcases eq_or_ne x 0 with rfl | hx
-  · simp [sphericalBesselY_def]
+  · simp
   · rw [sphericalBesselY_def, sphericalBesselYMulPow_one]
     field_simp
     ring
 
 /-- Every `y_l` is real analytic off the origin. -/
+@[fun_prop]
 theorem analyticAt_sphericalBesselY (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     AnalyticAt ℝ (sphericalBesselY l) x :=
   (analyticAt_sphericalBesselYMulPow l x).div (analyticAt_id.pow _) (pow_ne_zero _ hx)
 
+/-- Every `y_l` is smooth off the origin. -/
+@[fun_prop]
+theorem contDiffAt_sphericalBesselY (l : ℕ) {x : ℝ} {n : WithTop ℕ∞} (hx : x ≠ 0) :
+    ContDiffAt ℝ n (sphericalBesselY l) x :=
+  (analyticAt_sphericalBesselY l hx).contDiffAt
+
 /-- Every `y_l` is differentiable off the origin. -/
+@[fun_prop]
 theorem differentiableAt_sphericalBesselY (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     DifferentiableAt ℝ (sphericalBesselY l) x :=
   (analyticAt_sphericalBesselY l hx).differentiableAt
 
 /-- Every `y_l` is continuous off the origin. -/
+@[fun_prop]
 theorem continuousAt_sphericalBesselY (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     ContinuousAt (sphericalBesselY l) x :=
   (differentiableAt_sphericalBesselY l hx).continuousAt
@@ -289,11 +304,12 @@ theorem sphericalBesselY_neg (l : ℕ) (x : ℝ) :
 `x y_{l + 2}(x) = (2 l + 3) y_{l + 1}(x) - x y_l(x)`, the same as that of `j_l`
 (`mul_sphericalBesselJ_add_two`). It holds trivially at `x = 0`, where both sides are the junk
 value `0`. -/
+@[grind =]
 theorem mul_sphericalBesselY_add_two (l : ℕ) (x : ℝ) :
     x * sphericalBesselY (l + 2) x =
       (2 * l + 3) * sphericalBesselY (l + 1) x - x * sphericalBesselY l x := by
   rcases eq_or_ne x 0 with rfl | hx
-  · simp [sphericalBesselY_def]
+  · simp
   · simp only [sphericalBesselY_def, sphericalBesselYMulPow_add_two]
     field_simp
     ring
@@ -340,11 +356,13 @@ theorem hasDerivAt_sphericalBesselY_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0
     ring
 
 /-- The derivative of `y_l` for `x ≠ 0`, `y_l' = l / x * y_l - y_{l + 1}`. -/
+@[grind =]
 theorem deriv_sphericalBesselY_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     deriv (sphericalBesselY l) x = l / x * sphericalBesselY l x - sphericalBesselY (l + 1) x :=
   (hasDerivAt_sphericalBesselY_of_ne_zero l hx).deriv
 
 /-- The derivative of `y_{l + 1}` for `x ≠ 0`, `y_{l + 1}' = y_l - (l + 2) / x * y_{l + 1}`. -/
+@[grind =]
 theorem deriv_sphericalBesselY_succ'_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     deriv (sphericalBesselY (l + 1)) x =
       sphericalBesselY l x - (l + 2) / x * sphericalBesselY (l + 1) x :=
@@ -371,6 +389,7 @@ theorem hasDerivAt_deriv_sphericalBesselY_of_ne_zero (l : ℕ) {x : ℝ} (hx : x
 
 /-- The second derivative of `y_l` for `x ≠ 0`:
 `y_l'' = -(2 / x) y_l' + (l (l + 1) / x ^ 2 - 1) y_l`. -/
+@[grind =]
 theorem deriv_deriv_sphericalBesselY_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :
     deriv (deriv (sphericalBesselY l)) x =
       -(2 / x) * deriv (sphericalBesselY l) x +
