@@ -38,8 +38,8 @@ transverse circle average `circleAverageTransverse` of
   magnitude — the interface to the `kT < 0` cutoff of `azimuthalAverage`.
 * `azimuthalAverage_zero_radius`: the azimuthal average at zero transverse momentum is the
   value at the origin.
-* `azimuthalAverage_eq_zero_of_odd`: the azimuthal average annihilates every vector-argument
-  TMD that is odd in its transverse-momentum argument on the circle.
+* `azimuthalAverage_eq_zero_of_odd_on_circle`: the azimuthal average annihilates every
+  vector-argument TMD that is odd in its transverse-momentum argument on the circle.
 * `azimuthalAverage_comp_norm_of_kT_nonneg`: averaging a function of the magnitude alone returns
   that function at nonnegative transverse-momentum magnitude; the TMD form of
   `circleAverageTransverse_comp_norm`.
@@ -105,13 +105,14 @@ lemma azimuthalAverage_of_kT_nonneg (f : VectorTmd Flavor) (i : Flavor) {x kT Q2
 
 /-- The azimuthal average annihilates every vector-argument TMD that is odd in its
     transverse-momentum argument on the circle `‖w‖ = |kT|`. -/
-lemma azimuthalAverage_eq_zero_of_odd (f : VectorTmd Flavor) (i : Flavor) {x kT Q2 ζ : ℝ}
+lemma azimuthalAverage_eq_zero_of_odd_on_circle (f : VectorTmd Flavor) (i : Flavor)
+    {x kT Q2 ζ : ℝ}
     (hf : ∀ w, ‖w‖ = |kT| → f i x (-w) Q2 ζ = -f i x w Q2 ζ) :
     azimuthalAverage f i x kT Q2 ζ = 0 := by
   rcases lt_or_ge kT 0 with hkT | hkT
   · exact azimuthalAverage_eq_zero_of_kT_neg f i hkT
   · rw [azimuthalAverage_of_kT_nonneg f i hkT]
-    exact circleAverageTransverse_eq_zero_of_odd hf
+    exact circleAverageTransverse_eq_zero_of_odd_on_circle hf
 
 /-- The azimuthal average at zero transverse momentum is the value at the origin. -/
 @[simp]

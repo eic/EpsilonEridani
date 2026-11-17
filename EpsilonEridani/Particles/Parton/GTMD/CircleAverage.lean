@@ -37,8 +37,8 @@ Mathlib's circle average, with no parton-physics content.
   `g |R|`.
 * `circleAverageTransverse_nonneg_of_nonneg`: the average of a function nonnegative on the
   circle is nonnegative.
-* `circleAverageTransverse_eq_zero_of_odd`: the average of a function that is odd on the
-  circle `‖w‖ = |R|` vanishes; the transport of `Real.circleAverage_eq_zero_of_odd`.
+* `circleAverageTransverse_eq_zero_of_odd_on_circle`: the average of a function that is odd on the
+  circle `‖w‖ = |R|` vanishes; the transport of `Real.circleAverage_eq_zero_of_odd_on_circle`.
 * `MeasureTheory.StronglyMeasurable.circleAverageTransverse`: the average of a strongly
   measurable function is strongly measurable in the radius; the transport of
   `MeasureTheory.StronglyMeasurable.circleAverage`.
@@ -112,12 +112,12 @@ lemma circleAverageTransverse_nonneg_of_nonneg {g : Transverse → ℝ} {R : ℝ
   exact Real.circleAverage_nonneg_of_nonneg fun z hz => hg _ (norm_repr_of_mem_sphere hz)
 
 /-- The circle average of a function odd on the circle `‖w‖ = |R|` vanishes: the transverse
-    transport of `Real.circleAverage_eq_zero_of_odd`. -/
-lemma circleAverageTransverse_eq_zero_of_odd {g : Transverse → E} {R : ℝ}
+    transport of `Real.circleAverage_eq_zero_of_odd_on_circle`. -/
+lemma circleAverageTransverse_eq_zero_of_odd_on_circle {g : Transverse → E} {R : ℝ}
     (hg : ∀ w, ‖w‖ = |R| → g (-w) = -g w) :
     circleAverageTransverse g R = 0 := by
   rw [circleAverageTransverse_def]
-  refine Real.circleAverage_eq_zero_of_odd fun z hz => ?_
+  refine Real.circleAverage_eq_zero_of_odd_on_circle fun z hz => ?_
   rw [mul_zero, zero_sub, map_neg]
   exact hg _ (norm_repr_of_mem_sphere hz)
 

@@ -21,10 +21,10 @@ transverse-momentum magnitude.
 
 ## Main results
 
-* `Real.circleAverage_comp_reflection`: reflecting the function through the centre does not
+* `Real.circleAverage_comp_pointReflection`: reflecting the function through the centre does not
   change its circle average.
-* `Real.circleAverage_eq_zero_of_odd`: the circle average about `c` of a function that is odd
-  about `c` on the circle vanishes.
+* `Real.circleAverage_eq_zero_of_odd_on_circle`: the circle average about `c` of a function
+  that is odd about `c` on the circle vanishes.
 * `MeasureTheory.StronglyMeasurable.circleAverage`: the circle average of a strongly measurable
   function is strongly measurable as a function of the radius.
 -/
@@ -35,9 +35,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace Real
 
-/-- Reflecting the function through the centre, `z ↦ 2 * c - z`, does not change its circle
-    average about `c`. -/
-theorem circleAverage_comp_reflection {f : ℂ → E} {c : ℂ} {R : ℝ} :
+/-- Composing with the point reflection through the centre, `z ↦ 2 * c - z`, does not change
+    the circle average about `c`. -/
+theorem circleAverage_comp_pointReflection {f : ℂ → E} {c : ℂ} {R : ℝ} :
     circleAverage (fun z => f (2 * c - z)) c R = circleAverage f c R := by
   -- Pointwise, the reflected circle of radius `R` is the circle of radius `-R`.
   have h : ∀ θ, 2 * c - circleMap c R θ = circleMap c (-R) θ := fun θ => by
@@ -49,14 +49,14 @@ theorem circleAverage_comp_reflection {f : ℂ → E} {c : ℂ} {R : ℝ} :
 
 /-- The circle average about `c` of a function that is odd about `c` on the circle of radius `|R|`
     — `f (2 * c - z) = -f z` there — vanishes. -/
-theorem circleAverage_eq_zero_of_odd {f : ℂ → E} {c : ℂ} {R : ℝ}
+theorem circleAverage_eq_zero_of_odd_on_circle {f : ℂ → E} {c : ℂ} {R : ℝ}
     (hf : ∀ z ∈ Metric.sphere c |R|, f (2 * c - z) = -f z) :
     circleAverage f c R = 0 := by
   -- Reflection through `c` fixes the average and negates the function, so the average equals
   -- its own negative.
   have h : circleAverage f c R = -circleAverage f c R := calc
     circleAverage f c R = circleAverage (fun z => f (2 * c - z)) c R :=
-      circleAverage_comp_reflection.symm
+      circleAverage_comp_pointReflection.symm
     _ = circleAverage (fun z => -f z) c R := circleAverage_congr_sphere fun z hz => hf z hz
     _ = -circleAverage f c R := by
       simpa using circleAverage_fun_smul (a := (-1 : ℝ)) (f := f) (c := c) (R := R)
