@@ -17,7 +17,8 @@ relative to a frame, and the frame is always an explicit argument. Over the abst
 
 * the **energy** of `p` is `E(p) = g p n / √(g n n)`, a linear functional;
 * the **spatial part** of `p` is `p_s = p - (g p n / g n n) • n`, the projection
-  `Bilin.projOrthogonal g n` along `ℝ ∙ n` onto the `g`-orthogonal complement of `n`;
+  `LinearMap.BilinForm.projOrthogonal g n` along `ℝ ∙ n` onto the `g`-orthogonal complement
+  of `n`;
 * the **spatial norm** of `p` is `|p_s| = √(-g p_s p_s)`, and the **cosine of the opening angle** of
   `a` and `b` is `cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`.
 
@@ -124,7 +125,7 @@ theorem n_ne_zero : F.n ≠ 0 :=
 /-! ### The spatial part -/
 
 /-- The spatial part of a momentum relative to the frame, `p - (g p n / g n n) • n`: the projection
-`Bilin.projOrthogonal g n` along `ℝ ∙ n` onto the `g`-orthogonal complement of `n`. -/
+`LinearMap.BilinForm.projOrthogonal g n` along `ℝ ∙ n` onto the `g`-orthogonal complement of `n`. -/
 def spatialPart : V →ₗ[ℝ] V :=
   g.projOrthogonal F.n
 
@@ -198,6 +199,20 @@ theorem spatialNorm_pos_iff (p : V) :
     0 < F.spatialNorm p ↔ 0 < -g (F.spatialPart p) (F.spatialPart p) := by
   rw [spatialNorm_def, Real.sqrt_pos]
 
+/-- The frame vector has no spatial extent. -/
+@[simp]
+theorem spatialNorm_n : F.spatialNorm F.n = 0 := by
+  simp [spatialNorm_def]
+
+/-- The spatial norm only sees the spatial part. -/
+@[simp]
+theorem spatialNorm_spatialPart (p : V) : F.spatialNorm (F.spatialPart p) = F.spatialNorm p := by
+  simp [spatialNorm_def]
+
+@[simp]
+theorem spatialNorm_zero : F.spatialNorm 0 = 0 := by
+  simp [spatialNorm_def]
+
 @[simp]
 theorem spatialNorm_smul (c : ℝ) (p : V) : F.spatialNorm (c • p) = |c| * F.spatialNorm p := by
   simp only [spatialNorm_def, map_smul, LinearMap.smul_apply, smul_eq_mul]
@@ -223,6 +238,17 @@ def cosAngle (a b : V) : ℝ :=
 theorem cosAngle_def (a b : V) :
     F.cosAngle a b = -g (F.spatialPart a) (F.spatialPart b) / (F.spatialNorm a * F.spatialNorm b) :=
   (rfl)
+
+/-- The opening angle only sees the spatial part of its first argument. -/
+@[simp]
+theorem cosAngle_spatialPart_left (a b : V) : F.cosAngle (F.spatialPart a) b = F.cosAngle a b := by
+  simp [cosAngle_def]
+
+/-- The opening angle only sees the spatial part of its second argument. -/
+@[simp]
+theorem cosAngle_spatialPart_right (a b : V) :
+    F.cosAngle a (F.spatialPart b) = F.cosAngle a b := by
+  simp [cosAngle_def]
 
 theorem cosAngle_comm (hg : g.IsSymm) (a b : V) : F.cosAngle a b = F.cosAngle b a := by
   rw [cosAngle_def, cosAngle_def, hg.eq, mul_comm]
