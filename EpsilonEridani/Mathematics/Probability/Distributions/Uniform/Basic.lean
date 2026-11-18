@@ -11,7 +11,11 @@ public import EpsilonEridani.Mathematics.MeasureTheory.Measure.Prod
 /-!
 # Further facts about the uniform measure
 
-This file extends `TauCeti.Probability.Distributions.Uniform.Basic`.
+This file extends `TauCeti.Probability.Distributions.Uniform.Basic` with the facts about the
+uniform law needed to thin a proposal by an independent uniform variate: keep a draw `x` when a
+standard uniform variate lies below `a x`. That is the mechanism behind acceptance–rejection
+sampling, analysed in `EpsilonEridani.Mathematics.Probability.AcceptReject`, and the worked
+examples there integrate continuous targets against the standard uniform law.
 
 ## Main results
 

@@ -49,7 +49,7 @@ trial law is one too.
   `AcceptReject.measureReal_trialLaw_acceptSet_one_add_sq_div_two`: a uniform proposal on
   `[0, 1]` with bound `1` accepts the target `(1 + z ^ 2) / 2` with probability `2 / 3`, and the
   accepted law is the target normalised.
-* `AcceptReject.acceptedLaw_two_mul`: a bound that is too small. Sampling `2 * z` on `[0, 1]`
+* `AcceptReject.acceptedLaw_two_mul_eq_min`: a bound that is too small. Sampling `2 * z` on `[0, 1]`
   against the bound `3 / 2` yields `min (2 * z) (3 / 2)` normalised, of mass `15 / 16`.
 
 The bound hypothesis is taken almost everywhere. A bound checked at every point, which is what
@@ -241,9 +241,10 @@ theorem measureReal_trialLaw_acceptSet_of_ae_le (hc : 0 < c) (hf : Measurable f)
 and holds on a set of positive measure where `f` is positive. Then the accepted law is not `f`
 normalised: by `acceptedLaw_eq` it is `min f (c * g)` normalised, and the two differ.
 
-Both set hypotheses are needed. For `f = 2 * g` and `c = 1` the bound fails wherever `g` is
-positive, yet every proposal is accepted and the accepted law is `g` normalised, which is `f`
-normalised. -/
+Both set hypotheses are needed. Without the first, the bound holds almost everywhere and
+`acceptedLaw_eq_of_ae_le` gives equality. Without the second, take `f = 2 * g` and `c = 1`: the
+bound fails wherever `g` is positive, yet every proposal is accepted and the accepted law is `g`
+normalised, which is `f` normalised. -/
 theorem acceptedLaw_ne_of_measure_setOf_lt_ne_zero (hc : 0 < c) (hf : Measurable f)
     (hg : Measurable g) (hg₀ : 0 ≤ᵐ[μ] g) (hfi : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ ∞)
     (hviol : μ {x | c * g x < f x} ≠ 0) (hresp : μ {x | 0 < f x ∧ f x ≤ c * g x} ≠ 0) :
@@ -262,15 +263,14 @@ theorem acceptedLaw_ne_of_measure_setOf_lt_ne_zero (hc : 0 < c) (hf : Measurable
     exact (ENNReal.ofReal_pos.mpr hxS.1).ne' (hx hxS)
   have hXfin : ∫⁻ x in S, ENNReal.ofReal (f x) ∂μ ≠ ∞ :=
     ne_top_of_le_ne_top hfi (setLIntegral_le_lintegral _ _)
-  -- The thinned mass is strictly smaller than the target mass.
+  -- On the violation set, where `c * g < f`, the thinned density `min f (c * g)` is strictly
+  -- below `f`.
   have hlt : ∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ < ∫⁻ x, ENNReal.ofReal (f x) ∂μ := by
-    refine lintegral_strict_mono_of_ae_le_of_frequently_ae_lt (by fun_prop)
-      (ne_top_of_le_ne_top hfi (lintegral_mono hmF)) (ae_of_all _ hmF) fun hall => hviol ?_
-    refine measure_eq_zero_iff_ae_notMem.mpr ?_
-    filter_upwards [hall, hg₀] with x hx hgx hxV
-    have hcg : 0 ≤ c * g x := mul_nonneg hc.le hgx
-    rw [not_not, min_eq_right hxV.le] at hx
-    exact hxV.ne ((ENNReal.ofReal_eq_ofReal_iff hcg (hcg.trans hxV.le)).mp hx)
+    refine lintegral_strict_mono_of_ae_le_of_ae_lt_on (by fun_prop)
+      (ne_top_of_le_ne_top hfi (lintegral_mono hmF)) (ae_of_all _ hmF) hviol ?_
+    filter_upwards [hg₀] with x hgx hxV
+    rw [min_eq_right (le_of_lt hxV)]
+    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (mul_nonneg hc.le hgx)).mpr hxV
   intro h
   rw [acceptedLaw_eq hc hf hg] at h
   -- Evaluating both sides on the set where the bound holds forces the two masses to agree.
@@ -347,7 +347,7 @@ private theorem lintegral_min_two_mul :
 /-- **A bound that is too small.** Sampling the target `2 * z` on `[0, 1]` from a uniform
 proposal against the bound `3 / 2`, which `2 * z` exceeds above `z = 3 / 4`, produces the
 clipped target `min (2 * z) (3 / 2)` normalised by its integral `15 / 16`. -/
-theorem acceptedLaw_two_mul :
+theorem acceptedLaw_two_mul_eq_min :
     acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1) (3 / 2) =
       (ENNReal.ofReal (15 / 16))⁻¹ •
         (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal (min (2 * z) (3 / 2)) := by
