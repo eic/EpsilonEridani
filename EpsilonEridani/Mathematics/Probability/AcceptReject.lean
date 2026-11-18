@@ -39,18 +39,18 @@ trial law is one too.
 * `AcceptReject.measureReal_trialLaw_acceptSet_of_ae_le`: for an integrable, almost everywhere
   non-negative target with `f ≤ c * g` almost everywhere, the trial law's measure of the
   acceptance event is `(∫ f) / c`.
-* `AcceptReject.acceptedLaw_ne_of_measure_lt_ne_zero`: the silent bias. For an almost everywhere
-  non-negative proposal and a target of finite mass, when the bound fails on a set of positive
-  measure and holds on a set of positive measure where `f` is positive, the accepted law is not
-  `f` normalised. The second set hypothesis cannot be dropped: for `f = 2 * g` and `c = 1` the
-  bound fails everywhere, every proposal is accepted, and the accepted law is nevertheless `f`
-  normalised.
+* `AcceptReject.acceptedLaw_ne_of_measure_setOf_lt_ne_zero`: the silent bias. For an almost
+  everywhere non-negative proposal and a target of finite mass, when the bound fails on a set of
+  positive measure and holds on a set of positive measure where `f` is positive, the accepted law
+  is not `f` normalised. The second set hypothesis cannot be dropped: for `f = 2 * g` and `c = 1`
+  the bound fails wherever `g` is positive, every proposal is accepted, and the accepted law is
+  nevertheless `f` normalised.
 * `AcceptReject.acceptedLaw_one_add_sq_div_two` and
   `AcceptReject.measureReal_trialLaw_acceptSet_one_add_sq_div_two`: a uniform proposal on
   `[0, 1]` with bound `1` accepts the target `(1 + z ^ 2) / 2` with probability `2 / 3`, and the
   accepted law is the target normalised.
-* `AcceptReject.acceptedLaw_two_mul`: the silent bias at work. Sampling `2 * z` on `[0, 1]`
-  against the too-small bound `3 / 2` yields `min (2 * z) (3 / 2)` normalised, of mass `15 / 16`.
+* `AcceptReject.acceptedLaw_two_mul`: a bound that is too small. Sampling `2 * z` on `[0, 1]`
+  against the bound `3 / 2` yields `min (2 * z) (3 / 2)` normalised, of mass `15 / 16`.
 
 The bound hypothesis is taken almost everywhere. A bound checked at every point, which is what
 an implementation can verify, is the case `Filter.Eventually.of_forall`.
@@ -107,7 +107,7 @@ def acceptSet (f g : α → ℝ) (c : ℝ) : Set (α × ℝ) :=
 
 omit [MeasurableSpace α] in
 theorem acceptSet_def (f g : α → ℝ) (c : ℝ) :
-    acceptSet f g c = {p : α × ℝ | p.2 ≤ (fun x => f x / (c * g x)) p.1} :=
+    acceptSet f g c = {p : α × ℝ | p.2 ≤ f p.1 / (c * g p.1)} :=
   (rfl)
 
 omit [MeasurableSpace α] in
@@ -149,7 +149,8 @@ theorem map_fst_restrict_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measur
     ((trialLaw μ g).restrict (acceptSet f g c)).map Prod.fst =
       μ.withDensity fun x => ENNReal.ofReal (min (f x) (c * g x) / c) := by
   have hratio : Measurable fun x => f x / (c * g x) := hf.div (hg.const_mul c)
-  rw [trialLaw_def, acceptSet_def, Measure.map_fst_restrict_le_prod_uniformMeasure _ hratio,
+  rw [trialLaw_def, acceptSet_def,
+    Measure.map_fst_restrict_setOf_le_prod_uniformMeasure (a := fun x => f x / (c * g x)) _ hratio,
     ← withDensity_mul _ (by fun_prop) (by fun_prop)]
   congr 1
   funext x
@@ -159,8 +160,10 @@ theorem map_fst_restrict_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measur
   · rw [ENNReal.ofReal_of_nonpos hgx, zero_mul, ENNReal.ofReal_of_nonpos]
     exact div_nonpos_of_nonpos_of_nonneg
       ((min_le_right _ _).trans (mul_nonpos_of_nonneg_of_nonpos hc.le hgx)) hc.le
-  · rw [← ENNReal.ofReal_mul hgx.le, mul_min_of_nonneg _ _ hgx.le, ← min_div_div_right hc.le]
-    congr 2 <;> field_simp
+  · have hacc : g x * (f x / (c * g x)) = f x / c := by field_simp
+    have hcap : g x * 1 = c * g x / c := by field_simp
+    rw [← ENNReal.ofReal_mul hgx.le, mul_min_of_nonneg _ _ hgx.le, hacc, hcap,
+      min_div_div_right hc.le]
 
 /-- The trial law's measure of the acceptance event is `∫⁻ min f (c * g) / c`; it is the
 **acceptance probability** when the proposal law is a probability measure. -/
@@ -241,7 +244,7 @@ normalised: by `acceptedLaw_eq` it is `min f (c * g)` normalised, and the two di
 Both set hypotheses are needed. For `f = 2 * g` and `c = 1` the bound fails wherever `g` is
 positive, yet every proposal is accepted and the accepted law is `g` normalised, which is `f`
 normalised. -/
-theorem acceptedLaw_ne_of_measure_lt_ne_zero (hc : 0 < c) (hf : Measurable f)
+theorem acceptedLaw_ne_of_measure_setOf_lt_ne_zero (hc : 0 < c) (hf : Measurable f)
     (hg : Measurable g) (hg₀ : 0 ≤ᵐ[μ] g) (hfi : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ ∞)
     (hviol : μ {x | c * g x < f x} ≠ 0) (hresp : μ {x | 0 < f x ∧ f x ≤ c * g x} ≠ 0) :
     acceptedLaw μ f g c ≠ (∫⁻ x, ENNReal.ofReal (f x) ∂μ)⁻¹ •
@@ -280,11 +283,8 @@ theorem acceptedLaw_ne_of_measure_lt_ne_zero (hc : 0 < c) (hf : Measurable f)
   have hinv := (ENNReal.mul_left_inj hX₀ hXfin).mp hS_eq
   exact hlt.ne (inv_injective hinv)
 
-/-- The uniform measure on `[0, 1]` is Lebesgue measure restricted to `Set.Ioc 0 1`. -/
-private theorem uniformMeasure_zero_one : uniformMeasure 0 1 = volume.restrict (Set.Ioc 0 1) := by
-  simp [uniformMeasure_eq_smul]
-
-/-- The target `(1 + z ^ 2) / 2` is bounded by `1` on `[0, 1]`. -/
+/-- The target `(1 + z ^ 2) / 2` is bounded by `1` on `[0, 1]`, written `1 * 1` to match the
+bound `c * g x` at `c = 1` and `g = fun _ => 1`. -/
 private theorem ae_one_add_sq_div_two_le :
     ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 * 1 := by
   filter_upwards [ae_mem_Ioc_uniformMeasure] with z hz
@@ -293,10 +293,8 @@ private theorem ae_one_add_sq_div_two_le :
 /-- The target `(1 + z ^ 2) / 2` has integral `2 / 3` over `[0, 1]`. -/
 private theorem lintegral_one_add_sq_div_two :
     ∫⁻ z, ENNReal.ofReal ((1 + z ^ 2) / 2) ∂uniformMeasure 0 1 = ENNReal.ofReal (2 / 3) := by
-  have hfi : Integrable (fun z : ℝ => (1 + z ^ 2) / 2) (uniformMeasure 0 1) := by
-    rw [uniformMeasure_zero_one]
-    exact (by fun_prop : Continuous fun z : ℝ => (1 + z ^ 2) / 2).integrableOn_Icc.mono_set
-      Set.Ioc_subset_Icc_self
+  have hfi : Integrable (fun z : ℝ => (1 + z ^ 2) / 2) (uniformMeasure 0 1) :=
+    (by fun_prop : Continuous fun z : ℝ => (1 + z ^ 2) / 2).integrable_uniformMeasure
   rw [← ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ fun z => by positivity),
     uniformMeasure_zero_one, ← intervalIntegral.integral_of_le zero_le_one]
   norm_num [intervalIntegral.integral_div, integral_pow]
@@ -324,9 +322,8 @@ theorem acceptedLaw_one_add_sq_div_two :
 private theorem lintegral_min_two_mul :
     ∫⁻ z, ENNReal.ofReal (min (2 * z) (3 / 2)) ∂uniformMeasure 0 1 = ENNReal.ofReal (15 / 16) := by
   have hcont : Continuous fun z : ℝ => min (2 * z) (3 / 2) := by fun_prop
-  have hfi : Integrable (fun z : ℝ => min (2 * z) (3 / 2)) (uniformMeasure 0 1) := by
-    rw [uniformMeasure_zero_one]
-    exact hcont.integrableOn_Icc.mono_set Set.Ioc_subset_Icc_self
+  have hfi : Integrable (fun z : ℝ => min (2 * z) (3 / 2)) (uniformMeasure 0 1) :=
+    hcont.integrable_uniformMeasure
   have hf₀ : 0 ≤ᵐ[uniformMeasure 0 1] fun z : ℝ => min (2 * z) (3 / 2) := by
     filter_upwards [ae_mem_Ioc_uniformMeasure] with z hz
     rw [Pi.zero_apply]
@@ -347,9 +344,9 @@ private theorem lintegral_min_two_mul :
     intervalIntegral.integral_const_mul, integral_id, intervalIntegral.integral_const]
   norm_num
 
-/-- **The silent bias in an example.** Sampling the target `2 * z` on `[0, 1]` from a uniform
-proposal against the bound `3 / 2`, which `2 * z` exceeds above `z = 3 / 4`, produces
-`min (2 * z) (3 / 2)` normalised by its integral `15 / 16`, not the target normalised. -/
+/-- **A bound that is too small.** Sampling the target `2 * z` on `[0, 1]` from a uniform
+proposal against the bound `3 / 2`, which `2 * z` exceeds above `z = 3 / 4`, produces the
+clipped target `min (2 * z) (3 / 2)` normalised by its integral `15 / 16`. -/
 theorem acceptedLaw_two_mul :
     acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1) (3 / 2) =
       (ENNReal.ofReal (15 / 16))⁻¹ •
