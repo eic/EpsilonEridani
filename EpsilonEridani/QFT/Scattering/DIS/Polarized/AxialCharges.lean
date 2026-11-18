@@ -11,8 +11,8 @@ public import EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules
 # The axial charges and the first moment of `g₁` in the charge basis
 
 The quark helicity charges `Δu(Q²)`, `Δd(Q²)`, `Δs(Q²)` of a nucleon are the first moments
-`Δq(Q²) = ∫₀¹ dx (Δq(x, Q²) + Δq̄(x, Q²))` of its light-quark helicity densities, the forward
-matrix elements of the flavour-diagonal axial currents `q̄ γ^μ γ₅ q`. The same information is
+`Δq(Q²) = ∫₀¹ dx (Δq(x, Q²) + Δqbar(x, Q²))` of its light-quark helicity densities, the forward
+matrix elements of the flavour-diagonal axial currents `qbar γ^μ γ₅ q`. The same information is
 carried by the three axial charges of flavour `SU(3)`, the matrix elements of the isovector, octet
 and singlet axial currents:
 
@@ -87,7 +87,7 @@ namespace DIS
 namespace Polarized
 
 /-- The light-quark helicity charges of a nucleon as functions of the scale `Q²`:
-`Δq(Q²) = ∫₀¹ dx (Δq(x, Q²) + Δq̄(x, Q²))` for `q = u, d, s`, the forward matrix elements of the
+`Δq(Q²) = ∫₀¹ dx (Δq(x, Q²) + Δqbar(x, Q²))` for `q = u, d, s`, the forward matrix elements of the
 flavour-diagonal axial currents. They are the data; the `SU(3)` axial charges `a₀`, `a₃`, `a₈`
 are derived from them by `AxialCharges.a0`, `AxialCharges.a3` and `AxialCharges.a8`, and
 `AxialCharges.ofCharges` goes the other way. No numerical value is ever substituted. -/
