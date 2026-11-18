@@ -48,10 +48,11 @@ light-cone distance `L`, and `L < 0` the past-pointing staple of the Drell-Yan p
 along the far segment is the transverse link, `GaugeLink.transverseLink`. The staple traversed
 backwards, from `y` to `x`, gives the inverse link (`pathLink_staplePath_swap_eq_inv`). When both
 legs have trivial links, the whole staple link is carried by the transverse link
-(`pathLink_staplePath_of_legs_eq_one`); in axial gauge for `n` (`IsAxialGauge`), which is
-light-cone gauge for the light-like `n` and where the links along `n` are trivial, this holds for
-every staple of the above shape (`pathLink_staplePath_of_isAxialGauge`). The transverse link
-cannot be dropped there: the link of a linear abelian gauge potential (`GaugeLink.ofBilin`) gives
+(`pathLink_staplePath_eq_transverseLink_of_legs_eq_one`); in axial gauge for `n`
+(`IsAxialGauge`), which is light-cone gauge for the light-like `n` and where the links along `n`
+are trivial, this holds for every staple of the above shape
+(`pathLink_staplePath_eq_transverseLink_of_isAxialGauge`). The transverse link cannot be dropped
+there: the link of a linear abelian gauge potential (`GaugeLink.ofBilin`) gives
 a gauge link in axial gauge whose staple link differs from the product of its two longitudinal
 legs (`exists_isAxialGauge_pathLink_staplePath_ne_one`).
 
@@ -295,7 +296,7 @@ theorem pathLink_staplePath_swap_eq_inv (W : GaugeLink V G) (v w x y : V) :
 
 /-- **A staple with trivial legs carries its link on the far segment**: if the links of both
 legs are trivial, the staple link is the transverse link. -/
-theorem pathLink_staplePath_of_legs_eq_one (W : GaugeLink V G) {v w x y : V}
+theorem pathLink_staplePath_eq_transverseLink_of_legs_eq_one (W : GaugeLink V G) {v w x y : V}
     (hx : W x (x + v) = 1) (hy : W (x + v + w) y = 1) :
     W.pathLink (staplePath v w x y) = W.transverseLink v w x := by
   simp [pathLink_staplePath, hx, hy]
@@ -310,7 +311,7 @@ theorem isAxialGauge_iff {W : GaugeLink V G} {n : V} :
     W.IsAxialGauge n ↔ ∀ (x : V) (t : ℝ), W x (x + t • n) = 1 := Iff.rfl
 
 /-- In axial gauge for `n` the link along any segment parallel to `n` is trivial. -/
-theorem IsAxialGauge.apply_of_sub_eq_smul {W : GaugeLink V G} {n : V}
+theorem IsAxialGauge.apply_eq_one_of_sub_eq_smul {W : GaugeLink V G} {n : V}
     (hW : W.IsAxialGauge n) {x y : V} {t : ℝ} (h : y - x = t • n) : W x y = 1 := by
   rw [sub_eq_iff_eq_add'] at h
   rw [h]
@@ -321,10 +322,11 @@ gauge for light-like `n`), for the staple from `x` to
 `x + s • n + w` with legs along `n` to light-cone distance `L`, the two legs contribute nothing,
 and the whole gauge link of the staple sits on the transverse segment `w` at light-cone
 distance `L`. -/
-theorem pathLink_staplePath_of_isAxialGauge {W : GaugeLink V G} {n : V}
+theorem pathLink_staplePath_eq_transverseLink_of_isAxialGauge {W : GaugeLink V G} {n : V}
     (hW : W.IsAxialGauge n) (L s : ℝ) (x w : V) :
     W.pathLink (staplePath (L • n) w x (x + s • n + w)) = W.transverseLink (L • n) w x :=
-  W.pathLink_staplePath_of_legs_eq_one (hW x L) (hW.apply_of_sub_eq_smul (t := s - L) (by module))
+  W.pathLink_staplePath_eq_transverseLink_of_legs_eq_one (hW x L)
+    (hW.apply_eq_one_of_sub_eq_smul (t := s - L) (by module))
 
 /-! ### The gauge link of a linear abelian gauge potential -/
 
