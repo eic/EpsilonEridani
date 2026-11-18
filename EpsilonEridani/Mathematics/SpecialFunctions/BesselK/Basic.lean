@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
@@ -42,8 +43,12 @@ whole real line need no domain hypothesis where `0` is harmless.
 * `EpsilonEridani.hasDerivAt_besselK`: `K_ν' = -(K_{ν-1} + K_{ν+1}) / 2`, and its special
   case `EpsilonEridani.hasDerivAt_besselK_zero`: `K₀' = -K₁`.
 * `EpsilonEridani.strictAntiOn_besselK`: `K_ν` is strictly decreasing on `(0, ∞)`.
+* `EpsilonEridani.measurable_besselK`: `K_ν` is measurable on the whole real line.
 * `EpsilonEridani.besselK_le_exp_mul_besselK`: `K_ν(x) ≤ exp (-(x - x₀)) K_ν(x₀)` for
   `0 < x₀ ≤ x`.
+* `EpsilonEridani.besselK_one_half`: the closed form `K_{1/2}(x) = √(π / 2x) exp (-x)`
+  (DLMF 10.39.2), and hence `EpsilonEridani.besselK_le_sqrt_mul_exp`:
+  `K_ν(x) ≤ √(π / 2x) exp (-x)` for `|ν| ≤ 1/2`.
 * `EpsilonEridani.exp_neg_div_lt_besselK_one`,
   `EpsilonEridani.besselK_one_le_exp_neg_mul`: `exp (-x) / x < K₁(x) ≤ exp (-x) (1 + 1 / x)`,
   and hence `EpsilonEridani.tendsto_mul_besselK_one_nhdsGT_zero`: `x K₁(x) → 1` as `x → 0⁺`.
@@ -52,7 +57,7 @@ whole real line need no domain hypothesis where `0` is harmless.
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §10.25, §10.29 and §10.32.
+* NIST Digital Library of Mathematical Functions, §10.25, §10.29, §10.32 and §10.39.
 * G. N. Watson, *A Treatise on the Theory of Bessel Functions*, 2nd edition, Cambridge University
   Press (1944), §6.22.
 -/
@@ -211,6 +216,17 @@ theorem hasDerivAt_besselK_zero {x : ℝ} (hx : 0 < x) :
 theorem continuousOn_besselK (ν : ℝ) : ContinuousOn (besselK ν) (Ioi 0) :=
   fun _ hx ↦ (hasDerivAt_besselK ν hx).continuousAt.continuousWithinAt
 
+/-- `K_ν` is measurable: it is continuous on `(0, ∞)` and vanishes on `(-∞, 0]`. -/
+@[fun_prop]
+theorem measurable_besselK (ν : ℝ) : Measurable (besselK ν) := by
+  have : (Ioi 0).piecewise (besselK ν) 0 = besselK ν := by
+    ext x
+    by_cases hx : 0 < x
+    · exact piecewise_eq_of_mem _ _ _ hx
+    · rw [piecewise_eq_of_notMem _ _ _ hx, besselK_of_nonpos ν (not_lt.1 hx), Pi.zero_apply]
+  rw [← this]
+  exact (continuousOn_besselK ν).measurable_piecewise continuousOn_const measurableSet_Ioi
+
 /-- `K_ν` is strictly decreasing on `(0, ∞)`. -/
 theorem strictAntiOn_besselK (ν : ℝ) : StrictAntiOn (besselK ν) (Ioi 0) := by
   refine strictAntiOn_of_deriv_neg (convex_Ioi 0) (continuousOn_besselK ν) fun x hx ↦ ?_
@@ -232,6 +248,55 @@ theorem besselK_le_exp_mul_besselK (ν : ℝ) {x₀ x : ℝ} (hx₀ : 0 < x₀) 
   rw [← mul_assoc, ← exp_add]
   gcongr
   nlinarith [one_le_cosh t]
+
+/-! ### The order one half -/
+
+/-- The closed form of the modified Bessel function of order one half,
+`K_{1/2}(x) = √(π / 2x) exp (-x)` (DLMF 10.39.2). -/
+theorem besselK_one_half {x : ℝ} (hx : 0 < x) :
+    besselK (1 / 2) x = √(π / (2 * x)) * exp (-x) := by
+  have h2 : (√2) ^ 2 = 2 := sq_sqrt zero_le_two
+  -- The substitution `u = √2 sinh (t / 2)` turns `x cosh t` into `x (1 + u²)`.
+  have hint (t : ℝ) : √2 * exp (-x) * exp (-x * (√2 * sinh (t / 2)) ^ 2) *
+      (√2 / 2 * cosh (t / 2)) = exp (-(x * cosh t)) * cosh (1 / 2 * t) := by
+    have hc : cosh t = 1 + 2 * sinh (t / 2) ^ 2 := by
+      have := cosh_two_mul (t / 2)
+      rw [mul_div_cancel₀ _ two_ne_zero, cosh_sq] at this
+      linarith
+    rw [mul_pow, h2, hc, mul_comm (1 / 2) t, ← div_eq_mul_one_div]
+    have : √2 * exp (-x) * exp (-x * (2 * sinh (t / 2) ^ 2)) * (√2 / 2 * cosh (t / 2))
+        = (√2) ^ 2 / 2 * (exp (-x) * exp (-x * (2 * sinh (t / 2) ^ 2))) * cosh (t / 2) := by
+      ring
+    rw [this, h2, ← exp_add]
+    ring_nf
+  have hsub := integral_comp_mul_deriv_Ioi (a := 0) (f := fun t ↦ √2 * sinh (t / 2))
+    (f' := fun t ↦ √2 / 2 * cosh (t / 2)) (g := fun u ↦ √2 * exp (-x) * exp (-x * u ^ 2))
+    (by fun_prop)
+    (tendsto_atTop_mono' _ ((eventually_ge_atTop 0).mono fun t ht ↦ ?_)
+      ((tendsto_id.atTop_div_const two_pos).const_mul_atTop (sqrt_pos.2 two_pos)))
+    (fun t _ ↦ ?_) (by fun_prop)
+    ((integrable_exp_neg_mul_sq hx).const_mul _).integrableOn ?_
+  · simp only [Function.comp_def, hint] at hsub
+    rw [besselK_def, hsub]
+    simp only [zero_div, sinh_zero, mul_zero]
+    rw [integral_const_mul, integral_gaussian_Ioi,
+      show π / (2 * x) = π / x / 2 by ring, sqrt_div' _ zero_le_two]
+    field_simp
+    rw [h2]
+  · dsimp only [id]
+    gcongr
+    exact self_le_sinh_iff.2 (by positivity)
+  · exact ((((hasDerivAt_id t).div_const 2).sinh).const_mul √2).hasDerivWithinAt.congr_deriv
+      (by simp; ring)
+  · simp only [Function.comp_def, hint]
+    exact (integrableOn_Ici_iff_integrableOn_Ioi (by simp)).2 (integrableOn_besselK_integrand _ hx)
+
+/-- For orders `|ν| ≤ 1/2`, `K_ν` is bounded by the closed form of `K_{1/2}`:
+`K_ν(x) ≤ √(π / 2x) exp (-x)`. This controls `K₀` at once near the origin and at infinity. -/
+theorem besselK_le_sqrt_mul_exp {ν : ℝ} (hν : |ν| ≤ 1 / 2) {x : ℝ} (hx : 0 < x) :
+    besselK ν x ≤ √(π / (2 * x)) * exp (-x) := by
+  rw [← besselK_one_half hx]
+  exact besselK_le_besselK (by rwa [abs_of_pos (one_half_pos (α := ℝ))]) x
 
 /-! ### Behaviour at the origin -/
 
