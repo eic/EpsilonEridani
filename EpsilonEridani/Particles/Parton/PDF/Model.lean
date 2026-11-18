@@ -43,6 +43,7 @@ summing to six obeys the momentum sum rule and carries the sum-rule bundle
 - `EpsilonEridani.Particles.Parton.PDF.regularity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.isPartonDensity_modelPdf`
 - `EpsilonEridani.Particles.Parton.PDF.mellinMoment_modelPdf`
+- `EpsilonEridani.Particles.Parton.PDF.sumRuleAssumptionsWeight`
 - `EpsilonEridani.Particles.Parton.PDF.sumRuleAssumptionsWeightModelPdfZeroOne`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_modelSpinDensity`
 
@@ -229,41 +230,57 @@ lemma mellinMoment_modelPdf_zero_two (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 
   field_simp
   ring
 
-/-- **The Mellin moments of the model with exponents `a = 1` and `b = 2`**, the shape
-`x (1 - x)^2`: `∫₀¹ xⁿ x (1 - x)^2 dx = 2 / ((n + 2) (n + 3) (n + 4))`. This is the `a = 1`,
-`b = 2` case of `mellinMoment_modelPdf` with the factorials evaluated. -/
+/-- **Raising the power of `x` in the model shifts its moments**: the moment `n` of the shape
+`x^(a + 1) (1 - x)^b` is the moment `n + 1` of `x^a (1 - x)^b`. -/
+lemma mellinMoment_modelPdf_succ_left (Flavor : Type) (a b n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor (a + 1) b) n i Q2 =
+      mellinMoment (modelPdf Flavor a b) (n + 1) i Q2 := by
+  rw [mellinMoment_modelPdf, mellinMoment_modelPdf, show n + (a + 1) = n + 1 + a by omega]
+
+/-- **The momentum sum rule for a rescaled density of momentum fraction `1 / 6`.** If every parton
+of `f` carries the momentum fraction `1 / 6` at every scale, rescaling `f` by weights summing to
+six puts unit total momentum on the density. -/
+lemma sum_mellinMoment_one_weight [Fintype Flavor] {f : Pdf Flavor} {w : Flavor → ℝ}
+    (h1 : ∀ i Q2, mellinMoment f 1 i Q2 = 1 / 6) (hw : ∑ i, w i = 6) (Q2 : ℝ) :
+    ∑ i, mellinMoment (weight w f) 1 i Q2 = 1 := by
+  simp only [mellinMoment_weight, h1, ← Finset.sum_mul, hw]
+  norm_num
+
+/-- **The sum-rule bundle of a rescaled density with the moments of `1 - x`**: if every parton of
+`f` carries number density `1 / 2` and momentum fraction `1 / 6` at every scale, rescaling `f` by
+weights summing to six gives a density carrying the sum-rule bundle `SumRuleAssumptions`, the
+valence target of each flavour being half its weight. -/
+def sumRuleAssumptionsWeight [Fintype Flavor] {f : Pdf Flavor} {w : Flavor → ℝ}
+    (h0 : ∀ i Q2, mellinMoment f 0 i Q2 = 1 / 2) (h1 : ∀ i Q2, mellinMoment f 1 i Q2 = 1 / 6)
+    (hw : ∑ i, w i = 6) : SumRuleAssumptions (weight w f) where
+  momentum := sum_mellinMoment_one_weight h1 hw
+  valenceTarget i := w i / 2
+  valence i Q2 := by
+    rw [mellinMoment_weight, h0]
+    ring
+
 @[simp]
-lemma mellinMoment_modelPdf_one_two (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
-    mellinMoment (modelPdf Flavor 1 2) n i Q2 =
-      2 * (((n : ℝ) + 2) * ((n : ℝ) + 3) * ((n : ℝ) + 4))⁻¹ := by
-  have hn : ((n + 1) ! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (n + 1).factorial_ne_zero
-  rw [mellinMoment_modelPdf, Nat.factorial_two, Nat.factorial_succ (n + 1 + 2),
-    Nat.factorial_succ (n + 1 + 1), Nat.factorial_succ (n + 1)]
-  push_cast
-  field_simp
-  ring
+lemma sumRuleAssumptionsWeight_valenceTarget [Fintype Flavor] {f : Pdf Flavor} {w : Flavor → ℝ}
+    (h0 : ∀ i Q2, mellinMoment f 0 i Q2 = 1 / 2) (h1 : ∀ i Q2, mellinMoment f 1 i Q2 = 1 / 6)
+    (hw : ∑ i, w i = 6) (i : Flavor) :
+    (sumRuleAssumptionsWeight h0 h1 hw).valenceTarget i = w i / 2 :=
+  rfl
 
 /-- **The momentum sum rule for a rescaled shape `1 - x`.** Rescaling the model with exponents
 `a = 0` and `b = 1` by weights summing to six puts unit total momentum on the density, each unit
 of weight carrying the momentum fraction `1 / 6`. -/
 lemma sum_mellinMoment_one_weight_modelPdf_zero_one [Fintype Flavor] {w : Flavor → ℝ}
     (hw : ∑ i, w i = 6) (Q2 : ℝ) :
-    ∑ i, mellinMoment (weight w (modelPdf Flavor 0 1)) 1 i Q2 = 1 := by
-  simp only [mellinMoment_weight, mellinMoment_modelPdf_zero_one, ← Finset.sum_mul, hw]
-  norm_num
+    ∑ i, mellinMoment (weight w (modelPdf Flavor 0 1)) 1 i Q2 = 1 :=
+  sum_mellinMoment_one_weight (fun _ _ => by norm_num) hw Q2
 
 /-- **The sum-rule bundle of a rescaled shape `1 - x`**: the model with exponents `a = 0` and
 `b = 1`, rescaled by weights summing to six, carries the sum-rule bundle `SumRuleAssumptions`,
 the valence target of each flavour being half its weight. -/
 def sumRuleAssumptionsWeightModelPdfZeroOne [Fintype Flavor] {w : Flavor → ℝ}
     (hw : ∑ i, w i = 6) :
-    SumRuleAssumptions (weight w (modelPdf Flavor 0 1)) where
-  momentum := sum_mellinMoment_one_weight_modelPdf_zero_one hw
-  valenceTarget i := w i / 2
-  valence i Q2 := by
-    rw [mellinMoment_weight, mellinMoment_modelPdf_zero_one]
-    push_cast
-    ring
+    SumRuleAssumptions (weight w (modelPdf Flavor 0 1)) :=
+  sumRuleAssumptionsWeight (fun _ _ => by norm_num) (fun _ _ => by norm_num) hw
 
 @[simp]
 lemma sumRuleAssumptionsWeightModelPdfZeroOne_valenceTarget [Fintype Flavor] {w : Flavor → ℝ}

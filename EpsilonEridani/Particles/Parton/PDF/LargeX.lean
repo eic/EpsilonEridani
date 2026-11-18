@@ -21,36 +21,34 @@ exponent `β`, `PDF.HasLargeXExponent g β`, when `g x / (1 - x)^β` has a posit
 
 The exponent is unique when it exists (`HasLargeXExponent.unique`), so two densities with
 different exponents are different functions however many of their moments agree. It is preserved
-by multiplication by a function with a positive limit at the endpoint (`HasLargeXExponent.mul`),
-in particular by positive rescaling, and by sums of functions with the same exponent. A function
-`h x (1 - x)^β` with `h` tending to a positive limit at the endpoint has exponent `β`
-(`hasLargeXExponent_mul_one_sub_rpow`); in particular the model shape `x^a (1 - x)^b` of
-`PDF.modelPdf` has exponent `b` (`hasLargeXExponent_modelPdf`).
+by multiplication by a function with a positive limit at the endpoint
+(`HasLargeXExponent.mul_left`), in particular by positive rescaling, and by sums of functions with
+the same exponent. A function `h x (1 - x)^β` with `h` tending to a positive limit at the
+endpoint has exponent `β` (`hasLargeXExponent_mul_one_sub_rpow`); in particular the model shape
+`x^a (1 - x)^b` of `PDF.modelPdf` has exponent `b` (`hasLargeXExponent_modelPdf`).
 
-The moments do not see the exponent. The counting-rule model `PDF.countingRuleModelPdf ι w`
-rescales by the weight `w` the shape `(2/3) (1 - x)^2 (1 + 5 x)`, which has the number and
-momentum moments `1/2` and `1/6` of `1 - x` (`mellinMoment_countingRuleModelPdf`), and with
-weights summing to six carries the sum-rule bundle (`sumRuleAssumptionsCountingRuleModelPdf`),
-as the rescaled shape `1 - x` does; but it has exponent two
-(`hasLargeXExponent_countingRuleModelPdf`) where `1 - x` has exponent one.
+The moments do not see the exponent. The model `PDF.exponentTwoModelPdf ι` carries on every parton
+the shape `(2/3) (1 - x)^2 (1 + 5 x)`, which has the number and momentum moments `1/2` and `1/6`
+of `1 - x` (`mellinMoment_exponentTwoModelPdf`), so that rescaled by weights summing to six it
+carries the sum-rule bundle (`PDF.sumRuleAssumptionsWeight`) as the rescaled shape `1 - x` does;
+but it has exponent two (`hasLargeXExponent_exponentTwoModelPdf`) where `1 - x` has exponent one.
 
 ## Main definitions
 
 * `PDF.HasLargeXExponent g β`: `g x / (1 - x)^β` tends to a positive limit as `x → 1⁻`.
-* `PDF.countingRuleModelPdf ι w`: the weight `w` times the shape `(2/3) (1 - x)^2 (1 + 5 x)`.
+* `PDF.exponentTwoModelPdf ι`: the shape `(2/3) (1 - x)^2 (1 + 5 x)` at every parton.
 
 ## Main results
 
 * `PDF.hasLargeXExponent_iff_exists_isEquivalent`: the exponent as an asymptotic equivalence.
 * `PDF.HasLargeXExponent.unique`: the large-`x` exponent of a function is unique.
-* `PDF.HasLargeXExponent.mul`: multiplying by a function with a positive limit at the endpoint
+* `PDF.HasLargeXExponent.mul_left`: multiplying by a function with a positive limit at the endpoint
   preserves the exponent.
 * `PDF.hasLargeXExponent_mul_one_sub_rpow`: a function tending to a positive limit times
   `(1 - x)^β` has exponent `β`.
 * `PDF.hasLargeXExponent_modelPdf`: the model density `x^a (1 - x)^b` has exponent `b`.
-* `PDF.mellinMoment_countingRuleModelPdf`, `PDF.sumRuleAssumptionsCountingRuleModelPdf`,
-  `PDF.hasLargeXExponent_countingRuleModelPdf`: the counting-rule model has the moments `n ≤ 1`
-  and the sum-rule bundle of the rescaled shape `1 - x`, and exponent two.
+* `PDF.mellinMoment_exponentTwoModelPdf`, `PDF.hasLargeXExponent_exponentTwoModelPdf`: the model
+  of exponent two has the moments `n ≤ 1` of the shape `1 - x`, and exponent two.
 
 ## References
 
@@ -139,8 +137,8 @@ theorem HasLargeXExponent.congr (h : HasLargeXExponent g β) (hg : ∀ x, g x = 
   h.congr' (Eventually.of_forall hg)
 
 /-- **Multiplying by a function with a positive limit at the endpoint preserves the exponent**: if
-`h` tends to `c > 0` as `x → 1⁻`, then `h x g x` has the large-`x` exponent of `g`. -/
-theorem HasLargeXExponent.mul (h : HasLargeXExponent g β) {k : ℝ → ℝ} {c : ℝ} (hc : 0 < c)
+`k` tends to `c > 0` as `x → 1⁻`, then `k x * g x` has the large-`x` exponent of `g`. -/
+theorem HasLargeXExponent.mul_left (h : HasLargeXExponent g β) {k : ℝ → ℝ} {c : ℝ} (hc : 0 < c)
     (hk : Tendsto k (𝓝[<] 1) (𝓝 c)) : HasLargeXExponent (fun x => k x * g x) β := by
   obtain ⟨d, hd, hgd⟩ := h
   exact ⟨c * d, mul_pos hc hd, by simpa only [mul_div_assoc] using hk.mul hgd⟩
@@ -148,7 +146,7 @@ theorem HasLargeXExponent.mul (h : HasLargeXExponent g β) {k : ℝ → ℝ} {c 
 /-- A positive multiple of a function has the same large-`x` exponent. -/
 theorem HasLargeXExponent.const_mul (h : HasLargeXExponent g β) {k : ℝ} (hk : 0 < k) :
     HasLargeXExponent (fun x => k * g x) β :=
-  h.mul hk tendsto_const_nhds
+  h.mul_left hk tendsto_const_nhds
 
 /-- The sum of two functions with the same large-`x` exponent has that exponent. -/
 theorem HasLargeXExponent.add (h : HasLargeXExponent g β) (h' : HasLargeXExponent g' β) :
@@ -167,7 +165,7 @@ theorem hasLargeXExponent_one_sub_rpow (β : ℝ) : HasLargeXExponent (fun x => 
 `h x (1 - x)^β` has large-`x` exponent `β`. -/
 theorem hasLargeXExponent_mul_one_sub_rpow {h : ℝ → ℝ} {c : ℝ} (hc : 0 < c)
     (hh : Tendsto h (𝓝[<] 1) (𝓝 c)) : HasLargeXExponent (fun x => h x * (1 - x) ^ β) β :=
-  (hasLargeXExponent_one_sub_rpow β).mul hc hh
+  (hasLargeXExponent_one_sub_rpow β).mul_left hc hh
 
 /-- **The model density `x^a (1 - x)^b` has large-`x` exponent `b`**, at every parton and every
 scale. -/
@@ -180,89 +178,55 @@ theorem hasLargeXExponent_modelPdf (Flavor : Type) (a b : ℕ) (i : Flavor) (Q2 
   rw [modelPdf_apply, Set.indicator_of_mem (Set.Ioo_subset_Icc_self hx), betaShape,
     Real.rpow_natCast]
 
-/-! ### A model with the moments `n ≤ 1` of `1 - x` and exponent two -/
+/-! ### A shape with the moments `n ≤ 1` of `1 - x` and exponent two -/
 
-section CountingRuleModel
+section ExponentTwoModel
 
-variable {ι : Type}
+variable (ι : Type)
 
-/-- **The counting-rule model with weight `w`**: parton `i` carries `w i` times the shape
-`(2/3) (1 - x)^2 + (10/3) x (1 - x)^2 = (2/3) (1 - x)^2 (1 + 5 x)` on the unit interval. The
-shape has the number and momentum moments `1/2` and `1/6` of `1 - x`
-(`mellinMoment_countingRuleModelPdf`) but vanishes quadratically at `x = 1`
-(`hasLargeXExponent_countingRuleModelPdf`). -/
-def countingRuleModelPdf (ι : Type) (w : ι → ℝ) : Pdf ι :=
-  weight ((2 / 3 : ℝ) • w) (modelPdf ι 0 2) + weight ((10 / 3 : ℝ) • w) (modelPdf ι 1 2)
+/-- **A model density of large-`x` exponent two with the number and momentum moments of `1 - x`**:
+every parton carries the shape `(2/3) (1 - x)^2 + (10/3) x (1 - x)^2 = (2/3) (1 - x)^2 (1 + 5 x)`
+on the unit interval. Its moments `n = 0` and `n = 1` are the moments `1/2` and `1/6` of the
+shape `1 - x` of `modelPdf ι 0 1` (`mellinMoment_exponentTwoModelPdf`), but it vanishes
+quadratically at `x = 1` (`hasLargeXExponent_exponentTwoModelPdf`). -/
+def exponentTwoModelPdf : Pdf ι :=
+  weight (fun _ => 2 / 3) (modelPdf ι 0 2) + weight (fun _ => 10 / 3) (modelPdf ι 1 2)
 
 @[simp]
-lemma countingRuleModelPdf_apply (w : ι → ℝ) (i : ι) (x Q2 : ℝ) :
-    countingRuleModelPdf ι w i x Q2 =
-      w i * (2 / 3 * modelPdf ι 0 2 i x Q2 + 10 / 3 * modelPdf ι 1 2 i x Q2) := by
-  simp only [countingRuleModelPdf, add_apply, weight_apply, Pi.smul_apply, smul_eq_mul]
-  ring
+lemma exponentTwoModelPdf_apply (i : ι) (x Q2 : ℝ) :
+    exponentTwoModelPdf ι i x Q2 = 2 / 3 * modelPdf ι 0 2 i x Q2 + 10 / 3 * modelPdf ι 1 2 i x Q2 :=
+  (rfl)
 
-/-- The counting-rule model with a non-negative weight satisfies the density assumptions: it is a
-sum of non-negative weightings of model densities. -/
-lemma assumptions_countingRuleModelPdf {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) :
-    Assumptions (countingRuleModelPdf ι w) := by
-  have hsmul : ∀ {c : ℝ}, 0 ≤ c → ∀ i, 0 ≤ (c • w) i := fun hc i => by
-    simpa only [Pi.smul_apply, smul_eq_mul] using mul_nonneg hc (hw i)
-  exact ((assumptions_modelPdf _ 0 2).weight (hsmul (by norm_num))).add
-    ((assumptions_modelPdf _ 1 2).weight (hsmul (by norm_num)))
+/-- The model of exponent two satisfies the density assumptions: it is a sum of positive multiples
+of model densities. -/
+lemma assumptions_exponentTwoModelPdf : Assumptions (exponentTwoModelPdf ι) :=
+  ((assumptions_modelPdf _ 0 2).weight fun _ => by norm_num).add
+    ((assumptions_modelPdf _ 1 2).weight fun _ => by norm_num)
 
-/-- **The Mellin moments of the counting-rule model**: the weight times the moment
-`4 (2 n + 3) / ((n + 1) (n + 2) (n + 3) (n + 4))` of the shape `(2/3) (1 - x)^2 (1 + 5 x)`. At
-`n = 0` and `n = 1` these are `1/2` and `1/6`, the moments of `1 - x`. -/
+/-- **The Mellin moments of the model of exponent two**: `4 (2 n + 3) / ((n + 1) (n + 2) (n + 3)
+(n + 4))`, in particular `1/2` at `n = 0` and `1/6` at `n = 1`, the moments of `1 - x`. -/
 @[simp]
-lemma mellinMoment_countingRuleModelPdf (w : ι → ℝ) (n : ℕ) (i : ι) (Q2 : ℝ) :
-    mellinMoment (countingRuleModelPdf ι w) n i Q2 =
-      w i * (4 * (2 * (n : ℝ) + 3) /
-        (((n : ℝ) + 1) * ((n : ℝ) + 2) * ((n : ℝ) + 3) * ((n : ℝ) + 4))) := by
-  rw [countingRuleModelPdf, mellinMoment_add
+lemma mellinMoment_exponentTwoModelPdf (n : ℕ) (i : ι) (Q2 : ℝ) :
+    mellinMoment (exponentTwoModelPdf ι) n i Q2 = 4 * (2 * (n : ℝ) + 3) /
+      (((n : ℝ) + 1) * ((n : ℝ) + 2) * ((n : ℝ) + 3) * ((n : ℝ) + 4)) := by
+  rw [exponentTwoModelPdf, mellinMoment_add
     (((regularity_modelPdf _ 0 2).weight _).momentIntegrable n i Q2).integrableOn
     (((regularity_modelPdf _ 1 2).weight _).momentIntegrable n i Q2).integrableOn,
-    mellinMoment_weight, mellinMoment_weight, mellinMoment_modelPdf_zero_two,
-    mellinMoment_modelPdf_one_two, Pi.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
+    mellinMoment_weight, mellinMoment_weight, mellinMoment_modelPdf_succ_left,
+    mellinMoment_modelPdf_zero_two, mellinMoment_modelPdf_zero_two]
+  push_cast
   field_simp
   ring
 
-/-- **The momentum sum rule for the counting-rule model**: weights summing to six put unit total
-momentum on the density, each unit of weight carrying the momentum fraction `1 / 6`. -/
-lemma sum_mellinMoment_one_countingRuleModelPdf [Fintype ι] {w : ι → ℝ} (hw : ∑ i, w i = 6)
-    (Q2 : ℝ) : ∑ i, mellinMoment (countingRuleModelPdf ι w) 1 i Q2 = 1 := by
-  simp only [mellinMoment_countingRuleModelPdf, ← Finset.sum_mul, hw]
-  norm_num
-
-/-- **The sum-rule bundle of the counting-rule model**: with weights summing to six it carries the
-sum-rule bundle `SumRuleAssumptions`, the valence target of each parton being half its weight, as
-for the rescaled shape `1 - x` (`sumRuleAssumptionsWeightModelPdfZeroOne`). -/
-def sumRuleAssumptionsCountingRuleModelPdf [Fintype ι] {w : ι → ℝ} (hw : ∑ i, w i = 6) :
-    SumRuleAssumptions (countingRuleModelPdf ι w) where
-  momentum := sum_mellinMoment_one_countingRuleModelPdf hw
-  valenceTarget i := w i / 2
-  valence i Q2 := by
-    rw [mellinMoment_countingRuleModelPdf]
-    norm_num [div_eq_mul_one_div]
-
-@[simp]
-lemma sumRuleAssumptionsCountingRuleModelPdf_valenceTarget [Fintype ι] {w : ι → ℝ}
-    (hw : ∑ i, w i = 6) (i : ι) :
-    (sumRuleAssumptionsCountingRuleModelPdf hw).valenceTarget i = w i / 2 :=
-  (rfl)
-
-/-- **The counting-rule model has large-`x` exponent two** at every parton of positive weight and
-every scale. -/
-theorem hasLargeXExponent_countingRuleModelPdf {w : ι → ℝ} {i : ι} (hi : 0 < w i) (Q2 : ℝ) :
-    HasLargeXExponent (fun x => countingRuleModelPdf ι w i x Q2) 2 := by
-  have h := ((hasLargeXExponent_modelPdf ι 0 2 i Q2).const_mul (k := w i * (2 / 3))
-    (by positivity)).add ((hasLargeXExponent_modelPdf ι 1 2 i Q2).const_mul
-      (k := w i * (10 / 3)) (by positivity))
+/-- **The model of exponent two has large-`x` exponent two**, at every parton and every scale. -/
+theorem hasLargeXExponent_exponentTwoModelPdf (i : ι) (Q2 : ℝ) :
+    HasLargeXExponent (fun x => exponentTwoModelPdf ι i x Q2) 2 := by
+  have h := ((hasLargeXExponent_modelPdf ι 0 2 i Q2).const_mul (k := 2 / 3) (by norm_num)).add
+    ((hasLargeXExponent_modelPdf ι 1 2 i Q2).const_mul (k := 10 / 3) (by norm_num))
   rw [Nat.cast_ofNat] at h
-  refine h.congr fun x => ?_
-  rw [countingRuleModelPdf_apply]
-  ring
+  exact h.congr fun x => (exponentTwoModelPdf_apply ι i x Q2).symm
 
-end CountingRuleModel
+end ExponentTwoModel
 
 end PDF
 end Parton

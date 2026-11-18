@@ -300,15 +300,11 @@ section Add
 
 variable {ι : Type} {f g : Pdf ι}
 
-@[simp]
-lemma add_apply (f g : Pdf ι) (i : ι) (x Q2 : ℝ) : (f + g) i x Q2 = f i x Q2 + g i x Q2 :=
-  (rfl)
-
 /-- The sum of two parton densities is a parton density. -/
 lemma IsPartonDensity.add (hf : IsPartonDensity f) (hg : IsPartonDensity g) :
     IsPartonDensity (f + g) where
   support i x Q2 hx := by
-    rw [add_apply, hf.support i x Q2 hx, hg.support i x Q2 hx, add_zero]
+    simp only [Pi.add_apply, hf.support i x Q2 hx, hg.support i x Q2 hx, add_zero]
   nonneg i x Q2 hx₀ hx₁ := add_nonneg (hf.nonneg i x Q2 hx₀ hx₁) (hg.nonneg i x Q2 hx₀ hx₁)
 
 /-- The sum of two regular densities is regular. -/
@@ -330,7 +326,7 @@ lemma mellinMoment_add {n : ℕ} {i : ι} {Q2 : ℝ}
     (hg : MeasureTheory.IntegrableOn (fun x : ℝ => x ^ n * g i x Q2) (Set.Icc 0 1)) :
     mellinMoment (f + g) n i Q2 = mellinMoment f n i Q2 + mellinMoment g n i Q2 := by
   rw [mellinMoment, mellinMoment, mellinMoment, ← MeasureTheory.integral_add hf hg]
-  simp only [add_apply, mul_add]
+  simp only [Pi.add_apply, mul_add]
 
 end Add
 
