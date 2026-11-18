@@ -300,17 +300,34 @@ mass `M` that emerges as a system of mass `M_Y`:
 `tMin M M_Y ξ = -ξ (M_Y² - (1 - ξ) M²) / (1 - ξ)`.
 
 As for `tMinElastic`, the argument `xiLC` is the light-cone fraction `ξ = Δ⁺/P⁺`, not the
-invariant `Invariants.xi`. For `ξ < 1` the accessible momentum transfers are exactly
-`t ≤ tMin M M_Y ξ`, the boundary being attained when the momentum transfer has no transverse
-part; this is derived from the on-shell conditions `P² = M²`, `P'² = M_Y²` in
-`Kinematics.tMom_eq_tMin_add` and `Kinematics.setOf_tMom_eq_Iic_tMin`. In the target-elastic case
-`M_Y = M` it reduces to `tMinElastic M ξ` (`tMin_self`). At the pole `ξ = 1` the value is the
-division junk `0`. -/
+invariant `Invariants.xi`. For a target with no transverse momentum and non-vanishing plus
+momenta, the on-shell conditions `P² = M²`, `P'² = M_Y²` give `t = tMin M M_Y ξ + Δ_T²/(1-ξ)`
+(`Kinematics.tMom_eq_tMin_add`), so that `t ≤ tMin M M_Y ξ` for `ξ ≤ 1` when the transverse
+momentum transfer satisfies `Δ_T² ≤ 0`, the boundary being attained when `Δ_T² = 0`. For a
+metric that is negative semidefinite on transverse vectors and admits a space-like transverse
+vector, the momentum transfers compatible with the target-side constraints (`P`, `P'² = M_Y²`,
+`ξ < 1`) are exactly `t ≤ tMin M M_Y ξ` (`Kinematics.setOf_tMom_eq_Iic_tMin`); the lepton side is
+not constrained there, so this is not yet the diffractive physical region. In the target-elastic
+case `M_Y = M` it reduces to `tMinElastic M ξ` (`tMin_self`), which is the boundary
+`Particles.Parton.GPD.tZero M η` of the off-forward kinematics at skewness `η = ξ/(2-ξ)`, i.e.
+`ξ = 2η/(1+η)`. At the pole `ξ = 1` the value is the division junk `0`. -/
 def tMin (M MY xiLC : ℝ) : ℝ := -(xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) / (1 - xiLC)
 
 /-- Defining expression for `tMin`. -/
 theorem tMin_def (M MY xiLC : ℝ) :
     tMin M MY xiLC = -(xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) / (1 - xiLC) := (rfl)
+
+/-- The negated boundary, `-tMin M M_Y ξ = ξ (M_Y² - (1 - ξ) M²)/(1-ξ)`. The identity is
+unconditional; it is a (non-negative) magnitude only under the hypotheses of `tMin_nonpos`. -/
+theorem neg_tMin (M MY xiLC : ℝ) :
+    -tMin M MY xiLC = xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2) / (1 - xiLC) := by
+  rw [tMin_def, neg_div, neg_neg]
+
+/-- The boundary condition `t ≤ tMin M M_Y ξ` for a real momentum transfer `t`, in terms of its
+magnitude: `-t ≥ ξ (M_Y² - (1 - ξ) M²)/(1-ξ)`, for any choice of the parameters. -/
+theorem le_tMin_iff (M MY xiLC t : ℝ) :
+    t ≤ tMin M MY xiLC ↔ xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2) / (1 - xiLC) ≤ -t := by
+  rw [← neg_tMin, neg_le_neg_iff]
 
 /-- In the target-elastic case `M_Y = M` the boundary `tMin` is `tMinElastic`,
 `-ξ²M²/(1-ξ)`. -/
