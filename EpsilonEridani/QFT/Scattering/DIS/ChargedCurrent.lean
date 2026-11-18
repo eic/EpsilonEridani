@@ -47,6 +47,9 @@ The quark-parton model makes the following consequences exact at leading order.
   `xf3CCPlusLO_eq_neg_xf3CCMinusLO_chargeConj`).
 * *Quark/antiquark separation.* `F₂ + x F₃` sees only quarks and `F₂ - x F₃` only antiquarks
   (`f2CCMinusLO_add_xf3CCMinusLO`, `f2CCMinusLO_sub_xf3CCMinusLO`, and their `W⁺` versions).
+  The quark side of `W⁻` and the antiquark side of `W⁺` need only unit-norm rows of `V`, the other
+  two sides only unit-norm columns, so for a rectangular `V` with unit-norm rows
+  `F₂^{W⁻} + x F₃^{W⁻} = 4 x Σᵢ u_i` (`f2CCMinusLO_add_xf3CCMinusLO_eq_of_sum_norm_sq_eq_one`).
 * *Positivity.* For `0 ≤ x` and non-negative quark and antiquark densities in the active
   channels, `F₂ ≥ 0` and `|x F₃| ≤ F₂`
   (`abs_xf3CCMinusLO_le_f2CCMinusLO`, `abs_xf3CCPlusLO_le_f2CCPlusLO`).
@@ -58,8 +61,8 @@ The quark-parton model makes the following consequences exact at leading order.
   `x F₃^{W⁻} + x F₃^{W⁺} = 2 x (Σᵢ (u_i - ubar_i) + Σⱼ (d_j - dbar_j))`, a sum of valence
   densities (`xf3CCMinusLO_add_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one`).
 * *Agreement with the neutral current in the flavour-blind limit.* When the up-type and down-type
-  flavours together exhaust the flavour type and the rows and columns of `V` have unit norm, the
-  average of the `W⁻` and `W⁺` structure functions is the neutral-current `F₂` with every charge
+  flavours together are all the flavours, each exactly once, and the rows and columns of `V` have
+  unit norm, the average of `F₂^{W⁻}` and `F₂^{W⁺}` is the neutral-current `F₂` with every charge
   equal to one (`f2CCMinusLO_add_f2CCPlusLO_eq_two_mul_f2LO`), so the two hard kernels are
   normalised the same way.
 
@@ -152,7 +155,7 @@ theorem xf3CCPlusLO_def : xf3CCPlusLO V up down f x Q2 =
 ## Charge conjugation
 -/
 
-/-- **`W⁺` on a target is `W⁻` on its charge conjugate.** -/
+/-- **`F₂^{W⁺}` of a target is `F₂^{W⁻}` of its charge conjugate.** -/
 theorem f2CCPlusLO_eq_f2CCMinusLO_chargeConj :
     f2CCPlusLO V up down f x Q2 = f2CCMinusLO V up down (chargeConj f) x Q2 := by
   simp only [f2CCPlusLO_def, f2CCMinusLO_def, chargeConj_apply, Species.conj_quark,
@@ -323,6 +326,40 @@ theorem f2CCPlusLO_sub_xf3CCPlusLO : f2CCPlusLO V up down f x Q2 - xf3CCPlusLO V
   rw [f2CCPlusLO_eq_sum_add_sum, xf3CCPlusLO_eq_sum_sub_sum]
   ring
 
+variable {V}
+
+/-- With unit-norm rows of the mixing matrix, `F₂^{W⁻} + x F₃^{W⁻} = 4 x Σᵢ u_i`. The columns are
+unconstrained, so this covers a rectangular `V`. -/
+theorem f2CCMinusLO_add_xf3CCMinusLO_eq_of_sum_norm_sq_eq_one
+    (hrow : ∀ i, ∑ j, ‖V i j‖ ^ 2 = 1) :
+    f2CCMinusLO V up down f x Q2 + xf3CCMinusLO V up down f x Q2 =
+      4 * x * ∑ i, f (quark (up i)) x Q2 := by
+  simp [f2CCMinusLO_add_xf3CCMinusLO, hrow]
+
+/-- With unit-norm columns of the mixing matrix, `F₂^{W⁻} - x F₃^{W⁻} = 4 x Σⱼ dbar_j`. -/
+theorem f2CCMinusLO_sub_xf3CCMinusLO_eq_of_sum_norm_sq_eq_one
+    (hcol : ∀ j, ∑ i, ‖V i j‖ ^ 2 = 1) :
+    f2CCMinusLO V up down f x Q2 - xf3CCMinusLO V up down f x Q2 =
+      4 * x * ∑ j, f (antiquark (down j)) x Q2 := by
+  simp [f2CCMinusLO_sub_xf3CCMinusLO, hcol]
+
+/-- With unit-norm columns of the mixing matrix, `F₂^{W⁺} + x F₃^{W⁺} = 4 x Σⱼ d_j`. -/
+theorem f2CCPlusLO_add_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one
+    (hcol : ∀ j, ∑ i, ‖V i j‖ ^ 2 = 1) :
+    f2CCPlusLO V up down f x Q2 + xf3CCPlusLO V up down f x Q2 =
+      4 * x * ∑ j, f (quark (down j)) x Q2 := by
+  simp [f2CCPlusLO_add_xf3CCPlusLO, hcol]
+
+/-- With unit-norm rows of the mixing matrix, `F₂^{W⁺} - x F₃^{W⁺} = 4 x Σᵢ ubar_i`. The columns
+are unconstrained, so this covers a rectangular `V`. -/
+theorem f2CCPlusLO_sub_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one
+    (hrow : ∀ i, ∑ j, ‖V i j‖ ^ 2 = 1) :
+    f2CCPlusLO V up down f x Q2 - xf3CCPlusLO V up down f x Q2 =
+      4 * x * ∑ i, f (antiquark (up i)) x Q2 := by
+  simp [f2CCPlusLO_sub_xf3CCPlusLO, hrow]
+
+variable (V)
+
 /-!
 ## Positivity
 -/
@@ -421,6 +458,18 @@ theorem xf3CCMinusLO_add_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one (hrow : ∀ i, ∑
 ## The flavour-blind limit
 -/
 
+variable (V) in
+/-- **`F₂^{W⁻} + F₂^{W⁺}` for an arbitrary mixing matrix.** Each up-type flavour enters through
+`u_i + ubar_i`, weighted by the squared norm of its row of `V`, and each down-type flavour through
+`d_j + dbar_j`, weighted by the squared norm of its column. -/
+theorem f2CCMinusLO_add_f2CCPlusLO :
+    f2CCMinusLO V up down f x Q2 + f2CCPlusLO V up down f x Q2 =
+      2 * x * (∑ i, (∑ j, ‖V i j‖ ^ 2) * (f (quark (up i)) x Q2 + f (antiquark (up i)) x Q2) +
+        ∑ j, (∑ i, ‖V i j‖ ^ 2) * (f (quark (down j)) x Q2 + f (antiquark (down j)) x Q2)) := by
+  simp only [f2CCMinusLO_eq_sum_add_sum, f2CCPlusLO_eq_sum_add_sum, mul_add,
+    Finset.sum_add_distrib]
+  ring
+
 /-- **Charged and neutral currents agree in the flavour-blind limit.** If the up-type and
 down-type flavours together are all the flavours, each exactly once, and the rows and columns of
 the mixing matrix have unit norm, then the average of `F₂^{W⁻}` and `F₂^{W⁺}` is the
@@ -433,10 +482,9 @@ theorem f2CCMinusLO_add_f2CCPlusLO_eq_two_mul_f2LO [Fintype Flavor]
   have hsum := (Equiv.ofBijective _ hbij).sum_comp
     (fun a => f (quark a) x Q2 + f (antiquark a) x Q2)
   simp only [Fintype.sum_sum_type, Equiv.ofBijective_apply, Sum.elim_inl, Sum.elim_inr] at hsum
-  rw [f2CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 hrow hcol,
-    f2CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 hrow hcol, f2LO_def]
-  simp only [one_pow, one_mul]
-  rw [← hsum, Finset.sum_add_distrib, Finset.sum_add_distrib]
+  rw [f2CCMinusLO_add_f2CCPlusLO, f2LO_def]
+  simp only [hrow, hcol, one_pow, one_mul]
+  rw [← hsum]
   ring
 
 end DIS
