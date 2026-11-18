@@ -215,6 +215,34 @@ lemma mellinMoment_modelPdf_zero_one (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 
   field_simp
   ring
 
+/-- **The Mellin moments of the model with exponents `a = 0` and `b = 2`**, the shape
+`(1 - x)^2`: `∫₀¹ xⁿ (1 - x)^2 dx = 2 / ((n + 1) (n + 2) (n + 3))`. This is the `a = 0`, `b = 2`
+case of `mellinMoment_modelPdf` with the factorials evaluated. -/
+@[simp]
+lemma mellinMoment_modelPdf_zero_two (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor 0 2) n i Q2 =
+      2 * (((n : ℝ) + 1) * ((n : ℝ) + 2) * ((n : ℝ) + 3))⁻¹ := by
+  have hn : (n ! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
+  rw [mellinMoment_modelPdf, Nat.add_zero, Nat.factorial_two,
+    Nat.factorial_succ (n + 2), Nat.factorial_succ (n + 1), Nat.factorial_succ n]
+  push_cast
+  field_simp
+  ring
+
+/-- **The Mellin moments of the model with exponents `a = 1` and `b = 2`**, the shape
+`x (1 - x)^2`: `∫₀¹ xⁿ x (1 - x)^2 dx = 2 / ((n + 2) (n + 3) (n + 4))`. This is the `a = 1`,
+`b = 2` case of `mellinMoment_modelPdf` with the factorials evaluated. -/
+@[simp]
+lemma mellinMoment_modelPdf_one_two (Flavor : Type) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (modelPdf Flavor 1 2) n i Q2 =
+      2 * (((n : ℝ) + 2) * ((n : ℝ) + 3) * ((n : ℝ) + 4))⁻¹ := by
+  have hn : ((n + 1) ! : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (n + 1).factorial_ne_zero
+  rw [mellinMoment_modelPdf, Nat.factorial_two, Nat.factorial_succ (n + 1 + 2),
+    Nat.factorial_succ (n + 1 + 1), Nat.factorial_succ (n + 1)]
+  push_cast
+  field_simp
+  ring
+
 /-- **The momentum sum rule for a rescaled shape `1 - x`.** Rescaling the model with exponents
 `a = 0` and `b = 1` by weights summing to six puts unit total momentum on the density, each unit
 of weight carrying the momentum fraction `1 / 6`. -/
