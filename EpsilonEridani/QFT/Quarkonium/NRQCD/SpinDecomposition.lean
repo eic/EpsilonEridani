@@ -6,10 +6,7 @@ Authors: The EpsilonEridani contributors
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.TensorProduct.Symmetrizer
-public import EpsilonEridani.Mathematics.RepresentationTheory.Sl2.TensorHighestWeightExtensions
-public import EpsilonEridani.QuantumMechanics.AngularMomentum.AdditionExtensions
 public import EpsilonEridani.QuantumMechanics.AngularMomentum.SpinHalf
-public import Mathlib.LinearAlgebra.Trace
 
 /-!
 # The spin singlet and triplet channels of a heavy quark-antiquark pair
@@ -26,31 +23,27 @@ symmetry under the operator `P₁₂ = TensorProduct.comm` exchanging the two sp
 projector is the antisymmetrizer `(1 - P₁₂) / 2` and the triplet projector the symmetrizer
 `(1 + P₁₂) / 2` of `ℂ² ⊗ ℂ²`, so the general results on `TensorProduct.antisymmetrizer` and
 `TensorProduct.symmetrizer` apply to them: they are complete orthogonal idempotents onto the
-antisymmetric and symmetric tensors, and the exchange acts on them by `-1` and `1`. Both commute
-with the diagonal action `diagEnd X X = X ⊗ 1 + 1 ⊗ X` of every operator `X` on `ℂ²`
-(`PhyslibAlpha.Sl2.commute_diagEnd_antisymmetrizer`,
-`PhyslibAlpha.Sl2.commute_diagEnd_symmetrizer`, stated for the tensor square of any vector
-space). This is the form in which the total spin acts: the component
-`(tensor spinHalfRep spinHalfRep).Jx` is `diagEnd spinHalfRep.Jx spinHalfRep.Jx`
-(`PhyslibAlpha.Sl2.AngularMomentumRepresentation.tensor_Jx`), and likewise for `Jy` and `Jz`, so
-both channels are invariant under the total spin. Specific to spin `1/2` are
+antisymmetric and symmetric tensors, and the exchange acts on them by `-1` and `1`. Since the
+projectors are reducible abbreviations, the results on the spin-`1/2` representation in
+`EpsilonEridani.QuantumMechanics.AngularMomentum.SpinHalf` apply to them directly:
 
-* the traces `1` and `3` of the two projectors, which over `ℂ` are the dimensions of the two
-  channels (that rank statement is not formalised here);
-* the total spin squared `S² = Σᵢ Sᵢ Sᵢ` of the pair, which is `1 + P₁₂`, that is twice the
-  triplet projector, so it takes the value `S (S + 1) = 0` on the singlet channel and `2` on the
-  triplet channel.
+* their traces are `1` and `3` (`PhyslibAlpha.Sl2.trace_antisymmetrizer_euclideanSpace_fin_two`,
+  `PhyslibAlpha.Sl2.trace_symmetrizer_euclideanSpace_fin_two`), which over `ℂ` are the dimensions
+  of the two channels (that rank statement is not formalised here);
+* both commute with every component of the total spin
+  (`PhyslibAlpha.Sl2.commute_Jx_tensor_spinHalfRep_antisymmetrizer`,
+  `PhyslibAlpha.Sl2.commute_Jx_tensor_spinHalfRep_symmetrizer` and their `Jy`, `Jz` analogues), so
+  both channels are invariant under the total spin;
+* the total spin squared `S² = Σᵢ Sᵢ Sᵢ` of the pair is `1 + P₁₂`, that is twice the triplet
+  projector (`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`), so it takes the value `S (S + 1) = 0` on
+  the singlet channel and `2` on the triplet channel
+  (`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_mul_antisymmetrizer`,
+  `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_mul_symmetrizer`, and on states
+  `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
+  `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors`).
 
-The computation of `S²` is the decomposition `S² = S₁² + S₂² + 2 S(1) · S(2)`
-(`PhyslibAlpha.Sl2.AngularMomentumRepresentation.Jsq_tensor`) with `S₁² = S₂² = 3/4`
-(`PhyslibAlpha.Sl2.Jsq_spinHalfRep`) and the exchange identity `S(1) · S(2) = (2 P₁₂ - 1) / 4`
-of the Pauli matrices (`PhyslibAlpha.Sl2.dot_spinHalfRep_spinHalfRep`), which give
-`S² = 1 + P₁₂ = 2 • spinTripletProj` (`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep`); on states,
-`S² x = 0` for an antisymmetric `x` and `S² x = 2 x` for a symmetric `x`
-(`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
-`PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors`). Consequently the
-exchange operator acts on the channel of total spin `S` by `(-1)^(S + 1)`: this is the spin factor
-in the charge-conjugation eigenvalue of a quark-antiquark pair.
+Consequently the exchange operator acts on the channel of total spin `S` by `(-1)^(S + 1)`: this
+is the spin factor in the charge-conjugation eigenvalue of a quark-antiquark pair.
 
 The abstract counterpart of this decomposition is the Clebsch-Gordan rule
 `V(1) ⊗ V(1) ≅ V(2) ⊕ V(0)` for `sl₂` (`TauCeti.Sl2Std.isInternal_cgSummand`); this file gives
@@ -62,14 +55,6 @@ symmetry that distinguishes them. Its colour counterpart, whose structure this f
 ## Main definitions
 
 * `spinSingletProj`, `spinTripletProj`: the projectors onto the two spin channels of the pair.
-
-## Main results
-
-* `trace_spinSingletProj`, `trace_spinTripletProj`: the traces `1` and `3`.
-* `commute_Jx_tensor_spinHalfRep_spinSingletProj`, `commute_Jx_tensor_spinHalfRep_spinTripletProj`
-  and their `Jy`, `Jz` analogues: both channels are invariant under the total spin.
-* `Jsq_tensor_spinHalfRep_mul_spinSingletProj`, `Jsq_tensor_spinHalfRep_mul_spinTripletProj`:
-  the total spin squared is `0` on the singlet channel and `2` on the triplet channel.
 
 ## Implementation notes
 
@@ -92,12 +77,10 @@ noncomputable section
 
 namespace EpsilonEridani.QFT.Quarkonium
 
-open Matrix TensorProduct PauliMatrix PhyslibAlpha.Sl2
+open TensorProduct
 
 /-- The spin space `ℂ²` of a spin-`1/2` particle. -/
 local notation "ℂ²" => EuclideanSpace ℂ (Fin 2)
-
-/-! ### The two projectors -/
 
 /-- The projector `(1 - P₁₂) / 2` onto the spin-singlet channel of a pair of spin-`1/2`
 particles, where `P₁₂` exchanges the two spins: the antisymmetrizer of `ℂ² ⊗ ℂ²`. -/
@@ -108,91 +91,5 @@ abbrev spinSingletProj : Module.End ℂ (ℂ² ⊗[ℂ] ℂ²) :=
 particles, where `P₁₂` exchanges the two spins: the symmetrizer of `ℂ² ⊗ ℂ²`. -/
 abbrev spinTripletProj : Module.End ℂ (ℂ² ⊗[ℂ] ℂ²) :=
   symmetrizer ℂ ℂ²
-
-/-! ### Traces -/
-
-/-- The singlet projector has trace `1`, which over `ℂ` is the dimension of the singlet channel;
-that rank statement is not formalised here. -/
-@[simp]
-theorem trace_spinSingletProj :
-    LinearMap.trace ℂ (ℂ² ⊗[ℂ] ℂ²) spinSingletProj = 1 := by
-  rw [spinSingletProj, trace_antisymmetrizer, finrank_euclideanSpace_fin, invOf_eq_inv]
-  norm_num
-
-/-- The triplet projector has trace `3`, which over `ℂ` is the dimension of the triplet channel;
-that rank statement is not formalised here. -/
-@[simp]
-theorem trace_spinTripletProj :
-    LinearMap.trace ℂ (ℂ² ⊗[ℂ] ℂ²) spinTripletProj = 3 := by
-  rw [spinTripletProj, trace_symmetrizer, finrank_euclideanSpace_fin, invOf_eq_inv]
-  norm_num
-
-/-! ### Invariance under the total spin -/
-
-/-- The singlet channel is invariant under the `x`-component of the total spin. -/
-theorem commute_Jx_tensor_spinHalfRep_spinSingletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinSingletProj := by
-  rw [AngularMomentumRepresentation.tensor_Jx]
-  exact commute_diagEnd_antisymmetrizer _
-
-/-- The singlet channel is invariant under the `y`-component of the total spin. -/
-theorem commute_Jy_tensor_spinHalfRep_spinSingletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinSingletProj := by
-  rw [AngularMomentumRepresentation.tensor_Jy]
-  exact commute_diagEnd_antisymmetrizer _
-
-/-- The singlet channel is invariant under the `z`-component of the total spin. -/
-theorem commute_Jz_tensor_spinHalfRep_spinSingletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinSingletProj := by
-  rw [AngularMomentumRepresentation.tensor_Jz]
-  exact commute_diagEnd_antisymmetrizer _
-
-/-- The triplet channel is invariant under the `x`-component of the total spin. -/
-theorem commute_Jx_tensor_spinHalfRep_spinTripletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx spinTripletProj := by
-  rw [AngularMomentumRepresentation.tensor_Jx]
-  exact commute_diagEnd_symmetrizer _
-
-/-- The triplet channel is invariant under the `y`-component of the total spin. -/
-theorem commute_Jy_tensor_spinHalfRep_spinTripletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy spinTripletProj := by
-  rw [AngularMomentumRepresentation.tensor_Jy]
-  exact commute_diagEnd_symmetrizer _
-
-/-- The triplet channel is invariant under the `z`-component of the total spin. -/
-theorem commute_Jz_tensor_spinHalfRep_spinTripletProj :
-    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz spinTripletProj := by
-  rw [AngularMomentumRepresentation.tensor_Jz]
-  exact commute_diagEnd_symmetrizer _
-
-/-! ### The total spin squared -/
-
-/-- The total spin squared vanishes on the singlet channel: `S (S + 1) = 0` for `S = 0`. -/
-@[simp]
-theorem Jsq_tensor_spinHalfRep_mul_spinSingletProj :
-    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq * spinSingletProj = 0 := by
-  rw [Jsq_tensor_spinHalfRep, smul_mul_assoc, symmetrizer_mul_antisymmetrizer, smul_zero]
-
-/-- The total spin squared takes the value `2` on the triplet channel: `S (S + 1) = 2` for
-`S = 1`. -/
-@[simp]
-theorem Jsq_tensor_spinHalfRep_mul_spinTripletProj :
-    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq * spinTripletProj =
-      (2 : ℂ) • spinTripletProj := by
-  rw [Jsq_tensor_spinHalfRep, smul_mul_assoc, symmetrizer_mul_self]
-
-/-- The total spin squared vanishes on the singlet channel, multiplying from the right. -/
-@[simp]
-theorem spinSingletProj_mul_Jsq_tensor_spinHalfRep :
-    spinSingletProj * (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq = 0 := by
-  rw [Jsq_tensor_spinHalfRep, mul_smul_comm, antisymmetrizer_mul_symmetrizer, smul_zero]
-
-/-- The total spin squared takes the value `2` on the triplet channel, multiplying from the
-right. -/
-@[simp]
-theorem spinTripletProj_mul_Jsq_tensor_spinHalfRep :
-    spinTripletProj * (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq =
-      (2 : ℂ) • spinTripletProj := by
-  rw [Jsq_tensor_spinHalfRep, mul_smul_comm, symmetrizer_mul_self]
 
 end EpsilonEridani.QFT.Quarkonium

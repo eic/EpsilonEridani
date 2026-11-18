@@ -216,7 +216,7 @@ theorem comm_mul_antisymmetrizer :
 
 /-- The exchange operator acts by `-1` on the antisymmetric part: `A * P = -A`. -/
 @[simp]
-theorem antisymmetrizer_mul_comm :
+theorem antisymmetrizer_mul_comm_eq_neg :
     antisymmetrizer R M * (TensorProduct.comm R M M).toLinearMap = -antisymmetrizer R M := by
   rw [antisymmetrizer_def, smul_mul_assoc, sub_mul, one_mul, comm_mul_comm]
   match_scalars <;> simp
@@ -229,7 +229,7 @@ theorem comm_mul_symmetrizer :
 
 /-- The exchange operator acts by `1` on the symmetric part: `S * P = S`. -/
 @[simp]
-theorem symmetrizer_mul_comm :
+theorem symmetrizer_mul_comm_eq_self :
     symmetrizer R M * (TensorProduct.comm R M M).toLinearMap = symmetrizer R M := by
   rw [symmetrizer_def, smul_mul_assoc, add_mul, one_mul, comm_mul_comm, add_comm]
 

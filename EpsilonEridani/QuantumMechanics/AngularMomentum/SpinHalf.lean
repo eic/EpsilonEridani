@@ -8,6 +8,7 @@ module
 public import PhyslibAlpha.QuantumMechanics.AngularMomentum.SpinOrbit
 public import EpsilonEridani.Relativity.PauliMatrices.BasicExtensions
 public import EpsilonEridani.Mathematics.LinearAlgebra.TensorProduct.Symmetrizer
+public import EpsilonEridani.QuantumMechanics.AngularMomentum.AdditionExtensions
 
 /-!
 # The spin-`1/2` angular momentum representation
@@ -26,10 +27,13 @@ For two spin-`1/2` systems the exchange identity `σ(1) · σ(2) = 2 P₁₂ - 1
 TensorProduct.comm` swaps the two tensor factors, gives the scalar product of their spins:
 `S(1) · S(2) = (2 P₁₂ - 1) / 4`. Their total spin squared is then
 `S² = S(1)² + S(2)² + 2 S(1) · S(2) = 1 + P₁₂`, twice the symmetrizer `TensorProduct.symmetrizer`
-of `ℂ² ⊗ ℂ²`. The total spin acts on a tensor square through the diagonal action
+of `ℂ² ⊗ ℂ²`. The total spin acts on `ℂ² ⊗ ℂ²` through the diagonal action
 `diagEnd X X = X ⊗ 1 + 1 ⊗ X`, which commutes with the symmetrizer and the antisymmetrizer of the
-tensor square of any vector space (`PhyslibAlpha.Sl2.commute_diagEnd_symmetrizer`,
-`PhyslibAlpha.Sl2.commute_diagEnd_antisymmetrizer`).
+tensor square of any module (`TensorProduct.commute_rTensor_add_lTensor_symmetrizer`,
+`TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer`), so the antisymmetric part, the
+spin-singlet channel, and the symmetric part, the spin-triplet channel, are invariant under the
+total spin. On them the total spin squared takes the values `S (S + 1) = 0` and `2`, and the
+traces `1` and `3` of the two projectors are, over `ℂ`, the dimensions of the two channels.
 
 ## Implementation notes
 
@@ -56,6 +60,15 @@ states or rewrites with them must enable it with
 * `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_antisymmetricTensors`,
   `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors`: the total spin squared
   is `0` on an antisymmetric state and `2` on a symmetric state of `ℂ² ⊗ ℂ²`.
+* `PhyslibAlpha.Sl2.trace_antisymmetrizer_euclideanSpace_fin_two`,
+  `PhyslibAlpha.Sl2.trace_symmetrizer_euclideanSpace_fin_two`: the traces `1` and `3` of the two
+  projectors of `ℂ² ⊗ ℂ²`.
+* `PhyslibAlpha.Sl2.commute_Jx_tensor_spinHalfRep_antisymmetrizer`,
+  `PhyslibAlpha.Sl2.commute_Jx_tensor_spinHalfRep_symmetrizer` and their `Jy`, `Jz` analogues:
+  both projectors commute with the total spin.
+* `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_mul_antisymmetrizer`,
+  `PhyslibAlpha.Sl2.Jsq_tensor_spinHalfRep_mul_symmetrizer` and their right-multiplied forms:
+  the total spin squared is `0` on the antisymmetric and `2` on the symmetric part.
 -/
 
 @[expose] public section
@@ -189,5 +202,97 @@ theorem Jsq_tensor_spinHalfRep_apply_of_mem_symmetricTensors
     (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq x = (2 : ℂ) • x := by
   rw [← (symmetrizer_apply_eq_self_iff x).mpr hx, ← Module.End.mul_apply,
     Jsq_tensor_spinHalfRep, smul_mul_assoc, symmetrizer_mul_self, LinearMap.smul_apply]
+
+/-- The antisymmetrizer of `ℂ² ⊗ ℂ²` has trace `1`, which over `ℂ` is the dimension of the
+spin-singlet channel; that rank statement is not formalised here. -/
+@[simp]
+theorem trace_antisymmetrizer_euclideanSpace_fin_two :
+    LinearMap.trace ℂ _ (TensorProduct.antisymmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) = 1 := by
+  rw [trace_antisymmetrizer, finrank_euclideanSpace_fin, invOf_eq_inv]
+  norm_num
+
+/-- The symmetrizer of `ℂ² ⊗ ℂ²` has trace `3`, which over `ℂ` is the dimension of the
+spin-triplet channel; that rank statement is not formalised here. -/
+@[simp]
+theorem trace_symmetrizer_euclideanSpace_fin_two :
+    LinearMap.trace ℂ _ (TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) = 3 := by
+  rw [trace_symmetrizer, finrank_euclideanSpace_fin, invOf_eq_inv]
+  norm_num
+
+/-- The antisymmetric part of `ℂ² ⊗ ℂ²` is invariant under the `x`-component of the total spin. -/
+theorem commute_Jx_tensor_spinHalfRep_antisymmetrizer :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx
+      (TensorProduct.antisymmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) := by
+  rw [AngularMomentumRepresentation.tensor_Jx, diagEnd]
+  exact commute_rTensor_add_lTensor_antisymmetrizer _
+
+/-- The antisymmetric part of `ℂ² ⊗ ℂ²` is invariant under the `y`-component of the total spin. -/
+theorem commute_Jy_tensor_spinHalfRep_antisymmetrizer :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy
+      (TensorProduct.antisymmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) := by
+  rw [AngularMomentumRepresentation.tensor_Jy, diagEnd]
+  exact commute_rTensor_add_lTensor_antisymmetrizer _
+
+/-- The antisymmetric part of `ℂ² ⊗ ℂ²` is invariant under the `z`-component of the total spin. -/
+theorem commute_Jz_tensor_spinHalfRep_antisymmetrizer :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz
+      (TensorProduct.antisymmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) := by
+  rw [AngularMomentumRepresentation.tensor_Jz, diagEnd]
+  exact commute_rTensor_add_lTensor_antisymmetrizer _
+
+/-- The symmetric part of `ℂ² ⊗ ℂ²` is invariant under the `x`-component of the total spin. -/
+theorem commute_Jx_tensor_spinHalfRep_symmetrizer :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jx
+      (TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) := by
+  rw [AngularMomentumRepresentation.tensor_Jx, diagEnd]
+  exact commute_rTensor_add_lTensor_symmetrizer _
+
+/-- The symmetric part of `ℂ² ⊗ ℂ²` is invariant under the `y`-component of the total spin. -/
+theorem commute_Jy_tensor_spinHalfRep_symmetrizer :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jy
+      (TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) := by
+  rw [AngularMomentumRepresentation.tensor_Jy, diagEnd]
+  exact commute_rTensor_add_lTensor_symmetrizer _
+
+/-- The symmetric part of `ℂ² ⊗ ℂ²` is invariant under the `z`-component of the total spin. -/
+theorem commute_Jz_tensor_spinHalfRep_symmetrizer :
+    Commute (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jz
+      (TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) := by
+  rw [AngularMomentumRepresentation.tensor_Jz, diagEnd]
+  exact commute_rTensor_add_lTensor_symmetrizer _
+
+/-- The total spin squared of two spin-`1/2` systems vanishes on the antisymmetric part, the
+singlet channel: `S (S + 1) = 0` for `S = 0`. -/
+@[simp]
+theorem Jsq_tensor_spinHalfRep_mul_antisymmetrizer :
+    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq *
+      TensorProduct.antisymmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) = 0 := by
+  rw [Jsq_tensor_spinHalfRep, smul_mul_assoc, symmetrizer_mul_antisymmetrizer, smul_zero]
+
+/-- The total spin squared of two spin-`1/2` systems takes the value `2` on the symmetric part,
+the triplet channel: `S (S + 1) = 2` for `S = 1`. -/
+@[simp]
+theorem Jsq_tensor_spinHalfRep_mul_symmetrizer :
+    (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq *
+      TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) =
+        (2 : ℂ) • TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) := by
+  rw [Jsq_tensor_spinHalfRep, smul_mul_assoc, symmetrizer_mul_self]
+
+/-- The total spin squared of two spin-`1/2` systems vanishes on the antisymmetric part,
+multiplying from the right. -/
+@[simp]
+theorem antisymmetrizer_mul_Jsq_tensor_spinHalfRep :
+    TensorProduct.antisymmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) *
+      (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq = 0 := by
+  rw [Jsq_tensor_spinHalfRep, mul_smul_comm, antisymmetrizer_mul_symmetrizer, smul_zero]
+
+/-- The total spin squared of two spin-`1/2` systems takes the value `2` on the symmetric part,
+multiplying from the right. -/
+@[simp]
+theorem symmetrizer_mul_Jsq_tensor_spinHalfRep :
+    TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) *
+      (AngularMomentumRepresentation.tensor spinHalfRep spinHalfRep).Jsq =
+        (2 : ℂ) • TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) := by
+  rw [Jsq_tensor_spinHalfRep, mul_smul_comm, symmetrizer_mul_self]
 
 end PhyslibAlpha.Sl2
