@@ -66,7 +66,10 @@ conjugates of the meson's densities; the valence model is
 (`hasValenceNumbers_swapFlavor_speciesSwapFlavor_iff`). An assignment `F` with
 `F (M.swapFlavor e i j) = PDF.speciesSwapFlavor i j (F M)` for every meson `M` is
 `IsSwapFlavorCovariant e i j F`, covariant under the exchange of `i` and `j` at the charges `e`;
-the valence model is (`isSwapFlavorCovariant_valenceModelPdf`).
+the valence model is (`isSwapFlavorCovariant_valenceModelPdf`). For a meson whose exchange of
+`i` and `j` is its charge conjugate, the two covariances together make its densities invariant
+under charge conjugation composed with the exchange
+(`IsSwapFlavorCovariant.eq_chargeConj_speciesSwapFlavor`).
 
 ## Main definitions
 
@@ -490,6 +493,45 @@ theorem IsSwapFlavorCovariant.swapFlavor_apply {e : Flavor → ℝ} {i j : Flavo
 theorem isSwapFlavorCovariant_valenceModelPdf (e : Flavor → ℝ) (i j : Flavor) :
     IsSwapFlavorCovariant e i j (PseudoscalarMeson.valenceModelPdf (Flavor := Flavor)) :=
   fun M => M.swapFlavor_valenceModelPdf e i j
+
+/-- **A meson whose flavour exchange is its charge conjugate.** If exchanging `i` and `j` in `M`
+gives the charge-conjugate meson, as up and down do for the positive pion, then under both
+covariances the densities of `M` are invariant under charge conjugation composed with the exchange
+of `i` and `j`. -/
+theorem IsSwapFlavorCovariant.eq_chargeConj_speciesSwapFlavor {e : Flavor → ℝ} {i j : Flavor}
+    (hC : IsChargeConjCovariant F) (hS : IsSwapFlavorCovariant e i j F)
+    {M : PseudoscalarMeson Flavor} (hM : M.swapFlavor e i j = M.chargeConj) :
+    F M = PDF.chargeConj (PDF.speciesSwapFlavor i j (F M)) := by
+  conv_lhs => rw [← M.chargeConj_chargeConj]
+  rw [isChargeConjCovariant_iff.1 hC, ← hM, (isSwapFlavorCovariant_iff e i j).1 hS]
+
+/-- The species form of `IsSwapFlavorCovariant.eq_chargeConj_speciesSwapFlavor`: the density of
+species `s` is the density of the species obtained from `s` by exchanging `i` and `j` and then
+quark and antiquark. -/
+theorem IsSwapFlavorCovariant.apply_eq_apply_conj_map {e : Flavor → ℝ} {i j : Flavor}
+    (hC : IsChargeConjCovariant F) (hS : IsSwapFlavorCovariant e i j F)
+    {M : PseudoscalarMeson Flavor} (hM : M.swapFlavor e i j = M.chargeConj) (s : Species Flavor)
+    (x Q2 : ℝ) : F M s x Q2 = F M (s.conj.map (Equiv.swap i j)) x Q2 := by
+  conv_lhs => rw [hS.eq_chargeConj_speciesSwapFlavor hC hM]
+  rw [PDF.chargeConj_apply, PDF.speciesSwapFlavor_apply]
+
+/-- Under both covariances, for a meson whose exchange of `i` and `j` is its charge conjugate, the
+quark density of each flavour `k` is the antiquark density of `Equiv.swap i j k`. -/
+theorem IsSwapFlavorCovariant.quark_eq_antiquark_swap {e : Flavor → ℝ} {i j : Flavor}
+    (hC : IsChargeConjCovariant F) (hS : IsSwapFlavorCovariant e i j F)
+    {M : PseudoscalarMeson Flavor} (hM : M.swapFlavor e i j = M.chargeConj) (k : Flavor) :
+    F M (.quark k) = F M (.antiquark (Equiv.swap i j k)) := by
+  funext x Q2
+  rw [hS.apply_eq_apply_conj_map hC hM, Species.conj_quark, Species.map_antiquark]
+
+/-- Under both covariances, for a meson whose exchange of `i` and `j` is its charge conjugate, the
+valence number of each flavour `k` is minus that of `Equiv.swap i j k`, at every scale. -/
+theorem IsSwapFlavorCovariant.pdfValenceNumber_eq_neg_swap {e : Flavor → ℝ} {i j : Flavor}
+    (hC : IsChargeConjCovariant F) (hS : IsSwapFlavorCovariant e i j F)
+    {M : PseudoscalarMeson Flavor} (hM : M.swapFlavor e i j = M.chargeConj) (k : Flavor)
+    (Q2 : ℝ) : PDF.valenceNumber (F M) k Q2 = -PDF.valenceNumber (F M) (Equiv.swap i j k) Q2 := by
+  conv_lhs => rw [hS.eq_chargeConj_speciesSwapFlavor hC hM]
+  rw [PDF.valenceNumber_chargeConj, PDF.valenceNumber_speciesSwapFlavor]
 
 end Covariance
 
