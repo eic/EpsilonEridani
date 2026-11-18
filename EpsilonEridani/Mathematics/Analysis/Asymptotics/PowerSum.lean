@@ -1,0 +1,100 @@
+/-
+Copyright (c) 2026 The EpsilonEridani contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The EpsilonEridani contributors
+-/
+module
+
+public import Mathlib.Analysis.Asymptotics.Lemmas
+public import Mathlib.Analysis.Normed.Module.Basic
+
+/-!
+# Finite power sums that are small at the origin
+
+A finite power sum `∑_{k ≤ n} x ^ k • a k` that is `o(x ^ n)` as `x → 0` has all its coefficients
+equal to zero. This is the uniqueness of a truncated expansion at the origin: two expansions to
+order `n` whose difference is of higher order have the same coefficients.
+
+The statement only asks for smallness along a filter `l` on the punctured neighbourhoods of `0`,
+for instance `𝓝[>] 0` on `ℝ`, so a one-sided expansion already determines its coefficients. The
+uniqueness of power series, `HasFPowerSeriesAt.eq_formalMultilinearSeries`, instead compares two
+expansions that both converge on a whole neighbourhood of the origin.
+
+## Main results
+
+* `Asymptotics.isLittleO_sum_range_pow_smul_pow_iff`: a power sum of degree at most `n` is
+  `o(x ^ n)` along `l` exactly when all its coefficients vanish.
+* `Asymptotics.isBigO_sum_range_pow_smul_pow_succ_iff`: the same with the remainder `O(x ^ (n + 1))`
+  that a truncated expansion carries.
+-/
+
+public section
+
+open Filter Finset Topology
+
+namespace Asymptotics
+
+variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {l : Filter 𝕜} [l.NeBot]
+
+/-- A power sum of degree at most `n` that is `o(x ^ n)` along a filter on the punctured
+neighbourhoods of `0` has vanishing coefficients. -/
+theorem eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl : l ≤ 𝓝[≠] 0) {n : ℕ} {a : ℕ → E}
+    (h : (fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) :
+    ∀ k ≤ n, a k = 0 := by
+  have hl₀ : l ≤ 𝓝 0 := hl.trans nhdsWithin_le_nhds
+  -- the constant term is the limit of the sum at `0`, while the sum tends to `0` along `l`
+  have hconst : ∀ {n : ℕ} {a : ℕ → E},
+      ((fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) → a 0 = 0 := by
+    intro n a h
+    have hc : Continuous fun x : 𝕜 => ∑ k ∈ range (n + 1), x ^ k • a k := by fun_prop
+    have hlim : Tendsto (fun x : 𝕜 => ∑ k ∈ range (n + 1), x ^ k • a k) l (𝓝 (a 0)) := by
+      simpa [sum_range_succ'] using hc.continuousAt.tendsto.mono_left hl₀
+    have hpow : (fun x : 𝕜 => x ^ n) =O[l] fun _ => (1 : 𝕜) :=
+      ((continuous_pow n).continuousAt.tendsto.mono_left hl₀).isBigO_one 𝕜
+    exact tendsto_nhds_unique hlim ((isLittleO_one_iff 𝕜).1 (h.trans_isBigO hpow))
+  induction n generalizing a with
+  | zero =>
+    intro k hk
+    rw [Nat.le_zero.1 hk]
+    exact hconst h
+  | succ m ih =>
+    have ha₀ := hconst h
+    -- divide off the vanishing constant term: the sum is `x` times a power sum of degree `≤ m`
+    have hsplit : ∀ x : 𝕜, ∑ k ∈ range (m + 1 + 1), x ^ k • a k =
+        x • ∑ k ∈ range (m + 1), x ^ k • a (k + 1) := fun x => by
+      rw [sum_range_succ', smul_sum]
+      simp [ha₀, pow_succ', mul_smul]
+    have hx : ∀ᶠ x in l, x ≠ 0 := hl self_mem_nhdsWithin
+    have hdiv : (fun x => ∑ k ∈ range (m + 1), x ^ k • a (k + 1)) =o[l] fun x => x ^ m := by
+      refine ((isBigO_refl (fun x : 𝕜 => x⁻¹) l).smul_isLittleO h).congr' ?_ ?_ <;>
+        filter_upwards [hx] with x hx
+      · rw [hsplit, smul_smul, inv_mul_cancel₀ hx, one_smul]
+      · rw [smul_eq_mul, pow_succ', ← mul_assoc, inv_mul_cancel₀ hx, one_mul]
+    intro k hk
+    rcases k with _ | k
+    · exact ha₀
+    · exact ih hdiv k (Nat.le_of_succ_le_succ hk)
+
+/-- **Uniqueness of a truncated expansion at the origin.** A power sum of degree at most `n` is
+`o(x ^ n)` along a filter on the punctured neighbourhoods of `0` exactly when all its coefficients
+vanish. -/
+theorem isLittleO_sum_range_pow_smul_pow_iff (hl : l ≤ 𝓝[≠] 0) {n : ℕ} {a : ℕ → E} :
+    ((fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) ↔ ∀ k ≤ n, a k = 0 := by
+  refine ⟨eq_zero_of_isLittleO_sum_range_pow_smul_pow hl, fun h => ?_⟩
+  have h₀ : ∀ x : 𝕜, ∑ k ∈ range (n + 1), x ^ k • a k = 0 := fun _ =>
+    sum_eq_zero fun k hk => by rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), smul_zero]
+  simpa only [h₀] using isLittleO_zero (fun x : 𝕜 => x ^ n) l
+
+/-- A power sum of degree at most `n` is `O(x ^ (n + 1))` along a filter on the punctured
+neighbourhoods of `0` exactly when all its coefficients vanish. -/
+theorem isBigO_sum_range_pow_smul_pow_succ_iff (hl : l ≤ 𝓝[≠] 0) {n : ℕ} {a : ℕ → E} :
+    ((fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =O[l] fun x => x ^ (n + 1)) ↔
+      ∀ k ≤ n, a k = 0 := by
+  refine ⟨fun h => (isLittleO_sum_range_pow_smul_pow_iff hl).1 <| h.trans_isLittleO <|
+    (isLittleO_pow_pow n.lt_succ_self).mono (hl.trans nhdsWithin_le_nhds), fun h => ?_⟩
+  have h₀ : ∀ x : 𝕜, ∑ k ∈ range (n + 1), x ^ k • a k = 0 := fun _ =>
+    sum_eq_zero fun k hk => by rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), smul_zero]
+  simpa only [h₀] using isBigO_zero (fun x : 𝕜 => x ^ (n + 1)) l
+
+end Asymptotics
