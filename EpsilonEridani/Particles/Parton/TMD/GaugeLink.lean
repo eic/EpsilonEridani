@@ -45,8 +45,9 @@ to `x + v + w`, and back to `y`. For a light-like direction `n` (`n₋`), a sepa
 run along `n` and the far segment is the transverse displacement `w` at light-cone distance `L`:
 `L > 0` gives the future-pointing staple of semi-inclusive deep-inelastic scattering, cut off at
 light-cone distance `L`, and `L < 0` the past-pointing staple of the Drell-Yan process. The link
-along the far segment is the transverse link, `GaugeLink.transverseLink`. When both legs have
-trivial links, the whole staple link is carried by the transverse link
+along the far segment is the transverse link, `GaugeLink.transverseLink`. The staple traversed
+backwards, from `y` to `x`, gives the inverse link (`pathLink_staplePath_swap_eq_inv`). When both
+legs have trivial links, the whole staple link is carried by the transverse link
 (`pathLink_staplePath_of_legs_eq_one`); in axial gauge for `n` (`IsAxialGauge`), which is
 light-cone gauge for the light-like `n` and where the links along `n` are trivial, this holds for
 every staple of the above shape (`pathLink_staplePath_of_isAxialGauge`). The transverse link
@@ -92,10 +93,11 @@ namespace Particles
 namespace Parton
 namespace TMD
 
-/-- The gauge links of a gauge field along straight segments: `W x y` is the path-ordered
-exponential of the gauge field along the segment from `x` to `y`, valued in the gauge group `G`.
-It is inverted by reversing the segment and is multiplicative under subdivision of the segment,
-which are the properties of a path-ordered exponential along a straight line. -/
+/-- The gauge links of a gauge field along straight segments: a family of elements `W x y` of the
+gauge group `G`, to be read as the path-ordered exponential of a gauge field along the segment from
+`x` to `y`. The gauge field is not part of the data. The two fields, inversion under reversing the
+segment and multiplicativity under subdividing it, are properties every path-ordered exponential
+has along a straight line, not a characterisation of the links that come from a gauge field. -/
 structure GaugeLink (V G : Type*) [AddCommGroup V] [Module ℝ V] [Group G] where
   /-- The link along the segment from `x` to `y`. -/
   toFun : V → V → G
@@ -217,7 +219,8 @@ theorem pathLink_smul (Ω : V → G) (W : GaugeLink V G) (x : V) (l : List V) :
     group
 
 /-- **Independence of the subdivision**: inserting a corner on a segment of a path does not
-change the link along it. In particular repeated corners can be added or removed. -/
+change the link along it. In particular a corner followed by a later corner may be repeated
+(take `m = x`). -/
 theorem pathLink_subdivide_of_mem_segment (W : GaugeLink V G) (l₁ l₂ : List V) {x y m : V}
     (hm : m ∈ segment ℝ x y) :
     W.pathLink (l₁ ++ x :: m :: y :: l₂) = W.pathLink (l₁ ++ x :: y :: l₂) := by
@@ -284,8 +287,8 @@ theorem pathLink_staplePath_smul (Ω : V → G) (W : GaugeLink V G) (v w x y : V
   rw [List.getLast_cons_cons, List.getLast_cons_cons, List.getLast_cons_cons,
     List.getLast_singleton]
 
-/-- The link along the reverse of a staple path, the staple from `y` back to `x`, is the inverse
-of the staple link. -/
+/-- The link along the reverse of a staple path, the staple from `y` back to `x` with leg
+`x + v + w - y` and far segment `-w` (`reverse_staplePath`), is the inverse of the staple link. -/
 theorem pathLink_staplePath_swap_eq_inv (W : GaugeLink V G) (v w x y : V) :
     W.pathLink (staplePath (x + v + w - y) (-w) y x) = (W.pathLink (staplePath v w x y))⁻¹ := by
   rw [← reverse_staplePath, pathLink_reverse]
