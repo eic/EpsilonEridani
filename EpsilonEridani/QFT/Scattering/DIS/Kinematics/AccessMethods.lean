@@ -88,21 +88,21 @@ def q2Electron (d : ElectronMethodData) : ℝ :=
   4 * d.initialEnergy * d.finalEnergy * (Real.sin (d.theta / 2)) ^ 2
 
 lemma q2Electron_def (d : ElectronMethodData) :
-    d.q2Electron = 4 * d.initialEnergy * d.finalEnergy * (Real.sin (d.theta / 2)) ^ 2 := rfl
+    d.q2Electron = 4 * d.initialEnergy * d.finalEnergy * (Real.sin (d.theta / 2)) ^ 2 := (rfl)
 
 /-- Electron method y reconstruction from energy ratio. -/
 def yElectron (d : ElectronMethodData) : ℝ :=
   1 - d.finalEnergy / d.initialEnergy
 
 lemma yElectron_def (d : ElectronMethodData) :
-    d.yElectron = 1 - d.finalEnergy / d.initialEnergy := rfl
+    d.yElectron = 1 - d.finalEnergy / d.initialEnergy := (rfl)
 
 /-- Electron method xBj reconstruction; `M_p` is the target (proton) mass. -/
 def xBjElectron (d : ElectronMethodData) (M_p : ℝ) : ℝ :=
   (q2Electron d) / (2 * M_p * d.initialEnergy * (yElectron d))
 
 lemma xBjElectron_def (d : ElectronMethodData) (M_p : ℝ) :
-    d.xBjElectron M_p = d.q2Electron / (2 * M_p * d.initialEnergy * d.yElectron) := rfl
+    d.xBjElectron M_p = d.q2Electron / (2 * M_p * d.initialEnergy * d.yElectron) := (rfl)
 
 /-- Appropriateness theorem: electron method Q² reconstruction is positive. -/
 lemma q2Electron_pos (d : ElectronMethodData) : 0 < q2Electron d := by

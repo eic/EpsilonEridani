@@ -162,7 +162,7 @@ def trueMomentumTransfer : V := e.pX - e.p
 omit [Module ℝ V] in
 /-- The true momentum transfer is `p_X - p`, the simp normal form in which both the true and the
 reconstructed invariants are stated. -/
-@[simp] theorem trueMomentumTransfer_eq : e.trueMomentumTransfer = e.pX - e.p := (rfl)
+@[simp] theorem trueMomentumTransfer_def : e.trueMomentumTransfer = e.pX - e.p := (rfl)
 
 omit [Module ℝ V] in
 /-- The momentum transferred to the hadrons, `p_X - p`, is what the leptons lose besides the
@@ -189,7 +189,7 @@ def hardKinematics (l : EmissionLine) : DisKinematics V where
   k := e.leptonIn l
   kPrime := e.leptonOut l
   q := e.trueMomentumTransfer
-  hq := by rw [trueMomentumTransfer_eq, leptonIn_sub_leptonOut_eq_pX_sub_p]
+  hq := by rw [trueMomentumTransfer_def, leptonIn_sub_leptonOut_eq_pX_sub_p]
 
 /-- The true invariants of a radiative event whose photon was radiated by the line `l`: the
 invariants of its hard scattering. -/
@@ -209,20 +209,20 @@ theorem trueInvariants_toReconstructedInvariants_eq_xBj_Q2_yInel (g : Bilin V) (
 /-- The true virtuality is `-q²`, for the true momentum transfer `q = p_X - p`. -/
 theorem trueInvariants_Q2_eq_neg_apply_pX_sub_p (g : Bilin V) (l : EmissionLine) :
     (e.trueInvariants g l).Q2 = -g (e.pX - e.p) (e.pX - e.p) := by
-  rw [trueInvariants_Q2, DisKinematics.Q2_def, hardKinematics_q, trueMomentumTransfer_eq]
+  rw [trueInvariants_Q2, DisKinematics.Q2_def, hardKinematics_q, trueMomentumTransfer_def]
 
 /-- The true Bjorken variable is `Q² / (2 p·q)`, for the true momentum transfer `q = p_X - p`. -/
 theorem trueInvariants_x_eq_Q2_div (g : Bilin V) (l : EmissionLine) :
     (e.trueInvariants g l).x = (e.trueInvariants g l).Q2 / (2 * g e.p (e.pX - e.p)) := by
   rw [trueInvariants_x, trueInvariants_Q2, DisKinematics.xBj_def, hardKinematics_p,
-    hardKinematics_q, trueMomentumTransfer_eq]
+    hardKinematics_q, trueMomentumTransfer_def]
 
 /-- The true inelasticity is `p·q / p·k_hard`, for the true momentum transfer `q = p_X - p` and
 the lepton momentum `k_hard` entering the hard scattering. -/
 theorem trueInvariants_y_eq_div_leptonIn (g : Bilin V) (l : EmissionLine) :
     (e.trueInvariants g l).y = g e.p (e.pX - e.p) / g e.p (e.leptonIn l) := by
   rw [trueInvariants_y, DisKinematics.yInel_def, hardKinematics_p, hardKinematics_q,
-    hardKinematics_k, trueMomentumTransfer_eq]
+    hardKinematics_k, trueMomentumTransfer_def]
 
 /-! ### The hadronic method -/
 
@@ -386,7 +386,9 @@ theorem pX_sub_p_of_collinear_initialState (hcol : e.photon = (1 - z) • e.k) :
   rw [← e.leptonIn_sub_leptonOut_eq_pX_sub_p .initialState, leptonIn_of_collinear_initialState hcol,
     leptonOut_initialState]
 
-private theorem apply_pX_sub_p_of_collinear_initialState (hcol : e.photon = (1 - z) • e.k) :
+/-- After initial-state emission of the fraction `1 - z` of the incoming lepton momentum, the
+projection on the target of the momentum transferred to the hadrons is `p·(z k - k')`. -/
+theorem apply_pX_sub_p_of_collinear_initialState (hcol : e.photon = (1 - z) • e.k) :
     g e.p (e.pX - e.p) = z * g e.p e.k - g e.p e.kPrime := by
   rw [pX_sub_p_of_collinear_initialState hcol, map_sub, map_smul, smul_eq_mul]
 
@@ -406,7 +408,7 @@ theorem trueInvariants_Q2_of_collinear_initialState (hcol : e.photon = (1 - z) �
     (e.trueInvariants g .initialState).Q2 = z * (electronMethod g e.k e.p e.kPrime).Q2 +
       (1 - z) * (z * g e.k e.k - g e.kPrime e.kPrime) := by
   rw [trueInvariants_Q2_eq_neg_apply_pX_sub_p, pX_sub_p_of_collinear_initialState hcol,
-    LinearMap.BilinForm.apply_smul_sub_self_eq, electronMethod_Q2]
+    LinearMap.BilinForm.apply_smul_sub_self, electronMethod_Q2]
   ring
 
 /-- After exactly collinear initial-state emission of the fraction `1 - z` of the momentum of a
@@ -575,7 +577,7 @@ theorem electronMethod_Q2_of_collinear_finalState (g : Bilin V)
   rw [electronMethod_Q2, trueInvariants_Q2_eq_neg_apply_pX_sub_p,
     ← e.leptonIn_sub_leptonOut_eq_pX_sub_p .finalState,
     leptonIn_finalState, kPrime_eq_smul_leptonOut_of_collinear_finalState hcol,
-    LinearMap.BilinForm.apply_sub_smul_self_eq]
+    LinearMap.BilinForm.apply_sub_smul_self]
   ring
 
 /-- After exactly collinear final-state emission of the fraction `1 - z ≠ 1` of the outgoing hard

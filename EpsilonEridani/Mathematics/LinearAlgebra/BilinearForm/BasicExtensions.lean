@@ -25,9 +25,9 @@ the virtuality `-(k - k')²` computed from the lepton momenta before the emissio
 
 * `LinearMap.BilinForm.apply_sub_smul_pair`:
   `B (x - a u) (y - b u) = B x y - b B x u - a B u y + a b B u u`.
-* `LinearMap.BilinForm.apply_sub_smul_self_eq`:
+* `LinearMap.BilinForm.apply_sub_smul_self`:
   `B (u - z v) (u - z v) = z B (u - v) (u - v) + (1 - z) (B u u - z B v v)`.
-* `LinearMap.BilinForm.apply_smul_sub_self_eq`:
+* `LinearMap.BilinForm.apply_smul_sub_self`:
   `B (z u - v) (z u - v) = z B (u - v) (u - v) + (1 - z) (B v v - z B u u)`.
 -/
 
@@ -46,7 +46,7 @@ theorem apply_sub_smul_pair (B : BilinForm R M) (u x y : M) (a b : R) :
   ring
 
 /-- The expansion of `B (u - z v) (u - z v)` about `B (u - v) (u - v)`. -/
-theorem apply_sub_smul_self_eq (B : BilinForm R M) (u v : M) (z : R) :
+theorem apply_sub_smul_self (B : BilinForm R M) (u v : M) (z : R) :
     B (u - z • v) (u - z • v) = z * B (u - v) (u - v) + (1 - z) * (B u u - z * B v v) := by
   have h := apply_sub_smul_pair B v u u 1 1
   rw [one_smul] at h
@@ -54,10 +54,10 @@ theorem apply_sub_smul_self_eq (B : BilinForm R M) (u v : M) (z : R) :
   ring
 
 /-- The expansion of `B (z u - v) (z u - v)` about `B (u - v) (u - v)`. -/
-theorem apply_smul_sub_self_eq (B : BilinForm R M) (u v : M) (z : R) :
+theorem apply_smul_sub_self (B : BilinForm R M) (u v : M) (z : R) :
     B (z • u - v) (z • u - v) = z * B (u - v) (u - v) + (1 - z) * (B v v - z * B u u) := by
   rw [← neg_sub v (z • u), ← neg_sub v u]
   simp only [map_neg, LinearMap.neg_apply, neg_neg]
-  exact apply_sub_smul_self_eq B v u z
+  exact apply_sub_smul_self B v u z
 
 end LinearMap.BilinForm
