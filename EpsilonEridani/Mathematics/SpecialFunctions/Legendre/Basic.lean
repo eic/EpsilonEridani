@@ -39,6 +39,8 @@ unique.
   `one_sub_X_sq_mul_derivative_legendre_succ`: the ladder relations for the derivatives;
 * `derivative_one_sub_X_sq_mul_derivative_legendre`: Legendre's differential equation
   `((1 - X²) Pₙ')' = -n (n + 1) Pₙ`;
+* `one_sub_X_sq_mul_derivative_derivative_legendre`: the same equation in expanded form,
+  `(1 - X²) Pₙ'' = 2 X Pₙ' - n (n + 1) Pₙ`;
 * `integral_legendre_mul_legendre`, `setIntegral_Icc_legendre_mul_legendre`: the orthogonality
   relation `∫₋₁¹ Pₘ Pₙ = if m = n then 2 / (2n + 1) else 0`, as an interval integral and as a set
   integral over `Set.Icc (-1) 1`.
@@ -271,6 +273,16 @@ theorem derivative_one_sub_X_sq_mul_derivative_legendre (n : ℕ) :
       derivative_X, zero_mul, zero_add, one_mul]
     push_cast
     linear_combination -(n + 1 : ℝ[X]) * X_mul_derivative_legendre_succ n
+
+/-- **Legendre's differential equation** in expanded form:
+`(1 - X²) Pₙ'' = 2 X Pₙ' - n (n + 1) Pₙ`. -/
+theorem one_sub_X_sq_mul_derivative_derivative_legendre (n : ℕ) :
+    (1 - X ^ 2) * derivative (derivative (legendre n)) =
+      2 * X * derivative (legendre n) - (n : ℝ[X]) * ((n : ℝ[X]) + 1) * legendre n := by
+  have h := derivative_one_sub_X_sq_mul_derivative_legendre n
+  simp only [derivative_mul, derivative_sub, derivative_one, derivative_X_sq, zero_sub,
+    C_ofNat] at h
+  linear_combination h
 
 section Orthogonality
 
