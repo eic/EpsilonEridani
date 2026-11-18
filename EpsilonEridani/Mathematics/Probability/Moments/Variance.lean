@@ -30,7 +30,8 @@ coherent/incoherent decomposition of a configuration-averaged cross section.
 
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq`: `∫ ‖f - ∫ f‖² = ∫ ‖f‖² - ‖∫ f‖²`.
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq_eq_zero_iff`: the mean squared deviation
-  vanishes if and only if `f` is almost everywhere equal to its mean.
+  vanishes if and only if `f` is almost everywhere equal to its mean; this holds in any real
+  normed space.
 -/
 
 public section
@@ -41,13 +42,13 @@ open scoped RealInnerProductSpace
 namespace MeasureTheory.MemLp
 
 variable {α E : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
-  [InnerProductSpace ℝ E] {f : α → E}
+  {f : α → E}
 
 /-- **The variance as second moment minus squared mean.** For a square-integrable function `f`
 with values in a real inner product space and a probability measure `μ`, the mean squared
 deviation of `f` from its mean is `∫ ‖f‖² dμ - ‖∫ f dμ‖²`. -/
-theorem integral_norm_sub_integral_sq [CompleteSpace E] [IsProbabilityMeasure μ]
-    (hf : MemLp f 2 μ) :
+theorem integral_norm_sub_integral_sq [InnerProductSpace ℝ E] [CompleteSpace E]
+    [IsProbabilityMeasure μ] (hf : MemLp f 2 μ) :
     ∫ x, ‖f x - ∫ y, f y ∂μ‖ ^ 2 ∂μ = ∫ x, ‖f x‖ ^ 2 ∂μ - ‖∫ x, f x ∂μ‖ ^ 2 := by
   have hf₁ : Integrable f μ := hf.integrable one_le_two
   have hsq : Integrable (fun x ↦ ‖f x‖ ^ 2) μ :=
@@ -62,9 +63,10 @@ theorem integral_norm_sub_integral_sq [CompleteSpace E] [IsProbabilityMeasure μ
   ring
 
 /-- **Vanishing of the variance.** For a square-integrable function `f` with values in a real
-inner product space and a finite measure `μ`, the mean squared deviation of `f` from its mean
-vanishes if and only if `f` is almost everywhere equal to its mean. -/
-theorem integral_norm_sub_integral_sq_eq_zero_iff [IsFiniteMeasure μ] (hf : MemLp f 2 μ) :
+normed space and a finite measure `μ`, the mean squared deviation of `f` from its mean vanishes
+if and only if `f` is almost everywhere equal to its mean. -/
+theorem integral_norm_sub_integral_sq_eq_zero_iff [NormedSpace ℝ E] [IsFiniteMeasure μ]
+    (hf : MemLp f 2 μ) :
     ∫ x, ‖f x - ∫ y, f y ∂μ‖ ^ 2 ∂μ = 0 ↔ f =ᵐ[μ] fun _ ↦ ∫ y, f y ∂μ := by
   have hint : Integrable (fun x ↦ ‖f x - ∫ y, f y ∂μ‖ ^ 2) μ :=
     (memLp_two_iff_integrable_sq_norm (hf.sub (memLp_const _)).aestronglyMeasurable).1

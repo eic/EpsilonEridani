@@ -31,10 +31,11 @@ Up to the flux and phase-space factor that all three share, the cross sections a
 All three are taken against the *same* measure and the *same* amplitude, so that the
 **Good–Walker identity** holds: for a square-integrable amplitude the incoherent cross section is
 the variance `∫ ‖A - ∫ A dμ‖² dμ` of the amplitude over target configurations
-(`incoherentCrossSection_eq_integral_norm_sub_sq`). It is non-negative, it is half the mean
-squared difference between the amplitudes off two independently drawn configurations
-(`two_mul_incoherentCrossSection_eq_integral_prod`), and it vanishes exactly when the amplitude
-is almost everywhere independent of the configuration (`incoherentCrossSection_eq_zero_iff`).
+(`incoherentCrossSection_eq_integral_norm_sub_integral_sq`). It is non-negative, it is half the
+mean squared difference between the amplitudes off two independently drawn configurations
+(`two_mul_incoherentCrossSection_eq_integral_norm_sub_sq_prod`), and it vanishes exactly when the
+amplitude is almost everywhere independent of the configuration
+(`incoherentCrossSection_eq_zero_iff`).
 Incoherent diffraction therefore measures the fluctuations of the target, and nothing else.
 
 Square-integrability is the only hypothesis: it makes both the mean (`MemLp.integrable`) and the
@@ -53,7 +54,7 @@ for `0 < p < 1` exactly when the two amplitudes agree.
 
 ## Main results
 
-* `incoherentCrossSection_eq_integral_norm_sub_sq`: the Good–Walker identity.
+* `incoherentCrossSection_eq_integral_norm_sub_integral_sq`: the Good–Walker identity.
 * `coherentCrossSection_add_incoherentCrossSection`: coherent plus incoherent is total.
 * `incoherentCrossSection_nonneg`, `coherentCrossSection_le_totalDiffractiveCrossSection`.
 * `incoherentCrossSection_eq_zero_iff`: incoherent diffraction vanishes if and only if the
@@ -150,6 +151,24 @@ theorem incoherentCrossSection_const [CompleteSpace E] [IsProbabilityMeasure μ]
     incoherentCrossSection μ (fun _ ↦ c) = 0 := by
   simp [incoherentCrossSection_def]
 
+/-- The coherent cross section of a square-integrable amplitude is at most the total diffractive
+cross section. -/
+theorem coherentCrossSection_le_totalDiffractiveCrossSection [IsProbabilityMeasure μ]
+    {A : Ω → E} (hA : MemLp A 2 μ) :
+    coherentCrossSection μ A ≤ totalDiffractiveCrossSection μ A := by
+  have h := variance_nonneg (fun ω ↦ ‖A ω‖) μ
+  rw [variance_eq_sub hA.norm, sub_nonneg] at h
+  rw [coherentCrossSection_def, totalDiffractiveCrossSection_def]
+  calc ‖∫ ω, A ω ∂μ‖ ^ 2 ≤ (∫ ω, ‖A ω‖ ∂μ) ^ 2 := by
+        gcongr
+        exact norm_integral_le_integral_norm _
+    _ ≤ ∫ ω, ‖A ω‖ ^ 2 ∂μ := by simpa using h
+
+/-- The incoherent cross section of a square-integrable amplitude is non-negative. -/
+theorem incoherentCrossSection_nonneg [IsProbabilityMeasure μ] {A : Ω → E} (hA : MemLp A 2 μ) :
+    0 ≤ incoherentCrossSection μ A :=
+  sub_nonneg.2 (coherentCrossSection_le_totalDiffractiveCrossSection hA)
+
 end Definitions
 
 section GoodWalker
@@ -158,35 +177,24 @@ variable [InnerProductSpace ℝ E] [CompleteSpace E] [IsProbabilityMeasure μ] {
 
 /-- **The Good–Walker identity.** For a square-integrable amplitude, the incoherent cross section
 is the variance `∫ ‖A - ∫ A dμ‖² dμ` of the amplitude over target configurations. -/
-theorem incoherentCrossSection_eq_integral_norm_sub_sq (hA : MemLp A 2 μ) :
+theorem incoherentCrossSection_eq_integral_norm_sub_integral_sq (hA : MemLp A 2 μ) :
     incoherentCrossSection μ A = ∫ ω, ‖A ω - ∫ ω', A ω' ∂μ‖ ^ 2 ∂μ := by
   rw [hA.integral_norm_sub_integral_sq, incoherentCrossSection_def,
     totalDiffractiveCrossSection_def, coherentCrossSection_def]
 
 /-- Twice the incoherent cross section is the mean squared difference `∫∫ ‖A ω - A ω'‖²` between
 the amplitudes off two independently drawn target configurations. -/
-theorem two_mul_incoherentCrossSection_eq_integral_prod (hA : MemLp A 2 μ) :
+theorem two_mul_incoherentCrossSection_eq_integral_norm_sub_sq_prod (hA : MemLp A 2 μ) :
     2 * incoherentCrossSection μ A = ∫ z, ‖A z.1 - A z.2‖ ^ 2 ∂μ.prod μ := by
   rw [TauCeti.integral_norm_sub_sq_prod hA, probReal_univ, one_mul, incoherentCrossSection_def,
     totalDiffractiveCrossSection_def, coherentCrossSection_def]
-
-/-- The incoherent cross section of a square-integrable amplitude is non-negative. -/
-theorem incoherentCrossSection_nonneg (hA : MemLp A 2 μ) : 0 ≤ incoherentCrossSection μ A := by
-  rw [incoherentCrossSection_eq_integral_norm_sub_sq hA]
-  exact integral_nonneg fun _ ↦ by positivity
-
-/-- The coherent cross section of a square-integrable amplitude is at most the total diffractive
-cross section. -/
-theorem coherentCrossSection_le_totalDiffractiveCrossSection (hA : MemLp A 2 μ) :
-    coherentCrossSection μ A ≤ totalDiffractiveCrossSection μ A := by
-  simpa [incoherentCrossSection_def] using incoherentCrossSection_nonneg hA
 
 /-- **Incoherent diffraction measures fluctuations.** For a square-integrable amplitude, the
 incoherent cross section vanishes if and only if the amplitude is almost everywhere independent of
 the target configuration. -/
 theorem incoherentCrossSection_eq_zero_iff (hA : MemLp A 2 μ) :
     incoherentCrossSection μ A = 0 ↔ ∃ c, A =ᵐ[μ] fun _ ↦ c := by
-  rw [incoherentCrossSection_eq_integral_norm_sub_sq hA,
+  rw [incoherentCrossSection_eq_integral_norm_sub_integral_sq hA,
     hA.integral_norm_sub_integral_sq_eq_zero_iff]
   refine ⟨fun h ↦ ⟨_, h⟩, fun ⟨c, hc⟩ ↦ ?_⟩
   rwa [integral_congr_ae hc, integral_const, probReal_univ, one_smul]
@@ -219,8 +227,8 @@ theorem incoherentCrossSection_bernoulliMeasure [InnerProductSpace ℝ E] [Compl
     incoherentCrossSection Ber(x, y, p) A = p * (1 - p) * ‖A x - A y‖ ^ 2 := by
   rw [incoherentCrossSection_def, totalDiffractiveCrossSection_bernoulliMeasure,
     coherentCrossSection_bernoulliMeasure, norm_add_sq_real, norm_sub_sq_real, norm_smul,
-    norm_smul, real_inner_smul_left, real_inner_smul_right, Real.norm_of_nonneg p.2.1,
-    Real.norm_of_nonneg (sub_nonneg.2 p.2.2)]
+    norm_smul, real_inner_smul_left, real_inner_smul_right, Real.norm_of_nonneg (nonneg p),
+    Real.norm_of_nonneg (one_sub_nonneg p)]
   ring
 
 /-- For a target with two configurations of non-zero probability, incoherent diffraction
