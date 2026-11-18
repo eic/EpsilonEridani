@@ -30,10 +30,10 @@ values in `Real.Angle`, so no branch cut is chosen.
 
 The orientation is a genuine choice. The Trento convention (Bacchetta, D'Alesio, Diehl and
 Miller) measures azimuths in a right-handed frame whose `z`-axis points along the virtual-photon
-three-momentum `q⃗` and whose `x`-axis points along the lepton's transverse momentum. In
+three-momentum `q` and whose `x`-axis points along the lepton's transverse momentum. In
 coordinates
 
-  `cos φ_h = (l_T · P_hT) / (|l_T| |P_hT|)`,  `sin φ_h = (q⃗ × l⃗) · P⃗_h / (|q⃗| |l_T| |P_hT|)`.
+  `cos φ_h = (l_T · P_hT) / (|l_T| |P_hT|)`,  `sin φ_h = (q × l) · P_h / (|q| |l_T| |P_hT|)`.
 
 Rotating counterclockwise about `+z` is the standard orientation of the transverse plane
 (`EuclideanSpace.orientation`). So Trento's orientation is the standard one when the photon moves
@@ -236,8 +236,8 @@ theorem cos_azimuth_trento (l q p : Lorentz.Vector 3) :
   simp [PiLp.inner_apply, Fin.sum_univ_two, mul_comm]
 
 /-- The sine of a Trento azimuth, for a photon momentum `q` along the `z`-axis:
-`|q⃗| |l_T| |p_T| sin φ = (q⃗ × l⃗) · p⃗`, whose right-hand side is `q³ (l¹ p² - l² p¹)` when
-`q⃗ = q³ ẑ`. -/
+`|q| |l_T| |p_T| sin φ = (q × l) · p` for the spatial parts, whose right-hand side is
+`q³ (l¹ p² - l² p¹)` when `q = q³ e_z`. -/
 theorem sin_azimuth_trento (l q p : Lorentz.Vector 3) :
     |q (Sum.inr 2)| * (‖transversePart l‖ * ‖transversePart p‖ *
         Real.Angle.sin ((trento l q).azimuth p)) =
