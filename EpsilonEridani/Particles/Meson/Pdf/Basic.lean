@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Particles.Meson.Basic
 public import EpsilonEridani.Particles.Parton.PDF.ChargeConjugation
+public import EpsilonEridani.Particles.Parton.PDF.Isospin
 public import EpsilonEridani.Particles.Parton.PDF.Model
 
 /-!
@@ -59,7 +60,11 @@ meson conjugates the model (`chargeConj_valenceModelPdf`).
 An assignment `F` of a density to each meson is charge-conjugation covariant,
 `IsChargeConjCovariant F`, when the densities of the charge-conjugate meson are the charge
 conjugates of the meson's densities; the valence model is
-(`isChargeConjCovariant_valenceModelPdf`).
+(`isChargeConjCovariant_valenceModelPdf`). Exchanging two flavours `i`, `j` of the meson
+(`PseudoscalarMeson.swapFlavor`) likewise exchanges them over the species in its valence model
+(`swapFlavor_valenceModelPdf`), and the two exchanges together preserve the valence assignment
+(`hasValenceNumbers_swapFlavor_speciesSwapFlavor_iff`); an assignment with this property is
+`IsSwapFlavorCovariant`.
 
 ## Main definitions
 
@@ -69,8 +74,8 @@ conjugates of the meson's densities; the valence model is
   valence model gives each parton species, and the valence model density of a meson.
 * `PseudoscalarMeson.sumRuleAssumptionsValenceModelPdf`: the sum-rule bundle
   `PDF.SumRuleAssumptions` of the valence model.
-* `IsChargeConjCovariant`: charge-conjugation covariance of an assignment of densities to
-  mesons.
+* `IsChargeConjCovariant`, `IsSwapFlavorCovariant`: covariance of an assignment of densities to
+  mesons under charge conjugation and under the exchange of two flavours.
 
 ## Main results
 
@@ -170,6 +175,18 @@ theorem hasValenceNumbers_chargeConj_iff (M : PseudoscalarMeson Flavor)
     M.chargeConj.HasValenceNumbers (PDF.chargeConj f) ↔ M.HasValenceNumbers f := by
   simp only [hasValenceNumbers_iff, PDF.valenceNumber_chargeConj, chargeConj_valenceNumber,
     Pi.neg_apply, Int.cast_neg, neg_inj]
+
+/-- **Exchanging two flavours.** Exchanging the flavours `i` and `j` in both the meson and the
+density preserves the valence assignment: the exchanged density has the valence numbers of the
+exchanged meson exactly when the density has those of the meson. -/
+@[simp]
+theorem hasValenceNumbers_swapFlavor_speciesSwapFlavor_iff (M : PseudoscalarMeson Flavor)
+    (e : Flavor → ℝ) (i j : Flavor) (f : PDF.Pdf (Species Flavor)) :
+    (M.swapFlavor e i j).HasValenceNumbers (PDF.speciesSwapFlavor i j f)
+      ↔ M.HasValenceNumbers f := by
+  simp only [hasValenceNumbers_iff, PDF.valenceNumber_speciesSwapFlavor,
+    swapFlavor_valenceNumber, Function.comp_apply]
+  exact ⟨fun h k Q2 => by simpa using h (Equiv.swap i j k) Q2, fun h k Q2 => h _ Q2⟩
 
 /-- **The charge-weighted valence integrals.** The valence numbers of any density carrying the
 meson's net valence numbers at the scale `Q2`, weighted by arbitrary flavour charges, sum there to
@@ -336,11 +353,6 @@ momentum each. -/
 def valenceModelPdf (M : PseudoscalarMeson Flavor) : PDF.Pdf (Species Flavor) :=
   PDF.weight M.valenceModelWeight (PDF.modelPdf (Species Flavor) 0 1)
 
-/-- The valence model as the rescaling of the shape `1 - x` by the valence-model weight. -/
-theorem valenceModelPdf_eq_weight :
-    M.valenceModelPdf = PDF.weight M.valenceModelWeight (PDF.modelPdf (Species Flavor) 0 1) :=
-  (rfl)
-
 @[simp]
 theorem valenceModelPdf_apply (s : Species Flavor) (x Q2 : ℝ) :
     M.valenceModelPdf s x Q2 = M.valenceModelWeight s * PDF.modelPdf (Species Flavor) 0 1 s x Q2 :=
@@ -360,6 +372,25 @@ theorem chargeConj_valenceModelPdf :
     M.chargeConj.valenceModelPdf = PDF.chargeConj M.valenceModelPdf := by
   rw [valenceModelPdf, valenceModelPdf, PDF.chargeConj_weight, PDF.chargeConj_eq_comap,
     PDF.comap_modelPdf, chargeConj_valenceModelWeight]
+
+/-- The weight of the meson with two flavours exchanged is the weight of the meson at the species
+with those flavours exchanged. -/
+@[simp]
+theorem swapFlavor_valenceModelWeight (e : Flavor → ℝ) (i j : Flavor) :
+    (M.swapFlavor e i j).valenceModelWeight
+      = M.valenceModelWeight ∘ Species.map (Equiv.swap i j) := by
+  funext s
+  cases s <;> simp [Equiv.swap_apply_eq_iff]
+
+/-- **The valence model of the meson with two flavours exchanged is the valence model with those
+flavours exchanged over the species**: the shape is flavour-independent and the weight relabels by
+`swapFlavor_valenceModelWeight`. At the light-quark charges and up, down this is the isospin
+covariance of the valence model, whatever the quark masses. -/
+@[simp]
+theorem swapFlavor_valenceModelPdf (e : Flavor → ℝ) (i j : Flavor) :
+    (M.swapFlavor e i j).valenceModelPdf = PDF.speciesSwapFlavor i j M.valenceModelPdf := by
+  rw [valenceModelPdf, valenceModelPdf, PDF.speciesSwapFlavor_weight,
+    PDF.speciesSwapFlavor_eq_comap, PDF.comap_modelPdf, swapFlavor_valenceModelWeight]
 
 /-- The Mellin moments of the valence model: the species weight times the moment
 `1 / ((n + 1) (n + 2))` of the shape `1 - x`. -/
@@ -403,9 +434,9 @@ theorem sumRuleAssumptionsValenceModelPdf_valenceTarget [Fintype Flavor] (s : Sp
 
 end PseudoscalarMeson
 
-/-! ### Charge-conjugation covariance of a density assignment -/
+/-! ### Covariance of a density assignment -/
 
-section ChargeConjCovariance
+section Covariance
 
 variable {Flavor : Type} {F : PseudoscalarMeson Flavor → PDF.Pdf (Species Flavor)}
 
@@ -432,7 +463,33 @@ theorem isChargeConjCovariant_valenceModelPdf [DecidableEq Flavor] :
     IsChargeConjCovariant (PseudoscalarMeson.valenceModelPdf (Flavor := Flavor)) :=
   PseudoscalarMeson.chargeConj_valenceModelPdf
 
-end ChargeConjCovariance
+variable [DecidableEq Flavor]
+
+/-- **Covariance under the exchange of the flavours `i` and `j`** of an assignment `F` of parton
+densities to mesons: the densities of the meson with `i` and `j` exchanged (its charge shifted by
+the charges `e`) are the meson's densities with `i` and `j` exchanged over the species. At the
+light-quark charges and up, down it is isospin covariance. -/
+def IsSwapFlavorCovariant (e : Flavor → ℝ) (i j : Flavor)
+    (F : PseudoscalarMeson Flavor → PDF.Pdf (Species Flavor)) : Prop :=
+  ∀ M, F (M.swapFlavor e i j) = PDF.speciesSwapFlavor i j (F M)
+
+theorem isSwapFlavorCovariant_iff (e : Flavor → ℝ) (i j : Flavor) :
+    IsSwapFlavorCovariant e i j F ↔ ∀ M, F (M.swapFlavor e i j) = PDF.speciesSwapFlavor i j (F M) :=
+  Iff.rfl
+
+/-- Under covariance under the exchange of `i` and `j`, the density of species `s` in the meson
+with `i` and `j` exchanged is the density in the meson of the species with them exchanged. -/
+theorem IsSwapFlavorCovariant.swapFlavor_apply {e : Flavor → ℝ} {i j : Flavor}
+    (hF : IsSwapFlavorCovariant e i j F) (M : PseudoscalarMeson Flavor) (s : Species Flavor)
+    (x Q2 : ℝ) : F (M.swapFlavor e i j) s x Q2 = F M (s.map (Equiv.swap i j)) x Q2 := by
+  rw [hF M, PDF.speciesSwapFlavor_apply]
+
+/-- The valence model is covariant under the exchange of any two flavours. -/
+theorem isSwapFlavorCovariant_valenceModelPdf (e : Flavor → ℝ) (i j : Flavor) :
+    IsSwapFlavorCovariant e i j (PseudoscalarMeson.valenceModelPdf (Flavor := Flavor)) :=
+  fun M => M.swapFlavor_valenceModelPdf e i j
+
+end Covariance
 
 /-! ### The charged pion and the charged kaon -/
 
