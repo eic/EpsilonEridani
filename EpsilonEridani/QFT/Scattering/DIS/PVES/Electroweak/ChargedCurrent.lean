@@ -160,7 +160,7 @@ theorem chargedCurrent_rightChiralProjector_up (V : Matrix ι κ ℂ) (u : ι �
 
 /-- The Hermitian conjugate of the charged current, to which the `W⁻` boson couples, is the
 charged current of the down-type into the up-type spinors with mixing matrix `Vᴴ`:
-`(J^μ)* = Σᵢⱼ d̄_j γ^μ P_L V*_ij u_i`. -/
+`(J^μ)* = Σᵢⱼ \bar{d}_j γ^μ P_L V*_ij u_i`. -/
 theorem star_chargedCurrent (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ)
     (μ : Fin 4) :
     star (chargedCurrent V u d μ) = chargedCurrent Vᴴ d u μ := by

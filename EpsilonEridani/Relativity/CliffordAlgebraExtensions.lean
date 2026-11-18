@@ -21,7 +21,7 @@ This file extends `Physlib.Relativity.CliffordAlgebra` with the lowered gamma ma
 the Clifford anticommutator identity, the Dirac slash operators `/a = a_μ γ^μ`, a
 collection of gamma-matrix trace identities used in tree-level QED/QCD amplitude
 computations, the chiral projectors in the Dirac representation, and the Dirac adjoint
-`Γ̄ = γ⁰ Γ† γ⁰` with the Dirac bilinears `ψ̄ Γ χ` that tree-level currents are built from.
+`\bar{Γ} = γ⁰ Γ† γ⁰` with the Dirac bilinears `\bar{ψ} Γ χ` that tree-level currents are built from.
 
 ## Main definitions
 
@@ -31,8 +31,8 @@ computations, the chiral projectors in the Dirac representation, and the Dirac a
 - `spaceTime.leftChiralProjector`, `spaceTime.rightChiralProjector`: the chiral projectors
   `(1 ∓ γ⁵) / 2` in the Dirac representation, the images of Physlib's
   `Fermion.Dirac.leftChiralProjector` and `Fermion.Dirac.rightChiralProjector`.
-- `spaceTime.diracAdjoint`: the Dirac adjoint `Γ̄ = γ⁰ Γ† γ⁰` of a `4 × 4` matrix.
-- `spaceTime.diracBilinear`: the Dirac bilinear `ψ̄ Γ χ = ψ† γ⁰ Γ χ`.
+- `spaceTime.diracAdjoint`: the Dirac adjoint `\bar{Γ} = γ⁰ Γ† γ⁰` of a `4 × 4` matrix.
+- `spaceTime.diracBilinear`: the Dirac bilinear `\bar{ψ} Γ χ = ψ† γ⁰ Γ χ`.
 
 ## Main results
 
@@ -46,11 +46,11 @@ computations, the chiral projectors in the Dirac representation, and the Dirac a
   four-slash trace identity in terms of the Levi-Civita symbol.
 - `spaceTime.γ5_mul_γ`, `spaceTime.γ_mul_leftChiralProjector`: `γ⁵` anticommutes with
   each `γ^μ`, so moving `γ^μ` across a chiral projector flips its chirality.
-- `spaceTime.star_diracBilinear`: `(ψ̄ Γ χ)* = χ̄ Γ̄ ψ`.
+- `spaceTime.star_diracBilinear`: `(\bar{ψ} Γ χ)* = \bar{χ} \bar{Γ} ψ`.
 - `spaceTime.diracBilinear_mulVec_left`, `spaceTime.diracBilinear_mulVec_right`: a matrix
   acting on either spinor moves into the bilinear, through its Dirac adjoint on the left.
 - `spaceTime.diracAdjoint_γ`, `spaceTime.diracAdjoint_leftChiralProjector`,
-  `spaceTime.diracAdjoint_γ_mul_leftChiralProjector`: `γ̄^μ = γ^μ`, the Dirac adjoint
+  `spaceTime.diracAdjoint_γ_mul_leftChiralProjector`: `\bar{γ}^μ = γ^μ`, the Dirac adjoint
   exchanges the chiral projectors, and the `V - A` vertex `γ^μ P_L` is its own Dirac adjoint.
 
 ## Implementation notes
@@ -690,8 +690,8 @@ lemma γ_mul_rightChiralProjector (μ : Fin 4) :
 
 /-! ### The Dirac adjoint and Dirac bilinears -/
 
-/-- The Dirac adjoint `Γ̄ = γ⁰ Γ† γ⁰` of a `4 × 4` matrix, characterised by
-`(ψ̄ Γ χ)* = χ̄ Γ̄ ψ` (`star_diracBilinear`). -/
+/-- The Dirac adjoint `\bar{Γ} = γ⁰ Γ† γ⁰` of a `4 × 4` matrix, characterised by
+`(\bar{ψ} Γ χ)* = \bar{χ} \bar{Γ} ψ` (`star_diracBilinear`). -/
 def diracAdjoint (Γ : Matrix (Fin 4) (Fin 4) ℂ) : Matrix (Fin 4) (Fin 4) ℂ := γ0 * Γᴴ * γ0
 
 /-- Unfolding lemma for `diracAdjoint`. -/
@@ -766,7 +766,7 @@ lemma diracAdjoint_rightChiralProjector :
     diracAdjoint rightChiralProjector = leftChiralProjector := by
   rw [← diracAdjoint_leftChiralProjector, diracAdjoint_diracAdjoint]
 
-/-- The Dirac bilinear `ψ̄ Γ χ = ψ† γ⁰ Γ χ` of two Dirac-representation spinors and a `4 × 4`
+/-- The Dirac bilinear `\bar{ψ} Γ χ = ψ† γ⁰ Γ χ` of two Dirac-representation spinors and a `4 × 4`
 matrix `Γ`. It is conjugate-linear in `ψ` and linear in `χ`. -/
 def diracBilinear (ψ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) (χ : Fin 4 → ℂ) : ℂ :=
   star ψ ⬝ᵥ (γ0 * Γ) *ᵥ χ
@@ -775,7 +775,7 @@ def diracBilinear (ψ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) (χ : F
 lemma diracBilinear_def (ψ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) (χ : Fin 4 → ℂ) :
     diracBilinear ψ Γ χ = star ψ ⬝ᵥ (γ0 * Γ) *ᵥ χ := rfl
 
-/-- Complex conjugation of a Dirac bilinear: `(ψ̄ Γ χ)* = χ̄ Γ̄ ψ`. -/
+/-- Complex conjugation of a Dirac bilinear: `(\bar{ψ} Γ χ)* = \bar{χ} \bar{Γ} ψ`. -/
 lemma star_diracBilinear (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
     star (diracBilinear ψ Γ χ) = diracBilinear χ (diracAdjoint Γ) ψ := by
   have hM : γ0 * diracAdjoint Γ = (γ0 * Γ)ᴴ := by
@@ -784,13 +784,14 @@ lemma star_diracBilinear (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) �
   rw [diracBilinear, diracBilinear, hM, ← star_dotProduct_star, star_mulVec, star_star,
     dotProduct_mulVec]
 
-/-- A matrix acting on the right spinor moves into the bilinear: `ψ̄ Γ (M χ) = ψ̄ (Γ M) χ`. -/
+/-- A matrix acting on the right spinor moves into the bilinear:
+`\bar{ψ} Γ (M χ) = \bar{ψ} (Γ M) χ`. -/
 lemma diracBilinear_mulVec_right (ψ χ : Fin 4 → ℂ) (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
     diracBilinear ψ Γ (M *ᵥ χ) = diracBilinear ψ (Γ * M) χ := by
   rw [diracBilinear, diracBilinear, mulVec_mulVec, mul_assoc]
 
 /-- A matrix acting on the left spinor moves into the bilinear through its Dirac adjoint:
-`(M ψ)‾ Γ χ = ψ̄ (M̄ Γ) χ`. -/
+`\overline{M ψ} Γ χ = \bar{ψ} (\bar{M} Γ) χ`. -/
 lemma diracBilinear_mulVec_left (ψ χ : Fin 4 → ℂ) (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
     diracBilinear (M *ᵥ ψ) Γ χ = diracBilinear ψ (diracAdjoint M * Γ) χ := by
   have hM : γ0 * (diracAdjoint M * Γ) = Mᴴ * (γ0 * Γ) := by
