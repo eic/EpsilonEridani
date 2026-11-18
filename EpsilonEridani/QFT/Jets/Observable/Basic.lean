@@ -411,6 +411,14 @@ theorem isIRCSafe_multisetSum [TopologicalSpace V] [ContinuousAdd V] :
     IsIRCSafe (Multiset.sum : Multiset V → V) :=
   ⟨isCollinearSafe_multisetSum, isInfraredSafe_multisetSum⟩
 
+/-- The sum `∑ E p` over the particles of a final state of a continuous linear function `E` of
+the momenta, such as the total energy, is infrared and collinear safe: it is `E` of the total
+momentum. -/
+theorem isIRCSafe_sum_map [TopologicalSpace V] [ContinuousAdd V] [AddCommGroup X] [Module ℝ X]
+    [TopologicalSpace X] (E : V →L[ℝ] X) : IsIRCSafe fun s : Multiset V => (s.map E).sum := by
+  simp_rw [← map_multiset_sum]
+  exact isIRCSafe_multisetSum.map (f := E) E.continuous
+
 /-- The invariant mass squared is infrared and collinear safe for any jointly continuous bilinear
 form `g`. -/
 theorem isIRCSafe_invariantMassSq [TopologicalSpace V] [ContinuousAdd V]
