@@ -33,7 +33,8 @@ over `d` and `s`.
 
 Summing over the final-state flavour collapses the weights to the row sums `Σⱼ ‖V i j‖²` on the
 quark side and the column sums `Σᵢ ‖V i j‖²` on the antiquark side (`f2CCMinusLO_eq_sum_add_sum`).
-When every row and every column of `V` has unit norm, as for a unitary mixing matrix, the mixing
+These weighted forms hold for every `V`, rectangular or not. When every row and every column of
+`V` has unit norm, as for a unitary mixing matrix (which forces `V` to be square), the mixing
 drops out of every inclusive structure function and the flavour-diagonal formulas hold:
 `F₂^{W⁻} = 2 x (Σᵢ u_i + Σⱼ dbar_j)` (`f2CCMinusLO_eq_of_sum_norm_sq_eq_one`), which for the
 four light flavours is the familiar `F₂^{e⁻p} = 2 x (u + c + dbar + sbar)`. No mixing,
@@ -49,7 +50,9 @@ The quark-parton model makes the following consequences exact at leading order.
 * *Positivity.* For `0 ≤ x` and non-negative quark and antiquark densities in the active
   channels, `F₂ ≥ 0` and `|x F₃| ≤ F₂`
   (`abs_xf3CCMinusLO_le_f2CCMinusLO`, `abs_xf3CCPlusLO_le_f2CCPlusLO`).
-* *The sum-rule integrands.* With unit-norm rows and columns,
+* *The sum-rule integrands.* `F₂^{W⁻} - F₂^{W⁺}` and `x F₃^{W⁻} + x F₃^{W⁺}` are combinations of
+  valence densities, weighted by the squared norms of the rows and columns of `V`
+  (`f2CCMinusLO_sub_f2CCPlusLO`, `xf3CCMinusLO_add_xf3CCPlusLO`). With unit-norm rows and columns,
   `F₂^{W⁻} - F₂^{W⁺} = 2 x (Σᵢ (u_i - ubar_i) - Σⱼ (d_j - dbar_j))`, the integrand of the Adler
   sum rule (`f2CCMinusLO_sub_f2CCPlusLO_eq_of_sum_norm_sq_eq_one`), and
   `x F₃^{W⁻} + x F₃^{W⁺} = 2 x (Σᵢ (u_i - ubar_i) + Σⱼ (d_j - dbar_j))`, a sum of valence
@@ -365,7 +368,32 @@ theorem f2CCPlusLO_nonneg (hx : 0 ≤ x) (hq : ∀ j, 0 ≤ f (quark (down j)) x
 ## The sum-rule integrands
 -/
 
-variable {V} (f x Q2)
+variable (f x Q2)
+
+/-- **The Adler integrand for an arbitrary mixing matrix.**
+`F₂^{W⁻} - F₂^{W⁺} = 2 x (Σᵢ (Σⱼ ‖V i j‖²) (u_i - ubar_i) - Σⱼ (Σᵢ ‖V i j‖²) (d_j - dbar_j))`:
+each up-type valence density is weighted by the squared norm of its row of `V`, and each
+down-type one by the squared norm of its column. -/
+theorem f2CCMinusLO_sub_f2CCPlusLO :
+    f2CCMinusLO V up down f x Q2 - f2CCPlusLO V up down f x Q2 =
+      2 * x * (∑ i, (∑ j, ‖V i j‖ ^ 2) * (f (quark (up i)) x Q2 - f (antiquark (up i)) x Q2) -
+        ∑ j, (∑ i, ‖V i j‖ ^ 2) * (f (quark (down j)) x Q2 - f (antiquark (down j)) x Q2)) := by
+  simp only [f2CCMinusLO_eq_sum_add_sum, f2CCPlusLO_eq_sum_add_sum, mul_sub,
+    Finset.sum_sub_distrib]
+  ring
+
+/-- **The valence sum `x F₃^{W⁻} + x F₃^{W⁺}` for an arbitrary mixing matrix.**
+`x F₃^{W⁻} + x F₃^{W⁺} = 2 x (Σᵢ (Σⱼ ‖V i j‖²) (u_i - ubar_i) + Σⱼ (Σᵢ ‖V i j‖²) (d_j - dbar_j))`,
+with the same row and column weights as in `f2CCMinusLO_sub_f2CCPlusLO`. -/
+theorem xf3CCMinusLO_add_xf3CCPlusLO :
+    xf3CCMinusLO V up down f x Q2 + xf3CCPlusLO V up down f x Q2 =
+      2 * x * (∑ i, (∑ j, ‖V i j‖ ^ 2) * (f (quark (up i)) x Q2 - f (antiquark (up i)) x Q2) +
+        ∑ j, (∑ i, ‖V i j‖ ^ 2) * (f (quark (down j)) x Q2 - f (antiquark (down j)) x Q2)) := by
+  simp only [xf3CCMinusLO_eq_sum_sub_sum, xf3CCPlusLO_eq_sum_sub_sum, mul_sub,
+    Finset.sum_sub_distrib]
+  ring
+
+variable {V}
 
 /-- **The Adler integrand.** With unit-norm rows and columns of the mixing matrix,
 `F₂^{W⁻} - F₂^{W⁺} = 2 x (Σᵢ (u_i - ubar_i) - Σⱼ (d_j - dbar_j))`: a difference of valence
@@ -376,10 +404,7 @@ theorem f2CCMinusLO_sub_f2CCPlusLO_eq_of_sum_norm_sq_eq_one (hrow : ∀ i, ∑ j
     f2CCMinusLO V up down f x Q2 - f2CCPlusLO V up down f x Q2 =
       2 * x * (∑ i, (f (quark (up i)) x Q2 - f (antiquark (up i)) x Q2) -
         ∑ j, (f (quark (down j)) x Q2 - f (antiquark (down j)) x Q2)) := by
-  rw [f2CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 hrow hcol,
-    f2CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 hrow hcol, Finset.sum_sub_distrib,
-    Finset.sum_sub_distrib]
-  ring
+  simp [f2CCMinusLO_sub_f2CCPlusLO, hrow, hcol]
 
 /-- **The valence sum `x F₃^{W⁻} + x F₃^{W⁺}`.** With unit-norm rows and columns of the mixing
 matrix, `x F₃^{W⁻} + x F₃^{W⁺} = 2 x (Σᵢ (u_i - ubar_i) + Σⱼ (d_j - dbar_j))`, the sum of the
@@ -390,10 +415,7 @@ theorem xf3CCMinusLO_add_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one (hrow : ∀ i, ∑
     xf3CCMinusLO V up down f x Q2 + xf3CCPlusLO V up down f x Q2 =
       2 * x * (∑ i, (f (quark (up i)) x Q2 - f (antiquark (up i)) x Q2) +
         ∑ j, (f (quark (down j)) x Q2 - f (antiquark (down j)) x Q2)) := by
-  rw [xf3CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 hrow hcol,
-    xf3CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 hrow hcol, Finset.sum_sub_distrib,
-    Finset.sum_sub_distrib]
-  ring
+  simp [xf3CCMinusLO_add_xf3CCPlusLO, hrow, hcol]
 
 /-!
 ## The flavour-blind limit
