@@ -29,7 +29,7 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
 abbrev Bilin (V : Type) [AddCommGroup V] [Module ℝ V] := LinearMap.BilinForm ℝ V
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
-structure DisKinematics where
+@[ext] structure DisKinematics where
   /-- Incoming hadron momentum. -/
   p : V
   /-- Outgoing hadron momentum in exclusive/semi-inclusive projections.

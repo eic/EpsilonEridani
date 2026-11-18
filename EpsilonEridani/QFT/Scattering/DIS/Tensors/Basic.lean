@@ -177,7 +177,7 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
     IsIsometry g (reflect g u) := by
   intro v w
   have hc : (g u u)⁻¹ * g u u = 1 := inv_mul_cancel₀ hu
-  rw [reflect_apply, reflect_apply, LinearMap.BilinForm.apply_sub_smul_pair, hSymm.eq v u]
+  rw [reflect_apply, reflect_apply, LinearMap.BilinForm.apply_sub_smul_sub_smul, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
 end Bilin

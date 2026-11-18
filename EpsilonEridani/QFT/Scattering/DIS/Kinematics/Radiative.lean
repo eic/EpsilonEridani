@@ -212,7 +212,7 @@ theorem trueInvariants_Q2_eq_neg_apply_pX_sub_p (g : Bilin V) (l : EmissionLine)
   rw [trueInvariants_Q2, DisKinematics.Q2_def, hardKinematics_q, trueMomentumTransfer_def]
 
 /-- The true Bjorken variable is `Q² / (2 p·q)`, for the true momentum transfer `q = p_X - p`. -/
-theorem trueInvariants_x_eq_Q2_div (g : Bilin V) (l : EmissionLine) :
+theorem trueInvariants_x_eq_Q2_div_two_mul_apply_pX_sub_p (g : Bilin V) (l : EmissionLine) :
     (e.trueInvariants g l).x = (e.trueInvariants g l).Q2 / (2 * g e.p (e.pX - e.p)) := by
   rw [trueInvariants_x, trueInvariants_Q2, DisKinematics.xBj_def, hardKinematics_p,
     hardKinematics_q, trueMomentumTransfer_def]
@@ -239,7 +239,8 @@ theorem hadronicMethod_Q2_eq_trueInvariants_Q2 (l : EmissionLine) :
 /-- The hadronic method reconstructs the true Bjorken variable whichever line radiates. -/
 theorem hadronicMethod_x_eq_trueInvariants_x (l : EmissionLine) :
     (hadronicMethod g e.k e.p e.pX).x = (e.trueInvariants g l).x := by
-  rw [hadronicMethod_x, trueInvariants_x_eq_Q2_div, trueInvariants_Q2_eq_neg_apply_pX_sub_p]
+  rw [hadronicMethod_x, trueInvariants_x_eq_Q2_div_two_mul_apply_pX_sub_p,
+    trueInvariants_Q2_eq_neg_apply_pX_sub_p]
 
 /-- The `(x, Q²)` shift of the hadronic method vanishes whichever line radiates. -/
 theorem shiftXQ2_hadronicMethod_eq_zero (l : EmissionLine) :
@@ -308,8 +309,7 @@ omit [Module ℝ V] in
 /-- Without a photon, the hard scattering does not depend on the emission line. -/
 theorem hardKinematics_eq_of_photon_eq_zero (h : e.photon = 0) :
     e.hardKinematics l = e.hardKinematics .finalState := by
-  simp only [hardKinematics, leptonIn_of_photon_eq_zero l h, leptonOut_of_photon_eq_zero l h,
-    leptonIn_of_photon_eq_zero .finalState h, leptonOut_of_photon_eq_zero .finalState h]
+  ext <;> simp [leptonIn_of_photon_eq_zero, leptonOut_of_photon_eq_zero, h]
 
 /-- Without a photon, the true invariants do not depend on the emission line. -/
 theorem trueInvariants_eq_of_photon_eq_zero (h : e.photon = 0) :
@@ -346,8 +346,8 @@ theorem sigmaMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0)
     exact sigmaMethod_y_eq_trueInvariants_y_initialState g
   ext
   · rw [sigmaMethod_x_eq_Q2_div, sigmaMethod_Q2, hy, hQ, TrueInvariants.toReconstructedInvariants_x,
-      trueInvariants_x_eq_Q2_div, trueInvariants_y_eq_div_leptonIn, leptonIn_of_photon_eq_zero l h,
-      mul_assoc,
+      trueInvariants_x_eq_Q2_div_two_mul_apply_pX_sub_p, trueInvariants_y_eq_div_leptonIn,
+      leptonIn_of_photon_eq_zero l h, mul_assoc,
       mul_div_cancel₀ _ hpk]
   · rw [sigmaMethod_Q2, hQ, TrueInvariants.toReconstructedInvariants_Q2]
   · rw [hy, TrueInvariants.toReconstructedInvariants_y]
@@ -361,7 +361,7 @@ theorem mixedMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
       TrueInvariants.toReconstructedInvariants_y]
   ext
   · rw [mixedMethod_x, hQ, TrueInvariants.toReconstructedInvariants_x,
-      trueInvariants_x_eq_Q2_div]
+      trueInvariants_x_eq_Q2_div_two_mul_apply_pX_sub_p]
   · rw [mixedMethod_Q2, hQ, TrueInvariants.toReconstructedInvariants_Q2]
   · rw [mixedMethod_y, hy, TrueInvariants.toReconstructedInvariants_y]
 
@@ -418,7 +418,8 @@ theorem trueInvariants_x_of_collinear_initialState (hk : g e.k e.k = 0)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) :
     (e.trueInvariants g .initialState).x =
       z * (electronMethod g e.k e.p e.kPrime).Q2 / (2 * (z * g e.p e.k - g e.p e.kPrime)) := by
-  rw [trueInvariants_x_eq_Q2_div, trueInvariants_Q2_of_collinear_initialState g hcol, hk, hk',
+  rw [trueInvariants_x_eq_Q2_div_two_mul_apply_pX_sub_p,
+    trueInvariants_Q2_of_collinear_initialState g hcol, hk, hk',
     apply_pX_sub_p_of_collinear_initialState g hcol]
   ring
 
