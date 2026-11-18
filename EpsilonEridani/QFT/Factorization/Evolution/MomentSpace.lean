@@ -6,6 +6,9 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Factorization.Evolution.Basic
+public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
+public import Mathlib.Analysis.SpecialFunctions.Exponential
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 /-!
 
 # DGLAP Evolution in Moment Space
@@ -33,8 +36,14 @@ here.
 - `DglapMomentSystem` is the data of the moment-space system: anomalous dimensions as a
   function of the Mellin index, and a continuous running coupling.
 - `IsMomentSolution` is the linear ODE system, stated componentwise with `HasDerivAt`.
+- `momentEvolution S N τ₀ τ` is the evolution operator `exp ((∫_{τ₀}^{τ} αs/(2π)) • γ(N))`,
+  the exponential of the anomalous-dimension matrix times the `integratedCoupling`;
+  `momentEvolution_mul` is its cocycle law.
 - `moment_exists_unique` is well-posedness: a unique global solution for each initial
-  condition. Tagged `sorry` — uniqueness is proved, existence is not; see section B.
+  condition, and `IsMomentSolution.eq_momentEvolution_mulVec` identifies every solution with
+  the evolution operator applied to its value at a reference scale.
+- `IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal` is the closed form without channel
+  mixing: each channel evolves by the scalar exponential of its own anomalous dimension.
 - `sumRule_conserved` is the conservation law: if the anomalous-dimension matrix has
   vanishing column sums at `N`, then `∑ i, F i` is `τ`-independent.
 - `momentum_sumRule_conserved` and `valence_sumRule_conserved` are its specializations to
@@ -62,6 +71,8 @@ the standard strong coupling.
 
 - A. The moment-space system
 - B. Well-posedness
+  - B.1. Uniqueness
+  - B.2. Existence: the evolution operator
 - C. Sum-rule conservation
   - C.1. The general conservation law
   - C.2. The physical sum rules
@@ -73,7 +84,7 @@ the standard strong coupling.
 
 noncomputable section
 
-open scoped BigOperators
+open scoped BigOperators Matrix
 
 namespace EpsilonEridani
 namespace QFT
@@ -120,26 +131,18 @@ def IsMomentSolution {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) (N : �
 /-! ## B. Well-posedness
 
 The vector field `(τ, F) ↦ momentRhs S N τ F` is linear in `F` with coefficients continuous
-in `τ`, so on every compact `τ`-interval it is Lipschitz in `F` uniformly in `τ`. That gives
-local existence by Picard-Lindelöf and uniqueness by Gronwall, and linearity — the solution
-cannot blow up in finite time — upgrades local existence to global. This is the achievable
-form of DGLAP well-posedness; see the module docstring on why `x`-space is not attempted.
+in `τ`, so on every compact `τ`-interval it is Lipschitz in `F` uniformly in `τ`. Uniqueness
+follows by Gronwall (`momentSolution_unique`). Existence is global and explicit: the solution
+is the evolution operator `momentEvolution` applied to the initial condition
+(`momentSolution_exists`). The two together are `moment_exists_unique`. This is the achievable
+form of DGLAP well-posedness; see the module docstring on why `x`-space is not attempted. -/
 
-Of the two inputs below, **uniqueness is now proved** (`momentSolution_unique`; `#print axioms`
-reports `[propext, Classical.choice, Quot.sound]`).
-**Existence is not** (`momentSolution_exists`), and its `sorry` is the single open gap of this
-module: mathlib at this pin has local existence for Picard-Lindelöf fields but no ready-made
-global statement for linear systems. The combination `moment_exists_unique` is assembled from
-the two and therefore inherits that `sorry` — it is tagged accordingly, and the
-"well-posedness" advertised in the key-results list above is, at the kernel level, existence
-assumed and uniqueness proved. -/
+/-! ### B.1. Uniqueness -/
 
 /-- Uniqueness for the moment-space system: two solutions agreeing at one point agree
 everywhere.
 
-**Proved.** The header of this docstring previously read "proof not completed"; that was left
-behind when the proof landed, and is corrected here — the argument below is complete and
-`#print axioms` reports no `sorryAx`. The shape of the argument, retained because the
+The shape of the argument, retained because the
 hypothesis bookkeeping is easy to lose: fix
 `T > 0`; on `Set.Icc (τ0 - T) (τ0 + T)` the map `F ↦ momentRhs S N τ F` is Lipschitz with
 constant `K T = (sup over that interval of |S.alphaS (exp τ)| / (2 * π)) * ‖S.gamma N‖`,
@@ -243,43 +246,192 @@ lemma momentSolution_unique {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) 
           (mul_le_mul_of_nonneg_right hrowΓ (norm_nonneg _)) hM0
     _ = M * Γ * ‖X - Y‖ := by ring
 
-/- Global existence for the moment-space system.
+/-! ### B.2. Existence: the evolution operator
 
-TODO(task/e2-dglap-wellposedness): proof not completed. Intended argument. On each
-`Set.Icc (τ0 - T) (τ0 + T)` the vector field satisfies `ODE.IsPicardLindelof` (bounded and
-Lipschitz in `F` on bounded sets, continuous in `τ`, by the same estimate as in
-`momentSolution_unique`), which gives a solution on that interval; because the field is
-*linear* in `F`, the local solutions extend and patch to a solution on all of `ℝ` (no
-finite-time blow-up: `‖F τ‖ ≤ ‖F0‖ * exp (∫ K)` by Gronwall).
+The coefficient matrix of the system at log scale `τ` is `a(τ) • γ(N)`, with
+`a(τ) = αs(e^τ) / (2π)`: a scalar multiple of the single matrix `γ(N)`. The coefficient matrices
+at different scales therefore commute, and the system is solved by the exponential of the
+*integrated* coupling times `γ(N)`, with no time ordering. The integrated coupling
+`∫_{τ₀}^{τ} a(s) ds` is the evolution variable in which the moment-space flow becomes a
+one-parameter group generated by `γ(N)`; on log scales the evolution operators satisfy the
+two-parameter cocycle law instead.
 
-Checked against the pinned mathlib (2026-09-19), so this is no longer a guess: local
-existence *is* available, as the `ODE.IsPicardLindelof.exists_*` family in
-`Mathlib/Analysis/ODE/ExistUnique.lean`; a ready-made **global** statement for linear
-systems is *not*. That gap is the substantive missing piece of this module. The preferred
-route avoids the patching argument entirely: write the solution explicitly as the
-time-ordered exponential
-`F τ = exp ((∫ s in τ0..τ, S.alphaS (exp s) / (2 * π)) • S.gamma N) *ᵥ F0`, which is
-legitimate *here* because the coefficient matrices at different `τ` are all multiples of the
-single matrix `S.gamma N` and therefore commute; that reduces existence to differentiating
-`Matrix.exp` along a scalar path. -/
-/- @[sorryful]
-lemma momentSolution_exists {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ)
-    (F0 : ι → ℂ) (τ0 : ℝ) :
+The matrix exponential is `NormedSpace.exp` on `Matrix ι ι ℂ` with its product topology. Its
+derivative is computed with Mathlib's `L∞` operator norm (`Matrix.Norms.Operator`) installed
+locally inside the proof, as in Mathlib's `Matrix.exp_add_of_commute`; no norm on matrices
+appears in any statement. -/
+
+section Existence
+
+variable {ι : Type}
+
+/-- The scale-dependent coupling `a(τ) = αs(e^τ) / (2π)` of the moment-space system is
+continuous in the log scale `τ`. -/
+private lemma continuous_alphaS_exp_div (S : DglapMomentSystem ι) :
+    Continuous fun s => S.alphaS (Real.exp s) / (2 * Real.pi) :=
+  (S.alphaS_continuous.comp Real.continuous_exp).div_const _
+
+/-- The integrated coupling from log scale `τ₀` to log scale `τ`,
+
+`integratedCoupling S τ₀ τ = ∫ s in τ₀..τ, αs(e^s) / (2π)`.
+
+It is the evolution variable of the moment-space system: in it the coefficient matrix becomes
+the constant `γ(N)`. -/
+def integratedCoupling (S : DglapMomentSystem ι) (τ₀ τ : ℝ) : ℝ :=
+  ∫ s in τ₀..τ, S.alphaS (Real.exp s) / (2 * Real.pi)
+
+@[simp]
+lemma integratedCoupling_self (S : DglapMomentSystem ι) (τ : ℝ) :
+    integratedCoupling S τ τ = 0 :=
+  intervalIntegral.integral_same
+
+/-- The integrated coupling is additive over adjacent scale intervals. -/
+lemma integratedCoupling_add (S : DglapMomentSystem ι) (τ₀ τ₁ τ₂ : ℝ) :
+    integratedCoupling S τ₀ τ₁ + integratedCoupling S τ₁ τ₂ = integratedCoupling S τ₀ τ₂ :=
+  intervalIntegral.integral_add_adjacent_intervals
+    ((continuous_alphaS_exp_div S).intervalIntegrable _ _)
+    ((continuous_alphaS_exp_div S).intervalIntegrable _ _)
+
+/-- Reversing the scale interval reverses the sign of the integrated coupling. -/
+lemma integratedCoupling_swap (S : DglapMomentSystem ι) (τ₀ τ : ℝ) :
+    integratedCoupling S τ τ₀ = -integratedCoupling S τ₀ τ :=
+  intervalIntegral.integral_symm τ₀ τ
+
+/-- The integrated coupling has derivative `αs(e^τ) / (2π)` in its upper limit. -/
+lemma hasDerivAt_integratedCoupling (S : DglapMomentSystem ι) (τ₀ τ : ℝ) :
+    HasDerivAt (integratedCoupling S τ₀) (S.alphaS (Real.exp τ) / (2 * Real.pi)) τ :=
+  ((continuous_alphaS_exp_div S).integral_hasStrictDerivAt τ₀ τ).hasDerivAt
+
+/-- For a coupling that is positive at every positive scale, the integrated coupling is strictly
+increasing in its upper limit, so it is an admissible reparametrisation of the log scale. -/
+lemma strictMono_integratedCoupling (S : DglapMomentSystem ι)
+    (hα : ∀ Q2, 0 < Q2 → 0 < S.alphaS Q2) (τ₀ : ℝ) :
+    StrictMono (integratedCoupling S τ₀) :=
+  strictMono_of_hasDerivAt_pos (hasDerivAt_integratedCoupling S τ₀) fun τ =>
+    div_pos (hα _ (Real.exp_pos τ)) (by positivity)
+
+/-- The moment-space evolution operator from log scale `τ₀` to log scale `τ` at Mellin
+index `N`: the matrix exponential of the integrated coupling times the anomalous-dimension
+matrix,
+
+`momentEvolution S N τ₀ τ = exp ((∫ s in τ₀..τ, αs(e^s) / (2π)) • γ(N))`.
+
+This is the standard moment-space solution of DGLAP evolution (Furmanski and Petronzio,
+Z. Phys. C 11 (1982) 293). -/
+def momentEvolution [Fintype ι] [DecidableEq ι] (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
+    Matrix ι ι ℂ :=
+  NormedSpace.exp ((integratedCoupling S τ₀ τ : ℂ) • S.gamma N)
+
+section momentEvolution
+
+variable [Fintype ι] [DecidableEq ι]
+
+@[simp]
+lemma momentEvolution_self (S : DglapMomentSystem ι) (N : ℂ) (τ : ℝ) :
+    momentEvolution S N τ τ = 1 := by
+  rw [momentEvolution, integratedCoupling_self, Complex.ofReal_zero, zero_smul,
+    NormedSpace.exp_zero]
+
+/-- **The cocycle law.** Evolving from `τ₀` to `τ₁` and then from `τ₁` to `τ₂` is evolving from
+`τ₀` to `τ₂`. -/
+lemma momentEvolution_mul (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ₁ τ₂ : ℝ) :
+    momentEvolution S N τ₁ τ₂ * momentEvolution S N τ₀ τ₁ = momentEvolution S N τ₀ τ₂ := by
+  rw [momentEvolution, momentEvolution, momentEvolution, ← Matrix.exp_add_of_commute _ _
+    (((Commute.refl (S.gamma N)).smul_left _).smul_right _), ← add_smul, ← Complex.ofReal_add,
+    add_comm, integratedCoupling_add]
+
+/-- Evolving backwards from `τ` to `τ₀` inverts evolving from `τ₀` to `τ`. -/
+lemma momentEvolution_swap (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
+    momentEvolution S N τ τ₀ = (momentEvolution S N τ₀ τ)⁻¹ := by
+  rw [momentEvolution, momentEvolution, integratedCoupling_swap, Complex.ofReal_neg, neg_smul,
+    Matrix.exp_neg]
+
+/-- Without mixing between channels, that is for a diagonal anomalous-dimension matrix, each
+channel evolves by the scalar exponential of the integrated coupling times its own anomalous
+dimension. -/
+lemma momentEvolution_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ} {d : ι → ℂ}
+    (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
+    momentEvolution S N τ₀ τ =
+      Matrix.diagonal fun i => Complex.exp (integratedCoupling S τ₀ τ * d i) := by
+  rw [momentEvolution, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
+  simp only [Pi.smul_apply, smul_eq_mul, Complex.exp_eq_exp_ℂ]
+
+/-- The evolution operator applied to a fixed vector has the moment-space right-hand side
+`a(τ) • γ(N) *ᵥ ·` as its derivative in the log scale. -/
+lemma hasDerivAt_momentEvolution_mulVec (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ)
+    (F₀ : ι → ℂ) :
+    HasDerivAt (fun s => momentEvolution S N τ₀ s *ᵥ F₀)
+      (((S.alphaS (Real.exp τ) / (2 * Real.pi) : ℝ) : ℂ) •
+        (S.gamma N *ᵥ (momentEvolution S N τ₀ τ *ᵥ F₀))) τ := by
+  open scoped Matrix.Norms.Operator in
+  -- the exponential along the scalar path `s ↦ integratedCoupling S τ₀ s`
+  have hexp := (hasDerivAt_exp_smul_const' (𝕂 := ℂ) (S.gamma N)
+    (integratedCoupling S τ₀ τ : ℂ)).scomp τ (hasDerivAt_integratedCoupling S τ₀ τ).ofReal_comp
+  -- applying a matrix to `F₀` is a bounded real-linear map
+  let L : Matrix ι ι ℂ →L[ℝ] (ι → ℂ) :=
+    LinearMap.mkContinuous
+      { toFun := fun M => M *ᵥ F₀
+        map_add' := fun A B => Matrix.add_mulVec A B F₀
+        map_smul' := fun c A => Matrix.smul_mulVec c A F₀ } ‖F₀‖
+      fun M => (Matrix.linfty_opNorm_mulVec M F₀).trans_eq (mul_comm _ _)
+  refine (L.hasFDerivAt.comp_hasDerivAt τ hexp).congr_deriv ?_
+  simp only [L, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
+    Matrix.smul_mulVec, ← Matrix.mulVec_mulVec, momentEvolution]
+  -- The two sides differ only in the topology argument of `NormedSpace.exp`: the one induced
+  -- by the operator norm on the left and the product topology on the right. Mathlib builds the
+  -- operator norm with the product uniformity, so the two are definitionally equal.
+  rfl
+
+/-- The evolution operator applied to an initial vector solves the moment-space system. -/
+theorem isMomentSolution_momentEvolution_mulVec (S : DglapMomentSystem ι) (N : ℂ) (τ₀ : ℝ)
+    (F₀ : ι → ℂ) :
+    IsMomentSolution S N fun τ => momentEvolution S N τ₀ τ *ᵥ F₀ := by
+  intro i τ
+  have h := hasDerivAt_pi.1 (hasDerivAt_momentEvolution_mulVec S N τ₀ τ F₀) i
+  simpa only [momentRhs, Pi.smul_apply, smul_eq_mul, Matrix.mulVec, dotProduct] using h
+
+/-- Every solution of the moment-space system is the evolution operator applied to its value at
+any reference scale: `F τ = momentEvolution S N τ₀ τ *ᵥ F τ₀`. -/
+theorem IsMomentSolution.eq_momentEvolution_mulVec {S : DglapMomentSystem ι} {N : ℂ}
+    {F : ℝ → ι → ℂ} (hF : IsMomentSolution S N F) (τ₀ τ : ℝ) :
+    F τ = momentEvolution S N τ₀ τ *ᵥ F τ₀ :=
+  momentSolution_unique S N hF (isMomentSolution_momentEvolution_mulVec S N τ₀ (F τ₀)) τ₀
+    (by rw [momentEvolution_self, Matrix.one_mulVec]) τ
+
+/-- **The closed form without channel mixing.** If the anomalous-dimension matrix at `N` is
+diagonal, as for the non-singlet combinations, each channel of a solution evolves
+multiplicatively:
+`F τ i = exp ((∫ s in τ₀..τ, αs(e^s) / (2π)) * d i) * F τ₀ i`. -/
+theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal {S : DglapMomentSystem ι}
+    {N : ℂ} {d : ι → ℂ} (h : S.gamma N = Matrix.diagonal d) {F : ℝ → ι → ℂ}
+    (hF : IsMomentSolution S N F) (τ₀ τ : ℝ) (i : ι) :
+    F τ i = Complex.exp (integratedCoupling S τ₀ τ * d i) * F τ₀ i := by
+  rw [hF.eq_momentEvolution_mulVec τ₀ τ, momentEvolution_eq_diagonal h,
+    Matrix.mulVec_diagonal]
+
+end momentEvolution
+
+/-- Global existence for the moment-space system: for every Mellin index, initial log scale and
+initial condition there is a solution, namely `τ ↦ momentEvolution S N τ0 τ *ᵥ F0`. -/
+lemma momentSolution_exists [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ) (F0 : ι → ℂ) (τ0 : ℝ) :
     ∃ F : ℝ → ι → ℂ, F τ0 = F0 ∧ IsMomentSolution S N F := by
-  sorry -/
+  classical
+  exact ⟨fun τ => momentEvolution S N τ0 τ *ᵥ F0,
+    by simp only [momentEvolution_self, Matrix.one_mulVec],
+    isMomentSolution_momentEvolution_mulVec S N τ0 F0⟩
 
-/- **Well-posedness of DGLAP evolution in moment space.** For each Mellin index `N` and
+/-- **Well-posedness of DGLAP evolution in moment space.** For each Mellin index `N` and
 each initial condition `F0` at `τ0`, the linear moment-space system has a unique global
 solution. -/
-/- @[sorryful]
-theorem moment_exists_unique {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ)
-    (F0 : ι → ℂ) (τ0 : ℝ) :
+theorem moment_exists_unique [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ) (F0 : ι → ℂ) (τ0 : ℝ) :
     ∃! F : ℝ → ι → ℂ, F τ0 = F0 ∧ IsMomentSolution S N F := by
   obtain ⟨F, hF0, hF⟩ := momentSolution_exists S N F0 τ0
   refine ⟨F, ⟨hF0, hF⟩, ?_⟩
   intro G hG
   funext τ
-  exact momentSolution_unique S N hG.2 hF τ0 (hG.1.trans hF0.symm) τ -/
+  exact momentSolution_unique S N hG.2 hF τ0 (hG.1.trans hF0.symm) τ
+
+end Existence
 
 /-! ## C. Sum-rule conservation -/
 
