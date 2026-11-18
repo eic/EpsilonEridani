@@ -31,9 +31,13 @@ that relates the quark and antiquark densities within a charged pion in the isos
 The operation is an involution, and it preserves `PDF.IsPartonDensity`, `PDF.Regularity`,
 `PDF.Assumptions`, every moment (relabelled) and every flavour-summed moment; these are instances
 of the general results `PDF.Assumptions.comap` and its companions, as for charge conjugation
-(`PDF.chargeConj`). Unlike charge conjugation, no `PDF.SumRuleAssumptions` transport is provided:
-`ι` is a quark-flavour index rather than `Species Flavor`, and the momentum sum rule holds only
-summed over all parton species, including the gluon, so it is not available for such a density.
+(`PDF.chargeConj`). For the flavour-indexed `PDF.isospinConj`, unlike charge conjugation, no
+`PDF.SumRuleAssumptions` transport is provided: `ι` is a quark-flavour index rather than
+`Species Flavor`, and the momentum sum rule holds only summed over all parton species, including
+the gluon, so it is not available for such a density. The species-indexed
+`PDF.speciesIsospinConj` does transport the sum-rule bundle
+(`PDF.SumRuleAssumptions.speciesIsospinConj`), with the target of each species taken from its
+isospin conjugate.
 
 ## Main definitions
 
@@ -54,6 +58,7 @@ summed over all parton species, including the gluon, so it is not available for 
 * `PDF.chargeConj_speciesIsospinConj`: on species-indexed densities, isospin conjugation commutes
   with charge conjugation.
 * `PDF.valenceNumber_speciesIsospinConj`: it relabels the valence numbers.
+* `PDF.SumRuleAssumptions.speciesIsospinConj`: it transports the sum-rule bundle.
 
 ## References
 
@@ -165,6 +170,13 @@ theorem speciesIsospinConj_comm (u d : Flavor) (f : Pdf (Species Flavor)) :
     speciesIsospinConj u d f = speciesIsospinConj d u f := by
   rw [speciesIsospinConj_eq_comap, speciesIsospinConj_eq_comap, Equiv.swap_comm]
 
+/-- Exchanging a flavour with itself is the identity. -/
+@[simp]
+theorem speciesIsospinConj_self (u : Flavor) (f : Pdf (Species Flavor)) :
+    speciesIsospinConj u u f = f := by
+  ext s x Q2
+  rw [speciesIsospinConj_apply, Equiv.swap_self, Equiv.coe_refl, Species.map_id]
+
 @[simp]
 theorem speciesIsospinConj_speciesIsospinConj (u d : Flavor) (f : Pdf (Species Flavor)) :
     speciesIsospinConj u d (speciesIsospinConj u d f) = f := by
@@ -236,6 +248,18 @@ theorem Assumptions.speciesIsospinConj {f : Pdf (Species Flavor)} (h : Assumptio
     (u d : Flavor) : Assumptions (speciesIsospinConj u d f) := by
   rw [speciesIsospinConj_eq_comap]
   exact h.comap _
+
+/-- Isospin conjugation over the species preserves the sum-rule bundle, with the target value of
+each species taken from its isospin conjugate. -/
+def SumRuleAssumptions.speciesIsospinConj [Fintype Flavor] {f : Pdf (Species Flavor)}
+    (h : SumRuleAssumptions f) (u d : Flavor) : SumRuleAssumptions (speciesIsospinConj u d f) :=
+  h.comap (Species.map_involutive (Equiv.swap_apply_self u d)).bijective
+
+@[simp]
+theorem SumRuleAssumptions.speciesIsospinConj_valenceTarget [Fintype Flavor]
+    {f : Pdf (Species Flavor)} (h : SumRuleAssumptions f) (u d : Flavor) (s : Species Flavor) :
+    (h.speciesIsospinConj u d).valenceTarget s = h.valenceTarget (s.map (Equiv.swap u d)) :=
+  (rfl)
 
 end Species
 

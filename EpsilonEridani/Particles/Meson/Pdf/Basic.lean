@@ -56,6 +56,11 @@ each, so the momentum sum rule holds with the gluon included. Its sum-rule bundl
 one of a rescaled shape `1 - x`, `PDF.sumRuleAssumptionsWeightModelPdfZeroOne`. Conjugating the
 meson conjugates the model (`chargeConj_valenceModelPdf`).
 
+An assignment `F` of a density to each meson is charge-conjugation covariant,
+`IsChargeConjCovariant F`, when the densities of the charge-conjugate meson are the charge
+conjugates of the meson's densities; the valence model is
+(`isChargeConjCovariant_valenceModelPdf`).
+
 ## Main definitions
 
 * `PseudoscalarMeson.HasValenceNumbers`: the density carries the meson's net valence numbers at
@@ -64,6 +69,8 @@ meson conjugates the model (`chargeConj_valenceModelPdf`).
   valence model gives each parton species, and the valence model density of a meson.
 * `PseudoscalarMeson.sumRuleAssumptionsValenceModelPdf`: the sum-rule bundle
   `PDF.SumRuleAssumptions` of the valence model.
+* `IsChargeConjCovariant`: charge-conjugation covariance of an assignment of densities to
+  mesons.
 
 ## Main results
 
@@ -329,6 +336,11 @@ momentum each. -/
 def valenceModelPdf (M : PseudoscalarMeson Flavor) : PDF.Pdf (Species Flavor) :=
   PDF.weight M.valenceModelWeight (PDF.modelPdf (Species Flavor) 0 1)
 
+/-- The valence model as the rescaling of the shape `1 - x` by the valence-model weight. -/
+theorem valenceModelPdf_eq_weight :
+    M.valenceModelPdf = PDF.weight M.valenceModelWeight (PDF.modelPdf (Species Flavor) 0 1) :=
+  (rfl)
+
 @[simp]
 theorem valenceModelPdf_apply (s : Species Flavor) (x Q2 : ℝ) :
     M.valenceModelPdf s x Q2 = M.valenceModelWeight s * PDF.modelPdf (Species Flavor) 0 1 s x Q2 :=
@@ -390,6 +402,37 @@ theorem sumRuleAssumptionsValenceModelPdf_valenceTarget [Fintype Flavor] (s : Sp
   (rfl)
 
 end PseudoscalarMeson
+
+/-! ### Charge-conjugation covariance of a density assignment -/
+
+section ChargeConjCovariance
+
+variable {Flavor : Type} {F : PseudoscalarMeson Flavor → PDF.Pdf (Species Flavor)}
+
+/-- **Charge-conjugation covariance** of an assignment `F` of parton densities to mesons: the
+densities of the charge-conjugate meson are the charge conjugates of the meson's densities. It is
+the charge-conjugation invariance of the strong interaction, and holds whatever the quark
+masses. -/
+def IsChargeConjCovariant (F : PseudoscalarMeson Flavor → PDF.Pdf (Species Flavor)) : Prop :=
+  ∀ M, F M.chargeConj = PDF.chargeConj (F M)
+
+theorem isChargeConjCovariant_iff :
+    IsChargeConjCovariant F ↔ ∀ M, F M.chargeConj = PDF.chargeConj (F M) :=
+  Iff.rfl
+
+/-- Under charge-conjugation covariance, the density of species `s` in the charge-conjugate meson
+is the density of the conjugate species in the meson. -/
+theorem IsChargeConjCovariant.chargeConj_apply (hF : IsChargeConjCovariant F)
+    (M : PseudoscalarMeson Flavor) (s : Species Flavor) (x Q2 : ℝ) :
+    F M.chargeConj s x Q2 = F M s.conj x Q2 := by
+  rw [hF M, PDF.chargeConj_apply]
+
+/-- The valence model is charge-conjugation covariant. -/
+theorem isChargeConjCovariant_valenceModelPdf [DecidableEq Flavor] :
+    IsChargeConjCovariant (PseudoscalarMeson.valenceModelPdf (Flavor := Flavor)) :=
+  PseudoscalarMeson.chargeConj_valenceModelPdf
+
+end ChargeConjCovariance
 
 /-! ### The charged pion and the charged kaon -/
 

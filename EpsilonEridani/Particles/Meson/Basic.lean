@@ -40,9 +40,11 @@ superposition `(u ubar - d dbar) / √2`, has no single valence pair and is not 
 valence numbers vanish, by charge-conjugation invariance, while its individual quark and antiquark
 densities do not.
 
-Over the light flavours, the isospin conjugate of a meson exchanges up and down in its valence
-content and shifts its charge accordingly (`PseudoscalarMeson.isospinConj`); it exchanges the two
-charged pions (`isospinConj_piPlus`) and commutes with charge conjugation.
+Exchanging two flavours `i` and `j` in the valence content of a meson, with the charge shifted
+accordingly, is `PseudoscalarMeson.swapFlavor`; it is an involution, commutes with charge
+conjugation, preserves charge consistency and relabels the net valence numbers. Over the light
+flavours with the pair up, down it is the isospin conjugate (`PseudoscalarMeson.isospinConj`),
+which exchanges the two charged pions (`isospinConj_piPlus`).
 
 Flavour-symmetry breaking is carried as separate data, `FlavorBreaking`: the light-quark mass
 difference and the difference between the strange and the average light-quark mass. The isospin
@@ -55,6 +57,7 @@ built from quark masses, the limits are exactly the degeneracy of the correspond
 
 * `PseudoscalarMeson`: mass, decay constant, charge and valence flavours of a pseudoscalar meson.
 * `PseudoscalarMeson.chargeConj`: the charge-conjugate meson.
+* `PseudoscalarMeson.swapFlavor`: the meson with two flavours exchanged in its valence content.
 * `PseudoscalarMeson.isospinConj`: the isospin-conjugate meson over the light flavours, with up
   and down exchanged in its valence content.
 * `PseudoscalarMeson.valenceNumber`: the net valence number of each flavour.
@@ -291,6 +294,90 @@ theorem IsChargeConsistent.sum_mul_valenceNumber [DecidableEq Flavor] [Fintype F
     ∑ a, e a * M.valenceNumber a = M.charge := by
   rw [M.sum_mul_valenceNumber, h]
 
+/-! ### Exchanging two flavours -/
+
+section SwapFlavor
+
+variable [DecidableEq Flavor]
+
+/-- The meson with the flavours `i` and `j` exchanged in its valence content: the same mass and
+decay constant, the valence quark and antiquark flavours relabelled by `Equiv.swap i j`, and the
+charge shifted by the change this relabelling makes to the charge `e q - e q'` of the valence pair.
+Over the light flavours with `i, j = u, d` it is the isospin conjugate (`isospinConj`). -/
+def swapFlavor (e : Flavor → ℝ) (i j : Flavor) : PseudoscalarMeson Flavor where
+  mass := M.mass
+  decayConstant := M.decayConstant
+  charge := M.charge + (e (Equiv.swap i j M.valenceQuark) - e M.valenceQuark)
+    - (e (Equiv.swap i j M.valenceAntiquark) - e M.valenceAntiquark)
+  valenceQuark := Equiv.swap i j M.valenceQuark
+  valenceAntiquark := Equiv.swap i j M.valenceAntiquark
+  mass_pos := M.mass_pos
+  decayConstant_pos := M.decayConstant_pos
+
+variable (e : Flavor → ℝ) (i j : Flavor)
+
+@[simp]
+theorem swapFlavor_mass : (M.swapFlavor e i j).mass = M.mass := (rfl)
+
+@[simp]
+theorem swapFlavor_decayConstant : (M.swapFlavor e i j).decayConstant = M.decayConstant := (rfl)
+
+@[simp]
+theorem swapFlavor_charge :
+    (M.swapFlavor e i j).charge = M.charge + (e (Equiv.swap i j M.valenceQuark) - e M.valenceQuark)
+      - (e (Equiv.swap i j M.valenceAntiquark) - e M.valenceAntiquark) := (rfl)
+
+@[simp]
+theorem swapFlavor_valenceQuark :
+    (M.swapFlavor e i j).valenceQuark = Equiv.swap i j M.valenceQuark := (rfl)
+
+@[simp]
+theorem swapFlavor_valenceAntiquark :
+    (M.swapFlavor e i j).valenceAntiquark = Equiv.swap i j M.valenceAntiquark := (rfl)
+
+/-- Exchanging a flavour with itself is the identity. -/
+@[simp]
+theorem swapFlavor_self : M.swapFlavor e i i = M := by
+  ext <;> simp
+
+@[simp]
+theorem swapFlavor_swapFlavor : (M.swapFlavor e i j).swapFlavor e i j = M := by
+  ext <;> simp only [swapFlavor_mass, swapFlavor_decayConstant, swapFlavor_charge,
+    swapFlavor_valenceQuark, swapFlavor_valenceAntiquark, Equiv.swap_apply_self]
+  linarith
+
+theorem swapFlavor_involutive :
+    Function.Involutive (fun M : PseudoscalarMeson Flavor => M.swapFlavor e i j) :=
+  fun M => M.swapFlavor_swapFlavor e i j
+
+/-- Exchanging two flavours commutes with charge conjugation. -/
+theorem chargeConj_swapFlavor :
+    (M.swapFlavor e i j).chargeConj = M.chargeConj.swapFlavor e i j := by
+  ext <;> simp only [chargeConj_mass, chargeConj_decayConstant, chargeConj_charge,
+    chargeConj_valenceQuark, chargeConj_valenceAntiquark, swapFlavor_mass,
+    swapFlavor_decayConstant, swapFlavor_charge, swapFlavor_valenceQuark,
+    swapFlavor_valenceAntiquark]
+  linarith
+
+/-- Exchanging two flavours preserves charge consistency with the charges `e`: the charge shift is
+exactly the change in the charge of the valence pair. -/
+@[simp]
+theorem isChargeConsistent_swapFlavor_iff :
+    (M.swapFlavor e i j).IsChargeConsistent e ↔ M.IsChargeConsistent e := by
+  simp only [isChargeConsistent_iff, swapFlavor_charge, swapFlavor_valenceQuark,
+    swapFlavor_valenceAntiquark]
+  constructor <;> intro h <;> linarith
+
+/-- Exchanging two flavours relabels the net valence numbers. -/
+@[simp]
+theorem swapFlavor_valenceNumber :
+    (M.swapFlavor e i j).valenceNumber = M.valenceNumber ∘ Equiv.swap i j := by
+  funext a
+  simp only [valenceNumber_apply, swapFlavor_valenceQuark, swapFlavor_valenceAntiquark,
+    Function.comp_apply, Equiv.swap_apply_eq_iff]
+
+end SwapFlavor
+
 end PseudoscalarMeson
 
 /-! ### The charged pions and kaons -/
@@ -380,73 +467,15 @@ theorem kPlus_valenceNumber_ne_piPlus_valenceNumber :
 
 namespace PseudoscalarMeson
 
-/-- The isospin conjugate of a meson over the light flavours: the up and down flavours of its
-valence quark and valence antiquark exchanged, the same mass and decay constant, and the charge
-shifted by the change this exchange makes to the charge of the valence pair. It is the meson's
-partner under the isospin rotation exchanging up and down, whose mass and decay constant are the
-meson's in the isospin limit; it exchanges the two charged pions (`isospinConj_piPlus`). -/
-noncomputable def isospinConj (M : PseudoscalarMeson LightFlavor) :
-    PseudoscalarMeson LightFlavor where
-  mass := M.mass
-  decayConstant := M.decayConstant
-  charge := M.charge
-    + (LightFlavor.charge (Equiv.swap u d M.valenceQuark) - LightFlavor.charge M.valenceQuark)
-    - (LightFlavor.charge (Equiv.swap u d M.valenceAntiquark)
-      - LightFlavor.charge M.valenceAntiquark)
-  valenceQuark := Equiv.swap u d M.valenceQuark
-  valenceAntiquark := Equiv.swap u d M.valenceAntiquark
-  mass_pos := M.mass_pos
-  decayConstant_pos := M.decayConstant_pos
-
-variable (M : PseudoscalarMeson LightFlavor)
-
-@[simp]
-theorem isospinConj_mass : M.isospinConj.mass = M.mass := (rfl)
-
-@[simp]
-theorem isospinConj_decayConstant : M.isospinConj.decayConstant = M.decayConstant := (rfl)
-
-@[simp]
-theorem isospinConj_charge :
-    M.isospinConj.charge = M.charge
-      + (LightFlavor.charge (Equiv.swap u d M.valenceQuark) - LightFlavor.charge M.valenceQuark)
-      - (LightFlavor.charge (Equiv.swap u d M.valenceAntiquark)
-        - LightFlavor.charge M.valenceAntiquark) := (rfl)
-
-@[simp]
-theorem isospinConj_valenceQuark :
-    M.isospinConj.valenceQuark = Equiv.swap u d M.valenceQuark := (rfl)
-
-@[simp]
-theorem isospinConj_valenceAntiquark :
-    M.isospinConj.valenceAntiquark = Equiv.swap u d M.valenceAntiquark := (rfl)
-
-@[simp]
-theorem isospinConj_isospinConj : M.isospinConj.isospinConj = M := by
-  ext <;> simp only [isospinConj_mass, isospinConj_decayConstant, isospinConj_charge,
-    isospinConj_valenceQuark, isospinConj_valenceAntiquark, Equiv.swap_apply_self]
-  linarith
-
-theorem isospinConj_involutive : Function.Involutive isospinConj :=
-  isospinConj_isospinConj
-
-/-- Isospin conjugation commutes with charge conjugation. -/
-theorem chargeConj_isospinConj : M.isospinConj.chargeConj = M.chargeConj.isospinConj := by
-  ext <;> simp only [chargeConj_mass, chargeConj_decayConstant, chargeConj_charge,
-    chargeConj_valenceQuark, chargeConj_valenceAntiquark, isospinConj_mass,
-    isospinConj_decayConstant, isospinConj_charge, isospinConj_valenceQuark,
-    isospinConj_valenceAntiquark]
-  linarith
-
-/-- Isospin conjugation preserves charge consistency with the light-quark charges: the charge
-shift is exactly the change in the charge of the valence pair. -/
-@[simp]
-theorem isChargeConsistent_isospinConj_iff :
-    M.isospinConj.IsChargeConsistent LightFlavor.charge ↔
-      M.IsChargeConsistent LightFlavor.charge := by
-  simp only [isChargeConsistent_iff, isospinConj_charge, isospinConj_valenceQuark,
-    isospinConj_valenceAntiquark]
-  constructor <;> intro h <;> linarith
+/-- The isospin conjugate of a meson over the light flavours: up and down exchanged in its valence
+content, the same mass and decay constant, and the charge shifted by the change this exchange
+makes to the light-quark charge of the valence pair. It is `swapFlavor` at the light-quark charges
+and the pair up, down: the meson's partner under the isospin rotation exchanging up and down,
+whose mass and decay constant are the meson's in the isospin limit. It exchanges the two charged
+pions (`isospinConj_piPlus`). -/
+noncomputable abbrev isospinConj (M : PseudoscalarMeson LightFlavor) :
+    PseudoscalarMeson LightFlavor :=
+  M.swapFlavor LightFlavor.charge u d
 
 end PseudoscalarMeson
 
@@ -457,7 +486,8 @@ theorem isospinConj_piPlus : piPlus.isospinConj = piMinus := by
   ext <;> norm_num [piMinus_eq_chargeConj_piPlus]
 
 theorem isospinConj_piMinus : piMinus.isospinConj = piPlus := by
-  rw [← isospinConj_piPlus, PseudoscalarMeson.isospinConj_isospinConj]
+  rw [← isospinConj_piPlus]
+  exact piPlus.swapFlavor_swapFlavor _ _ _
 
 /-! ### Flavour-symmetry breaking -/
 
