@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Joseph Tooby-Smith
+Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
@@ -12,10 +12,10 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 This module implements reconstruction methods for DIS invariants from experimental measurements.
 The electron method reconstructs Q², y and xBj and carries positivity and range lemmas. The Sigma
-method reconstructs y, which is `DisKinematics.yInel` under energy-momentum conservation. The
-covariant `sigmaMethod` takes its virtuality from the electron method, `Q²_Σ := Q²_e`. This
-coincides with the canonical `DisKinematics.Q2` without radiation; after collinear radiation
-from either lepton line the virtuality is rescaled
+method reconstructs y, which is `DisKinematics.yInel` under energy-momentum conservation
+(`sigmaMethod_y_eq_yInel`). The covariant `sigmaMethod` takes its virtuality from the electron
+method, `Q²_Σ := Q²_e`. This coincides with the canonical `DisKinematics.Q2` without radiation;
+after collinear radiation from either lepton line the virtuality is rescaled
 (`RadiativeEvent.trueInvariants_Q2_of_collinear_initialState`,
 `RadiativeEvent.electronMethod_Q2_of_collinear_finalState` in `Kinematics.Radiative`), so the
 Sigma-method shift is stated there in `(x, y)`.
@@ -24,9 +24,9 @@ Sigma-method shift is stated there in `(x, y)`.
 
 - **Electron Method**: Reconstructs invariants from electron scattering
   kinematics (angle, energy loss)
-- **Sigma Method**: Reconstructs y from the target momentum `P`, the hadronic final state `p_X`
-  and the scattered lepton `k'`, as `y_Σ = P·(p_X - P) / (P·(p_X - P) + P·k')`; this y does not
-  involve the incident lepton momentum
+- **Sigma Method**: `sigmaMethod` reconstructs y from the target momentum `P`, the hadronic final
+  state `p_X` and the scattered lepton `k'`, as `y_Σ = P·(p_X - P) / (P·(p_X - P) + P·k')`; this
+  y does not involve the incident lepton momentum
 - **Covariant methods**: `electronMethod`, `hadronicMethod`, `sigmaMethod` and `mixedMethod`
   return the full triple `(x, Q², y)` as a `ReconstructedInvariants`, each as a function of
   exactly the momenta it measures. The electron and hadronic methods are the invariants
@@ -41,7 +41,8 @@ Sigma-method shift is stated there in `(x, y)`.
 
 - U. Bassler and G. Bernardi, *On the kinematic reconstruction of deep inelastic scattering at
   HERA: the Σ method*, Nucl. Instrum. Meth. A **361** (1995) 197, arXiv:hep-ex/9412004. In the
-  HERA frame with a massless target, `ySigma` reduces to their `y_Σ = Σ / (Σ + E'(1 - cos θ))`.
+  HERA frame with a massless target, the `y` of `sigmaMethod` reduces to their
+  `y_Σ = Σ / (Σ + E'(1 - cos θ))`.
 - F. Jacquet and A. Blondel, in *Proceedings of the Study of an ep Facility for Europe*,
   ed. U. Amaldi, DESY 79/48 (1979) 391, for the hadronic method.
 - S. Bentvelsen, J. Engelen and P. Kooijman, *Reconstruction of (x, Q²) and extraction of
@@ -86,13 +87,22 @@ namespace ElectronMethodData
 def q2Electron (d : ElectronMethodData) : ℝ :=
   4 * d.initialEnergy * d.finalEnergy * (Real.sin (d.theta / 2)) ^ 2
 
+lemma q2Electron_def (d : ElectronMethodData) :
+    d.q2Electron = 4 * d.initialEnergy * d.finalEnergy * (Real.sin (d.theta / 2)) ^ 2 := rfl
+
 /-- Electron method y reconstruction from energy ratio. -/
 def yElectron (d : ElectronMethodData) : ℝ :=
   1 - d.finalEnergy / d.initialEnergy
 
+lemma yElectron_def (d : ElectronMethodData) :
+    d.yElectron = 1 - d.finalEnergy / d.initialEnergy := rfl
+
 /-- Electron method xBj reconstruction; `M_p` is the target (proton) mass. -/
 def xBjElectron (d : ElectronMethodData) (M_p : ℝ) : ℝ :=
   (q2Electron d) / (2 * M_p * d.initialEnergy * (yElectron d))
+
+lemma xBjElectron_def (d : ElectronMethodData) (M_p : ℝ) :
+    d.xBjElectron M_p = d.q2Electron / (2 * M_p * d.initialEnergy * d.yElectron) := rfl
 
 /-- Appropriateness theorem: electron method Q² reconstruction is positive. -/
 lemma q2Electron_pos (d : ElectronMethodData) : 0 < q2Electron d := by
@@ -119,41 +129,6 @@ lemma yElectron_bounds (d : ElectronMethodData) : 0 < yElectron d ∧ yElectron 
   · linarith [hRatioPos]
 
 end ElectronMethodData
-
-/-- Sigma method input data: the hadronic final state momentum sum, the outgoing lepton momentum,
-and the incoming target momentum. -/
-structure SigmaMethodData where
-  /-- Sum of hadronic final state momenta `p_X`. -/
-  hadronicMomentum : V
-  /-- Outgoing lepton momentum. -/
-  kOut : V
-  /-- Incoming target hadron momentum. -/
-  targetMomentum : V
-
-namespace SigmaMethodData
-
-variable {V}
-
-/-- Sigma method y reconstruction `P·q_h / (P·q_h + P·k')`, built from the target momentum `P`,
-the hadronic transfer `q_h = hadronicMomentum - P` and the outgoing lepton momentum `k'`. The
-incoming lepton momentum does not enter. -/
-def ySigma (d : SigmaMethodData V) (g_met : Bilin V) : ℝ :=
-  g_met d.targetMomentum (d.hadronicMomentum - d.targetMomentum) /
-    (g_met d.targetMomentum (d.hadronicMomentum - d.targetMomentum) +
-      g_met d.targetMomentum d.kOut)
-
-/-- Under energy-momentum conservation `P + k = p_X + k'`, the Sigma method y is the canonical
-`DisKinematics.yInel` of any kinematic record with the same target and outgoing lepton
-momenta. -/
-lemma ySigma_eq_yInel (d : SigmaMethodData V) (g_met : Bilin V) (K : DisKinematics V)
-    (hp : K.p = d.targetMomentum) (hk' : K.kPrime = d.kOut)
-    (hCons : d.targetMomentum + K.k = d.hadronicMomentum + d.kOut) :
-    d.ySigma g_met = K.yInel g_met := by
-  have hq : d.hadronicMomentum - d.targetMomentum = K.q := by
-    rw [K.hq, hk', sub_eq_sub_iff_add_eq_add, ← hCons, add_comm]
-  rw [ySigma, DisKinematics.yInel, hq, ← map_add, hp, K.hq, hk', sub_add_cancel]
-
-end SigmaMethodData
 
 /-! ### Covariant reconstruction methods -/
 
@@ -185,7 +160,7 @@ def ofTransfer (g : Bilin V) (k p q : V) : ReconstructedInvariants where
 `DisKinematics.xBj`, `DisKinematics.Q2` and `DisKinematics.yInel`. -/
 theorem ofTransfer_eq_xBj_Q2_yInel (g : Bilin V) (K : DisKinematics V) :
     ofTransfer g K.k K.p K.q = ⟨K.xBj g, K.Q2 g, K.yInel g⟩ := by
-  ext <;> simp [DisKinematics.xBj, DisKinematics.Q2, DisKinematics.yInel]
+  ext <;> simp [DisKinematics.xBj_def, DisKinematics.Q2_def, DisKinematics.yInel_def]
 
 /-- The Bjorken variable of a momentum transfer is `Q² / (2 (p·k) y)` wherever `p·k ≠ 0`. -/
 theorem ofTransfer_x_eq_Q2_div (g : Bilin V) (k p q : V) (hpk : g p k ≠ 0) :
@@ -223,7 +198,7 @@ theorem hadronicMethod_eq_ofTransfer (g : Bilin V) (k p pX : V) :
 
 /-- The Sigma method, from all four measured momenta: the virtuality `Q²_Σ := Q²_e` of the
 electron method, the inelasticity `y_Σ = (p·q_h) / (p·q_h + p·k')` of Bassler and Bernardi
-(`SigmaMethodData.ySigma`), in which the incoming lepton does not appear, and
+(`sigmaMethod_y_eq_yInel`), in which the incoming lepton does not appear, and
 `x_Σ = Q²_e / (2 (p·k) y_Σ)`. Bassler and Bernardi build their own virtuality from the
 transverse momentum of the scattered lepton in the collider frame, `Q²_Σ = p²_{T,e} / (1 - y_Σ)`,
 which is unaffected by collinear initial-state radiation; it is not used here. With the
@@ -238,14 +213,20 @@ That failure is an artifact of the choice `Q²_Σ := Q²_e`, not of the method o
 Bernardi. -/
 @[simps]
 def sigmaMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants where
-  x := (electronMethod g k p kPrime).Q2 / (2 * g p k * SigmaMethodData.ySigma ⟨pX, kPrime, p⟩ g)
+  x := (electronMethod g k p kPrime).Q2 /
+    (2 * g p k * (g p (pX - p) / (g p (pX - p) + g p kPrime)))
   Q2 := (electronMethod g k p kPrime).Q2
-  y := SigmaMethodData.ySigma ⟨pX, kPrime, p⟩ g
+  y := g p (pX - p) / (g p (pX - p) + g p kPrime)
 
-/-- The Sigma-method inelasticity is `y_Σ = p·(p_X - p) / (p·(p_X - p) + p·k')`. -/
-theorem sigmaMethod_y_eq (g : Bilin V) (k p kPrime pX : V) :
-    (sigmaMethod g k p kPrime pX).y = g p (pX - p) / (g p (pX - p) + g p kPrime) := by
-  rw [sigmaMethod_y, SigmaMethodData.ySigma]
+/-- Under energy-momentum conservation `p + k = p_X + k'`, the Sigma-method inelasticity is the
+canonical `DisKinematics.yInel` of any kinematic record with the same target and outgoing lepton
+momenta, whatever incoming lepton momentum is passed to `sigmaMethod`. -/
+theorem sigmaMethod_y_eq_yInel (g : Bilin V) (k p kPrime pX : V) (K : DisKinematics V)
+    (hp : K.p = p) (hk' : K.kPrime = kPrime) (hCons : p + K.k = pX + kPrime) :
+    (sigmaMethod g k p kPrime pX).y = K.yInel g := by
+  have hq : pX - p = K.q := by
+    rw [K.hq, hk', sub_eq_sub_iff_add_eq_add, ← hCons, add_comm]
+  rw [sigmaMethod_y, DisKinematics.yInel_def, hq, ← map_add, hp, K.hq, hk', sub_add_cancel]
 
 /-- The mixed method of Bentvelsen, Engelen and Kooijman, from all four measured momenta: the
 virtuality `Q²_e` of the electron method, the inelasticity `y_h` of the hadronic method, and
@@ -297,7 +278,7 @@ theorem electronMethod_Q2_eq_q2Electron (d : ElectronMethodData) (g : Bilin V) (
     {k p kPrime : V} (hk : g k k = 0) (hk' : g kPrime kPrime = 0)
     (hkk' : g k kPrime = d.initialEnergy * d.finalEnergy * (1 - Real.cos d.theta)) :
     (electronMethod g k p kPrime).Q2 = d.q2Electron := by
-  rw [electronMethod_Q2, ElectronMethodData.q2Electron, Real.sin_sq_eq_half_sub,
+  rw [electronMethod_Q2, ElectronMethodData.q2Electron_def, Real.sin_sq_eq_half_sub,
     mul_div_cancel₀ _ two_ne_zero]
   simp only [map_sub, LinearMap.sub_apply, hk, hk', hg.eq kPrime k, hkk']
   ring
@@ -316,11 +297,11 @@ theorem electronMethod_eq_xBjElectron_q2Electron_yElectron (d : ElectronMethodDa
   have hE : d.initialEnergy ≠ 0 := (d.energy_loss.1.trans d.energy_loss.2).ne'
   have hQ := electronMethod_Q2_eq_q2Electron d g hg (p := p) hk hk' hkk'
   have hy : (electronMethod g k p kPrime).y = d.yElectron := by
-    rw [electronMethod_y, map_sub, hpk, hpk', ElectronMethodData.yElectron]
+    rw [electronMethod_y, map_sub, hpk, hpk', ElectronMethodData.yElectron_def]
     field_simp
   ext
   · rw [electronMethod_x_eq_Q2_div g k p kPrime (by rw [hpk]; exact mul_ne_zero hM hE), hQ, hy,
-      hpk, ElectronMethodData.xBjElectron, mul_assoc 2 M]
+      hpk, ElectronMethodData.xBjElectron_def, mul_assoc 2 M]
   · exact hQ
   · exact hy
 

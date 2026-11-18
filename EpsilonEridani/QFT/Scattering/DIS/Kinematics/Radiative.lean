@@ -42,9 +42,10 @@ the shift `ReconstructedInvariants.shiftXQ2` (or `ReconstructedInvariants.shiftX
   whichever line radiates, and `RadiativeEvent.hadronicMethod_eq_trueInvariants_finalState` it is
   exact for final-state radiation, while after collinear final-state emission the electron method
   rescales the virtuality by the fraction `z` of the hard outgoing lepton momentum retained by the
-  measured `k'`, `Q²_e = z Q²` for a massless incoming lepton
-  (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState`). Collinear final-state emission
-  is the condition `z ℓ = (1 - z) k'` on the measured momenta
+  measured `k'`, up to explicit lepton-mass remainders
+  (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState`), and `Q²_e = z Q²` for massless
+  leptons (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState_of_kPrime_sq_eq_zero`).
+  Collinear final-state emission is the condition `z ℓ = (1 - z) k'` on the measured momenta
   (`RadiativeEvent.photon_eq_smul_kPrime_add_photon_iff`), under which the hard lepton leaves
   with `k' / z` (`RadiativeEvent.leptonOut_of_collinear_finalState`).
 * `RadiativeEvent.sigmaMethod_y_eq_trueInvariants_y_initialState`: the Sigma method recovers the
@@ -159,7 +160,9 @@ whichever line radiates (`leptonIn_sub_leptonOut_eq_pX_sub_p`). -/
 def trueMomentumTransfer : V := e.pX - e.p
 
 omit [Module ℝ V] in
-theorem trueMomentumTransfer_eq : e.trueMomentumTransfer = e.pX - e.p := (rfl)
+/-- The true momentum transfer is `p_X - p`, the simp normal form in which both the true and the
+reconstructed invariants are stated. -/
+@[simp] theorem trueMomentumTransfer_eq : e.trueMomentumTransfer = e.pX - e.p := (rfl)
 
 omit [Module ℝ V] in
 /-- The momentum transferred to the hadrons, `p_X - p`, is what the leptons lose besides the
@@ -198,26 +201,28 @@ def trueInvariants (g : Bilin V) (l : EmissionLine) : TrueInvariants where
 
 /-- An exact measurement of the true invariants returns the canonical invariants of the hard
 scattering. -/
-theorem trueInvariants_toReconstructedInvariants (g : Bilin V) (l : EmissionLine) :
+theorem trueInvariants_toReconstructedInvariants_eq_xBj_Q2_yInel (g : Bilin V) (l : EmissionLine) :
     (e.trueInvariants g l).toReconstructedInvariants =
       ⟨(e.hardKinematics l).xBj g, (e.hardKinematics l).Q2 g, (e.hardKinematics l).yInel g⟩ := by
   ext <;> simp
 
 /-- The true virtuality is `-q²`, for the true momentum transfer `q = p_X - p`. -/
-theorem trueInvariants_Q2_eq (g : Bilin V) (l : EmissionLine) :
-    (e.trueInvariants g l).Q2 = -g e.trueMomentumTransfer e.trueMomentumTransfer := by
-  rw [trueInvariants_Q2, DisKinematics.Q2, hardKinematics_q]
+theorem trueInvariants_Q2_eq_neg_apply_pX_sub_p (g : Bilin V) (l : EmissionLine) :
+    (e.trueInvariants g l).Q2 = -g (e.pX - e.p) (e.pX - e.p) := by
+  rw [trueInvariants_Q2, DisKinematics.Q2_def, hardKinematics_q, trueMomentumTransfer_eq]
 
 /-- The true Bjorken variable is `Q² / (2 p·q)`, for the true momentum transfer `q = p_X - p`. -/
-theorem trueInvariants_x_eq (g : Bilin V) (l : EmissionLine) :
-    (e.trueInvariants g l).x = (e.trueInvariants g l).Q2 / (2 * g e.p e.trueMomentumTransfer) := by
-  rw [trueInvariants_x, trueInvariants_Q2, DisKinematics.xBj, hardKinematics_p, hardKinematics_q]
+theorem trueInvariants_x_eq_Q2_div (g : Bilin V) (l : EmissionLine) :
+    (e.trueInvariants g l).x = (e.trueInvariants g l).Q2 / (2 * g e.p (e.pX - e.p)) := by
+  rw [trueInvariants_x, trueInvariants_Q2, DisKinematics.xBj_def, hardKinematics_p,
+    hardKinematics_q, trueMomentumTransfer_eq]
 
 /-- The true inelasticity is `p·q / p·k_hard`, for the true momentum transfer `q = p_X - p` and
 the lepton momentum `k_hard` entering the hard scattering. -/
-theorem trueInvariants_y_eq (g : Bilin V) (l : EmissionLine) :
-    (e.trueInvariants g l).y = g e.p e.trueMomentumTransfer / g e.p (e.leptonIn l) := by
-  rw [trueInvariants_y, DisKinematics.yInel, hardKinematics_p, hardKinematics_q, hardKinematics_k]
+theorem trueInvariants_y_eq_div_leptonIn (g : Bilin V) (l : EmissionLine) :
+    (e.trueInvariants g l).y = g e.p (e.pX - e.p) / g e.p (e.leptonIn l) := by
+  rw [trueInvariants_y, DisKinematics.yInel_def, hardKinematics_p, hardKinematics_q,
+    hardKinematics_k, trueMomentumTransfer_eq]
 
 /-! ### The hadronic method -/
 
@@ -229,12 +234,12 @@ variable (g : Bilin V)
 lepton line transfers exactly `p_X - p` to the hadrons (`leptonIn_sub_leptonOut_eq_pX_sub_p`). -/
 theorem hadronicMethod_Q2_eq_trueInvariants_Q2 (l : EmissionLine) :
     (hadronicMethod g e.k e.p e.pX).Q2 = (e.trueInvariants g l).Q2 := by
-  rw [hadronicMethod_Q2, trueInvariants_Q2_eq, trueMomentumTransfer_eq]
+  rw [hadronicMethod_Q2, trueInvariants_Q2_eq_neg_apply_pX_sub_p]
 
 /-- The hadronic method reconstructs the true Bjorken variable whichever line radiates. -/
 theorem hadronicMethod_x_eq_trueInvariants_x (l : EmissionLine) :
     (hadronicMethod g e.k e.p e.pX).x = (e.trueInvariants g l).x := by
-  rw [hadronicMethod_x, trueInvariants_x_eq, trueInvariants_Q2_eq, trueMomentumTransfer_eq]
+  rw [hadronicMethod_x, trueInvariants_x_eq_Q2_div, trueInvariants_Q2_eq_neg_apply_pX_sub_p]
 
 /-- The `(x, Q²)` shift of the hadronic method vanishes whichever line radiates. -/
 theorem shiftXQ2_hadronicMethod_eq_zero (l : EmissionLine) :
@@ -251,8 +256,8 @@ theorem hadronicMethod_eq_trueInvariants_finalState :
     exact e.hadronicMethod_x_eq_trueInvariants_x g .finalState
   · rw [TrueInvariants.toReconstructedInvariants_Q2]
     exact e.hadronicMethod_Q2_eq_trueInvariants_Q2 g .finalState
-  · rw [hadronicMethod_y, TrueInvariants.toReconstructedInvariants_y, trueInvariants_y_eq,
-      trueMomentumTransfer_eq, leptonIn_finalState]
+  · rw [hadronicMethod_y, TrueInvariants.toReconstructedInvariants_y,
+      trueInvariants_y_eq_div_leptonIn, leptonIn_finalState]
 
 end Hadronic
 
@@ -275,8 +280,8 @@ denominator `p·(p_X - p) + p·k'` of `y_Σ` is `p·(k - ℓ)`, the projection o
 that enters the hard scattering. -/
 theorem sigmaMethod_y_eq_trueInvariants_y_initialState :
     (sigmaMethod g e.k e.p e.kPrime e.pX).y = (e.trueInvariants g .initialState).y := by
-  rw [sigmaMethod_y, trueInvariants_y]
-  refine SigmaMethodData.ySigma_eq_yInel _ g _ (e.hardKinematics_p _)
+  rw [trueInvariants_y]
+  refine sigmaMethod_y_eq_yInel g _ _ _ _ _ (e.hardKinematics_p _)
     ((e.hardKinematics_kPrime _).trans e.leptonOut_initialState) ?_
   rw [hardKinematics_k]
   exact e.p_add_leptonIn_initialState_eq_pX_add_kPrime
@@ -314,8 +319,8 @@ theorem trueInvariants_eq_of_photon_eq_zero (h : e.photon = 0) :
 /-- Without a photon, the electron method returns the true invariants. -/
 theorem electronMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
     electronMethod g e.k e.p e.kPrime = (e.trueInvariants g l).toReconstructedInvariants := by
-  rw [trueInvariants_toReconstructedInvariants, ← electronMethod_eq_xBj_Q2_yInel, hardKinematics_k,
-    hardKinematics_p, hardKinematics_kPrime, leptonIn_of_photon_eq_zero l h,
+  rw [trueInvariants_toReconstructedInvariants_eq_xBj_Q2_yInel, ← electronMethod_eq_xBj_Q2_yInel,
+    hardKinematics_k, hardKinematics_p, hardKinematics_kPrime, leptonIn_of_photon_eq_zero l h,
     leptonOut_of_photon_eq_zero l h]
 
 /-- Without a photon, the electron method returns the true virtuality. -/
@@ -341,7 +346,8 @@ theorem sigmaMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0)
     exact sigmaMethod_y_eq_trueInvariants_y_initialState g
   ext
   · rw [sigmaMethod_x_eq_Q2_div, sigmaMethod_Q2, hy, hQ, TrueInvariants.toReconstructedInvariants_x,
-      trueInvariants_x_eq, trueInvariants_y_eq, leptonIn_of_photon_eq_zero l h, mul_assoc,
+      trueInvariants_x_eq_Q2_div, trueInvariants_y_eq_div_leptonIn, leptonIn_of_photon_eq_zero l h,
+      mul_assoc,
       mul_div_cancel₀ _ hpk]
   · rw [sigmaMethod_Q2, hQ, TrueInvariants.toReconstructedInvariants_Q2]
   · rw [hy, TrueInvariants.toReconstructedInvariants_y]
@@ -354,8 +360,8 @@ theorem mixedMethod_eq_trueInvariants_of_photon_eq_zero (h : e.photon = 0) :
     rw [hadronicMethod_eq_trueInvariants_of_photon_eq_zero g l h,
       TrueInvariants.toReconstructedInvariants_y]
   ext
-  · rw [mixedMethod_x, hQ, TrueInvariants.toReconstructedInvariants_x, trueInvariants_x_eq,
-      trueMomentumTransfer_eq]
+  · rw [mixedMethod_x, hQ, TrueInvariants.toReconstructedInvariants_x,
+      trueInvariants_x_eq_Q2_div]
   · rw [mixedMethod_Q2, hQ, TrueInvariants.toReconstructedInvariants_Q2]
   · rw [mixedMethod_y, hy, TrueInvariants.toReconstructedInvariants_y]
 
@@ -389,7 +395,7 @@ inelasticity is `y = p·(z k - k') / p·(z k)` in terms of the measured momenta.
 theorem trueInvariants_y_of_collinear_initialState (hcol : e.photon = (1 - z) • e.k) :
     (e.trueInvariants g .initialState).y =
       (z * g e.p e.k - g e.p e.kPrime) / (z * g e.p e.k) := by
-  rw [trueInvariants_y_eq, trueMomentumTransfer_eq, apply_pX_sub_p_of_collinear_initialState g hcol,
+  rw [trueInvariants_y_eq_div_leptonIn, apply_pX_sub_p_of_collinear_initialState g hcol,
     leptonIn_of_collinear_initialState hcol, map_smul, smul_eq_mul]
 
 /-- After exactly collinear initial-state emission of the fraction `1 - z` of the incoming lepton
@@ -399,7 +405,7 @@ electron-method one. The on-shell photon forces `k² = 0`, so `Q² = z Q²_e - (
 theorem trueInvariants_Q2_of_collinear_initialState (hcol : e.photon = (1 - z) • e.k) :
     (e.trueInvariants g .initialState).Q2 = z * (electronMethod g e.k e.p e.kPrime).Q2 +
       (1 - z) * (z * g e.k e.k - g e.kPrime e.kPrime) := by
-  rw [trueInvariants_Q2_eq, trueMomentumTransfer_eq, pX_sub_p_of_collinear_initialState hcol,
+  rw [trueInvariants_Q2_eq_neg_apply_pX_sub_p, pX_sub_p_of_collinear_initialState hcol,
     LinearMap.BilinForm.apply_smul_sub_self_eq, electronMethod_Q2]
   ring
 
@@ -410,8 +416,8 @@ theorem trueInvariants_x_of_collinear_initialState (hk : g e.k e.k = 0)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) :
     (e.trueInvariants g .initialState).x =
       z * (electronMethod g e.k e.p e.kPrime).Q2 / (2 * (z * g e.p e.k - g e.p e.kPrime)) := by
-  rw [trueInvariants_x_eq, trueInvariants_Q2_of_collinear_initialState g hcol, hk, hk',
-    trueMomentumTransfer_eq, apply_pX_sub_p_of_collinear_initialState g hcol]
+  rw [trueInvariants_x_eq_Q2_div, trueInvariants_Q2_of_collinear_initialState g hcol, hk, hk',
+    apply_pX_sub_p_of_collinear_initialState g hcol]
   ring
 
 /-- After exactly collinear initial-state emission of the fraction `1 - z > 0` of the momentum of
@@ -439,7 +445,7 @@ theorem one_sub_electronMethod_y_of_collinear_initialState (hcol : e.photon = (1
 electron method returns the Bjorken variable `x_e = x y / (1 - z (1 - y))` in terms of the true
 `x` and `y`. -/
 theorem electronMethod_x_of_collinear_initialState (hk : g e.k e.k = 0)
-    (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) (hpk : g e.p e.k ≠ 0)
+    (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k)
     (hy : (e.trueInvariants g .initialState).y ≠ 0) :
     (electronMethod g e.k e.p e.kPrime).x =
       (e.trueInvariants g .initialState).x * (e.trueInvariants g .initialState).y /
@@ -449,6 +455,7 @@ theorem electronMethod_x_of_collinear_initialState (hk : g e.k e.k = 0)
     rintro rfl
     exact hy (by rw [zero_mul, div_zero])
   have hzk : z * g e.p e.k - g e.p e.kPrime ≠ 0 := (div_ne_zero_iff.mp hy).1
+  have hpk : g e.p e.k ≠ 0 := right_ne_zero_of_mul (div_ne_zero_iff.mp hy).2
   rw [← one_sub_electronMethod_y_of_collinear_initialState g hcol hz hpk, sub_sub_cancel,
     trueInvariants_x_of_collinear_initialState g hk hk' hcol,
     trueInvariants_y_of_collinear_initialState g hcol, electronMethod_x, electronMethod_y,
@@ -466,11 +473,11 @@ momentum, for massless leptons (`k² = k'² = 0`), the electron-method Bjorken v
 a nonvanishing true one, in the physical region `0 < y < 1` of the true inelasticity. -/
 theorem electronMethod_x_ne_trueInvariants_x_of_collinear_initialState (hk : g e.k e.k = 0)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) (hz1 : z < 1)
-    (hpk : g e.p e.k ≠ 0) (hy0 : 0 < (e.trueInvariants g .initialState).y)
+    (hy0 : 0 < (e.trueInvariants g .initialState).y)
     (hy1 : (e.trueInvariants g .initialState).y < 1)
     (hx : (e.trueInvariants g .initialState).x ≠ 0) :
     (electronMethod g e.k e.p e.kPrime).x ≠ (e.trueInvariants g .initialState).x := by
-  rw [electronMethod_x_of_collinear_initialState g hk hk' hcol hpk hy0.ne']
+  rw [electronMethod_x_of_collinear_initialState g hk hk' hcol hy0.ne']
   set x := (e.trueInvariants g .initialState).x
   set y := (e.trueInvariants g .initialState).y
   have hd : y < 1 - z * (1 - y) := by nlinarith
@@ -482,12 +489,12 @@ does not vanish, under the hypotheses of
 `electronMethod_x_ne_trueInvariants_x_of_collinear_initialState`. -/
 theorem shiftXY_electronMethod_ne_zero_of_collinear_initialState (hk : g e.k e.k = 0)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) (hz1 : z < 1)
-    (hpk : g e.p e.k ≠ 0) (hy0 : 0 < (e.trueInvariants g .initialState).y)
+    (hy0 : 0 < (e.trueInvariants g .initialState).y)
     (hy1 : (e.trueInvariants g .initialState).y < 1)
     (hx : (e.trueInvariants g .initialState).x ≠ 0) :
     (electronMethod g e.k e.p e.kPrime).shiftXY (e.trueInvariants g .initialState) ≠ 0 :=
-  fun h => electronMethod_x_ne_trueInvariants_x_of_collinear_initialState g hk hk' hcol hz1 hpk
-    hy0 hy1 hx (ReconstructedInvariants.shiftXY_eq_zero_iff.1 h).1
+  fun h => electronMethod_x_ne_trueInvariants_x_of_collinear_initialState g hk hk' hcol hz1 hy0
+    hy1 hx (ReconstructedInvariants.shiftXY_eq_zero_iff.1 h).1
 
 /-- The Sigma method recovers the true Bjorken variable after exactly collinear initial-state
 emission, for massless leptons (`k² = k'² = 0`). With
@@ -558,20 +565,30 @@ theorem leptonOut_sq_eq_zero_of_collinear_finalState (g : Bilin V)
   simpa only [map_smul, LinearMap.smul_apply, smul_eq_mul, mul_eq_zero, hz, false_or] using hk'
 
 /-- After exactly collinear final-state emission, in which the photon carries the fraction
-`1 - z` of the outgoing hard lepton momentum `k' + ℓ`, the electron method rescales the
-virtuality by `z`, up to the mass of the incoming lepton: `Q²_e = z Q² - (1 - z) k²`, and
-`Q²_e = z Q²` for a massless incoming lepton. -/
+`1 - z` of the outgoing hard lepton momentum `k_out = k' + ℓ`, the electron method rescales the
+virtuality by `z` up to the lepton masses: `Q²_e = z Q² - (1 - z) k² + z (1 - z) k_out²`. -/
 theorem electronMethod_Q2_of_collinear_finalState (g : Bilin V)
+    (hcol : e.photon = (1 - z) • (e.kPrime + e.photon)) :
+    (electronMethod g e.k e.p e.kPrime).Q2 =
+      z * (e.trueInvariants g .finalState).Q2 - (1 - z) * g e.k e.k +
+        z * (1 - z) * g (e.leptonOut .finalState) (e.leptonOut .finalState) := by
+  rw [electronMethod_Q2, trueInvariants_Q2_eq_neg_apply_pX_sub_p,
+    ← e.leptonIn_sub_leptonOut_eq_pX_sub_p .finalState,
+    leptonIn_finalState, kPrime_eq_smul_leptonOut_of_collinear_finalState hcol,
+    LinearMap.BilinForm.apply_sub_smul_self_eq]
+  ring
+
+/-- After exactly collinear final-state emission of the fraction `1 - z ≠ 1` of the outgoing hard
+lepton momentum from a massless measured lepton (`k'² = 0`), the electron method rescales the
+virtuality by `z` up to the mass of the incoming lepton: `Q²_e = z Q² - (1 - z) k²`, and
+`Q²_e = z Q²` for a massless incoming lepton. -/
+theorem electronMethod_Q2_of_collinear_finalState_of_kPrime_sq_eq_zero (g : Bilin V)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • (e.kPrime + e.photon))
     (hz : z ≠ 0) :
     (electronMethod g e.k e.p e.kPrime).Q2 =
       z * (e.trueInvariants g .finalState).Q2 - (1 - z) * g e.k e.k := by
-  have hww := leptonOut_sq_eq_zero_of_collinear_finalState g hk' hcol hz
-  rw [electronMethod_Q2, trueInvariants_Q2_eq, trueMomentumTransfer_eq,
-    ← e.leptonIn_sub_leptonOut_eq_pX_sub_p .finalState,
-    leptonIn_finalState, kPrime_eq_smul_leptonOut_of_collinear_finalState hcol,
-    LinearMap.BilinForm.apply_sub_smul_self_eq, hww]
-  ring
+  rw [electronMethod_Q2_of_collinear_finalState g hcol,
+    leptonOut_sq_eq_zero_of_collinear_finalState g hk' hcol hz, mul_zero, add_zero]
 
 end FinalState
 
