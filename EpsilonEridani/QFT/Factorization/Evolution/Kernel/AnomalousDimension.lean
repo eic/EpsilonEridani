@@ -27,7 +27,8 @@ the kernels are, and the inverse Mellin transform that reconstructs the densitie
 along a contour in the complex plane, to the right of their rightmost singularity.
 
 The singlet anomalous-dimension matrix `γ^S(N)` acts on the pair `(Σ, g)` of the quark singlet
-`Σ = ∑ᵢ (qᵢ + q̄ᵢ)` and the gluon, with the row index the daughter and the column index the parent:
+`Σ = ∑ᵢ (q_i + qbar_i)` and the gluon, with the row index the daughter and the column index the
+parent:
 
   `γ^S(N) = !![γ_qq(N), 2 n_f γ_qg(N); γ_gq(N), γ_gg(N)]`.
 
