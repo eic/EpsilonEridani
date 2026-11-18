@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis
+public import EpsilonEridani.Particles.Parton.GPD.Kinematics
 public import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics
 public import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics.Basic
 /-!
@@ -41,8 +42,9 @@ The bound `tMom_le_tMin` is unaffected by this caveat.
 
 In the target-elastic case this is the same kinematic boundary as the off-forward
 `Particles.Parton.GPD.tZero` (with `Particles.Parton.GPD.OffForwardKinematics.tMom_le_tZero`):
-`tMinElastic M ξ = tZero M η` at skewness `η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)`. What is new here is
-the dissociated target, `M_Y ≠ M`, and the abstract bilinear form `g`.
+`tMinElastic M ξ = tZero M η` at skewness `η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)`
+(`tMinElastic_eq_tZero`). What is new here is the dissociated target, `M_Y ≠ M`, and the abstract
+bilinear form `g`.
 
 As in the rest of the DIS kinematics layer, scalar products are taken with respect to an abstract
 bilinear form `g`, here assumed reflexive, for which the scalar product splits as
@@ -93,6 +95,18 @@ theorem one_sub_xiLC (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K
   field_simp
   ring
 
+/-- The plus momentum of the target-side system in terms of the fraction lost,
+`P'⁺ = (1 - ξ) P⁺`. -/
+theorem plus_pPrime_eq (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K.p ≠ 0) :
+    L.plus K.pPrime = (1 - xiLC L K) * L.plus K.p := by
+  rw [one_sub_xiLC L K hp, div_mul_cancel₀ _ hp]
+
+/-- The target-side system has non-vanishing plus momentum exactly when the target does not lose
+all of its plus momentum, `ξ ≠ 1`. -/
+theorem plus_pPrime_ne_zero_iff (L : LightConeBasis g) (K : DisKinematics V)
+    (hp : L.plus K.p ≠ 0) : L.plus K.pPrime ≠ 0 ↔ xiLC L K ≠ 1 := by
+  rw [plus_pPrime_eq L K hp, mul_ne_zero_iff, sub_ne_zero, ne_comm, and_iff_left hp]
+
 /-- With positive plus momenta, the light-cone fraction lost by the target is below one. -/
 theorem xiLC_lt_one (L : LightConeBasis g) (K : DisKinematics V) (hp : 0 < L.plus K.p)
     (hp' : 0 < L.plus K.pPrime) : xiLC L K < 1 := by
@@ -135,7 +149,7 @@ theorem tMom_eq_tMin_add (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinemati
     tMom g K = tMin M MY (xiLC L K) +
       g (L.transverseProj (deltaLost K)) (L.transverseProj (deltaLost K)) / (1 - xiLC L K) := by
   have hξ : xiLC L K = 1 - L.plus K.pPrime / L.plus K.p := by
-    linarith [one_sub_xiLC L K hp]
+    rw [← one_sub_xiLC L K hp, sub_sub_cancel]
   rw [MY2_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hMY
   rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hM
   simp only [hT, map_zero, add_zero] at hM
@@ -225,9 +239,9 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
     field_simp
     ring
   have hξK : xiLC L K = ξ := by
-    have := one_sub_xiLC L K hp
-    rw [hKp, ha, mul_div_assoc, div_self hp, mul_one] at this
-    linarith
+    have := plus_pPrime_eq L K hp
+    rw [hKp, ha] at this
+    linarith [mul_right_cancel₀ hp this]
   refine ⟨K, rfl, hMY, hξK, ?_⟩
   rw [tMom_eq_tMin_add hg L K hT hp (hKp ▸ ha0) hM hMY, hξK,
     apply_transverseProj_deltaLost L K hT, hKT]
@@ -257,10 +271,28 @@ theorem setOf_tMom_eq_Iic_tMin (hg : g.IsRefl) (L : LightConeBasis g)
   ext t
   refine ⟨?_, exists_tMom_eq_of_le_tMin hg L he hee hT hp hM hξ⟩
   rintro ⟨K, rfl, hMY, rfl, rfl⟩
-  have hp' : L.plus K.pPrime ≠ 0 := by
-    have h := one_sub_xiLC L K hp
-    exact (div_ne_zero_iff.mp (h ▸ (sub_pos.mpr hξ).ne')).1
+  have hp' : L.plus K.pPrime ≠ 0 := (plus_pPrime_ne_zero_iff L K hp).2 hξ.ne
   exact tMom_le_tMin hg L K hT hp hp' hξ.le hM hMY (htr _ (L.isProj_transverseProj.map_mem _))
+
+/-! ### Relation to the off-forward boundary -/
+
+/-- The target-elastic boundary is the off-forward boundary `Particles.Parton.GPD.tZero` at
+skewness `η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)`: `-ξ²M²/(1-ξ) = -4η²M²/(1-η²)`. The light-cone
+fraction `ξ = Δ⁺/P⁺` and the skewness `η = Δ⁺/(P + P')⁺` parametrize the same boundary. The
+excluded value `ξ = 2` is where the change of variables is singular. -/
+theorem tMinElastic_eq_tZero (M : ℝ) {ξ : ℝ} (hξ : ξ ≠ 2) :
+    tMinElastic M ξ = Particles.Parton.GPD.tZero M (ξ / (2 - ξ)) := by
+  have h2 : 2 - ξ ≠ 0 := sub_ne_zero.mpr (Ne.symm hξ)
+  rw [tMinElastic_def, Particles.Parton.GPD.tZero_def]
+  by_cases h1 : ξ = 1
+  · subst h1
+    norm_num
+  have h1' : 1 - ξ ≠ 0 := sub_ne_zero.mpr (Ne.symm h1)
+  have hη : 1 - (ξ / (2 - ξ)) ^ 2 = 4 * (1 - ξ) / (2 - ξ) ^ 2 := by
+    field_simp
+    ring
+  rw [hη]
+  field_simp
 
 end Kinematics
 end Diffractive

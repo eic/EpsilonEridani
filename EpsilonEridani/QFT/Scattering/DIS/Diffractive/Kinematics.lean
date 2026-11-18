@@ -248,12 +248,14 @@ skewness `ExclKinematics.xiSkew` (Belitsky-Müller-Kirchner's `η`), a different
 carries a `ξ` in the exclusive kinematics and for which the target-elastic boundary is a different
 function.
 
-For a light-cone fraction `ξ < 1`, the accessible momentum transfers of the target-elastic physical
-region are `t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)` (`le_tMinElastic_iff`, with
-`t ≤ 0` throughout); the boundary value is attained in the forward configuration, which is the
-point of minimum `|t|`. At the pole `ξ = 1` the true boundary diverges, whereas, like any real
-division in Lean, `tMinElastic M 1` is `0`; the characterisation is therefore stated only for
-`ξ < 1`.
+For a light-cone fraction `ξ < 1`, the momentum transfers compatible with the target-side
+constraints `P² = M²`, `P'² = M²` are `t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)`
+(`le_tMinElastic_iff`), by `Kinematics.tMom_le_tMin` and `Kinematics.setOf_tMom_eq_Iic_tMin`
+with `tMin_self`; the bound is saturated when the momentum transfer has no transverse part,
+`Δ_T² = 0`. These statements constrain only the target side and make no claim about the full
+diffractive physical region. At the pole `ξ = 1` the true boundary diverges, whereas, like any
+real division in Lean, `tMinElastic M 1` is `0`; the characterisation is therefore stated only
+for `ξ < 1`.
 
 The boundary is obtained from the two-body threshold condition at fixed `(ξ, M, M_Y)` as
 `tMin M M_Y ξ`, and in the target-elastic case `M_Y = M` it reduces to `-ξ²M²/(1-ξ)`
