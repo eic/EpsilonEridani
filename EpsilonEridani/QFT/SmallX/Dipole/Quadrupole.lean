@@ -147,9 +147,11 @@ particular the quadrupole is invariant under every global colour rotation `U ↦
 theorem quadrupoleS_gaugeTransform (Ωp Ωm : EuclideanSpace ℝ (Fin 2) → unitaryGroup (Fin Nc) ℂ)
     (U : WilsonConfiguration Nc) {x y z w : EuclideanSpace ℝ (Fin 2)} (hxy : Ωm x = Ωm y)
     (hyz : Ωp y = Ωp z) (hzw : Ωm z = Ωm w) (hwx : Ωp w = Ωp x) :
-    quadrupoleS (WilsonConfiguration.gaugeTransform Ωp Ωm U) x y z w = quadrupoleS U x y z w :=
-  multipoleS_gaugeTransform Ωp Ωm U (Fin.forall_fin_two.mpr ⟨hxy, hzw⟩)
-    (Fin.forall_fin_two.mpr ⟨hyz, hwx⟩)
+    quadrupoleS (WilsonConfiguration.gaugeTransform Ωp Ωm U) x y z w = quadrupoleS U x y z w := by
+  refine multipoleS_gaugeTransform Ωp Ωm U (Fin.forall_fin_two.mpr ⟨hxy, hzw⟩) ?_
+  refine Fin.forall_fin_two.mpr ⟨?_, ?_⟩
+  · simpa using hyz
+  · simpa using hwx
 
 end SmallX
 end QFT
