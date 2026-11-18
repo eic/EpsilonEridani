@@ -20,7 +20,7 @@ nucleon: the index `(Λ, λ)` is the pair of hadron and quark helicity. The diag
 `λ`, and the double-helicity-flip entry is the transversity transfer.
 
 The matrix is a sum over the unobserved final states `X` accompanying the hadron of products of
-amplitudes `⟨h X| ψ̄ |0⟩`, so it is positive semidefinite: this is
+the amplitudes `⟨0| ψ |h X⟩` and their conjugates, so it is positive semidefinite: this is
 `EpsilonEridani.Particles.Parton.PDF.SpinDensityC.ofAmplitudes`, and conversely every positive
 semidefinite helicity matrix is such a sum (`SpinDensityC.exists_eq_ofAmplitudes`). A family of
 such matrices is therefore a family of `SpinDensityC`, and the three leading-twist collinear
