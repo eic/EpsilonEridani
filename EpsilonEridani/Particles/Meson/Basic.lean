@@ -44,7 +44,7 @@ Exchanging two flavours `i` and `j` in the valence content of a meson, with the 
 accordingly, is `PseudoscalarMeson.swapFlavor`; it is an involution, commutes with charge
 conjugation, preserves charge consistency and relabels the net valence numbers. Over the light
 flavours, at the light-quark charges and the pair up, down, it is isospin conjugation, which
-exchanges the two charged pions (`piPlus_swapFlavor_u_d`).
+exchanges the two charged pions (`piPlus_swapFlavor_u_d_eq_piMinus`).
 
 Flavour-symmetry breaking is carried as separate data, `FlavorBreaking`: the light-quark mass
 difference and the difference between the strange and the average light-quark mass. The isospin
@@ -303,7 +303,7 @@ variable [DecidableEq Flavor]
 decay constant, the valence quark and antiquark flavours relabelled by `Equiv.swap i j`, and the
 charge shifted by the change this relabelling makes to the charge `e q - e q'` of the valence pair.
 Over the light flavours, at the light-quark charges and `i, j = u, d`, it is the isospin
-conjugate (`piPlus_swapFlavor_u_d`). -/
+conjugate (`piPlus_swapFlavor_u_d_eq_piMinus`). -/
 def swapFlavor (e : Flavor → ℝ) (i j : Flavor) : PseudoscalarMeson Flavor where
   mass := M.mass
   decayConstant := M.decayConstant
@@ -469,11 +469,13 @@ theorem kPlus_valenceNumber_ne_piPlus_valenceNumber :
 charges sends `π⁺ = u dbar` to `d ubar = π⁻`, the charge `+1` being shifted by `-1/3 - 2/3`
 twice. -/
 @[simp]
-theorem piPlus_swapFlavor_u_d : piPlus.swapFlavor LightFlavor.charge u d = piMinus := by
+theorem piPlus_swapFlavor_u_d_eq_piMinus :
+    piPlus.swapFlavor LightFlavor.charge u d = piMinus := by
   ext <;> norm_num [piMinus_eq_chargeConj_piPlus]
 
-theorem piMinus_swapFlavor_u_d : piMinus.swapFlavor LightFlavor.charge u d = piPlus := by
-  rw [← piPlus_swapFlavor_u_d, PseudoscalarMeson.swapFlavor_swapFlavor]
+theorem piMinus_swapFlavor_u_d_eq_piPlus :
+    piMinus.swapFlavor LightFlavor.charge u d = piPlus := by
+  rw [← piPlus_swapFlavor_u_d_eq_piMinus, PseudoscalarMeson.swapFlavor_swapFlavor]
 
 /-! ### Flavour-symmetry breaking -/
 

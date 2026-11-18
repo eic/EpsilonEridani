@@ -63,8 +63,10 @@ conjugates of the meson's densities; the valence model is
 (`isChargeConjCovariant_valenceModelPdf`). Exchanging two flavours `i`, `j` of the meson
 (`PseudoscalarMeson.swapFlavor`) likewise exchanges them over the species in its valence model
 (`swapFlavor_valenceModelPdf`), and the two exchanges together preserve the valence assignment
-(`hasValenceNumbers_swapFlavor_speciesSwapFlavor_iff`); an assignment with this property is
-`IsSwapFlavorCovariant`.
+(`hasValenceNumbers_swapFlavor_speciesSwapFlavor_iff`). An assignment `F` with
+`F (M.swapFlavor e i j) = PDF.speciesSwapFlavor i j (F M)` for every meson `M` is
+`IsSwapFlavorCovariant e i j F`, covariant under the exchange of `i` and `j` at the charges `e`;
+the valence model is (`isSwapFlavorCovariant_valenceModelPdf`).
 
 ## Main definitions
 
@@ -441,9 +443,9 @@ section Covariance
 variable {Flavor : Type} {F : PseudoscalarMeson Flavor → PDF.Pdf (Species Flavor)}
 
 /-- **Charge-conjugation covariance** of an assignment `F` of parton densities to mesons: the
-densities of the charge-conjugate meson are the charge conjugates of the meson's densities. It is
-the charge-conjugation invariance of the strong interaction, and holds whatever the quark
-masses. -/
+densities of the charge-conjugate meson are the charge conjugates of the meson's densities. It
+expresses the charge-conjugation invariance of the strong interaction, and is not conditioned on
+the quark masses. -/
 def IsChargeConjCovariant (F : PseudoscalarMeson Flavor → PDF.Pdf (Species Flavor)) : Prop :=
   ∀ M, F M.chargeConj = PDF.chargeConj (F M)
 
