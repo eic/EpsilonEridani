@@ -248,12 +248,16 @@ skewness `ExclKinematics.xiSkew` (Belitsky-Müller-Kirchner's `η`), a different
 carries a `ξ` in the exclusive kinematics and for which the target-elastic boundary is a different
 function.
 
-For a light-cone fraction `ξ < 1`, the momentum transfers compatible with the target-side
-constraints `P² = M²`, `P'² = M²` are `t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)`
-(`le_tMinElastic_iff`), by `Kinematics.tMom_le_tMin` and `Kinematics.setOf_tMom_eq_Iic_tMin`
-with `tMin_self`; the bound is saturated when the momentum transfer has no transverse part,
-`Δ_T² = 0`. These statements constrain only the target side and make no claim about the full
-diffractive physical region. At the pole `ξ = 1` the true boundary diverges, whereas, like any
+For a reflexive form, a target with no transverse momentum and non-vanishing plus momentum, a
+light-cone fraction `ξ < 1` and the target-side constraints `P² = M²`, `P'² = M²`, a transverse
+momentum transfer with `Δ_T² ≤ 0` gives `t ≤ tMinElastic M ξ`, equivalently
+`|t| ≥ ξ²M²/(1-ξ)` (`le_tMinElastic_iff`), by `Kinematics.tMom_le_tMin` with `tMin_self`; the
+bound is saturated exactly when `Δ_T² = 0` (`Kinematics.tMom_eq_tMin_iff`), i.e. in the forward
+configuration `Δ_T = 0` for a metric definite on transverse vectors. If moreover the metric is
+negative semidefinite on transverse vectors and admits a space-like transverse vector, these
+momentum transfers are exactly `t ≤ tMinElastic M ξ` (`Kinematics.setOf_tMom_eq_Iic_tMin`).
+These statements constrain only the target side and make no claim about the full diffractive
+physical region. At the pole `ξ = 1` the true boundary diverges, whereas, like any
 real division in Lean, `tMinElastic M 1` is `0`; the characterisation is therefore stated only
 for `ξ < 1`.
 
@@ -269,25 +273,6 @@ def tMinElastic (M xiLC : ℝ) : ℝ := -(xiLC ^ 2 * M ^ 2) / (1 - xiLC)
 theorem tMinElastic_def (M xiLC : ℝ) :
     tMinElastic M xiLC = -(xiLC ^ 2 * M ^ 2) / (1 - xiLC) := (rfl)
 
-/-- The negated target-elastic boundary, `-tMinElastic M ξ = ξ²M²/(1-ξ)`. The identity is
-unconditional; `-tMinElastic M ξ` is a (non-negative) magnitude only for `ξ ≤ 1`
-(`tMinElastic_nonpos`). -/
-theorem neg_tMinElastic (M xiLC : ℝ) : -tMinElastic M xiLC = xiLC ^ 2 * M ^ 2 / (1 - xiLC) := by
-  rw [tMinElastic_def, neg_div, neg_neg]
-
-/-- The boundary condition `t ≤ tMinElastic M ξ` for a real momentum transfer `t`, in terms of its
-magnitude: `-t ≥ ξ²M²/(1-ξ)`. Here `M` and `xiLC` are arbitrary parameters, `xiLC` being the
-light-cone fraction of `tMinElastic`, and the equivalence holds for any choice of them. -/
-theorem le_tMinElastic_iff (M xiLC t : ℝ) :
-    t ≤ tMinElastic M xiLC ↔ xiLC ^ 2 * M ^ 2 / (1 - xiLC) ≤ -t := by
-  rw [← neg_tMinElastic, neg_le_neg_iff]
-
-/-- At vanishing momentum loss `ξ = 0` the target-elastic boundary degenerates to `t = 0`. -/
-@[simp]
-theorem tMinElastic_xiLC_zero (M : ℝ) : tMinElastic M 0 = 0 := by
-  rw [tMinElastic_def]
-  norm_num
-
 /-- The target-elastic boundary lies on the non-positive side of zero whenever `xiLC ≤ 1`, in
 particular throughout the physical range `ξ ∈ [0, 1)`: the boundary of the physical region is on
 the same side of zero as the region it bounds. At `xiLC = 1` the value is the division junk `0`. -/
@@ -302,9 +287,10 @@ mass `M` that emerges as a system of mass `M_Y`:
 `tMin M M_Y ξ = -ξ (M_Y² - (1 - ξ) M²) / (1 - ξ)`.
 
 As for `tMinElastic`, the argument `xiLC` is the light-cone fraction `ξ = Δ⁺/P⁺`, not the
-invariant `Invariants.xi`. For a target with no transverse momentum and non-vanishing plus
-momenta, the on-shell conditions `P² = M²`, `P'² = M_Y²` give `t = tMin M M_Y ξ + Δ_T²/(1-ξ)`
-(`Kinematics.tMom_eq_tMin_add`), so that `t ≤ tMin M M_Y ξ` for `ξ ≤ 1` when the transverse
+invariant `Invariants.xi`. For a reflexive form, a target with no transverse momentum,
+non-vanishing plus momentum and `ξ ≠ 1`, the on-shell conditions `P² = M²`, `P'² = M_Y²` give
+`t = tMin M M_Y ξ + Δ_T²/(1-ξ)` (`Kinematics.tMom_eq_tMin_add`), so that `t ≤ tMin M M_Y ξ` for
+`ξ < 1` when the transverse
 momentum transfer satisfies `Δ_T² ≤ 0`, the boundary being attained when `Δ_T² = 0`. For a
 metric that is negative semidefinite on transverse vectors and admits a space-like transverse
 vector, the momentum transfers compatible with the target-side constraints (`P`, `P'² = M_Y²`,
@@ -312,7 +298,8 @@ vector, the momentum transfers compatible with the target-side constraints (`P`,
 not constrained there, so this is not yet the diffractive physical region. In the target-elastic
 case `M_Y = M` it reduces to `tMinElastic M ξ` (`tMin_self`), which is the boundary
 `Particles.Parton.GPD.tZero M η` of the off-forward kinematics at skewness `η = ξ/(2-ξ)`, i.e.
-`ξ = 2η/(1+η)`. At the pole `ξ = 1` the value is the division junk `0`. -/
+`ξ = 2η/(1+η)` (`tMinElastic_eq_tZero`). At the pole `ξ = 1` the value is the division junk
+`0`. -/
 def tMin (M MY xiLC : ℝ) : ℝ := -(xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) / (1 - xiLC)
 
 /-- Defining expression for `tMin`. -/
@@ -343,6 +330,25 @@ theorem tMin_self (M xiLC : ℝ) : tMin M M xiLC = tMinElastic M xiLC := by
 theorem tMin_xiLC_zero (M MY : ℝ) : tMin M MY 0 = 0 := by
   rw [tMin_def]
   norm_num
+
+/-- The negated target-elastic boundary, `-tMinElastic M ξ = ξ²M²/(1-ξ)`. The identity is
+unconditional; `-tMinElastic M ξ` is a (non-negative) magnitude only for `ξ ≤ 1`
+(`tMinElastic_nonpos`). -/
+theorem neg_tMinElastic (M xiLC : ℝ) : -tMinElastic M xiLC = xiLC ^ 2 * M ^ 2 / (1 - xiLC) := by
+  rw [← tMin_self, neg_tMin]
+  ring
+
+/-- The boundary condition `t ≤ tMinElastic M ξ` for a real momentum transfer `t`, in terms of its
+magnitude: `-t ≥ ξ²M²/(1-ξ)`. Here `M` and `xiLC` are arbitrary parameters, `xiLC` being the
+light-cone fraction of `tMinElastic`, and the equivalence holds for any choice of them. -/
+theorem le_tMinElastic_iff (M xiLC t : ℝ) :
+    t ≤ tMinElastic M xiLC ↔ xiLC ^ 2 * M ^ 2 / (1 - xiLC) ≤ -t := by
+  rw [← neg_tMinElastic, neg_le_neg_iff]
+
+/-- At vanishing momentum loss `ξ = 0` the target-elastic boundary degenerates to `t = 0`. -/
+@[simp]
+theorem tMinElastic_xiLC_zero (M : ℝ) : tMinElastic M 0 = 0 := by
+  rw [← tMin_self, tMin_xiLC_zero]
 
 /-- The boundary `tMin` is non-positive for `0 ≤ ξ ≤ 1` above the threshold
 `(1 - ξ) M² ≤ M_Y²`, in particular whenever `M² ≤ M_Y²`. -/

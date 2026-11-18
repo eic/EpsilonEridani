@@ -18,12 +18,12 @@ In a diffractive event `e(k) + p(P) → e(k') + X + Y(P')` the incoming target h
 with respect to a light-cone basis `(n₊, n₋)` along the collision axis, so that the target has no
 transverse momentum, the target loses the light-cone fraction `ξ = Δ⁺/P⁺` of its plus momentum
 (`xiLC`), where `Δ = P - P'`. This file derives from these two on-shell conditions, for
-non-vanishing plus momenta `P⁺` and `P'⁺`, the exact relation
+non-vanishing `P⁺` and `ξ ≠ 1` (equivalently non-vanishing `P'⁺`), the exact relation
 
   `t = tMin M M_Y ξ + Δ_T² / (1 - ξ)`  (`tMom_eq_tMin_add`),
 
 where `Δ_T` is the transverse part of the momentum transfer, that of `-P'`
-(`transverseProj_deltaLost`). For `ξ ≤ 1` and a transverse momentum transfer with `Δ_T² ≤ 0`, as
+(`transverseProj_deltaLost`). For `ξ < 1` and a transverse momentum transfer with `Δ_T² ≤ 0`, as
 for a metric of signature `(+, -, -, -)`, this is the two-body threshold condition
 `t ≤ tMin M M_Y ξ` (`tMom_le_tMin`), with equality exactly when `Δ_T² = 0`
 (`tMom_eq_tMin_iff`). Above the threshold `(1 - ξ) M² ≤ M_Y²` and for `0 ≤ ξ` the momentum
@@ -95,6 +95,12 @@ theorem one_sub_xiLC (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K
   field_simp
   ring
 
+/-- The light-cone fraction lost by the target in terms of the plus momenta,
+`ξ = 1 - P'⁺/P⁺`. -/
+theorem xiLC_eq_one_sub_div (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K.p ≠ 0) :
+    xiLC L K = 1 - L.plus K.pPrime / L.plus K.p := by
+  rw [← one_sub_xiLC L K hp, sub_sub_cancel]
+
 /-- The plus momentum of the target-side system in terms of the fraction lost,
 `P'⁺ = (1 - ξ) P⁺`. -/
 theorem plus_pPrime_eq (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K.p ≠ 0) :
@@ -140,16 +146,17 @@ theorem apply_transverseProj_deltaLost (L : LightConeBasis g) (K : DisKinematics
   simp [transverseProj_deltaLost L K hT]
 
 /-- The exact relation between the momentum transfer and its boundary: for a target with no
-transverse momentum, non-vanishing plus momenta `P⁺` and `P'⁺`, `P² = M²` and `P'² = M_Y²`,
+transverse momentum, non-vanishing plus momentum `P⁺`, a light-cone fraction `ξ ≠ 1` (so that
+`P'⁺ ≠ 0`, `plus_pPrime_ne_zero_iff`), `P² = M²` and `P'² = M_Y²`,
 `t = tMin M M_Y ξ + Δ_T² / (1 - ξ)`, where `ξ = Δ⁺/P⁺` and `Δ_T` is the transverse part of
 `Δ = P - P'`. No mass or high-energy approximation is made. -/
 theorem tMom_eq_tMin_add (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinematics V)
-    {M MY : ℝ} (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0)
-    (hp' : L.plus K.pPrime ≠ 0) (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2) :
+    {M MY : ℝ} (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K ≠ 1)
+    (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2) :
     tMom g K = tMin M MY (xiLC L K) +
       g (L.transverseProj (deltaLost K)) (L.transverseProj (deltaLost K)) / (1 - xiLC L K) := by
-  have hξ : xiLC L K = 1 - L.plus K.pPrime / L.plus K.p := by
-    rw [← one_sub_xiLC L K hp, sub_sub_cancel]
+  have hp' := (plus_pPrime_ne_zero_iff L K hp).2 hξ1
+  have hξ := xiLC_eq_one_sub_div L K hp
   rw [MY2_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hMY
   rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hM
   simp only [hT, map_zero, add_zero] at hM
@@ -160,43 +167,42 @@ theorem tMom_eq_tMin_add (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinemati
   ring
 
 /-- The two-body threshold condition: for a target with no transverse momentum, non-vanishing
-plus momenta `P⁺` and `P'⁺`, a light-cone fraction `ξ ≤ 1` (for instance from positive plus
-momenta, `xiLC_lt_one`), `P² = M²`, `P'² = M_Y²` and a space-like or null transverse momentum
-transfer `Δ_T² ≤ 0`, the momentum transfer lies below the boundary, `t ≤ tMin M M_Y ξ`. -/
+plus momentum `P⁺`, a light-cone fraction `ξ < 1` (for instance from positive plus momenta,
+`xiLC_lt_one`), `P² = M²`, `P'² = M_Y²` and a space-like or null transverse momentum transfer
+`Δ_T² ≤ 0`, the momentum transfer lies below the boundary, `t ≤ tMin M M_Y ξ`. -/
 theorem tMom_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinematics V) {M MY : ℝ}
-    (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0) (hp' : L.plus K.pPrime ≠ 0)
-    (hξ1 : xiLC L K ≤ 1) (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2)
+    (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K < 1)
+    (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2)
     (hΔT : g (L.transverseProj (deltaLost K)) (L.transverseProj (deltaLost K)) ≤ 0) :
     tMom g K ≤ tMin M MY (xiLC L K) := by
-  rw [tMom_eq_tMin_add hg L K hT hp hp' hM hMY, add_le_iff_nonpos_right]
-  exact div_nonpos_of_nonpos_of_nonneg hΔT (sub_nonneg.mpr hξ1)
+  rw [tMom_eq_tMin_add hg L K hT hp hξ1.ne hM hMY, add_le_iff_nonpos_right]
+  exact div_nonpos_of_nonpos_of_nonneg hΔT (sub_nonneg.mpr hξ1.le)
 
 /-- The boundary `t = tMin M M_Y ξ` is attained exactly when the transverse momentum transfer is
 null, `Δ_T² = 0`; for a metric that is definite on transverse vectors this is the forward
 configuration `Δ_T = 0`. -/
 theorem tMom_eq_tMin_iff (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinematics V)
-    {M MY : ℝ} (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0)
-    (hp' : L.plus K.pPrime ≠ 0) (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2) :
+    {M MY : ℝ} (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K ≠ 1)
+    (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2) :
     tMom g K = tMin M MY (xiLC L K) ↔
       g (L.transverseProj (deltaLost K)) (L.transverseProj (deltaLost K)) = 0 := by
-  have h1 : 1 - xiLC L K ≠ 0 := by
-    rw [one_sub_xiLC L K hp]
-    exact div_ne_zero hp' hp
-  rw [tMom_eq_tMin_add hg L K hT hp hp' hM hMY, add_eq_left, div_eq_zero_iff, or_iff_left h1]
+  rw [tMom_eq_tMin_add hg L K hT hp hξ1 hM hMY, add_eq_left, div_eq_zero_iff,
+    or_iff_left (sub_ne_zero.mpr (Ne.symm hξ1))]
 
 /-- The momentum transfer to the target is non-positive, which is the sign convention
 `t ≤ 0` derived rather than imposed: under the hypotheses of `tMom_le_tMin` (no transverse target
-momentum, non-vanishing plus momenta, `ξ ≤ 1`, `P² = M²`, `P'² = M_Y²` and `Δ_T² ≤ 0`), it holds
+momentum, non-vanishing plus momentum `P⁺`, `ξ < 1`, `P² = M²`, `P'² = M_Y²` and `Δ_T² ≤ 0`), it
+holds
 when the target loses a non-negative plus momentum fraction, `0 ≤ ξ` (`xiLC_nonneg`), and the
 target-side system lies above the threshold `(1 - ξ) M² ≤ M_Y²`, in particular when
 `M² ≤ M_Y²`. -/
 theorem tMom_nonpos (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinematics V) {M MY : ℝ}
-    (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0) (hp' : L.plus K.pPrime ≠ 0)
-    (hξ1 : xiLC L K ≤ 1) (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2)
+    (hT : L.transverseProj K.p = 0) (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K < 1)
+    (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2)
     (hΔT : g (L.transverseProj (deltaLost K)) (L.transverseProj (deltaLost K)) ≤ 0)
     (hξ : 0 ≤ xiLC L K) (hth : (1 - xiLC L K) * M ^ 2 ≤ MY ^ 2) :
     tMom g K ≤ 0 :=
-  (tMom_le_tMin hg L K hT hp hp' hξ1 hM hMY hΔT).trans (tMin_nonpos hξ hξ1 hth)
+  (tMom_le_tMin hg L K hT hp hξ1 hM hMY hΔT).trans (tMin_nonpos hξ hξ1.le hth)
 
 /-! ### The momentum transfers compatible with the target-side kinematics -/
 
@@ -243,7 +249,7 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
     rw [hKp, ha] at this
     linarith [mul_right_cancel₀ hp this]
   refine ⟨K, rfl, hMY, hξK, ?_⟩
-  rw [tMom_eq_tMin_add hg L K hT hp (hKp ▸ ha0) hM hMY, hξK,
+  rw [tMom_eq_tMin_add hg L K hT hp (hξK ▸ hξ.ne) hM hMY, hξK,
     apply_transverseProj_deltaLost L K hT, hKT]
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← sq, hs2]
@@ -271,8 +277,9 @@ theorem setOf_tMom_eq_Iic_tMin (hg : g.IsRefl) (L : LightConeBasis g)
   ext t
   refine ⟨?_, exists_tMom_eq_of_le_tMin hg L he hee hT hp hM hξ⟩
   rintro ⟨K, rfl, hMY, rfl, rfl⟩
-  have hp' : L.plus K.pPrime ≠ 0 := (plus_pPrime_ne_zero_iff L K hp).2 hξ.ne
-  exact tMom_le_tMin hg L K hT hp hp' hξ.le hM hMY (htr _ (L.isProj_transverseProj.map_mem _))
+  exact tMom_le_tMin hg L K hT hp hξ hM hMY (htr _ (L.isProj_transverseProj.map_mem _))
+
+end Kinematics
 
 /-! ### Relation to the off-forward boundary -/
 
@@ -294,7 +301,6 @@ theorem tMinElastic_eq_tZero (M : ℝ) {ξ : ℝ} (hξ : ξ ≠ 2) :
   rw [hη]
   field_simp
 
-end Kinematics
 end Diffractive
 end DIS
 end Scattering
