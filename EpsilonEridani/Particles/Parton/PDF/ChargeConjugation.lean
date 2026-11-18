@@ -23,7 +23,8 @@ bundle `PDF.SumRuleAssumptions`; these are instances of the general results
 `PDF.Assumptions.comap` and its companions.
 
 On a density over `Species Flavor` the integral `∫₀¹ (q_i(x) - qbar_i(x)) dx` is the net number of
-quarks of flavour `i`, the valence number `PDF.valenceNumber`. The valence sum rules of a hadron
+quarks of flavour `i`, the valence number `PDF.valenceNumber`; the integrand `q_i(x) - qbar_i(x)`
+at one scale is the valence density `PDF.valenceDensity`. The valence sum rules of a hadron
 prescribe it flavour by flavour. Charge conjugation negates every valence number, and a flavour
 whose quark and antiquark densities agree, as in a charge-conjugation invariant density, has no
 valence number.
@@ -39,6 +40,7 @@ only one scale.
 
 * `EpsilonEridani.Particles.Parton.PDF.chargeConj`: the charge-conjugate density.
 * `EpsilonEridani.Particles.Parton.PDF.valenceNumber`: `∫₀¹ (q_i - qbar_i)`.
+* `EpsilonEridani.Particles.Parton.PDF.valenceDensity`: `q_i(x) - qbar_i(x)` at one scale.
 
 ## Main statements
 
@@ -155,6 +157,17 @@ def valenceNumber (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) : ℝ :=
 
 theorem valenceNumber_def (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) :
     valenceNumber f i Q2 = mellinMoment f 0 (.quark i) Q2 - mellinMoment f 0 (.antiquark i) Q2 :=
+  (rfl)
+
+/-- The valence density `q_i(x, Q²) - qbar_i(x, Q²)` of flavour `i` in the density `f`, as a
+function of the momentum fraction `x` at the scale `Q2`: the quark density of flavour `i` minus
+its antiquark density. Its large-`x` behaviour is what quark-counting arguments constrain. -/
+def valenceDensity (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) : ℝ → ℝ :=
+  fun x => f (.quark i) x Q2 - f (.antiquark i) x Q2
+
+@[simp]
+theorem valenceDensity_apply (f : Pdf (Species Flavor)) (i : Flavor) (Q2 x : ℝ) :
+    valenceDensity f i Q2 x = f (.quark i) x Q2 - f (.antiquark i) x Q2 :=
   (rfl)
 
 /-- Under the sum-rule bundle, the valence number of a flavour is the target value of its quark

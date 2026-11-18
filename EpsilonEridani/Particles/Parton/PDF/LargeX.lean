@@ -21,8 +21,10 @@ exponent `β`, `PDF.HasLargeXExponent g β`, when `g x / (1 - x)^β` has a posit
 
 The exponent is unique when it exists (`HasLargeXExponent.unique`), so two densities with
 different exponents are different functions however many of their moments agree. It is preserved
-by positive rescaling and by sums of functions with the same exponent, and the model shape
-`x^a (1 - x)^b` of `PDF.modelPdf` has exponent `b` (`hasLargeXExponent_modelPdf`).
+by positive rescaling and by sums of functions with the same exponent. A function `h x (1 - x)^β`
+with `h` tending to a positive limit at the endpoint has exponent `β` (`hasLargeXExponent_mul`);
+in particular the model shape `x^a (1 - x)^b` of `PDF.modelPdf` has exponent `b`
+(`hasLargeXExponent_modelPdf`).
 
 ## Main definitions
 
@@ -32,6 +34,8 @@ by positive rescaling and by sums of functions with the same exponent, and the m
 
 * `PDF.hasLargeXExponent_iff_exists_isEquivalent`: the exponent as an asymptotic equivalence.
 * `PDF.HasLargeXExponent.unique`: the large-`x` exponent of a function is unique.
+* `PDF.hasLargeXExponent_mul`: a function tending to a positive limit times `(1 - x)^β` has
+  exponent `β`.
 * `PDF.hasLargeXExponent_modelPdf`: the model density `x^a (1 - x)^b` has exponent `b`.
 
 ## References
@@ -110,10 +114,15 @@ theorem HasLargeXExponent.unique (h : HasLargeXExponent g β) (h' : HasLargeXExp
     (Real.rpow_pos_of_pos hx' β').ne']
 
 /-- The large-`x` exponent depends only on the function near the endpoint `x = 1`, below it. -/
-theorem HasLargeXExponent.congr (h : HasLargeXExponent g β) (hg : g =ᶠ[𝓝[<] 1] g') :
+theorem HasLargeXExponent.congr' (h : HasLargeXExponent g β) (hg : g =ᶠ[𝓝[<] 1] g') :
     HasLargeXExponent g' β := by
   obtain ⟨c, hc, hgc⟩ := h
   exact ⟨c, hc, hgc.congr' (hg.mono fun x hx => by rw [hx])⟩
+
+/-- Pointwise equal functions have the same large-`x` exponent. -/
+theorem HasLargeXExponent.congr (h : HasLargeXExponent g β) (hg : ∀ x, g x = g' x) :
+    HasLargeXExponent g' β :=
+  h.congr' (Eventually.of_forall hg)
 
 /-- A positive multiple of a function has the same large-`x` exponent. -/
 theorem HasLargeXExponent.const_mul (h : HasLargeXExponent g β) {k : ℝ} (hk : 0 < k) :
@@ -128,23 +137,28 @@ theorem HasLargeXExponent.add (h : HasLargeXExponent g β) (h' : HasLargeXExpone
   obtain ⟨c', hc', hgc'⟩ := h'
   exact ⟨c + c', add_pos hc hc', by simpa only [add_div] using hgc.add hgc'⟩
 
+/-- **A positive limit times a power of `1 - x`**: if `h` tends to `c > 0` as `x → 1⁻`, then
+`h x (1 - x)^β` has large-`x` exponent `β`. -/
+theorem hasLargeXExponent_mul {h : ℝ → ℝ} {c : ℝ} (hc : 0 < c) (hh : Tendsto h (𝓝[<] 1) (𝓝 c)) :
+    HasLargeXExponent (fun x => h x * (1 - x) ^ β) β := by
+  refine ⟨c, hc, hh.congr' ?_⟩
+  filter_upwards [self_mem_nhdsWithin] with x hx
+  rw [mul_div_assoc, div_self (Real.rpow_pos_of_pos (sub_pos.2 hx) β).ne', mul_one]
+
 /-- The power `(1 - x)^β` has large-`x` exponent `β`. -/
 theorem hasLargeXExponent_one_sub_rpow (β : ℝ) : HasLargeXExponent (fun x => (1 - x) ^ β) β := by
-  refine ⟨1, one_pos, tendsto_const_nhds.congr' ?_⟩
-  filter_upwards [self_mem_nhdsWithin] with x hx
-  rw [div_self (Real.rpow_pos_of_pos (sub_pos.2 hx) β).ne']
+  simpa only [one_mul] using hasLargeXExponent_mul one_pos (tendsto_const_nhds (x := (1 : ℝ)))
 
 /-- **The model density `x^a (1 - x)^b` has large-`x` exponent `b`**, at every parton and every
 scale, with limit `1` for the ratio. -/
 theorem hasLargeXExponent_modelPdf (Flavor : Type) (a b : ℕ) (i : Flavor) (Q2 : ℝ) :
     HasLargeXExponent (fun x => modelPdf Flavor a b i x Q2) b := by
-  refine ⟨1, one_pos, ?_⟩
   have hx : Tendsto (fun x : ℝ => x ^ a) (𝓝[<] 1) (𝓝 1) := by
     simpa only [one_pow] using ((continuous_pow a).tendsto (1 : ℝ)).mono_left nhdsWithin_le_nhds
-  refine hx.congr' ?_
+  refine (hasLargeXExponent_mul one_pos hx).congr' ?_
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with x hx
   rw [modelPdf_apply, Set.indicator_of_mem (Set.Ioo_subset_Icc_self hx), betaShape,
-    Real.rpow_natCast, mul_div_assoc, div_self (pow_ne_zero _ (sub_pos.2 hx.2).ne'), mul_one]
+    Real.rpow_natCast]
 
 end PDF
 end Parton

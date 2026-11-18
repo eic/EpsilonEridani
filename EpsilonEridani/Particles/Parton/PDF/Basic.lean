@@ -293,18 +293,22 @@ end Weight
 
 Densities add parton by parton, `(f + g) i x Q2 = f i x Q2 + g i x Q2`, in the pointwise
 additive structure of the function type `Pdf ι`. Both halves of the density assumptions survive
-a sum, and the moments of a sum of regular densities are the sums of their moments. -/
+a sum, and the moments of a sum are the sums of the moments when the moment integrands are
+integrable. -/
 
 section Add
 
 variable {ι : Type} {f g : Pdf ι}
 
+@[simp]
+lemma add_apply (f g : Pdf ι) (i : ι) (x Q2 : ℝ) : (f + g) i x Q2 = f i x Q2 + g i x Q2 :=
+  (rfl)
+
 /-- The sum of two parton densities is a parton density. -/
 lemma IsPartonDensity.add (hf : IsPartonDensity f) (hg : IsPartonDensity g) :
     IsPartonDensity (f + g) where
   support i x Q2 hx := by
-    rw [Pi.add_apply, Pi.add_apply, Pi.add_apply, hf.support i x Q2 hx, hg.support i x Q2 hx,
-      add_zero]
+    rw [add_apply, hf.support i x Q2 hx, hg.support i x Q2 hx, add_zero]
   nonneg i x Q2 hx₀ hx₁ := add_nonneg (hf.nonneg i x Q2 hx₀ hx₁) (hg.nonneg i x Q2 hx₀ hx₁)
 
 /-- The sum of two regular densities is regular. -/
@@ -319,12 +323,14 @@ lemma Regularity.add (hf : Regularity f) (hg : Regularity g) : Regularity (f + g
 lemma Assumptions.add (hf : Assumptions f) (hg : Assumptions g) : Assumptions (f + g) :=
   assumptions_iff.2 ⟨hf.isPartonDensity.add hg.isPartonDensity, hf.regularity.add hg.regularity⟩
 
-/-- Each moment of a sum of two regular densities is the sum of their moments. -/
-lemma mellinMoment_add (hf : Regularity f) (hg : Regularity g) (n : ℕ) (i : ι) (Q2 : ℝ) :
+/-- A moment of a sum of two densities is the sum of their moments, when both moment integrands
+are integrable on the unit interval. -/
+lemma mellinMoment_add {n : ℕ} {i : ι} {Q2 : ℝ}
+    (hf : MeasureTheory.IntegrableOn (fun x : ℝ => x ^ n * f i x Q2) (Set.Icc 0 1))
+    (hg : MeasureTheory.IntegrableOn (fun x : ℝ => x ^ n * g i x Q2) (Set.Icc 0 1)) :
     mellinMoment (f + g) n i Q2 = mellinMoment f n i Q2 + mellinMoment g n i Q2 := by
-  rw [mellinMoment, mellinMoment, mellinMoment, ← MeasureTheory.integral_add
-    (hf.momentIntegrable n i Q2).integrableOn (hg.momentIntegrable n i Q2).integrableOn]
-  simp only [Pi.add_apply, mul_add]
+  rw [mellinMoment, mellinMoment, mellinMoment, ← MeasureTheory.integral_add hf hg]
+  simp only [add_apply, mul_add]
 
 end Add
 
