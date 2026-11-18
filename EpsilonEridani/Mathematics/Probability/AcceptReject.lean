@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Probability.ConditionalProbability
-public import TauCeti.Probability.Distributions.Uniform.Basic
+public import EpsilonEridani.Mathematics.Probability.Distributions.Uniform.Basic
 
 /-!
 # Acceptance–rejection sampling
@@ -22,25 +22,35 @@ proposal law `μ.withDensity g` with the standard uniform law
 `acceptSet f g c`, and the law of the accepted variate is `acceptedLaw μ f g c`, the first
 marginal of the trial law conditioned on acceptance.
 
+Nothing here assumes that `g` is normalised against `μ`, so the trial law's measure of the
+acceptance event is a mass, not necessarily a probability. It is the acceptance probability
+exactly when the proposal law `μ.withDensity g` is a probability measure, in which case the
+trial law is one too.
+
 ## Main results
 
-* `map_fst_restrict_prod`: the part of a product measure carried by a measurable set, projected
-  to the first factor, has density the measure of the slices.
-* `map_fst_restrict_prod_uniformMeasure`: thinning by a uniform variate. Keeping a proposal `x`
-  when an independent standard uniform variate lies below `a x` multiplies its law by the
-  density `min (a x) 1`, clipped at `0`.
 * `AcceptReject.map_fst_restrict_acceptSet`: the accepted part of the trial law, projected to
   the proposal, is `μ.withDensity (min f (c * g) / c)`, with no bound and no sign hypothesis.
-* `AcceptReject.trialLaw_acceptSet`: the acceptance probability is `∫⁻ min f (c * g) / c`.
+* `AcceptReject.trialLaw_acceptSet`: the trial law's measure of the acceptance event is
+  `∫⁻ min f (c * g) / c`.
 * `AcceptReject.acceptedLaw_eq`: the accepted law is `min f (c * g)` normalised.
-* `AcceptReject.acceptedLaw_eq_of_ae_le` and `AcceptReject.measureReal_trialLaw_acceptSet`:
-  when `f ≤ c * g` almost everywhere, the accepted law is `f` normalised and the acceptance
-  probability is `(∫ f) / c`.
-* `AcceptReject.acceptedLaw_ne_of_violation`: the silent bias. When the bound fails on a set of
-  positive measure and holds on a set of positive measure where `f` is positive, the accepted
-  law is not `f` normalised. The second hypothesis cannot be dropped: for `f = 2 * g` and
-  `c = 1` the bound fails everywhere, every proposal is accepted, and the accepted law is
-  nevertheless `f` normalised.
+* `AcceptReject.acceptedLaw_eq_of_ae_le`: when `f ≤ c * g` almost everywhere, the accepted law is
+  `f` normalised.
+* `AcceptReject.measureReal_trialLaw_acceptSet_of_ae_le`: for an integrable, almost everywhere
+  non-negative target with `f ≤ c * g` almost everywhere, the trial law's measure of the
+  acceptance event is `(∫ f) / c`.
+* `AcceptReject.acceptedLaw_ne_of_measure_lt_ne_zero`: the silent bias. For an almost everywhere
+  non-negative proposal and a target of finite mass, when the bound fails on a set of positive
+  measure and holds on a set of positive measure where `f` is positive, the accepted law is not
+  `f` normalised. The second set hypothesis cannot be dropped: for `f = 2 * g` and `c = 1` the
+  bound fails everywhere, every proposal is accepted, and the accepted law is nevertheless `f`
+  normalised.
+* `AcceptReject.acceptedLaw_one_add_sq_div_two` and
+  `AcceptReject.measureReal_trialLaw_acceptSet_one_add_sq_div_two`: a uniform proposal on
+  `[0, 1]` with bound `1` accepts the target `(1 + z ^ 2) / 2` with probability `2 / 3`, and the
+  accepted law is the target normalised.
+* `AcceptReject.acceptedLaw_two_mul`: the silent bias at work. Sampling `2 * z` on `[0, 1]`
+  against the too-small bound `3 / 2` yields `min (2 * z) (3 / 2)` normalised, of mass `15 / 16`.
 
 The bound hypothesis is taken almost everywhere. A bound checked at every point, which is what
 an implementation can verify, is the case `Filter.Eventually.of_forall`.
@@ -62,60 +72,27 @@ open MeasureTheory ProbabilityTheory TauCeti.Probability
 
 open scoped ENNReal
 
-variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-
-/-- The part of a product measure carried by a measurable set `s`, pushed forward to the first
-factor, is the first factor with density `x ↦ ρ (Prod.mk x ⁻¹' s)`, the measure of the slice of
-`s` above `x`. -/
-theorem map_fst_restrict_prod (ν : Measure α) (ρ : Measure β) [SFinite ρ] {s : Set (α × β)}
-    (hs : MeasurableSet s) :
-    ((ν.prod ρ).restrict s).map Prod.fst = ν.withDensity fun x => ρ (Prod.mk x ⁻¹' s) := by
-  ext t ht
-  rw [Measure.map_apply measurable_fst ht, Measure.restrict_apply (measurable_fst ht),
-    Measure.prod_apply ((measurable_fst ht).inter hs), withDensity_apply _ ht,
-    ← lintegral_indicator ht]
-  refine lintegral_congr fun x => ?_
-  by_cases hx : x ∈ t <;> simp [hx, Set.preimage_inter, Set.preimage_preimage]
-
-/-- The uniform measure of a closed lower tail: the fraction of `Set.Ioc a b` lying below `t`,
-which is `0` below the interval and `1` above it. -/
-theorem uniformMeasure_Iic {a b : ℝ} (hab : a < b) (t : ℝ) :
-    uniformMeasure a b (Set.Iic t) = ENNReal.ofReal ((min t b - a) / (b - a)) := by
-  have hset : Set.Iic t ∩ Set.Ioc a b = Set.Ioc a (min t b) := by
-    ext y
-    simp only [Set.mem_inter_iff, Set.mem_Iic, Set.mem_Ioc, le_min_iff]
-    tauto
-  rw [uniformMeasure_apply measurableSet_Iic, hset, Real.volume_Ioc,
-    ENNReal.ofReal_div_of_pos (sub_pos.mpr hab), ENNReal.div_eq_inv_mul]
-
-/-- **Thinning by a uniform variate.** Draw `x` from `ν` and an independent standard uniform
-variate `u`, and keep `x` when `u ≤ a x`. The kept part of the law of `x` is `ν` with density
-`min (a x) 1`, read as `0` where `a x` is negative. -/
-theorem map_fst_restrict_prod_uniformMeasure (ν : Measure α) {a : α → ℝ} (ha : Measurable a) :
-    ((ν.prod (uniformMeasure 0 1)).restrict {p | p.2 ≤ a p.1}).map Prod.fst =
-      ν.withDensity fun x => ENNReal.ofReal (min (a x) 1) := by
-  have hs : MeasurableSet {p : α × ℝ | p.2 ≤ a p.1} :=
-    measurableSet_le measurable_snd (ha.comp measurable_fst)
-  rw [map_fst_restrict_prod ν _ hs]
-  congr 1
-  funext x
-  have hslice : Prod.mk x ⁻¹' {p : α × ℝ | p.2 ≤ a p.1} = Set.Iic (a x) := by
-    ext u
-    simp
-  rw [hslice, uniformMeasure_Iic zero_lt_one]
-  simp
+variable {α : Type*} [MeasurableSpace α]
 
 namespace AcceptReject
 
 /-- The joint law of one acceptance–rejection trial: a proposal `x` with density `g` against
 `μ`, and an independent uniform variate `u` on `[0, 1]`. Negative values of `g` are read
-as `0`. -/
+as `0`. When `μ.withDensity g` is a probability measure, so is the trial law. -/
 def trialLaw (μ : Measure α) (g : α → ℝ) : Measure (α × ℝ) :=
   (μ.withDensity fun x => ENNReal.ofReal (g x)).prod (uniformMeasure 0 1)
 
 theorem trialLaw_def (μ : Measure α) (g : α → ℝ) :
     trialLaw μ g = (μ.withDensity fun x => ENNReal.ofReal (g x)).prod (uniformMeasure 0 1) :=
   (rfl)
+
+/-- A probability proposal law gives a probability trial law. -/
+instance isProbabilityMeasure_trialLaw (μ : Measure α) (g : α → ℝ)
+    [IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (g x))] :
+    IsProbabilityMeasure (trialLaw μ g) := by
+  have := isProbabilityMeasure_uniformMeasure (zero_lt_one' ℝ)
+  rw [trialLaw_def]
+  infer_instance
 
 /-- The proposal is the first marginal of the trial law. -/
 @[simp]
@@ -127,6 +104,11 @@ theorem map_fst_trialLaw (μ : Measure α) (g : α → ℝ) :
 uniform variate lies below the acceptance ratio `f x / (c * g x)`. -/
 def acceptSet (f g : α → ℝ) (c : ℝ) : Set (α × ℝ) :=
   {p | p.2 ≤ f p.1 / (c * g p.1)}
+
+omit [MeasurableSpace α] in
+theorem acceptSet_def (f g : α → ℝ) (c : ℝ) :
+    acceptSet f g c = {p : α × ℝ | p.2 ≤ (fun x => f x / (c * g x)) p.1} :=
+  (rfl)
 
 omit [MeasurableSpace α] in
 @[simp]
@@ -149,8 +131,8 @@ theorem acceptedLaw_def (μ : Measure α) (f g : α → ℝ) (c : ℝ) :
     acceptedLaw μ f g c = ((trialLaw μ g)[|acceptSet f g c]).map Prod.fst :=
   (rfl)
 
-/-- The accepted law is a probability measure as soon as acceptance has positive, finite
-probability. -/
+/-- The accepted law is a probability measure as soon as the trial law gives the acceptance
+event positive, finite measure. -/
 theorem isProbabilityMeasure_acceptedLaw {μ : Measure α} {f g : α → ℝ} {c : ℝ}
     (h₀ : trialLaw μ g (acceptSet f g c) ≠ 0) (hfin : trialLaw μ g (acceptSet f g c) ≠ ∞) :
     IsProbabilityMeasure (acceptedLaw μ f g c) := by
@@ -167,7 +149,7 @@ theorem map_fst_restrict_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measur
     ((trialLaw μ g).restrict (acceptSet f g c)).map Prod.fst =
       μ.withDensity fun x => ENNReal.ofReal (min (f x) (c * g x) / c) := by
   have hratio : Measurable fun x => f x / (c * g x) := hf.div (hg.const_mul c)
-  rw [trialLaw_def, acceptSet, map_fst_restrict_prod_uniformMeasure _ hratio,
+  rw [trialLaw_def, acceptSet_def, Measure.map_fst_restrict_le_prod_uniformMeasure _ hratio,
     ← withDensity_mul _ (by fun_prop) (by fun_prop)]
   congr 1
   funext x
@@ -180,7 +162,8 @@ theorem map_fst_restrict_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measur
   · rw [← ENNReal.ofReal_mul hgx.le, mul_min_of_nonneg _ _ hgx.le, ← min_div_div_right hc.le]
     congr 2 <;> field_simp
 
-/-- **The acceptance probability** of one trial is `∫⁻ min f (c * g) / c`. -/
+/-- The trial law's measure of the acceptance event is `∫⁻ min f (c * g) / c`; it is the
+**acceptance probability** when the proposal law is a probability measure. -/
 theorem trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measurable g) :
     trialLaw μ g (acceptSet f g c) =
       (∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ) / ENNReal.ofReal c := by
@@ -202,12 +185,14 @@ theorem acceptedLaw_eq (hc : 0 < c) (hf : Measurable f) (hg : Measurable g) :
       (ENNReal.ofReal c)⁻¹ • fun x => ENNReal.ofReal (min (f x) (c * g x)) := by
     funext x
     rw [Pi.smul_apply, smul_eq_mul, ENNReal.ofReal_div_of_pos hc, ENNReal.div_eq_inv_mul]
-  rw [acceptedLaw_def, ProbabilityTheory.cond, Measure.map_smul,
+  -- Normalising by the accepted mass `M / c` undoes the factor `1 / c` in the density.
+  have hscalar : ((∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ) / ENNReal.ofReal c)⁻¹ *
+      (ENNReal.ofReal c)⁻¹ = (∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ)⁻¹ := by
+    rw [ENNReal.inv_div (Or.inl ENNReal.ofReal_ne_top) (Or.inl hC₀), div_eq_mul_inv, mul_comm,
+      ← mul_assoc, ENNReal.inv_mul_cancel hC₀ ENNReal.ofReal_ne_top, one_mul]
+  rw [acceptedLaw_def, ProbabilityTheory.cond, Measure.map_smul _ measurable_fst.aemeasurable,
     map_fst_restrict_acceptSet hc hf hg, trialLaw_acceptSet hc hf hg, hden,
-    withDensity_smul _ (by fun_prop), smul_smul,
-    ENNReal.inv_div (Or.inl ENNReal.ofReal_ne_top) (Or.inl hC₀), div_eq_mul_inv, mul_comm,
-    ← mul_assoc, ENNReal.inv_mul_cancel hC₀ ENNReal.ofReal_ne_top, one_mul]
-  exact measurable_fst.aemeasurable
+    withDensity_smul _ (by fun_prop), smul_smul, hscalar]
 
 /-- **Acceptance–rejection has the right law.** When `f ≤ c * g` almost everywhere, the accepted
 variate has the law `f` normalised against `μ`. -/
@@ -219,7 +204,8 @@ theorem acceptedLaw_eq_of_ae_le (hc : 0 < c) (hf : Measurable f) (hg : Measurabl
       fun x => ENNReal.ofReal (f x) := hle.mono fun x hx => by simp only [min_eq_left hx]
   rw [acceptedLaw_eq hc hf hg, lintegral_congr_ae h, withDensity_congr_ae h]
 
-/-- When `f ≤ c * g` almost everywhere, the acceptance probability is `∫⁻ f / c`. -/
+/-- When `f ≤ c * g` almost everywhere, the trial law's measure of the acceptance event is
+`∫⁻ f / c`. -/
 theorem trialLaw_acceptSet_of_ae_le (hc : 0 < c) (hf : Measurable f) (hg : Measurable g)
     (hle : ∀ᵐ x ∂μ, f x ≤ c * g x) :
     trialLaw μ g (acceptSet f g c) = (∫⁻ x, ENNReal.ofReal (f x) ∂μ) / ENNReal.ofReal c := by
@@ -227,60 +213,93 @@ theorem trialLaw_acceptSet_of_ae_le (hc : 0 < c) (hf : Measurable f) (hg : Measu
   congr 1
   exact lintegral_congr_ae (hle.mono fun x hx => by simp only [min_eq_left hx])
 
-/-- **The acceptance probability is `(∫ f) / c`** for an integrable, almost everywhere
-non-negative target dominated almost everywhere by `c * g`. -/
-theorem measureReal_trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measurable g)
-    (hle : ∀ᵐ x ∂μ, f x ≤ c * g x) (hf₀ : 0 ≤ᵐ[μ] f) (hfi : Integrable f μ) :
+/-- When `f ≤ c * g` almost everywhere and the target has positive, finite mass, the accepted
+law is a probability measure. -/
+theorem isProbabilityMeasure_acceptedLaw_of_ae_le (hc : 0 < c) (hf : Measurable f)
+    (hg : Measurable g) (hle : ∀ᵐ x ∂μ, f x ≤ c * g x)
+    (h₀ : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ 0) (hfin : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ ∞) :
+    IsProbabilityMeasure (acceptedLaw μ f g c) := by
+  refine isProbabilityMeasure_acceptedLaw ?_ ?_ <;> rw [trialLaw_acceptSet_of_ae_le hc hf hg hle]
+  · exact ENNReal.div_ne_zero.mpr ⟨h₀, ENNReal.ofReal_ne_top⟩
+  · exact ENNReal.div_ne_top hfin (by simpa using hc)
+
+/-- For an integrable, almost everywhere non-negative target dominated almost everywhere by
+`c * g`, the trial law's measure of the acceptance event is `(∫ f) / c`. -/
+theorem measureReal_trialLaw_acceptSet_of_ae_le (hc : 0 < c) (hf : Measurable f)
+    (hg : Measurable g) (hle : ∀ᵐ x ∂μ, f x ≤ c * g x) (hf₀ : 0 ≤ᵐ[μ] f)
+    (hfi : Integrable f μ) :
     (trialLaw μ g).real (acceptSet f g c) = (∫ x, f x ∂μ) / c := by
   rw [measureReal_def, trialLaw_acceptSet_of_ae_le hc hf hg hle,
     ← ofReal_integral_eq_lintegral_ofReal hfi hf₀, ← ENNReal.ofReal_div_of_pos hc,
     ENNReal.toReal_ofReal (div_nonneg (integral_nonneg_of_ae hf₀) hc.le)]
 
-/-- **The silent bias.** Suppose the bound `f ≤ c * g` fails on a set of positive measure, and
-holds on a set of positive measure where `f` is positive. Then the accepted law is not `f`
+/-- **The silent bias.** Let the proposal `g` be almost everywhere non-negative and the target
+`f` have finite mass `∫⁻ f`. Suppose the bound `f ≤ c * g` fails on a set of positive measure,
+and holds on a set of positive measure where `f` is positive. Then the accepted law is not `f`
 normalised: by `acceptedLaw_eq` it is `min f (c * g)` normalised, and the two differ.
 
-Both hypotheses are needed. For `f = 2 * g` and `c = 1` the bound fails wherever `g` is
+Both set hypotheses are needed. For `f = 2 * g` and `c = 1` the bound fails wherever `g` is
 positive, yet every proposal is accepted and the accepted law is `g` normalised, which is `f`
 normalised. -/
-theorem acceptedLaw_ne_of_violation (hc : 0 < c) (hf : Measurable f) (hg : Measurable g)
-    (hg₀ : 0 ≤ᵐ[μ] g) (hfi : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ ∞)
+theorem acceptedLaw_ne_of_measure_lt_ne_zero (hc : 0 < c) (hf : Measurable f)
+    (hg : Measurable g) (hg₀ : 0 ≤ᵐ[μ] g) (hfi : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ ∞)
     (hviol : μ {x | c * g x < f x} ≠ 0) (hresp : μ {x | 0 < f x ∧ f x ≤ c * g x} ≠ 0) :
     acceptedLaw μ f g c ≠ (∫⁻ x, ENNReal.ofReal (f x) ∂μ)⁻¹ •
       μ.withDensity fun x => ENNReal.ofReal (f x) := by
-  set m : α → ℝ≥0∞ := fun x => ENNReal.ofReal (min (f x) (c * g x)) with hm_def
-  set F : α → ℝ≥0∞ := fun x => ENNReal.ofReal (f x) with hF_def
-  have hmF : ∀ x, m x ≤ F x := fun x => ENNReal.ofReal_le_ofReal (min_le_left _ _)
-  have hS : MeasurableSet {x | 0 < f x ∧ f x ≤ c * g x} :=
+  set S := {x | 0 < f x ∧ f x ≤ c * g x} with hS_def
+  have hmF : ∀ x, ENNReal.ofReal (min (f x) (c * g x)) ≤ ENNReal.ofReal (f x) :=
+    fun x => ENNReal.ofReal_le_ofReal (min_le_left _ _)
+  have hS : MeasurableSet S :=
     (measurableSet_lt measurable_const hf).inter (measurableSet_le hf (hg.const_mul c))
   -- The target mass on the set where the bound holds is positive and finite.
-  have hX₀ : ∫⁻ x in {x | 0 < f x ∧ f x ≤ c * g x}, F x ∂μ ≠ 0 := by
+  have hX₀ : ∫⁻ x in S, ENNReal.ofReal (f x) ∂μ ≠ 0 := by
     rw [Ne, setLIntegral_eq_zero_iff hS (by fun_prop)]
     refine fun h => hresp (measure_eq_zero_iff_ae_notMem.mpr ?_)
     filter_upwards [h] with x hx hxS
     exact (ENNReal.ofReal_pos.mpr hxS.1).ne' (hx hxS)
-  have hXfin : ∫⁻ x in {x | 0 < f x ∧ f x ≤ c * g x}, F x ∂μ ≠ ∞ :=
+  have hXfin : ∫⁻ x in S, ENNReal.ofReal (f x) ∂μ ≠ ∞ :=
     ne_top_of_le_ne_top hfi (setLIntegral_le_lintegral _ _)
   -- The thinned mass is strictly smaller than the target mass.
-  have hlt : ∫⁻ x, m x ∂μ < ∫⁻ x, F x ∂μ := by
+  have hlt : ∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ < ∫⁻ x, ENNReal.ofReal (f x) ∂μ := by
     refine lintegral_strict_mono_of_ae_le_of_frequently_ae_lt (by fun_prop)
       (ne_top_of_le_ne_top hfi (lintegral_mono hmF)) (ae_of_all _ hmF) fun hall => hviol ?_
     refine measure_eq_zero_iff_ae_notMem.mpr ?_
     filter_upwards [hall, hg₀] with x hx hgx hxV
     have hcg : 0 ≤ c * g x := mul_nonneg hc.le hgx
-    simp only [hm_def, hF_def, not_not, min_eq_right hxV.le] at hx
+    rw [not_not, min_eq_right hxV.le] at hx
     exact hxV.ne ((ENNReal.ofReal_eq_ofReal_iff hcg (hcg.trans hxV.le)).mp hx)
   intro h
   rw [acceptedLaw_eq hc hf hg] at h
   -- Evaluating both sides on the set where the bound holds forces the two masses to agree.
-  have hS_eq := congrArg (· {x | 0 < f x ∧ f x ≤ c * g x}) h
+  have hS_eq := congrArg (· S) h
   simp only [Measure.smul_apply, smul_eq_mul, withDensity_apply _ hS] at hS_eq
-  have hSm : ∫⁻ x in {x | 0 < f x ∧ f x ≤ c * g x}, ENNReal.ofReal (min (f x) (c * g x)) ∂μ =
-      ∫⁻ x in {x | 0 < f x ∧ f x ≤ c * g x}, F x ∂μ :=
-    setLIntegral_congr_fun hS fun x hx => by simp only [hF_def, min_eq_left hx.2]
+  have hSm : ∫⁻ x in S, ENNReal.ofReal (min (f x) (c * g x)) ∂μ =
+      ∫⁻ x in S, ENNReal.ofReal (f x) ∂μ :=
+    setLIntegral_congr_fun hS fun x hx => by rw [min_eq_left hx.2]
   rw [hSm] at hS_eq
   have hinv := (ENNReal.mul_left_inj hX₀ hXfin).mp hS_eq
   exact hlt.ne (inv_injective hinv)
+
+/-- The uniform measure on `[0, 1]` is Lebesgue measure restricted to `Set.Ioc 0 1`. -/
+private theorem uniformMeasure_zero_one : uniformMeasure 0 1 = volume.restrict (Set.Ioc 0 1) := by
+  simp [uniformMeasure_eq_smul]
+
+/-- The target `(1 + z ^ 2) / 2` is bounded by `1` on `[0, 1]`. -/
+private theorem ae_one_add_sq_div_two_le :
+    ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 * 1 := by
+  filter_upwards [ae_mem_Ioc_uniformMeasure] with z hz
+  nlinarith [hz.1, hz.2]
+
+/-- The target `(1 + z ^ 2) / 2` has integral `2 / 3` over `[0, 1]`. -/
+private theorem lintegral_one_add_sq_div_two :
+    ∫⁻ z, ENNReal.ofReal ((1 + z ^ 2) / 2) ∂uniformMeasure 0 1 = ENNReal.ofReal (2 / 3) := by
+  have hfi : Integrable (fun z : ℝ => (1 + z ^ 2) / 2) (uniformMeasure 0 1) := by
+    rw [uniformMeasure_zero_one]
+    exact (by fun_prop : Continuous fun z : ℝ => (1 + z ^ 2) / 2).integrableOn_Icc.mono_set
+      Set.Ioc_subset_Icc_self
+  rw [← ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ fun z => by positivity),
+    uniformMeasure_zero_one, ← intervalIntegral.integral_of_le zero_le_one]
+  norm_num [intervalIntegral.integral_div, integral_pow]
 
 /-- A uniform proposal on `[0, 1]` with the constant bound `1` accepts the target
 `(1 + z ^ 2) / 2` with probability `2 / 3`, its integral over the interval. The target is the
@@ -288,19 +307,56 @@ ratio of the quark splitting kernel `(1 + z ^ 2) / (1 - z)` to its overestimate 
 theorem measureReal_trialLaw_acceptSet_one_add_sq_div_two :
     (trialLaw (uniformMeasure 0 1) fun _ => 1).real
       (acceptSet (fun z => (1 + z ^ 2) / 2) (fun _ => 1) 1) = 2 / 3 := by
-  have hunif : uniformMeasure 0 1 = volume.restrict (Set.Ioc 0 1) := by
-    simp [uniformMeasure_eq_smul]
-  have hle : ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 * 1 := by
+  rw [measureReal_def, trialLaw_acceptSet_of_ae_le one_pos (by fun_prop) measurable_const
+    ae_one_add_sq_div_two_le, lintegral_one_add_sq_div_two, ENNReal.ofReal_one, div_one,
+    ENNReal.toReal_ofReal (by norm_num)]
+
+/-- A uniform proposal on `[0, 1]` with the constant bound `1` produces the target
+`(1 + z ^ 2) / 2` normalised by its integral `2 / 3`. -/
+theorem acceptedLaw_one_add_sq_div_two :
+    acceptedLaw (uniformMeasure 0 1) (fun z => (1 + z ^ 2) / 2) (fun _ => 1) 1 =
+      (ENNReal.ofReal (2 / 3))⁻¹ •
+        (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal ((1 + z ^ 2) / 2) := by
+  rw [acceptedLaw_eq_of_ae_le one_pos (by fun_prop) measurable_const ae_one_add_sq_div_two_le,
+    lintegral_one_add_sq_div_two]
+
+/-- The clipped target `min (2 * z) (3 / 2)` has integral `15 / 16` over `[0, 1]`. -/
+private theorem lintegral_min_two_mul :
+    ∫⁻ z, ENNReal.ofReal (min (2 * z) (3 / 2)) ∂uniformMeasure 0 1 = ENNReal.ofReal (15 / 16) := by
+  have hcont : Continuous fun z : ℝ => min (2 * z) (3 / 2) := by fun_prop
+  have hfi : Integrable (fun z : ℝ => min (2 * z) (3 / 2)) (uniformMeasure 0 1) := by
+    rw [uniformMeasure_zero_one]
+    exact hcont.integrableOn_Icc.mono_set Set.Ioc_subset_Icc_self
+  have hf₀ : 0 ≤ᵐ[uniformMeasure 0 1] fun z : ℝ => min (2 * z) (3 / 2) := by
     filter_upwards [ae_mem_Ioc_uniformMeasure] with z hz
-    nlinarith [hz.1, hz.2]
-  have hfi : Integrable (fun z : ℝ => (1 + z ^ 2) / 2) (uniformMeasure 0 1) := by
-    rw [hunif]
-    exact (by fun_prop : Continuous fun z : ℝ => (1 + z ^ 2) / 2).integrableOn_Icc.mono_set
-      Set.Ioc_subset_Icc_self
-  rw [measureReal_trialLaw_acceptSet one_pos (by fun_prop) measurable_const hle
-    (ae_of_all _ fun z => by positivity) hfi, hunif,
-    ← intervalIntegral.integral_of_le zero_le_one]
-  norm_num [intervalIntegral.integral_div, integral_pow]
+    rw [Pi.zero_apply]
+    exact le_min (by linarith [hz.1]) (by norm_num)
+  -- Split `[0, 1]` at the crossing point `3 / 4`, where `2 * z` meets the bound.
+  have hlo : ∫ z in (0 : ℝ)..3 / 4, min (2 * z) (3 / 2) = ∫ z in (0 : ℝ)..3 / 4, 2 * z :=
+    intervalIntegral.integral_congr fun z hz => by
+      rw [Set.uIcc_of_le (by norm_num)] at hz
+      exact min_eq_left (by linarith [hz.2])
+  have hhi : ∫ z in (3 / 4 : ℝ)..1, min (2 * z) (3 / 2) = ∫ _ in (3 / 4 : ℝ)..1, (3 / 2 : ℝ) :=
+    intervalIntegral.integral_congr fun z hz => by
+      rw [Set.uIcc_of_le (by norm_num)] at hz
+      exact min_eq_right (by linarith [hz.1])
+  rw [← ofReal_integral_eq_lintegral_ofReal hfi hf₀, uniformMeasure_zero_one,
+    ← intervalIntegral.integral_of_le zero_le_one,
+    ← intervalIntegral.integral_add_adjacent_intervals (b := 3 / 4)
+      (hcont.intervalIntegrable _ _) (hcont.intervalIntegrable _ _), hlo, hhi,
+    intervalIntegral.integral_const_mul, integral_id, intervalIntegral.integral_const]
+  norm_num
+
+/-- **The silent bias in an example.** Sampling the target `2 * z` on `[0, 1]` from a uniform
+proposal against the bound `3 / 2`, which `2 * z` exceeds above `z = 3 / 4`, produces
+`min (2 * z) (3 / 2)` normalised by its integral `15 / 16`, not the target normalised. -/
+theorem acceptedLaw_two_mul :
+    acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1) (3 / 2) =
+      (ENNReal.ofReal (15 / 16))⁻¹ •
+        (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal (min (2 * z) (3 / 2)) := by
+  rw [acceptedLaw_eq (by norm_num) (by fun_prop) measurable_const]
+  simp only [mul_one]
+  rw [lintegral_min_two_mul]
 
 end AcceptReject
 
