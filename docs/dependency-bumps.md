@@ -56,7 +56,7 @@ A dependency commit **fits** a mathlib commit M when
   line. The release-tag case is the weakest: a dependency built on master after the release
   branched may use API the tag lacks, and only the build will tell. A dependency commit whose
   manifest pins no mathlib fits on the toolchain line alone.
-- `cross` (only for a dependency `update.yml` names with `--cross-line`; today Physlib): its
+- `cross` (only for a dependency `update.yml` names with `--cross-line`; today none): its
   toolchain is on an **older** Lean line than M's and its mathlib is an ancestor of M. Physlib
   bumps only to stable mathlib tags, so without this it holds the whole project on its Lean line
   until the next release even when its source builds on newer mathlib. Lake builds a dependency
