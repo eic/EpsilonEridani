@@ -44,8 +44,10 @@ here.
   the evolution operator applied to its value at a reference scale.
 - `IsMomentSolution.apply_eq_exp_mul_of_gamma_apply_eq_zero` is the closed form for a channel
   that mixes with no other: it evolves by the scalar exponential of the integrated coupling times
-  its own anomalous dimension. `IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal` is the
-  case of a diagonal anomalous-dimension matrix.
+  its own anomalous dimension. `momentEvolution_apply_of_gamma_apply_eq_zero` is the same fact
+  for the corresponding row of the evolution operator, and `momentEvolution_eq_diagonal` and
+  `IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal` are the case of a diagonal
+  anomalous-dimension matrix.
 - `sumRule_conserved` is the conservation law: if the anomalous-dimension matrix has
   vanishing column sums at `N`, then `∑ i, F i` is `τ`-independent.
 - `momentum_sumRule_conserved` and `valence_sumRule_conserved` are its specializations to
@@ -326,27 +328,18 @@ lemma momentEvolution_self (S : DglapMomentSystem ι) (N : ℂ) (τ : ℝ) :
 `τ₀` to `τ₂`. -/
 lemma momentEvolution_mul (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ₁ τ₂ : ℝ) :
     momentEvolution S N τ₁ τ₂ * momentEvolution S N τ₀ τ₁ = momentEvolution S N τ₀ τ₂ := by
-  rw [momentEvolution_def, momentEvolution_def, momentEvolution_def,
-    ← Matrix.exp_add_of_commute _ _ (((Commute.refl (S.gamma N)).smul_left _).smul_right _),
-    ← add_smul, ← Complex.ofReal_add,
-    add_comm (integratedCoupling S.alphaS τ₁ τ₂) (integratedCoupling S.alphaS τ₀ τ₁),
-    integratedCoupling_add S.alphaS_continuous]
+  simp only [momentEvolution_def]
+  rw [← Matrix.exp_add_of_commute _ _ (((Commute.refl (S.gamma N)).smul_left _).smul_right _),
+    ← add_smul, ← integratedCoupling_add S.alphaS_continuous τ₀ τ₁ τ₂]
+  congr 2
+  push_cast
+  ring
 
 /-- Evolving backwards from `τ` to `τ₀` inverts evolving from `τ₀` to `τ`. -/
 lemma momentEvolution_swap (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
     momentEvolution S N τ τ₀ = (momentEvolution S N τ₀ τ)⁻¹ := by
-  rw [momentEvolution_def, momentEvolution_def, integratedCoupling_swap, Complex.ofReal_neg,
-    neg_smul, Matrix.exp_neg]
-
-/-- Without mixing between channels, that is for a diagonal anomalous-dimension matrix, each
-channel evolves by the scalar exponential of the integrated coupling times its own anomalous
-dimension. -/
-lemma momentEvolution_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ} {d : ι → ℂ}
-    (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
-    momentEvolution S N τ₀ τ =
-      Matrix.diagonal fun i => Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) := by
-  rw [momentEvolution_def, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
-  simp only [Pi.smul_apply, smul_eq_mul, Complex.exp_eq_exp_ℂ]
+  simp only [momentEvolution_def]
+  rw [integratedCoupling_swap, Complex.ofReal_neg, neg_smul, Matrix.exp_neg]
 
 /-- The evolution operator applied to a fixed vector has the moment-space right-hand side
 `a(τ) • γ(N) *ᵥ ·` as its derivative in the log scale. -/
@@ -405,6 +398,31 @@ theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_apply_eq_zero {S : DglapMomen
     Complex.exp_zero, one_mul] at hconst
   rw [← hconst, ← mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_mul]
 
+/-- **The evolution operator of an unmixed channel.** If the off-diagonal entries of row `i` of
+the anomalous-dimension matrix at `N` vanish, row `i` of the evolution operator is the scalar
+exponential of the integrated coupling times `γ i i`, placed on the diagonal. -/
+lemma momentEvolution_apply_of_gamma_apply_eq_zero {S : DglapMomentSystem ι} {N : ℂ} {i : ι}
+    (h : ∀ j, j ≠ i → S.gamma N i j = 0) (τ₀ τ : ℝ) (j : ι) :
+    momentEvolution S N τ₀ τ i j =
+      if i = j then Complex.exp (integratedCoupling S.alphaS τ₀ τ * S.gamma N i i) else 0 := by
+  -- the `j`-th column is the solution starting from the `j`-th basis vector
+  have hcol := (isMomentSolution_momentEvolution_mulVec S N τ₀ (Pi.single j 1)
+    ).apply_eq_exp_mul_of_gamma_apply_eq_zero h τ₀ τ
+  simpa only [Matrix.mulVec_single_one, momentEvolution_self, Matrix.col_apply,
+    Matrix.one_apply, mul_ite, mul_one, mul_zero] using hcol
+
+/-- Without mixing between channels, that is for a diagonal anomalous-dimension matrix, each
+channel evolves by the scalar exponential of the integrated coupling times its own anomalous
+dimension. -/
+lemma momentEvolution_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ} {d : ι → ℂ}
+    (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
+    momentEvolution S N τ₀ τ =
+      Matrix.diagonal fun i => Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) := by
+  ext i j
+  rw [momentEvolution_apply_of_gamma_apply_eq_zero
+      (fun j hj => by rw [h, Matrix.diagonal_apply_ne d hj.symm]),
+    Matrix.diagonal_apply, h, Matrix.diagonal_apply_eq]
+
 /-- **The closed form without channel mixing.** If the anomalous-dimension matrix at `N` is
 diagonal, as for the non-singlet combinations, each channel of a solution evolves
 multiplicatively:
@@ -413,9 +431,7 @@ theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal {S : DglapMomentS
     {N : ℂ} {d : ι → ℂ} (h : S.gamma N = Matrix.diagonal d) {F : ℝ → ι → ℂ}
     (hF : IsMomentSolution S N F) (τ₀ τ : ℝ) (i : ι) :
     F τ i = Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) * F τ₀ i := by
-  simpa only [h, Matrix.diagonal_apply_eq] using
-    hF.apply_eq_exp_mul_of_gamma_apply_eq_zero (i := i)
-      (fun j hj => by rw [h, Matrix.diagonal_apply_ne d hj.symm]) τ₀ τ
+  rw [hF.eq_momentEvolution_mulVec τ₀ τ, momentEvolution_eq_diagonal h, Matrix.mulVec_diagonal]
 
 end momentEvolution
 
