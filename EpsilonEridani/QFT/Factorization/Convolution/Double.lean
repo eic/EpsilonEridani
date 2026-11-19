@@ -40,6 +40,8 @@ coefficient function cannot be interchanged silently. A coefficient function tha
 * `doubleMellinConv_apply_eq_zero_of_notMem_left`, `doubleMellinConv_apply_eq_zero_of_notMem_right`:
   support in `(0,1]²`.
 * `doubleMellinConv_mul`: a product coefficient function factorizes the double convolution.
+* `doubleMellinConv_zero`, `doubleMellinConv_zero_density_left`,
+  `doubleMellinConv_zero_density_right`: the zero coefficient function and the zero densities.
 * `doubleMellinConv_swap`: exchanging the two densities transposes the coefficient function,
   under joint integrability.
 * `exists_doubleMellinConv_ne`: the exchange without transposition is not a symmetry.
@@ -100,41 +102,35 @@ theorem doubleMellinConv_apply_eq_zero_of_notMem_right (C : ℝ → ℝ → ℝ)
 /-- The double Mellin convolution with the zero coefficient function vanishes. -/
 @[simp]
 theorem doubleMellinConv_zero (f D : ℝ → ℝ) : doubleMellinConv 0 f D = 0 := by
-  have h (z : ℝ) : (fun y => mellinConv ((0 : ℝ → ℝ → ℝ) y) D z) = 0 := by
-    funext y
-    rw [Pi.zero_apply, mellinConv_zero_left, Pi.zero_apply, Pi.zero_apply]
   funext x z
-  rw [doubleMellinConv_def, h, mellinConv_zero_left, Pi.zero_apply, Pi.zero_apply,
-    Pi.zero_apply]
+  simp [doubleMellinConv_def, ← Pi.zero_def]
 
 /-- The double Mellin convolution with the zero density in the first variable vanishes. -/
 @[simp]
-theorem doubleMellinConv_zero_left (C : ℝ → ℝ → ℝ) (D : ℝ → ℝ) : doubleMellinConv C 0 D = 0 := by
+theorem doubleMellinConv_zero_density_left (C : ℝ → ℝ → ℝ) (D : ℝ → ℝ) :
+    doubleMellinConv C 0 D = 0 := by
   funext x z
-  rw [doubleMellinConv_def, mellinConv_zero_right, Pi.zero_apply, Pi.zero_apply, Pi.zero_apply]
+  simp [doubleMellinConv_def]
 
 /-- The double Mellin convolution with the zero density in the second variable vanishes. -/
 @[simp]
-theorem doubleMellinConv_zero_right (C : ℝ → ℝ → ℝ) (f : ℝ → ℝ) : doubleMellinConv C f 0 = 0 := by
-  have h (z : ℝ) : (fun y => mellinConv (C y) (0 : ℝ → ℝ) z) = 0 :=
-    funext fun _ => by rw [mellinConv_zero_right, Pi.zero_apply, Pi.zero_apply]
+theorem doubleMellinConv_zero_density_right (C : ℝ → ℝ → ℝ) (f : ℝ → ℝ) :
+    doubleMellinConv C f 0 = 0 := by
   funext x z
-  rw [doubleMellinConv_def, h, mellinConv_zero_left, Pi.zero_apply, Pi.zero_apply,
-    Pi.zero_apply]
+  simp [doubleMellinConv_def, ← Pi.zero_def]
 
 /-- **Factorization for a product coefficient function.** If `C (y, w) = A y * B w`, the double
 Mellin convolution is the product of the Mellin convolution of `A` with `f` in `x` and of `B` with
 `D` in `z`. No integrability hypothesis is needed. -/
 theorem doubleMellinConv_mul (A B : ℝ → ℝ) (f D : ℝ → ℝ) (x z : ℝ) :
     doubleMellinConv (fun y w => A y * B w) f D x z = mellinConv A f x * mellinConv B D z := by
-  have hin : (fun y => mellinConv (fun w => A y * B w) D z) =
-      mellinConv B D z • A := by
+  have hin : (fun y => mellinConv (fun w => A y * B w) D z) = mellinConv B D z • A := by
     funext y
     have hB : (fun w => A y * B w) = A y • B :=
       funext fun w => by rw [Pi.smul_apply, smul_eq_mul]
-    rw [hB, mellinConv_smul_left, Pi.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul,
-      mul_comm]
-  rw [doubleMellinConv_def, hin, mellinConv_smul_left, Pi.smul_apply, smul_eq_mul, mul_comm]
+    rw [hB]
+    simp [mul_comm]
+  simp [doubleMellinConv_def, hin, mul_comm]
 
 /-- Moving the outer factor `u a / v a` of an iterated set integral into the inner integral, with
 a pointwise rearrangement `G a b * (u a / v a) = H a b` of the integrand. -/
@@ -186,16 +182,12 @@ theorem exists_doubleMellinConv_ne :
   set one := (Ioc (0 : ℝ) 1).indicator (1 : ℝ → ℝ)
   -- The two single convolutions against `1` on `(0,1]`, in closed form.
   have hA {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1) : mellinConv (fun y => y) one t = 1 - t := by
-    rw [mellinConv_indicator_one_apply_of_mem _ ht,
-      setIntegral_congr_fun measurableSet_Icc fun y hy => div_self (ht.1.trans_le hy.1).ne',
-      setIntegral_const, Real.volume_real_Icc_of_le ht.2, smul_eq_mul, mul_one]
+    simpa using mellinConv_pow_succ_indicator_one_apply_of_mem 0 ht
   have hB {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1) :
       mellinConv (fun y => y ^ 2) one t = (1 - t ^ 2) / 2 := by
-    rw [mellinConv_indicator_one_apply_of_mem _ ht,
-      setIntegral_congr_fun measurableSet_Icc fun y hy => by
-        rw [sq, mul_div_cancel_right₀ _ (ht.1.trans_le hy.1).ne'],
-      integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le ht.2, integral_id]
-    ring
+    have h := mellinConv_pow_succ_indicator_one_apply_of_mem 1 ht
+    norm_num at h
+    exact h
   have h₁ : (1 / 2 : ℝ) ∈ Ioc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
   have h₂ : (1 / 4 : ℝ) ∈ Ioc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
   refine ⟨fun y w => y * w ^ 2, one, one, 1 / 2, 1 / 4, ?_⟩

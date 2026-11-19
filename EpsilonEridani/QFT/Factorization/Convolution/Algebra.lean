@@ -233,6 +233,17 @@ theorem mellinConv_indicator_one_apply_of_mem (e : ℝ → ℝ) {x : ℝ} (hx : 
   have hxy : x / y ∈ Ioc (0 : ℝ) 1 := ⟨div_pos hx.1 hy0, (div_le_one hy0).mpr hy.1⟩
   simp only [indicator_of_mem hxy, Pi.one_apply, mul_one]
 
+/-- The Mellin convolution of the monomial `y ^ (n + 1)` with the density `1` on `(0,1]`:
+`∫_x^1 y ^ n dy = (1 - x ^ (n + 1)) / (n + 1)` for `x ∈ (0,1]`. -/
+theorem mellinConv_pow_succ_indicator_one_apply_of_mem (n : ℕ) {x : ℝ}
+    (hx : x ∈ Ioc (0 : ℝ) 1) :
+    mellinConv (fun y => y ^ (n + 1)) ((Ioc (0 : ℝ) 1).indicator 1) x =
+      (1 - x ^ (n + 1)) / (n + 1) := by
+  have hy : ∀ y ∈ Icc x 1, y ^ (n + 1) / y = y ^ n := fun y hy => by
+    rw [pow_succ, mul_div_cancel_right₀ _ (hx.1.trans_le hy.1).ne']
+  rw [mellinConv_indicator_one_apply_of_mem _ hx, setIntegral_congr_fun measurableSet_Icc hy,
+    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hx.2, integral_pow, one_pow]
+
 /-- **No function is a unit for the Mellin convolution**, not even almost everywhere on `(0,1]`
 and not even against the single density `1` on `(0,1]`: for every `e : ℝ → ℝ`,
 `e ⊗ 1_{(0,1]}` differs from `1_{(0,1]}` on a set of positive measure in `(0,1]`. The unit of the
