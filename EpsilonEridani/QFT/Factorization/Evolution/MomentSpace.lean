@@ -6,8 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Factorization.Evolution.Basic
-public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
-public import Mathlib.Analysis.SpecialFunctions.Exponential
+public import EpsilonEridani.Mathematics.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 /-!
 
@@ -37,13 +36,16 @@ here.
   function of the Mellin index, and a continuous running coupling.
 - `IsMomentSolution` is the linear ODE system, stated componentwise with `HasDerivAt`.
 - `momentEvolution S N τ₀ τ` is the evolution operator `exp ((∫_{τ₀}^{τ} αs/(2π)) • γ(N))`,
-  the exponential of the anomalous-dimension matrix times the `integratedCoupling`;
+  the exponential of the anomalous-dimension matrix times the `integratedCoupling` of the
+  running coupling;
   `momentEvolution_mul` is its cocycle law.
 - `moment_exists_unique` is well-posedness: a unique global solution for each initial
   condition, and `IsMomentSolution.eq_momentEvolution_mulVec` identifies every solution with
   the evolution operator applied to its value at a reference scale.
-- `IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal` is the closed form without channel
-  mixing: each channel evolves by the scalar exponential of its own anomalous dimension.
+- `IsMomentSolution.apply_eq_exp_mul_of_gamma_apply_eq_zero` is the closed form for a channel
+  that mixes with no other: it evolves by the scalar exponential of the integrated coupling times
+  its own anomalous dimension. `IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal` is the
+  case of a diagonal anomalous-dimension matrix.
 - `sumRule_conserved` is the conservation law: if the anomalous-dimension matrix has
   vanishing column sums at `N`, then `∑ i, F i` is `τ`-independent.
 - `momentum_sumRule_conserved` and `valence_sumRule_conserved` are its specializations to
@@ -142,29 +144,9 @@ form of DGLAP well-posedness; see the module docstring on why `x`-space is not a
 /-- Uniqueness for the moment-space system: two solutions agreeing at one point agree
 everywhere.
 
-The shape of the argument, retained because the
-hypothesis bookkeeping is easy to lose: fix
-`T > 0`; on `Set.Icc (τ0 - T) (τ0 + T)` the map `F ↦ momentRhs S N τ F` is Lipschitz with
-constant `K T = (sup over that interval of |S.alphaS (exp τ)| / (2 * π)) * ‖S.gamma N‖`,
-finite because `S.alphaS_continuous` and `Real.continuous_exp` give continuity of
-`τ ↦ S.alphaS (exp τ)` and a continuous function on a compact interval is bounded
-(`IsCompact.exists_isMaxOn`). Then mathlib's Gronwall-based ODE uniqueness result
-gives `F = G` on that interval.
-
-Checked against the pinned mathlib (2026-09-19), so the following are facts rather than
-guesses, and the proof below is built on them:
-
-* The right theorem is `ODE_solution_unique_of_mem_Icc`
-  (`Mathlib/Analysis/ODE/ExistUnique.lean`), whose Lipschitz hypothesis is restricted to
-  the interval, `∀ t ∈ Ioo a b, LipschitzOnWith K (v t) (s t)`.
-* `ODE_solution_unique_univ` does **not** apply, and this is not a matter of convenience:
-  it demands a single `K` valid for every `t`, whereas `alphaS ∘ exp` is only continuous,
-  not bounded on `ℝ`. Hence the compact-interval detour.
-* `hasDerivAt_pi` is the correct name for the componentwise-to-vector conversion
-  (`Mathlib/Analysis/Calculus/Deriv/Prod.lean`); the earlier note flagged it unverified.
-* The pi-norm lemmas wanted here are the *unprimed* `pi_norm_le_iff_of_nonneg` and
-  `norm_le_pi_norm`. The primed spellings are the multiplicative `to_additive` sources and
-  fail with a stuck `SeminormedGroup` instance. -/
+The proof is Gronwall's inequality (`ODE_solution_unique_of_mem_Icc`) on a compact interval
+containing both scales, where the coupling is bounded and the linear vector field is therefore
+Lipschitz. -/
 lemma momentSolution_unique {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ)
     {F G : ℝ → ι → ℂ} (hF : IsMomentSolution S N F) (hG : IsMomentSolution S N G)
     (τ0 : ℝ) (h0 : F τ0 = G τ0) (τ : ℝ) :
@@ -259,55 +241,58 @@ two-parameter cocycle law instead.
 The matrix exponential is `NormedSpace.exp` on `Matrix ι ι ℂ` with its product topology. Its
 derivative is computed with Mathlib's `L∞` operator norm (`Matrix.Norms.Operator`) installed
 locally inside the proof, as in Mathlib's `Matrix.exp_add_of_commute`; no norm on matrices
-appears in any statement. -/
+appears in any statement (`Matrix.hasDerivAt_exp_smul_const_mulVec`). -/
 
 section Existence
 
 variable {ι : Type}
 
-/-- The scale-dependent coupling `a(τ) = αs(e^τ) / (2π)` of the moment-space system is
-continuous in the log scale `τ`. -/
-private lemma continuous_alphaS_exp_div (S : DglapMomentSystem ι) :
-    Continuous fun s => S.alphaS (Real.exp s) / (2 * Real.pi) :=
-  (S.alphaS_continuous.comp Real.continuous_exp).div_const _
-
 /-- The integrated coupling from log scale `τ₀` to log scale `τ`,
 
-`integratedCoupling S τ₀ τ = ∫ s in τ₀..τ, αs(e^s) / (2π)`.
+`integratedCoupling αs τ₀ τ = ∫ s in τ₀..τ, αs(e^s) / (2π)`.
 
 It is the evolution variable of the moment-space system: in it the coefficient matrix becomes
 the constant `γ(N)`. -/
-def integratedCoupling (S : DglapMomentSystem ι) (τ₀ τ : ℝ) : ℝ :=
-  ∫ s in τ₀..τ, S.alphaS (Real.exp s) / (2 * Real.pi)
+def integratedCoupling (αs : RunningCoupling) (τ₀ τ : ℝ) : ℝ :=
+  ∫ s in τ₀..τ, αs (Real.exp s) / (2 * Real.pi)
+
+lemma integratedCoupling_def (αs : RunningCoupling) (τ₀ τ : ℝ) :
+    integratedCoupling αs τ₀ τ = ∫ s in τ₀..τ, αs (Real.exp s) / (2 * Real.pi) := (rfl)
 
 @[simp]
-lemma integratedCoupling_self (S : DglapMomentSystem ι) (τ : ℝ) :
-    integratedCoupling S τ τ = 0 :=
-  intervalIntegral.integral_same
+lemma integratedCoupling_self (αs : RunningCoupling) (τ : ℝ) :
+    integratedCoupling αs τ τ = 0 := by
+  rw [integratedCoupling_def, intervalIntegral.integral_same]
 
-/-- The integrated coupling is additive over adjacent scale intervals. -/
-lemma integratedCoupling_add (S : DglapMomentSystem ι) (τ₀ τ₁ τ₂ : ℝ) :
-    integratedCoupling S τ₀ τ₁ + integratedCoupling S τ₁ τ₂ = integratedCoupling S τ₀ τ₂ :=
-  intervalIntegral.integral_add_adjacent_intervals
-    ((continuous_alphaS_exp_div S).intervalIntegrable _ _)
-    ((continuous_alphaS_exp_div S).intervalIntegrable _ _)
+/-- The integrated coupling of a continuous coupling is additive over adjacent scale
+intervals. -/
+lemma integratedCoupling_add {αs : RunningCoupling} (hαs : Continuous αs) (τ₀ τ₁ τ₂ : ℝ) :
+    integratedCoupling αs τ₀ τ₁ + integratedCoupling αs τ₁ τ₂ = integratedCoupling αs τ₀ τ₂ := by
+  have h := (hαs.comp Real.continuous_exp).div_const (2 * Real.pi)
+  simp only [integratedCoupling_def]
+  exact intervalIntegral.integral_add_adjacent_intervals (h.intervalIntegrable _ _)
+    (h.intervalIntegrable _ _)
 
 /-- Reversing the scale interval reverses the sign of the integrated coupling. -/
-lemma integratedCoupling_swap (S : DglapMomentSystem ι) (τ₀ τ : ℝ) :
-    integratedCoupling S τ τ₀ = -integratedCoupling S τ₀ τ :=
-  intervalIntegral.integral_symm τ₀ τ
+lemma integratedCoupling_swap (αs : RunningCoupling) (τ₀ τ : ℝ) :
+    integratedCoupling αs τ τ₀ = -integratedCoupling αs τ₀ τ := by
+  simp only [integratedCoupling_def]
+  exact intervalIntegral.integral_symm τ₀ τ
 
-/-- The integrated coupling has derivative `αs(e^τ) / (2π)` in its upper limit. -/
-lemma hasDerivAt_integratedCoupling (S : DglapMomentSystem ι) (τ₀ τ : ℝ) :
-    HasDerivAt (integratedCoupling S τ₀) (S.alphaS (Real.exp τ) / (2 * Real.pi)) τ :=
-  ((continuous_alphaS_exp_div S).integral_hasStrictDerivAt τ₀ τ).hasDerivAt
+/-- The integrated coupling of a continuous coupling has derivative `αs(e^τ) / (2π)` in its
+upper limit. -/
+lemma hasDerivAt_integratedCoupling {αs : RunningCoupling} (hαs : Continuous αs) (τ₀ τ : ℝ) :
+    HasDerivAt (integratedCoupling αs τ₀) (αs (Real.exp τ) / (2 * Real.pi)) τ :=
+  (((hαs.comp Real.continuous_exp).div_const (2 * Real.pi)).integral_hasStrictDerivAt
+    τ₀ τ).hasDerivAt
 
-/-- For a coupling that is positive at every positive scale, the integrated coupling is strictly
-increasing in its upper limit, so it is an admissible reparametrisation of the log scale. -/
-lemma strictMono_integratedCoupling (S : DglapMomentSystem ι)
-    (hα : ∀ Q2, 0 < Q2 → 0 < S.alphaS Q2) (τ₀ : ℝ) :
-    StrictMono (integratedCoupling S τ₀) :=
-  strictMono_of_hasDerivAt_pos (hasDerivAt_integratedCoupling S τ₀) fun τ =>
+/-- For a continuous coupling that is positive at every positive scale, the integrated coupling
+is strictly increasing in its upper limit, so it is an admissible reparametrisation of the log
+scale. -/
+lemma strictMono_integratedCoupling {αs : RunningCoupling} (hαs : Continuous αs)
+    (hα : ∀ Q2, 0 < Q2 → 0 < αs Q2) (τ₀ : ℝ) :
+    StrictMono (integratedCoupling αs τ₀) :=
+  strictMono_of_hasDerivAt_pos (hasDerivAt_integratedCoupling hαs τ₀) fun τ =>
     div_pos (hα _ (Real.exp_pos τ)) (by positivity)
 
 /-- The moment-space evolution operator from log scale `τ₀` to log scale `τ` at Mellin
@@ -320,31 +305,38 @@ This is the standard moment-space solution of DGLAP evolution (Furmanski and Pet
 Z. Phys. C 11 (1982) 293). -/
 def momentEvolution [Fintype ι] [DecidableEq ι] (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
     Matrix ι ι ℂ :=
-  NormedSpace.exp ((integratedCoupling S τ₀ τ : ℂ) • S.gamma N)
+  NormedSpace.exp ((integratedCoupling S.alphaS τ₀ τ : ℂ) • S.gamma N)
 
 section momentEvolution
 
 variable [Fintype ι] [DecidableEq ι]
 
+lemma momentEvolution_def (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
+    momentEvolution S N τ₀ τ =
+      NormedSpace.exp ((integratedCoupling S.alphaS τ₀ τ : ℂ) • S.gamma N) :=
+  (rfl)
+
 @[simp]
 lemma momentEvolution_self (S : DglapMomentSystem ι) (N : ℂ) (τ : ℝ) :
     momentEvolution S N τ τ = 1 := by
-  rw [momentEvolution, integratedCoupling_self, Complex.ofReal_zero, zero_smul,
+  rw [momentEvolution_def, integratedCoupling_self, Complex.ofReal_zero, zero_smul,
     NormedSpace.exp_zero]
 
 /-- **The cocycle law.** Evolving from `τ₀` to `τ₁` and then from `τ₁` to `τ₂` is evolving from
 `τ₀` to `τ₂`. -/
 lemma momentEvolution_mul (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ₁ τ₂ : ℝ) :
     momentEvolution S N τ₁ τ₂ * momentEvolution S N τ₀ τ₁ = momentEvolution S N τ₀ τ₂ := by
-  rw [momentEvolution, momentEvolution, momentEvolution, ← Matrix.exp_add_of_commute _ _
-    (((Commute.refl (S.gamma N)).smul_left _).smul_right _), ← add_smul, ← Complex.ofReal_add,
-    add_comm, integratedCoupling_add]
+  rw [momentEvolution_def, momentEvolution_def, momentEvolution_def,
+    ← Matrix.exp_add_of_commute _ _ (((Commute.refl (S.gamma N)).smul_left _).smul_right _),
+    ← add_smul, ← Complex.ofReal_add,
+    add_comm (integratedCoupling S.alphaS τ₁ τ₂) (integratedCoupling S.alphaS τ₀ τ₁),
+    integratedCoupling_add S.alphaS_continuous]
 
 /-- Evolving backwards from `τ` to `τ₀` inverts evolving from `τ₀` to `τ`. -/
 lemma momentEvolution_swap (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
     momentEvolution S N τ τ₀ = (momentEvolution S N τ₀ τ)⁻¹ := by
-  rw [momentEvolution, momentEvolution, integratedCoupling_swap, Complex.ofReal_neg, neg_smul,
-    Matrix.exp_neg]
+  rw [momentEvolution_def, momentEvolution_def, integratedCoupling_swap, Complex.ofReal_neg,
+    neg_smul, Matrix.exp_neg]
 
 /-- Without mixing between channels, that is for a diagonal anomalous-dimension matrix, each
 channel evolves by the scalar exponential of the integrated coupling times its own anomalous
@@ -352,8 +344,8 @@ dimension. -/
 lemma momentEvolution_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ} {d : ι → ℂ}
     (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
     momentEvolution S N τ₀ τ =
-      Matrix.diagonal fun i => Complex.exp (integratedCoupling S τ₀ τ * d i) := by
-  rw [momentEvolution, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
+      Matrix.diagonal fun i => Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) := by
+  rw [momentEvolution_def, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
   simp only [Pi.smul_apply, smul_eq_mul, Complex.exp_eq_exp_ℂ]
 
 /-- The evolution operator applied to a fixed vector has the moment-space right-hand side
@@ -363,24 +355,8 @@ lemma hasDerivAt_momentEvolution_mulVec (S : DglapMomentSystem ι) (N : ℂ) (τ
     HasDerivAt (fun s => momentEvolution S N τ₀ s *ᵥ F₀)
       (((S.alphaS (Real.exp τ) / (2 * Real.pi) : ℝ) : ℂ) •
         (S.gamma N *ᵥ (momentEvolution S N τ₀ τ *ᵥ F₀))) τ := by
-  open scoped Matrix.Norms.Operator in
-  -- the exponential along the scalar path `s ↦ integratedCoupling S τ₀ s`
-  have hexp := (hasDerivAt_exp_smul_const' (𝕂 := ℂ) (S.gamma N)
-    (integratedCoupling S τ₀ τ : ℂ)).scomp τ (hasDerivAt_integratedCoupling S τ₀ τ).ofReal_comp
-  -- applying a matrix to `F₀` is a bounded real-linear map
-  let L : Matrix ι ι ℂ →L[ℝ] (ι → ℂ) :=
-    LinearMap.mkContinuous
-      { toFun := fun M => M *ᵥ F₀
-        map_add' := fun A B => Matrix.add_mulVec A B F₀
-        map_smul' := fun c A => Matrix.smul_mulVec c A F₀ } ‖F₀‖
-      fun M => (Matrix.linfty_opNorm_mulVec M F₀).trans_eq (mul_comm _ _)
-  refine (L.hasFDerivAt.comp_hasDerivAt τ hexp).congr_deriv ?_
-  simp only [L, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    Matrix.smul_mulVec, ← Matrix.mulVec_mulVec, momentEvolution]
-  -- The two sides differ only in the topology argument of `NormedSpace.exp`: the one induced
-  -- by the operator norm on the left and the product topology on the right. Mathlib builds the
-  -- operator norm with the product uniformity, so the two are definitionally equal.
-  rfl
+  simpa only [momentEvolution_def] using Matrix.hasDerivAt_exp_smul_const_mulVec
+    (hasDerivAt_integratedCoupling S.alphaS_continuous τ₀ τ).ofReal_comp (S.gamma N) F₀
 
 /-- The evolution operator applied to an initial vector solves the moment-space system. -/
 theorem isMomentSolution_momentEvolution_mulVec (S : DglapMomentSystem ι) (N : ℂ) (τ₀ : ℝ)
@@ -388,7 +364,7 @@ theorem isMomentSolution_momentEvolution_mulVec (S : DglapMomentSystem ι) (N : 
     IsMomentSolution S N fun τ => momentEvolution S N τ₀ τ *ᵥ F₀ := by
   intro i τ
   have h := hasDerivAt_pi.1 (hasDerivAt_momentEvolution_mulVec S N τ₀ τ F₀) i
-  simpa only [momentRhs, Pi.smul_apply, smul_eq_mul, Matrix.mulVec, dotProduct] using h
+  simpa only [momentRhs, Pi.smul_apply, smul_eq_mul, Matrix.mulVec_apply_eq_sum] using h
 
 /-- Every solution of the moment-space system is the evolution operator applied to its value at
 any reference scale: `F τ = momentEvolution S N τ₀ τ *ᵥ F τ₀`. -/
@@ -398,6 +374,37 @@ theorem IsMomentSolution.eq_momentEvolution_mulVec {S : DglapMomentSystem ι} {N
   momentSolution_unique S N hF (isMomentSolution_momentEvolution_mulVec S N τ₀ (F τ₀)) τ₀
     (by rw [momentEvolution_self, Matrix.one_mulVec]) τ
 
+omit [DecidableEq ι] in
+/-- **The closed form for an unmixed channel.** If channel `i` mixes with no other channel at
+`N`, that is if the off-diagonal entries of row `i` of the anomalous-dimension matrix vanish,
+channel `i` of a solution evolves multiplicatively:
+`F τ i = exp ((∫ s in τ₀..τ, αs(e^s) / (2π)) * γ i i) * F τ₀ i`.
+
+Only row `i` enters, so this applies to a non-singlet channel inside a full flavor system whose
+singlet sector mixes quarks and gluons. -/
+theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_apply_eq_zero {S : DglapMomentSystem ι}
+    {N : ℂ} {F : ℝ → ι → ℂ} (hF : IsMomentSolution S N F) {i : ι}
+    (h : ∀ j, j ≠ i → S.gamma N i j = 0) (τ₀ τ : ℝ) :
+    F τ i = Complex.exp (integratedCoupling S.alphaS τ₀ τ * S.gamma N i i) * F τ₀ i := by
+  set c : ℝ → ℂ := fun s => (integratedCoupling S.alphaS τ₀ s : ℂ) with hc
+  -- `exp (-c s * γ i i) * F s i` is constant in `s`
+  have hderiv : ∀ s,
+      HasDerivAt (fun s => Complex.exp (-(c s * S.gamma N i i)) * F s i) 0 s := by
+    intro s
+    have hcs : HasDerivAt c ((S.alphaS (Real.exp s) / (2 * Real.pi) : ℝ) : ℂ) s :=
+      (hasDerivAt_integratedCoupling S.alphaS_continuous τ₀ s).ofReal_comp
+    have hFs : HasDerivAt (fun s => F s i)
+        (((S.alphaS (Real.exp s) / (2 * Real.pi) : ℝ) : ℂ) * (S.gamma N i i * F s i)) s := by
+      have hFi := hF i s
+      rwa [momentRhs, Finset.sum_eq_single i (fun j _ hj => by rw [h j hj, zero_mul])
+        (fun hi => absurd (Finset.mem_univ i) hi)] at hFi
+    convert ((hcs.mul_const (S.gamma N i i)).neg.cexp).mul hFs using 1
+    ring
+  have hconst := eq_of_hasDerivAt_zero hderiv τ τ₀
+  simp only [hc, integratedCoupling_self, Complex.ofReal_zero, zero_mul, neg_zero,
+    Complex.exp_zero, one_mul] at hconst
+  rw [← hconst, ← mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_mul]
+
 /-- **The closed form without channel mixing.** If the anomalous-dimension matrix at `N` is
 diagonal, as for the non-singlet combinations, each channel of a solution evolves
 multiplicatively:
@@ -405,9 +412,10 @@ multiplicatively:
 theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_eq_diagonal {S : DglapMomentSystem ι}
     {N : ℂ} {d : ι → ℂ} (h : S.gamma N = Matrix.diagonal d) {F : ℝ → ι → ℂ}
     (hF : IsMomentSolution S N F) (τ₀ τ : ℝ) (i : ι) :
-    F τ i = Complex.exp (integratedCoupling S τ₀ τ * d i) * F τ₀ i := by
-  rw [hF.eq_momentEvolution_mulVec τ₀ τ, momentEvolution_eq_diagonal h,
-    Matrix.mulVec_diagonal]
+    F τ i = Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) * F τ₀ i := by
+  simpa only [h, Matrix.diagonal_apply_eq] using
+    hF.apply_eq_exp_mul_of_gamma_apply_eq_zero (i := i)
+      (fun j hj => by rw [h, Matrix.diagonal_apply_ne d hj.symm]) τ₀ τ
 
 end momentEvolution
 
