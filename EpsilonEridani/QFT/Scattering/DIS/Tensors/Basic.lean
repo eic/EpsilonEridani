@@ -204,17 +204,49 @@ lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u �
   field_simp
   ring
 
-/-- Exchanging the slots of an alternating form reverses its sign. -/
-lemma flip_eq_neg_of_isAlt {A : Bilin V} (hA : A.IsAlt) : A.flip = -A :=
-  LinearMap.ext₂ fun v w => by simp [hA.neg_eq]
+/-- The composite of two reflections in non-null directions has determinant one. -/
+lemma det_reflect_comp_reflect (g : Bilin V) {u u' : V} (hu : g u u ≠ 0) (hu' : g u' u' ≠ 0) :
+    LinearMap.det (reflect g u ∘ₗ reflect g u') = 1 := by
+  by_cases hfin : Module.Finite ℝ V
+  · rw [LinearMap.det_comp, det_reflect g hu, det_reflect g hu']
+    norm_num
+  · -- Mathlib defines `LinearMap.det` to be `1` outside finite dimension, so this branch
+    -- is vacuous and carries no geometric content.
+    exact LinearMap.det_eq_one_of_not_module_finite hfin _
+
+/-- For `g` symmetric and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in
+`u - u'` sends `u` to `u'`. -/
+lemma reflect_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
+    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u = u' := by
+  have hdd : g (u - u') (u - u') = 2 * g (u - u') u := by
+    simp only [map_sub, LinearMap.sub_apply, hSymm.eq u u', ← hnorm]
+    ring
+  have h0 : g (u - u') u ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero])
+  have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u = 1 := by
+    rw [hdd]
+    field_simp
+  rw [reflect_apply, hc, one_smul]
+  abel
+
+/-- For `g` symmetric and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in
+`u - u'` sends `u'` to `u`. -/
+lemma reflect_sub_apply_right (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
+    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u' = u := by
+  have hdd : g (u - u') (u - u') = -(2 * g (u - u') u') := by
+    simp only [map_sub, LinearMap.sub_apply, hSymm.eq u u', hnorm]
+    ring
+  have h0 : g (u - u') u' ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero, neg_zero])
+  have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u' = -1 := by
+    rw [hdd]
+    field_simp
+  rw [reflect_apply, hc, neg_smul, one_smul]
+  abel
 
 /-- Exchanging the slots of a symmetric form plus a multiple of an alternating form reverses
 only the alternating term. -/
 lemma flip_add_smul_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt) (c : ℝ) :
-    (S + c • A).flip = S - c • A := by
-  rw [LinearMap.BilinForm.flip, map_add, map_smul, LinearMap.BilinForm.isSymm_iff_flip.mp hS,
-    ← LinearMap.BilinForm.flip, flip_eq_neg_of_isAlt hA]
-  module
+    (S + c • A).flip = S - c • A :=
+  LinearMap.ext₂ fun v w => by simp [hS.eq w v, ← hA.neg_eq v w, sub_eq_add_neg]
 
 end Bilin
 

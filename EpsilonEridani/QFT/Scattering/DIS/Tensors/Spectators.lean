@@ -19,15 +19,16 @@ stabilizer elements that `IsProperLorentzCovariant` constrains.
 
 - `SpectatorPair`: two non-null, mutually orthogonal spectator directions `e₁`, `e₂`.
 - `SpectatorPlane`: a `SpectatorPair` completing `p_T`, `q` to a frame of `V`.
-- `SpectatorPlane.normalize`: the plane with `e₂` rescaled to the norm of `e₁`, when the two
-  norms have the same sign.
+- `SpectatorPair.normalize`, `SpectatorPlane.normalize`: `e₂` rescaled to the norm of `e₁`,
+  when the two norms have the same sign.
 - `SpectatorPair.uniquenessAssumptions`: the probe pairs of `UniquenessAssumptions` built from
   `e₁` and `p_T`.
 
 ## Main results
 
 - `reflect_comp_reflect_isKinematicStabilizer`: the composite of the reflections in two
-  non-null spectators is a stabilizer element of determinant one.
+  non-null spectators is a stabilizer element, of determinant one by
+  `Bilin.det_reflect_comp_reflect`.
 - `exists_half_turn`: two orthogonal spectators are both reversed by such an element.
 - `exists_quarter_turn`: two orthogonal spectators of equal norm are turned into each other,
   `u ↦ u' ↦ -u`, by such an element.
@@ -54,26 +55,19 @@ open Kinematics
 -/
 
 /-- The composite of the reflections in two non-null spectators `u` and `u'` is a kinematic
-stabilizer element of determinant one. -/
+stabilizer element; its determinant is one by `Bilin.det_reflect_comp_reflect`. -/
 lemma reflect_comp_reflect_isKinematicStabilizer {g : Bilin V} {K : DisKinematics V}
     (hSymm : g.IsSymm) {u u' : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0)
     (hu : g u u ≠ 0) (hu'q : g K.q u' = 0) (hu'T : g (pTransverse g K) u' = 0)
     (hu' : g u' u' ≠ 0) :
-    IsKinematicStabilizer g K (Bilin.reflect g u ∘ₗ Bilin.reflect g u') ∧
-      LinearMap.det (Bilin.reflect g u ∘ₗ Bilin.reflect g u') = 1 := by
+    IsKinematicStabilizer g K (Bilin.reflect g u ∘ₗ Bilin.reflect g u') := by
   have h₁ := reflect_isKinematicStabilizer g K hSymm _ hu
     (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
   have h₂ := reflect_isKinematicStabilizer g K hSymm _ hu'
     (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
-  refine ⟨⟨fun v w => by simp only [LinearMap.comp_apply, h₁.isometry _ _, h₂.isometry _ _],
+  exact ⟨fun v w => by simp only [LinearMap.comp_apply, h₁.isometry _ _, h₂.isometry _ _],
     by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
-    by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩, ?_⟩
-  by_cases hfin : Module.Finite ℝ V
-  · rw [LinearMap.det_comp, Bilin.det_reflect g hu, Bilin.det_reflect g hu']
-    norm_num
-  · -- Mathlib defines `LinearMap.det` to be `1` outside finite dimension, so this branch
-    -- is vacuous and carries no geometric content.
-    exact LinearMap.det_eq_one_of_not_module_finite hfin _
+    by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩
 
 /-- Two orthogonal non-null spectators `u` and `u'` give a kinematic stabilizer element of
 determinant one reversing both: the composite of the reflections in `u` and in `u'`. -/
@@ -83,9 +77,9 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     (huu' : g u u' = 0) :
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
       f u = -u ∧ f u' = -u' := by
-  obtain ⟨hf, hdet⟩ := reflect_comp_reflect_isKinematicStabilizer hSymm huq huT hu hu'q hu'T hu'
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
-  refine ⟨_, hf, hdet, ?_, ?_⟩
+  refine ⟨_, reflect_comp_reflect_isKinematicStabilizer hSymm huq huT hu hu'q hu'T hu',
+    Bilin.det_reflect_comp_reflect g hu hu', ?_, ?_⟩
   · rw [LinearMap.comp_apply, Bilin.reflect_apply_of_orthogonal g _ _ hu'u,
       Bilin.reflect_apply_self g _ hu]
   · rw [LinearMap.comp_apply, Bilin.reflect_apply_self g _ hu', map_neg,
@@ -107,31 +101,24 @@ lemma exists_quarter_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
   have hdd0 : g (u - u') (u - u') ≠ 0 := by
     rw [hdd]
     exact mul_ne_zero two_ne_zero hu
-  obtain ⟨hf, hdet⟩ := reflect_comp_reflect_isKinematicStabilizer hSymm huq huT hu
-    (by rw [map_sub, huq, hu'q, sub_zero]) (by rw [map_sub, huT, hu'T, sub_zero]) hdd0
-  -- The reflection in `u - u'` exchanges `u` and `u'`.
-  have hc : 2 * (2 * g u u)⁻¹ * g u u = 1 := by field_simp
-  have hsu : Bilin.reflect g (u - u') u = u' := by
-    have h : g (u - u') u = g u u := by
-      rw [map_sub, LinearMap.sub_apply, hu'u, sub_zero]
-    rw [Bilin.reflect_apply, h, hdd, hc, one_smul]
-    abel
-  have hsu' : Bilin.reflect g (u - u') u' = u := by
-    have h : g (u - u') u' = -g u u := by
-      rw [map_sub, LinearMap.sub_apply, huu', ← hnorm, zero_sub]
-    rw [Bilin.reflect_apply, h, hdd, mul_neg, hc, neg_smul, one_smul]
-    abel
-  refine ⟨_, hf, hdet, ?_, ?_⟩
-  · rw [LinearMap.comp_apply, hsu, Bilin.reflect_apply_of_orthogonal g _ _ huu']
-  · rw [LinearMap.comp_apply, hsu', Bilin.reflect_apply_self g _ hu]
+  have hdq : g K.q (u - u') = 0 := by rw [map_sub, huq, hu'q, sub_zero]
+  have hdT : g (pTransverse g K) (u - u') = 0 := by rw [map_sub, huT, hu'T, sub_zero]
+  refine ⟨_, reflect_comp_reflect_isKinematicStabilizer hSymm huq huT hu hdq hdT hdd0,
+    Bilin.det_reflect_comp_reflect g hu hdd0, ?_, ?_⟩
+  · rw [LinearMap.comp_apply, Bilin.reflect_sub_apply_left g hSymm hnorm hdd0,
+      Bilin.reflect_apply_of_orthogonal g _ _ huu']
+  · rw [LinearMap.comp_apply, Bilin.reflect_sub_apply_right g hSymm hnorm hdd0,
+      Bilin.reflect_apply_self g _ hu]
 
 /-!
 ## Spectator pairs and planes
 -/
 
 /-- Two spectator directions `e₁`, `e₂` for the kinematics, non-null and `g`-orthogonal to each
-other and to `p_T` and `q`. They supply the half-turn of `exists_half_turn` that a parity-odd
-tensor must respect; `SpectatorPlane` adds that they complete `p_T`, `q` to a frame of `V`. -/
+other and to `p_T` and `q`. They supply the half-turn of `exists_half_turn`, at equal norms the
+quarter-turn of `exists_quarter_turn`, and the probe pairs `SpectatorPair.uniquenessAssumptions`
+of the `F1`/`F2` uniqueness theorem; `SpectatorPlane` adds that they complete `p_T`, `q` to a
+frame of `V`. -/
 @[ext]
 structure SpectatorPair (g : Bilin V) (K : DisKinematics V) : Type where
   /-- The first spectator direction. -/
@@ -180,8 +167,9 @@ lemma SpectatorPair.exists_half_turn {g : Bilin V} {K : DisKinematics V}
 For `V` Minkowski space with `p` timelike and `q` spacelike the spectator subspace
 `{p, q}^⊥` is a spacelike plane, and any orthogonal basis of it is such a frame. The frame
 is the only place where four-dimensionality enters the hypotheses on the hadronic tensor
-`W` of `Tensors.ParityOdd`; constructing the canonical parity-odd structure `A` there needs
-an alternating four-form, and its proper covariance a basis of four vectors, separately. -/
+`W` of `Tensors.ParityOdd` and `Tensors.Decomposition`; constructing the canonical
+parity-odd structure `A` there needs an alternating four-form, and its proper covariance a
+basis of four vectors, separately. -/
 @[ext]
 structure SpectatorPlane (g : Bilin V) (K : DisKinematics V) : Type extends SpectatorPair g K where
   /-- The frame spans `V`. -/
@@ -257,19 +245,13 @@ end uniquenessAssumptions
 
 section normalize
 
-variable {g : Bilin V} {K : DisKinematics V} (hP : SpectatorPlane g K)
+variable {g : Bilin V} {K : DisKinematics V}
 
-/-- The ratio `e₁·e₁ / e₂·e₂` of a `SpectatorPlane` whose two norms have the same sign is
-positive. -/
-private lemma SpectatorPlane.div_pos_of_mul_pos (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
-    0 < g hP.e₁ hP.e₁ / g hP.e₂ hP.e₂ :=
-  div_pos_iff.mpr (mul_pos_iff.mp hsign)
-
-/-- A `SpectatorPlane` whose two directions have norms of the same sign, with `e₂` rescaled by
+/-- A `SpectatorPair` whose two directions have norms of the same sign, with `e₂` rescaled by
 `√(e₁·e₁ / e₂·e₂)` so that both directions have the norm of `e₁`
-(`SpectatorPlane.normalize_self_eq`). -/
-noncomputable def SpectatorPlane.normalize (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
-    SpectatorPlane g K where
+(`SpectatorPair.normalize_self_eq`). -/
+noncomputable def SpectatorPair.normalize (hP : SpectatorPair g K)
+    (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) : SpectatorPair g K where
   e₁ := hP.e₁
   e₂ := √(g hP.e₁ hP.e₁ / g hP.e₂ hP.e₂) • hP.e₂
   q_orthogonal_e₁ := hP.q_orthogonal_e₁
@@ -279,27 +261,40 @@ noncomputable def SpectatorPlane.normalize (hsign : 0 < g hP.e₁ hP.e₁ * g hP
   e₁_orthogonal_e₂ := by rw [map_smul, hP.e₁_orthogonal_e₂, smul_zero]
   e₁_self_ne_zero := hP.e₁_self_ne_zero
   e₂_self_ne_zero := by
+    have ht := Real.sqrt_ne_zero'.mpr (div_pos_iff.mpr (mul_pos_iff.mp hsign))
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
-    exact mul_ne_zero (Real.sqrt_ne_zero'.mpr (hP.div_pos_of_mul_pos hsign))
-      (mul_ne_zero (Real.sqrt_ne_zero'.mpr (hP.div_pos_of_mul_pos hsign)) hP.e₂_self_ne_zero)
-  span v := by
-    obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
-    refine ⟨a, b, c₁, c₂ / √(g hP.e₁ hP.e₁ / g hP.e₂ hP.e₂), ?_⟩
-    rw [smul_smul, div_mul_cancel₀ _ (Real.sqrt_ne_zero'.mpr (hP.div_pos_of_mul_pos hsign))]
+    exact mul_ne_zero ht (mul_ne_zero ht hP.e₂_self_ne_zero)
 
-@[simp] lemma SpectatorPlane.normalize_e₁ (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
-    (hP.normalize hsign).e₁ = hP.e₁ := (rfl)
+@[simp] lemma SpectatorPair.normalize_e₁ (hP : SpectatorPair g K)
+    (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) : (hP.normalize hsign).e₁ = hP.e₁ := (rfl)
 
-@[simp] lemma SpectatorPlane.normalize_e₂ (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
+@[simp] lemma SpectatorPair.normalize_e₂ (hP : SpectatorPair g K)
+    (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
     (hP.normalize hsign).e₂ = √(g hP.e₁ hP.e₁ / g hP.e₂ hP.e₂) • hP.e₂ := (rfl)
 
-/-- The two directions of `SpectatorPlane.normalize` have equal norms. -/
-lemma SpectatorPlane.normalize_self_eq (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
+/-- The two directions of `SpectatorPair.normalize` have equal norms. -/
+lemma SpectatorPair.normalize_self_eq (hP : SpectatorPair g K)
+    (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
     g (hP.normalize hsign).e₁ (hP.normalize hsign).e₁ =
       g (hP.normalize hsign).e₂ (hP.normalize hsign).e₂ := by
   simp only [normalize_e₁, normalize_e₂, map_smul, LinearMap.smul_apply, smul_eq_mul]
-  rw [← mul_assoc, Real.mul_self_sqrt (hP.div_pos_of_mul_pos hsign).le,
+  rw [← mul_assoc, Real.mul_self_sqrt (div_pos_iff.mpr (mul_pos_iff.mp hsign)).le,
     div_mul_cancel₀ _ hP.e₂_self_ne_zero]
+
+/-- A `SpectatorPlane` whose two directions have norms of the same sign, with `e₂` rescaled as in
+`SpectatorPair.normalize`; it is still a frame. -/
+noncomputable def SpectatorPlane.normalize (hP : SpectatorPlane g K)
+    (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) : SpectatorPlane g K where
+  toSpectatorPair := hP.toSpectatorPair.normalize hsign
+  span v := by
+    obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
+    refine ⟨a, b, c₁, c₂ / √(g hP.e₁ hP.e₁ / g hP.e₂ hP.e₂), ?_⟩
+    rw [SpectatorPair.normalize_e₁, SpectatorPair.normalize_e₂, smul_smul,
+      div_mul_cancel₀ _ (Real.sqrt_ne_zero'.mpr (div_pos_iff.mpr (mul_pos_iff.mp hsign)))]
+
+@[simp] lemma SpectatorPlane.toSpectatorPair_normalize (hP : SpectatorPlane g K)
+    (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :
+    (hP.normalize hsign).toSpectatorPair = hP.toSpectatorPair.normalize hsign := (rfl)
 
 end normalize
 

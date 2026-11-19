@@ -90,10 +90,12 @@ lemma IsProperLorentzCovariant.apply_eq_of_spectatorPair {W : Bilin V} (hSymm : 
   obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_half_turn hSymm
   have hT₁ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
   have hT₂ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
-  have h₁T : W hP.e₁ (pTransverse g K) = 0 :=
-    hW.flip.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
-  have h₂T : W hP.e₂ (pTransverse g K) = 0 :=
-    hW.flip.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
+  have h₁T : W hP.e₁ (pTransverse g K) = 0 := by
+    rw [← LinearMap.BilinForm.flip_apply]
+    exact hW.flip.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
+  have h₂T : W hP.e₂ (pTransverse g K) = 0 := by
+    rw [← LinearMap.BilinForm.flip_apply]
+    exact hW.flip.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
   -- The quarter-turn relates the four spectator components.
   obtain ⟨r, hr, hrdet, hr₁, hr₂⟩ := hP.exists_quarter_turn hSymm hnorm
   have h₂₂ : W hP.e₂ hP.e₂ = W hP.e₁ hP.e₁ := by
@@ -117,17 +119,17 @@ lemma IsProperLorentzCovariant.eq_of_apply_eq {W W' : Bilin V} (hSymm : g.IsSymm
     (h₁₁ : W hP.e₁ hP.e₁ = W' hP.e₁ hP.e₁) (h₁₂ : W hP.e₁ hP.e₂ = W' hP.e₁ hP.e₂) :
     W = W' := by
   -- Work in the plane with `e₂` rescaled to the norm of `e₁`.
-  have hN := hP.normalize_self_eq hsign
-  have h₁₂' : W (hP.normalize hsign).e₁ (hP.normalize hsign).e₂ =
-      W' (hP.normalize hsign).e₁ (hP.normalize hsign).e₂ := by
-    simp only [SpectatorPlane.normalize_e₁, SpectatorPlane.normalize_e₂, map_smul, h₁₂]
+  have hN := hP.toSpectatorPair.normalize_self_eq hsign
+  have h₁₂' : W (hP.toSpectatorPair.normalize hsign).e₁ (hP.toSpectatorPair.normalize hsign).e₂ =
+      W' (hP.toSpectatorPair.normalize hsign).e₁ (hP.toSpectatorPair.normalize hsign).e₂ := by
+    simp only [SpectatorPair.normalize_e₁, SpectatorPair.normalize_e₂, map_smul, h₁₂]
   refine LinearMap.ext₂ fun v w => ?_
   obtain ⟨a, b, c₁, c₂, rfl⟩ := (hP.normalize hsign).span v
   obtain ⟨a', b', d₁, d₂, rfl⟩ := (hP.normalize hsign).span w
-  rw [hW.apply_eq_of_spectatorPair hSymm (hP.normalize hsign).toSpectatorPair hN hleft hright,
-    hW'.apply_eq_of_spectatorPair hSymm (hP.normalize hsign).toSpectatorPair hN hleft' hright',
-    hTT, h₁₂']
-  simp only [SpectatorPlane.normalize_e₁, h₁₁]
+  simp only [SpectatorPlane.toSpectatorPair_normalize]
+  rw [hW.apply_eq_of_spectatorPair hSymm _ hN hleft hright,
+    hW'.apply_eq_of_spectatorPair hSymm _ hN hleft' hright', hTT, h₁₂',
+    SpectatorPair.normalize_e₁, h₁₁]
 
 /-!
 ## The transverse pair plus a parity-odd structure
@@ -135,7 +137,7 @@ lemma IsProperLorentzCovariant.eq_of_apply_eq {W W' : Bilin V} (hSymm : g.IsSymm
 
 /-- The transverse pair plus a multiple of a properly covariant structure is properly
 covariant. -/
-lemma isProperLorentzCovariant_fromF1F2_add_smul {A : Bilin V}
+lemma fromF1F2_add_smul_isProperLorentzCovariant {A : Bilin V}
     (hA : IsProperLorentzCovariant g K A) (F1 F2 c : ℝ) :
     IsProperLorentzCovariant g K (fromF1F2 g K F1 F2 + c • A) :=
   (fromF1F2_isLorentzCovariant g K F1 F2).isProperLorentzCovariant.add (hA.smul c)
@@ -195,7 +197,7 @@ theorem IsProperLorentzCovariant.eq_fromF1F2_add_div_smul {W A : Bilin V}
   have he₁ := hP.e₁_self_ne_zero
   have hqT : g K.q (pTransverse g K) = 0 := by rw [hSymm.eq, pTransverse_orthogonal_q g K hQ2]
   refine hcov.eq_of_apply_eq hSymm hP hsign hleft hright
-    (isProperLorentzCovariant_fromF1F2_add_smul hA.proper_covariant _ _ _)
+    (fromF1F2_add_smul_isProperLorentzCovariant hA.proper_covariant _ _ _)
     (fromF1F2_add_smul_conserved_left hQ2 hA.conserved_left _ _ _)
     (fromF1F2_add_smul_conserved_right hSymm hQ2 hA.conserved_right _ _ _) ?_ ?_ ?_
   · -- The `(p_T, p_T)` component fixes `F₂` once `F₁` is known.
@@ -277,7 +279,7 @@ theorem exists_eq_fromF1F2_add_smul_iff {W A : Bilin V} (hSymm : g.IsSymm)
   refine ⟨?_, fun ⟨hcov, hleft, hright⟩ =>
     exists_eq_fromF1F2_add_smul hSymm hQ2 hP hsign hTT hA hA0 hcov hleft hright⟩
   rintro ⟨F1, F2, c, rfl⟩
-  exact ⟨isProperLorentzCovariant_fromF1F2_add_smul hA.proper_covariant F1 F2 c,
+  exact ⟨fromF1F2_add_smul_isProperLorentzCovariant hA.proper_covariant F1 F2 c,
     fromF1F2_add_smul_conserved_left hQ2 hA.conserved_left F1 F2 c,
     fromF1F2_add_smul_conserved_right hSymm hQ2 hA.conserved_right F1 F2 c⟩
 
