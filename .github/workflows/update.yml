@@ -58,7 +58,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 scripts/resolve_deps.py --summary --exclude exclude.json --cross-line Physlib --out resolved.json | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 scripts/resolve_deps.py --summary --exclude exclude.json --out resolved.json | tee -a "$GITHUB_STEP_SUMMARY"
           echo "changed=$(jq -r .changed resolved.json)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v7
