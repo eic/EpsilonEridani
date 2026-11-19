@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.LinearAlgebra.Trace
 public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Isometry
 
 /-!
@@ -47,7 +48,8 @@ by `T ↦ Λᵀ * T * Λ` and preserves `g` when `Λᵀ * g * Λ = g`.
   since a multiple of `g` plus a traceless tensor is split into exactly those two summands.
 * `Matrix.isIdempotentElem_tracePart`, `Matrix.isIdempotentElem_tracelessPart`: both are
   projections, and `Matrix.tracePart_tracelessPart`, `Matrix.tracelessPart_tracePart` say they
-  annihilate each other's ranges.
+  annihilate each other's ranges; `Matrix.trace_tracePart` and `Matrix.trace_tracelessPart` give
+  their ranks `1` and `D² - 1`.
 * `Matrix.tracePart_eq_zero_iff` and `Matrix.tracelessPart_eq_zero_iff`: the kernels are the
   traceless tensors and the multiples of `g`; `Matrix.tracePart_eq_self_iff` and
   `Matrix.tracelessPart_eq_self_iff` say the ranges are the multiples of `g` and the traceless
@@ -76,9 +78,16 @@ lower indices, with respect to the metric `g`, in dimension `D = card n`. -/
 def tracePart (g : Matrix n n K) : Module.End K (Matrix n n K) :=
   ((Fintype.card n : K)⁻¹ • (traceLinearMap n K K ∘ₗ mulLeftLinearMap n K g⁻¹)).smulRight g
 
+/-- The trace part as the rank-one map `T ↦ (trace (g⁻¹ * T) / D) • g` assembled from
+`Matrix.traceLinearMap` and `Matrix.mulLeftLinearMap`. -/
+lemma tracePart_def (g : Matrix n n K) :
+    tracePart g =
+      ((Fintype.card n : K)⁻¹ • (traceLinearMap n K K ∘ₗ mulLeftLinearMap n K g⁻¹)).smulRight g :=
+  (rfl)
+
 lemma tracePart_apply (g T : Matrix n n K) :
     tracePart g T = (trace (g⁻¹ * T) / Fintype.card n) • g := by
-  rw [tracePart, LinearMap.smulRight_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+  rw [tracePart_def, LinearMap.smulRight_apply, LinearMap.smul_apply, LinearMap.comp_apply,
     mulLeftLinearMap_apply, traceLinearMap_apply, smul_eq_mul, div_eq_inv_mul]
 
 /-- The traceless part `T_{μν} - (1/D) g_{μν} T^α{}_α` of a tensor `T` with two lower indices,
@@ -107,7 +116,8 @@ theorem trace_inv_mul_tracePart (hn : (Fintype.card n : K) ≠ 0)
   · -- For a singular metric `g⁻¹ = 0`, and both traces vanish.
     simp [nonsing_inv_apply_not_isUnit g (by simpa using hg)]
   · rw [tracePart_apply, Matrix.mul_smul, nonsing_inv_mul g (isUnit_iff_ne_zero.2 hg), trace_smul,
-      trace_one, smul_eq_mul, div_mul_cancel₀ _ hn]
+      trace_one, smul_eq_mul]
+    field_simp
 
 /-- The traceless part of a tensor is traceless. -/
 @[simp]
@@ -121,7 +131,9 @@ multiple of the metric and a traceless tensor is unique. -/
 theorem tracePart_smul_add (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) (c : K)
     {S : Matrix n n K} (hS : trace (g⁻¹ * S) = 0) : tracePart g (c • g + S) = c • g := by
   rw [tracePart_apply, Matrix.mul_add, Matrix.mul_smul, nonsing_inv_mul g (isUnit_iff_ne_zero.2 hg),
-    trace_add, trace_smul, hS, trace_one, smul_eq_mul, add_zero, mul_div_cancel_right₀ _ hn]
+    trace_add, trace_smul, hS, trace_one, smul_eq_mul, add_zero]
+  congr 1
+  field_simp
 
 /-- The traceless part of a multiple of the metric plus a traceless tensor is that traceless
 tensor. -/
@@ -172,6 +184,24 @@ theorem isIdempotentElem_tracePart : IsIdempotentElem (tracePart g) :=
 /-- The traceless part is a projection, complementary to the trace part. -/
 theorem isIdempotentElem_tracelessPart : IsIdempotentElem (tracelessPart g) :=
   isIdempotentElem_tracePart.one_sub
+
+/-- The trace part projects onto the line of multiples of the metric: its trace as an
+endomorphism is `1`. -/
+theorem trace_tracePart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
+    LinearMap.trace K (Matrix n n K) (tracePart g) = 1 := by
+  rw [tracePart_def, LinearMap.trace_smulRight, LinearMap.smul_apply, LinearMap.comp_apply,
+    mulLeftLinearMap_apply, nonsing_inv_mul g (isUnit_iff_ne_zero.2 hg), traceLinearMap_apply,
+    trace_one, smul_eq_mul]
+  field_simp
+
+/-- The traceless part projects onto the traceless tensors, of dimension `D² - 1`: its trace as
+an endomorphism is `D² - 1`. -/
+theorem trace_tracelessPart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
+    LinearMap.trace K (Matrix n n K) (tracelessPart g) = (Fintype.card n : K) ^ 2 - 1 := by
+  rw [tracelessPart_eq_one_sub, map_sub, trace_tracePart hg hn, LinearMap.trace_one,
+    Module.finrank_matrix, Module.finrank_self]
+  push_cast
+  ring
 
 /-- The trace part of a tensor vanishes exactly when the tensor is traceless. -/
 theorem tracePart_eq_zero_iff (hn : (Fintype.card n : K) ≠ 0)

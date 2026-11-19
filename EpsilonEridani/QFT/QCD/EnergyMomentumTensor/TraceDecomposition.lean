@@ -31,8 +31,9 @@ part plus the whole gluon part.
 
 * `tracePart_total`, `tracelessPart_total`: the projections commute with the quark-gluon split.
 * `tracePart_gluonPart`: the trace part `(D / 4 - 1) / D · g_{μν} F^a_{αβ} F^{a αβ}` of the gluon
-  part in dimension `D`, which vanishes in four dimensions (`tracePart_gluonPart_of_card_eq_four`),
-  so that the gluon part is then traceless (`tracelessPart_gluonPart_of_card_eq_four`).
+  part in dimension `D`, which vanishes in four dimensions or when `F^a_{αβ} F^{a αβ} = 0`
+  (`tracePart_gluonPart_eq_zero`), so that the gluon part is then traceless
+  (`tracelessPart_gluonPart_eq_self`).
 * `tracePart_quarkPart`: the trace part `(1/D) g_{μν} Re (ψ‾ i γ^α D_α ψ)` of the quark part,
   which on solutions of the Dirac equation is `(1/D) g_{μν} Re (ψ‾ M ψ)`
   (`tracePart_quarkPart_of_diracEq`); the traceless part of the quark part is then the quark part
@@ -82,16 +83,18 @@ theorem tracePart_gluonPart (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
       ((Fintype.card n / 4 - 1) * gluonFieldSq g F / Fintype.card n) • g := by
   rw [tracePart_apply, trace_gluonPart]
 
-/-- In four spacetime dimensions the gluon part has no trace part. -/
-theorem tracePart_gluonPart_of_card_eq_four (hn : Fintype.card n = 4) (g : Matrix n n ℝ)
-    (F : ι → Matrix n n ℝ) : tracePart g (gluonPart g F) = 0 := by
-  rw [tracePart_gluonPart, hn]
-  norm_num
+/-- The gluon part has no trace part in four spacetime dimensions, or when
+`F^a_{αβ} F^{a αβ} = 0`. -/
+theorem tracePart_gluonPart_eq_zero (g : Matrix n n ℝ) {F : ι → Matrix n n ℝ}
+    (h : Fintype.card n = 4 ∨ gluonFieldSq g F = 0) : tracePart g (gluonPart g F) = 0 := by
+  rw [tracePart_apply, (trace_gluonPart_eq_zero_iff g F).2 h, zero_div, zero_smul]
 
-/-- In four spacetime dimensions the gluon part is its own traceless part. -/
-theorem tracelessPart_gluonPart_of_card_eq_four (hn : Fintype.card n = 4) (g : Matrix n n ℝ)
-    (F : ι → Matrix n n ℝ) : tracelessPart g (gluonPart g F) = gluonPart g F := by
-  rw [tracelessPart_apply, tracePart_gluonPart_of_card_eq_four hn, sub_zero]
+/-- The gluon part is its own traceless part in four spacetime dimensions, or when
+`F^a_{αβ} F^{a αβ} = 0`. -/
+theorem tracelessPart_gluonPart_eq_self (g : Matrix n n ℝ) {F : ι → Matrix n n ℝ}
+    (h : Fintype.card n = 4 ∨ gluonFieldSq g F = 0) :
+    tracelessPart g (gluonPart g F) = gluonPart g F := by
+  rw [tracelessPart_apply, tracePart_gluonPart_eq_zero g h, sub_zero]
 
 /-- The trace part `(1/D) g_{μν} Re (ψ‾ i γ^α D_α ψ)` of the quark part in spacetime dimension
 `D = card n`. -/
@@ -107,7 +110,7 @@ theorem tracePart_quarkPart_of_diracEq (hg : g.IsSymm) (hγ : ∀ μ, (β * γ �
     {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ} (h : diracOpApply g γ Dψ = M *ᵥ ψ) :
     tracePart g (quarkPart β γ ψ Dψ) =
       ((star ψ ⬝ᵥ (β * M) *ᵥ ψ).re / Fintype.card n) • g := by
-  rw [tracePart_quarkPart hg hγ, h, mulVec_mulVec]
+  rw [tracePart_apply, trace_quarkPart_of_diracEq hg hγ h]
 
 /-- On solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the traceless part of the quark part
 is `T^q_{μν} - (1/D) g_{μν} Re (ψ‾ M ψ)` in spacetime dimension `D = card n`. -/
@@ -125,7 +128,7 @@ theorem tracePart_total_of_diracEq (hn : Fintype.card n = 4) (hg : g.IsSymm)
     (h : diracOpApply g γ Dψ = M *ᵥ ψ) (F : ι → Matrix n n ℝ) :
     tracePart g (total g β γ ψ Dψ F) = ((star ψ ⬝ᵥ (β * M) *ᵥ ψ).re / 4) • g := by
   rw [tracePart_total, tracePart_quarkPart_of_diracEq hg hγ h,
-    tracePart_gluonPart_of_card_eq_four hn, add_zero, hn]
+    tracePart_gluonPart_eq_zero g (.inl hn), add_zero, hn]
   norm_num
 
 /-- In four spacetime dimensions the traceless part of the total energy-momentum tensor is the
@@ -134,7 +137,7 @@ theorem tracelessPart_total_of_card_eq_four (hn : Fintype.card n = 4) (ψ : m �
     (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
     tracelessPart g (total g β γ ψ Dψ F) =
       tracelessPart g (quarkPart β γ ψ Dψ) + gluonPart g F := by
-  rw [tracelessPart_total, tracelessPart_gluonPart_of_card_eq_four hn]
+  rw [tracelessPart_total, tracelessPart_gluonPart_eq_self g (.inl hn)]
 
 end EnergyMomentumTensor
 end QCD
