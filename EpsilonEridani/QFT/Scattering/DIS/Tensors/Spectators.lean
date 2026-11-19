@@ -159,6 +159,26 @@ lemma SpectatorPair.exists_half_turn {g : Bilin V} {K : DisKinematics V}
   Hadronic.exists_half_turn hSymm hP.q_orthogonal_e₁ hP.pT_orthogonal_e₁ hP.e₁_self_ne_zero
     hP.q_orthogonal_e₂ hP.pT_orthogonal_e₂ hP.e₂_self_ne_zero hP.e₁_orthogonal_e₂
 
+/-- **The half-turn removes the mixed `p_T`-spectator components.** On the span of `p_T`, `q`
+and a `SpectatorPair` `e₁`, `e₂`, a conserved, properly covariant tensor is determined by
+`W(p_T, p_T)` and its four spectator components. -/
+lemma IsProperLorentzCovariant.apply_eq_of_spectatorPair {g : Bilin V} {K : DisKinematics V}
+    {W : Bilin V} (hSymm : g.IsSymm) (hP : SpectatorPair g K) (hW : IsProperLorentzCovariant g K W)
+    (hleft : ∀ v : V, W K.q v = 0) (hright : ∀ v : V, W v K.q = 0)
+    (a b c₁ c₂ a' b' d₁ d₂ : ℝ) :
+    W (a • pTransverse g K + b • K.q + c₁ • hP.e₁ + c₂ • hP.e₂)
+        (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
+      a * a' * W (pTransverse g K) (pTransverse g K) + c₁ * d₁ * W hP.e₁ hP.e₁
+        + c₁ * d₂ * W hP.e₁ hP.e₂ + c₂ * d₁ * W hP.e₂ hP.e₁ + c₂ * d₂ * W hP.e₂ hP.e₂ := by
+  obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_half_turn hSymm
+  have hT₁ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
+  have hT₂ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
+  have h₁T := hW.apply_pTransverse_right_eq_zero_of_apply_eq_neg hf hdet hf₁
+  have h₂T := hW.apply_pTransverse_right_eq_zero_of_apply_eq_neg hf hdet hf₂
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hleft,
+    hright, hT₁, hT₂, h₁T, h₂T]
+  ring
+
 /-- An adapted frame for the kinematics: a `SpectatorPair` `e₁`, `e₂` such that `p_T`, `q`,
 `e₁`, `e₂` span `V`.
 

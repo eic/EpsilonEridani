@@ -36,7 +36,9 @@ The input is a `SpectatorPlane` `e₁`, `e₂` whose two norms have the same sig
 `exists_half_turn`, which reverses both spectators, the proper stabilizer contains the
 quarter-turn `e₁ ↦ e₂ ↦ -e₁` of `exists_quarter_turn` (both in `Tensors.Spectators`). These two
 elements alone cut a conserved, properly covariant tensor down to three components,
-`W(p_T, p_T)`, `W(e₁, e₁)` and `W(e₁, e₂)` (`IsProperLorentzCovariant.apply_eq_of_spectatorPair`).
+`W(p_T, p_T)`, `W(e₁, e₁)` and `W(e₁, e₂)`: the half-turn removes the mixed components
+(`IsProperLorentzCovariant.apply_eq_of_spectatorPair`) and the quarter-turn relates the
+spectator ones (`IsProperLorentzCovariant.apply_eq_of_spectatorPair_of_norm_eq`).
 For Minkowski space with `p` timelike and `q` spacelike the spectator plane is spacelike, and any
 orthogonal basis of it qualifies.
 
@@ -82,7 +84,8 @@ variable {g : Bilin V} {K : DisKinematics V}
 and a `SpectatorPair` `e₁`, `e₂` of equal norm, such a tensor is determined by `W(p_T, p_T)`,
 `W(e₁, e₁)` and `W(e₁, e₂)`: it has no mixed `p_T`-spectator components, and its spectator
 block is `W(e₁, e₁)` times the identity plus `W(e₁, e₂)` times the `2 × 2` determinant. -/
-lemma IsProperLorentzCovariant.apply_eq_of_spectatorPair {W : Bilin V} (hSymm : g.IsSymm)
+lemma IsProperLorentzCovariant.apply_eq_of_spectatorPair_of_norm_eq {W : Bilin V}
+    (hSymm : g.IsSymm)
     (hP : SpectatorPair g K) (hnorm : g hP.e₁ hP.e₁ = g hP.e₂ hP.e₂)
     (hW : IsProperLorentzCovariant g K W) (hleft : ∀ v : V, W K.q v = 0)
     (hright : ∀ v : V, W v K.q = 0) (a b c₁ c₂ a' b' d₁ d₂ : ℝ) :
@@ -90,12 +93,6 @@ lemma IsProperLorentzCovariant.apply_eq_of_spectatorPair {W : Bilin V} (hSymm : 
         (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
       a * a' * W (pTransverse g K) (pTransverse g K) + (c₁ * d₁ + c₂ * d₂) * W hP.e₁ hP.e₁
         + (c₁ * d₂ - c₂ * d₁) * W hP.e₁ hP.e₂ := by
-  -- The half-turn removes the mixed `p_T`-spectator components.
-  obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_half_turn hSymm
-  have hT₁ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
-  have hT₂ := hW.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
-  have h₁T := hW.apply_pTransverse_right_eq_zero_of_apply_eq_neg hf hdet hf₁
-  have h₂T := hW.apply_pTransverse_right_eq_zero_of_apply_eq_neg hf hdet hf₂
   -- The quarter-turn relates the four spectator components.
   obtain ⟨r, hr, hrdet, hr₁, hr₂⟩ := hP.exists_quarter_turn hSymm hnorm
   have h₂₂ : W hP.e₂ hP.e₂ = W hP.e₁ hP.e₁ := by
@@ -104,8 +101,7 @@ lemma IsProperLorentzCovariant.apply_eq_of_spectatorPair {W : Bilin V} (hSymm : 
     have h := hW r hr hrdet hP.e₁ hP.e₂
     rw [hr₁, hr₂, map_neg] at h
     linarith
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hleft,
-    hright, hT₁, hT₂, h₁T, h₂T, h₂₂, h₂₁]
+  rw [hW.apply_eq_of_spectatorPair hSymm hP hleft hright, h₂₂, h₂₁]
   ring
 
 /-- Two conserved, properly covariant tensors that agree on `(p_T, p_T)`, `(e₁, e₁)` and
@@ -130,8 +126,8 @@ lemma IsProperLorentzCovariant.eq_of_apply_eq {W W' : Bilin V} (hSymm : g.IsSymm
   obtain ⟨a, b, c₁, c₂, rfl⟩ := (hP.equalizeNorms hsign).span v
   obtain ⟨a', b', d₁, d₂, rfl⟩ := (hP.equalizeNorms hsign).span w
   simp only [SpectatorPlane.equalizeNorms_toSpectatorPair]
-  rw [hW.apply_eq_of_spectatorPair hSymm _ hN hleft hright,
-    hW'.apply_eq_of_spectatorPair hSymm _ hN hleft' hright', hTT, h₁₂',
+  rw [hW.apply_eq_of_spectatorPair_of_norm_eq hSymm _ hN hleft hright,
+    hW'.apply_eq_of_spectatorPair_of_norm_eq hSymm _ hN hleft' hright', hTT, h₁₂',
     SpectatorPair.equalizeNorms_e₁, h₁₁]
 
 /-!
@@ -202,17 +198,15 @@ transverse pair. -/
 theorem inv_two_smul_fromF1F2_add_smul_add_flip {A : Bilin V} (hSymm : g.IsSymm) (hA : A.IsAlt)
     (F1 F2 c : ℝ) :
     (2 : ℝ)⁻¹ • (fromF1F2 g K F1 F2 + c • A + (fromF1F2 g K F1 F2 + c • A).flip) =
-      fromF1F2 g K F1 F2 := by
-  rw [fromF1F2_add_smul_flip hSymm hA]
-  module
+      fromF1F2 g K F1 F2 :=
+  Bilin.inv_two_smul_add_flip_of_isSymm_of_isAlt (fromF1F2_isSymm g K hSymm F1 F2) hA c
 
 /-- The antisymmetric part of the transverse pair plus a multiple of an alternating structure is
 the alternating term. -/
 theorem inv_two_smul_fromF1F2_add_smul_sub_flip {A : Bilin V} (hSymm : g.IsSymm) (hA : A.IsAlt)
     (F1 F2 c : ℝ) :
-    (2 : ℝ)⁻¹ • (fromF1F2 g K F1 F2 + c • A - (fromF1F2 g K F1 F2 + c • A).flip) = c • A := by
-  rw [fromF1F2_add_smul_flip hSymm hA]
-  module
+    (2 : ℝ)⁻¹ • (fromF1F2 g K F1 F2 + c • A - (fromF1F2 g K F1 F2 + c • A).flip) = c • A :=
+  Bilin.inv_two_smul_sub_flip_of_isSymm_of_isAlt (fromF1F2_isSymm g K hSymm F1 F2) hA c
 
 /-!
 ## Existence and uniqueness of the three coefficients
@@ -282,12 +276,11 @@ theorem fromF1F2_add_smul_injective {A : Bilin V} (hSymm : g.IsSymm) (hQ2 : g K.
     fromF1F2_add_smul_apply_of_spectator A heq heT hee'] at hee
   obtain rfl : c = c' := mul_right_cancel₀ hA hee
   -- The other two then follow from `decomposition_unique`.
-  have hdec : IsF1F2Decomposition g K (fromF1F2 g K F1 F2) F1' F2' := fun v w => by
-    have hvw := LinearMap.congr_fun₂ h v w
-    simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, add_left_inj] at hvw
-    rw [hvw, fromF1F2_apply]
+  -- Cancel `c • A`.
+  have h' : fromF1F2 g K F1 F2 = fromF1F2 g K F1' F2' := LinearMap.ext₂ fun v w => by
+    simpa using LinearMap.congr_fun₂ h v w
   obtain ⟨rfl, rfl⟩ := decomposition_unique g K _ F1 F2 F1' F2'
-    (fromF1F2_isDecomposition g K F1 F2) hdec
+    (fromF1F2_isDecomposition g K F1 F2) (h' ▸ fromF1F2_isDecomposition g K F1' F2')
     (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he)
   rfl
 

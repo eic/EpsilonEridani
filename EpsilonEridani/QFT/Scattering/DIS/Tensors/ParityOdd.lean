@@ -176,14 +176,10 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPair g K)
     W (a • pTransverse g K + b • K.q + c₁ • hP.e₁ + c₂ • hP.e₂)
         (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
       (c₁ * d₂ - c₂ * d₁) * W hP.e₁ hP.e₂ := by
-  obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_half_turn hSymm
-  have h₁ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
-  have h₂ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
-  have h₁' : W hP.e₁ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₁
-  have h₂' : W hP.e₂ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₂
   have h₂₁ : W hP.e₂ hP.e₁ = -W hP.e₁ hP.e₂ := (hW.isAlt.neg_eq _ _).symm
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    hW.conserved_left, hW.conserved_right, hW.isAlt.self_eq_zero, h₁, h₂, h₁', h₂', h₂₁]
+  rw [hW.proper_covariant.apply_eq_of_spectatorPair hSymm hP hW.conserved_left
+    hW.conserved_right]
+  simp only [hW.isAlt.self_eq_zero, h₂₁]
   ring
 
 /-- **A parity-odd tensor annihilates `p_T` under a `SpectatorPlane`.** In the frame `p_T`, `q`,

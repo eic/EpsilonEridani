@@ -141,8 +141,7 @@ lemma apply_sub_smul_pair (g : Bilin V) (u x y : V) (a b : ℝ) :
 /-- Expansion of a bilinear form on a difference paired with itself. -/
 lemma apply_sub_sub_self (g : Bilin V) (x y : V) :
     g (x - y) (x - y) = g x x - g x y - g y x + g y y := by
-  simp only [map_sub, LinearMap.sub_apply]
-  ring
+  simpa using apply_sub_smul_pair g y x x 1 1
 
 /-- A linear endomorphism preserving the background form `g`. For `g` a Lorentz metric these
 are exactly the (linear) Lorentz transformations. -/
@@ -191,12 +190,21 @@ lemma reflect_apply_of_orthogonal (g : Bilin V) (u v : V) (h : g u v = 0) :
     reflect g u v = v := by
   rw [reflect_apply, h, mul_zero, zero_smul, sub_zero]
 
-/-- A reflection in a non-null direction is an involution. -/
-lemma reflect_reflect (g : Bilin V) {u : V} (hu : g u u ≠ 0) (v : V) :
-    reflect g u (reflect g u v) = v := by
-  simp only [reflect_apply, map_sub, map_smul]
-  field_simp
-  module
+/-- `reflect g u` is Mathlib's `Module.preReflection` along `u` with the functional
+`(2 / g u u) g u`. -/
+lemma reflect_eq_preReflection (g : Bilin V) (u : V) :
+    reflect g u = Module.preReflection u ((2 * (g u u)⁻¹) • g u) := by
+  ext v
+  simp [Module.preReflection_apply]
+
+/-- A reflection is an involution. In a null direction `reflect g u` is the identity, since
+`(0 : ℝ)⁻¹ = 0`. -/
+lemma reflect_reflect (g : Bilin V) (u v : V) : reflect g u (reflect g u v) = v := by
+  by_cases hu : g u u = 0
+  · simp [hu]
+  · rw [reflect_eq_preReflection]
+    refine Module.involutive_preReflection ?_ v
+    rw [LinearMap.smul_apply, smul_eq_mul, mul_assoc, inv_mul_cancel₀ hu, mul_one]
 
 /-- A reflection in a non-null direction is a `g`-isometry when `g` is symmetric. -/
 lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0) :
@@ -247,7 +255,7 @@ lemma reflect_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
 lemma reflect_sub_apply_right (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
     (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u' = u :=
   (congrArg (reflect g (u - u')) (reflect_sub_apply_left g hSymm hnorm hd)).symm.trans
-    (reflect_reflect g hd u)
+    (reflect_reflect g (u - u') u)
 
 /-- Rescaling `v` by `√(g u u / g v v)` gives it the norm of `u`, when that ratio is
 non-negative. -/
@@ -262,6 +270,20 @@ only the alternating term. -/
 lemma flip_add_smul_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt) (c : ℝ) :
     (S + c • A).flip = S - c • A :=
   LinearMap.ext₂ fun v w => by simp [hS.eq w v, ← hA.neg_eq v w, sub_eq_add_neg]
+
+/-- The symmetric part of a symmetric form plus a multiple of an alternating form is the
+symmetric form. -/
+lemma inv_two_smul_add_flip_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt)
+    (c : ℝ) : (2 : ℝ)⁻¹ • (S + c • A + (S + c • A).flip) = S := by
+  rw [flip_add_smul_of_isSymm_of_isAlt hS hA]
+  module
+
+/-- The antisymmetric part of a symmetric form plus a multiple of an alternating form is the
+alternating term. -/
+lemma inv_two_smul_sub_flip_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt)
+    (c : ℝ) : (2 : ℝ)⁻¹ • (S + c • A - (S + c • A).flip) = c • A := by
+  rw [flip_add_smul_of_isSymm_of_isAlt hS hA]
+  module
 
 end Bilin
 
@@ -435,8 +457,9 @@ theorem inv_two_smul_lMuNuVA_add_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[�
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
     (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA + (lMuNuVA g ε K cV cA).flip)
       = (cV ^ 2 + cA ^ 2) • lMuNu g K := by
-  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA_def]
-  module
+  rw [lMuNuVA_def]
+  exact Bilin.inv_two_smul_add_flip_of_isSymm_of_isAlt ((lMuNu_isSymm g K hSymm).smul _)
+    (isAlt_lMuNuOdd ε K) _
 
 /-- The antisymmetric part of the vector/axial-vector leptonic tensor is `2 c_V c_A` times the
 parity-odd structure `ε(·, ·, k, k')`. -/
@@ -444,8 +467,9 @@ theorem inv_two_smul_lMuNuVA_sub_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[�
     (K : Kinematics.DisKinematics V) (hSymm : g.IsSymm) (cV cA : ℝ) :
     (2 : ℝ)⁻¹ • (lMuNuVA g ε K cV cA - (lMuNuVA g ε K cV cA).flip)
       = (2 * cV * cA) • lMuNuOdd ε K := by
-  rw [lMuNuVA_flip g ε K hSymm, lMuNuVA_def]
-  module
+  rw [lMuNuVA_def]
+  exact Bilin.inv_two_smul_sub_flip_of_isSymm_of_isAlt ((lMuNu_isSymm g K hSymm).smul _)
+    (isAlt_lMuNuOdd ε K) _
 
 /-- Contracting the vector/axial-vector leptonic tensor with `q = k - k'` in the first slot
 leaves only the lepton-mass terms of its symmetric part. -/
@@ -1036,6 +1060,29 @@ noncomputable def uniquenessAssumptionsOfSpectator {g : Bilin V} {K : DisKinemat
     simp only [map_add, map_sub, map_smul, smul_eq_mul, heT, mul_zero, add_zero, sub_zero]
     exact mul_ne_zero hTT hTT
 
+section uniquenessAssumptionsOfSpectator
+
+variable {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0)
+  (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) {e : V} (heq : g K.q e = 0)
+  (heT : g (pTransverse g K) e = 0) (he : g e e ≠ 0)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_vF1 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).vF1 = e := (rfl)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_wF1 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).wF1 = e := (rfl)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_vF2 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).vF2 = pTransverse g K + e :=
+  (rfl)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_wF2 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).wF2 =
+      pTransverse g K - (g (pTransverse g K) (pTransverse g K) / g e e) • e :=
+  (rfl)
+
+end uniquenessAssumptionsOfSpectator
+
 /-!
 
 ## Exhaustion: covariance and conservation leave exactly two structures
@@ -1285,6 +1332,11 @@ because its `covariant` field alone already rules `wWit` out. -/
 lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
   not_isLorentzCovariant_wWit hA.covariant
 
+/-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
+already `gWit`-orthogonal to `q`. -/
+@[simp] lemma pTransverse_kWit : pTransverse gWit kWit = ((1, 0, 0) : ℝ × ℝ × ℝ) := by
+  simp [pTransverse]
+
 /-- **`UniquenessAssumptions` is satisfiable.** These are the probe pairs
 `uniquenessAssumptionsOfSpectator` builds from the spectator `u = (0,0,1)`. The `F1` probe is
 `(u, u)`, which sees the transverse projector (`g u u = -1`) but is orthogonal to `p_T`; the
@@ -1295,12 +1347,16 @@ Without a witness of this kind, `decomposition_unique` and `fromF1F2_ne_zero` we
 conditioned on a structure not known to be inhabited. -/
 noncomputable def uniquenessWit : UniquenessAssumptions gWit kWit :=
   uniquenessAssumptionsOfSpectator (e := ((0, 0, 1) : ℝ × ℝ × ℝ)) gWit_isSymm (by norm_num)
-    (by simp [pTransverse]) (by simp) (by simp [pTransverse]) (by norm_num)
+    (by simp) (by simp) (by simp) (by norm_num)
 
-/-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
-already `gWit`-orthogonal to `q`. -/
-@[simp] lemma pTransverse_kWit : pTransverse gWit kWit = ((1, 0, 0) : ℝ × ℝ × ℝ) := by
-  simp [pTransverse]
+/-- The first `F2` probe vector of `uniquenessWit` is the null vector `(1,0,1)`. -/
+lemma uniquenessWit_vF2 : uniquenessWit.vF2 = ((1, 0, 1) : ℝ × ℝ × ℝ) := by
+  simp [uniquenessWit]
+
+/-- The second `F2` probe vector of `uniquenessWit` is also `(1,0,1)`: the general
+`p_T - (p_T·p_T / u·u) u` of `uniquenessAssumptionsOfSpectator` evaluates to it here. -/
+lemma uniquenessWit_wF2 : uniquenessWit.wF2 = ((1, 0, 1) : ℝ × ℝ × ℝ) := by
+  simp [uniquenessWit]
 
 /-- **`SpectatorAssumptions` is satisfiable.** On the witness kinematics the spectator
 subspace is the spacelike line through `u = (0,0,1)`. Two spectator vectors of equal norm are
