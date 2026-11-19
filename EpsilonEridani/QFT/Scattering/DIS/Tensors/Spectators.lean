@@ -94,7 +94,7 @@ lemma exists_quarter_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
       f u = u' ∧ f u' = -u := by
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
   have hdd : g (u - u') (u - u') = 2 * g u u := by
-    simp only [map_sub, LinearMap.sub_apply, huu', hu'u, ← hnorm]
+    rw [Bilin.apply_sub_sub_self, huu', hu'u, ← hnorm]
     ring
   have hdd0 : g (u - u') (u - u') ≠ 0 := by
     rw [hdd]
@@ -196,12 +196,6 @@ section equalizeNorms
 
 variable {g : Bilin V} {K : DisKinematics V}
 
-/-- The ratio `e₁·e₁ / e₂·e₂` of a `SpectatorPair` whose two norms have the same sign is
-positive. -/
-lemma SpectatorPair.div_pos_of_mul_pos (hP : SpectatorPair g K)
-    (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) : 0 < g hP.e₁ hP.e₁ / g hP.e₂ hP.e₂ :=
-  div_pos_iff.mpr (mul_pos_iff.mp hsign)
-
 /-- A `SpectatorPair` whose two directions have norms of the same sign, with `e₂` rescaled by
 `√(e₁·e₁ / e₂·e₂)` so that both directions have the norm of `e₁`
 (`SpectatorPair.equalizeNorms_self_eq`). -/
@@ -216,7 +210,7 @@ noncomputable def SpectatorPair.equalizeNorms (hP : SpectatorPair g K)
   e₁_orthogonal_e₂ := by rw [map_smul, hP.e₁_orthogonal_e₂, smul_zero]
   e₁_self_ne_zero := hP.e₁_self_ne_zero
   e₂_self_ne_zero := by
-    have ht := Real.sqrt_ne_zero'.mpr (hP.div_pos_of_mul_pos hsign)
+    have ht := Real.sqrt_ne_zero'.mpr (div_pos_iff.mpr (mul_pos_iff.mp hsign))
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
     exact mul_ne_zero ht (mul_ne_zero ht hP.e₂_self_ne_zero)
 
@@ -233,7 +227,8 @@ lemma SpectatorPair.equalizeNorms_self_eq (hP : SpectatorPair g K)
     g (hP.equalizeNorms hsign).e₁ (hP.equalizeNorms hsign).e₁ =
       g (hP.equalizeNorms hsign).e₂ (hP.equalizeNorms hsign).e₂ := by
   rw [equalizeNorms_e₁, equalizeNorms_e₂,
-    Bilin.apply_smul_sqrt_div_self g hP.e₂_self_ne_zero (hP.div_pos_of_mul_pos hsign).le]
+    Bilin.apply_smul_sqrt_div_self g hP.e₂_self_ne_zero
+      (div_pos_iff.mpr (mul_pos_iff.mp hsign)).le]
 
 /-- A `SpectatorPlane` whose two directions have norms of the same sign, with `e₂` rescaled as in
 `SpectatorPair.equalizeNorms`; it is still a frame. -/
@@ -244,7 +239,7 @@ noncomputable def SpectatorPlane.equalizeNorms (hP : SpectatorPlane g K)
     obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
     refine ⟨a, b, c₁, c₂ / √(g hP.e₁ hP.e₁ / g hP.e₂ hP.e₂), ?_⟩
     rw [SpectatorPair.equalizeNorms_e₁, SpectatorPair.equalizeNorms_e₂, smul_smul,
-      div_mul_cancel₀ _ (Real.sqrt_ne_zero'.mpr (hP.div_pos_of_mul_pos hsign))]
+      div_mul_cancel₀ _ (Real.sqrt_ne_zero'.mpr (div_pos_iff.mpr (mul_pos_iff.mp hsign)))]
 
 @[simp] lemma SpectatorPlane.equalizeNorms_toSpectatorPair (hP : SpectatorPlane g K)
     (hsign : 0 < g hP.e₁ hP.e₁ * g hP.e₂ hP.e₂) :

@@ -138,6 +138,12 @@ lemma apply_sub_smul_pair (g : Bilin V) (u x y : V) (a b : ℝ) :
   rw [h1, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, h3 x, h3 u]
   ring
 
+/-- Expansion of a bilinear form on a difference paired with itself. -/
+lemma apply_sub_sub_self (g : Bilin V) (x y : V) :
+    g (x - y) (x - y) = g x x - g x y - g y x + g y y := by
+  simp only [map_sub, LinearMap.sub_apply]
+  ring
+
 /-- A linear endomorphism preserving the background form `g`. For `g` a Lorentz metric these
 are exactly the (linear) Lorentz transformations. -/
 def IsIsometry (g : Bilin V) (f : V →ₗ[ℝ] V) : Prop :=
@@ -185,6 +191,13 @@ lemma reflect_apply_of_orthogonal (g : Bilin V) (u v : V) (h : g u v = 0) :
     reflect g u v = v := by
   rw [reflect_apply, h, mul_zero, zero_smul, sub_zero]
 
+/-- A reflection in a non-null direction is an involution. -/
+lemma reflect_reflect (g : Bilin V) {u : V} (hu : g u u ≠ 0) (v : V) :
+    reflect g u (reflect g u v) = v := by
+  simp only [reflect_apply, map_sub, map_smul]
+  field_simp
+  module
+
 /-- A reflection in a non-null direction is a `g`-isometry when `g` is symmetric. -/
 lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0) :
     IsIsometry g (reflect g u) := by
@@ -220,9 +233,7 @@ lemma det_reflect_comp_reflect (g : Bilin V) {u u' : V} (hu : g u u ≠ 0) (hu' 
 lemma reflect_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
     (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u = u' := by
   have hdd : g (u - u') (u - u') = 2 * g (u - u') u := by
-    have h := apply_sub_smul_pair g u' u u 1 1
-    simp only [one_smul, one_mul, mul_one] at h
-    rw [h, map_sub, LinearMap.sub_apply, hSymm.eq u u', ← hnorm]
+    rw [apply_sub_sub_self, map_sub, LinearMap.sub_apply, hSymm.eq u u', ← hnorm]
     ring
   have h0 : g (u - u') u ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero])
   have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u = 1 := by
@@ -234,18 +245,9 @@ lemma reflect_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
 /-- For `g` symmetric and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in
 `u - u'` sends `u'` to `u`. -/
 lemma reflect_sub_apply_right (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
-    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u' = u := by
-  have hdd : g (u - u') (u - u') = -(2 * g (u - u') u') := by
-    have h := apply_sub_smul_pair g u' u u 1 1
-    simp only [one_smul, one_mul, mul_one] at h
-    rw [h, map_sub, LinearMap.sub_apply, hSymm.eq u u', hnorm]
-    ring
-  have h0 : g (u - u') u' ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero, neg_zero])
-  have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u' = -1 := by
-    rw [hdd]
-    field_simp [h0]
-  rw [reflect_apply, hc, neg_smul, one_smul]
-  abel
+    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u' = u :=
+  (congrArg (reflect g (u - u')) (reflect_sub_apply_left g hSymm hnorm hd)).symm.trans
+    (reflect_reflect g hd u)
 
 /-- Rescaling `v` by `√(g u u / g v v)` gives it the norm of `u`, when that ratio is
 non-negative. -/
@@ -842,6 +844,30 @@ lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinem
   rw [hW, transverseMetric_apply, hqe, hTe]
   ring
 
+/-- The transverse projector `-g + q ⊗ q / q²` acts as minus the identity on the transverse
+hadron momentum, because `p_T` is orthogonal to `q`. -/
+lemma transverseMetric_pTransverse_self (g : Bilin V) (K : DisKinematics V)
+    (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) :
+    transverseMetric g K (pTransverse g K) (pTransverse g K)
+      = - g (pTransverse g K) (pTransverse g K) := by
+  have hqpT : g K.q (pTransverse g K) = 0 := by
+    rw [hSymm.eq K.q (pTransverse g K)]
+    exact pTransverse_orthogonal_q g K hQ2
+  rw [transverseMetric_apply, hqpT]
+  ring
+
+/-- Value of a decomposed hadronic tensor on `(p_T, p_T)`, the longitudinal polarization
+direction of the virtual photon. -/
+lemma apply_pTransverse_self (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
+    (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (F1 F2c : ℝ)
+    (hW : IsF1F2Decomposition g K W F1 F2c) :
+    W (pTransverse g K) (pTransverse g K)
+      = g (pTransverse g K) (pTransverse g K)
+        * (F2c * g (pTransverse g K) (pTransverse g K) - F1) := by
+  rw [hW (pTransverse g K) (pTransverse g K),
+    transverseMetric_pTransverse_self g K hSymm hQ2]
+  ring
+
 /-- **Orthogonal splitting along `q` and `p_T`.** When `q` and `p_T` are non-null, every vector
 splits as `v = a p_T + b q + u` with `u` `g`-orthogonal to `q` and to `p_T`. This discharges the
 `SpectatorSplitting.span` condition; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
@@ -1009,29 +1035,6 @@ noncomputable def uniquenessAssumptionsOfSpectator {g : Bilin V} {K : DisKinemat
   pT_outer_nonzero := by
     simp only [map_add, map_sub, map_smul, smul_eq_mul, heT, mul_zero, add_zero, sub_zero]
     exact mul_ne_zero hTT hTT
-
-section uniquenessAssumptionsOfSpectator
-
-variable {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0)
-  (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) {e : V} (heq : g K.q e = 0)
-  (heT : g (pTransverse g K) e = 0) (he : g e e ≠ 0)
-
-@[simp] lemma uniquenessAssumptionsOfSpectator_vF1 :
-    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).vF1 = e := (rfl)
-
-@[simp] lemma uniquenessAssumptionsOfSpectator_wF1 :
-    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).wF1 = e := (rfl)
-
-@[simp] lemma uniquenessAssumptionsOfSpectator_vF2 :
-    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).vF2 = pTransverse g K + e :=
-  (rfl)
-
-@[simp] lemma uniquenessAssumptionsOfSpectator_wF2 :
-    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).wF2 =
-      pTransverse g K - (g (pTransverse g K) (pTransverse g K) / g e e) • e :=
-  (rfl)
-
-end uniquenessAssumptionsOfSpectator
 
 /-!
 
@@ -1282,22 +1285,17 @@ because its `covariant` field alone already rules `wWit` out. -/
 lemma not_assumptions_wWit : ¬ Assumptions gWit kWit wWit := fun hA =>
   not_isLorentzCovariant_wWit hA.covariant
 
-/-- **`UniquenessAssumptions` is satisfiable.** The `F1` probe is the spectator pair
+/-- **`UniquenessAssumptions` is satisfiable.** These are the probe pairs
+`uniquenessAssumptionsOfSpectator` builds from the spectator `u = (0,0,1)`. The `F1` probe is
 `(u, u)`, which sees the transverse projector (`g u u = -1`) but is orthogonal to `p_T`; the
-`F2` probe is the null pair `(n, n)` with `n = (1,0,1)`, for which the projector value
-`-n₀² + n₂² ` vanishes while `g p_T n = 1`.
+`F2` probe `(p_T + u, p_T - (p_T·p_T / u·u) u)` is here the null pair `(n, n)` with
+`n = (1,0,1)`, for which the projector value `-n₀² + n₂²` vanishes while `g p_T n = 1`.
 
 Without a witness of this kind, `decomposition_unique` and `fromF1F2_ne_zero` were
 conditioned on a structure not known to be inhabited. -/
-def uniquenessWit : UniquenessAssumptions gWit kWit where
-  vF1 := (0, 0, 1)
-  wF1 := (0, 0, 1)
-  transverse_nonzero := by rw [transverseMetric_apply]; norm_num
-  pT_outer_zero := by simp only [pTransverse_pairing]; norm_num
-  vF2 := (1, 0, 1)
-  wF2 := (1, 0, 1)
-  transverse_zero := by rw [transverseMetric_apply]; norm_num
-  pT_outer_nonzero := by simp only [pTransverse_pairing]; norm_num
+noncomputable def uniquenessWit : UniquenessAssumptions gWit kWit :=
+  uniquenessAssumptionsOfSpectator (e := ((0, 0, 1) : ℝ × ℝ × ℝ)) gWit_isSymm (by norm_num)
+    (by simp [pTransverse]) (by simp) (by simp [pTransverse]) (by norm_num)
 
 /-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
 already `gWit`-orthogonal to `q`. -/

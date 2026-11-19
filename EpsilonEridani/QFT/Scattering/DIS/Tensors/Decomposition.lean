@@ -25,9 +25,9 @@ coefficient `F₂` is the literature's `F₂ / (p·q)`; the Lean `F₁` is the l
 is the statement that licenses reading three structure functions off a measured cross section.
 
 No symmetry hypothesis is placed on `W`. The symmetric part comes out as the parity-even pair and
-the antisymmetric part as the parity-odd term (`Bilin.flip_add_smul_of_isSymm_of_isAlt` applied
-to `fromF1F2_isSymm`): in the real model this split is what hermiticity of the complex tensor
-means.
+the antisymmetric part as the parity-odd term (`inv_two_smul_fromF1F2_add_smul_add_flip`,
+`inv_two_smul_fromF1F2_add_smul_sub_flip`): in the real model this split is what hermiticity of
+the complex tensor means.
 
 ## Proper covariance on a spectator plane
 
@@ -47,6 +47,9 @@ orthogonal basis of it qualifies.
   parity-odd `A`, with the coefficients read off on `(p_T, p_T)`, `(e₁, e₁)` and `(e₁, e₂)`.
 - `fromF1F2_add_smul_injective`: the coefficients `(F₁, F₂, c)` are determined by the tensor.
 - `existsUnique_eq_fromF1F2_add_smul`: the two together.
+- `inv_two_smul_fromF1F2_add_smul_add_flip`, `inv_two_smul_fromF1F2_add_smul_sub_flip`: the
+  symmetric and antisymmetric parts of such a tensor are the parity-even pair and the parity-odd
+  term.
 - `exists_eq_fromF1F2_add_smul_iff`: a tensor is such a combination exactly when it is conserved
   and properly covariant.
 - `Witness.existsUnique_eq_fromF1F2_add_smul_aFour`: on Minkowski space `ℝ⁴` at the witness
@@ -165,9 +168,9 @@ lemma fromF1F2_add_smul_apply_pTransverse {A : Bilin V} (hSymm : g.IsSymm) (hQ2 
     (fromF1F2 g K F1 F2 + c • A) (pTransverse g K) (pTransverse g K) =
       -(F1 * g (pTransverse g K) (pTransverse g K))
         + F2 * g (pTransverse g K) (pTransverse g K) ^ 2 := by
-  have hqT : g K.q (pTransverse g K) = 0 := by rw [hSymm.eq, pTransverse_orthogonal_q g K hQ2]
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, fromF1F2_apply,
-    transverseMetric_apply, hA.self_eq_zero, hqT, mul_zero, add_zero]
+  simp only [LinearMap.add_apply, LinearMap.smul_apply]
+  rw [apply_pTransverse_self g K _ hSymm hQ2 F1 F2 (fromF1F2_isDecomposition g K F1 F2),
+    hA.self_eq_zero, smul_zero, add_zero]
   ring
 
 /-- On a spectator `e`, `(e, e)` sees only the transverse projector: the transverse pair plus a
@@ -175,8 +178,9 @@ multiple of an alternating structure takes the value `-F₁ (e·e)`. -/
 lemma fromF1F2_add_smul_apply_self_of_spectator {A : Bilin V} (hA : A.IsAlt) {e : V}
     (heq : g K.q e = 0) (heT : g (pTransverse g K) e = 0) (F1 F2 c : ℝ) :
     (fromF1F2 g K F1 F2 + c • A) e e = -(F1 * g e e) := by
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, fromF1F2_apply,
-    transverseMetric_apply, hA.self_eq_zero, heq, heT, mul_zero, add_zero]
+  simp only [LinearMap.add_apply, LinearMap.smul_apply]
+  rw [apply_self_of_isF1F2Decomposition_of_spectator g K (fromF1F2_isDecomposition g K F1 F2) heq
+      heT, hA.self_eq_zero, smul_zero, add_zero]
   ring
 
 /-- On a spectator `e` and a vector `e'` orthogonal to it the transverse pair vanishes, so
@@ -186,6 +190,29 @@ lemma fromF1F2_add_smul_apply_of_spectator (A : Bilin V) {e e' : V} (heq : g K.q
     (fromF1F2 g K F1 F2 + c • A) e e' = c * A e e' := by
   simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, fromF1F2_apply,
     transverseMetric_apply, heq, heT, hee', mul_zero, zero_mul, neg_zero, add_zero, zero_add]
+
+/-- Exchanging the slots of the transverse pair plus a multiple of an alternating structure
+reverses only the alternating term. -/
+lemma fromF1F2_add_smul_flip {A : Bilin V} (hSymm : g.IsSymm) (hA : A.IsAlt) (F1 F2 c : ℝ) :
+    (fromF1F2 g K F1 F2 + c • A).flip = fromF1F2 g K F1 F2 - c • A :=
+  Bilin.flip_add_smul_of_isSymm_of_isAlt (fromF1F2_isSymm g K hSymm F1 F2) hA c
+
+/-- The symmetric part of the transverse pair plus a multiple of an alternating structure is the
+transverse pair. -/
+theorem inv_two_smul_fromF1F2_add_smul_add_flip {A : Bilin V} (hSymm : g.IsSymm) (hA : A.IsAlt)
+    (F1 F2 c : ℝ) :
+    (2 : ℝ)⁻¹ • (fromF1F2 g K F1 F2 + c • A + (fromF1F2 g K F1 F2 + c • A).flip) =
+      fromF1F2 g K F1 F2 := by
+  rw [fromF1F2_add_smul_flip hSymm hA]
+  module
+
+/-- The antisymmetric part of the transverse pair plus a multiple of an alternating structure is
+the alternating term. -/
+theorem inv_two_smul_fromF1F2_add_smul_sub_flip {A : Bilin V} (hSymm : g.IsSymm) (hA : A.IsAlt)
+    (F1 F2 c : ℝ) :
+    (2 : ℝ)⁻¹ • (fromF1F2 g K F1 F2 + c • A - (fromF1F2 g K F1 F2 + c • A).flip) = c • A := by
+  rw [fromF1F2_add_smul_flip hSymm hA]
+  module
 
 /-!
 ## Existence and uniqueness of the three coefficients
