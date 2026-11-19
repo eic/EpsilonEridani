@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Relativity.Fermions.Dirac.BasicExtensions
+public import EpsilonEridani.Relativity.Fermions.Dirac.GammaMatricesExtensions
 public import EpsilonEridani.Relativity.LightConeBasis
 public import Mathlib.LinearAlgebra.Trace
 public import Physlib.Relativity.Fermions.Dirac.GammaMatrices
@@ -68,7 +69,7 @@ from eliminating the bad components through the constraint equation.
 * `LightConeBasis.badProjector_apply_eq_of_gammaMatrix_sub_smul_one_apply_eq_zero`: the
   constraint equation solved for the bad component, `ψ₋ = (2p⁺)⁻¹ (/p_T + m) γ⁺ ψ₊`.
 * `LightConeBasis.finrank_ker_gammaMatrix_sub_smul_one_eq_two`: on the mass shell with `p⁺ ≠ 0`
-  the solutions of the Dirac equation form a two-dimensional space, by `goodProjectorEquiv`.
+  the solutions of the Dirac equation form a two-dimensional space.
 
 ## References
 
@@ -95,14 +96,14 @@ variable (L : LightConeBasis (minkowskiProduct (d := 3)).toBilinForm)
 /-- `γ⁻ = /n₊` squares to zero. -/
 @[simp]
 theorem gammaMatrix_nPlus_mul_self_eq_zero :
-    gammaMatrix L.nPlus * gammaMatrix L.nPlus = 0 := by
-  simp [gammaMatrix_mul_self]
+    gammaMatrix L.nPlus * gammaMatrix L.nPlus = 0 :=
+  gammaMatrix_mul_self_eq_zero_of_minkowskiProduct_self_eq_zero (by simp)
 
 /-- `γ⁺ = /n₋` squares to zero. -/
 @[simp]
 theorem gammaMatrix_nMinus_mul_self_eq_zero :
-    gammaMatrix L.nMinus * gammaMatrix L.nMinus = 0 := by
-  simp [gammaMatrix_mul_self]
+    gammaMatrix L.nMinus * gammaMatrix L.nMinus = 0 :=
+  gammaMatrix_mul_self_eq_zero_of_minkowskiProduct_self_eq_zero (by simp)
 
 /-- `γ⁻ γ⁻ ψ = 0`. -/
 @[simp]
@@ -127,17 +128,17 @@ theorem gammaMatrix_nPlus_anticomm_nMinus :
 
 /-- Clifford multiplication by a vector with vanishing minus component `t⁻ = n₊ · t`
 anticommutes with `γ⁻ = /n₊`. -/
-theorem gammaMatrix_nPlus_mul_gammaMatrix_of_minus_eq_zero {t : Lorentz.Vector}
+theorem gammaMatrix_nPlus_mul_gammaMatrix_eq_neg_mul_of_minus_eq_zero {t : Lorentz.Vector}
     (ht : L.minus t = 0) :
     gammaMatrix L.nPlus * gammaMatrix t = -(gammaMatrix t * gammaMatrix L.nPlus) :=
-  eq_neg_of_add_eq_zero_left (by simp [gammaMatrix_anticomm, ht])
+  gammaMatrix_mul_gammaMatrix_eq_neg_mul_of_minkowskiProduct_eq_zero (by simp [ht])
 
 /-- Clifford multiplication by a vector with vanishing plus component `t⁺ = n₋ · t`
 anticommutes with `γ⁺ = /n₋`. -/
-theorem gammaMatrix_nMinus_mul_gammaMatrix_of_plus_eq_zero {t : Lorentz.Vector}
+theorem gammaMatrix_nMinus_mul_gammaMatrix_eq_neg_mul_of_plus_eq_zero {t : Lorentz.Vector}
     (ht : L.plus t = 0) :
     gammaMatrix L.nMinus * gammaMatrix t = -(gammaMatrix t * gammaMatrix L.nMinus) :=
-  eq_neg_of_add_eq_zero_left (by simp [gammaMatrix_anticomm, ht])
+  gammaMatrix_mul_gammaMatrix_eq_neg_mul_of_minkowskiProduct_eq_zero (by simp [ht])
 
 /-- The light-cone decomposition of Clifford multiplication, `/p = p⁺ γ⁻ + p⁻ γ⁺ + /p_T`. -/
 theorem gammaMatrix_eq_plus_smul_add_minus_smul_add (p : Lorentz.Vector) :
@@ -213,6 +214,10 @@ theorem badProjector_add_goodProjector : L.badProjector + L.goodProjector = 1 :=
 theorem goodProjector_apply_add_badProjector_apply (ψ : Dirac) :
     L.goodProjector ψ + L.badProjector ψ = ψ := by
   rw [← LinearMap.add_apply, goodProjector_add_badProjector, Module.End.one_apply]
+
+/-- `P₊ = 1 - P₋`. -/
+theorem goodProjector_eq_one_sub : L.goodProjector = 1 - L.badProjector :=
+  eq_sub_of_add_eq L.goodProjector_add_badProjector
 
 /-- `P₋ = 1 - P₊`. -/
 theorem badProjector_eq_one_sub : L.badProjector = 1 - L.goodProjector :=
@@ -350,6 +355,34 @@ theorem badProjector_gammaMatrix_nPlus_apply_eq_zero (ψ : Dirac) :
     L.badProjector (gammaMatrix L.nPlus ψ) = 0 := by
   simp [badProjector_apply]
 
+/-- `P₋ γ⁺ = γ⁺`: the image of `γ⁺` consists of bad spinors. -/
+@[simp]
+theorem badProjector_mul_gammaMatrix_nMinus :
+    L.badProjector * gammaMatrix L.nMinus = gammaMatrix L.nMinus := by
+  rw [badProjector_eq_one_sub, sub_mul, goodProjector_mul_gammaMatrix_nMinus_eq_zero, one_mul,
+    sub_zero]
+
+/-- `P₊ γ⁻ = γ⁻`: the image of `γ⁻` consists of good spinors. -/
+@[simp]
+theorem goodProjector_mul_gammaMatrix_nPlus :
+    L.goodProjector * gammaMatrix L.nPlus = gammaMatrix L.nPlus := by
+  simpa only [goodProjector_swap, badProjector_swap, nPlus_swap, nMinus_swap] using
+    L.swap.badProjector_mul_gammaMatrix_nMinus
+
+/-- `P₋ γ⁺ ψ = γ⁺ ψ`. -/
+@[simp]
+theorem badProjector_gammaMatrix_nMinus_apply (ψ : Dirac) :
+    L.badProjector (gammaMatrix L.nMinus ψ) = gammaMatrix L.nMinus ψ := by
+  simpa only [Module.End.mul_apply] using
+    LinearMap.congr_fun L.badProjector_mul_gammaMatrix_nMinus ψ
+
+/-- `P₊ γ⁻ ψ = γ⁻ ψ`. -/
+@[simp]
+theorem goodProjector_gammaMatrix_nPlus_apply (ψ : Dirac) :
+    L.goodProjector (gammaMatrix L.nPlus ψ) = gammaMatrix L.nPlus ψ := by
+  simpa only [Module.End.mul_apply] using
+    LinearMap.congr_fun L.goodProjector_mul_gammaMatrix_nPlus ψ
+
 /-! ### The good and bad subspaces -/
 
 /-- The good spinors are the kernel of `γ⁻ = /n₊`. -/
@@ -387,7 +420,7 @@ theorem trace_goodProjector_eq_two : trace ℂ Dirac L.goodProjector = 2 := by
   have hsymm : trace ℂ Dirac L.badProjector = trace ℂ Dirac L.goodProjector := by
     rw [goodProjector_def, badProjector_def, map_smul, map_smul, trace_mul_comm]
   have h := congrArg (trace ℂ Dirac) L.goodProjector_add_badProjector
-  rw [map_add, hsymm, trace_one, finrank_eq_card_basis chiralBasis, Fintype.card_fin] at h
+  rw [map_add, hsymm, trace_one, finrank_eq_four] at h
   push_cast at h
   linear_combination h / 2
 
@@ -447,8 +480,8 @@ theorem commute_goodProjector_gammaMatrix_of_mem_transverse {t : Lorentz.Vector}
     (ht : t ∈ L.transverse) : Commute L.goodProjector (gammaMatrix t) := by
   obtain ⟨hplus, hminus⟩ := L.mem_transverse_iff.1 ht
   refine L.commute_goodProjector_of_anticomm ?_ ?_
-  · rw [L.gammaMatrix_nPlus_mul_gammaMatrix_of_minus_eq_zero hminus, neg_neg]
-  · rw [L.gammaMatrix_nMinus_mul_gammaMatrix_of_plus_eq_zero hplus, neg_neg]
+  · rw [L.gammaMatrix_nPlus_mul_gammaMatrix_eq_neg_mul_of_minus_eq_zero hminus, neg_neg]
+  · rw [L.gammaMatrix_nMinus_mul_gammaMatrix_eq_neg_mul_of_plus_eq_zero hplus, neg_neg]
 
 /-- The bad projector commutes with Clifford multiplication by a transverse vector. -/
 theorem commute_badProjector_gammaMatrix_of_mem_transverse {t : Lorentz.Vector}
@@ -475,7 +508,8 @@ theorem gammaMatrix_nMinus_mul_gammaMatrix_sub_smul_one :
     rw [L.gammaMatrix_eq_plus_smul_add_minus_smul_add p]
     simp only [mul_add, mul_smul_comm, gammaMatrix_nMinus_mul_self_eq_zero,
       gammaMatrix_nMinus_mul_gammaMatrix_nPlus_eq_two_smul_badProjector,
-      L.gammaMatrix_nMinus_mul_gammaMatrix_of_plus_eq_zero (L.plus_transverseProj_eq_zero p)]
+      L.gammaMatrix_nMinus_mul_gammaMatrix_eq_neg_mul_of_plus_eq_zero
+        (L.plus_transverseProj_eq_zero p)]
     module
   simp only [mul_sub, hp, gammaMatrix_nMinus_mul_goodProjector, mul_smul_comm, add_mul,
     smul_mul_assoc, mul_one, one_mul]
@@ -534,15 +568,15 @@ theorem injOn_goodProjector (hp : L.plus p ≠ 0) :
     goodProjector_apply_add_badProjector_apply]
 
 /-- `(/t + m) γ⁻ (/t + m) γ⁺ = 2 (m² - t²) P₊` for a vector `t` with `t⁻ = 0`. -/
-theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus {t : Lorentz.Vector}
-    (ht : L.minus t = 0) (m : ℝ) :
+theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus_eq_smul_goodProjector
+    {t : Lorentz.Vector} (ht : L.minus t = 0) (m : ℝ) :
     (gammaMatrix t + m • 1) * gammaMatrix L.nPlus *
         ((gammaMatrix t + m • 1) * gammaMatrix L.nMinus) =
       (2 * (m ^ 2 - ⟪t, t⟫ₘ)) • L.goodProjector := by
   have haT : gammaMatrix L.nPlus * (gammaMatrix t + m • 1) =
       (m • 1 - gammaMatrix t) * gammaMatrix L.nPlus := by
     simp only [mul_add, sub_mul, mul_smul_comm, smul_mul_assoc, mul_one, one_mul,
-      L.gammaMatrix_nPlus_mul_gammaMatrix_of_minus_eq_zero ht]
+      L.gammaMatrix_nPlus_mul_gammaMatrix_eq_neg_mul_of_minus_eq_zero ht]
     abel
   have hTT : (gammaMatrix t + m • 1) * (m • 1 - gammaMatrix t) = (m ^ 2 - ⟪t, t⟫ₘ) • 1 := by
     simp only [add_mul, mul_sub, smul_mul_assoc, mul_smul_comm, one_mul, mul_one,
@@ -593,7 +627,8 @@ theorem exists_gammaMatrix_sub_smul_one_apply_eq_zero_and_goodProjector_apply_eq
     rw [← hshell, L.minkowskiProduct_eq_plus_mul_minus_add p p]
     ring
   have key := LinearMap.congr_fun
-    (L.mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus (L.minus_transverseProj_eq_zero p) m) χ
+    (L.mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus_eq_smul_goodProjector
+      (L.minus_transverseProj_eq_zero p) m) χ
   simp only [Module.End.mul_apply, LinearMap.smul_apply, hχ', hshell'] at key
   simp only [η, T, LinearMap.map_smul_of_tower]
   rw [key, smul_smul]
@@ -622,8 +657,7 @@ theorem coe_goodProjectorEquiv_apply (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp : L.pl
   exact (congrArg Subtype.val (LinearEquiv.ofBijective_apply _ ψ)).trans (coe_restrict_apply _ _)
 
 /-- On the mass shell `p² = m²` with `p⁺ ≠ 0`, the solutions of the Dirac equation
-`(/p - m) ψ = 0` form a two-dimensional space, by `goodProjectorEquiv` and
-`finrank_range_goodProjector_eq_two`. -/
+`(/p - m) ψ = 0` form a two-dimensional space. -/
 theorem finrank_ker_gammaMatrix_sub_smul_one_eq_two (hshell : ⟪p, p⟫ₘ = m ^ 2)
     (hp : L.plus p ≠ 0) :
     finrank ℂ (ker (gammaMatrix p - m • 1)) = 2 := by
