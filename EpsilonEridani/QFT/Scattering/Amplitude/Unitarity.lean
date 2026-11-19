@@ -38,7 +38,8 @@ is determined by `t` modulo `π`.
 
 * `sMatrix ρ T`: the partial-wave S-matrix `1 + 2 i √ρ T √ρ` of a T-matrix.
 * `elasticSMatrix ρ t`: the single-channel S-matrix `1 + 2 i ρ t`.
-* `phaseShiftAmplitude ρ δ`: the single-channel amplitude `e^{iδ} sin δ / ρ` of phase shift `δ`.
+* `phaseShiftAmplitude ρ δ`: the single-channel amplitude `e^{iδ} sin δ / ρ` of a phase shift
+  `δ : ℂ`; a real `δ` is the elastic case and `Im δ > 0` describes absorption.
 
 ## Main results
 
@@ -48,13 +49,14 @@ is determined by `t` modulo `π`.
 * `sMatrix_mem_unitaryGroup_iff_isHermitian`: for invertible `T`, `S` is unitary iff `T⁻¹ + i ρ`
   is Hermitian.
 * `norm_elasticSMatrix_eq_one_iff_norm_sub_eq`: single-channel unitarity is the Argand circle.
-* `sMatrix_mem_unitaryGroup_iff_norm_elasticSMatrix`: with one channel, unitarity of `sMatrix` is
-  `|S| = 1` for the single-channel S-matrix.
+* `sMatrix_mem_unitaryGroup_iff_norm_elasticSMatrix_eq_one`: with one channel, unitarity of
+  `sMatrix` is `|S| = 1` for the single-channel S-matrix.
 * `norm_le_one_div_of_norm_elasticSMatrix_eq_one`: the unitarity bound `|t| ≤ 1 / ρ`.
 * `norm_elasticSMatrix_eq_one_iff_inv_im`: single-channel unitarity is `Im t⁻¹ = -ρ`.
 * `norm_elasticSMatrix_eq_one_iff_exists_phaseShiftAmplitude`: single-channel unitarity is the
   existence of a real phase shift, and `phaseShiftAmplitude_eq_iff_exists_int` its uniqueness
   modulo `π`.
+* `norm_elasticSMatrix_phaseShiftAmplitude`: a complex phase shift `δ` gives `|S| = e^{-2 Im δ}`.
 
 ## References
 
@@ -133,23 +135,28 @@ theorem sMatrix_mem_unitaryGroup_iff_inv {ρ : n → ℝ} (hρ : ∀ i, 0 < ρ i
   have hTH : IsUnit Tᴴ.det := by rwa [det_conjTranspose, isUnit_star]
   rw [sMatrix_mem_unitaryGroup_iff hρ, conjTranspose_nonsing_inv]
   -- Multiply by `(Tᴴ)⁻¹` on the left and `T⁻¹` on the right, and back by `Tᴴ` and `T`.
+  have hu : IsUnit Tᴴ ↔ IsUnit T :=
+    iff_of_true ((isUnit_iff_isUnit_det _).2 hTH) ((isUnit_iff_isUnit_det _).2 hT)
+  have hu' : IsUnit Tᴴ⁻¹ ↔ IsUnit T⁻¹ :=
+    iff_of_true ((isUnit_iff_isUnit_det _).2 (isUnit_nonsing_inv_det _ hTH))
+      ((isUnit_iff_isUnit_det _).2 (isUnit_nonsing_inv_det _ hT))
   constructor
   · intro h
-    calc T⁻¹ - Tᴴ⁻¹ = -(Tᴴ⁻¹ * (T - Tᴴ) * T⁻¹) := by
-          rw [Matrix.mul_sub, Matrix.sub_mul, nonsing_inv_mul _ hTH, Matrix.one_mul,
-            Matrix.mul_assoc, mul_nonsing_inv _ hT, Matrix.mul_one, neg_sub]
+    calc T⁻¹ - Tᴴ⁻¹ = -(Tᴴ⁻¹ * (T - Tᴴ) * T⁻¹) := by rw [← inv_sub_inv hu, neg_sub]
       _ = -(2 * I) • D := by
           rw [h, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_assoc Tᴴ,
             nonsing_inv_mul_cancel_left _ _ hTH, mul_nonsing_inv_cancel_right _ _ hT, neg_smul]
   · intro h
     calc T - Tᴴ = -(Tᴴ * (T⁻¹ - Tᴴ⁻¹) * T) := by
-          rw [Matrix.mul_sub, Matrix.sub_mul, mul_nonsing_inv _ hTH, Matrix.one_mul,
-            Matrix.mul_assoc, nonsing_inv_mul _ hT, Matrix.mul_one, neg_sub]
+          have := inv_sub_inv hu'
+          rw [nonsing_inv_nonsing_inv _ hTH, nonsing_inv_nonsing_inv _ hT] at this
+          rw [← this, neg_sub]
       _ = (2 * I) • (Tᴴ * D * T) := by
           rw [h, Matrix.mul_smul, Matrix.smul_mul, neg_smul, neg_neg]
 
-/-- **The inverse of the K-matrix is Hermitian.** For positive phase-space factors and an
-invertible `T`, the partial-wave S-matrix is unitary iff `T⁻¹ + i ρ` is Hermitian. -/
+/-- **Unitarity as Hermiticity of `T⁻¹ + i ρ`.** For positive phase-space factors and an
+invertible `T`, the partial-wave S-matrix is unitary iff `T⁻¹ + i ρ` is Hermitian; this Hermitian
+matrix is the inverse of the K-matrix. -/
 theorem sMatrix_mem_unitaryGroup_iff_isHermitian {ρ : n → ℝ} (hρ : ∀ i, 0 < ρ i)
     {T : Matrix n n ℂ} (hT : IsUnit T.det) :
     sMatrix ρ T ∈ unitaryGroup n ℂ ↔ (T⁻¹ + I • diagonal (fun i ↦ (ρ i : ℂ))).IsHermitian := by
@@ -175,19 +182,16 @@ theorem elasticSMatrix_zero (ρ : ℝ) : elasticSMatrix ρ 0 = 1 := by
 
 /-- A diagonal entry `S i i` of the partial-wave S-matrix is the single-channel S-matrix of the
 diagonal amplitude `T i i` with the phase-space factor of channel `i`. -/
-theorem sMatrix_apply_self_eq_elasticSMatrix {ρ : n → ℝ} {i : n} (hρ : 0 ≤ ρ i)
+theorem sMatrix_apply_eq_elasticSMatrix {ρ : n → ℝ} {i : n} (hρ : 0 ≤ ρ i)
     (T : Matrix n n ℂ) : sMatrix ρ T i i = elasticSMatrix (ρ i) (T i i) := by
   rw [sMatrix_apply, elasticSMatrix_def, one_apply_eq, mul_right_comm _ (T i i),
     mul_assoc (2 * I), ← ofReal_mul, Real.mul_self_sqrt hρ]
 
-/-- **The single-channel S-matrix is the one-channel case of `sMatrix`.** With a single channel,
-the partial-wave S-matrix is unitary iff the single-channel S-matrix has modulus one. -/
-theorem sMatrix_mem_unitaryGroup_iff_norm_elasticSMatrix [Unique n] {ρ : n → ℝ}
-    (hρ : 0 ≤ ρ default) (T : Matrix n n ℂ) :
-    sMatrix ρ T ∈ unitaryGroup n ℂ ↔ ‖elasticSMatrix (ρ default) (T default default)‖ = 1 := by
-  rw [mem_unitaryGroup_iff', ← sMatrix_apply_self_eq_elasticSMatrix hρ]
-  set S := sMatrix ρ T
-  -- With one channel, `(Sᴴ S) i j = |S₀₀|²`.
+/-- A matrix with a single row and column is unitary iff its entry has modulus one. -/
+theorem mem_unitaryGroup_iff_norm_apply_default_eq_one [Unique n] (S : Matrix n n ℂ) :
+    S ∈ unitaryGroup n ℂ ↔ ‖S default default‖ = 1 := by
+  rw [mem_unitaryGroup_iff']
+  -- With one row and column, `(Sᴴ S) i j = |S₀₀|²`.
   have hS (i j : n) : (star S * S) i j = ((‖S default default‖ ^ 2 : ℝ) : ℂ) := by
     rw [Subsingleton.elim i default, Subsingleton.elim j default, mul_apply, Fintype.sum_unique,
       star_apply, star_def, ← normSq_eq_conj_mul_self, normSq_eq_norm_sq]
@@ -196,6 +200,13 @@ theorem sMatrix_mem_unitaryGroup_iff_norm_elasticSMatrix [Unique n] {ρ : n → 
   refine ⟨fun h ↦ by rw [h], fun h ↦ ?_⟩
   ext i j
   rw [hS, Subsingleton.elim i default, Subsingleton.elim j default, ← h, hS]
+
+/-- **One-channel unitarity.** With a single channel, the partial-wave S-matrix is unitary iff the
+single-channel S-matrix has modulus one. -/
+theorem sMatrix_mem_unitaryGroup_iff_norm_elasticSMatrix_eq_one [Unique n] {ρ : n → ℝ}
+    (hρ : 0 ≤ ρ default) (T : Matrix n n ℂ) :
+    sMatrix ρ T ∈ unitaryGroup n ℂ ↔ ‖elasticSMatrix (ρ default) (T default default)‖ = 1 := by
+  rw [mem_unitaryGroup_iff_norm_apply_default_eq_one, sMatrix_apply_eq_elasticSMatrix hρ]
 
 /-- The single-channel S-matrix is `2 i ρ` times the displacement of `t` from the centre `i / 2ρ` of
 the Argand circle. -/
@@ -214,22 +225,18 @@ theorem norm_elasticSMatrix_eq_one_iff_norm_sub_eq {ρ : ℝ} (hρ : 0 < ρ) (t 
     norm_real, Real.norm_of_nonneg hρ.le, eq_div_iff (by positivity)]
   constructor <;> intro h <;> linarith
 
+/-- The squared modulus of the single-channel S-matrix: `|S|² = 1 + 4 ρ (ρ |t|² - Im t)`. -/
+theorem normSq_elasticSMatrix (ρ : ℝ) (t : ℂ) :
+    normSq (elasticSMatrix ρ t) = 1 + 4 * ρ * (ρ * normSq t - t.im) := by
+  simp [elasticSMatrix_def, normSq_apply]
+  ring
+
 /-- Single-channel unitarity in quadratic form: `|S| = 1` iff `Im t = ρ |t|²`. -/
-theorem norm_elasticSMatrix_eq_one_iff {ρ : ℝ} (hρ : ρ ≠ 0) (t : ℂ) :
+theorem norm_elasticSMatrix_eq_one_iff_im_eq_mul_normSq {ρ : ℝ} (hρ : ρ ≠ 0) (t : ℂ) :
     ‖elasticSMatrix ρ t‖ = 1 ↔ t.im = ρ * normSq t := by
   rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, ← normSq_eq_norm_sq,
-    elasticSMatrix_def, normSq_apply]
-  simp only [add_re, one_re, mul_re, re_ofNat, I_re, im_ofNat, I_im, ofReal_re, ofReal_im,
-    add_im, one_im, mul_im, normSq_apply]
-  -- `|S|² - 1 = 4 ρ (ρ |t|² - Im t)`.
-  constructor
-  · intro h
-    have : 4 * ρ * (ρ * (t.re * t.re + t.im * t.im) - t.im) = 0 := by linear_combination h
-    rcases mul_eq_zero.1 this with h0 | h0
-    · exact absurd h0 (by simpa using hρ)
-    · linarith
-  · intro h
-    linear_combination (-4 * ρ) * h
+    normSq_elasticSMatrix, add_eq_left, mul_eq_zero, or_iff_right (mul_ne_zero four_ne_zero hρ),
+    sub_eq_zero, eq_comm]
 
 /-- **The unitarity bound.** A unitary single-channel amplitude satisfies `|t| ≤ 1 / ρ`. -/
 theorem norm_le_one_div_of_norm_elasticSMatrix_eq_one {ρ : ℝ} (hρ : 0 < ρ) {t : ℂ}
@@ -248,13 +255,19 @@ theorem norm_le_one_div_of_norm_elasticSMatrix_eq_one {ρ : ℝ} (hρ : 0 < ρ) 
 theorem norm_elasticSMatrix_eq_one_iff_inv_im {ρ : ℝ} (hρ : ρ ≠ 0) {t : ℂ} (ht : t ≠ 0) :
     ‖elasticSMatrix ρ t‖ = 1 ↔ t⁻¹.im = -ρ := by
   have hn : normSq t ≠ 0 := normSq_eq_zero.not.2 ht
-  rw [norm_elasticSMatrix_eq_one_iff hρ, inv_im, neg_div, neg_inj, div_eq_iff hn]
+  rw [norm_elasticSMatrix_eq_one_iff_im_eq_mul_normSq hρ, inv_im, neg_div, neg_inj, div_eq_iff hn]
 
 /-- For `ρ ≠ 0` the single-channel S-matrix determines the amplitude. -/
 theorem elasticSMatrix_injective {ρ : ℝ} (hρ : ρ ≠ 0) : Function.Injective (elasticSMatrix ρ) := by
   intro u v h
   have : (2 * I * ρ : ℂ) ≠ 0 := by simp [hρ]
   rwa [elasticSMatrix_def, elasticSMatrix_def, add_right_inj, mul_right_inj' this] at h
+
+/-- For `ρ ≠ 0` the amplitude is read off the single-channel S-matrix as `t = (S - 1) / 2iρ`. -/
+theorem elasticSMatrix_eq_iff {ρ : ℝ} (hρ : ρ ≠ 0) {t s : ℂ} :
+    elasticSMatrix ρ t = s ↔ t = (s - 1) / (2 * I * ρ) := by
+  have : (2 * I * ρ : ℂ) ≠ 0 := by simp [hρ]
+  rw [elasticSMatrix_def, eq_div_iff this, eq_sub_iff_add_eq', mul_comm t]
 
 /-- The partial-wave amplitude `e^{iδ} sin δ / ρ` of phase shift `δ`, for a single channel with
 phase-space factor `ρ`. The phase shift is real for an elastic channel; a complex `δ` with
@@ -320,5 +333,12 @@ theorem phaseShiftAmplitude_eq_iff_exists_int {ρ : ℝ} (hρ : ρ ≠ 0) (δ δ
     apply mul_left_cancel₀ this
     linear_combination h
   · rw [h]; ring
+
+/-- **A real phase shift is determined modulo `π`.** Two real phase shifts give the same amplitude
+iff they differ by an integer multiple of `π`. -/
+theorem phaseShiftAmplitude_ofReal_eq_iff_exists_int {ρ : ℝ} (hρ : ρ ≠ 0) (δ δ' : ℝ) :
+    phaseShiftAmplitude ρ δ = phaseShiftAmplitude ρ δ' ↔ ∃ k : ℤ, δ = δ' + k * Real.pi := by
+  rw [phaseShiftAmplitude_eq_iff_exists_int hρ]
+  exact exists_congr fun k ↦ by norm_cast
 
 end EpsilonEridani.QFT.Scattering.Amplitude
