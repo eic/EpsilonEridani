@@ -23,8 +23,6 @@ This module introduces tensor objects for inclusive DIS:
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
   terms of structure functions `F1` and `F2` written against it.
 - A uniqueness theorem for decomposition coefficients under probe-vector assumptions.
-- Spectator frames (`SpectatorPair`, `SpectatorPlane`) and the determinant-one half-turn
-  `exists_half_turn`, the kinematic inputs of `Tensors.ParityOdd`.
 - Pointwise contraction lemmas used by later cross-section derivations.
 
 ## Conventions
@@ -206,6 +204,18 @@ lemma det_reflect [FiniteDimensional ℝ V] (g : Bilin V) {u : V} (hu : g u u �
   field_simp
   ring
 
+/-- Exchanging the slots of an alternating form reverses its sign. -/
+lemma flip_eq_neg_of_isAlt {A : Bilin V} (hA : A.IsAlt) : A.flip = -A :=
+  LinearMap.ext₂ fun v w => by simp [hA.neg_eq]
+
+/-- Exchanging the slots of a symmetric form plus a multiple of an alternating form reverses
+only the alternating term. -/
+lemma flip_add_smul_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt) (c : ℝ) :
+    (S + c • A).flip = S - c • A := by
+  rw [LinearMap.BilinForm.flip, map_add, map_smul, LinearMap.BilinForm.isSymm_iff_flip.mp hS,
+    ← LinearMap.BilinForm.flip, flip_eq_neg_of_isAlt hA]
+  module
+
 end Bilin
 
 namespace Leptonic
@@ -369,12 +379,9 @@ lemma lMuNuVA_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : Kinema
     (hSymm : g.IsSymm) (cV cA : ℝ) :
     (lMuNuVA g ε K cV cA).flip
       = (cV ^ 2 + cA ^ 2) • lMuNu g K - (2 * cV * cA) • lMuNuOdd ε K := by
-  have hOdd : (lMuNuOdd ε K).flip = -lMuNuOdd ε K := by
-    ext v w
-    simp [(isAlt_lMuNuOdd ε K).neg_eq]
-  simp only [lMuNuVA_def, map_add, map_smul,
-    LinearMap.BilinForm.isSymm_iff_flip.mp (lMuNu_isSymm g K hSymm), hOdd]
-  module
+  rw [lMuNuVA_def]
+  exact Bilin.flip_add_smul_of_isSymm_of_isAlt ((lMuNu_isSymm g K hSymm).smul _)
+    (isAlt_lMuNuOdd ε K) _
 
 /-- The symmetric part of the vector/axial-vector leptonic tensor is `(c_V² + c_A²) lMuNu`. -/
 theorem inv_two_smul_lMuNuVA_add_flip (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ)
@@ -1063,111 +1070,6 @@ theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bili
     hWtt, htq, hqt, huq, huT, hu'q, hu'T, huq', huT']
   field_simp
   ring
-
-/-!
-
-## Spectator frames and half-turns
-
-Kinematic inputs of the parity-odd sector (`Tensors.ParityOdd`). Like `SpectatorAssumptions`
-they are facts about `g`, `p`, `q` and the isometry group, not about the hadronic tensor; they
-supply the determinant-one stabilizer elements that `IsProperLorentzCovariant` constrains.
-
--/
-
-/-- Two orthogonal non-null spectators `u` and `u'` give a kinematic stabilizer element of
-determinant one reversing both: the composite of the reflections in `u` and in `u'`. -/
-lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
-    {u u' : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0) (hu : g u u ≠ 0)
-    (hu'q : g K.q u' = 0) (hu'T : g (pTransverse g K) u' = 0) (hu' : g u' u' ≠ 0)
-    (huu' : g u u' = 0) :
-    ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
-      f u = -u ∧ f u' = -u' := by
-  have h₁ := reflect_isKinematicStabilizer g K hSymm _ hu
-    (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
-  have h₂ := reflect_isKinematicStabilizer g K hSymm _ hu'
-    (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
-  have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
-  refine ⟨Bilin.reflect g u ∘ₗ Bilin.reflect g u',
-    ⟨fun v w => by simp only [LinearMap.comp_apply, h₁.isometry _ _, h₂.isometry _ _],
-      by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
-      by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩, ?_, ?_, ?_⟩
-  · by_cases hfin : Module.Finite ℝ V
-    · rw [LinearMap.det_comp, Bilin.det_reflect g hu, Bilin.det_reflect g hu']
-      norm_num
-    · -- Mathlib defines `LinearMap.det` to be `1` outside finite dimension, so this branch
-      -- is vacuous and carries no geometric content.
-      exact LinearMap.det_eq_one_of_not_module_finite hfin _
-  · rw [LinearMap.comp_apply, Bilin.reflect_apply_of_orthogonal g _ _ hu'u,
-      Bilin.reflect_apply_self g _ hu]
-  · rw [LinearMap.comp_apply, Bilin.reflect_apply_self g _ hu', map_neg,
-      Bilin.reflect_apply_of_orthogonal g _ _ huu']
-
-/-- Two spectator directions `e₁`, `e₂` for the kinematics, non-null and `g`-orthogonal to each
-other and to `p_T` and `q`. They supply the half-turn of `exists_half_turn` that a parity-odd
-tensor must respect; `SpectatorPlane` adds that they complete `p_T`, `q` to a frame of `V`. -/
-@[ext]
-structure SpectatorPair (g : Bilin V) (K : DisKinematics V) : Type where
-  /-- The first spectator direction. -/
-  e₁ : V
-  /-- The second spectator direction. -/
-  e₂ : V
-  /-- The momentum transfer is `g`-orthogonal to `e₁`. -/
-  q_orthogonal_e₁ : g K.q e₁ = 0
-  /-- The momentum transfer is `g`-orthogonal to `e₂`. -/
-  q_orthogonal_e₂ : g K.q e₂ = 0
-  /-- The transverse hadron momentum is `g`-orthogonal to `e₁`. -/
-  pT_orthogonal_e₁ : g (pTransverse g K) e₁ = 0
-  /-- The transverse hadron momentum is `g`-orthogonal to `e₂`. -/
-  pT_orthogonal_e₂ : g (pTransverse g K) e₂ = 0
-  /-- The two spectator directions are orthogonal. -/
-  e₁_orthogonal_e₂ : g e₁ e₂ = 0
-  /-- `e₁` is not null. -/
-  e₁_self_ne_zero : g e₁ e₁ ≠ 0
-  /-- `e₂` is not null. -/
-  e₂_self_ne_zero : g e₂ e₂ ≠ 0
-
-/-- The momentum transfer is `g`-orthogonal to a combination of the spectator directions. -/
-lemma SpectatorPair.q_orthogonal_smul_add_smul {g : Bilin V} {K : DisKinematics V}
-    (hP : SpectatorPair g K) (c₁ c₂ : ℝ) : g K.q (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
-  simp only [map_add, map_smul, hP.q_orthogonal_e₁, hP.q_orthogonal_e₂, smul_zero, add_zero]
-
-/-- The transverse hadron momentum is `g`-orthogonal to a combination of the spectator
-directions. -/
-lemma SpectatorPair.pT_orthogonal_smul_add_smul {g : Bilin V} {K : DisKinematics V}
-    (hP : SpectatorPair g K) (c₁ c₂ : ℝ) :
-    g (pTransverse g K) (c₁ • hP.e₁ + c₂ • hP.e₂) = 0 := by
-  simp only [map_add, map_smul, hP.pT_orthogonal_e₁, hP.pT_orthogonal_e₂, smul_zero, add_zero]
-
-/-- The half-turn of a `SpectatorPair`: a kinematic stabilizer element of determinant one
-reversing both spectator directions (`exists_half_turn` applied to `e₁`, `e₂`). -/
-lemma SpectatorPair.exists_half_turn {g : Bilin V} {K : DisKinematics V}
-    (hP : SpectatorPair g K) (hSymm : g.IsSymm) :
-    ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
-      f hP.e₁ = -hP.e₁ ∧ f hP.e₂ = -hP.e₂ :=
-  Hadronic.exists_half_turn hSymm hP.q_orthogonal_e₁ hP.pT_orthogonal_e₁ hP.e₁_self_ne_zero
-    hP.q_orthogonal_e₂ hP.pT_orthogonal_e₂ hP.e₂_self_ne_zero hP.e₁_orthogonal_e₂
-
-/-- An adapted frame for the kinematics: a `SpectatorPair` `e₁`, `e₂` such that `p_T`, `q`,
-`e₁`, `e₂` span `V`.
-
-For `V` Minkowski space with `p` timelike and `q` spacelike the spectator subspace
-`{p, q}^⊥` is a spacelike plane, and any orthogonal basis of it is such a frame. The frame
-is the only place where four-dimensionality enters the hypotheses on the hadronic tensor
-`W` of `Tensors.ParityOdd`; constructing the canonical parity-odd structure `A` there needs
-an alternating four-form, and its proper covariance a basis of four vectors, separately. -/
-@[ext]
-structure SpectatorPlane (g : Bilin V) (K : DisKinematics V) : Type extends SpectatorPair g K where
-  /-- The frame spans `V`. -/
-  span : ∀ v : V, ∃ a b c₁ c₂ : ℝ, v = a • pTransverse g K + b • K.q + c₁ • e₁ + c₂ • e₂
-
-/-- The adapted frame of a `SpectatorPlane` splits every vector: the spectator part of
-`a • p_T + b • q + c₁ • e₁ + c₂ • e₂` is `c₁ • e₁ + c₂ • e₂`. -/
-lemma SpectatorPlane.toSpectatorSplitting {g : Bilin V} {K : DisKinematics V}
-    (hP : SpectatorPlane g K) : SpectatorSplitting g K where
-  span v := by
-    obtain ⟨a, b, c₁, c₂, rfl⟩ := hP.span v
-    exact ⟨a, b, c₁ • hP.e₁ + c₂ • hP.e₂, hP.q_orthogonal_smul_add_smul c₁ c₂,
-      hP.pT_orthogonal_smul_add_smul c₁ c₂, add_assoc _ _ _⟩
 
 /-!
 

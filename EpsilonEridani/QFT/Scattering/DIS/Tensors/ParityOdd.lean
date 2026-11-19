@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Spectators
 
 /-!
 # The parity-odd part of the hadronic tensor
@@ -41,10 +41,11 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
   alternating and conserved on every space, and properly covariant on every space with a basis
   of four vectors (`parityOddAssumptions_aOfAlt`).
 
-The kinematic hypotheses come from `Tensors.Basic`: `SpectatorPair` (two non-null, mutually
-orthogonal spectator directions `e₁`, `e₂`), `SpectatorPlane` (a `SpectatorPair` completing
-`p_T`, `q` to a frame of `V`) and `SpectatorSplitting` (every vector splits into `p_T`, `q`
-and spectator parts), together with the determinant-one half-turn `exists_half_turn`. A
+The kinematic hypotheses come from `Tensors.Spectators`: `SpectatorPair` (two non-null,
+mutually orthogonal spectator directions `e₁`, `e₂`), `SpectatorPlane` (a `SpectatorPair`
+completing `p_T`, `q` to a frame of `V`) and, from `Tensors.Basic`, `SpectatorSplitting` (every
+vector splits into `p_T`, `q` and spectator parts), together with the determinant-one half-turn
+`exists_half_turn`. A
 `SpectatorPlane` is the only place where four-dimensionality enters the hypotheses on the
 tensor `W`; the canonical structure `A` needs an alternating four-form — and, for its proper
 covariance, a basis of four vectors — separately.
