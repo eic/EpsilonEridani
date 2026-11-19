@@ -232,8 +232,7 @@ theorem analyticAt_gammaQQ {N : ℂ} (hN : ∀ m : ℕ, N ≠ -m) : AnalyticAt �
   have h0 : N ≠ 0 := by simpa using hN 0
   have h1 : N + 1 ≠ 0 := by simpa using add_natCast_ne_zero hN 1
   have hd : N * (N + 1) ≠ 0 := mul_ne_zero h0 h1
-  have hS : AnalyticAt ℂ complexHarmonic N :=
-    analyticAt_complexHarmonic fun m h => hN (m + 1) (by push_cast; exact h)
+  have hS : AnalyticAt ℂ complexHarmonic N := analyticAt_complexHarmonic_of_ne_neg_natCast hN
   unfold gammaQQ
   fun_prop (disch := assumption)
 
@@ -273,8 +272,7 @@ theorem analyticAt_gammaGG {N : ℂ} (h : N ≠ 1) (hN : ∀ m : ℕ, N ≠ -m) 
   have h0 : N ≠ 0 := by simpa using hN 0
   have h1 : N + 1 ≠ 0 := by simpa using add_natCast_ne_zero hN 1
   have h2 : N + 2 ≠ 0 := by simpa using add_natCast_ne_zero hN 2
-  have hS : AnalyticAt ℂ complexHarmonic N :=
-    analyticAt_complexHarmonic fun m h => hN (m + 1) (by push_cast; exact h)
+  have hS : AnalyticAt ℂ complexHarmonic N := analyticAt_complexHarmonic_of_ne_neg_natCast hN
   unfold gammaGG
   fun_prop (disch := assumption)
 
@@ -366,8 +364,7 @@ private theorem gammaGG_eq_inv_smul : ∀ᶠ N in 𝓝[≠] (1 : ℂ),
   ring
 
 private theorem analyticAt_gammaGGAnalyticFactor : AnalyticAt ℂ (gammaGGAnalyticFactor c) 1 := by
-  have hS : AnalyticAt ℂ complexHarmonic 1 :=
-    analyticAt_complexHarmonic fun m => by exact_mod_cast one_ne_neg_natCast (m + 1)
+  have hS : AnalyticAt ℂ complexHarmonic 1 := analyticAt_complexHarmonic_one
   unfold gammaGGAnalyticFactor
   fun_prop (disch := norm_num)
 

@@ -47,7 +47,9 @@ plane is what controls the behaviour of the densities in momentum-fraction space
   continuation at the natural number literals.
 * `EpsilonEridani.complexHarmonic_add_one`: the recurrence `S₁(s + 1) = S₁(s) + 1/(s + 1)`.
 * `EpsilonEridani.complexHarmonic_neg`: the reflection formula.
-* `EpsilonEridani.analyticAt_complexHarmonic`: analyticity away from the negative integers.
+* `EpsilonEridani.analyticAt_complexHarmonic`: analyticity away from the negative integers, with
+  `analyticAt_complexHarmonic_of_ne_neg_natCast` for the hypothesis form excluding all
+  non-positive integers and `analyticAt_complexHarmonic_one` at `s = 1`.
 * `EpsilonEridani.add_natCast_ne_zero`, `EpsilonEridani.one_ne_neg_natCast`: the side conditions
   `s + k ≠ 0` away from the non-positive integers, and `1 ≠ -m`, for analyticity statements.
 * `EpsilonEridani.meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ`:
@@ -118,8 +120,7 @@ side condition that rational factors such as `1 / (s (s + 1))` need next to `S�
 theorem add_natCast_ne_zero {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) (k : ℕ) : s + k ≠ 0 :=
   fun h => hs k (eq_neg_of_add_eq_zero_left h)
 
-/-- `1` is not a non-positive integer, so the hypotheses `∀ m : ℕ, s ≠ -m` and
-`∀ m : ℕ, s ≠ -(m + 1)` hold at `s = 1`. -/
+/-- `1` is not a non-positive integer: the hypothesis `∀ m : ℕ, s ≠ -m` holds at `s = 1`. -/
 theorem one_ne_neg_natCast (m : ℕ) : (1 : ℂ) ≠ -(m : ℂ) := fun h =>
   Nat.cast_add_one_ne_zero (R := ℂ) m (by linear_combination h)
 
@@ -174,6 +175,17 @@ theorem analyticAt_complexHarmonic {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) 
 theorem continuousAt_complexHarmonic {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) :
     ContinuousAt complexHarmonic s :=
   (analyticAt_complexHarmonic hs).continuousAt
+
+/-- The continuation is analytic away from the non-positive integers: `analyticAt_complexHarmonic`
+under the hypothesis `∀ m : ℕ, s ≠ -m` that the rational factors next to `S₁(s)` need. -/
+theorem analyticAt_complexHarmonic_of_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) :
+    AnalyticAt ℂ complexHarmonic s :=
+  analyticAt_complexHarmonic fun m h => hs (m + 1) (by push_cast; exact h)
+
+/-- The continuation is analytic at `s = 1`. -/
+@[fun_prop]
+theorem analyticAt_complexHarmonic_one : AnalyticAt ℂ complexHarmonic 1 :=
+  analyticAt_complexHarmonic_of_ne_neg_natCast one_ne_neg_natCast
 
 /-- The regular part at the negative integer `-(m + 1)`: the function
 `s ↦ S₁(s + m + 1) - ∑_{k<m} 1/(s + k + 1)`, which differs from `S₁` by the polar term
