@@ -5,6 +5,9 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.MeasureTheory.WithDensity
+public import Mathlib.Basic.Real.Sign
+public import Mathlib.MeasureTheory.Order.Group.Lattice
 public import Mathlib.MeasureTheory.VectorMeasure.WithDensity
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Variance
@@ -18,32 +21,43 @@ a *proposal* law `μ.withDensity g`, with `g` a density against `μ`, and gives 
 *weight* `f x / g x` (`ImportanceSampling.weight f g`). The weight is real-valued and may be
 negative, as the weights of an event generator with negative-weight events are.
 
-The hypotheses are the ones an implementation needs: `g` is almost everywhere finite, and `g`
-vanishes only where `f` does (`∀ᵐ x ∂μ, g x = 0 → f x = 0`), so that every region where `f`
-has mass is ever proposed. Under them:
+The standing hypotheses are the ones an implementation needs: `g` is almost everywhere finite,
+and `g` vanishes only where `f` does (`∀ᵐ x ∂μ, g x = 0 → f x = 0`), so that every region where
+`f` has mass is ever proposed. Under them:
 
 * `integral_weight`: the expected weight under the proposal is `∫ f dμ`, so the mean weight is an
   unbiased estimator of the integral. An observable `O` is estimated with the weight of `f * O`,
   which is `weight f g * O` (`weight_mul`).
 * `withDensityᵥ_weight`: the proposal law reweighted by `weight f g` is the signed measure with
   density `f`. This is the statement that a weighted sample is a sample of `f`.
-* `variance_weight`: for a normalised proposal, the variance of the weight is
-  `∫ f² / g dμ - (∫ f dμ)²`.
+
+The variance results additionally assume a normalised proposal (`∫⁻ g dμ = 1`, which also makes
+`g` almost everywhere finite) and a square-integrable weight (`MemLp (weight f g) 2`; otherwise
+Mathlib's `variance` is `0`):
+
+* `variance_weight`: the variance of the weight is `∫ f² / g dμ - (∫ f dμ)²`.
 * `sq_integral_abs_sub_sq_integral_le_variance_weight` and
   `variance_weight_optimalProposal`: that variance is at least `(∫ |f| dμ)² - (∫ f dμ)²` for
-  every proposal, and the proposal `|f| / ∫ |f| dμ` (`optimalProposal`) attains the bound. For
-  a non-negative `f` the optimal proposal has zero variance
+  every such proposal, and the proposal `|f| / ∫ |f| dμ` (`optimalProposal`) attains the bound.
+  The optimal proposal gives every point the weight `(∫ |f| dμ) · sign (f x)`
+  (`weight_optimalProposal`), so for a non-negative `f` it has zero variance
   (`variance_weight_optimalProposal_of_nonneg`).
-* `integral_average_weight` and `ae_tendsto_average_weight`: for independent draws `X i` from
-  the proposal, the average `(1/n) ∑_{i < n} weight f g (X i)` has expectation `∫ f dμ` for every
-  `n ≥ 1` and converges to it almost surely, by Mathlib's strong law of large numbers. This is
+
+For the estimator built from draws `X i`:
+
+* `integral_average_weight`: for any draws with the proposal law, independent or not, the
+  average `(1/n) ∑_{i < n} weight f g (X i)` has expectation `∫ f dμ` for every `n ≥ 1`.
+* `ae_tendsto_average_weight`: for pairwise independent draws with the proposal law, that
+  average converges to `∫ f dμ` almost surely, by Mathlib's strong law of large numbers. This is
   the convergence of the cross-section estimator of an event generator.
+
+Both are instances of `integral_average` and `ae_tendsto_average`, the same statements for an
+arbitrary integrable function of draws with an arbitrary law.
 
 ## References
 
 * G. P. Lepage, *A new algorithm for adaptive multidimensional integration*,
   J. Comput. Phys. 27 (1978) 192.
-* L. Devroye, *Non-Uniform Random Variate Generation*, Springer (1986).
 * A. B. Owen, *Monte Carlo theory, methods and examples* (2013), Chapter 9, for the variance of
   the importance-sampling estimator and its optimal proposal.
 -/
@@ -65,6 +79,9 @@ or `∞`. -/
 def weight (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) : ℝ := f x / (g x).toReal
 
 theorem weight_def (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) : weight f g x = f x / (g x).toReal :=
+  (rfl)
+
+theorem weight_eq (f : α → ℝ) (g : α → ℝ≥0∞) : weight f g = fun x => f x / (g x).toReal :=
   (rfl)
 
 /-- The weight for the integrand `f * O` is the weight for `f` times the observable `O`. -/
@@ -95,9 +112,16 @@ variable [MeasurableSpace α] {μ : Measure α}
 
 theorem aestronglyMeasurable_weight (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
     AEStronglyMeasurable (weight f g) (μ.withDensity g) := by
-  rw [show weight f g = fun x => f x / (g x).toReal from funext (weight_def f g)]
+  rw [weight_eq]
   exact (hf.div hg.ennreal_toReal).aestronglyMeasurable.mono_ac
     (withDensity_absolutelyContinuous μ g)
+
+/-- Almost everywhere, the density times the weight recovers the target. -/
+theorem toReal_smul_weight_ae_eq (hg_top : ∀ᵐ x ∂μ, g x < ∞)
+    (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) :
+    (fun x => (g x).toReal • weight f g x) =ᵐ[μ] f := by
+  filter_upwards [hg_top, hfg] with x hx hx0
+  rw [smul_eq_mul, toReal_mul_weight hx.ne hx0]
 
 /-- **Unbiasedness of importance sampling.** The expected weight under the proposal law is the
 integral of the target density. -/
@@ -105,9 +129,7 @@ theorem integral_weight (hg : AEMeasurable g μ) (hg_top : ∀ᵐ x ∂μ, g x <
     (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) :
     ∫ x, weight f g x ∂μ.withDensity g = ∫ x, f x ∂μ := by
   rw [integral_withDensity_eq_integral_toReal_smul₀ hg hg_top]
-  refine integral_congr_ae ?_
-  filter_upwards [hg_top, hfg] with x hx hx0
-  rw [smul_eq_mul, toReal_mul_weight hx.ne hx0]
+  exact integral_congr_ae (toReal_smul_weight_ae_eq hg_top hfg)
 
 /-- The weight is integrable under the proposal law exactly when the target density is
 integrable. -/
@@ -115,9 +137,7 @@ theorem integrable_weight_iff (hg : AEMeasurable g μ) (hg_top : ∀ᵐ x ∂μ,
     (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) :
     Integrable (weight f g) (μ.withDensity g) ↔ Integrable f μ := by
   rw [integrable_withDensity_iff_integrable_smul₀' hg hg_top]
-  refine integrable_congr ?_
-  filter_upwards [hg_top, hfg] with x hx hx0
-  rw [smul_eq_mul, toReal_mul_weight hx.ne hx0]
+  exact integrable_congr (toReal_smul_weight_ae_eq hg_top hfg)
 
 /-- **The weighted sample is a sample of the target.** The proposal law reweighted by the
 importance weight is the signed measure with density `f`. -/
@@ -125,9 +145,7 @@ theorem withDensityᵥ_weight (hg : AEMeasurable g μ) (hg_top : ∀ᵐ x ∂μ,
     (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) :
     (μ.withDensity g).withDensityᵥ (weight f g) = μ.withDensityᵥ f := by
   by_cases hf : Integrable f μ
-  · have hfg' : (fun x => (g x).toReal • weight f g x) =ᵐ[μ] f := by
-      filter_upwards [hg_top, hfg] with x hx hx0
-      rw [smul_eq_mul, toReal_mul_weight hx.ne hx0]
+  · have hfg' := toReal_smul_weight_ae_eq hg_top hfg
     rw [← withDensityᵥ_smul_eq_withDensityᵥ_withDensity' hg hg_top
       ((integrable_congr hfg').2 hf)]
     exact WithDensityᵥEq.congr_ae hfg'
@@ -149,28 +167,26 @@ theorem memLp_weight_two_iff (hf : AEMeasurable f μ) (hg : AEMeasurable g μ)
     integrable_withDensity_iff_integrable_smul₀' hg hg_top]
   simp only [smul_eq_mul, toReal_mul_weight_sq]
 
-/-- **The variance of the importance weight.** For a normalised proposal density `g`, the variance
-of the weight is `∫ f² / g dμ - (∫ f dμ)²`. -/
+/-- **The variance of the importance weight.** For a normalised proposal density `g` whose weight
+is square-integrable, the variance of the weight is `∫ f² / g dμ - (∫ f dμ)²`. -/
 theorem variance_weight (hg : AEMeasurable g μ) (hg1 : ∫⁻ x, g x ∂μ = 1)
     (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) (hw : MemLp (weight f g) 2 (μ.withDensity g)) :
     variance (weight f g) (μ.withDensity g) =
       ∫ x, f x ^ 2 / (g x).toReal ∂μ - (∫ x, f x ∂μ) ^ 2 := by
-  have : IsProbabilityMeasure (μ.withDensity g) :=
-    ⟨by rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, hg1]⟩
-  have hg_top : ∀ᵐ x ∂μ, g x < ∞ := ae_lt_top' hg (by simp [hg1])
+  have := isProbabilityMeasure_withDensity hg1
+  have hg_top := ae_lt_top_of_lintegral_eq_one hg hg1
   rw [variance_eq_sub hw]
   simp only [Pi.pow_apply]
   rw [integral_weight_sq hg hg_top, integral_weight hg hg_top hfg]
 
-/-- **No proposal beats `|f|`.** For every normalised proposal density, the variance of the
-importance weight is at least `(∫ |f| dμ)² - (∫ f dμ)²`. -/
+/-- **No proposal beats `|f|`.** For every normalised proposal density whose weight is
+square-integrable, the variance of the importance weight is at least `(∫ |f| dμ)² - (∫ f dμ)²`. -/
 theorem sq_integral_abs_sub_sq_integral_le_variance_weight (hg : AEMeasurable g μ)
     (hg1 : ∫⁻ x, g x ∂μ = 1) (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0)
     (hw : MemLp (weight f g) 2 (μ.withDensity g)) :
     (∫ x, |f x| ∂μ) ^ 2 - (∫ x, f x ∂μ) ^ 2 ≤ variance (weight f g) (μ.withDensity g) := by
-  have : IsProbabilityMeasure (μ.withDensity g) :=
-    ⟨by rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, hg1]⟩
-  have hg_top : ∀ᵐ x ∂μ, g x < ∞ := ae_lt_top' hg (by simp [hg1])
+  have := isProbabilityMeasure_withDensity hg1
+  have hg_top := ae_lt_top_of_lintegral_eq_one hg hg1
   -- The mean of `|weight f g|` is `∫ |f| dμ`, and its square is at most the second moment.
   have habs : ∫ x, |weight f g x| ∂μ.withDensity g = ∫ x, |f x| ∂μ := by
     simp_rw [abs_weight]
@@ -198,22 +214,50 @@ theorem toReal_optimalProposal (f : α → ℝ) (μ : Measure α) (x : α) :
 
 theorem aemeasurable_optimalProposal (hf : AEMeasurable f μ) :
     AEMeasurable (optimalProposal f μ) μ :=
-  ((continuous_abs.measurable.comp_aemeasurable hf).div_const _).ennreal_ofReal
+  (hf.abs.div_const _).ennreal_ofReal
 
 /-- The optimal proposal is a probability density. -/
-theorem lintegral_optimalProposal (hf : Integrable f μ) (hf0 : ∫ x, |f x| ∂μ ≠ 0) :
+theorem lintegral_optimalProposal_eq_one (hf : Integrable f μ) (hf0 : ∫ x, |f x| ∂μ ≠ 0) :
     ∫⁻ x, optimalProposal f μ x ∂μ = 1 := by
   simp only [optimalProposal_def]
   rw [← ofReal_integral_eq_lintegral_ofReal (hf.abs.div_const _)
     (ae_of_all _ fun _ => div_nonneg (abs_nonneg _) (integral_nonneg fun _ => abs_nonneg _)),
     integral_div, div_self hf0, ENNReal.ofReal_one]
 
-/-- The optimal proposal vanishes only where `f` does. -/
-theorem eq_zero_of_optimalProposal_eq_zero (hf0 : ∫ x, |f x| ∂μ ≠ 0) {x : α}
-    (hx : optimalProposal f μ x = 0) : f x = 0 := by
+/-- The optimal proposal law is a probability measure. -/
+theorem isProbabilityMeasure_withDensity_optimalProposal (hf : Integrable f μ)
+    (hf0 : ∫ x, |f x| ∂μ ≠ 0) : IsProbabilityMeasure (μ.withDensity (optimalProposal f μ)) :=
+  isProbabilityMeasure_withDensity (lintegral_optimalProposal_eq_one hf hf0)
+
+/-- The optimal proposal vanishes exactly where `f` does. -/
+theorem optimalProposal_eq_zero_iff (hf0 : ∫ x, |f x| ∂μ ≠ 0) {x : α} :
+    optimalProposal f μ x = 0 ↔ f x = 0 := by
   rw [optimalProposal_def, ENNReal.ofReal_eq_zero,
-    div_le_iff₀ ((integral_nonneg fun _ => abs_nonneg _).lt_of_ne' hf0), zero_mul] at hx
-  exact abs_nonpos_iff.1 hx
+    div_le_iff₀ ((integral_nonneg fun _ => abs_nonneg _).lt_of_ne' hf0), zero_mul,
+    abs_nonpos_iff]
+
+/-- **The optimal proposal equalises the weights.** Against the optimal proposal, every point has
+weight `(∫ |f| dμ) · sign (f x)`. -/
+@[simp]
+theorem weight_optimalProposal (f : α → ℝ) (μ : Measure α) (x : α) :
+    weight f (optimalProposal f μ) x = (∫ y, |f y| ∂μ) * Real.sign (f x) := by
+  rw [weight_def, toReal_optimalProposal]
+  rcases eq_or_ne (∫ y, |f y| ∂μ) 0 with hc | hc
+  · simp [hc]
+  rcases lt_trichotomy (f x) 0 with h | h | h
+  · have := h.ne
+    rw [abs_of_neg h, Real.sign_of_neg h]
+    field_simp
+  · simp [h]
+  · rw [abs_of_pos h, Real.sign_of_pos h]
+    field_simp
+
+/-- Against the optimal proposal, every point where `f` does not vanish has weight of magnitude
+`∫ |f| dμ`. -/
+theorem abs_weight_optimalProposal {x : α} (hx : f x ≠ 0) :
+    |weight f (optimalProposal f μ) x| = ∫ y, |f y| ∂μ := by
+  rw [weight_optimalProposal, abs_mul, abs_of_nonneg (integral_nonneg fun _ => abs_nonneg _)]
+  rcases Real.sign_apply_eq_of_ne_zero _ hx with h | h <;> simp [h]
 
 /-- Against the optimal proposal, `f² / g` is `(∫ |f| dμ) |f|`. -/
 theorem sq_div_toReal_optimalProposal (hf0 : ∫ x, |f x| ∂μ ≠ 0) (x : α) :
@@ -232,13 +276,13 @@ theorem variance_weight_optimalProposal (hf : Integrable f μ) (hf0 : ∫ x, |f 
       (∫ x, |f x| ∂μ) ^ 2 - (∫ x, f x ∂μ) ^ 2 := by
   have hg := aemeasurable_optimalProposal (μ := μ) hf.aemeasurable
   have hfg : ∀ᵐ x ∂μ, optimalProposal f μ x = 0 → f x = 0 :=
-    ae_of_all _ fun _ => eq_zero_of_optimalProposal_eq_zero hf0
+    ae_of_all _ fun _ => (optimalProposal_eq_zero_iff hf0).1
   have hsq : (fun x => f x ^ 2 / (optimalProposal f μ x).toReal) =
       fun x => (∫ y, |f y| ∂μ) * |f x| := funext (sq_div_toReal_optimalProposal hf0)
   have hw : MemLp (weight f (optimalProposal f μ)) 2 (μ.withDensity (optimalProposal f μ)) := by
     rw [memLp_weight_two_iff hf.aemeasurable hg (ae_of_all _ fun _ => ENNReal.ofReal_lt_top), hsq]
     exact hf.abs.const_mul _
-  rw [variance_weight hg (lintegral_optimalProposal hf hf0) hfg hw, hsq, integral_const_mul]
+  rw [variance_weight hg (lintegral_optimalProposal_eq_one hf hf0) hfg hw, hsq, integral_const_mul]
   ring
 
 /-- For a non-negative target density, the optimal proposal has zero variance. -/
@@ -252,6 +296,33 @@ section Estimator
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : ℕ → Ω → α}
 
+/-- **The Monte Carlo average is unbiased for every sample size.** For draws `X i` with law `ν`
+and a `ν`-integrable `φ`, the average of `φ` over the first `n ≥ 1` draws has expectation
+`∫ φ dν`. No independence is needed. -/
+theorem integral_average {ν : Measure α} {φ : α → ℝ} (hφ : Integrable φ ν)
+    (hX : ∀ i, HasLaw (X i) ν P) {n : ℕ} (hn : n ≠ 0) :
+    ∫ ω, (n : ℝ)⁻¹ * ∑ i ∈ range n, φ (X i ω) ∂P = ∫ x, φ x ∂ν := by
+  rw [integral_const_mul, integral_finsetSum _ fun i _ => (hX i).integrable_fun_comp hφ]
+  have hi : ∀ i, ∫ ω, φ (X i ω) ∂P = ∫ x, φ x ∂ν := fun i => (hX i).integral_comp hφ.1
+  simp only [hi, sum_const, card_range, nsmul_eq_mul]
+  field_simp
+
+/-- **The Monte Carlo average converges almost surely.** For pairwise independent draws `X i`
+with law `ν` and a `ν`-integrable `φ`, the average `(1/n) ∑_{i < n} φ (X i)` converges almost
+surely to `∫ φ dν`. This is Mathlib's strong law of large numbers applied to `φ ∘ X i`. -/
+theorem ae_tendsto_average {ν : Measure α} {φ : α → ℝ} (hφ : Integrable φ ν)
+    (hX : ∀ i, HasLaw (X i) ν P) (hindep : Pairwise ((· ⟂ᵢ[P] ·) on X)) :
+    ∀ᵐ ω ∂P, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ range n, φ (X i ω)) atTop
+      (𝓝 (∫ x, φ x ∂ν)) := by
+  have hφm : ∀ i, AEMeasurable φ (P.map (X i)) := fun i => by
+    rw [(hX i).map_eq]
+    exact hφ.aemeasurable
+  have key := strong_law_ae (fun i => φ ∘ X i) ((hX 0).integrable_comp hφ)
+    (fun i j hij => (hindep hij).comp₀ (hX i).aemeasurable (hX j).aemeasurable (hφm i) (hφm j))
+    fun i => ((hX i).identDistrib (hX 0)).comp_of_aemeasurable (hφm i)
+  rw [(hX 0).integral_comp hφ.1] at key
+  simpa only [smul_eq_mul, Function.comp_apply] using key
+
 /-- **The estimator is unbiased for every sample size.** For draws `X i` from the proposal law,
 the average weight of the first `n ≥ 1` draws has expectation `∫ f dμ`. No independence is
 needed. -/
@@ -259,13 +330,8 @@ theorem integral_average_weight (hf : Integrable f μ) (hg : AEMeasurable g μ)
     (hg_top : ∀ᵐ x ∂μ, g x < ∞) (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0)
     (hX : ∀ i, HasLaw (X i) (μ.withDensity g) P) {n : ℕ} (hn : n ≠ 0) :
     ∫ ω, (n : ℝ)⁻¹ * ∑ i ∈ range n, weight f g (X i ω) ∂P = ∫ x, f x ∂μ := by
-  have hw := aestronglyMeasurable_weight hf.aemeasurable hg
-  have hwi := (integrable_weight_iff hg hg_top hfg).2 hf
-  rw [integral_const_mul, integral_finsetSum _ fun i _ => (hX i).integrable_fun_comp hwi]
-  have hi : ∀ i, ∫ ω, weight f g (X i ω) ∂P = ∫ x, f x ∂μ := fun i => by
-    simpa only [Function.comp_apply, integral_weight hg hg_top hfg] using (hX i).integral_comp hw
-  simp only [hi, sum_const, card_range, nsmul_eq_mul]
-  field_simp
+  rw [integral_average ((integrable_weight_iff hg hg_top hfg).2 hf) hX hn,
+    integral_weight hg hg_top hfg]
 
 /-- **The estimator converges almost surely.** For pairwise independent draws `X i` from the
 proposal law, the average weight `(1/n) ∑_{i < n} weight f g (X i)` converges almost surely to
@@ -275,21 +341,8 @@ theorem ae_tendsto_average_weight (hf : Integrable f μ) (hg : AEMeasurable g μ
     (hX : ∀ i, HasLaw (X i) (μ.withDensity g) P) (hindep : Pairwise ((· ⟂ᵢ[P] ·) on X)) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ range n, weight f g (X i ω)) atTop
       (𝓝 (∫ x, f x ∂μ)) := by
-  have hw := aestronglyMeasurable_weight hf.aemeasurable hg
-  have hwi := (integrable_weight_iff hg hg_top hfg).2 hf
-  have hwm : ∀ i, AEMeasurable (weight f g) (P.map (X i)) := fun i => by
-    rw [(hX i).map_eq]
-    exact hw.aemeasurable
-  have hident : ∀ i, IdentDistrib (weight f g ∘ X i) (weight f g ∘ X 0) P P := fun i =>
-    IdentDistrib.comp_of_aemeasurable
-      { aemeasurable_fst := (hX i).aemeasurable
-        aemeasurable_snd := (hX 0).aemeasurable
-        map_eq := by rw [(hX i).map_eq, (hX 0).map_eq] } (hwm i)
-  have key := strong_law_ae (fun i => weight f g ∘ X i) ((hX 0).integrable_comp hwi)
-    (fun i j hij => (hindep hij).comp₀ (hX i).aemeasurable (hX j).aemeasurable (hwm i) (hwm j))
-    hident
-  rw [(hX 0).integral_comp hw, integral_weight hg hg_top hfg] at key
-  simpa only [smul_eq_mul, Function.comp_apply] using key
+  simpa only [integral_weight hg hg_top hfg] using
+    ae_tendsto_average ((integrable_weight_iff hg hg_top hfg).2 hf) hX hindep
 
 end Estimator
 
