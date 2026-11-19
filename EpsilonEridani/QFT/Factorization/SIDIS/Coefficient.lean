@@ -29,15 +29,23 @@ C (y, w) = c δ(1 - y) δ(1 - w) + δ(1 - y) a (w) + b (y) δ(1 - w) + R (y, w)
 through `Convolution.mellinConv` and `Convolution.doubleMellinConv`, and proves:
 
 * the transposition symmetry: exchanging the two densities is a symmetry once the coefficient
-  function is transposed (`Coefficient.doubleConv_transpose`), and the exchange without the
+  function is transposed, provided the integrand of the regular part is jointly integrable on
+  `[x, 1] × [z, 1]` (`Coefficient.doubleConv_transpose`), and the exchange without the
   transposition is not a symmetry (`Coefficient.exists_doubleConv_ne`);
 * the leading-order reduction: for the coefficient functions `e_i δ_{ij} δ(1 - y) δ(1 - w)`, with
   `e_i` the squared charge of flavour `i`, the double convolution is `∑ᵢ e_i f_i (x) D_i (z)`
-  (`structureFunction_delta`);
-* compatibility with `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction`: for the
-  coefficient function `δ_{ij} c_i (y) δ(1 - w)`, with `c_i` the coefficient function of a
-  collinear hard kernel, the double convolution is `sidisStructureFunction`
-  (`structureFunction_ofRegularDelta`).
+  (`doubleConvStructureFunction_ofDeltaDelta`);
+* compatibility with `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` in the
+  fragmentation variable only: for the coefficient function `δ_{ij} c_i (y) δ(1 - w)`, with `c_i`
+  the coefficient function of a collinear hard kernel, the double convolution is
+  `sidisStructureFunction` (`doubleConvStructureFunction_ofRegularDelta`).
+
+The leading-order coefficient function, with delta functions in both variables, is not related to
+`sidisStructureFunction` here, and cannot be while `Factorization.DIS.HardKernel` is a function
+type: the parton side of `sidisStructureFunction` is the convolution `Factorization.DIS.loChannel`
+with a function kernel, and `δ(1 - y)` is not such a kernel, since `mellinConv` has no unit
+(`Convolution.not_exists_forall_mellinConv_ae_eq`). That statement needs a distributional
+hard-kernel interface first.
 
 The delta functions act as the unit of the Mellin convolution, that is, as the restriction of a
 density to `(0,1]`. Plus distributions in either variable, which the next-to-leading-order
@@ -50,9 +58,10 @@ component functions on `(0,1]` enter the double convolution.
 * `SIDIS.Coefficient`: a coefficient function with delta parts at `y = 1` and `w = 1`.
 * `SIDIS.Coefficient.transpose`: the transposed coefficient function `C (w, y)`.
 * `SIDIS.Coefficient.doubleConv`: its double convolution with two densities.
-* `SIDIS.Coefficient.delta`, `SIDIS.Coefficient.ofRegularDelta`: the coefficient functions
-  `c δ(1 - y) δ(1 - w)` and `b (y) δ(1 - w)`.
-* `SIDIS.structureFunction`: the flavour-summed double convolution.
+* `SIDIS.Coefficient.ofDeltaDelta`, `SIDIS.Coefficient.ofDeltaRegular`,
+  `SIDIS.Coefficient.ofRegularDelta`, `SIDIS.Coefficient.ofRegular`: the coefficient functions
+  `c δ(1 - y) δ(1 - w)`, `δ(1 - y) a (w)`, `b (y) δ(1 - w)` and `R (y, w)`.
+* `SIDIS.doubleConvStructureFunction`: the flavour-summed double convolution.
 
 ## References
 
@@ -163,22 +172,34 @@ theorem doubleConv_apply_of_mem (C : Coefficient) (f D : ℝ → ℝ) {x z : ℝ
   rw [doubleConv_def, indicator_of_mem hx, indicator_of_mem hz]
 
 /-- The double convolution vanishes when the first momentum fraction lies outside `(0,1]`. -/
-theorem doubleConv_of_notMem_left (C : Coefficient) (f D : ℝ → ℝ) {x : ℝ}
+theorem doubleConv_apply_eq_zero_of_notMem_left (C : Coefficient) (f D : ℝ → ℝ) {x : ℝ}
     (hx : x ∉ Ioc (0 : ℝ) 1) (z : ℝ) : C.doubleConv f D x z = 0 := by
   rw [doubleConv_def, indicator_of_notMem hx, mellinConv_apply_eq_zero_of_notMem _ _ hx,
-    doubleMellinConv_of_notMem_left _ _ _ hx]
+    doubleMellinConv_apply_eq_zero_of_notMem_left _ _ _ hx]
   ring
 
 /-- The double convolution vanishes when the second momentum fraction lies outside `(0,1]`. -/
-theorem doubleConv_of_notMem_right (C : Coefficient) (f D : ℝ → ℝ) (x : ℝ) {z : ℝ}
+theorem doubleConv_apply_eq_zero_of_notMem_right (C : Coefficient) (f D : ℝ → ℝ) (x : ℝ) {z : ℝ}
     (hz : z ∉ Ioc (0 : ℝ) 1) : C.doubleConv f D x z = 0 := by
   rw [doubleConv_def, indicator_of_notMem hz, mellinConv_apply_eq_zero_of_notMem _ _ hz,
-    doubleMellinConv_of_notMem_right _ _ _ _ hz]
+    doubleMellinConv_apply_eq_zero_of_notMem_right _ _ _ _ hz]
   ring
 
 /-- The double convolution with the zero coefficient function vanishes. -/
 @[simp]
-theorem zero_doubleConv (f D : ℝ → ℝ) : (0 : Coefficient).doubleConv f D = 0 := by
+theorem doubleConv_zero (f D : ℝ → ℝ) : (0 : Coefficient).doubleConv f D = 0 := by
+  funext x z
+  simp [doubleConv_def]
+
+/-- The double convolution with the zero density in the first variable vanishes. -/
+@[simp]
+theorem doubleConv_zero_left (C : Coefficient) (D : ℝ → ℝ) : C.doubleConv 0 D = 0 := by
+  funext x z
+  simp [doubleConv_def]
+
+/-- The double convolution with the zero density in the second variable vanishes. -/
+@[simp]
+theorem doubleConv_zero_right (C : Coefficient) (f : ℝ → ℝ) : C.doubleConv f 0 = 0 := by
   funext x z
   simp [doubleConv_def]
 
@@ -196,42 +217,55 @@ theorem doubleConv_transpose (C : Coefficient) (f D : ℝ → ℝ) {x z : ℝ}
   simp only [transpose_deltaDelta, transpose_deltaRegular, transpose_regularDelta]
   ring
 
-/-- **Exchanging the densities without transposing is not a symmetry**: some coefficient
-function, already one with only a regular part, has a double convolution that changes when the
-two densities and the two momentum fractions are exchanged. -/
-theorem exists_doubleConv_ne :
-    ∃ (C : Coefficient) (f D : ℝ → ℝ) (x z : ℝ), C.doubleConv D f z x ≠ C.doubleConv f D x z := by
-  obtain ⟨R, f, D, x, z, h⟩ := exists_doubleMellinConv_ne
-  refine ⟨⟨0, 0, 0, R⟩, f, D, x, z, ?_⟩
-  simpa [doubleConv_def] using h
-
-/-! ### The leading-order and hard-kernel coefficient functions -/
+/-! ### The coefficient functions with a single component -/
 
 /-- The coefficient function `c δ(1 - y) δ(1 - w)`. With `c = e_i²` it is the leading-order
 coefficient function of a quark flavour `i`. -/
-def delta (c : ℝ) : Coefficient := ⟨c, 0, 0, 0⟩
+def ofDeltaDelta (c : ℝ) : Coefficient := ⟨c, 0, 0, 0⟩
 
 @[simp]
-theorem delta_deltaDelta (c : ℝ) : (delta c).deltaDelta = c := (rfl)
+theorem ofDeltaDelta_deltaDelta (c : ℝ) : (ofDeltaDelta c).deltaDelta = c := (rfl)
 
 @[simp]
-theorem delta_deltaRegular (c : ℝ) : (delta c).deltaRegular = 0 := (rfl)
+theorem ofDeltaDelta_deltaRegular (c : ℝ) : (ofDeltaDelta c).deltaRegular = 0 := (rfl)
 
 @[simp]
-theorem delta_regularDelta (c : ℝ) : (delta c).regularDelta = 0 := (rfl)
+theorem ofDeltaDelta_regularDelta (c : ℝ) : (ofDeltaDelta c).regularDelta = 0 := (rfl)
 
 @[simp]
-theorem delta_regular (c : ℝ) : (delta c).regular = 0 := (rfl)
+theorem ofDeltaDelta_regular (c : ℝ) : (ofDeltaDelta c).regular = 0 := (rfl)
 
 /-- The coefficient function `c δ(1 - y) δ(1 - w)` is symmetric. -/
 @[simp]
-theorem transpose_delta (c : ℝ) : (delta c).transpose = delta c := (rfl)
+theorem transpose_ofDeltaDelta (c : ℝ) : (ofDeltaDelta c).transpose = ofDeltaDelta c := (rfl)
 
 /-- **The leading-order double convolution.** The coefficient function `c δ(1 - y) δ(1 - w)`
 multiplies the two densities at the same momentum fractions: `c f (x) D (z)` on `(0,1]²`. -/
-theorem delta_doubleConv (c : ℝ) (f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
-    (hz : z ∈ Ioc (0 : ℝ) 1) : (delta c).doubleConv f D x z = c * f x * D z := by
+theorem doubleConv_ofDeltaDelta (c : ℝ) (f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
+    (hz : z ∈ Ioc (0 : ℝ) 1) : (ofDeltaDelta c).doubleConv f D x z = c * f x * D z := by
   simp [doubleConv_apply_of_mem _ _ _ hx hz]
+
+/-- The coefficient function `δ(1 - y) a (w)`: a coefficient function `a` in the momentum fraction
+conjugate to the fragmentation function, concentrated at `y = 1` in the parton variable. -/
+def ofDeltaRegular (a : ℝ → ℝ) : Coefficient := ⟨0, a, 0, 0⟩
+
+@[simp]
+theorem ofDeltaRegular_deltaDelta (a : ℝ → ℝ) : (ofDeltaRegular a).deltaDelta = 0 := (rfl)
+
+@[simp]
+theorem ofDeltaRegular_deltaRegular (a : ℝ → ℝ) : (ofDeltaRegular a).deltaRegular = a := (rfl)
+
+@[simp]
+theorem ofDeltaRegular_regularDelta (a : ℝ → ℝ) : (ofDeltaRegular a).regularDelta = 0 := (rfl)
+
+@[simp]
+theorem ofDeltaRegular_regular (a : ℝ → ℝ) : (ofDeltaRegular a).regular = 0 := (rfl)
+
+/-- The double convolution with `δ(1 - y) a (w)` is the parton density at `x` times the Mellin
+convolution of `a` with the fragmentation density in `z`, for `x ∈ (0,1]`. -/
+theorem doubleConv_ofDeltaRegular (a f D : ℝ → ℝ) {x : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (z : ℝ) :
+    (ofDeltaRegular a).doubleConv f D x z = f x * mellinConv a D z := by
+  simp [doubleConv_def, indicator_of_mem hx]
 
 /-- The coefficient function `b (y) δ(1 - w)`: a coefficient function `b` in the momentum fraction
 conjugate to the parton density, concentrated at `w = 1` in the fragmentation variable. -/
@@ -250,10 +284,56 @@ theorem ofRegularDelta_regularDelta (b : ℝ → ℝ) : (ofRegularDelta b).regul
 theorem ofRegularDelta_regular (b : ℝ → ℝ) : (ofRegularDelta b).regular = 0 := (rfl)
 
 /-- The double convolution with `b (y) δ(1 - w)` is the Mellin convolution of `b` with the
-density in `x`, times the fragmentation density at `z`, on `(0,1]²`. -/
-theorem ofRegularDelta_doubleConv (b f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
-    (hz : z ∈ Ioc (0 : ℝ) 1) : (ofRegularDelta b).doubleConv f D x z = mellinConv b f x * D z := by
-  simp [doubleConv_apply_of_mem _ _ _ hx hz]
+density in `x`, times the fragmentation density at `z`, for `z ∈ (0,1]`. -/
+theorem doubleConv_ofRegularDelta (b f D : ℝ → ℝ) (x : ℝ) {z : ℝ} (hz : z ∈ Ioc (0 : ℝ) 1) :
+    (ofRegularDelta b).doubleConv f D x z = mellinConv b f x * D z := by
+  simp [doubleConv_def, indicator_of_mem hz]
+
+/-- Transposition exchanges `b (y) δ(1 - w)` with `δ(1 - y) b (w)`. -/
+@[simp]
+theorem transpose_ofRegularDelta (b : ℝ → ℝ) :
+    (ofRegularDelta b).transpose = ofDeltaRegular b := (rfl)
+
+/-- Transposition exchanges `δ(1 - y) a (w)` with `a (y) δ(1 - w)`. -/
+@[simp]
+theorem transpose_ofDeltaRegular (a : ℝ → ℝ) :
+    (ofDeltaRegular a).transpose = ofRegularDelta a := (rfl)
+
+/-- The coefficient function with only a regular part `R (y, w)`. -/
+def ofRegular (R : ℝ → ℝ → ℝ) : Coefficient := ⟨0, 0, 0, R⟩
+
+@[simp]
+theorem ofRegular_deltaDelta (R : ℝ → ℝ → ℝ) : (ofRegular R).deltaDelta = 0 := (rfl)
+
+@[simp]
+theorem ofRegular_deltaRegular (R : ℝ → ℝ → ℝ) : (ofRegular R).deltaRegular = 0 := (rfl)
+
+@[simp]
+theorem ofRegular_regularDelta (R : ℝ → ℝ → ℝ) : (ofRegular R).regularDelta = 0 := (rfl)
+
+@[simp]
+theorem ofRegular_regular (R : ℝ → ℝ → ℝ) : (ofRegular R).regular = R := (rfl)
+
+/-- The double convolution with a purely regular coefficient function is the double Mellin
+convolution. -/
+@[simp]
+theorem doubleConv_ofRegular (R : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) :
+    (ofRegular R).doubleConv f D = doubleMellinConv R f D := by
+  funext x z
+  simp [doubleConv_def]
+
+/-- Transposition of a purely regular coefficient function transposes its regular part. -/
+@[simp]
+theorem transpose_ofRegular (R : ℝ → ℝ → ℝ) :
+    (ofRegular R).transpose = ofRegular (Function.swap R) := (rfl)
+
+/-- **Exchanging the densities without transposing is not a symmetry**: some coefficient
+function, already one with only a regular part, has a double convolution that changes when the
+two densities and the two momentum fractions are exchanged. -/
+theorem exists_doubleConv_ne :
+    ∃ (C : Coefficient) (f D : ℝ → ℝ) (x z : ℝ), C.doubleConv D f z x ≠ C.doubleConv f D x z := by
+  obtain ⟨R, f, D, x, z, h⟩ := exists_doubleMellinConv_ne
+  exact ⟨ofRegular R, f, D, x, z, by rwa [doubleConv_ofRegular, doubleConv_ofRegular]⟩
 
 end Coefficient
 
@@ -265,26 +345,45 @@ variable {Flavor Hadron : Type}
 `∑_{i, j} (f_i ⊗ C_{ij} ⊗ D_j) (x, z)` of the double convolutions of the parton densities `f_i` at
 the scale `Q2`, the coefficient functions `C_{ij}` at that scale, and the fragmentation functions
 `D_j` of the fragmenting parton `j` into the hadron `h`. -/
-def structureFunction [Fintype Flavor] (C : Flavor → Flavor → ℝ → Coefficient)
+def doubleConvStructureFunction [Fintype Flavor] (C : Flavor → Flavor → ℝ → Coefficient)
     (f : Particles.Parton.PDF.Pdf Flavor) (D : Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron) (x z Q2 : ℝ) : ℝ :=
   ∑ i, ∑ j, (C i j Q2).doubleConv (fun y => f i y Q2) (fun y => D h j y Q2) x z
 
-/-- Unfolding lemma for `SIDIS.structureFunction`. -/
-theorem structureFunction_def [Fintype Flavor] (C : Flavor → Flavor → ℝ → Coefficient)
+/-- Unfolding lemma for `SIDIS.doubleConvStructureFunction`. -/
+theorem doubleConvStructureFunction_def [Fintype Flavor] (C : Flavor → Flavor → ℝ → Coefficient)
     (f : Particles.Parton.PDF.Pdf Flavor) (D : Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron) (x z Q2 : ℝ) :
-    structureFunction C f D h x z Q2 =
+    doubleConvStructureFunction C f D h x z Q2 =
       ∑ i, ∑ j, (C i j Q2).doubleConv (fun y => f i y Q2) (fun y => D h j y Q2) x z :=
   (rfl)
 
+/-- The structure function vanishes when the first momentum fraction lies outside `(0,1]`. -/
+theorem doubleConvStructureFunction_apply_eq_zero_of_notMem_left [Fintype Flavor]
+    (C : Flavor → Flavor → ℝ → Coefficient) (f : Particles.Parton.PDF.Pdf Flavor)
+    (D : Particles.Fragmentation.Frag Hadron Flavor) (h : Hadron) {x : ℝ}
+    (hx : x ∉ Ioc (0 : ℝ) 1) (z Q2 : ℝ) : doubleConvStructureFunction C f D h x z Q2 = 0 := by
+  rw [doubleConvStructureFunction_def]
+  exact Finset.sum_eq_zero fun i _ => Finset.sum_eq_zero fun j _ =>
+    Coefficient.doubleConv_apply_eq_zero_of_notMem_left _ _ _ hx _
+
+/-- The structure function vanishes when the second momentum fraction lies outside `(0,1]`. -/
+theorem doubleConvStructureFunction_apply_eq_zero_of_notMem_right [Fintype Flavor]
+    (C : Flavor → Flavor → ℝ → Coefficient) (f : Particles.Parton.PDF.Pdf Flavor)
+    (D : Particles.Fragmentation.Frag Hadron Flavor) (h : Hadron) (x : ℝ) {z : ℝ}
+    (hz : z ∉ Ioc (0 : ℝ) 1) (Q2 : ℝ) : doubleConvStructureFunction C f D h x z Q2 = 0 := by
+  rw [doubleConvStructureFunction_def]
+  exact Finset.sum_eq_zero fun i _ => Finset.sum_eq_zero fun j _ =>
+    Coefficient.doubleConv_apply_eq_zero_of_notMem_right _ _ _ _ hz
+
 /-- For a coefficient function diagonal in flavour, the structure function is a single flavour
 sum. -/
-theorem structureFunction_diagonal [Fintype Flavor] [DecidableEq Flavor]
+theorem doubleConvStructureFunction_diagonal [Fintype Flavor] [DecidableEq Flavor]
     (c : Flavor → ℝ → Coefficient) (f : Particles.Parton.PDF.Pdf Flavor)
     (D : Particles.Fragmentation.Frag Hadron Flavor) (h : Hadron) (x z Q2 : ℝ) :
-    structureFunction (fun i j Q2 => if i = j then c i Q2 else 0) f D h x z Q2 =
+    doubleConvStructureFunction (fun i j Q2 => if i = j then c i Q2 else 0) f D h x z Q2 =
       ∑ i, (c i Q2).doubleConv (fun y => f i y Q2) (fun y => D h i y Q2) x z := by
+  rw [doubleConvStructureFunction_def]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.sum_eq_single i (fun j _ hji => by simp [Ne.symm hji])
     (fun hi => absurd (Finset.mem_univ i) hi)]
@@ -293,30 +392,33 @@ theorem structureFunction_diagonal [Fintype Flavor] [DecidableEq Flavor]
 /-- **The leading-order structure function.** For the coefficient functions
 `e_i δ_{ij} δ(1 - y) δ(1 - w)`, with `e_i` the squared charge of flavour `i`, the double
 convolution reduces to `∑ᵢ e_i f_i (x) D_i (z)` on `(0,1]²`. -/
-theorem structureFunction_delta [Fintype Flavor] [DecidableEq Flavor] (e : Flavor → ℝ)
-    (f : Particles.Parton.PDF.Pdf Flavor) (D : Particles.Fragmentation.Frag Hadron Flavor)
-    (h : Hadron) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) (Q2 : ℝ) :
-    structureFunction (fun i j _ => if i = j then Coefficient.delta (e i) else 0) f D h x z Q2 =
+theorem doubleConvStructureFunction_ofDeltaDelta [Fintype Flavor] [DecidableEq Flavor]
+    (e : Flavor → ℝ) (f : Particles.Parton.PDF.Pdf Flavor)
+    (D : Particles.Fragmentation.Frag Hadron Flavor) (h : Hadron) {x z : ℝ}
+    (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) (Q2 : ℝ) :
+    doubleConvStructureFunction
+        (fun i j _ => if i = j then Coefficient.ofDeltaDelta (e i) else 0) f D h x z Q2 =
       ∑ i, e i * f i x Q2 * D h i z Q2 := by
-  rw [structureFunction_diagonal (fun i _ => Coefficient.delta (e i))]
-  exact Finset.sum_congr rfl fun i _ => Coefficient.delta_doubleConv _ _ _ hx hz
+  rw [doubleConvStructureFunction_diagonal (fun i _ => Coefficient.ofDeltaDelta (e i))]
+  exact Finset.sum_congr rfl fun i _ => Coefficient.doubleConv_ofDeltaDelta _ _ _ hx hz
 
-/-- **Compatibility with `sidisStructureFunction`.** If the hard kernel `C'` of
-`EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` is, at the scale `Q2`, the
-collinear kernel of the coefficient function `c i` for every flavour `i`, then
+/-- **Compatibility with `sidisStructureFunction` in the fragmentation variable.** If the hard
+kernel `C'` of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` is, at the scale
+`Q2`, the collinear kernel of the coefficient function `c i` for every flavour `i`, then
 `sidisStructureFunction` is the double convolution with the coefficient functions
 `δ_{ij} c_i (y) δ(1 - w)` on `(0,1]²`. -/
-theorem structureFunction_ofRegularDelta [Fintype Flavor] [DecidableEq Flavor]
+theorem doubleConvStructureFunction_ofRegularDelta [Fintype Flavor] [DecidableEq Flavor]
     (C' : DIS.HardKernel Flavor) (c : Flavor → ℝ → ℝ) {Q2 : ℝ}
     (hc : ∀ i, Convolution.IsCollinearKernel (fun x' z => C' i x' z Q2) (c i))
     (f : Particles.Parton.PDF.Pdf Flavor) (D : Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) :
-    structureFunction (fun i j _ => if i = j then Coefficient.ofRegularDelta (c i) else 0)
-        f D h x z Q2 =
+    doubleConvStructureFunction
+        (fun i j _ => if i = j then Coefficient.ofRegularDelta (c i) else 0) f D h x z Q2 =
       Scattering.DIS.SIDIS.sidisStructureFunction C' f D h x z Q2 := by
-  rw [structureFunction_diagonal (fun i _ => Coefficient.ofRegularDelta (c i))]
+  rw [doubleConvStructureFunction_diagonal (fun i _ => Coefficient.ofRegularDelta (c i)),
+    Scattering.DIS.SIDIS.sidisStructureFunction]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [Coefficient.ofRegularDelta_doubleConv _ _ _ hx hz, Scattering.DIS.SIDIS.sidisChannel,
+  rw [Coefficient.doubleConv_ofRegularDelta _ _ _ _ hz, Scattering.DIS.SIDIS.sidisChannel,
     DIS.loChannel, (hc i).convolveAt_eq, ← mellinConv_apply_eq_convolveAt_of_mem _ _ hx,
     mellinConv_comm]
 

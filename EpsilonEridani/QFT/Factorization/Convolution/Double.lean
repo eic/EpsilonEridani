@@ -24,7 +24,8 @@ the outer one in `x`. In each variable the density is evaluated at the ratio (`f
 `D (z / w)`) and the coefficient at the integration variable.
 
 Exchanging the roles of the two densities is a symmetry only together with the transposition
-`C (y, w) ↦ C (w, y)` of the coefficient function (`doubleMellinConv_swap`, by Fubini). Without
+`C (y, w) ↦ C (w, y)` of the coefficient function, provided the integrand is jointly integrable on
+`[x, 1] × [z, 1]` (`doubleMellinConv_swap`, by Fubini). Without
 the transposition the exchange fails (`exists_doubleMellinConv_ne`), so the two arguments of a
 coefficient function cannot be interchanged silently. A coefficient function that is a product
 `A (y) B (w)` gives the product of the two single convolutions (`doubleMellinConv_mul`).
@@ -36,9 +37,11 @@ coefficient function cannot be interchanged silently. A coefficient function tha
 ## Main results
 
 * `doubleMellinConv_apply_of_mem`: the defining iterated integral on `(0,1]²`.
-* `doubleMellinConv_of_notMem_left`, `doubleMellinConv_of_notMem_right`: support in `(0,1]²`.
+* `doubleMellinConv_apply_eq_zero_of_notMem_left`, `doubleMellinConv_apply_eq_zero_of_notMem_right`:
+  support in `(0,1]²`.
 * `doubleMellinConv_mul`: a product coefficient function factorizes the double convolution.
-* `doubleMellinConv_swap`: exchanging the two densities transposes the coefficient function.
+* `doubleMellinConv_swap`: exchanging the two densities transposes the coefficient function,
+  under joint integrability.
 * `exists_doubleMellinConv_ne`: the exchange without transposition is not a symmetry.
 
 ## References
@@ -82,13 +85,13 @@ theorem doubleMellinConv_apply_of_mem (C : ℝ → ℝ → ℝ) (f D : ℝ → �
 
 /-- The double Mellin convolution vanishes when the first momentum fraction lies outside
 `(0,1]`. -/
-theorem doubleMellinConv_of_notMem_left (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x : ℝ}
+theorem doubleMellinConv_apply_eq_zero_of_notMem_left (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x : ℝ}
     (hx : x ∉ Ioc (0 : ℝ) 1) (z : ℝ) : doubleMellinConv C f D x z = 0 :=
   mellinConv_apply_eq_zero_of_notMem _ _ hx
 
 /-- The double Mellin convolution vanishes when the second momentum fraction lies outside
 `(0,1]`. -/
-theorem doubleMellinConv_of_notMem_right (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) (x : ℝ) {z : ℝ}
+theorem doubleMellinConv_apply_eq_zero_of_notMem_right (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) (x : ℝ) {z : ℝ}
     (hz : z ∉ Ioc (0 : ℝ) 1) : doubleMellinConv C f D x z = 0 := by
   have h : (fun y => mellinConv (C y) D z) = 0 :=
     funext fun _ => mellinConv_apply_eq_zero_of_notMem _ _ hz
@@ -96,10 +99,25 @@ theorem doubleMellinConv_of_notMem_right (C : ℝ → ℝ → ℝ) (f D : ℝ �
 
 /-- The double Mellin convolution with the zero coefficient function vanishes. -/
 @[simp]
-theorem zero_doubleMellinConv (f D : ℝ → ℝ) : doubleMellinConv 0 f D = 0 := by
+theorem doubleMellinConv_zero (f D : ℝ → ℝ) : doubleMellinConv 0 f D = 0 := by
   have h (z : ℝ) : (fun y => mellinConv ((0 : ℝ → ℝ → ℝ) y) D z) = 0 := by
     funext y
     rw [Pi.zero_apply, mellinConv_zero_left, Pi.zero_apply, Pi.zero_apply]
+  funext x z
+  rw [doubleMellinConv_def, h, mellinConv_zero_left, Pi.zero_apply, Pi.zero_apply,
+    Pi.zero_apply]
+
+/-- The double Mellin convolution with the zero density in the first variable vanishes. -/
+@[simp]
+theorem doubleMellinConv_zero_left (C : ℝ → ℝ → ℝ) (D : ℝ → ℝ) : doubleMellinConv C 0 D = 0 := by
+  funext x z
+  rw [doubleMellinConv_def, mellinConv_zero_right, Pi.zero_apply, Pi.zero_apply, Pi.zero_apply]
+
+/-- The double Mellin convolution with the zero density in the second variable vanishes. -/
+@[simp]
+theorem doubleMellinConv_zero_right (C : ℝ → ℝ → ℝ) (f : ℝ → ℝ) : doubleMellinConv C f 0 = 0 := by
+  have h (z : ℝ) : (fun y => mellinConv (C y) (0 : ℝ → ℝ) z) = 0 :=
+    funext fun _ => by rw [mellinConv_zero_right, Pi.zero_apply, Pi.zero_apply]
   funext x z
   rw [doubleMellinConv_def, h, mellinConv_zero_left, Pi.zero_apply, Pi.zero_apply,
     Pi.zero_apply]
@@ -117,6 +135,16 @@ theorem doubleMellinConv_mul (A B : ℝ → ℝ) (f D : ℝ → ℝ) (x z : ℝ)
     rw [hB, mellinConv_smul_left, Pi.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul,
       mul_comm]
   rw [doubleMellinConv_def, hin, mellinConv_smul_left, Pi.smul_apply, smul_eq_mul, mul_comm]
+
+/-- Moving the outer factor `u a / v a` of an iterated set integral into the inner integral, with
+a pointwise rearrangement `G a b * (u a / v a) = H a b` of the integrand. -/
+private theorem setIntegral_integral_mul_div {s t : Set ℝ} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) {G H : ℝ → ℝ → ℝ} {u v : ℝ → ℝ}
+    (hGH : ∀ a ∈ s, ∀ b ∈ t, G a b * (u a / v a) = H a b) :
+    ∫ a in s, (∫ b in t, G a b) * u a / v a = ∫ a in s, ∫ b in t, H a b :=
+  setIntegral_congr_fun hs fun a ha => by
+    rw [mul_div_assoc, ← integral_mul_const]
+    exact setIntegral_congr_fun ht fun b hb => hGH a ha b hb
 
 /-- **Exchanging the densities transposes the coefficient function.** The double convolution of
 `C` with `f` in `x` and `D` in `z` equals the double convolution of the transposed coefficient
@@ -138,24 +166,16 @@ theorem doubleMellinConv_swap (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x z
       rw [doubleMellinConv_apply_of_mem _ _ _ hz hx, doubleMellinConv_apply_of_mem _ _ _ hx hz]
       -- Both sides are the iterated integrals, in the two orders, of one function on the
       -- rectangle `[x, 1] × [z, 1]`.
-      have hl : (∫ w in Icc z 1, (∫ y in Icc x 1, Function.swap C w y * f (x / y) / y) *
-            D (z / w) / w) =
-          ∫ w in Icc z 1, ∫ y in Icc x 1, C y w * (f (x / y) / y) * (D (z / w) / w) := by
-        refine setIntegral_congr_fun measurableSet_Icc fun w _ => ?_
-        rw [mul_div_assoc, ← integral_mul_const]
-        refine setIntegral_congr_fun measurableSet_Icc fun y _ => ?_
-        simp only [Function.swap]
-        ring
-      have hr : (∫ y in Icc x 1, (∫ w in Icc z 1, C y w * D (z / w) / w) *
-            f (x / y) / y) =
-          ∫ y in Icc x 1, ∫ w in Icc z 1, C y w * (f (x / y) / y) * (D (z / w) / w) := by
-        refine setIntegral_congr_fun measurableSet_Icc fun y _ => ?_
-        rw [mul_div_assoc, ← integral_mul_const]
-        refine setIntegral_congr_fun measurableSet_Icc fun w _ => ?_
-        ring
-      rw [hl, hr, integral_integral_swap hint]
-    · rw [doubleMellinConv_of_notMem_left _ _ _ hz, doubleMellinConv_of_notMem_right _ _ _ _ hz]
-  · rw [doubleMellinConv_of_notMem_right _ _ _ _ hx, doubleMellinConv_of_notMem_left _ _ _ hx]
+      set F := fun y w => C y w * (f (x / y) / y) * (D (z / w) / w)
+      rw [setIntegral_integral_mul_div (H := Function.swap F) measurableSet_Icc measurableSet_Icc
+          fun w _ y _ => by simp only [F, Function.swap_def]; ring,
+        setIntegral_integral_mul_div (H := F) measurableSet_Icc measurableSet_Icc
+          fun y _ w _ => by simp only [F]; ring,
+        integral_integral_swap hint]
+    · rw [doubleMellinConv_apply_eq_zero_of_notMem_left _ _ _ hz,
+        doubleMellinConv_apply_eq_zero_of_notMem_right _ _ _ _ hz]
+  · rw [doubleMellinConv_apply_eq_zero_of_notMem_right _ _ _ _ hx,
+      doubleMellinConv_apply_eq_zero_of_notMem_left _ _ _ hx]
 
 /-- **Exchanging the densities without transposing is not a symmetry.** For the coefficient
 function `C (y, w) = y w²` and the density `1` on `(0,1]` in both variables,
