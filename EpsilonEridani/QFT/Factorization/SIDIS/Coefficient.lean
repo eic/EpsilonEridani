@@ -54,7 +54,8 @@ The delta functions act as the unit of the Mellin convolution, that is, as the r
 density to `(0,1]`. Plus distributions in either variable, which the next-to-leading-order
 coefficient functions also contain, are not part of `SIDIS.CoefficientFunction`. As for the
 densities, whose support in `[0, 1]` is a hypothesis and not part of their type, only the values
-of the component functions on `(0,1]` enter the double convolution.
+of the component functions on `(0,1]` enter the double convolution
+(`CoefficientFunction.doubleConv_congr_of_eqOn`).
 
 ## Main definitions
 
@@ -175,6 +176,21 @@ theorem doubleConv_apply_of_mem (C : CoefficientFunction) (f D : ℝ → ℝ) {x
         mellinConv C.regularDelta f x * D z + doubleMellinConv C.regular f D x z := by
   rw [doubleConv_def, indicator_of_mem hx, indicator_of_mem hz]
 
+/-- The double convolution depends only on the values of the components on `(0,1]` and `(0,1]²`
+and of the densities on `(0,1]`. -/
+theorem doubleConv_congr_of_eqOn {C C' : CoefficientFunction} {f f' D D' : ℝ → ℝ}
+    (hdd : C.deltaDelta = C'.deltaDelta)
+    (hdr : EqOn C.deltaRegular C'.deltaRegular (Ioc (0 : ℝ) 1))
+    (hrd : EqOn C.regularDelta C'.regularDelta (Ioc (0 : ℝ) 1))
+    (hr : EqOn (Function.uncurry C.regular) (Function.uncurry C'.regular)
+      (Ioc (0 : ℝ) 1 ×ˢ Ioc (0 : ℝ) 1))
+    (hf : EqOn f f' (Ioc (0 : ℝ) 1)) (hD : EqOn D D' (Ioc (0 : ℝ) 1)) :
+    C.doubleConv f D = C'.doubleConv f' D' := by
+  funext x z
+  rw [doubleConv_def, doubleConv_def, hdd, mellinConv_congr_of_eqOn hdr hD,
+    mellinConv_congr_of_eqOn hrd hf, doubleMellinConv_congr_of_eqOn hr hf hD,
+    indicator_congr hf, indicator_congr hD]
+
 /-- The double convolution vanishes when the first momentum fraction lies outside `(0,1]`. -/
 theorem doubleConv_apply_eq_zero_of_notMem_left (C : CoefficientFunction) (f D : ℝ → ℝ) {x : ℝ}
     (hx : x ∉ Ioc (0 : ℝ) 1) (z : ℝ) : C.doubleConv f D x z = 0 := by
@@ -245,11 +261,19 @@ theorem ofDeltaDelta_regular (c : ℝ) : (ofDeltaDelta c).regular = 0 := (rfl)
 @[simp]
 theorem transpose_ofDeltaDelta (c : ℝ) : (ofDeltaDelta c).transpose = ofDeltaDelta c := (rfl)
 
+/-- The double convolution with `c δ(1 - y) δ(1 - w)` multiplies the two densities, restricted
+to `(0,1]`, at the same momentum fractions. -/
+@[simp]
+theorem doubleConv_ofDeltaDelta (c : ℝ) (f D : ℝ → ℝ) (x z : ℝ) :
+    (ofDeltaDelta c).doubleConv f D x z =
+      c * (Ioc (0 : ℝ) 1).indicator f x * (Ioc (0 : ℝ) 1).indicator D z := by
+  simp [doubleConv_def]
+
 /-- **The leading-order double convolution.** The coefficient function `c δ(1 - y) δ(1 - w)`
 multiplies the two densities at the same momentum fractions: `c f (x) D (z)` on `(0,1]²`. -/
-theorem doubleConv_ofDeltaDelta (c : ℝ) (f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
+theorem doubleConv_ofDeltaDelta_of_mem (c : ℝ) (f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
     (hz : z ∈ Ioc (0 : ℝ) 1) : (ofDeltaDelta c).doubleConv f D x z = c * f x * D z := by
-  simp [doubleConv_apply_of_mem _ _ _ hx hz]
+  rw [doubleConv_ofDeltaDelta, indicator_of_mem hx, indicator_of_mem hz]
 
 /-- The coefficient function `δ(1 - y) a (w)`: a coefficient function `a` in the momentum fraction
 conjugate to the fragmentation function, concentrated at `y = 1` in the parton variable. -/
@@ -267,11 +291,18 @@ theorem ofDeltaRegular_regularDelta (a : ℝ → ℝ) : (ofDeltaRegular a).regul
 @[simp]
 theorem ofDeltaRegular_regular (a : ℝ → ℝ) : (ofDeltaRegular a).regular = 0 := (rfl)
 
+/-- The double convolution with `δ(1 - y) a (w)` is the parton density at `x`, restricted to
+`(0,1]`, times the Mellin convolution of `a` with the fragmentation density in `z`. -/
+@[simp]
+theorem doubleConv_ofDeltaRegular (a f D : ℝ → ℝ) (x z : ℝ) :
+    (ofDeltaRegular a).doubleConv f D x z = (Ioc (0 : ℝ) 1).indicator f x * mellinConv a D z := by
+  simp [doubleConv_def]
+
 /-- The double convolution with `δ(1 - y) a (w)` is the parton density at `x` times the Mellin
 convolution of `a` with the fragmentation density in `z`, for `x ∈ (0,1]`. -/
-theorem doubleConv_ofDeltaRegular (a f D : ℝ → ℝ) {x : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (z : ℝ) :
-    (ofDeltaRegular a).doubleConv f D x z = f x * mellinConv a D z := by
-  simp [doubleConv_def, indicator_of_mem hx]
+theorem doubleConv_ofDeltaRegular_of_mem (a f D : ℝ → ℝ) {x : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
+    (z : ℝ) : (ofDeltaRegular a).doubleConv f D x z = f x * mellinConv a D z := by
+  rw [doubleConv_ofDeltaRegular, indicator_of_mem hx]
 
 /-- The coefficient function `b (y) δ(1 - w)`: a coefficient function `b` in the momentum fraction
 conjugate to the parton density, concentrated at `w = 1` in the fragmentation variable. -/
@@ -290,10 +321,25 @@ theorem ofRegularDelta_regularDelta (b : ℝ → ℝ) : (ofRegularDelta b).regul
 theorem ofRegularDelta_regular (b : ℝ → ℝ) : (ofRegularDelta b).regular = 0 := (rfl)
 
 /-- The double convolution with `b (y) δ(1 - w)` is the Mellin convolution of `b` with the
+density in `x`, times the fragmentation density at `z` restricted to `(0,1]`. -/
+@[simp]
+theorem doubleConv_ofRegularDelta (b f D : ℝ → ℝ) (x z : ℝ) :
+    (ofRegularDelta b).doubleConv f D x z = mellinConv b f x * (Ioc (0 : ℝ) 1).indicator D z := by
+  simp [doubleConv_def]
+
+/-- The double convolution with `b (y) δ(1 - w)` is the Mellin convolution of `b` with the
 density in `x`, times the fragmentation density at `z`, for `z ∈ (0,1]`. -/
-theorem doubleConv_ofRegularDelta (b f D : ℝ → ℝ) (x : ℝ) {z : ℝ} (hz : z ∈ Ioc (0 : ℝ) 1) :
-    (ofRegularDelta b).doubleConv f D x z = mellinConv b f x * D z := by
-  simp [doubleConv_def, indicator_of_mem hz]
+theorem doubleConv_ofRegularDelta_of_mem (b f D : ℝ → ℝ) (x : ℝ) {z : ℝ}
+    (hz : z ∈ Ioc (0 : ℝ) 1) : (ofRegularDelta b).doubleConv f D x z = mellinConv b f x * D z := by
+  rw [doubleConv_ofRegularDelta, indicator_of_mem hz]
+
+/-- The double convolution with `b (y) δ(1 - w)` against a collinear kernel `K` with coefficient
+function `b`: the collinear convolution `convolveAt K` of the density in `x`, times the
+fragmentation density at `z`, on `(0,1]²`. -/
+theorem doubleConv_ofRegularDelta_eq_convolveAt {K : Kernel} {b : ℝ → ℝ}
+    (hK : IsCollinearKernel K b) (f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
+    (hz : z ∈ Ioc (0 : ℝ) 1) : (ofRegularDelta b).doubleConv f D x z = convolveAt K f x * D z := by
+  rw [doubleConv_ofRegularDelta_of_mem _ _ _ _ hz, hK.convolveAt_eq_mellinConv _ hx]
 
 /-- Transposition exchanges `b (y) δ(1 - w)` with `δ(1 - y) b (w)`. -/
 @[simp]
@@ -419,7 +465,7 @@ theorem doubleConvStructureFunction_diagonal_ofDeltaDelta [Fintype Flavor]
     doubleConvStructureFunction C f D h x z Q2 = ∑ i, c i * f i x Q2 * D h i z Q2 := by
   rw [doubleConvStructureFunction_diagonal C f D h x z hC]
   exact Finset.sum_congr rfl fun i _ => by
-    rw [hc i, CoefficientFunction.doubleConv_ofDeltaDelta _ _ _ hx hz]
+    rw [hc i, CoefficientFunction.doubleConv_ofDeltaDelta_of_mem _ _ _ hx hz]
 
 /-- **Compatibility with `sidisStructureFunction` in a single channel.** If the hard kernel `C'`
 of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` is, at the scale `Q2` and for
@@ -432,8 +478,8 @@ theorem CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel
     (h : Hadron) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) :
     (ofRegularDelta b).doubleConv (fun y => f i y Q2) (fun y => D h i y Q2) x z =
       Scattering.DIS.SIDIS.sidisChannel C' f D h i x z Q2 := by
-  rw [doubleConv_ofRegularDelta _ _ _ _ hz, Scattering.DIS.SIDIS.sidisChannel, DIS.loChannel,
-    hc.convolveAt_eq, ← mellinConv_apply_eq_convolveAt_of_mem _ _ hx, mellinConv_comm]
+  rw [doubleConv_ofRegularDelta_eq_convolveAt hc _ _ hx hz, Scattering.DIS.SIDIS.sidisChannel,
+    DIS.loChannel]
 
 /-- **Compatibility with `sidisStructureFunction` in the fragmentation variable.** If the hard
 kernel `C'` of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` is, at the scale

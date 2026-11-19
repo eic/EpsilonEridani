@@ -37,6 +37,8 @@ coefficient function cannot be interchanged silently. A coefficient function tha
 ## Main results
 
 * `doubleMellinConv_apply_of_mem`: the defining iterated integral on `(0,1]²`.
+* `doubleMellinConv_apply_eq_convolveAt_of_mem`: the same as iterated collinear convolutions.
+* `doubleMellinConv_congr_of_eqOn`: only the values on `(0,1]²` and `(0,1]` enter.
 * `doubleMellinConv_apply_eq_zero_of_notMem_left`, `doubleMellinConv_apply_eq_zero_of_notMem_right`:
   support in `(0,1]²`.
 * `doubleMellinConv_mul`: a product coefficient function factorizes the double convolution.
@@ -84,6 +86,25 @@ theorem doubleMellinConv_apply_of_mem (C : ℝ → ℝ → ℝ) (f D : ℝ → �
     doubleMellinConv C f D x z =
       ∫ y in Icc x 1, (∫ w in Icc z 1, C y w * D (z / w) / w) * f (x / y) / y := by
   simp only [doubleMellinConv_def, mellinConv_apply_of_mem _ _ hx, mellinConv_apply_of_mem _ _ hz]
+
+/-- The double Mellin convolution on `(0,1]²` as iterated collinear convolutions `convolveAt`. -/
+theorem doubleMellinConv_apply_eq_convolveAt_of_mem (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x z : ℝ}
+    (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) :
+    doubleMellinConv C f D x z =
+      convolveAt (collinearKernel f) (fun y => convolveAt (collinearKernel D) (C y) z) x := by
+  simp only [doubleMellinConv_def, mellinConv_apply_eq_convolveAt_of_mem _ _ hx,
+    mellinConv_apply_eq_convolveAt_of_mem _ _ hz]
+
+/-- The double Mellin convolution depends only on the values of the coefficient function on
+`(0,1]²` and of the densities on `(0,1]`. -/
+theorem doubleMellinConv_congr_of_eqOn {C C' : ℝ → ℝ → ℝ} {f f' D D' : ℝ → ℝ}
+    (hC : EqOn (Function.uncurry C) (Function.uncurry C') (Ioc (0 : ℝ) 1 ×ˢ Ioc (0 : ℝ) 1))
+    (hf : EqOn f f' (Ioc (0 : ℝ) 1)) (hD : EqOn D D' (Ioc (0 : ℝ) 1)) :
+    doubleMellinConv C f D = doubleMellinConv C' f' D' := by
+  funext x z
+  rw [doubleMellinConv_def, doubleMellinConv_def]
+  refine congrFun (mellinConv_congr_of_eqOn (fun y hy => ?_) hf) x
+  exact congrFun (mellinConv_congr_of_eqOn (fun w hw => hC (mk_mem_prod hy hw)) hD) z
 
 /-- The double Mellin convolution vanishes when the first momentum fraction lies outside
 `(0,1]`. -/
