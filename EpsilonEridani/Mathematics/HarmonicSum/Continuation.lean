@@ -48,6 +48,8 @@ plane is what controls the behaviour of the densities in momentum-fraction space
 * `EpsilonEridani.complexHarmonic_add_one`: the recurrence `S₁(s + 1) = S₁(s) + 1/(s + 1)`.
 * `EpsilonEridani.complexHarmonic_neg`: the reflection formula.
 * `EpsilonEridani.analyticAt_complexHarmonic`: analyticity away from the negative integers.
+* `EpsilonEridani.add_natCast_ne_zero`, `EpsilonEridani.one_ne_neg_natCast`: the side conditions
+  `s + k ≠ 0` away from the non-positive integers, and `1 ≠ -m`, for analyticity statements.
 * `EpsilonEridani.meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ`:
   the trailing coefficient at each negative integer is `-1`.
 * `EpsilonEridani.meromorphicOrderAt_complexHarmonic_neg_nat_succ` and
@@ -110,6 +112,16 @@ theorem complexHarmonic_ofNat (n : ℕ) [n.AtLeastTwo] :
 /-- Away from the negative integers, `s + 1` avoids the poles `0, -1, -2, …` of `ψ`. -/
 private theorem add_one_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) (m : ℕ) :
     s + 1 ≠ -(m : ℂ) := fun h => hs m (by linear_combination h)
+
+/-- Away from the non-positive integers, every shift `s + k` by a natural number is nonzero: the
+side condition that rational factors such as `1 / (s (s + 1))` need next to `S₁(s)`. -/
+theorem add_natCast_ne_zero {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) (k : ℕ) : s + k ≠ 0 :=
+  fun h => hs k (eq_neg_of_add_eq_zero_left h)
+
+/-- `1` is not a non-positive integer, so the hypotheses `∀ m : ℕ, s ≠ -m` and
+`∀ m : ℕ, s ≠ -(m + 1)` hold at `s = 1`. -/
+theorem one_ne_neg_natCast (m : ℕ) : (1 : ℂ) ≠ -(m : ℂ) := fun h =>
+  Nat.cast_add_one_ne_zero (R := ℂ) m (by linear_combination h)
 
 /-- **The recurrence** `S₁(s + 1) = S₁(s) + 1/(s + 1)`, away from the negative integers. -/
 theorem complexHarmonic_add_one {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) :

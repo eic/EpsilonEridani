@@ -38,10 +38,11 @@ It is defined as the matrix `Species.singletGluonMatrix` of
 and the real flavour number `n_f`. When `n_f` is the number of quark flavours, this is the matrix
 through which the flavour-blind kernel of the four entries acts on the singlet sector.
 
-The pole structure at `N = 1` is the moment-space form of the small-`x` behaviour: `γ_gq` and
-`γ_gg` have simple poles there, with residues `2 C_F` and `2 C_A`, the colour charges of the
-emitting parton, and `γ_qq` and `γ_qg` are analytic there. The pole of `γ_gq` is also visible on
-the moments themselves: `(N - 1) M[P_gq](N) → 2 C_F` as the real index `N` decreases to `1`.
+The pole structure at `N = 1` is the moment-space form of the small-`x` behaviour: for
+non-vanishing colour factors `γ_gq` and `γ_gg` have simple poles there, with residues `2 C_F` and
+`2 C_A`, the colour charges of the emitting parton, and `γ_qq` and `γ_qg` are analytic there.
+The pole of `γ_gq` is also visible on the moments themselves: `(N - 1) M[P_gq](N) → 2 C_F` as
+the real index `N` decreases to `1`.
 
 ## Main definitions
 
@@ -56,16 +57,20 @@ the moments themselves: `(N - 1) M[P_gq](N) → 2 C_F` as the real index `N` dec
   kernel moments at the natural indices `N ≥ 1` and `N ≥ 2`.
 * `gammaGQ_ofReal_eq_moment`, `gammaQG_ofReal_eq_moment`, `gammaQGSinglet_ofReal_eq_moment`: the
   continuations agree with the kernel moments on the real half-lines `N > 1` and `N > 0`.
+* `gammaS_zero_zero`, `gammaS_zero_one`, `gammaS_one_zero`, `gammaS_one_one`: the entries of
+  `γ^S(N)`.
 * `gammaS_natCast_eq_moment`: `γ^S(N)` is the matrix of the kernel moments at natural `N ≥ 2`.
 * `gammaQQ_one`: quark-number conservation, `γ_qq(1) = 0`.
 * `meromorphic_gammaQQ`, `meromorphic_gammaGQ`, `meromorphic_gammaQG`, `meromorphic_gammaGG`:
   the entries of `γ^S` are meromorphic on `ℂ`.
 * `analyticAt_gammaQQ`, `analyticAt_gammaQG`, `analyticAt_gammaGQ`, `analyticAt_gammaGG`: the
-  regions of analyticity; in particular `γ_qq` and `γ_qg` are analytic at `N = 1`.
-* `meromorphicOrderAt_gammaGQ_one`, `meromorphicOrderAt_gammaGG_one`: simple poles at `N = 1`.
+  regions of analyticity; in particular `γ_qq`, `γ_qg` and `2 n_f γ_qg` are analytic at `N = 1`.
+* `meromorphicOrderAt_gammaGQ_one`, `meromorphicOrderAt_gammaGG_one`: simple poles at `N = 1`
+  (for `C_F ≠ 0`, resp. `C_A ≠ 0`).
 * `meromorphicTrailingCoeffAt_gammaGQ_one`, `meromorphicTrailingCoeffAt_gammaGG_one`,
   `tendsto_sub_one_mul_gammaGQ`, `tendsto_sub_one_mul_gammaGG`: their residues `2 C_F` and
-  `2 C_A`, and `tendsto_sub_one_mul_moment_pgq` for the moments of `P_gq`.
+  `2 C_A`, and `tendsto_sub_one_mul_moment_pgq` for the moments of `P_gq`. All hold without
+  hypotheses except `meromorphicTrailingCoeffAt_gammaGG_one`, which needs `C_A ≠ 0`.
 * `singletGluon_flavorBlindMatrix_mulVec_eq_gammaS_mulVec`: when `n_f` is the number of quark
   flavours, `γ^S` is the matrix by which the flavour-blind matrix of the four anomalous dimensions
   acts on `(Σ, g)`.
@@ -171,7 +176,7 @@ theorem gammaQG_ofReal_eq_moment {N : ℝ} (hN : 0 < N) : gammaQG c N = (pqg c).
 half-line `N > 0`. -/
 theorem gammaQGSinglet_ofReal_eq_moment {N : ℝ} (hN : 0 < N) :
     gammaQGSinglet c N = (pqgSinglet c).moment N := by
-  rw [gammaQGSinglet_apply, gammaQG_ofReal_eq_moment c hN, pqgSinglet_def, KernelForm.moment_smul]
+  rw [gammaQGSinglet_apply, gammaQG_apply, moment_pqgSinglet c hN]
   push_cast
   ring
 
@@ -220,12 +225,6 @@ theorem meromorphic_gammaGG : Meromorphic (gammaGG c) := by
   have h := meromorphic_complexHarmonic
   unfold gammaGG
   fun_prop
-
-private theorem add_natCast_ne_zero {N : ℂ} (hN : ∀ m : ℕ, N ≠ -m) (k : ℕ) : N + k ≠ 0 :=
-  fun h => hN k (eq_neg_of_add_eq_zero_left h)
-
-private theorem one_ne_neg_natCast (m : ℕ) : (1 : ℂ) ≠ -(m : ℂ) := fun h =>
-  Nat.cast_add_one_ne_zero (R := ℂ) m (by linear_combination h)
 
 /-- `γ_qq` is analytic away from the non-positive integers. -/
 @[fun_prop]
@@ -289,6 +288,11 @@ theorem analyticAt_gammaQQ_one : AnalyticAt ℂ (gammaQQ c) 1 :=
 theorem analyticAt_gammaQG_one : AnalyticAt ℂ (gammaQG c) 1 :=
   analyticAt_gammaQG c one_ne_zero (by norm_num) (by norm_num)
 
+/-- `2 n_f γ_qg`, the quark-from-gluon entry of `γ^S`, is analytic at `N = 1`. -/
+@[fun_prop]
+theorem analyticAt_gammaQGSinglet_one : AnalyticAt ℂ (gammaQGSinglet c) 1 :=
+  analyticAt_gammaQGSinglet c one_ne_zero (by norm_num) (by norm_num)
+
 /-! ### The poles at `N = 1` -/
 
 /-- The analytic factor `(N - 1) γ_gq(N)` of `γ_gq` at its pole at `N = 1`. -/
@@ -312,8 +316,9 @@ private theorem gammaGQAnalyticFactor_one : gammaGQAnalyticFactor c 1 = 2 * c.cF
 theorem tendsto_sub_one_mul_gammaGQ :
     Tendsto (fun N => (N - 1) * gammaGQ c N) (𝓝[≠] 1) (𝓝 (2 * c.cF)) := by
   rw [← gammaGQAnalyticFactor_one]
-  exact tendsto_sub_smul_of_eventually_eq_inv_smul (analyticAt_gammaGQAnalyticFactor c).continuousAt
-    (Eventually.of_forall (gammaGQ_eq_inv_smul c))
+  simpa only [smul_eq_mul] using
+    tendsto_sub_smul_of_eventually_eq_inv_smul (analyticAt_gammaGQAnalyticFactor c).continuousAt
+      (Eventually.of_forall (gammaGQ_eq_inv_smul c))
 
 /-- **`γ_gq` has a simple pole at `N = 1`** whenever `C_F ≠ 0`. -/
 theorem meromorphicOrderAt_gammaGQ_one (hc : c.cF ≠ 0) :
@@ -373,8 +378,9 @@ private theorem gammaGGAnalyticFactor_one : gammaGGAnalyticFactor c 1 = 2 * c.cA
 theorem tendsto_sub_one_mul_gammaGG :
     Tendsto (fun N => (N - 1) * gammaGG c N) (𝓝[≠] 1) (𝓝 (2 * c.cA)) := by
   rw [← gammaGGAnalyticFactor_one]
-  exact tendsto_sub_smul_of_eventually_eq_inv_smul (analyticAt_gammaGGAnalyticFactor c).continuousAt
-    (gammaGG_eq_inv_smul c)
+  simpa only [smul_eq_mul] using
+    tendsto_sub_smul_of_eventually_eq_inv_smul (analyticAt_gammaGGAnalyticFactor c).continuousAt
+      (gammaGG_eq_inv_smul c)
 
 /-- **`γ_gg` has a simple pole at `N = 1`** whenever `C_A ≠ 0`. -/
 theorem meromorphicOrderAt_gammaGG_one (hc : c.cA ≠ 0) :
@@ -397,13 +403,34 @@ theorem meromorphicTrailingCoeffAt_gammaGG_one (hc : c.cA ≠ 0) :
 singlet and the gluon, with the row index the daughter and the column index the parent:
 `γ^S(N) = !![γ_qq(N), 2 n_f γ_qg(N); γ_gq(N), γ_gg(N)]`, the matrix `Species.singletGluonMatrix`
 of the four anomalous dimensions at the real flavour number `n_f`. -/
-noncomputable abbrev gammaS (N : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
+noncomputable def gammaS (N : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   Particles.Parton.Species.singletGluonMatrix (gammaQQ c N) (gammaQG c N) (gammaGQ c N)
     (gammaGG c N) c.nF
 
+theorem gammaS_def (N : ℂ) :
+    gammaS c N = Particles.Parton.Species.singletGluonMatrix (gammaQQ c N) (gammaQG c N)
+      (gammaGQ c N) (gammaGG c N) c.nF :=
+  (rfl)
+
+/-- The quark-from-quark entry of `γ^S(N)` is `γ_qq(N)`. -/
+@[simp]
+theorem gammaS_zero_zero (N : ℂ) : gammaS c N 0 0 = gammaQQ c N := by
+  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_zero_zero]
+
 /-- The quark-from-gluon entry of `γ^S(N)` is the singlet-normalised `2 n_f γ_qg(N)`. -/
-theorem gammaS_zero_one (N : ℂ) : gammaS c N 0 1 = gammaQGSinglet c N :=
-  Particles.Parton.Species.singletGluonMatrix_zero_one _ _ _ _ _
+@[simp]
+theorem gammaS_zero_one (N : ℂ) : gammaS c N 0 1 = gammaQGSinglet c N := by
+  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_zero_one, gammaQGSinglet_apply]
+
+/-- The gluon-from-quark entry of `γ^S(N)` is `γ_gq(N)`. -/
+@[simp]
+theorem gammaS_one_zero (N : ℂ) : gammaS c N 1 0 = gammaGQ c N := by
+  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_one_zero]
+
+/-- The gluon-from-gluon entry of `γ^S(N)` is `γ_gg(N)`. -/
+@[simp]
+theorem gammaS_one_one (N : ℂ) : gammaS c N 1 1 = gammaGG c N := by
+  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_one_one]
 
 open Particles.Parton.Species in
 /-- When `n_f` is the number of quark flavours, `γ^S(N)` is the matrix by which the
@@ -414,7 +441,7 @@ theorem singletGluon_flavorBlindMatrix_mulVec_eq_gammaS_mulVec {Flavor : Type} [
     singletGluon
         (flavorBlindMatrix (gammaQQ c N) (gammaQG c N) (gammaGQ c N) (gammaGG c N) *ᵥ v) =
       gammaS c N *ᵥ singletGluon v := by
-  rw [singletGluon_flavorBlindMatrix_mulVec, h]
+  rw [singletGluon_flavorBlindMatrix_mulVec, h, gammaS_def]
 
 /-- At natural `N ≥ 2`, where all four kernel moments converge, `γ^S(N)` is the matrix of the
 moments of the four kernels, with the singlet-normalised `2 n_f P_qg` in the quark-from-gluon
@@ -425,25 +452,25 @@ theorem gammaS_natCast_eq_moment {n : ℕ} (hn : 2 ≤ n) :
         ((↑) : ℝ → ℂ) := by
   have hn0 : (0 : ℝ) < n := by exact_mod_cast (show 0 < n by omega)
   have hn1 : (1 : ℝ) < n := by exact_mod_cast (show 1 < n by omega)
-  rw [gammaS, Particles.Parton.Species.singletGluonMatrix_def,
-    gammaQQ_natCast_eq_moment c (by omega), gammaGG_natCast_eq_moment c hn,
-    show ((n : ℂ)) = ((n : ℝ) : ℂ) by norm_cast, gammaQG_ofReal_eq_moment c hn0,
-    gammaGQ_ofReal_eq_moment c hn1, pqgSinglet_def, KernelForm.moment_smul]
+  have hqg : gammaQGSinglet c n = (pqgSinglet c).moment n := by
+    simpa only [ofReal_natCast] using gammaQGSinglet_ofReal_eq_moment c hn0
+  have hgq : gammaGQ c n = (pgq c).moment n := by
+    simpa only [ofReal_natCast] using gammaGQ_ofReal_eq_moment c hn1
   ext i j
-  fin_cases i <;> fin_cases j <;> simp
+  fin_cases i <;> fin_cases j <;>
+    simp [gammaQQ_natCast_eq_moment c (n := n) (by omega), hqg, hgq, gammaGG_natCast_eq_moment c hn]
 
 /-- **The momentum sum rule in moment space.** `(1, 1)` is a left null vector of `γ^S(2)`: both
 columns of the singlet matrix sum to zero at the momentum index `N = 2`. -/
 theorem one_vecMul_gammaS_two_eq_zero : 1 ᵥ* gammaS c 2 = 0 := by
   have h := gammaS_natCast_eq_moment c (le_refl 2)
   push_cast at h
-  ext j
-  fin_cases j
-  · simpa [h, vecMul, dotProduct, Fin.sum_univ_two, -moment_pqq_two, -moment_pgq_two] using
-      congrArg ((↑) : ℝ → ℂ) (moment_pqq_two_add_moment_pgq_two_eq_zero c)
-  · simpa [h, vecMul, dotProduct, Fin.sum_univ_two, add_comm, -moment_pgg_two,
-      -moment_pqgSinglet_two] using
-      congrArg ((↑) : ℝ → ℂ) (moment_pgg_two_add_moment_pqgSinglet_two_eq_zero c)
+  rw [h]
+  refine funext (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;>
+    simp only [vecMul, dotProduct, Fin.sum_univ_two, Pi.one_apply, one_mul, Pi.zero_apply,
+      map_apply, of_apply, cons_val_zero, cons_val_one]
+  · exact_mod_cast moment_pqq_two_add_moment_pgq_two_eq_zero c
+  · exact_mod_cast (add_comm _ _).trans (moment_pgg_two_add_moment_pqgSinglet_two_eq_zero c)
 
 end Evolution
 end Factorization
