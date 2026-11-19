@@ -138,11 +138,6 @@ lemma apply_sub_smul_pair (g : Bilin V) (u x y : V) (a b : ℝ) :
   rw [h1, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, h3 x, h3 u]
   ring
 
-/-- Expansion of a bilinear form on a difference paired with itself. -/
-lemma apply_sub_sub_self (g : Bilin V) (x y : V) :
-    g (x - y) (x - y) = g x x - g x y - g y x + g y y := by
-  simpa using apply_sub_smul_pair g y x x 1 1
-
 /-- A linear endomorphism preserving the background form `g`. For `g` a Lorentz metric these
 are exactly the (linear) Lorentz transformations. -/
 def IsIsometry (g : Bilin V) (f : V →ₗ[ℝ] V) : Prop :=
@@ -241,7 +236,8 @@ lemma det_reflect_comp_reflect (g : Bilin V) {u u' : V} (hu : g u u ≠ 0) (hu' 
 lemma reflect_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
     (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u = u' := by
   have hdd : g (u - u') (u - u') = 2 * g (u - u') u := by
-    rw [apply_sub_sub_self, map_sub, LinearMap.sub_apply, hSymm.eq u u', ← hnorm]
+    rw [Kinematics.Bilin.apply_sub_self g hSymm, map_sub, LinearMap.sub_apply, hSymm.eq u u',
+      ← hnorm]
     ring
   have h0 : g (u - u') u ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero])
   have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u = 1 := by
@@ -1349,13 +1345,21 @@ noncomputable def uniquenessWit : UniquenessAssumptions gWit kWit :=
   uniquenessAssumptionsOfSpectator (e := ((0, 0, 1) : ℝ × ℝ × ℝ)) gWit_isSymm (by norm_num)
     (by simp) (by simp) (by simp) (by norm_num)
 
+/-- The first `F1` probe vector of `uniquenessWit` is the spectator `(0,0,1)`. -/
+@[simp] lemma uniquenessWit_vF1 : uniquenessWit.vF1 = ((0, 0, 1) : ℝ × ℝ × ℝ) := by
+  simp [uniquenessWit]
+
+/-- The second `F1` probe vector of `uniquenessWit` is the spectator `(0,0,1)`. -/
+@[simp] lemma uniquenessWit_wF1 : uniquenessWit.wF1 = ((0, 0, 1) : ℝ × ℝ × ℝ) := by
+  simp [uniquenessWit]
+
 /-- The first `F2` probe vector of `uniquenessWit` is the null vector `(1,0,1)`. -/
-lemma uniquenessWit_vF2 : uniquenessWit.vF2 = ((1, 0, 1) : ℝ × ℝ × ℝ) := by
+@[simp] lemma uniquenessWit_vF2 : uniquenessWit.vF2 = ((1, 0, 1) : ℝ × ℝ × ℝ) := by
   simp [uniquenessWit]
 
 /-- The second `F2` probe vector of `uniquenessWit` is also `(1,0,1)`: the general
 `p_T - (p_T·p_T / u·u) u` of `uniquenessAssumptionsOfSpectator` evaluates to it here. -/
-lemma uniquenessWit_wF2 : uniquenessWit.wF2 = ((1, 0, 1) : ℝ × ℝ × ℝ) := by
+@[simp] lemma uniquenessWit_wF2 : uniquenessWit.wF2 = ((1, 0, 1) : ℝ × ℝ × ℝ) := by
   simp [uniquenessWit]
 
 /-- **`SpectatorAssumptions` is satisfiable.** On the witness kinematics the spectator

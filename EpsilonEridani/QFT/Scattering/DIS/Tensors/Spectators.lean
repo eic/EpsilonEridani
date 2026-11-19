@@ -11,9 +11,10 @@ public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 # Spectator frames and turns of the spectator plane
 
 Kinematic inputs of the parity-odd sector (`Tensors.ParityOdd`) and of the three-coefficient
-decomposition (`Tensors.Decomposition`). Like `SpectatorAssumptions` they are facts about `g`,
-`p`, `q` and the isometry group, not about the hadronic tensor; they supply the determinant-one
-stabilizer elements that `IsProperLorentzCovariant` constrains.
+decomposition (`Tensors.Decomposition`). Like `SpectatorAssumptions` they are, apart from the
+last result below, facts about `g`, `p`, `q` and the isometry group rather than about the
+hadronic tensor; they supply the determinant-one stabilizer elements that
+`IsProperLorentzCovariant` constrains.
 
 ## Main definitions
 
@@ -30,6 +31,9 @@ stabilizer elements that `IsProperLorentzCovariant` constrains.
 - `exists_half_turn`: two orthogonal spectators are both reversed by such an element.
 - `exists_quarter_turn`: two orthogonal spectators of equal norm are turned into each other,
   `u ↦ u' ↦ -u`, by such an element.
+- `IsProperLorentzCovariant.apply_eq_of_spectatorPair`: the half-turn removes the mixed
+  `p_T`-spectator components of a conserved, properly covariant tensor, leaving `W(p_T, p_T)`
+  and its four spectator components.
 -/
 
 public section
@@ -92,9 +96,8 @@ lemma exists_quarter_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     (hnorm : g u u = g u' u') :
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
       f u = u' ∧ f u' = -u := by
-  have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
   have hdd : g (u - u') (u - u') = 2 * g u u := by
-    rw [Bilin.apply_sub_sub_self, huu', hu'u, ← hnorm]
+    rw [Bilin.apply_sub_self g hSymm, huu', ← hnorm]
     ring
   have hdd0 : g (u - u') (u - u') ≠ 0 := by
     rw [hdd]

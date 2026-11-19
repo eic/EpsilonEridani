@@ -20,9 +20,13 @@ the normalization of `ε` (Devenish & Cooper-Sarkar, *Deep Inelastic Scattering*
 Halzen & Martin, *Quarks and Leptons* (1984), ch. 8). This module proves that statement for the
 real bilinear forms of `Tensors.Basic`: covariance under the proper kinematic stabilizer and
 current conservation leave exactly the transverse pair `fromF1F2` and one parity-odd structure
-`A`, and the three coefficients are determined by the tensor. As in `fromF1F2`, the Lean
-coefficient `F₂` is the literature's `F₂ / (p·q)`; the Lean `F₁` is the literature's `F₁`. It
-is the statement that licenses reading three structure functions off a measured cross section.
+`A`, and the three coefficients are determined by the tensor. The general theorems take any
+non-zero parity-odd `A`, so `c` is fixed only relative to that choice; it is the literature's
+coefficient when `A` is the contraction `ε(·, ·, p, q)` with the standard normalization of `ε`,
+which is the structure used for the four-dimensional witness `Witness.aFour`. As in
+`fromF1F2`, the Lean coefficient `F₂` is the literature's `F₂ / (p·q)`; the Lean `F₁` is the
+literature's `F₁`. It is the statement that licenses reading three structure functions off a
+measured cross section.
 
 No symmetry hypothesis is placed on `W`. The symmetric part comes out as the parity-even pair and
 the antisymmetric part as the parity-odd term (`inv_two_smul_fromF1F2_add_smul_add_flip`,
