@@ -349,6 +349,10 @@ theorem isTensorPair_def {c c' : ChannelLabel} :
       (c.L + 1 = c.J ∧ c'.L = c.J + 1 ∨ c'.L + 1 = c.J ∧ c.L = c.J + 1) :=
   (Iff.rfl)
 
+/-- Being a tensor pair is decided by comparing the spins, orbital and total angular momenta. -/
+instance {c c' : ChannelLabel} : Decidable (c.IsTensorPair c') :=
+  decidable_of_iff' _ isTensorPair_def
+
 theorem IsTensorPair.symm {c c' : ChannelLabel} (h : c.IsTensorPair c') : c'.IsTensorPair c := by
   rw [isTensorPair_def] at h ⊢
   omega
