@@ -445,8 +445,9 @@ theorem transpose_flavorBlindMatrix :
   cases s <;> cases t <;> simp [eq_comm]
 
 /-- The `2 × 2` matrix by which a flavour-blind kernel acts on the pair `(Σ, g)` of the quark
-singlet and the gluon, for `n_f` quark flavours: its quark-from-gluon entry is the singlet
-combination `2 n_f qg`. -/
+singlet and the gluon: its quark-from-gluon entry is the singlet combination `2 n_f qg`. The flavour
+number `nf` is a scalar, `Fintype.card Flavor` in `singletGluon_flavorBlindMatrix_mulVec`, and may
+be a real parameter such as the `n_f` of a set of colour factors. -/
 def singletGluonMatrix (nf : R) : Matrix (Fin 2) (Fin 2) R :=
   !![qq, 2 * nf * qg; gq, gg]
 
