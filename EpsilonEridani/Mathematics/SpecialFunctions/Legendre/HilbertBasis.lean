@@ -35,9 +35,9 @@ applied to the exact-degree family `Pₙ` (`degree_legendre`).
 * `coeFn_legendreHilbertBasis`: the `n`-th basis vector is the function `√((2n + 1) / 2) Pₙ (x)`;
 * `legendreHilbertBasis_repr_apply`: the `n`-th coordinate of `f` is its Legendre coefficient
   `√((2n + 1) / 2) ∫₋₁¹ Pₙ (x) f (x) dx`;
-* `ae_eq_zero_of_forall_setIntegral_legendre_smul_eq_zero`: completeness in its elementary form,
+* `ae_eq_zero_of_forall_setIntegral_Icc_legendre_smul_eq_zero`: completeness in its elementary form,
   a square-integrable function on `[-1, 1]` orthogonal to every `Pₙ` vanishes almost everywhere;
-* `ae_eq_of_forall_setIntegral_legendre_smul_eq`: a square-integrable function on `[-1, 1]` is
+* `ae_eq_of_forall_setIntegral_Icc_legendre_smul_eq`: a square-integrable function on `[-1, 1]` is
   determined almost everywhere by its Legendre coefficients.
 
 ## References
@@ -94,7 +94,8 @@ theorem coeFn_legendreHilbertBasis (n : ℕ) :
   refine (TauCeti.coeFn_hilbertBasisOfOrthogonalSystem _ _ _ _ _ _ _ _ _ n).trans
     (ae_of_all _ fun x => ?_)
   simp only [Real.sqrt_one, mul_one]
-  rw [div_eq_mul_inv, ← Real.sqrt_inv, inv_div, mul_comm]
+  rw [div_eq_mul_inv ((legendre n).eval x), ← Real.sqrt_inv, inv_div,
+    mul_comm ((legendre n).eval x)]
 
 variable {𝕜}
 
@@ -106,11 +107,12 @@ theorem legendreHilbertBasis_repr_apply (f : Lp 𝕜 2 (volume.restrict (Icc (-1
   rw [HilbertBasis.repr_apply_apply, L2.inner_def, ← integral_smul]
   refine integral_congr_ae ?_
   filter_upwards [coeFn_legendreHilbertBasis 𝕜 n] with x hx
-  rw [hx, RCLike.inner_apply', RCLike.conj_ofReal, smul_smul, RCLike.real_smul_eq_coe_mul]
+  rw [hx, RCLike.inner_apply', RCLike.algebraMap_eq_ofReal, RCLike.conj_ofReal, smul_smul,
+    RCLike.real_smul_eq_coe_mul]
 
 /-- **Completeness of the Legendre polynomials.** A square-integrable function on `[-1, 1]` whose
 integral against every Legendre polynomial vanishes is zero almost everywhere. -/
-theorem ae_eq_zero_of_forall_setIntegral_legendre_smul_eq_zero {f : ℝ → 𝕜}
+theorem ae_eq_zero_of_forall_setIntegral_Icc_legendre_smul_eq_zero {f : ℝ → 𝕜}
     (hf : MemLp f 2 (volume.restrict (Icc (-1 : ℝ) 1)))
     (h : ∀ n, ∫ x in Icc (-1 : ℝ) 1, (legendre n).eval x • f x = 0) :
     f =ᵐ[volume.restrict (Icc (-1 : ℝ) 1)] 0 := by
@@ -127,7 +129,7 @@ theorem ae_eq_zero_of_forall_setIntegral_legendre_smul_eq_zero {f : ℝ → 𝕜
 
 /-- **A function is determined by its Legendre coefficients.** Two square-integrable functions on
 `[-1, 1]` with the same integral against every Legendre polynomial agree almost everywhere. -/
-theorem ae_eq_of_forall_setIntegral_legendre_smul_eq {f g : ℝ → 𝕜}
+theorem ae_eq_of_forall_setIntegral_Icc_legendre_smul_eq {f g : ℝ → 𝕜}
     (hf : MemLp f 2 (volume.restrict (Icc (-1 : ℝ) 1)))
     (hg : MemLp g 2 (volume.restrict (Icc (-1 : ℝ) 1)))
     (h : ∀ n, ∫ x in Icc (-1 : ℝ) 1, (legendre n).eval x • f x =
@@ -137,7 +139,7 @@ theorem ae_eq_of_forall_setIntegral_legendre_smul_eq {f g : ℝ → 𝕜}
       Integrable (fun x => (legendre n).eval x • u x) (volume.restrict (Icc (-1 : ℝ) 1)) :=
     fun n u hu => IntegrableOn.continuousOn_smul (hu.integrable one_le_two)
       (legendre n).continuous.continuousOn isCompact_Icc
-  refine (ae_eq_zero_of_forall_setIntegral_legendre_smul_eq_zero (hf.sub hg) fun n => ?_).mono
+  refine (ae_eq_zero_of_forall_setIntegral_Icc_legendre_smul_eq_zero (hf.sub hg) fun n => ?_).mono
     fun x hx => sub_eq_zero.mp hx
   simp only [Pi.sub_apply, smul_sub]
   rw [integral_sub (hint n hf) (hint n hg), h n, sub_self]
