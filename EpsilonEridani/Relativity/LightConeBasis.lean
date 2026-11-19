@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 
 /-!
@@ -42,6 +43,10 @@ transverse parts of momenta with respect to such a basis.
   the light-cone components `v± = (v⁰ ± vⁱ)/√2`.
 * `LightConeBasis.mem_transverse_minkowskiAxis_iff`: a vector is transverse to the standard
   light-cone basis along axis `i` iff its time and `i`-th spatial components vanish.
+* `LightConeBasis.minkowskiProduct_nPlus_eq_minus`,
+  `LightConeBasis.minkowskiProduct_nMinus_eq_plus`,
+  `LightConeBasis.minkowskiProduct_eq_plus_mul_minus_add`: for any light-cone basis of Minkowski
+  space, `n₊ · v = v⁻`, `n₋ · v = v⁺` and `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
 * `LightConeBasis.finrank_transverse_minkowskiProduct_add_one_eq`: in `d + 1`-dimensional
   Minkowski space the transverse projector of any light-cone basis has rank `d - 1`.
 * `LightConeBasis.finrank_transverse_minkowskiProduct_eq_two`: in four-dimensional Minkowski
@@ -145,6 +150,25 @@ theorem mem_transverse_minkowskiAxis_iff (i : Fin d) (v : Vector d) :
   rw [mem_transverse_iff, minkowskiAxis_plus_apply, minkowskiAxis_minus_apply, div_eq_zero_iff,
     div_eq_zero_iff, or_iff_left h, or_iff_left h]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> exact ⟨by linarith, by linarith⟩
+
+/-- For any light-cone basis of Minkowski space, `n₊ · v = v⁻`. -/
+@[simp]
+theorem minkowskiProduct_nPlus_eq_minus (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm)
+    (v : Vector d) : ⟪L.nPlus, v⟫ₘ = L.minus v := by
+  rw [minus_apply, ContinuousLinearMap.toBilinForm_apply]
+
+/-- For any light-cone basis of Minkowski space, `n₋ · v = v⁺`. -/
+@[simp]
+theorem minkowskiProduct_nMinus_eq_plus (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm)
+    (v : Vector d) : ⟪L.nMinus, v⟫ₘ = L.plus v := by
+  rw [plus_apply, ContinuousLinearMap.toBilinForm_apply]
+
+/-- The Minkowski product in light-cone components, `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`. -/
+theorem minkowskiProduct_eq_plus_mul_minus_add
+    (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm) (u v : Vector d) :
+    ⟪u, v⟫ₘ = L.plus u * L.minus v + L.minus u * L.plus v +
+      ⟪L.transverseProj u, L.transverseProj v⟫ₘ :=
+  L.bilinForm_eq_plus_mul_minus_add EpsilonEridani.isSymm_toBilinForm_minkowskiProduct.isRefl u v
 
 /-- For any light-cone basis of `d + 1`-dimensional Minkowski space the transverse subspace, the
 range of the transverse projector (`L.isProj_transverseProj.range`), has dimension `d - 1`. -/
