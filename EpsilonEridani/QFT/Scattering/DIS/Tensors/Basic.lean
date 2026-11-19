@@ -22,7 +22,8 @@ This module introduces tensor objects for inclusive DIS:
   current-conservation assumptions.
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
   terms of structure functions `F1` and `F2` written against it.
-- A uniqueness theorem for decomposition coefficients under probe-vector assumptions.
+- A uniqueness theorem for decomposition coefficients under probe-vector assumptions, with
+  probe vectors built from one non-null spectator (`uniquenessAssumptionsOfSpectator`).
 - Pointwise contraction lemmas used by later cross-section derivations.
 
 ## Conventions
@@ -219,12 +220,14 @@ lemma det_reflect_comp_reflect (g : Bilin V) {u u' : V} (hu : g u u ≠ 0) (hu' 
 lemma reflect_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
     (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u = u' := by
   have hdd : g (u - u') (u - u') = 2 * g (u - u') u := by
-    simp only [map_sub, LinearMap.sub_apply, hSymm.eq u u', ← hnorm]
+    have h := apply_sub_smul_pair g u' u u 1 1
+    simp only [one_smul, one_mul, mul_one] at h
+    rw [h, map_sub, LinearMap.sub_apply, hSymm.eq u u', ← hnorm]
     ring
   have h0 : g (u - u') u ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero])
   have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u = 1 := by
     rw [hdd]
-    field_simp
+    field_simp [h0]
   rw [reflect_apply, hc, one_smul]
   abel
 
@@ -233,14 +236,24 @@ lemma reflect_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
 lemma reflect_sub_apply_right (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
     (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) : reflect g (u - u') u' = u := by
   have hdd : g (u - u') (u - u') = -(2 * g (u - u') u') := by
-    simp only [map_sub, LinearMap.sub_apply, hSymm.eq u u', hnorm]
+    have h := apply_sub_smul_pair g u' u u 1 1
+    simp only [one_smul, one_mul, mul_one] at h
+    rw [h, map_sub, LinearMap.sub_apply, hSymm.eq u u', hnorm]
     ring
   have h0 : g (u - u') u' ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero, neg_zero])
   have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u' = -1 := by
     rw [hdd]
-    field_simp
+    field_simp [h0]
   rw [reflect_apply, hc, neg_smul, one_smul]
   abel
+
+/-- Rescaling `v` by `√(g u u / g v v)` gives it the norm of `u`, when that ratio is
+non-negative. -/
+lemma apply_smul_sqrt_div_self (g : Bilin V) {u v : V} (hv : g v v ≠ 0)
+    (h : 0 ≤ g u u / g v v) :
+    g (√(g u u / g v v) • v) (√(g u u / g v v) • v) = g u u := by
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [← mul_assoc, Real.mul_self_sqrt h, div_mul_cancel₀ _ hv]
 
 /-- Exchanging the slots of a symmetric form plus a multiple of an alternating form reverses
 only the alternating term. -/
@@ -667,6 +680,15 @@ lemma IsProperLorentzCovariant.apply_pTransverse_eq_zero_of_apply_eq_neg {g : Bi
   Bilin.apply_eq_zero_of_apply_eq_self_of_apply_eq_neg (hW f hf hdet _ _)
     (stabilizer_fixes_pTransverse g K hf) hfu
 
+/-- A properly covariant tensor annihilates `p_T` in the second slot against any vector that a
+determinant-one stabilizer element reverses. -/
+lemma IsProperLorentzCovariant.apply_pTransverse_right_eq_zero_of_apply_eq_neg {g : Bilin V}
+    {K : DisKinematics V} {W : Bilin V} (hW : IsProperLorentzCovariant g K W)
+    {f : V →ₗ[ℝ] V} (hf : IsKinematicStabilizer g K f) (hdet : LinearMap.det f = 1)
+    {u : V} (hfu : f u = -u) : W u (pTransverse g K) = 0 := by
+  rw [← LinearMap.BilinForm.flip_apply]
+  exact hW.flip.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hfu
+
 /-- The transverse metric projector is Lorentz covariant. -/
 lemma transverseMetric_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
     IsLorentzCovariant g K (transverseMetric g K) := by
@@ -960,6 +982,57 @@ lemma decomposition_unique
     exact sub_eq_zero.mp hSub
   exact ⟨hF1, hF2⟩
 
+/-- The probe pairs of `UniquenessAssumptions` supplied by one non-null spectator `e`:
+`(e, e)` sees only the transverse projector, and `(p_T + e, p_T - (p_T·p_T / e·e) e)` sees only
+`p_T ⊗ p_T`, which needs `p_T` to be non-null. -/
+noncomputable def uniquenessAssumptionsOfSpectator {g : Bilin V} {K : DisKinematics V}
+    (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0)
+    {e : V} (heq : g K.q e = 0) (heT : g (pTransverse g K) e = 0) (he : g e e ≠ 0) :
+    UniquenessAssumptions g K where
+  vF1 := e
+  wF1 := e
+  transverse_nonzero := by
+    rw [transverseMetric_apply, heq, mul_zero, mul_zero, add_zero, neg_ne_zero]
+    exact he
+  pT_outer_zero := by rw [heT, mul_zero]
+  vF2 := pTransverse g K + e
+  wF2 := pTransverse g K - (g (pTransverse g K) (pTransverse g K) / g e e) • e
+  transverse_zero := by
+    have hqT : g K.q (pTransverse g K) = 0 := by
+      rw [hSymm.eq, pTransverse_orthogonal_q g K hQ2]
+    have heT' : g e (pTransverse g K) = 0 := by rw [hSymm.eq, heT]
+    rw [transverseMetric_apply]
+    simp only [map_add, map_sub, map_smul, LinearMap.add_apply, smul_eq_mul, hqT, heq, heT,
+      heT']
+    field_simp [he]
+    ring
+  pT_outer_nonzero := by
+    simp only [map_add, map_sub, map_smul, smul_eq_mul, heT, mul_zero, add_zero, sub_zero]
+    exact mul_ne_zero hTT hTT
+
+section uniquenessAssumptionsOfSpectator
+
+variable {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0)
+  (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) {e : V} (heq : g K.q e = 0)
+  (heT : g (pTransverse g K) e = 0) (he : g e e ≠ 0)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_vF1 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).vF1 = e := (rfl)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_wF1 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).wF1 = e := (rfl)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_vF2 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).vF2 = pTransverse g K + e :=
+  (rfl)
+
+@[simp] lemma uniquenessAssumptionsOfSpectator_wF2 :
+    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he).wF2 =
+      pTransverse g K - (g (pTransverse g K) (pTransverse g K) / g e e) • e :=
+  (rfl)
+
+end uniquenessAssumptionsOfSpectator
+
 /-!
 
 ## Exhaustion: covariance and conservation leave exactly two structures
@@ -1019,10 +1092,8 @@ private lemma covariant_spectator_apply_self (g : Bilin V) (K : DisKinematics V)
   set s := √(g e e / g u u)
   have hs : s ^ 2 * g u u = g e e := by
     rw [Real.sq_sqrt (div_nonneg_of_nonpos hee.le huu.le), div_mul_cancel₀ _ huu.ne]
-  have hsu : g e e = g (s • u) (s • u) := by
-    rw [← hs, map_smul, map_smul]
-    simp only [LinearMap.smul_apply, smul_eq_mul]
-    ring
+  have hsu : g e e = g (s • u) (s • u) :=
+    (Bilin.apply_smul_sqrt_div_self g huu.ne (div_nonneg_of_nonpos hee.le huu.le)).symm
   obtain ⟨f, hf, hfe⟩ := hS.transitive e (s • u) heq heT
     (by rw [map_smul, huq, smul_zero]) (by rw [map_smul, huT, smul_zero]) hsu
   have h := hW f hf e e
