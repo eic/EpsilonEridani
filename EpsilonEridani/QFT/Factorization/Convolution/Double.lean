@@ -26,9 +26,10 @@ the outer one in `x`. In each variable the density is evaluated at the ratio (`f
 Exchanging the roles of the two densities is a symmetry only together with the transposition
 `C (y, w) ↦ C (w, y)` of the coefficient function, provided the integrand is jointly integrable on
 `[x, 1] × [z, 1]` (`doubleMellinConv_swap`, by Fubini). Without
-the transposition the exchange fails (`exists_doubleMellinConv_ne`), so the two arguments of a
-coefficient function cannot be interchanged silently. A coefficient function that is a product
-`A (y) B (w)` gives the product of the two single convolutions (`doubleMellinConv_mul`).
+the transposition the exchange fails (`exists_doubleMellinConv_swap_densities_ne`), so the two
+arguments of a coefficient function cannot be interchanged silently. A coefficient function
+that is a product `A (y) B (w)` gives the product of the two single convolutions
+(`doubleMellinConv_mul`).
 
 ## Main definitions
 
@@ -46,7 +47,8 @@ coefficient function cannot be interchanged silently. A coefficient function tha
   `doubleMellinConv_zero_density_right`: the zero coefficient function and the zero densities.
 * `doubleMellinConv_swap`: exchanging the two densities transposes the coefficient function,
   under joint integrability.
-* `exists_doubleMellinConv_ne`: the exchange without transposition is not a symmetry.
+* `exists_doubleMellinConv_swap_densities_ne`: the exchange without transposition is not a
+  symmetry.
 
 ## References
 
@@ -197,7 +199,7 @@ theorem doubleMellinConv_swap (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x z
 /-- **Exchanging the densities without transposing is not a symmetry.** For the coefficient
 function `C (y, w) = y w²` and the density `1` on `(0,1]` in both variables,
 `doubleMellinConv C 1 1 (1/2) (1/4) = 15/64` while `doubleMellinConv C 1 1 (1/4) (1/2) = 9/32`. -/
-theorem exists_doubleMellinConv_ne :
+theorem exists_doubleMellinConv_swap_densities_ne :
     ∃ (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) (x z : ℝ),
       doubleMellinConv C D f z x ≠ doubleMellinConv C f D x z := by
   set one := (Ioc (0 : ℝ) 1).indicator (1 : ℝ → ℝ)

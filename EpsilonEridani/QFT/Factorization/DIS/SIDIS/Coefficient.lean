@@ -11,8 +11,8 @@ public import EpsilonEridani.QFT.Scattering.DIS.SIDIS.Basic
 /-!
 # Semi-inclusive coefficient functions and the double convolution
 
-In collinear factorization of semi-inclusive deep-inelastic scattering at large hadron transverse
-momentum, a structure function is a double convolution
+In collinear factorization of semi-inclusive deep-inelastic scattering, a structure function in
+the two momentum fractions is a double convolution
 ```
 F (x, z) = ∑_{i, j} ∫_x^1 (dy / y) ∫_z^1 (dw / w) C_{ij} (y, w) f_i (x / y) D_j (z / w)
 ```
@@ -33,14 +33,15 @@ function through `Convolution.mellinConv` and `Convolution.doubleMellinConv`, an
 * the transposition symmetry: exchanging the two densities is a symmetry once the coefficient
   function is transposed, provided the integrand of the regular part is jointly integrable on
   `[x, 1] × [z, 1]` (`CoefficientFunction.doubleConv_transpose`), and the exchange without the
-  transposition is not a symmetry (`CoefficientFunction.exists_doubleConv_ne`);
+  transposition is not a symmetry (`CoefficientFunction.exists_doubleConv_swap_densities_ne`);
 * the leading-order reduction: for the flavour-diagonal coefficient functions
   `c_i δ_{ij} δ(1 - y) δ(1 - w)`, at leading order with `c_i = e_i²`, the double convolution is
-  `∑ᵢ c_i f_i (x) D_i (z)` (`doubleConvStructureFunction_diagonal_ofDeltaDelta`);
+  `∑ᵢ c_i f_i (x) D_i (z)` (`doubleConvStructureFunction_of_diagonal_ofDeltaDelta`);
 * compatibility with `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` in the
   fragmentation variable only: for the coefficient function `δ_{ij} b_i (y) δ(1 - w)`, with `b_i`
   the coefficient function of a collinear hard kernel, the double convolution is
-  `sidisStructureFunction` (`doubleConvStructureFunction_diagonal_ofRegularDelta`, from the
+  `sidisStructureFunction`
+  (`doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction`, from the
   single-channel `CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel`).
 
 The leading-order coefficient function, with delta functions in both variables, is not related to
@@ -85,6 +86,7 @@ open EpsilonEridani.QFT.Factorization.Convolution
 namespace EpsilonEridani
 namespace QFT
 namespace Factorization
+namespace DIS
 namespace SIDIS
 
 /-- A semi-inclusive coefficient function on the unit square in the form
@@ -392,10 +394,10 @@ theorem transpose_ofRegular (R : ℝ → ℝ → ℝ) :
 /-- **Exchanging the densities without transposing is not a symmetry**: some coefficient
 function, already one with only a regular part, has a double convolution that changes when the
 two densities and the two momentum fractions are exchanged. -/
-theorem exists_doubleConv_ne :
+theorem exists_doubleConv_swap_densities_ne :
     ∃ (C : CoefficientFunction) (f D : ℝ → ℝ) (x z : ℝ),
       C.doubleConv D f z x ≠ C.doubleConv f D x z := by
-  obtain ⟨R, f, D, x, z, h⟩ := exists_doubleMellinConv_ne
+  obtain ⟨R, f, D, x, z, h⟩ := exists_doubleMellinConv_swap_densities_ne
   exact ⟨ofRegular R, f, D, x, z, by rwa [doubleConv_ofRegular, doubleConv_ofRegular]⟩
 
 end CoefficientFunction
@@ -442,7 +444,7 @@ theorem doubleConvStructureFunction_apply_eq_zero_of_notMem_right [Fintype Flavo
 
 /-- For a coefficient function diagonal in flavour at the scale `Q2`, the structure function is a
 single flavour sum. -/
-theorem doubleConvStructureFunction_diagonal [Fintype Flavor]
+theorem doubleConvStructureFunction_of_diagonal [Fintype Flavor]
     (C : Flavor → Flavor → ℝ → CoefficientFunction) (f : Particles.Parton.PDF.Pdf Flavor)
     (D : Particles.Fragmentation.Frag Hadron Flavor) (h : Hadron) (x z : ℝ) {Q2 : ℝ}
     (hC : ∀ i j, i ≠ j → C i j Q2 = 0) :
@@ -456,14 +458,14 @@ theorem doubleConvStructureFunction_diagonal [Fintype Flavor]
 /-- **The leading-order structure function.** For a coefficient function diagonal in flavour at
 the scale `Q2`, with diagonal entries `c_i δ(1 - y) δ(1 - w)` (at leading order `c_i = e_i²`, with
 `e_i` the charge of flavour `i`), the structure function is `∑ᵢ c_i f_i (x) D_i (z)` on `(0,1]²`. -/
-theorem doubleConvStructureFunction_diagonal_ofDeltaDelta [Fintype Flavor]
+theorem doubleConvStructureFunction_of_diagonal_ofDeltaDelta [Fintype Flavor]
     (C : Flavor → Flavor → ℝ → CoefficientFunction) (c : Flavor → ℝ)
     (f : Particles.Parton.PDF.Pdf Flavor) (D : Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron) {x z Q2 : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1)
     (hC : ∀ i j, i ≠ j → C i j Q2 = 0)
     (hc : ∀ i, C i i Q2 = CoefficientFunction.ofDeltaDelta (c i)) :
     doubleConvStructureFunction C f D h x z Q2 = ∑ i, c i * f i x Q2 * D h i z Q2 := by
-  rw [doubleConvStructureFunction_diagonal C f D h x z hC]
+  rw [doubleConvStructureFunction_of_diagonal C f D h x z hC]
   exact Finset.sum_congr rfl fun i _ => by
     rw [hc i, CoefficientFunction.doubleConv_ofDeltaDelta_of_mem _ _ _ hx hz]
 
@@ -486,7 +488,8 @@ kernel `C'` of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` 
 `Q2`, the collinear kernel of the coefficient function `b i` for every flavour `i`, then
 `sidisStructureFunction` is the double convolution with a coefficient function diagonal in
 flavour at `Q2`, with diagonal entries `b_i (y) δ(1 - w)`, on `(0,1]²`. -/
-theorem doubleConvStructureFunction_diagonal_ofRegularDelta [Fintype Flavor]
+theorem doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction
+    [Fintype Flavor]
     (C' : DIS.HardKernel Flavor) (b : Flavor → ℝ → ℝ) {Q2 : ℝ}
     (hc : ∀ i, Convolution.IsCollinearKernel (fun x' z => C' i x' z Q2) (b i))
     (C : Flavor → Flavor → ℝ → CoefficientFunction) (hC : ∀ i j, i ≠ j → C i j Q2 = 0)
@@ -495,7 +498,7 @@ theorem doubleConvStructureFunction_diagonal_ofRegularDelta [Fintype Flavor]
     (h : Hadron) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) :
     doubleConvStructureFunction C f D h x z Q2 =
       Scattering.DIS.SIDIS.sidisStructureFunction C' f D h x z Q2 := by
-  rw [doubleConvStructureFunction_diagonal C f D h x z hC,
+  rw [doubleConvStructureFunction_of_diagonal C f D h x z hC,
     Scattering.DIS.SIDIS.sidisStructureFunction]
   exact Finset.sum_congr rfl fun i _ => by
     rw [hCc i]
@@ -503,6 +506,7 @@ theorem doubleConvStructureFunction_diagonal_ofRegularDelta [Fintype Flavor]
       hx hz
 
 end SIDIS
+end DIS
 end Factorization
 end QFT
 end EpsilonEridani
