@@ -38,7 +38,8 @@ here.
 - `momentEvolution S N τ₀ τ` is the evolution operator `exp ((∫_{τ₀}^{τ} αs/(2π)) • γ(N))`,
   the exponential of the anomalous-dimension matrix times the `integratedCoupling` of the
   running coupling;
-  `momentEvolution_mul` is its cocycle law.
+  `momentEvolution_mul` is its cocycle law, and `hasDerivAt_momentEvolution` is the matrix
+  form of the system it solves.
 - `moment_exists_unique` is well-posedness: a unique global solution for each initial
   condition, and `IsMomentSolution.eq_momentEvolution_mulVec` identifies every solution with
   the evolution operator applied to its value at a reference scale.
@@ -255,7 +256,7 @@ variable {ι : Type}
 
 It is the evolution variable of the moment-space system: in it the coefficient matrix becomes
 the constant `γ(N)`. -/
-def integratedCoupling (αs : RunningCoupling) (τ₀ τ : ℝ) : ℝ :=
+@[no_expose] def integratedCoupling (αs : RunningCoupling) (τ₀ τ : ℝ) : ℝ :=
   ∫ s in τ₀..τ, αs (Real.exp s) / (2 * Real.pi)
 
 lemma integratedCoupling_def (αs : RunningCoupling) (τ₀ τ : ℝ) :
@@ -305,6 +306,7 @@ matrix,
 
 This is the standard moment-space solution of DGLAP evolution (Furmanski and Petronzio,
 Z. Phys. C 11 (1982) 293). -/
+@[no_expose]
 def momentEvolution [Fintype ι] [DecidableEq ι] (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
     Matrix ι ι ℂ :=
   NormedSpace.exp ((integratedCoupling S.alphaS τ₀ τ : ℂ) • S.gamma N)
@@ -340,6 +342,15 @@ lemma momentEvolution_swap (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ)
     momentEvolution S N τ τ₀ = (momentEvolution S N τ₀ τ)⁻¹ := by
   simp only [momentEvolution_def]
   rw [integratedCoupling_swap, Complex.ofReal_neg, neg_smul, Matrix.exp_neg]
+
+/-- The evolution operator solves the matrix form of the moment-space system: its derivative in
+the log scale is `a(τ) • (γ(N) * momentEvolution S N τ₀ τ)`. -/
+lemma hasDerivAt_momentEvolution (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
+    HasDerivAt (fun s => momentEvolution S N τ₀ s)
+      (((S.alphaS (Real.exp τ) / (2 * Real.pi) : ℝ) : ℂ) •
+        (S.gamma N * momentEvolution S N τ₀ τ)) τ := by
+  simpa only [momentEvolution_def] using Matrix.hasDerivAt_exp_smul_const_comp
+    (hasDerivAt_integratedCoupling S.alphaS_continuous τ₀ τ).ofReal_comp (S.gamma N)
 
 /-- The evolution operator applied to a fixed vector has the moment-space right-hand side
 `a(τ) • γ(N) *ᵥ ·` as its derivative in the log scale. -/
@@ -411,17 +422,14 @@ lemma momentEvolution_apply_of_gamma_apply_eq_zero {S : DglapMomentSystem ι} {N
   simpa only [Matrix.mulVec_single_one, momentEvolution_self, Matrix.col_apply,
     Matrix.one_apply, mul_ite, mul_one, mul_zero] using hcol
 
-/-- Without mixing between channels, that is for a diagonal anomalous-dimension matrix, each
-channel evolves by the scalar exponential of the integrated coupling times its own anomalous
-dimension. -/
+/-- For a diagonal anomalous-dimension matrix `γ(N) = diagonal d`, the evolution operator is
+itself diagonal, with entries `exp ((∫ s in τ₀..τ, αs(e^s) / (2π)) * d i)`. -/
 lemma momentEvolution_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ} {d : ι → ℂ}
     (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
     momentEvolution S N τ₀ τ =
       Matrix.diagonal fun i => Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) := by
-  ext i j
-  rw [momentEvolution_apply_of_gamma_apply_eq_zero
-      (fun j hj => by rw [h, Matrix.diagonal_apply_ne d hj.symm]),
-    Matrix.diagonal_apply, h, Matrix.diagonal_apply_eq]
+  rw [momentEvolution_def, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
+  simp only [Pi.smul_apply, smul_eq_mul, Complex.exp_eq_exp_ℂ]
 
 /-- **The closed form without channel mixing.** If the anomalous-dimension matrix at `N` is
 diagonal, as for the non-singlet combinations, each channel of a solution evolves
