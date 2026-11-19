@@ -34,7 +34,9 @@ theorem isProbabilityMeasure_withDensity {g : α → ℝ≥0∞} (hg1 : ∫⁻ x
 
 /-- The signed measure with a non-integrable density is `0`. -/
 theorem withDensityᵥ_eq_zero_of_not_integrable {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {f : α → E} (hf : ¬Integrable f μ) : μ.withDensityᵥ f = 0 :=
-  dite_eq_right hf
+    [NormedSpace ℝ E] {f : α → E} (hf : ¬Integrable f μ) : μ.withDensityᵥ f = 0 := by
+  -- `Measure.withDensityᵥ` is a `dite` on integrability whose `else` branch is `0`.
+  rw [Measure.withDensityᵥ]
+  exact dite_eq_right hf
 
 end EpsilonEridani
