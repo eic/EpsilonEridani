@@ -15,6 +15,7 @@ import Physlib.SpaceAndTime.Space.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.MeasureTheory.Integral.ExpDecay
 
 /-!
 # Coordinate-space nuclear density profiles
@@ -299,10 +300,8 @@ theorem integrable_woodsSaxonDensity_norm (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a)
   simp only [Nat.reduceSub]
   -- Compare with `exp (R / a) * r² exp(-r / a)`, integrable on `(0, ∞)` as a Gamma integral.
   have hg : IntegrableOn (fun r : ℝ => exp (R / a) * (r ^ 2 * exp (-a⁻¹ * r))) (Ioi 0) := by
-    refine Integrable.const_mul ?_ _
-    refine (integrableOn_rpow_mul_exp_neg_mul_rpow (s := 2) (p := 1) (by norm_num) one_pos
-      (inv_pos.2 ha)).congr_fun (fun r _ => ?_) measurableSet_Ioi
-    simp [rpow_ofNat]
+    simp only [neg_mul]
+    exact (TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi 2 (inv_pos.2 ha)).const_mul _
   refine hg.mono' ?_ (ae_restrict_of_forall_mem measurableSet_Ioi fun r _ => ?_)
   · exact ((continuous_pow 2).smul
       (continuous_woodsSaxonDensity 1 R a)).aestronglyMeasurable.restrict
