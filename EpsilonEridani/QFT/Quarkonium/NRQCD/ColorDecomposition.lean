@@ -135,7 +135,7 @@ theorem colorOctetProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
 /-- The two colour channels exhaust the pair's colour space. -/
 @[simp]
 theorem colorSingletProj_add_colorOctetProj : colorSingletProj N + colorOctetProj N = 1 := by
-  rw [colorOctetProj_eq, add_sub_cancel]
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart, tracePart_add_tracelessPart]
 
 /-- The two colour channels exhaust the pair's colour space, in the reversed addition order. -/
 @[simp]
@@ -167,19 +167,19 @@ theorem colorOctetProj_mul_self :
 /-- The singlet and octet channels are orthogonal. -/
 @[simp]
 theorem colorSingletProj_mul_colorOctetProj : colorSingletProj N * colorOctetProj N = 0 := by
-  rw [colorOctetProj_eq, isIdempotentElem_colorSingletProj.mul_one_sub_self]
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart, tracePart_mul_tracelessPart]
 
 /-- The octet and singlet channels are orthogonal. -/
 @[simp]
 theorem colorOctetProj_mul_colorSingletProj : colorOctetProj N * colorSingletProj N = 0 := by
-  rw [colorOctetProj_eq, isIdempotentElem_colorSingletProj.one_sub_mul_self]
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart, tracelessPart_mul_tracePart]
 
 /-- The singlet and octet projectors are complete orthogonal idempotents: the colour space of a
 quark-antiquark pair is the direct sum of the two channels. -/
 theorem completeOrthogonalIdempotents_colorSingletProj_colorOctetProj :
     CompleteOrthogonalIdempotents ![colorSingletProj N, colorOctetProj N] := by
-  rw [colorOctetProj_eq]
-  exact .of_isIdempotentElem isIdempotentElem_colorSingletProj
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart]
+  exact completeOrthogonalIdempotents_tracePart_tracelessPart
 
 /-- A wave function lies in the singlet channel exactly when it is a multiple of `1`. -/
 theorem colorSingletProj_apply_eq_self_iff (ψ : Matrix (Fin N) (Fin N) ℂ) :

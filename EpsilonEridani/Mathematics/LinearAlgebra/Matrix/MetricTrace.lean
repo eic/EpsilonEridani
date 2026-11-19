@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.LinearAlgebra.Trace
+public import Mathlib.RingTheory.Idempotents
 public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Isometry
 
 /-!
@@ -41,15 +42,17 @@ by `T ↦ Λᵀ * T * Λ` and preserves `g` when `Λᵀ * g * Λ = g`.
 
 ## Main statements
 
-* `Matrix.tracePart_add_tracelessPart`: `T` is the sum of its two parts.
+* `Matrix.tracePart_add_tracelessPart`, `Matrix.tracePart_add_tracelessPart_apply`: `T` is the
+  sum of its two parts.
 * `Matrix.trace_inv_mul_tracePart` and `Matrix.trace_inv_mul_tracelessPart`: the trace part
   carries the whole trace and the traceless part has none.
 * `Matrix.tracePart_smul_add` and `Matrix.tracelessPart_smul_add`: the decomposition is unique,
   since a multiple of `g` plus a traceless tensor is split into exactly those two summands.
 * `Matrix.isIdempotentElem_tracePart`, `Matrix.isIdempotentElem_tracelessPart`: both are
-  projections, and `Matrix.tracePart_tracelessPart`, `Matrix.tracelessPart_tracePart` say they
-  annihilate each other's ranges; `Matrix.trace_tracePart` and `Matrix.trace_tracelessPart` give
-  their ranks `1` and `D² - 1`.
+  projections, `Matrix.tracePart_tracelessPart`, `Matrix.tracelessPart_tracePart` say they
+  annihilate each other's ranges, and
+  `Matrix.completeOrthogonalIdempotents_tracePart_tracelessPart` bundles this;
+  `Matrix.trace_tracePart` and `Matrix.trace_tracelessPart` give their ranks `1` and `D² - 1`.
 * `Matrix.tracePart_eq_zero_iff` and `Matrix.tracelessPart_eq_zero_iff`: the kernels are the
   traceless tensors and the multiples of `g`; `Matrix.tracePart_eq_self_iff` and
   `Matrix.tracelessPart_eq_self_iff` say the ranges are the multiples of `g` and the traceless
@@ -100,9 +103,14 @@ lemma tracelessPart_eq_one_sub (g : Matrix n n K) : tracelessPart g = 1 - traceP
 lemma tracelessPart_apply (g T : Matrix n n K) : tracelessPart g T = T - tracePart g T := by
   rw [tracelessPart_eq_one_sub, LinearMap.sub_apply, Module.End.one_apply]
 
+/-- The trace part and the traceless part add up to the identity. -/
+@[simp]
+theorem tracePart_add_tracelessPart (g : Matrix n n K) : tracePart g + tracelessPart g = 1 := by
+  rw [tracelessPart_eq_one_sub, add_sub_cancel]
+
 /-- A tensor is the sum of its trace part and its traceless part. -/
 @[simp]
-theorem tracePart_add_tracelessPart (g T : Matrix n n K) :
+theorem tracePart_add_tracelessPart_apply (g T : Matrix n n K) :
     tracePart g T + tracelessPart g T = T := by
   rw [tracelessPart_apply, add_sub_cancel]
 
@@ -185,6 +193,23 @@ theorem isIdempotentElem_tracePart : IsIdempotentElem (tracePart g) :=
 theorem isIdempotentElem_tracelessPart : IsIdempotentElem (tracelessPart g) :=
   isIdempotentElem_tracePart.one_sub
 
+/-- The trace part annihilates the range of the traceless part. -/
+@[simp]
+theorem tracePart_mul_tracelessPart : tracePart g * tracelessPart g = 0 := by
+  rw [tracelessPart_eq_one_sub, isIdempotentElem_tracePart.mul_one_sub_self]
+
+/-- The traceless part annihilates the range of the trace part. -/
+@[simp]
+theorem tracelessPart_mul_tracePart : tracelessPart g * tracePart g = 0 := by
+  rw [tracelessPart_eq_one_sub, isIdempotentElem_tracePart.one_sub_mul_self]
+
+/-- The trace part and the traceless part are complete orthogonal idempotents: the space of
+tensors is the direct sum of their ranges. -/
+theorem completeOrthogonalIdempotents_tracePart_tracelessPart :
+    CompleteOrthogonalIdempotents ![tracePart g, tracelessPart g] := by
+  rw [tracelessPart_eq_one_sub]
+  exact .of_isIdempotentElem isIdempotentElem_tracePart
+
 /-- The trace part projects onto the line of multiples of the metric: its trace as an
 endomorphism is `1`. -/
 theorem trace_tracePart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
@@ -219,7 +244,7 @@ metric. -/
 theorem tracelessPart_eq_zero_iff (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0)
     {T : Matrix n n K} : tracelessPart g T = 0 ↔ ∃ c : K, c • g = T := by
   refine ⟨fun h => ⟨trace (g⁻¹ * T) / Fintype.card n, ?_⟩, ?_⟩
-  · have hT := tracePart_add_tracelessPart g T
+  · have hT := tracePart_add_tracelessPart_apply g T
     rwa [h, add_zero, tracePart_apply] at hT
   · rintro ⟨c, rfl⟩
     rw [map_smul, tracelessPart_self hg hn, smul_zero]
