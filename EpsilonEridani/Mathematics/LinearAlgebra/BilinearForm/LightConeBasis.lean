@@ -260,11 +260,11 @@ def swap : LightConeBasis B where
   nMinus_nPlus_eq_one := L.nPlus_nMinus_eq_one
 
 @[simp]
-theorem swap_nPlus : L.swap.nPlus = L.nMinus :=
+theorem nPlus_swap : L.swap.nPlus = L.nMinus :=
   (rfl)
 
 @[simp]
-theorem swap_nMinus : L.swap.nMinus = L.nPlus :=
+theorem nMinus_swap : L.swap.nMinus = L.nPlus :=
   (rfl)
 
 @[simp]
@@ -282,12 +282,12 @@ theorem minus_swap : L.swap.minus = L.plus :=
 @[simp]
 theorem transverseProj_swap : L.swap.transverseProj = L.transverseProj := by
   ext v
-  simp only [transverseProj_apply, plus_swap, minus_swap, swap_nPlus, swap_nMinus]
+  simp only [transverseProj_apply, plus_swap, minus_swap, nPlus_swap, nMinus_swap]
   abel
 
 @[simp]
 theorem longitudinal_swap : L.swap.longitudinal = L.longitudinal := by
-  simp only [longitudinal_def, swap_nPlus, swap_nMinus, Set.pair_comm]
+  simp only [longitudinal_def, nPlus_swap, nMinus_swap, Set.pair_comm]
 
 @[simp]
 theorem transverse_swap : L.swap.transverse = L.transverse := by
