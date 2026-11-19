@@ -466,9 +466,8 @@ theorem singletGluonMatrix_one_zero (nf : ℕ) : singletGluonMatrix qq qg gq gg 
 @[simp]
 theorem singletGluonMatrix_one_one (nf : ℕ) : singletGluonMatrix qq qg gq gg nf 1 1 = gg := (rfl)
 
--- Not a simp lemma: the whole-library simp set contains `Matrix.mulVec_fin_two`, which
--- rewrites the left-hand side first, so the `simpNF` linter rejects it.
-/-- `singletGluonMatrix` acting on a pair `(a, b)`. -/
+/-- `singletGluonMatrix` acting on a pair `(a, b)`. Not a `@[simp]` lemma: `Matrix.mulVec_fin_two`
+together with the entry lemmas above already reduces it, so the attribute would be redundant. -/
 theorem singletGluonMatrix_mulVec (nf : ℕ) (a b : R) :
     singletGluonMatrix qq qg gq gg nf *ᵥ ![a, b] =
       ![qq * a + 2 * nf * qg * b, gq * a + gg * b] := by
