@@ -117,17 +117,6 @@ namespace DeuteronWave
 
 /-! ### Introduction and extensionality -/
 
-/-- A function vanishing for `r ≤ 0` is determined by its values on the half-line. -/
-private theorem eq_of_eqOn_Ioi {u v : ℝ → ℝ} (hu : ∀ r ≤ 0, u r = 0) (hv : ∀ r ≤ 0, v r = 0)
-    (h : EqOn u v (Ioi 0)) : u = v :=
-  funext fun r => (le_or_gt r 0).elim (fun hr => (hu r hr).trans (hv r hr).symm) (@h r)
-
-/-- A deuteron wave function is determined by its amplitudes on the half-line `r > 0`. -/
-theorem ext_of_eqOn_Ioi {ψ ψ' : DeuteronWave} (hS : EqOn ψ.uS ψ'.uS (Ioi 0))
-    (hD : EqOn ψ.uD ψ'.uD (Ioi 0)) : ψ = ψ' :=
-  DeuteronWave.ext (eq_of_eqOn_Ioi ψ.uS_eq_zero_of_nonpos ψ'.uS_eq_zero_of_nonpos hS)
-    (eq_of_eqOn_Ioi ψ.uD_eq_zero_of_nonpos ψ'.uD_eq_zero_of_nonpos hD)
-
 /-- The s-wave amplitude is supported in the half-line `r > 0`. -/
 theorem support_uS_subset (ψ : DeuteronWave) : Function.support ψ.uS ⊆ Ioi 0 :=
   Function.support_subset_iff'.2 fun r hr => ψ.uS_eq_zero_of_nonpos r (not_lt.1 hr)
@@ -136,16 +125,25 @@ theorem support_uS_subset (ψ : DeuteronWave) : Function.support ψ.uS ⊆ Ioi 0
 theorem support_uD_subset (ψ : DeuteronWave) : Function.support ψ.uD ⊆ Ioi 0 :=
   Function.support_subset_iff'.2 fun r hr => ψ.uD_eq_zero_of_nonpos r (not_lt.1 hr)
 
+/-- A deuteron wave function is determined by its amplitudes on the half-line `r > 0`. -/
+theorem ext_of_eqOn_Ioi {ψ ψ' : DeuteronWave} (hS : EqOn ψ.uS ψ'.uS (Ioi 0))
+    (hD : EqOn ψ.uD ψ'.uD (Ioi 0)) : ψ = ψ' := by
+  ext1
+  · rw [← indicator_eq_self.2 ψ.support_uS_subset, ← indicator_eq_self.2 ψ'.support_uS_subset,
+      indicator_congr hS]
+  · rw [← indicator_eq_self.2 ψ.support_uD_subset, ← indicator_eq_self.2 ψ'.support_uD_subset,
+      indicator_congr hD]
+
 /-- The s-wave amplitude is square integrable on all of `ℝ`, as it vanishes off the
 half-line. -/
 theorem memLp_uS_volume (ψ : DeuteronWave) : MemLp ψ.uS 2 volume :=
-  memLp_of_restrict_of_support_subset measurableSet_Ioi.nullMeasurableSet ψ.support_uS_subset
+  memLp_of_support_subset_of_restrict measurableSet_Ioi.nullMeasurableSet ψ.support_uS_subset
     ψ.memLp_uS
 
 /-- The d-wave amplitude is square integrable on all of `ℝ`, as it vanishes off the
 half-line. -/
 theorem memLp_uD_volume (ψ : DeuteronWave) : MemLp ψ.uD 2 volume :=
-  memLp_of_restrict_of_support_subset measurableSet_Ioi.nullMeasurableSet ψ.support_uD_subset
+  memLp_of_support_subset_of_restrict measurableSet_Ioi.nullMeasurableSet ψ.support_uD_subset
     ψ.memLp_uD
 
 /-- The deuteron wave function with amplitudes `vS`, `vD` on the half-line `r > 0`, extended by
@@ -316,53 +314,52 @@ private theorem setIntegral_ofHalfLine {vS vD : ℝ → ℝ}
   setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) => by
     simp only [ofHalfLine_uS_of_pos hr, ofHalfLine_uD_of_pos hr]
 
-theorem sStateProbability_ofHalfLine {vS vD : ℝ → ℝ}
+@[simp] theorem sStateProbability_ofHalfLine {vS vD : ℝ → ℝ}
     (hS : MemLp vS 2 (volume.restrict (Ioi 0))) (hD : MemLp vD 2 (volume.restrict (Ioi 0)))
     (h : ∫ r in Ioi 0, (vS r ^ 2 + vD r ^ 2) = 1) :
-    (ofHalfLine vS vD hS hD h).sStateProbability = ∫ r in Ioi 0, vS r ^ 2 :=
-  setIntegral_ofHalfLine fun _ s _ => s ^ 2
+    (ofHalfLine vS vD hS hD h).sStateProbability = ∫ r in Ioi 0, vS r ^ 2 := by
+  rw [sStateProbability_def]
+  exact setIntegral_ofHalfLine fun _ s _ => s ^ 2
 
-theorem dStateProbability_ofHalfLine {vS vD : ℝ → ℝ}
+@[simp] theorem dStateProbability_ofHalfLine {vS vD : ℝ → ℝ}
     (hS : MemLp vS 2 (volume.restrict (Ioi 0))) (hD : MemLp vD 2 (volume.restrict (Ioi 0)))
     (h : ∫ r in Ioi 0, (vS r ^ 2 + vD r ^ 2) = 1) :
-    (ofHalfLine vS vD hS hD h).dStateProbability = ∫ r in Ioi 0, vD r ^ 2 :=
-  setIntegral_ofHalfLine fun _ _ d => d ^ 2
+    (ofHalfLine vS vD hS hD h).dStateProbability = ∫ r in Ioi 0, vD r ^ 2 := by
+  rw [dStateProbability_def]
+  exact setIntegral_ofHalfLine fun _ _ d => d ^ 2
 
-theorem quadrupoleMoment_ofHalfLine {vS vD : ℝ → ℝ}
+@[simp] theorem quadrupoleMoment_ofHalfLine {vS vD : ℝ → ℝ}
     (hS : MemLp vS 2 (volume.restrict (Ioi 0))) (hD : MemLp vD 2 (volume.restrict (Ioi 0)))
     (h : ∫ r in Ioi 0, (vS r ^ 2 + vD r ^ 2) = 1) :
     (ofHalfLine vS vD hS hD h).quadrupoleMoment =
-      (1 / 20) * ∫ r in Ioi 0, r ^ 2 * vD r * (√8 * vS r - vD r) :=
-  congrArg _ (setIntegral_ofHalfLine fun r s d => r ^ 2 * d * (√8 * s - d))
+      (1 / 20) * ∫ r in Ioi 0, r ^ 2 * vD r * (√8 * vS r - vD r) := by
+  rw [quadrupoleMoment_def]
+  congr 1
+  exact setIntegral_ofHalfLine fun r s d => r ^ 2 * d * (√8 * s - d)
 
 /-! ### The d-state probability is not an observable -/
 
-/-- The amplitude equal to `a` on `(0, R]` and to `v` on `(R, ∞)`; `glued` keeps only its
-values on the half-line `r > 0`. -/
+/-- The amplitude equal to `v` on `(R, ∞)` and to the constant `a` elsewhere; `glued` keeps only
+its values on the half-line `r > 0`, where it is `a` on `(0, R]`. -/
 private def glue (R a : ℝ) (v : ℝ → ℝ) : ℝ → ℝ :=
-  (Ioc 0 R).indicator (fun _ => a) + (Ioi R).indicator v
+  (Ioi R).piecewise v fun _ => a
 
-private theorem glue_of_mem_Ioc {R a r : ℝ} {v : ℝ → ℝ} (hr : r ∈ Ioc 0 R) :
-    glue R a v r = a := by
-  simp [glue, hr, notMem_Ioi.2 hr.2]
-
-private theorem glue_of_lt {R a r : ℝ} {v : ℝ → ℝ} (hr : R < r) : glue R a v r = v r := by
-  have : r ∉ Ioc 0 R := fun h => hr.not_ge h.2
-  simp [glue, this, mem_Ioi.2 hr]
-
-private theorem memLp_glue {R : ℝ} (a : ℝ) {v : ℝ → ℝ} (hv : MemLp v 2 (volume.restrict (Ioi R))) :
-    MemLp (glue R a v) 2 (volume.restrict (Ioi 0)) :=
-  ((memLp_indicator_const 2 measurableSet_Ioc.nullMeasurableSet a
-    (Or.inr measure_Ioc_lt_top.ne)).add
-    ((memLp_indicator_iff_restrict measurableSet_Ioi.nullMeasurableSet).2 hv)).restrict _
+private theorem memLp_glue {R : ℝ} (hR : 0 ≤ R) (a : ℝ) {v : ℝ → ℝ}
+    (hv : MemLp v 2 (volume.restrict (Ioi R))) :
+    MemLp (glue R a v) 2 (volume.restrict (Ioi 0)) := by
+  refine MemLp.piecewise measurableSet_Ioi.nullMeasurableSet ?_ ?_
+  · rwa [Measure.restrict_restrict measurableSet_Ioi, inter_eq_left.2 (Ioi_subset_Ioi hR)]
+  · rw [Measure.restrict_restrict measurableSet_Ioi.compl, compl_Ioi, Iic_inter_Ioi]
+    have : IsFiniteMeasure (volume.restrict (Ioc 0 R)) := ⟨by simp⟩
+    exact memLp_const a
 
 private theorem integral_glue_sq {R : ℝ} (hR : 0 ≤ R) (a : ℝ) {v : ℝ → ℝ}
     (hv : MemLp v 2 (volume.restrict (Ioi R))) :
     ∫ r in Ioi 0, glue R a v r ^ 2 = R * a ^ 2 + ∫ r in Ioi R, v r ^ 2 := by
   have hIoc : EqOn (fun r => glue R a v r ^ 2) (fun _ => a ^ 2) (Ioc 0 R) :=
-    fun r hr => by simp only [glue_of_mem_Ioc hr]
+    fun r hr => by simp only [glue, piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hr.2)]
   have hIoi : EqOn (fun r => glue R a v r ^ 2) (fun r => v r ^ 2) (Ioi R) :=
-    fun r hr => by simp only [glue_of_lt (mem_Ioi.1 hr)]
+    fun r hr => by simp only [glue, piecewise_eq_of_mem _ _ _ hr]
   rw [← Ioc_union_Ioi_eq_Ioi hR, setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
     ((integrableOn_const measure_Ioc_lt_top.ne).congr_fun hIoc.symm measurableSet_Ioc)
     (IntegrableOn.congr_fun hv.integrable_sq hIoi.symm measurableSet_Ioi),
@@ -375,8 +372,8 @@ for interior values making the total weight one. -/
 private def glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {vS vD : ℝ → ℝ}
     (hS : MemLp vS 2 (volume.restrict (Ioi R))) (hD : MemLp vD 2 (volume.restrict (Ioi R)))
     (h : R * (aS ^ 2 + aD ^ 2) + ∫ r in Ioi R, (vS r ^ 2 + vD r ^ 2) = 1) : DeuteronWave :=
-  ofHalfLine (glue R aS vS) (glue R aD vD) (memLp_glue aS hS) (memLp_glue aD hD) (by
-    rw [integral_add (memLp_glue aS hS).integrable_sq (memLp_glue aD hD).integrable_sq,
+  ofHalfLine (glue R aS vS) (glue R aD vD) (memLp_glue hR aS hS) (memLp_glue hR aD hD) (by
+    rw [integral_add (memLp_glue hR aS hS).integrable_sq (memLp_glue hR aD hD).integrable_sq,
       integral_glue_sq hR aS hS, integral_glue_sq hR aD hD, ← h,
       integral_add hS.integrable_sq hD.integrable_sq]
     ring)
@@ -386,8 +383,8 @@ private theorem eqOn_Ioi_glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {vS vD : �
     (hS : MemLp vS 2 (volume.restrict (Ioi R))) (hD : MemLp vD 2 (volume.restrict (Ioi R)))
     (h : R * (aS ^ 2 + aD ^ 2) + ∫ r in Ioi R, (vS r ^ 2 + vD r ^ 2) = 1) :
     EqOn (glued hR aS aD hS hD h).uS vS (Ioi R) ∧ EqOn (glued hR aS aD hS hD h).uD vD (Ioi R) :=
-  ⟨fun r (hr : R < r) => by simp [glued, hR.trans_lt hr, glue_of_lt hr],
-    fun r (hr : R < r) => by simp [glued, hR.trans_lt hr, glue_of_lt hr]⟩
+  ⟨fun r hr => by simp [glued, glue, hR.trans_lt (mem_Ioi.1 hr), piecewise_eq_of_mem _ _ _ hr],
+    fun r hr => by simp [glued, glue, hR.trans_lt (mem_Ioi.1 hr), piecewise_eq_of_mem _ _ _ hr]⟩
 
 private theorem dStateProbability_glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {vS vD : ℝ → ℝ}
     (hS : MemLp vS 2 (volume.restrict (Ioi R))) (hD : MemLp vD 2 (volume.restrict (Ioi R)))
@@ -408,11 +405,14 @@ private theorem quadrupoleMoment_glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {v
   rw [glued, quadrupoleMoment_ofHalfLine, ← inter_eq_right.2 (Ioi_subset_Ioi hR),
     ← setIntegral_indicator measurableSet_Ioi]
   congr 1
-  refine setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) => ?_
+  refine setIntegral_congr_fun measurableSet_Ioi fun r _ => ?_
   rcases le_or_gt r R with hrR | hrR
-  · rw [glue_of_mem_Ioc ⟨hr, hrR⟩, glue_of_mem_Ioc ⟨hr, hrR⟩, mul_assoc, h0, mul_zero,
+  · rw [glue, glue, piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hrR),
+      piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hrR), mul_assoc, h0, mul_zero,
       indicator_of_notMem (notMem_Ioi.2 hrR)]
-  · rw [glue_of_lt hrR, glue_of_lt hrR, indicator_of_mem (mem_Ioi.2 hrR)]
+  · rw [glue, glue, piecewise_eq_of_mem _ _ _ (mem_Ioi.2 hrR),
+      piecewise_eq_of_mem _ _ _ (mem_Ioi.2 hrR),
+      indicator_of_mem (mem_Ioi.2 hrR)]
 
 /-- **The d-state probability is not an observable.** Fix an exterior `(vS, vD)` on `r > R`,
 square integrable there with total weight below one. There are two deuteron wave functions
@@ -440,10 +440,11 @@ theorem exists_eqOn_Ioi_quadrupoleMoment_eq_dStateProbability_ne {R : ℝ} (hR :
     rw [mul_pow, hc]; field_simp; ring
   have h₂ : R * (c ^ 2 + (√8 * c) ^ 2) + E = 1 := by
     rw [mul_pow, h8, hc]; field_simp; ring
-  refine ⟨glued hR.le _ _ hS hD h₁, glued hR.le _ _ hS hD h₂, (eqOn_Ioi_glued _ _ _ _ _ _).1,
-    (eqOn_Ioi_glued _ _ _ _ _ _).2, (eqOn_Ioi_glued _ _ _ _ _ _).1, (eqOn_Ioi_glued _ _ _ _ _ _).2,
-    quadrupoleMoment_glued _ _ _ _ _ _ (by ring), quadrupoleMoment_glued _ _ _ _ _ _ (by ring),
-    ?_⟩
+  obtain ⟨h₁S, h₁D⟩ := eqOn_Ioi_glued hR.le (3 * c) 0 hS hD h₁
+  obtain ⟨h₂S, h₂D⟩ := eqOn_Ioi_glued hR.le c (√8 * c) hS hD h₂
+  refine ⟨glued hR.le (3 * c) 0 hS hD h₁, glued hR.le c (√8 * c) hS hD h₂, h₁S, h₁D, h₂S, h₂D,
+    quadrupoleMoment_glued hR.le (3 * c) 0 hS hD h₁ (by ring),
+    quadrupoleMoment_glued hR.le c (√8 * c) hS hD h₂ (by ring), ?_⟩
   rw [dStateProbability_glued, dStateProbability_glued, Ne, add_left_inj, mul_pow, h8]
   nlinarith [mul_pos hR (pow_pos hcpos 2)]
 

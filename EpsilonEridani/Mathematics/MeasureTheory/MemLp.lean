@@ -8,13 +8,13 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-# Square-integrable functions: vanishing weight and extension by zero
+# `MemLp` functions: vanishing square integral and support in a set
 
 Two facts about `MemLp` functions used for wave functions on a half-line.
 
 * `integral_sq_eq_zero_iff`: a square-integrable real function has `∫ f ^ 2 = 0` exactly when
   it vanishes almost everywhere, so a probability `∫ u ^ 2` is zero only for a null amplitude.
-* `memLp_of_restrict_of_support_subset`: a function supported in a set `s` that is in `Lᵖ` for
+* `memLp_of_support_subset_of_restrict`: a function supported in a set `s` that is in `Lᵖ` for
   the measure restricted to `s` is in `Lᵖ` for the whole measure.
 -/
 
@@ -34,7 +34,7 @@ theorem integral_sq_eq_zero_iff {f : α → ℝ} (hf : MemLp f 2 μ) :
   refine ⟨fun h => ?_, fun h => ?_⟩ <;> filter_upwards [h] with x hx <;> simpa using hx
 
 /-- A function supported in `s` that is in `Lᵖ` for `μ` restricted to `s` is in `Lᵖ` for `μ`. -/
-theorem memLp_of_restrict_of_support_subset {E : Type*} [NormedAddCommGroup E]
+theorem memLp_of_support_subset_of_restrict {E : Type*} [NormedAddCommGroup E]
     {p : ENNReal} {s : Set α} {f : α → E} (hs : NullMeasurableSet s μ)
     (hsupp : Function.support f ⊆ s) (hf : MemLp f p (μ.restrict s)) : MemLp f p μ := by
   rw [← indicator_eq_self.2 hsupp]
