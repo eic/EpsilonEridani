@@ -117,9 +117,9 @@ lemma coeff_unique {W Wlp : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
     (h₂ : ApproximatesToOrder W (fun lam => Wlp lam + c₂ * lam ^ n) (n + 1)) :
     c₁ = c₂ := by
   have h₁' : (fun lam : ℝ => W lam - (Wlp lam + c₁ * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := h₁
+      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 h₁
   have h₂' : (fun lam : ℝ => W lam - (Wlp lam + c₂ * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := h₂
+      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 h₂
   have hdiff : (fun lam : ℝ => (c₂ - c₁) * lam ^ n) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) := by
     refine (h₁'.sub h₂').congr_left ?_
@@ -148,7 +148,7 @@ lemma leadingPower_approximatesToOrder {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
     (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) :
     ApproximatesToOrder W Wlp n := by
   have h' : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := h
+      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 h
   have hlow : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ n := h'.trans (isBigO_pow_of_le (Nat.le_succ n))
   have hcorr : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n :=
@@ -157,7 +157,7 @@ lemma leadingPower_approximatesToOrder {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
     refine (hlow.add hcorr).congr_left ?_
     intro lam
     ring
-  exact hsum
+  exact approximatesToOrder_iff.2 hsum
 
 /-- **A nonvanishing power correction is detectable.** If the order-`n` coefficient is
 nonzero then the leading-power term alone is *not* accurate to order `n + 1`.
@@ -169,14 +169,14 @@ lemma not_approximatesToOrder_succ_of_coeff_ne_zero {W Wlp : ℝ → ℝ} {n : �
     ¬ ApproximatesToOrder W Wlp (n + 1) := by
   intro hlp
   have hlp' : (fun lam : ℝ => W lam - Wlp lam) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := hlp
+      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 hlp
   have hzero : ApproximatesToOrder W (fun lam => Wlp lam + 0 * lam ^ n) (n + 1) := by
     have hcast : (fun lam : ℝ => W lam - (Wlp lam + 0 * lam ^ n)) =O[𝓝[>] 0]
         fun lam : ℝ => lam ^ (n + 1) := by
       refine hlp'.congr_left ?_
       intro lam
       ring
-    exact hcast
+    exact approximatesToOrder_iff.2 hcast
   exact hc (coeff_unique h hzero)
 
 /-- The data of a TMD factorization formula at one order in the power counting: a
@@ -234,7 +234,7 @@ def monomialKpc (n : ℕ) : Kpc (fun lam : ℝ => lam ^ n) n where
       refine hz.congr_left ?_
       intro lam
       ring
-    exact hcast
+    exact approximatesToOrder_iff.2 hcast
 
 /-- **The order gap is real.** `λ ^ n` is not `O(λ ^ (n + 1))` as `λ → 0⁺`, so the vanishing
 leading-power term of `monomialKpc` is accurate to order `n` and no further.
@@ -268,7 +268,8 @@ lemma isBigO_inv_pow_atTop {W Wapp : ℝ → ℝ} {n : ℕ} (h : ApproximatesToO
     {qT : ℝ} (hqT : 0 < qT) :
     (fun Q : ℝ => W (powerRatio qT Q) - Wapp (powerRatio qT Q)) =O[atTop]
       fun Q : ℝ => (Q ^ n)⁻¹ := by
-  have h' : (fun lam : ℝ => W lam - Wapp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n := h
+  have h' : (fun lam : ℝ => W lam - Wapp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n :=
+    approximatesToOrder_iff.1 h
   have hcomp := h'.comp_tendsto (tendsto_powerRatio_atTop hqT)
   have hconv : (fun Q : ℝ => powerRatio qT Q ^ n) =O[atTop] fun Q : ℝ => (Q ^ n)⁻¹ := by
     refine ((isBigO_refl (fun Q : ℝ => (Q ^ n)⁻¹) atTop).const_mul_left (qT ^ n)).congr_left ?_

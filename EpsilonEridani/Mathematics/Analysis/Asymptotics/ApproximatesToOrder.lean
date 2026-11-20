@@ -22,7 +22,8 @@ such expansions depends.
 
 ## Main definitions
 
-* `ApproximatesToOrder W Wapp n`: `W λ - Wapp λ = O(λ ^ n)` as `λ → 0⁺`.
+* `ApproximatesToOrder W Wapp n`: `W λ - Wapp λ = O(λ ^ n)` as `λ → 0⁺`
+  (`approximatesToOrder_iff`).
 
 ## Main results
 
@@ -32,7 +33,7 @@ such expansions depends.
   reflexive and transitive.
 -/
 
-@[expose] public section
+public section
 
 open Filter Topology Asymptotics
 
@@ -43,6 +44,11 @@ bounded by `λ ^ n` as the small parameter `λ` tends to zero from above,
 `W λ - Wapp λ = O(λ ^ n)`. -/
 def ApproximatesToOrder (W Wapp : ℝ → ℝ) (n : ℕ) : Prop :=
   (fun lam => W lam - Wapp lam) =O[𝓝[>] 0] fun lam => lam ^ n
+
+/-- Unfolding `ApproximatesToOrder` into its remainder bound. -/
+theorem approximatesToOrder_iff {W Wapp : ℝ → ℝ} {n : ℕ} :
+    ApproximatesToOrder W Wapp n ↔ (fun lam => W lam - Wapp lam) =O[𝓝[>] 0] fun lam => lam ^ n :=
+  Iff.rfl
 
 /-- Every function approximates itself to every order. -/
 lemma ApproximatesToOrder.refl (W : ℝ → ℝ) (n : ℕ) : ApproximatesToOrder W W n := by

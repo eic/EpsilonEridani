@@ -152,7 +152,8 @@ theorem approximatesToOrder_effectiveAmplitude {m n : ℕ} (hmn : m ≤ n) (M c 
     fun ε => by
       simp only [effectiveAmplitude_eq_sum_range, add_right_comm m d 1, sum_range_add,
         add_sub_cancel_left, smul_eq_mul, mul_comm (ε ^ _)]
-  refine (IsBigO.fun_sum fun j _ => ?_).congr_left fun ε => (hdiff ε).symm
+  refine approximatesToOrder_iff.2 <|
+    (IsBigO.fun_sum fun j _ => ?_).congr_left fun ε => (hdiff ε).symm
   exact (isBigO_pow_of_le (Nat.le_add_right (m + 1) j)).const_mul_left _
 
 /-- The effective-theory amplitude is additive in the coefficient assignment. -/
@@ -252,11 +253,12 @@ theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c)
     rw [Pi.zero_apply]
     refine (isBigO_sum_range_pow_smul_pow_succ_iff hl
       (a := fun k => (P.matchingMatrix M k).mulVec (fun o => c' o - c o) a)).1 ?_ k hk
-    refine ((hc a).sub (hc' a)).congr_left fun ε => ?_
+    refine ((approximatesToOrder_iff.1 (hc a)).sub
+      (approximatesToOrder_iff.1 (hc' a))).congr_left fun ε => ?_
     rw [← hdiff]
     ring
   · intro h a
-    refine (hc a).congr_left fun ε => ?_
+    refine approximatesToOrder_iff.2 <| (approximatesToOrder_iff.1 (hc a)).congr_left fun ε => ?_
     rw [← sub_eq_zero, sub_sub_sub_cancel_left, hdiff]
     exact sum_eq_zero fun k hk => by
       rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), Pi.zero_apply, smul_zero]
