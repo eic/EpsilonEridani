@@ -56,8 +56,8 @@ are unique on the whole truncation exactly when this holds at every total degree
 
 ## Main results
 
-* `PowerCounting.IsMatching.isMatching_iff_mulVec_sub_eq_zero`: the matching assignments are the
-  translates of one of them by the kernels of the matching matrices.
+* `PowerCounting.IsMatching.isMatching_iff_mulVec_sub_eq_zero`: on the truncation, the matching
+  assignments are the translates of one of them by the kernels of the matching matrices.
 * `PowerCounting.IsMatching.eqOn_totalDegreePiece`: **uniqueness** at one total degree — under
   the rank condition at that degree, two matching assignments agree on its operators.
 * `PowerCounting.IsMatching.eqOn_truncation`: **uniqueness** — under the rank condition at every
@@ -73,6 +73,11 @@ matrix elements at the stated order in the coupling and at one scale, and every 
 at each scale separately, so a scale-dependent assignment `c : FreeMonoid B → ℝ → ℝ` is unique
 when each `c · μ` is. Existence of a matching assignment is not claimed in general; it is a
 property of the full theory, not of this linear algebra.
+
+The full-theory amplitudes `F` and the velocity-stripped matrix elements `M` are given data: nothing
+here derives them from QCD or NRQCD, and no dynamics, renormalisation or operator mixing is
+modelled. The results are statements of linear algebra and real analysis about such data, and no
+instance in which the rank condition holds is supplied here.
 
 The rank condition is turned into injectivity of the matching matrices by
 `Matrix.rank_eq_card_iff_mulVec_injective` of `TauCeti.LinearAlgebra.Matrix.Rank`, and the
@@ -191,7 +196,7 @@ is the coefficient of `ε ^ k` in the effective-theory amplitude through total d
 theorem matchingMatrix_mulVec_apply (M : A → FreeMonoid B → ℝ) (k : ℕ) (c : FreeMonoid B → ℝ)
     (a : A) :
     (P.matchingMatrix M k).mulVec (fun o => c o) a = ∑ o ∈ P.totalDegreePiece k, c o * M a o := by
-  simp only [Matrix.mulVec, dotProduct, matchingMatrix_apply, mul_comm (M a _)]
+  simp only [Matrix.mulVec_apply_eq_sum, matchingMatrix_apply, mul_comm (M a _)]
   exact sum_coe_sort (P.totalDegreePiece k) fun o => c o * M a o
 
 /-! ### Uniqueness -/

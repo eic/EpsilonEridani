@@ -108,18 +108,9 @@ def ApproximatesToOrder (W Wapp : ℝ → ℝ) (n : ℕ) : Prop :=
 
 /-- Near `0⁺` a higher power of the power-counting ratio is dominated by a lower one. -/
 lemma isBigO_pow_of_le {m n : ℕ} (hmn : m ≤ n) :
-    (fun lam : ℝ => lam ^ n) =O[smallRatio] fun lam : ℝ => lam ^ m := by
-  have hIio : Set.Iio (1 : ℝ) ∈ 𝓝 (0 : ℝ) := isOpen_Iio.mem_nhds (by norm_num)
-  have hlt1 : ∀ᶠ lam : ℝ in smallRatio, lam < 1 :=
-    Filter.Eventually.filter_mono nhdsWithin_le_nhds hIio
-  rw [isBigO_iff]
-  refine ⟨1, ?_⟩
-  filter_upwards [self_mem_nhdsWithin, hlt1] with lam hmem hlt
-  have hpos : (0 : ℝ) < lam := hmem
-  have hle : lam ^ n ≤ lam ^ m := pow_le_pow_of_le_one hpos.le hlt.le hmn
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (pow_pos hpos n),
-    abs_of_pos (pow_pos hpos m), one_mul]
-  exact hle
+    (fun lam : ℝ => lam ^ n) =O[smallRatio] fun lam : ℝ => lam ^ m :=
+  hmn.lt_or_eq.elim (fun h => (isLittleO_pow_pow h).isBigO.mono nhdsWithin_le_nhds)
+    fun h => h ▸ isBigO_refl _ _
 
 /-- An approximation accurate to order `n` is accurate to every lower order. -/
 lemma ApproximatesToOrder.mono {W Wapp : ℝ → ℝ} {m n : ℕ}
