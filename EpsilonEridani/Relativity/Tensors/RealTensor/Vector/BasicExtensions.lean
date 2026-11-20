@@ -10,23 +10,35 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 # Extensions of the basic API of Lorentz vectors
 
-Facts about `Physlib`'s elementary Lorentz-vector API, companions to
-`Physlib.Relativity.Tensors.RealTensor.Vector.Basic`.
-
-* Component lemmas for the constructor `Lorentz.Vector.ofTemporalComponent`: the time
+* Component lemmas for `Physlib`'s constructor `Lorentz.Vector.ofTemporalComponent`: the time
   component and spatial part of a purely temporal vector `t e₀`, and the spatial part of a
   difference (`spatialPart_sub`). They describe the equal-time projection
   `v - ofTemporalComponent v.timeComponent` of a vector `v`, which has vanishing time component
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
+
 * The additivity of the time component and of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and
-  `(u + v).spatialPart = u.spatialPart + v.spatialPart`; the closure of collinearity under sums,
-  `(u + v).spatialPart = (a + b) • n` when `u.spatialPart = a • n` and `v.spatialPart = b • n`;
-  and the component `⟪v.spatialPart, n⟫ = a` along a unit vector `n` of the spatial part `a • n`
-  of a four-vector, so that `|⟪v.spatialPart, n⟫| < v⁰` when `|a| < v⁰`.
+  `(u + v).spatialPart = u.spatialPart + v.spatialPart` (`timeComponent_add`, `spatialPart_add`);
+  the closure of collinearity under sums, `(u + v).spatialPart = (a + b) • n` when
+  `u.spatialPart = a • n` and `v.spatialPart = b • n`
+  (`spatialPart_add_eq_smul_of_spatialPart_eq_smul`); and the component `⟪v.spatialPart, n⟫ = a`
+  along a unit vector `n` of the spatial part `a • n` of a four-vector
+  (`inner_spatialPart_eq_of_spatialPart_eq_smul`), so that `|⟪v.spatialPart, n⟫| < v⁰` when
+  `|a| < v⁰` (`abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul`).
+
+* The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
+  (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from
+  Physlib's `ofTemporalComponent` and `ofSpatialComponent`, and every vector arises this way from
+  its own time component and spatial part (`ofTimeAndSpatial_timeComponent_spatialPart_eq`).
+  Its Minkowski product is `minkowskiProduct_ofTimeAndSpatial_eq` in
+  `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`. It gives
+  explicit configurations, such as light-cone frames, in any spacetime with at least two spatial
+  dimensions.
 -/
 
 public section
+
+noncomputable section
 
 namespace Lorentz
 namespace Vector
@@ -105,6 +117,37 @@ theorem abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul {d : ℕ} 
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
     (h : |a| < v.timeComponent) : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent := by
   rwa [inner_spatialPart_eq_of_spatialPart_eq_smul hn hv]
+
+/-- The vector with time component `x` and spatial part `s`, assembled from Physlib's
+`ofTemporalComponent` and `ofSpatialComponent`. -/
+def ofTimeAndSpatial {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) : Vector d :=
+  ofTemporalComponent x + ofSpatialComponent s
+
+lemma ofTimeAndSpatial_def {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
+    ofTimeAndSpatial x s = ofTemporalComponent x + ofSpatialComponent s := (rfl)
+
+@[simp]
+lemma timeComponent_ofTimeAndSpatial_eq {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
+    (ofTimeAndSpatial x s).timeComponent = x := by
+  simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
+
+@[simp]
+lemma spatialPart_ofTimeAndSpatial_eq {d : ℕ} (x : ℝ) (s : EuclideanSpace ℝ (Fin d)) :
+    (ofTimeAndSpatial x s).spatialPart = s := by
+  ext i
+  simp [ofTimeAndSpatial_def, ofTemporalComponent, ofSpatialComponent, apply_sum, basis_apply]
+
+/-- Every vector is assembled from its time component and its spatial part. -/
+@[simp]
+lemma ofTimeAndSpatial_timeComponent_spatialPart_eq {d : ℕ} (v : Vector d) :
+    ofTimeAndSpatial v.timeComponent v.spatialPart = v := by
+  refine ext_of_apply fun μ => ?_
+  rcases μ with μ | i
+  · fin_cases μ
+    -- `timeComponent` is an `abbrev` for evaluation at `Sum.inl 0`
+    exact timeComponent_ofTimeAndSpatial_eq ..
+  · rw [← spatialPart_apply_eq_toCoord (ofTimeAndSpatial _ _), ← spatialPart_apply_eq_toCoord v,
+      spatialPart_ofTimeAndSpatial_eq]
 
 end Vector
 end Lorentz

@@ -93,7 +93,7 @@ theorem sum_bilin_sum_smul_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι]
     (B : M →ₗ[R] M →ₗ[R] N) {A : Matrix ι ι R} (hA : A ∈ orthogonalGroup ι R) (x y : ι → M) :
     ∑ a, B (∑ b, A a b • x b) (∑ c, A a c • y c) = ∑ b, B (x b) (y b) := by
   have hδ (b c : ι) : ∑ a, A a b * A a c = if b = c then 1 else 0 := by
-    simpa [Matrix.mul_apply, one_apply] using
+    simpa [Matrix.mul_apply, Matrix.one_apply] using
       congrFun (congrFun ((mem_orthogonalGroup_iff' ι R).mp hA) b) c
   calc ∑ a, B (∑ b, A a b • x b) (∑ c, A a c • y c)
       = ∑ a, ∑ b, ∑ c, (A a b * A a c) • B (x b) (y c) := by

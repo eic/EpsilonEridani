@@ -214,11 +214,11 @@ theorem mem_euclideanSection_iff {z : ComplexSeparation d} :
 
 /-- The Minkowski section is closed. -/
 theorem isClosed_minkowskiSection : IsClosed (minkowskiSection d : Set (ComplexSeparation d)) :=
-  Submodule.closed_of_finiteDimensional _
+  Submodule.isClosed_of_finiteDimensional _
 
 /-- The Euclidean section is closed. -/
 theorem isClosed_euclideanSection : IsClosed (euclideanSection d : Set (ComplexSeparation d)) :=
-  Submodule.closed_of_finiteDimensional _
+  Submodule.isClosed_of_finiteDimensional _
 
 /-! ### The Wick rotation -/
 
