@@ -96,27 +96,37 @@ instance : AddCommGroup Dipole := equivProd.addCommGroup
 
 instance : Module ℝ Dipole := equivProd.addEquiv.module ℝ
 
-@[simp] lemma zero_quark : (0 : Dipole).quark = 0 := (rfl)
+@[simp] lemma equivProd_apply (d : Dipole) : equivProd d = (d.quark, d.antiquark) := (rfl)
 
-@[simp] lemma zero_antiquark : (0 : Dipole).antiquark = 0 := (rfl)
+@[simp] lemma equivProd_symm_apply (p : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
+    equivProd.symm p = ⟨p.1, p.2⟩ :=
+  (rfl)
 
-@[simp] lemma add_quark (d d' : Dipole) : (d + d').quark = d.quark + d'.quark := (rfl)
+/-! The transported operations act on a dipole as `equivProd.symm (op (equivProd d))`
+(`Equiv.addCommGroup`, `AddEquiv.module`), and the operations of the product act componentwise,
+so each endpoint equation below holds by construction, definitionally. -/
 
-@[simp] lemma add_antiquark (d d' : Dipole) :
+@[simp] lemma quark_zero : (0 : Dipole).quark = 0 := (rfl)
+
+@[simp] lemma antiquark_zero : (0 : Dipole).antiquark = 0 := (rfl)
+
+@[simp] lemma quark_add (d d' : Dipole) : (d + d').quark = d.quark + d'.quark := (rfl)
+
+@[simp] lemma antiquark_add (d d' : Dipole) :
     (d + d').antiquark = d.antiquark + d'.antiquark := (rfl)
 
-@[simp] lemma neg_quark (d : Dipole) : (-d).quark = -d.quark := (rfl)
+@[simp] lemma quark_neg (d : Dipole) : (-d).quark = -d.quark := (rfl)
 
-@[simp] lemma neg_antiquark (d : Dipole) : (-d).antiquark = -d.antiquark := (rfl)
+@[simp] lemma antiquark_neg (d : Dipole) : (-d).antiquark = -d.antiquark := (rfl)
 
-@[simp] lemma sub_quark (d d' : Dipole) : (d - d').quark = d.quark - d'.quark := (rfl)
+@[simp] lemma quark_sub (d d' : Dipole) : (d - d').quark = d.quark - d'.quark := (rfl)
 
-@[simp] lemma sub_antiquark (d d' : Dipole) :
+@[simp] lemma antiquark_sub (d d' : Dipole) :
     (d - d').antiquark = d.antiquark - d'.antiquark := (rfl)
 
-@[simp] lemma smul_quark (c : ℝ) (d : Dipole) : (c • d).quark = c • d.quark := (rfl)
+@[simp] lemma quark_smul (c : ℝ) (d : Dipole) : (c • d).quark = c • d.quark := (rfl)
 
-@[simp] lemma smul_antiquark (c : ℝ) (d : Dipole) : (c • d).antiquark = c • d.antiquark := (rfl)
+@[simp] lemma antiquark_smul (c : ℝ) (d : Dipole) : (c • d).antiquark = c • d.antiquark := (rfl)
 
 /-! ### Size and impact parameter -/
 
@@ -160,37 +170,37 @@ lemma size_eq_zero_iff_antiquark_eq_impactParameter {d : Dipole} :
   simp [impactParameter_def]
 
 @[simp] lemma size_add (d d' : Dipole) : (d + d').size = d.size + d'.size := by
-  simp only [size_def, add_quark, add_antiquark]
+  simp only [size_def, quark_add, antiquark_add]
   abel
 
 @[simp] lemma impactParameter_add (d d' : Dipole) :
     (d + d').impactParameter = d.impactParameter + d'.impactParameter := by
-  simpa only [impactParameter_def, add_quark, add_antiquark, vadd_eq_add] using
+  simpa only [impactParameter_def, quark_add, antiquark_add, vadd_eq_add] using
     (midpoint_vadd_midpoint (R := ℝ) d.quark d.antiquark d'.quark d'.antiquark).symm
 
 @[simp] lemma size_neg (d : Dipole) : (-d).size = -d.size := by
-  simp only [size_def, neg_quark, neg_antiquark]
+  simp only [size_def, quark_neg, antiquark_neg]
   abel
 
 @[simp] lemma impactParameter_neg (d : Dipole) : (-d).impactParameter = -d.impactParameter := by
-  simp only [impactParameter_eq_smul_add, neg_quark, neg_antiquark]
+  simp only [impactParameter_eq_smul_add, quark_neg, antiquark_neg]
   module
 
 @[simp] lemma size_sub (d d' : Dipole) : (d - d').size = d.size - d'.size := by
-  simp only [size_def, sub_quark, sub_antiquark]
+  simp only [size_def, quark_sub, antiquark_sub]
   abel
 
 @[simp] lemma impactParameter_sub (d d' : Dipole) :
     (d - d').impactParameter = d.impactParameter - d'.impactParameter := by
-  simpa only [impactParameter_def, sub_quark, sub_antiquark, vsub_eq_sub] using
+  simpa only [impactParameter_def, quark_sub, antiquark_sub, vsub_eq_sub] using
     (midpoint_vsub_midpoint (R := ℝ) d.quark d.antiquark d'.quark d'.antiquark).symm
 
 @[simp] lemma size_smul (c : ℝ) (d : Dipole) : (c • d).size = c • d.size := by
-  simp only [size_def, smul_quark, smul_antiquark, smul_sub]
+  simp only [size_def, quark_smul, antiquark_smul, smul_sub]
 
 @[simp] lemma impactParameter_smul (c : ℝ) (d : Dipole) :
     (c • d).impactParameter = c • d.impactParameter := by
-  simp only [impactParameter_eq_smul_add, smul_quark, smul_antiquark]
+  simp only [impactParameter_eq_smul_add, quark_smul, antiquark_smul]
   module
 
 /-- The quark sits half the dipole vector beyond the impact parameter: `x = b + r / 2`. -/
@@ -210,22 +220,22 @@ antiquark at `b - r / 2`. -/
 def ofSizeImpactParameter (r b : EuclideanSpace ℝ (Fin 2)) : Dipole :=
   ⟨b + (2 : ℝ)⁻¹ • r, b - (2 : ℝ)⁻¹ • r⟩
 
-@[simp] lemma ofSizeImpactParameter_quark (r b : EuclideanSpace ℝ (Fin 2)) :
+@[simp] lemma quark_ofSizeImpactParameter (r b : EuclideanSpace ℝ (Fin 2)) :
     (ofSizeImpactParameter r b).quark = b + (2 : ℝ)⁻¹ • r :=
   (rfl)
 
-@[simp] lemma ofSizeImpactParameter_antiquark (r b : EuclideanSpace ℝ (Fin 2)) :
+@[simp] lemma antiquark_ofSizeImpactParameter (r b : EuclideanSpace ℝ (Fin 2)) :
     (ofSizeImpactParameter r b).antiquark = b - (2 : ℝ)⁻¹ • r :=
   (rfl)
 
 @[simp] lemma size_ofSizeImpactParameter (r b : EuclideanSpace ℝ (Fin 2)) :
     (ofSizeImpactParameter r b).size = r := by
-  rw [size_def, ofSizeImpactParameter_quark, ofSizeImpactParameter_antiquark]
+  rw [size_def, quark_ofSizeImpactParameter, antiquark_ofSizeImpactParameter]
   module
 
 @[simp] lemma impactParameter_ofSizeImpactParameter (r b : EuclideanSpace ℝ (Fin 2)) :
     (ofSizeImpactParameter r b).impactParameter = b := by
-  rw [impactParameter_def, ofSizeImpactParameter_quark, ofSizeImpactParameter_antiquark,
+  rw [impactParameter_def, quark_ofSizeImpactParameter, antiquark_ofSizeImpactParameter,
     midpoint_add_sub]
 
 @[simp] lemma ofSizeImpactParameter_size_impactParameter (d : Dipole) :
@@ -233,7 +243,7 @@ def ofSizeImpactParameter (r b : EuclideanSpace ℝ (Fin 2)) : Dipole :=
   ext1 <;> simp
 
 /-- The diagonal dipole at `b` is the dipole of zero size at impact parameter `b`. -/
-lemma ofSizeImpactParameter_zero (b : EuclideanSpace ℝ (Fin 2)) :
+lemma ofSizeImpactParameter_zero_left (b : EuclideanSpace ℝ (Fin 2)) :
     ofSizeImpactParameter 0 b = ⟨b, b⟩ := by
   ext1 <;> simp
 

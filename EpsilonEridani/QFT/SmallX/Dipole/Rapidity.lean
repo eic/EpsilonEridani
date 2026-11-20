@@ -43,7 +43,7 @@ This file defines `rapidity x₀ x` and proves the properties the evolution equa
 * `SmallX.tendsto_rapidity_nhdsGT_zero`: rapidity grows without bound as `x → 0⁺`.
 * `SmallX.log_le_rapidity`: on `0 < x ≤ 1` the rapidity is at least `log x₀`.
 * `DisKinematics.BasicAssumptions.log_le_rapidity_xBj` and
-  `DisKinematics.BasicAssumptions.rapidity_xBj_lt_rapidity_xBj_iff`: rapidity on the physical
+  `DisKinematics.BasicAssumptions.rapidity_xBj_lt_rapidity_xBj_iff_gt`: rapidity on the physical
   region of deep-inelastic scattering.
 
 ## References
@@ -100,18 +100,18 @@ lemma strictAntiOn_rapidity {x₀ : ℝ} (hx₀ : x₀ ≠ 0) : StrictAntiOn (ra
   have := Real.log_lt_log (Set.mem_Ioi.1 hx) hlt
   linarith
 
-lemma rapidity_lt_rapidity_iff {x₀ x x' : ℝ} (hx₀ : x₀ ≠ 0) (hx : 0 < x) (hx' : 0 < x') :
+lemma rapidity_lt_rapidity_iff_gt {x₀ x x' : ℝ} (hx₀ : x₀ ≠ 0) (hx : 0 < x) (hx' : 0 < x') :
     rapidity x₀ x < rapidity x₀ x' ↔ x' < x :=
   (strictAntiOn_rapidity hx₀).lt_iff_gt hx hx'
 
-lemma rapidity_le_rapidity_iff {x₀ x x' : ℝ} (hx₀ : x₀ ≠ 0) (hx : 0 < x) (hx' : 0 < x') :
+lemma rapidity_le_rapidity_iff_ge {x₀ x x' : ℝ} (hx₀ : x₀ ≠ 0) (hx : 0 < x) (hx' : 0 < x') :
     rapidity x₀ x ≤ rapidity x₀ x' ↔ x' ≤ x :=
   (strictAntiOn_rapidity hx₀).le_iff_ge hx hx'
 
 /-- A positive momentum fraction has positive rapidity exactly when it lies below the positive
 reference. -/
 lemma rapidity_pos_iff {x₀ x : ℝ} (hx₀ : 0 < x₀) (hx : 0 < x) : 0 < rapidity x₀ x ↔ x < x₀ := by
-  rw [← rapidity_self x₀, rapidity_lt_rapidity_iff hx₀.ne' hx₀ hx]
+  rw [← rapidity_self x₀, rapidity_lt_rapidity_iff_gt hx₀.ne' hx₀ hx]
 
 /-- On `0 < x ≤ 1` the rapidity is at least `log x₀`. -/
 lemma log_le_rapidity (x₀ : ℝ) {x : ℝ} (hx : 0 < x) (hx1 : x ≤ 1) :
@@ -127,7 +127,7 @@ lemma log_le_rapidity (x₀ : ℝ) {x : ℝ} (hx : 0 < x) (hx1 : x ≤ 1) :
   rw [rapidity_def, div_mul_cancel_left₀ hx₀, ← Real.exp_neg, neg_neg, Real.log_exp]
 
 /-- A positive momentum fraction is recovered from its rapidity as `x = x₀ e^{-Y}`. -/
-lemma mul_exp_neg_rapidity {x₀ x : ℝ} (hx₀ : 0 < x₀) (hx : 0 < x) :
+@[simp] lemma mul_exp_neg_rapidity {x₀ x : ℝ} (hx₀ : 0 < x₀) (hx : 0 < x) :
     x₀ * Real.exp (-rapidity x₀ x) = x := by
   rw [rapidity_def, Real.exp_neg, Real.exp_log (div_pos hx₀ hx), inv_div,
     mul_div_cancel₀ _ hx₀.ne']
@@ -159,10 +159,10 @@ lemma log_le_rapidity_xBj {g : Bilin V} {K : DisKinematics V} (h : BasicAssumpti
 
 /-- On the physical region of deep-inelastic scattering, ordering two configurations by the
 rapidity of their Bjorken variables reverses their ordering in `x`. -/
-lemma rapidity_xBj_lt_rapidity_xBj_iff {g g' : Bilin V} {K K' : DisKinematics V}
+lemma rapidity_xBj_lt_rapidity_xBj_iff_gt {g g' : Bilin V} {K K' : DisKinematics V}
     (h : BasicAssumptions g K) (h' : BasicAssumptions g' K') {x₀ : ℝ} (hx₀ : x₀ ≠ 0) :
     rapidity x₀ (K.xBj g) < rapidity x₀ (K'.xBj g') ↔ K'.xBj g' < K.xBj g :=
-  rapidity_lt_rapidity_iff hx₀ (xBj_pos g K h.q2_pos h.p_dot_q_pos)
+  rapidity_lt_rapidity_iff_gt hx₀ (xBj_pos g K h.q2_pos h.p_dot_q_pos)
     (xBj_pos g' K' h'.q2_pos h'.p_dot_q_pos)
 
 end Scattering.DIS.Kinematics.DisKinematics.BasicAssumptions
