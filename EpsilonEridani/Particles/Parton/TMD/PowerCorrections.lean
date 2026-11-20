@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.TMD.Basic
+public import EpsilonEridani.Mathematics.Analysis.Asymptotics.ApproximatesToOrder
 import EpsilonEridani.Mathematics.Analysis.Asymptotics.TruncatedExpansion
 /-!
 
@@ -44,9 +45,10 @@ determination rather than a convention:
 * `monomialKpc` and `monomialKpc_leadingPower_not_approx_succ`: the interface is inhabited
   with a *nonzero* coefficient, so the sharpness statement is not vacuously true.
 
-These are statements of real analysis about the `λ → 0⁺` expansion; they are not statements
-about QCD. They are placed in the TMD namespace because the power counting they encode is
-the TMD power counting, and because `Kpc` is the interface that a future derivation of a
+The remainder bound is `EpsilonEridani.ApproximatesToOrder` in the power-counting ratio
+`λ = q_T / Q`. These are statements of real analysis about the `λ → 0⁺` expansion; they are
+not statements about QCD. They are placed in the TMD namespace because the power counting they
+encode is the TMD power counting, and because `Kpc` is the interface that a future derivation of a
 factorization theorem in this library should be asked to produce. A definition that merely
 named a correction term without bounding anything would carry none of this content.
 
@@ -90,34 +92,6 @@ theorem is an expansion in this ratio, and the limit in which the theorem is a t
 `λ → 0⁺`. -/
 def powerRatio (qT Q : ℝ) : ℝ := qT / Q
 
-/-- The filter in which TMD power counting is done: the power-counting ratio tends to zero
-from above.
-
-From *above* is not cosmetic. `λ` is a ratio of a transverse momentum to a hard scale and is
-positive, and it is positivity that makes `λ ^ n` nonvanishing along the filter, on which
-the uniqueness argument below depends. -/
-abbrev smallRatio : Filter ℝ := 𝓝[>] (0 : ℝ)
-
-/-- `ApproximatesToOrder W Wapp n` states that `Wapp` reproduces `W` with a remainder
-bounded by `λ ^ n` as the power-counting ratio `λ` tends to zero from above,
-`W λ - Wapp λ = O(λ ^ n)`.
-
-This is the shape of a factorization theorem carrying a stated accuracy. -/
-def ApproximatesToOrder (W Wapp : ℝ → ℝ) (n : ℕ) : Prop :=
-  (fun lam => W lam - Wapp lam) =O[smallRatio] fun lam => lam ^ n
-
-/-- Near `0⁺` a higher power of the power-counting ratio is dominated by a lower one. -/
-lemma isBigO_pow_of_le {m n : ℕ} (hmn : m ≤ n) :
-    (fun lam : ℝ => lam ^ n) =O[smallRatio] fun lam : ℝ => lam ^ m :=
-  hmn.lt_or_eq.elim (fun h => (isLittleO_pow_pow h).isBigO.mono nhdsWithin_le_nhds)
-    fun h => h ▸ isBigO_refl _ _
-
-/-- An approximation accurate to order `n` is accurate to every lower order. -/
-lemma ApproximatesToOrder.mono {W Wapp : ℝ → ℝ} {m n : ℕ}
-    (h : ApproximatesToOrder W Wapp n) (hmn : m ≤ n) :
-    ApproximatesToOrder W Wapp m :=
-  Asymptotics.IsBigO.trans h (isBigO_pow_of_le hmn)
-
 /-- A monomial `c λ ^ n` that is bounded by `λ ^ (n + 1)` as `λ → 0⁺` has vanishing
 coefficient.
 
@@ -125,7 +99,7 @@ This is the analytic fact behind every statement in this module. It is what forb
 different power corrections at the same order, and what makes a nonzero correction
 detectable in the accuracy of the leading-power term. -/
 lemma eq_zero_of_isBigO_pow_succ {n : ℕ} {c : ℝ}
-    (h : (fun lam : ℝ => c * lam ^ n) =O[smallRatio] fun lam : ℝ => lam ^ (n + 1)) :
+    (h : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ (n + 1)) :
     c = 0 := by
   have hsum : ∀ lam : ℝ, ∑ k ∈ Finset.range (n + 1), lam ^ k • Pi.single n c k = c * lam ^ n :=
     fun lam => by simp [Pi.single_apply, mul_comm]
@@ -142,11 +116,11 @@ lemma coeff_unique {W Wlp : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
     (h₁ : ApproximatesToOrder W (fun lam => Wlp lam + c₁ * lam ^ n) (n + 1))
     (h₂ : ApproximatesToOrder W (fun lam => Wlp lam + c₂ * lam ^ n) (n + 1)) :
     c₁ = c₂ := by
-  have h₁' : (fun lam : ℝ => W lam - (Wlp lam + c₁ * lam ^ n)) =O[smallRatio]
+  have h₁' : (fun lam : ℝ => W lam - (Wlp lam + c₁ * lam ^ n)) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) := h₁
-  have h₂' : (fun lam : ℝ => W lam - (Wlp lam + c₂ * lam ^ n)) =O[smallRatio]
+  have h₂' : (fun lam : ℝ => W lam - (Wlp lam + c₂ * lam ^ n)) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) := h₂
-  have hdiff : (fun lam : ℝ => (c₂ - c₁) * lam ^ n) =O[smallRatio]
+  have hdiff : (fun lam : ℝ => (c₂ - c₁) * lam ^ n) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) := by
     refine (h₁'.sub h₂').congr_left ?_
     intro lam
@@ -173,13 +147,13 @@ accurate to order `n`: the correction is genuinely subleading. -/
 lemma leadingPower_approximatesToOrder {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
     (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) :
     ApproximatesToOrder W Wlp n := by
-  have h' : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[smallRatio]
+  have h' : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) := h
-  have hlow : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[smallRatio]
+  have hlow : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ n := h'.trans (isBigO_pow_of_le (Nat.le_succ n))
-  have hcorr : (fun lam : ℝ => c * lam ^ n) =O[smallRatio] fun lam : ℝ => lam ^ n :=
-    (isBigO_refl (fun lam : ℝ => lam ^ n) smallRatio).const_mul_left c
-  have hsum : (fun lam : ℝ => W lam - Wlp lam) =O[smallRatio] fun lam : ℝ => lam ^ n := by
+  have hcorr : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n :=
+    (isBigO_refl (fun lam : ℝ => lam ^ n) (𝓝[>] 0)).const_mul_left c
+  have hsum : (fun lam : ℝ => W lam - Wlp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n := by
     refine (hlow.add hcorr).congr_left ?_
     intro lam
     ring
@@ -194,10 +168,10 @@ lemma not_approximatesToOrder_succ_of_coeff_ne_zero {W Wlp : ℝ → ℝ} {n : �
     (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) (hc : c ≠ 0) :
     ¬ ApproximatesToOrder W Wlp (n + 1) := by
   intro hlp
-  have hlp' : (fun lam : ℝ => W lam - Wlp lam) =O[smallRatio]
+  have hlp' : (fun lam : ℝ => W lam - Wlp lam) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) := hlp
   have hzero : ApproximatesToOrder W (fun lam => Wlp lam + 0 * lam ^ n) (n + 1) := by
-    have hcast : (fun lam : ℝ => W lam - (Wlp lam + 0 * lam ^ n)) =O[smallRatio]
+    have hcast : (fun lam : ℝ => W lam - (Wlp lam + 0 * lam ^ n)) =O[𝓝[>] 0]
         fun lam : ℝ => lam ^ (n + 1) := by
       refine hlp'.congr_left ?_
       intro lam
@@ -253,10 +227,10 @@ def monomialKpc (n : ℕ) : Kpc (fun lam : ℝ => lam ^ n) n where
   leadingPower := fun _ => 0
   coeff := 1
   remainder := by
-    have hz : (fun _ : ℝ => (0 : ℝ)) =O[smallRatio] fun lam : ℝ => lam ^ (n + 1) :=
+    have hz : (fun _ : ℝ => (0 : ℝ)) =O[𝓝[>] 0] fun lam : ℝ => lam ^ (n + 1) :=
       isBigO_zero _ _
     have hcast : (fun lam : ℝ => lam ^ n - ((fun _ : ℝ => (0 : ℝ)) lam + 1 * lam ^ n))
-        =O[smallRatio] fun lam : ℝ => lam ^ (n + 1) := by
+        =O[𝓝[>] 0] fun lam : ℝ => lam ^ (n + 1) := by
       refine hz.congr_left ?_
       intro lam
       ring
@@ -274,7 +248,7 @@ lemma monomialKpc_leadingPower_not_approx_succ (n : ℕ) :
 /-- The power-counting ratio tends to zero from above as the hard scale grows at fixed
 transverse momentum. -/
 lemma tendsto_powerRatio_atTop {qT : ℝ} (hqT : 0 < qT) :
-    Tendsto (fun Q : ℝ => powerRatio qT Q) atTop smallRatio := by
+    Tendsto (fun Q : ℝ => powerRatio qT Q) atTop (𝓝[>] 0) := by
   rw [tendsto_nhdsWithin_iff]
   constructor
   · have hdiv : Tendsto (fun Q : ℝ => qT / Q) atTop (𝓝 0) :=
@@ -294,7 +268,7 @@ lemma isBigO_inv_pow_atTop {W Wapp : ℝ → ℝ} {n : ℕ} (h : ApproximatesToO
     {qT : ℝ} (hqT : 0 < qT) :
     (fun Q : ℝ => W (powerRatio qT Q) - Wapp (powerRatio qT Q)) =O[atTop]
       fun Q : ℝ => (Q ^ n)⁻¹ := by
-  have h' : (fun lam : ℝ => W lam - Wapp lam) =O[smallRatio] fun lam : ℝ => lam ^ n := h
+  have h' : (fun lam : ℝ => W lam - Wapp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n := h
   have hcomp := h'.comp_tendsto (tendsto_powerRatio_atTop hqT)
   have hconv : (fun Q : ℝ => powerRatio qT Q ^ n) =O[atTop] fun Q : ℝ => (Q ^ n)⁻¹ := by
     refine ((isBigO_refl (fun Q : ℝ => (Q ^ n)⁻¹) atTop).const_mul_left (qT ^ n)).congr_left ?_

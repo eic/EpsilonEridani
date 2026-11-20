@@ -58,8 +58,8 @@ private theorem sum_range_pow_smul_eq_zero {n : ℕ} {a : ℕ → E} (h : ∀ k 
 
 /-- A polynomial of degree at most `n` that is `o(x ^ n)` along a nontrivial filter on the
 punctured neighbourhoods of `0` has vanishing coefficients. -/
-theorem eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl : l ≤ 𝓝[≠] 0) {n : ℕ} {a : ℕ → E}
-    (h : (fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) :
+private theorem eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl : l ≤ 𝓝[≠] 0) {n : ℕ}
+    {a : ℕ → E} (h : (fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) :
     ∀ k ≤ n, a k = 0 := by
   have hl₀ : l ≤ 𝓝 0 := hl.trans nhdsWithin_le_nhds
   induction n generalizing a with

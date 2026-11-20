@@ -5,8 +5,8 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
+public import EpsilonEridani.Mathematics.Analysis.Asymptotics.ApproximatesToOrder
 public import EpsilonEridani.QFT.Quarkonium.NRQCD.PowerCounting
-public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import EpsilonEridani.Mathematics.Analysis.Asymptotics.TruncatedExpansion
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -32,7 +32,9 @@ amplitude `a`:
 A coefficient assignment `c` gives the effective-theory amplitude through total degree `n`,
 `effectiveAmplitude n (M a) c ε = ∑_{o of total degree ≤ n} c o * M a o * ε ^ (total degree of o)`,
 and `c` satisfies the matching condition `IsMatching` when, for every amplitude, the full and
-effective amplitudes agree up to a remainder `O(ε ^ (n + 1))` as `ε → 0⁺`.
+effective amplitudes agree up to a remainder `O(ε ^ (n + 1))` as `ε → 0⁺`, that is when the
+effective amplitude `ApproximatesToOrder` the full one to order `n + 1`. Matching through total
+degree `n` implies matching through every lower total degree (`IsMatching.mono`).
 
 Matching to this order constrains the coefficients one total degree at a time, through the
 *matching matrix* `matchingMatrix M k`: its rows are the amplitudes, its columns the finitely many
@@ -56,6 +58,8 @@ are unique on the whole truncation exactly when this holds at every total degree
 
 ## Main results
 
+* `PowerCounting.IsMatching.mono`: matching through total degree `n` implies matching through
+  every total degree `m ≤ n`.
 * `PowerCounting.IsMatching.isMatching_iff_mulVec_sub_eq_zero`: on the truncation, the matching
   assignments are the translates of one of them by the kernels of the matching matrices.
 * `PowerCounting.IsMatching.eqOn_totalDegreePiece`: **uniqueness** at one total degree — under
@@ -136,6 +140,21 @@ theorem effectiveAmplitude_congr {n : ℕ} {M M' c c' : FreeMonoid B → ℝ}
   simp only [effectiveAmplitude_def]
   exact sum_congr rfl fun o ho => by rw [hM ho, hc ho]
 
+/-- Truncating the effective-theory amplitude from total degree `n` to a total degree `m ≤ n`
+changes it by `O(ε ^ (m + 1))` as `ε → 0⁺`: the dropped operators all have total degree at
+least `m + 1`. -/
+theorem approximatesToOrder_effectiveAmplitude {m n : ℕ} (hmn : m ≤ n) (M c : FreeMonoid B → ℝ) :
+    ApproximatesToOrder (P.effectiveAmplitude n M c) (P.effectiveAmplitude m M c) (m + 1) := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
+  -- the difference is the sum of the terms of total degree `m + 1` through `m + d`
+  have hdiff : ∀ ε, P.effectiveAmplitude (m + d) M c ε - P.effectiveAmplitude m M c ε =
+      ∑ j ∈ range d, (∑ o ∈ P.totalDegreePiece (m + 1 + j), c o * M o) * ε ^ (m + 1 + j) :=
+    fun ε => by
+      simp only [effectiveAmplitude_eq_sum_range, add_right_comm m d 1, sum_range_add,
+        add_sub_cancel_left, smul_eq_mul, mul_comm (ε ^ _)]
+  refine (IsBigO.fun_sum fun j _ => ?_).congr_left fun ε => (hdiff ε).symm
+  exact (isBigO_pow_of_le (Nat.le_add_right (m + 1) j)).const_mul_left _
+
 /-- The effective-theory amplitude is additive in the coefficient assignment. -/
 theorem effectiveAmplitude_add_right (n : ℕ) (M c c' : FreeMonoid B → ℝ) (ε : ℝ) :
     P.effectiveAmplitude n M (c + c') ε =
@@ -156,27 +175,35 @@ the effective-theory amplitude built from the velocity-stripped matrix elements 
 `O(ε ^ (n + 1))` as the power-counting parameter `ε` tends to `0⁺`. -/
 def IsMatching (n : ℕ) (F : A → ℝ → ℝ) (M : A → FreeMonoid B → ℝ) (c : FreeMonoid B → ℝ) :
     Prop :=
-  ∀ a, (fun ε => F a ε - P.effectiveAmplitude n (M a) c ε) =O[𝓝[>] 0] fun ε => ε ^ (n + 1)
+  ∀ a, ApproximatesToOrder (F a) (P.effectiveAmplitude n (M a) c) (n + 1)
 
 /-- Unfolding the matching condition. -/
 theorem isMatching_def {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}
     {c : FreeMonoid B → ℝ} :
-    P.IsMatching n F M c ↔ ∀ a,
-      (fun ε => F a ε - P.effectiveAmplitude n (M a) c ε) =O[𝓝[>] 0] fun ε => ε ^ (n + 1) :=
+    P.IsMatching n F M c ↔
+      ∀ a, ApproximatesToOrder (F a) (P.effectiveAmplitude n (M a) c) (n + 1) :=
   Iff.rfl
 
-/-- The matching condition through total degree `n` depends only on the coefficients of the
-operators of the truncation. -/
-theorem isMatching_congr {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}
-    {c c' : FreeMonoid B → ℝ} (h : Set.EqOn c c' (P.truncation n)) :
-    P.IsMatching n F M c ↔ P.IsMatching n F M c' :=
-  forall_congr' fun _ => by simp only [P.effectiveAmplitude_congr (Set.eqOn_refl _ _) h]
+/-- The matching condition through total degree `n` depends only on the matrix elements and the
+coefficients of the operators of the truncation. -/
+theorem isMatching_congr {n : ℕ} {F : A → ℝ → ℝ} {M M' : A → FreeMonoid B → ℝ}
+    {c c' : FreeMonoid B → ℝ} (hM : ∀ a, Set.EqOn (M a) (M' a) (P.truncation n))
+    (hc : Set.EqOn c c' (P.truncation n)) :
+    P.IsMatching n F M c ↔ P.IsMatching n F M' c' :=
+  forall_congr' fun a => by rw [funext (P.effectiveAmplitude_congr (hM a) hc)]
+
+/-- **Matching to a lower order.** An assignment matching the full-theory amplitudes through
+total degree `n` matches them through every total degree `m ≤ n`. -/
+theorem IsMatching.mono {n m : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}
+    {c : FreeMonoid B → ℝ} (h : P.IsMatching n F M c) (hmn : m ≤ n) : P.IsMatching m F M c :=
+  fun a =>
+    ((h a).mono (Nat.succ_le_succ hmn)).trans (P.approximatesToOrder_effectiveAmplitude hmn _ _)
 
 /-- Every coefficient assignment matches the amplitudes it generates itself. -/
 theorem isMatching_effectiveAmplitude (n : ℕ) (M : A → FreeMonoid B → ℝ)
     (c : FreeMonoid B → ℝ) :
-    P.IsMatching n (fun a => P.effectiveAmplitude n (M a) c) M c := fun _ => by
-  simpa only [sub_self] using isBigO_zero (fun ε : ℝ => ε ^ (n + 1)) (𝓝[>] 0)
+    P.IsMatching n (fun a => P.effectiveAmplitude n (M a) c) M c := fun _ =>
+  ApproximatesToOrder.refl _ _
 
 /-! ### The matching matrix -/
 
