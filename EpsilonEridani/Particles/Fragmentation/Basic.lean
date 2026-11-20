@@ -59,6 +59,18 @@ lemma zMoment_nonneg {D : Frag Hadron Flavor} {h : Hadron} {i : Flavor} {Q2 : �
     (hD : ∀ z ∈ Icc (0 : ℝ) 1, 0 ≤ D h i z Q2) (n : ℕ) : 0 ≤ zMoment D n h i Q2 :=
   setIntegral_nonneg measurableSet_Icc fun z hz => mul_nonneg (pow_nonneg hz.1 n) (hD z hz)
 
+/-- A `z`-moment of a family dominated in absolute value on the unit interval by a second family
+is dominated by the corresponding moment of the second family, provided that moment's integrand
+is integrable. -/
+lemma abs_zMoment_le {D G : Frag Hadron Flavor} {h : Hadron} {i : Flavor} {Q2 : ℝ} {n : ℕ}
+    (hD : IntegrableOn (fun z => z ^ n * D h i z Q2) (Icc 0 1))
+    (hGD : ∀ z ∈ Icc (0 : ℝ) 1, |G h i z Q2| ≤ D h i z Q2) :
+    |zMoment G n h i Q2| ≤ zMoment D n h i Q2 := by
+  rw [← Real.norm_eq_abs, zMoment, zMoment]
+  refine norm_integral_le_of_norm_le hD (ae_restrict_of_forall_mem measurableSet_Icc fun z hz => ?_)
+  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (pow_nonneg hz.1 n)]
+  exact mul_le_mul_of_nonneg_left (hGD z hz) (pow_nonneg hz.1 n)
+
 /-- The `k`-th moment over the unit interval of the monomial `c zᵐ` is `c / (k + m + 1)`. -/
 lemma integral_pow_mul_const_mul_pow (c : ℝ) (k m : ℕ) :
     ∫ z in (0 : ℝ)..1, z ^ k * (c * z ^ m) = c / (k + m + 1) := by
