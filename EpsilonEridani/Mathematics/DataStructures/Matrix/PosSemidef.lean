@@ -43,6 +43,13 @@ the quadratic-form characterisation of an arbitrary-index positive-semidefinite 
 `TauCeti.posSemidef_iff_finite_sum` of `TauCeti.LinearAlgebra.Matrix.PosSemidef`, through its
 principal-submatrix form `Matrix.PosSemidef.of_submatrix_dotProduct_mulVec_nonneg`.
 
+For a Hermitian `M` and a real vector `x`, `xᵀ (Re M) x = Re (xᴴ M x)`. This is how a real
+Gaussian kernel `(a, b) ↦ exp (-c ‖a - b‖²)` on a real inner-product space inherits positivity
+from its complex counterpart through `Matrix.PosSemidef.map_re`; that kernel lemma is recorded in
+`EpsilonEridani/Mathematics/DataStructures/Matrix/GaussianKernel.lean`, where it feeds the
+admissibility of the Golec-Biernat-Wüsthoff dipole amplitude of
+`EpsilonEridani/QFT/SmallX/Dipole/Amplitude.lean`.
+
 ## Main results
 
 - `Matrix.PosSemidef.of_submatrix_dotProduct_mulVec_nonneg`: a hermitian matrix whose principal
