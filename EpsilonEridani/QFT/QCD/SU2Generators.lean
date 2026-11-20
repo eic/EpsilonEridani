@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.QCD.CasimirDerivation
-public import Physlib.Relativity.PauliMatrices.Basic
+public import EpsilonEridani.Relativity.PauliMatrices.BasicExtensions
 /-!
 
 # Genuine `su(2)` normalized generator data
@@ -103,10 +103,16 @@ lemma su2TraceStatement : SU2TraceStatement := by
 /-- The fundamental `su(2)` Casimir: `Σₐ (σᵃ/2)(σᵃ/2) = (3/4) · 1`. -/
 lemma su2FundamentalStatement : SU2FundamentalStatement := by
   intro i j
-  fin_cases i <;> fin_cases j <;>
-    simp [su2GenEntry, su2DeltaFund, Fin.sum_univ_two, Fin.sum_univ_three, pauliMatrix,
-      Complex.ext_iff] <;>
-    norm_num
+  have h := Matrix.ext_iff.mpr sum_pauliMatrix_inr_mul_self i j
+  simp only [Matrix.sum_apply, Matrix.mul_apply, Matrix.smul_apply, Matrix.one_apply,
+    smul_eq_mul] at h
+  have hquarter : ∀ a k, su2GenEntry a i k * su2GenEntry a k j =
+      (1 / 4 : ℂ) * (pauliMatrix (Sum.inr a) i k * pauliMatrix (Sum.inr a) k j) := by
+    intro a k
+    simp only [su2GenEntry]
+    ring
+  simp only [hquarter, ← Finset.mul_sum, h, su2DeltaFund]
+  split_ifs <;> norm_num
 
 /-- The adjoint `su(2)` Casimir: `Σ_{cd} ε^{acd} ε^{bcd} = 2 δᵃᵇ`, i.e. `C_A = 2`. -/
 lemma su2AdjointStatement : SU2AdjointStatement := by
