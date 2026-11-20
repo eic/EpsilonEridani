@@ -18,8 +18,8 @@ the identity.
 
 ## Main results
 
-- `Matrix.sum_norm_sq_one_row_eq_one`: each row of `1` has unit squared norm.
-- `Matrix.sum_norm_sq_one_col_eq_one`: each column of `1` has unit squared norm.
+- `Matrix.sum_row_norm_sq_one_eq_one`: each row of `1` has unit squared norm.
+- `Matrix.sum_col_norm_sq_one_eq_one`: each column of `1` has unit squared norm.
 -/
 
 public section
@@ -29,11 +29,13 @@ namespace Matrix
 variable {n α : Type*} [Fintype n] [DecidableEq n] [SeminormedRing α] [NormOneClass α]
 
 /-- Each row of the identity matrix has unit squared norm. -/
-theorem sum_norm_sq_one_row_eq_one (i : n) : ∑ j, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1 := by
+@[simp]
+theorem sum_row_norm_sq_one_eq_one (i : n) : ∑ j, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1 := by
   simp [one_apply, apply_ite (fun z : α => ‖z‖ ^ 2)]
 
 /-- Each column of the identity matrix has unit squared norm. -/
-theorem sum_norm_sq_one_col_eq_one (j : n) : ∑ i, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1 := by
+@[simp]
+theorem sum_col_norm_sq_one_eq_one (j : n) : ∑ i, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1 := by
   simp [one_apply, apply_ite (fun z : α => ‖z‖ ^ 2)]
 
 end Matrix

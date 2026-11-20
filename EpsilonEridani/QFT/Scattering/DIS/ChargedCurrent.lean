@@ -253,32 +253,32 @@ down-type flavour `down i` of its generation: `F₂^{W⁻} = 2 x Σᵢ (u_i + db
 theorem f2CCMinusLO_one :
     f2CCMinusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (up i)) x Q2 + f (antiquark (down i)) x Q2) := by
-  rw [f2CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
-    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_add_distrib]
+  rw [f2CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_row_norm_sq_one_eq_one
+    Matrix.sum_col_norm_sq_one_eq_one, Finset.sum_add_distrib]
 
 /-- **`x F₃^{W⁻}` without mixing.** `x F₃^{W⁻} = 2 x Σᵢ (u_i - dbar_i)`. -/
 @[simp]
 theorem xf3CCMinusLO_one :
     xf3CCMinusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (up i)) x Q2 - f (antiquark (down i)) x Q2) := by
-  rw [xf3CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
-    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_sub_distrib]
+  rw [xf3CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_row_norm_sq_one_eq_one
+    Matrix.sum_col_norm_sq_one_eq_one, Finset.sum_sub_distrib]
 
 /-- **`F₂^{W⁺}` without mixing.** `F₂^{W⁺} = 2 x Σᵢ (d_i + ubar_i)`. -/
 @[simp]
 theorem f2CCPlusLO_one :
     f2CCPlusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (down i)) x Q2 + f (antiquark (up i)) x Q2) := by
-  rw [f2CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
-    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_add_distrib]
+  rw [f2CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_row_norm_sq_one_eq_one
+    Matrix.sum_col_norm_sq_one_eq_one, Finset.sum_add_distrib]
 
 /-- **`x F₃^{W⁺}` without mixing.** `x F₃^{W⁺} = 2 x Σᵢ (d_i - ubar_i)`. -/
 @[simp]
 theorem xf3CCPlusLO_one :
     xf3CCPlusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (down i)) x Q2 - f (antiquark (up i)) x Q2) := by
-  rw [xf3CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
-    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_sub_distrib]
+  rw [xf3CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_row_norm_sq_one_eq_one
+    Matrix.sum_col_norm_sq_one_eq_one, Finset.sum_sub_distrib]
 
 end NoMixing
 
