@@ -8,7 +8,7 @@ module
 public import EpsilonEridani.QFT.Quarkonium.NRQCD.PowerCounting
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.LinearAlgebra.Matrix.Rank
-import EpsilonEridani.Mathematics.Analysis.Asymptotics.PowerSum
+import EpsilonEridani.Mathematics.Analysis.Asymptotics.TruncatedExpansion
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
@@ -40,10 +40,12 @@ operators of total degree exactly `k` (`PowerCounting.totalDegreePiece k`), and 
 velocity-stripped matrix elements; the set of amplitudes need not be finite. Given one matching
 assignment `c`, another assignment `c'` matches if and only if, at every total degree `k ≤ n`, the
 difference `c' - c` lies in the kernel of the matching matrix
-(`IsMatching.isMatching_iff_mulVec_eq_zero`). Hence the matching coefficients are unique on the
-truncation exactly when every matching matrix up to total degree `n` has full column rank, that is
-when the amplitudes separate the operators of each total degree (`IsMatching.eqOn_truncation` and
-`IsMatching.forall_eqOn_truncation_iff`).
+(`IsMatching.isMatching_iff_mulVec_sub_eq_zero`). Hence the matching coefficients of the operators
+of a total degree `k ≤ n` are unique exactly when the matching matrix at total degree `k` has full
+column rank, that is when the amplitudes separate the operators of total degree `k`
+(`IsMatching.eqOn_totalDegreePiece` and `IsMatching.forall_eqOn_totalDegreePiece_iff`), and they
+are unique on the whole truncation exactly when this holds at every total degree `k ≤ n`
+(`IsMatching.eqOn_truncation` and `IsMatching.forall_eqOn_truncation_iff`).
 
 ## Main definitions
 
@@ -54,12 +56,15 @@ when the amplitudes separate the operators of each total degree (`IsMatching.eqO
 
 ## Main results
 
-* `PowerCounting.IsMatching.isMatching_iff_mulVec_eq_zero`: the matching assignments are the
+* `PowerCounting.IsMatching.isMatching_iff_mulVec_sub_eq_zero`: the matching assignments are the
   translates of one of them by the kernels of the matching matrices.
-* `PowerCounting.IsMatching.eqOn_truncation`: **uniqueness** — under the rank condition, two
-  matching assignments agree on the truncation.
-* `PowerCounting.IsMatching.forall_eqOn_truncation_iff`: the rank condition is also necessary
-  for uniqueness.
+* `PowerCounting.IsMatching.eqOn_totalDegreePiece`: **uniqueness** at one total degree — under
+  the rank condition at that degree, two matching assignments agree on its operators.
+* `PowerCounting.IsMatching.eqOn_truncation`: **uniqueness** — under the rank condition at every
+  total degree, two matching assignments agree on the truncation.
+* `PowerCounting.IsMatching.forall_eqOn_totalDegreePiece_iff`,
+  `PowerCounting.IsMatching.forall_eqOn_truncation_iff`: the rank condition is also necessary for
+  uniqueness, at each total degree and on the whole truncation.
 
 ## Implementation notes
 
@@ -72,7 +77,7 @@ property of the full theory, not of this linear algebra.
 The rank condition is turned into injectivity of the matching matrices by
 `Matrix.rank_eq_card_iff_mulVec_injective` of `TauCeti.LinearAlgebra.Matrix.Rank`, and the
 coefficients are read off degree by degree with `Asymptotics.isBigO_sum_range_pow_smul_pow_succ_iff`
-of `EpsilonEridani.Mathematics.Analysis.Asymptotics.PowerSum`.
+of `EpsilonEridani.Mathematics.Analysis.Asymptotics.TruncatedExpansion`.
 
 ## References
 
@@ -148,6 +153,13 @@ def IsMatching (n : ℕ) (F : A → ℝ → ℝ) (M : A → FreeMonoid B → ℝ
     Prop :=
   ∀ a, (fun ε => F a ε - P.effectiveAmplitude n (M a) c ε) =O[𝓝[>] 0] fun ε => ε ^ (n + 1)
 
+/-- Unfolding the matching condition. -/
+theorem isMatching_def {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}
+    {c : FreeMonoid B → ℝ} :
+    P.IsMatching n F M c ↔ ∀ a,
+      (fun ε => F a ε - P.effectiveAmplitude n (M a) c ε) =O[𝓝[>] 0] fun ε => ε ^ (n + 1) :=
+  Iff.rfl
+
 /-- The matching condition through total degree `n` depends only on the coefficients of the
 operators of the truncation. -/
 theorem isMatching_congr {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}
@@ -189,11 +201,11 @@ variable {P} {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ} 
 /-- **The space of matching coefficients.** Given one assignment `c` matching through total
 degree `n`, an assignment `c'` matches as well exactly when, at every total degree `k ≤ n`, the
 difference `c' - c` lies in the kernel of the matching matrix. -/
-theorem IsMatching.isMatching_iff_mulVec_eq_zero (hc : P.IsMatching n F M c) :
+theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c) :
     P.IsMatching n F M c' ↔
       ∀ k ≤ n, (P.matchingMatrix M k).mulVec (fun o => c' o - c o) = 0 := by
   have hl : 𝓝[>] (0 : ℝ) ≤ 𝓝[≠] 0 := nhdsGT_le_nhdsNE 0
-  -- the difference of the effective amplitudes, as a power sum with the matching-matrix
+  -- the difference of the effective amplitudes, as a polynomial with the matching-matrix
   -- coefficients
   have hdiff : ∀ a ε, P.effectiveAmplitude n (M a) c' ε - P.effectiveAmplitude n (M a) c ε =
       ∑ k ∈ range (n + 1), ε ^ k • (P.matchingMatrix M k).mulVec (fun o => c' o - c o) a :=
@@ -217,27 +229,37 @@ theorem IsMatching.isMatching_iff_mulVec_eq_zero (hc : P.IsMatching n F M c) :
     exact sum_eq_zero fun k hk => by
       rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), Pi.zero_apply, smul_zero]
 
+/-- **Uniqueness of the matching coefficients at one total degree.** If the matching matrix at a
+total degree `k ≤ n` has full column rank — the amplitudes separate the operators of total
+degree `k` — then two coefficient assignments matching the same amplitudes through total degree `n`
+agree on every operator of total degree `k`. -/
+theorem IsMatching.eqOn_totalDegreePiece (hc : P.IsMatching n F M c)
+    (hc' : P.IsMatching n F M c') {k : ℕ} (hk : k ≤ n)
+    (hrank : (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k)) :
+    Set.EqOn c c' (P.totalDegreePiece k) := fun o ho => by
+  have hinj := (Matrix.rank_eq_card_iff_mulVec_injective _).1 hrank
+  have h0 : (fun o : P.totalDegreePiece k => c' o - c o) = 0 :=
+    hinj <| by rw [(hc.isMatching_iff_mulVec_sub_eq_zero).1 hc' k hk, Matrix.mulVec_zero]
+  exact (sub_eq_zero.1 (congrFun h0 ⟨o, ho⟩)).symm
+
 /-- **Uniqueness of the matching coefficients.** If at every total degree `k ≤ n` the matching
-matrix has full column rank — the amplitudes separate the operators of total degree `k` — then two
-coefficient assignments matching the same amplitudes through total degree `n` agree on every
-operator of the truncation. -/
+matrix has full column rank, then two coefficient assignments matching the same amplitudes through
+total degree `n` agree on every operator of the truncation. -/
 theorem IsMatching.eqOn_truncation (hc : P.IsMatching n F M c) (hc' : P.IsMatching n F M c')
     (hrank : ∀ k ≤ n, (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k)) :
-    Set.EqOn c c' (P.truncation n) := fun o ho => by
-  set k := totalDegree (compositeDeg P.deg o)
-  have hk : k ≤ n := P.mem_truncation.1 ho
-  have hinj := (Matrix.rank_eq_card_iff_mulVec_injective _).1 (hrank k hk)
-  have h0 : (fun o : P.totalDegreePiece k => c' o - c o) = 0 :=
-    hinj <| by rw [(hc.isMatching_iff_mulVec_eq_zero).1 hc' k hk, Matrix.mulVec_zero]
-  exact (sub_eq_zero.1 (congrFun h0 ⟨o, (P.mem_totalDegreePiece).2 rfl⟩)).symm
+    Set.EqOn c c' (P.truncation n) := fun _ ho =>
+  hc.eqOn_totalDegreePiece hc' (P.mem_truncation.1 ho) (hrank _ (P.mem_truncation.1 ho))
+    ((P.mem_totalDegreePiece).2 rfl)
 
-/-- **The rank condition is necessary and sufficient.** Given one assignment matching through
-total degree `n`, every matching assignment agrees with it on the truncation exactly when the
-matching matrix has full column rank at every total degree `k ≤ n`. -/
-theorem IsMatching.forall_eqOn_truncation_iff (hc : P.IsMatching n F M c) :
-    (∀ c', P.IsMatching n F M c' → Set.EqOn c c' (P.truncation n)) ↔
-      ∀ k ≤ n, (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k) := by
-  refine ⟨fun huniq k hk => ?_, fun hrank c' hc' => hc.eqOn_truncation hc' hrank⟩
+/-- **The rank condition at one total degree is necessary and sufficient.** Given one assignment
+matching through total degree `n` and a total degree `k ≤ n`, every matching assignment agrees with
+it on the operators of total degree `k` exactly when the matching matrix at total degree `k` has
+full column rank. -/
+theorem IsMatching.forall_eqOn_totalDegreePiece_iff (hc : P.IsMatching n F M c) {k : ℕ}
+    (hk : k ≤ n) :
+    (∀ c', P.IsMatching n F M c' → Set.EqOn c c' (P.totalDegreePiece k)) ↔
+      (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k) := by
+  refine ⟨fun huniq => ?_, fun hrank c' hc' => hc.eqOn_totalDegreePiece hc' hk hrank⟩
   classical
   by_contra hrank
   -- a nonzero kernel vector `d` of the matching matrix at total degree `k`
@@ -250,7 +272,7 @@ theorem IsMatching.forall_eqOn_truncation_iff (hc : P.IsMatching n F M c) :
   -- shifting `c` by `d` on the operators of total degree `k` keeps the matching condition
   set c' : FreeMonoid B → ℝ := fun o => c o + if h : o ∈ P.totalDegreePiece k then d ⟨o, h⟩ else 0
   have hc' : P.IsMatching n F M c' := by
-    refine (hc.isMatching_iff_mulVec_eq_zero).2 fun j _ => ?_
+    refine (hc.isMatching_iff_mulVec_sub_eq_zero).2 fun j _ => ?_
     by_cases hjk : j = k
     · subst hjk
       have : (fun o : P.totalDegreePiece j => c' o - c o) = d := funext fun o => by
@@ -261,9 +283,19 @@ theorem IsMatching.forall_eqOn_truncation_iff (hc : P.IsMatching n F M c) :
           hjk (((P.mem_totalDegreePiece).1 o.2).symm.trans ((P.mem_totalDegreePiece).1 h))
         simp only [c', this, ↓reduceDIte, add_zero, sub_self, Pi.zero_apply]
       rw [this, Matrix.mulVec_zero]
-  have := huniq c' hc' (P.totalDegreePiece_subset_truncation hk o.2)
+  have := huniq c' hc' o.2
   simp only [c', o.2, ↓reduceDIte, Subtype.coe_eta] at this
   exact ho (by linarith)
+
+/-- **The rank condition is necessary and sufficient.** Given one assignment matching through
+total degree `n`, every matching assignment agrees with it on the truncation exactly when the
+matching matrix has full column rank at every total degree `k ≤ n`. -/
+theorem IsMatching.forall_eqOn_truncation_iff (hc : P.IsMatching n F M c) :
+    (∀ c', P.IsMatching n F M c' → Set.EqOn c c' (P.truncation n)) ↔
+      ∀ k ≤ n, (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k) :=
+  ⟨fun huniq _ hk => (hc.forall_eqOn_totalDegreePiece_iff hk).1 fun c' hc' =>
+      (huniq c' hc').mono (Finset.coe_subset.2 (P.totalDegreePiece_subset_truncation hk)),
+    fun hrank _ hc' => hc.eqOn_truncation hc' hrank⟩
 
 end PowerCounting
 

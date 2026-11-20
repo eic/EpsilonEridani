@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.TMD.Basic
-import EpsilonEridani.Mathematics.Analysis.Asymptotics.PowerSum
+import EpsilonEridani.Mathematics.Analysis.Asymptotics.TruncatedExpansion
 /-!
 
 # Kinematic Power Corrections to TMD Factorization
@@ -173,18 +173,8 @@ here is that such a prediction is unique — there is no freedom left in the coe
 lemma coeff_unique_of_leadingPower_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
     (h₁ : ApproximatesToOrder W (fun lam => c₁ * lam ^ n) (n + 1))
     (h₂ : ApproximatesToOrder W (fun lam => c₂ * lam ^ n) (n + 1)) :
-    c₁ = c₂ := by
-  have h₁' : (fun lam : ℝ => W lam - c₁ * lam ^ n) =O[smallRatio]
-      fun lam : ℝ => lam ^ (n + 1) := h₁
-  have h₂' : (fun lam : ℝ => W lam - c₂ * lam ^ n) =O[smallRatio]
-      fun lam : ℝ => lam ^ (n + 1) := h₂
-  have hdiff : (fun lam : ℝ => (c₂ - c₁) * lam ^ n) =O[smallRatio]
-      fun lam : ℝ => lam ^ (n + 1) := by
-    refine (h₁'.sub h₂').congr_left ?_
-    intro lam
-    ring
-  have hz := eq_zero_of_isBigO_pow_succ hdiff
-  linarith
+    c₁ = c₂ :=
+  coeff_unique (Wlp := fun _ => 0) (by simpa using h₁) (by simpa using h₂)
 
 /-- **The leading-power term keeps its own accuracy.** If including the order-`n` correction
 gives an approximation accurate to order `n + 1`, then the leading-power term on its own is
