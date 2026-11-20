@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import Physlib.Relativity.LorentzGroup.Boosts.Apply
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 
 /-!
@@ -44,6 +45,12 @@ orientation-preserving isometries of the transverse plane, acting on four-vector
 transverse position and transverse momentum as phase-space variables of parton Wigner distributions,
 and behind `ω(b_T, k_T)` as the weight of parton orbital angular momentum.
 
+The boosts along the longitudinal axis are Physlib's `LorentzGroup.boost 2 β`. In light-front
+components the boost with speed `β` multiplies `p⁺` by `γ (1 - β)` and `p⁻` by `γ (1 + β)`, both
+positive, and leaves `p_T` unchanged. A spacelike vector along the `z`-axis, such as the
+virtual-photon momentum in a frame where it has no transverse part, points along `+z` exactly when
+its plus component is positive, so such a boost never reverses its direction.
+
 ## Main definitions
 
 * `Lorentz.Vector.plusComponent`, `Lorentz.Vector.minusComponent`,
@@ -73,6 +80,10 @@ and behind `ω(b_T, k_T)` as the weight of parton orbital angular momentum.
   between two relative transverse momenta is invariant under transverse boosts; in particular
   (`EpsilonEridani.LightFront.areaForm_transversePart_relativeTransverse_transverseBoost`) so is
   the area between a light-front position and a relative transverse momentum.
+* `Lorentz.Vector.transversePart_boost_two`, `Lorentz.Vector.plusComponent_boost_two`,
+  `Lorentz.Vector.minusComponent_boost_two`: a boost along the `z`-axis in light-front components.
+* `Lorentz.Vector.boost_two_inr_two_pos_iff`: a boost along the `z`-axis does not reverse the
+  direction of a spacelike vector along that axis.
 * `EpsilonEridani.LightFront.areaForm_relativeTransverse_transverseIsometry`,
   `EpsilonEridani.LightFront.areaForm_transversePart_relativeTransverse_transverseIsometry`: the
   same two areas are invariant under orientation-preserving isometries of the transverse plane.
@@ -365,6 +376,58 @@ lemma relativeTransverse_of_plusComponent_eq_zero {b : Vector 3} (hb : plusCompo
 lemma relativeTransverse_self {P : Vector 3} (hP : plusComponent P ≠ 0) :
     relativeTransverse P P = 0 := by
   simp [relativeTransverse_def, div_self hP]
+
+/-! ### Longitudinal boosts -/
+
+section LongitudinalBoost
+
+open LorentzGroup
+
+/-- A boost along the `z`-axis does not change the transverse part of a four-vector. -/
+@[simp]
+lemma transversePart_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
+    transversePart (boost (2 : Fin 3) β hβ • p) = transversePart p := by
+  ext i
+  fin_cases i <;> simp [boost_inr_other_eq]
+
+/-- A boost along the `z`-axis with speed `β` rescales the plus component by `γ (1 - β)`. -/
+lemma plusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
+    plusComponent (boost (2 : Fin 3) β hβ • p) = γ β * (1 - β) * plusComponent p := by
+  simp only [plusComponent_def, boost_time_eq, boost_inr_self_eq]
+  ring
+
+/-- A boost along the `z`-axis with speed `β` rescales the minus component by `γ (1 + β)`. -/
+lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
+    minusComponent (boost (2 : Fin 3) β hβ • p) = γ β * (1 + β) * minusComponent p := by
+  simp only [minusComponent_def, boost_time_eq, boost_inr_self_eq]
+  ring
+
+/-- A spacelike four-vector along the `z`-axis points along `+z` exactly when its plus component
+is positive. -/
+lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3} (hT : transversePart q = 0)
+    (hq : ⟪q, q⟫ₘ < 0) : 0 < q (Sum.inr 2) ↔ 0 < plusComponent q := by
+  have h0 : q (Sum.inr 0) = 0 := by simpa using congrArg (· 0) hT
+  have h1 : q (Sum.inr 1) = 0 := by simpa using congrArg (· 1) hT
+  rw [minkowskiProduct_toCoord, Fin.sum_univ_three, h0, h1] at hq
+  rw [plusComponent_def, div_pos_iff_of_pos_right (by positivity)]
+  constructor <;> intro h
+  · nlinarith
+  · by_contra h'
+    nlinarith
+
+/-- A boost along the `z`-axis does not reverse the direction of a spacelike four-vector along
+the `z`-axis. -/
+lemma boost_two_inr_two_pos_iff {q : Vector 3} (hT : transversePart q = 0) (hq : ⟪q, q⟫ₘ < 0)
+    (β : ℝ) (hβ : |β| < 1) : 0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
+  have hγ : 0 < γ β * (1 - β) := by
+    have := abs_lt.1 hβ
+    refine mul_pos ?_ (by linarith)
+    simp only [γ, one_div, inv_pos, Real.sqrt_pos]
+    nlinarith
+  rw [inr_two_pos_iff_plusComponent_pos (by simpa) (by simpa), plusComponent_boost_two,
+    mul_pos_iff_of_pos_left hγ, inr_two_pos_iff_plusComponent_pos hT hq]
+
+end LongitudinalBoost
 
 end Lorentz.Vector
 
