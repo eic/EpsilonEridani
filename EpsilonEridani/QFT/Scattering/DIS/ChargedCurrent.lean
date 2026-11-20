@@ -5,10 +5,10 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.DataStructures.Matrix.Diagonal
 public import EpsilonEridani.Particles.Parton.PDF.ChargeConjugation
 public import EpsilonEridani.QFT.Scattering.DIS.CrossSection
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Data.Matrix.Diagonal
 
 /-!
 # Charged-current structure functions in the quark-parton model
@@ -49,7 +49,7 @@ The quark-parton model makes the following consequences exact at leading order.
   (`f2CCMinusLO_add_xf3CCMinusLO`, `f2CCMinusLO_sub_xf3CCMinusLO`, and their `W⁺` versions).
   The quark side of `W⁻` and the antiquark side of `W⁺` need only unit-norm rows of `V`, the other
   two sides only unit-norm columns, so for a rectangular `V` with unit-norm rows
-  `F₂^{W⁻} + x F₃^{W⁻} = 4 x Σᵢ u_i` (`f2CCMinusLO_add_xf3CCMinusLO_eq_of_sum_norm_sq_eq_one`).
+  `F₂^{W⁻} + x F₃^{W⁻} = 4 x Σᵢ u_i` (`f2CCMinusLO_add_xf3CCMinusLO_eq_of_row_sum_norm_sq_eq_one`).
 * *Positivity.* For `0 ≤ x` and non-negative quark and antiquark densities in the active
   channels, `F₂ ≥ 0` and `|x F₃| ≤ F₂`
   (`abs_xf3CCMinusLO_le_f2CCMinusLO`, `abs_xf3CCPlusLO_le_f2CCPlusLO`).
@@ -247,46 +247,38 @@ section NoMixing
 
 variable {n : Type} [Fintype n] [DecidableEq n] (up : n → Flavor) (down : n → Flavor)
 
-/-- Each row of the identity matrix has unit squared norm. -/
-private theorem sum_norm_sq_one_row (i : n) : ∑ j, ‖(1 : Matrix n n ℂ) i j‖ ^ 2 = 1 := by
-  simp [Matrix.one_apply, apply_ite (fun z : ℂ => ‖z‖ ^ 2)]
-
-/-- Each column of the identity matrix has unit squared norm. -/
-private theorem sum_norm_sq_one_col (j : n) : ∑ i, ‖(1 : Matrix n n ℂ) i j‖ ^ 2 = 1 := by
-  simp [Matrix.one_apply, apply_ite (fun z : ℂ => ‖z‖ ^ 2)]
-
 /-- **`F₂^{W⁻}` without mixing.** With `V = 1` each up-type flavour `up i` is paired with the
 down-type flavour `down i` of its generation: `F₂^{W⁻} = 2 x Σᵢ (u_i + dbar_i)`. -/
 @[simp]
 theorem f2CCMinusLO_one :
     f2CCMinusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (up i)) x Q2 + f (antiquark (down i)) x Q2) := by
-  rw [f2CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 sum_norm_sq_one_row sum_norm_sq_one_col,
-    Finset.sum_add_distrib]
+  rw [f2CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
+    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_add_distrib]
 
 /-- **`x F₃^{W⁻}` without mixing.** `x F₃^{W⁻} = 2 x Σᵢ (u_i - dbar_i)`. -/
 @[simp]
 theorem xf3CCMinusLO_one :
     xf3CCMinusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (up i)) x Q2 - f (antiquark (down i)) x Q2) := by
-  rw [xf3CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 sum_norm_sq_one_row sum_norm_sq_one_col,
-    Finset.sum_sub_distrib]
+  rw [xf3CCMinusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
+    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_sub_distrib]
 
 /-- **`F₂^{W⁺}` without mixing.** `F₂^{W⁺} = 2 x Σᵢ (d_i + ubar_i)`. -/
 @[simp]
 theorem f2CCPlusLO_one :
     f2CCPlusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (down i)) x Q2 + f (antiquark (up i)) x Q2) := by
-  rw [f2CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 sum_norm_sq_one_row sum_norm_sq_one_col,
-    Finset.sum_add_distrib]
+  rw [f2CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
+    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_add_distrib]
 
 /-- **`x F₃^{W⁺}` without mixing.** `x F₃^{W⁺} = 2 x Σᵢ (d_i - ubar_i)`. -/
 @[simp]
 theorem xf3CCPlusLO_one :
     xf3CCPlusLO 1 up down f x Q2 =
       2 * x * ∑ i, (f (quark (down i)) x Q2 - f (antiquark (up i)) x Q2) := by
-  rw [xf3CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 sum_norm_sq_one_row sum_norm_sq_one_col,
-    Finset.sum_sub_distrib]
+  rw [xf3CCPlusLO_eq_of_sum_norm_sq_eq_one up down f x Q2 Matrix.sum_norm_sq_one_row_eq_one
+    Matrix.sum_norm_sq_one_col_eq_one, Finset.sum_sub_distrib]
 
 end NoMixing
 
@@ -330,21 +322,21 @@ variable {V}
 
 /-- With unit-norm rows of the mixing matrix, `F₂^{W⁻} + x F₃^{W⁻} = 4 x Σᵢ u_i`. The columns are
 unconstrained, so this covers a rectangular `V`. -/
-theorem f2CCMinusLO_add_xf3CCMinusLO_eq_of_sum_norm_sq_eq_one
+theorem f2CCMinusLO_add_xf3CCMinusLO_eq_of_row_sum_norm_sq_eq_one
     (hrow : ∀ i, ∑ j, ‖V i j‖ ^ 2 = 1) :
     f2CCMinusLO V up down f x Q2 + xf3CCMinusLO V up down f x Q2 =
       4 * x * ∑ i, f (quark (up i)) x Q2 := by
   simp [f2CCMinusLO_add_xf3CCMinusLO, hrow]
 
 /-- With unit-norm columns of the mixing matrix, `F₂^{W⁻} - x F₃^{W⁻} = 4 x Σⱼ dbar_j`. -/
-theorem f2CCMinusLO_sub_xf3CCMinusLO_eq_of_sum_norm_sq_eq_one
+theorem f2CCMinusLO_sub_xf3CCMinusLO_eq_of_col_sum_norm_sq_eq_one
     (hcol : ∀ j, ∑ i, ‖V i j‖ ^ 2 = 1) :
     f2CCMinusLO V up down f x Q2 - xf3CCMinusLO V up down f x Q2 =
       4 * x * ∑ j, f (antiquark (down j)) x Q2 := by
   simp [f2CCMinusLO_sub_xf3CCMinusLO, hcol]
 
 /-- With unit-norm columns of the mixing matrix, `F₂^{W⁺} + x F₃^{W⁺} = 4 x Σⱼ d_j`. -/
-theorem f2CCPlusLO_add_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one
+theorem f2CCPlusLO_add_xf3CCPlusLO_eq_of_col_sum_norm_sq_eq_one
     (hcol : ∀ j, ∑ i, ‖V i j‖ ^ 2 = 1) :
     f2CCPlusLO V up down f x Q2 + xf3CCPlusLO V up down f x Q2 =
       4 * x * ∑ j, f (quark (down j)) x Q2 := by
@@ -352,7 +344,7 @@ theorem f2CCPlusLO_add_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one
 
 /-- With unit-norm rows of the mixing matrix, `F₂^{W⁺} - x F₃^{W⁺} = 4 x Σᵢ ubar_i`. The columns
 are unconstrained, so this covers a rectangular `V`. -/
-theorem f2CCPlusLO_sub_xf3CCPlusLO_eq_of_sum_norm_sq_eq_one
+theorem f2CCPlusLO_sub_xf3CCPlusLO_eq_of_row_sum_norm_sq_eq_one
     (hrow : ∀ i, ∑ j, ‖V i j‖ ^ 2 = 1) :
     f2CCPlusLO V up down f x Q2 - xf3CCPlusLO V up down f x Q2 =
       4 * x * ∑ i, f (antiquark (up i)) x Q2 := by
