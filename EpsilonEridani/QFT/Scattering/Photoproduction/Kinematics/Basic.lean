@@ -29,8 +29,9 @@ a massive source emits has strictly positive virtuality
 (`ChargedSource.not_isReal_of_mem_photonRegion`): the virtuality integral of the equivalent-photon
 spectrum has a strictly positive lower limit, and the real-photon point `Q² = 0` lies outside the
 physical region of every massive source. Rewritten through the photon energy `k = γ m x`, the
-same minimum bounds the energy by the virtuality, `k² < γ² (1 - x) Q²`
-(`ChargedSource.energy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality`).
+same minimum bounds the energy by the virtuality, `k² < γ² (1 - x) Q²`, as
+`ChargedSource.energy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion`
+states for a photon in the photon region.
 
 ## References
 
@@ -326,12 +327,13 @@ theorem gamma_pos_of_mem_photonRegion (hm : 0 < s.mass) {θmax : ℝ} {k : Photo
   by_contra hγ
   nlinarith
 
-/-- **The photon energy is bounded by the virtuality.** A photon of energy `k` carrying the
-fraction `x` of the energy of a massive source with Lorentz factor `γ` has `k² < γ² (1 - x) Q²`:
-in the collider frame, `k / γ` is at most of the order of `√(Q²)`. This is the kinematic minimum
-`m² x² / (1 - x) < Q²` rewritten through `k = γ m x`. -/
-theorem energy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality (hm : 0 < s.mass)
-    {θmax : ℝ} {k : PhotonKinematics} (hk : k ∈ s.photonRegion θmax) :
+/-- **The photon energy is bounded by the virtuality.** A photon in the photon region of a source
+of positive mass, of energy `k` carrying the fraction `x` of the energy of the source with
+Lorentz factor `γ`, has `k² < γ² (1 - x) Q²`: in the collider frame, `k / γ` is at most of the
+order of `√(Q²)`. This is the kinematic minimum `m² x² / (1 - x) < Q²` rewritten through
+`k = γ m x`. -/
+theorem energy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion
+    (hm : 0 < s.mass) {θmax : ℝ} {k : PhotonKinematics} (hk : k ∈ s.photonRegion θmax) :
     k.energy ^ 2 < s.gamma ^ 2 * (1 - k.energyFraction s) * k.virtuality := by
   have hγ := gamma_pos_of_mem_photonRegion hm hk
   have hx0 := energyFraction_pos_of_mem_photonRegion hm.le hk

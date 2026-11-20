@@ -38,9 +38,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
 moment, `1 - Re (charFun μ t) ≤ ‖t‖² (∫ ‖x‖² ∂μ) / 2`. -/
 theorem one_sub_re_charFun_le (hμ : Integrable (fun x ↦ ‖x‖ ^ 2) μ) (t : E) :
     1 - (charFun μ t).re ≤ ‖t‖ ^ 2 * (∫ x, ‖x‖ ^ 2 ∂μ) / 2 := by
-  have hint : Integrable (fun x ↦ exp (⟪x, t⟫ * I)) μ := by
-    refine (integrable_const (1 : ℂ)).mono (by fun_prop) (ae_of_all _ fun x ↦ ?_)
-    simp [norm_exp_ofReal_mul_I]
+  have hint : Integrable (fun x ↦ exp (⟪x, t⟫ * I)) μ :=
+    BoundedContinuousFunction.integrable μ (BoundedContinuousFunction.innerProbChar t)
   have hsq : Integrable (fun x ↦ ‖t‖ ^ 2 * ‖x‖ ^ 2 / 2) μ := (hμ.const_mul _).div_const _
   -- pointwise, `1 - ‖t‖² ‖x‖² / 2 ≤ 1 - ⟪x, t⟫² / 2 ≤ cos ⟪x, t⟫`
   have hpt : ∀ x, 1 - ‖t‖ ^ 2 * ‖x‖ ^ 2 / 2 ≤ (exp (⟪x, t⟫ * I)).re := fun x ↦ by
