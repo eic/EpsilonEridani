@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.TMD.Basic
+import EpsilonEridani.Mathematics.Analysis.Asymptotics.PowerSum
 /-!
 
 # Kinematic Power Corrections to TMD Factorization
@@ -135,29 +136,11 @@ detectable in the accuracy of the leading-power term. -/
 lemma eq_zero_of_isBigO_pow_succ {n : ℕ} {c : ℝ}
     (h : (fun lam : ℝ => c * lam ^ n) =O[smallRatio] fun lam : ℝ => lam ^ (n + 1)) :
     c = 0 := by
-  by_contra hc
-  have : Filter.NeBot smallRatio := nhdsGT_neBot (0 : ℝ)
-  have h0 : Tendsto (fun lam : ℝ => lam) smallRatio (𝓝 0) := by
-    have hid : Tendsto (fun lam : ℝ => lam) (𝓝 (0 : ℝ)) (𝓝 0) := tendsto_id
-    exact hid.mono_left nhdsWithin_le_nhds
-  have h1 : (fun lam : ℝ => lam) =o[smallRatio] fun _ : ℝ => (1 : ℝ) :=
-    (isLittleO_one_iff ℝ).mpr h0
-  have h2 := h1.mul_isBigO (isBigO_refl (fun lam : ℝ => lam ^ n) smallRatio)
-  have hstep : (fun lam : ℝ => lam ^ (n + 1)) =o[smallRatio] fun lam : ℝ => lam ^ n := by
-    simpa [pow_succ', one_mul] using h2
-  have hlo := h.trans_isLittleO hstep
-  have hback : (fun lam : ℝ => lam ^ n) =O[smallRatio] fun lam : ℝ => c * lam ^ n := by
-    refine ((isBigO_refl (fun lam : ℝ => c * lam ^ n) smallRatio).const_mul_left
-      c⁻¹).congr_left ?_
-    intro lam
-    field_simp
-  have hfreq : ∃ᶠ lam : ℝ in smallRatio, c * lam ^ n ≠ 0 := by
-    have hev : ∀ᶠ lam : ℝ in smallRatio, c * lam ^ n ≠ 0 := by
-      filter_upwards [self_mem_nhdsWithin] with lam hmem
-      have hpos : (0 : ℝ) < lam := hmem
-      exact mul_ne_zero hc (pow_ne_zero n hpos.ne')
-    exact hev.frequently
-  exact hlo.not_isBigO hfreq hback
+  have hsum : ∀ lam : ℝ, ∑ k ∈ Finset.range (n + 1), lam ^ k • Pi.single n c k = c * lam ^ n :=
+    fun lam => by simp [Pi.single_apply, mul_comm]
+  have := (isBigO_sum_range_pow_smul_pow_succ_iff (nhdsGT_le_nhdsNE 0) (a := Pi.single n c)).1
+    (h.congr_left fun lam => (hsum lam).symm) n le_rfl
+  rwa [Pi.single_eq_same] at this
 
 /-- **The kinematic power correction at a given order is unique.** If two coefficients each
 improve the leading-power approximation from order `n` to order `n + 1`, they are equal.

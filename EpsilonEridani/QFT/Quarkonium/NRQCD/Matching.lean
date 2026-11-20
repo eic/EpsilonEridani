@@ -17,7 +17,8 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 A matching coefficient of non-relativistic QCD is not computed from a formula: it is *defined* by
 the condition that the effective theory reproduces the full theory. This module states that
 condition for the operator basis of a velocity power counting (`PowerCounting`) and proves that it
-determines the coefficients exactly when an explicit finite matrix has full column rank.
+determines the coefficients exactly when an explicit matrix, with finitely many columns, has full
+column rank.
 
 The data are a set `A` of amplitudes (each a process at fixed external momenta), and for every
 amplitude `a`:
@@ -34,10 +35,11 @@ and `c` satisfies the matching condition `IsMatching` when, for every amplitude,
 effective amplitudes agree up to a remainder `O(ε ^ (n + 1))` as `ε → 0⁺`.
 
 Matching to this order constrains the coefficients one total degree at a time, through the
-*matching matrix* `matchingMatrix M k`: its rows are the amplitudes, its columns the operators of
-total degree exactly `k` (`totalDegreePiece k`), and its entries the velocity-stripped matrix
-elements. Given one matching assignment `c`, another assignment `c'` matches if and only if, at
-every total degree `k ≤ n`, the difference `c' - c` lies in the kernel of the matching matrix
+*matching matrix* `matchingMatrix M k`: its rows are the amplitudes, its columns the finitely many
+operators of total degree exactly `k` (`PowerCounting.totalDegreePiece k`), and its entries the
+velocity-stripped matrix elements; the set of amplitudes need not be finite. Given one matching
+assignment `c`, another assignment `c'` matches if and only if, at every total degree `k ≤ n`, the
+difference `c' - c` lies in the kernel of the matching matrix
 (`IsMatching.isMatching_iff_mulVec_eq_zero`). Hence the matching coefficients are unique on the
 truncation exactly when every matching matrix up to total degree `n` has full column rank, that is
 when the amplitudes separate the operators of each total degree (`IsMatching.eqOn_truncation` and
@@ -45,7 +47,6 @@ when the amplitudes separate the operators of each total degree (`IsMatching.eqO
 
 ## Main definitions
 
-* `PowerCounting.totalDegreePiece`: the composite operators of total degree exactly `k`.
 * `PowerCounting.effectiveAmplitude`: the effective-theory amplitude through total degree `n`.
 * `PowerCounting.IsMatching`: the matching condition through total degree `n`.
 * `PowerCounting.matchingMatrix`: the matrix of velocity-stripped matrix elements at total
@@ -68,6 +69,11 @@ at each scale separately, so a scale-dependent assignment `c : FreeMonoid B → 
 when each `c · μ` is. Existence of a matching assignment is not claimed in general; it is a
 property of the full theory, not of this linear algebra.
 
+The rank condition is turned into injectivity of the matching matrices by
+`Matrix.rank_eq_card_iff_mulVec_injective` of `TauCeti.LinearAlgebra.Matrix.Rank`, and the
+coefficients are read off degree by degree with `Asymptotics.isBigO_sum_range_pow_smul_pow_succ_iff`
+of `EpsilonEridani.Mathematics.Analysis.Asymptotics.PowerSum`.
+
 ## References
 
 * G. T. Bodwin, E. Braaten and G. P. Lepage, *Rigorous QCD analysis of inclusive annihilation and
@@ -85,24 +91,6 @@ namespace EpsilonEridani.QFT.Quarkonium
 namespace PowerCounting
 
 variable {A B : Type*} (P : PowerCounting B)
-
-/-! ### Operators of a fixed total degree -/
-
-/-- The composite operators of total degree exactly `k`: the operators retained by the
-truncation at total degree `k` and by no truncation at lower total degree. -/
-noncomputable def totalDegreePiece (k : ℕ) : Finset (FreeMonoid B) :=
-  {o ∈ P.truncation k | totalDegree (compositeDeg P.deg o) = k}
-
-@[simp]
-theorem mem_totalDegreePiece {k : ℕ} {o : FreeMonoid B} :
-    o ∈ P.totalDegreePiece k ↔ totalDegree (compositeDeg P.deg o) = k := by
-  simp +contextual [totalDegreePiece]
-
-/-- The operators of total degree `k` are retained by every truncation at total degree `n ≥ k`. -/
-theorem totalDegreePiece_subset_truncation {k n : ℕ} (hk : k ≤ n) :
-    P.totalDegreePiece k ⊆ P.truncation n := fun o ho => by
-  rw [mem_totalDegreePiece] at ho
-  simpa [ho] using hk
 
 /-! ### The effective-theory amplitude -/
 
@@ -126,21 +114,26 @@ theorem effectiveAmplitude_eq_sum_range (n : ℕ) (M c : FreeMonoid B → ℝ) (
     (g := fun o => totalDegree (compositeDeg P.deg o)) (t := range (n + 1))
     fun o ho => by simpa [Nat.lt_succ_iff] using ho]
   refine sum_congr rfl fun k hk => ?_
-  rw [smul_sum]
-  refine sum_congr ?_ fun o ho => ?_
-  · ext o
-    simp only [mem_filter, mem_truncation, mem_totalDegreePiece, and_iff_right_iff_imp]
-    exact fun h => h ▸ Nat.lt_succ_iff.1 (mem_range.1 hk)
-  · rw [(P.mem_totalDegreePiece).1 ho, smul_eq_mul, mul_comm]
+  rw [smul_sum, P.filter_truncation_eq_totalDegreePiece (Nat.lt_succ_iff.1 (mem_range.1 hk))]
+  refine sum_congr rfl fun o ho => ?_
+  rw [(P.mem_totalDegreePiece).1 ho, smul_eq_mul, mul_comm]
+
+/-- The effective-theory amplitude through total degree `n` depends only on the matrix elements
+and the coefficients of the operators of the truncation. -/
+theorem effectiveAmplitude_congr {n : ℕ} {M M' c c' : FreeMonoid B → ℝ}
+    (hM : Set.EqOn M M' (P.truncation n)) (hc : Set.EqOn c c' (P.truncation n)) (ε : ℝ) :
+    P.effectiveAmplitude n M c ε = P.effectiveAmplitude n M' c' ε := by
+  simp only [effectiveAmplitude_def]
+  exact sum_congr rfl fun o ho => by rw [hM ho, hc ho]
 
 /-- The effective-theory amplitude is additive in the coefficient assignment. -/
-theorem effectiveAmplitude_add (n : ℕ) (M c c' : FreeMonoid B → ℝ) (ε : ℝ) :
+theorem effectiveAmplitude_add_right (n : ℕ) (M c c' : FreeMonoid B → ℝ) (ε : ℝ) :
     P.effectiveAmplitude n M (c + c') ε =
       P.effectiveAmplitude n M c ε + P.effectiveAmplitude n M c' ε := by
   simp only [effectiveAmplitude_def, ← sum_add_distrib, Pi.add_apply, add_mul]
 
 /-- The effective-theory amplitude commutes with differences of coefficient assignments. -/
-theorem effectiveAmplitude_sub (n : ℕ) (M c c' : FreeMonoid B → ℝ) (ε : ℝ) :
+theorem effectiveAmplitude_sub_right (n : ℕ) (M c c' : FreeMonoid B → ℝ) (ε : ℝ) :
     P.effectiveAmplitude n M (c - c') ε =
       P.effectiveAmplitude n M c ε - P.effectiveAmplitude n M c' ε := by
   simp only [effectiveAmplitude_def, ← sum_sub_distrib, Pi.sub_apply, sub_mul]
@@ -155,11 +148,12 @@ def IsMatching (n : ℕ) (F : A → ℝ → ℝ) (M : A → FreeMonoid B → ℝ
     Prop :=
   ∀ a, (fun ε => F a ε - P.effectiveAmplitude n (M a) c ε) =O[𝓝[>] 0] fun ε => ε ^ (n + 1)
 
-theorem isMatching_iff {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}
-    {c : FreeMonoid B → ℝ} :
-    P.IsMatching n F M c ↔ ∀ a,
-      (fun ε => F a ε - P.effectiveAmplitude n (M a) c ε) =O[𝓝[>] 0] fun ε => ε ^ (n + 1) :=
-  Iff.rfl
+/-- The matching condition through total degree `n` depends only on the coefficients of the
+operators of the truncation. -/
+theorem isMatching_congr {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}
+    {c c' : FreeMonoid B → ℝ} (h : Set.EqOn c c' (P.truncation n)) :
+    P.IsMatching n F M c ↔ P.IsMatching n F M c' :=
+  forall_congr' fun _ => by simp only [P.effectiveAmplitude_congr (Set.eqOn_refl _ _) h]
 
 /-- Every coefficient assignment matches the amplitudes it generates itself. -/
 theorem isMatching_effectiveAmplitude (n : ℕ) (M : A → FreeMonoid B → ℝ)
@@ -180,7 +174,8 @@ theorem matchingMatrix_apply (M : A → FreeMonoid B → ℝ) (k : ℕ) (a : A)
     (o : P.totalDegreePiece k) : P.matchingMatrix M k a o = M a o := (rfl)
 
 /-- Applying the matching matrix at total degree `k` to a coefficient assignment gives, for each
-amplitude, the coefficient of `ε ^ k` in the effective-theory amplitude. -/
+amplitude, the sum of `c o * M a o` over the operators `o` of total degree `k`: when `k ≤ n`, this
+is the coefficient of `ε ^ k` in the effective-theory amplitude through total degree `n`. -/
 theorem matchingMatrix_mulVec_apply (M : A → FreeMonoid B → ℝ) (k : ℕ) (c : FreeMonoid B → ℝ)
     (a : A) :
     (P.matchingMatrix M k).mulVec (fun o => c o) a = ∑ o ∈ P.totalDegreePiece k, c o * M a o := by
@@ -205,7 +200,7 @@ theorem IsMatching.isMatching_iff_mulVec_eq_zero (hc : P.IsMatching n F M c) :
     fun a ε => by
       have hk := fun k => P.matchingMatrix_mulVec_apply M k (c' - c) a
       simp only [Pi.sub_apply] at hk
-      rw [← effectiveAmplitude_sub, effectiveAmplitude_eq_sum_range]
+      rw [← effectiveAmplitude_sub_right, effectiveAmplitude_eq_sum_range]
       simp only [hk, Pi.sub_apply]
   constructor
   · intro hc' k hk
@@ -234,8 +229,7 @@ theorem IsMatching.eqOn_truncation (hc : P.IsMatching n F M c) (hc' : P.IsMatchi
   have hinj := (Matrix.rank_eq_card_iff_mulVec_injective _).1 (hrank k hk)
   have h0 : (fun o : P.totalDegreePiece k => c' o - c o) = 0 :=
     hinj <| by rw [(hc.isMatching_iff_mulVec_eq_zero).1 hc' k hk, Matrix.mulVec_zero]
-  have := congrFun h0 ⟨o, (P.mem_totalDegreePiece).2 rfl⟩
-  simpa [sub_eq_zero, eq_comm] using this
+  exact (sub_eq_zero.1 (congrFun h0 ⟨o, (P.mem_totalDegreePiece).2 rfl⟩)).symm
 
 /-- **The rank condition is necessary and sufficient.** Given one assignment matching through
 total degree `n`, every matching assignment agrees with it on the truncation exactly when the
@@ -247,10 +241,8 @@ theorem IsMatching.forall_eqOn_truncation_iff (hc : P.IsMatching n F M c) :
   classical
   by_contra hrank
   -- a nonzero kernel vector `d` of the matching matrix at total degree `k`
-  obtain ⟨d₁, d₂, hd, hne⟩ : ∃ d₁ d₂, (P.matchingMatrix M k).mulVec d₁ =
-      (P.matchingMatrix M k).mulVec d₂ ∧ d₁ ≠ d₂ := by
-    simpa [Function.Injective, and_comm] using
-      mt (Matrix.rank_eq_card_iff_mulVec_injective _).2 hrank
+  obtain ⟨d₁, d₂, hd, hne⟩ :=
+    Function.not_injective_iff.1 (mt (Matrix.rank_eq_card_iff_mulVec_injective _).2 hrank)
   set d := d₁ - d₂ with hd_def
   obtain ⟨o, ho⟩ : ∃ o, d o ≠ 0 := by
     by_contra! h

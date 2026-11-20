@@ -37,29 +37,36 @@ namespace Asymptotics
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {l : Filter 𝕜} [l.NeBot]
 
+/-- The constant term of a power sum that is `o(x ^ n)` along a filter on the neighbourhoods of `0`
+vanishes: it is the limit of the sum at `0`, while the sum tends to `0` along the filter. -/
+private theorem apply_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl₀ : l ≤ 𝓝 0) {n : ℕ}
+    {a : ℕ → E} (h : (fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) :
+    a 0 = 0 := by
+  have hc : Continuous fun x : 𝕜 => ∑ k ∈ range (n + 1), x ^ k • a k := by fun_prop
+  have hlim : Tendsto (fun x : 𝕜 => ∑ k ∈ range (n + 1), x ^ k • a k) l (𝓝 (a 0)) := by
+    simpa [sum_range_succ'] using hc.continuousAt.tendsto.mono_left hl₀
+  have hpow : (fun x : 𝕜 => x ^ n) =O[l] fun _ => (1 : 𝕜) :=
+    ((continuous_pow n).continuousAt.tendsto.mono_left hl₀).isBigO_one 𝕜
+  exact tendsto_nhds_unique hlim ((isLittleO_one_iff 𝕜).1 (h.trans_isBigO hpow))
+
+/-- A power sum of degree at most `n` with vanishing coefficients vanishes identically. -/
+private theorem sum_range_pow_smul_eq_zero {n : ℕ} {a : ℕ → E} (h : ∀ k ≤ n, a k = 0) (x : 𝕜) :
+    ∑ k ∈ range (n + 1), x ^ k • a k = 0 :=
+  sum_eq_zero fun k hk => by rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), smul_zero]
+
 /-- A power sum of degree at most `n` that is `o(x ^ n)` along a filter on the punctured
 neighbourhoods of `0` has vanishing coefficients. -/
 theorem eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl : l ≤ 𝓝[≠] 0) {n : ℕ} {a : ℕ → E}
     (h : (fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) :
     ∀ k ≤ n, a k = 0 := by
   have hl₀ : l ≤ 𝓝 0 := hl.trans nhdsWithin_le_nhds
-  -- the constant term is the limit of the sum at `0`, while the sum tends to `0` along `l`
-  have hconst : ∀ {n : ℕ} {a : ℕ → E},
-      ((fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) → a 0 = 0 := by
-    intro n a h
-    have hc : Continuous fun x : 𝕜 => ∑ k ∈ range (n + 1), x ^ k • a k := by fun_prop
-    have hlim : Tendsto (fun x : 𝕜 => ∑ k ∈ range (n + 1), x ^ k • a k) l (𝓝 (a 0)) := by
-      simpa [sum_range_succ'] using hc.continuousAt.tendsto.mono_left hl₀
-    have hpow : (fun x : 𝕜 => x ^ n) =O[l] fun _ => (1 : 𝕜) :=
-      ((continuous_pow n).continuousAt.tendsto.mono_left hl₀).isBigO_one 𝕜
-    exact tendsto_nhds_unique hlim ((isLittleO_one_iff 𝕜).1 (h.trans_isBigO hpow))
   induction n generalizing a with
   | zero =>
     intro k hk
     rw [Nat.le_zero.1 hk]
-    exact hconst h
+    exact apply_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow hl₀ h
   | succ m ih =>
-    have ha₀ := hconst h
+    have ha₀ := apply_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow hl₀ h
     -- divide off the vanishing constant term: the sum is `x` times a power sum of degree `≤ m`
     have hsplit : ∀ x : 𝕜, ∑ k ∈ range (m + 1 + 1), x ^ k • a k =
         x • ∑ k ∈ range (m + 1), x ^ k • a (k + 1) := fun x => by
@@ -82,9 +89,7 @@ vanish. -/
 theorem isLittleO_sum_range_pow_smul_pow_iff (hl : l ≤ 𝓝[≠] 0) {n : ℕ} {a : ℕ → E} :
     ((fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) ↔ ∀ k ≤ n, a k = 0 := by
   refine ⟨eq_zero_of_isLittleO_sum_range_pow_smul_pow hl, fun h => ?_⟩
-  have h₀ : ∀ x : 𝕜, ∑ k ∈ range (n + 1), x ^ k • a k = 0 := fun _ =>
-    sum_eq_zero fun k hk => by rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), smul_zero]
-  simpa only [h₀] using isLittleO_zero (fun x : 𝕜 => x ^ n) l
+  simpa only [sum_range_pow_smul_eq_zero h] using isLittleO_zero (fun x : 𝕜 => x ^ n) l
 
 /-- A power sum of degree at most `n` is `O(x ^ (n + 1))` along a filter on the punctured
 neighbourhoods of `0` exactly when all its coefficients vanish. -/
@@ -93,8 +98,6 @@ theorem isBigO_sum_range_pow_smul_pow_succ_iff (hl : l ≤ 𝓝[≠] 0) {n : ℕ
       ∀ k ≤ n, a k = 0 := by
   refine ⟨fun h => (isLittleO_sum_range_pow_smul_pow_iff hl).1 <| h.trans_isLittleO <|
     (isLittleO_pow_pow n.lt_succ_self).mono (hl.trans nhdsWithin_le_nhds), fun h => ?_⟩
-  have h₀ : ∀ x : 𝕜, ∑ k ∈ range (n + 1), x ^ k • a k = 0 := fun _ =>
-    sum_eq_zero fun k hk => by rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), smul_zero]
-  simpa only [h₀] using isBigO_zero (fun x : 𝕜 => x ^ (n + 1)) l
+  simpa only [sum_range_pow_smul_eq_zero h] using isBigO_zero (fun x : 𝕜 => x ^ (n + 1)) l
 
 end Asymptotics

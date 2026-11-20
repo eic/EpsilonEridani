@@ -45,6 +45,7 @@ zero, its powers. The structure `PowerCounting` bundles a grading with these two
 * `PowerCounting`: a grading of bilinears in which every bilinear is suppressed and each total
   degree is reached by finitely many bilinears.
 * `PowerCounting.truncation`: the finite set of composite operators up to a given total degree.
+* `PowerCounting.totalDegreePiece`: the finite set of composite operators of a given total degree.
 
 ## Main results
 
@@ -292,6 +293,32 @@ theorem truncation_zero : P.truncation 0 = {1} := by
   have := length_le_totalDegree_compositeDeg P.deg P.totalDegree_pos o
   rw [h, nonpos_iff_eq_zero, FreeMonoid.length_eq_zero] at this
   exact this
+
+/-! ### Operators of a fixed total degree -/
+
+/-- The composite operators of total degree exactly `k`: the operators retained by the
+truncation at total degree `k` and by no truncation at lower total degree. -/
+noncomputable def totalDegreePiece (k : ℕ) : Finset (FreeMonoid B) :=
+  {o ∈ P.truncation k | totalDegree (compositeDeg P.deg o) = k}
+
+@[simp]
+theorem mem_totalDegreePiece {k : ℕ} {o : FreeMonoid B} :
+    o ∈ P.totalDegreePiece k ↔ totalDegree (compositeDeg P.deg o) = k := by
+  simp +contextual [totalDegreePiece]
+
+/-- The operators of total degree `k` are retained by every truncation at total degree `n ≥ k`. -/
+theorem totalDegreePiece_subset_truncation {k n : ℕ} (hk : k ≤ n) :
+    P.totalDegreePiece k ⊆ P.truncation n := fun o ho => by
+  rw [mem_totalDegreePiece] at ho
+  simpa [ho] using hk
+
+/-- The operators of a truncation at total degree `n ≥ k` that have total degree `k` are the
+operators of total degree `k`. -/
+theorem filter_truncation_eq_totalDegreePiece {k n : ℕ} (hk : k ≤ n) :
+    {o ∈ P.truncation n | totalDegree (compositeDeg P.deg o) = k} = P.totalDegreePiece k := by
+  ext o
+  simp only [Finset.mem_filter, mem_truncation, mem_totalDegreePiece, and_iff_right_iff_imp]
+  exact fun h => h ▸ hk
 
 end PowerCounting
 
