@@ -18,7 +18,8 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
   (`spatialPart_sub_ofTemporalComponent`).
 
 * The additivity of the time component and of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and
-  `(u + v).spatialPart = u.spatialPart + v.spatialPart` (`timeComponent_add`, `spatialPart_add`);
+  `(u + v).spatialPart = u.spatialPart + v.spatialPart` (`timeComponent_add`, `spatialPart_add`),
+  and the time component of a difference, `(u - v)⁰ = u⁰ - v⁰` (`timeComponent_sub`);
   the closure of collinearity under sums, `(u + v).spatialPart = (a + b) • n` when
   `u.spatialPart = a • n` and `v.spatialPart = b • n`
   (`spatialPart_add_eq_smul_of_spatialPart_eq_smul`); and the component `⟪v.spatialPart, n⟫ = a`
@@ -88,6 +89,13 @@ This is not a `@[simp]` lemma: the reducible `timeComponent` head unfolds to a c
 lemma timeComponent_add {d : ℕ} (u v : Vector d) :
     (u + v).timeComponent = u.timeComponent + v.timeComponent :=
   apply_add u v (Sum.inl 0)
+
+/-- The time component of a difference is the difference of the time components.
+
+This is not a `@[simp]` lemma, for the reason given at `timeComponent_add`. -/
+lemma timeComponent_sub {d : ℕ} (u v : Vector d) :
+    (u - v).timeComponent = u.timeComponent - v.timeComponent :=
+  apply_sub u v (Sum.inl 0)
 
 /-- The spatial part of a sum is the sum of the spatial parts.
 

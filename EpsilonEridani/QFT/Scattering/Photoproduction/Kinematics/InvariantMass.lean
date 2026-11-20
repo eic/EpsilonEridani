@@ -121,8 +121,9 @@ theorem energyFraction_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_sub_d
     γ.energyFraction s = (√⟪q + P, q + P⟫ₘ * cosh ((q + P).rapidity n) - E) / s.energy := by
   -- the energy of the system is `γ.energy + E = W cosh y`
   rw [energyFraction_def,
-    ← timeComponent_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_of_spatialPart_eq_smul hn
-      hq' hP' (by rwa [hq, hP, ← sub_eq_add_neg]),
+    ← timeComponent_eq_sqrt_minkowskiProduct_self_mul_cosh_rapidity_of_spatialPart_eq_smul hn
+      (spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP')
+      (by rwa [timeComponent_add, hq, hP, ← sub_eq_add_neg]),
     timeComponent_add, hq, hP, add_sub_cancel_right]
 
 /-- **The energy fraction of a photon null along the beam axis from the invariant mass and the
@@ -144,8 +145,8 @@ theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_sel
   have hW := minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add hn hq hq' hP hP'
   -- `E + p = W e^{-y}`
   have hB :=
-    timeComponent_sub_eq_sqrt_minkowskiProduct_add_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul
-      hn hq' hP' h'
+    timeComponent_sub_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul hn
+      (spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP') (by rwa [timeComponent_add])
   rw [timeComponent_add, hq, hP] at hB
   have hpos := sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul hn hq' hP' h'
   have he : exp ((q + P).rapidity n) * exp (-(q + P).rapidity n) = 1 := by

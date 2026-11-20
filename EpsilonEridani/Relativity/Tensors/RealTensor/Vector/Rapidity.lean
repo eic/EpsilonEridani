@@ -49,15 +49,13 @@ invariant mass `W = √⟪v, v⟫ₘ`
 light-cone relations read `v⁰ ± a = W e^{±y}` with `e^{2y} = (v⁰ + a) / (v⁰ - a)`, so that
 `v⁰ = W cosh y` and `a = W sinh y` (the `_of_spatialPart_eq_smul` forms).
 
-Collinearity is preserved by sums, so the same relations hold for the system `u + v` of two
-four-vectors with spatial parts `a • n` and `b • n`: for `|a + b| < u⁰ + v⁰`,
-`(u + v)⁰ ± (a + b) = W e^{±y}`, `e^{2y} = ((u + v)⁰ + (a + b)) / ((u + v)⁰ - (a + b))`,
-`(u + v)⁰ = W cosh y` and `a + b = W sinh y`, with `W` and `y` the invariant mass and the rapidity
-of `u + v` (`Lorentz.Vector.exp_two_mul_rapidity_add_of_spatialPart_eq_smul` and the
-`_add_self_…_of_spatialPart_eq_smul` forms); `W > 0` is
-`Lorentz.Vector.sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul`. For two
-null vectors of positive energy, one along and one against `n` (`a = u⁰`, `b = -v⁰`), these reduce
-to `e^{2y} = u⁰ / v⁰`, `2 u⁰ = W e^{y}` and `2 v⁰ = W e^{-y}`.
+Collinearity is preserved by sums
+(`Lorentz.Vector.spatialPart_add_eq_smul_of_spatialPart_eq_smul`), so these relations apply to
+the system `u + v` of two four-vectors with spatial parts `a • n` and `b • n`, with `a + b` and
+`(u + v)⁰ = u⁰ + v⁰` (`Lorentz.Vector.timeComponent_add`) in place of `a` and `v⁰`; `W > 0` for
+`|a + b| < u⁰ + v⁰` is `Lorentz.Vector.sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul`.
+For two null vectors of positive energy, one along and one against `n` (`a = u⁰`, `b = -v⁰`),
+they reduce to `e^{2y} = u⁰ / v⁰`, `2 u⁰ = W e^{y}` and `2 v⁰ = W e^{-y}`.
 
 These are the variables in which collider kinematics along a beam axis is reported, and the form
 in which an invariant mass and a rapidity are traded for energies.
@@ -271,75 +269,6 @@ theorem eq_sqrt_minkowskiProduct_self_mul_sinh_rapidity_of_spatialPart_eq_smul
     ← inner_spatialPart_eq_of_spatialPart_eq_smul hn hv]
   exact inner_spatialPart_eq_sqrt_mul_sinh_rapidity hn
     (abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul hn hv h)
-
-/-! ### The system of two four-vectors along an axis -/
-
-section Add
-
-variable {u v : Vector d} {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ}
-
-/-- **The rapidity of a system of two collinear four-vectors.** If the spatial parts of `u` and
-`v` are `a • n` and `b • n` for a unit vector `n` and `|a + b| < u⁰ + v⁰`, the rapidity `y` of
-`u + v` along `n` has `e^{2y} = ((u + v)⁰ + (a + b)) / ((u + v)⁰ - (a + b))`. -/
-theorem exp_two_mul_rapidity_add_of_spatialPart_eq_smul (hn : ‖n‖ = 1)
-    (hu : u.spatialPart = a • n) (hv : v.spatialPart = b • n)
-    (h : |a + b| < u.timeComponent + v.timeComponent) :
-    exp (2 * (u + v).rapidity n) =
-      ((u + v).timeComponent + (a + b)) / ((u + v).timeComponent - (a + b)) := by
-  rw [← timeComponent_add] at h
-  exact exp_two_mul_rapidity_of_spatialPart_eq_smul hn
-    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) h
-
-/-- **A system of two collinear four-vectors from its invariant mass and rapidity, forward
-component.** If the spatial parts of `u` and `v` are `a • n` and `b • n` for a unit vector `n` and
-`|a + b| < u⁰ + v⁰`, then `(u + v)⁰ + (a + b) = W e^{y}`, with `W` and `y` the invariant mass and
-the rapidity of `u + v` along `n`. -/
-theorem timeComponent_add_eq_sqrt_minkowskiProduct_add_self_mul_exp_rapidity_of_spatialPart_eq_smul
-    (hn : ‖n‖ = 1) (hu : u.spatialPart = a • n) (hv : v.spatialPart = b • n)
-    (h : |a + b| < u.timeComponent + v.timeComponent) :
-    (u + v).timeComponent + (a + b) = √⟪u + v, u + v⟫ₘ * exp ((u + v).rapidity n) := by
-  rw [← timeComponent_add] at h
-  exact timeComponent_add_eq_sqrt_minkowskiProduct_self_mul_exp_rapidity_of_spatialPart_eq_smul hn
-    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) h
-
-/-- **A system of two collinear four-vectors from its invariant mass and rapidity, backward
-component.** If the spatial parts of `u` and `v` are `a • n` and `b • n` for a unit vector `n` and
-`|a + b| < u⁰ + v⁰`, then `(u + v)⁰ - (a + b) = W e^{-y}`, with `W` and `y` the invariant mass and
-the rapidity of `u + v` along `n`. -/
-theorem
-    timeComponent_sub_eq_sqrt_minkowskiProduct_add_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul
-    (hn : ‖n‖ = 1) (hu : u.spatialPart = a • n) (hv : v.spatialPart = b • n)
-    (h : |a + b| < u.timeComponent + v.timeComponent) :
-    (u + v).timeComponent - (a + b) = √⟪u + v, u + v⟫ₘ * exp (-(u + v).rapidity n) := by
-  rw [← timeComponent_add] at h
-  exact
-    timeComponent_sub_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul hn
-      (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) h
-
-/-- **The energy of a system of two collinear four-vectors.** If the spatial parts of `u` and `v`
-are `a • n` and `b • n` for a unit vector `n` and `|a + b| < u⁰ + v⁰`, then
-`(u + v)⁰ = W cosh y`, with `W` and `y` the invariant mass and the rapidity of `u + v` along
-`n`. -/
-theorem timeComponent_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_of_spatialPart_eq_smul
-    (hn : ‖n‖ = 1) (hu : u.spatialPart = a • n) (hv : v.spatialPart = b • n)
-    (h : |a + b| < u.timeComponent + v.timeComponent) :
-    (u + v).timeComponent = √⟪u + v, u + v⟫ₘ * cosh ((u + v).rapidity n) := by
-  rw [← timeComponent_add] at h
-  exact timeComponent_eq_sqrt_minkowskiProduct_self_mul_cosh_rapidity_of_spatialPart_eq_smul hn
-    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) h
-
-/-- **The momentum of a system of two collinear four-vectors.** If the spatial parts of `u` and
-`v` are `a • n` and `b • n` for a unit vector `n` and `|a + b| < u⁰ + v⁰`, then
-`a + b = W sinh y`, with `W` and `y` the invariant mass and the rapidity of `u + v` along `n`. -/
-theorem eq_sqrt_minkowskiProduct_add_self_mul_sinh_rapidity_of_spatialPart_eq_smul
-    (hn : ‖n‖ = 1) (hu : u.spatialPart = a • n) (hv : v.spatialPart = b • n)
-    (h : |a + b| < u.timeComponent + v.timeComponent) :
-    a + b = √⟪u + v, u + v⟫ₘ * sinh ((u + v).rapidity n) := by
-  rw [← timeComponent_add] at h
-  exact eq_sqrt_minkowskiProduct_self_mul_sinh_rapidity_of_spatialPart_eq_smul hn
-    (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) h
-
-end Add
 
 end Vector
 end Lorentz
