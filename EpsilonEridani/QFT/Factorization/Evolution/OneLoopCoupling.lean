@@ -1,0 +1,505 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
+module
+
+public import Mathlib.Analysis.Asymptotics.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Inv
+public import Mathlib.Analysis.ODE.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import EpsilonEridani.QFT.QCD.Basic
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Topology.Algebra.Order.Field
+import EpsilonEridani.Mathematics.Analysis.ODE.ExistUnique.Extensions
+import EpsilonEridani.Mathematics.Topology.Order.DenselyOrdered.Extensions
+
+/-!
+# The one-loop running coupling
+
+The renormalisation-group equation for the strong coupling, truncated at one loop, is the scalar
+autonomous equation
+
+`da/dt = -β₀ a²`,
+
+with `t = log (Q² / μ₀²)` the logarithm of the scale in units of a reference scale `μ₀`, `a` the
+coupling in the normalisation `a = α_s / (4π)` in which `β₀ = (11/3) C_A - (4/3) T_F n_f` is
+`EpsilonEridani.QFT.QCD.beta0`, and the sign fixed so that `β₀ > 0` is asymptotic freedom.
+
+`oneLoopCouplingLogScale β₀ a₀ t = a₀ / (1 + β₀ a₀ t)` is its solution with `a (0) = a₀`; the
+`LogScale` suffix records that its argument is the log-scale `t`, not `Q²`. This file proves
+that it is a solution (`hasDerivAt_oneLoopCouplingLogScale`), that on an open connected set every
+solution is the one of these referenced at any point of the set
+(`IsOneLoopRGSolution.eqOn_oneLoopCouplingLogScale`), and the three qualitative facts the
+truncation is used for: the coupling decreases with the scale and tends to zero
+(`strictAntiOn_oneLoopCouplingLogScale`, `tendsto_oneLoopCouplingLogScale_atTop_zero`) at the
+rate `a(t) = 1/(β₀ t) + O(t⁻²)` (`isBigO_oneLoopCouplingLogScale_sub_inv`), and it blows up at the
+finite value `landauLogScale β₀ a₀ = -(β₀ a₀)⁻¹` of the evolution variable
+(`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`). For `β₀ ≠ 0`, no nonzero solution on
+an open connected set has its own Landau log-scale in its domain, so this solution does not
+continue through it (`IsOneLoopRGSolution.add_landauLogScale_notMem`); for `0 < β₀ f(t₀)` the
+domain lies strictly above it (`IsOneLoopRGSolution.subset_Ioi_add_landauLogScale`). The last is
+a property of the truncation, not of QCD.
+
+`landauLogScale` is the `Λ` parameter of the one-loop coupling, expressed in the evolution
+variable: it is a derived quantity, not an independent one. Re-referencing the coupling at
+`t = u` shifts it by `-u`, so that it names the same point of the scale axis
+(`add_landauLogScale_oneLoopCouplingLogScale`), and the scale
+`Λ² = μ₀² exp (landauLogScale β₀ a₀)` itself does not depend on which scale is taken as the
+reference (`landauScaleSq_oneLoopCouplingLogScale`). Eliminating `a₀` in favour of it turns the
+solution into the familiar
+`a(Q²) = 1 / (β₀ log (Q² / Λ²))` (`oneLoopCouplingLogScale_log_eq_inv`).
+
+The coupling here is `a₄` as a function of the evolution variable `t`, not `α_s` as a function of
+`Q²`; it is a different object from `EpsilonEridani.QFT.QCD.oneLoopAlphaS`, which is a regularised
+proxy, total in `Q²` and `Λ²` by construction and therefore not a solution of the equation above.
+For the same reason `oneLoopCouplingLogScale β₀ a₀` is not meant as an
+`Evolution.RunningCoupling`. That type is an abbreviation for `ℝ → ℝ`, so
+`oneLoopCouplingLogScale β₀ a₀` typechecks as one, but a `RunningCoupling` means `α_s` as a
+function of `Q²`. Supplying `oneLoopCouplingLogScale β₀ a₀` to `dglapRhsLogScale` or
+`IsDGLAPLogScaleEquation` is wrong mathematics that the elaborator does not catch.
+
+## References
+
+* D. J. Gross and F. Wilczek, *Ultraviolet behavior of non-abelian gauge theories*, Phys. Rev.
+  Lett. 30 (1973) 1343.
+* H. D. Politzer, *Reliable perturbative results for strong interactions?*, Phys. Rev. Lett. 30
+  (1973) 1346.
+* J. C. Collins, *Foundations of Perturbative QCD*, Cambridge University Press (2011), ch. 3.
+-/
+
+@[expose] public section
+
+noncomputable section
+
+open Asymptotics Filter Set Topology
+
+namespace EpsilonEridani
+namespace QFT
+namespace Factorization
+namespace Evolution
+
+variable {β₀ a₀ t u μ₀sq μ₁sq Q2 : ℝ} {s : Set ℝ} {f : ℝ → ℝ}
+
+/-! ### The solution and its Landau log-scale -/
+
+/-- The one-loop running coupling `a₀ / (1 + β₀ a₀ t)`: the solution of `da/dt = -β₀ a²` taking
+the value `a₀` at `t = 0`, where `t = log (Q² / μ₀²)` and the coupling is normalised as
+`a = α_s / (4π)`. It is a solution on `{t | 1 + β₀ a₀ t ≠ 0}`
+(`isOneLoopRGSolution_oneLoopCouplingLogScale`); at the Landau log-scale the division is by zero
+and the value `0` is junk (`oneLoopCouplingLogScale_landauLogScale`, cf.
+`inv_oneLoopCouplingLogScale`). -/
+def oneLoopCouplingLogScale (β₀ a₀ t : ℝ) : ℝ := a₀ / (1 + β₀ * a₀ * t)
+
+theorem oneLoopCouplingLogScale_def (β₀ a₀ t : ℝ) :
+    oneLoopCouplingLogScale β₀ a₀ t = a₀ / (1 + β₀ * a₀ * t) :=
+  (rfl)
+
+/-- The one-loop coupling takes the reference value `a₀` at `t = 0`: the initial condition of the
+solution. -/
+@[simp]
+theorem oneLoopCouplingLogScale_zero (β₀ a₀ : ℝ) : oneLoopCouplingLogScale β₀ a₀ 0 = a₀ := by
+  rw [oneLoopCouplingLogScale_def]
+  norm_num
+
+/-- The one-loop coupling with zero reference value is identically zero. -/
+@[simp]
+theorem oneLoopCouplingLogScale_zero_reference (β₀ t : ℝ) : oneLoopCouplingLogScale β₀ 0 t = 0 := by
+  rw [oneLoopCouplingLogScale_def, zero_div]
+
+/-- The reciprocal of the one-loop coupling is affine in the evolution variable with slope `β₀`.
+For `β₀ ≠ 0`, at the Landau log-scale both sides are `0`. -/
+theorem inv_oneLoopCouplingLogScale (β₀ : ℝ) (ha : a₀ ≠ 0) (t : ℝ) :
+    (oneLoopCouplingLogScale β₀ a₀ t)⁻¹ = a₀⁻¹ + β₀ * t := by
+  rw [oneLoopCouplingLogScale_def, inv_div]
+  field_simp
+
+/-- The Landau log-scale of the one-loop coupling: for `β₀ a₀ ≠ 0`, the value `-(β₀ a₀)⁻¹` of
+the evolution variable at which the denominator of `oneLoopCouplingLogScale β₀ a₀` vanishes
+(`one_add_mul_eq_zero_iff_eq_landauLogScale`); for `β₀ a₀ = 0` the denominator never vanishes and
+the value `0` is junk. This is the `Λ` parameter of the one-loop coupling in the evolution
+variable, as a quantity derived from the reference value `a₀` rather than an independent
+parameter; see `landauScaleSq` for the scale itself. -/
+def landauLogScale (β₀ a₀ : ℝ) : ℝ := -(β₀ * a₀)⁻¹
+
+theorem landauLogScale_def (β₀ a₀ : ℝ) : landauLogScale β₀ a₀ = -(β₀ * a₀)⁻¹ :=
+  (rfl)
+
+/-- The denominator of the one-loop coupling vanishes at the Landau log-scale. -/
+@[simp]
+theorem one_add_mul_landauLogScale_eq_zero (h : β₀ * a₀ ≠ 0) :
+    1 + β₀ * a₀ * landauLogScale β₀ a₀ = 0 := by
+  rw [landauLogScale_def, mul_neg, mul_inv_cancel₀ h]
+  norm_num
+
+/-- At the Landau log-scale the one-loop coupling divides by zero, so it takes the junk value
+`0` there, although it diverges as the Landau log-scale is approached
+(`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`). -/
+@[simp]
+theorem oneLoopCouplingLogScale_landauLogScale (h : β₀ * a₀ ≠ 0) :
+    oneLoopCouplingLogScale β₀ a₀ (landauLogScale β₀ a₀) = 0 := by
+  rw [oneLoopCouplingLogScale_def, one_add_mul_landauLogScale_eq_zero h, div_zero]
+
+/-- For `β₀ a₀ ≠ 0` the denominator of the one-loop coupling vanishes exactly at the Landau
+log-scale. -/
+theorem one_add_mul_eq_zero_iff_eq_landauLogScale (h : β₀ * a₀ ≠ 0) :
+    1 + β₀ * a₀ * t = 0 ↔ t = landauLogScale β₀ a₀ := by
+  refine ⟨fun ht => mul_left_cancel₀ h ?_, fun ht => ht ▸ one_add_mul_landauLogScale_eq_zero h⟩
+  rw [landauLogScale_def, mul_neg, mul_inv_cancel₀ h]
+  linarith
+
+/-- For a positive `β₀ a₀` the Landau log-scale is negative: the one-loop coupling diverges at a
+finite scale *below* the reference scale. -/
+theorem landauLogScale_neg (h : 0 < β₀ * a₀) : landauLogScale β₀ a₀ < 0 := by
+  rw [landauLogScale_def, neg_lt_zero]
+  exact inv_pos.2 h
+
+/-- For a positive `β₀ a₀` the denominator of the one-loop coupling is positive exactly above the
+Landau log-scale. -/
+theorem landauLogScale_lt_iff (h : 0 < β₀ * a₀) :
+    landauLogScale β₀ a₀ < t ↔ 0 < 1 + β₀ * a₀ * t := by
+  have key : β₀ * a₀ * landauLogScale β₀ a₀ = -1 := by
+    linarith [one_add_mul_landauLogScale_eq_zero h.ne']
+  constructor <;> intro ht <;> nlinarith
+
+/-- The one-loop coupling with the reference value eliminated in favour of the Landau log-scale:
+`a(t) = 1 / (β₀ (t - t_Λ))`. -/
+theorem oneLoopCouplingLogScale_eq_inv (hβ : β₀ ≠ 0) (ha : a₀ ≠ 0) (t : ℝ) :
+    oneLoopCouplingLogScale β₀ a₀ t = (β₀ * (t - landauLogScale β₀ a₀))⁻¹ := by
+  rw [← inv_inv (oneLoopCouplingLogScale β₀ a₀ t), inv_oneLoopCouplingLogScale β₀ ha,
+    landauLogScale_def]
+  field_simp
+  ring
+
+/-! ### The renormalisation-group equation -/
+
+/-- `IsOneLoopRGSolution β₀ s f` says that `f` solves the one-loop renormalisation-group equation
+`da/dt = -β₀ a²` on `s`, where `t = log (Q² / μ₀²)`: it is an integral curve on `s` of the
+autonomous vector field `a ↦ -β₀ a²` (`isOneLoopRGSolution_iff`), so Mathlib's
+`IsIntegralCurveOn` API applies to it. On an open connected `s`, every solution is a one-loop
+coupling of `oneLoopCouplingLogScale`, by `isOneLoopRGSolution_oneLoopCouplingLogScale_Ioi` and
+`IsOneLoopRGSolution.eqOn_oneLoopCouplingLogScale`. -/
+def IsOneLoopRGSolution (β₀ : ℝ) (s : Set ℝ) (f : ℝ → ℝ) : Prop :=
+  IsIntegralCurveOn f (fun _ a => -β₀ * a ^ 2) s
+
+theorem isOneLoopRGSolution_iff :
+    IsOneLoopRGSolution β₀ s f ↔ IsIntegralCurveOn f (fun _ a => -β₀ * a ^ 2) s :=
+  Iff.rfl
+
+/-- The zero function solves the one-loop renormalisation-group equation; by
+`IsOneLoopRGSolution.ne_zero` it is the only solution on an open connected set that vanishes
+somewhere on the set. -/
+theorem isOneLoopRGSolution_zero (β₀ : ℝ) (s : Set ℝ) : IsOneLoopRGSolution β₀ s fun _ => 0 :=
+  isOneLoopRGSolution_iff.2 fun t _ => by simpa using hasDerivWithinAt_const t s (0 : ℝ)
+
+/-- **The one-loop renormalisation-group equation.** Away from its Landau log-scale, the one-loop
+coupling satisfies `da/dt = -β₀ a²`. -/
+theorem hasDerivAt_oneLoopCouplingLogScale (β₀ a₀ : ℝ) (h : 1 + β₀ * a₀ * t ≠ 0) :
+    HasDerivAt (oneLoopCouplingLogScale β₀ a₀) (-β₀ * oneLoopCouplingLogScale β₀ a₀ t ^ 2) t := by
+  have hd : HasDerivAt (fun x : ℝ => 1 + β₀ * a₀ * x) (β₀ * a₀) t := by
+    simpa using ((hasDerivAt_id t).const_mul (β₀ * a₀)).const_add 1
+  refine ((hasDerivAt_const t a₀).div hd h).congr_deriv ?_
+  rw [oneLoopCouplingLogScale_def]
+  field_simp
+  ring
+
+/-- The one-loop coupling solves the one-loop renormalisation-group equation off its Landau
+log-scale. -/
+theorem isOneLoopRGSolution_oneLoopCouplingLogScale (β₀ a₀ : ℝ) :
+    IsOneLoopRGSolution β₀ {t | 1 + β₀ * a₀ * t ≠ 0} (oneLoopCouplingLogScale β₀ a₀) :=
+  isOneLoopRGSolution_iff.2 fun _ ht =>
+    (hasDerivAt_oneLoopCouplingLogScale β₀ a₀ ht).hasDerivWithinAt
+
+/-- The one-loop coupling solves the one-loop renormalisation-group equation on the whole half
+line above its Landau log-scale, which for `β₀, a₀ > 0` is its maximal domain by
+`IsOneLoopRGSolution.subset_Ioi_add_landauLogScale`. -/
+theorem isOneLoopRGSolution_oneLoopCouplingLogScale_Ioi (h : 0 < β₀ * a₀) :
+    IsOneLoopRGSolution β₀ (Ioi (landauLogScale β₀ a₀)) (oneLoopCouplingLogScale β₀ a₀) :=
+  isOneLoopRGSolution_iff.2 <|
+    (isOneLoopRGSolution_iff.1 (isOneLoopRGSolution_oneLoopCouplingLogScale β₀ a₀)).mono fun _ ht =>
+      ((landauLogScale_lt_iff h).1 ht).ne'
+
+/-- A solution of the one-loop renormalisation-group equation on an open connected set that is
+nonzero somewhere on the set is nonzero everywhere on it: a coupling obeying the one-loop equation
+cannot reach zero at a finite scale. The other case is `isOneLoopRGSolution_zero`. -/
+theorem IsOneLoopRGSolution.ne_zero {t₀ : ℝ} (hf : IsOneLoopRGSolution β₀ s f) (hs : IsOpen s)
+    (hs' : IsPreconnected s) (ht₀ : t₀ ∈ s) (h₀ : f t₀ ≠ 0) :
+    ∀ t ∈ s, f t ≠ 0 := by
+  intro t₁ ht₁ hzero
+  have hd : ∀ {x}, x ∈ s → HasDerivAt f (-β₀ * f x ^ 2) x := fun hx =>
+    (isOneLoopRGSolution_iff.1 hf _ hx).hasDerivAt (hs.mem_nhds hx)
+  -- Work on a compact interval `[a, b] ⊆ s` whose interior contains `t₀` and `t₁`.
+  obtain ⟨a, b, hsub, ht₀', ht₁'⟩ := hs.exists_Icc_subset hs'.ordConnected ht₀ ht₁
+  -- On a ball `x ↦ -β₀ x²` is Lipschitz, being `C¹`, so uniqueness applies with the zero solution.
+  have hv : ContDiff ℝ 1 fun x : ℝ => -β₀ * x ^ 2 := by fun_prop
+  have heq := ODE_solution_unique_of_mem_Icc_of_lipschitzOnWith_closedBall
+    (v := fun _ x => -β₀ * x ^ 2) (g := fun _ => 0)
+    (fun R _ => (hv.contDiffOn.exists_lipschitzOnWith one_ne_zero (convex_closedBall 0 R)
+      (isCompact_closedBall 0 R)).imp fun _ hK _ _ => hK)
+    ht₁' (fun x hx => (hd (hsub hx)).continuousAt.continuousWithinAt)
+    (fun x hx => hd (hsub (Ioo_subset_Icc_self hx))) continuousOn_const
+    (fun x _ => by simpa using hasDerivAt_const x (0 : ℝ)) (by simpa using hzero)
+  exact h₀ (heq (Ioo_subset_Icc_self ht₀'))
+
+/-- The reciprocal of a solution of the one-loop renormalisation-group equation on an open
+connected set is affine in the evolution variable with slope `β₀`. This is the separation of
+variables behind `IsOneLoopRGSolution.eqOn_oneLoopCouplingLogScale`. -/
+theorem IsOneLoopRGSolution.inv_eqOn {t₀ : ℝ} (hf : IsOneLoopRGSolution β₀ s f) (hs : IsOpen s)
+    (hs' : IsPreconnected s) (ht₀ : t₀ ∈ s) (h₀ : f t₀ ≠ 0) :
+    EqOn (fun t => (f t)⁻¹) (fun t => (f t₀)⁻¹ + β₀ * (t - t₀)) s := by
+  have hne := hf.ne_zero hs hs' ht₀ h₀
+  have hinv : ∀ t ∈ s, HasDerivAt (fun x => (f x)⁻¹) β₀ t := by
+    intro t ht
+    have hfne := hne t ht
+    exact (((isOneLoopRGSolution_iff.1 hf t ht).hasDerivAt (hs.mem_nhds ht)).inv hfne).congr_deriv
+      (by field_simp)
+  have haff : ∀ x : ℝ, HasDerivAt (fun y => (f t₀)⁻¹ + β₀ * (y - t₀)) β₀ x := fun x => by
+    simpa using (((hasDerivAt_id x).sub_const t₀).const_mul β₀).const_add ((f t₀)⁻¹)
+  exact hs.eqOn_of_deriv_eq hs'
+    (fun x hx => (hinv x hx).differentiableAt.differentiableWithinAt)
+    (fun x _ => (haff x).differentiableAt.differentiableWithinAt)
+    (fun x hx => ((hinv x hx).deriv).trans ((haff x).deriv).symm) ht₀ (by simp)
+
+/-- **Uniqueness of the one-loop running coupling.** A solution of `da/dt = -β₀ a²` on an open
+connected set agrees on that set with the one-loop coupling whose reference value is its own value
+at any point `t₀` of the set. Together with `isOneLoopRGSolution_oneLoopCouplingLogScale_Ioi` this
+determines the one-loop coupling completely. -/
+theorem IsOneLoopRGSolution.eqOn_oneLoopCouplingLogScale {t₀ : ℝ}
+    (hf : IsOneLoopRGSolution β₀ s f) (hs : IsOpen s) (hs' : IsPreconnected s) (ht₀ : t₀ ∈ s) :
+    EqOn f (fun t => oneLoopCouplingLogScale β₀ (f t₀) (t - t₀)) s := by
+  intro t ht
+  rcases eq_or_ne (f t₀) 0 with h₀ | h₀
+  · simp only [h₀, oneLoopCouplingLogScale_zero_reference]
+    by_contra h
+    exact hf.ne_zero hs hs' ht h t₀ ht₀ h₀
+  · exact inv_injective
+      ((hf.inv_eqOn hs hs' ht₀ h₀ ht).trans (inv_oneLoopCouplingLogScale β₀ h₀ _).symm)
+
+/-- **The one-loop solution does not extend past its Landau log-scale.** For `β₀ ≠ 0`, a
+solution of `da/dt = -β₀ a²` on an open connected set, nonzero at a point `t₀` of the set, does
+not have the Landau log-scale of its value at `t₀` in that set: a solution's domain stops short
+of its own Landau log-scale, so the divergence of
+`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale` cannot be removed by continuing the
+solution differently. -/
+theorem IsOneLoopRGSolution.add_landauLogScale_notMem {t₀ : ℝ} (hf : IsOneLoopRGSolution β₀ s f)
+    (hs : IsOpen s) (hs' : IsPreconnected s) (hβ : β₀ ≠ 0) (ht₀ : t₀ ∈ s) (h₀ : f t₀ ≠ 0) :
+    t₀ + landauLogScale β₀ (f t₀) ∉ s := by
+  intro hmem
+  have hne := hf.ne_zero hs hs' ht₀ h₀ _ hmem
+  have h : (f (t₀ + landauLogScale β₀ (f t₀)))⁻¹
+      = (f t₀)⁻¹ + β₀ * (t₀ + landauLogScale β₀ (f t₀) - t₀) :=
+    hf.inv_eqOn hs hs' ht₀ h₀ hmem
+  have hzero : 1 + β₀ * f t₀ * landauLogScale β₀ (f t₀) = 0 :=
+    one_add_mul_landauLogScale_eq_zero (mul_ne_zero hβ h₀)
+  refine hne (inv_eq_zero.1 ?_)
+  rw [h]
+  field_simp
+  linear_combination hzero
+
+/-- **The one-loop solution does not extend below its Landau log-scale.** A solution of
+`da/dt = -β₀ a²` on an open connected set, with `β₀ f(t₀) > 0` at a point `t₀` of the set (for
+instance `β₀ > 0` and `f(t₀) > 0`), lives strictly above the Landau log-scale of its value at
+`t₀`. -/
+theorem IsOneLoopRGSolution.subset_Ioi_add_landauLogScale {t₀ : ℝ}
+    (hf : IsOneLoopRGSolution β₀ s f) (hs : IsOpen s) (hs' : IsPreconnected s) (ht₀ : t₀ ∈ s)
+    (h : 0 < β₀ * f t₀) :
+    s ⊆ Ioi (t₀ + landauLogScale β₀ (f t₀)) := by
+  intro x hx
+  by_contra hle
+  have hlt : t₀ + landauLogScale β₀ (f t₀) < t₀ := by
+    linarith [landauLogScale_neg h]
+  exact hf.add_landauLogScale_notMem hs hs' (left_ne_zero_of_mul h.ne') ht₀
+    (right_ne_zero_of_mul h.ne')
+    (hs'.ordConnected.out hx ht₀ ⟨not_lt.1 hle, hlt.le⟩)
+
+/-! ### Asymptotic freedom -/
+
+/-- Above its Landau log-scale, a one-loop coupling with `β₀ > 0` and positive reference value is
+positive. -/
+theorem oneLoopCouplingLogScale_pos (hβ : 0 < β₀) (ha : 0 < a₀) (ht : landauLogScale β₀ a₀ < t) :
+    0 < oneLoopCouplingLogScale β₀ a₀ t := by
+  rw [oneLoopCouplingLogScale_def]
+  exact div_pos ha ((landauLogScale_lt_iff (mul_pos hβ ha)).1 ht)
+
+/-- **The one-loop coupling decreases with the scale.** For `β₀ > 0` and a positive reference
+value, the coupling is strictly decreasing in `t = log (Q² / μ₀²)` above its Landau log-scale. -/
+theorem strictAntiOn_oneLoopCouplingLogScale (hβ : 0 < β₀) (ha : 0 < a₀) :
+    StrictAntiOn (oneLoopCouplingLogScale β₀ a₀) (Ioi (landauLogScale β₀ a₀)) := by
+  intro x hx y _ hxy
+  have hβa := mul_pos hβ ha
+  rw [oneLoopCouplingLogScale_def, oneLoopCouplingLogScale_def]
+  refine div_lt_div_of_pos_left ha ((landauLogScale_lt_iff hβa).1 hx) ?_
+  have := mul_lt_mul_of_pos_left hxy hβa
+  linarith
+
+/-- **Asymptotic freedom at one loop.** For a positive `β₀ a₀`, the one-loop coupling tends to
+zero as the scale grows. -/
+theorem tendsto_oneLoopCouplingLogScale_atTop_zero (h : 0 < β₀ * a₀) :
+    Tendsto (oneLoopCouplingLogScale β₀ a₀) atTop (𝓝 0) := by
+  have h : Tendsto (fun x : ℝ => 1 + β₀ * a₀ * x) atTop atTop :=
+    tendsto_atTop_add_const_left _ 1 (tendsto_id.const_mul_atTop h)
+  exact Tendsto.congr (fun x => (oneLoopCouplingLogScale_def β₀ a₀ x).symm) (h.const_div_atTop a₀)
+
+/-- The exact remainder of the leading asymptotics `1 / (β₀ t)` of the one-loop coupling. -/
+theorem oneLoopCouplingLogScale_sub_inv (hβ : β₀ ≠ 0) (ht : t ≠ 0) (h : 1 + β₀ * a₀ * t ≠ 0) :
+    oneLoopCouplingLogScale β₀ a₀ t - (β₀ * t)⁻¹ = -(β₀ * t * (1 + β₀ * a₀ * t))⁻¹ := by
+  -- `field_simp` commutes the two factors in the denominator, so it needs `h` in that form.
+  have h' : 1 + a₀ * β₀ * t ≠ 0 := by rwa [mul_comm a₀ β₀]
+  rw [oneLoopCouplingLogScale_def]
+  field_simp
+  ring
+
+/-- **The rate of asymptotic freedom.** For `β₀ a₀ ≠ 0` the one-loop coupling is
+`1 / (β₀ t) + O(t⁻²)`: the leading behaviour is independent of the reference value, which enters
+first at second order. -/
+theorem isBigO_oneLoopCouplingLogScale_sub_inv (h : β₀ * a₀ ≠ 0) :
+    (fun t => oneLoopCouplingLogScale β₀ a₀ t - (β₀ * t)⁻¹) =O[atTop] fun t : ℝ => (t ^ 2)⁻¹ := by
+  have hβ : 0 < |β₀| := abs_pos.2 (left_ne_zero_of_mul h)
+  have hc : 0 < |β₀ * a₀| := abs_pos.2 h
+  rw [isBigO_iff]
+  refine ⟨2 * (|β₀| * |β₀ * a₀|)⁻¹, ?_⟩
+  filter_upwards [eventually_gt_atTop (2 / |β₀ * a₀|), eventually_gt_atTop 0] with t ht ht0
+  -- For large `t` the denominator `1 + β₀ a₀ t` is at least half its leading term.
+  have hct : 2 < |β₀ * a₀| * t := by rwa [div_lt_iff₀' hc] at ht
+  have hD : |β₀ * a₀| * t / 2 ≤ |1 + β₀ * a₀ * t| := by
+    have := abs_sub_abs_le_abs_sub (β₀ * a₀ * t) (-1)
+    rw [abs_mul _ t, abs_of_pos ht0, abs_neg, abs_one, sub_neg_eq_add, add_comm] at this
+    linarith
+  have hpos : 0 < |β₀| * |β₀ * a₀| * t ^ 2 / 2 := by positivity
+  have hD0 : 1 + β₀ * a₀ * t ≠ 0 := abs_pos.1 (by linarith)
+  rw [oneLoopCouplingLogScale_sub_inv (left_ne_zero_of_mul h) ht0.ne' hD0, norm_neg, norm_inv,
+    Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (inv_pos.2 (pow_pos ht0 2)), abs_mul, abs_mul,
+    abs_of_pos ht0]
+  calc (|β₀| * t * |1 + β₀ * a₀ * t|)⁻¹ ≤ (|β₀| * |β₀ * a₀| * t ^ 2 / 2)⁻¹ := by
+        refine inv_anti₀ hpos ?_
+        calc |β₀| * |β₀ * a₀| * t ^ 2 / 2 = |β₀| * t * (|β₀ * a₀| * t / 2) := by ring
+          _ ≤ |β₀| * t * |1 + β₀ * a₀ * t| := by gcongr
+    _ = 2 * (|β₀| * |β₀ * a₀|)⁻¹ * (t ^ 2)⁻¹ := by field_simp
+
+/-- **The Landau pole of the one-loop coupling.** For `β₀ > 0` and a nonzero reference value the
+one-loop coupling diverges as the Landau log-scale is approached from above. -/
+theorem tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale (hβ : 0 < β₀) (ha : a₀ ≠ 0) :
+    Tendsto (oneLoopCouplingLogScale β₀ a₀) (𝓝[>] landauLogScale β₀ a₀) atTop := by
+  have hmap : Tendsto (fun x => β₀ * (x - landauLogScale β₀ a₀))
+      (𝓝[>] landauLogScale β₀ a₀) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have hc : Continuous fun x : ℝ => β₀ * (x - landauLogScale β₀ a₀) :=
+        continuous_const.mul (continuous_id.sub continuous_const)
+      simpa using (hc.tendsto (landauLogScale β₀ a₀)).mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with x hx
+      exact mul_pos hβ (sub_pos.2 hx)
+  exact Tendsto.congr (fun x => (oneLoopCouplingLogScale_eq_inv hβ.ne' ha x).symm)
+    (tendsto_inv_nhdsGT_zero.comp hmap)
+
+/-! ### Changing the reference scale -/
+
+/-- **Changing the reference scale.** Re-referencing the one-loop coupling at `t = u`, with the
+value it takes there, gives the same function of the evolution variable. -/
+@[simp]
+theorem oneLoopCouplingLogScale_oneLoopCouplingLogScale_sub (h : 1 + β₀ * a₀ * u ≠ 0) :
+    oneLoopCouplingLogScale β₀ (oneLoopCouplingLogScale β₀ a₀ u) (t - u)
+      = oneLoopCouplingLogScale β₀ a₀ t := by
+  have key : (1 : ℝ) + β₀ * oneLoopCouplingLogScale β₀ a₀ u * (t - u)
+      = (1 + β₀ * a₀ * t) / (1 + β₀ * a₀ * u) := by
+    rw [oneLoopCouplingLogScale_def]
+    field_simp
+    ring
+  rw [oneLoopCouplingLogScale_def, key, oneLoopCouplingLogScale_def β₀ a₀ u,
+    oneLoopCouplingLogScale_def β₀ a₀ t]
+  rcases eq_or_ne (1 + β₀ * a₀ * t) 0 with ht | ht
+  · simp [ht]
+  · rw [div_div_div_cancel_right₀ h]
+
+/-- **Re-referencing shifts the Landau log-scale.** Re-referencing the one-loop coupling at
+`t = u` shifts its Landau log-scale by `-u`, so `u + t_Λ(a(u))` and `t_Λ(a₀)` are the same point
+of the scale axis: the coupling diverges at the same scale in both parametrisations. -/
+@[simp]
+theorem add_landauLogScale_oneLoopCouplingLogScale (hβ : β₀ ≠ 0) (ha : a₀ ≠ 0) (u : ℝ) :
+    u + landauLogScale β₀ (oneLoopCouplingLogScale β₀ a₀ u) = landauLogScale β₀ a₀ := by
+  simp only [landauLogScale_def, mul_inv, inv_oneLoopCouplingLogScale β₀ ha]
+  field_simp
+  ring
+
+/-! ### The scale form -/
+
+/-- The Landau scale `Λ² = μ₀² exp (t_Λ)` of the one-loop coupling with reference value `a₀` at
+the reference scale `μ₀²`: for `β₀, a₀ > 0`, the scale at which the one-loop coupling diverges
+(`tendsto_oneLoopCouplingLogScale_nhdsGT_landauLogScale`). For `β₀ a₀ = 0` the coupling does not
+diverge and the value `μ₀²` is junk. -/
+def landauScaleSq (β₀ a₀ μ₀sq : ℝ) : ℝ := μ₀sq * Real.exp (landauLogScale β₀ a₀)
+
+theorem landauScaleSq_def (β₀ a₀ μ₀sq : ℝ) :
+    landauScaleSq β₀ a₀ μ₀sq = μ₀sq * Real.exp (landauLogScale β₀ a₀) :=
+  (rfl)
+
+/-- The Landau scale of a positive reference scale is positive. -/
+theorem landauScaleSq_pos (β₀ a₀ : ℝ) (hμ : 0 < μ₀sq) : 0 < landauScaleSq β₀ a₀ μ₀sq := by
+  rw [landauScaleSq_def]
+  positivity
+
+/-- **The Landau scale sits at the Landau log-scale.** In the evolution variable of the reference
+scale `μ₀²`, the scale `Λ²` sits at `landauLogScale β₀ a₀`. -/
+@[simp]
+theorem log_landauScaleSq_div (β₀ a₀ : ℝ) (hμ : 0 < μ₀sq) :
+    Real.log (landauScaleSq β₀ a₀ μ₀sq / μ₀sq) = landauLogScale β₀ a₀ := by
+  rw [landauScaleSq_def, mul_div_cancel_left₀ _ hμ.ne', Real.log_exp]
+
+/-- **The one-loop coupling in terms of its Landau scale.** Eliminating the reference value in
+favour of `Λ²` turns the solution into `a(Q²) = 1 / (β₀ log (Q² / Λ²))`. -/
+theorem oneLoopCouplingLogScale_log_eq_inv (hβ : β₀ ≠ 0) (ha : a₀ ≠ 0) (hμ : 0 < μ₀sq)
+    (hQ : 0 < Q2) :
+    oneLoopCouplingLogScale β₀ a₀ (Real.log (Q2 / μ₀sq))
+      = (β₀ * Real.log (Q2 / landauScaleSq β₀ a₀ μ₀sq))⁻¹ := by
+  have hΛ : 0 < landauScaleSq β₀ a₀ μ₀sq := landauScaleSq_pos β₀ a₀ hμ
+  have hlog : Real.log (Q2 / landauScaleSq β₀ a₀ μ₀sq)
+      = Real.log (Q2 / μ₀sq) - landauLogScale β₀ a₀ := by
+    rw [← log_landauScaleSq_div β₀ a₀ hμ, Real.log_div hQ.ne' hΛ.ne',
+      Real.log_div hQ.ne' hμ.ne', Real.log_div hΛ.ne' hμ.ne']
+    ring
+  rw [oneLoopCouplingLogScale_eq_inv hβ ha, hlog]
+
+/-- **The Landau scale does not depend on the reference scale.** Re-referencing the one-loop
+coupling at the scale `μ₁²`, with the value it takes there, leaves `Λ²` unchanged. -/
+@[simp]
+theorem landauScaleSq_oneLoopCouplingLogScale (hβ : β₀ ≠ 0) (ha : a₀ ≠ 0) (hμ₀ : 0 < μ₀sq)
+    (hμ₁ : 0 < μ₁sq) :
+    landauScaleSq β₀ (oneLoopCouplingLogScale β₀ a₀ (Real.log (μ₁sq / μ₀sq))) μ₁sq
+      = landauScaleSq β₀ a₀ μ₀sq := by
+  have hshift := add_landauLogScale_oneLoopCouplingLogScale hβ ha (Real.log (μ₁sq / μ₀sq))
+  have hL : landauLogScale β₀ (oneLoopCouplingLogScale β₀ a₀ (Real.log (μ₁sq / μ₀sq)))
+      = landauLogScale β₀ a₀ - Real.log (μ₁sq / μ₀sq) := by linarith
+  rw [landauScaleSq_def, landauScaleSq_def, hL, Real.exp_sub,
+    Real.exp_log (div_pos hμ₁ hμ₀)]
+  field_simp
+
+/-! ### The QCD coupling -/
+
+section QCD
+
+open EpsilonEridani.QFT.QCD
+
+/-- **The one-loop coupling of an `SU(N_c)` gauge theory decreases with the scale**, in the
+asymptotically free flavour window `2 n_f < 11 N_c`; for `N_c = 3` this is `n_f < 16.5`, so every
+physical flavour number. -/
+theorem strictAntiOn_oneLoopCouplingLogScale_beta0_suN {nC nF : ℝ} (h : 2 * nF < 11 * nC)
+    (ha : 0 < a₀) :
+    StrictAntiOn (oneLoopCouplingLogScale (beta0 (suNColorFactors nC nF)) a₀)
+      (Ioi (landauLogScale (beta0 (suNColorFactors nC nF)) a₀)) :=
+  strictAntiOn_oneLoopCouplingLogScale (isAsymptoticallyFree_suNColorFactors nC nF h) ha
+
+/-- **Asymptotic freedom of an `SU(N_c)` gauge theory at one loop**, in the flavour window
+`2 n_f < 11 N_c`. -/
+theorem tendsto_oneLoopCouplingLogScale_beta0_suN_atTop_zero {nC nF : ℝ} (h : 2 * nF < 11 * nC)
+    (ha : 0 < a₀) :
+    Tendsto (oneLoopCouplingLogScale (beta0 (suNColorFactors nC nF)) a₀) atTop (𝓝 0) :=
+  tendsto_oneLoopCouplingLogScale_atTop_zero
+    (mul_pos (isAsymptoticallyFree_suNColorFactors nC nF h) ha)
+
+end QCD
+
+end Evolution
+end Factorization
+end QFT
+end EpsilonEridani
