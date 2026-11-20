@@ -309,6 +309,14 @@ lemma Regularity.of_abs_le {f g : Pdf Flavor} (hf : Regularity f)
     simp only [norm_mul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_left ((hle i x Q2).trans (le_abs_self _)) (abs_nonneg _)
 
+/-- A density of a regular family is integrable on the physical support: its `n = 0`
+Mellin-moment integrand is the density itself. This is the form in which the regularity of a
+density feeds the integrability statements of the structure-function layer. -/
+lemma Regularity.integrableOn {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ) :
+    MeasureTheory.IntegrableOn (fun x : ℝ => f i x Q2) (Set.Icc (0 : ℝ) 1) := by
+  refine MeasureTheory.Integrable.integrableOn ?_
+  simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
+
 end PDF
 end Parton
 end Particles

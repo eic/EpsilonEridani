@@ -40,7 +40,9 @@ The first moment of the parton-model `g₁` is the charge-weighted sum of the he
 leading-order form of the flavour decomposition carried by `Polarized.EllisJaffeSumRule`, so the
 parton model discharges its `moment_decomposition` field with vanishing perturbative correction,
 and the Ellis–Jaffe sum rule holds for it exactly when the strange helicity charge vanishes
-(`ellisJaffeSumRule_partonModel_iff`).
+(`ellisJaffeSumRule_partonModel_iff`). Because `g₂` vanishes identically, its first moment
+vanishes and the Burkhardt-Cottingham sum rule holds unconditionally (`firstMomentG2_partonModel`,
+`burkhardtCottingham_partonModel`).
 
 ## Main definitions
 
@@ -51,9 +53,14 @@ and the Ellis–Jaffe sum rule holds for it exactly when the strange helicity ch
 * `Polarized.partonModel_g1`: `g₁ = (1/2) ∑_q e_q² (Δq + Δqbar)`.
 * `Polarized.assumptions_partonModel`: support and regularity of the helicity distribution give
   `Polarized.Assumptions`.
+* `Polarized.assumptions_partonModel_of_regularity`: the same, from the support postulate and a
+  `PDF.Regularity` bundle of the helicity distribution.
 * `Polarized.assumptions_partonModel_helicityPdfOfSpinDensity`: the same, discharged from the
   structural assumptions of a spin-density family and measurability of its helicity density.
 * `Polarized.firstMomentG1_partonModel`: `Γ₁ = (1/2) ∑_q e_q² ∫₀¹ dx (Δq + Δqbar)`.
+* `Polarized.firstMomentG2_partonModel`: `Γ₂ = 0`.
+* `Polarized.burkhardtCottingham_partonModel`: the Burkhardt-Cottingham sum rule,
+  unconditionally.
 * `Polarized.ellisJaffeSumRule_partonModel_iff`: the light-flavour parton model satisfies the
   Ellis–Jaffe sum rule, with zero correction, exactly when the strange helicity charge vanishes.
 
@@ -148,6 +155,16 @@ theorem assumptions_partonModel (charge : Flavor → ℝ) {Δ : Pdf (Species Fla
   assumptions_iff.2
     ⟨hasPhysicalSupport_partonModel charge hΔ, regularity_partonModel charge hm hi⟩
 
+/-- The parton-model pair satisfies the polarized structural assumptions whenever the helicity
+distribution is supported in the physical interval and regular: the support postulate is the
+physical half of `PDF.Assumptions`, and `PDF.Regularity` its analytic half, supplying the
+measurability together with the integrability on the physical support. A user holding a full
+`PDF.Assumptions` bundle reaches this through its `support` field and `.regularity` projection. -/
+theorem assumptions_partonModel_of_regularity (charge : Flavor → ℝ) {Δ : Pdf (Species Flavor)}
+    (hΔ : ∀ s x Q2, x < 0 ∨ 1 < x → Δ s x Q2 = 0) (hr : PDF.Regularity Δ) :
+    Assumptions (partonModel charge Δ) :=
+  assumptions_partonModel charge hΔ hr.measurable hr.integrableOn
+
 /-- **The parton-model `g₁` built from spin-density matrices satisfies the polarized
 assumptions**, with support and integrability discharged rather than assumed: they follow from
 the structural assumptions of the spin-density family through helicity dominance `|Δq| ≤ q`.
@@ -155,12 +172,11 @@ Only the measurability of the helicity density in `x` is supplied. This is the p
 counterpart of `PDF.assumptions_pdfOfSpinDensity`. -/
 theorem assumptions_partonModel_helicityPdfOfSpinDensity (charge : Flavor → ℝ)
     {ρ : Species Flavor → ℝ → ℝ → SpinDensity} (h : SpinDensityAssumptions ρ)
-    (hm : ∀ s Q2, AEStronglyMeasurable (fun x : ℝ => PDF.g1 (ρ s x Q2))) :
-    Assumptions (partonModel charge (helicityPdfOfSpinDensity ρ)) := by
-  have hr := PDF.regularity_helicityPdfOfSpinDensity h hm
-  refine assumptions_partonModel charge (PDF.helicityPdfOfSpinDensity_eq_zero h) hm
-    fun s Q2 => Integrable.integrableOn ?_
-  simpa only [pow_zero, one_mul] using hr.momentIntegrable 0 s Q2
+    (hm : ∀ s Q2, AEStronglyMeasurable (fun x : ℝ => helicityPdfOfSpinDensity ρ s x Q2)) :
+    Assumptions (partonModel charge (helicityPdfOfSpinDensity ρ)) :=
+  assumptions_partonModel_of_regularity charge
+    (PDF.helicityPdfOfSpinDensity_eq_zero h.support)
+    (PDF.regularity_helicityPdfOfSpinDensity (PDF.assumptions_pdfOfSpinDensity ρ h).regularity hm)
 
 /-- **The first moment of the parton-model `g₁`** is half the charge-weighted sum of the helicity
 charges `∫₀¹ dx (Δq + Δqbar)`, written as the zeroth Mellin moments of the quark and antiquark
@@ -190,6 +206,18 @@ theorem firstMomentG1_partonModel_lightFlavor {Δ : Pdf (Species LightFlavor)} {
   rw [firstMomentG1_partonModel _ hi, LightFlavor.sum_univ, LightFlavor.charge_u,
     LightFlavor.charge_d, LightFlavor.charge_s]
   ring
+
+/-- **The first moment of the parton-model `g₂`** vanishes at every scale, unconditionally:
+`g₂` is identically zero at leading order, so no integrability hypothesis is needed. -/
+theorem firstMomentG2_partonModel (charge : Flavor → ℝ) (Δ : Pdf (Species Flavor)) (Q2 : ℝ) :
+    firstMomentG2 (partonModel charge Δ) Q2 = 0 := by
+  simp [firstMomentG2]
+
+/-- **The parton model satisfies the Burkhardt-Cottingham sum rule**, unconditionally: `g₂`
+vanishes identically at leading order, so its first moment vanishes at every scale. -/
+theorem burkhardtCottingham_partonModel (charge : Flavor → ℝ) (Δ : Pdf (Species Flavor)) :
+    BurkhardtCottingham (partonModel charge Δ) :=
+  ⟨fun Q2 => firstMomentG2_partonModel charge Δ Q2⟩
 
 /-- **The parton model and the Ellis–Jaffe sum rule.** For the light flavours, the leading-order
 parton-model `g₁` carries the flavour decomposition of `EllisJaffeSumRule` with vanishing
