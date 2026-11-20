@@ -167,8 +167,9 @@ theorem minkowskiProduct_nMinus_eq_plus (L : LightConeBasis (minkowskiProduct (d
 theorem minkowskiProduct_eq_plus_mul_minus_add
     (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm) (u v : Vector d) :
     ⟪u, v⟫ₘ = L.plus u * L.minus v + L.minus u * L.plus v +
-      ⟪L.transverseProj u, L.transverseProj v⟫ₘ :=
-  L.bilinForm_eq_plus_mul_minus_add EpsilonEridani.isSymm_toBilinForm_minkowskiProduct.isRefl u v
+      ⟪L.transverseProj u, L.transverseProj v⟫ₘ := by
+  simpa only [ContinuousLinearMap.toBilinForm_apply] using
+    L.bilinForm_eq_plus_mul_minus_add EpsilonEridani.isSymm_toBilinForm_minkowskiProduct.isRefl u v
 
 /-- For any light-cone basis of `d + 1`-dimensional Minkowski space the transverse subspace, the
 range of the transverse projector (`L.isProj_transverseProj.range`), has dimension `d - 1`. -/

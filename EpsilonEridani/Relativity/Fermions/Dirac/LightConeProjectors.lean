@@ -56,8 +56,9 @@ from eliminating the bad components through the constraint equation.
 * `LightConeBasis.goodProjector_add_badProjector`, `LightConeBasis.goodProjector_mul_self`,
   `LightConeBasis.goodProjector_mul_badProjector_eq_zero`: `P₊`, `P₋` are complementary
   orthogonal idempotents.
-* `LightConeBasis.ker_gammaMatrix_nPlus`, `LightConeBasis.ker_gammaMatrix_nMinus`: the good
-  spinors are the kernel of `γ⁻`, the bad spinors the kernel of `γ⁺`.
+* `LightConeBasis.ker_gammaMatrix_nPlus_eq_range_goodProjector`,
+  `LightConeBasis.ker_gammaMatrix_nMinus_eq_range_badProjector`: the good spinors are the kernel
+  of `γ⁻`, the bad spinors the kernel of `γ⁺`.
 * `LightConeBasis.finrank_range_goodProjector_eq_two`,
   `LightConeBasis.finrank_range_badProjector_eq_two`:
   the good and the bad spinors each form a two-dimensional space.
@@ -386,7 +387,8 @@ theorem goodProjector_gammaMatrix_nPlus_apply (ψ : Dirac) :
 /-! ### The good and bad subspaces -/
 
 /-- The good spinors are the kernel of `γ⁻ = /n₊`. -/
-theorem ker_gammaMatrix_nPlus : ker (gammaMatrix L.nPlus) = range L.goodProjector := by
+theorem ker_gammaMatrix_nPlus_eq_range_goodProjector :
+    ker (gammaMatrix L.nPlus) = range L.goodProjector := by
   ext ψ
   refine ⟨fun h => ⟨ψ, ?_⟩, ?_⟩
   · have hbad : L.badProjector ψ = 0 := by simp [badProjector_apply, mem_ker.1 h]
@@ -395,23 +397,24 @@ theorem ker_gammaMatrix_nPlus : ker (gammaMatrix L.nPlus) = range L.goodProjecto
     exact mem_ker.2 (L.gammaMatrix_nPlus_goodProjector_apply_eq_zero χ)
 
 /-- The bad spinors are the kernel of `γ⁺ = /n₋`. -/
-theorem ker_gammaMatrix_nMinus : ker (gammaMatrix L.nMinus) = range L.badProjector := by
+theorem ker_gammaMatrix_nMinus_eq_range_badProjector :
+    ker (gammaMatrix L.nMinus) = range L.badProjector := by
   simpa only [goodProjector_swap, badProjector_swap, nPlus_swap, nMinus_swap] using
-    L.swap.ker_gammaMatrix_nPlus
+    L.swap.ker_gammaMatrix_nPlus_eq_range_goodProjector
 
 /-- The kernel of the good projector is the space of bad spinors. -/
-theorem ker_goodProjector : ker L.goodProjector = range L.badProjector := by
+theorem ker_goodProjector_eq_range_badProjector : ker L.goodProjector = range L.badProjector := by
   rw [L.isIdempotentElem_goodProjector.ker_eq_range_one_sub, badProjector_eq_one_sub]
 
 /-- The kernel of the bad projector is the space of good spinors. -/
-theorem ker_badProjector : ker L.badProjector = range L.goodProjector := by
+theorem ker_badProjector_eq_range_goodProjector : ker L.badProjector = range L.goodProjector := by
   simpa only [goodProjector_swap, badProjector_swap, nPlus_swap, nMinus_swap] using
-    L.swap.ker_goodProjector
+    L.swap.ker_goodProjector_eq_range_badProjector
 
 /-- The Dirac spinors are the direct sum of the good and the bad spinors. -/
 theorem isCompl_range_goodProjector_range_badProjector :
     IsCompl (range L.goodProjector) (range L.badProjector) := by
-  rw [← ker_goodProjector]
+  rw [← ker_goodProjector_eq_range_badProjector]
   exact L.isIdempotentElem_goodProjector.isProj_range.isCompl
 
 /-- The trace of the good projector is two. -/
@@ -543,7 +546,7 @@ theorem gammaMatrix_sub_smul_one_apply_eq_zero_iff (ψ : Dirac) :
   have hmem : gammaMatrix p ψ - m • ψ ∈
       ker (gammaMatrix L.nPlus) ⊓ ker (gammaMatrix L.nMinus) :=
     Submodule.mem_inf.2 ⟨mem_ker.2 h₂, mem_ker.2 h₁⟩
-  rwa [ker_gammaMatrix_nPlus, ker_gammaMatrix_nMinus,
+  rwa [ker_gammaMatrix_nPlus_eq_range_goodProjector, ker_gammaMatrix_nMinus_eq_range_badProjector,
     L.isCompl_range_goodProjector_range_badProjector.inf_eq_bot, Submodule.mem_bot] at hmem
 
 variable {p m}
