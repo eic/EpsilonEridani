@@ -197,12 +197,6 @@ structure HasSpectralGap (n₀ : ι) (Δ : ℝ) : Prop where
 
 variable {S} {O : ι → ι → ℂ} {n₀ : ι} {Δ : ℝ}
 
-/-- Relative to an energy `E` not above that of the state `n`, the state `n` does not grow in
-Euclidean time. -/
-private theorem exp_neg_sub_mul_le_one {E : ℝ} {n : ι} (hE : E ≤ S.energy n) {s : ℝ} (hs : 0 ≤ s) :
-    Real.exp (-((S.energy n - E) * s)) ≤ 1 :=
-  Real.exp_le_one_iff.2 <| neg_nonpos.2 <| mul_nonneg (sub_nonneg.2 hE) hs
-
 namespace HasSpectralGap
 
 /-- Under a spectral gap, `n₀` is a state of lowest energy. -/
@@ -229,11 +223,14 @@ private theorem exp_mul_exp_le (h : S.HasSpectralGap n₀ Δ) {p : ι × ι} (hp
   by_cases hm : m = n₀
   · have hn : n ≠ n₀ := by rintro rfl; exact hp (by rw [hm])
     calc _ ≤ Real.exp (-(Δ * s)) * 1 :=
-          mul_le_mul (h.exp_neg_sub_mul_le hn hs) (exp_neg_sub_mul_le_one (h.energy_le m) hτ)
+          mul_le_mul (h.exp_neg_sub_mul_le hn hs)
+            (Real.exp_le_one_iff.2 <| neg_nonpos.2 <| mul_nonneg (sub_nonneg.2 (h.energy_le m)) hτ)
             (Real.exp_pos _).le (Real.exp_pos _).le
       _ ≤ _ := by rw [mul_one]; exact le_add_of_nonneg_left (Real.exp_pos _).le
   · calc _ ≤ 1 * Real.exp (-(Δ * τ)) :=
-          mul_le_mul (exp_neg_sub_mul_le_one (h.energy_le n) hs) (h.exp_neg_sub_mul_le hm hτ)
+          mul_le_mul
+            (Real.exp_le_one_iff.2 <| neg_nonpos.2 <| mul_nonneg (sub_nonneg.2 (h.energy_le n)) hs)
+            (h.exp_neg_sub_mul_le hm hτ)
             (Real.exp_pos _).le zero_le_one
       _ ≤ _ := by rw [one_mul]; exact le_add_of_nonneg_right (Real.exp_pos _).le
 
@@ -308,10 +305,10 @@ theorem sq_norm_overlap_le_twoPoint_mul_exp {t : ℝ}
   rw [twoPoint_def]
   simpa [twoPoint_term_mul_exp] using this
 
-/-- **Excited-state contamination of the two-point correlator.** After the ground-state decay
-`e^{-E₀ t}` is divided out, the two-point correlator at a time `t` after a reference time `t₀` at
-which it converges exceeds the ground-state weight `|Z₀|²` by at most the excited-state weight
-`K₂(t₀)` times `e^{-Δ (t - t₀)}`. -/
+/-- **Excited-state contamination of the two-point correlator.** Under a spectral gap `Δ`, after
+the ground-state decay `e^{-E₀ t}` is divided out, the two-point correlator at a time `t` after a
+reference time `t₀` at which it converges exceeds the ground-state weight `|Z₀|²` by at most the
+excited-state weight `K₂(t₀)` times `e^{-Δ (t - t₀)}`. -/
 theorem twoPoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ) {t₀ : ℝ}
     (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) {t : ℝ}
     (ht : t₀ ≤ t) :
@@ -461,10 +458,11 @@ theorem threePointExcitedWeight_nonneg {s₀ τ₀ : ℝ}
   · exact le_rfl
   · exact mul_nonneg (S.threePointWeight_nonneg O p) (by positivity)
 
-/-- **Excited-state contamination of the three-point correlator.** For `t - τ ≥ s₀` and `τ ≥ τ₀`,
-after the ground-state decay `e^{-E₀ t}` is divided out, the three-point correlator differs from
-its ground-state term `|Z₀|² ⟨0|O|0⟩` by at most the excited-state weight `K₃(s₀, τ₀)` times
-`e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}`, once it converges absolutely at `(s₀, τ₀)`. -/
+/-- **Excited-state contamination of the three-point correlator.** Under a spectral gap `Δ`, for
+`t - τ ≥ s₀` and `τ ≥ τ₀`, after the ground-state decay `e^{-E₀ t}` is divided out, the three-point
+correlator differs from its ground-state term `|Z₀|² ⟨0|O|0⟩` by at most the excited-state weight
+`K₃(s₀, τ₀)` times `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}`, once it converges absolutely at
+`(s₀, τ₀)`. -/
 theorem norm_threePoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : ℝ}
     (hO : Summable fun p => S.threePointWeight O p *
       (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
@@ -505,20 +503,6 @@ theorem norm_threePoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀ τ�
           (h.exp_mul_exp_le hp (sub_nonneg.2 (le_sub_iff_add_le.2 (by linarith)))
             (sub_nonneg.2 hτ)) (by positivity)
 
-/-- The excited-state suppression `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}` vanishes along any
-filter on which both `τ` and `t - τ` tend to infinity. -/
-private theorem tendsto_exp_neg_add_exp_neg (hΔ : 0 < Δ) {α : Type*} {l : Filter α}
-    {t τ : α → ℝ} (hτ : Tendsto τ l atTop) (htτ : Tendsto (fun a => t a - τ a) l atTop)
-    (s₀ τ₀ : ℝ) :
-    Tendsto (fun a => Real.exp (-(Δ * (τ a - τ₀))) + Real.exp (-(Δ * (t a - τ a - s₀)))) l
-      (𝓝 0) := by
-  have hexp : ∀ {f : α → ℝ}, Tendsto f l atTop → ∀ r : ℝ,
-      Tendsto (fun a => Real.exp (-(Δ * (f a - r)))) l (𝓝 0) := fun hf r =>
-    Real.tendsto_exp_neg_atTop_nhds_zero.comp <|
-      (by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-r) hf :
-        Tendsto (fun a => _ - r) l atTop).const_mul_atTop hΔ
-  simpa using (hexp hτ τ₀).add (hexp htτ s₀)
-
 /-- **Ground-state dominance of the three-point correlator.** Under a spectral gap, after the
 ground-state decay `e^{-E₀ t}` is divided out, a three-point correlator converging absolutely at
 some `(s₀, τ₀)` tends to its ground-state term `|Z₀|² ⟨0|O|0⟩` along any filter on which both the
@@ -530,9 +514,15 @@ theorem tendsto_threePoint_mul_exp (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : 
     (hτ : Tendsto τ l atTop) (htτ : Tendsto (fun a => t a - τ a) l atTop) :
     Tendsto (fun a => S.threePoint O (t a) (τ a) * (Real.exp (S.energy n₀ * t a) : ℂ)) l
       (𝓝 ((‖S.overlap n₀‖ : ℂ) ^ 2 * O n₀ n₀)) := by
-  have hbound := (tendsto_exp_neg_add_exp_neg h.pos hτ htτ s₀ τ₀).const_mul
-    (S.threePointExcitedWeight O n₀ s₀ τ₀)
-  rw [mul_zero] at hbound
+  -- the suppression `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}` of the excited states vanishes
+  have hexp : ∀ {f : α → ℝ}, Tendsto f l atTop → ∀ r : ℝ,
+      Tendsto (fun a => Real.exp (-(Δ * (f a - r)))) l (𝓝 0) := fun hf r =>
+    Real.tendsto_exp_neg_atTop_nhds_zero.comp <|
+      (by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-r) hf :
+        Tendsto (fun a => _ - r) l atTop).const_mul_atTop h.pos
+  have hbound : Tendsto (fun a => S.threePointExcitedWeight O n₀ s₀ τ₀ *
+      (Real.exp (-(Δ * (τ a - τ₀))) + Real.exp (-(Δ * (t a - τ a - s₀))))) l (𝓝 0) := by
+    simpa using ((hexp hτ τ₀).add (hexp htτ s₀)).const_mul (S.threePointExcitedWeight O n₀ s₀ τ₀)
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero' (Eventually.of_forall fun a => norm_nonneg _) ?_ hbound
   filter_upwards [hτ.eventually_ge_atTop τ₀, htτ.eventually_ge_atTop s₀] with a ha hta
@@ -544,8 +534,9 @@ theorem tendsto_threePoint_mul_exp (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : 
 ratio of the three-point to the two-point correlator differs from the ground-state matrix element
 `⟨0|O|0⟩` by at most `(K₃(s₀, τ₀) + ‖⟨0|O|0⟩‖ K₂(s₀ + τ₀)) / |Z₀|²` times
 `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}`, where `K₂` and `K₃` are the excited-state weights
-`twoPointExcitedWeight` and `threePointExcitedWeight`, once the two-point correlator converges at
-`s₀ + τ₀` and the three-point correlator converges absolutely at `(s₀, τ₀)`. -/
+`twoPointExcitedWeight` and `threePointExcitedWeight`, once the interpolating operator overlaps
+the ground state (`Z₀ ≠ 0`), the two-point correlator converges at `s₀ + τ₀` and the three-point
+correlator converges absolutely at `(s₀, τ₀)`. -/
 theorem norm_threePoint_div_twoPoint_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : ℝ}
     (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * (s₀ + τ₀))))
     (hO : Summable fun p => S.threePointWeight O p *
@@ -599,28 +590,31 @@ theorem norm_threePoint_div_twoPoint_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀
     _ ≤ (K₃ * c + ‖O₀‖ * (K₂ * c)) * A := by gcongr
     _ = (K₃ + ‖O₀‖ * K₂) * c * A := by ring
 
-/-- **The ratio method.** Under a spectral gap, the ratio of the three-point to the two-point
-correlator converges to the ground-state matrix element `⟨0|O|0⟩` along any filter on which both
-the operator time `τ` and the sink-operator separation `t - τ` tend to infinity, once the
-two-point correlator converges at `s₀ + τ₀` and the three-point correlator converges absolutely at
-some sink-operator separation `s₀` and operator time `τ₀`. -/
-theorem tendsto_threePoint_div_twoPoint (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : ℝ}
-    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * (s₀ + τ₀))))
+/-- **The ratio method.** Under a spectral gap, once the interpolating operator overlaps the
+ground state (`Z₀ ≠ 0`), the two-point correlator converges at some time `t₀` and the three-point
+correlator converges absolutely at some sink-operator separation `s₀` and operator time `τ₀`, the
+ratio of the three-point to the two-point correlator converges to the ground-state matrix element
+`⟨0|O|0⟩` along any filter on which both the operator time `τ` and the sink-operator separation
+`t - τ` tend to infinity. -/
+theorem tendsto_threePoint_div_twoPoint (h : S.HasSpectralGap n₀ Δ) {t₀ s₀ τ₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀)))
     (hO : Summable fun p => S.threePointWeight O p *
       (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
     (h₀ : S.overlap n₀ ≠ 0) {α : Type*} {l : Filter α} {t τ : α → ℝ}
     (hτ : Tendsto τ l atTop) (htτ : Tendsto (fun a => t a - τ a) l atTop) :
     Tendsto (fun a => S.threePoint O (t a) (τ a) / S.twoPoint (t a)) l
       (𝓝 (O n₀ n₀)) := by
-  set C := (S.threePointExcitedWeight O n₀ s₀ τ₀ +
-    ‖O n₀ n₀‖ * S.twoPointExcitedWeight n₀ (s₀ + τ₀)) / ‖S.overlap n₀‖ ^ 2
-  have hbound : Tendsto (fun a => C * (Real.exp (-(Δ * (τ a - τ₀))) +
-      Real.exp (-(Δ * (t a - τ a - s₀))))) l (𝓝 0) := by
-    simpa using (tendsto_exp_neg_add_exp_neg h.pos hτ htτ s₀ τ₀).const_mul C
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  refine squeeze_zero' (Eventually.of_forall fun a => norm_nonneg _) ?_ hbound
-  filter_upwards [hτ.eventually_ge_atTop τ₀, htτ.eventually_ge_atTop s₀] with a ha hta
-  exact norm_threePoint_div_twoPoint_sub_le h hZ hO h₀ ha hta
+  have ht : Tendsto t l atTop := by simpa using hτ.atTop_add_atTop htτ
+  -- both correlators, with the ground-state decay divided out, tend to their ground-state terms
+  have hA := (Complex.continuous_ofReal.tendsto _).comp ((tendsto_twoPoint_mul_exp h hZ).comp ht)
+  have hz : ((‖S.overlap n₀‖ ^ 2 : ℝ) : ℂ) ≠ 0 := by
+    exact_mod_cast (pow_pos (norm_pos_iff.2 h₀) 2).ne'
+  have hlim := (tendsto_threePoint_mul_exp h hO hτ htτ).div hA hz
+  rw [← ofReal_pow, mul_div_cancel_left₀ _ hz] at hlim
+  -- dividing both correlators by the ground-state decay does not change their ratio
+  refine hlim.congr fun a => ?_
+  simp only [Pi.div_apply, Function.comp_apply, ofReal_mul]
+  exact mul_div_mul_right _ _ (by exact_mod_cast (Real.exp_pos _).ne')
 
 end SpectralData
 
