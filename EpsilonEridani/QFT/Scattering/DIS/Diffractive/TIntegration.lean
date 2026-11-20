@@ -20,10 +20,9 @@ The file proves two things about this integration.
 
 * It loses information. Two normalised exponentials with different slopes both integrate to one,
   so their difference integrates to zero, yet it vanishes only where `|t|` takes one value
-  (`abs_eq_of_normalizedExpProfile_eq`), hence almost nowhere on the range
-  (`ae_normalizedExpProfile_ne`). So a `t`-integrated quantity does not determine the
-  `t`-differential one (`exists_continuous_not_ae_eq_zero_tIntegrate_eq_zero`,
-  `tIntegrate_not_injective`).
+  (`abs_eq_of_mul_expProfile_eq`), hence almost nowhere on the range
+  (`not_ae_eq_zero_normalizedExpProfile_sub`). So a `t`-integrated quantity does not determine the
+  `t`-differential one (`exists_continuous_not_ae_eq_zero_tIntegrate_eq_zero`).
 * A slope measurement restores what integration lost. Suppose the profile is a single exponential
   `A e^{-B |t|}`. If `B` is known, `A` and hence the profile follow from the integral
   (`eq_div_tIntegrate`, `eqOn_of_tIntegrate_eq_expProfile`). If `B` is not known, it is the
@@ -80,15 +79,15 @@ theorem tIntegrate_eq_intervalIntegral (h : tLo ≤ tHi) (f : ℝ → ℝ) :
     tIntegrate tLo tHi f = ∫ t in tLo..tHi, f t := by
   rw [tIntegrate_def, integral_Icc_eq_integral_Ioc, intervalIntegral.integral_of_le h]
 
+/-- The restricted measure of a range vanishes exactly when the range has length zero or less. -/
+private theorem volume_restrict_Icc_eq_zero_iff :
+    volume.restrict (Icc tLo tHi) = 0 ↔ tHi ≤ tLo := by
+  rw [Measure.restrict_eq_zero, Real.volume_Icc, ENNReal.ofReal_eq_zero, sub_nonpos]
+
 /-- On an empty or one-point range, `tIntegrate` is zero. -/
 @[simp]
-theorem tIntegrate_eq_zero_of_le (h : tHi ≤ tLo) (f : ℝ → ℝ) : tIntegrate tLo tHi f = 0 := by
-  rw [tIntegrate_def, Measure.restrict_eq_zero.mpr (by
-    rw [Real.volume_Icc, ENNReal.ofReal_eq_zero]; linarith), integral_zero_measure]
-
-/-- On a one-point range, `tIntegrate` is zero. -/
-theorem tIntegrate_self (t : ℝ) (f : ℝ → ℝ) : tIntegrate t t f = 0 :=
-  tIntegrate_eq_zero_of_le le_rfl f
+theorem tIntegrate_eq_zero_of_ge (h : tHi ≤ tLo) (f : ℝ → ℝ) : tIntegrate tLo tHi f = 0 := by
+  rw [tIntegrate_def, volume_restrict_Icc_eq_zero_iff.mpr h, integral_zero_measure]
 
 /-- The integral of a constant profile is the width of the range times the constant. -/
 theorem tIntegrate_const (h : tLo ≤ tHi) (c : ℝ) :
@@ -99,6 +98,14 @@ theorem tIntegrate_const (h : tLo ≤ tHi) (c : ℝ) :
 theorem tIntegrate_congr (h : EqOn f g (Icc tLo tHi)) :
     tIntegrate tLo tHi f = tIntegrate tLo tHi g :=
   setIntegral_congr_fun measurableSet_Icc h
+
+@[simp]
+theorem tIntegrate_zero (tLo tHi : ℝ) : tIntegrate tLo tHi 0 = 0 :=
+  integral_zero _ _
+
+@[simp]
+theorem tIntegrate_neg (f : ℝ → ℝ) : tIntegrate tLo tHi (fun t => -f t) = -tIntegrate tLo tHi f :=
+  integral_neg f
 
 theorem tIntegrate_add (hf : IntegrableOn f (Icc tLo tHi)) (hg : IntegrableOn g (Icc tLo tHi)) :
     tIntegrate tLo tHi (fun t => f t + g t) = tIntegrate tLo tHi f + tIntegrate tLo tHi g :=
@@ -141,7 +148,7 @@ theorem tIntegrate_mono (hf : IntegrableOn f (Icc tLo tHi)) (hg : IntegrableOn g
   setIntegral_mono_on hf hg measurableSet_Icc h
 
 /-- Monotonicity in the range, for a non-negative profile. -/
-theorem tIntegrate_mono_range {tLo' tHi' : ℝ} (hf : IntegrableOn f (Icc tLo' tHi'))
+theorem tIntegrate_mono_Icc {tLo' tHi' : ℝ} (hf : IntegrableOn f (Icc tLo' tHi'))
     (hf₀ : ∀ t ∈ Icc tLo' tHi', 0 ≤ f t) (hLo : tLo' ≤ tLo) (hHi : tHi ≤ tHi') :
     tIntegrate tLo tHi f ≤ tIntegrate tLo' tHi' f :=
   setIntegral_mono_set hf ((ae_restrict_iff' measurableSet_Icc).mpr (.of_forall hf₀))
@@ -153,7 +160,7 @@ theorem tIntegrate_comp_add_right (s : ℝ) (f : ℝ → ℝ) :
   rcases le_or_gt tLo tHi with h | h
   · rw [tIntegrate_eq_intervalIntegral h, tIntegrate_eq_intervalIntegral (by linarith),
       intervalIntegral.integral_comp_add_right]
-  · rw [tIntegrate_eq_zero_of_le h.le, tIntegrate_eq_zero_of_le (by linarith)]
+  · rw [tIntegrate_eq_zero_of_ge h.le, tIntegrate_eq_zero_of_ge (by linarith)]
 
 /-! ## The single-exponential profile -/
 
@@ -170,7 +177,7 @@ theorem expProfile_pos (B t : ℝ) : 0 < expProfile B t :=
   Real.exp_pos _
 
 theorem expProfile_of_nonpos {t : ℝ} (ht : t ≤ 0) : expProfile B t = Real.exp (B * t) := by
-  rw [expProfile_def, abs_of_nonpos ht, mul_neg, neg_neg]
+  simp [expProfile_def, abs_of_nonpos ht]
 
 @[fun_prop]
 theorem continuous_expProfile (B : ℝ) : Continuous (expProfile B) := by
@@ -180,15 +187,15 @@ theorem continuous_expProfile (B : ℝ) : Continuous (expProfile B) := by
 @[simp]
 theorem expProfile_zero : expProfile 0 = fun _ => 1 := by
   funext t
-  rw [expProfile_def, zero_mul, neg_zero, Real.exp_zero]
+  simp [expProfile_def]
 
 /-- The profile is normalised to one at `t = 0`. -/
 @[simp]
 theorem expProfile_apply_zero (B : ℝ) : expProfile B 0 = 1 := by
-  rw [expProfile_def, abs_zero, mul_zero, neg_zero, Real.exp_zero]
+  simp [expProfile_def]
 
 /-- With zero slope, the integral of the profile is the width of the range. -/
-theorem tIntegrate_expProfile_zero (h : tLo ≤ tHi) :
+theorem tIntegrate_expProfile_zero_eq_sub (h : tLo ≤ tHi) :
     tIntegrate tLo tHi (expProfile 0) = tHi - tLo := by
   rw [expProfile_zero, tIntegrate_const h, mul_one]
 
@@ -224,10 +231,7 @@ range the divisor is zero and so is the profile. -/
 def normalizedExpProfile (tLo tHi B t : ℝ) : ℝ :=
   expProfile B t / tIntegrate tLo tHi (expProfile B)
 
-theorem normalizedExpProfile_def (tLo tHi B t : ℝ) :
-    normalizedExpProfile tLo tHi B t = expProfile B t / tIntegrate tLo tHi (expProfile B) := (rfl)
-
-theorem normalizedExpProfile_eq_div (tLo tHi B : ℝ) :
+theorem normalizedExpProfile_def (tLo tHi B : ℝ) :
     normalizedExpProfile tLo tHi B = fun t => expProfile B t / tIntegrate tLo tHi (expProfile B) :=
   (rfl)
 
@@ -240,7 +244,7 @@ theorem continuous_normalizedExpProfile (tLo tHi B : ℝ) :
 @[simp]
 theorem tIntegrate_normalizedExpProfile_eq_one (B : ℝ) (h : tLo < tHi) :
     tIntegrate tLo tHi (normalizedExpProfile tLo tHi B) = 1 := by
-  rw [normalizedExpProfile_eq_div, tIntegrate_div_const,
+  rw [normalizedExpProfile_def, tIntegrate_div_const,
     div_self (tIntegrate_expProfile_pos B h).ne']
 
 /-- Two normalised exponentials integrate to the same value, so their difference is in the kernel
@@ -253,64 +257,62 @@ theorem tIntegrate_normalizedExpProfile_sub_eq_zero (B₁ B₂ : ℝ) (h : tLo <
     tIntegrate_normalizedExpProfile_eq_one B₁ h, tIntegrate_normalizedExpProfile_eq_one B₂ h,
     sub_self]
 
-/-- Normalised exponentials with different slopes agree only where `|t|` takes one value, so at no
-more than two points. -/
-theorem abs_eq_of_normalizedExpProfile_eq {B₁ B₂ t : ℝ} (h : tLo < tHi) (hB : B₁ ≠ B₂)
-    (heq : normalizedExpProfile tLo tHi B₁ t = normalizedExpProfile tLo tHi B₂ t) :
-    |t| = Real.log (tIntegrate tLo tHi (expProfile B₁) / tIntegrate tLo tHi (expProfile B₂)) /
-      (B₂ - B₁) := by
-  have h₁ := tIntegrate_expProfile_pos B₁ h
-  have h₂ := tIntegrate_expProfile_pos B₂ h
-  rw [normalizedExpProfile_def, normalizedExpProfile_def, expProfile_def, expProfile_def,
-    div_eq_div_iff h₁.ne' h₂.ne'] at heq
-  have hexp : Real.exp ((B₂ - B₁) * |t|) =
-      tIntegrate tLo tHi (expProfile B₁) / tIntegrate tLo tHi (expProfile B₂) := by
-    rw [show (B₂ - B₁) * |t| = -(B₁ * |t|) - -(B₂ * |t|) by ring, Real.exp_sub,
-      div_eq_div_iff (Real.exp_pos _).ne' h₂.ne']
-    linarith
-  rw [← hexp, Real.log_exp, mul_div_cancel_left₀ _ (sub_ne_zero.mpr hB.symm)]
+/-- Multiples of exponential profiles with different slopes, the second multiple non-zero, agree
+only where `|t|` takes one value, so at no more than two points. -/
+theorem abs_eq_of_mul_expProfile_eq {B₁ B₂ c₁ c₂ t : ℝ} (hc₂ : c₂ ≠ 0) (hB : B₁ ≠ B₂)
+    (heq : c₁ * expProfile B₁ t = c₂ * expProfile B₂ t) :
+    |t| = Real.log (c₁ / c₂) / (B₁ - B₂) := by
+  have hexp : Real.exp ((B₁ - B₂) * |t|) = c₁ / c₂ := by
+    rw [expProfile_def, expProfile_def] at heq
+    rw [eq_div_iff hc₂, show (B₁ - B₂) * |t| = -(B₂ * |t|) - -(B₁ * |t|) by ring,
+      Real.exp_sub, div_mul_eq_mul_div, div_eq_iff (Real.exp_pos _).ne']
+    linear_combination -heq
+  rw [← hexp, Real.log_exp, mul_div_cancel_left₀ _ (sub_ne_zero.mpr hB)]
 
-/-- Normalised exponentials with different slopes differ almost everywhere: by
-`abs_eq_of_normalizedExpProfile_eq` they agree at no more than two points. -/
-theorem ae_normalizedExpProfile_ne {B₁ B₂ : ℝ} (h : tLo < tHi) (hB : B₁ ≠ B₂) :
-    ∀ᵐ t ∂(volume : Measure ℝ),
-      normalizedExpProfile tLo tHi B₁ t ≠ normalizedExpProfile tLo tHi B₂ t := by
-  set x := Real.log (tIntegrate tLo tHi (expProfile B₁) / tIntegrate tLo tHi (expProfile B₂)) /
-    (B₂ - B₁)
+/-- Multiples of exponential profiles with different slopes, the second multiple non-zero, differ
+almost everywhere: by `abs_eq_of_mul_expProfile_eq` they agree at no more than two points. -/
+theorem ae_mul_expProfile_ne {B₁ B₂ c₁ c₂ : ℝ} (hc₂ : c₂ ≠ 0) (hB : B₁ ≠ B₂) :
+    ∀ᵐ t ∂(volume : Measure ℝ), c₁ * expProfile B₁ t ≠ c₂ * expProfile B₂ t := by
+  set x := Real.log (c₁ / c₂) / (B₁ - B₂)
   have hnull : volume ({x, -x} : Set ℝ) = 0 := (toFinite _).measure_zero _
   filter_upwards [measure_eq_zero_iff_ae_notMem.mp hnull] with t ht heq
   simp only [mem_insert_iff, mem_singleton_iff, not_or] at ht
-  have hx : |t| = x := abs_eq_of_normalizedExpProfile_eq h hB heq
+  have hx : |t| = x := abs_eq_of_mul_expProfile_eq hc₂ hB heq
   rcases abs_choice t with ht' | ht'
   · exact ht.1 (by linarith)
   · exact ht.2 (by linarith)
 
-/-- `F₂^{D(3)}` does not determine `F₂^{D(4)}`: on a range of positive length, the
-difference of two normalised exponentials with different slopes is a continuous profile that is
-not almost everywhere zero on the range, yet integrates to zero over it. -/
+/-- Normalised exponentials with different slopes differ almost everywhere: on a range of positive
+length they are non-zero multiples of exponential profiles (`ae_mul_expProfile_ne`). -/
+theorem ae_normalizedExpProfile_ne {B₁ B₂ : ℝ} (h : tLo < tHi) (hB : B₁ ≠ B₂) :
+    ∀ᵐ t ∂(volume : Measure ℝ),
+      normalizedExpProfile tLo tHi B₁ t ≠ normalizedExpProfile tLo tHi B₂ t := by
+  filter_upwards [ae_mul_expProfile_ne (c₁ := (tIntegrate tLo tHi (expProfile B₁))⁻¹)
+    (inv_ne_zero (tIntegrate_expProfile_pos B₂ h).ne') hB] with t ht
+  simpa only [normalizedExpProfile_def, div_eq_inv_mul] using ht
+
+/-- On a range of positive length, the difference of two normalised exponentials with different
+slopes is not almost everywhere zero on the range. -/
+theorem not_ae_eq_zero_normalizedExpProfile_sub {B₁ B₂ : ℝ} (h : tLo < tHi) (hB : B₁ ≠ B₂) :
+    ¬(fun t => normalizedExpProfile tLo tHi B₁ t - normalizedExpProfile tLo tHi B₂ t)
+      =ᵐ[volume.restrict (Icc tLo tHi)] 0 := by
+  intro h0
+  have hfalse : ∀ᵐ _t ∂volume.restrict (Icc tLo tHi), False := by
+    filter_upwards [h0, ae_restrict_of_ae (ae_normalizedExpProfile_ne h hB)] with t ht hne
+    exact hne (sub_eq_zero.mp ht)
+  exact h.not_ge (volume_restrict_Icc_eq_zero_iff.mp
+    (ae_eq_bot.mp (Filter.eventually_false_iff_eq_bot.mp hfalse)))
+
+/-- `F₂^{D(3)}` does not determine `F₂^{D(4)}`: on a range of positive length there is a continuous
+profile that is not almost everywhere zero on the range, yet integrates to zero over it. The
+difference of two normalised exponentials with different slopes is one
+(`not_ae_eq_zero_normalizedExpProfile_sub`, `tIntegrate_normalizedExpProfile_sub_eq_zero`). -/
 theorem exists_continuous_not_ae_eq_zero_tIntegrate_eq_zero (h : tLo < tHi) :
     ∃ f : ℝ → ℝ, Continuous f ∧ ¬f =ᵐ[volume.restrict (Icc tLo tHi)] 0 ∧
-      tIntegrate tLo tHi f = 0 := by
-  refine ⟨fun t => normalizedExpProfile tLo tHi 0 t - normalizedExpProfile tLo tHi 1 t,
-    by fun_prop, fun h0 => ?_, tIntegrate_normalizedExpProfile_sub_eq_zero 0 1 h⟩
-  have hfalse : ∀ᵐ _t ∂volume.restrict (Icc tLo tHi), False := by
-    filter_upwards [h0, ae_restrict_of_ae (ae_normalizedExpProfile_ne h zero_ne_one)]
-      with t ht hne
-    exact hne (sub_eq_zero.mp ht)
-  have hne : volume.restrict (Icc tLo tHi) ≠ 0 := by
-    rw [Ne, Measure.restrict_eq_zero, Real.volume_Icc, ENNReal.ofReal_eq_zero, not_le]
-    exact sub_pos.mpr h
-  -- `Filter.Eventually.exists` needs the a.e. filter of the restricted measure to be non-trivial.
-  have : (ae (volume.restrict (Icc tLo tHi))).NeBot := ae_neBot.mpr hne
-  exact hfalse.exists.elim fun _ hx => hx
-
-/-- `F₂^{D(3)}` does not determine `F₂^{D(4)}`: on a range of positive length, `tIntegrate` is not
-injective. -/
-theorem tIntegrate_not_injective (h : tLo < tHi) : ¬Function.Injective (tIntegrate tLo tHi) := by
-  intro hinj
-  obtain ⟨f, -, hf, hf0⟩ := exists_continuous_not_ae_eq_zero_tIntegrate_eq_zero h
-  have hz : tIntegrate tLo tHi 0 = 0 := by simp [tIntegrate_def]
-  exact hf (by rw [hinj (hf0.trans hz.symm)])
+      tIntegrate tLo tHi f = 0 :=
+  ⟨fun t => normalizedExpProfile tLo tHi 0 t - normalizedExpProfile tLo tHi 1 t, by fun_prop,
+    not_ae_eq_zero_normalizedExpProfile_sub h zero_ne_one,
+    tIntegrate_normalizedExpProfile_sub_eq_zero 0 1 h⟩
 
 /-! ## Recovery under the single-exponential hypothesis -/
 
