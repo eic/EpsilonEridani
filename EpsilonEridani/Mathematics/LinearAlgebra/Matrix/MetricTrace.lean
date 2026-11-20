@@ -101,7 +101,7 @@ def tracelessPart (g : Matrix n n K) : Module.End K (Matrix n n K) :=
 lemma tracelessPart_eq_one_sub (g : Matrix n n K) : tracelessPart g = 1 - tracePart g := (rfl)
 
 lemma tracelessPart_apply (g T : Matrix n n K) : tracelessPart g T = T - tracePart g T := by
-  rw [tracelessPart_eq_one_sub, LinearMap.sub_apply, Module.End.one_apply]
+  rw [tracelessPart_eq_one_sub, LinearMap.sub_apply, one_apply_eq_self]
 
 /-- The trace part and the traceless part add up to the identity. -/
 @[simp]
@@ -187,7 +187,7 @@ theorem tracelessPart_tracelessPart (T : Matrix n n K) :
 
 /-- The trace part is a projection. -/
 theorem isIdempotentElem_tracePart : IsIdempotentElem (tracePart g) :=
-  LinearMap.ext fun T => by rw [Module.End.mul_apply, tracePart_tracePart]
+  LinearMap.ext fun T => by rw [mul_apply_eq_comp, tracePart_tracePart]
 
 /-- The traceless part is a projection, complementary to the trace part. -/
 theorem isIdempotentElem_tracelessPart : IsIdempotentElem (tracelessPart g) :=

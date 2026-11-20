@@ -114,7 +114,7 @@ lemma casimir_eq_sum_comp (b b' : ι → L) :
 @[simp]
 lemma casimir_apply (b b' : ι → L) (m : M) :
     casimir R L M b b' m = ∑ i, ⁅b i, ⁅b' i, m⁆⁆ := by
-  simp only [casimir, LinearMap.sum_apply, Module.End.mul_apply, toEnd_apply_apply]
+  simp only [casimir, LinearMap.sum_apply, mul_apply_eq_comp, toEnd_apply_apply]
 
 /-- The quadratic Casimir endomorphism attached to a single basis `b`, i.e.
 `∑ i, φ (b i) ∘ₗ φ (b i)`. This is the familiar expression `∑ a, T a * T a`; it computes the
