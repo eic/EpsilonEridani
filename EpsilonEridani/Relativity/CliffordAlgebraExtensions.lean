@@ -15,18 +15,24 @@ public import Physlib.Mathematics.LeviCivita.Basic
 public import Physlib.Mathematics.KroneckerDelta.Basic
 
 /-!
-# Gamma matrix anticommutator and Dirac slash extensions
+# Gamma matrix anticommutator, Dirac slash and Dirac bilinear extensions
 
 This file extends `Physlib.Relativity.CliffordAlgebra` with the lowered gamma matrices,
-the Clifford anticommutator identity, the Dirac slash operators `/a = a_μ γ^μ`, and a
+the Clifford anticommutator identity, the Dirac slash operators `/a = a_μ γ^μ`, a
 collection of gamma-matrix trace identities used in tree-level QED/QCD amplitude
-computations.
+computations, the chiral projectors in the Dirac representation, and the Dirac adjoint
+`\bar{Γ} = γ⁰ Γ† γ⁰` with the Dirac bilinears `\bar{ψ} Γ χ` that tree-level currents are built from.
 
 ## Main definitions
 
 - `spaceTime.γDown`: the lowered gamma matrices `γ_μ = η_{μν} γ^ν`.
 - `spaceTime.γ.Slash.slash`: the Dirac slash `/a` of a Lorentz vector.
 - `spaceTime.γ.Slash.slashProd`: the product of a list of slashed Lorentz vectors.
+- `spaceTime.leftChiralProjector`, `spaceTime.rightChiralProjector`: the chiral projectors
+  `(1 ∓ γ⁵) / 2` in the Dirac representation, the images of Physlib's
+  `Fermion.Dirac.leftChiralProjector` and `Fermion.Dirac.rightChiralProjector`.
+- `spaceTime.diracAdjoint`: the Dirac adjoint `\bar{Γ} = γ⁰ Γ† γ⁰` of a `4 × 4` matrix.
+- `spaceTime.diracBilinear`: the Dirac bilinear `\bar{ψ} Γ χ = ψ† γ⁰ Γ χ`.
 
 ## Main results
 
@@ -38,6 +44,14 @@ computations.
   identity `Tr[/a /b /c /d] = 4 (a·b c·d - a·c b·d + a·d b·c)`.
 - `spaceTime.γ.Trace.gamma5_slash_mul_slash_mul_slash_mul_slash_trace`: the `γ5`
   four-slash trace identity in terms of the Levi-Civita symbol.
+- `spaceTime.γ5_mul_γ`, `spaceTime.γ_mul_leftChiralProjector`: `γ⁵` anticommutes with
+  each `γ^μ`, so moving `γ^μ` across a chiral projector flips its chirality.
+- `spaceTime.star_diracBilinear`: `(\bar{ψ} Γ χ)* = \bar{χ} \bar{Γ} ψ`.
+- `spaceTime.diracBilinear_mulVec_left`, `spaceTime.diracBilinear_mulVec_right`: a matrix
+  acting on either spinor moves into the bilinear, through its Dirac adjoint on the left.
+- `spaceTime.diracAdjoint_γ`, `spaceTime.diracAdjoint_leftChiralProjector`,
+  `spaceTime.diracAdjoint_γ_mul_leftChiralProjector`: `\bar{γ}^μ = γ^μ`, the Dirac adjoint
+  exchanges the chiral projectors, and the `V - A` vertex `γ^μ P_L` is its own Dirac adjoint.
 
 ## Implementation notes
 
@@ -566,6 +580,253 @@ theorem gamma5_slash_mul_slash_mul_slash_mul_slash_trace
 end Trace
 
 end γ
+
+open Matrix
+
+/-! ### Chirality in the Dirac representation -/
+
+/-- `γ⁰` is Hermitian. -/
+lemma isHermitian_γ0 : γ0.IsHermitian := by
+  rw [γ0_eq]
+  refine Matrix.IsHermitian.ext fun i j => ?_
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- In the Dirac representation the chirality matrix `γ⁵ = i γ⁰ γ¹ γ² γ³` is the block matrix
+`[[0, 1], [1, 0]]`. -/
+lemma γ5_eq : γ5 = !![0, 0, 1, 0; 0, 0, 0, 1; 1, 0, 0, 0; 0, 1, 0, 0] := by
+  rw [γ5, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  ext i j; fin_cases i <;> fin_cases j <;> simp
+
+/-- `γ⁵` is Hermitian. -/
+lemma isHermitian_γ5 : γ5.IsHermitian := by
+  rw [γ5_eq]
+  refine Matrix.IsHermitian.ext fun i j => ?_
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- `γ⁵` squares to the identity. -/
+@[simp]
+lemma γ5_mul_γ5 : γ5 * γ5 = 1 := by
+  rw [γ5_eq_endEquivMatrix, ← map_mul, Fermion.Dirac.gamma5_mul_self, map_one]
+
+/-- `γ⁵` anticommutes with every gamma matrix. -/
+lemma γ5_mul_γ (μ : Fin 4) : γ5 * γ μ = -(γ μ * γ5) := by
+  rw [γ5_eq_endEquivMatrix, γ_eq_endEquivMatrix, ← map_mul, ← map_mul,
+    Fermion.Dirac.gamma5_mul_gamma, map_neg]
+
+/-- The left chiral projector `(1 - γ⁵) / 2` in the Dirac representation: the image of
+`Fermion.Dirac.leftChiralProjector` under `Fermion.Dirac.endEquivMatrix`. -/
+def leftChiralProjector : Matrix (Fin 4) (Fin 4) ℂ :=
+  Fermion.Dirac.endEquivMatrix Fermion.Dirac.leftChiralProjector
+
+/-- The right chiral projector `(1 + γ⁵) / 2` in the Dirac representation: the image of
+`Fermion.Dirac.rightChiralProjector` under `Fermion.Dirac.endEquivMatrix`. -/
+def rightChiralProjector : Matrix (Fin 4) (Fin 4) ℂ :=
+  Fermion.Dirac.endEquivMatrix Fermion.Dirac.rightChiralProjector
+
+/-- The left chiral projector is `(1 - γ⁵) / 2`. -/
+lemma leftChiralProjector_eq : leftChiralProjector = (2 : ℂ)⁻¹ • (1 - γ5) := by
+  rw [leftChiralProjector, Fermion.Dirac.leftChiralProjector, map_smul, map_sub, map_one,
+    γ5_eq_endEquivMatrix]
+
+/-- The right chiral projector is `(1 + γ⁵) / 2`. -/
+lemma rightChiralProjector_eq : rightChiralProjector = (2 : ℂ)⁻¹ • (1 + γ5) := by
+  rw [rightChiralProjector, Fermion.Dirac.rightChiralProjector, map_smul, map_add, map_one,
+    γ5_eq_endEquivMatrix]
+
+/-- The left chiral projector is idempotent. -/
+@[simp]
+lemma leftChiralProjector_mul_self :
+    leftChiralProjector * leftChiralProjector = leftChiralProjector := by
+  rw [leftChiralProjector, ← map_mul, Fermion.Dirac.leftChiralProjector_mul_self]
+
+/-- The right chiral projector is idempotent. -/
+@[simp]
+lemma rightChiralProjector_mul_self :
+    rightChiralProjector * rightChiralProjector = rightChiralProjector := by
+  rw [rightChiralProjector, ← map_mul, Fermion.Dirac.rightChiralProjector_mul_self]
+
+/-- The chiral projectors are orthogonal. -/
+@[simp]
+lemma leftChiralProjector_mul_rightChiralProjector :
+    leftChiralProjector * rightChiralProjector = 0 := by
+  rw [leftChiralProjector, rightChiralProjector, ← map_mul,
+    Fermion.Dirac.leftChiralProjector_mul_rightChiralProjector, map_zero]
+
+/-- The chiral projectors are orthogonal in the reverse order as well. -/
+@[simp]
+lemma rightChiralProjector_mul_leftChiralProjector :
+    rightChiralProjector * leftChiralProjector = 0 := by
+  rw [leftChiralProjector, rightChiralProjector, ← map_mul,
+    Fermion.Dirac.rightChiralProjector_mul_leftChiralProjector, map_zero]
+
+/-- The two chiral projectors resolve the identity. -/
+@[simp]
+lemma leftChiralProjector_add_rightChiralProjector :
+    leftChiralProjector + rightChiralProjector = 1 := by
+  rw [leftChiralProjector, rightChiralProjector, ← map_add,
+    Fermion.Dirac.leftChiralProjector_add_rightChiralProjector, map_one]
+
+/-- The left chiral projector is Hermitian. -/
+lemma isHermitian_leftChiralProjector : leftChiralProjector.IsHermitian := by
+  rw [leftChiralProjector_eq]
+  exact (isHermitian_one.sub isHermitian_γ5).smul (by simp [IsSelfAdjoint])
+
+/-- The right chiral projector is Hermitian. -/
+lemma isHermitian_rightChiralProjector : rightChiralProjector.IsHermitian := by
+  rw [rightChiralProjector_eq]
+  exact (isHermitian_one.add isHermitian_γ5).smul (by simp [IsSelfAdjoint])
+
+/-- Moving a gamma matrix across a chiral projector flips its chirality: `γ^μ P_L = P_R γ^μ`. -/
+lemma γ_mul_leftChiralProjector (μ : Fin 4) :
+    γ μ * leftChiralProjector = rightChiralProjector * γ μ := by
+  rw [leftChiralProjector_eq, rightChiralProjector_eq, mul_smul_comm, smul_mul_assoc, mul_sub,
+    add_mul, mul_one, one_mul, γ5_mul_γ, sub_eq_add_neg]
+
+/-- Moving a gamma matrix across a chiral projector flips its chirality: `γ^μ P_R = P_L γ^μ`. -/
+lemma γ_mul_rightChiralProjector (μ : Fin 4) :
+    γ μ * rightChiralProjector = leftChiralProjector * γ μ := by
+  rw [leftChiralProjector_eq, rightChiralProjector_eq, mul_smul_comm, smul_mul_assoc, mul_add,
+    sub_mul, mul_one, one_mul, γ5_mul_γ, sub_neg_eq_add]
+
+/-! ### The Dirac adjoint and Dirac bilinears -/
+
+/-- The Dirac adjoint `\bar{Γ} = γ⁰ Γ† γ⁰` of a `4 × 4` matrix, characterised by
+`(\bar{ψ} Γ χ)* = \bar{χ} \bar{Γ} ψ` (`star_diracBilinear`). -/
+def diracAdjoint (Γ : Matrix (Fin 4) (Fin 4) ℂ) : Matrix (Fin 4) (Fin 4) ℂ := γ0 * Γᴴ * γ0
+
+/-- Unfolding lemma for `diracAdjoint`. -/
+lemma diracAdjoint_def (Γ : Matrix (Fin 4) (Fin 4) ℂ) : diracAdjoint Γ = γ0 * Γᴴ * γ0 := rfl
+
+/-- The Dirac adjoint is an involution. -/
+@[simp]
+lemma diracAdjoint_diracAdjoint (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracAdjoint (diracAdjoint Γ) = Γ := by
+  simp only [diracAdjoint, conjTranspose_mul, conjTranspose_conjTranspose, isHermitian_γ0.eq,
+    ← mul_assoc, γ0_mul_γ0, one_mul]
+  rw [mul_assoc, γ0_mul_γ0, mul_one]
+
+/-- The Dirac adjoint reverses products. -/
+@[simp]
+lemma diracAdjoint_mul (A B : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracAdjoint (A * B) = diracAdjoint B * diracAdjoint A := by
+  simp only [diracAdjoint, conjTranspose_mul, mul_assoc]
+  rw [← mul_assoc γ0 γ0, γ0_mul_γ0, one_mul]
+
+/-- The identity is its own Dirac adjoint. -/
+@[simp]
+lemma diracAdjoint_one : diracAdjoint 1 = 1 := by
+  simp [diracAdjoint]
+
+/-- The Dirac adjoint is additive. -/
+@[simp]
+lemma diracAdjoint_add (A B : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracAdjoint (A + B) = diracAdjoint A + diracAdjoint B := by
+  simp only [diracAdjoint, conjTranspose_add, mul_add, add_mul]
+
+/-- The Dirac adjoint commutes with negation. -/
+@[simp]
+lemma diracAdjoint_neg (A : Matrix (Fin 4) (Fin 4) ℂ) : diracAdjoint (-A) = -diracAdjoint A := by
+  simp only [diracAdjoint, conjTranspose_neg, mul_neg, neg_mul]
+
+/-- The Dirac adjoint commutes with subtraction. -/
+@[simp]
+lemma diracAdjoint_sub (A B : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracAdjoint (A - B) = diracAdjoint A - diracAdjoint B := by
+  simp only [diracAdjoint, conjTranspose_sub, mul_sub, sub_mul]
+
+/-- The Dirac adjoint is conjugate-linear. -/
+@[simp]
+lemma diracAdjoint_smul (c : ℂ) (A : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracAdjoint (c • A) = star c • diracAdjoint A := by
+  simp only [diracAdjoint, conjTranspose_smul, mul_smul_comm, smul_mul_assoc]
+
+/-- The gamma matrices are self-adjoint in the Dirac sense: `γ⁰ (γ^μ)† γ⁰ = γ^μ`. -/
+@[simp]
+lemma diracAdjoint_γ (μ : Fin 4) : diracAdjoint (γ μ) = γ μ := by
+  have h := (isHermitian_γ0_mul_γ μ).eq
+  rw [conjTranspose_mul, isHermitian_γ0.eq] at h
+  rw [diracAdjoint, mul_assoc, h, ← mul_assoc, γ0_mul_γ0, one_mul]
+
+/-- `γ⁵` is anti-self-adjoint in the Dirac sense: `γ⁰ γ⁵† γ⁰ = -γ⁵`. -/
+@[simp]
+lemma diracAdjoint_γ5 : diracAdjoint γ5 = -γ5 := by
+  have h := γ5_mul_γ 0
+  rw [γ_zero] at h
+  rw [diracAdjoint, isHermitian_γ5.eq, mul_assoc, h, mul_neg, ← mul_assoc, γ0_mul_γ0, one_mul]
+
+/-- The Dirac adjoint exchanges the chiral projectors. -/
+@[simp]
+lemma diracAdjoint_leftChiralProjector :
+    diracAdjoint leftChiralProjector = rightChiralProjector := by
+  simp [leftChiralProjector_eq, rightChiralProjector_eq]
+
+/-- The Dirac adjoint exchanges the chiral projectors. -/
+@[simp]
+lemma diracAdjoint_rightChiralProjector :
+    diracAdjoint rightChiralProjector = leftChiralProjector := by
+  rw [← diracAdjoint_leftChiralProjector, diracAdjoint_diracAdjoint]
+
+/-- The Dirac bilinear `\bar{ψ} Γ χ = ψ† γ⁰ Γ χ` of two Dirac-representation spinors and a `4 × 4`
+matrix `Γ`. It is conjugate-linear in `ψ` and linear in `χ`. -/
+def diracBilinear (ψ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) (χ : Fin 4 → ℂ) : ℂ :=
+  star ψ ⬝ᵥ (γ0 * Γ) *ᵥ χ
+
+/-- Unfolding lemma for `diracBilinear`. -/
+lemma diracBilinear_def (ψ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) (χ : Fin 4 → ℂ) :
+    diracBilinear ψ Γ χ = star ψ ⬝ᵥ (γ0 * Γ) *ᵥ χ := rfl
+
+/-- Complex conjugation of a Dirac bilinear: `(\bar{ψ} Γ χ)* = \bar{χ} \bar{Γ} ψ`. -/
+lemma star_diracBilinear (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    star (diracBilinear ψ Γ χ) = diracBilinear χ (diracAdjoint Γ) ψ := by
+  have hM : γ0 * diracAdjoint Γ = (γ0 * Γ)ᴴ := by
+    rw [diracAdjoint, conjTranspose_mul, isHermitian_γ0.eq, ← mul_assoc, ← mul_assoc,
+      γ0_mul_γ0, one_mul]
+  rw [diracBilinear, diracBilinear, hM, ← star_dotProduct_star, star_mulVec, star_star,
+    dotProduct_mulVec]
+
+/-- A matrix acting on the right spinor moves into the bilinear:
+`\bar{ψ} Γ (M χ) = \bar{ψ} (Γ M) χ`. -/
+lemma diracBilinear_mulVec_right (ψ χ : Fin 4 → ℂ) (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ Γ (M *ᵥ χ) = diracBilinear ψ (Γ * M) χ := by
+  rw [diracBilinear, diracBilinear, mulVec_mulVec, mul_assoc]
+
+/-- A matrix acting on the left spinor moves into the bilinear through its Dirac adjoint:
+`\overline{M ψ} Γ χ = \bar{ψ} (\bar{M} Γ) χ`. -/
+lemma diracBilinear_mulVec_left (ψ χ : Fin 4 → ℂ) (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear (M *ᵥ ψ) Γ χ = diracBilinear ψ (diracAdjoint M * Γ) χ := by
+  have hM : γ0 * (diracAdjoint M * Γ) = Mᴴ * (γ0 * Γ) := by
+    rw [diracAdjoint, ← mul_assoc, ← mul_assoc, ← mul_assoc, γ0_mul_γ0, one_mul, mul_assoc]
+  rw [diracBilinear, diracBilinear, hM, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec]
+
+/-- A Dirac bilinear is conjugate-linear in its left spinor. -/
+@[simp]
+lemma diracBilinear_smul_left (c : ℂ) (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear (c • ψ) Γ χ = star c * diracBilinear ψ Γ χ := by
+  simp [diracBilinear, star_smul, smul_dotProduct]
+
+/-- A Dirac bilinear is linear in its right spinor. -/
+@[simp]
+lemma diracBilinear_smul_right (c : ℂ) (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ Γ (c • χ) = c * diracBilinear ψ Γ χ := by
+  simp [diracBilinear, mulVec_smul, dotProduct_smul]
+
+/-- A Dirac bilinear is additive in its left spinor. -/
+@[simp]
+lemma diracBilinear_add_left (ψ ψ' χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear (ψ + ψ') Γ χ = diracBilinear ψ Γ χ + diracBilinear ψ' Γ χ := by
+  simp [diracBilinear, add_dotProduct]
+
+/-- A Dirac bilinear is additive in its right spinor. -/
+@[simp]
+lemma diracBilinear_add_right (ψ χ χ' : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ Γ (χ + χ') = diracBilinear ψ Γ χ + diracBilinear ψ Γ χ' := by
+  simp [diracBilinear, mulVec_add, dotProduct_add]
+
+/-- The `V - A` vertex `γ^μ P_L` is its own Dirac adjoint. -/
+lemma diracAdjoint_γ_mul_leftChiralProjector (μ : Fin 4) :
+    diracAdjoint (γ μ * leftChiralProjector) = γ μ * leftChiralProjector := by
+  rw [diracAdjoint_mul, diracAdjoint_leftChiralProjector, diracAdjoint_γ,
+    γ_mul_leftChiralProjector]
 
 end diracRepresentation
 end spaceTime
