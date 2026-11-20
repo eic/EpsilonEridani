@@ -17,6 +17,16 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
 
+* The additivity of the time component and of the spatial part, `(u + v)⁰ = u⁰ + v⁰` and
+  `(u + v).spatialPart = u.spatialPart + v.spatialPart` (`timeComponent_add`, `spatialPart_add`),
+  and the time component of a difference, `(u - v)⁰ = u⁰ - v⁰` (`timeComponent_sub`);
+  the closure of collinearity under sums, `(u + v).spatialPart = (a + b) • n` when
+  `u.spatialPart = a • n` and `v.spatialPart = b • n`
+  (`spatialPart_add_eq_smul_of_spatialPart_eq_smul`); and the component `⟪v.spatialPart, n⟫ = a`
+  along a unit vector `n` of the spatial part `a • n` of a four-vector
+  (`inner_spatialPart_eq_of_spatialPart_eq_smul`), so that `|⟪v.spatialPart, n⟫| < v⁰` when
+  `|a| < v⁰` (`abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul`).
+
 * The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
   (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from
   Physlib's `ofTemporalComponent` and `ofSpatialComponent`, and every vector arises this way from
@@ -33,6 +43,8 @@ noncomputable section
 
 namespace Lorentz
 namespace Vector
+
+open scoped InnerProductSpace
 
 /-- The purely temporal vector `ofTemporalComponent t = t e₀` has time component `t`. -/
 @[simp]
@@ -69,6 +81,50 @@ lemma timeComponent_sub_ofTemporalComponent_timeComponent {d : ℕ} (v : Vector 
 lemma spatialPart_sub_ofTemporalComponent {d : ℕ} (v : Vector d) (t : ℝ) :
     (v - ofTemporalComponent t).spatialPart = v.spatialPart := by
   simp [spatialPart_sub]
+
+/-- The time component of a sum is the sum of the time components.
+
+This is not a `@[simp]` lemma: the reducible `timeComponent` head unfolds to a component, which
+`apply_add` already rewrites. -/
+lemma timeComponent_add {d : ℕ} (u v : Vector d) :
+    (u + v).timeComponent = u.timeComponent + v.timeComponent :=
+  apply_add u v (Sum.inl 0)
+
+/-- The time component of a difference is the difference of the time components.
+
+This is not a `@[simp]` lemma, for the reason given at `timeComponent_add`. -/
+lemma timeComponent_sub {d : ℕ} (u v : Vector d) :
+    (u - v).timeComponent = u.timeComponent - v.timeComponent :=
+  apply_sub u v (Sum.inl 0)
+
+/-- The spatial part of a sum is the sum of the spatial parts.
+
+This is not a `@[simp]` lemma, for the reason given at `spatialPart_sub`. -/
+lemma spatialPart_add {d : ℕ} (u v : Vector d) :
+    (u + v).spatialPart = u.spatialPart + v.spatialPart := by
+  ext i
+  simp
+
+/-- The spatial part of a sum of four-vectors whose spatial parts lie along `n` lies along `n`
+too: if `u.spatialPart = a • n` and `v.spatialPart = b • n`, then
+`(u + v).spatialPart = (a + b) • n`. -/
+theorem spatialPart_add_eq_smul_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} {a b : ℝ} (hu : u.spatialPart = a • n)
+    (hv : v.spatialPart = b • n) : (u + v).spatialPart = (a + b) • n := by
+  rw [spatialPart_add, hu, hv, add_smul]
+
+/-- The component along a unit vector `n` of a spatial part `a • n` is `a`. -/
+theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
+    ⟪v.spatialPart, n⟫_ℝ = a := by
+  rw [hv, real_inner_smul_self_left, hn, mul_one, mul_one]
+
+/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < v⁰` has
+`|⟪v.spatialPart, n⟫| < v⁰`. -/
+theorem abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
+    (h : |a| < v.timeComponent) : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent := by
+  rwa [inner_spatialPart_eq_of_spatialPart_eq_smul hn hv]
 
 /-- The vector with time component `x` and spatial part `s`, assembled from Physlib's
 `ofTemporalComponent` and `ofSpatialComponent`. -/

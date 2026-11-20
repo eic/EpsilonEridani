@@ -16,7 +16,9 @@ scattering angle `θ` hands the photon the virtuality `emissionVirtuality m E E'
 
 The explicit data of the subject are a `ChargedSource` (charge, mass, charge radius and Lorentz
 factor in the collider frame), the photon variables `PhotonKinematics` (energy in the collider
-frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`), and the photon energy
+frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`, which for a photon of
+spatial part `a • n` along a unit vector is `|a|` equal to the photon energy,
+`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`), and the photon energy
 fraction `PhotonKinematics.energyFraction`. The kinematic minimum of the virtuality is strictly
 positive for a massive source (`ChargedSource.photonVirtualityMin_pos`) and strictly exceeds the
 familiar `m² x² / (1 - x)` in terms of the energy fraction `x` carried by the photon
@@ -95,6 +97,17 @@ def IsReal (k : PhotonKinematics) : Prop := k.virtuality = 0
 @[simp]
 theorem isReal_iff (k : PhotonKinematics) : k.IsReal ↔ k.virtuality = 0 := (Iff.rfl)
 
+/-- **A photon along an axis is real exactly when its momentum equals its energy.** A photon `γ`
+of four-momentum `q`, with `q⁰ = γ.energy ≥ 0`, virtuality `Q² = -q²` and spatial part `a • n` along
+a unit vector `n`, is real, `Q² = 0`, exactly when `|a| = γ.energy`, that is when `q` is null. -/
+theorem isReal_iff_abs_eq_energy_of_spatialPart_eq_smul {d : ℕ} {q : Lorentz.Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} {a : ℝ} {γ : PhotonKinematics} (hn : ‖n‖ = 1)
+    (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = a • n)
+    (hγ : γ.virtuality = -⟪q, q⟫ₘ) (hk : 0 ≤ γ.energy) : γ.IsReal ↔ |a| = γ.energy := by
+  rw [isReal_iff, hγ, neg_eq_zero,
+    Lorentz.Vector.minkowskiProduct_self_eq_zero_iff_of_spatialPart_eq_smul hn hq', hq,
+    abs_of_nonneg hk]
+
 /-- The fraction `x = k / E` of the source energy carried by the photon. -/
 def energyFraction (k : PhotonKinematics) (s : ChargedSource) : ℝ := k.energy / s.energy
 
@@ -103,10 +116,15 @@ theorem energyFraction_def (k : PhotonKinematics) (s : ChargedSource) :
     k.energyFraction s = k.energy / s.energy :=
   (rfl)
 
+/-- The photon carries the fraction `x` of the source energy: `x E_s = k`. -/
+theorem energyFraction_mul_energy (k : PhotonKinematics) {s : ChargedSource}
+    (hs : s.energy ≠ 0) : k.energyFraction s * s.energy = k.energy :=
+  div_mul_cancel₀ _ hs
+
 /-- The source keeps the fraction `1 - x` of its energy. -/
 theorem one_sub_energyFraction_mul_energy (k : PhotonKinematics) {s : ChargedSource}
     (hs : s.energy ≠ 0) : (1 - k.energyFraction s) * s.energy = s.energy - k.energy := by
-  simp only [energyFraction, sub_mul, div_mul_cancel₀ _ hs, one_mul]
+  rw [sub_mul, one_mul, k.energyFraction_mul_energy hs]
 
 /-- The photon `q = p - p'` emitted by a source going from four-momentum `p` to `p'`: its energy
 is the energy lost by the source, and its virtuality is `-q²`. -/
