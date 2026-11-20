@@ -35,6 +35,14 @@ abbrev Pdf (Flavor : Type) : Type := Flavor → ℝ → ℝ → ℝ
 def mellinMoment (f : Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) : ℝ :=
   ∫ x in Set.Icc (0 : ℝ) 1, x ^ n * f i x Q2
 
+/-- A Mellin moment is the interval integral of its integrand from `0` to `1`: the closed
+interval of the definition and the half-open one of the interval integral differ by the null set
+`{0}`. -/
+lemma mellinMoment_eq_intervalIntegral (f : Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment f n i Q2 = ∫ x in (0 : ℝ)..1, x ^ n * f i x Q2 := by
+  rw [mellinMoment, intervalIntegral.integral_of_le zero_le_one,
+    MeasureTheory.integral_Icc_eq_integral_Ioc]
+
 /-- Structural assumptions for a collinear PDF object.
 
 The `nonneg` field is derivable, not fundamental. Positivity of a leading-twist parton density
@@ -114,6 +122,12 @@ lemma Assumptions.isPartonDensity {f : Pdf Flavor} (h : Assumptions f) :
 /-- The analytic half of a full assumption bundle. -/
 lemma Assumptions.regularity {f : Pdf Flavor} (h : Assumptions f) : Regularity f :=
   { measurable := h.measurable, momentIntegrable := h.momentIntegrable }
+
+/-- Under the analytic half of the assumptions, every density is interval integrable, on any
+interval: this is the zeroth-moment case of `Regularity.momentIntegrable`. -/
+lemma Regularity.intervalIntegrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 a b : ℝ) :
+    IntervalIntegrable (fun x => f i x Q2) MeasureTheory.volume a b := by
+  simpa using (h.momentIntegrable 0 i Q2).intervalIntegrable (a := a) (b := b)
 
 /-- The split is exact: `Assumptions` is the conjunction of the physical and the analytic
 half, with no residue. -/
