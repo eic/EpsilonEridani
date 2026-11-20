@@ -29,11 +29,18 @@ a family `F : ι → Matrix n n ℝ` indexed by a basis `ι` of the adjoint repr
 transformation acts on it by an orthogonal matrix `R : Matrix ι ι ℝ` (the adjoint action of a
 compact gauge group is orthogonal in a basis orthonormal for its invariant form).
 
+A multiplet field is a function `F : (n → ℝ) → ι → Matrix n n ℝ` of the spacetime coordinates.
+Its partial derivatives at a point are a family `dF : n → ι → Matrix n n ℝ`, and its
+gauge-covariant derivatives are `DF ρ = dF ρ + gaugeRotate (ω ρ) F` for antisymmetric matrices
+`ω ρ`, the adjoint action of the gauge potential `A_ρ`.
+
 ## Main definitions
 
 * `gluonFieldSq g F`: the colour-summed invariant `F^a_{αβ} F^{a αβ}`.
 * `gluonPart g F`: the gluon part `T_g` of the energy-momentum tensor.
 * `gaugeRotate R F`: the multiplet `F` rotated by `R`.
+* `gluonPartDeriv g F G`: the variation of `T_g` at `F` in the direction `G`, bilinear in `F`
+  and `G`.
 
 ## Main statements
 
@@ -43,6 +50,14 @@ compact gauge group is orthogonal in a basis orthonormal for its invariant form)
   the tracelessness of the classical gluon part is special to four dimensions.
 * `gluonPart_gaugeRotate`: `T_g` is invariant under orthogonal rotations of the multiplet.
 * `gluonPart_equivariant`: `T_g` transforms as a tensor under transformations preserving `g`.
+* `gluonPart_add`, `hasDerivAt_gluonPart_apply`: `T_g` is quadratic in the multiplet, and its
+  derivative along a differentiable family of multiplets is `gluonPartDeriv`.
+* `gluonPartDeriv_gaugeRotate`: infinitesimal gauge invariance, so partial derivatives of the
+  multiplet may be replaced by gauge-covariant ones (`gluonPartDeriv_add_gaugeRotate`).
+* `divergence_deriv_gluonPart`: given the Bianchi identity and the Yang–Mills equation
+  `D^ρ F^a_{ρν} = J^a_ν`, the divergence of the gluon part is
+  `∂^μ T_g{}_{μν} = - Σ_a F^a_{να} J^{a α}`. The gluon part is not conserved by itself; this is
+  the momentum it exchanges with the colour current, an operator built from `F` and the current.
 
 ## References
 
@@ -161,6 +176,136 @@ theorem gluonPart_equivariant {g Λ : Matrix n n ℝ} (hΛ : Λᵀ * g * Λ = g)
     (F : ι → Matrix n n ℝ) :
     gluonPart g (fun a => Λᵀ * F a * Λ) = Λᵀ * gluonPart g F * Λ := by
   simp only [gluonPart, maxwellTensor_equivariant hΛ, Matrix.mul_sum, Matrix.sum_mul]
+
+/-! ### Variations and the divergence -/
+
+/-- The first-order variation of the gluon part at a multiplet `F` of field strengths in the
+direction of a multiplet `G`, the colour sum `Σ_a δT(F^a; G^a)` of the variations
+`maxwellTensorDeriv` of its components. It is the derivative of the gluon part along a
+differentiable family of multiplets (`hasDerivAt_gluonPart_apply`). -/
+def gluonPartDeriv (g : Matrix n n ℝ) :
+    (ι → Matrix n n ℝ) →ₗ[ℝ] (ι → Matrix n n ℝ) →ₗ[ℝ] Matrix n n ℝ :=
+  ∑ a, (maxwellTensorDeriv g).compl₁₂ (LinearMap.proj a) (LinearMap.proj a)
+
+@[simp]
+lemma gluonPartDeriv_apply (g : Matrix n n ℝ) (F G : ι → Matrix n n ℝ) :
+    gluonPartDeriv g F G = ∑ a, maxwellTensorDeriv g (F a) (G a) := by
+  simp [gluonPartDeriv]
+
+/-- The gluon part is quadratic in the multiplet, with cross term `gluonPartDeriv`. -/
+theorem gluonPart_add (g : Matrix n n ℝ) (F G : ι → Matrix n n ℝ) :
+    gluonPart g (F + G) = gluonPart g F + gluonPartDeriv g F G + gluonPart g G := by
+  simp only [gluonPart_def, gluonPartDeriv_apply, Pi.add_apply, maxwellTensor_add,
+    Finset.sum_add_distrib]
+
+/-- The gluon part of a differentiable family of multiplets is differentiable, with derivative
+the variation `gluonPartDeriv` in the direction of the derivative of the family. Derivatives are
+taken entry by entry. -/
+theorem hasDerivAt_gluonPart_apply (g : Matrix n n ℝ) {c : ℝ → ι → Matrix n n ℝ}
+    {c' : ι → Matrix n n ℝ} {t : ℝ} (hc : ∀ a i j, HasDerivAt (fun s => c s a i j) (c' a i j) t)
+    (μ ν : n) :
+    HasDerivAt (fun s => gluonPart g (c s) μ ν) (gluonPartDeriv g (c t) c' μ ν) t := by
+  simp only [gluonPart_def, gluonPartDeriv_apply, Matrix.sum_apply]
+  exact HasDerivAt.fun_sum fun a _ => hasDerivAt_maxwellTensor_apply g (hc a) μ ν
+
+/-- Infinitesimal gauge invariance of the gluon part: its variation along an infinitesimal
+rotation `F^a ↦ Σ_b ω_{ab} F^b` of the multiplet by an antisymmetric `ω` vanishes. The adjoint
+action of an element of the Lie algebra of a compact gauge group is such an `ω`. -/
+theorem gluonPartDeriv_gaugeRotate (g : Matrix n n ℝ) {ω : Matrix ι ι ℝ} (hω : ωᵀ = -ω)
+    (F : ι → Matrix n n ℝ) : gluonPartDeriv g F (gaugeRotate ω F) = 0 := by
+  have hsum : gluonPartDeriv g F (gaugeRotate ω F) =
+      ∑ a, ∑ b, ω a b • maxwellTensorDeriv g (F a) (F b) := by
+    simp only [gluonPartDeriv_apply, gaugeRotate_apply, map_sum, map_smul]
+  -- the sum pairs the antisymmetric `ω` with the symmetric `δT(F^a; F^b)`
+  have hneg : ∑ a, ∑ b, ω a b • maxwellTensorDeriv g (F a) (F b) =
+      -∑ a, ∑ b, ω a b • maxwellTensorDeriv g (F a) (F b) := by
+    have h (a b : ι) : ω a b = -ω b a := by simpa using congrFun (congrFun hω b) a
+    calc ∑ a, ∑ b, ω a b • maxwellTensorDeriv g (F a) (F b)
+        = ∑ b, ∑ a, ω a b • maxwellTensorDeriv g (F a) (F b) := Finset.sum_comm
+      _ = ∑ b, ∑ a, -(ω b a • maxwellTensorDeriv g (F b) (F a)) :=
+        Finset.sum_congr rfl fun b _ => Finset.sum_congr rfl fun a _ => by
+          rw [h a b, neg_smul, maxwellTensorDeriv_comm g (F a) (F b)]
+      _ = -∑ a, ∑ b, ω a b • maxwellTensorDeriv g (F a) (F b) := by
+        simp only [Finset.sum_neg_distrib]
+  rw [hsum]
+  ext i j
+  have h := congrFun (congrFun hneg i) j
+  simp only [Matrix.neg_apply] at h
+  simp only [Matrix.zero_apply]
+  linarith
+
+/-- The variation of the gluon part is unchanged when the direction is shifted by an
+infinitesimal gauge rotation of the multiplet. Applied to the derivatives of a multiplet, it
+says that partial derivatives `∂_ρ F` may be replaced by gauge-covariant derivatives
+`D_ρ F = ∂_ρ F + ω_ρ F`. -/
+theorem gluonPartDeriv_add_gaugeRotate (g : Matrix n n ℝ) {ω : Matrix ι ι ℝ} (hω : ωᵀ = -ω)
+    (F G : ι → Matrix n n ℝ) :
+    gluonPartDeriv g F (G + gaugeRotate ω F) = gluonPartDeriv g F G := by
+  rw [map_add, gluonPartDeriv_gaugeRotate g hω, add_zero]
+
+/-- **The divergence of the gluon part**, pointwise. Let `F` be a multiplet of antisymmetric
+field strengths and `DF ρ` multiplets of antisymmetric matrices obeying the Bianchi identity
+`D_ρ F^a_{μν} + D_μ F^a_{νρ} + D_ν F^a_{ρμ} = 0`, as the gauge-covariant derivatives of a
+multiplet of field strengths do. Then the divergence of the variation of the gluon part along
+them is `- Σ_a F^a_{να} g^{αβ} J^a_β`, where `J^a = D^ρ F^a_{ρ·}` is the colour current that
+sources the Yang–Mills equation. -/
+theorem divergence_gluonPartDeriv {g : Matrix n n ℝ} (hg : g.IsSymm) (hdet : IsUnit g.det)
+    {F : ι → Matrix n n ℝ} (hF : ∀ a, (F a)ᵀ = -F a) {DF : n → ι → Matrix n n ℝ}
+    (hDF : ∀ ρ a, (DF ρ a)ᵀ = -DF ρ a)
+    (hbianchi : ∀ a ρ μ ν, DF ρ a μ ν + DF μ a ν ρ + DF ν a ρ μ = 0) :
+    divergence g (fun ρ => gluonPartDeriv g F (DF ρ)) =
+      -∑ a, F a *ᵥ g⁻¹ *ᵥ divergence g (fun ρ => DF ρ a) := by
+  have h : (fun ρ => gluonPartDeriv g F (DF ρ)) =
+      ∑ a, fun ρ => maxwellTensorDeriv g (F a) (DF ρ a) := by
+    funext ρ
+    simp only [gluonPartDeriv_apply, Finset.sum_apply]
+  rw [h, map_sum, ← Finset.sum_neg_distrib]
+  exact Finset.sum_congr rfl fun a _ =>
+    divergence_maxwellTensorDeriv hg hdet (hF a) (fun ρ => hDF ρ a) (hbianchi a)
+
+/-- **The divergence of the gluon part of the energy-momentum tensor.** Let `F` be a multiplet of
+antisymmetric field strengths on spacetime `n → ℝ`, with partial derivatives `dF ρ` at `x`, and
+let `DF ρ = dF ρ + ω_ρ F` be its gauge-covariant derivatives for a connection acting by
+antisymmetric matrices `ω ρ`. If `DF` obeys the Bianchi identity and the Yang–Mills equation
+`D^ρ F^a_{ρν} = J^a_ν` with colour current `J`, then
+
+  `∂^μ T_g{}_{μν} = - Σ_a F^a_{να} J^{a α}`.
+
+The gluon part alone is not conserved: it exchanges momentum with whatever carries the colour
+current. In the abelian case `ι = Unit`, `ω = 0` this is `∂^μ T_{μν} = - F_{να} J^α` for the
+Maxwell tensor, the negative of the Lorentz force density. -/
+theorem divergence_deriv_gluonPart {g : Matrix n n ℝ} (hg : g.IsSymm) (hdet : IsUnit g.det)
+    {F : (n → ℝ) → ι → Matrix n n ℝ} (hF : ∀ y a, (F y a)ᵀ = -F y a) {x : n → ℝ}
+    {dF : n → ι → Matrix n n ℝ}
+    (hdF : ∀ ρ a i j, HasDerivAt (fun s : ℝ => F (x + s • Pi.single ρ 1) a i j) (dF ρ a i j) 0)
+    {ω : n → Matrix ι ι ℝ} (hω : ∀ ρ, (ω ρ)ᵀ = -ω ρ) {DF : n → ι → Matrix n n ℝ}
+    (hD : ∀ ρ, DF ρ = dF ρ + gaugeRotate (ω ρ) (F x))
+    (hbianchi : ∀ a ρ μ ν, DF ρ a μ ν + DF μ a ν ρ + DF ν a ρ μ = 0) {J : ι → n → ℝ}
+    (hYM : ∀ a, divergence g (fun ρ => DF ρ a) = J a) :
+    divergence g (fun ρ => Matrix.of fun μ ν =>
+        deriv (fun s : ℝ => gluonPart g (F (x + s • Pi.single ρ 1)) μ ν) 0) =
+      -∑ a, F x a *ᵥ g⁻¹ *ᵥ J a := by
+  -- the partial derivatives of the gluon part are its variations along the covariant derivatives
+  have hderiv (ρ : n) : (Matrix.of fun μ ν =>
+      deriv (fun s : ℝ => gluonPart g (F (x + s • Pi.single ρ 1)) μ ν) 0) =
+        gluonPartDeriv g (F x) (DF ρ) := by
+    ext μ ν
+    rw [Matrix.of_apply, (hasDerivAt_gluonPart_apply g (hdF ρ) μ ν).deriv, hD,
+      gluonPartDeriv_add_gaugeRotate g (hω ρ), zero_smul, add_zero]
+  -- the partial derivatives of an antisymmetric field strength are antisymmetric
+  have hdF_anti (ρ : n) (a : ι) : (dF ρ a)ᵀ = -dF ρ a := by
+    ext i j
+    simp only [transpose_apply, Matrix.neg_apply]
+    have e : (fun s : ℝ => F (x + s • Pi.single ρ 1) a j i) =
+        fun s => -F (x + s • Pi.single ρ 1) a i j :=
+      funext fun s => by simpa using congrFun (congrFun (hF (x + s • Pi.single ρ 1) a) i) j
+    have h := hdF ρ a j i
+    rw [e] at h
+    exact h.unique (hdF ρ a i j).fun_neg
+  have hDF_anti (ρ : n) (a : ι) : (DF ρ a)ᵀ = -DF ρ a := by
+    simp only [hD, Pi.add_apply, gaugeRotate_apply, transpose_add, transpose_sum,
+      transpose_smul, hdF_anti, hF, smul_neg, Finset.sum_neg_distrib, neg_add]
+  simp only [hderiv, divergence_gluonPartDeriv hg hdet (hF x) hDF_anti hbianchi, hYM]
 
 end EnergyMomentumTensor
 end QCD
