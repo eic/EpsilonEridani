@@ -56,7 +56,8 @@ tower of states with `∑ₙ |Z n|² = ∞` whose correlators converge at every 
 * `SpectralData.norm_threePoint_mul_exp_sub_le`: `‖C₃(t, τ) e^{E₀ t} - |Z₀|² O₀₀‖` is at most
   `K₃(s₀, τ₀) (e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)})` for `t - τ ≥ s₀` and `τ ≥ τ₀`, where
   `K₃(s₀, τ₀)` is the excited-state weight `SpectralData.threePointExcitedWeight` of the
-  three-point correlator.
+  three-point correlator, and `C₃(t, τ) e^{E₀ t} → |Z₀|² O₀₀` as `τ` and `t - τ` tend to infinity
+  (`SpectralData.tendsto_threePoint_mul_exp`).
 * `SpectralData.norm_threePoint_div_twoPoint_sub_le`: for `t - τ ≥ s₀`, `τ ≥ τ₀` and `Z₀ ≠ 0`, the
   ratio `C₃(t, τ) / C₂(t)` differs from the ground-state matrix element `O₀₀` by at most
   `(K₃(s₀, τ₀) + ‖O₀₀‖ K₂(s₀ + τ₀)) / |Z₀|²` times `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}`.
@@ -145,6 +146,7 @@ theorem threePointWeight_nonneg (O : ι → ι → ℂ) (p : ι × ι) : 0 ≤ S
   positivity
 
 /-- The weight of a pair of equal states `(n, n)` is `|Z n|² ‖⟨n|O|n⟩‖`. -/
+@[simp]
 theorem threePointWeight_self (O : ι → ι → ℂ) (n : ι) :
     S.threePointWeight O (n, n) = ‖S.overlap n‖ ^ 2 * ‖O n n‖ := by
   rw [threePointWeight_def]
@@ -152,7 +154,10 @@ theorem threePointWeight_self (O : ι → ι → ℂ) (n : ι) :
 
 /-- The excited-state weight `K₂(t₀) = ∑ₙ |Z n|² e^{-(E n - E₀) t₀} - |Z₀|²` of the two-point
 correlator relative to the state `n₀`, at the reference time `t₀`: the contribution of the states
-other than `n₀` to `C₂(t₀) e^{E₀ t₀}` (see `hasSum_twoPointExcitedWeight`). -/
+other than `n₀` to `C₂(t₀) e^{E₀ t₀}` (see `hasSum_twoPointExcitedWeight`). As a `tsum` the sum is
+`0` where it does not converge, and the weight is then the nonpositive junk value `-|Z₀|²`;
+`hasSum_twoPointExcitedWeight` and `twoPointExcitedWeight_nonneg` assume the convergence at `t₀`
+that rules this out. -/
 noncomputable def twoPointExcitedWeight (n₀ : ι) (t₀ : ℝ) : ℝ :=
   ∑' n, ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - S.energy n₀) * t₀)) - ‖S.overlap n₀‖ ^ 2
 
@@ -167,7 +172,10 @@ theorem twoPointExcitedWeight_def (n₀ : ι) (t₀ : ℝ) :
 `K₃(s₀, τ₀) = ∑ₙ,ₘ |Z n| ‖⟨n|O|m⟩‖ |Z m| e^{-(E n - E₀) s₀} e^{-(E m - E₀) τ₀} - |Z₀|² ‖⟨0|O|0⟩‖`
 of the three-point correlator relative to the state `n₀`, at the reference sink-operator
 separation `s₀` and operator time `τ₀`: the weight of the pairs of states other than `(n₀, n₀)`
-(see `hasSum_threePointExcitedWeight`). -/
+(see `hasSum_threePointExcitedWeight`). As a `tsum` the sum is `0` where it does not converge, and
+the weight is then the nonpositive junk value `-|Z₀|² ‖⟨0|O|0⟩‖`;
+`hasSum_threePointExcitedWeight` and `threePointExcitedWeight_nonneg` assume the absolute
+convergence at `(s₀, τ₀)` that rules this out. -/
 noncomputable def threePointExcitedWeight (O : ι → ι → ℂ) (n₀ : ι) (s₀ τ₀ : ℝ) : ℝ :=
   ∑' p, S.threePointWeight O p * (Real.exp (-((S.energy p.1 - S.energy n₀) * s₀)) *
     Real.exp (-((S.energy p.2 - S.energy n₀) * τ₀))) - ‖S.overlap n₀‖ ^ 2 * ‖O n₀ n₀‖
@@ -334,9 +342,9 @@ theorem twoPoint_pos {t : ℝ}
   exact hs.tsum_pos (fun _ => by positivity) n₀
     (mul_pos (pow_pos (norm_pos_iff.2 h₀) 2) (Real.exp_pos _))
 
-/-- **Ground-state dominance.** After the ground-state decay `e^{-E₀ t}` is divided out, a
-two-point correlator converging at some time `t₀` tends to the ground-state weight `|Z₀|²` at large
-Euclidean time. -/
+/-- **Ground-state dominance.** Under a spectral gap, after the ground-state decay `e^{-E₀ t}` is
+divided out, a two-point correlator converging at some time `t₀` tends to the ground-state weight
+`|Z₀|²` at large Euclidean time. -/
 theorem tendsto_twoPoint_mul_exp (h : S.HasSpectralGap n₀ Δ) {t₀ : ℝ}
     (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) :
     Tendsto (fun t => S.twoPoint t * Real.exp (S.energy n₀ * t)) atTop
@@ -369,7 +377,7 @@ private theorem threePoint_term_mul_exp (p : ι × ι) (E t τ : ℝ) :
 
 /-- The norm of a summand of the three-point correlator with a nonnegative time dependence `r`
 is the weight of its pair of states times `r`. -/
-private theorem norm_threePoint_term (p : ι × ι) {r : ℝ} (hr : 0 ≤ r) :
+theorem norm_overlap_mul_mul_conj_overlap_mul (p : ι × ι) {r : ℝ} (hr : 0 ≤ r) :
     ‖S.overlap p.1 * O p.1 p.2 * conj (S.overlap p.2) * (r : ℂ)‖ =
       S.threePointWeight O p * r := by
   simp only [threePointWeight_def, norm_mul, Complex.norm_conj, Complex.norm_of_nonneg hr]
@@ -397,7 +405,7 @@ theorem hasSum_threePoint {E : ℝ} (hE : ∀ n, E ≤ S.energy n) {s₀ τ₀ :
   rw [threePoint_def]
   refine (Summable.of_norm_bounded (hO.mul_right
     (Real.exp (-(E * (t - τ - s₀))) * Real.exp (-(E * (τ - τ₀))))) fun p => ?_).hasSum
-  rw [norm_threePoint_term p (by positivity), mul_assoc]
+  rw [norm_overlap_mul_mul_conj_overlap_mul p (by positivity), mul_assoc]
   refine mul_le_mul_of_nonneg_left ?_ (S.threePointWeight_nonneg O p)
   simp only [← Real.exp_add]
   refine Real.exp_le_exp.2 ?_
@@ -438,7 +446,7 @@ theorem hasSum_threePointExcitedWeight [DecidableEq ι] {s₀ τ₀ : ℝ}
       simp only [← Real.exp_add]
       ring_nf
   convert hasSum_ite_sub_hasSum h.hasSum (n₀, n₀) using 1
-  simp [threePointExcitedWeight_def, threePointWeight_self]
+  simp [threePointExcitedWeight_def]
 
 /-- The excited-state weight of a three-point correlator converging absolutely at `(s₀, τ₀)` is
 nonnegative. -/
@@ -471,7 +479,7 @@ theorem norm_threePoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀ τ�
   set g : ι × ι → ℂ := fun p => S.overlap p.1 * O p.1 p.2 * conj (S.overlap p.2) *
     (e p : ℂ)
   have hg : ∀ p, ‖g p‖ = S.threePointWeight O p * e p := fun p =>
-    norm_threePoint_term p (by positivity)
+    norm_overlap_mul_mul_conj_overlap_mul p (by positivity)
   have hB : HasSum g (S.threePoint O t τ * (Real.exp (S.energy n₀ * t) : ℂ)) :=
     hasSum_threePoint_mul_exp h.energy_le hO hτ hs
   have hg₀ : g (n₀, n₀) = (‖S.overlap n₀‖ : ℂ) ^ 2 * O n₀ n₀ := by
@@ -496,6 +504,39 @@ theorem norm_threePoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀ τ�
       _ ≤ _ := mul_le_mul_of_nonneg_left
           (h.exp_mul_exp_le hp (sub_nonneg.2 (le_sub_iff_add_le.2 (by linarith)))
             (sub_nonneg.2 hτ)) (by positivity)
+
+/-- The excited-state suppression `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}` vanishes along any
+filter on which both `τ` and `t - τ` tend to infinity. -/
+private theorem tendsto_exp_neg_add_exp_neg (hΔ : 0 < Δ) {α : Type*} {l : Filter α}
+    {t τ : α → ℝ} (hτ : Tendsto τ l atTop) (htτ : Tendsto (fun a => t a - τ a) l atTop)
+    (s₀ τ₀ : ℝ) :
+    Tendsto (fun a => Real.exp (-(Δ * (τ a - τ₀))) + Real.exp (-(Δ * (t a - τ a - s₀)))) l
+      (𝓝 0) := by
+  have hexp : ∀ {f : α → ℝ}, Tendsto f l atTop → ∀ r : ℝ,
+      Tendsto (fun a => Real.exp (-(Δ * (f a - r)))) l (𝓝 0) := fun hf r =>
+    Real.tendsto_exp_neg_atTop_nhds_zero.comp <|
+      (by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-r) hf :
+        Tendsto (fun a => _ - r) l atTop).const_mul_atTop hΔ
+  simpa using (hexp hτ τ₀).add (hexp htτ s₀)
+
+/-- **Ground-state dominance of the three-point correlator.** Under a spectral gap, after the
+ground-state decay `e^{-E₀ t}` is divided out, a three-point correlator converging absolutely at
+some `(s₀, τ₀)` tends to its ground-state term `|Z₀|² ⟨0|O|0⟩` along any filter on which both the
+operator time `τ` and the sink-operator separation `t - τ` tend to infinity. -/
+theorem tendsto_threePoint_mul_exp (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : ℝ}
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
+    {α : Type*} {l : Filter α} {t τ : α → ℝ}
+    (hτ : Tendsto τ l atTop) (htτ : Tendsto (fun a => t a - τ a) l atTop) :
+    Tendsto (fun a => S.threePoint O (t a) (τ a) * (Real.exp (S.energy n₀ * t a) : ℂ)) l
+      (𝓝 ((‖S.overlap n₀‖ : ℂ) ^ 2 * O n₀ n₀)) := by
+  have hbound := (tendsto_exp_neg_add_exp_neg h.pos hτ htτ s₀ τ₀).const_mul
+    (S.threePointExcitedWeight O n₀ s₀ τ₀)
+  rw [mul_zero] at hbound
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero' (Eventually.of_forall fun a => norm_nonneg _) ?_ hbound
+  filter_upwards [hτ.eventually_ge_atTop τ₀, htτ.eventually_ge_atTop s₀] with a ha hta
+  exact norm_threePoint_mul_exp_sub_le h hO ha hta
 
 /-! ### The ratio and the ground-state matrix element -/
 
@@ -573,14 +614,9 @@ theorem tendsto_threePoint_div_twoPoint (h : S.HasSpectralGap n₀ Δ) {s₀ τ�
       (𝓝 (O n₀ n₀)) := by
   set C := (S.threePointExcitedWeight O n₀ s₀ τ₀ +
     ‖O n₀ n₀‖ * S.twoPointExcitedWeight n₀ (s₀ + τ₀)) / ‖S.overlap n₀‖ ^ 2
-  have hexp : ∀ {f : α → ℝ}, Tendsto f l atTop → ∀ r : ℝ,
-      Tendsto (fun a => Real.exp (-(Δ * (f a - r)))) l (𝓝 0) := fun hf r =>
-    Real.tendsto_exp_neg_atTop_nhds_zero.comp <|
-      (by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-r) hf :
-        Tendsto (fun a => _ - r) l atTop).const_mul_atTop h.pos
   have hbound : Tendsto (fun a => C * (Real.exp (-(Δ * (τ a - τ₀))) +
       Real.exp (-(Δ * (t a - τ a - s₀))))) l (𝓝 0) := by
-    simpa using ((hexp hτ τ₀).add (hexp htτ s₀)).const_mul C
+    simpa using (tendsto_exp_neg_add_exp_neg h.pos hτ htτ s₀ τ₀).const_mul C
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero' (Eventually.of_forall fun a => norm_nonneg _) ?_ hbound
   filter_upwards [hτ.eventually_ge_atTop τ₀, htτ.eventually_ge_atTop s₀] with a ha hta
