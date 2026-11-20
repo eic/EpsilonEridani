@@ -23,7 +23,8 @@ bundle `PDF.SumRuleAssumptions`; these are instances of the general results
 `PDF.Assumptions.comap` and its companions.
 
 On a density over `Species Flavor` the integral `∫₀¹ (q_i(x) - qbar_i(x)) dx` is the net number of
-quarks of flavour `i`, the valence number `PDF.valenceNumber`. The valence sum rules of a hadron
+quarks of flavour `i`, the valence number `PDF.valenceNumber`; the integrand `q_i(x) - qbar_i(x)`
+at one scale is the valence density `PDF.valenceDensity`. The valence sum rules of a hadron
 prescribe it flavour by flavour. Charge conjugation negates every valence number, and a flavour
 whose quark and antiquark densities agree, as in a charge-conjugation invariant density, has no
 valence number.
@@ -39,6 +40,7 @@ only one scale.
 
 * `EpsilonEridani.Particles.Parton.PDF.chargeConj`: the charge-conjugate density.
 * `EpsilonEridani.Particles.Parton.PDF.valenceNumber`: `∫₀¹ (q_i - qbar_i)`.
+* `EpsilonEridani.Particles.Parton.PDF.valenceDensity`: `q_i(x) - qbar_i(x)` at one scale.
 
 ## Main statements
 
@@ -48,7 +50,10 @@ only one scale.
 * `PDF.sum_mellinMoment_chargeConj`: it preserves every species-summed moment, in particular the
   momentum sum.
 * `PDF.chargeConj_weight`: it commutes with a species-wise rescaling, conjugating the weight.
-* `PDF.valenceNumber_chargeConj`: it negates the valence numbers.
+* `PDF.valenceNumber_chargeConj`, `PDF.valenceDensity_chargeConj`: it negates the valence numbers
+  and the valence densities.
+* `PDF.valenceNumber_eq_integral_valenceDensity`: the valence number is the integral of the
+  valence density.
 * `PDF.valenceNumber_eq_sub_valenceTarget`: under the sum-rule bundle, the valence number is the
   quark target minus the antiquark target.
 * `PDF.forall_valenceNumber_eq_iff_valenceTarget`: under the sum-rule bundle, prescribed valence
@@ -157,6 +162,28 @@ theorem valenceNumber_def (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) :
     valenceNumber f i Q2 = mellinMoment f 0 (.quark i) Q2 - mellinMoment f 0 (.antiquark i) Q2 :=
   (rfl)
 
+/-- The valence density `q_i(x, Q²) - qbar_i(x, Q²)` of flavour `i` in the density `f`, as a
+function of the momentum fraction `x` at the scale `Q2`: the quark density of flavour `i` minus
+its antiquark density. When both are integrable on the unit interval its integral there is the
+valence number (`valenceNumber_eq_integral_valenceDensity`). -/
+def valenceDensity (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) : ℝ → ℝ :=
+  fun x => f (.quark i) x Q2 - f (.antiquark i) x Q2
+
+@[simp]
+theorem valenceDensity_apply (f : Pdf (Species Flavor)) (i : Flavor) (Q2 x : ℝ) :
+    valenceDensity f i Q2 x = f (.quark i) x Q2 - f (.antiquark i) x Q2 :=
+  (rfl)
+
+/-- **The valence number is the integral of the valence density** over the unit interval, when the
+quark and antiquark densities are integrable there. -/
+theorem valenceNumber_eq_integral_valenceDensity {f : Pdf (Species Flavor)} {i : Flavor} {Q2 : ℝ}
+    (hq : MeasureTheory.IntegrableOn (fun x => f (.quark i) x Q2) (Set.Icc 0 1))
+    (hqb : MeasureTheory.IntegrableOn (fun x => f (.antiquark i) x Q2) (Set.Icc 0 1)) :
+    valenceNumber f i Q2 = ∫ x in Set.Icc (0 : ℝ) 1, valenceDensity f i Q2 x := by
+  rw [valenceNumber_def, mellinMoment, mellinMoment]
+  simp only [pow_zero, one_mul, valenceDensity_apply]
+  rw [MeasureTheory.integral_sub hq hqb]
+
 /-- Under the sum-rule bundle, the valence number of a flavour is the target value of its quark
 minus that of its antiquark, at every scale. -/
 theorem valenceNumber_eq_sub_valenceTarget [Fintype Flavor] {f : Pdf (Species Flavor)}
@@ -183,6 +210,13 @@ theorem forall_valenceNumber_eq_iff_valenceTarget [Fintype Flavor] {f : Pdf (Spe
 theorem valenceNumber_chargeConj (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) :
     valenceNumber (chargeConj f) i Q2 = -valenceNumber f i Q2 := by
   simp [valenceNumber_def]
+
+/-- Charge conjugation negates the valence density of every flavour. -/
+@[simp]
+theorem valenceDensity_chargeConj (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) :
+    valenceDensity (chargeConj f) i Q2 = -valenceDensity f i Q2 := by
+  funext x
+  simp
 
 /-- A flavour whose quark and antiquark densities coincide on the unit interval at the scale
 `Q2` has vanishing valence number there. -/
