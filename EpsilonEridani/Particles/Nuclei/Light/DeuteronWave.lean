@@ -5,9 +5,9 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.MeasureTheory.HalfLine
 public import EpsilonEridani.Mathematics.MeasureTheory.MemLp
 public import Mathlib.MeasureTheory.Integral.ExpDecay
-public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
 # The deuteron radial wave function and the d-state probability
@@ -43,8 +43,9 @@ every exterior `(vS, vD)` square integrable on `r > R` of total weight below one
 deuteron wave functions equal to it for `r > R`, with the quadrupole moment of that exterior
 and different d-state probabilities.
 `exists_hasAsymptoticSNormalization_quadrupoleMoment_eq_dStateProbability_ne` specialises
-this to exponential tails `uS = uD = t * exp (-κ * r)`, giving two wave functions with the same
-non-zero asymptotic normalisation and the same positive quadrupole moment. The
+this to exponential tails `uS = uD = A * exp (-κ * r)`: for every binding momentum `κ > 0` and
+every non-zero `A` there are two wave functions with asymptotic normalisation `A` and the same
+positive quadrupole moment. The
 two wave functions differ only for `r ≤ R`, where they are constant; `DeuteronWave` imposes
 no regularity, and the statement is about the functionals, not about a particular potential.
 The d-state probability is therefore meaningful only relative to a stated nucleon-nucleon
@@ -233,13 +234,13 @@ theorem sStateProbability_mem_Icc : ψ.sStateProbability ∈ Icc (0 : ℝ) 1 :=
 everywhere on the half-line. -/
 theorem sStateProbability_eq_zero_iff :
     ψ.sStateProbability = 0 ↔ ψ.uS =ᵐ[volume.restrict (Ioi 0)] 0 :=
-  integral_sq_eq_zero_iff ψ.memLp_uS
+  integral_sq_eq_zero_iff ψ.memLp_uS.integrable_sq
 
 /-- The d-state probability vanishes exactly when the d-wave amplitude vanishes almost
 everywhere on the half-line. -/
 theorem dStateProbability_eq_zero_iff :
     ψ.dStateProbability = 0 ↔ ψ.uD =ᵐ[volume.restrict (Ioi 0)] 0 :=
-  integral_sq_eq_zero_iff ψ.memLp_uD
+  integral_sq_eq_zero_iff ψ.memLp_uD.integrable_sq
 
 /-! ### The quadrupole moment -/
 
@@ -341,40 +342,26 @@ private theorem setIntegral_ofHalfLine {vS vD : ℝ → ℝ}
 
 /-- The amplitude equal to `v` on `(R, ∞)` and to the constant `a` elsewhere; `glued` keeps only
 its values on the half-line `r > 0`, where it is `a` on `(0, R]`. -/
-private def glue (R a : ℝ) (v : ℝ → ℝ) : ℝ → ℝ :=
+private abbrev glue (R a : ℝ) (v : ℝ → ℝ) : ℝ → ℝ :=
   (Ioi R).piecewise v fun _ => a
 
-private theorem memLp_glue {R : ℝ} (hR : 0 ≤ R) (a : ℝ) {v : ℝ → ℝ}
-    (hv : MemLp v 2 (volume.restrict (Ioi R))) :
-    MemLp (glue R a v) 2 (volume.restrict (Ioi 0)) := by
-  refine MemLp.piecewise measurableSet_Ioi.nullMeasurableSet ?_ ?_
-  · rwa [Measure.restrict_restrict measurableSet_Ioi, inter_eq_left.2 (Ioi_subset_Ioi hR)]
-  · rw [Measure.restrict_restrict measurableSet_Ioi.compl, compl_Ioi, Iic_inter_Ioi]
-    have : IsFiniteMeasure (volume.restrict (Ioc 0 R)) := ⟨by simp⟩
-    exact memLp_const a
+private theorem glue_of_lt {R a r : ℝ} {v : ℝ → ℝ} (h : R < r) : glue R a v r = v r :=
+  piecewise_eq_of_mem _ _ _ h
 
-private theorem integral_glue_sq {R : ℝ} (hR : 0 ≤ R) (a : ℝ) {v : ℝ → ℝ}
-    (hv : MemLp v 2 (volume.restrict (Ioi R))) :
-    ∫ r in Ioi 0, glue R a v r ^ 2 = R * a ^ 2 + ∫ r in Ioi R, v r ^ 2 := by
-  have hIoc : EqOn (fun r => glue R a v r ^ 2) (fun _ => a ^ 2) (Ioc 0 R) :=
-    fun r hr => by simp only [glue, piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hr.2)]
-  have hIoi : EqOn (fun r => glue R a v r ^ 2) (fun r => v r ^ 2) (Ioi R) :=
-    fun r hr => by simp only [glue, piecewise_eq_of_mem _ _ _ hr]
-  rw [← Ioc_union_Ioi_eq_Ioi hR, setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
-    ((integrableOn_const measure_Ioc_lt_top.ne).congr_fun hIoc.symm measurableSet_Ioc)
-    (IntegrableOn.congr_fun hv.integrable_sq hIoi.symm measurableSet_Ioi),
-    setIntegral_congr_fun measurableSet_Ioc hIoc, setIntegral_congr_fun measurableSet_Ioi hIoi,
-    setIntegral_const, Real.volume_real_Ioc_of_le hR]
-  simp
+private theorem glue_of_le {R a r : ℝ} {v : ℝ → ℝ} (h : r ≤ R) : glue R a v r = a :=
+  piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 h)
 
 /-- The deuteron wave function equal to `(aS, aD)` on `(0, R]` and to `(vS, vD)` on `(R, ∞)`,
 for interior values making the total weight one. -/
 private def glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {vS vD : ℝ → ℝ}
     (hS : MemLp vS 2 (volume.restrict (Ioi R))) (hD : MemLp vD 2 (volume.restrict (Ioi R)))
     (h : R * (aS ^ 2 + aD ^ 2) + ∫ r in Ioi R, (vS r ^ 2 + vD r ^ 2) = 1) : DeuteronWave :=
-  ofHalfLine (glue R aS vS) (glue R aD vD) (memLp_glue hR aS hS) (memLp_glue hR aD hD) (by
-    rw [integral_add (memLp_glue hR aS hS).integrable_sq (memLp_glue hR aD hD).integrable_sq,
-      integral_glue_sq hR aS hS, integral_glue_sq hR aD hD, ← h,
+  ofHalfLine (glue R aS vS) (glue R aD vD) (memLp_piecewise_Ioi_const hR aS hS)
+    (memLp_piecewise_Ioi_const hR aD hD) (by
+    rw [glue, glue, integral_add (memLp_piecewise_Ioi_const hR aS hS).integrable_sq
+      (memLp_piecewise_Ioi_const hR aD hD).integrable_sq,
+      setIntegral_piecewise_Ioi_const_sq hR aS hS.integrable_sq,
+      setIntegral_piecewise_Ioi_const_sq hR aD hD.integrable_sq, sub_zero, ← h,
       integral_add hS.integrable_sq hD.integrable_sq]
     ring)
 
@@ -383,14 +370,15 @@ private theorem eqOn_Ioi_glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {vS vD : �
     (hS : MemLp vS 2 (volume.restrict (Ioi R))) (hD : MemLp vD 2 (volume.restrict (Ioi R)))
     (h : R * (aS ^ 2 + aD ^ 2) + ∫ r in Ioi R, (vS r ^ 2 + vD r ^ 2) = 1) :
     EqOn (glued hR aS aD hS hD h).uS vS (Ioi R) ∧ EqOn (glued hR aS aD hS hD h).uD vD (Ioi R) :=
-  ⟨fun r hr => by simp [glued, glue, hR.trans_lt (mem_Ioi.1 hr), piecewise_eq_of_mem _ _ _ hr],
-    fun r hr => by simp [glued, glue, hR.trans_lt (mem_Ioi.1 hr), piecewise_eq_of_mem _ _ _ hr]⟩
+  ⟨fun r (hr : R < r) => by rw [glued, ofHalfLine_uS_of_pos (hR.trans_lt hr), glue_of_lt hr],
+    fun r (hr : R < r) => by rw [glued, ofHalfLine_uD_of_pos (hR.trans_lt hr), glue_of_lt hr]⟩
 
 private theorem dStateProbability_glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {vS vD : ℝ → ℝ}
     (hS : MemLp vS 2 (volume.restrict (Ioi R))) (hD : MemLp vD 2 (volume.restrict (Ioi R)))
     (h : R * (aS ^ 2 + aD ^ 2) + ∫ r in Ioi R, (vS r ^ 2 + vD r ^ 2) = 1) :
     (glued hR aS aD hS hD h).dStateProbability = R * aD ^ 2 + ∫ r in Ioi R, vD r ^ 2 := by
-  rw [glued, dStateProbability_ofHalfLine, integral_glue_sq hR aD hD]
+  rw [glued, dStateProbability_ofHalfLine, glue,
+    setIntegral_piecewise_Ioi_const_sq hR aD hD.integrable_sq, sub_zero]
 
 /-- A glued wave function whose interior values give a vanishing quadrupole integrand has the
 quadrupole moment of its exterior. -/
@@ -407,12 +395,9 @@ private theorem quadrupoleMoment_glued {R : ℝ} (hR : 0 ≤ R) (aS aD : ℝ) {v
   congr 1
   refine setIntegral_congr_fun measurableSet_Ioi fun r _ => ?_
   rcases le_or_gt r R with hrR | hrR
-  · rw [glue, glue, piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hrR),
-      piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hrR), mul_assoc, h0, mul_zero,
+  · rw [glue_of_le hrR, glue_of_le hrR, mul_assoc, h0, mul_zero,
       indicator_of_notMem (notMem_Ioi.2 hrR)]
-  · rw [glue, glue, piecewise_eq_of_mem _ _ _ (mem_Ioi.2 hrR),
-      piecewise_eq_of_mem _ _ _ (mem_Ioi.2 hrR),
-      indicator_of_mem (mem_Ioi.2 hrR)]
+  · rw [glue_of_lt hrR, glue_of_lt hrR, indicator_of_mem (mem_Ioi.2 hrR)]
 
 /-- **The d-state probability is not an observable.** Fix an exterior `(vS, vD)` on `r > R`,
 square integrable there with total weight below one. There are two deuteron wave functions
@@ -448,74 +433,64 @@ theorem exists_eqOn_Ioi_quadrupoleMoment_eq_dStateProbability_ne {R : ℝ} (hR :
   rw [dStateProbability_glued, dStateProbability_glued, Ne, add_left_inj, mul_pow, h8]
   nlinarith [mul_pos hR (pow_pos hcpos 2)]
 
-/-- The integral `∫_1^∞ r ^ 2 e^{-b r} dr` is positive for `b > 0`. -/
-private theorem setIntegral_Ioi_one_sq_mul_exp_neg_pos {b : ℝ} (hb : 0 < b) :
-    0 < ∫ r in Ioi (1 : ℝ), r ^ 2 * Real.exp (-b * r) := by
-  have hint : IntegrableOn (fun r : ℝ => r ^ 2 * Real.exp (-b * r)) (Ioi 1) :=
-    ((integrableOn_rpow_mul_exp_neg_mul_rpow (s := 2) (p := 1) (by norm_num) one_pos hb).mono_set
-      (Ioi_subset_Ioi zero_le_one)).congr_fun (fun r _ => by simp [Real.rpow_one])
-      measurableSet_Ioi
-  refine (setIntegral_pos_iff_support_of_nonneg_ae ?_ hint).2 ?_
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with r _
-    positivity
-  · refine lt_of_lt_of_le (by simp [Real.volume_Ioi]) (measure_mono (s := Ioi 1)
-      fun r (hr : r ∈ Ioi 1) => ⟨(mul_pos (pow_pos (one_pos.trans hr) 2)
-        (Real.exp_pos _)).ne', hr⟩)
-
-/-- Two deuteron wave functions with the same non-zero asymptotic s-state normalisation, at any
-binding momentum `κ > 0`, the same positive quadrupole moment and different d-state
-probabilities: the d-state probability is not fixed by the asymptotic normalisation and the
-quadrupole moment. -/
-theorem exists_hasAsymptoticSNormalization_quadrupoleMoment_eq_dStateProbability_ne {κ : ℝ}
-    (hκ : 0 < κ) :
-    ∃ A ≠ 0, ∃ ψ₁ ψ₂ : DeuteronWave, ψ₁.HasAsymptoticSNormalization κ A ∧
+/-- Two deuteron wave functions with the same prescribed non-zero asymptotic s-state
+normalisation `A`, at any binding momentum `κ > 0`, the same positive quadrupole moment and
+different d-state probabilities: the d-state probability is not fixed by the asymptotic
+normalisation and the quadrupole moment. -/
+theorem exists_hasAsymptoticSNormalization_quadrupoleMoment_eq_dStateProbability_ne {κ A : ℝ}
+    (hκ : 0 < κ) (hA : A ≠ 0) :
+    ∃ ψ₁ ψ₂ : DeuteronWave, ψ₁.HasAsymptoticSNormalization κ A ∧
       ψ₂.HasAsymptoticSNormalization κ A ∧ 0 < ψ₁.quadrupoleMoment ∧
       ψ₁.quadrupoleMoment = ψ₂.quadrupoleMoment ∧
       ψ₁.dStateProbability ≠ ψ₂.dStateProbability := by
-  -- The exterior on `r > 1` is `(t * exp (-κ r), t * exp (-κ r))`, with `t` small enough that
-  -- its weight is below one.
-  set I := ∫ r in Ioi (1 : ℝ), Real.exp (-(2 * κ) * r)
-  have hI : 0 ≤ I := integral_nonneg fun _ => (Real.exp_pos _).le
-  set t := (√(2 * I + 1))⁻¹
-  have htpos : 0 < t := inv_pos.2 (Real.sqrt_pos.2 (by linarith))
-  have ht : t ^ 2 = (2 * I + 1)⁻¹ := by rw [inv_pow, Real.sq_sqrt (by linarith)]
+  -- The exterior on `r > R` is `(A * exp (-κ r), A * exp (-κ r))`, of weight
+  -- `A ^ 2 * exp (-2 κ R) / κ`, with `R` large enough that this is below one.
+  set R := (A ^ 2 / κ + 1) / (2 * κ)
+  have hR : 0 < R := by positivity
   have hexp : ∀ r, Real.exp (-κ * r) ^ 2 = Real.exp (-(2 * κ) * r) := fun r => by
     rw [sq, ← Real.exp_add]; ring_nf
-  have hsq : ∀ r, (t * Real.exp (-κ * r)) ^ 2 = t ^ 2 * Real.exp (-(2 * κ) * r) := fun r => by
+  have hsq : ∀ r, (A * Real.exp (-κ * r)) ^ 2 = A ^ 2 * Real.exp (-(2 * κ) * r) := fun r => by
     rw [mul_pow, hexp]
-  have hS : MemLp (fun r => t * Real.exp (-κ * r)) 2 (volume.restrict (Ioi 1)) :=
+  have hS : MemLp (fun r => A * Real.exp (-κ * r)) 2 (volume.restrict (Ioi R)) :=
     (memLp_two_iff_integrable_sq (by fun_prop)).2 <| by
-      simpa only [hsq] using (exp_neg_integrableOn_Ioi 1 (by positivity : 0 < 2 * κ)).const_mul _
-  have hlt : ∫ r in Ioi (1 : ℝ), ((t * Real.exp (-κ * r)) ^ 2 + (t * Real.exp (-κ * r)) ^ 2)
+      simpa only [hsq] using (exp_neg_integrableOn_Ioi R (by positivity : 0 < 2 * κ)).const_mul _
+  have hlt : ∫ r in Ioi R, ((A * Real.exp (-κ * r)) ^ 2 + (A * Real.exp (-κ * r)) ^ 2)
       < 1 := by
-    simp only [hsq, ← two_mul, integral_const_mul, ht]
-    have h : 0 < 2 * I + 1 := by linarith
-    rw [inv_mul_eq_div, ← mul_div_assoc, div_lt_one h]
-    linarith
+    simp only [hsq, ← two_mul, integral_const_mul]
+    rw [integral_exp_mul_Ioi (by linarith), neg_div_neg_eq, neg_mul, Real.exp_neg]
+    have h2R : 2 * κ * R = A ^ 2 / κ + 1 := by
+      simp only [R]; field_simp
+    have hE : A ^ 2 / κ + 1 < Real.exp (2 * κ * R) := by
+      linarith [Real.add_one_lt_exp (x := 2 * κ * R) (by positivity)]
+    have hEpos := Real.exp_pos (2 * κ * R)
+    rw [div_add_one hκ.ne', div_lt_iff₀ hκ] at hE
+    field_simp
+    nlinarith
   obtain ⟨ψ₁, ψ₂, h₁S, -, h₂S, -, hQ₁, hQ₂, hP⟩ :=
-    exists_eqOn_Ioi_quadrupoleMoment_eq_dStateProbability_ne one_pos hS hS hlt
-  have hA : ψ₁.HasAsymptoticSNormalization κ t := by
+    exists_eqOn_Ioi_quadrupoleMoment_eq_dStateProbability_ne hR hS hS hlt
+  have hA₁ : ψ₁.HasAsymptoticSNormalization κ A := by
     refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_gt_atTop 1] with r hr
+    filter_upwards [eventually_gt_atTop R] with r hr
     simp only [h₁S hr]
     rw [mul_left_comm, ← Real.exp_add]
     simp
   have hψ : ψ₁.uS =ᶠ[atTop] ψ₂.uS := by
-    filter_upwards [eventually_gt_atTop 1] with r hr
+    filter_upwards [eventually_gt_atTop R] with r hr
     rw [h₁S hr, h₂S hr]
-  -- The quadrupole moment of the exterior is `(t ^ 2 (√8 - 1) / 20) ∫_1^∞ r ^ 2 e^{-2κr} dr`.
+  -- The quadrupole moment of the exterior is `(A ^ 2 (√8 - 1) / 20) ∫_R^∞ r ^ 2 e^{-2κr} dr`.
   have h8 : 0 < √8 - 1 := by
     have : (1 : ℝ) < √8 := by rw [Real.lt_sqrt zero_le_one]; norm_num
     linarith
   have hpos : 0 < ψ₁.quadrupoleMoment := by
     rw [hQ₁, setIntegral_congr_fun measurableSet_Ioi fun r _ => (show
-      r ^ 2 * (t * Real.exp (-κ * r)) * (√8 * (t * Real.exp (-κ * r)) - t * Real.exp (-κ * r))
-        = t ^ 2 * (√8 - 1) * (r ^ 2 * Real.exp (-(2 * κ) * r)) by rw [← hexp]; ring),
+      r ^ 2 * (A * Real.exp (-κ * r)) * (√8 * (A * Real.exp (-κ * r)) - A * Real.exp (-κ * r))
+        = A ^ 2 * (√8 - 1) * (r ^ 2 * Real.exp (-(2 * κ) * r)) by rw [← hexp]; ring),
       integral_const_mul]
-    have := setIntegral_Ioi_one_sq_mul_exp_neg_pos (by positivity : 0 < 2 * κ)
+    have := setIntegral_Ioi_pow_mul_exp_neg_pos 2 hR.le (by positivity : 0 < 2 * κ)
+    have := pow_pos (abs_pos.2 hA) 2
+    rw [sq_abs] at this
     positivity
-  exact ⟨t, htpos.ne', ψ₁, ψ₂, hA, hA.congr' hψ, hpos,
-    hQ₁.trans hQ₂.symm, hP⟩
+  exact ⟨ψ₁, ψ₂, hA₁, hA₁.congr' hψ, hpos, hQ₁.trans hQ₂.symm, hP⟩
 
 end DeuteronWave
 

@@ -8,12 +8,13 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-# `MemLp` functions: vanishing square integral and support in a set
+# Square-integrable functions: vanishing square integral and support in a set
 
-Two facts about `MemLp` functions used for wave functions on a half-line.
+Two facts about square-integrable and `MemLp` functions used for wave functions on a half-line.
 
-* `integral_sq_eq_zero_iff`: a square-integrable real function has `∫ f ^ 2 = 0` exactly when
-  it vanishes almost everywhere, so a probability `∫ u ^ 2` is zero only for a null amplitude.
+* `integral_sq_eq_zero_iff`: a real function whose square is integrable has `∫ f ^ 2 = 0`
+  exactly when it vanishes almost everywhere, so a probability `∫ u ^ 2` is zero only for a null
+  amplitude.
 * `memLp_of_support_subset_of_restrict`: a function supported in a set `s` that is in `Lᵖ` for
   the measure restricted to `s` is in `Lᵖ` for the whole measure.
 -/
@@ -26,11 +27,11 @@ open MeasureTheory Set
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
-/-- A square-integrable real function has vanishing integral of its square exactly when it
+/-- A real function with integrable square has vanishing integral of its square exactly when it
 vanishes almost everywhere. -/
-theorem integral_sq_eq_zero_iff {f : α → ℝ} (hf : MemLp f 2 μ) :
+theorem integral_sq_eq_zero_iff {f : α → ℝ} (hf : Integrable (fun x => f x ^ 2) μ) :
     ∫ x, f x ^ 2 ∂μ = 0 ↔ f =ᵐ[μ] 0 := by
-  rw [integral_eq_zero_iff_of_nonneg (fun _ => sq_nonneg _) hf.integrable_sq]
+  rw [integral_eq_zero_iff_of_nonneg (fun _ => sq_nonneg _) hf]
   refine ⟨fun h => ?_, fun h => ?_⟩ <;> filter_upwards [h] with x hx <;> simpa using hx
 
 /-- A function supported in `s` that is in `Lᵖ` for `μ` restricted to `s` is in `Lᵖ` for `μ`. -/
