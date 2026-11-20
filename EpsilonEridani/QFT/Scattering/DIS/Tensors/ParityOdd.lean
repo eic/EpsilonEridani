@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Spectators
 
 /-!
 # The parity-odd part of the hadronic tensor
@@ -41,10 +41,10 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
   alternating and conserved on every space, and properly covariant on every space with a basis
   of four vectors (`parityOddAssumptions_aOfAlt`).
 
-The kinematic hypotheses come from `Tensors.Basic`: `SpectatorPair` (two non-null, mutually
-orthogonal spectator directions `e₁`, `e₂`), `SpectatorPlane` (a `SpectatorPair` completing
-`p_T`, `q` to a frame of `V`) and `SpectatorSplitting` (every vector splits into `p_T`, `q`
-and spectator parts), together with the determinant-one half-turn `exists_half_turn`. A
+`SpectatorPair` (two non-null, mutually orthogonal spectator directions `e₁`, `e₂`),
+`SpectatorPlane` (a `SpectatorPair` completing `p_T`, `q` to a frame of `V`) and the
+determinant-one half-turn `exists_half_turn` come from `Tensors.Spectators`; `SpectatorSplitting`
+(every vector splits into `p_T`, `q` and spectator parts) stays in `Tensors.Basic`. A
 `SpectatorPlane` is the only place where four-dimensionality enters the hypotheses on the
 tensor `W`; the canonical structure `A` needs an alternating four-form — and, for its proper
 covariance, a basis of four vectors — separately.
@@ -176,14 +176,10 @@ lemma apply_eq_mul_apply_e₁_e₂ (hSymm : g.IsSymm) (hP : SpectatorPair g K)
     W (a • pTransverse g K + b • K.q + c₁ • hP.e₁ + c₂ • hP.e₂)
         (a' • pTransverse g K + b' • K.q + d₁ • hP.e₁ + d₂ • hP.e₂) =
       (c₁ * d₂ - c₂ * d₁) * W hP.e₁ hP.e₂ := by
-  obtain ⟨f, hf, hdet, hf₁, hf₂⟩ := hP.exists_half_turn hSymm
-  have h₁ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₁
-  have h₂ := hW.proper_covariant.apply_pTransverse_eq_zero_of_apply_eq_neg hf hdet hf₂
-  have h₁' : W hP.e₁ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₁
-  have h₂' : W hP.e₂ (pTransverse g K) = 0 := hW.isAlt.isRefl.eq_zero h₂
   have h₂₁ : W hP.e₂ hP.e₁ = -W hP.e₁ hP.e₂ := (hW.isAlt.neg_eq _ _).symm
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    hW.conserved_left, hW.conserved_right, hW.isAlt.self_eq_zero, h₁, h₂, h₁', h₂', h₂₁]
+  rw [hW.proper_covariant.apply_eq_of_spectatorPair hSymm hP hW.conserved_left
+    hW.conserved_right]
+  simp only [hW.isAlt.self_eq_zero, h₂₁]
   ring
 
 /-- **A parity-odd tensor annihilates `p_T` under a `SpectatorPlane`.** In the frame `p_T`, `q`,
