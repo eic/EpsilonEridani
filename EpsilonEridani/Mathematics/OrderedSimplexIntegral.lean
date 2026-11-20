@@ -272,7 +272,7 @@ normed space over `ℝ`, over the `(n + 1)`-coordinate ordered region equals the
 `x ∈ (t, T)` of the integral of `q ↦ g (Fin.cons x q)` over the `n`-coordinate ordered region
 with lower endpoint `x`: splitting off the smallest coordinate `p 0`, a volume-preserving
 `Fin.cons` decomposition followed by the slice-by-slice Fubini theorem
-`setIntegral_prod_eq_integral_setIntegral_preimage_mk`, leaves exactly that nested integral.
+`setIntegral_prod_eq_integral_setIntegral_mk_preimage`, leaves exactly that nested integral.
 This is the measure-theoretic counterpart of `orderedProdIntegral_succ`.  The integrability
 hypothesis holds for any integrand continuous on the cube `[t, T] ^ (n + 1)`, by
 `integrableOn_orderedRegion`; for the product integrand of a continuous `f` it is
@@ -317,7 +317,7 @@ theorem setIntegral_orderedRegion_succ {E : Type*} [NormedAddCommGroup E] [Norme
         rw [← he.setIntegral_preimage_emb e.symm.measurableEmbedding]
         exact setIntegral_congr_fun hS fun z _ => hh z
     _ = ∫ x, ∫ q in Prod.mk x ⁻¹' S, h (x, q) :=
-        setIntegral_prod_eq_integral_setIntegral_preimage_mk hS hint
+        setIntegral_prod_eq_integral_setIntegral_mk_preimage hS hint
     _ = ∫ x in Set.Ioo t T, ∫ q in orderedRegion T n x, g (Fin.cons x q) := by
         simp_rw [hslice, MeasureTheory.integral_indicator measurableSet_Ioo]
 

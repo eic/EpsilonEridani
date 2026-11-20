@@ -180,7 +180,8 @@ theorem mul_sum_mellinMoment_one_eq_valenceNumber [Fintype Flavor] [DecidableEq 
   have hswap (a : Species Flavor) : (fun p : ℝ × ℝ => G a p.swap) =
       fun p => p.2 * (F (.quark i) a p.1 p.2 - F (.antiquark i) a p.1 p.2) := by
     funext p
-    simp only [hG, Prod.fst_swap, Prod.snd_swap, hsymm]
+    simp only [hG, Prod.fst_swap, Prod.snd_swap]
+    rw [hsymm (.quark i) a p.1 p.2, hsymm (.antiquark i) a p.1 p.2]
     ring
   have hGint (a : Species Flavor) : IntegrableOn (G a) unitTriangle := (hFq a).sub (hFqbar a)
   -- First evaluation of `∑ₐ ∫_{triangle} G a`: through the number sum rules.
@@ -326,7 +327,7 @@ def sumRuleAssumptionsThreeQuarkPdf : SumRuleAssumptions threeQuarkPdf :=
 @[simp]
 theorem sumRuleAssumptionsThreeQuarkPdf_valenceTarget (a : Species Unit) :
     sumRuleAssumptionsThreeQuarkPdf.valenceTarget a = threeQuarkWeight a / 2 :=
-  (rfl)
+  sumRuleAssumptionsWeightModelPdfZeroOne_valenceTarget sum_threeQuarkWeight a
 
 @[simp]
 theorem threeQuarkDpd_quark_quark (i j : Unit) (x₁ x₂ : ℝ) :
@@ -427,11 +428,11 @@ theorem integrableOn_fst_mul_threeQuarkDpd (a b : Species Unit) :
 
 /-- The single-parton densities of the three-quark model are integrable on `[0, 1]`. -/
 theorem integrableOn_threeQuarkPdf (a : Species Unit) (Q2 : ℝ) :
-    IntegrableOn (fun x => threeQuarkPdf a x Q2) (Icc 0 1) := by
-  simpa only [pow_zero, one_mul] using
-    (assumptions_threeQuarkPdf.momentIntegrable 0 a Q2).integrableOn
+    IntegrableOn (fun x => threeQuarkPdf a x Q2) (Icc 0 1) :=
+  (assumptions_threeQuarkPdf.integrable a Q2).integrableOn
 
 /-- The quark of the three-quark model has the valence number `3`. -/
+@[simp]
 theorem valenceNumber_threeQuarkPdf (Q2 : ℝ) : valenceNumber threeQuarkPdf () Q2 = 3 := by
   rw [valenceNumber_eq_sub_valenceTarget sumRuleAssumptionsThreeQuarkPdf,
     sumRuleAssumptionsThreeQuarkPdf_valenceTarget, sumRuleAssumptionsThreeQuarkPdf_valenceTarget,

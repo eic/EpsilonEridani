@@ -19,7 +19,7 @@ in the form that integrates the first coordinate innermost,
 
 together with the integrability of the outer integrand, and the invariance of integrals over the
 triangle under the exchange of the two coordinates. Both Fubini statements are the slice-by-slice
-Fubini theorem `EpsilonEridani.setIntegral_prod_eq_integral_setIntegral_preimage_mk` for a
+Fubini theorem `EpsilonEridani.setIntegral_prod_eq_integral_setIntegral_mk_preimage` for a
 measurable subset of a product, applied after exchanging the coordinates, once the slices of the
 triangle are computed.
 
@@ -56,13 +56,16 @@ theorem mem_unitTriangle {p : ℝ × ℝ} :
   Iff.rfl
 
 @[simp, measurability]
-theorem measurableSet_unitTriangle : MeasurableSet unitTriangle :=
-  (measurableSet_le measurable_const measurable_fst).inter
+theorem measurableSet_unitTriangle : MeasurableSet unitTriangle := by
+  -- `unitTriangle` is the intersection of the three half-planes cut out by its inequalities.
+  simp only [unitTriangle, ofPred_and]
+  exact (measurableSet_le measurable_const measurable_fst).inter
     ((measurableSet_le measurable_const measurable_snd).inter
       (measurableSet_le (measurable_fst.add measurable_snd) measurable_const))
 
-theorem isClosed_unitTriangle : IsClosed unitTriangle :=
-  (isClosed_le continuous_const continuous_fst).inter
+theorem isClosed_unitTriangle : IsClosed unitTriangle := by
+  simp only [unitTriangle, ofPred_and]
+  exact (isClosed_le continuous_const continuous_fst).inter
     ((isClosed_le continuous_const continuous_snd).inter
       (isClosed_le (continuous_fst.add continuous_snd) continuous_const))
 
@@ -100,7 +103,7 @@ theorem integrableOn_unitTriangle_comp_swap_iff {g : ℝ × ℝ → E} :
 
 /-- The slice `{x | (y, x) ∈ unitTriangle}` of the unit triangle at `y ≥ 0` is `[0, 1 - y]`, which
 is empty for `y > 1`. -/
-theorem preimage_mk_unitTriangle_of_nonneg {y : ℝ} (hy : 0 ≤ y) :
+theorem mk_preimage_unitTriangle_of_nonneg {y : ℝ} (hy : 0 ≤ y) :
     Prod.mk y ⁻¹' unitTriangle = Icc 0 (1 - y) := by
   ext x
   simp only [mem_preimage, mem_unitTriangle, mem_Icc]
@@ -111,28 +114,29 @@ theorem preimage_mk_unitTriangle_of_nonneg {y : ℝ} (hy : 0 ≤ y) :
     exact ⟨hy, hx, by linarith⟩
 
 /-- The slice `{x | (y, x) ∈ unitTriangle}` of the unit triangle at `y ∉ [0, 1]` is empty. -/
-theorem preimage_mk_unitTriangle_of_notMem_Icc {y : ℝ} (hy : y ∉ Icc (0 : ℝ) 1) :
+theorem mk_preimage_unitTriangle_eq_empty_of_notMem_Icc {y : ℝ} (hy : y ∉ Icc (0 : ℝ) 1) :
     Prod.mk y ⁻¹' unitTriangle = ∅ :=
   eq_empty_of_forall_notMem fun _ ⟨hy0, hx, hxy⟩ => hy ⟨hy0, by linarith⟩
 
 /-- The integral of `g (·, y)` over the slice of the unit triangle at `y`: the interval integral
 `∫_0^{1-y} dx g(x, y)` for `y ∈ [0, 1]`, and zero otherwise. -/
-theorem setIntegral_preimage_mk_unitTriangle (g : ℝ × ℝ → E) (y : ℝ) :
+theorem setIntegral_mk_preimage_unitTriangle (g : ℝ × ℝ → E) (y : ℝ) :
     ∫ x in Prod.mk y ⁻¹' unitTriangle, g (x, y) =
       (Icc (0 : ℝ) 1).indicator (fun y => ∫ x in 0..1 - y, g (x, y)) y := by
   by_cases hy : y ∈ Icc (0 : ℝ) 1
-  · rw [preimage_mk_unitTriangle_of_nonneg hy.1, indicator_of_mem hy, integral_Icc_eq_integral_Ioc,
+  · rw [mk_preimage_unitTriangle_of_nonneg hy.1, indicator_of_mem hy, integral_Icc_eq_integral_Ioc,
       intervalIntegral.integral_of_le (by linarith [hy.2])]
-  · rw [preimage_mk_unitTriangle_of_notMem_Icc hy, setIntegral_empty, indicator_of_notMem hy]
+  · rw [mk_preimage_unitTriangle_eq_empty_of_notMem_Icc hy, setIntegral_empty,
+      indicator_of_notMem hy]
 
 /-- **Fubini on the unit triangle**, with the first coordinate integrated innermost:
 `∫_{triangle} g = ∫_0^1 dy ∫_0^{1-y} dx g(x, y)`. -/
 theorem setIntegral_unitTriangle {g : ℝ × ℝ → E} (hg : IntegrableOn g unitTriangle) :
     ∫ p in unitTriangle, g p = ∫ y in Icc (0 : ℝ) 1, ∫ x in 0..1 - y, g (x, y) := by
   rw [← setIntegral_unitTriangle_comp_swap, Measure.volume_eq_prod,
-    setIntegral_prod_eq_integral_setIntegral_preimage_mk measurableSet_unitTriangle
+    setIntegral_prod_eq_integral_setIntegral_mk_preimage measurableSet_unitTriangle
       (integrableOn_unitTriangle_comp_swap_iff.2 hg), ← integral_indicator measurableSet_Icc]
-  simp only [Prod.swap_prod_mk, setIntegral_preimage_mk_unitTriangle]
+  simp only [Prod.swap_prod_mk, setIntegral_mk_preimage_unitTriangle]
 
 /-- The outer integrand `y ↦ ∫_0^{1-y} dx g(x, y)` of `setIntegral_unitTriangle` is integrable
 on `[0, 1]`. -/
@@ -140,9 +144,9 @@ theorem integrableOn_Icc_intervalIntegral_of_integrableOn_unitTriangle {g : ℝ 
     (hg : IntegrableOn g unitTriangle) :
     IntegrableOn (fun y => ∫ x in 0..1 - y, g (x, y)) (Icc (0 : ℝ) 1) := by
   rw [← integrable_indicator_iff measurableSet_Icc]
-  refine (integrable_setIntegral_preimage_mk (g := fun p => g p.swap) measurableSet_unitTriangle
+  refine (integrable_setIntegral_mk_preimage (g := fun p => g p.swap) measurableSet_unitTriangle
     (integrableOn_unitTriangle_comp_swap_iff.2 hg)).congr
     (Filter.Eventually.of_forall fun y => ?_)
-  simp only [Prod.swap_prod_mk, setIntegral_preimage_mk_unitTriangle]
+  simp only [Prod.swap_prod_mk, setIntegral_mk_preimage_unitTriangle]
 
 end EpsilonEridani
