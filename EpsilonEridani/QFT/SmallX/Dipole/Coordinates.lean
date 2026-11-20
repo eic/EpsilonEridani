@@ -151,7 +151,7 @@ lemma norm_size (d : Dipole) : ‖d.size‖ = dist d.quark d.antiquark := by
   rw [size_def, dist_eq_norm]
 
 /-- A dipole has zero size exactly when its quark and antiquark sit at the same point. -/
-lemma size_eq_zero_iff {d : Dipole} : d.size = 0 ↔ d.quark = d.antiquark := by
+@[simp] lemma size_eq_zero_iff {d : Dipole} : d.size = 0 ↔ d.quark = d.antiquark := by
   rw [size_def, sub_eq_zero]
 
 /-- A dipole has zero size exactly when its quark sits at its impact parameter. -/
