@@ -242,20 +242,9 @@ lemma q_sq_mul_pTransverse_self (g : Bilin V) (K : DisKinematics V)
     (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) :
     g K.q K.q * g (pTransverse g K) (pTransverse g K)
       = g K.q K.q * g K.p K.p - g K.p K.q ^ 2 := by
-  have hqpT : g K.q (pTransverse g K) = 0 := by
-    rw [hSymm.eq K.q (pTransverse g K)]
-    exact pTransverse_orthogonal_q g K hQ2
-  have hppT : g K.p (pTransverse g K)
-      = g K.p K.p - g K.p K.q / g K.q K.q * g K.p K.q := by
-    simp only [pTransverse, map_sub, map_smul, smul_eq_mul]
-  have hc : g K.p K.q / g K.q K.q * g K.q K.q = g K.p K.q := by
-    rw [div_eq_mul_inv, mul_assoc, inv_mul_cancel₀ hQ2, mul_one]
-  have hT : g (pTransverse g K) (pTransverse g K)
-      = g K.p K.p - g K.p K.q / g K.q K.q * g K.p K.q := by
-    rw [pTransverse_pairing, hppT, hqpT]
-    ring
-  rw [hT]
-  linear_combination (- g K.p K.q) * hc
+  rw [pTransverse_def, g.projOrthogonal_pairing K.q K.p K.p,
+    hSymm.eq K.q K.p]
+  field_simp
 
 /-- The same statement written with the hard scale: `Q² (p_T · p_T) = Q² M² + (p·q)²`. In the
 `+---` convention of `Kinematics` this is positive for a spacelike probe. -/
