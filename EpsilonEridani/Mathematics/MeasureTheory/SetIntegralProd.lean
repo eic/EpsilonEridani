@@ -43,10 +43,10 @@ variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measu
 
 /-- The integral of the extension by zero of `g` along the vertical line through `x` is the
 integral of `g` over the slice of `S` at `x`. -/
-theorem integral_indicator_mk (hS : MeasurableSet S) (g : α × β → E) (x : α) :
+theorem integral_indicator_comp_mk (hS : MeasurableSet S) (g : α × β → E) (x : α) :
     ∫ y, S.indicator g (x, y) ∂ν = ∫ y in Prod.mk x ⁻¹' S, g (x, y) ∂ν := by
   rw [← integral_indicator (measurable_prodMk_left hS)]
-  rfl
+  simp_rw [← indicator_comp_right (Prod.mk x) (g := g), Function.comp_def]
 
 /-- **Fubini over a measurable subset of a product**: the integral of `g` over `S` is the integral
 over `x` of the integral of `g (x, ·)` over the slice `{y | (x, y) ∈ S}`. -/
@@ -54,14 +54,14 @@ theorem setIntegral_prod_eq_integral_setIntegral_preimage_mk [SFinite μ] [SFini
     (hS : MeasurableSet S) (hg : IntegrableOn g S (μ.prod ν)) :
     ∫ p in S, g p ∂μ.prod ν = ∫ x, ∫ y in Prod.mk x ⁻¹' S, g (x, y) ∂ν ∂μ := by
   rw [← integral_indicator hS, integral_prod _ (hg.integrable_indicator hS)]
-  simp only [integral_indicator_mk hS]
+  simp only [integral_indicator_comp_mk hS]
 
 /-- The outer integrand `x ↦ ∫_{y : (x, y) ∈ S} g(x, y)` of
 `setIntegral_prod_eq_integral_setIntegral_preimage_mk` is integrable. -/
-theorem integrable_setIntegral_preimage_mk [SFinite μ] [SFinite ν] (hS : MeasurableSet S)
+theorem integrable_setIntegral_preimage_mk [SFinite ν] (hS : MeasurableSet S)
     (hg : IntegrableOn g S (μ.prod ν)) :
     Integrable (fun x => ∫ y in Prod.mk x ⁻¹' S, g (x, y) ∂ν) μ :=
   (hg.integrable_indicator hS).integral_prod_left.congr
-    (Filter.Eventually.of_forall fun x => integral_indicator_mk hS g x)
+    (Filter.Eventually.of_forall fun x => integral_indicator_comp_mk hS g x)
 
 end EpsilonEridani

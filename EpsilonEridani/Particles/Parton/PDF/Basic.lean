@@ -71,7 +71,8 @@ lemma mellinMoment_integrable
 
 /-- The zeroth minus the first Mellin moment is the integral of `(1 - x) f(x)` over `[0, 1]`:
 `∫₀¹ f - ∫₀¹ x f = ∫₀¹ (1 - x) f`. -/
-lemma mellinMoment_zero_sub_mellinMoment_one {f : Pdf Flavor} {i : Flavor} {Q2 : ℝ}
+lemma mellinMoment_zero_sub_mellinMoment_one_eq_setIntegral_one_sub_mul {f : Pdf Flavor}
+    {i : Flavor} {Q2 : ℝ}
     (h : MeasureTheory.IntegrableOn (fun x => f i x Q2) (Set.Icc 0 1)) :
     mellinMoment f 0 i Q2 - mellinMoment f 1 i Q2 =
       ∫ x in Set.Icc (0 : ℝ) 1, (1 - x) * f i x Q2 := by

@@ -18,10 +18,10 @@ in the form that integrates the first coordinate innermost,
 `∫_{triangle} g = ∫_0^1 dy ∫_0^{1-y} dx g(x, y)`,
 
 together with the integrability of the outer integrand, and the invariance of integrals over the
-triangle under the exchange of the two coordinates. Combining the two gives the other order of
-integration. Both Fubini statements are the slice-by-slice Fubini theorem
-`EpsilonEridani.setIntegral_prod_eq_integral_setIntegral_preimage_mk` for a measurable subset of a
-product, applied after exchanging the coordinates, once the slices of the triangle are computed.
+triangle under the exchange of the two coordinates. Both Fubini statements are the slice-by-slice
+Fubini theorem `EpsilonEridani.setIntegral_prod_eq_integral_setIntegral_preimage_mk` for a
+measurable subset of a product, applied after exchanging the coordinates, once the slices of the
+triangle are computed.
 
 ## Main definitions
 
@@ -32,8 +32,8 @@ product, applied after exchanging the coordinates, once the slices of the triang
 
 * `EpsilonEridani.setIntegral_unitTriangle`: Fubini on the triangle, the first coordinate
   innermost.
-* `EpsilonEridani.integrableOn_Icc_integral_unitTriangle`: the outer integrand of that formula is
-  integrable on `[0, 1]`.
+* `EpsilonEridani.integrableOn_Icc_intervalIntegral_of_integrableOn_unitTriangle`: the outer
+  integrand of that formula is integrable on `[0, 1]`.
 * `EpsilonEridani.setIntegral_unitTriangle_comp_swap`: integrals over the triangle are invariant
   under exchanging the two coordinates.
 -/
@@ -98,8 +98,9 @@ theorem integrableOn_unitTriangle_comp_swap_iff {g : ℝ × ℝ → E} :
   exact Measure.measurePreserving_swap.integrableOn_comp_preimage
     MeasurableEquiv.prodComm.measurableEmbedding
 
-/-- The slice `{x | (y, x) ∈ unitTriangle}` of the unit triangle at `y ∈ [0, 1]` is `[0, 1 - y]`. -/
-theorem preimage_mk_unitTriangle_of_mem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) :
+/-- The slice `{x | (y, x) ∈ unitTriangle}` of the unit triangle at `y ≥ 0` is `[0, 1 - y]`, which
+is empty for `y > 1`. -/
+theorem preimage_mk_unitTriangle_of_nonneg {y : ℝ} (hy : 0 ≤ y) :
     Prod.mk y ⁻¹' unitTriangle = Icc 0 (1 - y) := by
   ext x
   simp only [mem_preimage, mem_unitTriangle, mem_Icc]
@@ -107,10 +108,10 @@ theorem preimage_mk_unitTriangle_of_mem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) :
   · rintro ⟨-, hx, hxy⟩
     exact ⟨hx, by linarith⟩
   · rintro ⟨hx, hxy⟩
-    exact ⟨hy.1, hx, by linarith⟩
+    exact ⟨hy, hx, by linarith⟩
 
 /-- The slice `{x | (y, x) ∈ unitTriangle}` of the unit triangle at `y ∉ [0, 1]` is empty. -/
-theorem preimage_mk_unitTriangle_of_notMem {y : ℝ} (hy : y ∉ Icc (0 : ℝ) 1) :
+theorem preimage_mk_unitTriangle_of_notMem_Icc {y : ℝ} (hy : y ∉ Icc (0 : ℝ) 1) :
     Prod.mk y ⁻¹' unitTriangle = ∅ :=
   eq_empty_of_forall_notMem fun _ ⟨hy0, hx, hxy⟩ => hy ⟨hy0, by linarith⟩
 
@@ -120,9 +121,9 @@ theorem setIntegral_preimage_mk_unitTriangle (g : ℝ × ℝ → E) (y : ℝ) :
     ∫ x in Prod.mk y ⁻¹' unitTriangle, g (x, y) =
       (Icc (0 : ℝ) 1).indicator (fun y => ∫ x in 0..1 - y, g (x, y)) y := by
   by_cases hy : y ∈ Icc (0 : ℝ) 1
-  · rw [preimage_mk_unitTriangle_of_mem hy, indicator_of_mem hy, integral_Icc_eq_integral_Ioc,
+  · rw [preimage_mk_unitTriangle_of_nonneg hy.1, indicator_of_mem hy, integral_Icc_eq_integral_Ioc,
       intervalIntegral.integral_of_le (by linarith [hy.2])]
-  · rw [preimage_mk_unitTriangle_of_notMem hy, setIntegral_empty, indicator_of_notMem hy]
+  · rw [preimage_mk_unitTriangle_of_notMem_Icc hy, setIntegral_empty, indicator_of_notMem hy]
 
 /-- **Fubini on the unit triangle**, with the first coordinate integrated innermost:
 `∫_{triangle} g = ∫_0^1 dy ∫_0^{1-y} dx g(x, y)`. -/
@@ -135,7 +136,7 @@ theorem setIntegral_unitTriangle {g : ℝ × ℝ → E} (hg : IntegrableOn g uni
 
 /-- The outer integrand `y ↦ ∫_0^{1-y} dx g(x, y)` of `setIntegral_unitTriangle` is integrable
 on `[0, 1]`. -/
-theorem integrableOn_Icc_integral_unitTriangle {g : ℝ × ℝ → E}
+theorem integrableOn_Icc_intervalIntegral_of_integrableOn_unitTriangle {g : ℝ × ℝ → E}
     (hg : IntegrableOn g unitTriangle) :
     IntegrableOn (fun y => ∫ x in 0..1 - y, g (x, y)) (Icc (0 : ℝ) 1) := by
   rw [← integrable_indicator_iff measurableSet_Icc]
