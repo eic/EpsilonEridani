@@ -6,8 +6,6 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.QFT.Factorization.Evolution.Basic
-import EpsilonEridani.Mathematics.Analysis.ODE.ExistUnique.Extensions
-import EpsilonEridani.QFT.Factorization.Evolution.OneLoopCoupling
 /-!
 
 # Small-`x` evolution: the Cauchy problem for BFKL and Balitsky-Kovchegov
@@ -249,18 +247,32 @@ lemma bkRhs_lipschitzOnWith (S : SmallXSystem E) {R : ℝ} (hR : 0 ≤ R) :
 Balitsky-Kovchegov equation on `Set.Ioo a b`, continuous up to the endpoints and agreeing at
 one interior rapidity, agree on all of `Set.Icc a b`.
 
-No bound on the solutions is assumed: `bkRhs_lipschitzOnWith` gives a Lipschitz constant on
-every ball, which is what `ODE_solution_unique_of_mem_Icc_of_lipschitzOnWith_closedBall`
-needs. -/
+No bound on the solutions is assumed: continuity on the compact interval supplies one, and
+`bkRhs_lipschitzOnWith` is then applied on a ball large enough to contain both solutions. -/
 lemma bkSolution_unique_on_Icc (S : SmallXSystem E) {F G : ℝ → E} {a b Y₀ : ℝ}
     (hY₀ : Y₀ ∈ Set.Ioo a b)
     (hFc : ContinuousOn F (Set.Icc a b)) (hGc : ContinuousOn G (Set.Icc a b))
     (hF : ∀ Y ∈ Set.Ioo a b, HasDerivAt F (bkRhs S (F Y)) Y)
     (hG : ∀ Y ∈ Set.Ioo a b, HasDerivAt G (bkRhs S (G Y)) Y)
     (h0 : F Y₀ = G Y₀) :
-    Set.EqOn F G (Set.Icc a b) :=
-  ODE_solution_unique_of_mem_Icc_of_lipschitzOnWith_closedBall (v := fun _ => bkRhs S)
-    (fun _ hR => ⟨_, fun _ _ => bkRhs_lipschitzOnWith S hR⟩) hY₀ hFc hF hGc hG h0
+    Set.EqOn F G (Set.Icc a b) := by
+  obtain ⟨R₁, hR₁⟩ := isCompact_Icc.exists_bound_of_continuousOn hFc
+  obtain ⟨R₂, hR₂⟩ := isCompact_Icc.exists_bound_of_continuousOn hGc
+  set R : ℝ := max (max R₁ R₂) 0 with hRdef
+  have hR0 : 0 ≤ R := le_max_right _ _
+  have hle₁ : R₁ ≤ R := le_trans (le_max_left _ _) (le_max_left _ _)
+  have hle₂ : R₂ ≤ R := le_trans (le_max_right _ _) (le_max_left _ _)
+  have hFR : ∀ Y ∈ Set.Ioo a b, F Y ∈ Metric.closedBall (0 : E) R := by
+    intro Y hY
+    simp only [Metric.mem_closedBall, dist_zero_right]
+    exact (hR₁ Y (Set.mem_Icc_of_Ioo hY)).trans hle₁
+  have hGR : ∀ Y ∈ Set.Ioo a b, G Y ∈ Metric.closedBall (0 : E) R := by
+    intro Y hY
+    simp only [Metric.mem_closedBall, dist_zero_right]
+    exact (hR₂ Y (Set.mem_Icc_of_Ioo hY)).trans hle₂
+  exact ODE_solution_unique_of_mem_Icc (v := fun _ => bkRhs S)
+    (s := fun _ => Metric.closedBall (0 : E) R)
+    (fun _ _ => bkRhs_lipschitzOnWith S hR0) hY₀ hFc hF hFR hGc hG hGR h0
 
 /-! ### C.2. Globally in rapidity -/
 
@@ -397,17 +409,50 @@ input this development does not have. -/
 
 /-- The scalar equation `F' = F ^ 2` has no solution on all of `ℝ` with `F 0 = 1`.
 
-This is the finite-rapidity blow-up, in its simplest form. The equation is the one-loop
-renormalisation-group equation `da/dt = -β₀ a²` with `β₀ = -1`, whose Landau log-scale for the
-value `1` at `0` is `1`; by `IsOneLoopRGSolution.add_landauLogScale_notMem` no solution has it in
-its domain. -/
+This is the finite-rapidity blow-up, in its simplest form. Because `F` is non-decreasing and
+`F 0 = 1`, it stays at least `1` on `Set.Icc 0 1`, so `Y ↦ -(F Y)⁻¹ - Y` is well defined
+there and has zero derivative; being constant it forces `(F 1)⁻¹ = 0`, which contradicts
+`1 ≤ F 1`. -/
 lemma not_exists_global_solution_sq :
     ¬ ∃ F : ℝ → ℝ, F 0 = 1 ∧ ∀ Y, HasDerivAt F (F Y ^ 2) Y := by
   rintro ⟨F, hF0, hF⟩
-  have hsol : IsOneLoopRGSolution (-1) Set.univ F :=
-    isOneLoopRGSolution_iff.2 fun Y _ => by simpa using hF Y
-  exact hsol.add_landauLogScale_notMem isOpen_univ isPreconnected_univ (by norm_num)
-    (Set.mem_univ 0) (by rw [hF0]; exact one_ne_zero) (Set.mem_univ _)
+  have hdiff : Differentiable ℝ F := fun y => (hF y).differentiableAt
+  have hmono : Monotone F := by
+    refine monotone_of_deriv_nonneg hdiff fun y => ?_
+    rw [(hF y).deriv]
+    positivity
+  have hge : ∀ y ∈ Set.Icc (0 : ℝ) 1, (1 : ℝ) ≤ F y := by
+    intro y hy
+    calc (1 : ℝ) = F 0 := hF0.symm
+      _ ≤ F y := hmono hy.1
+  have hne : ∀ y ∈ Set.Icc (0 : ℝ) 1, F y ≠ 0 := by
+    intro y hy
+    have := hge y hy
+    linarith
+  have hwc : ContinuousOn (fun y => -(F y)⁻¹ - y) (Set.Icc (0 : ℝ) 1) := by
+    refine ContinuousOn.sub (ContinuousOn.neg ?_) continuousOn_id
+    exact hdiff.continuous.continuousOn.inv₀ hne
+  have hwd : ∀ y ∈ Set.Ico (0 : ℝ) 1,
+      HasDerivWithinAt (fun y => -(F y)⁻¹ - y) 0 (Set.Ici y) y := by
+    intro y hy
+    have hy' : y ∈ Set.Icc (0 : ℝ) 1 := ⟨hy.1, hy.2.le⟩
+    have hsq : F y ^ 2 ≠ 0 := pow_ne_zero 2 (hne y hy')
+    have hinv : HasDerivAt (fun z => (F z)⁻¹) (-1) y := by
+      have h := (hF y).inv (hne y hy')
+      rw [neg_div, div_self hsq] at h
+      exact h
+    have hval : HasDerivAt (fun z => -(F z)⁻¹ - z) (-(-1) - 1) y :=
+      hinv.neg.sub (hasDerivAt_id y)
+    have hz : (-(-1 : ℝ)) - 1 = 0 := by norm_num
+    rw [hz] at hval
+    exact hval.hasDerivWithinAt
+  have hconst := constant_of_has_deriv_right_zero hwc hwd 1 (Set.right_mem_Icc.2 zero_le_one)
+  have h1 : (1 : ℝ) ≤ F 1 := hge 1 (Set.right_mem_Icc.2 zero_le_one)
+  have hc2 : -(F 1)⁻¹ - 1 = -(F 0)⁻¹ - 0 := hconst
+  rw [hF0, inv_one] at hc2
+  have hzero : (F 1)⁻¹ = 0 := by linarith
+  rw [inv_eq_zero.mp hzero] at h1
+  linarith
 
 /-- **Global existence fails for the quadratic system.** There is a small-`x` system with a
 bounded BFKL kernel and a bounded dipole pairing, and an initial amplitude, for which the

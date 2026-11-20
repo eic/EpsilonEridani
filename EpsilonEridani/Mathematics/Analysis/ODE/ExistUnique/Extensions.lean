@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Copyright (c) 2026 Joseph Tooby-Smith, Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wouter Deconinck
+Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
@@ -18,6 +18,10 @@ interval is bounded, so it stays in one such ball. This file records that step:
 * `ODE_solution_unique_of_mem_Icc_of_lipschitzOnWith_closedBall`: two solutions on `Ioo a b`,
   continuous on `Icc a b` and agreeing at a point of `Ioo a b`, agree on `Icc a b`, when the
   vector field is Lipschitz on every closed ball centred at the origin.
+
+The lemma is the uniqueness step inlined in the proof of `bkSolution_unique_on_Icc` in
+`EpsilonEridani/QFT/Factorization/Evolution/SmallX.lean` (Joseph Tooby-Smith), generalised from the
+Balitsky-Kovchegov right-hand side to an arbitrary time-dependent vector field.
 -/
 
 @[expose] public section

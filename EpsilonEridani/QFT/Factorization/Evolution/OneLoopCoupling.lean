@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Algebra.Order.Field
 import EpsilonEridani.Mathematics.Analysis.ODE.ExistUnique.Extensions
-import EpsilonEridani.Mathematics.Topology.Order.IntermediateValue.Extensions
+import EpsilonEridani.Mathematics.Topology.Order.DenselyOrdered.Extensions
 
 /-!
 # The one-loop running coupling
@@ -231,7 +231,7 @@ theorem IsOneLoopRGSolution.ne_zero {t₀ : ℝ} (hf : IsOneLoopRGSolution β₀
   have hd : ∀ {x}, x ∈ s → HasDerivAt f (-β₀ * f x ^ 2) x := fun hx =>
     (isOneLoopRGSolution_iff.1 hf _ hx).hasDerivAt (hs.mem_nhds hx)
   -- Work on a compact interval `[a, b] ⊆ s` whose interior contains `t₀` and `t₁`.
-  obtain ⟨a, b, hsub, ht₀', ht₁'⟩ := hs.exists_Icc_subset hs' ht₀ ht₁
+  obtain ⟨a, b, hsub, ht₀', ht₁'⟩ := hs.exists_Icc_subset hs'.ordConnected ht₀ ht₁
   -- On a ball `x ↦ -β₀ x²` is Lipschitz, being `C¹`, so uniqueness applies with the zero solution.
   have hv : ContDiff ℝ 1 fun x : ℝ => -β₀ * x ^ 2 := by fun_prop
   have heq := ODE_solution_unique_of_mem_Icc_of_lipschitzOnWith_closedBall
