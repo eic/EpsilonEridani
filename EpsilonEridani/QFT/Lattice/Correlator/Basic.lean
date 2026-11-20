@@ -36,28 +36,37 @@ the hypothesis on the data that it would supply. The *spectral gap* hypothesis
 sum does not converge; `hasSum_twoPoint` and `hasSum_threePoint` give conditions under which it
 does.
 
+Convergence is only ever assumed at reference time separations: the two-point sum at a time `t₀`,
+the three-point sum (absolutely) at sink-operator separation `s₀` and operator time `τ₀`. The
+results then hold at all later separations. No convergence at zero separation is assumed, so a
+tower of states with `∑ₙ |Z n|² = ∞` whose correlators converge at every positive time is covered.
+
 ## Main results
 
-* `SpectralData.hasSum_twoPoint` and `SpectralData.hasSum_threePoint`: for `0 ≤ τ ≤ t` the
-  spectral sums converge once the energies are bounded below and the weights `|Z n|²`, resp.
-  `SpectralData.threePointWeight`, are summable.
+* `SpectralData.hasSum_twoPoint` and `SpectralData.hasSum_threePoint`: once the energies are
+  bounded below, the two-point sum converges at every `t ≥ t₀` if it converges at `t₀`, and the
+  three-point sum converges whenever `t - τ ≥ s₀` and `τ ≥ τ₀` if it converges absolutely at
+  `(s₀, τ₀)`.
 * `SpectralData.twoPoint_mul_exp_sub_le` and `SpectralData.sq_norm_overlap_le_twoPoint_mul_exp`:
-  `0 ≤ C₂(t) e^{E₀ t} - |Z₀|² ≤ K₂ e^{-Δ t}`, where `K₂ = ∑ₙ |Z n|² - |Z₀|²` is the excited-state
-  weight `SpectralData.twoPointExcitedWeight` of the two-point correlator. A convergent two-point
+  `0 ≤ C₂(t) e^{E₀ t} - |Z₀|² ≤ K₂(t₀) e^{-Δ (t - t₀)}` for `t ≥ t₀`, where
+  `K₂(t₀) = ∑_{n ≠ n₀} |Z n|² e^{-(E n - E₀) t₀}` is the excited-state weight
+  `SpectralData.twoPointExcitedWeight` of the two-point correlator. A convergent two-point
   correlator is positive once some overlap is nonzero (`SpectralData.twoPoint_pos`), and
   `C₂(t) e^{E₀ t} → |Z₀|²` (`SpectralData.tendsto_twoPoint_mul_exp`).
 * `SpectralData.norm_threePoint_mul_exp_sub_le`: `‖C₃(t, τ) e^{E₀ t} - |Z₀|² O₀₀‖` is at most
-  `K₃ (e^{-Δ τ} + e^{-Δ (t - τ)})` for `0 ≤ τ ≤ t`, where `K₃` is the excited-state weight
-  `SpectralData.threePointExcitedWeight` of the three-point correlator.
-* `SpectralData.norm_threePoint_div_twoPoint_sub_le`: for `0 ≤ τ ≤ t` and `Z₀ ≠ 0`, the ratio
-  `C₃(t, τ) / C₂(t)` differs from the ground-state matrix element `O₀₀` by at most
-  `(K₃ + ‖O₀₀‖ K₂) / |Z₀|²` times `e^{-Δ τ} + e^{-Δ (t - τ)}`.
+  `K₃(s₀, τ₀) (e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)})` for `t - τ ≥ s₀` and `τ ≥ τ₀`, where
+  `K₃(s₀, τ₀)` is the excited-state weight `SpectralData.threePointExcitedWeight` of the
+  three-point correlator.
+* `SpectralData.norm_threePoint_div_twoPoint_sub_le`: for `t - τ ≥ s₀`, `τ ≥ τ₀` and `Z₀ ≠ 0`, the
+  ratio `C₃(t, τ) / C₂(t)` differs from the ground-state matrix element `O₀₀` by at most
+  `(K₃(s₀, τ₀) + ‖O₀₀‖ K₂(s₀ + τ₀)) / |Z₀|²` times `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}`.
 * `SpectralData.tendsto_threePoint_div_twoPoint`: for `Z₀ ≠ 0`, the ratio converges to `O₀₀` along
   any filter on which both `τ` and `t - τ` tend to infinity.
 
 The constant `K₂` is fixed by the overlaps of the interpolating operator with the excited states,
-and `K₃` also by the matrix elements of `O` involving them; about these nothing beyond summability
-is assumed: the gap alone determines the rate, not the size, of the excited-state contamination.
+and `K₃` also by the matrix elements of `O` involving them; about these nothing beyond convergence
+at the reference separations is assumed: the gap alone determines the rate, not the size, of the
+excited-state contamination.
 
 ## References
 
@@ -135,25 +144,39 @@ theorem threePointWeight_nonneg (O : ι → ι → ℂ) (p : ι × ι) : 0 ≤ S
   rw [threePointWeight_def]
   positivity
 
-/-- The excited-state weight `K₂ = ∑ₙ |Z n|² - |Z₀|²` of the two-point correlator relative to the
-state `n₀`. -/
-noncomputable def twoPointExcitedWeight (n₀ : ι) : ℝ :=
-  ∑' n, ‖S.overlap n‖ ^ 2 - ‖S.overlap n₀‖ ^ 2
+/-- The weight of a pair of equal states `(n, n)` is `|Z n|² ‖⟨n|O|n⟩‖`. -/
+theorem threePointWeight_self (O : ι → ι → ℂ) (n : ι) :
+    S.threePointWeight O (n, n) = ‖S.overlap n‖ ^ 2 * ‖O n n‖ := by
+  rw [threePointWeight_def]
+  ring
+
+/-- The excited-state weight `K₂(t₀) = ∑ₙ |Z n|² e^{-(E n - E₀) t₀} - |Z₀|²` of the two-point
+correlator relative to the state `n₀`, at the reference time `t₀`: the contribution of the states
+other than `n₀` to `C₂(t₀) e^{E₀ t₀}` (see `hasSum_twoPointExcitedWeight`). -/
+noncomputable def twoPointExcitedWeight (n₀ : ι) (t₀ : ℝ) : ℝ :=
+  ∑' n, ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - S.energy n₀) * t₀)) - ‖S.overlap n₀‖ ^ 2
 
 /-- The excited-state weight of the two-point correlator as a difference of sums. -/
-theorem twoPointExcitedWeight_def (n₀ : ι) :
-    S.twoPointExcitedWeight n₀ = ∑' n, ‖S.overlap n‖ ^ 2 - ‖S.overlap n₀‖ ^ 2 :=
+theorem twoPointExcitedWeight_def (n₀ : ι) (t₀ : ℝ) :
+    S.twoPointExcitedWeight n₀ t₀ =
+      ∑' n, ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - S.energy n₀) * t₀)) -
+        ‖S.overlap n₀‖ ^ 2 :=
   (rfl)
 
-/-- The excited-state weight `K₃ = ∑ₙ,ₘ |Z n| ‖⟨n|O|m⟩‖ |Z m| - |Z₀|² ‖⟨0|O|0⟩‖` of the
-three-point correlator relative to the state `n₀`. -/
-noncomputable def threePointExcitedWeight (O : ι → ι → ℂ) (n₀ : ι) : ℝ :=
-  ∑' p, S.threePointWeight O p - ‖S.overlap n₀‖ ^ 2 * ‖O n₀ n₀‖
+/-- The excited-state weight
+`K₃(s₀, τ₀) = ∑ₙ,ₘ |Z n| ‖⟨n|O|m⟩‖ |Z m| e^{-(E n - E₀) s₀} e^{-(E m - E₀) τ₀} - |Z₀|² ‖⟨0|O|0⟩‖`
+of the three-point correlator relative to the state `n₀`, at the reference sink-operator
+separation `s₀` and operator time `τ₀`: the weight of the pairs of states other than `(n₀, n₀)`
+(see `hasSum_threePointExcitedWeight`). -/
+noncomputable def threePointExcitedWeight (O : ι → ι → ℂ) (n₀ : ι) (s₀ τ₀ : ℝ) : ℝ :=
+  ∑' p, S.threePointWeight O p * (Real.exp (-((S.energy p.1 - S.energy n₀) * s₀)) *
+    Real.exp (-((S.energy p.2 - S.energy n₀) * τ₀))) - ‖S.overlap n₀‖ ^ 2 * ‖O n₀ n₀‖
 
 /-- The excited-state weight of the three-point correlator as a difference of sums. -/
-theorem threePointExcitedWeight_def (O : ι → ι → ℂ) (n₀ : ι) :
-    S.threePointExcitedWeight O n₀ =
-      ∑' p, S.threePointWeight O p - ‖S.overlap n₀‖ ^ 2 * ‖O n₀ n₀‖ :=
+theorem threePointExcitedWeight_def (O : ι → ι → ℂ) (n₀ : ι) (s₀ τ₀ : ℝ) :
+    S.threePointExcitedWeight O n₀ s₀ τ₀ =
+      ∑' p, S.threePointWeight O p * (Real.exp (-((S.energy p.1 - S.energy n₀) * s₀)) *
+        Real.exp (-((S.energy p.2 - S.energy n₀) * τ₀))) - ‖S.overlap n₀‖ ^ 2 * ‖O n₀ n₀‖ :=
   (rfl)
 
 /-- The *spectral gap* hypothesis: every state other than the ground state `n₀` has energy at
@@ -165,20 +188,6 @@ structure HasSpectralGap (n₀ : ι) (Δ : ℝ) : Prop where
   add_le_energy : ∀ n, n ≠ n₀ → S.energy n₀ + Δ ≤ S.energy n
 
 variable {S} {O : ι → ι → ℂ} {n₀ : ι} {Δ : ℝ}
-
-/-- The excited-state weight of a two-point correlator with summable weights is nonnegative. -/
-theorem twoPointExcitedWeight_nonneg (hZ : Summable fun n => ‖S.overlap n‖ ^ 2) (n₀ : ι) :
-    0 ≤ S.twoPointExcitedWeight n₀ := by
-  rw [twoPointExcitedWeight_def, sub_nonneg]
-  exact hZ.le_tsum n₀ fun _ _ => sq_nonneg _
-
-/-- The excited-state weight of a three-point correlator with summable weights is nonnegative. -/
-theorem threePointExcitedWeight_nonneg (hO : Summable (S.threePointWeight O)) (n₀ : ι) :
-    0 ≤ S.threePointExcitedWeight O n₀ := by
-  rw [threePointExcitedWeight_def, sub_nonneg]
-  calc ‖S.overlap n₀‖ ^ 2 * ‖O n₀ n₀‖ = S.threePointWeight O (n₀, n₀) := by
-        rw [threePointWeight_def]; ring
-    _ ≤ _ := hO.le_tsum (n₀, n₀) fun p _ => S.threePointWeight_nonneg O p
 
 /-- Relative to an energy `E` not above that of the state `n`, the state `n` does not grow in
 Euclidean time. -/
@@ -239,24 +248,47 @@ theorem twoPoint_mul_exp (E t : ℝ) :
   rw [twoPoint_def, ← tsum_mul_right]
   exact tsum_congr fun n => twoPoint_term_mul_exp n E t
 
-/-- For energies bounded below, the spectral sum of the two-point correlator at a nonnegative time
-converges once the overlap weights `|Z n|²` are summable. -/
-theorem hasSum_twoPoint {E : ℝ} (hE : ∀ n, E ≤ S.energy n)
-    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2) {t : ℝ} (ht : 0 ≤ t) :
+/-- For energies bounded below, the spectral sum of the two-point correlator converges at every
+time `t` after a reference time `t₀` at which it converges. -/
+theorem hasSum_twoPoint {E : ℝ} (hE : ∀ n, E ≤ S.energy n) {t₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) {t : ℝ}
+    (ht : t₀ ≤ t) :
     HasSum (fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t))) (S.twoPoint t) := by
   rw [twoPoint_def]
   refine (Summable.of_nonneg_of_le (fun n => by positivity) (fun n => ?_)
-    (hZ.mul_right (Real.exp (-(E * t))))).hasSum
-  exact mul_le_mul_of_nonneg_left
-    (Real.exp_le_exp.2 <| neg_le_neg <| mul_le_mul_of_nonneg_right (hE n) ht) (sq_nonneg _)
+    (hZ.mul_right (Real.exp (-(E * (t - t₀)))))).hasSum
+  rw [mul_assoc, ← Real.exp_add]
+  refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) (sq_nonneg _)
+  nlinarith [mul_le_mul_of_nonneg_right (hE n) (sub_nonneg.2 ht)]
 
 /-- For energies bounded below by `E`, the summands `|Z n|² e^{-(E n - E) t}`, each state decaying
-with its energy above `E`, sum to `C₂(t) e^{E t}` at a nonnegative time `t`. -/
-theorem hasSum_twoPoint_mul_exp {E : ℝ} (hE : ∀ n, E ≤ S.energy n)
-    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2) {t : ℝ} (ht : 0 ≤ t) :
+with its energy above `E`, sum to `C₂(t) e^{E t}` at every time `t` after a reference time `t₀` at
+which the two-point correlator converges. -/
+theorem hasSum_twoPoint_mul_exp {E : ℝ} (hE : ∀ n, E ≤ S.energy n) {t₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) {t : ℝ}
+    (ht : t₀ ≤ t) :
     HasSum (fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - E) * t)))
       (S.twoPoint t * Real.exp (E * t)) :=
   ((hasSum_twoPoint hE hZ ht).mul_right _).congr_fun fun n => (twoPoint_term_mul_exp n E t).symm
+
+/-- The excited-state weight `K₂(t₀)` of a two-point correlator converging at `t₀` is the sum over
+the states other than `n₀` of their weights `|Z n|² e^{-(E n - E₀) t₀}`. -/
+theorem hasSum_twoPointExcitedWeight [DecidableEq ι] {t₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) (n₀ : ι) :
+    HasSum (fun n => if n = n₀ then 0 else
+        ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - S.energy n₀) * t₀)))
+      (S.twoPointExcitedWeight n₀ t₀) := by
+  have h := (hZ.mul_right (Real.exp (S.energy n₀ * t₀))).congr fun n =>
+    twoPoint_term_mul_exp n (S.energy n₀) t₀
+  convert hasSum_ite_sub_hasSum h.hasSum n₀ using 1
+  simp [twoPointExcitedWeight_def]
+
+/-- The excited-state weight of a two-point correlator converging at `t₀` is nonnegative. -/
+theorem twoPointExcitedWeight_nonneg {t₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) (n₀ : ι) :
+    0 ≤ S.twoPointExcitedWeight n₀ t₀ := by
+  classical
+  exact (hasSum_twoPointExcitedWeight hZ n₀).nonneg fun n => by split_ifs <;> positivity
 
 /-- Any state `n₀` saturates the two-point correlator from below: after its decay `e^{-E₀ t}` is
 divided out, a convergent two-point correlator is at least its weight `|Z₀|²`. -/
@@ -269,23 +301,29 @@ theorem sq_norm_overlap_le_twoPoint_mul_exp {t : ℝ}
   simpa [twoPoint_term_mul_exp] using this
 
 /-- **Excited-state contamination of the two-point correlator.** After the ground-state decay
-`e^{-E₀ t}` is divided out, the two-point correlator exceeds the ground-state weight `|Z₀|²` by at
-most the excited-state weight `∑ₙ |Z n|² - |Z₀|²` times `e^{-Δ t}`. -/
-theorem twoPoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ)
-    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2) {t : ℝ} (ht : 0 ≤ t) :
+`e^{-E₀ t}` is divided out, the two-point correlator at a time `t` after a reference time `t₀` at
+which it converges exceeds the ground-state weight `|Z₀|²` by at most the excited-state weight
+`K₂(t₀)` times `e^{-Δ (t - t₀)}`. -/
+theorem twoPoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ) {t₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) {t : ℝ}
+    (ht : t₀ ≤ t) :
     S.twoPoint t * Real.exp (S.energy n₀ * t) - ‖S.overlap n₀‖ ^ 2 ≤
-      S.twoPointExcitedWeight n₀ * Real.exp (-(Δ * t)) := by
+      S.twoPointExcitedWeight n₀ t₀ * Real.exp (-(Δ * (t - t₀))) := by
   classical
-  -- each excited state is suppressed by at least `e^{-Δ t}` relative to the ground state
+  -- each excited state is suppressed by at least `e^{-Δ (t - t₀)}` relative to its weight at `t₀`
   have hle : ∀ n, (if n = n₀ then 0 else
         ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - S.energy n₀) * t))) ≤
-      (if n = n₀ then 0 else ‖S.overlap n‖ ^ 2 * Real.exp (-(Δ * t))) := fun n => by
+      (if n = n₀ then 0 else
+        ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - S.energy n₀) * t₀))) *
+          Real.exp (-(Δ * (t - t₀))) := fun n => by
     split_ifs with hn
-    · exact le_rfl
-    · exact mul_le_mul_of_nonneg_left (h.exp_neg_sub_mul_le hn ht) (sq_nonneg _)
+    · simp
+    · rw [mul_assoc, ← Real.exp_add]
+      refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) (sq_nonneg _)
+      nlinarith [mul_nonneg (sub_nonneg.2 (h.add_le_energy n hn)) (sub_nonneg.2 ht)]
   have h₁ := hasSum_ite_sub_hasSum (hasSum_twoPoint_mul_exp h.energy_le hZ ht) n₀
-  have h₂ := hasSum_ite_sub_hasSum (hZ.hasSum.mul_right (Real.exp (-(Δ * t)))) n₀
-  simpa [twoPointExcitedWeight_def, sub_mul] using hasSum_le hle h₁ h₂
+  have h₂ := (hasSum_twoPointExcitedWeight hZ n₀).mul_right (Real.exp (-(Δ * (t - t₀))))
+  simpa only [sub_self, zero_mul, neg_zero, Real.exp_zero, mul_one] using hasSum_le hle h₁ h₂
 
 /-- A convergent two-point correlator is positive once the interpolating operator overlaps with
 some state. -/
@@ -296,20 +334,24 @@ theorem twoPoint_pos {t : ℝ}
   exact hs.tsum_pos (fun _ => by positivity) n₀
     (mul_pos (pow_pos (norm_pos_iff.2 h₀) 2) (Real.exp_pos _))
 
-/-- **Ground-state dominance.** After the ground-state decay `e^{-E₀ t}` is divided out, the
-two-point correlator tends to the ground-state weight `|Z₀|²` at large Euclidean time. -/
-theorem tendsto_twoPoint_mul_exp (h : S.HasSpectralGap n₀ Δ)
-    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2) :
+/-- **Ground-state dominance.** After the ground-state decay `e^{-E₀ t}` is divided out, a
+two-point correlator converging at some time `t₀` tends to the ground-state weight `|Z₀|²` at large
+Euclidean time. -/
+theorem tendsto_twoPoint_mul_exp (h : S.HasSpectralGap n₀ Δ) {t₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) :
     Tendsto (fun t => S.twoPoint t * Real.exp (S.energy n₀ * t)) atTop
       (𝓝 (‖S.overlap n₀‖ ^ 2)) := by
+  have hsub : Tendsto (fun t : ℝ => t - t₀) atTop atTop := by
+    simpa [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-t₀) tendsto_id
   have hK : Tendsto (fun t => ‖S.overlap n₀‖ ^ 2 +
-      S.twoPointExcitedWeight n₀ * Real.exp (-(Δ * t))) atTop (𝓝 (‖S.overlap n₀‖ ^ 2)) := by
+      S.twoPointExcitedWeight n₀ t₀ * Real.exp (-(Δ * (t - t₀)))) atTop
+        (𝓝 (‖S.overlap n₀‖ ^ 2)) := by
     simpa using tendsto_const_nhds.add <| tendsto_const_nhds.mul <|
-      Real.tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop h.pos)
+      Real.tendsto_exp_neg_atTop_nhds_zero.comp (hsub.const_mul_atTop h.pos)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hK ?_ ?_
-  · filter_upwards [eventually_ge_atTop 0] with t ht
+  · filter_upwards [eventually_ge_atTop t₀] with t ht
     exact sq_norm_overlap_le_twoPoint_mul_exp (hasSum_twoPoint h.energy_le hZ ht).summable n₀
-  · filter_upwards [eventually_ge_atTop 0] with t ht
+  · filter_upwards [eventually_ge_atTop t₀] with t ht
     linarith [twoPoint_mul_exp_sub_le h hZ ht]
 
 /-! ### The three-point correlator -/
@@ -342,42 +384,88 @@ theorem threePoint_mul_exp (E t τ : ℝ) :
   rw [threePoint_def, ← tsum_mul_right]
   exact tsum_congr fun p => threePoint_term_mul_exp p E t τ
 
-/-- For energies bounded below, the spectral sum of the three-point correlator converges for
-`0 ≤ τ ≤ t` once the weights `|Z n| ‖⟨n|O|m⟩‖ |Z m|` are summable. -/
-theorem hasSum_threePoint {E : ℝ} (hE : ∀ n, E ≤ S.energy n)
-    (hO : Summable (S.threePointWeight O)) {t τ : ℝ} (hτ : 0 ≤ τ) (hτt : τ ≤ t) :
+/-- For energies bounded below, the spectral sum of the three-point correlator converges whenever
+the sink-operator separation `t - τ` is at least `s₀` and the operator time `τ` at least `τ₀`, once
+it converges absolutely at sink-operator separation `s₀` and operator time `τ₀`. -/
+theorem hasSum_threePoint {E : ℝ} (hE : ∀ n, E ≤ S.energy n) {s₀ τ₀ : ℝ}
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
+    {t τ : ℝ} (hτ : τ₀ ≤ τ) (hs : s₀ ≤ t - τ) :
     HasSum (fun p : ι × ι => S.overlap p.1 * O p.1 p.2 * conj (S.overlap p.2) *
         (Real.exp (-(S.energy p.1 * (t - τ))) * Real.exp (-(S.energy p.2 * τ)) : ℝ))
       (S.threePoint O t τ) := by
   rw [threePoint_def]
-  refine (Summable.of_norm_bounded (hO.mul_right (Real.exp (-(E * t)))) fun p => ?_).hasSum
-  have hs : 0 ≤ t - τ := sub_nonneg.2 hτt
-  rw [norm_threePoint_term p (by positivity), ← Real.exp_add]
-  refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) (S.threePointWeight_nonneg O p)
-  nlinarith [mul_le_mul_of_nonneg_right (hE p.1) hs, mul_le_mul_of_nonneg_right (hE p.2) hτ]
+  refine (Summable.of_norm_bounded (hO.mul_right
+    (Real.exp (-(E * (t - τ - s₀))) * Real.exp (-(E * (τ - τ₀))))) fun p => ?_).hasSum
+  rw [norm_threePoint_term p (by positivity), mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (S.threePointWeight_nonneg O p)
+  simp only [← Real.exp_add]
+  refine Real.exp_le_exp.2 ?_
+  nlinarith [mul_le_mul_of_nonneg_right (hE p.1) (sub_nonneg.2 hs),
+    mul_le_mul_of_nonneg_right (hE p.2) (sub_nonneg.2 hτ)]
 
-/-- For energies bounded below by `E` and `0 ≤ τ ≤ t`, the summands of the three-point correlator
-with each pair of states decaying with its energies above `E` sum to `C₃(t, τ) e^{E t}`. -/
-theorem hasSum_threePoint_mul_exp {E : ℝ} (hE : ∀ n, E ≤ S.energy n)
-    (hO : Summable (S.threePointWeight O)) {t τ : ℝ} (hτ : 0 ≤ τ) (hτt : τ ≤ t) :
+/-- For energies bounded below by `E`, the summands of the three-point correlator with each pair
+of states decaying with its energies above `E` sum to `C₃(t, τ) e^{E t}` whenever `t - τ ≥ s₀` and
+`τ ≥ τ₀`, once the three-point correlator converges absolutely at `(s₀, τ₀)`. -/
+theorem hasSum_threePoint_mul_exp {E : ℝ} (hE : ∀ n, E ≤ S.energy n) {s₀ τ₀ : ℝ}
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
+    {t τ : ℝ} (hτ : τ₀ ≤ τ) (hs : s₀ ≤ t - τ) :
     HasSum (fun p : ι × ι => S.overlap p.1 * O p.1 p.2 * conj (S.overlap p.2) *
         (Real.exp (-((S.energy p.1 - E) * (t - τ))) * Real.exp (-((S.energy p.2 - E) * τ)) :
           ℝ))
       (S.threePoint O t τ * (Real.exp (E * t) : ℂ)) :=
-  ((hasSum_threePoint hE hO hτ hτt).mul_right _).congr_fun fun p =>
+  ((hasSum_threePoint hE hO hτ hs).mul_right _).congr_fun fun p =>
     (threePoint_term_mul_exp p E t τ).symm
 
-/-- **Excited-state contamination of the three-point correlator.** For `0 ≤ τ ≤ t`, after the
-ground-state decay `e^{-E₀ t}` is divided out, the three-point correlator differs from its
-ground-state term `|Z₀|² ⟨0|O|0⟩` by at most the excited-state weight
-`∑ₙ,ₘ |Z n| ‖⟨n|O|m⟩‖ |Z m| - |Z₀|² ‖⟨0|O|0⟩‖` times `e^{-Δ τ} + e^{-Δ (t - τ)}`. -/
-theorem norm_threePoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ)
-    (hO : Summable (S.threePointWeight O)) {t τ : ℝ} (hτ : 0 ≤ τ) (hτt : τ ≤ t) :
+/-- The excited-state weight `K₃(s₀, τ₀)` of a three-point correlator converging absolutely at
+`(s₀, τ₀)` is the sum over the pairs of states other than `(n₀, n₀)` of their weights
+`|Z n| ‖⟨n|O|m⟩‖ |Z m| e^{-(E n - E₀) s₀} e^{-(E m - E₀) τ₀}`. -/
+theorem hasSum_threePointExcitedWeight [DecidableEq ι] {s₀ τ₀ : ℝ}
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
+    (n₀ : ι) :
+    HasSum (fun p => if p = (n₀, n₀) then 0 else S.threePointWeight O p *
+        (Real.exp (-((S.energy p.1 - S.energy n₀) * s₀)) *
+          Real.exp (-((S.energy p.2 - S.energy n₀) * τ₀))))
+      (S.threePointExcitedWeight O n₀ s₀ τ₀) := by
+  have h : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-((S.energy p.1 - S.energy n₀) * s₀)) *
+        Real.exp (-((S.energy p.2 - S.energy n₀) * τ₀))) :=
+    (hO.mul_right (Real.exp (S.energy n₀ * (s₀ + τ₀)))).congr fun p => by
+      rw [mul_assoc]
+      congr 1
+      simp only [← Real.exp_add]
+      ring_nf
+  convert hasSum_ite_sub_hasSum h.hasSum (n₀, n₀) using 1
+  simp [threePointExcitedWeight_def, threePointWeight_self]
+
+/-- The excited-state weight of a three-point correlator converging absolutely at `(s₀, τ₀)` is
+nonnegative. -/
+theorem threePointExcitedWeight_nonneg {s₀ τ₀ : ℝ}
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
+    (n₀ : ι) :
+    0 ≤ S.threePointExcitedWeight O n₀ s₀ τ₀ := by
+  classical
+  refine (hasSum_threePointExcitedWeight hO n₀).nonneg fun p => ?_
+  split_ifs
+  · exact le_rfl
+  · exact mul_nonneg (S.threePointWeight_nonneg O p) (by positivity)
+
+/-- **Excited-state contamination of the three-point correlator.** For `t - τ ≥ s₀` and `τ ≥ τ₀`,
+after the ground-state decay `e^{-E₀ t}` is divided out, the three-point correlator differs from
+its ground-state term `|Z₀|² ⟨0|O|0⟩` by at most the excited-state weight `K₃(s₀, τ₀)` times
+`e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}`, once it converges absolutely at `(s₀, τ₀)`. -/
+theorem norm_threePoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : ℝ}
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
+    {t τ : ℝ} (hτ : τ₀ ≤ τ) (hs : s₀ ≤ t - τ) :
     ‖S.threePoint O t τ * (Real.exp (S.energy n₀ * t) : ℂ) -
         (‖S.overlap n₀‖ : ℂ) ^ 2 * O n₀ n₀‖ ≤
-      S.threePointExcitedWeight O n₀ * (Real.exp (-(Δ * τ)) + Real.exp (-(Δ * (t - τ)))) := by
+      S.threePointExcitedWeight O n₀ s₀ τ₀ *
+        (Real.exp (-(Δ * (τ - τ₀))) + Real.exp (-(Δ * (t - τ - s₀)))) := by
   classical
-  have hs : 0 ≤ t - τ := sub_nonneg.2 hτt
   set e : ι × ι → ℝ := fun p => Real.exp (-((S.energy p.1 - S.energy n₀) * (t - τ))) *
     Real.exp (-((S.energy p.2 - S.energy n₀) * τ))
   set g : ι × ι → ℂ := fun p => S.overlap p.1 * O p.1 p.2 * conj (S.overlap p.2) *
@@ -385,55 +473,71 @@ theorem norm_threePoint_mul_exp_sub_le (h : S.HasSpectralGap n₀ Δ)
   have hg : ∀ p, ‖g p‖ = S.threePointWeight O p * e p := fun p =>
     norm_threePoint_term p (by positivity)
   have hB : HasSum g (S.threePoint O t τ * (Real.exp (S.energy n₀ * t) : ℂ)) :=
-    hasSum_threePoint_mul_exp h.energy_le hO hτ hτt
+    hasSum_threePoint_mul_exp h.energy_le hO hτ hs
   have hg₀ : g (n₀, n₀) = (‖S.overlap n₀‖ : ℂ) ^ 2 * O n₀ n₀ := by
     simp only [g, e, sub_self, zero_mul, neg_zero, Real.exp_zero, mul_one, ofReal_one]
     rw [mul_right_comm, Complex.mul_conj']
-  set c := Real.exp (-(Δ * τ)) + Real.exp (-(Δ * (t - τ)))
-  have hK := hasSum_ite_sub_hasSum (hO.hasSum.mul_right c) (n₀, n₀)
+  set c := Real.exp (-(Δ * (τ - τ₀))) + Real.exp (-(Δ * (t - τ - s₀)))
+  have hK := (hasSum_threePointExcitedWeight hO n₀).mul_right c
   rw [← hg₀, ← (hasSum_ite_sub_hasSum hB (n₀, n₀)).tsum_eq]
-  refine (tsum_of_norm_bounded hK fun p => ?_).trans_eq ?_
-  · split_ifs with hp
-    · simp
-    · rw [hg]
-      exact mul_le_mul_of_nonneg_left (h.exp_mul_exp_le hp hs hτ) (S.threePointWeight_nonneg O p)
-  · rw [threePointExcitedWeight_def, threePointWeight_def, sub_mul]
-    ring
+  refine tsum_of_norm_bounded hK fun p => ?_
+  split_ifs with hp
+  · simp
+  · rw [hg, mul_assoc]
+    refine mul_le_mul_of_nonneg_left ?_ (S.threePointWeight_nonneg O p)
+    -- relative to its weight at `(s₀, τ₀)`, the pair is suppressed by `e^{-Δ (τ - τ₀)}` or by
+    -- `e^{-Δ (t - τ - s₀)}`
+    calc e p = (Real.exp (-((S.energy p.1 - S.energy n₀) * s₀)) *
+            Real.exp (-((S.energy p.2 - S.energy n₀) * τ₀))) *
+          (Real.exp (-((S.energy p.1 - S.energy n₀) * (t - τ - s₀))) *
+            Real.exp (-((S.energy p.2 - S.energy n₀) * (τ - τ₀)))) := by
+          simp only [e, ← Real.exp_add]
+          ring_nf
+      _ ≤ _ := mul_le_mul_of_nonneg_left
+          (h.exp_mul_exp_le hp (sub_nonneg.2 (le_sub_iff_add_le.2 (by linarith)))
+            (sub_nonneg.2 hτ)) (by positivity)
 
 /-! ### The ratio and the ground-state matrix element -/
 
-/-- **The ratio method, quantitatively.** Under a spectral gap, for `0 ≤ τ ≤ t`, the ratio of the
-three-point to the two-point correlator differs from the ground-state matrix element `⟨0|O|0⟩` by
-at most `(K₃ + ‖⟨0|O|0⟩‖ K₂) / |Z₀|²` times `e^{-Δ τ} + e^{-Δ (t - τ)}`, where `K₂` and `K₃` are
-the excited-state weights `twoPointExcitedWeight` and `threePointExcitedWeight`. -/
-theorem norm_threePoint_div_twoPoint_sub_le (h : S.HasSpectralGap n₀ Δ)
-    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2) (hO : Summable (S.threePointWeight O))
-    (h₀ : S.overlap n₀ ≠ 0) {t τ : ℝ} (hτ : 0 ≤ τ) (hτt : τ ≤ t) :
+/-- **The ratio method, quantitatively.** Under a spectral gap, for `t - τ ≥ s₀` and `τ ≥ τ₀`, the
+ratio of the three-point to the two-point correlator differs from the ground-state matrix element
+`⟨0|O|0⟩` by at most `(K₃(s₀, τ₀) + ‖⟨0|O|0⟩‖ K₂(s₀ + τ₀)) / |Z₀|²` times
+`e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}`, where `K₂` and `K₃` are the excited-state weights
+`twoPointExcitedWeight` and `threePointExcitedWeight`, once the two-point correlator converges at
+`s₀ + τ₀` and the three-point correlator converges absolutely at `(s₀, τ₀)`. -/
+theorem norm_threePoint_div_twoPoint_sub_le (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * (s₀ + τ₀))))
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
+    (h₀ : S.overlap n₀ ≠ 0) {t τ : ℝ} (hτ : τ₀ ≤ τ) (hs : s₀ ≤ t - τ) :
     ‖S.threePoint O t τ / S.twoPoint t - O n₀ n₀‖ ≤
-      (S.threePointExcitedWeight O n₀ + ‖O n₀ n₀‖ * S.twoPointExcitedWeight n₀) /
-        ‖S.overlap n₀‖ ^ 2 * (Real.exp (-(Δ * τ)) + Real.exp (-(Δ * (t - τ)))) := by
-  have ht : 0 ≤ t := hτ.trans hτt
+      (S.threePointExcitedWeight O n₀ s₀ τ₀ +
+          ‖O n₀ n₀‖ * S.twoPointExcitedWeight n₀ (s₀ + τ₀)) /
+        ‖S.overlap n₀‖ ^ 2 * (Real.exp (-(Δ * (τ - τ₀))) + Real.exp (-(Δ * (t - τ - s₀)))) := by
+  have ht : s₀ + τ₀ ≤ t := by linarith
   set E₀ := S.energy n₀
   set z := ‖S.overlap n₀‖ ^ 2
   set O₀ := O n₀ n₀
-  set K₂ := S.twoPointExcitedWeight n₀
-  set K₃ := S.threePointExcitedWeight O n₀
-  set c := Real.exp (-(Δ * τ)) + Real.exp (-(Δ * (t - τ)))
+  set K₂ := S.twoPointExcitedWeight n₀ (s₀ + τ₀)
+  set K₃ := S.threePointExcitedWeight O n₀ s₀ τ₀
+  set c := Real.exp (-(Δ * (τ - τ₀))) + Real.exp (-(Δ * (t - τ - s₀)))
   set A := S.twoPoint t * Real.exp (E₀ * t)
   set B := S.threePoint O t τ * (Real.exp (E₀ * t) : ℂ)
   have hz : 0 < z := pow_pos (norm_pos_iff.2 h₀) 2
   have hzA : z ≤ A :=
     sq_norm_overlap_le_twoPoint_mul_exp (hasSum_twoPoint h.energy_le hZ ht).summable n₀
-  have hA₂ : A - z ≤ K₂ * Real.exp (-(Δ * t)) := twoPoint_mul_exp_sub_le h hZ ht
+  have hA₂ : A - z ≤ K₂ * Real.exp (-(Δ * (t - (s₀ + τ₀)))) := twoPoint_mul_exp_sub_le h hZ ht
   have hB₃ : ‖B - (z : ℂ) * O₀‖ ≤ K₃ * c := by
     rw [show ((z : ℝ) : ℂ) = (‖S.overlap n₀‖ : ℂ) ^ 2 by simp only [z, ofReal_pow]]
-    exact norm_threePoint_mul_exp_sub_le h hO hτ hτt
+    exact norm_threePoint_mul_exp_sub_le h hO hτ hs
   have hK₂ : 0 ≤ K₂ := twoPointExcitedWeight_nonneg hZ n₀
   have hK₃ : 0 ≤ K₃ := threePointExcitedWeight_nonneg hO n₀
   have hc : 0 < c := by positivity
-  -- the decay `e^{-Δ t}` of the two-point remainder is dominated by `c`
-  have htc : Real.exp (-(Δ * t)) ≤ c :=
-    le_add_of_le_of_nonneg (Real.exp_le_exp.2 (by nlinarith [h.pos])) (Real.exp_pos _).le
+  -- the decay `e^{-Δ (t - s₀ - τ₀)}` of the two-point remainder is dominated by `c`
+  have htc : Real.exp (-(Δ * (t - (s₀ + τ₀)))) ≤ c :=
+    le_add_of_le_of_nonneg
+      (Real.exp_le_exp.2 (by nlinarith [mul_nonneg h.pos.le (sub_nonneg.2 hs)]))
+      (Real.exp_pos _).le
   -- dividing both correlators by the ground-state decay does not change their ratio
   have hratio : S.threePoint O t τ / S.twoPoint t = B / (A : ℂ) := by
     simp only [B, A, ofReal_mul]
@@ -456,25 +560,31 @@ theorem norm_threePoint_div_twoPoint_sub_le (h : S.HasSpectralGap n₀ Δ)
 
 /-- **The ratio method.** Under a spectral gap, the ratio of the three-point to the two-point
 correlator converges to the ground-state matrix element `⟨0|O|0⟩` along any filter on which both
-the operator time `τ` and the sink-operator separation `t - τ` tend to infinity. -/
-theorem tendsto_threePoint_div_twoPoint (h : S.HasSpectralGap n₀ Δ)
-    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2) (hO : Summable (S.threePointWeight O))
+the operator time `τ` and the sink-operator separation `t - τ` tend to infinity, once the
+two-point correlator converges at `s₀ + τ₀` and the three-point correlator converges absolutely at
+some sink-operator separation `s₀` and operator time `τ₀`. -/
+theorem tendsto_threePoint_div_twoPoint (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : ℝ}
+    (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * (s₀ + τ₀))))
+    (hO : Summable fun p => S.threePointWeight O p *
+      (Real.exp (-(S.energy p.1 * s₀)) * Real.exp (-(S.energy p.2 * τ₀))))
     (h₀ : S.overlap n₀ ≠ 0) {α : Type*} {l : Filter α} {t τ : α → ℝ}
     (hτ : Tendsto τ l atTop) (htτ : Tendsto (fun a => t a - τ a) l atTop) :
     Tendsto (fun a => S.threePoint O (t a) (τ a) / S.twoPoint (t a)) l
       (𝓝 (O n₀ n₀)) := by
-  set C := (S.threePointExcitedWeight O n₀ +
-    ‖O n₀ n₀‖ * S.twoPointExcitedWeight n₀) / ‖S.overlap n₀‖ ^ 2
-  have hexp : ∀ {f : α → ℝ}, Tendsto f l atTop →
-      Tendsto (fun a => Real.exp (-(Δ * f a))) l (𝓝 0) := fun hf =>
-    Real.tendsto_exp_neg_atTop_nhds_zero.comp (hf.const_mul_atTop h.pos)
-  have hbound : Tendsto (fun a => C * (Real.exp (-(Δ * τ a)) + Real.exp (-(Δ * (t a - τ a)))))
-      l (𝓝 0) := by
-    simpa using ((hexp hτ).add (hexp htτ)).const_mul C
+  set C := (S.threePointExcitedWeight O n₀ s₀ τ₀ +
+    ‖O n₀ n₀‖ * S.twoPointExcitedWeight n₀ (s₀ + τ₀)) / ‖S.overlap n₀‖ ^ 2
+  have hexp : ∀ {f : α → ℝ}, Tendsto f l atTop → ∀ r : ℝ,
+      Tendsto (fun a => Real.exp (-(Δ * (f a - r)))) l (𝓝 0) := fun hf r =>
+    Real.tendsto_exp_neg_atTop_nhds_zero.comp <|
+      (by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-r) hf :
+        Tendsto (fun a => _ - r) l atTop).const_mul_atTop h.pos
+  have hbound : Tendsto (fun a => C * (Real.exp (-(Δ * (τ a - τ₀))) +
+      Real.exp (-(Δ * (t a - τ a - s₀))))) l (𝓝 0) := by
+    simpa using ((hexp hτ τ₀).add (hexp htτ s₀)).const_mul C
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero' (Eventually.of_forall fun a => norm_nonneg _) ?_ hbound
-  filter_upwards [hτ.eventually_ge_atTop 0, htτ.eventually_ge_atTop 0] with a ha hta
-  exact norm_threePoint_div_twoPoint_sub_le h hZ hO h₀ ha (sub_nonneg.1 hta)
+  filter_upwards [hτ.eventually_ge_atTop τ₀, htτ.eventually_ge_atTop s₀] with a ha hta
+  exact norm_threePoint_div_twoPoint_sub_le h hZ hO h₀ ha hta
 
 end SpectralData
 
