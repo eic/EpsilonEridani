@@ -49,6 +49,7 @@ is determined by `t` modulo `π`.
   `T⁻¹ - (T⁻¹)ᴴ = -2 i ρ`.
 * `sMatrix_mem_unitaryGroup_iff_isHermitian`: for invertible `T`, `S` is unitary iff `T⁻¹ + i ρ`
   is Hermitian.
+* `norm_elasticSMatrix`: `|S| = 2ρ |t - i / 2ρ|`, the distance from the centre of the Argand circle.
 * `norm_elasticSMatrix_eq_one_iff_norm_sub_eq`: single-channel unitarity is the Argand circle.
 * `sMatrix_apply_same_eq_elasticSMatrix`: a diagonal entry of `sMatrix` is a single-channel
   S-matrix.
@@ -57,10 +58,10 @@ is determined by `t` modulo `π`.
 * `norm_elasticSMatrix_le_one_iff_norm_sub_le`: `|S| ≤ 1` is the disc bounded by the Argand circle.
 * `norm_elasticSMatrix_eq_one_iff_im_eq_mul_normSq`: single-channel unitarity is `Im t = ρ |t|²`.
 * `norm_le_one_div_of_norm_elasticSMatrix_le_one`: the unitarity bound `|t| ≤ 1 / ρ`, for `|S| ≤ 1`.
-* `norm_elasticSMatrix_eq_one_iff_inv_im`: single-channel unitarity is `Im t⁻¹ = -ρ`.
-* `norm_elasticSMatrix_eq_one_iff_exists_phaseShiftAmplitude`: single-channel unitarity is the
-  existence of a real phase shift, and `phaseShiftAmplitude_eq_iff_exists_int` its uniqueness
-  modulo `π`.
+* `norm_elasticSMatrix_eq_one_iff_inv_im_eq_neg`: single-channel unitarity is `Im t⁻¹ = -ρ`.
+* `norm_elasticSMatrix_eq_one_iff_exists_real_phaseShiftAmplitude`: single-channel unitarity is
+  the existence of a real phase shift, and
+  `phaseShiftAmplitude_eq_phaseShiftAmplitude_iff_exists_int` its uniqueness modulo `π`.
 * `elasticSMatrix_eq_iff`: the amplitude is read off the S-matrix as `t = (S - 1) / 2iρ`.
 * `norm_elasticSMatrix_phaseShiftAmplitude`: a complex phase shift `δ` gives `|S| = e^{-2 Im δ}`.
 
@@ -208,21 +209,24 @@ theorem elasticSMatrix_eq_mul_sub {ρ : ℝ} (hρ : ρ ≠ 0) (t : ℂ) :
     linear_combination (2 * ρ : ℂ) * I_sq
   rw [elasticSMatrix_def, mul_sub, h, sub_neg_eq_add, add_comm]
 
+/-- The modulus of the single-channel S-matrix is `2ρ` times the distance of `t` from the centre
+`i / 2ρ` of the Argand circle. -/
+theorem norm_elasticSMatrix {ρ : ℝ} (hρ : 0 < ρ) (t : ℂ) :
+    ‖elasticSMatrix ρ t‖ = 2 * ρ * ‖t - I / (2 * ρ)‖ := by
+  rw [elasticSMatrix_eq_mul_sub hρ.ne', norm_mul, norm_mul, norm_mul, norm_I, Complex.norm_two,
+    norm_real, Real.norm_of_nonneg hρ.le, mul_one]
+
 /-- **The Argand circle.** For a single channel with `ρ > 0`, unitarity `|S| = 1` holds iff the
 amplitude lies on the circle of radius `1 / 2ρ` about `i / 2ρ`. -/
 theorem norm_elasticSMatrix_eq_one_iff_norm_sub_eq {ρ : ℝ} (hρ : 0 < ρ) (t : ℂ) :
     ‖elasticSMatrix ρ t‖ = 1 ↔ ‖t - I / (2 * ρ)‖ = 1 / (2 * ρ) := by
-  rw [elasticSMatrix_eq_mul_sub hρ.ne', norm_mul, norm_mul, norm_mul, norm_I, Complex.norm_two,
-    norm_real, Real.norm_of_nonneg hρ.le, eq_div_iff (by positivity)]
-  constructor <;> intro h <;> linarith
+  rw [norm_elasticSMatrix hρ, eq_div_iff (by positivity), mul_comm]
 
 /-- **The unitarity disc.** For a single channel with `ρ > 0`, `|S| ≤ 1` holds iff the amplitude
 lies in the closed disc bounded by the Argand circle. -/
 theorem norm_elasticSMatrix_le_one_iff_norm_sub_le {ρ : ℝ} (hρ : 0 < ρ) (t : ℂ) :
     ‖elasticSMatrix ρ t‖ ≤ 1 ↔ ‖t - I / (2 * ρ)‖ ≤ 1 / (2 * ρ) := by
-  rw [elasticSMatrix_eq_mul_sub hρ.ne', norm_mul, norm_mul, norm_mul, norm_I, Complex.norm_two,
-    norm_real, Real.norm_of_nonneg hρ.le, le_div_iff₀ (by positivity)]
-  constructor <;> intro h <;> linarith
+  rw [norm_elasticSMatrix hρ, le_div_iff₀ (by positivity), mul_comm]
 
 /-- The squared modulus of the single-channel S-matrix: `|S|² = 1 + 4 ρ (ρ |t|² - Im t)`. -/
 theorem normSq_elasticSMatrix (ρ : ℝ) (t : ℂ) :
@@ -243,8 +247,7 @@ theorem norm_elasticSMatrix_eq_one_iff_im_eq_mul_normSq {ρ : ℝ} (hρ : ρ ≠
 one, satisfies `|t| ≤ 1 / ρ`. -/
 theorem norm_le_one_div_of_norm_elasticSMatrix_le_one {ρ : ℝ} (hρ : 0 < ρ) {t : ℂ}
     (ht : ‖elasticSMatrix ρ t‖ ≤ 1) : ‖t‖ ≤ 1 / ρ := by
-  have hc : ‖I / (2 * ρ)‖ = 1 / (2 * ρ) := by
-    rw [norm_div, norm_I, norm_mul, Complex.norm_two, norm_real, Real.norm_of_nonneg hρ.le]
+  have hc : ‖I / (2 * ρ)‖ = 1 / (2 * ρ) := by simp [hρ.le]
   calc ‖t‖ = ‖(t - I / (2 * ρ)) + I / (2 * ρ)‖ := by rw [sub_add_cancel]
     _ ≤ ‖t - I / (2 * ρ)‖ + ‖I / (2 * ρ)‖ := norm_add_le _ _
     _ ≤ 1 / (2 * ρ) + 1 / (2 * ρ) := by
@@ -254,7 +257,7 @@ theorem norm_le_one_div_of_norm_elasticSMatrix_le_one {ρ : ℝ} (hρ : 0 < ρ) 
 
 /-- **Single-channel unitarity in inverse form.** For a non-zero amplitude, `|S| = 1` iff
 `Im t⁻¹ = -ρ`. -/
-theorem norm_elasticSMatrix_eq_one_iff_inv_im {ρ : ℝ} (hρ : ρ ≠ 0) {t : ℂ} (ht : t ≠ 0) :
+theorem norm_elasticSMatrix_eq_one_iff_inv_im_eq_neg {ρ : ℝ} (hρ : ρ ≠ 0) {t : ℂ} (ht : t ≠ 0) :
     ‖elasticSMatrix ρ t‖ = 1 ↔ t⁻¹.im = -ρ := by
   have hn : normSq t ≠ 0 := normSq_eq_zero.not.2 ht
   rw [norm_elasticSMatrix_eq_one_iff_im_eq_mul_normSq hρ, inv_im, neg_div, neg_inj, div_eq_iff hn]
@@ -308,7 +311,8 @@ theorem norm_elasticSMatrix_phaseShiftAmplitude {ρ : ℝ} (hρ : ρ ≠ 0) (δ 
 
 /-- **The phase shift.** For a single channel, `|S| = 1` iff the amplitude is `e^{iδ} sin δ / ρ`
 for some real phase shift `δ`. -/
-theorem norm_elasticSMatrix_eq_one_iff_exists_phaseShiftAmplitude {ρ : ℝ} (hρ : ρ ≠ 0) (t : ℂ) :
+theorem norm_elasticSMatrix_eq_one_iff_exists_real_phaseShiftAmplitude {ρ : ℝ} (hρ : ρ ≠ 0)
+    (t : ℂ) :
     ‖elasticSMatrix ρ t‖ = 1 ↔ ∃ δ : ℝ, t = phaseShiftAmplitude ρ δ := by
   constructor
   · intro h
@@ -326,7 +330,8 @@ theorem norm_elasticSMatrix_eq_one_iff_exists_phaseShiftAmplitude {ρ : ℝ} (h�
 
 /-- **The phase shift is determined modulo `π`.** Two phase shifts give the same amplitude iff they
 differ by an integer multiple of `π`. -/
-theorem phaseShiftAmplitude_eq_iff_exists_int {ρ : ℝ} (hρ : ρ ≠ 0) (δ δ' : ℂ) :
+theorem phaseShiftAmplitude_eq_phaseShiftAmplitude_iff_exists_int {ρ : ℝ} (hρ : ρ ≠ 0)
+    (δ δ' : ℂ) :
     phaseShiftAmplitude ρ δ = phaseShiftAmplitude ρ δ' ↔ ∃ k : ℤ, δ = δ' + k * Real.pi := by
   rw [← (elasticSMatrix_injective hρ).eq_iff, elasticSMatrix_phaseShiftAmplitude hρ,
     elasticSMatrix_phaseShiftAmplitude hρ, exp_eq_exp_iff_exists_int]
@@ -338,9 +343,9 @@ theorem phaseShiftAmplitude_eq_iff_exists_int {ρ : ℝ} (hρ : ρ ≠ 0) (δ δ
 
 /-- **A real phase shift is determined modulo `π`.** Two real phase shifts give the same amplitude
 iff they differ by an integer multiple of `π`. -/
-theorem phaseShiftAmplitude_ofReal_eq_iff_exists_int {ρ : ℝ} (hρ : ρ ≠ 0) (δ δ' : ℝ) :
+theorem phaseShiftAmplitude_ofReal_eq_ofReal_iff_exists_int {ρ : ℝ} (hρ : ρ ≠ 0) (δ δ' : ℝ) :
     phaseShiftAmplitude ρ δ = phaseShiftAmplitude ρ δ' ↔ ∃ k : ℤ, δ = δ' + k * Real.pi := by
-  rw [phaseShiftAmplitude_eq_iff_exists_int hρ]
+  rw [phaseShiftAmplitude_eq_phaseShiftAmplitude_iff_exists_int hρ]
   exact exists_congr fun k ↦ by norm_cast
 
 end EpsilonEridani.QFT.Scattering.Amplitude
