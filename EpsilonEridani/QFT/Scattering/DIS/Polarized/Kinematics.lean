@@ -37,6 +37,10 @@ Each satisfies both normalisation conditions (`PolarizedKinematics.longitudinal`
 the longitudinal one is not (`apply_transverseSpin_k_eq_zero`, `apply_longitudinalSpin_k`), and
 the two are mutually orthogonal (`apply_longitudinalSpin_transverseSpin_eq_zero`).
 
+`Witness.longitudinalPol` and `Witness.transversePol` realise both configurations in
+three-dimensional Minkowski space; `Witness.kWit4` is polarised kinematics on `ℝ⁴` with the
+Minkowski metric `Witness.gWit4`.
+
 ## References
 
 * M. Anselmino, A. Efremov and E. Leader, *The theory and phenomenology of polarized deep
@@ -339,6 +343,53 @@ def longitudinalPol : PolarizedKinematics gWit :=
 def transversePol : PolarizedKinematics gWit :=
   .transverse kPol (0, 0, 1) gWit_isSymm (by rw [kPol_p_k]; exact one_ne_zero)
     (by simp [transverseComponent_kPol])
+
+/-! ### A witness in four-dimensional Minkowski space -/
+
+/-- The Minkowski metric `diag(1, -1, -1, -1)` on `ℝ⁴`. -/
+def gWit4 : Bilin (Fin 4 → ℝ) :=
+  Matrix.toBilin' (Matrix.diagonal ![1, -1, -1, -1])
+
+@[simp] lemma gWit4_apply (v w : Fin 4 → ℝ) :
+    gWit4 v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := by
+  simp only [gWit4, Matrix.toBilin'_apply', dotProduct, Matrix.mulVec_diagonal, Fin.sum_univ_four,
+    Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, one_mul, neg_mul,
+    mul_neg]
+  ring
+
+/-- `gWit4` is symmetric, as a metric must be. -/
+lemma gWit4_isSymm : gWit4.IsSymm :=
+  Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal _)
+
+/-- Witness kinematics on `ℝ⁴` with the metric `gWit4`: a target of unit mass at rest,
+`p = (1, 0, 0, 0)`, momentum transfer `q = (1, 0, 1, 1)` (so `p·q = 1`, `Q² = 1`) and spin
+`S = (0, 0, 0, 1)`, which has `S·q = -1 ≠ 0`. The lepton line is the placeholder `k = q`,
+`k' = 0` (and `p' = 0`), so this is an algebraic non-degeneracy witness, not a physical
+event. -/
+def kWit4 : PolarizedKinematics gWit4 where
+  p := ![1, 0, 0, 0]
+  pPrime := 0
+  k := ![1, 0, 1, 1]
+  kPrime := 0
+  q := ![1, 0, 1, 1]
+  hq := (sub_zero _).symm
+  S := ![0, 0, 0, 1]
+  spin_orthogonal := by simp
+  spin_normalized := by simp
+
+@[simp] lemma kWit4_p : kWit4.p = ![1, 0, 0, 0] := (rfl)
+
+@[simp] lemma kWit4_q : kWit4.q = ![1, 0, 1, 1] := (rfl)
+
+@[simp] lemma kWit4_S : kWit4.S = ![0, 0, 0, 1] := (rfl)
+
+@[simp] lemma kWit4_M2 : kWit4.M2 gWit4 = 1 := by simp [DisKinematics.M2_def]
+
+@[simp] lemma kWit4_Q2 : kWit4.Q2 gWit4 = 1 := by simp [DisKinematics.Q2]
+
+@[simp] lemma kWit4_xBj : kWit4.xBj gWit4 = 1 / 2 := by simp [DisKinematics.xBj]
+
+lemma kWit4_p_q : gWit4 kWit4.p kWit4.q = 1 := by simp
 
 end Witness
 

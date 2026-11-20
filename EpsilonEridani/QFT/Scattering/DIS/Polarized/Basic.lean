@@ -8,12 +8,14 @@ module
 public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 /-!
 
-# Polarized DIS Interfaces (Stage 10)
+# Polarized DIS Interfaces
 
 This module introduces polarized DIS interfaces: a structure-function container for
-`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, a decomposition
-schema, and endpoint conditions at `x = 1`. The moment identities usually called sum rules
-live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
+`g₁`, `g₂`, an antisymmetry assumption on the polarized hadronic tensor, the fixed-point
+condition `IsFixedByStructureFunctionSum` (equivalent to `A = 0` or `g₁ + g₂ = 1` by
+`isFixedByStructureFunctionSum_iff`; the covariant decomposition is
+`Polarized.IsG1G2Decomposition`), and endpoint conditions at `x = 1`. The moment identities
+usually called sum rules live in `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules`.
 
 -/
 
@@ -149,12 +151,10 @@ structure TensorAssumptions (A : Bilin V) : Prop where
 
 /-! ### `TensorAssumptions` is antisymmetry, and antisymmetry is `IsAlt`
 
-`TensorAssumptions` had no consumer anywhere in the repository when this lane started: no
-bridge produced one and no declaration took one. It is connected here rather than deleted,
-because the physics content — that the polarized hadronic tensor is antisymmetric — is worth
-naming, and because the connection is what shows the bundle is not a physics postulate at
-all: over `ℝ` it is exactly Mathlib's `LinearMap.BilinForm.IsAlt`, an algebraic condition
-with a standard consequence.
+`TensorAssumptions` names the physics content that the polarized hadronic tensor is
+antisymmetric. Over `ℝ` it is exactly Mathlib's `LinearMap.BilinForm.IsAlt`
+(`tensorAssumptions_iff_isAlt`), an algebraic condition rather than a physics postulate; the
+covariant decomposition `Polarized.fromG1G2` satisfies it (`Polarized.tensorAssumptions_fromG1G2`).
 -/
 
 /-- An antisymmetric bilinear form has vanishing diagonal. Over `ℝ` this needs no further
@@ -174,11 +174,24 @@ lemma tensorAssumptions_iff_isAlt {W : Type} [AddCommGroup W] [Module ℝ W]
   · intro h
     exact ⟨fun v w => (LinearMap.BilinForm.IsAlt.neg_eq h w v).symm⟩
 
-/-- Polarized decomposition schema. -/
-def IsPolarizedDecomposition
+/-- The fixed-point condition `A = (g₁ + g₂) • A` at every `(x, Q²)`. By
+`isFixedByStructureFunctionSum_iff` it holds exactly when `A = 0` or `g₁ + g₂ = 1` everywhere. -/
+def IsFixedByStructureFunctionSum
     (G : StructureFunctions)
     (A : Bilin V) : Prop :=
   ∀ x Q2, A = (G.g1 x Q2 + G.g2 x Q2) • A
+
+/-- The fixed-point condition `IsFixedByStructureFunctionSum` holds exactly when `A = 0` or
+`g₁ + g₂ = 1` everywhere. -/
+lemma isFixedByStructureFunctionSum_iff (G : StructureFunctions) (A : Bilin V) :
+    IsFixedByStructureFunctionSum V G A ↔ A = 0 ∨ ∀ x Q2, G.g1 x Q2 + G.g2 x Q2 = 1 := by
+  refine ⟨fun h => or_iff_not_imp_left.mpr fun hA x Q2 => ?_, ?_⟩
+  · have h0 : (G.g1 x Q2 + G.g2 x Q2 - 1) • A = 0 := by
+      rw [sub_smul (M := Bilin V), one_smul, ← h x Q2, sub_self]
+    exact sub_eq_zero.mp ((smul_eq_zero.mp h0).resolve_right hA)
+  · rintro (rfl | h) x Q2
+    · rw [smul_zero]
+    · rw [h x Q2, one_smul]
 
 /-- Endpoint conditions on the polarized structure functions at the elastic point `x = 1`.
 
