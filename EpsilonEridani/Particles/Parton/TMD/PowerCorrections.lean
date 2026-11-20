@@ -147,10 +147,8 @@ accurate to order `n`: the correction is genuinely subleading. -/
 lemma leadingPower_approximatesToOrder {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
     (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) :
     ApproximatesToOrder W Wlp n := by
-  have h' : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 h
   have hlow : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ n := h'.trans (isBigO_pow_of_le (Nat.le_succ n))
+      fun lam : ℝ => lam ^ n := approximatesToOrder_iff.1 (h.mono (Nat.le_succ n))
   have hcorr : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n :=
     (isBigO_refl (fun lam : ℝ => lam ^ n) (𝓝[>] 0)).const_mul_left c
   have hsum : (fun lam : ℝ => W lam - Wlp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n := by
@@ -168,15 +166,8 @@ lemma not_approximatesToOrder_succ_of_coeff_ne_zero {W Wlp : ℝ → ℝ} {n : �
     (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) (hc : c ≠ 0) :
     ¬ ApproximatesToOrder W Wlp (n + 1) := by
   intro hlp
-  have hlp' : (fun lam : ℝ => W lam - Wlp lam) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 hlp
-  have hzero : ApproximatesToOrder W (fun lam => Wlp lam + 0 * lam ^ n) (n + 1) := by
-    have hcast : (fun lam : ℝ => W lam - (Wlp lam + 0 * lam ^ n)) =O[𝓝[>] 0]
-        fun lam : ℝ => lam ^ (n + 1) := by
-      refine hlp'.congr_left ?_
-      intro lam
-      ring
-    exact approximatesToOrder_iff.2 hcast
+  have hzero : ApproximatesToOrder W (fun lam => Wlp lam + 0 * lam ^ n) (n + 1) :=
+    hlp.congr fun lam => by ring
   exact hc (coeff_unique h hzero)
 
 /-- The data of a TMD factorization formula at one order in the power counting: a

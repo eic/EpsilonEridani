@@ -5,7 +5,7 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import Mathlib.Analysis.Asymptotics.Lemmas
+public import EpsilonEridani.Mathematics.Analysis.Asymptotics.TruncatedExpansion
 
 /-!
 # Approximations to a given order in a small positive parameter
@@ -31,6 +31,7 @@ such expansions depends.
   order.
 * `ApproximatesToOrder.refl`, `ApproximatesToOrder.trans`: the relation to a fixed order is
   reflexive and transitive.
+* `ApproximatesToOrder.congr`: it depends on the two functions only through their difference.
 -/
 
 public section
@@ -54,17 +55,18 @@ theorem approximatesToOrder_iff {W Wapp : ℝ → ℝ} {n : ℕ} :
 lemma ApproximatesToOrder.refl (W : ℝ → ℝ) (n : ℕ) : ApproximatesToOrder W W n := by
   simpa only [ApproximatesToOrder, sub_self] using isBigO_zero (fun lam : ℝ => lam ^ n) (𝓝[>] 0)
 
-/-- Near `0⁺` a higher power of the small parameter is dominated by a lower one. -/
-lemma isBigO_pow_of_le {m n : ℕ} (hmn : m ≤ n) :
-    (fun lam : ℝ => lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ m :=
-  hmn.lt_or_eq.elim (fun h => (isLittleO_pow_pow h).isBigO.mono nhdsWithin_le_nhds)
-    fun h => h ▸ isBigO_refl _ _
-
 /-- An approximation accurate to order `n` is accurate to every lower order. -/
 lemma ApproximatesToOrder.mono {W Wapp : ℝ → ℝ} {m n : ℕ}
     (h : ApproximatesToOrder W Wapp n) (hmn : m ≤ n) :
     ApproximatesToOrder W Wapp m :=
-  Asymptotics.IsBigO.trans h (isBigO_pow_of_le hmn)
+  Asymptotics.IsBigO.trans h ((isBigO_pow_pow hmn).mono nhdsWithin_le_nhds)
+
+/-- An approximation accurate to order `n` stays so when the functions are changed without
+changing their difference. -/
+lemma ApproximatesToOrder.congr {W Wapp W' Wapp' : ℝ → ℝ} {n : ℕ}
+    (h : ApproximatesToOrder W Wapp n) (he : ∀ lam, W lam - Wapp lam = W' lam - Wapp' lam) :
+    ApproximatesToOrder W' Wapp' n :=
+  Asymptotics.IsBigO.congr_left h he
 
 /-- If `W₂` approximates `W₁` and `W₃` approximates `W₂` to order `n`, then `W₃` approximates `W₁`
 to order `n`. -/

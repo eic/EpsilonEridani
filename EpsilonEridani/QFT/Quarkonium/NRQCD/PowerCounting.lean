@@ -306,6 +306,12 @@ theorem mem_totalDegreePiece {k : ℕ} {o : FreeMonoid B} :
     o ∈ P.totalDegreePiece k ↔ totalDegree (compositeDeg P.deg o) = k := by
   simp +contextual [totalDegreePiece]
 
+/-- The operators of total degree `k`, as a set of composite operators. -/
+@[simp]
+theorem coe_totalDegreePiece (k : ℕ) :
+    (P.totalDegreePiece k : Set (FreeMonoid B)) = {o | totalDegree (compositeDeg P.deg o) = k} :=
+  Set.ext fun _ => P.mem_totalDegreePiece
+
 /-- The operators of total degree `k` are retained by every truncation at total degree `n ≥ k`. -/
 theorem totalDegreePiece_subset_truncation {k n : ℕ} (hk : k ≤ n) :
     P.totalDegreePiece k ⊆ P.truncation n := fun o ho => by

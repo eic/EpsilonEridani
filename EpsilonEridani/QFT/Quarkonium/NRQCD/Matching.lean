@@ -154,7 +154,7 @@ theorem approximatesToOrder_effectiveAmplitude {m n : ℕ} (hmn : m ≤ n) (M c 
         add_sub_cancel_left, smul_eq_mul, mul_comm (ε ^ _)]
   refine approximatesToOrder_iff.2 <|
     (IsBigO.fun_sum fun j _ => ?_).congr_left fun ε => (hdiff ε).symm
-  exact (isBigO_pow_of_le (Nat.le_add_right (m + 1) j)).const_mul_left _
+  exact ((isBigO_pow_pow (Nat.le_add_right (m + 1) j)).mono nhdsWithin_le_nhds).const_mul_left _
 
 /-- The effective-theory amplitude is additive in the coefficient assignment. -/
 theorem effectiveAmplitude_add_right (n : ℕ) (M c c' : FreeMonoid B → ℝ) (ε : ℝ) :
@@ -258,7 +258,7 @@ theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c)
     rw [← hdiff]
     ring
   · intro h a
-    refine approximatesToOrder_iff.2 <| (approximatesToOrder_iff.1 (hc a)).congr_left fun ε => ?_
+    refine (hc a).congr fun ε => ?_
     rw [← sub_eq_zero, sub_sub_sub_cancel_left, hdiff]
     exact sum_eq_zero fun k hk => by
       rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), Pi.zero_apply, smul_zero]

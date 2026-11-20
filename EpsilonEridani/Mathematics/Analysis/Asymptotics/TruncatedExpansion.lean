@@ -27,6 +27,8 @@ instead compares two expansions that both converge on a whole neighbourhood of t
   `o(x ^ n)` along `l` exactly when all its coefficients vanish.
 * `Asymptotics.isBigO_sum_range_pow_smul_pow_succ_iff`: the same with the remainder `O(x ^ (n + 1))`
   that a truncated expansion carries.
+* `Asymptotics.isBigO_pow_pow`: near `0` a higher power is dominated by a lower one, so a
+  truncated expansion to a higher order is also one to every lower order.
 -/
 
 public section
@@ -37,6 +39,10 @@ namespace Asymptotics
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {l : Filter 𝕜} [l.NeBot]
+
+/-- Near `0` a higher power is dominated by a lower one. -/
+theorem isBigO_pow_pow {m n : ℕ} (h : m ≤ n) : (fun x : 𝕜 => x ^ n) =O[𝓝 0] fun x => x ^ m :=
+  h.lt_or_eq.elim (fun h => (isLittleO_pow_pow h).isBigO) fun h => h ▸ isBigO_refl _ _
 
 /-- The constant term of a polynomial that is `o(x ^ n)` along a nontrivial filter on the
 neighbourhoods of `0` vanishes: it is the limit of the sum at `0`, while the sum tends to `0` along
