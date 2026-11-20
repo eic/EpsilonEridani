@@ -135,8 +135,9 @@ lemma mul_exp_neg_rapidity {x₀ x : ℝ} (hx₀ : 0 < x₀) (hx : 0 < x) :
 /-- Rapidity grows without bound towards small momentum fraction. -/
 lemma tendsto_rapidity_nhdsGT_zero {x₀ : ℝ} (hx₀ : x₀ ≠ 0) :
     Tendsto (rapidity x₀) (𝓝[>] 0) atTop := by
-  have h : Tendsto (fun x => Real.log x₀ - Real.log x) (𝓝[>] 0) atTop :=
-    tendsto_atTop_add_const_left _ _ (tendsto_neg_atBot_atTop.comp Real.tendsto_log_nhdsGT_zero)
+  have h : Tendsto (fun x => Real.log x₀ - Real.log x) (𝓝[>] 0) atTop := by
+    simp only [sub_eq_add_neg]
+    exact tendsto_atTop_add_const_left _ _ (tendsto_neg_atTop_iff.2 Real.tendsto_log_nhdsGT_zero)
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with x hx
   exact (rapidity_eq_log_sub_log hx₀ (ne_of_gt hx)).symm
