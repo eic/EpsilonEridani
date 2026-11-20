@@ -153,7 +153,7 @@ theorem legendre_eval_neg_one (n : ℕ) : (legendre n).eval (-1) = (-1) ^ n := b
 theorem add_two_mul_coeff_legendre_add_two (n k : ℕ) :
     (n + 2) * (legendre (n + 2)).coeff (k + 1) =
       (2 * n + 3) * (legendre (n + 1)).coeff k - (n + 1) * (legendre n).coeff (k + 1) := by
-  have h := congrArg (coeff · (k + 1)) (add_two_mul_legendre_add_two n)
+  have h := congrArg (·.coeff (k + 1)) (add_two_mul_legendre_add_two n)
   simpa [add_mul, sub_mul, mul_assoc, coeff_X_mul] using h
 
 /-- `Pₙ` has no coefficient above degree `n`. -/
