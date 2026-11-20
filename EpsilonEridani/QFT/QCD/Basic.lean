@@ -111,6 +111,25 @@ def beta1Of (G : Type) [HasColorInvariants G] (nF : ℝ) : ℝ :=
 def IsAsymptoticallyFree (cf : ColorFactors) : Prop :=
   0 < beta0 cf
 
+/-- The supersymmetric point of the color factors, `C_F = C_A = 2 n_f T_F`. There the quarks
+carry the color charge of the gluon, and the `n_f` flavors enter the gluon self-energy as a
+single Majorana fermion in the adjoint representation does, as the gluino of `𝒩 = 1`
+super-Yang–Mills theory does. It is not a point of QCD, where `C_F = 4/3` and `C_A = 3`. The
+splitting kernels obey an extra relation there, which serves as a check on their
+coefficients. -/
+structure ColorFactors.IsSupersymmetric (cf : ColorFactors) : Prop where
+  /-- The fundamental Casimir equals the adjoint one. -/
+  cF_eq_cA : cf.cF = cf.cA
+  /-- The flavors contribute `2 n_f T_F = C_A`, as one adjoint Majorana fermion. -/
+  two_mul_nF_mul_tF_eq_cA : 2 * cf.nF * cf.tF = cf.cA
+
+/-- At the supersymmetric point the one-loop beta-function coefficient is `β₀ = 3 C_A`, that of
+`𝒩 = 1` super-Yang–Mills theory. -/
+lemma ColorFactors.IsSupersymmetric.beta0_eq {cf : ColorFactors} (h : cf.IsSupersymmetric) :
+    beta0 cf = 3 * cf.cA := by
+  rw [beta0, ← h.two_mul_nF_mul_tF_eq_cA]
+  ring
+
 /-- One-loop beta-function coefficient of an `SU(Nc)` color-factor model:
 `β₀ = (11/3) Nc - (2/3) nF`. -/
 lemma beta0_suNColorFactors (nC nF : ℝ) :
