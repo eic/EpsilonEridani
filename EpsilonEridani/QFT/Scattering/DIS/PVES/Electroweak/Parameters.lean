@@ -16,7 +16,9 @@ public import Mathlib.Tactic.Ring
 This module defines electroweak parameter and effective neutral-current coupling
 interfaces used by parity-violating electron scattering (PVES) contracts, together with the
 left- and right-handed couplings `g_L = (g_V + g_A) / 2` and `g_R = (g_V - g_A) / 2` of a
-vector/axial coupling pair.
+vector/axial coupling pair. With the beam-helicity sign `helicitySign`, the `Z` coupling of a
+massless fermion of definite helicity is `FermionNeutralCurrentCouplings.helicityCoupling`,
+`g_V - λ g_A`, which is `2 g_R` for a right-handed and `2 g_L` for a left-handed fermion.
 
 It also defines the neutral-current couplings of an arbitrary fermion as functions of its quantum
 numbers: `chiralCoupling t3 q s2 = T³ - Q sin²θ_W` is the `Z` coupling of a chiral field, and
@@ -55,6 +57,19 @@ structure Parameters where
   mZ : ℝ
   /-- W-boson mass parameter. -/
   mW : ℝ
+
+/-- Helicity sign convention for right/left polarized beam labels. -/
+@[no_expose] def helicitySign (h : Bool) : ℝ :=
+  if h then 1 else -1
+
+@[simp] lemma helicitySign_true : helicitySign true = 1 := by simp [helicitySign]
+
+@[simp] lemma helicitySign_false : helicitySign false = -1 := by simp [helicitySign]
+
+@[simp] lemma helicitySign_sq (h : Bool) : helicitySign h ^ 2 = 1 := by
+  by_cases hh : h
+  · simp [helicitySign, hh]
+  · simp [helicitySign, hh]
 
 /-- Effective vector/axial neutral-current couplings for one fermion species. -/
 @[ext]
@@ -108,6 +123,28 @@ variable {c d} in
 /-- Two vector/axial coupling pairs are equal exactly when their chiral couplings agree. -/
 theorem ext_gL_gR_iff : c = d ↔ c.gL = d.gL ∧ c.gR = d.gR :=
   ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun h => ext_gL_gR h.1 h.2⟩
+
+/-- The `Z` coupling `g_V - λ g_A` of a massless fermion of helicity `λ = helicitySign h`: the
+vertex `γ^μ (g_V - g_A γ⁵)` acting on its single chiral component, whose chirality equals its
+helicity. It is `2 g_R` for `h = true` and `2 g_L` for `h = false`. -/
+@[no_expose] def helicityCoupling (h : Bool) : ℝ := c.gV - helicitySign h * c.gA
+
+/-- The helicity coupling unfolded. -/
+theorem helicityCoupling_def (h : Bool) :
+    c.helicityCoupling h = c.gV - helicitySign h * c.gA :=
+  (rfl)
+
+/-- A right-handed fermion couples to the `Z` with `2 g_R`. -/
+@[simp]
+theorem helicityCoupling_true : c.helicityCoupling true = 2 * c.gR := by
+  rw [helicityCoupling_def, gR_def, helicitySign_true]
+  ring
+
+/-- A left-handed fermion couples to the `Z` with `2 g_L`. -/
+@[simp]
+theorem helicityCoupling_false : c.helicityCoupling false = 2 * c.gL := by
+  rw [helicityCoupling_def, gL_def, helicitySign_false]
+  ring
 
 end FermionNeutralCurrentCouplings
 
