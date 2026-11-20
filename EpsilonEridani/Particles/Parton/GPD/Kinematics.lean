@@ -104,6 +104,11 @@ lemma tZero_zero_left (ξ : ℝ) : tZero 0 ξ = 0 := by
 lemma tZero_neg_left (M ξ : ℝ) : tZero (-M) ξ = tZero M ξ := by
   simp [tZero]
 
+/-- Away from `|ξ| = 1` the denominator `1 - ξ²` of the minimal momentum transfer is non-zero. -/
+lemma one_sub_sq_ne_zero {ξ : ℝ} (hξ : |ξ| ≠ 1) : 1 - ξ ^ 2 ≠ 0 :=
+  sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
+    ⟨fun h => hξ (by simp [h]), fun h => hξ (by simp [h])⟩))
+
 /-- The minimal momentum transfer is non-positive in the physical range `|ξ| < 1`. -/
 lemma tZero_nonpos (M : ℝ) {ξ : ℝ} (hξ : |ξ| < 1) : tZero M ξ ≤ 0 := by
   have h : 0 < 1 - ξ ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one ξ).mpr hξ)
