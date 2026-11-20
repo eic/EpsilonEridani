@@ -319,10 +319,15 @@ theorem norm_elasticSMatrix_eq_one_iff_exists_real_phaseShiftAmplitude {ρ : ℝ
     -- `S = e^{iθ}`, so `δ = θ / 2`.
     refine ⟨θ / 2, elasticSMatrix_injective hρ ?_⟩
     rw [elasticSMatrix_phaseShiftAmplitude hρ, ← hθ]
+    congr 1
     push_cast
-    ring_nf
+    ring
   · rintro ⟨δ, rfl⟩
-    exact ⟨2 * δ, by rw [elasticSMatrix_phaseShiftAmplitude hρ]; push_cast; ring_nf⟩
+    refine ⟨2 * δ, ?_⟩
+    rw [elasticSMatrix_phaseShiftAmplitude hρ]
+    congr 1
+    push_cast
+    ring
 
 /-- **The phase shift is determined modulo `π`.** Two phase shifts give the same amplitude iff they
 differ by an integer multiple of `π`. -/
