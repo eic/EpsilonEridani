@@ -291,7 +291,7 @@ theorem truncation_zero : P.truncation 0 = {1} := by
   refine ⟨fun h => ?_, fun h => by simp [h]⟩
   have := length_le_totalDegree_compositeDeg P.deg P.totalDegree_pos o
   rw [h, nonpos_iff_eq_zero, List.length_eq_zero_iff] at this
-  exact FreeMonoid.ext this
+  exact FreeMonoid.ext (this.trans FreeMonoid.toList_one.symm)
 
 end PowerCounting
 
