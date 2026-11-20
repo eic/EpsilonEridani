@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Physlib.Mathematics.KroneckerDelta.Basic
 public import EpsilonEridani.Mathematics.MeasureTheory.UnitTriangle
 public import EpsilonEridani.Particles.Parton.PDF.ChargeConjugation
+public import EpsilonEridani.Particles.Parton.PDF.Model
 
 /-!
 # The sum rules of double parton distributions and their consistency
@@ -46,7 +47,7 @@ triangle in two ways, and the comparison gives
 `N i * ∑ₐ ∫₀¹ x fₐ(x) dx = ∫₀¹ (f_{q_i} - f_{qbar_i})(x) dx`,
 
 the main theorem `mul_sum_mellinMoment_one_eq_valenceNumber`. So the constants `N i` of the
-number sum rule are the valence numbers of `f` exactly when `f` carries the full momentum of the
+number sum rule are the valence numbers of `f` as soon as `f` carries the full momentum of the
 hadron, and conversely the momentum sum rule of the single-parton densities follows from the two
 families as soon as one flavour has a nonzero valence number.
 
@@ -55,15 +56,18 @@ families as soon as one flavour has a nonzero valence number.
 * `DoubleParton.NumberSumRule F f Q2 N`: the number sum rules of `F` with valence numbers `N`.
 * `DoubleParton.MomentumSumRule F f Q2`: the momentum sum rules of `F`.
 * `DoubleParton.threeQuarkPdf`, `DoubleParton.threeQuarkDpd`: the single and double parton
-  distributions of three quarks of one flavour with uniformly distributed momentum fractions.
+  distributions of three quarks of one flavour with uniformly distributed momentum fractions. The
+  single-parton densities are the shape `1 - x` of `PDF.modelPdf`, rescaled by
+  `DoubleParton.threeQuarkWeight` with `PDF.weight`.
 
 ## Main statements
 
 * `DoubleParton.mul_sum_mellinMoment_one_eq_valenceNumber`: the consistency relation above.
 * `DoubleParton.sum_mellinMoment_one_eq_one`: the two families and a single-parton valence sum
   rule with a nonzero valence number imply the single-parton momentum sum rule.
-* `DoubleParton.valenceNumber_eq`: the two families and the single-parton momentum sum rule imply
-  that the constants of the number sum rule are the valence numbers of the single-parton densities.
+* `DoubleParton.valenceNumber_eq_of_sum_mellinMoment_one_eq_one`: the two families and the
+  single-parton momentum sum rule imply that the constants of the number sum rule are the valence
+  numbers of the single-parton densities.
 * `DoubleParton.numberSumRule_threeQuarkDpd`, `DoubleParton.momentumSumRule_threeQuarkDpd`: the
   three-quark model satisfies both families, with three valence quarks.
 
@@ -122,7 +126,7 @@ triangle:
 `∫_{triangle} x₂ (F_{q_i a} - F_{qbar_i a})(x₁, x₂)
 = (N i + δ_{a qbar_i} - δ_{a q_i}) ∫₀¹ x f_a(x)`.
 -/
-theorem setIntegral_unitTriangle_mul_sub_eq [DecidableEq Flavor]
+theorem setIntegral_unitTriangle_snd_mul_sub_eq_mul_mellinMoment [DecidableEq Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
     {N : Flavor → ℝ} (hN : NumberSumRule F f Q2 N) (i : Flavor) (a : Species Flavor)
     (hF : IntegrableOn (fun p : ℝ × ℝ => p.2 * (F (.quark i) a p.1 p.2 -
@@ -130,29 +134,22 @@ theorem setIntegral_unitTriangle_mul_sub_eq [DecidableEq Flavor]
     ∫ p in unitTriangle, p.2 * (F (.quark i) a p.1 p.2 - F (.antiquark i) a p.1 p.2) =
       (N i + δ[a, .antiquark i] - δ[a, .quark i]) * mellinMoment f 1 a Q2 := by
   rw [setIntegral_unitTriangle hF, mellinMoment, ← integral_const_mul,
-    ← setIntegral_congr_set (Ioo_ae_eq_Icc (μ := volume)),
-    ← setIntegral_congr_set (Ioo_ae_eq_Icc (μ := volume))]
+    integral_Icc_eq_integral_Ioo, integral_Icc_eq_integral_Ioo]
   refine setIntegral_congr_fun measurableSet_Ioo fun y hy => ?_
-  dsimp only
-  rw [integral_const_mul, integral_Icc_eq_integral_Ioc,
-    ← intervalIntegral.integral_of_le (by linarith [hy.2]), hN i a y hy.1 hy.2]
+  rw [intervalIntegral.integral_const_mul, hN i a y hy.1 hy.2]
   ring
 
 /-- The momentum sum rule of the species `a`, integrated over the unit triangle:
 `∑_b ∫_{triangle} x₁ F_{b a}(x₁, x₂) = ∫₀¹ (1 - x) f_a(x) dx`. -/
-theorem sum_setIntegral_unitTriangle_eq [Fintype Flavor]
+theorem sum_setIntegral_unitTriangle_fst_mul_eq_integral_one_sub_mul [Fintype Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
     (hM : MomentumSumRule F f Q2) (a : Species Flavor)
     (hF : ∀ b, IntegrableOn (fun p : ℝ × ℝ => p.1 * F b a p.1 p.2) unitTriangle) :
     ∑ b, ∫ p in unitTriangle, p.1 * F b a p.1 p.2 = ∫ x in Icc (0 : ℝ) 1, (1 - x) * f a x Q2 := by
   simp only [setIntegral_unitTriangle (hF _)]
-  rw [← integral_finsetSum _ fun b _ => integrableOn_integral_unitTriangle (hF b),
-    ← setIntegral_congr_set (Ioo_ae_eq_Icc (μ := volume)),
-    ← setIntegral_congr_set (Ioo_ae_eq_Icc (μ := volume))]
-  refine setIntegral_congr_fun measurableSet_Ioo fun y hy => ?_
-  simp only [integral_Icc_eq_integral_Ioc,
-    ← intervalIntegral.integral_of_le (show (0 : ℝ) ≤ 1 - y by linarith [hy.2])]
-  exact hM a y hy.1 hy.2
+  rw [← integral_finsetSum _ fun b _ => integrableOn_Icc_integral_unitTriangle (hF b),
+    integral_Icc_eq_integral_Ioo, integral_Icc_eq_integral_Ioo]
+  exact setIntegral_congr_fun measurableSet_Ioo fun y hy => hM a y hy.1 hy.2
 
 /-! ### The consistency of the two families -/
 
@@ -187,7 +184,7 @@ theorem mul_sum_mellinMoment_one_eq_valenceNumber [Fintype Flavor] [DecidableEq 
       ∑ a, (N i + δ[a, .antiquark i] - δ[a, .quark i]) * mellinMoment f 1 a Q2 := by
     refine Finset.sum_congr rfl fun a _ => ?_
     rw [← setIntegral_unitTriangle_comp_swap, hswap]
-    refine setIntegral_unitTriangle_mul_sub_eq hN i a ?_
+    refine setIntegral_unitTriangle_snd_mul_sub_eq_mul_mellinMoment hN i a ?_
     rw [← hswap]
     exact integrableOn_unitTriangle_comp_swap_iff.2 (hGint a)
   -- Second evaluation: through the momentum sum rules of `q_i` and `qbar_i`.
@@ -195,24 +192,18 @@ theorem mul_sum_mellinMoment_one_eq_valenceNumber [Fintype Flavor] [DecidableEq 
       (∫ x in Icc (0 : ℝ) 1, (1 - x) * f (.quark i) x Q2) -
         ∫ x in Icc (0 : ℝ) 1, (1 - x) * f (.antiquark i) x Q2 := by
     simp only [hG, integral_sub (hFq _) (hFqbar _), Finset.sum_sub_distrib]
-    rw [sum_setIntegral_unitTriangle_eq hM _ hFq, sum_setIntegral_unitTriangle_eq hM _ hFqbar]
-  -- `∫₀¹ (1 - x) f = ∫₀¹ f - ∫₀¹ x f`.
-  have hsplit {g : ℝ → ℝ} (hg : IntegrableOn g (Icc 0 1)) :
-      ∫ x in Icc (0 : ℝ) 1, (1 - x) * g x = (∫ x in Icc (0 : ℝ) 1, x ^ 0 * g x) -
-        ∫ x in Icc (0 : ℝ) 1, x ^ 1 * g x := by
-    have hxg : IntegrableOn (fun x => x * g x) (Icc 0 1) :=
-      hg.continuousOn_mul continuousOn_id isCompact_Icc
-    simp only [sub_mul, one_mul, pow_zero, pow_one]
-    exact integral_sub hg hxg
+    rw [sum_setIntegral_unitTriangle_fst_mul_eq_integral_one_sub_mul hM _ hFq,
+      sum_setIntegral_unitTriangle_fst_mul_eq_integral_one_sub_mul hM _ hFqbar]
   have hdelta : ∑ a, (N i + δ[a, .antiquark i] - δ[a, .quark i]) * mellinMoment f 1 a Q2 =
       N i * ∑ a, mellinMoment f 1 a Q2 + mellinMoment f 1 (.antiquark i) Q2 -
         mellinMoment f 1 (.quark i) Q2 := by
-    simp [kroneckerDelta, add_mul, sub_mul, Finset.sum_add_distrib, Finset.sum_sub_distrib,
-      Finset.mul_sum]
+    simp only [add_mul, sub_mul, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+      ← Finset.mul_sum, ← nsmul_eq_mul, KroneckerDelta.symm _ (Species.antiquark i),
+      KroneckerDelta.symm _ (Species.quark i), KroneckerDelta.sum_smul]
   have h := hnumber.symm.trans hmomentum
-  rw [hdelta, hsplit hfq, hsplit hfqbar] at h
+  rw [hdelta, ← mellinMoment_zero_sub_mellinMoment_one hfq,
+    ← mellinMoment_zero_sub_mellinMoment_one hfqbar] at h
   rw [valenceNumber_def]
-  simp only [mellinMoment] at h ⊢
   linarith
 
 /-- **The momentum sum rule from the double-parton sum rules.** If `F` satisfies the number and
@@ -237,7 +228,7 @@ theorem sum_mellinMoment_one_eq_one [Fintype Flavor] [DecidableEq Flavor]
 and momentum sum rules, and the single-parton densities satisfy the momentum sum rule
 `∑ₐ ∫₀¹ x fₐ(x) dx = 1`, then the constant `N i` of the number sum rule is the valence number
 `∫₀¹ (f_{q_i} - f_{qbar_i})` of the single-parton densities. -/
-theorem valenceNumber_eq [Fintype Flavor] [DecidableEq Flavor]
+theorem valenceNumber_eq_of_sum_mellinMoment_one_eq_one [Fintype Flavor] [DecidableEq Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
     {N : Flavor → ℝ} (hN : NumberSumRule F f Q2 N) (hM : MomentumSumRule F f Q2)
     (hsymm : ∀ a b x₁ x₂, F b a x₂ x₁ = F a b x₁ x₂) {i : Flavor}
@@ -259,11 +250,41 @@ two of the quarks then has the density `2` on the unit triangle, so the density 
 distinct quarks is `3 · 2 · 2 = 12` there, and a single quark has the density `2 (1 - x)` on
 `[0, 1]`, so the quark density is `3 · 2 (1 - x) = 6 (1 - x)`. -/
 
+/-- The weight of each parton species in the three-quark model: `6` on the quark, and zero on the
+antiquark and the gluon. -/
+def threeQuarkWeight : Species Unit → ℝ
+  | .quark _ => 6
+  | _ => 0
+
+@[simp]
+theorem threeQuarkWeight_quark (i : Unit) : threeQuarkWeight (.quark i) = 6 :=
+  (rfl)
+
+@[simp]
+theorem threeQuarkWeight_antiquark (i : Unit) : threeQuarkWeight (.antiquark i) = 0 :=
+  (rfl)
+
+@[simp]
+theorem threeQuarkWeight_gluon : threeQuarkWeight .gluon = 0 :=
+  (rfl)
+
+theorem threeQuarkWeight_nonneg (s : Species Unit) : 0 ≤ threeQuarkWeight s := by
+  cases s with
+  | quark i => rw [threeQuarkWeight_quark]; norm_num
+  | antiquark i => rw [threeQuarkWeight_antiquark]
+  | gluon => rw [threeQuarkWeight_gluon]
+
+/-- The weights of the three-quark model sum to six over all species. -/
+theorem sum_threeQuarkWeight : ∑ s, threeQuarkWeight s = 6 := by
+  rw [Species.sum_univ, Fintype.sum_unique, Fintype.sum_unique, threeQuarkWeight_quark,
+    threeQuarkWeight_antiquark, threeQuarkWeight_gluon]
+  norm_num
+
 /-- The single-parton densities of the three-quark model: `f_q(x) = 6 (1 - x)` on `[0, 1]` for the
-quark, and zero for the antiquark and the gluon, at every scale. -/
-def threeQuarkPdf : Pdf (Species Unit)
-  | .quark _, x, _ => (Icc (0 : ℝ) 1).indicator (fun x => 6 * (1 - x)) x
-  | _, _, _ => 0
+quark, and zero for the antiquark and the gluon, at every scale. It is the shape `1 - x` of
+`PDF.modelPdf`, rescaled by `threeQuarkWeight`. -/
+def threeQuarkPdf : Pdf (Species Unit) :=
+  weight threeQuarkWeight (modelPdf (Species Unit) 0 1)
 
 /-- The double parton distribution of the three-quark model: `F_{qq} = 12` on the unit triangle,
 and zero for every other pair of species. -/
@@ -273,16 +294,29 @@ def threeQuarkDpd : Species Unit → Species Unit → ℝ → ℝ → ℝ
 
 @[simp]
 theorem threeQuarkPdf_quark (i : Unit) (x Q2 : ℝ) :
-    threeQuarkPdf (.quark i) x Q2 = (Icc (0 : ℝ) 1).indicator (fun x => 6 * (1 - x)) x :=
-  (rfl)
+    threeQuarkPdf (.quark i) x Q2 = (Icc (0 : ℝ) 1).indicator (fun x => 6 * (1 - x)) x := by
+  rw [threeQuarkPdf, weight_apply, modelPdf_apply, threeQuarkWeight_quark]
+  by_cases hx : x ∈ Icc (0 : ℝ) 1
+  · rw [indicator_of_mem hx, indicator_of_mem hx, betaShape, pow_zero, one_mul, pow_one]
+  · rw [indicator_of_notMem hx, indicator_of_notMem hx, mul_zero]
 
 @[simp]
-theorem threeQuarkPdf_antiquark (i : Unit) (x Q2 : ℝ) : threeQuarkPdf (.antiquark i) x Q2 = 0 :=
-  (rfl)
+theorem threeQuarkPdf_antiquark (i : Unit) (x Q2 : ℝ) : threeQuarkPdf (.antiquark i) x Q2 = 0 := by
+  rw [threeQuarkPdf, weight_apply, threeQuarkWeight_antiquark, zero_mul]
 
 @[simp]
-theorem threeQuarkPdf_gluon (x Q2 : ℝ) : threeQuarkPdf .gluon x Q2 = 0 :=
-  (rfl)
+theorem threeQuarkPdf_gluon (x Q2 : ℝ) : threeQuarkPdf .gluon x Q2 = 0 := by
+  rw [threeQuarkPdf, weight_apply, threeQuarkWeight_gluon, zero_mul]
+
+/-- The single-parton densities of the three-quark model satisfy the density assumptions
+`PDF.Assumptions`: they are a nonnegative weighting of the model `PDF.modelPdf`. -/
+theorem assumptions_threeQuarkPdf : Assumptions threeQuarkPdf :=
+  (assumptions_modelPdf (Species Unit) 0 1).weight threeQuarkWeight_nonneg
+
+/-- The sum-rule bundle `PDF.SumRuleAssumptions` of the three-quark model, with the valence
+targets `3`, `0` and `0` of the quark, the antiquark and the gluon. -/
+def sumRuleAssumptionsThreeQuarkPdf : SumRuleAssumptions threeQuarkPdf :=
+  sumRuleAssumptionsWeightModelPdfZeroOne sum_threeQuarkWeight
 
 @[simp]
 theorem threeQuarkDpd_quark_quark (i j : Unit) (x₁ x₂ : ℝ) :
@@ -310,7 +344,7 @@ theorem threeQuarkDpd_gluon (b : Species Unit) (x₁ x₂ : ℝ) : threeQuarkDpd
 
 /-- The double parton distribution of the three-quark model is symmetric under exchange of the two
 partons. -/
-theorem threeQuarkDpd_swap (a b : Species Unit) (x₁ x₂ : ℝ) :
+theorem threeQuarkDpd_comm (a b : Species Unit) (x₁ x₂ : ℝ) :
     threeQuarkDpd b a x₂ x₁ = threeQuarkDpd a b x₁ x₂ := by
   have h : (x₂, x₁) ∈ unitTriangle ↔ (x₁, x₂) ∈ unitTriangle :=
     swap_mem_unitTriangle (p := (x₁, x₂))
@@ -342,8 +376,9 @@ theorem numberSumRule_threeQuarkDpd (Q2 : ℝ) :
       intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun x hx => by
         rw [threeQuarkDpd_quark_quark_of_mem hy0 hy1.le hx]
         simp)
-    rw [h]
-    simp [indicator_of_mem hy]
+    rw [h, intervalIntegral.integral_const, smul_eq_mul, sub_zero, threeQuarkPdf_quark,
+      indicator_of_mem hy, eq_one_of_same, eq_zero_of_ne (by simp)]
+    push_cast
     ring
   | antiquark => simp
   | gluon => simp
@@ -361,8 +396,9 @@ theorem momentumSumRule_threeQuarkDpd (Q2 : ℝ) :
       intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun x hx => by
         rw [threeQuarkDpd_quark_quark_of_mem hy0 hy1.le hx])
     simp only [Species.sum_univ, Finset.univ_unique, Finset.sum_singleton, PUnit.default_eq_unit,
-      h]
-    simp [indicator_of_mem hy, intervalIntegral.integral_mul_const]
+      h, threeQuarkDpd_antiquark, threeQuarkDpd_gluon, mul_zero, intervalIntegral.integral_zero,
+      add_zero, intervalIntegral.integral_mul_const, integral_id, threeQuarkPdf_quark,
+      indicator_of_mem hy]
     ring
   | antiquark => simp [Species.sum_univ]
   | gluon => simp [Species.sum_univ]
@@ -382,32 +418,25 @@ theorem integrableOn_mul_threeQuarkDpd (a b : Species Unit) :
 /-- The single-parton densities of the three-quark model are integrable on `[0, 1]`. -/
 theorem integrableOn_threeQuarkPdf (a : Species Unit) (Q2 : ℝ) :
     IntegrableOn (fun x => threeQuarkPdf a x Q2) (Icc 0 1) := by
-  cases a <;> simp only [threeQuarkPdf_quark, threeQuarkPdf_antiquark, threeQuarkPdf_gluon,
-    integrableOn_zero]
-  have hc : Continuous fun x : ℝ => 6 * (1 - x) := by fun_prop
-  refine (hc.continuousOn.integrableOn_compact isCompact_Icc).congr_fun (fun x hx => ?_)
-    measurableSet_Icc
-  simp [indicator_of_mem hx]
+  simpa only [pow_zero, one_mul] using
+    (assumptions_threeQuarkPdf.momentIntegrable 0 a Q2).integrableOn
 
 /-- The quark of the three-quark model has the valence number `3`. -/
 theorem valenceNumber_threeQuarkPdf (Q2 : ℝ) : valenceNumber threeQuarkPdf () Q2 = 3 := by
-  have h : ∫ x in Icc (0 : ℝ) 1, x ^ 0 * threeQuarkPdf (.quark ()) x Q2 =
-      ∫ x in (0 : ℝ)..1, 6 * (1 - x) := by
-    rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc]
-    exact setIntegral_congr_fun measurableSet_Icc fun x hx => by
-      simp [indicator_of_mem hx]
-  rw [valenceNumber_def, mellinMoment, h]
-  simp [mellinMoment, intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_sub intervalIntegrable_const intervalIntegral.intervalIntegrable_id]
+  rw [valenceNumber_def, threeQuarkPdf, mellinMoment_weight, mellinMoment_weight,
+    mellinMoment_modelPdf_zero_one, mellinMoment_modelPdf_zero_one, threeQuarkWeight_quark,
+    threeQuarkWeight_antiquark]
   norm_num
 
 /-- **The three-quark model carries the full momentum of the hadron**, as
 `sum_mellinMoment_one_eq_one` predicts from its two families of double-parton sum rules and the
-valence number `3` of its quark. -/
+valence number `3` of its quark. This is a cross-check of the double-parton route: the same
+statement follows directly from the single-parton densities, whose weights sum to six, by
+`PDF.sum_mellinMoment_one_weight_modelPdf_zero_one`. -/
 theorem sum_mellinMoment_one_threeQuarkPdf (Q2 : ℝ) :
     ∑ a, mellinMoment threeQuarkPdf 1 a Q2 = 1 :=
   sum_mellinMoment_one_eq_one (numberSumRule_threeQuarkDpd Q2) (momentumSumRule_threeQuarkDpd Q2)
-    threeQuarkDpd_swap (i := ()) (fun a => integrableOn_mul_threeQuarkDpd a _)
+    threeQuarkDpd_comm (i := ()) (fun a => integrableOn_mul_threeQuarkDpd a _)
     (fun a => integrableOn_mul_threeQuarkDpd a _) (integrableOn_threeQuarkPdf _ Q2)
     (integrableOn_threeQuarkPdf _ Q2) (valenceNumber_threeQuarkPdf Q2) three_ne_zero
 

@@ -69,6 +69,17 @@ lemma mellinMoment_integrable
   MeasureTheory.Integrable (fun x : ℝ => x ^ n * f i x Q2) :=
   h.momentIntegrable n i Q2
 
+/-- The zeroth minus the first Mellin moment is the integral of `(1 - x) f(x)` over `[0, 1]`:
+`∫₀¹ f - ∫₀¹ x f = ∫₀¹ (1 - x) f`. -/
+lemma mellinMoment_zero_sub_mellinMoment_one {f : Pdf Flavor} {i : Flavor} {Q2 : ℝ}
+    (h : MeasureTheory.IntegrableOn (fun x => f i x Q2) (Set.Icc 0 1)) :
+    mellinMoment f 0 i Q2 - mellinMoment f 1 i Q2 =
+      ∫ x in Set.Icc (0 : ℝ) 1, (1 - x) * f i x Q2 := by
+  have hx : MeasureTheory.IntegrableOn (fun x => x * f i x Q2) (Set.Icc 0 1) :=
+    h.continuousOn_mul continuousOn_id isCompact_Icc
+  simp only [mellinMoment, pow_zero, one_mul, pow_one, sub_mul]
+  exact (MeasureTheory.integral_sub h hx).symm
+
 /-! ### The analytic/physical split of `Assumptions`
 
 `Assumptions` bundles two kinds of hypothesis, and the difference decides what can be
