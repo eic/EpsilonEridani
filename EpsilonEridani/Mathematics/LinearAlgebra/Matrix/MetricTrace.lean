@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wouter Deconinck
+Authors: Wouter Deconinck, The EpsilonEridani contributors
 -/
 module
 
@@ -28,7 +28,10 @@ idempotents, whose ranges are, in a dimension invertible in the scalars and for 
 metric, the multiples of `g` and the traceless tensors. Both commute with every transformation
 preserving the metric, and preserve symmetry when `g` is symmetric. In relativistic field theory
 this is the split of an energy-momentum tensor into the part that carries the trace anomaly and
-the traceless part that carries the twist-two operators.
+the traceless part that carries the twist-two operators. The projector algebra generalizes the
+colour singlet and octet projectors `colorSingletProj` and `colorOctetProj` of
+`EpsilonEridani.QFT.Quarkonium.NRQCD.ColorDecomposition` from the metric `1` to an arbitrary
+metric `g`.
 
 The conventions for tensors with lower indices, the metric `g` and its inverse are those of
 `EpsilonEridani.Mathematics.LinearAlgebra.Matrix.Isometry`: `g⁻¹` is the inverse of
@@ -52,7 +55,8 @@ by `T ↦ Λᵀ * T * Λ` and preserves `g` when `Λᵀ * g * Λ = g`.
   projections, `Matrix.tracePart_tracelessPart`, `Matrix.tracelessPart_tracePart` say they
   annihilate each other's ranges, and
   `Matrix.completeOrthogonalIdempotents_tracePart_tracelessPart` bundles this;
-  `Matrix.trace_tracePart` and `Matrix.trace_tracelessPart` give their ranks `1` and `D² - 1`.
+  `Matrix.trace_tracePart` and `Matrix.trace_tracelessPart` give their traces as endomorphisms,
+  `1` and `D² - 1`.
 * `Matrix.tracePart_eq_zero_iff` and `Matrix.tracelessPart_eq_zero_iff`: the kernels are the
   traceless tensors and the multiples of `g`; `Matrix.tracePart_eq_self_iff` and
   `Matrix.tracelessPart_eq_self_iff` say the ranges are the multiples of `g` and the traceless
@@ -193,6 +197,16 @@ theorem isIdempotentElem_tracePart : IsIdempotentElem (tracePart g) :=
 theorem isIdempotentElem_tracelessPart : IsIdempotentElem (tracelessPart g) :=
   isIdempotentElem_tracePart.one_sub
 
+/-- The trace part squares to itself: it is idempotent at the composition level. -/
+@[simp]
+theorem tracePart_mul_self : tracePart g * tracePart g = tracePart g :=
+  isIdempotentElem_tracePart.eq
+
+/-- The traceless part squares to itself: it is idempotent at the composition level. -/
+@[simp]
+theorem tracelessPart_mul_self : tracelessPart g * tracelessPart g = tracelessPart g :=
+  isIdempotentElem_tracelessPart.eq
+
 /-- The trace part annihilates the range of the traceless part. -/
 @[simp]
 theorem tracePart_mul_tracelessPart : tracePart g * tracelessPart g = 0 := by
@@ -219,8 +233,8 @@ theorem trace_tracePart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
     trace_one, smul_eq_mul]
   field_simp
 
-/-- The traceless part projects onto the traceless tensors, of dimension `D² - 1`: its trace as
-an endomorphism is `D² - 1`. -/
+/-- The traceless part projects onto the traceless tensors: its trace as an endomorphism is
+`D² - 1`. -/
 theorem trace_tracelessPart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
     LinearMap.trace K (Matrix n n K) (tracelessPart g) = (Fintype.card n : K) ^ 2 - 1 := by
   rw [tracelessPart_eq_one_sub, map_sub, trace_tracePart hg hn, LinearMap.trace_one,

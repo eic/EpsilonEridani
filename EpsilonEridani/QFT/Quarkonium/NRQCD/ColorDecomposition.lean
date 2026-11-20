@@ -155,14 +155,14 @@ theorem isIdempotentElem_colorOctetProj : IsIdempotentElem (colorOctetProj N) :=
 /-- The singlet projector squares to itself: `P₁ P₁ = P₁`. -/
 @[simp]
 theorem colorSingletProj_mul_self :
-    colorSingletProj N * colorSingletProj N = colorSingletProj N :=
-  isIdempotentElem_colorSingletProj.eq
+    colorSingletProj N * colorSingletProj N = colorSingletProj N := by
+  rw [colorSingletProj_eq_tracePart, tracePart_mul_self]
 
 /-- The octet projector squares to itself: `P₈ P₈ = P₈`. -/
 @[simp]
 theorem colorOctetProj_mul_self :
-    colorOctetProj N * colorOctetProj N = colorOctetProj N :=
-  isIdempotentElem_colorOctetProj.eq
+    colorOctetProj N * colorOctetProj N = colorOctetProj N := by
+  rw [colorOctetProj_eq_tracelessPart, tracelessPart_mul_self]
 
 /-- The singlet and octet channels are orthogonal. -/
 @[simp]

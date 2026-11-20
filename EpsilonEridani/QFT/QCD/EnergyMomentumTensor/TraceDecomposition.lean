@@ -30,20 +30,18 @@ part plus the whole gluon part.
 ## Main statements
 
 * `tracePart_total`, `tracelessPart_total`: the projections commute with the quark-gluon split.
-* `tracePart_gluonPart`, `tracelessPart_gluonPart`: the trace part
-  `(D / 4 - 1) / D · g_{μν} F^a_{αβ} F^{a αβ}` of the gluon part in dimension `D`, and the
-  remaining traceless part. The trace part vanishes in four dimensions or when
-  `F^a_{αβ} F^{a αβ} = 0` (`tracePart_gluonPart_eq_zero`), so that the gluon part is then its own
-  traceless part (`tracelessPart_gluonPart_eq_self`).
-* `tracePart_quarkPart`, `tracelessPart_quarkPart`: the trace part
-  `(1/D) g_{μν} Re (ψ‾ i γ^α D_α ψ)` of the quark part and the remaining traceless part. The trace
-  part on solutions of the Dirac equation is `(1/D) g_{μν} Re (ψ‾ M ψ)`
-  (`tracePart_quarkPart_of_diracEq`); the traceless part of the quark part is then the quark part
-  minus this (`tracelessPart_quarkPart_of_diracEq`).
-* `tracePart_total_of_diracEq` and `tracelessPart_total_of_trace_gluonPart_eq_zero`: the trace
-  part of the total in four dimensions is the classical mass term, and, whenever the gluon part is
-  traceless, the traceless part of the total is the traceless part of the quark part plus the
-  gluon part.
+* `tracePart_gluonPart`: the trace part `(D / 4 - 1) / D · g_{μν} F^a_{αβ} F^{a αβ}` of the gluon
+  part in dimension `D`. It vanishes in four dimensions or when `F^a_{αβ} F^{a αβ} = 0`
+  (`tracePart_gluonPart_eq_zero`), so that the gluon part is then its own traceless part
+  (`tracelessPart_gluonPart_eq_self`).
+* `tracePart_quarkPart`: the trace part `(1/D) g_{μν} Re (ψ‾ i γ^α D_α ψ)` of the quark part in
+  dimension `D`; on solutions of the Dirac equation it is `(1/D) g_{μν} Re (ψ‾ M ψ)`
+  (`tracePart_quarkPart_of_diracEq`).
+* `tracePart_total_of_trace_gluonPart_eq_zero`, `tracelessPart_total_of_trace_gluonPart_eq_zero`:
+  whenever the gluon part is traceless, the traceless part of the total is the traceless part of
+  the quark part plus the gluon part, and, on solutions of the Dirac equation, the trace part of
+  the total is the classical mass term `(1/D) g_{μν} Re (ψ‾ M ψ)`. In four dimensions these are
+  `tracePart_total_of_diracEq` and `tracelessPart_total_of_card_eq_four`.
 
 ## References
 
@@ -86,13 +84,6 @@ theorem tracePart_gluonPart (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
       ((Fintype.card n / 4 - 1) * gluonFieldSq g F / Fintype.card n) • g := by
   rw [tracePart_apply, trace_gluonPart]
 
-/-- The traceless part `T^g_{μν} - (D / 4 - 1) / D · g_{μν} F^a_{αβ} F^{a αβ}` of the gluon part in
-spacetime dimension `D = card n`. -/
-theorem tracelessPart_gluonPart (g : Matrix n n ℝ) (F : ι → Matrix n n ℝ) :
-    tracelessPart g (gluonPart g F) =
-      gluonPart g F - ((Fintype.card n / 4 - 1) * gluonFieldSq g F / Fintype.card n) • g := by
-  rw [tracelessPart_apply, tracePart_gluonPart]
-
 /-- The gluon part has no trace part in four spacetime dimensions, or when
 `F^a_{αβ} F^{a αβ} = 0`. -/
 theorem tracePart_gluonPart_eq_zero (g : Matrix n n ℝ) {F : ι → Matrix n n ℝ}
@@ -114,14 +105,6 @@ theorem tracePart_quarkPart (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermit
       ((star ψ ⬝ᵥ β *ᵥ diracOpApply g γ Dψ).re / Fintype.card n) • g := by
   rw [tracePart_apply, trace_quarkPart hg hγ]
 
-/-- The traceless part `T^q_{μν} - (1/D) g_{μν} Re (ψ‾ i γ^α D_α ψ)` of the quark part in spacetime
-dimension `D = card n`. -/
-theorem tracelessPart_quarkPart (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian) (ψ : m → ℂ)
-    (Dψ : n → m → ℂ) :
-    tracelessPart g (quarkPart β γ ψ Dψ) =
-      quarkPart β γ ψ Dψ - ((star ψ ⬝ᵥ β *ᵥ diracOpApply g γ Dψ).re / Fintype.card n) • g := by
-  rw [tracelessPart_apply, tracePart_quarkPart hg hγ]
-
 /-- On solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the trace part of the quark part is
 `(1/D) g_{μν} Re (ψ‾ M ψ)` in spacetime dimension `D = card n`. -/
 theorem tracePart_quarkPart_of_diracEq (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian)
@@ -130,13 +113,18 @@ theorem tracePart_quarkPart_of_diracEq (hg : g.IsSymm) (hγ : ∀ μ, (β * γ �
       ((star ψ ⬝ᵥ (β * M) *ᵥ ψ).re / Fintype.card n) • g := by
   rw [tracePart_apply, trace_quarkPart_of_diracEq hg hγ h]
 
-/-- On solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the traceless part of the quark part
-is `T^q_{μν} - (1/D) g_{μν} Re (ψ‾ M ψ)` in spacetime dimension `D = card n`. -/
-theorem tracelessPart_quarkPart_of_diracEq (hg : g.IsSymm) (hγ : ∀ μ, (β * γ μ).IsHermitian)
-    {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ} (h : diracOpApply g γ Dψ = M *ᵥ ψ) :
-    tracelessPart g (quarkPart β γ ψ Dψ) =
-      quarkPart β γ ψ Dψ - ((star ψ ⬝ᵥ (β * M) *ᵥ ψ).re / Fintype.card n) • g := by
-  rw [tracelessPart_apply, tracePart_quarkPart_of_diracEq hg hγ h]
+/-- On solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, and whenever the gluon part is
+traceless, as it is in four spacetime dimensions or when `F^a_{αβ} F^{a αβ} = 0`
+(`trace_gluonPart_eq_zero_iff`), the trace part of the total energy-momentum tensor is the mass
+term `(1/D) g_{μν} Re (ψ‾ M ψ)` in spacetime dimension `D = card n`. -/
+theorem tracePart_total_of_trace_gluonPart_eq_zero (hg : g.IsSymm)
+    (hγ : ∀ μ, (β * γ μ).IsHermitian) {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ}
+    (h : diracOpApply g γ Dψ = M *ᵥ ψ) {F : ι → Matrix n n ℝ}
+    (hF : trace (g⁻¹ * gluonPart g F) = 0) :
+    tracePart g (total g β γ ψ Dψ F) =
+      ((star ψ ⬝ᵥ (β * M) *ᵥ ψ).re / Fintype.card n) • g := by
+  rw [tracePart_total, tracePart_quarkPart_of_diracEq hg hγ h, tracePart_apply, hF, zero_div,
+    zero_smul, add_zero]
 
 /-- In four spacetime dimensions and on solutions of the Dirac equation `i γ^μ D_μ ψ = M ψ`, the
 trace part of the total energy-momentum tensor is the classical mass term
@@ -145,8 +133,7 @@ theorem tracePart_total_of_diracEq (hn : Fintype.card n = 4) (hg : g.IsSymm)
     (hγ : ∀ μ, (β * γ μ).IsHermitian) {M : Matrix m m ℂ} {ψ : m → ℂ} {Dψ : n → m → ℂ}
     (h : diracOpApply g γ Dψ = M *ᵥ ψ) (F : ι → Matrix n n ℝ) :
     tracePart g (total g β γ ψ Dψ F) = ((star ψ ⬝ᵥ (β * M) *ᵥ ψ).re / 4) • g := by
-  rw [tracePart_total, tracePart_quarkPart_of_diracEq hg hγ h,
-    tracePart_gluonPart_eq_zero g (.inl hn), add_zero, hn]
+  rw [tracePart_apply, trace_total_of_diracEq hn hg hγ h, hn]
   norm_num
 
 /-- When the gluon part is traceless, as it is in four spacetime dimensions or when
@@ -158,6 +145,15 @@ theorem tracelessPart_total_of_trace_gluonPart_eq_zero (ψ : m → ℂ) (Dψ : n
       tracelessPart g (quarkPart β γ ψ Dψ) + gluonPart g F := by
   rw [tracelessPart_total,
     tracelessPart_gluonPart_eq_self g ((trace_gluonPart_eq_zero_iff g F).1 h)]
+
+/-- In four spacetime dimensions, the traceless part of the total energy-momentum tensor is the
+traceless part of the quark part plus the whole gluon part. -/
+theorem tracelessPart_total_of_card_eq_four (hn : Fintype.card n = 4) (ψ : m → ℂ)
+    (Dψ : n → m → ℂ) (F : ι → Matrix n n ℝ) :
+    tracelessPart g (total g β γ ψ Dψ F) =
+      tracelessPart g (quarkPart β γ ψ Dψ) + gluonPart g F :=
+  tracelessPart_total_of_trace_gluonPart_eq_zero ψ Dψ
+    ((trace_gluonPart_eq_zero_iff g F).2 (.inl hn))
 
 end EnergyMomentumTensor
 end QCD
