@@ -23,11 +23,15 @@ examples there integrate continuous targets against the standard uniform law.
   restricted to `Set.Ioc 0 1`.
 * `EpsilonEridani.uniformMeasure_Iic`: the uniform measure of a closed lower tail, the companion
   of `TauCeti.Probability.uniformMeasure_Iio`.
-* `Continuous.integrable_uniformMeasure`: a continuous function is integrable against every
-  uniform measure.
-* `MeasureTheory.Measure.map_fst_restrict_setOf_le_prod_uniformMeasure`: thinning by a uniform
-  variate. Keeping a proposal `x` when an independent standard uniform variate lies below `a x`
-  multiplies its law by the density `min (a x) 1`, clipped at `0`.
+* `ContinuousOn.integrable_uniformMeasure`: a function continuous on `Set.Icc a b` is integrable
+  against every uniform measure.
+* `EpsilonEridani.lintegral_ofReal_uniformMeasure`: the lower integral of a nonnegative function
+  against the uniform law, as an interval integral divided by the interval length.
+* `EpsilonEridani.lintegral_one_add_sq_div_two` and `EpsilonEridani.lintegral_min_two_mul`: the
+  integrals of the acceptance–rejection example targets against the standard uniform law.
+* `MeasureTheory.Measure.map_fst_restrict_setOf_le_prod_uniformMeasure_zero_one`: thinning by a
+  uniform variate. Keeping a proposal `x` when an independent standard uniform variate lies
+  below `a x` multiplies its law by the density `min (a x) 1`, clipped at `0`.
 -/
 
 public section
@@ -51,12 +55,57 @@ theorem uniformMeasure_Iic {a b : ℝ} (hab : a < b) (t : ℝ) :
   rw [uniformMeasure_apply measurableSet_Iic, hset, Real.volume_Ioc,
     ENNReal.ofReal_div_of_pos (sub_pos.mpr hab), ENNReal.div_eq_inv_mul]
 
+/-- The lower integral of a nonnegative `f` against the uniform law on `Set.Ioc a b` is the
+interval integral of `f` over `[a, b]` divided by the interval length. -/
+theorem lintegral_ofReal_uniformMeasure {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
+    (hf : ContinuousOn f (Set.Icc a b)) (hf₀ : ∀ x ∈ Set.Ioc a b, 0 ≤ f x) :
+    ∫⁻ x, ENNReal.ofReal (f x) ∂uniformMeasure a b =
+      ENNReal.ofReal ((∫ x in a..b, f x) / (b - a)) := by
+  rw [uniformMeasure_eq_smul, lintegral_smul_measure, smul_eq_mul,
+    ← ofReal_integral_eq_lintegral_ofReal (hf.integrableOn_Icc.mono_set Set.Ioc_subset_Icc_self)
+      (ae_restrict_of_forall_mem measurableSet_Ioc hf₀),
+    ← intervalIntegral.integral_of_le hab.le, ENNReal.ofReal_div_of_pos (sub_pos.mpr hab),
+    ENNReal.div_eq_inv_mul]
+
+/-- The function `(1 + z ^ 2) / 2` has integral `2 / 3` over `[0, 1]`. It is the target of the
+acceptance–rejection example in `EpsilonEridani.Mathematics.Probability.AcceptReject`, and its
+integral is that example's acceptance probability. -/
+theorem lintegral_one_add_sq_div_two :
+    ∫⁻ z, ENNReal.ofReal ((1 + z ^ 2) / 2) ∂uniformMeasure 0 1 = ENNReal.ofReal (2 / 3) := by
+  have hcont : Continuous fun z : ℝ => (1 + z ^ 2) / 2 := by fun_prop
+  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn (fun z _ => by positivity),
+    sub_zero, div_one]
+  norm_num [intervalIntegral.integral_div, integral_pow]
+
+/-- The clipped function `min (2 * z) (3 / 2)` has integral `15 / 16` over `[0, 1]`. It is the
+clipped target of the acceptance–rejection example in
+`EpsilonEridani.Mathematics.Probability.AcceptReject`. -/
+theorem lintegral_min_two_mul :
+    ∫⁻ z, ENNReal.ofReal (min (2 * z) (3 / 2)) ∂uniformMeasure 0 1 = ENNReal.ofReal (15 / 16) := by
+  have hcont : Continuous fun z : ℝ => min (2 * z) (3 / 2) := by fun_prop
+  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn
+    (fun x hx => le_min (by linarith [hx.1]) (by norm_num)), sub_zero, div_one]
+  -- Split `[0, 1]` at the crossing point `3 / 4`, where `2 * z` meets the bound.
+  have hlo : ∫ z in (0 : ℝ)..3 / 4, min (2 * z) (3 / 2) = ∫ z in (0 : ℝ)..3 / 4, 2 * z :=
+    intervalIntegral.integral_congr fun z hz => by
+      rw [Set.uIcc_of_le (by norm_num)] at hz
+      exact min_eq_left (by linarith [hz.2])
+  have hhi : ∫ z in (3 / 4 : ℝ)..1, min (2 * z) (3 / 2) = ∫ _ in (3 / 4 : ℝ)..1, (3 / 2 : ℝ) :=
+    intervalIntegral.integral_congr fun z hz => by
+      rw [Set.uIcc_of_le (by norm_num)] at hz
+      exact min_eq_right (by linarith [hz.1])
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 3 / 4)
+      (hcont.intervalIntegrable _ _) (hcont.intervalIntegrable _ _), hlo, hhi,
+    intervalIntegral.integral_const_mul, integral_id, intervalIntegral.integral_const]
+  norm_num
+
 end EpsilonEridani
 
-/-- A continuous function is integrable against the uniform measure on any interval: on a
-nondegenerate interval it is bounded there, and on a degenerate one the measure is zero. -/
-theorem Continuous.integrable_uniformMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
-    (hf : Continuous f) {a b : ℝ} : Integrable f (uniformMeasure a b) := by
+/-- A function continuous on `Set.Icc a b` is integrable against the uniform measure on any
+interval: on a nondegenerate interval it is bounded there, and on a degenerate one the measure
+is zero. -/
+theorem ContinuousOn.integrable_uniformMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+    {a b : ℝ} (hf : ContinuousOn f (Set.Icc a b)) : Integrable f (uniformMeasure a b) := by
   rcases le_or_gt b a with hba | hab
   · simp [uniformMeasure_eq_zero_of_le hba]
   rw [uniformMeasure_eq_smul]
@@ -69,7 +118,7 @@ variable {α : Type*} [MeasurableSpace α]
 /-- **Thinning by a uniform variate.** Draw `x` from `ν` and an independent standard uniform
 variate `u`, and keep `x` when `u ≤ a x`. The kept part of the law of `x` is `ν` with density
 `min (a x) 1`, read as `0` where `a x` is negative. -/
-theorem map_fst_restrict_setOf_le_prod_uniformMeasure (ν : Measure α) {a : α → ℝ}
+theorem map_fst_restrict_setOf_le_prod_uniformMeasure_zero_one (ν : Measure α) {a : α → ℝ}
     (ha : Measurable a) :
     ((ν.prod (uniformMeasure 0 1)).restrict {p | p.2 ≤ a p.1}).map Prod.fst =
       ν.withDensity fun x => ENNReal.ofReal (min (a x) 1) := by
