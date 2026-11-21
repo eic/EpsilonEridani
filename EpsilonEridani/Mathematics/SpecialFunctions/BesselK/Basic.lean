@@ -43,7 +43,7 @@ whole real line need no domain hypothesis where `0` is harmless.
 * `EpsilonEridani.besselK_le_besselK`: `K_ν ≤ K_μ` when `|ν| ≤ |μ|`.
 * `EpsilonEridani.besselK_add_one_sub_besselK_sub_one`: `K_{ν+1} - K_{ν-1} = (2ν/x) K_ν`.
 * `EpsilonEridani.hasDerivAt_besselK`: `K_ν' = -(K_{ν-1} + K_{ν+1}) / 2`, and
-  `EpsilonEridani.hasDerivAt_besselK_neg_besselK_sub_one_sub_div_mul_besselK`:
+  `EpsilonEridani.hasDerivAt_besselK'`:
   `K_ν' = -K_{ν-1} - (ν/x) K_ν`, with its special cases
   `EpsilonEridani.hasDerivAt_besselK_zero`: `K₀' = -K₁` and
   `EpsilonEridani.hasDerivAt_besselK_one`: `K₁' = -K₀ - K₁/x`.
@@ -183,7 +183,7 @@ theorem besselK_le_besselK {ν μ : ℝ} (h : |ν| ≤ |μ|) (x : ℝ) : besselK
 
 /-- The primitive `sinh (ν t) exp (-x cosh t)` that the recurrence in the order integrates decays
 at infinity, since the exponent dominates every exponential growth of the prefactor. -/
-private theorem tendsto_sinh_mul_exp_neg_cosh_atTop {x : ℝ} (hx : 0 < x) (ν : ℝ) :
+private theorem tendsto_sinh_mul_exp_neg_cosh_atTop_nhds_zero {x : ℝ} (hx : 0 < x) (ν : ℝ) :
     Tendsto (fun t : ℝ ↦ sinh (ν * t) * exp (-(x * cosh t))) atTop (𝓝 0) := by
   refine squeeze_zero_norm' ?_
     (by simpa using tendsto_exp_neg_atTop_nhds_zero.const_mul (exp ((|ν| + 1) ^ 2 / x)))
@@ -232,7 +232,7 @@ theorem besselK_add_one_sub_besselK_sub_one (ν : ℝ) {x : ℝ} (hx : 0 < x) :
       x / 2 * (exp (-(x * cosh t)) * cosh ((ν + 1) * t) -
         exp (-(x * cosh t)) * cosh ((ν - 1) * t))) (Ioi 0) := hintScaled.sub hintTail
   have hFTC := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv hF'int
-    (tendsto_sinh_mul_exp_neg_cosh_atTop hx ν)
+    (tendsto_sinh_mul_exp_neg_cosh_atTop_nhds_zero hx ν)
   simp only [mul_zero, sinh_zero, zero_mul, sub_zero] at hFTC
   rw [integral_sub hintScaled hintTail, integral_const_mul, integral_const_mul,
     integral_sub hintAdd hintSub] at hFTC
@@ -284,7 +284,7 @@ theorem hasDerivAt_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
 
 /-- The derivative relation `K_ν'(x) = -K_{ν-1}(x) - (ν/x) K_ν(x)` (the first identity of
 DLMF 10.29.2), the form in which only the order below `ν` appears. -/
-theorem hasDerivAt_besselK_neg_besselK_sub_one_sub_div_mul_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
+theorem hasDerivAt_besselK' (ν : ℝ) {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK ν) (-besselK (ν - 1) x - ν / x * besselK ν x) x :=
   (hasDerivAt_besselK ν hx).congr_deriv
     (by linear_combination (-1 / 2 : ℝ) * besselK_add_one_sub_besselK_sub_one ν hx)
@@ -292,13 +292,13 @@ theorem hasDerivAt_besselK_neg_besselK_sub_one_sub_div_mul_besselK (ν : ℝ) {x
 /-- The derivative relation `K₀' = -K₁` (DLMF 10.29.3), the case `ν = 0` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_zero {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK 0) (-besselK 1 x) x :=
-  (hasDerivAt_besselK_neg_besselK_sub_one_sub_div_mul_besselK 0 hx).congr_deriv
+  (hasDerivAt_besselK' 0 hx).congr_deriv
     (by rw [zero_sub, besselK_neg]; ring)
 
 /-- The derivative relation `K₁'(x) = -K₀(x) - K₁(x)/x`, the case `ν = 1` of DLMF 10.29.2. -/
 theorem hasDerivAt_besselK_one {x : ℝ} (hx : 0 < x) :
     HasDerivAt (besselK 1) (-besselK 0 x - besselK 1 x / x) x :=
-  (hasDerivAt_besselK_neg_besselK_sub_one_sub_div_mul_besselK 1 hx).congr_deriv
+  (hasDerivAt_besselK' 1 hx).congr_deriv
     (by rw [sub_self]; ring)
 
 /-- `K_ν` is continuous on `(0, ∞)`. -/
@@ -328,6 +328,11 @@ theorem besselK_le_exp_mul_besselK (ν : ℝ) {x₀ x : ℝ} (hx₀ : 0 < x₀) 
   nlinarith [one_le_cosh t]
 
 /-! ### Behaviour at the origin -/
+
+/-- `-log x → ∞` as `x → 0⁺`, the divergence that every logarithmic small-argument estimate
+compares against. -/
+theorem tendsto_neg_log_nhdsGT_zero : Tendsto (fun x : ℝ ↦ -log x) (𝓝[>] 0) atTop :=
+  tendsto_neg_atBot_atTop.comp tendsto_log_nhdsGT_zero
 
 /-- The remainder `∫₀^∞ exp (-x cosh t) exp (-t) dt` of `K₁(x)` beyond `exp (-x) / x` converges
 for `x ≥ 0`. -/
@@ -495,20 +500,19 @@ theorem besselK_zero_le_log_two_div_add_exp_neg_one {x : ℝ} (hx : 0 < x) (hx2 
 
 /-- Every `K_ν` diverges at the origin. -/
 theorem tendsto_besselK_nhdsGT_zero (ν : ℝ) : Tendsto (besselK ν) (𝓝[>] 0) atTop := by
-  have hlog : Tendsto (fun x : ℝ ↦ -log x) (𝓝[>] 0) atTop :=
-    tendsto_neg_atBot_atTop.comp tendsto_log_nhdsGT_zero
-  refine tendsto_atTop_mono' _ ?_ (hlog.atTop_div_const two_pos)
-  filter_upwards [self_mem_nhdsWithin, hlog.eventually_ge_atTop 2] with x (hx : 0 < x) hM
+  refine tendsto_atTop_mono' _ ?_ (tendsto_neg_log_nhdsGT_zero.atTop_div_const two_pos)
+  filter_upwards [self_mem_nhdsWithin, tendsto_neg_log_nhdsGT_zero.eventually_ge_atTop 2]
+    with x (hx : 0 < x) hM
   linarith [neg_log_sub_one_le_besselK ν hx]
 
 /-- `K₀` is logarithmic at the origin: `K₀(x) ~ -log x` as `x → 0⁺` (DLMF 10.30.2). -/
 theorem isEquivalent_besselK_zero_neg_log :
     besselK 0 ~[𝓝[>] (0 : ℝ)] fun x ↦ -log x := by
-  have hlog : Tendsto (fun x : ℝ ↦ -log x) (𝓝[>] 0) atTop :=
-    tendsto_neg_atBot_atTop.comp tendsto_log_nhdsGT_zero
-  have hpos : ∀ᶠ x in 𝓝[>] (0 : ℝ), 0 < -log x := hlog.eventually_gt_atTop 0
+  have hpos : ∀ᶠ x in 𝓝[>] (0 : ℝ), 0 < -log x :=
+    tendsto_neg_log_nhdsGT_zero.eventually_gt_atTop 0
   rw [isEquivalent_iff_tendsto_one (hpos.mono fun x h ↦ ne_of_gt h)]
-  have hinv : Tendsto (fun x : ℝ ↦ (-log x)⁻¹) (𝓝[>] 0) (𝓝 0) := hlog.inv_tendsto_atTop
+  have hinv : Tendsto (fun x : ℝ ↦ (-log x)⁻¹) (𝓝[>] 0) (𝓝 0) :=
+    tendsto_neg_log_nhdsGT_zero.inv_tendsto_atTop
   have hlow : Tendsto (fun x : ℝ ↦ 1 - (-log x)⁻¹) (𝓝[>] 0) (𝓝 1) := by
     simpa using tendsto_const_nhds.sub hinv
   have hupp : Tendsto (fun x : ℝ ↦ 1 + (log 2 + exp (-1)) * (-log x)⁻¹) (𝓝[>] 0) (𝓝 1) := by
