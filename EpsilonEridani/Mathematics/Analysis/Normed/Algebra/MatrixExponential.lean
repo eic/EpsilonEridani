@@ -26,19 +26,17 @@ matrices carry no global norm instance. `HasDerivAt` itself needs only a topolog
 as codomain, so the statements below are about the product topology on `Matrix m m 𝔸`, the one
 `NormedSpace.exp` uses on matrices. As in `Matrix.exp_add_of_commute`, the `L∞` operator norm
 (`Matrix.Norms.Operator`) is installed locally inside the proofs only; it induces the product
-topology, and no matrix norm appears in any statement. Also as there, the
-`CompleteSpace (Matrix m m 𝔸)` instance under that scoped norm only unifies with
-`backward.isDefEq.respectTransparency` turned off.
+topology, and no matrix norm appears in any statement.
 
 ## Main results
 
 - `Matrix.hasDerivAt_exp_smul_const'`: `d/du exp (u • A) = A * exp (u • A)`.
-- `HasDerivAt.matrix_exp_smul_const`: along a scalar path `f` with derivative `f'` at `t`,
+- `HasDerivAt.matrix_exp_smul_const'`: along a scalar path `f` with derivative `f'` at `t`,
   `d/ds exp (f s • A) = f' • (A * exp (f t • A))` at `t`.
-- `HasDerivAt.matrix_exp_smul_const_mulVec`: the same applied to a fixed vector `v`,
+- `HasDerivAt.matrix_exp_smul_const_mulVec'`: the same applied to a fixed vector `v`,
   `d/ds (exp (f s • A) *ᵥ v) = f' • (A *ᵥ (exp (f t • A) *ᵥ v))` at `t`. So
   `x s = exp (f s • A) *ᵥ v` satisfies `x' = f' • (A *ᵥ x)` wherever `f` is differentiable.
-- `Matrix.exp_smul_apply_of_apply_eq_zero`: if the off-diagonal entries of row `i` of `A`
+- `Matrix.exp_smul_apply_of_apply_eq_zero_of_ne`: if the off-diagonal entries of row `i` of `A`
   vanish, row `i` of `exp (u • A)` is `exp (u • A i i)` on the diagonal and zero elsewhere.
 -/
 
@@ -49,6 +47,8 @@ variable {𝕜 𝕂 𝔸 m : Type*} [NontriviallyNormedField 𝕜] [RCLike 𝕂]
 
 namespace Matrix
 
+-- as for Mathlib's `Matrix.exp_add_of_commute`, `CompleteSpace (Matrix m m 𝔸)` under the scoped
+-- operator norm only unifies with `respectTransparency` turned off
 set_option backward.isDefEq.respectTransparency false in
 /-- The derivative of `u ↦ exp (u • A)` is `A * exp (u • A)`: the matrix version of
 `_root_.hasDerivAt_exp_smul_const'`. -/
@@ -64,14 +64,14 @@ variable [NormedAlgebra 𝕜 𝔸] [IsScalarTower 𝕜 𝕂 𝔸]
 
 /-- The matrix exponential along a differentiable scalar path `f`: the derivative of
 `s ↦ exp (f s • A)` at `t` is `f' • (A * exp (f t • A))`. -/
-theorem HasDerivAt.matrix_exp_smul_const {f : 𝕜 → 𝕂} {f' : 𝕂} {t : 𝕜}
+theorem HasDerivAt.matrix_exp_smul_const' {f : 𝕜 → 𝕂} {f' : 𝕂} {t : 𝕜}
     (hf : HasDerivAt f f' t) (A : Matrix m m 𝔸) :
     HasDerivAt (fun s => NormedSpace.exp (f s • A)) (f' • (A * NormedSpace.exp (f t • A))) t :=
   open scoped Norms.Operator in HasDerivAt.scomp t (Matrix.hasDerivAt_exp_smul_const' A (f t)) hf
 
 /-- The matrix exponential along a differentiable scalar path `f`, applied to a fixed vector `v`,
 has derivative `f' • (A *ᵥ (exp (f t • A) *ᵥ v))` at `t`. -/
-theorem HasDerivAt.matrix_exp_smul_const_mulVec {f : 𝕜 → 𝕂} {f' : 𝕂} {t : 𝕜}
+theorem HasDerivAt.matrix_exp_smul_const_mulVec' {f : 𝕜 → 𝕂} {f' : 𝕂} {t : 𝕜}
     (hf : HasDerivAt f f' t) (A : Matrix m m 𝔸) (v : m → 𝔸) :
     HasDerivAt (fun s => NormedSpace.exp (f s • A) *ᵥ v)
       (f' • (A *ᵥ (NormedSpace.exp (f t • A) *ᵥ v))) t := by
@@ -83,7 +83,7 @@ theorem HasDerivAt.matrix_exp_smul_const_mulVec {f : 𝕜 → 𝕂} {f' : 𝕂} 
   -- `⇑L ∘ g` is `fun s => g s *ᵥ v` by `rfl`, since `⇑L` unfolds to `(· *ᵥ v)`
   have h : HasDerivAt (fun s => NormedSpace.exp (f s • A) *ᵥ v)
       (L (f' • (A * NormedSpace.exp (f t • A)))) t :=
-    HasFDerivAt.comp_hasDerivAt t L.hasFDerivAt (hf.matrix_exp_smul_const A)
+    HasFDerivAt.comp_hasDerivAt t L.hasFDerivAt (hf.matrix_exp_smul_const' A)
   have hL : L (f' • (A * NormedSpace.exp (f t • A))) =
       f' • (A *ᵥ (NormedSpace.exp (f t • A) *ᵥ v)) := by
     rw [mulVec_mulVec, ← smul_mulVec]
@@ -95,7 +95,7 @@ namespace Matrix
 
 /-- **The exponential of an unmixed row.** If the off-diagonal entries of row `i` of `A` vanish,
 row `i` of `exp (u • A)` is `exp (u • A i i)` on the diagonal and zero elsewhere. -/
-theorem exp_smul_apply_of_apply_eq_zero {A : Matrix m m 𝔸} {i : m}
+theorem exp_smul_apply_of_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
     (h : ∀ j, j ≠ i → A i j = 0) (u : 𝕂) (j : m) :
     NormedSpace.exp (u • A) i j = if i = j then NormedSpace.exp (u • A i i) else 0 := by
   set a := A i i
@@ -104,7 +104,7 @@ theorem exp_smul_apply_of_apply_eq_zero {A : Matrix m m 𝔸} {i : m}
   have hg (s : 𝕂) : HasDerivAt (fun s : 𝕂 => NormedSpace.exp (s • A) i j)
       (a * NormedSpace.exp (s • A) i j) s := by
     have hv := hasDerivAt_pi.1
-      ((hasDerivAt_id s).matrix_exp_smul_const_mulVec A (Pi.single j 1)) i
+      ((hasDerivAt_id s).matrix_exp_smul_const_mulVec' A (Pi.single j 1)) i
     rw [mulVec_mulVec] at hv
     simp only [id, one_smul, mulVec_single_one, col_apply] at hv
     rwa [mul_apply, Finset.sum_eq_single i (fun k _ hk => by rw [h k hk, zero_mul])
