@@ -191,6 +191,38 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
   rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
+/-- A `g`-isometry fixing the two vectors `a` and `b`: an element of the stabilizer of the pair
+`(a, b)` inside the isometry group of `g`. -/
+structure IsPairStabilizer (g : Bilin V) (a b : V) (f : V →ₗ[ℝ] V) : Prop where
+  /-- `f` preserves the background form. -/
+  isometry : IsIsometry g f
+  /-- `f` fixes the first vector of the pair. -/
+  fixes_left : f a = a
+  /-- `f` fixes the second vector of the pair. -/
+  fixes_right : f b = b
+
+/-- A stabilizer of the pair `(a, b)` fixes the difference `b - a`. -/
+lemma IsPairStabilizer.fixes_sub {g : Bilin V} {a b : V} {f : V →ₗ[ℝ] V}
+    (hf : IsPairStabilizer g a b f) : f (b - a) = b - a := by
+  rw [map_sub, hf.fixes_left, hf.fixes_right]
+
+/-- An isometry fixing `a` and the difference `b - a` is a stabilizer of the pair `(a, b)`. -/
+lemma IsPairStabilizer.of_fixes_sub {g : Bilin V} {a b : V} {f : V →ₗ[ℝ] V}
+    (hf : IsIsometry g f) (ha : f a = a) (hba : f (b - a) = b - a) :
+    IsPairStabilizer g a b f where
+  isometry := hf
+  fixes_left := ha
+  fixes_right := by rw [map_sub, ha, sub_left_inj] at hba; exact hba
+
+/-- The reflection in a non-null direction `g`-orthogonal to both `a` and `b` is a stabilizer of
+the pair `(a, b)`. -/
+lemma reflect_isPairStabilizer (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0)
+    {a b : V} (hua : g u a = 0) (hub : g u b = 0) :
+    IsPairStabilizer g a b (reflect g u) where
+  isometry := reflect_isometry g hSymm u hu
+  fixes_left := reflect_apply_of_orthogonal g u a hua
+  fixes_right := reflect_apply_of_orthogonal g u b hub
+
 end Bilin
 
 namespace Leptonic
@@ -519,15 +551,10 @@ information (any such field is satisfiable by `True`).
 -/
 
 /-- A `g`-isometry fixing both hadron and probe momenta, i.e. an element of the stabilizer of
-the kinematics inside the isometry group of `g`. -/
-structure IsKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (f : V →ₗ[ℝ] V) :
-    Prop where
-  /-- `f` preserves the background form. -/
-  isometry : Bilin.IsIsometry g f
-  /-- `f` fixes the hadron momentum. -/
-  fixes_p : f K.p = K.p
-  /-- `f` fixes the momentum transfer. -/
-  fixes_q : f K.q = K.q
+the kinematics inside the isometry group of `g`: the stabilizer `Bilin.IsPairStabilizer` of the
+pair `(p, q)`. -/
+abbrev IsKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (f : V →ₗ[ℝ] V) : Prop :=
+  Bilin.IsPairStabilizer g K.p K.q f
 
 /-- Lorentz covariance of a hadronic tensor, stated concretely: `W` is invariant under every
 `g`-isometry fixing `p` and `q`. -/
@@ -545,15 +572,15 @@ lemma pairing_invariant_of_fixed (g : Bilin V) (K : DisKinematics V) {f : V →�
 lemma stabilizer_fixes_pTransverse (g : Bilin V) (K : DisKinematics V) {f : V →ₗ[ℝ] V}
     (hf : IsKinematicStabilizer g K f) :
     f (pTransverse g K) = pTransverse g K := by
-  simp only [pTransverse, map_sub, map_smul, hf.fixes_p, hf.fixes_q]
+  simp only [pTransverse, map_sub, map_smul, hf.fixes_left, hf.fixes_right]
 
 /-- The transverse metric projector is Lorentz covariant. -/
 lemma transverseMetric_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
     IsLorentzCovariant g K (transverseMetric g K) := by
   intro f hf v w
   rw [transverseMetric_apply, transverseMetric_apply, hf.isometry v w,
-    pairing_invariant_of_fixed g K hf hf.fixes_q v,
-    pairing_invariant_of_fixed g K hf hf.fixes_q w]
+    pairing_invariant_of_fixed g K hf hf.fixes_right v,
+    pairing_invariant_of_fixed g K hf hf.fixes_right w]
 
 /-- The transverse hadron rank-one tensor is Lorentz covariant. -/
 lemma rankOne_pTransverse_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
@@ -568,10 +595,8 @@ is an element of the kinematic stabilizer. This is the concrete supply of covari
 constraints used by `covariant_spectator_offDiagonal_zero`. -/
 lemma reflect_isKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (u : V) (hu : g u u ≠ 0) (hup : g u K.p = 0) (huq : g u K.q = 0) :
-    IsKinematicStabilizer g K (Bilin.reflect g u) where
-  isometry := Bilin.reflect_isometry g hSymm u hu
-  fixes_p := Bilin.reflect_apply_of_orthogonal g u K.p hup
-  fixes_q := Bilin.reflect_apply_of_orthogonal g u K.q huq
+    IsKinematicStabilizer g K (Bilin.reflect g u) :=
+  Bilin.reflect_isPairStabilizer g hSymm u hu hup huq
 
 /-- **Covariance has content.** A Lorentz-covariant tensor has no mixed component between a
 non-null spectator direction `u` and any vector `g`-orthogonal to `u`: the reflection in `u`
@@ -1167,7 +1192,7 @@ def kLine : DisKinematics ℝ where
 spans. Note that the isometry field is not even needed. -/
 lemma stabilizer_line_eq_id (f : ℝ →ₗ[ℝ] ℝ) (hf : IsKinematicStabilizer gLine kLine f) :
     f = LinearMap.id := by
-  have h1 : f 1 = 1 := hf.fixes_q
+  have h1 : f 1 = 1 := hf.fixes_right
   refine LinearMap.ext fun x => ?_
   change f x = x
   calc f x = f (x • (1 : ℝ)) := by rw [smul_eq_mul, mul_one]
