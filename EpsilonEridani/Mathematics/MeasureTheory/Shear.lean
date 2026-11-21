@@ -62,8 +62,9 @@ lemma integrable_comp_prod_add_mul_iff {E : Type*} [NormedAddCommGroup E] (g : �
     (measurableEmbedding_prod_add_mul ha)
 
 /-- **Change of variables along the scaled shear.**
-`∫ g (x, x + a * y) d(x, y) = |a⁻¹| • ∫ g`. For `a = 0` both sides vanish: the integrand is
-constant in `y`, and Lebesgue measure on the line is infinite. -/
+`∫ g (x, x + a * y) d(x, y) = |a⁻¹| • ∫ g`. For `a = 0` the identity is degenerate, not a
+change of variables: the left side vanishes because the integrand is constant in `y` and
+Lebesgue measure on the line is infinite, and the right side vanishes because `|0⁻¹| = 0`. -/
 lemma integral_comp_prod_add_mul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (g : ℝ × ℝ → E) (a : ℝ) :
     ∫ p : ℝ × ℝ, g (p.1, p.1 + a * p.2) = |a⁻¹| • ∫ q, g q := by
@@ -72,13 +73,9 @@ lemma integral_comp_prod_add_mul {E : Type*} [NormedAddCommGroup E] [NormedSpace
     by_cases hint : Integrable fun p : ℝ × ℝ => g (p.1, p.1)
     · rw [Measure.volume_eq_prod, integral_prod _ hint]
       refine integral_eq_zero_of_ae (Filter.Eventually.of_forall fun x => ?_)
-      dsimp only [Pi.zero_apply]
-      by_cases hc : g (x, x) = 0
-      · rw [hc, integral_zero]
-      · refine integral_undef fun h => ?_
-        rcases integrable_const_iff.mp h with h | h
-        · exact hc h
-        · exact not_isFiniteMeasure_iff.mpr Real.volume_univ h
+      by_cases hE : CompleteSpace E
+      · simp [integral_const, measureReal_def]
+      · exact integral_of_not_completeSpace hE
     · exact integral_undef hint
   · rw [(measurePreserving_prod_add_mul ha).integral_comp (measurableEmbedding_prod_add_mul ha),
       integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _)]

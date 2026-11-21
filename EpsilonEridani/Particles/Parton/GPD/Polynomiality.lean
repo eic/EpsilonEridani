@@ -152,6 +152,24 @@ def momentCoeff (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
   else if k = n + 1 then dtMoment dt i n t
   else 0
 
+/-- Below the top slot `momentCoeff` is a binomial-weighted double-distribution form factor. -/
+lemma momentCoeff_of_le (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
+    (n : ℕ) (i : Flavor) {k : ℕ} (t : ℝ) (hk : k ≤ n) :
+    momentCoeff dd dt n i k t = (n.choose k : ℝ) * ddMoment dd i (n - k) k t := by
+  rw [momentCoeff, ite_eq_left hk]
+
+/-- The top slot `k = n + 1` of `momentCoeff` is the D-term moment. -/
+lemma momentCoeff_top (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
+    (n : ℕ) (i : Flavor) (t : ℝ) :
+    momentCoeff dd dt n i (n + 1) t = dtMoment dt i n t := by
+  rw [momentCoeff, ite_eq_right (by omega : ¬ n + 1 ≤ n), ite_eq_left rfl]
+
+/-- Above the top slot `momentCoeff` vanishes. -/
+lemma momentCoeff_eq_zero_of_lt (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
+    (n : ℕ) (i : Flavor) {k : ℕ} (t : ℝ) (hk : n + 1 < k) :
+    momentCoeff dd dt n i k t = 0 := by
+  rw [momentCoeff, ite_eq_right (by omega : ¬ k ≤ n), ite_eq_right (by omega : k ≠ n + 1)]
+
 /-- Odd coefficients of the moment polynomial vanish: moments are even in `ξ`. -/
 lemma momentCoeff_eq_zero_of_odd (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
     (n : ℕ) (i : Flavor) (k : ℕ) (t : ℝ) (hk : Odd k) :
@@ -184,8 +202,8 @@ lemma momentPolynomial_coeff (dd : DoubleDistribution Flavor) (dt : DTerm Flavor
   rw [Finset.sum_ite_eq (Finset.range (n + 2)) k (fun j => momentCoeff dd dt n i j t)]
   by_cases hk : k < n + 2
   · rw [ite_eq_left (Finset.mem_range.mpr hk)]
-  · rw [ite_eq_right (fun hmem => hk (Finset.mem_range.mp hmem))]
-    rw [momentCoeff, ite_eq_right (by omega : ¬ k ≤ n), ite_eq_right (by omega : k ≠ n + 1)]
+  · rw [ite_eq_right (fun hmem => hk (Finset.mem_range.mp hmem)),
+      momentCoeff_eq_zero_of_lt dd dt n i t (by omega)]
 
 /-- The moment polynomial has degree at most `n + 1`.
 
@@ -196,8 +214,7 @@ lemma momentPolynomial_natDegree_le (dd : DoubleDistribution Flavor) (dt : DTerm
     (momentPolynomial dd dt n i t).natDegree ≤ n + 1 := by
   rw [Polynomial.natDegree_le_iff_coeff_eq_zero]
   intro m hm
-  rw [momentPolynomial_coeff, momentCoeff, ite_eq_right (by omega : ¬ m ≤ n),
-    ite_eq_right (by omega : m ≠ n + 1)]
+  rw [momentPolynomial_coeff, momentCoeff_eq_zero_of_lt dd dt n i t (by omega)]
 
 /-- Evaluating the moment polynomial is summing the coefficients against powers of `ξ`. -/
 lemma momentPolynomial_eval (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
@@ -275,16 +292,21 @@ private lemma integral_pow_mul_ddTerm (dd : DoubleDistribution Flavor) (i : Flav
   rw [integral_const_mul]
   ring
 
+/-- The rescaling `x = ξ u` of the `x^n`-weighted D-term contribution to the GPD, pulling the
+constant `ξ/|ξ| ξ^n` out of the integrand. -/
+private lemma pow_mul_dTerm_eq (dt : DTerm Flavor) (i : Flavor) (n : ℕ) {xi : ℝ}
+    (hxi : xi ≠ 0) (t x : ℝ) :
+    x ^ n * (xi / |xi| * dt.D i (x / xi) t)
+      = xi / |xi| * xi ^ n * ((x / xi) ^ n * dt.D i (x / xi) t) := by
+  rw [← mul_div_cancel₀ x hxi, mul_div_cancel_left₀ _ hxi, mul_pow]
+  ring
+
 /-- For `ξ ≠ 0` the D-term contribution to the GPD, weighted by `x^n`, is integrable in `x`. -/
 private lemma integrable_pow_mul_dTerm (dt : DTerm Flavor) (i : Flavor) (n : ℕ) {xi : ℝ}
     (hxi : xi ≠ 0) (t : ℝ) :
     Integrable fun x : ℝ => x ^ n * (xi / |xi| * dt.D i (x / xi) t) := by
   refine (((dt.momentIntegrable i n t).comp_div hxi).const_mul (xi / |xi| * xi ^ n)).congr
-    (Filter.Eventually.of_forall fun x => ?_)
-  have hx : x ^ n = xi ^ n * (x / xi) ^ n := by rw [← mul_pow, mul_div_cancel₀ x hxi]
-  simp only
-  rw [hx]
-  ring
+    (Filter.Eventually.of_forall fun x => (pow_mul_dTerm_eq dt i n hxi t x).symm)
 
 /-- For `ξ ≠ 0` the `n`-th moment of the D-term contribution to the GPD is
 `ξ^(n+1) ∫ du u^n D(u, t)`: the rescaling `x = ξ u` contributes `|ξ| ξ^n`, and the prefactor
@@ -292,13 +314,7 @@ private lemma integrable_pow_mul_dTerm (dt : DTerm Flavor) (i : Flavor) (n : ℕ
 private lemma integral_pow_mul_dTerm (dt : DTerm Flavor) (i : Flavor) (n : ℕ) {xi : ℝ}
     (hxi : xi ≠ 0) (t : ℝ) :
     ∫ x : ℝ, x ^ n * (xi / |xi| * dt.D i (x / xi) t) = xi ^ (n + 1) * dtMoment dt i n t := by
-  have h : ∀ x : ℝ, x ^ n * (xi / |xi| * dt.D i (x / xi) t)
-      = xi / |xi| * xi ^ n * ((x / xi) ^ n * dt.D i (x / xi) t) := by
-    intro x
-    have hx : x ^ n = xi ^ n * (x / xi) ^ n := by rw [← mul_pow, mul_div_cancel₀ x hxi]
-    rw [hx]
-    ring
-  simp_rw [h]
+  simp_rw [pow_mul_dTerm_eq dt i n hxi t]
   rw [integral_const_mul, Measure.integral_comp_div (fun u => u ^ n * dt.D i u t), smul_eq_mul,
     dtMoment]
   field_simp
@@ -314,19 +330,16 @@ theorem mellinMomentGpd_ofDoubleDistribution
     mellinMomentGpd (gpdOfDoubleDistribution dd dt) n i xi t
       = ∑ k ∈ Finset.range (n + 2), momentCoeff dd dt n i k t * xi ^ k := by
   -- the integrand vanishes off `[-1, 1]`, so the moment is an integral over `ℝ`
-  rw [mellinMomentGpd, setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-    rw [gpdOfDoubleDistribution_eq_zero_of_one_lt_abs dd dt i x xi t hxi, mul_zero]
-    rw [Set.mem_Icc, not_and_or, not_le, not_le] at hx
-    rcases hx with hx | hx
-    · rw [abs_of_neg (by linarith)]
-      linarith
-    · rw [abs_of_pos (by linarith)]
-      exact hx]
+  have hvanish : ∀ x ∉ Set.Icc (-1 : ℝ) 1, x ^ n * gpdOfDoubleDistribution dd dt i x xi t = 0 :=
+    fun x hx => by
+      rw [gpdOfDoubleDistribution_eq_zero_of_one_lt_abs dd dt i x xi t hxi
+        (lt_of_not_ge fun h => hx (Set.mem_Icc.mpr (abs_le.mp h))), mul_zero]
+  rw [mellinMomentGpd, setIntegral_eq_integral_of_forall_compl_eq_zero hvanish]
   -- split off the D-term slot and recognise the rest as the moment along `x = β + ξ α`
-  rw [Finset.sum_range_succ, momentCoeff, ite_eq_right (by omega : ¬ n + 1 ≤ n), ite_eq_left rfl]
+  rw [Finset.sum_range_succ, momentCoeff_top]
   have hlow : ∀ k ∈ Finset.range (n + 1), momentCoeff dd dt n i k t * xi ^ k
       = (n.choose k : ℝ) * ddMoment dd i (n - k) k t * xi ^ k := fun k hk => by
-    rw [momentCoeff, ite_eq_left (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))]
+    rw [momentCoeff_of_le dd dt n i t (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))]
   rw [Finset.sum_congr rfl hlow, ← integral_add_mul_pow_mul]
   by_cases hxi0 : xi = 0
   · -- forward limit: the GPD is the `α`-integral of `F`, and the formula is Fubini
@@ -360,21 +373,24 @@ theorem mellinMomentGpd_polynomial
     rw [momentPolynomial_eval]
     exact mellinMomentGpd_ofDoubleDistribution dd dt n i xi t hxi
 
-/-- Polynomiality of the `H` moments of a GPD model built from double distributions. -/
+/-- **Polynomiality** of the `H` moments of a GPD model built from double distributions: the
+`n`-th `x`-moment of `H` is, at physical skewness, an even polynomial in `ξ` of degree at most
+`n + 1`. -/
 theorem mellinMomentH_polynomial
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
     (n : ℕ) (i : Flavor) (t : ℝ) :
     ∃ p : Polynomial ℝ, p.natDegree ≤ n + 1 ∧ (∀ k, Odd k → p.coeff k = 0) ∧
       ∀ xi, |xi| ≤ 1 →
-        mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) n i xi t = p.eval xi :=
-  mellinMomentGpd_polynomial ddH dtH n i t
+        mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) n i xi t = p.eval xi := by
+  simpa only [mellinMomentH, Model.ofDoubleDistribution_H] using
+    mellinMomentGpd_polynomial ddH dtH n i t
 
 /-- Below the top slot the coefficients are pure double-distribution form factors. -/
 lemma momentPolynomial_coeff_of_le (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
     (n : ℕ) (i : Flavor) (t : ℝ) (k : ℕ) (hk : k ≤ n) :
     (momentPolynomial dd dt n i t).coeff k
       = (n.choose k : ℝ) * ddMoment dd i (n - k) k t := by
-  rw [momentPolynomial_coeff, momentCoeff, ite_eq_left hk]
+  rw [momentPolynomial_coeff, momentCoeff_of_le dd dt n i t hk]
 
 /-- **The D-term is the top coefficient.** The `ξ^(n+1)` coefficient of the moment
 polynomial is exactly the `n`-th moment of the D-term, with no double-distribution
@@ -384,7 +400,7 @@ the `C_n(t)` that carries the pressure and shear-force interpretation of the nuc
 lemma momentPolynomial_coeff_top (dd : DoubleDistribution Flavor) (dt : DTerm Flavor)
     (n : ℕ) (i : Flavor) (t : ℝ) :
     (momentPolynomial dd dt n i t).coeff (n + 1) = dtMoment dt i n t := by
-  rw [momentPolynomial_coeff, momentCoeff, ite_eq_right (by omega : ¬ n + 1 ≤ n), ite_eq_left rfl]
+  rw [momentPolynomial_coeff, momentCoeff_top]
 
 /-- The D-term slot is empty for even `n`, i.e. for odd literature index `n + 1`. -/
 lemma momentPolynomial_coeff_top_eq_zero_of_even (dd : DoubleDistribution Flavor)
@@ -400,10 +416,22 @@ def polynomialityAssumptionsOfDoubleDistribution
     PolynomialityAssumptions (Model.ofDoubleDistribution ddH dtH ddE dtE) where
   coeff := fun n i k t => momentCoeff ddH dtH n i k t
   coeff_eq_zero_of_odd := fun n i k t hk => momentCoeff_eq_zero_of_odd ddH dtH n i k t hk
-  polynomial := fun n i xi t hxi => mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi
+  polynomial := fun n i xi t hxi => by
+    rw [mellinMomentH, Model.ofDoubleDistribution_H]
+    exact mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi
+
+/-- The coefficients of `polynomialityAssumptionsOfDoubleDistribution` are `momentCoeff` of the
+`H` double distribution and D-term. -/
+@[simp]
+lemma polynomialityAssumptionsOfDoubleDistribution_coeff
+    (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
+    (n : ℕ) (i : Flavor) (k : ℕ) (t : ℝ) :
+    (polynomialityAssumptionsOfDoubleDistribution ddH ddE dtH dtE).coeff n i k t
+      = momentCoeff ddH dtH n i k t :=
+  rfl
 
 /-- The zeroth moment of `H` for a GPD model built from double distributions does not depend
-on the skewness. -/
+on the skewness, for physical skewness `|ξ| ≤ 1`. -/
 lemma mellinMomentH_n0_eq_at_zero_ofDoubleDistribution
     (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
     (i : Flavor) (xi t : ℝ) (hxi : |xi| ≤ 1) :

@@ -117,6 +117,22 @@ def Model.ofDoubleDistribution
   H := gpdOfDoubleDistribution ddH dtH
   E := gpdOfDoubleDistribution ddE dtE
 
+/-- The `H` GPD of `Model.ofDoubleDistribution` is the one induced by `ddH` and `dtH`. -/
+@[simp]
+lemma Model.ofDoubleDistribution_H
+    (ddH : DoubleDistribution Flavor) (dtH : DTerm Flavor)
+    (ddE : DoubleDistribution Flavor) (dtE : DTerm Flavor) :
+    (Model.ofDoubleDistribution ddH dtH ddE dtE).H = gpdOfDoubleDistribution ddH dtH :=
+  rfl
+
+/-- The `E` GPD of `Model.ofDoubleDistribution` is the one induced by `ddE` and `dtE`. -/
+@[simp]
+lemma Model.ofDoubleDistribution_E
+    (ddH : DoubleDistribution Flavor) (dtH : DTerm Flavor)
+    (ddE : DoubleDistribution Flavor) (dtE : DTerm Flavor) :
+    (Model.ofDoubleDistribution ddH dtH ddE dtE).E = gpdOfDoubleDistribution ddE dtE :=
+  rfl
+
 /-- The forward parton density carried by a double distribution, `f(x) = ∫ dα F(x, α, 0)`. -/
 def pdfOfDoubleDistribution (dd : DoubleDistribution Flavor) : PDF.Pdf Flavor :=
   fun i x _Q2 => ∫ α : ℝ, dd.F i x α 0
@@ -134,7 +150,7 @@ lemma forwardLimit_ofDoubleDistribution
     ForwardLimitToPdfAtScale (Model.ofDoubleDistribution ddH dtH ddE dtE)
       (pdfOfDoubleDistribution ddH) Q2 := by
   intro i x
-  simp [Model.ofDoubleDistribution, gpdOfDoubleDistribution, pdfOfDoubleDistribution]
+  simp [gpdOfDoubleDistribution, pdfOfDoubleDistribution]
 
 /-- The induced GPD has the physical support `|x| ≤ 1`, for physical skewness `|ξ| ≤ 1`.
 
