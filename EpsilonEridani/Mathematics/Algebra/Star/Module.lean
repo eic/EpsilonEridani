@@ -12,14 +12,16 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 /-!
 # Dimensions of the self-adjoint and skew-adjoint parts of a star module
 
-Every element of a star module over a ring in which `2` is invertible is uniquely the sum of a
-self-adjoint and a skew-adjoint element (`StarModule.decomposeProdAdjoint`), so over a field the
-two parts have complementary dimensions.
+Every element of a star module over a ring with trivial star in which `2` is invertible is uniquely
+the sum of a self-adjoint and a skew-adjoint element (`StarModule.decomposeProdAdjoint`), so over
+such a field the two parts have complementary dimensions. The trivial star on the scalars is what
+makes the two parts submodules; a complex star module is therefore treated over `ℝ`.
 
 ## Main results
 
-* `finrank_selfAdjoint_add_finrank_skewAdjoint`: over any field in which `2` is invertible, the
-  `R`-dimensions of the self-adjoint and skew-adjoint parts add up to that of the space.
+* `finrank_selfAdjoint_add_finrank_skewAdjoint`: over any field with trivial star in which `2` is
+  invertible, the `R`-dimensions of the self-adjoint and skew-adjoint parts add up to that of the
+  space.
 -/
 
 public section

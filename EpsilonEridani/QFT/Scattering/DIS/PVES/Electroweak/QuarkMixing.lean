@@ -32,9 +32,10 @@ identified with the Lie algebra `𝔲(n)` of skew-Hermitian matrices by left tra
 `phaseShiftGenerator V (α, β) = I (V† diag(α) V + diag(β))`
 
 from `ℝⁿ × ℝⁿ` to `𝔲(n)`: `V` times it is, entrywise, the derivative at `t = 0` of the rephasing
-curve with phases `tα`, `tβ` (`hasDerivAt_phaseShift_apply`). For three generations Physlib's
-`phaseShift` is the corresponding diagonal unitary (`unitaryTorusHom_circleExp_eq_phaseShift`),
-so the rephasing curve is Physlib's `phaseShiftApply` (`hasDerivAt_phaseShiftApply_apply`).
+curve with phases `tα`, `tβ` (`hasDerivAt_unitaryTorusHom_mul_mul_apply`). For three
+generations Physlib's `phaseShift` is the corresponding diagonal unitary
+(`unitaryTorusHom_circleExp_eq_phaseShift`), so the rephasing curve is Physlib's `phaseShiftApply`
+(`hasDerivAt_phaseShiftApply_apply`).
 
 A pair `(α, β)` lies in the kernel exactly when `αᵢ + βⱼ = 0` at every nonzero entry `Vᵢⱼ`
 (`phaseShiftGenerator_eq_zero_iff`). The overall phase `(1, -1)` always lies in the kernel; when
@@ -46,10 +47,11 @@ familiar count of four physical parameters, three mixing angles and one phase.
 ## Main results
 
 * `mul_phaseShiftGenerator_apply`: `(V · phaseShiftGenerator V (α, β))ᵢⱼ = I (αᵢ + βⱼ) Vᵢⱼ`.
-* `hasDerivAt_phaseShift_apply`: `V · phaseShiftGenerator V (α, β)` is, entrywise, the velocity at
-  `t = 0` of the rephasing curve `t ↦ diag(e^{itα}) V diag(e^{itβ})`.
-* `unitaryTorusHom_circleExp_eq_phaseShift`, `hasDerivAt_phaseShiftApply_apply`: for three
-  generations the rephasing curve is Physlib's `phaseShiftApply`.
+* `hasDerivAt_unitaryTorusHom_mul_mul_apply`: `V · phaseShiftGenerator V (α, β)` is, entrywise,
+  the velocity at `t = 0` of the rephasing curve `t ↦ diag(e^{itα}) V diag(e^{itβ})`.
+* `unitaryTorusHom_circleExp_eq_phaseShift`, `phaseShiftApply_eq_unitaryTorusHom_mul_mul`,
+  `hasDerivAt_phaseShiftApply_apply`: for three generations the rephasing curve is Physlib's
+  `phaseShiftApply`.
 * `phaseShiftGenerator_eq_zero_iff`: the kernel consists of the `(α, β)` with `αᵢ + βⱼ = 0`
   whenever `Vᵢⱼ ≠ 0`.
 * `ker_phaseShiftGenerator`: if no entry of `V` vanishes, the kernel is the line of the overall
@@ -90,13 +92,14 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- The infinitesimal rephasing of a mixing matrix `V ∈ U(n)`, left-translated to the Lie algebra
 `𝔲(n)` of skew-Hermitian matrices: the phases `(α, β)` of the up-type and down-type quarks go to
 `I (V† diag(α) V + diag(β))`. Multiplied on the left by `V` it is the velocity of the rephasing
-curve `t ↦ diag(e^{itα}) V diag(e^{itβ})` (`hasDerivAt_phaseShift_apply`). -/
+curve `t ↦ diag(e^{itα}) V diag(e^{itβ})` (`hasDerivAt_unitaryTorusHom_mul_mul_apply`). -/
 def phaseShiftGenerator (V : unitaryGroup ι ℂ) :
     (ι → ℝ) × (ι → ℝ) →ₗ[ℝ] skewAdjoint (_root_.Matrix ι ι ℂ) where
   toFun p := ⟨I • (star (V : _root_.Matrix ι ι ℂ) * diagonal (fun k => (p.1 k : ℂ)) * V +
       diagonal (fun k => (p.2 k : ℂ))), by
     have hD (d : ι → ℝ) : IsSelfAdjoint (diagonal fun k => (d k : ℂ)) :=
-      _root_.Matrix.isHermitian_diagonal_of_self_adjoint _ (funext fun k => conj_ofReal (d k))
+      (_root_.Matrix.isHermitian_diagonal_of_self_adjoint _
+        (funext fun k => conj_ofReal (d k))).isSelfAdjoint
     exact I_smul_mem_skewAdjoint_iff_isSelfAdjoint.2 (((hD p.1).conjugate' _).add (hD p.2))⟩
   map_add' p q := by
     ext1
@@ -139,7 +142,7 @@ theorem mul_phaseShiftGenerator_apply (V : unitaryGroup ι ℂ) (p : (ι → ℝ
 /-- `V · phaseShiftGenerator V (α, β)` is the velocity at `t = 0` of the rephasing curve
 `t ↦ diag(e^{itα}) V diag(e^{itβ})`, read entrywise. This identifies `phaseShiftGenerator V` with
 the derivative of the rephasing action at `V`, left-translated to the Lie algebra. -/
-theorem hasDerivAt_phaseShift_apply (V : unitaryGroup ι ℂ) (α β : ι → ℝ) (i j : ι) :
+theorem hasDerivAt_unitaryTorusHom_mul_mul_apply (V : unitaryGroup ι ℂ) (α β : ι → ℝ) (i j : ι) :
     HasDerivAt (fun t : ℝ => ((TauCeti.unitaryTorusHom ι (fun k => Circle.exp (t * α k)) * V *
         TauCeti.unitaryTorusHom ι (fun k => Circle.exp (t * β k)) : unitaryGroup ι ℂ) :
           _root_.Matrix ι ι ℂ) i j)
@@ -255,6 +258,15 @@ theorem finrank_quotient_range_phaseShiftGenerator_add_two_mul_card (V : unitary
   have h₂ := finrank_range_add_finrank_ker_phaseShiftGenerator V
   omega
 
+/-- The arithmetic step shared by the two quotient counts: `q + 2n = n² + k` with `n ≥ 1` means
+`q + 1 = (n - 1)² + k`. -/
+private theorem add_one_eq_sq_sub_one_add {q n k : ℕ} (hn : 0 < n) (h : q + 2 * n = n ^ 2 + k) :
+    q + 1 = (n - 1) ^ 2 + k := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have hsq : (m + 1) ^ 2 = m ^ 2 + 2 * m + 1 := by ring
+  rw [add_tsub_cancel_right]
+  omega
+
 /-- For every mixing matrix `V`, there are at least `(n - 1)²` physical directions at `V`: the
 quotient of the Lie algebra `𝔲(n)` by the infinitesimal rephasings has dimension at least
 `(n - 1)²`. -/
@@ -263,13 +275,10 @@ theorem sq_card_sub_one_le_finrank_quotient_range_phaseShiftGenerator (V : unita
       finrank ℝ (skewAdjoint (_root_.Matrix ι ι ℂ) ⧸ LinearMap.range (phaseShiftGenerator V)) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · simp
-  have h := finrank_quotient_range_phaseShiftGenerator_add_two_mul_card V
+  have h := add_one_eq_sq_sub_one_add Fintype.card_pos
+    (finrank_quotient_range_phaseShiftGenerator_add_two_mul_card V)
   have hk := one_le_finrank_ker_phaseShiftGenerator V
-  obtain ⟨m, hm⟩ : ∃ m, Fintype.card ι = m + 1 :=
-    ⟨_, (Nat.succ_pred_eq_of_pos Fintype.card_pos).symm⟩
-  rw [hm] at h ⊢
-  rw [add_tsub_cancel_right]
-  nlinarith
+  omega
 
 /-- If no entry of the mixing matrix `V` vanishes, the physical directions at `V`, the quotient of
 the Lie algebra `𝔲(n)` by the infinitesimal rephasings, form a real vector space of dimension
@@ -281,13 +290,10 @@ theorem finrank_quotient_range_phaseShiftGenerator {V : unitaryGroup ι ℂ}
   rcases isEmpty_or_nonempty ι with hι | hι
   · have h := finrank_quotient_add_finrank_range_phaseShiftGenerator V
     simp_all
-  have h := finrank_quotient_range_phaseShiftGenerator_add_two_mul_card V
+  have h := add_one_eq_sq_sub_one_add Fintype.card_pos
+    (finrank_quotient_range_phaseShiftGenerator_add_two_mul_card V)
   rw [finrank_ker_phaseShiftGenerator hV] at h
-  obtain ⟨m, hm⟩ : ∃ m, Fintype.card ι = m + 1 :=
-    ⟨_, (Nat.succ_pred_eq_of_pos Fintype.card_pos).symm⟩
-  rw [hm] at h ⊢
-  rw [add_tsub_cancel_right]
-  nlinarith
+  omega
 
 /-- Physlib's phase shift `phaseShift a b c` is the element of the diagonal torus of `U(3)` with
 phases `e^{ia}`, `e^{ib}`, `e^{ic}`. -/
@@ -298,6 +304,23 @@ theorem unitaryTorusHom_circleExp_eq_phaseShift (a b c : ℝ) :
   rw [TauCeti.coe_unitaryTorusHom, phaseShift_coe_matrix]
   fin_cases i <;> fin_cases j <;> simp [mul_comm]
 
+/-- Physlib's phase-shift action `phaseShiftApply` is the rephasing by the corresponding elements
+of the diagonal torus of `U(3)`. -/
+theorem phaseShiftApply_eq_unitaryTorusHom_mul_mul (V : unitaryGroup (Fin 3) ℂ)
+    (a b c d e f : ℝ) :
+    (phaseShiftApply V a b c d e f : unitaryGroup (Fin 3) ℂ) =
+      TauCeti.unitaryTorusHom (Fin 3) ![Circle.exp a, Circle.exp b, Circle.exp c] * V *
+        TauCeti.unitaryTorusHom (Fin 3) ![Circle.exp d, Circle.exp e, Circle.exp f] := by
+  rw [unitaryTorusHom_circleExp_eq_phaseShift, unitaryTorusHom_circleExp_eq_phaseShift]
+  rfl
+
+/-- Scaling the three phases by `t` inside `Circle.exp`, written as a vector. -/
+private theorem circleExp_mul_vecCons (t x y z : ℝ) :
+    (fun k => Circle.exp (t * ![x, y, z] k)) =
+      ![Circle.exp (t * x), Circle.exp (t * y), Circle.exp (t * z)] := by
+  funext k
+  fin_cases k <;> rfl
+
 /-- For a three-generation mixing matrix, `V · phaseShiftGenerator V (α, β)` is, entrywise, the
 velocity at `t = 0` of Physlib's phase-shift curve `t ↦ phaseShiftApply V (tα) (tβ)`, whose points
 are all `PhaseShiftRelation`-equivalent to `V`. -/
@@ -305,13 +328,10 @@ theorem hasDerivAt_phaseShiftApply_apply (V : CKMMatrix) (a b c d e f : ℝ) (i 
     HasDerivAt
       (fun t : ℝ => (phaseShiftApply V (t * a) (t * b) (t * c) (t * d) (t * e) (t * f)).1 i j)
       ((V.1 * phaseShiftGenerator V (![a, b, c], ![d, e, f])) i j) 0 := by
-  convert hasDerivAt_phaseShift_apply V ![a, b, c] ![d, e, f] i j using 2 with t
-  have h (x y z : ℝ) : (fun k => Circle.exp (t * ![x, y, z] k)) =
-      ![Circle.exp (t * x), Circle.exp (t * y), Circle.exp (t * z)] := by
-    funext k
-    fin_cases k <;> rfl
-  rw [h, h, unitaryTorusHom_circleExp_eq_phaseShift, unitaryTorusHom_circleExp_eq_phaseShift,
-    phaseShiftApply_coe, Submonoid.coe_mul, phaseShift_coe_matrix, phaseShiftMatrix]
+  convert hasDerivAt_unitaryTorusHom_mul_mul_apply V ![a, b, c] ![d, e, f] i j using 2 with t
+  rw [circleExp_mul_vecCons, circleExp_mul_vecCons]
+  exact congrArg (fun U : unitaryGroup (Fin 3) ℂ => (U : _root_.Matrix (Fin 3) (Fin 3) ℂ) i j)
+    (phaseShiftApply_eq_unitaryTorusHom_mul_mul V _ _ _ _ _ _)
 
 /-- A three-generation quark mixing matrix with no vanishing entry has four physical directions:
 the quotient of `𝔲(3)` by the infinitesimal rephasings has dimension four, the count of three
