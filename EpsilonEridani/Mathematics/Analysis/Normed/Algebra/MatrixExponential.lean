@@ -47,14 +47,20 @@ variable {𝕜 𝕂 𝔸 m : Type*} [NontriviallyNormedField 𝕜] [RCLike 𝕂]
 
 namespace Matrix
 
--- as for Mathlib's `Matrix.exp_add_of_commute`, `CompleteSpace (Matrix m m 𝔸)` under the scoped
--- operator norm only unifies with `respectTransparency` turned off
-set_option backward.isDefEq.respectTransparency false in
+-- The `CompleteSpace (Matrix m m 𝔸)` argument of the general lemma is passed explicitly.
+-- Under the scoped operator norm, typeclass synthesis cannot match the `CompleteSpace`
+-- instance of the product uniformity against the operator-norm uniformity baked into the
+-- lemma's binder: the two uniformities agree only beyond instance transparency. Mathlib's
+-- `Matrix.exp_add_of_commute` bridges the same diamond with
+-- `set_option backward.isDefEq.respectTransparency false`, which this repository forbids;
+-- an explicit argument instead leaves the check to the elaborator's definitional equality.
 /-- The derivative of `u ↦ exp (u • A)` is `A * exp (u • A)`: the matrix version of
 `_root_.hasDerivAt_exp_smul_const'`. -/
 theorem hasDerivAt_exp_smul_const' (A : Matrix m m 𝔸) (t : 𝕂) :
     HasDerivAt (fun u : 𝕂 => NormedSpace.exp (u • A)) (A * NormedSpace.exp (t • A)) t :=
-  open scoped Norms.Operator in _root_.hasDerivAt_exp_smul_const' A t
+  open scoped Norms.Operator in
+  @_root_.hasDerivAt_exp_smul_const' 𝕂 (Matrix m m 𝔸) _ _ _
+    (inferInstance : CompleteSpace (Matrix m m 𝔸)) A t
 
 end Matrix
 
@@ -107,7 +113,7 @@ theorem exp_smul_apply_of_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
       ((hasDerivAt_id s).matrix_exp_smul_const_mulVec' A (Pi.single j 1)) i
     rw [mulVec_mulVec] at hv
     simp only [id, one_smul, mulVec_single_one, col_apply] at hv
-    rwa [mul_apply, Finset.sum_eq_single i (fun k _ hk => by rw [h k hk, zero_mul])
+    rwa [Matrix.mul_apply, Finset.sum_eq_single i (fun k _ hk => by rw [h k hk, zero_mul])
       (fun hi => absurd (Finset.mem_univ i) hi)] at hv
   -- so `exp (s • -a) * g s` has derivative zero, `a` commuting with its own exponential
   have hc (s : 𝕂) : HasDerivAt
@@ -118,7 +124,7 @@ theorem exp_smul_apply_of_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
     rw [neg_mul, neg_mul, hcomm.eq, mul_assoc, neg_add_cancel]
   have hconst := is_const_of_deriv_eq_zero (fun s => (hc s).differentiableAt)
     (fun s => (hc s).deriv) u 0
-  simp only [zero_smul, NormedSpace.exp_zero, one_mul, one_apply] at hconst
+  simp only [zero_smul, NormedSpace.exp_zero, one_mul, Matrix.one_apply] at hconst
   -- `exp (u • a)` inverts `exp (u • -a)`; `NormedSpace.exp_add_of_commute` is stated over `ℚ`
   let : NormedAlgebra ℚ 𝔸 := NormedAlgebra.restrictScalars ℚ 𝕂 𝔸
   have hinv : NormedSpace.exp (u • a) * NormedSpace.exp (u • -a) = 1 := by
