@@ -32,7 +32,7 @@ here.
 ## ii. Key results
 
 - `DglapMomentSystem` is the data of the moment-space system: anomalous dimensions as a
-  function of the Mellin index, and a continuous running coupling.
+  function of the Mellin index, and a running coupling continuous in the log scale.
 - `IsMomentSolution` is the linear ODE system, stated componentwise with `HasDerivAt`.
 - `momentEvolution S N τ₀ τ` is the evolution operator `exp ((∫_{τ₀}^{τ} αs/(2π)) • γ(N))`,
   the exponential of the anomalous-dimension matrix times the `integratedCoupling` of the
@@ -103,15 +103,16 @@ channels.
 
 `gamma N` is the anomalous-dimension matrix at Mellin index `N`: the matrix of Mellin
 transforms of the splitting kernels, `γ i j N = M[P i j] N`. `alphaS` is the running
-coupling as a function of `Q2`, required to be continuous, which is what makes the
-coefficient matrix of the system continuous in `τ` and hence the system well posed. -/
+coupling as a function of `Q2`, required to be continuous in the log scale `τ = log Q2`, which is
+what makes the coefficient matrix of the system continuous in `τ` and hence the system well
+posed. Only positive scales enter, so `alphaS` may be discontinuous at `Q2 ≤ 0`. -/
 structure DglapMomentSystem (ι : Type) where
   /-- The anomalous-dimension matrix as a function of the Mellin index. -/
   gamma : ℂ → Matrix ι ι ℂ
   /-- The running coupling as a function of `Q2`. -/
   alphaS : ℝ → ℝ
-  /-- Continuity of the running coupling in `Q2`. -/
-  alphaS_continuous : Continuous alphaS
+  /-- Continuity of the running coupling in the log scale `τ = log Q2`. -/
+  alphaS_logScale_continuous : Continuous fun τ => alphaS (Real.exp τ)
 
 /-- The right-hand side of the moment-space DGLAP system in channel `i`:
 
@@ -170,8 +171,7 @@ lemma momentSolution_unique {ι : Type} [Fintype ι] (S : DglapMomentSystem ι) 
   -- the coupling is continuous, hence bounded on the compact interval
   have hcont : ContinuousOn (fun t => |S.alphaS (Real.exp t)| / (2 * Real.pi))
       (Set.Icc a b) :=
-    (((continuous_abs.comp
-      (S.alphaS_continuous.comp Real.continuous_exp)).div_const _)).continuousOn
+    ((continuous_abs.comp S.alphaS_logScale_continuous).div_const _).continuousOn
   have hne : (Set.Icc a b).Nonempty := Set.nonempty_Icc.mpr (le_of_lt (hτ0.1.trans hτ0.2))
   obtain ⟨tm, htm, hmax⟩ := isCompact_Icc.exists_isMaxOn hne hcont
   set M : ℝ := |S.alphaS (Real.exp tm)| / (2 * Real.pi) with hMdef
@@ -290,7 +290,7 @@ lemma momentEvolution_mul_adjacent (S : DglapMomentSystem ι) (N : ℂ) (τ₀ �
   simp only [momentEvolution_def]
   rw [← Matrix.exp_add_of_commute _ _ (((Commute.refl (S.gamma N)).smul_left _).smul_right _),
     ← add_smul,
-    ← integratedCoupling_add_adjacent (S.alphaS_continuous.comp Real.continuous_exp) τ₀ τ₁ τ₂]
+    ← integratedCoupling_add_adjacent S.alphaS_logScale_continuous τ₀ τ₁ τ₂]
   congr 2
   push_cast
   ring
@@ -308,7 +308,7 @@ lemma hasDerivAt_momentEvolution (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ 
       (((S.alphaS (Real.exp τ) / (2 * Real.pi) : ℝ) : ℂ) •
         (S.gamma N * momentEvolution S N τ₀ τ)) τ := by
   have hc :=
-    (hasDerivAt_integratedCoupling (S.alphaS_continuous.comp Real.continuous_exp) τ₀ τ).ofReal_comp
+    (hasDerivAt_integratedCoupling S.alphaS_logScale_continuous τ₀ τ).ofReal_comp
   simpa only [momentEvolution_def] using hc.matrix_exp_smul_const' (S.gamma N)
 
 /-- The evolution operator applied to a fixed vector has the moment-space right-hand side
@@ -319,7 +319,7 @@ lemma hasDerivAt_momentEvolution_mulVec (S : DglapMomentSystem ι) (N : ℂ) (τ
       (((S.alphaS (Real.exp τ) / (2 * Real.pi) : ℝ) : ℂ) •
         (S.gamma N *ᵥ (momentEvolution S N τ₀ τ *ᵥ F₀))) τ := by
   have hc :=
-    (hasDerivAt_integratedCoupling (S.alphaS_continuous.comp Real.continuous_exp) τ₀ τ).ofReal_comp
+    (hasDerivAt_integratedCoupling S.alphaS_logScale_continuous τ₀ τ).ofReal_comp
   simpa only [momentEvolution_def] using hc.matrix_exp_smul_const_mulVec' (S.gamma N) F₀
 
 /-- The evolution operator applied to an initial vector solves the moment-space system. -/
@@ -371,10 +371,8 @@ lemma momentEvolution_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ} {d : ι �
     (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
     momentEvolution S N τ₀ τ =
       Matrix.diagonal fun i => Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) := by
-  ext i j
-  rw [momentEvolution_apply_of_gamma_apply_eq_zero_of_ne
-      (fun k hk => by rw [h, Matrix.diagonal_apply_ne d hk.symm]),
-    h, Matrix.diagonal_apply_eq, Matrix.diagonal_apply]
+  rw [momentEvolution_def, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
+  simp only [Pi.smul_apply, smul_eq_mul, Complex.exp_eq_exp_ℂ]
 
 end momentEvolution
 
