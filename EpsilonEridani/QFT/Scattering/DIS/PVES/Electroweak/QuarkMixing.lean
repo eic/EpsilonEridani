@@ -44,6 +44,9 @@ no entry of `V` vanishes the kernel is its line, so the rephasings span a subspa
 `n² - (2n - 1) = (n - 1)²`. For every `V` this is a lower bound. For three generations it is the
 familiar count of four physical parameters, three mixing angles and one phase.
 
+Physlib's `CKMMatrix` is by definition `unitaryGroup (Fin 3) ℂ`, so a CKM matrix is passed to the
+`n`-generation API (`phaseShiftGenerator` and its lemmas) without a coercion.
+
 ## Main results
 
 * `mul_phaseShiftGenerator_apply`: `(V · phaseShiftGenerator V (α, β))ᵢⱼ = I (αᵢ + βⱼ) Vᵢⱼ`.
@@ -62,7 +65,7 @@ familiar count of four physical parameters, three mixing angles and one phase.
   `V` form a real vector space of dimension `(n - 1)²`;
   `finrank_quotient_range_phaseShiftGenerator_add_two_mul_card` is the exact count for every `V`
   in terms of the kernel, and
-  `sq_card_sub_one_le_finrank_quotient_range_phaseShiftGenerator` is the lower bound for every `V`.
+  `card_sub_one_sq_le_finrank_quotient_range_phaseShiftGenerator` is the lower bound for every `V`.
 * `finrank_quotient_range_phaseShiftGenerator_eq_four`: for a three-generation mixing matrix with
   no vanishing entry there are four physical directions.
 
@@ -90,7 +93,8 @@ open _root_.Matrix Complex Module
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The infinitesimal rephasing of a mixing matrix `V ∈ U(n)`, left-translated to the Lie algebra
-`𝔲(n)` of skew-Hermitian matrices: the phases `(α, β)` of the up-type and down-type quarks go to
+`𝔲(n)` of skew-Hermitian matrices: the parameters `(α, β)` of the rephasing
+`V ↦ diag(e^{iα}) V diag(e^{iβ})`, with `α` the up-type phases and `-β` the down-type phases, go to
 `I (V† diag(α) V + diag(β))`. Multiplied on the left by `V` it is the velocity of the rephasing
 curve `t ↦ diag(e^{itα}) V diag(e^{itβ})` (`hasDerivAt_unitaryTorusHom_mul_mul_apply`). -/
 def phaseShiftGenerator (V : unitaryGroup ι ℂ) :
@@ -260,7 +264,7 @@ theorem finrank_quotient_range_phaseShiftGenerator_add_two_mul_card (V : unitary
 
 /-- The arithmetic step shared by the two quotient counts: `q + 2n = n² + k` with `n ≥ 1` means
 `q + 1 = (n - 1)² + k`. -/
-private theorem add_one_eq_sq_sub_one_add {q n k : ℕ} (hn : 0 < n) (h : q + 2 * n = n ^ 2 + k) :
+private theorem add_one_eq_sub_one_sq_add {q n k : ℕ} (hn : 0 < n) (h : q + 2 * n = n ^ 2 + k) :
     q + 1 = (n - 1) ^ 2 + k := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   have hsq : (m + 1) ^ 2 = m ^ 2 + 2 * m + 1 := by ring
@@ -270,12 +274,12 @@ private theorem add_one_eq_sq_sub_one_add {q n k : ℕ} (hn : 0 < n) (h : q + 2 
 /-- For every mixing matrix `V`, there are at least `(n - 1)²` physical directions at `V`: the
 quotient of the Lie algebra `𝔲(n)` by the infinitesimal rephasings has dimension at least
 `(n - 1)²`. -/
-theorem sq_card_sub_one_le_finrank_quotient_range_phaseShiftGenerator (V : unitaryGroup ι ℂ) :
+theorem card_sub_one_sq_le_finrank_quotient_range_phaseShiftGenerator (V : unitaryGroup ι ℂ) :
     (Fintype.card ι - 1) ^ 2 ≤
       finrank ℝ (skewAdjoint (_root_.Matrix ι ι ℂ) ⧸ LinearMap.range (phaseShiftGenerator V)) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · simp
-  have h := add_one_eq_sq_sub_one_add Fintype.card_pos
+  have h := add_one_eq_sub_one_sq_add Fintype.card_pos
     (finrank_quotient_range_phaseShiftGenerator_add_two_mul_card V)
   have hk := one_le_finrank_ker_phaseShiftGenerator V
   omega
@@ -290,7 +294,7 @@ theorem finrank_quotient_range_phaseShiftGenerator {V : unitaryGroup ι ℂ}
   rcases isEmpty_or_nonempty ι with hι | hι
   · have h := finrank_quotient_add_finrank_range_phaseShiftGenerator V
     simp_all
-  have h := add_one_eq_sq_sub_one_add Fintype.card_pos
+  have h := add_one_eq_sub_one_sq_add Fintype.card_pos
     (finrank_quotient_range_phaseShiftGenerator_add_two_mul_card V)
   rw [finrank_ker_phaseShiftGenerator hV] at h
   omega
@@ -312,7 +316,8 @@ theorem phaseShiftApply_eq_unitaryTorusHom_mul_mul (V : unitaryGroup (Fin 3) ℂ
       TauCeti.unitaryTorusHom (Fin 3) ![Circle.exp a, Circle.exp b, Circle.exp c] * V *
         TauCeti.unitaryTorusHom (Fin 3) ![Circle.exp d, Circle.exp e, Circle.exp f] := by
   rw [unitaryTorusHom_circleExp_eq_phaseShift, unitaryTorusHom_circleExp_eq_phaseShift]
-  rfl
+  exact Subtype.ext <| (phaseShiftApply_coe V a b c d e f).trans <| by
+    simp only [Submonoid.coe_mul, phaseShift_coe_matrix, phaseShiftMatrix]
 
 /-- Scaling the three phases by `t` inside `Circle.exp`, written as a vector. -/
 private theorem circleExp_mul_vecCons (t x y z : ℝ) :
