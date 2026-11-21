@@ -205,11 +205,6 @@ structure IsPairStabilizer (g : Bilin V) (a b : V) (f : V →ₗ[ℝ] V) : Prop 
   /-- `f` fixes the second vector of the pair. -/
   fixes_right : f b = b
 
-/-- A stabilizer of the pair `(a, b)` fixes the difference `b - a`. -/
-lemma IsPairStabilizer.fixes_sub {g : Bilin V} {a b : V} {f : V →ₗ[ℝ] V}
-    (hf : IsPairStabilizer g a b f) : f (b - a) = b - a := by
-  rw [map_sub, hf.fixes_left, hf.fixes_right]
-
 /-- The reflection in a non-null direction `g`-orthogonal to both `a` and `b` is a stabilizer of
 the pair `(a, b)`. -/
 lemma reflect_isPairStabilizer (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0)
@@ -224,6 +219,23 @@ a vector `g`-orthogonal to both. -/
 structure IsSpectatorSplit (g : Bilin V) (a b : V) : Prop where
   /-- Every vector is a combination of `a` and `b` plus a spectator `g`-orthogonal to both. -/
   span : ∀ v : V, ∃ (x y : ℝ) (u : V), g a u = 0 ∧ g b u = 0 ∧ v = x • a + y • b + u
+
+/-- Two vectors with non-zero Gram determinant split `V`: the coefficients of `v` solve the
+linear system `g a v = x g a a + y g a b`, `g b v = x g b a + y g b b` by Cramer's rule, and the
+remainder is `g`-orthogonal to both. -/
+lemma isSpectatorSplit_of_gram_ne_zero (g : Bilin V) {a b : V}
+    (h : g a a * g b b - g a b * g b a ≠ 0) : IsSpectatorSplit g a b := by
+  have h' : g b b * g a a - g a b * g b a ≠ 0 := by rwa [mul_comm (g b b)]
+  refine ⟨fun v => ?_⟩
+  set x := (g a v * g b b - g a b * g b v) / (g a a * g b b - g a b * g b a)
+  set y := (g a a * g b v - g b a * g a v) / (g a a * g b b - g a b * g b a)
+  refine ⟨x, y, v - x • a - y • b, ?_, ?_, by abel⟩
+  · simp only [map_sub, map_smul, smul_eq_mul, x, y]
+    field_simp
+    ring
+  · simp only [map_sub, map_smul, smul_eq_mul, x, y]
+    field_simp
+    ring
 
 end Bilin
 
@@ -709,30 +721,19 @@ lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinem
   rw [hW, transverseMetric_apply, hqe, hTe]
   ring
 
-/-- **Orthogonal splitting along `q` and `p_T`.** When `q` and `p_T` are non-null, every vector
-splits as `v = a p_T + b q + u` with `u` `g`-orthogonal to `q` and to `p_T`. This discharges the
-`Bilin.IsSpectatorSplit.span` condition of `SpectatorAssumptions`, up to the order of the two
-orthogonality conditions; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
-`b = (q·v) / (q·q)`. -/
-lemma exists_orthogonal_spectator (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
-    (hqq : g K.q K.q ≠ 0) (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) (v : V) :
-    ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
-      v = a • pTransverse g K + b • K.q + u := by
-  set T := pTransverse g K
-  have hTq : g T K.q = 0 := pTransverse_orthogonal_q g K hqq
-  have hqT : g K.q T = 0 := by rw [hSymm.eq, hTq]
-  set a := g T v / g T T
-  set b := g K.q v / g K.q K.q
-  refine ⟨a, b, v - a • T - b • K.q, ?_, ?_, by abel⟩
-  · simp only [map_sub, map_smul, smul_eq_mul, hqT, b]
-    field_simp
-    ring
-  · simp only [map_sub, map_smul, smul_eq_mul, hTq, a]
-    field_simp
-    ring
+/-- **Orthogonal splitting along `p_T` and `q`.** When `q` and `p_T` are non-null, every vector
+splits as `v = a p_T + b q + u` with `u` `g`-orthogonal to `p_T` and to `q`, which is the
+`Bilin.IsSpectatorSplit` that `SpectatorAssumptions` extends. Since `p_T` and `q` are orthogonal,
+the coefficients are `a = (p_T·v) / (p_T·p_T)` and `b = (q·v) / (q·q)`. -/
+lemma isSpectatorSplit_pTransverse_q (g : Bilin V) (K : DisKinematics V)
+    (hqq : g K.q K.q ≠ 0) (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) :
+    Bilin.IsSpectatorSplit g (pTransverse g K) K.q := by
+  refine Bilin.isSpectatorSplit_of_gram_ne_zero g ?_
+  rw [pTransverse_orthogonal_q g K hqq, zero_mul, sub_zero]
+  exact mul_ne_zero hTT hqq
 
 /-- **Orthogonal splitting of a decomposed tensor.** Write `v = a p_T + b q + u` with `u`
-`g`-orthogonal to `q` and to `p_T` (`exists_orthogonal_spectator`), so that
+`g`-orthogonal to `q` and to `p_T` (`isSpectatorSplit_pTransverse_q`), so that
 `a = (p_T·v) / (p_T·p_T)`. A tensor with an `F1`/`F2` decomposition then takes the value
 `-(u·u) F1 + a² W(p_T, p_T)` on `v`: the `q` component is invisible and the cross terms
 vanish. -/
@@ -743,7 +744,7 @@ lemma exists_apply_self_eq_of_isF1F2Decomposition (g : Bilin V) (K : DisKinemati
     ∃ u : V, g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
       W v v = -g u u * F1 + (g (pTransverse g K) v / g (pTransverse g K) (pTransverse g K)) ^ 2
         * W (pTransverse g K) (pTransverse g K) := by
-  obtain ⟨a, b, u, huq, huT, rfl⟩ := exists_orthogonal_spectator g K hSymm hqq hTT v
+  obtain ⟨a, b, u, huT, huq, rfl⟩ := (isSpectatorSplit_pTransverse_q g K hqq hTT).span v
   refine ⟨u, huq, huT, ?_⟩
   have hTq : g (pTransverse g K) K.q = 0 := pTransverse_orthogonal_q g K hqq
   have hqT : g K.q (pTransverse g K) = 0 := by rw [hSymm.eq, hTq]

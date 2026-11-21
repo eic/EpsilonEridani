@@ -49,7 +49,7 @@ and the difference `q = p' - p`
 `g q J = 0` then reads `A (g p' p' - g p p) + B t = 0` for the coefficients `A` of `P` and `B` of
 `q` (`FormFactor.apply_sub_smul_add_add_smul_sub`). When the two states have equal mass the first
 term vanishes, so a non-zero `t` forces `B = 0`
-(`FormFactor.coeff_sub_eq_zero_of_apply_sub_eq_zero`); this equal-mass hypothesis is exactly
+(`FormFactor.eq_zero_of_smul_add_add_smul_sub_conserved`); this equal-mass hypothesis is exactly
 what fails for a transition between different states. The single surviving coefficient is
 unique as soon as `P ≠ 0` (`FormFactor.IsLorentzCovariant.existsUnique_eq_smul`), as at the
 witness transition (`FormFactor.Witness.existsUnique_eq_smul_pWit`). The witness
@@ -66,7 +66,7 @@ pointwise theorem depends on the transition only through `t` is the further stat
 isometries act transitively on transitions with equal `t`, a Witt-type theorem not available in
 Mathlib; it is not proved here, and `HasFormFactor` assumes it. Such a family is covariant and
 conserved at every transition (`FormFactor.HasFormFactor.isLorentzCovariant`,
-`FormFactor.HasFormFactor.apply_sub_eq_zero`), and its form factor is determined at every
+`FormFactor.HasFormFactor.conserved`), and its form factor is determined at every
 momentum transfer that a transition with `p + p' ≠ 0` realises
 (`FormFactor.HasFormFactor.formFactor_eq_of_apply_eq_smul`).
 
@@ -74,8 +74,8 @@ The normalisation is the Ward identity for the electromagnetic current in matrix
 the charge operator `Q = ∫ d³x J⁰` acts on the state as its charge `e`, which for covariantly
 normalised states is the forward matrix element `⟨h(p)| J^μ_em(0) |h(p)⟩ = 2 e p^μ`. The
 forward matrix element of a family with a form factor is `2 F(0) p`
-(`FormFactor.HasFormFactor.apply_self`), so under that hypothesis the form factor at `t = 0` is
-the charge (`FormFactor.HasFormFactor.formFactor_zero_eq`).
+(`FormFactor.HasFormFactor.apply_self`), so the form factor at `t = 0` is the
+charge exactly when that hypothesis holds (`FormFactor.HasFormFactor.formFactor_zero_eq_iff`).
 
 ## The charge radius and the single-pole form factor
 
@@ -84,8 +84,8 @@ For a form factor normalised to unit charge, `F(0) = 1`, the squared charge radi
 `Q² = -t`; for charge `e` the same quantity is `e ⟨r²⟩`. The single-pole form factor
 `F(t) = e Λ² / (Λ² - t)` (`FormFactor.singlePole`) has `F(0) = e`, `6 dF/dt (0) = 6 e / Λ²`, so
 squared charge radius `6 / Λ²` (`FormFactor.chargeRadiusSq_singlePole`), and `t F(t) → -e Λ²`
-as `t → -∞` (`FormFactor.tendsto_mul_singlePole_atBot`), so a form factor falling like `1/Q²`
-at large spacelike momentum transfer needs no distribution amplitude to produce it.
+as `t → -∞` (`FormFactor.tendsto_mul_singlePole_atBot`): the single-pole form factor falls like
+`1/t` at large spacelike momentum transfer.
 
 ## References
 
@@ -105,7 +105,8 @@ namespace EpsilonEridani.QFT.Scattering.Elastic.FormFactor
 open Filter Topology
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
 open EpsilonEridani.QFT.Scattering.DIS.Tensors (Bilin.IsPairStabilizer Bilin.IsSpectatorSplit
-  Bilin.reflect Bilin.reflect_apply Bilin.reflect_isPairStabilizer)
+  Bilin.isSpectatorSplit_of_gram_ne_zero Bilin.reflect Bilin.reflect_apply
+  Bilin.reflect_isPairStabilizer)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
@@ -142,19 +143,13 @@ theorem isLorentzCovariant_smul_sub (g : Bilin V) (p p' : V) (B : ℝ) :
   rw [h]
   exact isLorentzCovariant_smul_add_smul g p p' (-B) B
 
-/-- Every combination of the sum and the difference of the momenta is covariant. -/
-theorem isLorentzCovariant_smul_add_add_smul_sub (g : Bilin V) (p p' : V) (A B : ℝ) :
-    IsLorentzCovariant g p p' (A • (p + p') + B • (p' - p)) := by
-  have h : A • (p + p') + B • (p' - p) = (A - B) • p + (A + B) • p' := by module
-  rw [h]
-  exact isLorentzCovariant_smul_add_smul g p p' (A - B) (A + B)
-
 /-- **Covariance has content.** A covariant matrix element has no component along a non-null
 spectator direction: the reflection in that direction fixes both momenta and reverses it. -/
 theorem IsLorentzCovariant.apply_spectator_eq_zero {g : Bilin V} (hSymm : g.IsSymm) {p p' J u : V}
-    (hJ : IsLorentzCovariant g p p' J) (hu : g u u ≠ 0) (hup : g u p = 0) (hup' : g u p' = 0) :
+    (hJ : IsLorentzCovariant g p p' J) (hu : g u u ≠ 0) (hpu : g p u = 0) (hp'u : g p' u = 0) :
     g u J = 0 := by
-  have h := hJ _ (Bilin.reflect_isPairStabilizer g hSymm u hu hup hup')
+  have h := hJ _ (Bilin.reflect_isPairStabilizer g hSymm u hu
+    (by rwa [hSymm.eq]) (by rwa [hSymm.eq]))
   rw [Bilin.reflect_apply, sub_eq_self, smul_eq_zero] at h
   rcases h with h | h
   · simpa [hu] using h
@@ -163,11 +158,13 @@ theorem IsLorentzCovariant.apply_spectator_eq_zero {g : Bilin V} (hSymm : g.IsSy
 /-- A covariant combination of the two momenta plus a spectator `u` has a null spectator part:
 were `u` non-null, the reflection in it would reverse it. -/
 theorem IsLorentzCovariant.apply_spectator_self_eq_zero {g : Bilin V} (hSymm : g.IsSymm)
-    {p p' u : V} (hup : g u p = 0) (hup' : g u p' = 0) {a b : ℝ}
+    {p p' u : V} (hpu : g p u = 0) (hp'u : g p' u = 0) {a b : ℝ}
     (hJ : IsLorentzCovariant g p p' (a • p + b • p' + u)) : g u u = 0 := by
+  have hup : g u p = 0 := by rwa [hSymm.eq]
+  have hup' : g u p' = 0 := by rwa [hSymm.eq]
   by_contra huu
   exact huu (by simpa [map_add, map_smul, hup, hup'] using
-    hJ.apply_spectator_eq_zero hSymm huu hup hup')
+    hJ.apply_spectator_eq_zero hSymm huu hpu hp'u)
 
 /-- Linear-algebra inputs about the spectator subspace `{p, p'}^⊥` of an elastic transition that
 turn covariance into the two-structure form: the momenta split `V` (`Bilin.IsSpectatorSplit`),
@@ -187,7 +184,7 @@ theorem IsLorentzCovariant.spectator_eq_zero {g : Bilin V} (hSymm : g.IsSymm) {p
     (hJ : IsLorentzCovariant g p p' (a • p + b • p' + u)) : u = 0 := by
   by_contra hu
   exact hS.anisotropic u hpu hp'u hu
-    (hJ.apply_spectator_self_eq_zero hSymm (by rwa [hSymm.eq]) (by rwa [hSymm.eq]))
+    (hJ.apply_spectator_self_eq_zero hSymm hpu hp'u)
 
 /-- **Covariance leaves the two momenta.** Under `SpectatorAssumptions`, a covariant
 matrix element is a combination of `p` and `p'`. -/
@@ -222,14 +219,14 @@ theorem apply_sub_smul_add_add_smul_sub {g : Bilin V} (hSymm : g.IsSymm) (p p' :
 /-- **Conservation removes the difference structure.** Between states of equal mass the sum
 structure is conserved on its own, so a conserved combination at non-zero momentum transfer
 has no difference component. -/
-theorem coeff_sub_eq_zero_of_apply_sub_eq_zero {g : Bilin V} (hSymm : g.IsSymm) {p p' : V}
+theorem eq_zero_of_smul_add_add_smul_sub_conserved {g : Bilin V} (hSymm : g.IsSymm) {p p' : V}
     {A B : ℝ} (hm : g p p = g p' p') (ht : g (p' - p) (p' - p) ≠ 0)
     (hJ : g (p' - p) (A • (p + p') + B • (p' - p)) = 0) : B = 0 := by
   rw [apply_sub_smul_add_add_smul_sub hSymm, hm, sub_self, mul_zero, zero_add] at hJ
   exact (mul_eq_zero.mp hJ).resolve_right ht
 
 /-- Between states of equal mass, every multiple of the sum of the momenta is conserved. -/
-theorem apply_sub_smul_add_eq_zero {g : Bilin V} (hSymm : g.IsSymm) {p p' : V}
+theorem smul_add_conserved {g : Bilin V} (hSymm : g.IsSymm) {p p' : V}
     (hm : g p p = g p' p') (A : ℝ) : g (p' - p) (A • (p + p')) = 0 := by
   simpa [hm] using apply_sub_smul_add_add_smul_sub hSymm p p' A 0
 
@@ -241,7 +238,7 @@ theorem IsLorentzCovariant.existsUnique_eq_smul {g : Bilin V} (hSymm : g.IsSymm)
     (ht : g (p' - p) (p' - p) ≠ 0) (hP : p + p' ≠ 0) (hJ : IsLorentzCovariant g p p' J)
     (hcons : g (p' - p) J = 0) : ∃! A : ℝ, J = A • (p + p') := by
   obtain ⟨A, B, rfl⟩ := hJ.exists_eq_smul_add_add_smul_sub hSymm hS
-  obtain rfl := coeff_sub_eq_zero_of_apply_sub_eq_zero hSymm hm ht hcons
+  obtain rfl := eq_zero_of_smul_add_add_smul_sub_conserved hSymm hm ht hcons
   refine ⟨A, by rw [zero_smul, add_zero], fun A' hA' => ?_⟩
   rw [zero_smul, add_zero] at hA'
   exact (smul_left_injective ℝ hP hA').symm
@@ -287,13 +284,8 @@ theorem pWit_add_pWit'_ne_zero : pWit + pWit' ≠ 0 := by
 
 /-- The spectator assumptions hold at the witness transition. -/
 theorem spectatorAssumptions_pWit : SpectatorAssumptions gWit pWit pWit' := by
-  refine ⟨⟨fun v => ?_⟩, fun u hup hup' hu => ?_⟩
-  · obtain ⟨v₀, v₁, v₂⟩ := v
-    -- The coefficients solve the first two components of `v = a • pWit + b • pWit' + u` for
-    -- the spectator `u = (0, 0, v₂)`.
-    refine ⟨v₀ / 3 - 5 * v₁ / 12, v₁ / 4, (0, 0, v₂), by simp, by simp, ?_⟩
-    simp only [pWit_def, pWit'_def, Prod.smul_mk, Prod.mk_add_mk, smul_eq_mul, Prod.mk.injEq]
-    refine ⟨by ring, by ring, by ring⟩
+  -- The Gram determinant of the two momenta is `9 · 9 - 15 · 15 = -144`.
+  refine ⟨Bilin.isSpectatorSplit_of_gram_ne_zero gWit (by norm_num), fun u hup hup' hu => ?_⟩
   · obtain ⟨u₀, u₁, u₂⟩ := u
     simp only [gWit_apply, pWit_def, pWit'_def] at hup hup' ⊢
     have h₀ : u₀ = 0 := by linarith
@@ -366,10 +358,10 @@ theorem isLorentzCovariant (hF : HasFormFactor g m2 J F) {p p' : V} (hp : g p p 
   exact isLorentzCovariant_smul_add g p p' _
 
 /-- A family with a form factor is conserved at every transition on the mass shell. -/
-theorem apply_sub_eq_zero (hF : HasFormFactor g m2 J F) (hSymm : g.IsSymm) {p p' : V}
+theorem conserved (hF : HasFormFactor g m2 J F) (hSymm : g.IsSymm) {p p' : V}
     (hp : g p p = m2) (hp' : g p' p' = m2) : g (p' - p) (J p p') = 0 := by
   rw [hF p p' hp hp']
-  exact apply_sub_smul_add_eq_zero hSymm (hp.trans hp'.symm) _
+  exact smul_add_conserved hSymm (hp.trans hp'.symm) _
 
 /-- The form factor is determined by the family at every momentum transfer realised by a
 transition with `p + p' ≠ 0`: if the matrix element there is `A (p + p')`, then `F(t) = A`. In
@@ -384,16 +376,16 @@ theorem apply_self (hF : HasFormFactor g m2 J F) {p : V} (hp : g p p = m2) :
     J p p = (2 * F 0) • p := by
   rw [hF p p hp hp, sub_self, map_zero, ← two_smul ℝ p, smul_smul, mul_comm]
 
-/-- **Charge normalisation.** If the forward matrix element at a non-zero momentum `p` on the
-mass shell is `2 e p`, the form factor at zero momentum transfer is `e`. The hypothesis is the
-Ward identity for the electromagnetic current in matrix-element form: the charge operator acts on
-the state as its charge `e`, and the states are covariantly normalised. -/
-theorem formFactor_zero_eq (hF : HasFormFactor g m2 J F) {p : V} (hp : g p p = m2)
-    (hp0 : p ≠ 0) {e : ℝ} (hJ : J p p = (2 * e) • p) : F 0 = e := by
-  have hP : p + p ≠ 0 := by rwa [← two_smul ℝ p, smul_ne_zero_iff_right two_ne_zero]
-  have h := hF.formFactor_eq_of_apply_eq_smul hp hp hP (A := e)
-    (by rw [hJ, ← two_smul ℝ p, smul_smul, mul_comm])
-  rwa [sub_self, map_zero] at h
+/-- **Charge normalisation.** The form factor at zero momentum transfer is `e` exactly when the
+forward matrix element at a non-zero momentum `p` on the mass shell is `2 e p`. That forward
+matrix element is the Ward identity for the electromagnetic current in matrix-element form: the
+charge operator acts on the state as its charge `e`, and the states are covariantly normalised.
+This file carries no charge operator, so the Ward identity enters as this equivalent condition. -/
+theorem formFactor_zero_eq_iff (hF : HasFormFactor g m2 J F) {p : V} (hp : g p p = m2)
+    (hp0 : p ≠ 0) {e : ℝ} : F 0 = e ↔ J p p = (2 * e) • p := by
+  refine ⟨fun h => by rw [hF.apply_self hp, h], fun hJ => ?_⟩
+  have := smul_left_injective ℝ hp0 ((hF.apply_self hp).symm.trans hJ)
+  linarith
 
 end HasFormFactor
 
@@ -410,7 +402,8 @@ noncomputable def chargeRadiusSq (F : ℝ → ℝ) : ℝ := 6 * deriv F 0
 /-- `chargeRadiusSq F` unfolds to `6 * deriv F 0`. -/
 theorem chargeRadiusSq_def (F : ℝ → ℝ) : chargeRadiusSq F = 6 * deriv F 0 := (rfl)
 
-/-- The squared charge radius of a form factor with slope `F'` at zero is `6 F'`. -/
+/-- `chargeRadiusSq F = 6 F'` for a form factor with slope `F'` at zero; it is the squared charge
+radius when `F 0 = 1`. -/
 theorem chargeRadiusSq_eq {F : ℝ → ℝ} {F' : ℝ} (h : HasDerivAt F F' 0) :
     chargeRadiusSq F = 6 * F' := by
   rw [chargeRadiusSq_def, h.deriv]
@@ -438,7 +431,7 @@ theorem hasDerivAt_singlePole (e : ℝ) {Λsq t : ℝ} (ht : t ≠ Λsq) :
     ?_
   ring
 
-/-- **The charge radius of the single-pole form factor.** Six times the slope at zero of the
+/-- **`chargeRadiusSq` of the single-pole form factor.** Six times the slope at zero of the
 single-pole form factor of charge `e` is `6 e / Λ²`; divided by the charge, its squared charge
 radius is `6 / Λ²`, independent of `e`. -/
 theorem chargeRadiusSq_singlePole (e : ℝ) {Λsq : ℝ} (hΛ : Λsq ≠ 0) :
