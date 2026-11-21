@@ -234,6 +234,15 @@ private theorem exp_mul_exp_le (h : S.HasSpectralGap n₀ Δ) {p : ι × ι} (hp
             (Real.exp_pos _).le zero_le_one
       _ ≤ _ := by rw [one_mul]; exact le_add_of_nonneg_right (Real.exp_pos _).le
 
+/-- Under a spectral gap, the exponential suppression `e^{-Δ (f a - r)}` of a quantity `f` that
+tends to infinity along a filter vanishes along that filter. -/
+private theorem tendsto_exp_neg_mul_sub (h : S.HasSpectralGap n₀ Δ) {α : Type*} {l : Filter α}
+    {f : α → ℝ} (hf : Tendsto f l atTop) (r : ℝ) :
+    Tendsto (fun a => Real.exp (-(Δ * (f a - r)))) l (𝓝 0) := by
+  have hsub : Tendsto (fun a => f a - r) l atTop := by
+    simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-r) hf
+  exact Real.tendsto_exp_neg_atTop_nhds_zero.comp (hsub.const_mul_atTop h.pos)
+
 end HasSpectralGap
 
 /-! ### The two-point correlator -/
@@ -244,14 +253,6 @@ private theorem twoPoint_term_mul_exp (n : ι) (E t : ℝ) :
       ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - E) * t)) := by
   rw [mul_assoc, ← Real.exp_add]
   ring_nf
-
-/-- The two-point correlator measured in units of a reference decay `e^{-E t}`: each state then
-decays with its energy relative to `E`. -/
-theorem twoPoint_mul_exp (E t : ℝ) :
-    S.twoPoint t * Real.exp (E * t) =
-      ∑' n, ‖S.overlap n‖ ^ 2 * Real.exp (-((S.energy n - E) * t)) := by
-  rw [twoPoint_def, ← tsum_mul_right]
-  exact tsum_congr fun n => twoPoint_term_mul_exp n E t
 
 /-- For energies bounded below, the spectral sum of the two-point correlator converges at every
 time `t` after a reference time `t₀` at which it converges. -/
@@ -346,13 +347,11 @@ theorem tendsto_twoPoint_mul_exp (h : S.HasSpectralGap n₀ Δ) {t₀ : ℝ}
     (hZ : Summable fun n => ‖S.overlap n‖ ^ 2 * Real.exp (-(S.energy n * t₀))) :
     Tendsto (fun t => S.twoPoint t * Real.exp (S.energy n₀ * t)) atTop
       (𝓝 (‖S.overlap n₀‖ ^ 2)) := by
-  have hsub : Tendsto (fun t : ℝ => t - t₀) atTop atTop := by
-    simpa [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-t₀) tendsto_id
   have hK : Tendsto (fun t => ‖S.overlap n₀‖ ^ 2 +
       S.twoPointExcitedWeight n₀ t₀ * Real.exp (-(Δ * (t - t₀)))) atTop
         (𝓝 (‖S.overlap n₀‖ ^ 2)) := by
     simpa using tendsto_const_nhds.add <| tendsto_const_nhds.mul <|
-      Real.tendsto_exp_neg_atTop_nhds_zero.comp (hsub.const_mul_atTop h.pos)
+      h.tendsto_exp_neg_mul_sub tendsto_id t₀
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hK ?_ ?_
   · filter_upwards [eventually_ge_atTop t₀] with t ht
     exact sq_norm_overlap_le_twoPoint_mul_exp (hasSum_twoPoint h.energy_le hZ ht).summable n₀
@@ -378,16 +377,6 @@ theorem norm_overlap_mul_mul_conj_overlap_mul (p : ι × ι) {r : ℝ} (hr : 0 �
     ‖S.overlap p.1 * O p.1 p.2 * conj (S.overlap p.2) * (r : ℂ)‖ =
       S.threePointWeight O p * r := by
   simp only [threePointWeight_def, norm_mul, Complex.norm_conj, Complex.norm_of_nonneg hr]
-
-/-- The three-point correlator measured in units of a reference decay `e^{-E t}`: each pair of
-states then decays with its energies relative to `E`. -/
-theorem threePoint_mul_exp (E t τ : ℝ) :
-    S.threePoint O t τ * (Real.exp (E * t) : ℂ) =
-      ∑' p : ι × ι, S.overlap p.1 * O p.1 p.2 * conj (S.overlap p.2) *
-        (Real.exp (-((S.energy p.1 - E) * (t - τ))) *
-          Real.exp (-((S.energy p.2 - E) * τ)) : ℝ) := by
-  rw [threePoint_def, ← tsum_mul_right]
-  exact tsum_congr fun p => threePoint_term_mul_exp p E t τ
 
 /-- For energies bounded below, the spectral sum of the three-point correlator converges whenever
 the sink-operator separation `t - τ` is at least `s₀` and the operator time `τ` at least `τ₀`, once
@@ -515,14 +504,10 @@ theorem tendsto_threePoint_mul_exp (h : S.HasSpectralGap n₀ Δ) {s₀ τ₀ : 
     Tendsto (fun a => S.threePoint O (t a) (τ a) * (Real.exp (S.energy n₀ * t a) : ℂ)) l
       (𝓝 ((‖S.overlap n₀‖ : ℂ) ^ 2 * O n₀ n₀)) := by
   -- the suppression `e^{-Δ (τ - τ₀)} + e^{-Δ (t - τ - s₀)}` of the excited states vanishes
-  have hexp : ∀ {f : α → ℝ}, Tendsto f l atTop → ∀ r : ℝ,
-      Tendsto (fun a => Real.exp (-(Δ * (f a - r)))) l (𝓝 0) := fun hf r =>
-    Real.tendsto_exp_neg_atTop_nhds_zero.comp <|
-      (by simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-r) hf :
-        Tendsto (fun a => _ - r) l atTop).const_mul_atTop h.pos
   have hbound : Tendsto (fun a => S.threePointExcitedWeight O n₀ s₀ τ₀ *
       (Real.exp (-(Δ * (τ a - τ₀))) + Real.exp (-(Δ * (t a - τ a - s₀))))) l (𝓝 0) := by
-    simpa using ((hexp hτ τ₀).add (hexp htτ s₀)).const_mul (S.threePointExcitedWeight O n₀ s₀ τ₀)
+    simpa using ((h.tendsto_exp_neg_mul_sub hτ τ₀).add
+      (h.tendsto_exp_neg_mul_sub htτ s₀)).const_mul (S.threePointExcitedWeight O n₀ s₀ τ₀)
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero' (Eventually.of_forall fun a => norm_nonneg _) ?_ hbound
   filter_upwards [hτ.eventually_ge_atTop τ₀, htτ.eventually_ge_atTop s₀] with a ha hta
