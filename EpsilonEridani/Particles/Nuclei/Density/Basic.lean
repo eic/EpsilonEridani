@@ -15,7 +15,7 @@ import Physlib.SpaceAndTime.Space.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Coordinate-space nuclear density profiles
