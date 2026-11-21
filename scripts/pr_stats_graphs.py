@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate the Tau Ceti pull-request statistics SVGs.
+"""Generate the Epsilon Eridani pull-request statistics SVGs.
 
 The live data path uses GitHub's GraphQL API for every pull request and its label
-timeline, plus the repository issue-comments REST endpoint for posted Tau Ceti
+timeline, plus the repository issue-comments REST endpoint for posted Epsilon Eridani
 scoreboards, keeping only those posted on a fetched pull request and carrying the review
 engine's meta block for it.  A normalized snapshot can be written with ``--dump-data``
 and replayed with ``--data``; tests and local chart work therefore need no network.

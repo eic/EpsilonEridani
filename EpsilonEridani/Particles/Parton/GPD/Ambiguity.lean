@@ -203,7 +203,7 @@ structure AdmitsDoubleDistribution (M : Model Flavor) : Type where
   reprH : ∀ i x xi t, M.H i x xi t = gpdOfDoubleDistribution ddH dtH i x xi t
 
 /-- The zero model is represented by the zero double distribution and the zero D-term. -/
-def admitsDoubleDistribution_zero (Flavor : Type) :
+def AdmitsDoubleDistribution.zero (Flavor : Type) :
     AdmitsDoubleDistribution (Model.zero Flavor) where
   ddH := DoubleDistribution.zero Flavor
   dtH := DTerm.zero Flavor

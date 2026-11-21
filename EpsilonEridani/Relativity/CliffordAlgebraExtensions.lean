@@ -6,13 +6,13 @@ Authors: Wouter Deconinck
 module
 
 public import Physlib.Relativity.CliffordAlgebra
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.NumberTheory.Zsqrtd.GaussianInt
 public import Physlib.Relativity.MinkowskiMatrix
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 public import Physlib.Mathematics.LeviCivita.Basic
 public import Physlib.Mathematics.KroneckerDelta.Basic
-public import EpsilonEridani.Mathematics.KroneckerDelta.BasicExtensions
 
 /-!
 # Gamma matrix anticommutator and Dirac slash extensions
@@ -30,6 +30,8 @@ computations.
 
 ## Main results
 
+- `spaceTime.isHermitian_γ0_mul_γ`: each `γ⁰ γ^μ` is Hermitian.
+- `spaceTime.isHermitian_γ0_mul_γDown`: each `γ⁰ γ_μ` is Hermitian.
 - `spaceTime.γ.gamma_anticomm`: the Clifford anticommutator `{γ^μ, γ^ν} = 2 η^{μν}`.
 - `spaceTime.γ.Slash.slash_mul_add_mul_slash`: the anticommutator `{/a, /b} = 2 (a·b)`.
 - `spaceTime.γ.Trace.slash_mul_slash_mul_slash_mul_slash_trace`: the four-slash trace
@@ -56,8 +58,19 @@ open Complex
 noncomputable section diracRepresentation
 
 /-- The gamma matrices in the Dirac representation, indexed as `γ0, γ1, γ2, γ3`. -/
-@[simp]
 def γ : Fin 4 → Matrix (Fin 4) (Fin 4) ℂ := ![γ0, γ1, γ2, γ3]
+
+/-- The zeroth Dirac-representation gamma matrix is `γ0`. -/
+@[simp] lemma γ_zero : γ 0 = γ0 := rfl
+
+/-- The first Dirac-representation gamma matrix is `γ1`. -/
+@[simp] lemma γ_one : γ 1 = γ1 := rfl
+
+/-- The second Dirac-representation gamma matrix is `γ2`. -/
+@[simp] lemma γ_two : γ 2 = γ2 := rfl
+
+/-- The third Dirac-representation gamma matrix is `γ3`. -/
+@[simp] lemma γ_three : γ 3 = γ3 := rfl
 
 /-- The lowered gamma matrices in the Dirac representation. -/
 @[simp]
@@ -88,6 +101,19 @@ lemma γ2_eq : γ2 = !![0, 0, 0, -I; 0, 0, I, 0; 0, I, 0, 0; -I, 0, 0, 0] := by
 lemma γ3_eq : γ3 = !![0, 0, 1, 0; 0, 0, 0, -1; -1, 0, 0, 0; 0, 1, 0, 0] := by
   rw [γ3, Fermion.Dirac.endEquivMatrix_apply, Fermion.Dirac.gamma_toMatrix]
   ext i j; fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_four]
+
+/-- Each `γ⁰ γ^μ` is Hermitian, so the bilinears `ψ‾ γ^μ χ = ψ† γ⁰ γ^μ χ` are Hermitian
+forms. -/
+lemma isHermitian_γ0_mul_γ (μ : Fin 4) : (γ0 * γ μ).IsHermitian := by
+  refine Matrix.IsHermitian.ext fun i j => ?_
+  fin_cases μ <;> fin_cases i <;> fin_cases j <;> simp [γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+
+/-- Each `γ⁰ γ_μ` is Hermitian, so the bilinears `ψ‾ γ_μ χ = ψ† γ⁰ γ_μ χ` are Hermitian
+forms. -/
+lemma isHermitian_γ0_mul_γDown (μ : Fin 4) : (γ0 * γDown μ).IsHermitian := by
+  simp only [γDown, Matrix.mul_smul]
+  exact (isHermitian_γ0_mul_γ μ).smul
+    ((Complex.im_eq_zero_iff_isSelfAdjoint _).mp (Complex.ofReal_im _))
 
 /-- `γ μ` is the Dirac-representation matrix of the upstream gamma endomorphism. -/
 lemma γ_eq_endEquivMatrix (μ : Fin 4) :
@@ -288,7 +314,7 @@ theorem trace_γ5_mul_γ_mul_γ_mul_γ_mul_γ (μ ν ρ σ : Fin 4) :
 
 @[simp]
 lemma trace_γ (μ : Fin 4) : Matrix.trace (γ μ) = 0 := by
-  fin_cases μ <;> simp [Matrix.trace, Fin.sum_univ_four, γ, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
+  fin_cases μ <;> simp [Matrix.trace, Fin.sum_univ_four, γ0_eq, γ1_eq, γ2_eq, γ3_eq]
 
 @[simp]
 lemma slash_trace (k : Lorentz.Vector 3) : Matrix.trace (Slash.slash k) = 0 := by
@@ -464,9 +490,7 @@ private def reverseConjInv : Matrix (Fin 4) (Fin 4) ℂ := γ3 * γ1
     reverseConj * Matrix.transpose (γ μ) * reverseConjInv = γ μ := by
   have key : ∀ μ, γZ 1 * γZ 3 * Matrix.transpose (γZ μ) * (γZ 3 * γZ 1) = γZ μ := by
     decide +kernel
-  have h1 : γ1 = γ 1 := rfl
-  have h3 : γ3 = γ 3 := rfl
-  rw [reverseConj, reverseConjInv, h1, h3]
+  rw [reverseConj, reverseConjInv, ← γ_one, ← γ_three]
   simp only [γ_eq_map, ← Matrix.transpose_map, ← Matrix.map_mul, key]
 
 @[simp] private lemma reverseConj_mul_slash_transpose_mul_reverseConjInv (k : Lorentz.Vector 3) :

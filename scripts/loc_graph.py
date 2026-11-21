@@ -10,7 +10,7 @@ git each run, so there is no state file to keep up to date. Counting the lines
 that exist (rather than summing diffs) needs no special handling for merges,
 renames, or binary files.
 
-Styled to sit on the dark navy EpsilonEridani site (see web/static_files/style.css).
+Styled to sit on the dark navy Epsilon Eridani site (see web/static_files/style.css).
 """
 
 import subprocess, sys, argparse, datetime as dt, html, math

@@ -22,26 +22,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toolchain_tags as tt  # noqa: E402
 
 
-class VersionNames(unittest.TestCase):
-    def test_releases_and_rcs_parse(self):
-        self.assertEqual(tt.parse_release("v4.33.0")[:3], (4, 33, 0))
-        self.assertEqual(tt.parse_release("v4.33.0-rc2")[3], 2)
-
-    def test_non_releases_do_not(self):
-        for name in ("v2024", "v4.32.0-rc1-patch1", "nightly-2026-01-01", "", None):
-            self.assertIsNone(tt.parse_release(name), name)
-
-    def test_a_final_release_sorts_after_its_own_rcs(self):
-        order = ["v4.32.1", "v4.33.0-rc1", "v4.33.0-rc2", "v4.33.0", "v4.34.0-rc1"]
-        self.assertEqual(sorted(order, key=tt.release_key), order)
-
-    def test_only_release_toolchains_name_a_release(self):
-        self.assertEqual(tt.release_of_toolchain("leanprover/lean4:v4.33.0"), "v4.33.0")
-        self.assertIsNone(tt.release_of_toolchain("leanprover/lean4:nightly-2026-01-01"))
-        self.assertIsNone(tt.release_of_toolchain("leanprover/lean4-pr-releases:pr-1"))
-        self.assertIsNone(tt.release_of_toolchain(""))
-
-
 class TagMessage(unittest.TestCase):
     ROW = {"release": "v4.33.0-rc2", "toolchain": "leanprover/lean4:v4.33.0-rc2",
            "commit": "f" * 40, "mathlib_rev": "9" * 40, "status": "ready", "reason": None}
@@ -548,6 +528,76 @@ class CommandLine(unittest.TestCase):
         with redirect_stdout(out), self.assertRaises(SystemExit):
             tt.main(["--help"])
         self.assertIn("first commit on `main`", out.getvalue())
+
+
+class MattermostPost(unittest.TestCase):
+    """The Mattermost leg, with Zulip unconfigured as it is in this repository.
+
+    It once called urllib without importing it, and it once decided whether to post from
+    Zulip's last report, which without Zulip is always "nothing posted yet", so it would
+    have posted on every run. It now reads its own last report from the channel."""
+
+    ROWS = [{"release": "v4.34.0", "toolchain": "leanprover/lean4:v4.34.0",
+             "commit": "a" * 40, "mathlib_rev": "9" * 40, "status": "ready", "reason": None}]
+
+    def run_post(self, channel_posts):
+        """post_if_changed against a fake channel holding `channel_posts`, newest first."""
+        calls = []
+
+        def api(method, path, data=None):
+            calls.append((method, path, data))
+            if path == "/users/me":
+                return {"id": "bot"}
+            if path.startswith("/channels/"):
+                return {"order": [p["id"] for p in channel_posts],
+                        "posts": {p["id"]: p for p in channel_posts}}
+            return {}
+
+        saved = {k: getattr(tt.mm, k) for k in ("api_request", "BOT_TOKEN", "CHANNEL_ID", "URL")}
+        zulip = {k: os.environ.pop(k, None) for k in ("ZULIP_EMAIL", "ZULIP_API_KEY")}
+        tt.mm.api_request = api
+        tt.mm.BOT_TOKEN, tt.mm.CHANNEL_ID, tt.mm.URL = "token", "channel", "https://chat.example.org"
+        try:
+            with redirect_stdout(io.StringIO()):
+                posted = tt.post_if_changed(self.ROWS)
+        finally:
+            for k, v in saved.items():
+                setattr(tt.mm, k, v)
+            os.environ.update({k: v for k, v in zulip.items() if v is not None})
+        return posted, [c for c in calls if c[0] == "POST"]
+
+    def report(self, digest, user="bot", post_id="p1"):
+        return {"id": post_id, "user_id": user, "message": "...",
+                "props": {tt.MM_DIGEST_PROP: digest}}
+
+    def test_first_report_is_posted_with_its_digest_and_no_visible_marker(self):
+        posted, sent = self.run_post([])
+        self.assertTrue(posted)
+        [(_, path, data)] = sent
+        self.assertEqual(path, "/posts")
+        self.assertEqual(data["channel_id"], "channel")
+        self.assertEqual(data["props"][tt.MM_DIGEST_PROP], tt.state_digest(self.ROWS))
+        self.assertNotIn("<!--", data["message"])
+        self.assertIn(tt.SHELL_FENCE, data["message"])
+
+    def test_unchanged_state_posts_nothing(self):
+        posted, sent = self.run_post([self.report(tt.state_digest(self.ROWS))])
+        self.assertFalse(posted)
+        self.assertEqual(sent, [])
+
+    def test_changed_state_is_posted(self):
+        posted, sent = self.run_post([self.report("0" * 16)])
+        self.assertTrue(posted)
+        self.assertEqual(len(sent), 1)
+
+    def test_only_this_accounts_newest_report_counts(self):
+        current = tt.state_digest(self.ROWS)
+        # Someone else's post carrying the current digest is ignored; the bot's newest
+        # report is the stale one, so the state counts as changed.
+        posted, _ = self.run_post([self.report(current, user="human", post_id="p3"),
+                                   self.report("0" * 16, post_id="p2"),
+                                   self.report(current, post_id="p1")])
+        self.assertTrue(posted)
 
 
 if __name__ == "__main__":

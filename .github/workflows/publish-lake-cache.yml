@@ -44,9 +44,9 @@ jobs:
     outputs:
       published: ${{ steps.result.outputs.published }}
     steps:
-      # Exactly two repository files are admitted. Which toolchain this job installs decides
-      # which `lake` handles the upload key, so the pin is read independently from the immutable
-      # revision rather than trusted from the staging build. The Python helper is present only so
+      # Exactly two repository files are admitted. The toolchain names the revision map's object
+      # key, so the pin is read independently from the immutable revision rather than trusted
+      # from the staging build. The Python helper is present only so
       # a later, key-free step can share the public URL contract with every other cache probe; it
       # is data, never executed, before or during the secret-bearing upload step.
       - name: Check out the toolchain pin and key-free confirmation helper
@@ -65,14 +65,15 @@ jobs:
           name: ${{ inputs.artifact-name }}
           path: ${{ runner.temp }}/lake-cache-staging
 
-      - name: Check the staged tree before pointing Lake at it
+      - name: Check the staged tree before uploading it
         env:
           STAGING: ${{ runner.temp }}/lake-cache-staging
         run: |
           set -euo pipefail
-          # `lake cache put-staged` joins artifact names from outputs.jsonl to STAGING. The
-          # producer ran arbitrary Lean code, so reject nesting, symlinks, path components, and
-          # every other name that could make Lake read outside this flat data-only directory.
+          # The producer ran arbitrary Lean code. The upload step reads only the flat files here,
+          # but every `lake cache get` that later downloads the map joins its artifact names to a
+          # local directory, so reject nesting, symlinks, path components, and every other name
+          # that could make Lake reach outside a flat data-only directory.
           if find "$STAGING" -mindepth 2 -print -quit | grep -q .; then
             echo "::error::the staged tree is nested; expected a flat directory of artifacts"
             exit 1
@@ -111,11 +112,9 @@ jobs:
               sys.exit(f"::error::{path} contains no root-package output mappings")
           PY
 
-      - name: Install elan (pinned + checksum) and the pinned toolchain
+      - name: Read and check the pinned toolchain
         id: toolchain
         env:
-          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
-          ELAN_VER: v4.2.3
           REPORTED: ${{ inputs.reported-toolchain }}
         run: |
           set -euo pipefail
@@ -128,14 +127,6 @@ jobs:
             echo "::error::the staging build used '$REPORTED' but the revision pins '$TOOLCHAIN'"
             exit 1
           fi
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
-          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
-          tar -xzf elan.tar.gz elan-init
-          ./elan-init -y --default-toolchain none
-          rm -f elan.tar.gz elan-init
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          "$HOME/.elan/bin/elan" toolchain install "$TOOLCHAIN"
           printf 'name=%s\n' "$TOOLCHAIN" >> "$GITHUB_OUTPUT"
 
       - name: Publish the staged Lake cache
@@ -177,19 +168,57 @@ jobs:
           echo "::add-mask::$KEY"
           export LAKE_CACHE_KEY="$KEY"
 
-          CFG="$RUNNER_TEMP/lake-cache.toml"
-          cat > "$CFG" <<TOML
-          cache.defaultUploadService = "epsiloneridani-r2"
-          [[cache.service]]
-          name = "epsiloneridani-r2"
-          kind = "s3"
-          artifactEndpoint = "$S3_ARTIFACT_ENDPOINT"
-          revisionEndpoint = "$S3_REVISION_ENDPOINT"
-          TOML
-          export LAKE_CONFIG="$CFG"
+          # Upload here rather than through `lake cache put-staged`. That command sends every
+          # artifact in one parallel curl batch and fails the whole batch on any single bad
+          # response, then resends all of them on the next call. The endpoint answers roughly 1% of
+          # PUTs with a bare 302 or an HTTP/2 stream error (curl 92/55), so across ~165 artifacts a
+          # whole batch rarely gets through, and retrying the batch does not converge. One object
+          # at a time, each retried until it answers 200, does.
+          #
+          # The object keys, content types and signing are Lake's own (see
+          # docs/cache-infrastructure.md), so `lake cache get` reads the result unchanged. The map
+          # goes last, only once every artifact is in, so it is never published ahead of them.
+          TC_DIR="${ELAN_TOOLCHAIN//\//--}"
+          TC_DIR="${TC_DIR//:/---}"
+          case "$TC_DIR" in
+            *[!A-Za-z0-9._-]*|'') echo "::error::toolchain '$ELAN_TOOLCHAIN' does not map to a plain key segment"; exit 1 ;;
+          esac
+          ARTIFACT_PREFIX="$S3_ARTIFACT_ENDPOINT/eic/EpsilonEridani"
+          MAP_URL="$S3_REVISION_ENDPOINT/eic/EpsilonEridani/tc/$TC_DIR/$REVISION.jsonl"
 
-          lake cache put-staged "$STAGING" --service epsiloneridani-r2 \
-            --repo eic/EpsilonEridani --rev "$REVISION" --toolchain "$ELAN_TOOLCHAIN"
+          ATTEMPTS=6
+          put() {  # <file> <content type> <url>
+            local attempt code
+            for attempt in $(seq 1 "$ATTEMPTS"); do
+              # HTTP/1.1 sidesteps the HTTP/2 stream resets; no -L, so a 302 is a failed attempt.
+              code="$(curl -sS -o /dev/null -w '%{http_code}' --http1.1 \
+                --aws-sigv4 aws:amz:auto:s3 --user "$LAKE_CACHE_KEY" \
+                -X PUT -T "$1" -H "Content-Type: $2" "$3")" || code="$code, curl exit $?"
+              [ "$code" = 200 ] && return 0
+              echo "::warning::PUT ${1##*/} got $code (attempt $attempt of $ATTEMPTS)"
+              [ "$attempt" = "$ATTEMPTS" ] || sleep $((5 * attempt))
+            done
+            echo "::error::PUT ${1##*/} failed $ATTEMPTS times"
+            return 1
+          }
+
+          # `lake cache stage` fills the directory with exactly the mapped artifacts, each named
+          # `<hash>` or `<hash>.<ext>`; Lake keys an artifact by its hash alone.
+          uploaded=0
+          for path in "$STAGING"/*; do
+            name="${path##*/}"
+            [ "$name" = outputs.jsonl ] && continue
+            if ! [[ "$name" =~ ^[0-9a-f]{16}(\.[0-9A-Za-z]+)*$ ]]; then
+              echo "::error::staged file '$name' is not a <hash>[.<ext>] artifact"
+              exit 1
+            fi
+            put "$path" application/vnd.reservoir.artifact "$ARTIFACT_PREFIX/${name%%.*}.art"
+            uploaded=$((uploaded + 1))
+          done
+          [ "$uploaded" -gt 0 ] || { echo "::error::the staging directory holds no artifacts"; exit 1; }
+          echo "uploaded $uploaded artifacts"
+          put "$STAGING/outputs.jsonl" application/vnd.reservoir.outputs+json-lines "$MAP_URL"
+          echo "uploaded the revision map to $MAP_URL"
 
           echo 'uploaded=true' >> "$GITHUB_OUTPUT"
           echo "::notice::uploaded the Lake cache for $REVISION"

@@ -34,7 +34,7 @@ The three identities are the actual equations
 in the generator entries and structure constants stored by `D`; see
 `NormalizedGeneratorData.TraceIdentity` and friends.  Supplying this record is therefore
 a genuine obligation on `D`, not a choice of proposition. -/
-structure CasimirDerivationAssumptions (D : NormalizedGeneratorData) : Type where
+structure CasimirDerivationAssumptions (D : NormalizedGeneratorData) : Prop where
   /-- Proof of the trace-normalization identity `Tr(T^a T^b) = T_F δ^{ab}` for `D`. -/
   hTraceIdentity : D.TraceIdentity
   /-- Proof of the fundamental Casimir identity `Σ_a T^a T^a = C_F I` for `D`. -/
@@ -55,7 +55,7 @@ representation-level identities are proven and shown equivalent to the
 normalized-generator contracts, the complete `CasimirDerivationAssumptions`
 record is synthesized automatically.
 -/
-def casimirDerivationAssumptions_of_iff
+lemma casimirDerivationAssumptions_of_iff
     (D : NormalizedGeneratorData)
     (hTrace : D.TraceIdentity)
     (hFundamental : D.FundamentalCasimirIdentity)
@@ -199,7 +199,7 @@ lemma u1NormalizedData_adjointIdentity (Y : ℝ) :
 
 /-- The U(1) sector carries a full derivation package: all three representation-level
 identities are proved, not assumed. -/
-def u1CasimirDerivationAssumptions (Y : ℝ) :
+lemma u1NormalizedData_casimirDerivationAssumptions (Y : ℝ) :
     CasimirDerivationAssumptions (u1NormalizedData Y) where
   hTraceIdentity := u1NormalizedData_traceIdentity Y
   hFundamentalIdentity := u1NormalizedData_fundamentalIdentity Y
