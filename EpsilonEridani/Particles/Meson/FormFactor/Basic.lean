@@ -12,10 +12,11 @@ public import EpsilonEridani.QFT.Scattering.Elastic.FormFactor.Basic
 # The electromagnetic form factor of the positive pion
 
 The elastic electromagnetic form factor of a spin-zero state, its charge normalisation, the
-charge radius `⟨r²⟩ = 6 dF/dt (0)` and the single-pole form factor `F(t) = e Λ² / (Λ² - t)` are
-developed for an arbitrary spin-zero state in
-`EpsilonEridani.QFT.Scattering.Elastic.FormFactor.Basic`. This file instantiates the single-pole
-form factor at the charge of the positive pion: its squared charge radius is `6 / Λ²`
+quantity `6 dF/dt (0)` (the squared charge radius `⟨r²⟩` of a form factor normalised to unit
+charge) and the single-pole form factor `F(t) = e Λ² / (Λ² - t)` are developed for an arbitrary
+spin-zero state in `EpsilonEridani.QFT.Scattering.Elastic.FormFactor.Basic`. This file
+instantiates the single-pole form factor at the charge `1` of the positive pion, so that
+`6 dF/dt (0)` is its squared charge radius, `6 / Λ²`
 (`FormFactor.chargeRadiusSq_singlePole_piPlus`).
 
 ## References
@@ -32,7 +33,7 @@ namespace EpsilonEridani.Particles.Meson.FormFactor
 open EpsilonEridani.QFT.Scattering.Elastic.FormFactor (chargeRadiusSq singlePole
   chargeRadiusSq_singlePole)
 
-/-- The single-pole form factor of the positive pion, normalised to the pion's charge, has
+/-- The single-pole form factor of the positive pion, normalised to the pion's unit charge, has
 squared charge radius `6 / Λ²`, six times the reciprocal of the squared pole mass. -/
 theorem chargeRadiusSq_singlePole_piPlus {Λsq : ℝ} (hΛ : Λsq ≠ 0) :
     chargeRadiusSq (singlePole piPlus.charge Λsq) = 6 / Λsq := by

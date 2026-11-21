@@ -18,6 +18,10 @@ This module introduces tensor objects for inclusive DIS:
   `ε(·, ·, k, k')` of a supplied alternating four-form `ε`.
 - Reflections of a bilinear form, used as concrete elements of the stabilizer of the
   kinematics inside the `g`-isometry group.
+- The stabilizer `Bilin.IsPairStabilizer g a b` of a pair of vectors in the `g`-isometry group,
+  of which the kinematic stabilizer `Hadronic.IsKinematicStabilizer` is the instance at `(p, q)`,
+  and the splitting `Bilin.IsSpectatorSplit g a b` of every vector into a combination of `a` and
+  `b` plus a spectator `g`-orthogonal to both, which `Hadronic.SpectatorAssumptions` extends.
 - An abstract hadronic tensor with explicit Lorentz-covariance, symmetry and
   current-conservation assumptions.
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
@@ -206,14 +210,6 @@ lemma IsPairStabilizer.fixes_sub {g : Bilin V} {a b : V} {f : V →ₗ[ℝ] V}
     (hf : IsPairStabilizer g a b f) : f (b - a) = b - a := by
   rw [map_sub, hf.fixes_left, hf.fixes_right]
 
-/-- An isometry fixing `a` and the difference `b - a` is a stabilizer of the pair `(a, b)`. -/
-lemma IsPairStabilizer.of_fixes_sub {g : Bilin V} {a b : V} {f : V →ₗ[ℝ] V}
-    (hf : IsIsometry g f) (ha : f a = a) (hba : f (b - a) = b - a) :
-    IsPairStabilizer g a b f where
-  isometry := hf
-  fixes_left := ha
-  fixes_right := by rw [map_sub, ha, sub_left_inj] at hba; exact hba
-
 /-- The reflection in a non-null direction `g`-orthogonal to both `a` and `b` is a stabilizer of
 the pair `(a, b)`. -/
 lemma reflect_isPairStabilizer (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0)
@@ -222,6 +218,12 @@ lemma reflect_isPairStabilizer (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g 
   isometry := reflect_isometry g hSymm u hu
   fixes_left := reflect_apply_of_orthogonal g u a hua
   fixes_right := reflect_apply_of_orthogonal g u b hub
+
+/-- The pair `(a, b)` splits `V`: every vector is a combination of `a` and `b` plus a spectator,
+a vector `g`-orthogonal to both. -/
+structure IsSpectatorSplit (g : Bilin V) (a b : V) : Prop where
+  /-- Every vector is a combination of `a` and `b` plus a spectator `g`-orthogonal to both. -/
+  span : ∀ v : V, ∃ (x y : ℝ) (u : V), g a u = 0 ∧ g b u = 0 ∧ v = x • a + y • b + u
 
 end Bilin
 
@@ -590,14 +592,6 @@ lemma rankOne_pTransverse_isLorentzCovariant (g : Bilin V) (K : DisKinematics V)
     pairing_invariant_of_fixed g K hf (stabilizer_fixes_pTransverse g K hf) v,
     pairing_invariant_of_fixed g K hf (stabilizer_fixes_pTransverse g K hf) w]
 
-/-- Reflection in a spectator direction — a direction `g`-orthogonal to both `p` and `q` —
-is an element of the kinematic stabilizer. This is the concrete supply of covariance
-constraints used by `covariant_spectator_offDiagonal_zero`. -/
-lemma reflect_isKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
-    (u : V) (hu : g u u ≠ 0) (hup : g u K.p = 0) (huq : g u K.q = 0) :
-    IsKinematicStabilizer g K (Bilin.reflect g u) :=
-  Bilin.reflect_isPairStabilizer g hSymm u hu hup huq
-
 /-- **Covariance has content.** A Lorentz-covariant tensor has no mixed component between a
 non-null spectator direction `u` and any vector `g`-orthogonal to `u`: the reflection in `u`
 is a stabilizer element that reverses `u` and fixes `v`, so covariance forces
@@ -607,7 +601,8 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
     (hSymm : g.IsSymm) (hW : IsLorentzCovariant g K W) (u v : V) (hu : g u u ≠ 0)
     (hup : g u K.p = 0) (huq : g u K.q = 0) (huv : g u v = 0) :
     W u v = 0 := by
-  have hf := reflect_isKinematicStabilizer g K hSymm u hu hup huq
+  have hf : IsKinematicStabilizer g K (Bilin.reflect g u) :=
+    Bilin.reflect_isPairStabilizer g hSymm u hu hup huq
   have h := hW (Bilin.reflect g u) hf u v
   rw [Bilin.reflect_apply_self g u hu, Bilin.reflect_apply_of_orthogonal g u v huv] at h
   have hneg : W (-u) v = -W u v := by simp
@@ -716,7 +711,8 @@ lemma apply_self_of_isF1F2Decomposition_of_spectator (g : Bilin V) (K : DisKinem
 
 /-- **Orthogonal splitting along `q` and `p_T`.** When `q` and `p_T` are non-null, every vector
 splits as `v = a p_T + b q + u` with `u` `g`-orthogonal to `q` and to `p_T`. This discharges the
-`SpectatorAssumptions.span` condition; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
+`Bilin.IsSpectatorSplit.span` condition of `SpectatorAssumptions`, up to the order of the two
+orthogonality conditions; the coefficients are `a = (p_T·v) / (p_T·p_T)` and
 `b = (q·v) / (q·q)`. -/
 lemma exists_orthogonal_spectator (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (hqq : g K.q K.q ≠ 0) (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) (v : V) :
@@ -872,11 +868,8 @@ timelike and `q` spacelike, and none of them is the conclusion.
 /-- Linear-algebra inputs about the spectator subspace `{p, q}^⊥` needed to turn covariance
 plus conservation into the two-structure decomposition. These are facts about `g`, `p`, `q`
 and the isometry group — not about the hadronic tensor. -/
-structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Prop where
-  /-- Every vector splits into a transverse-hadron part, a longitudinal `q` part, and a
-  spectator part orthogonal to both. -/
-  span : ∀ v : V, ∃ (a b : ℝ) (u : V), g K.q u = 0 ∧ g (pTransverse g K) u = 0 ∧
-    v = a • pTransverse g K + b • K.q + u
+structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Prop
+    extends Bilin.IsSpectatorSplit g (pTransverse g K) K.q where
   /-- The spectator subspace is negative definite — spacelike, in the `+---` convention of
   `Kinematics`. In particular every non-zero spectator direction is non-null, so
   `Bilin.reflect` supplies a stabilizer element for it. -/
@@ -983,8 +976,8 @@ theorem exists_isF1F2Decomposition (g : Bilin V) (K : DisKinematics V) (W : Bili
       field_simp
       ring
   refine ⟨F1, F2, fun v w => ?_⟩
-  obtain ⟨a, b, u, huq, huT, rfl⟩ := hS.span v
-  obtain ⟨a', b', u', hu'q, hu'T, rfl⟩ := hS.span w
+  obtain ⟨a, b, u, huT, huq, rfl⟩ := hS.span v
+  obtain ⟨a', b', u', hu'T, hu'q, rfl⟩ := hS.span w
   rw [← ht] at huT hu'T ⊢
   have huq' : g u K.q = 0 := by rw [hSymm.eq, huq]
   have huT' : g u t = 0 := by rw [hSymm.eq, huT]
@@ -1148,7 +1141,7 @@ lemma spectatorAssumptions_kWit : SpectatorAssumptions gWit kWit where
     · refine ⟨LinearMap.id, ⟨Bilin.isIsometry_id gWit, rfl, rfl⟩, ?_⟩
       ext <;> simp <;> linarith
     · refine ⟨Bilin.reflect gWit (0, 0, 1),
-        reflect_isKinematicStabilizer gWit kWit gWit_isSymm (0, 0, 1)
+        Bilin.reflect_isPairStabilizer gWit gWit_isSymm (0, 0, 1)
           (by norm_num) (by norm_num) (by norm_num), ?_⟩
       ext <;> simp <;> linarith
 
