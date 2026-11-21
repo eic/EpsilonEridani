@@ -13,8 +13,8 @@ public import EpsilonEridani.QFT.SmallX.Dipole.WilsonLine
 # Higher Wilson-line correlators
 
 A colour-singlet state of `n` quark-antiquark pairs crossing a target described by the
-Wilson-line configuration `U` is probed through the `2n`-point Wilson-line correlator. For quark
-positions `x₀, …, x_{n-1}` and antiquark positions `y₀, …, y_{n-1}` it is
+Wilson-line configuration `U` is probed through the single-trace `2n`-point Wilson-line
+correlator. For quark positions `x₀, …, x_{n-1}` and antiquark positions `y₀, …, y_{n-1}` it is
 
 ```
 (1 / N_c) Re Tr(U(x₀) U(y₀)† U(x₁) U(y₁)† ⋯ U(x_{n-1}) U(y_{n-1})†).
@@ -26,6 +26,10 @@ an observable involves more than one quark-antiquark pair, and the rapidity evol
 `2n`-point correlator involves correlators with more lines. See Jalilian-Marian and Kovchegov,
 *Phys. Rev.* **D70** (2004) 114017, and Dominguez, Marquet, Xiao and Yuan, *Phys. Rev.* **D83**
 (2011) 105005, for these correlators and the observables that measure them.
+
+For `n ≥ 2` the same `2n` Wilson lines also admit independent multi-trace colour-singlet
+contractions, such as the double dipole `Tr(U(x₀) U(y₀)†) Tr(U(x₁) U(y₁)†)`; these are distinct
+operators, and `multipoleS` covers only the single-trace contraction.
 
 Everything proved here holds configuration by configuration and uses only unitarity of the
 Wilson lines:
@@ -45,7 +49,7 @@ Wilson lines:
 
 ## Main definitions
 
-- `SmallX.multipoleS`: the `2n`-point Wilson-line correlator of a configuration.
+- `SmallX.multipoleS`: the single-trace `2n`-point Wilson-line correlator of a configuration.
 
 ## Main results
 
@@ -73,7 +77,7 @@ open Matrix
 
 variable {Nc : ℕ}
 
-/-- The `2n`-point Wilson-line correlator
+/-- The single-trace `2n`-point Wilson-line correlator
 `(1 / N_c) Re Tr(U(x₀) U(y₀)† ⋯ U(x_{n-1}) U(y_{n-1})†)` of a configuration `U`, for quarks at
 the positions `x i` and antiquarks at the positions `y i`. The product is taken in the unitary
 group, with the factor of index `0` leftmost. -/

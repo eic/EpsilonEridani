@@ -10,17 +10,19 @@ public import EpsilonEridani.QFT.SmallX.Dipole.Operator
 /-!
 # The quadrupole operator
 
-The quadrupole is the four-point member `n = 2` of the `2n`-point Wilson-line correlators
-`SmallX.multipoleS`: for quarks at `x`, `z` and antiquarks at `y`, `w`,
+The quadrupole is the four-point member `n = 2` of the single-trace `2n`-point Wilson-line
+correlators `SmallX.multipoleS`: for quarks at `x`, `z` and antiquarks at `y`, `w`,
 
 ```
 Q U x y z w = (1 / N_c) Re Tr(U(x) U(y)† U(z) U(w)†).
 ```
 
-It is the next correlator after the dipole, and enters, for instance, the cross section for
-quark-antiquark dijet production in deep-inelastic scattering at small `x` (Jalilian-Marian and
-Kovchegov, *Phys. Rev.* **D70** (2004) 114017; Dominguez, Marquet, Xiao and Yuan, *Phys. Rev.*
-**D83** (2011) 105005). Its properties are specialisations of those of the general correlator,
+It is the next single-trace correlator after the dipole; the same four Wilson lines also
+contract into the two-trace double dipole `Tr(U(x) U(y)†) Tr(U(z) U(w)†)`, a distinct operator
+not covered here. The quadrupole enters, for instance, the cross section for quark-antiquark
+dijet production in deep-inelastic scattering at small `x` (Jalilian-Marian and Kovchegov,
+*Phys. Rev.* **D70** (2004) 114017; Dominguez, Marquet, Xiao and Yuan, *Phys. Rev.* **D83**
+(2011) 105005). Its properties are specialisations of those of the general correlator,
 and hold configuration by configuration:
 
 * `|Q| ≤ 1`;
@@ -64,8 +66,8 @@ open Matrix
 variable {Nc : ℕ}
 
 /-- The quadrupole operator `Q U x y z w = (1 / N_c) Re Tr(U(x) U(y)† U(z) U(w)†)` of a
-Wilson-line configuration `U`: the four-point correlator with quarks at `x`, `z` and antiquarks
-at `y`, `w`. -/
+Wilson-line configuration `U`: the single-trace four-point correlator with quarks at `x`, `z`
+and antiquarks at `y`, `w`. -/
 def quadrupoleS (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   multipoleS U ![x, z] ![y, w]
 
