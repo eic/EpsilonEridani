@@ -19,16 +19,17 @@ examples there integrate continuous targets against the standard uniform law.
 
 ## Main results
 
-* `EpsilonEridani.uniformMeasure_zero_one`: the standard uniform law is Lebesgue measure
-  restricted to `Set.Ioc 0 1`.
 * `EpsilonEridani.uniformMeasure_Iic`: the uniform measure of a closed lower tail, the companion
   of `TauCeti.Probability.uniformMeasure_Iio`.
 * `ContinuousOn.integrable_uniformMeasure`: a function continuous on `Set.Icc a b` is integrable
   against every uniform measure.
-* `EpsilonEridani.lintegral_ofReal_uniformMeasure`: the lower integral of a nonnegative function
-  against the uniform law, as an interval integral divided by the interval length.
-* `EpsilonEridani.lintegral_one_add_sq_div_two` and `EpsilonEridani.lintegral_min_two_mul`: the
-  integrals of the acceptance–rejection example targets against the standard uniform law.
+* `EpsilonEridani.lintegral_ofReal_uniformMeasure`: the lower integral of an integrable,
+  nonnegative function against the uniform law, as an interval integral divided by the interval
+  length.
+* `EpsilonEridani.lintegral_one_add_sq_div_two_uniformMeasure_zero_one` and
+  `EpsilonEridani.lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one`: the integrals of
+  the acceptance–rejection example targets against the standard uniform law, with
+  `EpsilonEridani.ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one`, the bound of the first.
 * `MeasureTheory.Measure.map_fst_restrict_setOf_le_prod_uniformMeasure_zero_one`: thinning by a
   uniform variate. Keeping a proposal `x` when an independent standard uniform variate lies
   below `a x` multiplies its law by the density `min (a x) 1`, clipped at `0`.
@@ -38,11 +39,17 @@ public section
 
 open MeasureTheory TauCeti.Probability
 
-namespace EpsilonEridani
+/-- A function continuous on `Set.Icc a b` is integrable against the uniform measure on any
+interval: on a nondegenerate interval it is bounded there, and on a degenerate one the measure
+is zero. -/
+theorem ContinuousOn.integrable_uniformMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+    {a b : ℝ} (hf : ContinuousOn f (Set.Icc a b)) : Integrable f (uniformMeasure a b) := by
+  rcases le_or_gt b a with hba | hab
+  · simp [uniformMeasure_eq_zero_of_le hba]
+  rw [uniformMeasure_eq_smul]
+  exact (hf.integrableOn_Icc.mono_set Set.Ioc_subset_Icc_self).smul_measure (by simp [hab])
 
-/-- The standard uniform law is Lebesgue measure restricted to `Set.Ioc 0 1`. -/
-theorem uniformMeasure_zero_one : uniformMeasure 0 1 = volume.restrict (Set.Ioc 0 1) := by
-  simp [uniformMeasure_eq_smul]
+namespace EpsilonEridani
 
 /-- The uniform measure of a closed lower tail: the fraction of `Set.Ioc a b` lying below `t`,
 which is `0` below the interval and `1` above it. -/
@@ -55,35 +62,46 @@ theorem uniformMeasure_Iic {a b : ℝ} (hab : a < b) (t : ℝ) :
   rw [uniformMeasure_apply measurableSet_Iic, hset, Real.volume_Ioc,
     ENNReal.ofReal_div_of_pos (sub_pos.mpr hab), ENNReal.div_eq_inv_mul]
 
-/-- The lower integral of a nonnegative `f` against the uniform law on `Set.Ioc a b` is the
-interval integral of `f` over `[a, b]` divided by the interval length. -/
+/-- The lower integral of an integrable `f`, nonnegative on `Set.Ioc a b`, against the uniform
+law on that interval is the interval integral of `f` over `[a, b]` divided by the interval
+length. -/
 theorem lintegral_ofReal_uniformMeasure {f : ℝ → ℝ} {a b : ℝ} (hab : a < b)
-    (hf : ContinuousOn f (Set.Icc a b)) (hf₀ : ∀ x ∈ Set.Ioc a b, 0 ≤ f x) :
+    (hf : Integrable f (uniformMeasure a b)) (hf₀ : ∀ x ∈ Set.Ioc a b, 0 ≤ f x) :
     ∫⁻ x, ENNReal.ofReal (f x) ∂uniformMeasure a b =
       ENNReal.ofReal ((∫ x in a..b, f x) / (b - a)) := by
+  rw [uniformMeasure_eq_smul] at hf
+  have hfi : IntegrableOn f (Set.Ioc a b) :=
+    (integrable_smul_measure (by simp) (by simp [hab])).mp hf
   rw [uniformMeasure_eq_smul, lintegral_smul_measure, smul_eq_mul,
-    ← ofReal_integral_eq_lintegral_ofReal (hf.integrableOn_Icc.mono_set Set.Ioc_subset_Icc_self)
-      (ae_restrict_of_forall_mem measurableSet_Ioc hf₀),
+    ← ofReal_integral_eq_lintegral_ofReal hfi (ae_restrict_of_forall_mem measurableSet_Ioc hf₀),
     ← intervalIntegral.integral_of_le hab.le, ENNReal.ofReal_div_of_pos (sub_pos.mpr hab),
     ENNReal.div_eq_inv_mul]
+
+/-- The function `(1 + z ^ 2) / 2` is bounded by `1` almost everywhere for the standard uniform
+law. It is the bound hypothesis of the acceptance–rejection example in
+`EpsilonEridani.Mathematics.Probability.AcceptReject` with constant proposal and bound `1`. -/
+theorem ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one :
+    ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 := by
+  filter_upwards [ae_mem_Ioc_uniformMeasure] with z hz
+  nlinarith [hz.1, hz.2]
 
 /-- The function `(1 + z ^ 2) / 2` has integral `2 / 3` over `[0, 1]`. It is the target of the
 acceptance–rejection example in `EpsilonEridani.Mathematics.Probability.AcceptReject`, and its
 integral is that example's acceptance probability. -/
-theorem lintegral_one_add_sq_div_two :
+theorem lintegral_one_add_sq_div_two_uniformMeasure_zero_one :
     ∫⁻ z, ENNReal.ofReal ((1 + z ^ 2) / 2) ∂uniformMeasure 0 1 = ENNReal.ofReal (2 / 3) := by
   have hcont : Continuous fun z : ℝ => (1 + z ^ 2) / 2 := by fun_prop
-  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn (fun z _ => by positivity),
-    sub_zero, div_one]
+  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn.integrable_uniformMeasure
+    (fun z _ => by positivity), sub_zero, div_one]
   norm_num [intervalIntegral.integral_div, integral_pow]
 
 /-- The clipped function `min (2 * z) (3 / 2)` has integral `15 / 16` over `[0, 1]`. It is the
 clipped target of the acceptance–rejection example in
 `EpsilonEridani.Mathematics.Probability.AcceptReject`. -/
-theorem lintegral_min_two_mul :
+theorem lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one :
     ∫⁻ z, ENNReal.ofReal (min (2 * z) (3 / 2)) ∂uniformMeasure 0 1 = ENNReal.ofReal (15 / 16) := by
   have hcont : Continuous fun z : ℝ => min (2 * z) (3 / 2) := by fun_prop
-  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn
+  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn.integrable_uniformMeasure
     (fun x hx => le_min (by linarith [hx.1]) (by norm_num)), sub_zero, div_one]
   -- Split `[0, 1]` at the crossing point `3 / 4`, where `2 * z` meets the bound.
   have hlo : ∫ z in (0 : ℝ)..3 / 4, min (2 * z) (3 / 2) = ∫ z in (0 : ℝ)..3 / 4, 2 * z :=
@@ -100,16 +118,6 @@ theorem lintegral_min_two_mul :
   norm_num
 
 end EpsilonEridani
-
-/-- A function continuous on `Set.Icc a b` is integrable against the uniform measure on any
-interval: on a nondegenerate interval it is bounded there, and on a degenerate one the measure
-is zero. -/
-theorem ContinuousOn.integrable_uniformMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
-    {a b : ℝ} (hf : ContinuousOn f (Set.Icc a b)) : Integrable f (uniformMeasure a b) := by
-  rcases le_or_gt b a with hba | hab
-  · simp [uniformMeasure_eq_zero_of_le hba]
-  rw [uniformMeasure_eq_smul]
-  exact (hf.integrableOn_Icc.mono_set Set.Ioc_subset_Icc_self).smul_measure (by simp [hab])
 
 namespace MeasureTheory.Measure
 
