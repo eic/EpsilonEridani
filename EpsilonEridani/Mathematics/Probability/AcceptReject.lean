@@ -40,6 +40,8 @@ trial law is one too.
   probability measure once `min f (c * g)` has positive, finite mass.
 * `AcceptReject.acceptedLaw_eq_smul_withDensity_of_ae_le`: when `f ≤ c * g` almost everywhere,
   the accepted law is `f` normalised.
+* `AcceptReject.measureReal_trialLaw_acceptSet`: the same mass as a real number,
+  `(∫⁻ min f (c * g)).toReal / c`.
 * `AcceptReject.measureReal_trialLaw_acceptSet_of_ae_le`: for an integrable, almost everywhere
   non-negative target with `f ≤ c * g` almost everywhere, the trial law's measure of the
   acceptance event is `(∫ f) / c`.
@@ -230,6 +232,14 @@ theorem acceptedLaw_eq_smul_withDensity_of_ae_le (hc : 0 < c) (hf : Measurable f
       fun x => ENNReal.ofReal (f x) := hle.mono fun x hx => by simp only [min_eq_left hx]
   rw [acceptedLaw_eq_smul_withDensity_min hc hf hg, lintegral_congr_ae h, withDensity_congr_ae h]
 
+/-- The trial law's measure of the acceptance event, as a real number, is
+`(∫⁻ min f (c * g)).toReal / c`, whatever the relation between `f` and `c * g`. -/
+theorem measureReal_trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measurable g) :
+    (trialLaw μ g).real (acceptSet f g c) =
+      (∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ).toReal / c := by
+  rw [measureReal_def, trialLaw_acceptSet hc hf hg, ENNReal.toReal_div,
+    ENNReal.toReal_ofReal hc.le]
+
 /-- When `f ≤ c * g` almost everywhere, the trial law's measure of the acceptance event is
 `∫⁻ f / c`. -/
 theorem trialLaw_acceptSet_of_ae_le (hc : 0 < c) (hf : Measurable f) (hg : Measurable g)
@@ -369,10 +379,10 @@ accepts with probability `5 / 8`: the clipped target's integral `15 / 16` divide
 theorem measureReal_trialLaw_acceptSet_two_mul_three_div_two :
     (trialLaw (uniformMeasure 0 1) fun _ => 1).real
       (acceptSet (fun z => 2 * z) (fun _ => 1) (3 / 2)) = 5 / 8 := by
-  rw [measureReal_def, trialLaw_acceptSet (by norm_num) (by fun_prop) measurable_const]
+  rw [measureReal_trialLaw_acceptSet (by norm_num) (by fun_prop) measurable_const]
   simp only [mul_one]
-  rw [lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one, ENNReal.toReal_div,
-    ENNReal.toReal_ofReal (by norm_num), ENNReal.toReal_ofReal (by norm_num)]
+  rw [lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one,
+    ENNReal.toReal_ofReal (by norm_num)]
   norm_num
 
 /-- The accepted law of the bound-that-is-too-small example is a probability measure: the
