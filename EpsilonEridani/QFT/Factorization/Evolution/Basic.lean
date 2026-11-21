@@ -8,6 +8,7 @@ module
 public import EpsilonEridani.QFT.Factorization.Convolution.Basic
 public import EpsilonEridani.QFT.Factorization.Convolution.Collinear
 public import EpsilonEridani.Particles.Parton.PDF.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 /-!
 
 # DGLAP Evolution Core
@@ -33,6 +34,9 @@ a coupled system of integro-differential equations, one per flavor channel.
 - `dglapOperator_add` and `dglapOperator_const_mul` are its linearity in the densities.
 - `IsDGLAPLogScaleEquation` is the DGLAP evolution equation, stated with `HasDerivAt` in
   `τ = log Q2`.
+- `integratedCoupling` is the integral of the prefactor `αs (exp τ) / (2 * π)` between two log
+  scales; for a coupling positive at positive scales it is strictly increasing
+  (`strictMono_integratedCoupling`), an admissible reparametrisation of the log scale.
 - `IsDGLAPFixedPoint` is the scale-local fixed-point condition that
   `IsDGLAPLogScaleEquation` used to assert before this module was corrected; it is retained
   under a name that describes it.
@@ -255,6 +259,54 @@ lemma dglapRhsLogScale_zero_coupling [Fintype Flavor]
     (i : Flavor) (x τ : ℝ) :
     dglapRhsLogScale P (fun _ => 0) f i x τ = 0 := by
   simp [dglapRhsLogScale]
+
+/-- The integrated coupling from log scale `τ₀` to log scale `τ`,
+
+`integratedCoupling αs τ₀ τ = ∫ s in τ₀..τ, αs(e^s) / (2π)`.
+
+It is the evolution variable of DGLAP evolution in moment space: in it the coefficient matrix of
+the moment-space system becomes the constant anomalous-dimension matrix. -/
+@[no_expose] def integratedCoupling (αs : RunningCoupling) (τ₀ τ : ℝ) : ℝ :=
+  ∫ s in τ₀..τ, αs (Real.exp s) / (2 * Real.pi)
+
+lemma integratedCoupling_def (αs : RunningCoupling) (τ₀ τ : ℝ) :
+    integratedCoupling αs τ₀ τ = ∫ s in τ₀..τ, αs (Real.exp s) / (2 * Real.pi) := (rfl)
+
+@[simp]
+lemma integratedCoupling_self (αs : RunningCoupling) (τ : ℝ) :
+    integratedCoupling αs τ τ = 0 := by
+  rw [integratedCoupling_def, intervalIntegral.integral_same]
+
+/-- The integrated coupling of a continuous coupling is additive over adjacent scale
+intervals. -/
+lemma integratedCoupling_add {αs : RunningCoupling} (hαs : Continuous αs) (τ₀ τ₁ τ₂ : ℝ) :
+    integratedCoupling αs τ₀ τ₁ + integratedCoupling αs τ₁ τ₂ = integratedCoupling αs τ₀ τ₂ := by
+  have h := (hαs.comp Real.continuous_exp).div_const (2 * Real.pi)
+  simp only [integratedCoupling_def]
+  exact intervalIntegral.integral_add_adjacent_intervals (h.intervalIntegrable _ _)
+    (h.intervalIntegrable _ _)
+
+/-- Reversing the scale interval reverses the sign of the integrated coupling. -/
+lemma integratedCoupling_swap (αs : RunningCoupling) (τ₀ τ : ℝ) :
+    integratedCoupling αs τ τ₀ = -integratedCoupling αs τ₀ τ := by
+  simp only [integratedCoupling_def]
+  exact intervalIntegral.integral_symm τ₀ τ
+
+/-- The integrated coupling of a continuous coupling has derivative `αs(e^τ) / (2π)` in its
+upper limit. -/
+lemma hasDerivAt_integratedCoupling {αs : RunningCoupling} (hαs : Continuous αs) (τ₀ τ : ℝ) :
+    HasDerivAt (integratedCoupling αs τ₀) (αs (Real.exp τ) / (2 * Real.pi)) τ :=
+  (((hαs.comp Real.continuous_exp).div_const (2 * Real.pi)).integral_hasStrictDerivAt
+    τ₀ τ).hasDerivAt
+
+/-- For a continuous coupling that is positive at every positive scale, the integrated coupling
+is strictly increasing in its upper limit, so it is an admissible reparametrisation of the log
+scale. -/
+lemma strictMono_integratedCoupling {αs : RunningCoupling} (hαs : Continuous αs)
+    (hα : ∀ Q2, 0 < Q2 → 0 < αs Q2) (τ₀ : ℝ) :
+    StrictMono (integratedCoupling αs τ₀) :=
+  strictMono_of_hasDerivAt_pos (hasDerivAt_integratedCoupling hαs τ₀) fun τ =>
+    div_pos (hα _ (Real.exp_pos τ)) (by positivity)
 
 /-! ## D. The evolution equation -/
 
