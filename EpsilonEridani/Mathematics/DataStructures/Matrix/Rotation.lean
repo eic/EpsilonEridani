@@ -78,7 +78,7 @@ theorem rotation_zero : rotation 0 = 1 := by
 theorem rotation_mul_rotation (θ φ : ℝ) : rotation θ * rotation φ = rotation (θ + φ) := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [rotation_def, mul_apply, Fin.sum_univ_two, cos_add, sin_add] <;> ring
+    simp [rotation_def, cos_add, sin_add] <;> ring
 
 /-- The transpose of the rotation by `θ` is the rotation by `-θ`, its inverse. -/
 @[simp]

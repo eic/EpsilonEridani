@@ -217,7 +217,7 @@ lemma spinOneMatrix_mul_spinOneMatrix_apply (i j a b : Fin 3) :
 
 /-- The entries of a spin-one matrix are antisymmetric: `(Sₖ)ᵦₐ = -(Sₖ)ₐᵦ`. -/
 lemma spinOneMatrix_apply_swap (k a b : Fin 3) : spinOneMatrix k b a = -spinOneMatrix k a b := by
-  rw [← transpose_apply (spinOneMatrix k), transpose_spinOneMatrix, neg_apply]
+  rw [← transpose_apply (spinOneMatrix k), transpose_spinOneMatrix, Matrix.neg_apply]
 
 /-- The diagonal entries of a spin-one matrix vanish. -/
 @[simp]
