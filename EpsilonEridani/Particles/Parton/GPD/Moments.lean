@@ -55,6 +55,11 @@ The integrand is `x ^ n * H i x ξ t`; see the module docstring for the index co
 def mellinMomentGpd (H : Gpd Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :=
   ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * H i x xi t
 
+/-- `mellinMomentGpd` as an explicit set integral over `[-1, 1]`. -/
+lemma mellinMomentGpd_eq_integral (H : Gpd Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
+    mellinMomentGpd H n i xi t = ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * H i x xi t :=
+  (rfl)
+
 /-- Mellin moments of `H` over the full GPD support `x ∈ [-1, 1]`. -/
 def mellinMomentH (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :=
   mellinMomentGpd M.H n i xi t
@@ -66,12 +71,12 @@ def mellinMomentE (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :
 /-- `mellinMomentH` is the Mellin moment of the `H` component. -/
 lemma mellinMomentH_def (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
     mellinMomentH M n i xi t = mellinMomentGpd M.H n i xi t :=
-  rfl
+  (rfl)
 
 /-- `mellinMomentE` is the Mellin moment of the `E` component. -/
 lemma mellinMomentE_def (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
     mellinMomentE M n i xi t = mellinMomentGpd M.E n i xi t :=
-  rfl
+  (rfl)
 
 /-- Unfolding lemma for `mellinMomentH` as an explicit integral. -/
 lemma mellinMomentH_eq_integral (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :

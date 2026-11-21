@@ -45,6 +45,17 @@ lemma coe_measurableEquivProdAddMul {a : ℝ} (ha : a ≠ 0) :
     ⇑(measurableEquivProdAddMul ha) = fun p : ℝ × ℝ => (p.1, p.1 + a * p.2) :=
   rfl
 
+/-- The inverse of the scaled shear `measurableEquivProdAddMul` is
+`(x, y) ↦ (x, a⁻¹ * (y - x))`. -/
+@[simp]
+lemma coe_measurableEquivProdAddMul_symm {a : ℝ} (ha : a ≠ 0) :
+    ⇑(measurableEquivProdAddMul ha).symm = fun q : ℝ × ℝ => (q.1, a⁻¹ * (q.2 - q.1)) := by
+  funext q
+  rw [MeasurableEquiv.symm_apply_eq, coe_measurableEquivProdAddMul]
+  ext
+  · rfl
+  · simp [mul_inv_cancel_left₀ ha]
+
 /-- For `a ≠ 0` the scaled shear `(x, y) ↦ (x, x + a * y)` is a measurable embedding. -/
 lemma measurableEmbedding_prod_add_mul {a : ℝ} (ha : a ≠ 0) :
     MeasurableEmbedding fun p : ℝ × ℝ => (p.1, p.1 + a * p.2) := by
@@ -91,6 +102,8 @@ lemma integral_comp_prod_add_mul {E : Type*} [NormedAddCommGroup E] [NormedSpace
     by_cases hint : Integrable fun p : ℝ × ℝ => g (p.1, p.1)
     · rw [Measure.volume_eq_prod, integral_prod _ hint]
       refine integral_eq_zero_of_ae (Filter.Eventually.of_forall fun x => ?_)
+      -- the slice is constant in `y`; `integral_const` needs `CompleteSpace E`, and without it
+      -- every Bochner integral vanishes (`integral_of_not_completeSpace`)
       by_cases hE : CompleteSpace E
       · simp [integral_const, measureReal_def]
       · exact integral_of_not_completeSpace hE

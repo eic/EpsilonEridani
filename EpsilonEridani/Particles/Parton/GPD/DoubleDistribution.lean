@@ -123,7 +123,7 @@ lemma Model.ofDoubleDistribution_H
     (ddH : DoubleDistribution Flavor) (dtH : DTerm Flavor)
     (ddE : DoubleDistribution Flavor) (dtE : DTerm Flavor) :
     (Model.ofDoubleDistribution ddH dtH ddE dtE).H = gpdOfDoubleDistribution ddH dtH :=
-  rfl
+  (rfl)
 
 /-- The `E` GPD of `Model.ofDoubleDistribution` is the one induced by `ddE` and `dtE`. -/
 @[simp]
@@ -131,7 +131,7 @@ lemma Model.ofDoubleDistribution_E
     (ddH : DoubleDistribution Flavor) (dtH : DTerm Flavor)
     (ddE : DoubleDistribution Flavor) (dtE : DTerm Flavor) :
     (Model.ofDoubleDistribution ddH dtH ddE dtE).E = gpdOfDoubleDistribution ddE dtE :=
-  rfl
+  (rfl)
 
 /-- The forward parton density carried by a double distribution, `f(x) = ∫ dα F(x, α, 0)`. -/
 def pdfOfDoubleDistribution (dd : DoubleDistribution Flavor) : PDF.Pdf Flavor :=

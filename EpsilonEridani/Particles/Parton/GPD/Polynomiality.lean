@@ -91,6 +91,16 @@ def ddMoment (dd : DoubleDistribution Flavor) (i : Flavor) (m k : ℕ) (t : ℝ)
 def dtMoment (dt : DTerm Flavor) (i : Flavor) (m : ℕ) (t : ℝ) : ℝ :=
   ∫ u : ℝ, u ^ m * dt.D i u t
 
+/-- `ddMoment` as an explicit integral over the `(β, α)` plane. -/
+lemma ddMoment_eq_integral (dd : DoubleDistribution Flavor) (i : Flavor) (m k : ℕ) (t : ℝ) :
+    ddMoment dd i m k t = ∫ p : ℝ × ℝ, p.1 ^ m * p.2 ^ k * dd.F i p.1 p.2 t :=
+  (rfl)
+
+/-- `dtMoment` as an explicit integral over `u`. -/
+lemma dtMoment_eq_integral (dt : DTerm Flavor) (i : Flavor) (m : ℕ) (t : ℝ) :
+    dtMoment dt i m t = ∫ u : ℝ, u ^ m * dt.D i u t :=
+  (rfl)
+
 /-- Odd `α`-moments of a double distribution vanish.
 
 This is the formal content of the `α`-symmetry of `F`, and it is what makes the moment
@@ -230,7 +240,7 @@ private lemma add_mul_pow_mul_eq_sum (dd : DoubleDistribution Flavor) (i : Flavo
     (xi t : ℝ) (p : ℝ × ℝ) :
     (p.1 + xi * p.2) ^ n * dd.F i p.1 p.2 t = ∑ k ∈ Finset.range (n + 1),
       (n.choose k : ℝ) * xi ^ k * (p.1 ^ (n - k) * p.2 ^ k * dd.F i p.1 p.2 t) := by
-  rw [add_comm, add_pow, Finset.sum_mul]
+  rw [add_comm p.1 (xi * p.2), add_pow, Finset.sum_mul]
   refine Finset.sum_congr rfl fun k _ => ?_
   ring
 
@@ -251,7 +261,7 @@ lemma integral_add_mul_pow_mul (dd : DoubleDistribution Flavor) (i : Flavor) (n 
   simp_rw [add_mul_pow_mul_eq_sum]
   rw [integral_finsetSum _ fun k _ => (dd.momentIntegrable i (n - k) k t).const_mul _]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [integral_const_mul, ddMoment]
+  rw [integral_const_mul, ddMoment_eq_integral]
   ring
 
 /-- The double-distribution integrand of the moment, written on the `(β, x)` plane, is
@@ -261,8 +271,8 @@ private lemma integrable_pow_mul_F_div (dd : DoubleDistribution Flavor) (i : Fla
     {xi : ℝ} (hxi : xi ≠ 0) (t : ℝ) :
     Integrable fun q : ℝ × ℝ => q.2 ^ n * dd.F i q.1 ((q.2 - q.1) / xi) t := by
   rw [← integrable_comp_prod_add_mul_iff _ hxi]
-  convert integrable_add_mul_pow_mul dd i n xi t using 3 with p
-  rw [add_sub_cancel_left, mul_div_cancel_left₀ _ hxi]
+  simp only [add_sub_cancel_left, mul_div_cancel_left₀ _ hxi]
+  exact integrable_add_mul_pow_mul dd i n xi t
 
 /-- For `ξ ≠ 0` the double-distribution term of the GPD, weighted by `x^n`, is integrable
 in `x`. -/
@@ -271,7 +281,8 @@ private lemma integrable_pow_mul_ddTerm (dd : DoubleDistribution Flavor) (i : Fl
     Integrable fun x : ℝ => x ^ n * ((|xi|)⁻¹ * ∫ β : ℝ, dd.F i β ((x - β) / xi) t) := by
   refine (((integrable_pow_mul_F_div dd i n hxi t).integral_prod_right).const_mul
     (|xi|)⁻¹).congr (Filter.Eventually.of_forall fun x => ?_)
-  simp only
+  -- reduce the projections of the pair `(β, x)` so the constant can be pulled out
+  dsimp only
   rw [integral_const_mul]
   ring
 
@@ -299,7 +310,8 @@ private lemma pow_mul_dTerm_eq (dt : DTerm Flavor) (i : Flavor) (n : ℕ) {xi : 
     (hxi : xi ≠ 0) (t x : ℝ) :
     x ^ n * (xi / |xi| * dt.D i (x / xi) t)
       = xi / |xi| * xi ^ n * ((x / xi) ^ n * dt.D i (x / xi) t) := by
-  rw [← mul_div_cancel₀ x hxi, mul_div_cancel_left₀ _ hxi, mul_pow]
+  have hx : x ^ n = xi ^ n * (x / xi) ^ n := by rw [← mul_pow, mul_div_cancel₀ x hxi]
+  rw [hx]
   ring
 
 /-- For `ξ ≠ 0` the D-term contribution to the GPD, weighted by `x^n`, is integrable in `x`. -/
@@ -317,7 +329,7 @@ private lemma integral_pow_mul_dTerm (dt : DTerm Flavor) (i : Flavor) (n : ℕ) 
     ∫ x : ℝ, x ^ n * (xi / |xi| * dt.D i (x / xi) t) = xi ^ (n + 1) * dtMoment dt i n t := by
   simp_rw [pow_mul_dTerm_eq dt i n hxi t]
   rw [integral_const_mul, Measure.integral_comp_div (fun u => u ^ n * dt.D i u t), smul_eq_mul,
-    dtMoment]
+    dtMoment_eq_integral]
   field_simp
   ring
 
@@ -335,7 +347,7 @@ theorem mellinMomentGpd_ofDoubleDistribution
     fun x hx => by
       rw [gpdOfDoubleDistribution_eq_zero_of_one_lt_abs dd dt i x xi t hxi
         (lt_of_not_ge fun h => hx (Set.mem_Icc.mpr (abs_le.mp h))), mul_zero]
-  rw [mellinMomentGpd, setIntegral_eq_integral_of_forall_compl_eq_zero hvanish]
+  rw [mellinMomentGpd_eq_integral, setIntegral_eq_integral_of_forall_compl_eq_zero hvanish]
   -- split off the D-term slot and recognise the rest as the moment along `x = β + ξ α`
   rw [Finset.sum_range_succ, momentCoeff_top]
   have hlow : ∀ k ∈ Finset.range (n + 1), momentCoeff dd dt n i k t * xi ^ k
@@ -351,7 +363,8 @@ theorem mellinMomentGpd_ofDoubleDistribution
     simp only [zero_mul, add_zero] at hI
     rw [mul_zero, add_zero, Measure.volume_eq_prod, integral_prod _ hI]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-    simp only
+    -- reduce the projections of the pair `(x, α)` so the constant can be pulled out
+    dsimp only
     rw [integral_const_mul]
   · simp only [fun x => gpdOfDoubleDistribution_ne_zero_skewness dd dt i x xi t hxi0, mul_add]
     rw [integral_add (integrable_pow_mul_ddTerm dd i n hxi0 t)
@@ -438,7 +451,7 @@ lemma polynomialityAssumptionsOfDoubleDistribution_coeff
     (n : ℕ) (i : Flavor) (k : ℕ) (t : ℝ) :
     (polynomialityAssumptionsOfDoubleDistribution ddH ddE dtH dtE).coeff n i k t
       = momentCoeff ddH dtH n i k t :=
-  rfl
+  (rfl)
 
 /-- The zeroth moment of `H` for a GPD model built from double distributions does not depend
 on the skewness, for physical skewness `|ξ| ≤ 1`. -/
