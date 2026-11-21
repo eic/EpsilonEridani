@@ -14,7 +14,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 For `a ≠ 0` the map `(x, y) ↦ (x, x + a * y)` of `ℝ × ℝ` is the composite of a rescaling of the
 second coordinate by `a` and Mathlib's shear `(x, y) ↦ (x, x + y)`
-(`MeasureTheory.measurePreserving_prod_add`). It is therefore a measurable embedding
+(`MeasureTheory.measurePreserving_prod_add`), packaged as the measurable equivalence
+`measurableEquivProdAddMul`. It is therefore a measurable embedding
 (`measurableEmbedding_prod_add_mul`) that sends Lebesgue measure to `|a⁻¹|` times itself
 (`measurePreserving_prod_add_mul`), which gives the change of variables
 `∫ g (x, x + a * y) = |a⁻¹| • ∫ g` (`integral_comp_prod_add_mul`, which also holds for `a = 0`)
@@ -31,24 +32,41 @@ namespace EpsilonEridani
 
 open MeasureTheory
 
+/-- For `a ≠ 0` the scaled shear `(x, y) ↦ (x, x + a * y)` of the plane as a measurable
+equivalence: the rescaling `y ↦ a * y` of the second coordinate followed by Mathlib's shear
+`MeasurableEquiv.shearAddRight`. -/
+noncomputable def measurableEquivProdAddMul {a : ℝ} (ha : a ≠ 0) : ℝ × ℝ ≃ᵐ ℝ × ℝ :=
+  ((MeasurableEquiv.refl ℝ).prodCongr (MeasurableEquiv.mulLeft₀ a ha)).trans
+    (MeasurableEquiv.shearAddRight ℝ)
+
+/-- The scaled shear `measurableEquivProdAddMul` is `(x, y) ↦ (x, x + a * y)`. -/
+@[simp]
+lemma coe_measurableEquivProdAddMul {a : ℝ} (ha : a ≠ 0) :
+    ⇑(measurableEquivProdAddMul ha) = fun p : ℝ × ℝ => (p.1, p.1 + a * p.2) :=
+  rfl
+
 /-- For `a ≠ 0` the scaled shear `(x, y) ↦ (x, x + a * y)` is a measurable embedding. -/
 lemma measurableEmbedding_prod_add_mul {a : ℝ} (ha : a ≠ 0) :
-    MeasurableEmbedding fun p : ℝ × ℝ => (p.1, p.1 + a * p.2) :=
-  (MeasurableEquiv.shearAddRight ℝ).measurableEmbedding.comp
-    ((MeasurableEquiv.refl ℝ).prodCongr (MeasurableEquiv.mulLeft₀ a ha)).measurableEmbedding
+    MeasurableEmbedding fun p : ℝ × ℝ => (p.1, p.1 + a * p.2) := by
+  rw [← coe_measurableEquivProdAddMul ha]
+  exact (measurableEquivProdAddMul ha).measurableEmbedding
 
 /-- For `a ≠ 0` the scaled shear `(x, y) ↦ (x, x + a * y)` sends Lebesgue measure on the plane
 to `|a⁻¹|` times Lebesgue measure. -/
 lemma measurePreserving_prod_add_mul {a : ℝ} (ha : a ≠ 0) :
     MeasurePreserving (fun p : ℝ × ℝ => (p.1, p.1 + a * p.2)) volume
       (ENNReal.ofReal |a⁻¹| • volume) := by
-  have hS : MeasurePreserving (Prod.map id (a * ·)) (volume : Measure (ℝ × ℝ))
-      (ENNReal.ofReal |a⁻¹| • volume) := by
+  -- the rescaling of the second coordinate scales Lebesgue measure by `|a⁻¹|`
+  have hS : MeasurePreserving ((MeasurableEquiv.refl ℝ).prodCongr (MeasurableEquiv.mulLeft₀ a ha))
+      (volume : Measure (ℝ × ℝ)) (ENNReal.ofReal |a⁻¹| • volume) := by
     rw [Measure.volume_eq_prod, ← Measure.prod_smul_right]
-    exact (MeasurePreserving.id _).prod ⟨by fun_prop, Real.map_volume_mul_left ha⟩
+    exact (MeasurePreserving.id _).prod
+      ⟨(MeasurableEquiv.mulLeft₀ a ha).measurable, Real.map_volume_mul_left ha⟩
+  -- the shear preserves Lebesgue measure, hence also its multiples
   have hA := (measurePreserving_prod_add (volume : Measure ℝ) volume).smul_measure
     (ENNReal.ofReal |a⁻¹|)
   rw [← Measure.volume_eq_prod] at hA
+  rw [← coe_measurableEquivProdAddMul ha, measurableEquivProdAddMul, MeasurableEquiv.coe_trans]
   exact hA.comp hS
 
 /-- For `a ≠ 0`, a function on the plane is integrable if and only if its composite with the

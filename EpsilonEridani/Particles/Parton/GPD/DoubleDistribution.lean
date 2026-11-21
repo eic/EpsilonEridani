@@ -143,6 +143,17 @@ lemma gpdOfDoubleDistribution_zero_skewness
     gpdOfDoubleDistribution dd dt i x 0 t = ∫ α : ℝ, dd.F i x α t := by
   simp [gpdOfDoubleDistribution]
 
+/-- The induced GPD at nonzero skewness, with the skewness branch already resolved.
+
+The companion of `gpdOfDoubleDistribution_zero_skewness`; both exist so that downstream
+proofs never have to rewrite inside the `if`. -/
+lemma gpdOfDoubleDistribution_ne_zero_skewness (dd : DoubleDistribution Flavor)
+    (dt : DTerm Flavor) (i : Flavor) (x xi t : ℝ) (hxi : xi ≠ 0) :
+    gpdOfDoubleDistribution dd dt i x xi t
+      = (|xi|)⁻¹ * (∫ β : ℝ, dd.F i β ((x - β) / xi) t)
+        + (xi / |xi|) * dt.D i (x / xi) t := by
+  simp [gpdOfDoubleDistribution, hxi]
+
 /-- The GPD forward-limit relation is *discharged*, not assumed, for a model built from
 double distributions: `H(x, 0, 0)` is by construction the induced parton density. -/
 lemma forwardLimit_ofDoubleDistribution
@@ -150,7 +161,7 @@ lemma forwardLimit_ofDoubleDistribution
     ForwardLimitToPdfAtScale (Model.ofDoubleDistribution ddH dtH ddE dtE)
       (pdfOfDoubleDistribution ddH) Q2 := by
   intro i x
-  simp [gpdOfDoubleDistribution, pdfOfDoubleDistribution]
+  simp [gpdOfDoubleDistribution_zero_skewness, pdfOfDoubleDistribution]
 
 /-- The induced GPD has the physical support `|x| ≤ 1`, for physical skewness `|ξ| ≤ 1`.
 

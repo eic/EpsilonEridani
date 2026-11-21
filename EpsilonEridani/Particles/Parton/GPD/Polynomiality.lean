@@ -51,7 +51,8 @@ Two structural facts then give the physics content:
 
 ## Main results
 
-* `mellinMomentGpd_ofDoubleDistribution`: the moment formula above, for `|ξ| ≤ 1`.
+* `mellinMomentGpd_ofDoubleDistribution`, `mellinMomentH_ofDoubleDistribution`: the moment formula
+  above, for `|ξ| ≤ 1`.
 * `mellinMomentGpd_polynomial`, `mellinMomentH_polynomial`: the moment is an even polynomial in
   `ξ` of degree at most `n + 1`.
 * `polynomialityAssumptionsOfDoubleDistribution`: every GPD model built from double
@@ -344,7 +345,7 @@ theorem mellinMomentGpd_ofDoubleDistribution
   by_cases hxi0 : xi = 0
   · -- forward limit: the GPD is the `α`-integral of `F`, and the formula is Fubini
     subst hxi0
-    simp only [gpdOfDoubleDistribution, ite_true, zero_mul, add_zero,
+    simp only [gpdOfDoubleDistribution_zero_skewness, zero_mul, add_zero,
       zero_pow n.succ_ne_zero]
     have hI := integrable_add_mul_pow_mul dd i n 0 t
     simp only [zero_mul, add_zero] at hI
@@ -352,11 +353,22 @@ theorem mellinMomentGpd_ofDoubleDistribution
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
     simp only
     rw [integral_const_mul]
-  · simp only [gpdOfDoubleDistribution, hxi0, ite_false, mul_add]
+  · simp only [fun x => gpdOfDoubleDistribution_ne_zero_skewness dd dt i x xi t hxi0, mul_add]
     rw [integral_add (integrable_pow_mul_ddTerm dd i n hxi0 t)
       (integrable_pow_mul_dTerm dt i n hxi0 t), integral_pow_mul_ddTerm dd i n hxi0 t,
       integral_pow_mul_dTerm dt i n hxi0 t]
     ring
+
+/-- **The moment formula for a model.** The `n`-th `x`-moment of `H` for a GPD model built from
+double distributions is, for physical skewness `|ξ| ≤ 1`, the moment formula
+`mellinMomentGpd_ofDoubleDistribution` of its `H` double distribution and D-term. -/
+theorem mellinMomentH_ofDoubleDistribution
+    (ddH ddE : DoubleDistribution Flavor) (dtH dtE : DTerm Flavor)
+    (n : ℕ) (i : Flavor) (xi t : ℝ) (hxi : |xi| ≤ 1) :
+    mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) n i xi t
+      = ∑ k ∈ Finset.range (n + 2), momentCoeff ddH dtH n i k t * xi ^ k := by
+  rw [mellinMomentH_def, Model.ofDoubleDistribution_H]
+  exact mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi
 
 /-- **Polynomiality.** For a GPD built from a double distribution and a D-term, the `n`-th
 `x`-moment is, at physical skewness, an even polynomial in `ξ` of degree at most `n + 1`. -/
@@ -382,7 +394,7 @@ theorem mellinMomentH_polynomial
     ∃ p : Polynomial ℝ, p.natDegree ≤ n + 1 ∧ (∀ k, Odd k → p.coeff k = 0) ∧
       ∀ xi, |xi| ≤ 1 →
         mellinMomentH (Model.ofDoubleDistribution ddH dtH ddE dtE) n i xi t = p.eval xi := by
-  simpa only [mellinMomentH, Model.ofDoubleDistribution_H] using
+  simpa only [mellinMomentH_def, Model.ofDoubleDistribution_H] using
     mellinMomentGpd_polynomial ddH dtH n i t
 
 /-- Below the top slot the coefficients are pure double-distribution form factors. -/
@@ -416,9 +428,7 @@ def polynomialityAssumptionsOfDoubleDistribution
     PolynomialityAssumptions (Model.ofDoubleDistribution ddH dtH ddE dtE) where
   coeff := fun n i k t => momentCoeff ddH dtH n i k t
   coeff_eq_zero_of_odd := fun n i k t hk => momentCoeff_eq_zero_of_odd ddH dtH n i k t hk
-  polynomial := fun n i xi t hxi => by
-    rw [mellinMomentH, Model.ofDoubleDistribution_H]
-    exact mellinMomentGpd_ofDoubleDistribution ddH dtH n i xi t hxi
+  polynomial := fun n i xi t hxi => mellinMomentH_ofDoubleDistribution ddH ddE dtH dtE n i xi t hxi
 
 /-- The coefficients of `polynomialityAssumptionsOfDoubleDistribution` are `momentCoeff` of the
 `H` double distribution and D-term. -/
