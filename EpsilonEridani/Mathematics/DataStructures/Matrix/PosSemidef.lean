@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Tactic.Linarith
-public import TauCeti.Analysis.Matrix.PosSemidef
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
 
 /-!
@@ -26,8 +26,8 @@ A positive-semidefinite matrix `M` over `RCLike 𝕜` carries two entrywise boun
 * `Matrix.PosSemidef.two_mul_norm_apply_le`: `2 * ‖M i j‖ ≤ re (M i i) + re (M j j)`.
 
 The second is the arithmetic-mean form of the Cauchy-Schwarz bound `Matrix.PosSemidef.normSq_le`
-of `TauCeti.Analysis.Matrix.PosSemidef`. It is stated multiplied out, with no division, so that it
-applies without field side conditions. Its specialisation to `𝕜 = ℝ` is
+of `TauCeti.Analysis.Matrix.PosSemidef.Basic`. It is stated multiplied out, with no division, so
+that it applies without field side conditions. Its specialisation to `𝕜 = ℝ` is
 `Matrix.PosSemidef.two_mul_abs_apply_le`, `2 * |M i j| ≤ M i i + M j j`; over `ℝ` the first bound
 is Mathlib's `Matrix.PosSemidef.diag_nonneg`, and the real case of `normSq_le` is
 `Matrix.PosSemidef.sq_apply_le`, `(M i j) ^ 2 ≤ M i i * M j j`. This is the form in which
