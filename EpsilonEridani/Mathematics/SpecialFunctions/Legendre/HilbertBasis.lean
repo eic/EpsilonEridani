@@ -35,6 +35,8 @@ applied to the exact-degree family `Pₙ` (`degree_legendre`).
 * `coeFn_legendreHilbertBasis`: the `n`-th basis vector is the function `√((2n + 1) / 2) Pₙ (x)`;
 * `legendreHilbertBasis_repr_apply`: the `n`-th coordinate of `f` is its Legendre coefficient
   `√((2n + 1) / 2) ∫₋₁¹ Pₙ (x) f (x) dx`;
+* `integrableOn_Icc_legendre_smul`: the integrals `∫₋₁¹ Pₙ (x) f (x) dx` against a
+  square-integrable `f` are integrals of integrable functions;
 * `ae_eq_zero_of_forall_setIntegral_Icc_legendre_smul_eq_zero`: completeness in its elementary form,
   a square-integrable function on `[-1, 1]` orthogonal to every `Pₙ` vanishes almost everywhere;
 * `ae_eq_of_forall_setIntegral_Icc_legendre_smul_eq`: a square-integrable function on `[-1, 1]` is
@@ -44,6 +46,9 @@ applied to the exact-degree family `Pₙ` (`degree_legendre`).
 
 * [G. Szegő, *Orthogonal Polynomials*, §3.1 and §4.7]
 * [NIST Digital Library of Mathematical Functions, §18.2(i) and §18.3](https://dlmf.nist.gov/18)
+* `TauCeti.chebyshevTEnvelopeHilbertBasis`
+  (`TauCeti/Analysis/SpecialFunctions/Trigonometric/Chebyshev/Envelope.lean`), the Tau Ceti
+  instance of the same machinery that this construction follows.
 -/
 
 public section
@@ -99,6 +104,14 @@ theorem coeFn_legendreHilbertBasis (n : ℕ) :
 
 variable {𝕜}
 
+/-- The integrand `Pₙ (x) f (x)` of a Legendre coefficient of a square-integrable function on
+`[-1, 1]` is integrable on `[-1, 1]`, so the integrals in the statements below are genuine. -/
+theorem integrableOn_Icc_legendre_smul (n : ℕ) {f : ℝ → 𝕜}
+    (hf : MemLp f 2 (volume.restrict (Icc (-1 : ℝ) 1))) :
+    IntegrableOn (fun x => (legendre n).eval x • f x) (Icc (-1 : ℝ) 1) :=
+  IntegrableOn.continuousOn_smul (hf.integrable one_le_two) (legendre n).continuous.continuousOn
+    isCompact_Icc
+
 /-- **The coordinates are the Legendre coefficients**: the `n`-th coordinate of `f ∈ L²[-1, 1]` in
 `legendreHilbertBasis` is `√((2n + 1) / 2) ∫₋₁¹ Pₙ (x) f (x) dx`. -/
 theorem legendreHilbertBasis_repr_apply (f : Lp 𝕜 2 (volume.restrict (Icc (-1 : ℝ) 1))) (n : ℕ) :
@@ -135,14 +148,11 @@ theorem ae_eq_of_forall_setIntegral_Icc_legendre_smul_eq {f g : ℝ → 𝕜}
     (h : ∀ n, ∫ x in Icc (-1 : ℝ) 1, (legendre n).eval x • f x =
       ∫ x in Icc (-1 : ℝ) 1, (legendre n).eval x • g x) :
     f =ᵐ[volume.restrict (Icc (-1 : ℝ) 1)] g := by
-  have hint : ∀ (n : ℕ) {u : ℝ → 𝕜}, MemLp u 2 (volume.restrict (Icc (-1 : ℝ) 1)) →
-      Integrable (fun x => (legendre n).eval x • u x) (volume.restrict (Icc (-1 : ℝ) 1)) :=
-    fun n u hu => IntegrableOn.continuousOn_smul (hu.integrable one_le_two)
-      (legendre n).continuous.continuousOn isCompact_Icc
   refine (ae_eq_zero_of_forall_setIntegral_Icc_legendre_smul_eq_zero (hf.sub hg) fun n => ?_).mono
     fun x hx => sub_eq_zero.mp hx
   simp only [Pi.sub_apply, smul_sub]
-  rw [integral_sub (hint n hf) (hint n hg), h n, sub_self]
+  rw [integral_sub (integrableOn_Icc_legendre_smul n hf)
+    (integrableOn_Icc_legendre_smul n hg), h n, sub_self]
 
 end Polynomial
 
