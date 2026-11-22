@@ -414,7 +414,9 @@ lemma minkowskiProduct_ofLightFront (a b : ℝ) (kT : E²) (q : Lorentz.Vector 3
     transversePart_ofLightFront]
 
 /-- The Minkowski square of the four-vector with light-front components `(a, b, kT)` is
-`2 a b - ‖kT‖²`. -/
+`2 a b - ‖kT‖²`. On such a square this takes precedence over `minkowskiProduct_ofLightFront`,
+so that the square is normalised as in `minkowskiProduct_self_eq_lightFront`. -/
+@[simp 1100]
 lemma minkowskiProduct_ofLightFront_self (a b : ℝ) (kT : E²) :
     ⟪ofLightFront a b kT, ofLightFront a b kT⟫ₘ = 2 * a * b - ‖kT‖ ^ 2 := by
   rw [minkowskiProduct_ofLightFront, plusComponent_ofLightFront, minusComponent_ofLightFront,

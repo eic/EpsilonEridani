@@ -42,19 +42,11 @@ the transverse momentum transfer and the momentum transfer are those of the GTMD
 `Kinematics.deltaT_ofMomenta_eq_transversePart_deltaOrthN` and `Kinematics.tMom_ofMomenta_eq_tMom`);
 the GPD conventions for `ξ` and `t` are adopted unchanged.
 
-This file is the first to import both `EpsilonEridani.Particles.Parton.GPD.Kinematics` and
-`EpsilonEridani.Relativity.Tensors.RealTensor.Vector.LightFront`, so it also states, in the
-`GPD.OffForwardKinematics` namespace, the bridge `GPD.OffForwardKinematics.ofLightFrontMomenta` and
-the facts the identifications above use for a direction with `⟪n, q⟫ₘ = c q⁺`:
-`GPD.OffForwardKinematics.ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent` (`c ≠ 0`),
-`GPD.OffForwardKinematics.plusComponent_avgMomentum_ne_zero` (`P⁺ ≠ 0`) and
-`GPD.OffForwardKinematics.plusComponent_deltaOrthN_eq_zero` (`w⁺ = 0` for `w = Δ + 2 ξ P`).
-
 The variables are invariant under the light-front transverse boosts, provided `P⁺ ≠ 0`
 (`Kinematics.ofMomenta_transverseBoost`). Exchanging the two hadrons reverses the skewness and the
-transverse momentum transfer (`Kinematics.ofMomenta_swap`), the operation `Kinematics.swap` against
-which hermiticity of an off-forward correlator is stated; it preserves the physical domain
-(`Kinematics.isPhysical_swap`).
+transverse momentum transfer (`Kinematics.ofMomenta_reverse`), the operation `Kinematics.reverse`
+against which hermiticity of an off-forward correlator is stated; it preserves the physical domain
+(`Kinematics.isPhysical_reverse`).
 
 Consequences of the formula for `t`:
 
@@ -89,70 +81,6 @@ noncomputable section
 namespace EpsilonEridani
 namespace Particles
 namespace Parton
-
-/-! ### Off-forward kinematics of light-front momenta -/
-
-namespace GPD.OffForwardKinematics
-
-open Lorentz Lorentz.Vector EpsilonEridani.LightFront
-
-variable {M : ℝ}
-
-/-- The off-forward kinematics of two on-shell hadron momenta `p`, `p'` of mass `M` with positive
-plus components, with the light-like direction `ofLightFront 0 1 0`, which defines the light-front
-plus component, `⟪ofLightFront 0 1 0, q⟫ₘ = q⁺` (`minkowskiProduct_ofLightFront`). -/
-def ofLightFrontMomenta {p p' : Lorentz.Vector 3} (hp : ⟪p, p⟫ₘ = M ^ 2)
-    (hp' : ⟪p', p'⟫ₘ = M ^ 2) (hpos : 0 < plusComponent p) (hpos' : 0 < plusComponent p') :
-    OffForwardKinematics 3 M where
-  p := p
-  pPrime := p'
-  n := ofLightFront 0 1 0
-  minkowskiProduct_p_self := hp
-  minkowskiProduct_pPrime_self := hp'
-  minkowskiProduct_n_self := by simp
-  minkowskiProduct_n_p_pos := by simpa using hpos
-  minkowskiProduct_n_pPrime_pos := by simpa using hpos'
-
-section
-
-variable {p p' : Lorentz.Vector 3} (hp : ⟪p, p⟫ₘ = M ^ 2) (hp' : ⟪p', p'⟫ₘ = M ^ 2)
-  (hpos : 0 < plusComponent p) (hpos' : 0 < plusComponent p')
-
-@[simp]
-lemma p_ofLightFrontMomenta : (ofLightFrontMomenta hp hp' hpos hpos').p = p := (rfl)
-
-@[simp]
-lemma pPrime_ofLightFrontMomenta : (ofLightFrontMomenta hp hp' hpos hpos').pPrime = p' := (rfl)
-
-@[simp]
-lemma n_ofLightFrontMomenta : (ofLightFrontMomenta hp hp' hpos hpos').n = ofLightFront 0 1 0 :=
-  (rfl)
-
-end
-
-variable (F : OffForwardKinematics 3 M) {c : ℝ}
-
-/-- If the light-like direction `n` defines the light-front plus component up to a scale `c`,
-`⟪n, q⟫ₘ = c q⁺`, the scale is non-zero. -/
-lemma ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent
-    (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) : c ≠ 0 :=
-  left_ne_zero_of_mul (by rw [← hn]; exact F.minkowskiProduct_n_avgMomentum_pos.ne')
-
-/-- If the light-like direction `n` defines the light-front plus component up to a scale `c`,
-`⟪n, q⟫ₘ = c q⁺`, the average momentum has non-zero light-front plus component. -/
-lemma plusComponent_avgMomentum_ne_zero (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
-    plusComponent F.avgMomentum ≠ 0 :=
-  right_ne_zero_of_mul (by rw [← hn]; exact F.minkowskiProduct_n_avgMomentum_pos.ne')
-
-/-- If the light-like direction `n` defines the light-front plus component up to a scale `c`,
-`⟪n, q⟫ₘ = c q⁺`, the vector `w = Δ + 2 ξ P` has vanishing light-front plus component. -/
-lemma plusComponent_deltaOrthN_eq_zero (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
-    plusComponent F.deltaOrthN = 0 := by
-  have h := F.minkowskiProduct_n_deltaOrthN_eq_zero
-  rw [hn, mul_eq_zero] at h
-  exact h.resolve_left (F.ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent hn)
-
-end GPD.OffForwardKinematics
 
 namespace GTMD
 
@@ -205,7 +133,9 @@ relation `(1 - ξ²) t + 4 ξ² M² = -ΔT²`. -/
 lemma tMom_eq_iff (hξ : |K.skewness| ≠ 1) (t : ℝ) :
     K.tMom M = t ↔
       ‖K.deltaT‖ ^ 2 = -((1 - K.skewness ^ 2) * t + 4 * K.skewness ^ 2 * M ^ 2) := by
-  have h := GPD.one_sub_sq_ne_zero hξ
+  have h : 1 - K.skewness ^ 2 ≠ 0 :=
+    sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
+      ⟨fun h' => hξ (by simp [h']), fun h' => hξ (by simp [h'])⟩))
   rw [tMom_def, div_eq_iff h]
   constructor <;> intro h <;> linarith
 
@@ -225,7 +155,9 @@ theorem tMom_le_tZero (hξ : |K.skewness| < 1) : K.tMom M ≤ tZero M K.skewness
 `ΔT = 0`; in the physical range `|ξ| < 1` this is where the bound `t ≤ t₀(ξ)` is attained. -/
 theorem tMom_eq_tZero_iff (hξ : |K.skewness| ≠ 1) :
     K.tMom M = tZero M K.skewness ↔ K.deltaT = 0 := by
-  have h := GPD.one_sub_sq_ne_zero hξ
+  have h : 1 - K.skewness ^ 2 ≠ 0 :=
+    sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
+      ⟨fun h' => hξ (by simp [h']), fun h' => hξ (by simp [h'])⟩))
   rw [tMom_eq_tZero_sub, sub_eq_self, div_eq_zero_iff, or_iff_left h]
   simp
 
@@ -270,7 +202,9 @@ lemma tMom_eq_tZero_of_mem_zeroDeltaT (hK : K ∈ zeroDeltaT) :
 skewness and zero transverse momentum transfer. -/
 theorem tMom_eq_zero_iff (hM : M ≠ 0) (hξ : |K.skewness| ≠ 1) :
     K.tMom M = 0 ↔ K ∈ zeroSkewness ∩ zeroDeltaT := by
-  have h := GPD.one_sub_sq_ne_zero hξ
+  have h : 1 - K.skewness ^ 2 ≠ 0 :=
+    sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
+      ⟨fun h' => hξ (by simp [h']), fun h' => hξ (by simp [h'])⟩))
   have h₁ : 0 ≤ 4 * K.skewness ^ 2 * M ^ 2 := by positivity
   have h₂ : 0 ≤ ‖K.deltaT‖ ^ 2 := by positivity
   rw [tMom_def, div_eq_zero_iff, or_iff_left h, neg_eq_zero,
@@ -296,33 +230,34 @@ theorem isPhysical_iff :
 
 /-! ### Exchange of the two hadrons -/
 
-/-- The kinematics with the two hadrons exchanged: the skewness and the transverse momentum
-transfer change sign, `(x, ξ, kT, ΔT) ↦ (x, -ξ, kT, -ΔT)` (`ofMomenta_swap`). -/
-def swap : Kinematics := ⟨K.x, -K.skewness, K.kT, -K.deltaT⟩
+/-- The kinematics with the skewness and the transverse momentum transfer reversed,
+`(x, ξ, kT, ΔT) ↦ (x, -ξ, kT, -ΔT)`: the same transition with the two hadrons exchanged
+(`ofMomenta_reverse`). -/
+def reverse : Kinematics := ⟨K.x, -K.skewness, K.kT, -K.deltaT⟩
 
 @[simp]
-lemma x_swap : K.swap.x = K.x := (rfl)
+lemma x_reverse : K.reverse.x = K.x := (rfl)
 
 @[simp]
-lemma skewness_swap : K.swap.skewness = -K.skewness := (rfl)
+lemma skewness_reverse : K.reverse.skewness = -K.skewness := (rfl)
 
 @[simp]
-lemma kT_swap : K.swap.kT = K.kT := (rfl)
+lemma kT_reverse : K.reverse.kT = K.kT := (rfl)
 
 @[simp]
-lemma deltaT_swap : K.swap.deltaT = -K.deltaT := (rfl)
+lemma deltaT_reverse : K.reverse.deltaT = -K.deltaT := (rfl)
 
 @[simp]
-lemma swap_swap : K.swap.swap = K := by
+lemma reverse_reverse : K.reverse.reverse = K := by
   ext <;> simp
 
 @[simp]
-lemma tMom_swap : K.swap.tMom M = K.tMom M := by
+lemma tMom_reverse : K.reverse.tMom M = K.tMom M := by
   simp [tMom_def]
 
 /-- Exchanging the two hadrons preserves the physical domain. -/
 @[simp]
-lemma isPhysical_swap : K.swap.IsPhysical ↔ K.IsPhysical :=
+lemma isPhysical_reverse : K.reverse.IsPhysical ↔ K.IsPhysical :=
   ⟨fun h => ⟨by simpa using h.abs_x_le_one, by simpa using h.abs_skewness_lt_one⟩,
     fun h => ⟨by simpa using h.abs_x_le_one, by simpa using h.abs_skewness_lt_one⟩⟩
 
@@ -357,10 +292,10 @@ lemma deltaT_ofMomenta :
     (ofMomenta p p' k).deltaT = relativeTransverse (p' - p) ((2⁻¹ : ℝ) • (p + p')) := (rfl)
 
 /-- Exchanging the two hadrons reverses the skewness and the transverse momentum transfer. -/
-theorem ofMomenta_swap : ofMomenta p' p k = (ofMomenta p p' k).swap := by
+theorem ofMomenta_reverse : ofMomenta p' p k = (ofMomenta p p' k).reverse := by
   apply Kinematics.ext
   · simp [add_comm p']
-  · simp only [skewness_ofMomenta, skewness_swap, add_comm (plusComponent p'), ← neg_div,
+  · simp only [skewness_ofMomenta, skewness_reverse, add_comm (plusComponent p'), ← neg_div,
       neg_sub]
   · simp [add_comm p']
   · simp [add_comm p']
