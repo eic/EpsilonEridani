@@ -34,7 +34,9 @@ controlled by `Q² R²`, and beyond it the squared form factor of a Gaussian sou
   `‖F‖` stays close to one, the value for a point charge, while `Q² R²` is small against one. For
   the isotropic Gaussian charge distribution of width `σ` in `d` dimensions, the exact form
   factor `ProbabilityTheory.norm_charFun_map_smul_stdGaussian` gives the bound sharper by the
-  factor `d`, `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`
+  factor `d`, `1 - ‖F(q)‖ ≤ ‖q‖² σ² / 2`
+  (`ProbabilityTheory.one_sub_norm_charFun_map_smul_stdGaussian_le`), that is
+  `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`
   (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le`).
 * Beyond the scale the coherent rate is suppressed by the square of the form factor. For the
   isotropic Gaussian charge distribution of width `σ` in `d` dimensions,
@@ -106,11 +108,9 @@ theorem one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le {d : ℕ} (
     (hp0 : p.timeComponent = m) (hp' : ⟪p', p'⟫ₘ = m ^ 2) :
     1 - ‖charFun ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) (p - p').spatialPart‖ ≤
       -⟪p - p', p - p'⟫ₘ * (1 + -⟪p - p', p - p'⟫ₘ / (4 * m ^ 2)) * σ ^ 2 / 2 := by
-  rw [norm_charFun_map_smul_stdGaussian,
-    ← Lorentz.Vector.norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_minkowskiProduct_self_eq
-      hm hp hp0 hp']
-  -- `1 - exp (-y) ≤ y` for `y = σ² ‖q‖² / 2`
-  linarith [Real.add_one_le_exp (-(σ ^ 2 * ‖(p - p').spatialPart‖ ^ 2) / 2)]
+  rw [← Lorentz.Vector.norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_minkowskiProduct_self_eq
+    hm hp hp0 hp', mul_comm _ (σ ^ 2)]
+  exact one_sub_norm_charFun_map_smul_stdGaussian_le σ _
 
 /-- **Beyond the coherence scale the coherent rate of a Gaussian source is exponentially
 suppressed.** For the isotropic Gaussian charge distribution of width `σ` in `d` dimensions, the

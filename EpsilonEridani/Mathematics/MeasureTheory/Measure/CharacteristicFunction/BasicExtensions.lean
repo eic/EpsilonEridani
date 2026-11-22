@@ -47,16 +47,17 @@ theorem measureReal_univ_sub_charFun_re_le [IsFiniteMeasure μ]
     (hμ : Integrable (fun x ↦ ‖x‖ ^ 2) μ) (t : E) :
     μ.real Set.univ - (charFun μ t).re ≤ ‖t‖ ^ 2 * (∫ x, ‖x‖ ^ 2 ∂μ) / 2 := by
   have hint : Integrable (fun x ↦ exp (⟪x, t⟫ * I)) μ :=
-    BoundedContinuousFunction.integrable μ (BoundedContinuousFunction.innerProbChar t)
+    (BoundedContinuousFunction.integrable μ (BoundedContinuousFunction.innerProbChar t)).congr
+      (.of_forall (BoundedContinuousFunction.innerProbChar_apply t))
   have hsq : Integrable (fun x ↦ ‖t‖ ^ 2 * ‖x‖ ^ 2 / 2) μ := (hμ.const_mul _).div_const _
   -- pointwise, `1 - ‖t‖² ‖x‖² / 2 ≤ 1 - ⟪x, t⟫² / 2 ≤ cos ⟪x, t⟫`
-  have hpt : ∀ x, 1 - ‖t‖ ^ 2 * ‖x‖ ^ 2 / 2 ≤ (exp (⟪x, t⟫ * I)).re := fun x ↦ by
-    rw [exp_ofReal_mul_I_re]
+  have hpt : ∀ x, 1 - ‖t‖ ^ 2 * ‖x‖ ^ 2 / 2 ≤ RCLike.re (exp (⟪x, t⟫ * I)) := fun x ↦ by
+    rw [RCLike.re_to_complex, exp_ofReal_mul_I_re]
     have hcs : ⟪x, t⟫ ^ 2 ≤ (‖x‖ * ‖t‖) ^ 2 := by
       rw [← sq_abs]
       exact pow_le_pow_left₀ (abs_nonneg _) (abs_real_inner_le_norm x t) 2
     nlinarith [Real.one_sub_sq_div_two_le_cos (x := ⟪x, t⟫)]
-  have hmono : ∫ x, (1 - ‖t‖ ^ 2 * ‖x‖ ^ 2 / 2) ∂μ ≤ ∫ x, (exp (⟪x, t⟫ * I)).re ∂μ :=
+  have hmono : ∫ x, (1 - ‖t‖ ^ 2 * ‖x‖ ^ 2 / 2) ∂μ ≤ ∫ x, RCLike.re (exp (⟪x, t⟫ * I)) ∂μ :=
     integral_mono ((integrable_const 1).sub hsq) hint.re hpt
   rw [integral_sub (integrable_const 1) hsq, integral_div, integral_const_mul] at hmono
   rw [charFun_apply, ← RCLike.re_to_complex, ← integral_re hint]

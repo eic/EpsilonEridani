@@ -6,7 +6,7 @@ Authors: The EpsilonEridani contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
-public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.FerniqueExtensions
+public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.BasicExtensions
 public import EpsilonEridani.Mathematics.MeasureTheory.Integral.Bochner.BasicExtensions
 
 /-!
@@ -28,8 +28,9 @@ The characteristic function of the image under `x ↦ σ • x` — in physics t
 isotropic Gaussian charge distribution of width `σ` — decays as a Gaussian in the momentum:
 `charFun ((stdGaussian E).map (σ • ·)) t = exp (-σ² ‖t‖² / 2)`
 (`ProbabilityTheory.charFun_map_smul_stdGaussian`), with modulus `exp (-σ² ‖t‖² / 2)`
-(`ProbabilityTheory.norm_charFun_map_smul_stdGaussian`) and squared modulus `exp (-σ² ‖t‖²)`
-(`ProbabilityTheory.norm_sq_charFun_map_smul_stdGaussian`).
+(`ProbabilityTheory.norm_charFun_map_smul_stdGaussian`), which departs from one by at most
+`σ² ‖t‖² / 2` (`ProbabilityTheory.one_sub_norm_charFun_map_smul_stdGaussian_le`), and squared
+modulus `exp (-σ² ‖t‖²)` (`ProbabilityTheory.norm_sq_charFun_map_smul_stdGaussian`).
 -/
 
 public section
@@ -62,7 +63,12 @@ theorem integral_norm_sq_stdGaussian :
     ∫ x, ‖x‖ ^ 2 ∂(stdGaussian E) = Module.finrank ℝ E := by
   let b := stdOrthonormalBasis ℝ E
   simp_rw [← b.sum_sq_inner_left]
-  rw [integral_finsetSum _ fun i _ ↦ IsGaussian.integrable_inner_sq (stdGaussian E) (b i)]
+  -- each coordinate `⟪x, b i⟫ = innerSL ℝ (b i) x` is a continuous linear functional
+  rw [integral_finsetSum _ fun i _ ↦
+    (IsGaussian.integrable_dual_sq (stdGaussian E) (innerSL ℝ (b i))).congr
+      (.of_forall fun x ↦ by
+        dsimp only
+        rw [innerSL_apply_apply, real_inner_comm x (b i)])]
   simp [integral_inner_sq_stdGaussian, b.norm_eq_one]
 
 /-- The second moment of the standard Gaussian dilated by `σ` is `σ²` times the dimension:
@@ -89,6 +95,14 @@ physics the modulus of the form factor of the isotropic Gaussian charge distribu
 theorem norm_charFun_map_smul_stdGaussian (σ : ℝ) (t : E) :
     ‖charFun ((stdGaussian E).map (σ • ·)) t‖ = Real.exp (-(σ ^ 2 * ‖t‖ ^ 2) / 2) := by
   rw [charFun_map_smul_stdGaussian, Complex.norm_exp_ofReal]
+
+/-- The characteristic function of the standard Gaussian dilated by `σ` departs from one by at most
+`σ² ‖t‖² / 2`: `1 - ‖charFun ((stdGaussian E).map (σ • ·)) t‖ ≤ σ² ‖t‖² / 2`. -/
+theorem one_sub_norm_charFun_map_smul_stdGaussian_le (σ : ℝ) (t : E) :
+    1 - ‖charFun ((stdGaussian E).map (σ • ·)) t‖ ≤ σ ^ 2 * ‖t‖ ^ 2 / 2 := by
+  rw [norm_charFun_map_smul_stdGaussian]
+  -- `1 - exp (-y) ≤ y` for `y = σ² ‖t‖² / 2`
+  linarith [Real.add_one_le_exp (-(σ ^ 2 * ‖t‖ ^ 2) / 2)]
 
 /-- The squared modulus of the characteristic function of the standard Gaussian dilated by `σ`
 decays as `exp (-σ² ‖t‖²)`; in physics this is the factor by which the coherent rate of the
