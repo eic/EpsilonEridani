@@ -34,10 +34,10 @@ a coupled system of integro-differential equations, one per flavor channel.
 - `dglapOperator_add` and `dglapOperator_const_mul` are its linearity in the densities.
 - `IsDGLAPLogScaleEquation` is the DGLAP evolution equation, stated with `HasDerivAt` in
   `τ = log Q2`.
-- `integratedCoupling` is the integral of the prefactor `a τ / (2 * π)` of a log-scale coupling
-  `a` (for a running coupling `αs`, `a τ = αs (exp τ)`) between two log scales; for a continuous,
-  positive `a` it is strictly increasing (`strictMono_integratedCoupling`), an admissible
-  reparametrisation of the log scale.
+- `integratedCouplingLogScale` is the integral of the prefactor `a τ / (2 * π)` of a log-scale
+  coupling `a` (for a running coupling `αs`, `a τ = αs (exp τ)`) between two log scales; for a
+  continuous, positive `a` it is strictly increasing (`strictMono_integratedCouplingLogScale`), an
+  admissible reparametrisation of the log scale.
 - `IsDGLAPFixedPoint` is the scale-local fixed-point condition that
   `IsDGLAPLogScaleEquation` used to assert before this module was corrected; it is retained
   under a name that describes it.
@@ -264,53 +264,55 @@ lemma dglapRhsLogScale_zero_coupling [Fintype Flavor]
 /-- The integrated coupling from log scale `τ₀` to log scale `τ` of a coupling `a` given as a
 function of the log scale `τ = log Q2`,
 
-`integratedCoupling a τ₀ τ = ∫ s in τ₀..τ, a s / (2π)`.
+`integratedCouplingLogScale a τ₀ τ = ∫ s in τ₀..τ, a s / (2π)`.
 
 For a running coupling `αs` of `Q2` the log-scale coupling is `a = fun τ => αs (exp τ)`. It is the
 evolution variable of DGLAP evolution in moment space: in it the coefficient matrix of the
 moment-space system becomes the constant anomalous-dimension matrix.
 
-The definition is opaque outside this module; unfold it with `integratedCoupling_def`. -/
-@[no_expose] def integratedCoupling (a : ℝ → ℝ) (τ₀ τ : ℝ) : ℝ :=
+The definition is opaque outside this module; unfold it with `integratedCouplingLogScale_def`. -/
+@[no_expose] def integratedCouplingLogScale (a : ℝ → ℝ) (τ₀ τ : ℝ) : ℝ :=
   ∫ s in τ₀..τ, a s / (2 * Real.pi)
 
 /-- The integrated coupling unfolded to its defining interval integral. -/
-lemma integratedCoupling_def (a : ℝ → ℝ) (τ₀ τ : ℝ) :
-    integratedCoupling a τ₀ τ = ∫ s in τ₀..τ, a s / (2 * Real.pi) := (rfl)
+lemma integratedCouplingLogScale_def (a : ℝ → ℝ) (τ₀ τ : ℝ) :
+    integratedCouplingLogScale a τ₀ τ = ∫ s in τ₀..τ, a s / (2 * Real.pi) := (rfl)
 
 /-- The integrated coupling over an empty scale interval vanishes. -/
 @[simp]
-lemma integratedCoupling_self (a : ℝ → ℝ) (τ : ℝ) :
-    integratedCoupling a τ τ = 0 := by
-  rw [integratedCoupling_def, intervalIntegral.integral_same]
+lemma integratedCouplingLogScale_self (a : ℝ → ℝ) (τ : ℝ) :
+    integratedCouplingLogScale a τ τ = 0 := by
+  rw [integratedCouplingLogScale_def, intervalIntegral.integral_same]
 
 /-- The integrated coupling of a continuous log-scale coupling is additive over adjacent scale
 intervals. -/
-lemma integratedCoupling_add_adjacent {a : ℝ → ℝ} (ha : Continuous a) (τ₀ τ₁ τ₂ : ℝ) :
-    integratedCoupling a τ₀ τ₁ + integratedCoupling a τ₁ τ₂ = integratedCoupling a τ₀ τ₂ := by
+lemma integratedCouplingLogScale_add_adjacent {a : ℝ → ℝ} (ha : Continuous a) (τ₀ τ₁ τ₂ : ℝ) :
+    integratedCouplingLogScale a τ₀ τ₁ + integratedCouplingLogScale a τ₁ τ₂ =
+      integratedCouplingLogScale a τ₀ τ₂ := by
   have h := ha.div_const (2 * Real.pi)
-  simp only [integratedCoupling_def]
+  simp only [integratedCouplingLogScale_def]
   exact intervalIntegral.integral_add_adjacent_intervals (h.intervalIntegrable _ _)
     (h.intervalIntegrable _ _)
 
 /-- Reversing the scale interval reverses the sign of the integrated coupling. -/
-lemma integratedCoupling_swap (a : ℝ → ℝ) (τ₀ τ : ℝ) :
-    integratedCoupling a τ τ₀ = -integratedCoupling a τ₀ τ := by
-  simp only [integratedCoupling_def]
+lemma integratedCouplingLogScale_swap (a : ℝ → ℝ) (τ₀ τ : ℝ) :
+    integratedCouplingLogScale a τ τ₀ = -integratedCouplingLogScale a τ₀ τ := by
+  simp only [integratedCouplingLogScale_def]
   exact intervalIntegral.integral_symm τ₀ τ
 
 /-- The integrated coupling of a continuous log-scale coupling has derivative `a τ / (2π)` in
 its upper limit. -/
-lemma hasDerivAt_integratedCoupling {a : ℝ → ℝ} (ha : Continuous a) (τ₀ τ : ℝ) :
-    HasDerivAt (integratedCoupling a τ₀) (a τ / (2 * Real.pi)) τ :=
-  ((ha.div_const (2 * Real.pi)).integral_hasStrictDerivAt τ₀ τ).hasDerivAt
+lemma hasDerivAt_integratedCouplingLogScale {a : ℝ → ℝ} (ha : Continuous a) (τ₀ τ : ℝ) :
+    HasDerivAt (fun τ => integratedCouplingLogScale a τ₀ τ) (a τ / (2 * Real.pi)) τ := by
+  simpa only [integratedCouplingLogScale_def] using
+    ((ha.div_const (2 * Real.pi)).integral_hasStrictDerivAt τ₀ τ).hasDerivAt
 
 /-- For a continuous, everywhere positive log-scale coupling, the integrated coupling is
 strictly increasing in its upper limit, so it is an admissible reparametrisation of the log
 scale. -/
-lemma strictMono_integratedCoupling {a : ℝ → ℝ} (ha : Continuous a) (hpos : ∀ τ, 0 < a τ)
-    (τ₀ : ℝ) : StrictMono (integratedCoupling a τ₀) :=
-  strictMono_of_hasDerivAt_pos (hasDerivAt_integratedCoupling ha τ₀) fun τ =>
+lemma strictMono_integratedCouplingLogScale {a : ℝ → ℝ} (ha : Continuous a) (hpos : ∀ τ, 0 < a τ)
+    (τ₀ : ℝ) : StrictMono (integratedCouplingLogScale a τ₀) :=
+  strictMono_of_hasDerivAt_pos (hasDerivAt_integratedCouplingLogScale ha τ₀) fun τ =>
     div_pos (hpos τ) (by positivity)
 
 /-! ## D. The evolution equation -/

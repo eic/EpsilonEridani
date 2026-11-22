@@ -35,11 +35,11 @@ here.
   function of the Mellin index, and a running coupling continuous in the log scale.
 - `IsMomentSolution` is the linear ODE system, stated componentwise with `HasDerivAt`.
 - `momentEvolution S N τ₀ τ` is the evolution operator `exp ((∫_{τ₀}^{τ} αs/(2π)) • γ(N))`,
-  the exponential of the anomalous-dimension matrix times the `integratedCoupling` of the
+  the exponential of the anomalous-dimension matrix times the `integratedCouplingLogScale` of the
   running coupling;
   `momentEvolution_mul_adjacent` is its cocycle law, and `hasDerivAt_momentEvolution` is the matrix
   form of the system it solves.
-- `moment_exists_unique` is well-posedness: a unique global solution for each initial
+- `momentSolution_exists_unique` is well-posedness: a unique global solution for each initial
   condition, and `IsMomentSolution.eq_momentEvolution_mulVec` identifies every solution with
   the evolution operator applied to its value at a reference scale.
 - `IsMomentSolution.apply_eq_exp_mul_of_gamma_row_apply_eq_zero_of_ne` is the closed form for a
@@ -140,8 +140,9 @@ The vector field `(τ, F) ↦ momentRhs S N τ F` is linear in `F` with coeffici
 in `τ`, so on every compact `τ`-interval it is Lipschitz in `F` uniformly in `τ`. Uniqueness
 follows by Gronwall (`momentSolution_unique`). Existence is global and explicit: the solution
 is the evolution operator `momentEvolution` applied to the initial condition
-(`momentSolution_exists`). The two together are `moment_exists_unique`. This is the achievable
-form of DGLAP well-posedness; see the module docstring on why `x`-space is not attempted. -/
+(`momentSolution_exists`). The two together are `momentSolution_exists_unique`. This is the
+achievable form of DGLAP well-posedness; see the module docstring on why `x`-space is not
+attempted. -/
 
 /-! ### B.1. Uniqueness -/
 
@@ -266,7 +267,7 @@ The definition is opaque outside this module; unfold it with `momentEvolution_de
 @[no_expose]
 def momentEvolution [Fintype ι] [DecidableEq ι] (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
     Matrix ι ι ℂ :=
-  NormedSpace.exp ((integratedCoupling S.alphaSLogScale τ₀ τ : ℂ) • S.gamma N)
+  NormedSpace.exp ((integratedCouplingLogScale S.alphaSLogScale τ₀ τ : ℂ) • S.gamma N)
 
 section momentEvolution
 
@@ -275,14 +276,14 @@ variable [Fintype ι] [DecidableEq ι]
 /-- The evolution operator unfolded to its defining matrix exponential. -/
 lemma momentEvolution_def (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
     momentEvolution S N τ₀ τ =
-      NormedSpace.exp ((integratedCoupling S.alphaSLogScale τ₀ τ : ℂ) • S.gamma N) :=
+      NormedSpace.exp ((integratedCouplingLogScale S.alphaSLogScale τ₀ τ : ℂ) • S.gamma N) :=
   (rfl)
 
 /-- Evolving over an empty scale interval is the identity. -/
 @[simp]
 lemma momentEvolution_self (S : DglapMomentSystem ι) (N : ℂ) (τ : ℝ) :
     momentEvolution S N τ τ = 1 := by
-  rw [momentEvolution_def, integratedCoupling_self, Complex.ofReal_zero, zero_smul,
+  rw [momentEvolution_def, integratedCouplingLogScale_self, Complex.ofReal_zero, zero_smul,
     NormedSpace.exp_zero]
 
 /-- **The cocycle law.** Evolving from `τ₀` to `τ₁` and then from `τ₁` to `τ₂` is evolving from
@@ -292,14 +293,14 @@ lemma momentEvolution_mul_adjacent (S : DglapMomentSystem ι) (N : ℂ) (τ₀ �
   simp only [momentEvolution_def]
   rw [← Matrix.exp_add_of_commute _ _ (((Commute.refl (S.gamma N)).smul_left _).smul_right _),
     ← add_smul,
-    ← integratedCoupling_add_adjacent S.alphaSLogScale_continuous τ₀ τ₁ τ₂,
-    add_comm (integratedCoupling S.alphaSLogScale τ₀ τ₁), Complex.ofReal_add]
+    ← integratedCouplingLogScale_add_adjacent S.alphaSLogScale_continuous τ₀ τ₁ τ₂,
+    add_comm (integratedCouplingLogScale S.alphaSLogScale τ₀ τ₁), Complex.ofReal_add]
 
 /-- Evolving backwards from `τ` to `τ₀` inverts evolving from `τ₀` to `τ`. -/
 lemma momentEvolution_swap (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
     momentEvolution S N τ τ₀ = (momentEvolution S N τ₀ τ)⁻¹ := by
   simp only [momentEvolution_def]
-  rw [integratedCoupling_swap, Complex.ofReal_neg, neg_smul, Matrix.exp_neg]
+  rw [integratedCouplingLogScale_swap, Complex.ofReal_neg, neg_smul, Matrix.exp_neg]
 
 /-- The evolution operator solves the matrix form of the moment-space system: its derivative in
 the log scale is `a(τ) • (γ(N) * momentEvolution S N τ₀ τ)`. -/
@@ -308,7 +309,7 @@ lemma hasDerivAt_momentEvolution (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ 
       (((S.alphaSLogScale τ / (2 * Real.pi) : ℝ) : ℂ) •
         (S.gamma N * momentEvolution S N τ₀ τ)) τ := by
   have hc :=
-    (hasDerivAt_integratedCoupling S.alphaSLogScale_continuous τ₀ τ).ofReal_comp
+    (hasDerivAt_integratedCouplingLogScale S.alphaSLogScale_continuous τ₀ τ).ofReal_comp
   simpa only [momentEvolution_def] using hc.matrix_exp_smul_const' (S.gamma N)
 
 /-- The evolution operator applied to a fixed vector has the moment-space right-hand side
@@ -319,7 +320,7 @@ lemma hasDerivAt_momentEvolution_mulVec (S : DglapMomentSystem ι) (N : ℂ) (τ
       (((S.alphaSLogScale τ / (2 * Real.pi) : ℝ) : ℂ) •
         (S.gamma N *ᵥ (momentEvolution S N τ₀ τ *ᵥ F₀))) τ := by
   have hc :=
-    (hasDerivAt_integratedCoupling S.alphaSLogScale_continuous τ₀ τ).ofReal_comp
+    (hasDerivAt_integratedCouplingLogScale S.alphaSLogScale_continuous τ₀ τ).ofReal_comp
   simpa only [momentEvolution_def] using hc.matrix_exp_smul_const_mulVec' (S.gamma N) F₀
 
 /-- The evolution operator applied to an initial vector solves the moment-space system. -/
@@ -344,7 +345,7 @@ exponential of the integrated coupling times `γ i i`, placed on the diagonal. -
 lemma momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne {S : DglapMomentSystem ι} {N : ℂ}
     {i : ι} (h : ∀ j, j ≠ i → S.gamma N i j = 0) (τ₀ τ : ℝ) (j : ι) :
     momentEvolution S N τ₀ τ i j =
-      if i = j then Complex.exp (integratedCoupling S.alphaSLogScale τ₀ τ * S.gamma N i i)
+      if i = j then Complex.exp (integratedCouplingLogScale S.alphaSLogScale τ₀ τ * S.gamma N i i)
       else 0 := by
   rw [momentEvolution_def, Matrix.exp_smul_apply_of_row_apply_eq_zero_of_ne h, smul_eq_mul,
     Complex.exp_eq_exp_ℂ]
@@ -360,7 +361,8 @@ singlet sector mixes quarks and gluons. -/
 theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_row_apply_eq_zero_of_ne
     {S : DglapMomentSystem ι} {N : ℂ} {F : ℝ → ι → ℂ} (hF : IsMomentSolution S N F) {i : ι}
     (h : ∀ j, j ≠ i → S.gamma N i j = 0) (τ₀ τ : ℝ) :
-    F τ i = Complex.exp (integratedCoupling S.alphaSLogScale τ₀ τ * S.gamma N i i) * F τ₀ i := by
+    F τ i =
+      Complex.exp (integratedCouplingLogScale S.alphaSLogScale τ₀ τ * S.gamma N i i) * F τ₀ i := by
   classical
   rw [hF.eq_momentEvolution_mulVec τ₀ τ, Matrix.mulVec_apply_eq_sum]
   simp only [momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne h, ite_mul, zero_mul,
@@ -371,7 +373,8 @@ itself diagonal, with entries `exp ((∫ s in τ₀..τ, S.alphaSLogScale s / (2
 lemma momentEvolution_eq_diagonal_of_gamma_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ}
     {d : ι → ℂ} (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
     momentEvolution S N τ₀ τ =
-      Matrix.diagonal fun i => Complex.exp (integratedCoupling S.alphaSLogScale τ₀ τ * d i) := by
+      Matrix.diagonal fun i =>
+        Complex.exp (integratedCouplingLogScale S.alphaSLogScale τ₀ τ * d i) := by
   rw [momentEvolution_def, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
   simp only [Pi.smul_apply, smul_eq_mul, Complex.exp_eq_exp_ℂ]
 
@@ -389,7 +392,8 @@ lemma momentSolution_exists [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ) (F
 /-- **Well-posedness of DGLAP evolution in moment space.** For each Mellin index `N` and
 each initial condition `F0` at `τ0`, the linear moment-space system has a unique global
 solution. -/
-theorem moment_exists_unique [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ) (F0 : ι → ℂ) (τ0 : ℝ) :
+theorem momentSolution_exists_unique [Fintype ι] (S : DglapMomentSystem ι) (N : ℂ) (F0 : ι → ℂ)
+    (τ0 : ℝ) :
     ∃! F : ℝ → ι → ℂ, F τ0 = F0 ∧ IsMomentSolution S N F := by
   obtain ⟨F, hF0, hF⟩ := momentSolution_exists S N F0 τ0
   refine ⟨F, ⟨hF0, hF⟩, ?_⟩
