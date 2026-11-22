@@ -245,14 +245,15 @@ theorem colorSingletProj_apply_eq_smul_colorSingletState (ψ : Matrix (Fin N) (F
 @[simp]
 theorem trace_colorSingletProj [NeZero N] :
     LinearMap.trace ℂ (Matrix (Fin N) (Fin N) ℂ) (colorSingletProj N) = 1 := by
-  rw [colorSingletProj_eq_tracePart, trace_tracePart (by simp) (by simp [NeZero.ne N])]
+  rw [colorSingletProj_eq_tracePart,
+    linearMap_trace_tracePart (by simp) (by simp [NeZero.ne N])]
 
 /-- The octet channel has dimension `N² - 1`: its projector has trace `N² - 1`. -/
 @[simp]
 theorem trace_colorOctetProj [NeZero N] :
     LinearMap.trace ℂ (Matrix (Fin N) (Fin N) ℂ) (colorOctetProj N) = (N : ℂ) ^ 2 - 1 := by
-  rw [colorOctetProj_eq_tracelessPart, trace_tracelessPart (by simp) (by simp [NeZero.ne N]),
-    Fintype.card_fin]
+  rw [colorOctetProj_eq_tracelessPart,
+    linearMap_trace_tracelessPart (by simp) (by simp [NeZero.ne N]), Fintype.card_fin]
 
 /-! ### The colour action on the pair -/
 

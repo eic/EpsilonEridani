@@ -55,10 +55,11 @@ by `T ↦ Λᵀ * T * Λ` and preserves `g` when `Λᵀ * g * Λ = g`.
   projections, `Matrix.tracePart_tracelessPart`, `Matrix.tracelessPart_tracePart` say they
   annihilate each other's ranges, and
   `Matrix.completeOrthogonalIdempotents_tracePart_tracelessPart` bundles this;
-  `Matrix.trace_tracePart` and `Matrix.trace_tracelessPart` give their traces as endomorphisms,
-  `1` and `D² - 1`.
+  `Matrix.linearMap_trace_tracePart` and `Matrix.linearMap_trace_tracelessPart` give their
+  traces as endomorphisms, `1` and `D² - 1`.
 * `Matrix.tracePart_eq_zero_iff` and `Matrix.tracelessPart_eq_zero_iff`: the kernels are the
-  traceless tensors and the multiples of `g`; `Matrix.tracePart_eq_self_iff` and
+  traceless tensors and the multiples of `g` (`Matrix.tracePart_eq_zero_of_trace_eq_zero` is the
+  direction that needs no hypothesis on `D`); `Matrix.tracePart_eq_self_iff` and
   `Matrix.tracelessPart_eq_self_iff` say the ranges are the multiples of `g` and the traceless
   tensors.
 * `Matrix.tracePart_equivariant`, `Matrix.tracelessPart_equivariant`: both parts transform as
@@ -226,7 +227,7 @@ theorem completeOrthogonalIdempotents_tracePart_tracelessPart :
 
 /-- The trace part projects onto the line of multiples of the metric: its trace as an
 endomorphism is `1`. -/
-theorem trace_tracePart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
+theorem linearMap_trace_tracePart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
     LinearMap.trace K (Matrix n n K) (tracePart g) = 1 := by
   rw [tracePart_def, LinearMap.trace_smulRight, LinearMap.smul_apply, LinearMap.comp_apply,
     mulLeftLinearMap_apply, nonsing_inv_mul g (isUnit_iff_ne_zero.2 hg), traceLinearMap_apply,
@@ -235,17 +236,22 @@ theorem trace_tracePart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
 
 /-- The traceless part projects onto the traceless tensors: its trace as an endomorphism is
 `D² - 1`. -/
-theorem trace_tracelessPart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
+theorem linearMap_trace_tracelessPart (hg : g.det ≠ 0) (hn : (Fintype.card n : K) ≠ 0) :
     LinearMap.trace K (Matrix n n K) (tracelessPart g) = (Fintype.card n : K) ^ 2 - 1 := by
-  rw [tracelessPart_eq_one_sub, map_sub, trace_tracePart hg hn, LinearMap.trace_one,
+  rw [tracelessPart_eq_one_sub, map_sub, linearMap_trace_tracePart hg hn, LinearMap.trace_one,
     Module.finrank_matrix, Module.finrank_self]
   push_cast
   ring
 
+/-- A traceless tensor has no trace part. -/
+theorem tracePart_eq_zero_of_trace_eq_zero {T : Matrix n n K} (h : trace (g⁻¹ * T) = 0) :
+    tracePart g T = 0 := by
+  rw [tracePart_apply, h, zero_div, zero_smul]
+
 /-- The trace part of a tensor vanishes exactly when the tensor is traceless. -/
 theorem tracePart_eq_zero_iff (hn : (Fintype.card n : K) ≠ 0)
     {T : Matrix n n K} : tracePart g T = 0 ↔ trace (g⁻¹ * T) = 0 := by
-  refine ⟨fun h => ?_, fun h => by rw [tracePart_apply, h, zero_div, zero_smul]⟩
+  refine ⟨fun h => ?_, tracePart_eq_zero_of_trace_eq_zero⟩
   rw [← trace_inv_mul_tracePart hn, h, Matrix.mul_zero, trace_zero]
 
 /-- A tensor is its own traceless part exactly when it is traceless. -/
