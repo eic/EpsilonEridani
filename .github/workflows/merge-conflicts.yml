@@ -36,6 +36,12 @@ name: Merge conflicts
 # labelled. scripts/pr_status/conflicts.py skips an unknown PR and keeps going.
 
 on:
+  # A PR conflicts because its base moved, and on main that is a push -- so react
+  # to it directly. GitHub delivers the 15-minute cron below only every few hours
+  # under load; it stays as the backstop for other bases and for PRs that were
+  # still UNKNOWN when the push-triggered run read them.
+  push:
+    branches: [main]
   schedule:
     # Every 15 minutes, on the quarter -- the offsets furthest from pr-labels
     # (:05), housekeeping (:20), merge-sweep (:40) and stuck-alerts (:50). The gap
@@ -61,7 +67,7 @@ concurrency:
 jobs:
   label:
     if: github.repository == 'eic/EpsilonEridani'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 15
     steps:
       # Pinned to a full SHA, not a floating major tag: this step receives the App

@@ -9,6 +9,7 @@ state on the day the resolver was written: Physlib on mathlib's v4.34.1 tag, Tau
 on Lean v4.35.0-rc3, and main on v4.34.0.
 """
 
+import contextlib
 import json
 import os
 import sys
@@ -37,6 +38,7 @@ class Graph:
         self.tags = {}
         self.cached = None
         self.uncached = set()  # mathlib commits whose cache is not published
+        self.too_slow = set()  # (repo, base, head) that GitHub refuses to compare (HTTP 422)
         self.clock = 0
 
     def commit(self, repo, sha, parent=None, branch=None, **files):
@@ -73,6 +75,8 @@ class Graph:
         return self.repos[repo]["commits"][sha]["files"][path]
 
     def compare(self, repo, base, head):
+        if (repo, base, head) in self.too_slow:
+            return list(rd.UNKNOWN)
         branches = self.repos[repo]["branches"]  # like GitHub, a branch name stands for its tip
         base, head = branches.get(base, base), branches.get(head, head)
         a, b = set(self.ancestors(repo, head)), set(self.ancestors(repo, base))
@@ -105,8 +109,8 @@ def manifest(mathlib_rev):
     return json.dumps({"packages": [{"name": "mathlib", "rev": mathlib_rev}]})
 
 
-def resolve(g, pins, toolchain, exclude=()):
-    return rd.Resolver(g, REQUIRES, pins, toolchain).resolve(exclude)
+def resolve(g, pins, toolchain, exclude=(), cross_line=()):
+    return rd.Resolver(g, REQUIRES, pins, toolchain, cross_line).resolve(exclude)
 
 
 def mathlib_line(g):
@@ -120,6 +124,54 @@ def mathlib_line(g):
     g.commit(ML, "s1", "m0", branch="stable", lean_toolchain=lean("v4.34.1"))
     g.tags = {"s1": "v4.34.1"}
     g.cached = "m3"
+
+
+def physlib_behind_a_line(g):
+    """Physlib stays on the 4.34 line (p1 on m1; p2 on the v4.34.1 tag), TauCeti pins m3 on 4.35."""
+    mathlib_line(g)
+    g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+    g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("s1"), lean_toolchain=lean("v4.34.1"))
+    g.commit(TC, "t1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+    g.commit(TC, "t2", "t1", branch="main", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+    return {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}
+
+
+class CrossLine(unittest.TestCase):
+    def test_off_by_default(self):
+        g = Graph()
+        r = resolve(g, physlib_behind_a_line(g), lean("v4.34.0"))
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "s1")
+        self.assertNotIn("cross", {p["fit"] for p in r["pins"].values()})
+
+    def test_a_named_dependency_may_cross_to_a_newer_line(self):
+        # p2 pins the v4.34.1 tag, which diverged from master, so only p1 (on m1, an ancestor of m3)
+        # can cross; TauCeti's exact pin of m3 is what makes m3 the choice.
+        g = Graph()
+        r = resolve(g, physlib_behind_a_line(g), lean("v4.34.0"), cross_line=["Physlib"])
+        self.assertEqual({n: (p["rev"], p["fit"]) for n, p in r["pins"].items()},
+                         {"mathlib": ("m3", "descendant"), "Physlib": ("p1", "cross"), "TauCeti": ("t2", "exact")})
+        self.assertEqual(r["toolchain"]["chosen"], lean("v4.35.0-rc1"))
+
+    def test_only_the_named_dependency_crosses(self):
+        g = Graph()
+        r = resolve(g, physlib_behind_a_line(g), lean("v4.34.0"), cross_line=["TauCeti"])
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "s1")
+
+    def test_a_failed_cross_pin_blocks_its_line_not_just_its_set(self):
+        # m2 is on the 4.34 line, so only m3 is a cross candidate; add m4 on 4.35 to show the block
+        # carries over to a different set on the same line.
+        g = Graph()
+        pins = physlib_behind_a_line(g)
+        g.commit(ML, "m4", "m3", branch="master")
+        g.cached = "m4"
+        first = resolve(g, pins, lean("v4.34.0"), cross_line=["Physlib"])
+        failed = {n: p["rev"] for n, p in first["pins"].items()}
+        r = resolve(g, pins, lean("v4.34.0"), exclude=[failed], cross_line=["Physlib"])
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "s1")
+        blocked = {b["mathlib"]: [x["dependency"] for x in b["blockers"]] for b in r["blocked"]}
+        self.assertEqual(blocked[failed["mathlib"]], ["*"])
+        other = "m4" if failed["mathlib"] == "m3" else "m3"
+        self.assertEqual(blocked[other], ["Physlib"])
 
 
 class Toolchains(unittest.TestCase):
@@ -228,6 +280,29 @@ class Resolution(unittest.TestCase):
         bad = {n: p["rev"] for n, p in first["pins"].items()}
         second = resolve(g, pins, lean("v4.34.0"), exclude=[bad])
         self.assertNotEqual({n: p["rev"] for n, p in second["pins"].items()}, bad)
+
+    def test_mathlib_does_not_pass_every_dependency_on_the_same_toolchain(self):
+        # 2026-10-15: Physlib pinned the v4.35.0 tag exactly, TauCeti an older commit, and
+        # master moved on (same toolchain) into a refactor Physlib could not build. Both sets
+        # are feasible; the one Physlib's CI built wins over the newer master commit.
+        g = Graph()
+        mathlib_line(g)
+        g.commit(ML, "m4", "m3", lean_toolchain=lean("v4.35.0"))
+        g.commit(ML, "m5", "m4", branch="master")
+        g.tags = {"s1": "v4.34.1", "m4": "v4.35.0"}
+        g.cached = "m5"
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m4"), lean_toolchain=lean("v4.35.0"))
+        g.commit(TC, "t1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(TC, "t2", "t1", branch="main", lake_manifest=manifest("m3"), lean_toolchain=lean("v4.35.0-rc1"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual({n: (p["rev"], p["fit"]) for n, p in r["pins"].items()},
+                         {"mathlib": ("m4", "descendant"), "Physlib": ("p2", "exact"), "TauCeti": ("t2", "near")})
+        # once a dependency has built the newer commit, mathlib follows it
+        g.commit(PL, "p3", "p2", branch="master", lake_manifest=manifest("m5"))
+        r = resolve(g, {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}, lean("v4.34.0"))
+        self.assertEqual({n: p["rev"] for n, p in r["pins"].items()},
+                         {"mathlib": "m5", "Physlib": "p3", "TauCeti": "t2"})
 
     def test_mathlib_hold_quotes_the_newest_blocked_commit(self):
         # Blocked commits are collected cached-tip first, then dependency pins: here the newer
@@ -371,6 +446,68 @@ class RewrittenBranch(unittest.TestCase):
         self.assertFalse(any("rewritten" in h["text"] for h in r["holds"]))
 
 
+class UnknownComparison(unittest.TestCase):
+    """GitHub sometimes refuses a comparison (HTTP 422, "this diff is taking too long to generate").
+    The resolver skips what needed it, reports it, and still answers."""
+
+    def graph(self):
+        g = Graph()
+        mathlib_line(g)
+        g.commit(PL, "p1", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        g.commit(PL, "p2", "p1", branch="master", lake_manifest=manifest("m2"))
+        g.commit(TC, "t1", branch="main", manifest=manifest("m1"), lean_toolchain=lean("v4.34.0"))
+        return g
+
+    def pins(self):
+        return {"mathlib": "m1", "Physlib": "p1", "TauCeti": "t1"}
+
+    def test_a_mathlib_candidate_that_cannot_be_compared_is_skipped_and_reported(self):
+        g = self.graph()
+        g.too_slow.add((ML, "m1", "m2"))
+        r = resolve(g, self.pins(), lean("v4.34.0"))
+        self.assertEqual(r["pins"]["mathlib"]["rev"], "m1")
+        self.assertEqual(r["pins"]["Physlib"]["rev"], "p1")
+        self.assertIn(f"{ML} m1...m2", r["unknown_compares"])
+        self.assertIn("Not compared", rd.summary(r))
+
+    def test_a_dependency_candidate_that_cannot_be_compared_is_not_called_rewritten(self):
+        g = self.graph()
+        g.too_slow.add((PL, "p1", "p2"))
+        r = resolve(g, self.pins(), lean("v4.34.0"))
+        self.assertEqual(r["pins"]["Physlib"]["rev"], "p1")
+        self.assertNotIn("not_forward", r["pins"]["Physlib"])
+        self.assertIn(f"{PL} p1...p2", r["unknown_compares"])
+
+    def test_an_unknown_lag_is_shown_as_unknown(self):
+        g = self.graph()
+        g.too_slow.add((ML, "m1", "m2"))
+        g.too_slow.add((ML, "m1", "m3"))  # the lag behind the cached tip
+        r = resolve(g, self.pins(), lean("v4.34.0"))
+        self.assertIsNone(r["pins"]["mathlib"]["commits_behind_tip"])
+        self.assertIn("? commits", rd.summary(r))
+        self.assertTrue(any("an unknown number of commits" in h["text"] for h in r["holds"]))
+
+    def test_github_answers_unknown_only_for_a_422(self):
+        def failing(message):
+            def fake_gh(path, jq=None, paginate=False):
+                raise RuntimeError(f"gh api {path} failed: {message}")
+            return fake_gh
+        saved = rd.gh
+        try:
+            rd.gh = failing("gh: Server Error: Sorry, this diff is taking too long to generate. (HTTP 422)")
+            self.assertEqual(rd.GitHub().compare(ML, "a", "b"), rd.UNKNOWN)
+            rd.gh = failing("gh: Not Found (HTTP 404)")
+            with self.assertRaises(RuntimeError):
+                rd.GitHub().compare(ML, "a", "b")
+            def limited(path, jq=None, paginate=False):
+                raise rd.RateLimited("rate limited (HTTP 422)")
+            rd.gh = limited
+            with self.assertRaises(rd.RateLimited):
+                rd.GitHub().compare(ML, "a", "b")
+        finally:
+            rd.gh = saved
+
+
 class ForwardMoves(unittest.TestCase):
     """What Resolver.forward offers must be what check-bump.sh accepts (test_check_bump.py)."""
 
@@ -485,6 +622,20 @@ class RealRecording(unittest.TestCase):
         # the next commit that pins something else is 81acd31, on mathlib d870b90.
         text = {h["pin"]: h["text"] for h in self.r["holds"]}["TauCeti"]
         self.assertIn("newer commits pin Lean v4.35.0-rc3 and mathlib d870b90", text)
+
+    def test_out_writes_the_json_result_for_the_writer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "lakefile.toml").write_text((Path(__file__).resolve().parents[1] / "lakefile.toml").read_text())
+            (root / "lean-toolchain").write_text(lean("v4.34.0") + "\n")
+            packages = [{"name": n, "rev": rev, "inherited": False} for n, rev in self.PINS.items()]
+            (root / "lake-manifest.json").write_text(json.dumps({"packages": packages}))
+            out = root / "resolved.json"
+            with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
+                code = rd.main(["--root", str(root), "--summary", "--out", str(out),
+                                "--replay", str(FIXTURES / "2026-10-03.json")])
+            self.assertEqual(code, 0)
+            self.assertEqual(json.loads(out.read_text()), json.loads(json.dumps(self.r)))
 
 
 class Project(unittest.TestCase):

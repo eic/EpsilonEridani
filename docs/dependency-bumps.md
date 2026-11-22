@@ -56,19 +56,35 @@ A dependency commit **fits** a mathlib commit M when
   line. The release-tag case is the weakest: a dependency built on master after the release
   branched may use API the tag lacks, and only the build will tell. A dependency commit whose
   manifest pins no mathlib fits on the toolchain line alone.
+- `cross` (only for a dependency `update.yml` names with `--cross-line`; today none): its
+  toolchain is on an **older** Lean line than M's and its mathlib is an ancestor of M. Physlib
+  bumps only to stable mathlib tags, so without this it holds the whole project on its Lean line
+  until the next release even when its source builds on newer mathlib. Lake builds a dependency
+  with the root's toolchain and mathlib whatever the dependency pins, so this is the same
+  bet as `near`, one Lean line further. When a set with a `cross` pin is excluded, every set
+  pinning that dependency commit `cross` onto the same Lean line is blocked as well, so a
+  dependency commit that does not build costs at most one failed bump build per line.
 
 For each M every dependency takes its newest fitting commit. A dependency with none may stay
 on its current pin (`carried`) only while M stays on the Lean line main is already on: main
 builds that pin today. A carried pin is not checked against M; it may already pin a newer
 toolchain or mathlib. Otherwise M is **blocked** by that dependency. The chosen set is the
-feasible one with the newest M (toolchain, then date). Carried pins only break exact ties:
-ranking them higher would let one dependency that fits nothing stall mathlib on an older
-commit.
+feasible one with the newest M: newest toolchain first; then, on that toolchain, an M that at
+least one dependency pins `exact` (its own CI built it) over one that every dependency only
+fits `near`; then the newest date. So mathlib follows the most advanced dependency but does
+not run past all of them on the same toolchain: on 2026-10-15 Physlib pinned the v4.35.0 tag
+exactly, and master commits after it carried a refactor (`Set` as a structure) that Physlib
+could not build. Carried pins only break exact ties: ranking them higher would let one
+dependency that fits nothing stall mathlib on an older commit.
 
 These rules only predict. The bump PR's build is the arbiter. A set whose build fails inside
 a dependency (not something EpsilonEridani can fix) is meant to be passed back with
-`--exclude` so the next feasible set is tried; today only the flag exists, and the worker
-`bump` stage and `update.yml` job that would use it are in the Status table below.
+`--exclude` so the next feasible set is tried. `update.yml` does that: before resolving,
+`scripts/bump_excludes.py` reads the excluded sets carried in the open bump PR's body (a hidden
+marker), adds that PR's own set when its `build` failed and every module Lake reports as failed is
+outside EpsilonEridani, and passes the list to `resolve_deps.py --exclude`; the refreshed body carries it
+on. A closed bump PR takes its list with it, so a set offered again later costs one more failed
+build before it is excluded again.
 
 ### Example: 2026-10-03
 
@@ -143,7 +159,8 @@ expected and are reported informationally, never as stuck automation. Alerts are
 |---|---|
 | resolver (`scripts/resolve_deps.py`) and its tests | done |
 | bump-guard (`scripts/check-bump.sh`, `scripts/bump_manifest.py`) accepts each direct dependency moving forward, mathlib's newer-toolchain release tags and master commits (cache signal for a tag: `release_cache.yml`), and the inherited packages Lake derives from all three | done |
-| `update.yml` runs the resolver as a daily dry run, reporting in the job summary | done |
-| `update.yml` opens one rolling `bump-mathlib/` PR from the resolver's answer, records failed sets | planned |
+| writer (`scripts/write_bump.py`): writes the resolver's answer into `lake-manifest.json` and `lean-toolchain`, deriving the inherited entries as `bump_manifest.py` requires and refusing any result it rejects | done |
+| `update.yml` runs the resolver daily, reporting in the job summary, and opens, refreshes or closes one rolling `bump-mathlib/resolved` PR from its answer | done |
+| failed sets recorded and passed back to the resolver with `--exclude` (`scripts/bump_excludes.py`) | done |
 | `scripts/pr_status/stuck_alerts.py`: `stale-pin` replaced by "a feasible set is not landing"; holds reported as information | planned |
 | EpsilonEridaniWorker's `bump` stage hands back a PR whose build fails inside a dependency | planned |

@@ -9,3 +9,10 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    groups:
+      # Bump every EpsilonEridaniReview reusable workflow in one PR, so the callers move to the
+      # same commit together. The checkout and `review_ref` pins need no edit: they are read from
+      # the `uses:` lines at run time (.github/actions/review-pin).
+      epsiloneridani-review:
+        patterns:
+          - "eic/EpsilonEridaniReview/*"

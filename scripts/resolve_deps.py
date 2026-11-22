@@ -47,6 +47,16 @@ hold rather than silently dropped. A candidate FITS M when
              its mathlib is an ancestor of M, or has diverged from M and M is a release tag
              on that line. A candidate whose manifest pins no mathlib fits on the toolchain
              line alone.
+  * `cross` (only for a dependency named with `--cross-line`): its toolchain is on an OLDER Lean line than M's, and its mathlib is an ancestor of M.
+             Nothing upstream has built this pairing; only the bump PR's build will tell. It lets
+             one dependency that follows mathlib release tags (Physlib) stop pinning the whole
+             project to its Lean line while another (TauCeti) has moved on. A dependency builds
+             with the root's toolchain and mathlib anyway (Lake ignores its `lean-toolchain`
+             and takes mathlib from the root manifest), exactly as for `near`.
+             When a set with a `cross` pin is excluded (its build failed inside a dependency),
+             every other set that pins that dependency at the same commit `cross` onto the same
+             Lean line is blocked too, so one failed build per dependency commit and line is the
+             most a cross fit costs.
 
 For each M, each dependency takes its newest fitting candidate. When none fits, it may stay on
 its current pin (`carried`) only while M stays on the Lean line main is already on: main builds
@@ -68,14 +78,21 @@ pin is held back, and the ranked feasible sets. `--summary` prints the same as M
 job summary. Being held back is the normal state of a pin, not an error: an alert belongs to a
 feasible set that does not land, not to a set that stays put because nothing newer fits.
 
+GitHub sometimes refuses a comparison between distant commits (HTTP 422, "this diff is taking too
+long to generate"). Such a comparison is unknown, not a failure: whatever needed it (a mathlib
+candidate, a dependency candidate, a fit) is skipped, never offered, and listed under
+`unknown_compares`; an unknown lag behind a tip is reported as such.
+
 ## Usage
 
-    resolve_deps.py [--root DIR] [--json | --summary] [--exclude FILE]
+    resolve_deps.py [--root DIR] [--json | --summary] [--exclude FILE] [--out FILE]
     resolve_deps.py --record FILE ...   # also save every upstream answer, for a test fixture
     resolve_deps.py --replay FILE ...   # answer from a saved recording, no network
 
 `--exclude FILE` takes a JSON list of pin sets ({"mathlib": sha, "Physlib": sha, ...}) whose
 build already failed inside a dependency, so the next feasible set is offered instead.
+`--out FILE` also writes the `--json` result to FILE, so one run can print the summary and hand
+the answer to scripts/write_bump.py (`--resolved FILE`).
 
 ## Environment
 
@@ -95,9 +112,14 @@ import lake_requires
 import lean_versions
 import mathlib_cache
 from lean_versions import parse_toolchain, show_toolchain
-from pr_status.core import gh_api
+from pr_status.core import RateLimited, gh_api
 
 MATHLIB = "mathlib"
+
+# What `compare` answers when GitHub would not compute the comparison (HTTP 422, e.g. "this diff is
+# taking too long to generate" between distant commits). Unknown is never a forward move, an ancestor
+# or a branch member, so a candidate that needs one is skipped (and reported), never offered.
+UNKNOWN = [None, None, None]
 
 
 # --- upstream facts -----------------------------------------------------------------------------
@@ -142,7 +164,9 @@ class GitHub:
                     sha, when = line.split()
                     dated[sha] = when
             newest_first = sorted(dated, key=lambda s: dated[s], reverse=True)
-            return [s for s in newest_first if self.compare(repo, base, s)[0] == "ahead"]
+            # an unknown comparison is kept: `candidates` asks again and reports it rather than this
+            # dropping it unseen
+            return [s for s in newest_first if self.compare(repo, base, s)[0] in ("ahead", None)]
         return self._once(("boundaries", repo, branch, base), fetch)
 
     def file(self, repo, sha, path):
@@ -152,10 +176,18 @@ class GitHub:
         return self._once(("file", repo, sha, path), fetch)
 
     def compare(self, repo, base, head):
-        """[status, ahead_by, behind_by] of head relative to base."""
+        """[status, ahead_by, behind_by] of head relative to base, or UNKNOWN when GitHub refuses to
+        compute it (HTTP 422). Any other failure still raises."""
         def fetch():
-            out = gh(f"repos/{repo}/compare/{base}...{head}?per_page=1",
-                     jq='[.status, .ahead_by, .behind_by] | @json')
+            try:
+                out = gh(f"repos/{repo}/compare/{base}...{head}?per_page=1",
+                         jq='[.status, .ahead_by, .behind_by] | @json')
+            except RateLimited:
+                raise
+            except RuntimeError as exc:
+                if "(HTTP 422)" in str(exc):
+                    return list(UNKNOWN)
+                raise
             return json.loads(out)
         return self._once(("compare", repo, base, head), fetch)
 
@@ -214,6 +246,11 @@ def line_of(tc):
     return tc[:2] if tc else None
 
 
+def commits(n):
+    """`n commits`, for a count a comparison may not have produced."""
+    return "an unknown number of commits" if n is None else f"{n} commits"
+
+
 def short(sha):
     return (sha or "?")[:7]
 
@@ -248,8 +285,9 @@ def mathlib_pin_of(manifest_text):
 # --- the resolution -------------------------------------------------------------------------------
 
 class Resolver:
-    def __init__(self, src, requires, pins, toolchain):
+    def __init__(self, src, requires, pins, toolchain, cross_line=()):
         self.src = src
+        self.cross_line = frozenset(cross_line)
         self.requires = requires
         self.pins = pins
         self.toolchain = toolchain
@@ -266,6 +304,16 @@ class Resolver:
         self.deps = [(name, repo, branch) for name, repo, branch in requires if name != MATHLIB]
         self.tags = src.release_tags(self.mathlib_repo)
         self.not_forward = {}  # dependency -> candidate commits left out because they do not descend from its pin
+        self.unknown = []  # "repo base...head" comparisons GitHub would not compute; what needed them was skipped
+
+    def compare(self, repo, base, head):
+        """The source's compare, noting each UNKNOWN answer for the report."""
+        answer = self.src.compare(repo, base, head)
+        if answer[0] is None:
+            key = f"{repo} {short(base)}...{short(head)}"
+            if key not in self.unknown:
+                self.unknown.append(key)
+        return answer
 
     # facts about one commit
     def dep_commit(self, repo, sha):
@@ -281,13 +329,17 @@ class Resolver:
         dependency other than mathlib (bump_moves.dependency_move). A candidate comes from the
         dependency's own branch listing, so it is on the branch by construction; what can fail is
         that it is not a descendant of the pin (a rewritten branch, an odd merge)."""
-        kind, _ = bump_moves.dependency_move(self.src.compare(repo, pin, sha)[0], True)
+        status = self.compare(repo, pin, sha)[0]
+        if status is None:
+            return None
+        kind, _ = bump_moves.dependency_move(status, True)
         return kind is not None
 
     def candidates(self, name, repo, branch):
         """A dependency's candidate commits, newest first, ending with its current pin. A commit that
         does not descend from the pin is left out, since the guard would refuse the move, and is
-        noted in `not_forward` so the report can say so."""
+        noted in `not_forward` so the report can say so. One whose comparison is unknown is left out
+        too, and only noted in `unknown`: it is not evidence of a rewritten branch."""
         pin = self.pins[name]
         shas = [self.src.tip(repo, branch)]
         for boundary in self.src.boundaries(repo, branch, pin):
@@ -295,9 +347,10 @@ class Resolver:
         shas.append(pin)
         out, dropped = [], []
         for sha in dict.fromkeys(shas):
-            if sha != pin and not self.moves_forward(repo, pin, sha):
+            forward = True if sha == pin else self.moves_forward(repo, pin, sha)
+            if forward is False:
                 dropped.append(sha)
-            else:
+            elif forward:
                 out.append(self.dep_commit(repo, sha))
         self.not_forward[name] = dropped
         return out
@@ -310,23 +363,44 @@ class Resolver:
         order = lean_versions.toolchain_order(self.toolchain, self.mathlib_toolchain(m))
         if order in (None, "older"):
             return None
-        status = self.src.compare(self.mathlib_repo, current, m)[0]
-        on_branch = bump_moves.is_on_branch(self.src.compare(self.mathlib_repo, m, self.mathlib_branch)[0])
+        status = self.compare(self.mathlib_repo, current, m)[0]
+        on_branch = bump_moves.is_on_branch(self.compare(self.mathlib_repo, m, self.mathlib_branch)[0])
         kind, _ = bump_moves.mathlib_move(status, on_branch, lambda: order, lambda: m in self.tags)
         return kind
 
-    def fit(self, commit, m):
+    def fit(self, commit, m, name=None):
         if commit["mathlib"] == m:
             return "exact"
         tc, tc_m = parse_toolchain(commit["toolchain"]), parse_toolchain(self.mathlib_toolchain(m))
-        if tc is None or tc_m is None or line_of(tc) != line_of(tc_m) or tc > tc_m:
+        if tc is None or tc_m is None or tc > tc_m:
             return None
+        if line_of(tc) != line_of(tc_m):
+            if name not in self.cross_line or commit["mathlib"] is None:
+                return None
+            status = self.compare(self.mathlib_repo, commit["mathlib"], m)[0]
+            return "cross" if status in ("ahead", "identical") else None
         if commit["mathlib"] is None:
             return "near"
-        status = self.src.compare(self.mathlib_repo, commit["mathlib"], m)[0]
+        status = self.compare(self.mathlib_repo, commit["mathlib"], m)[0]
         if status in ("ahead", "identical") or (status == "diverged" and m in self.tags):
             return "near"
         return None
+
+    def cross_failed(self, cands, exclude):
+        """(dependency, rev, Lean line) for each dependency pinned `cross` in an excluded set: the
+        excluded set does not say which dependency failed, so every cross pin in it is suspect."""
+        out = set()
+        for ex in exclude:
+            ex = dict(ex)
+            m = ex.get(MATHLIB)
+            tc_m = parse_toolchain(self.mathlib_toolchain(m)) if m else None
+            if tc_m is None:
+                continue
+            for name, _, _ in self.deps:
+                commit = next((c for c in cands[name] if c["rev"] == ex.get(name)), None)
+                if commit and self.fit(commit, m, name) == "cross":
+                    out.add((name, commit["rev"], line_of(tc_m)))
+        return out
 
     def resolve(self, exclude=()):
         cands = {name: self.candidates(name, repo, branch) for name, repo, branch in self.deps}
@@ -335,6 +409,7 @@ class Resolver:
         mathlibs += [c["mathlib"] for name in cands for c in cands[name] if c["mathlib"]]
         mathlibs = list(dict.fromkeys(mathlibs))
         current_line = line_of(parse_toolchain(self.toolchain))
+        cross_failed = self.cross_failed(cands, exclude)
 
         feasible, blocked = [], []
         for m in mathlibs:
@@ -342,13 +417,13 @@ class Resolver:
             if how is None:
                 continue
             tc_m = self.mathlib_toolchain(m)
-            dropped = self.src.compare(self.mathlib_repo, self.pins[MATHLIB], m)[2] if how != "current" else 0
+            dropped = self.compare(self.mathlib_repo, self.pins[MATHLIB], m)[2] if how != "current" else 0
             pins = {MATHLIB: {"rev": m, "fit": how, "toolchain": tc_m, "tag": self.tags.get(m),
                               "dropped_commits": dropped}}
             blockers = []
             for name, _, _ in self.deps:
                 for index, commit in enumerate(cands[name]):
-                    fit = self.fit(commit, m)
+                    fit = self.fit(commit, m, name)
                     if fit:
                         pins[name] = dict(commit, fit=fit, index=index)
                         break
@@ -376,12 +451,27 @@ class Resolver:
             if any(flat == dict(ex) for ex in exclude):
                 blocked.append(dict(entry, blockers=[{"dependency": "*", "reason": "excluded: its build failed before"}]))
                 continue
+            failed_cross = [name for name, pin in pins.items()
+                            if pin["fit"] == "cross" and (name, pin["rev"], line_of(parse_toolchain(tc_m))) in cross_failed]
+            if failed_cross:
+                blocked.append(dict(entry, blockers=[
+                    {"dependency": name,
+                     "reason": (f"{name} {short(pins[name]['rev'])} already failed to build on Lean "
+                                f"{show_toolchain(tc_m)}'s line in an excluded set")} for name in failed_cross]))
+                continue
             feasible.append(dict(entry, pins=pins))
 
         def rank(entry):
+            # Within a toolchain, a mathlib commit some dependency pins exactly (its own CI built
+            # it) beats a newer one that every dependency only fits `near`: past every
+            # dependency's own pin, nothing has built the pairing. On 2026-10-15 Physlib's exact
+            # pin (the v4.35.0 tag) lost to master commits past a refactor Physlib could not build.
+            toolchain, date = newness(entry)
+            built = any(p["fit"] == "exact" for name, p in entry["pins"].items() if name != MATHLIB)
             carried = sum(1 for p in entry["pins"].values() if p["fit"] == "carried")
             behind = sum(p.get("index", 0) for p in entry["pins"].values())
-            return newness(entry) + (-carried, -behind)
+            cross = sum(1 for p in entry["pins"].values() if p["fit"] == "cross")
+            return (toolchain, built, -cross, date, -carried, -behind)
         feasible.sort(key=rank, reverse=True)
         if not feasible:
             raise RuntimeError("no feasible pin set, not even the current one; see `blocked`")
@@ -401,7 +491,7 @@ class Resolver:
         pins, holds = {}, []
         for name, pin in chosen["pins"].items():
             rev, tip = pin["rev"], tips[name]
-            lag = 0 if rev == tip else self.src.compare(repos[name], rev, tip)[1]
+            lag = 0 if rev == tip else self.compare(repos[name], rev, tip)[1]
             days = 0.0
             if rev != tip:
                 delta = (datetime.fromisoformat(self.src.date(repos[name], tip).replace("Z", "+00:00"))
@@ -431,7 +521,7 @@ class Resolver:
                 holds.append({"pin": name, "held_by": why,
                               "text": (f"mathlib held at {short(rev)}"
                                        f"{' (' + pin['tag'] + ')' if pin.get('tag') else ''}, "
-                                       f"{lag} commits behind its newest cached {branches[name]} commit"
+                                       f"{commits(lag)} behind its newest cached {branches[name]} commit"
                                        + (f": {'; '.join(reasons)}" if reasons else ""))})
             else:
                 # the oldest newer candidate that pins something else: the commit just before a
@@ -439,7 +529,7 @@ class Resolver:
                 pinned = (pin.get("toolchain"), pin.get("mathlib"))
                 nxt = next((c for c in reversed(cands[name][:pin["index"]])
                             if (c["toolchain"], c["mathlib"]) != pinned), None)
-                text = f"{name} held at {short(rev)}, {lag} commits behind {branches[name]}"
+                text = f"{name} held at {short(rev)}, {commits(lag)} behind {branches[name]}"
                 if pin["fit"] == "carried":
                     text += f" and kept on its current pin, which pins Lean {show_toolchain(pin['toolchain'])}"
                 if nxt:
@@ -454,6 +544,7 @@ class Resolver:
             "toolchain": {"previous": self.toolchain, "chosen": chosen["toolchain"]},
             "pins": pins,
             "holds": holds,
+            "unknown_compares": list(self.unknown),
             "feasible": [{"mathlib": f["mathlib"], "toolchain": f["toolchain"], "tag": f["tag"],
                           "pins": {n: p["rev"] for n, p in f["pins"].items()},
                           "fits": {n: p["fit"] for n, p in f["pins"].items()}} for f in feasible],
@@ -473,8 +564,8 @@ def summary(result):
     lines.append(f"| Lean | {show_toolchain(tc['previous'])} | {show_toolchain(tc['chosen'])} | | |")
     for name, p in result["pins"].items():
         tag = f" ({p['tag']})" if p.get("tag") else ""
-        behind = "at tip" if p["commits_behind_tip"] == 0 else \
-            f"{p['commits_behind_tip']} commits, {p['days_behind_tip']} days"
+        n = p["commits_behind_tip"]
+        behind = "at tip" if n == 0 else f"{'?' if n is None else n} commits, {p['days_behind_tip']} days"
         lines.append(f"| {name} | {short(p['previous'])} | {short(p['rev'])}{tag} | {p['fit']} | {behind} |")
     ml = result["pins"][MATHLIB]
     if ml["dropped_commits"]:
@@ -484,6 +575,10 @@ def summary(result):
     if result["holds"]:
         lines += ["", "Held back (expected while upstreams move at different speeds; not an error):", ""]
         lines += [f"- {h['text']}" for h in result["holds"]]
+    if result.get("unknown_compares"):
+        lines += ["", "Not compared (GitHub answered HTTP 422, e.g. the diff took too long); whatever "
+                      "needed these comparisons was skipped, not offered:", ""]
+        lines += [f"- `{c}`" for c in result["unknown_compares"]]
     return "\n".join(lines)
 
 
@@ -494,6 +589,9 @@ def main(argv=None):
     out.add_argument("--json", action="store_true")
     out.add_argument("--summary", action="store_true")
     ap.add_argument("--exclude", type=Path)
+    ap.add_argument("--cross-line", action="append", default=[], metavar="DEPENDENCY",
+                    help="let this dependency fit a mathlib on a newer Lean line than its own (`cross`)")
+    ap.add_argument("--out", type=Path, help="also write the JSON result here (for write_bump.py --resolved)")
     src_group = ap.add_mutually_exclusive_group()
     src_group.add_argument("--record", type=Path)
     src_group.add_argument("--replay", type=Path)
@@ -505,13 +603,15 @@ def main(argv=None):
     exclude = json.loads(args.exclude.read_text()) if args.exclude else []
     try:
         requires, pins, toolchain = read_project(args.root)
-        result = Resolver(src, requires, pins, toolchain).resolve(exclude)
+        result = Resolver(src, requires, pins, toolchain, args.cross_line).resolve(exclude)
     except RuntimeError as exc:
         print(f"resolve_deps: {exc}", file=sys.stderr)
         return 2
     finally:
         if args.record:
             args.record.write_text(json.dumps(src.answers, indent=1, sort_keys=True) + "\n")
+    if args.out:
+        args.out.write_text(json.dumps(result, indent=2) + "\n")
     if args.json:
         print(json.dumps(result, indent=2))
     else:

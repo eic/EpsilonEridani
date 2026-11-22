@@ -182,13 +182,21 @@ theorem harmonicSum_pos {m : List ℤ} (hm : ∀ a ∈ m, 0 < a) {n : ℕ} (hn :
 
 /-! ### Small values -/
 
+/-- The first harmonic number: `harmonic 1 = 1`. -/
+theorem harmonic_one : harmonic 1 = 1 := by
+  norm_num [harmonic]
+
+/-- The second harmonic number: `harmonic 2 = 3 / 2`. -/
+theorem harmonic_two : harmonic 2 = 3 / 2 := by
+  norm_num [harmonic, Finset.sum_range_succ]
+
 /-- `S₁(1) = 1`. -/
-theorem harmonicSum_singleton_one_one : harmonicSum [1] 1 = 1 := by
-  norm_num [harmonicSum_cons]
+theorem harmonicSum_singleton_one_one : harmonicSum [1] 1 = 1 :=
+  (harmonicSum_singleton_one_eq_harmonic 1).trans harmonic_one
 
 /-- `S₁(2) = 3/2`. -/
-theorem harmonicSum_singleton_one_two : harmonicSum [1] 2 = 3 / 2 := by
-  norm_num [harmonicSum_cons, Finset.sum_range_succ]
+theorem harmonicSum_singleton_one_two : harmonicSum [1] 2 = 3 / 2 :=
+  (harmonicSum_singleton_one_eq_harmonic 2).trans harmonic_two
 
 /-- `S₂(2) = 5/4`. -/
 theorem harmonicSum_singleton_two_two : harmonicSum [2] 2 = 5 / 4 := by

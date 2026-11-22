@@ -1,6 +1,6 @@
-# Working in Tau Ceti
+# Working in Epsilon Eridani
 
-This is the AI-owned code repo of Tau Ceti. Read `README.md` for what the project is and how
+This is the AI-owned code repo of Epsilon Eridani. Read `README.md` for what the project is and how
 the three repos fit together; this file only adds the contract for agents working here.
 
 ## Before you write code
@@ -19,6 +19,20 @@ refactoring, simplifying proofs, fixing or modestly generalising an existing lem
 expanding the project's mathematical scope), relocating a misplaced declaration, adopting a
 cleaner idiom, and documenting existing code are all welcome at any time. The roadmap conditions
 what new mathematics gets *added*, not whether already-merged code may be made better.
+
+**Material in upstream namespaces is PhyslibAlpha-eligible.** A declaration placed in a Physlib
+or Mathlib namespace rather than under `EpsilonEridani` (dot notation on an upstream type, or an
+`*Extensions.lean` module extending a Physlib module at the mirrored path) is written to be
+contributed to PhyslibAlpha, the lightly reviewed library inside the Physlib package, without
+renaming. Keep such material in its own module at the path PhyslibAlpha would use, with the
+upstream module as its first import, so the whole file can move. The flow is "mirror, pin,
+delete": once a human has landed the file in PhyslibAlpha and a dependency bump pins a Physlib
+commit carrying it, delete the local copy and import the upstream module in the same PR, as the
+no-compatibility rule below requires. You may prepare the upstream contribution (the file, its
+API map, attribution); never open a pull request in `leanprover-community/physlib` yourself.
+Material under the `EpsilonEridani` namespace is not eligible until it is renamed into an upstream
+namespace, which is an ordinary refactor. As with Mathlib, promotion from PhyslibAlpha into
+Physlib is Physlib's decision, and nothing on a roadmap is ever "pending upstream".
 
 Every pull request description must also contain one standalone attribution line:
 
@@ -46,7 +60,7 @@ scope do not coincide.
   Mathlib linter set (style, file length, no `maxHeartbeats` overrides). Do not try to disable
   these.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
-- Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
+- Epsilon Eridani does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every
   in-repository use and remove the obsolete names and module paths in the same PR. Do not add or
   retain anything whose only purpose is compatibility: aliases, wrapper declarations, forwarding
