@@ -83,7 +83,7 @@ its plus component is positive, so such a boost never reverses its direction.
 * `Lorentz.Vector.transversePart_boost_two`, `Lorentz.Vector.plusComponent_boost_two`,
   `Lorentz.Vector.minusComponent_boost_two`: a boost along the `z`-axis in light-front components.
 * `Lorentz.Vector.boost_two_inr_two_pos_iff`: a boost along the `z`-axis does not reverse the
-  direction of a spacelike vector along that axis.
+  direction of a four-vector whose longitudinal part is spacelike.
 * `EpsilonEridani.LightFront.areaForm_relativeTransverse_transverseIsometry`,
   `EpsilonEridani.LightFront.areaForm_transversePart_relativeTransverse_transverseIsometry`: the
   same two areas are invariant under orientation-preserving isometries of the transverse plane.
@@ -404,30 +404,39 @@ lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
   simp only [minusComponent_def, boost_time_eq, boost_inr_self_eq]
   ring
 
-/-- A spacelike four-vector along the `z`-axis points along `+z` exactly when its plus component
-is positive. -/
-lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3} (hT : transversePart q = 0)
-    (hq : ⟪q, q⟫ₘ < 0) : 0 < q (Sum.inr 2) ↔ 0 < plusComponent q := by
-  have h2 : minusComponent q = plusComponent q - √2 * q (Sum.inr 2) := by
-    rw [plusComponent_def, minusComponent_def]
-    field_simp
-    rw [Real.sq_sqrt zero_le_two]
-    ring
-  rw [minkowskiProduct_self_eq_lightFront, hT, norm_zero, h2] at hq
-  rw [← mul_pos_iff_of_pos_left (show (0 : ℝ) < √2 by positivity)]
-  constructor <;> intro h <;> nlinarith
+/-- A four-vector whose plus and minus components have opposite signs, i.e. whose longitudinal
+part is spacelike, points along `+z` exactly when its plus component is positive. -/
+lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
+    (hq : plusComponent q * minusComponent q < 0) : 0 < q (Sum.inr 2) ↔ 0 < plusComponent q := by
+  rw [← add_div_sqrt_two_sub_sub_div_sqrt_two (q (Sum.inl 0)) (q (Sum.inr 2)),
+    ← plusComponent_def, ← minusComponent_def, div_pos_iff_of_pos_right (by positivity), sub_pos]
+  constructor
+  · -- `p⁻ < p⁺ ≤ 0` would make `p⁺ p⁻` nonnegative.
+    intro h
+    refine lt_of_not_ge fun hP => ?_
+    exact hq.not_ge (mul_nonneg_of_nonpos_of_nonpos hP (h.le.trans hP))
+  · -- `0 < p⁺` forces `p⁻ < 0`.
+    intro hP
+    exact (neg_of_mul_neg_right hq hP.le).trans hP
 
-/-- A boost along the `z`-axis does not reverse the direction of a spacelike four-vector along
-the `z`-axis. -/
-lemma boost_two_inr_two_pos_iff {q : Vector 3} (hT : transversePart q = 0) (hq : ⟪q, q⟫ₘ < 0)
+/-- A boost along the `z`-axis does not reverse the direction of a four-vector whose longitudinal
+part is spacelike. -/
+lemma boost_two_inr_two_pos_iff {q : Vector 3} (hq : plusComponent q * minusComponent q < 0)
     (β : ℝ) (hβ : |β| < 1) : 0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
-  have hγ : 0 < γ β * (1 - β) := by
-    have := abs_lt.1 hβ
-    refine mul_pos ?_ (by linarith)
+  have hβ' := abs_lt.1 hβ
+  have hγ : 0 < γ β := by
     simp only [γ, one_div, inv_pos, Real.sqrt_pos]
     nlinarith
-  rw [inr_two_pos_iff_plusComponent_pos (by simpa) (by simpa), plusComponent_boost_two,
-    mul_pos_iff_of_pos_left hγ, inr_two_pos_iff_plusComponent_pos hT hq]
+  have hm : 0 < γ β * (1 - β) := mul_pos hγ (by linarith)
+  have hp : 0 < γ β * (1 + β) := mul_pos hγ (by linarith)
+  have hq' : plusComponent (boost (2 : Fin 3) β hβ • q) *
+      minusComponent (boost (2 : Fin 3) β hβ • q) < 0 := by
+    rw [plusComponent_boost_two, minusComponent_boost_two,
+      show γ β * (1 - β) * plusComponent q * (γ β * (1 + β) * minusComponent q) =
+        (γ β * (1 - β) * (γ β * (1 + β))) * (plusComponent q * minusComponent q) by ring]
+    exact mul_neg_of_pos_of_neg (mul_pos hm hp) hq
+  rw [inr_two_pos_iff_plusComponent_pos hq', plusComponent_boost_two,
+    mul_pos_iff_of_pos_left hm, inr_two_pos_iff_plusComponent_pos hq]
 
 end LongitudinalBoost
 
