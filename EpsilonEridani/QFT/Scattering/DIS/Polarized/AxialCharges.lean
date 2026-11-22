@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Particles.Parton.Flavor
 public import EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules
 
 /-!
@@ -25,43 +26,47 @@ written `ΔΣ`. This module makes the two parametrisations interchangeable by pr
 rather than by numerical substitution, and restates the existing Bjorken and Ellis–Jaffe sum rules
 of `EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules` in the charge basis.
 
-`AxialCharges` carries the flavour charges `Δu`, `Δd`, `Δs` as functions of `Q²` and nothing
-else; the axial charges `AxialCharges.a0`, `AxialCharges.a3`, `AxialCharges.a8` are derived from
-them. The change of basis is invertible: `AxialCharges.ofAxialCharges` builds the flavour charges
-from prescribed axial charges (`AxialCharges.a0_ofAxialCharges`, …,
-`AxialCharges.ofAxialCharges_a0_a3_a8`), so either triple may be supplied as data, and two charge
-records agree exactly when their axial charges do (`AxialCharges.ext_a0_a3_a8_iff`).
+`HelicityCharges` carries the quark helicity charges `Δu`, `Δd`, `Δs` as functions of `Q²` and
+nothing else; `HelicityCharges.delta` reads them as a function on `LightFlavor`, and the axial
+charges `HelicityCharges.a0`, `HelicityCharges.a3`, `HelicityCharges.a8` are derived from them.
+The change of basis is invertible: `HelicityCharges.ofAxialCharges` builds the flavour charges
+from prescribed axial charges (`HelicityCharges.a0_ofAxialCharges`, …,
+`HelicityCharges.ofAxialCharges_a0_a3_a8`), so either triple may be supplied as data, and two charge
+records agree exactly when their axial charges do (`HelicityCharges.ext_a0_a3_a8_iff`).
 
-`AxialCharges.partonFirstMomentG1` is the leading-twist parton-model value `½ Σ_q e_q² Δq` of the
+`HelicityCharges.partonFirstMomentG1` is the leading-twist parton-model value `½ Σ_q e_q² Δq` of the
 first moment of `g₁`, before the radiative correction. It is a function of the charges, distinct
 from the first moment `firstMomentG1` of a structure function; the two are related only through
 the decomposition hypothesis `Γ₁ = (½ Σ_q e_q² Δq) (1 + Δ)`.
 
 Two operations act on the flavour charges.
 
-* `AxialCharges.isospinConj` exchanges `Δu` and `Δd`. Under isospin symmetry the neutron's charges
-  are the proton's, conjugated; the conjugation reverses `a₃` and fixes `a₈` and `a₀`.
-* `AxialCharges.addUniform` adds a common function `s` to every flavour, the form of a
+* `HelicityCharges.isospinConj` exchanges `Δu` and `Δd`, the relabelling of flavours by the
+  isospin involution `Equiv.swap u d` (`HelicityCharges.delta_isospinConj`). Under isospin
+  symmetry the neutron's charges are the proton's, conjugated; the conjugation reverses `a₃` and
+  fixes `a₈` and `a₀`.
+* `HelicityCharges.addUniform` adds a common function `s` to every flavour, the form of a
   flavour-universal contribution such as the gluon's. It shifts `a₀` by `3s`, fixes `a₃` and
   `a₈`, and shifts the parton-model first moment by `s / 3`
-  (`AxialCharges.partonFirstMomentG1_addUniform`); these shifts are exactly the changes invisible
-  to `a₃` and `a₈` (`AxialCharges.a3_eq_and_a8_eq_iff_exists_eq_addUniform`). So the non-singlet
+  (`HelicityCharges.partonFirstMomentG1_addUniform`); these shifts are exactly the changes invisible
+  to `a₃` and `a₈` (`HelicityCharges.a3_eq_and_a8_eq_iff_exists_eq_addUniform`). So the non-singlet
   charges, and in particular the isovector combination that the Bjorken sum rule measures, receive
   no flavour-universal contribution.
 
 ## Main statements
 
-* `AxialCharges.partonFirstMomentG1_eq_axialCharges`: the change of basis for the leading-twist
+* `HelicityCharges.partonFirstMomentG1_eq_axialCharges`: the change of basis for the leading-twist
   first moment, `½ ((4/9) Δu + (1/9) Δd + (1/9) Δs) = (1/12) a₃ + (1/36) a₈ + (1/9) a₀`.
-* `AxialCharges.partonFirstMomentG1_isospinConj`,
-  `AxialCharges.partonFirstMomentG1_sub_partonFirstMomentG1_isospinConj`: at charge level, the
+* `HelicityCharges.partonFirstMomentG1_isospinConj`,
+  `HelicityCharges.partonFirstMomentG1_sub_partonFirstMomentG1_isospinConj`: at charge level, the
   isospin-conjugate value `−(1/12) a₃ + (1/36) a₈ + (1/9) a₀` and the isovector difference
   `Γ₁(a) − Γ₁(a.isospinConj) = (1/6) a₃`.
-* `AxialCharges.deltaS_eq_zero_iff_a0_eq_a8`: a vanishing strange polarisation is exactly
+* `HelicityCharges.deltaS_eq_zero_iff_a0_eq_a8`: a vanishing strange polarisation is exactly
   `a₀ = a₈`, the content of the Ellis–Jaffe hypothesis in the charge basis.
-* `AxialCharges.partonFirstMomentG1_eq_ellisJaffe_add_deltaS`: the parton-model first moment is the
-  Ellis–Jaffe value `(1/12) a₃ + (5/36) a₈` plus `Δs / 3`; `firstMomentG1_eq_ellisJaffe_add_deltaS`
-  is the same split of a measured `Γ₁ᵖ` satisfying the leading-twist decomposition.
+* `HelicityCharges.partonFirstMomentG1_eq_ellisJaffe_add_deltaS`: the parton-model first moment is
+  the Ellis–Jaffe value `(1/12) a₃ + (5/36) a₈` plus `Δs / 3`;
+  `firstMomentG1_eq_ellisJaffe_add_deltaS` is the same split of a measured `Γ₁ᵖ` satisfying the
+  leading-twist decomposition.
 * `ellisJaffeSumRule_iff`: the existing `EllisJaffeSumRule` is the leading-twist decomposition
   together with `a₀ = a₈`; `firstMomentG1_eq_of_ellisJaffeSumRule` is its prediction
   `Γ₁ᵖ = ((1/12) a₃ + (5/36) a₈) (1 + Δ)`.
@@ -99,10 +104,10 @@ namespace Polarized
 /-- The light-quark helicity charges of a nucleon as functions of the scale `Q²`:
 `Δq(Q²) = ∫₀¹ dx (Δq(x, Q²) + Δqbar(x, Q²))` for `q = u, d, s`, the forward matrix elements of the
 flavour-diagonal axial currents. They are the data; the `SU(3)` axial charges `a₀`, `a₃`, `a₈`
-are derived from them by `AxialCharges.a0`, `AxialCharges.a3` and `AxialCharges.a8`, and
-`AxialCharges.ofAxialCharges` goes the other way. No numerical value is ever substituted. -/
+are derived from them by `HelicityCharges.a0`, `HelicityCharges.a3` and `HelicityCharges.a8`, and
+`HelicityCharges.ofAxialCharges` goes the other way. No numerical value is ever substituted. -/
 @[ext]
-structure AxialCharges where
+structure HelicityCharges where
   /-- The up-quark helicity charge `Δu(Q²)`. -/
   deltaU : ℝ → ℝ
   /-- The down-quark helicity charge `Δd(Q²)`. -/
@@ -110,9 +115,26 @@ structure AxialCharges where
   /-- The strange-quark helicity charge `Δs(Q²)`. -/
   deltaS : ℝ → ℝ
 
-namespace AxialCharges
+namespace HelicityCharges
 
-variable (a b : AxialCharges)
+variable (a b : HelicityCharges)
+
+open Particles.Parton
+
+/-- The helicity charges as a function of the light flavour, `Δ_f` for `f = u, d, s`. -/
+def delta : LightFlavor → ℝ → ℝ
+  | .u => a.deltaU
+  | .d => a.deltaD
+  | .s => a.deltaS
+
+@[simp]
+theorem delta_u : a.delta .u = a.deltaU := (rfl)
+
+@[simp]
+theorem delta_d : a.delta .d = a.deltaD := (rfl)
+
+@[simp]
+theorem delta_s : a.delta .s = a.deltaS := (rfl)
 
 /-! ### The axial charges -/
 
@@ -156,7 +178,7 @@ theorem deltaS_eq_zero_iff_a0_eq_a8 (Q2 : ℝ) : a.deltaS Q2 = 0 ↔ a.a0 Q2 = a
 
 /-- The flavour charges with prescribed axial charges `a₀`, `a₃`, `a₈`: the inverse of the change
 of basis, `Δu = a₀/3 + a₃/2 + a₈/6`, `Δd = a₀/3 − a₃/2 + a₈/6`, `Δs = (a₀ − a₈)/3`. -/
-def ofAxialCharges (a0 a3 a8 : ℝ → ℝ) : AxialCharges where
+def ofAxialCharges (a0 a3 a8 : ℝ → ℝ) : HelicityCharges where
   deltaU Q2 := a0 Q2 / 3 + a3 Q2 / 2 + a8 Q2 / 6
   deltaD Q2 := a0 Q2 / 3 - a3 Q2 / 2 + a8 Q2 / 6
   deltaS Q2 := (a0 Q2 - a8 Q2) / 3
@@ -210,7 +232,7 @@ theorem ext_a0_a3_a8_iff : a = b ↔ a.a0 = b.a0 ∧ a.a3 = b.a3 ∧ a.a8 = b.a8
 
 /-- The isospin-conjugate charges, with `Δu` and `Δd` exchanged and `Δs` unchanged. Under isospin
 symmetry these are the neutron's charges when `a` are the proton's. -/
-def isospinConj : AxialCharges where
+def isospinConj : HelicityCharges where
   deltaU := a.deltaD
   deltaD := a.deltaU
   deltaS := a.deltaS
@@ -223,6 +245,14 @@ theorem deltaD_isospinConj : a.isospinConj.deltaD = a.deltaU := (rfl)
 
 @[simp]
 theorem deltaS_isospinConj : a.isospinConj.deltaS = a.deltaS := (rfl)
+
+/-- Isospin conjugation is the relabelling of flavours by the isospin involution `swap u d`. -/
+theorem delta_isospinConj (f : LightFlavor) :
+    a.isospinConj.delta f = a.delta (Equiv.swap .u .d f) := by
+  cases f
+  · rw [Equiv.swap_apply_left, delta_u, delta_d, deltaU_isospinConj]
+  · rw [Equiv.swap_apply_right, delta_u, delta_d, deltaD_isospinConj]
+  · rw [Equiv.swap_apply_of_ne_of_ne (by decide) (by decide), delta_s, delta_s, deltaS_isospinConj]
 
 @[simp]
 theorem isospinConj_isospinConj : a.isospinConj.isospinConj = a := (rfl)
@@ -252,7 +282,7 @@ theorem a8_isospinConj : a.isospinConj.a8 = a.a8 := by
 
 /-- The charges shifted by a common amount `s(Q²)` in every flavour: the form of a
 flavour-universal contribution, such as the gluon's, to the quark helicity charges. -/
-def addUniform (s : ℝ → ℝ) : AxialCharges where
+def addUniform (s : ℝ → ℝ) : HelicityCharges where
   deltaU Q2 := a.deltaU Q2 + s Q2
   deltaD Q2 := a.deltaD Q2 + s Q2
   deltaS Q2 := a.deltaS Q2 + s Q2
@@ -308,15 +338,22 @@ theorem a3_eq_and_a8_eq_iff_exists_eq_addUniform :
 /-! ### The first moment of `g₁` -/
 
 /-- The leading-twist parton-model first moment of `g₁` of the target whose helicity charges these
-are, before the radiative correction: `½ Σ_q e_q² Δq = ½ ((4/9) Δu + (1/9) Δd + (1/9) Δs)`. This
-is the combination in the field `EllisJaffeSumRule.moment_decomposition`. -/
-def partonFirstMomentG1 : ℝ → ℝ := fun Q2 =>
-  (1 / 2) * ((4 / 9) * a.deltaU Q2 + (1 / 9) * a.deltaD Q2 + (1 / 9) * a.deltaS Q2)
+are, before the radiative correction: `½ Σ_f e_f² Δ_f`, with `e_f` the quark charge
+`LightFlavor.charge`. -/
+def partonFirstMomentG1 : ℝ → ℝ := fun Q2 => (1 / 2) * ∑ f, LightFlavor.charge f ^ 2 * a.delta f Q2
 
+theorem partonFirstMomentG1_eq_sum (Q2 : ℝ) :
+    a.partonFirstMomentG1 Q2 = (1 / 2) * ∑ f, LightFlavor.charge f ^ 2 * a.delta f Q2 := (rfl)
+
+/-- The parton-model first moment with the light-quark charges evaluated,
+`½ ((4/9) Δu + (1/9) Δd + (1/9) Δs)`: the combination in the field
+`EllisJaffeSumRule.moment_decomposition`. -/
 theorem partonFirstMomentG1_apply (Q2 : ℝ) :
     a.partonFirstMomentG1 Q2
-      = (1 / 2) * ((4 / 9) * a.deltaU Q2 + (1 / 9) * a.deltaD Q2 + (1 / 9) * a.deltaS Q2) :=
-  (rfl)
+      = (1 / 2) * ((4 / 9) * a.deltaU Q2 + (1 / 9) * a.deltaD Q2 + (1 / 9) * a.deltaS Q2) := by
+  rw [partonFirstMomentG1_eq_sum, LightFlavor.sum_univ, LightFlavor.charge_u, LightFlavor.charge_d,
+    LightFlavor.charge_s, delta_u, delta_d, delta_s]
+  ring
 
 /-- **The change of basis** for the parton-model first moment: the charge-weighted flavour sum is
 `(1/12) a₃ + (1/36) a₈ + (1/9) a₀`. -/
@@ -372,17 +409,17 @@ theorem a0_eq_nine_mul_partonFirstMomentG1_sub (Q2 : ℝ) :
   rw [partonFirstMomentG1_eq_axialCharges]
   ring
 
-end AxialCharges
+end HelicityCharges
 
 /-! ### The sum rules in the charge basis -/
 
-open AxialCharges
+open HelicityCharges
 
 /-- **The Ellis–Jaffe sum rule in the charge basis.** `EllisJaffeSumRule` for the charges `a` is
 the leading-twist decomposition `Γ₁ᵖ = Γ₁(a) (1 + Δ)` together with `a₀ = a₈` at every scale: the
 vanishing-strange hypothesis is an `SU(3)`-flavour statement about the singlet and octet
 charges. -/
-theorem ellisJaffeSumRule_iff (Gp : StructureFunctions) (a : AxialCharges) (correction : ℝ → ℝ) :
+theorem ellisJaffeSumRule_iff (Gp : StructureFunctions) (a : HelicityCharges) (correction : ℝ → ℝ) :
     EllisJaffeSumRule Gp a.deltaU a.deltaD a.deltaS correction ↔
       (∀ Q2, firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2)) ∧
         ∀ Q2, a.a0 Q2 = a.a8 Q2 := by
@@ -393,7 +430,7 @@ theorem ellisJaffeSumRule_iff (Gp : StructureFunctions) (a : AxialCharges) (corr
 decomposition `Γ₁ᵖ = Γ₁(a) (1 + Δ)` holds at `Q²`, then
 `Γ₁ᵖ(Q²) = ((1/12) a₃ + (5/36) a₈) (1 + Δ(Q²)) + (Δs / 3) (1 + Δ(Q²))`: the measured moment is the
 Ellis–Jaffe value plus the strange contribution. -/
-theorem firstMomentG1_eq_ellisJaffe_add_deltaS {Gp : StructureFunctions} {a : AxialCharges}
+theorem firstMomentG1_eq_ellisJaffe_add_deltaS {Gp : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} {Q2 : ℝ}
     (hdec : firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2)) :
     firstMomentG1 Gp Q2
@@ -405,7 +442,7 @@ theorem firstMomentG1_eq_ellisJaffe_add_deltaS {Gp : StructureFunctions} {a : Ax
 /-- **The Ellis–Jaffe prediction in the charge basis**,
 `Γ₁ᵖ(Q²) = ((1/12) a₃ + (5/36) a₈) (1 + Δ(Q²))`: the proton first moment is fixed by the isovector
 and octet charges alone. -/
-theorem firstMomentG1_eq_of_ellisJaffeSumRule {Gp : StructureFunctions} {a : AxialCharges}
+theorem firstMomentG1_eq_of_ellisJaffeSumRule {Gp : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} (h : EllisJaffeSumRule Gp a.deltaU a.deltaD a.deltaS correction)
     (Q2 : ℝ) :
     firstMomentG1 Gp Q2
@@ -417,7 +454,7 @@ theorem firstMomentG1_eq_of_ellisJaffeSumRule {Gp : StructureFunctions} {a : Axi
 leading-twist decomposition holds at `Q²` and the measured `Γ₁ᵖ(Q²)` differs from the Ellis–Jaffe
 value, then `Δs(Q²) ≠ 0`. The derivation of the sum rule is sound; its hypothesis is what
 fails. -/
-theorem deltaS_ne_zero_of_firstMomentG1_ne {Gp : StructureFunctions} {a : AxialCharges}
+theorem deltaS_ne_zero_of_firstMomentG1_ne {Gp : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} {Q2 : ℝ}
     (hdec : firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2))
     (hne : firstMomentG1 Gp Q2
@@ -429,7 +466,7 @@ theorem deltaS_ne_zero_of_firstMomentG1_ne {Gp : StructureFunctions} {a : AxialC
 
 /-- The signed form of the violation: with a positive correction factor `1 + Δ(Q²)`, a measured
 `Γ₁ᵖ(Q²)` below the Ellis–Jaffe value forces a negative strange polarisation. -/
-theorem deltaS_neg_of_firstMomentG1_lt {Gp : StructureFunctions} {a : AxialCharges}
+theorem deltaS_neg_of_firstMomentG1_lt {Gp : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} {Q2 : ℝ}
     (hdec : firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2))
     (hc : 0 < 1 + correction Q2)
@@ -443,7 +480,7 @@ theorem deltaS_neg_of_firstMomentG1_lt {Gp : StructureFunctions} {a : AxialCharg
 /-- **The singlet charge is measured.** If the leading-twist decomposition holds at `Q²` with a
 nonzero correction factor, then `a₀(Q²)` is determined by the measured `Γ₁ᵖ(Q²)` and the
 non-singlet charges: `a₀ = 9 Γ₁ᵖ / (1 + Δ) − (3/4) a₃ − (1/4) a₈`. -/
-theorem a0_eq_of_firstMomentG1 {Gp : StructureFunctions} {a : AxialCharges}
+theorem a0_eq_of_firstMomentG1 {Gp : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} {Q2 : ℝ}
     (hdec : firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2))
     (hc : 1 + correction Q2 ≠ 0) :
@@ -455,7 +492,7 @@ theorem a0_eq_of_firstMomentG1 {Gp : StructureFunctions} {a : AxialCharges}
 /-- The isovector combination of first moments in the charge basis: if the proton moment is the
 leading-twist value of the charges `a` and the neutron moment that of their isospin conjugate,
 with a common correction, then `Γ₁ᵖ − Γ₁ⁿ = (1/6) a₃ (1 + Δ)`. -/
-theorem firstMomentG1_sub_firstMomentG1_eq {Gp Gn : StructureFunctions} {a : AxialCharges}
+theorem firstMomentG1_sub_firstMomentG1_eq {Gp Gn : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} {Q2 : ℝ}
     (hp : firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2))
     (hn : firstMomentG1 Gn Q2 = a.isospinConj.partonFirstMomentG1 Q2 * (1 + correction Q2)) :
@@ -464,7 +501,7 @@ theorem firstMomentG1_sub_firstMomentG1_eq {Gp Gn : StructureFunctions} {a : Axi
 
 /-- The Bjorken sum rule holds when the isovector charge is `|g_A/g_V|` at every scale, given the
 leading-twist decomposition of the proton moment and its isospin conjugate for the neutron. -/
-theorem bjorkenSumRule_of_forall_a3_eq {Gp Gn : StructureFunctions} {a : AxialCharges}
+theorem bjorkenSumRule_of_forall_a3_eq {Gp Gn : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} {gAOverGV : ℝ}
     (hp : ∀ Q2, firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2))
     (hn : ∀ Q2, firstMomentG1 Gn Q2 = a.isospinConj.partonFirstMomentG1 Q2 * (1 + correction Q2))
@@ -477,7 +514,7 @@ proton moment and its isospin conjugate for the neutron, with a nowhere-vanishin
 factor, the `BjorkenSumRule` with axial-charge ratio `g_A/g_V` holds exactly when the isovector
 charge `a₃` is `|g_A/g_V|` at every scale: under the decomposition, the sum rule is exactly this
 assignment of the isovector charge. -/
-theorem bjorkenSumRule_iff {Gp Gn : StructureFunctions} {a : AxialCharges}
+theorem bjorkenSumRule_iff {Gp Gn : StructureFunctions} {a : HelicityCharges}
     {correction : ℝ → ℝ} {gAOverGV : ℝ}
     (hp : ∀ Q2, firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2))
     (hn : ∀ Q2, firstMomentG1 Gn Q2 = a.isospinConj.partonFirstMomentG1 Q2 * (1 + correction Q2))
