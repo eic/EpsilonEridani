@@ -35,8 +35,8 @@ applied to the exact-degree family `Pₙ` (`degree_legendre`).
 * `coeFn_legendreHilbertBasis`: the `n`-th basis vector is the function `√((2n + 1) / 2) Pₙ (x)`;
 * `legendreHilbertBasis_repr_apply`: the `n`-th coordinate of `f` is its Legendre coefficient
   `√((2n + 1) / 2) ∫₋₁¹ Pₙ (x) f (x) dx`;
-* `integrableOn_Icc_legendre_smul`: the integrals `∫₋₁¹ Pₙ (x) f (x) dx` against a
-  square-integrable `f` are integrals of integrable functions;
+* `integrableOn_Icc_legendre_smul`: the integrals `∫₋₁¹ Pₙ (x) f (x) dx` against an
+  integrable `f` are integrals of integrable functions;
 * `ae_eq_zero_of_forall_setIntegral_Icc_legendre_smul_eq_zero`: completeness in its elementary form,
   a square-integrable function on `[-1, 1]` orthogonal to every `Pₙ` vanishes almost everywhere;
 * `ae_eq_of_forall_setIntegral_Icc_legendre_smul_eq`: a square-integrable function on `[-1, 1]` is
@@ -104,13 +104,12 @@ theorem coeFn_legendreHilbertBasis (n : ℕ) :
 
 variable {𝕜}
 
-/-- The integrand `Pₙ (x) f (x)` of a Legendre coefficient of a square-integrable function on
+/-- The integrand `Pₙ (x) f (x)` of a Legendre coefficient of an integrable function on
 `[-1, 1]` is integrable on `[-1, 1]`, so the integrals in the statements below are genuine. -/
 theorem integrableOn_Icc_legendre_smul (n : ℕ) {f : ℝ → 𝕜}
-    (hf : MemLp f 2 (volume.restrict (Icc (-1 : ℝ) 1))) :
+    (hf : IntegrableOn f (Icc (-1 : ℝ) 1)) :
     IntegrableOn (fun x => (legendre n).eval x • f x) (Icc (-1 : ℝ) 1) :=
-  IntegrableOn.continuousOn_smul (hf.integrable one_le_two) (legendre n).continuous.continuousOn
-    isCompact_Icc
+  hf.continuousOn_smul (legendre n).continuous.continuousOn isCompact_Icc
 
 /-- **The coordinates are the Legendre coefficients**: the `n`-th coordinate of `f ∈ L²[-1, 1]` in
 `legendreHilbertBasis` is `√((2n + 1) / 2) ∫₋₁¹ Pₙ (x) f (x) dx`. -/
@@ -151,8 +150,8 @@ theorem ae_eq_of_forall_setIntegral_Icc_legendre_smul_eq {f g : ℝ → 𝕜}
   refine (ae_eq_zero_of_forall_setIntegral_Icc_legendre_smul_eq_zero (hf.sub hg) fun n => ?_).mono
     fun x hx => sub_eq_zero.mp hx
   simp only [Pi.sub_apply, smul_sub]
-  rw [integral_sub (integrableOn_Icc_legendre_smul n hf)
-    (integrableOn_Icc_legendre_smul n hg), h n, sub_self]
+  rw [integral_sub (integrableOn_Icc_legendre_smul n (hf.integrable one_le_two))
+    (integrableOn_Icc_legendre_smul n (hg.integrable one_le_two)), h n, sub_self]
 
 end Polynomial
 
