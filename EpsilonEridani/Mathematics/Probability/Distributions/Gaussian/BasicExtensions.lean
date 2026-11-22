@@ -13,8 +13,8 @@ public import Mathlib.Probability.Distributions.Gaussian.Basic
 Mathlib shows that the image of a Gaussian measure under a continuous linear map is Gaussian
 (`ProbabilityTheory.isGaussian_map`). This file registers the instance for the image under a
 dilation `x ↦ c • x`, the form in which a Gaussian of width `c` is written as the image of a
-standard one, so that it is found by instance search; in particular the dilated measure is a
-probability measure.
+standard one, so that it is found by instance search and the moment bounds of Gaussian measures,
+such as `ProbabilityTheory.IsGaussian.integrable_norm_sq`, apply to the dilated measure.
 -/
 
 public section
@@ -26,8 +26,7 @@ namespace ProbabilityTheory
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [IsGaussian μ]
 
-/-- The image of a Gaussian measure under the dilation `x ↦ c • x` is Gaussian; in particular it
-is a probability measure. -/
+/-- The image of a Gaussian measure under the dilation `x ↦ c • x` is Gaussian. -/
 instance isGaussian_map_const_smul (c : ℝ) : IsGaussian (μ.map (c • ·)) := by
   -- the dilation is the continuous linear map `c • id`
   convert isGaussian_map (μ := μ) (c • ContinuousLinearMap.id ℝ E)
