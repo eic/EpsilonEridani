@@ -123,10 +123,8 @@ variable [AddCommGroup V] {R : RecombinationScheme V}
 
 /-- An additive scheme merges the negatives of a pair into the negative of the merged momentum. -/
 theorem IsAdditive.merge_neg_neg (hadd : R.IsAdditive) (a b : V) :
-    R.merge (-a) (-b) = -R.merge a b := by
-  have h := hadd.merge_add_add a (-a) b (-b)
-  rw [add_neg_cancel, add_neg_cancel, hadd.merge_zero_zero] at h
-  exact (neg_eq_of_add_eq_zero_right h.symm).symm
+    R.merge (-a) (-b) = -R.merge a b :=
+  map_neg (AddMonoidHom.mk' (Function.uncurry R.merge) fun x y => hadd x.1 y.1 x.2 y.2) (a, b)
 
 end AdditiveGroup
 
