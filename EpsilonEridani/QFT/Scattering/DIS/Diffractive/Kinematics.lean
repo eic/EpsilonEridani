@@ -250,7 +250,8 @@ function.
 
 For a reflexive form, a target with no transverse momentum and non-vanishing plus momentum, a
 light-cone fraction `ξ < 1` and the target-side constraints `P² = M²`, `P'² = M²`, a transverse
-momentum transfer with `Δ_T² ≤ 0` gives `t ≤ tMinElastic M ξ`, equivalently
+momentum transfer with `Δ_T² ≤ 0` gives `t ≤ tMinElastic M ξ` (for a target with transverse
+momentum `P_T`, `Δ_T` is replaced by `Δ_T - ξ P_T`), equivalently
 `|t| ≥ ξ²M²/(1-ξ)` (`le_tMin_iff` at `M_Y = M`, where `ξ (M² - (1 - ξ) M²) = ξ²M²`), by
 `Kinematics.tMom_le_tMin` with `tMin_self`; the bound is saturated exactly when `Δ_T² = 0`
 (`Kinematics.tMom_eq_tMin_iff`), i.e. in the forward configuration `Δ_T = 0` for a metric
@@ -288,16 +289,16 @@ mass `M` that emerges as a system of mass `M_Y`:
 `tMin M M_Y ξ = -ξ (M_Y² - (1 - ξ) M²) / (1 - ξ)`.
 
 As for `tMinElastic`, the argument `xiLC` is the light-cone fraction `ξ = Δ⁺/P⁺`, not the
-invariant `Invariants.xi`. For a reflexive form, a target with no transverse momentum,
-non-vanishing plus momentum and `ξ ≠ 1`, the on-shell conditions `P² = M²`, `P'² = M_Y²` give
-`t = tMin M M_Y ξ + Δ_T²/(1-ξ)` (`Kinematics.tMom_eq_tMin_add`), so that `t ≤ tMin M M_Y ξ` for
-`ξ < 1` when the transverse
-momentum transfer satisfies `Δ_T² ≤ 0`, the boundary being attained when `Δ_T² = 0`. For a
+invariant `Invariants.xi`. For a reflexive form, non-vanishing plus momentum and `ξ ≠ 1`, the
+on-shell conditions `P² = M²`, `P'² = M_Y²` give `t = tMin M M_Y ξ + w²/(1-ξ)`
+(`Kinematics.tMom_eq_tMin_add`), where `w = Δ_T - ξ P_T` is the transverse momentum transfer
+relative to the target direction (`w = Δ_T` for a target with no transverse momentum), so that
+`t ≤ tMin M M_Y ξ` for `ξ < 1` when `w² ≤ 0`, the boundary being attained when `w² = 0`. For a
 metric that is negative semidefinite on transverse vectors and admits a space-like transverse
 vector, the momentum transfers compatible with the target-side constraints (`P`, `P'² = M_Y²`,
-`ξ < 1`) are exactly `t ≤ tMin M M_Y ξ` (`Kinematics.setOf_tMom_eq_Iic_tMin`); the lepton side is
-not constrained there, so this is not yet the diffractive physical region. In the target-elastic
-case `M_Y = M` it reduces to `tMinElastic M ξ` (`tMin_self`), which is the boundary
+`ξ < 1`) are exactly `t ≤ tMin M M_Y ξ` (`Kinematics.setOf_tMom_eq_Iic_tMin`); the photon-side
+mass `M_X² ≥ 0` is not imposed there, so this is not yet the diffractive physical region. In the
+target-elastic case `M_Y = M` it reduces to `tMinElastic M ξ` (`tMin_self`), which is the boundary
 `Particles.Parton.GPD.tZero M η` of the off-forward kinematics at skewness `η = ξ/(2-ξ)`, i.e.
 `ξ = 2η/(1+η)` (`tMinElastic_eq_tZero`). At the pole `ξ = 1` the value is the division junk
 `0`. -/
