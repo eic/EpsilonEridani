@@ -102,7 +102,8 @@ instance : AddCommGroup Dipole := equivProd.addCommGroup
 
 /-- Endpointwise scaling of dipoles, transported from the product along `equivProd`; see
 `equivProd` for why a dipole carries it. -/
-instance : Module ℝ Dipole := equivProd.addEquiv.module ℝ
+instance : Module ℝ Dipole :=
+  AddEquiv.module ℝ { equivProd with map_add' := fun _ _ => equivProd.apply_symm_apply _ }
 
 @[simp] lemma equivProd_apply (d : Dipole) : equivProd d = (d.quark, d.antiquark) := (rfl)
 

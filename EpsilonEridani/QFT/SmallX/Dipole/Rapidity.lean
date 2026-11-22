@@ -29,9 +29,10 @@ why the lemmas below carry hypotheses such as `x₀ ≠ 0` and `0 < x`. For a re
 * the reference point only shifts it by a constant, through the chain rule
   `rapidity x₀ x₁ + rapidity x₁ x = rapidity x₀ x`, so rapidity *differences* do not depend on the
   choice of `x₀`;
-* `x ↦ rapidity x₀ x` is inverted by `Y ↦ x₀ exp (-Y)`;
+* for `x₀ > 0`, `x ↦ rapidity x₀ x` on `x > 0` is inverted by `Y ↦ x₀ exp (-Y)`;
 * on the physical region of deep-inelastic scattering, where `0 < x ≤ 1`, the rapidity of the
-  Bjorken variable is at least `log x₀`, and ordering in rapidity is reverse ordering in `x`.
+  Bjorken variable is at least `log x₀` (for every `x₀`), and ordering in rapidity is reverse
+  ordering in `x`.
 
 ## Main definitions
 
@@ -66,7 +67,8 @@ namespace SmallX
 open Filter Topology
 
 /-- The rapidity `Y = log (x₀ / x)` of the momentum fraction `x`, measured from the reference
-momentum fraction `x₀`. It increases towards small `x`. -/
+momentum fraction `x₀`. For `x₀ ≠ 0` it increases towards small `x > 0`; off that region it takes
+junk values (for instance `rapidity 0 x = 0`). -/
 def rapidity (x₀ x : ℝ) : ℝ := Real.log (x₀ / x)
 
 lemma rapidity_def (x₀ x : ℝ) : rapidity x₀ x = Real.log (x₀ / x) := (rfl)
