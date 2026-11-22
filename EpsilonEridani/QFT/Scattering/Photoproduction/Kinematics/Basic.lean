@@ -17,8 +17,8 @@ scattering angle `θ` hands the photon the virtuality `emissionVirtuality m E E'
 The explicit data of the subject are a `ChargedSource` (charge, mass, charge radius and Lorentz
 factor in the collider frame), the photon variables `PhotonKinematics` (energy in the collider
 frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`, which for a photon of
-spatial part `a • n` along a unit vector is `|a|` equal to the photon energy,
-`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`), and the photon energy
+four-momentum `q` is the length of `q.spatialPart` equal to the photon energy,
+`PhotonKinematics.isReal_iff_norm_spatialPart_eq_energy`), and the photon energy
 fraction `PhotonKinematics.energyFraction`. The kinematic minimum of the virtuality is strictly
 positive for a massive source (`ChargedSource.photonVirtualityMin_pos`) and strictly exceeds the
 familiar `m² x² / (1 - x)` in terms of the energy fraction `x` carried by the photon
@@ -97,15 +97,13 @@ def IsReal (k : PhotonKinematics) : Prop := k.virtuality = 0
 @[simp]
 theorem isReal_iff (k : PhotonKinematics) : k.IsReal ↔ k.virtuality = 0 := (Iff.rfl)
 
-/-- **A photon along an axis is real exactly when its momentum equals its energy.** A photon `γ`
-of four-momentum `q`, with `q⁰ = γ.energy ≥ 0`, virtuality `Q² = -q²` and spatial part `a • n` along
-a unit vector `n`, is real, `Q² = 0`, exactly when `|a| = γ.energy`, that is when `q` is null. -/
-theorem isReal_iff_abs_eq_energy_of_spatialPart_eq_smul {d : ℕ} {q : Lorentz.Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} {a : ℝ} {γ : PhotonKinematics} (hn : ‖n‖ = 1)
-    (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = a • n)
-    (hγ : γ.virtuality = -⟪q, q⟫ₘ) (hk : 0 ≤ γ.energy) : γ.IsReal ↔ |a| = γ.energy := by
-  rw [isReal_iff, hγ, neg_eq_zero,
-    Lorentz.Vector.minkowskiProduct_self_eq_zero_iff_of_spatialPart_eq_smul hn hq', hq,
+/-- **A photon is real exactly when its momentum equals its energy.** A photon `γ` of
+four-momentum `q`, with `q⁰ = γ.energy ≥ 0` and virtuality `Q² = -q²`, is real, `Q² = 0`, exactly
+when `‖q.spatialPart‖ = γ.energy`, that is when `q` is null. -/
+theorem isReal_iff_norm_spatialPart_eq_energy {d : ℕ} {q : Lorentz.Vector d}
+    {γ : PhotonKinematics} (hq : q.timeComponent = γ.energy) (hγ : γ.virtuality = -⟪q, q⟫ₘ)
+    (hk : 0 ≤ γ.energy) : γ.IsReal ↔ ‖q.spatialPart‖ = γ.energy := by
+  rw [isReal_iff, hγ, neg_eq_zero, Lorentz.Vector.minkowskiProduct_self_eq_zero_iff, hq,
     abs_of_nonneg hk]
 
 /-- The fraction `x = k / E` of the source energy carried by the photon. -/

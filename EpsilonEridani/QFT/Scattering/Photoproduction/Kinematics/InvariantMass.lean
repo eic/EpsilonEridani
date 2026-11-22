@@ -27,13 +27,14 @@ This module relates the three by equalities between four-vector quantities rathe
 convention.
 * For a photon of any virtuality `Q² = γ.virtuality = -q²` and direction,
   `W² = M² - Q² + 2 (k E + p q_∥)`, with `q_∥ = ⟪q.spatialPart, n⟫`
-  (`PhotonKinematics.minkowskiProduct_add_self_eq_sub_virtuality`), so the virtuality enters `W²`
-  explicitly.
+  (`PhotonKinematics.minkowskiProduct_add_self_eq_sub_virtuality_add_two_mul`), so the virtuality
+  enters `W²` explicitly.
 * For a photon of momentum `a` along the beam axis, of any virtuality, with `|a - p| < k + E`, the
   energy fraction is `x = (W cosh y - E) / E_s`
   (`PhotonKinematics.energyFraction_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_sub_div`).
-* A photon of energy `k ≥ 0` and momentum `a` along the beam axis is real exactly when `|a| = k`
-  (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`, in
+* A photon of energy `k ≥ 0` is real exactly when its momentum has length `k`, so a photon of
+  momentum `a` along the beam axis is real exactly when `|a| = k`
+  (`PhotonKinematics.isReal_iff_norm_spatialPart_eq_energy`, in
   `EpsilonEridani.QFT.Scattering.Photoproduction.Kinematics.Basic`). For a photon null along the
   beam axis, `a = k`,
   `W² = M² + 2 k (E + p)`
@@ -89,7 +90,7 @@ variable {d : ℕ} {q P : Lorentz.Vector d} {n : EuclideanSpace ℝ (Fin d)} {E 
 direction `n` form a system of invariant mass `W² = P² - Q² + 2 (γ.energy E + p q_∥)`, with
 `q_∥ = ⟪q.spatialPart, n⟫` and `P² = M²` for a target of mass `M`. For a unit vector `n`, `p` is
 the target momentum and `q_∥` the photon momentum along `n`. -/
-theorem minkowskiProduct_add_self_eq_sub_virtuality (hq : q.timeComponent = γ.energy)
+theorem minkowskiProduct_add_self_eq_sub_virtuality_add_two_mul (hq : q.timeComponent = γ.energy)
     (hγ : γ.virtuality = -⟪q, q⟫ₘ) (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n) :
     ⟪q + P, q + P⟫ₘ =
       ⟪P, P⟫ₘ - γ.virtuality + 2 * (γ.energy * E + p * ⟪q.spatialPart, n⟫_ℝ) := by
@@ -101,7 +102,7 @@ four-momentum `q` is null along the unit beam axis `n`, `q⁰ = γ.energy` and
 `q.spatialPart = γ.energy • n`, and a target of energy `E` and momentum
 `p` against it form a system of invariant mass `W² = P² + 2 γ.energy (E + p)`, with `P² = M²` for a
 target of mass `M`. When moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real
-photon (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`). -/
+photon (`PhotonKinematics.isReal_iff_norm_spatialPart_eq_energy`). -/
 theorem minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add_of_spatialPart_eq_energy_smul
     (hn : ‖n‖ = 1) (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n) :
@@ -134,7 +135,7 @@ against it, with `|γ.energy - p| < γ.energy + E`, form a system of invariant m
 `y` along `n` with `x = e^{y} (W² - P²) / (2 W E_s)`, where `x` is the fraction of the energy
 `E_s` of the source `s` carried by the photon and `P² = M²` for a target of mass `M`. When
 moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real photon
-(`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`). -/
+(`PhotonKinematics.isReal_iff_norm_spatialPart_eq_energy`). -/
 theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_energy_smul
     (hn : ‖n‖ = 1) (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n)
