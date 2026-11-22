@@ -235,6 +235,64 @@ theorem ofExclKinematics_absT (g : Bilin V) (K : ExclKinematics V)
 
 end Invariants
 
+/-! ## The boundary in `t` for a target-side system of mass `M_Y` -/
+
+/-- The kinematic boundary in `t` at fixed light-cone momentum fraction `ξ` lost by a target of
+mass `M` that emerges as a system of mass `M_Y`:
+`tMin M M_Y ξ = -ξ (M_Y² - (1 - ξ) M²) / (1 - ξ)`.
+
+The argument `xiLC` is the light-cone fraction `ξ = Δ⁺/P⁺`, not the
+invariant `Invariants.xi`. For a reflexive form, non-vanishing plus momentum and `ξ ≠ 1`, the
+on-shell conditions `P² = M²`, `P'² = M_Y²` give `t = tMin M M_Y ξ + w²/(1-ξ)`
+(`Kinematics.tMom_eq_tMin_add`), where `w = Δ_T - ξ P_T` is the transverse momentum transfer
+relative to the target direction (`w = Δ_T` for a target with no transverse momentum), so that
+`t ≤ tMin M M_Y ξ` for `ξ < 1` when `w² ≤ 0`, the boundary being attained when `w² = 0`. For a
+metric that is negative semidefinite on transverse vectors and admits a space-like transverse
+vector, the momentum transfers compatible with the target-side constraints (`P`, `P'² = M_Y²`,
+`ξ < 1`) are exactly `t ≤ tMin M M_Y ξ` (`Kinematics.setOf_tMom_eq_Iic_tMin`); the photon-side
+mass `M_X² ≥ 0` is not imposed there, so this is not yet the diffractive physical region. In the
+target-elastic case `M_Y = M` it reduces to `tMinElastic M ξ` (`tMin_self`), which is the boundary
+`Particles.Parton.GPD.tZero M η` of the off-forward kinematics at skewness `η = ξ/(2-ξ)`, i.e.
+`ξ = 2η/(1+η)` (`tMinElastic_eq_tZero`). At the pole `ξ = 1` the value is the division junk
+`0`. -/
+def tMin (M MY xiLC : ℝ) : ℝ := -(xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) / (1 - xiLC)
+
+/-- Defining expression for `tMin`. -/
+theorem tMin_def (M MY xiLC : ℝ) :
+    tMin M MY xiLC = -(xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) / (1 - xiLC) := (rfl)
+
+/-- The negated boundary, `-tMin M M_Y ξ = ξ (M_Y² - (1 - ξ) M²)/(1-ξ)`. The identity is
+unconditional; it is a (non-negative) magnitude only under the hypotheses of `tMin_nonpos`. -/
+theorem neg_tMin (M MY xiLC : ℝ) :
+    -tMin M MY xiLC = xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2) / (1 - xiLC) := by
+  rw [tMin_def, neg_div, neg_neg]
+
+/-- The boundary condition `t ≤ tMin M M_Y ξ` for a real momentum transfer `t`, in terms of its
+magnitude: `-t ≥ ξ (M_Y² - (1 - ξ) M²)/(1-ξ)`, for any choice of the parameters. -/
+theorem le_tMin_iff (M MY xiLC t : ℝ) :
+    t ≤ tMin M MY xiLC ↔ xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2) / (1 - xiLC) ≤ -t := by
+  rw [← neg_tMin, neg_le_neg_iff]
+
+/-- At vanishing momentum loss `ξ = 0` the boundary degenerates to `t = 0` for every final mass. -/
+@[simp]
+theorem tMin_xiLC_zero (M MY : ℝ) : tMin M MY 0 = 0 := by
+  rw [tMin_def]
+  norm_num
+
+/-- The boundary `tMin` is non-positive for `ξ ≤ 1` whenever the numerator
+`ξ (M_Y² - (1 - ξ) M²)` is non-negative. This holds unconditionally in the target-elastic case,
+where the numerator is `ξ²M²` (`tMinElastic_nonpos`). -/
+theorem tMin_nonpos {M MY xiLC : ℝ} (h1 : xiLC ≤ 1)
+    (hnum : 0 ≤ xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) : tMin M MY xiLC ≤ 0 := by
+  rw [tMin_def, neg_div, neg_nonpos]
+  exact div_nonneg hnum (sub_nonneg.mpr h1)
+
+/-- The boundary `tMin` is non-positive for `0 ≤ ξ ≤ 1` above the threshold
+`(1 - ξ) M² ≤ M_Y²`, in particular whenever `M² ≤ M_Y²`. -/
+theorem tMin_nonpos_of_threshold {M MY xiLC : ℝ} (h0 : 0 ≤ xiLC) (h1 : xiLC ≤ 1)
+    (hM : (1 - xiLC) * M ^ 2 ≤ MY ^ 2) : tMin M MY xiLC ≤ 0 :=
+  tMin_nonpos h1 (mul_nonneg h0 (sub_nonneg.mpr hM))
+
 /-! ## The target-elastic boundary in `t` -/
 
 /-- The kinematic boundary in `t` at fixed light-cone momentum fraction in the target-elastic
@@ -269,76 +327,30 @@ The boundary is obtained from the two-body threshold condition at fixed `(ξ, M,
 
 See `tMinElastic_def` for the defining expression and `tMinElastic_nonpos` for the sign
 property. -/
-def tMinElastic (M xiLC : ℝ) : ℝ := -(xiLC ^ 2 * M ^ 2) / (1 - xiLC)
+def tMinElastic (M xiLC : ℝ) : ℝ := tMin M M xiLC
+
+/-- In the target-elastic case `M_Y = M` the boundary `tMin` is `tMinElastic`. -/
+@[simp]
+theorem tMin_self (M xiLC : ℝ) : tMin M M xiLC = tMinElastic M xiLC := (rfl)
 
 /-- Defining expression for `tMinElastic`. -/
 theorem tMinElastic_def (M xiLC : ℝ) :
-    tMinElastic M xiLC = -(xiLC ^ 2 * M ^ 2) / (1 - xiLC) := (rfl)
+    tMinElastic M xiLC = -(xiLC ^ 2 * M ^ 2) / (1 - xiLC) := by
+  rw [← tMin_self, tMin_def]
+  ring
+
+/-- At vanishing momentum loss `ξ = 0` the target-elastic boundary degenerates to `t = 0`. -/
+@[simp]
+theorem tMinElastic_xiLC_zero (M : ℝ) : tMinElastic M 0 = 0 := by
+  rw [← tMin_self, tMin_xiLC_zero]
 
 /-- The target-elastic boundary lies on the non-positive side of zero whenever `xiLC ≤ 1`, in
 particular throughout the physical range `ξ ∈ [0, 1)`: the boundary of the physical region is on
 the same side of zero as the region it bounds. At `xiLC = 1` the value is the division junk `0`. -/
 theorem tMinElastic_nonpos (M xiLC : ℝ) (h : xiLC ≤ 1) : tMinElastic M xiLC ≤ 0 := by
-  rw [tMinElastic_def, neg_div, neg_nonpos]
-  exact div_nonneg (mul_nonneg (sq_nonneg xiLC) (sq_nonneg M)) (sub_nonneg.mpr h)
-
-/-! ## The boundary in `t` for a dissociated target -/
-
-/-- The kinematic boundary in `t` at fixed light-cone momentum fraction `ξ` lost by a target of
-mass `M` that emerges as a system of mass `M_Y`:
-`tMin M M_Y ξ = -ξ (M_Y² - (1 - ξ) M²) / (1 - ξ)`.
-
-As for `tMinElastic`, the argument `xiLC` is the light-cone fraction `ξ = Δ⁺/P⁺`, not the
-invariant `Invariants.xi`. For a reflexive form, non-vanishing plus momentum and `ξ ≠ 1`, the
-on-shell conditions `P² = M²`, `P'² = M_Y²` give `t = tMin M M_Y ξ + w²/(1-ξ)`
-(`Kinematics.tMom_eq_tMin_add`), where `w = Δ_T - ξ P_T` is the transverse momentum transfer
-relative to the target direction (`w = Δ_T` for a target with no transverse momentum), so that
-`t ≤ tMin M M_Y ξ` for `ξ < 1` when `w² ≤ 0`, the boundary being attained when `w² = 0`. For a
-metric that is negative semidefinite on transverse vectors and admits a space-like transverse
-vector, the momentum transfers compatible with the target-side constraints (`P`, `P'² = M_Y²`,
-`ξ < 1`) are exactly `t ≤ tMin M M_Y ξ` (`Kinematics.setOf_tMom_eq_Iic_tMin`); the photon-side
-mass `M_X² ≥ 0` is not imposed there, so this is not yet the diffractive physical region. In the
-target-elastic case `M_Y = M` it reduces to `tMinElastic M ξ` (`tMin_self`), which is the boundary
-`Particles.Parton.GPD.tZero M η` of the off-forward kinematics at skewness `η = ξ/(2-ξ)`, i.e.
-`ξ = 2η/(1+η)` (`tMinElastic_eq_tZero`). At the pole `ξ = 1` the value is the division junk
-`0`. -/
-def tMin (M MY xiLC : ℝ) : ℝ := -(xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) / (1 - xiLC)
-
-/-- Defining expression for `tMin`. -/
-theorem tMin_def (M MY xiLC : ℝ) :
-    tMin M MY xiLC = -(xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2)) / (1 - xiLC) := (rfl)
-
-/-- The negated boundary, `-tMin M M_Y ξ = ξ (M_Y² - (1 - ξ) M²)/(1-ξ)`. The identity is
-unconditional; it is a (non-negative) magnitude only under the hypotheses of `tMin_nonpos`. -/
-theorem neg_tMin (M MY xiLC : ℝ) :
-    -tMin M MY xiLC = xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2) / (1 - xiLC) := by
-  rw [tMin_def, neg_div, neg_neg]
-
-/-- The boundary condition `t ≤ tMin M M_Y ξ` for a real momentum transfer `t`, in terms of its
-magnitude: `-t ≥ ξ (M_Y² - (1 - ξ) M²)/(1-ξ)`, for any choice of the parameters. -/
-theorem le_tMin_iff (M MY xiLC t : ℝ) :
-    t ≤ tMin M MY xiLC ↔ xiLC * (MY ^ 2 - (1 - xiLC) * M ^ 2) / (1 - xiLC) ≤ -t := by
-  rw [← neg_tMin, neg_le_neg_iff]
-
-/-- In the target-elastic case `M_Y = M` the boundary `tMin` is `tMinElastic`,
-`-ξ²M²/(1-ξ)`. -/
-@[simp]
-theorem tMin_self (M xiLC : ℝ) : tMin M M xiLC = tMinElastic M xiLC := by
-  rw [tMin_def, tMinElastic_def]
-  ring
-
-/-- At vanishing momentum loss `ξ = 0` the boundary degenerates to `t = 0` for every final mass. -/
-@[simp]
-theorem tMin_xiLC_zero (M MY : ℝ) : tMin M MY 0 = 0 := by
-  rw [tMin_def]
-  norm_num
-
-/-- The boundary `tMin` is non-positive for `0 ≤ ξ ≤ 1` above the threshold
-`(1 - ξ) M² ≤ M_Y²`, in particular whenever `M² ≤ M_Y²`. -/
-theorem tMin_nonpos {M MY xiLC : ℝ} (h0 : 0 ≤ xiLC) (h1 : xiLC ≤ 1)
-    (hM : (1 - xiLC) * M ^ 2 ≤ MY ^ 2) : tMin M MY xiLC ≤ 0 := by
-  rw [tMin_def, neg_div, neg_nonpos]
-  exact div_nonneg (mul_nonneg h0 (sub_nonneg.mpr hM)) (sub_nonneg.mpr h1)
+  rw [← tMin_self]
+  refine tMin_nonpos h ?_
+  nlinarith [sq_nonneg xiLC, sq_nonneg M, mul_nonneg (sq_nonneg xiLC) (sq_nonneg M)]
 
 end Diffractive
 end DIS
