@@ -36,23 +36,24 @@ function through `Convolution.mellinConv` and `Convolution.doubleMellinConv`, an
   transposition is not a symmetry (`CoefficientFunction.exists_doubleConv_swap_densities_ne`);
 * the leading-order reduction: for the flavour-diagonal coefficient functions
   `c_i δ_{ij} δ(1 - y) δ(1 - w)`, at leading order with `c_i = e_i²`, the double convolution is
-  `∑ᵢ c_i f_i (x) D_i (z)` (`doubleConvStructureFunction_of_diagonal_ofDeltaDelta_of_mem`);
+  `∑ᵢ c_i f_i (x) D_i (z)` on `(0,1]²`
+  (`doubleConvStructureFunction_of_diagonal_ofDeltaDelta_of_mem`);
 * compatibility with `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` for a
   coefficient function whose delta function sits in the fragmentation variable: for the
   coefficient function `δ_{ij} b_i (y) δ(1 - w)`, with `b_i` the coefficient function of a
   collinear hard kernel, the double convolution equals `sidisStructureFunction` on `(0,1]²`
-  (`doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction_of_mem`,
+  (`doubleConvStructureFunction_eq_sidisStructureFunction_of_diagonal_ofRegularDelta_of_mem`,
   from the single-channel `CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel_of_mem`).
   The channel `sidisChannel C' f D h i x z Q2 = loChannel C' f i x Q2 * D h i z Q2` has no
   convolution in `z` at all, so `δ(1 - w)` matches it exactly, while the parton side carries the
   hard kernel.
 
 The leading-order coefficient function, with delta functions in both variables, is not related to
-`sidisStructureFunction` here, and cannot be while `Factorization.DIS.HardKernel` is a function
-type: the parton side of `sidisStructureFunction` is the convolution `Factorization.DIS.loChannel`
-with a function kernel, and `δ(1 - y)` is not such a kernel, since `mellinConv` has no unit
-(`Convolution.not_exists_forall_mellinConv_ae_eq`). That statement needs a distributional
-hard-kernel interface first.
+`sidisStructureFunction` here: the parton side of `sidisStructureFunction` is the convolution
+`Factorization.DIS.loChannel` with a function kernel, and no collinear hard kernel reproduces
+`δ(1 - y)`, since `mellinConv` has no unit (`Convolution.not_exists_forall_mellinConv_ae_eq`). The
+case of a general, non-collinear function kernel is not proved here. That statement needs a
+distributional hard-kernel interface first.
 
 The delta functions act as the unit of the Mellin convolution, that is, as the restriction of a
 density to `(0,1]`. Plus distributions in either variable, which the next-to-leading-order
@@ -497,7 +498,7 @@ kernel `C'` of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` 
 `Q2`, the collinear kernel of the coefficient function `b i` for every flavour `i`, then
 `sidisStructureFunction` is the double convolution with a coefficient function diagonal in
 flavour at `Q2`, with diagonal entries `b_i (y) δ(1 - w)`, on `(0,1]²`. -/
-theorem doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction_of_mem
+theorem doubleConvStructureFunction_eq_sidisStructureFunction_of_diagonal_ofRegularDelta_of_mem
     [Fintype Flavor]
     (C' : DIS.HardKernel Flavor) (b : Flavor → ℝ → ℝ) {Q2 : ℝ}
     (hc : ∀ i, Convolution.IsCollinearKernel (fun x' z => C' i x' z Q2) (b i))
