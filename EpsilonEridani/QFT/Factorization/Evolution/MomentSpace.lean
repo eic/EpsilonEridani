@@ -42,11 +42,12 @@ here.
 - `moment_exists_unique` is well-posedness: a unique global solution for each initial
   condition, and `IsMomentSolution.eq_momentEvolution_mulVec` identifies every solution with
   the evolution operator applied to its value at a reference scale.
-- `IsMomentSolution.apply_eq_exp_mul_of_gamma_apply_eq_zero_of_ne` is the closed form for a channel
-  that mixes with no other: it evolves by the scalar exponential of the integrated coupling times
-  its own anomalous dimension. `momentEvolution_apply_of_gamma_apply_eq_zero_of_ne` is the same fact
-  for the corresponding row of the evolution operator, and `momentEvolution_eq_diagonal` is the
-  evolution operator of a diagonal anomalous-dimension matrix.
+- `IsMomentSolution.apply_eq_exp_mul_of_gamma_row_apply_eq_zero_of_ne` is the closed form for a
+  channel that mixes with no other: it evolves by the scalar exponential of the integrated coupling
+  times its own anomalous dimension. `momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne` is
+  the same fact for the corresponding row of the evolution operator, and
+  `momentEvolution_eq_diagonal_of_gamma_eq_diagonal` is the evolution operator of a diagonal
+  anomalous-dimension matrix.
 - `sumRule_conserved` is the conservation law: if the anomalous-dimension matrix has
   vanishing column sums at `N`, then `∑ i, F i` is `τ`-independent.
 - `momentum_sumRule_conserved` and `valence_sumRule_conserved` are its specializations to
@@ -244,8 +245,8 @@ derivative comes from `HasDerivAt.matrix_exp_smul_const'` and
 `HasDerivAt.matrix_exp_smul_const_mulVec'` in
 `EpsilonEridani.Mathematics.Analysis.Normed.Algebra.MatrixExponential`, which install the `L∞`
 operator norm inside their own proofs; no norm on matrices appears in any statement here. The
-closed form of an unmixed channel is the row lemma `Matrix.exp_smul_apply_of_apply_eq_zero_of_ne` of
-that file. -/
+closed form of an unmixed channel is the row lemma
+`Matrix.exp_smul_apply_of_row_apply_eq_zero_of_ne` of that file. -/
 
 section Existence
 
@@ -290,10 +291,8 @@ lemma momentEvolution_mul_adjacent (S : DglapMomentSystem ι) (N : ℂ) (τ₀ �
   simp only [momentEvolution_def]
   rw [← Matrix.exp_add_of_commute _ _ (((Commute.refl (S.gamma N)).smul_left _).smul_right _),
     ← add_smul,
-    ← integratedCoupling_add_adjacent S.alphaS_logScale_continuous τ₀ τ₁ τ₂]
-  congr 2
-  push_cast
-  ring
+    ← integratedCoupling_add_adjacent S.alphaS_logScale_continuous τ₀ τ₁ τ₂,
+    add_comm (integratedCoupling S.alphaS τ₀ τ₁), Complex.ofReal_add]
 
 /-- Evolving backwards from `τ` to `τ₀` inverts evolving from `τ₀` to `τ`. -/
 lemma momentEvolution_swap (S : DglapMomentSystem ι) (N : ℂ) (τ₀ τ : ℝ) :
@@ -341,11 +340,11 @@ theorem IsMomentSolution.eq_momentEvolution_mulVec {S : DglapMomentSystem ι} {N
 /-- **The evolution operator of an unmixed channel.** If the off-diagonal entries of row `i` of
 the anomalous-dimension matrix at `N` vanish, row `i` of the evolution operator is the scalar
 exponential of the integrated coupling times `γ i i`, placed on the diagonal. -/
-lemma momentEvolution_apply_of_gamma_apply_eq_zero_of_ne {S : DglapMomentSystem ι} {N : ℂ}
+lemma momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne {S : DglapMomentSystem ι} {N : ℂ}
     {i : ι} (h : ∀ j, j ≠ i → S.gamma N i j = 0) (τ₀ τ : ℝ) (j : ι) :
     momentEvolution S N τ₀ τ i j =
       if i = j then Complex.exp (integratedCoupling S.alphaS τ₀ τ * S.gamma N i i) else 0 := by
-  rw [momentEvolution_def, Matrix.exp_smul_apply_of_apply_eq_zero_of_ne h, smul_eq_mul,
+  rw [momentEvolution_def, Matrix.exp_smul_apply_of_row_apply_eq_zero_of_ne h, smul_eq_mul,
     Complex.exp_eq_exp_ℂ]
 
 omit [DecidableEq ι] in
@@ -356,19 +355,19 @@ channel `i` of a solution evolves multiplicatively:
 
 Only row `i` enters, so this applies to a non-singlet channel inside a full flavor system whose
 singlet sector mixes quarks and gluons. -/
-theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_apply_eq_zero_of_ne
+theorem IsMomentSolution.apply_eq_exp_mul_of_gamma_row_apply_eq_zero_of_ne
     {S : DglapMomentSystem ι} {N : ℂ} {F : ℝ → ι → ℂ} (hF : IsMomentSolution S N F) {i : ι}
     (h : ∀ j, j ≠ i → S.gamma N i j = 0) (τ₀ τ : ℝ) :
     F τ i = Complex.exp (integratedCoupling S.alphaS τ₀ τ * S.gamma N i i) * F τ₀ i := by
   classical
   rw [hF.eq_momentEvolution_mulVec τ₀ τ, Matrix.mulVec_apply_eq_sum]
-  simp only [momentEvolution_apply_of_gamma_apply_eq_zero_of_ne h, ite_mul, zero_mul,
+  simp only [momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne h, ite_mul, zero_mul,
     Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
 
 /-- For a diagonal anomalous-dimension matrix `γ(N) = diagonal d`, the evolution operator is
 itself diagonal, with entries `exp ((∫ s in τ₀..τ, αs(e^s) / (2π)) * d i)`. -/
-lemma momentEvolution_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ} {d : ι → ℂ}
-    (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
+lemma momentEvolution_eq_diagonal_of_gamma_eq_diagonal {S : DglapMomentSystem ι} {N : ℂ}
+    {d : ι → ℂ} (h : S.gamma N = Matrix.diagonal d) (τ₀ τ : ℝ) :
     momentEvolution S N τ₀ τ =
       Matrix.diagonal fun i => Complex.exp (integratedCoupling S.alphaS τ₀ τ * d i) := by
   rw [momentEvolution_def, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
@@ -497,8 +496,9 @@ structure MomentReductionAssumptions [Fintype Flavor]
     (P : SplittingKernel Flavor) (αs : RunningCoupling)
     (f : EpsilonEridani.Particles.Parton.PDF.Pdf Flavor)
     (S : DglapMomentSystem Flavor) (n : ℕ) (γ : Flavor → Flavor → ℝ) : Prop where
-  /-- The system's coupling is the one driving the `x`-space equation. -/
-  coupling : S.alphaS = αs
+  /-- The system's coupling is the one driving the `x`-space equation at every positive scale
+  `Q2 = exp τ`, the only scales either equation evaluates it at. -/
+  coupling : ∀ τ : ℝ, S.alphaS (Real.exp τ) = αs (Real.exp τ)
   /-- The system's anomalous dimensions at the real index `n` are the real matrix `γ`. -/
   gamma_ofReal : ∀ i j, S.gamma (n : ℂ) i j = ((γ i j : ℝ) : ℂ)
   /-- Differentiation under the moment integral: the `τ`-derivative of the `n`-th moment of

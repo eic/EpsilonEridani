@@ -36,8 +36,8 @@ topology, and no matrix norm appears in any statement.
 - `HasDerivAt.matrix_exp_smul_const_mulVec'`: the same applied to a fixed vector `v`,
   `d/ds (exp (f s • A) *ᵥ v) = f' • (A *ᵥ (exp (f t • A) *ᵥ v))` at `t`. So
   `x s = exp (f s • A) *ᵥ v` satisfies `x' = f' • (A *ᵥ x)` wherever `f` is differentiable.
-- `Matrix.exp_smul_apply_of_apply_eq_zero_of_ne`: if the off-diagonal entries of row `i` of `A`
-  vanish, row `i` of `exp (u • A)` is `exp (u • A i i)` on the diagonal and zero elsewhere.
+- `Matrix.exp_smul_apply_of_row_apply_eq_zero_of_ne`: if the off-diagonal entries of row `i` of
+  `A` vanish, row `i` of `exp (u • A)` is `exp (u • A i i)` on the diagonal and zero elsewhere.
 -/
 
 public section
@@ -54,6 +54,8 @@ namespace Matrix
 -- `Matrix.exp_add_of_commute` bridges the same diamond with
 -- `set_option backward.isDefEq.respectTransparency false`, which this repository forbids;
 -- an explicit argument instead leaves the check to the elaborator's definitional equality.
+-- A local `letI : CompleteSpace (Matrix m m 𝔸)` does not help: synthesis rejects it for the same
+-- reason. The three `_` are exactly the `RCLike 𝕂`, `NormedRing` and `NormedAlgebra 𝕂` instances.
 /-- The derivative of `u ↦ exp (u • A)` is `A * exp (u • A)`: the matrix version of
 `_root_.hasDerivAt_exp_smul_const'`. -/
 theorem hasDerivAt_exp_smul_const' (A : Matrix m m 𝔸) (t : 𝕂) :
@@ -83,25 +85,20 @@ theorem HasDerivAt.matrix_exp_smul_const_mulVec' {f : 𝕜 → 𝕂} {f' : 𝕂}
       (f' • (A *ᵥ (NormedSpace.exp (f t • A) *ᵥ v))) t := by
   open scoped Norms.Operator in
   -- applying a matrix to `v` is a bounded linear map for the operator norm
-  let L : Matrix m m 𝔸 →L[𝕜] (m → 𝔸) :=
-    LinearMap.mkContinuous ((mulVecBilin 𝕜 𝕜).flip v) ‖v‖
-      fun M => (linfty_opNorm_mulVec M v).trans_eq (mul_comm _ _)
-  -- `⇑L ∘ g` is `fun s => g s *ᵥ v` by `rfl`, since `⇑L` unfolds to `(· *ᵥ v)`
-  have h : HasDerivAt (fun s => NormedSpace.exp (f s • A) *ᵥ v)
-      (L (f' • (A * NormedSpace.exp (f t • A)))) t :=
-    HasFDerivAt.comp_hasDerivAt t L.hasFDerivAt (hf.matrix_exp_smul_const' A)
-  have hL : L (f' • (A * NormedSpace.exp (f t • A))) =
-      f' • (A *ᵥ (NormedSpace.exp (f t • A) *ᵥ v)) := by
-    rw [mulVec_mulVec, ← smul_mulVec]
-    -- `⇑L` is `(· *ᵥ v)` by definition
-    rfl
-  rwa [hL] at h
+  let L := LinearMap.mkContinuous ((mulVecBilin 𝕜 𝕜).flip v : Matrix m m 𝔸 →ₗ[𝕜] m → 𝔸) ‖v‖
+    fun M => by
+      rw [LinearMap.flip_apply, mulVecBilin_apply, mul_comm]
+      exact linfty_opNorm_mulVec M v
+  have hL (M : Matrix m m 𝔸) : L M = M *ᵥ v := by
+    simp only [L, LinearMap.mkContinuous_apply, LinearMap.flip_apply, mulVecBilin_apply]
+  have h := L.hasFDerivAt.comp_hasDerivAt t (hf.matrix_exp_smul_const' A)
+  simpa only [Function.comp_def, hL, mulVec_mulVec, ← smul_mulVec] using h
 
 namespace Matrix
 
 /-- **The exponential of an unmixed row.** If the off-diagonal entries of row `i` of `A` vanish,
 row `i` of `exp (u • A)` is `exp (u • A i i)` on the diagonal and zero elsewhere. -/
-theorem exp_smul_apply_of_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
+theorem exp_smul_apply_of_row_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
     (h : ∀ j, j ≠ i → A i j = 0) (u : 𝕂) (j : m) :
     NormedSpace.exp (u • A) i j = if i = j then NormedSpace.exp (u • A i i) else 0 := by
   set a := A i i
