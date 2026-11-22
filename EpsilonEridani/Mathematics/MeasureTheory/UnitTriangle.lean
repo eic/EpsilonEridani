@@ -95,16 +95,14 @@ theorem preimage_swap_unitTriangle : Prod.swap ⁻¹' unitTriangle = unitTriangl
 theorem setIntegral_unitTriangle_comp_swap (g : ℝ × ℝ → E) :
     ∫ p in unitTriangle, g p.swap = ∫ p in unitTriangle, g p := by
   conv_lhs => rw [← preimage_swap_unitTriangle]
-  exact Measure.measurePreserving_swap.setIntegral_preimage_emb
-    MeasurableEquiv.prodComm.measurableEmbedding g unitTriangle
+  exact setIntegral_preimage_swap unitTriangle g
 
 omit [NormedSpace ℝ E] in
 /-- Integrability on the unit triangle is invariant under exchanging the two coordinates. -/
 theorem integrableOn_unitTriangle_comp_swap_iff {g : ℝ × ℝ → E} :
     IntegrableOn (fun p => g p.swap) unitTriangle ↔ IntegrableOn g unitTriangle := by
   conv_lhs => rw [← preimage_swap_unitTriangle]
-  exact Measure.measurePreserving_swap.integrableOn_comp_preimage
-    MeasurableEquiv.prodComm.measurableEmbedding
+  exact integrableOn_preimage_swap_iff
 
 /-- The slice `{x | (y, x) ∈ unitTriangle}` of the unit triangle at `y ≥ 0` is `[0, 1 - y]`, which
 is empty for `y > 1`. -/
