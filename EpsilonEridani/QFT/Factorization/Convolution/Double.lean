@@ -106,7 +106,8 @@ theorem doubleMellinConv_congr_of_eqOn {C C' : ℝ → ℝ → ℝ} {f f' D D' :
   funext x z
   rw [doubleMellinConv_def, doubleMellinConv_def]
   refine congrFun (mellinConv_congr_of_eqOn (fun y hy => ?_) hf) x
-  exact congrFun (mellinConv_congr_of_eqOn (fun w hw => hC (mk_mem_prod hy hw)) hD) z
+  refine congrFun (mellinConv_congr_of_eqOn (fun w hw => ?_) hD) z
+  simpa only [Function.uncurry_apply_pair] using hC (mk_mem_prod hy hw)
 
 /-- The double Mellin convolution vanishes when the first momentum fraction lies outside
 `(0,1]`. -/
@@ -180,7 +181,7 @@ theorem doubleMellinConv_swap (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x z
     · have hint : Integrable
           (Function.uncurry fun y w => C y w * (f (x / y) / y) * (D (z / w) / w))
           ((volume.restrict (Icc x 1)).prod (volume.restrict (Icc z 1))) := by
-        rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+        rw [Measure.prod_restrict, ← Measure.volume_eq_prod, Function.uncurry_def]
         exact h hx hz
       rw [doubleMellinConv_apply_of_mem _ _ _ hz hx, doubleMellinConv_apply_of_mem _ _ _ hx hz]
       -- Both sides are the iterated integrals, in the two orders, of one function on the
@@ -208,9 +209,7 @@ theorem exists_doubleMellinConv_swap_densities_ne :
     simpa using mellinConv_pow_succ_indicator_one_apply_of_mem 0 ht
   have hB {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1) :
       mellinConv (fun y => y ^ 2) one t = (1 - t ^ 2) / 2 := by
-    have h := mellinConv_pow_succ_indicator_one_apply_of_mem 1 ht
-    norm_num at h
-    exact h
+    simpa [one_add_one_eq_two] using mellinConv_pow_succ_indicator_one_apply_of_mem 1 ht
   have h₁ : (1 / 2 : ℝ) ∈ Ioc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
   have h₂ : (1 / 4 : ℝ) ∈ Ioc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
   refine ⟨fun y w => y * w ^ 2, one, one, 1 / 2, 1 / 4, ?_⟩

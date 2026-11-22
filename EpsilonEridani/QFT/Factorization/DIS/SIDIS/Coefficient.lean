@@ -36,13 +36,16 @@ function through `Convolution.mellinConv` and `Convolution.doubleMellinConv`, an
   transposition is not a symmetry (`CoefficientFunction.exists_doubleConv_swap_densities_ne`);
 * the leading-order reduction: for the flavour-diagonal coefficient functions
   `c_i δ_{ij} δ(1 - y) δ(1 - w)`, at leading order with `c_i = e_i²`, the double convolution is
-  `∑ᵢ c_i f_i (x) D_i (z)` (`doubleConvStructureFunction_of_diagonal_ofDeltaDelta`);
-* compatibility with `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` in the
-  fragmentation variable only: for the coefficient function `δ_{ij} b_i (y) δ(1 - w)`, with `b_i`
-  the coefficient function of a collinear hard kernel, the double convolution is
-  `sidisStructureFunction`
-  (`doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction`, from the
-  single-channel `CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel`).
+  `∑ᵢ c_i f_i (x) D_i (z)` (`doubleConvStructureFunction_of_diagonal_ofDeltaDelta_of_mem`);
+* compatibility with `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` for a
+  coefficient function whose delta function sits in the fragmentation variable: for the
+  coefficient function `δ_{ij} b_i (y) δ(1 - w)`, with `b_i` the coefficient function of a
+  collinear hard kernel, the double convolution equals `sidisStructureFunction` on `(0,1]²`
+  (`doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction_of_mem`,
+  from the single-channel `CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel_of_mem`).
+  The channel `sidisChannel C' f D h i x z Q2 = loChannel C' f i x Q2 * D h i z Q2` has no
+  convolution in `z` at all, so `δ(1 - w)` matches it exactly, while the parton side carries the
+  hard kernel.
 
 The leading-order coefficient function, with delta functions in both variables, is not related to
 `sidisStructureFunction` here, and cannot be while `Factorization.DIS.HardKernel` is a function
@@ -338,10 +341,10 @@ theorem doubleConv_ofRegularDelta_of_mem (b f D : ℝ → ℝ) (x : ℝ) {z : �
 /-- The double convolution with `b (y) δ(1 - w)` against a collinear kernel `K` with coefficient
 function `b`: the collinear convolution `convolveAt K` of the density in `x`, times the
 fragmentation density at `z`, on `(0,1]²`. -/
-theorem doubleConv_ofRegularDelta_eq_convolveAt {K : Kernel} {b : ℝ → ℝ}
+theorem doubleConv_ofRegularDelta_eq_convolveAt_of_mem {K : Kernel} {b : ℝ → ℝ}
     (hK : IsCollinearKernel K b) (f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
     (hz : z ∈ Ioc (0 : ℝ) 1) : (ofRegularDelta b).doubleConv f D x z = convolveAt K f x * D z := by
-  rw [doubleConv_ofRegularDelta_of_mem _ _ _ _ hz, hK.convolveAt_eq_mellinConv _ hx]
+  rw [doubleConv_ofRegularDelta_of_mem _ _ _ _ hz, hK.convolveAt_eq_mellinConv_of_mem _ hx]
 
 /-- Transposition exchanges `b (y) δ(1 - w)` with `δ(1 - y) b (w)`. -/
 @[simp]
@@ -458,7 +461,7 @@ theorem doubleConvStructureFunction_of_diagonal [Fintype Flavor]
 /-- **The leading-order structure function.** For a coefficient function diagonal in flavour at
 the scale `Q2`, with diagonal entries `c_i δ(1 - y) δ(1 - w)` (at leading order `c_i = e_i²`, with
 `e_i` the charge of flavour `i`), the structure function is `∑ᵢ c_i f_i (x) D_i (z)` on `(0,1]²`. -/
-theorem doubleConvStructureFunction_of_diagonal_ofDeltaDelta [Fintype Flavor]
+theorem doubleConvStructureFunction_of_diagonal_ofDeltaDelta_of_mem [Fintype Flavor]
     (C : Flavor → Flavor → ℝ → CoefficientFunction) (c : Flavor → ℝ)
     (f : Particles.Parton.PDF.Pdf Flavor) (D : Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron) {x z Q2 : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1)
@@ -469,26 +472,32 @@ theorem doubleConvStructureFunction_of_diagonal_ofDeltaDelta [Fintype Flavor]
   exact Finset.sum_congr rfl fun i _ => by
     rw [hc i, CoefficientFunction.doubleConv_ofDeltaDelta_of_mem _ _ _ hx hz]
 
-/-- **Compatibility with `sidisStructureFunction` in a single channel.** If the hard kernel `C'`
-of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` is, at the scale `Q2` and for
-the flavour `i`, the collinear kernel of the coefficient function `b`, then the channel
-`sidisChannel` is the double convolution with `b (y) δ(1 - w)` on `(0,1]²`. -/
-theorem CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel
+/-- **Compatibility with `sidisStructureFunction` in a single channel, for a coefficient function
+whose delta function sits in the fragmentation variable.** If the hard kernel `C'` of
+`EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` is, at the scale `Q2` and for the
+flavour `i`, the collinear kernel of the coefficient function `b`, then the channel `sidisChannel`
+is the double convolution with `b (y) δ(1 - w)` on `(0,1]²`. The channel
+`sidisChannel C' f D h i x z Q2 = loChannel C' f i x Q2 * D h i z Q2` has no convolution in `z`,
+so `δ(1 - w)` matches it exactly, while the parton side carries the hard kernel. -/
+theorem CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel_of_mem
     (C' : DIS.HardKernel Flavor) (b : ℝ → ℝ) (i : Flavor) {Q2 : ℝ}
     (hc : Convolution.IsCollinearKernel (fun x' z => C' i x' z Q2) b)
     (f : Particles.Parton.PDF.Pdf Flavor) (D : Particles.Fragmentation.Frag Hadron Flavor)
     (h : Hadron) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) :
     (ofRegularDelta b).doubleConv (fun y => f i y Q2) (fun y => D h i y Q2) x z =
       Scattering.DIS.SIDIS.sidisChannel C' f D h i x z Q2 := by
-  rw [doubleConv_ofRegularDelta_eq_convolveAt hc _ _ hx hz, Scattering.DIS.SIDIS.sidisChannel,
-    DIS.loChannel]
+  rw [doubleConv_ofRegularDelta_eq_convolveAt_of_mem hc _ _ hx hz,
+    Scattering.DIS.SIDIS.sidisChannel, DIS.loChannel]
 
-/-- **Compatibility with `sidisStructureFunction` in the fragmentation variable.** If the hard
+/-- **Compatibility with `sidisStructureFunction` for a coefficient function whose delta function
+sits in the fragmentation variable.** The two structure functions are equal on `(0,1]²`: each
+channel `sidisChannel C' f D h i x z Q2 = loChannel C' f i x Q2 * D h i z Q2` has no convolution in
+`z`, so `δ(1 - w)` matches it exactly, while the parton side carries the hard kernel. If the hard
 kernel `C'` of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.sidisStructureFunction` is, at the scale
 `Q2`, the collinear kernel of the coefficient function `b i` for every flavour `i`, then
 `sidisStructureFunction` is the double convolution with a coefficient function diagonal in
 flavour at `Q2`, with diagonal entries `b_i (y) δ(1 - w)`, on `(0,1]²`. -/
-theorem doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction
+theorem doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructureFunction_of_mem
     [Fintype Flavor]
     (C' : DIS.HardKernel Flavor) (b : Flavor → ℝ → ℝ) {Q2 : ℝ}
     (hc : ∀ i, Convolution.IsCollinearKernel (fun x' z => C' i x' z Q2) (b i))
@@ -502,8 +511,8 @@ theorem doubleConvStructureFunction_of_diagonal_ofRegularDelta_eq_sidisStructure
     Scattering.DIS.SIDIS.sidisStructureFunction]
   exact Finset.sum_congr rfl fun i _ => by
     rw [hCc i]
-    exact CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel C' (b i) i (hc i) f D h
-      hx hz
+    exact CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel_of_mem C' (b i) i (hc i)
+      f D h hx hz
 
 end SIDIS
 end DIS

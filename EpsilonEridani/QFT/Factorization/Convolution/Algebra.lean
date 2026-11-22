@@ -36,7 +36,7 @@ The value at `x = 0` is set to zero rather than to the integral: at `x = 0` the 
 - `mellinConv_apply_of_mem`: the defining integral on `(0,1]`.
 - `support_mellinConv_subset`: the convolution is supported in `(0,1]`.
 - `mellinConv_comm`: commutativity, with no hypothesis on `f` or `g`.
-- `IsCollinearKernel.convolveAt_eq_mellinConv`: a collinear kernel convolves as `mellinConv`.
+- `IsCollinearKernel.convolveAt_eq_mellinConv_of_mem`: a collinear kernel convolves as `mellinConv`.
 - `mellinConv_congr_of_eqOn`: only the values on `(0,1]` enter the convolution.
 - `mellinConv_smul_left`, `mellinConv_neg_left`, `mellinConv_add_left_apply`,
   `mellinConv_sub_left_apply` and their right-hand versions: bilinearity, additivity requiring
@@ -125,7 +125,7 @@ theorem mellinConv_comm (f g : ℝ → ℝ) : mellinConv f g = mellinConv g f :=
 
 /-- A collinear kernel with coefficient function `b` convolves as the Mellin convolution with
 `b` on `(0,1]`. -/
-theorem IsCollinearKernel.convolveAt_eq_mellinConv {K : Kernel} {b : ℝ → ℝ}
+theorem IsCollinearKernel.convolveAt_eq_mellinConv_of_mem {K : Kernel} {b : ℝ → ℝ}
     (h : IsCollinearKernel K b) (g : ℝ → ℝ) {x : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) :
     convolveAt K g x = mellinConv b g x := by
   rw [h.convolveAt_eq, ← mellinConv_apply_eq_convolveAt_of_mem _ _ hx, mellinConv_comm]
