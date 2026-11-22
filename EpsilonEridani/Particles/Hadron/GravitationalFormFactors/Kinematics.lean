@@ -7,9 +7,9 @@ module
 
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.GeneralizedExtensions
-public import EpsilonEridani.Mathematics.Calculus.CompNeg
 public import Physlib.Relativity.Causality.CausallyFollows
 public import Physlib.Relativity.LorentzGroup.Restricted.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Shift
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
 /-!
@@ -159,26 +159,22 @@ lemma minkowskiProduct_avgMomentum_self_eq :
 
 /-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
 lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 :=
-  minkowskiProduct_sub_eq_neg_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_left_sub_eq_neg_minkowskiProduct_sub_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
 lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 :=
-  minkowskiProduct_sub_eq_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_right_sub_eq_minkowskiProduct_sub_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The average momentum paired with the incoming momentum is `P · p = M² - t / 4`. -/
 lemma minkowskiProduct_avgMomentum_p_eq : ⟪K.avgMomentum, K.p⟫ₘ = T.mass ^ 2 - K.tMom / 4 := by
-  rw [K.p_eq_avgMomentum_sub, map_sub, map_smul, smul_eq_mul,
-    minkowskiProduct_avgMomentum_delta_eq_zero, mul_zero, sub_zero,
-    minkowskiProduct_avgMomentum_self_eq]
+  simp [K.p_eq_avgMomentum_sub]
 
 /-- The average momentum paired with the outgoing momentum is `P · p' = M² - t / 4`. -/
 lemma minkowskiProduct_avgMomentum_pPrime_eq :
     ⟪K.avgMomentum, K.pPrime⟫ₘ = T.mass ^ 2 - K.tMom / 4 := by
-  rw [K.pPrime_eq_avgMomentum_add, map_add, map_smul, smul_eq_mul,
-    minkowskiProduct_avgMomentum_delta_eq_zero, mul_zero, add_zero,
-    minkowskiProduct_avgMomentum_self_eq]
+  simp [K.pPrime_eq_avgMomentum_add]
 
 /-- The incoming momentum lies in the causal future of the origin. -/
 lemma causallyFollows_zero_p : causallyFollows 0 K.p :=
@@ -318,7 +314,7 @@ lemma spatialPart_avgMomentum_eq :
   rw [avgMomentum_def, spatialPart_smul, spatialPart_add]
 
 /-- The Breit frame is the frame in which the two target three-momenta are opposite. -/
-lemma isBreitFrame_iff_spatialPart_pPrime :
+lemma isBreitFrame_iff_spatialPart_pPrime_eq_neg :
     K.IsBreitFrame ↔ K.pPrime.spatialPart = -K.p.spatialPart := by
   rw [isBreitFrame_iff, spatialPart_avgMomentum_eq, smul_eq_zero, eq_neg_iff_add_eq_zero,
     add_comm]
@@ -388,34 +384,13 @@ theorem exists_isBreitFrame :
       K'.p = Λ • K.p ∧ K'.pPrime = Λ • K.pPrime ∧ K'.IsBreitFrame := by
   -- the witness is the generalised boost taking the velocity `P / √(P²)` of the average momentum
   -- to rest
-  set P := K.avgMomentum with hPdef
-  have hPP := K.minkowskiProduct_avgMomentum_self_pos
-  set m := √⟪P, P⟫ₘ with hm
-  have hm0 : 0 < m := Real.sqrt_pos.mpr hPP
-  -- the velocity of the average momentum
-  have hu : m⁻¹ • P ∈ Velocity d := by
-    refine Velocity.mem_iff.mpr ⟨?_, ?_⟩
-    · rw [minkowskiProduct_smul_self, inv_pow, hm, Real.sq_sqrt hPP.le, inv_mul_cancel₀ hPP.ne']
-    · simp only [timeComponent, apply_smul]
-      exact mul_pos (inv_pos.mpr hm0) K.timeComponent_avgMomentum_pos
-  set u : Velocity d := ⟨m⁻¹ • P, hu⟩ with hudef
-  set Λ := LorentzGroup.generalizedBoost u 0 with hΛ
-  have hΛP : Λ • P = m • (0 : Velocity d).1 := by
-    have h := LorentzGroup.generalizedBoost_apply_fst u 0
-    rw [← hΛ, hudef, smul_comm] at h
-    rw [← h, smul_smul, mul_inv_cancel₀ hm0.ne', one_smul]
-  -- pairing with the average momentum reads off `m` times the boosted energy
-  have hpos : ∀ x : Vector d, T.mass ^ 2 ≤ ⟪P, x⟫ₘ → 0 < (Λ • x).timeComponent := by
-    intro x hx
-    have hPx : ⟪P, x⟫ₘ = m * (Λ • x).timeComponent := by
-      rw [← LorentzGroup.minkowskiProduct_eq_timeComponent_generalizedBoost_smul, hudef,
-        map_smul, _root_.smul_apply, smul_eq_mul, mul_inv_cancel_left₀ hm0.ne']
-    rw [hPx] at hx
-    exact pos_of_mul_pos_right ((pow_pos T.mass_pos 2).trans_le hx) hm0.le
-  have hp : T.mass ^ 2 ≤ ⟪P, K.p⟫ₘ := by
+  obtain ⟨Λ, hΛ, hΛP, hpos⟩ := LorentzGroup.exists_mem_restricted_spatialPart_smul_eq_zero
+    K.minkowskiProduct_avgMomentum_self_pos K.timeComponent_avgMomentum_pos
+  have hM := pow_pos T.mass_pos 2
+  have hp : 0 < ⟪K.avgMomentum, K.p⟫ₘ := by
     rw [K.minkowskiProduct_avgMomentum_p_eq]
     linarith [K.tMom_nonpos]
-  have hp' : T.mass ^ 2 ≤ ⟪P, K.pPrime⟫ₘ := by
+  have hp' : 0 < ⟪K.avgMomentum, K.pPrime⟫ₘ := by
     rw [K.minkowskiProduct_avgMomentum_pPrime_eq]
     linarith [K.tMom_nonpos]
   let K' : ElasticKinematics T d :=
@@ -426,10 +401,9 @@ theorem exists_isBreitFrame :
         rw [minkowskiProduct_invariant, K.minkowskiProduct_pPrime_self]
       timeComponent_p_pos := hpos _ hp
       timeComponent_pPrime_pos := hpos _ hp' }
-  have hav : K'.avgMomentum = Λ • P := by
-    rw [avgMomentum_def, hPdef, avgMomentum_def, smul_comm, Lorentz.Vector.smul_add]
-  refine ⟨Λ, LorentzGroup.generalizedBoost_mem_restricted _ _, K', rfl, rfl, ?_⟩
-  rw [isBreitFrame_iff, hav, hΛP, spatialPart_smul, Velocity.spatialPart_zero, _root_.smul_zero]
+  have hav : K'.avgMomentum = Λ • K.avgMomentum := by
+    rw [avgMomentum_def, avgMomentum_def, smul_comm, Lorentz.Vector.smul_add]
+  exact ⟨Λ, hΛ, K', rfl, rfl, by rw [isBreitFrame_iff, hav, hΛP]⟩
 
 end ElasticKinematics
 
@@ -454,6 +428,11 @@ lemma ofLiteratureT_toNNReal (f : ℝ → ℝ) {q : ℝ} (hq : 0 ≤ q) :
     ofLiteratureT f q.toNNReal = f (-q) := by
   rw [ofLiteratureT_apply, Real.coe_toNNReal q hq]
 
+/-- On `Q² ≥ 0` read as a real number, the translated function agrees with `Q² ↦ f (-Q²)`. -/
+lemma eqOn_ofLiteratureT_toNNReal (f : ℝ → ℝ) :
+    EqOn (fun q : ℝ => ofLiteratureT f q.toNNReal) (fun q => f (-q)) (Ici 0) :=
+  fun _ hq => ofLiteratureT_toNNReal f hq
+
 /-- Two functions of `t` give the same function of `Q²` exactly when they agree on `t ≤ 0`. -/
 lemma ofLiteratureT_eq_ofLiteratureT_iff {f g : ℝ → ℝ} :
     ofLiteratureT f = ofLiteratureT g ↔ EqOn f g (Iic 0) := by
@@ -462,30 +441,25 @@ lemma ofLiteratureT_eq_ofLiteratureT_iff {f g : ℝ → ℝ} :
   rwa [ofLiteratureT_toNNReal f (neg_nonneg.mpr ht), ofLiteratureT_toNNReal g (neg_nonneg.mpr ht),
     neg_neg] at h'
 
+open scoped Pointwise in
 /-- The slope in `Q²` at the origin is minus the slope in `t`: `ofLiteratureT f`, read on `Q² ≥ 0`,
 has right derivative `f'` at `0` exactly when `f` has left derivative `-f'` at `0`. -/
 theorem hasDerivWithinAt_ofLiteratureT_iff {f : ℝ → ℝ} {f' : ℝ} :
     HasDerivWithinAt (fun q : ℝ => ofLiteratureT f q.toNNReal) f' (Ici 0) 0 ↔
       HasDerivWithinAt f (-f') (Iic 0) 0 := by
-  have hEq : EqOn (fun q : ℝ => ofLiteratureT f q.toNNReal) (fun q => f (-q)) (Ici 0) :=
-    fun q hq => ofLiteratureT_toNNReal f hq
-  rw [(Filter.eventuallyEq_of_mem self_mem_nhdsWithin hEq).hasDerivWithinAt_iff_of_mem
-    (by simp)]
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · have h' := HasDerivWithinAt.comp_neg (f := fun x => f (-x)) (s := Iic 0) (x := 0)
-      (by rwa [neg_Iic, neg_zero])
-    simpa only [neg_neg] using h'
-  · have h' := HasDerivWithinAt.comp_neg (f := f) (f' := -f') (s := Ici 0) (x := 0)
-      (by rwa [neg_Ici, neg_zero])
-    rwa [neg_neg] at h'
+  rw [(Filter.eventuallyEq_of_mem self_mem_nhdsWithin (eqOn_ofLiteratureT_toNNReal f)
+    ).hasDerivWithinAt_iff_of_mem (by simp)]
+  -- `x ↦ f (-x)` is `f` composed with multiplication by `-1`
+  simpa [neg_one_mul, MulAction.one_smul] using
+    hasDerivWithinAt_comp_mul_left_smul_iff (c := (-1 : ℝ)) (f := f) (f' := -f') (s := Ici 0)
+      (x := 0)
 
 /-- The slope in `Q²` at the origin is minus the slope in `t` at the origin. -/
 theorem derivWithin_ofLiteratureT (f : ℝ → ℝ) :
     derivWithin (fun q : ℝ => ofLiteratureT f q.toNNReal) (Ici 0) 0 =
       -derivWithin f (Iic 0) 0 := by
-  have hEq : EqOn (fun q : ℝ => ofLiteratureT f q.toNNReal) (fun q => f (-q)) (Ici 0) :=
-    fun q hq => ofLiteratureT_toNNReal f hq
-  rw [derivWithin_congr hEq (by simp), derivWithin_comp_neg, neg_zero, Set.neg_Ici, neg_zero]
+  rw [derivWithin_congr (eqOn_ofLiteratureT_toNNReal f) (by simp), derivWithin_comp_neg,
+    neg_zero, Set.neg_Ici, neg_zero]
 
 /-- `∫_0^∞ dQ²` of the translated function is `∫_{-∞}^0 dt` of the original. -/
 theorem setIntegral_ofLiteratureT (f : ℝ → ℝ) :

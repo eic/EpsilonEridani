@@ -101,13 +101,13 @@ lemma minkowskiProduct_inv_two_smul_add_self_eq {m : ℝ} (hu : ⟪u, u⟫ₘ = 
   ring
 
 /-- For two vectors of equal Minkowski square, `⟪u, v - u⟫ₘ = -⟪v - u, v - u⟫ₘ / 2`. -/
-lemma minkowskiProduct_sub_eq_neg_minkowskiProduct_sub_self_div_two (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) :
+lemma minkowskiProduct_left_sub_eq_neg_minkowskiProduct_sub_self_div_two (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) :
     ⟪u, v - u⟫ₘ = -⟪v - u, v - u⟫ₘ / 2 := by
   rw [minkowskiProduct_sub_self, map_sub, ← h, minkowskiProduct_symm v u]
   ring
 
 /-- For two vectors of equal Minkowski square, `⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`. -/
-lemma minkowskiProduct_sub_eq_minkowskiProduct_sub_self_div_two (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) :
+lemma minkowskiProduct_right_sub_eq_minkowskiProduct_sub_self_div_two (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) :
     ⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2 := by
   rw [minkowskiProduct_sub_self, map_sub, h]
   ring

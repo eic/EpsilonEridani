@@ -286,12 +286,12 @@ lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2
 
 /-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
 lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 :=
-  minkowskiProduct_sub_eq_neg_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_left_sub_eq_neg_minkowskiProduct_sub_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
 lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 :=
-  minkowskiProduct_sub_eq_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_right_sub_eq_minkowskiProduct_sub_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The plus-component of the momentum transfer is `Δ⁺ = -2 ξ P⁺`. -/
