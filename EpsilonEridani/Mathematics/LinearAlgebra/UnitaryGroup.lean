@@ -32,6 +32,7 @@ namespace RCLike
 variable {𝕜 : Type*} [RCLike 𝕜]
 
 /-- An element of an `RCLike` field is unitary iff it has norm one. -/
+@[simp]
 theorem mem_unitary_iff_norm_eq_one {x : 𝕜} : x ∈ unitary 𝕜 ↔ ‖x‖ = 1 := by
   rw [Unitary.mem_iff_star_mul_self, star_def, conj_mul,
     ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]
@@ -44,6 +45,7 @@ namespace Matrix
 variable {n R 𝕜 : Type*} [Fintype n] [DecidableEq n]
 
 /-- A matrix with a single row and column is unitary iff its entry is unitary. -/
+@[simp]
 theorem mem_unitary_iff_apply_default_mem_unitary [Semiring R] [StarRing R] [Unique n]
     (S : Matrix n n R) : S ∈ unitary (Matrix n n R) ↔ S default default ∈ unitary R := by
   -- With one row and column, `S` is the diagonal matrix of its constant entry.

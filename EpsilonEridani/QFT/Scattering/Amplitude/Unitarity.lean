@@ -47,6 +47,8 @@ is determined by `t` modulo `π`.
 * `sMatrix_mem_unitaryGroup_iff`: `S` is unitary iff `T - Tᴴ = 2 i Tᴴ ρ T`.
 * `sMatrix_mem_unitaryGroup_iff_inv`: for invertible `T`, `S` is unitary iff
   `T⁻¹ - (T⁻¹)ᴴ = -2 i ρ`.
+* `sMatrix_mem_unitaryGroup_iff_imaginaryPart`: for invertible `T`, `S` is unitary iff
+  `ℑ T⁻¹ = -ρ`, for Mathlib's imaginary part `ℑ`.
 * `sMatrix_mem_unitaryGroup_iff_isHermitian`: for invertible `T`, `S` is unitary iff `T⁻¹ + i ρ`
   is Hermitian.
 * `norm_elasticSMatrix`: `|S| = 2ρ |t - i / 2ρ|`, the distance from the centre of the Argand circle.
@@ -58,7 +60,8 @@ is determined by `t` modulo `π`.
 * `norm_elasticSMatrix_le_one_iff_norm_sub_le`: `|S| ≤ 1` is the disc bounded by the Argand circle.
 * `norm_elasticSMatrix_eq_one_iff_im_eq_mul_normSq`: single-channel unitarity is `Im t = ρ |t|²`.
 * `norm_le_one_div_of_norm_elasticSMatrix_le_one`: the unitarity bound `|t| ≤ 1 / ρ`, for `|S| ≤ 1`.
-* `norm_elasticSMatrix_eq_one_iff_inv_im_eq_neg`: single-channel unitarity is `Im t⁻¹ = -ρ`.
+* `norm_elasticSMatrix_eq_one_iff_inv_im_eq_neg`: for a non-zero amplitude, single-channel unitarity
+  is `Im t⁻¹ = -ρ`.
 * `norm_elasticSMatrix_eq_one_iff_exists_real_phaseShiftAmplitude`: single-channel unitarity is
   the existence of a real phase shift, and
   `phaseShiftAmplitude_eq_phaseShiftAmplitude_iff_exists_int` its uniqueness modulo `π`.
@@ -79,7 +82,7 @@ public section
 
 namespace EpsilonEridani.QFT.Scattering.Amplitude
 
-open Complex Matrix
+open Complex Matrix ComplexStarModule
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
@@ -159,6 +162,18 @@ theorem sMatrix_mem_unitaryGroup_iff_inv {ρ : n → ℝ} (hρ : ∀ i, 0 < ρ i
           rw [← this, neg_sub]
       _ = (2 * I) • (Tᴴ * D * T) := by
           rw [h, Matrix.mul_smul, Matrix.smul_mul, neg_smul, neg_neg]
+
+/-- **Unitarity as `Im T⁻¹ = -ρ`.** For positive phase-space factors and an invertible `T`, the
+partial-wave S-matrix is unitary iff the imaginary part `ℑ T⁻¹ = (T⁻¹ - (T⁻¹)ᴴ) / 2i` is `-ρ`. -/
+theorem sMatrix_mem_unitaryGroup_iff_imaginaryPart {ρ : n → ℝ} (hρ : ∀ i, 0 < ρ i)
+    {T : Matrix n n ℂ} (hT : IsUnit T.det) :
+    sMatrix ρ T ∈ unitaryGroup n ℂ ↔ (ℑ T⁻¹ : Matrix n n ℂ) = -diagonal (fun i ↦ (ρ i : ℂ)) := by
+  have hc : -I * ((2⁻¹ : ℝ) : ℂ) ≠ 0 := by simp
+  have hi : (-I * ((2⁻¹ : ℝ) : ℂ))⁻¹ = 2 * I := by
+    rw [ofReal_inv, ofReal_ofNat, mul_inv, inv_inv, inv_neg, inv_I, neg_neg, mul_comm]
+  -- `ℑ T⁻¹ = (-i / 2) • (T⁻¹ - (T⁻¹)ᴴ)`, and `-i / 2` is invertible with inverse `2 i`.
+  rw [sMatrix_mem_unitaryGroup_iff_inv hρ hT, imaginaryPart_apply_coe, star_eq_conjTranspose,
+    ← Complex.coe_smul, smul_smul, ← eq_inv_smul_iff₀ hc, hi, smul_neg, neg_smul]
 
 /-- **Unitarity as Hermiticity of `T⁻¹ + i ρ`.** For positive phase-space factors and an
 invertible `T`, the partial-wave S-matrix is unitary iff `T⁻¹ + i ρ` is Hermitian; this Hermitian
