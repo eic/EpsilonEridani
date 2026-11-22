@@ -20,8 +20,8 @@ traverses.
   lies in the set `S`, which is the support of the nuclear density: the Lebesgue measure of the set
   `pathParameters S x v = {s | 0 ≤ s ∧ x + s • v ∈ S}`. For a support star-shaped about the
   production point this is the path parameter at which the ray leaves `S`, which for `‖v‖ = 1` is
-  the distance from `x` to the boundary of `S` along the ray (`geometricPathLength_eq_sSup`); when
-  the ray never leaves `S`, both sides are `0`.
+  the distance along the ray from `x` to its exit point
+  (`geometricPathLength_eq_sSup_of_starConvex`); when the ray never leaves `S`, both sides are `0`.
 * The *density-weighted path length* `densityWeightedPathLength ρ ρ₀ x v` is the integral of the
   density `ρ` along the ray, divided by the central density `ρ₀`: the length of uniform medium of
   density `ρ₀` with the same number of nucleons per unit area along the ray.
@@ -63,14 +63,17 @@ The ambient space is any real normed space; the physical case is three-dimension
 * `densityWeightedPathLength_indicator_const`: for the uniform density `c` on `S`, the
   density-weighted path length is `c / ρ₀` times the geometric one.
 * `densityWeightedPathLength_smul`, `densityWeightedPathLength_smul_mul`: the density-weighted path
-  length is linear in the density, and depends on the profile only through its shape, i.e. it is
-  unchanged when the density and the central density are rescaled together.
-* `geometricPathLength_eq_sSup`: for a support star-shaped about `x`, the geometric path length is
-  the supremum of the path parameters `s ≥ 0` with `x + s • v ∈ S`, which for `‖v‖ = 1` is the
-  distance from `x` to the boundary of the support along the ray.
-* `geometricPathLength_closedBall`: for the hard sphere of radius `R` about `c` and a unit
-  direction, the geometric path length from a point `x` of the sphere is
-  `√(⟪x - c, v⟫² + R² - ‖x - c‖²) - ⟪x - c, v⟫`.
+  length is homogeneous in the density, and depends on the profile only through its shape, i.e. it
+  is unchanged when the density and the central density are rescaled by the same nonzero factor.
+* `geometricPathLength_eq_sSup`, `geometricPathLength_eq_sSup_of_starConvex`: when the path
+  parameters are star-shaped about `0` (for instance for a support star-shaped about `x`), the
+  geometric path length is the supremum of the path parameters `s ≥ 0` with `x + s • v ∈ S`: the
+  parameter at which the ray leaves `S`, which for `‖v‖ = 1` is the distance along the ray from `x`
+  to its exit point.
+* `pathParameters_closedBall`, `geometricPathLength_closedBall`: for the hard sphere of radius `R`
+  about `c` and a unit direction, the path parameters from a point `x` of the sphere form the
+  interval from `0` to `√(⟪x - c, v⟫² + R² - ‖x - c‖²) - ⟪x - c, v⟫`, which is the geometric path
+  length.
 
 ## References
 
@@ -189,17 +192,9 @@ theorem volume_pathParameters_ne_top_of_isBounded (hS : Bornology.IsBounded S) (
 of the support. That it is the honest measure of the set of path parameters, not the junk value
 `0`, is `volume_pathParameters_ne_top_of_isBounded`. -/
 theorem geometricPathLength_le_diam (hS : Bornology.IsBounded S) (hv : ‖v‖ = 1) :
-    geometricPathLength S x v ≤ diam S :=
-  ENNReal.toReal_mono hS.ediam_ne_top (volume_pathParameters_le_ediam hv)
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- A density bounded in absolute value by `M` and supported in `S` is dominated by the uniform
-density `M` on `S`. -/
-private theorem abs_le_indicator_const (hρS : Function.support ρ ⊆ S) {M : ℝ}
-    (hρM : ∀ y, |ρ y| ≤ M) (y : E) : |ρ y| ≤ S.indicator (fun _ => M) y := by
-  by_cases hy : y ∈ S
-  · simpa [Set.indicator_of_mem hy] using hρM y
-  · simp [Set.indicator_of_notMem hy, Function.notMem_support.1 fun h => hy (hρS h)]
+    geometricPathLength S x v ≤ diam S := by
+  rw [geometricPathLength_def, measureReal_def, Metric.diam]
+  exact ENNReal.toReal_mono hS.ediam_ne_top (volume_pathParameters_le_ediam hv)
 
 section Measurable
 
@@ -212,6 +207,7 @@ private theorem measurableSet_preimage_ray (hS : MeasurableSet S) :
     MeasurableSet ((fun s : ℝ => x + s • v) ⁻¹' S) :=
   hS.preimage (measurable_ray x v)
 
+@[measurability]
 theorem measurableSet_pathParameters (hS : MeasurableSet S) (x v : E) :
     MeasurableSet (pathParameters S x v) := by
   rw [pathParameters_eq_preimage_inter]
@@ -249,7 +245,9 @@ theorem integrableOn_Ici_comp_add_smul (hS : MeasurableSet S)
     IntegrableOn (fun s : ℝ => ρ (x + s • v)) (Ici 0) :=
   (integrableOn_indicator_const hS hfin M).mono'
     (hρm.comp (measurable_ray x v)).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun _ => abs_le_indicator_const hρS hρM _)
+    (Filter.Eventually.of_forall fun _ => (Real.norm_eq_abs _).trans_le <|
+      Set.le_indicator (f := fun y => |ρ y|) (fun y _ => hρM y)
+        (fun y hy => by simp [Function.notMem_support.1 fun h => hy (hρS h)]) _)
 
 /-- For a nonnegative density bounded by `M`, supported in a measurable set `S` whose set of path
 parameters along the ray has finite measure (for a bounded `S` and `‖v‖ = 1`, see
@@ -262,10 +260,10 @@ theorem densityWeightedPathLength_le_mul_geometricPathLength (hS : MeasurableSet
   rw [← densityWeightedPathLength_indicator_const hS, densityWeightedPathLength_def,
     densityWeightedPathLength_def]
   refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hρ₀)
-  refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ => hρ _)
-    (integrableOn_indicator_const hS hfin M) (Filter.Eventually.of_forall fun s => ?_)
-  exact (le_abs_self _).trans <| abs_le_indicator_const hρS
-    (fun y => (abs_of_nonneg (hρ y)).trans_le (hρM y)) _
+  exact integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ => hρ _)
+    (integrableOn_indicator_const hS hfin M) (Filter.Eventually.of_forall fun _ =>
+      Set.le_indicator (fun y _ => hρM y) (fun y hy => (Function.notMem_support.1 fun h =>
+        hy (hρS h)).le) _)
 
 variable [SecondCountableTopology E]
 
@@ -279,6 +277,8 @@ theorem measurable_geometricPathLength (hS : MeasurableSet S) :
   have hset : MeasurableSet {q : (E × E) × ℝ | 0 ≤ q.2 ∧ q.1.1 + q.2 • q.1.2 ∈ S} :=
     (measurableSet_le measurable_const measurable_snd).inter
       (hS.preimage measurable_rayProd)
+  simp only [geometricPathLength_def, measureReal_def]
+  -- The section of `hset` at `p` is, by definition, `pathParameters S p.1 p.2`.
   exact (measurable_measure_prodMk_left hset).ennreal_toReal
 
 /-- The density-weighted path length of a measurable density is measurable in the production
@@ -308,23 +308,25 @@ theorem Measurable.densityWeightedPathLength {α : Type*} [MeasurableSpace α] (
 
 end Measurable
 
-/-- For a support star-shaped about the production point (for instance a convex support containing
-it), the geometric path length is the supremum of the path parameters `s ≥ 0` with
+/-- For a support star-shaped about the production point, the path parameters are star-shaped
+about `0`: with `t` they contain `[0, t]`. -/
+theorem starConvex_pathParameters (hS : StarConvex ℝ x S) (v : E) :
+    StarConvex ℝ 0 (pathParameters S x v) := by
+  rintro t ⟨ht0, ht⟩ a b ha hb hab
+  rw [smul_zero, zero_add, smul_eq_mul, mem_pathParameters]
+  refine ⟨mul_nonneg hb ht0, ?_⟩
+  convert hS ht ha hb hab using 1
+  rw [smul_add, smul_smul, ← add_assoc, ← add_smul, hab, one_smul]
+
+/-- When the path parameters are star-shaped about `0`, i.e. the ray does not re-enter `S` once
+it has left it, the geometric path length is the supremum of the path parameters `s ≥ 0` with
 `x + s • v ∈ S`: the path parameter at which the ray leaves `S`, which for `‖v‖ = 1` is the distance
-from `x` to the boundary of the support along the ray. (Both sides are `0` when the ray never
-leaves `S`, and when `S` is empty.) -/
-theorem geometricPathLength_eq_sSup (hS : StarConvex ℝ x S) :
+along the ray from `x` to its exit point. (Both sides are `0` when the ray never leaves `S`, and
+when it never meets `S`.) -/
+theorem geometricPathLength_eq_sSup (hT : StarConvex ℝ 0 (pathParameters S x v)) :
     geometricPathLength S x v = sSup (pathParameters S x v) := by
   rw [geometricPathLength_def]
-  set T := pathParameters S x v with hT_def
-  -- `T` is the intersection of `Ici 0` with a preimage of `S` star-shaped about `0`.
-  have hT : StarConvex ℝ 0 T := by
-    rw [hT_def, pathParameters_eq_preimage_inter]
-    refine StarConvex.inter ?_ ((convex_Ici 0).starConvex (mem_Ici.2 le_rfl))
-    change StarConvex ℝ 0 ((fun s : ℝ => s • v) ⁻¹' ((fun y => x + y) ⁻¹' S))
-    refine StarConvex.is_linear_preimage ?_ (IsLinearMap.isLinearMap_smul' v)
-    rw [zero_smul]
-    exact StarConvex.preimage_add_right (by rwa [add_zero])
+  set T := pathParameters S x v
   rcases T.eq_empty_or_nonempty with hTe | hTne
   · rw [hTe, measureReal_empty, Real.sSup_empty]
   have hT0 : (0 : ℝ) ∈ T := hT.mem hTne
@@ -348,6 +350,12 @@ theorem geometricPathLength_eq_sSup (hS : StarConvex ℝ x S) :
     have hvol : volume T = ⊤ := top_unique (Real.volume_Ici.symm.trans_le (measure_mono h))
     rw [measureReal_def, hvol, ENNReal.toReal_top, Real.sSup_of_not_bddAbove hb]
 
+/-- For a support star-shaped about the production point (for instance a convex support containing
+it), the geometric path length is the path parameter at which the ray leaves `S`. -/
+theorem geometricPathLength_eq_sSup_of_starConvex (hS : StarConvex ℝ x S) :
+    geometricPathLength S x v = sSup (pathParameters S x v) :=
+  geometricPathLength_eq_sSup (starConvex_pathParameters hS v)
+
 end NormedSpace
 
 section InnerProductSpace
@@ -355,14 +363,11 @@ section InnerProductSpace
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- The hard sphere: for a point `x` of the closed ball of radius `R` about `c` and a unit
-direction `v`, the geometric path length is the larger root
-`√(⟪x - c, v⟫² + R² - ‖x - c‖²) - ⟪x - c, v⟫` of `‖x + s • v - c‖ = R`. Together with
-`densityWeightedPathLength_indicator_const` this gives both path-length functionals of the uniform
-sphere in closed form. -/
-theorem geometricPathLength_closedBall {c x v : F} {R : ℝ} (hx : x ∈ closedBall c R)
-    (hv : ‖v‖ = 1) :
-    geometricPathLength (closedBall c R) x v =
-      √(⟪x - c, v⟫_ℝ ^ 2 + R ^ 2 - ‖x - c‖ ^ 2) - ⟪x - c, v⟫_ℝ := by
+direction `v`, the path parameters inside the ball form the interval from `0` to the larger root
+`√(⟪x - c, v⟫² + R² - ‖x - c‖²) - ⟪x - c, v⟫` of `‖x + s • v - c‖ = R`. -/
+theorem pathParameters_closedBall {c x v : F} {R : ℝ} (hx : x ∈ closedBall c R) (hv : ‖v‖ = 1) :
+    pathParameters (closedBall c R) x v =
+      Icc 0 (√(⟪x - c, v⟫_ℝ ^ 2 + R ^ 2 - ‖x - c‖ ^ 2) - ⟪x - c, v⟫_ℝ) := by
   set b := ⟪x - c, v⟫_ℝ
   set D := b ^ 2 + R ^ 2 - ‖x - c‖ ^ 2
   have hxc : ‖x - c‖ ≤ R := by rwa [mem_closedBall, dist_eq_norm] at hx
@@ -373,22 +378,34 @@ theorem geometricPathLength_closedBall {c x v : F} {R : ℝ} (hx : x ∈ closedB
   have hD : 0 ≤ D := (sq_nonneg b).trans hb2
   have hbD := abs_le.1 (Real.abs_le_sqrt hb2)
   -- `‖x + s • v - c‖ ≤ R` is the quadratic inequality `(s + b)² ≤ D`.
-  have hset : pathParameters (closedBall c R) x v = Icc 0 (√D - b) := by
-    ext s
-    have hnorm : ‖x + s • v - c‖ ^ 2 = (s + b) ^ 2 - D + R ^ 2 := by
-      rw [show x + s • v - c = (x - c) + s • v by abel, norm_add_sq_real, inner_smul_right,
-        norm_smul, hv, Real.norm_eq_abs, mul_one, sq_abs]
-      ring
-    simp only [mem_pathParameters, mem_Icc, mem_closedBall, dist_eq_norm,
-      ← sq_le_sq₀ (norm_nonneg _) hR, hnorm, and_congr_right_iff]
-    intro hs
-    rw [show (s + b) ^ 2 - D + R ^ 2 ≤ R ^ 2 ↔ (s + b) ^ 2 ≤ D by
-      constructor <;> intro h <;> linarith, Real.sq_le hD]
-    constructor
-    · exact fun h => by linarith [h.2]
-    · exact fun h => ⟨by linarith, by linarith⟩
-  rw [geometricPathLength_def, hset, Real.volume_real_Icc, sub_zero,
-    max_eq_left (by linarith)]
+  ext s
+  have hnorm : ‖x + s • v - c‖ ^ 2 = (s + b) ^ 2 - D + R ^ 2 := by
+    rw [show x + s • v - c = (x - c) + s • v by abel, norm_add_sq_real, inner_smul_right,
+      norm_smul, hv, Real.norm_eq_abs, mul_one, sq_abs]
+    ring
+  simp only [mem_pathParameters, mem_Icc, mem_closedBall, dist_eq_norm,
+    ← sq_le_sq₀ (norm_nonneg _) hR, hnorm, and_congr_right_iff]
+  intro hs
+  rw [show (s + b) ^ 2 - D + R ^ 2 ≤ R ^ 2 ↔ (s + b) ^ 2 ≤ D by
+    constructor <;> intro h <;> linarith, Real.sq_le hD]
+  constructor
+  · exact fun h => by linarith [h.2]
+  · exact fun h => ⟨by linarith, by linarith⟩
+
+/-- The hard sphere: for a point `x` of the closed ball of radius `R` about `c` and a unit
+direction `v`, the geometric path length is the larger root
+`√(⟪x - c, v⟫² + R² - ‖x - c‖²) - ⟪x - c, v⟫` of `‖x + s • v - c‖ = R`. Together with
+`densityWeightedPathLength_indicator_const` this gives both path-length functionals of the uniform
+sphere in closed form. -/
+theorem geometricPathLength_closedBall {c x v : F} {R : ℝ} (hx : x ∈ closedBall c R)
+    (hv : ‖v‖ = 1) :
+    geometricPathLength (closedBall c R) x v =
+      √(⟪x - c, v⟫_ℝ ^ 2 + R ^ 2 - ‖x - c‖ ^ 2) - ⟪x - c, v⟫_ℝ := by
+  -- The production point itself is in the ball, so the interval is nonempty.
+  have h0 : (0 : ℝ) ∈ pathParameters (closedBall c R) x v := ⟨le_rfl, by simpa using hx⟩
+  rw [pathParameters_closedBall hx hv] at h0
+  rw [geometricPathLength_def, pathParameters_closedBall hx hv, Real.volume_real_Icc, sub_zero,
+    max_eq_left h0.2]
 
 end InnerProductSpace
 
