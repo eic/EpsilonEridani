@@ -341,7 +341,7 @@ theorem doubleConv_ofRegularDelta_of_mem (b f D : ℝ → ℝ) (x : ℝ) {z : �
 /-- The double convolution with `b (y) δ(1 - w)` against a collinear kernel `K` with coefficient
 function `b`: the collinear convolution `convolveAt K` of the density in `x`, times the
 fragmentation density at `z`, on `(0,1]²`. -/
-theorem doubleConv_ofRegularDelta_eq_convolveAt_of_mem {K : Kernel} {b : ℝ → ℝ}
+theorem doubleConv_ofRegularDelta_eq_convolveAt_mul_of_mem {K : Kernel} {b : ℝ → ℝ}
     (hK : IsCollinearKernel K b) (f D : ℝ → ℝ) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1)
     (hz : z ∈ Ioc (0 : ℝ) 1) : (ofRegularDelta b).doubleConv f D x z = convolveAt K f x * D z := by
   rw [doubleConv_ofRegularDelta_of_mem _ _ _ _ hz, hK.convolveAt_eq_mellinConv_of_mem _ hx]
@@ -486,7 +486,7 @@ theorem CoefficientFunction.doubleConv_ofRegularDelta_eq_sidisChannel_of_mem
     (h : Hadron) {x z : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) (hz : z ∈ Ioc (0 : ℝ) 1) :
     (ofRegularDelta b).doubleConv (fun y => f i y Q2) (fun y => D h i y Q2) x z =
       Scattering.DIS.SIDIS.sidisChannel C' f D h i x z Q2 := by
-  rw [doubleConv_ofRegularDelta_eq_convolveAt_of_mem hc _ _ hx hz,
+  rw [doubleConv_ofRegularDelta_eq_convolveAt_mul_of_mem hc _ _ hx hz,
     Scattering.DIS.SIDIS.sidisChannel, DIS.loChannel]
 
 /-- **Compatibility with `sidisStructureFunction` for a coefficient function whose delta function

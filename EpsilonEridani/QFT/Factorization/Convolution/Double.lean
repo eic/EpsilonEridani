@@ -29,7 +29,7 @@ Exchanging the roles of the two densities is a symmetry only together with the t
 the transposition the exchange fails (`exists_doubleMellinConv_swap_densities_ne`), so the two
 arguments of a coefficient function cannot be interchanged silently. A coefficient function
 that is a product `A (y) B (w)` gives the product of the two single convolutions
-(`doubleMellinConv_mul`).
+(`doubleMellinConv_prod_mul`).
 
 ## Main definitions
 
@@ -42,7 +42,7 @@ that is a product `A (y) B (w)` gives the product of the two single convolutions
 * `doubleMellinConv_congr_of_eqOn`: only the values on `(0,1]²` and `(0,1]` enter.
 * `doubleMellinConv_apply_eq_zero_of_notMem_left`, `doubleMellinConv_apply_eq_zero_of_notMem_right`:
   support in `(0,1]²`.
-* `doubleMellinConv_mul`: a product coefficient function factorizes the double convolution.
+* `doubleMellinConv_prod_mul`: a product coefficient function factorizes the double convolution.
 * `doubleMellinConv_zero`, `doubleMellinConv_zero_density_left`,
   `doubleMellinConv_zero_density_right`: the zero coefficient function and the zero densities.
 * `doubleMellinConv_swap`: exchanging the two densities transposes the coefficient function,
@@ -112,8 +112,9 @@ theorem doubleMellinConv_congr_of_eqOn {C C' : ℝ → ℝ → ℝ} {f f' D D' :
 /-- The double Mellin convolution vanishes when the first momentum fraction lies outside
 `(0,1]`. -/
 theorem doubleMellinConv_apply_eq_zero_of_notMem_left (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x : ℝ}
-    (hx : x ∉ Ioc (0 : ℝ) 1) (z : ℝ) : doubleMellinConv C f D x z = 0 :=
-  mellinConv_apply_eq_zero_of_notMem _ _ hx
+    (hx : x ∉ Ioc (0 : ℝ) 1) (z : ℝ) : doubleMellinConv C f D x z = 0 := by
+  rw [doubleMellinConv_def]
+  exact mellinConv_apply_eq_zero_of_notMem _ _ hx
 
 /-- The double Mellin convolution vanishes when the second momentum fraction lies outside
 `(0,1]`. -/
@@ -146,7 +147,7 @@ theorem doubleMellinConv_zero_density_right (C : ℝ → ℝ → ℝ) (f : ℝ �
 /-- **Factorization for a product coefficient function.** If `C (y, w) = A y * B w`, the double
 Mellin convolution is the product of the Mellin convolution of `A` with `f` in `x` and of `B` with
 `D` in `z`. No integrability hypothesis is needed. -/
-theorem doubleMellinConv_mul (A B : ℝ → ℝ) (f D : ℝ → ℝ) (x z : ℝ) :
+theorem doubleMellinConv_prod_mul (A B : ℝ → ℝ) (f D : ℝ → ℝ) (x z : ℝ) :
     doubleMellinConv (fun y w => A y * B w) f D x z = mellinConv A f x * mellinConv B D z := by
   have hin : (fun y => mellinConv (fun w => A y * B w) D z) = mellinConv B D z • A := by
     funext y
@@ -186,11 +187,11 @@ theorem doubleMellinConv_swap (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) {x z
       rw [doubleMellinConv_apply_of_mem _ _ _ hz hx, doubleMellinConv_apply_of_mem _ _ _ hx hz]
       -- Both sides are the iterated integrals, in the two orders, of one function on the
       -- rectangle `[x, 1] × [z, 1]`.
-      set F := fun y w => C y w * (f (x / y) / y) * (D (z / w) / w)
+      set F := fun y w => C y w * (f (x / y) / y) * (D (z / w) / w) with hF
       rw [setIntegral_integral_mul_div (H := Function.swap F) measurableSet_Icc measurableSet_Icc
-          fun w _ y _ => by simp only [F, Function.swap_def]; ring,
+          fun w _ y _ => by rw [Function.swap_def, hF]; ring,
         setIntegral_integral_mul_div (H := F) measurableSet_Icc measurableSet_Icc
-          fun y _ w _ => by simp only [F]; ring,
+          fun y _ w _ => by rw [hF]; ring,
         integral_integral_swap hint]
     · rw [doubleMellinConv_apply_eq_zero_of_notMem_left _ _ _ hz,
         doubleMellinConv_apply_eq_zero_of_notMem_right _ _ _ _ hz]
@@ -203,17 +204,18 @@ function `C (y, w) = y w²` and the density `1` on `(0,1]` in both variables,
 theorem exists_doubleMellinConv_swap_densities_ne :
     ∃ (C : ℝ → ℝ → ℝ) (f D : ℝ → ℝ) (x z : ℝ),
       doubleMellinConv C D f z x ≠ doubleMellinConv C f D x z := by
-  set one := (Ioc (0 : ℝ) 1).indicator (1 : ℝ → ℝ)
   -- The two single convolutions against `1` on `(0,1]`, in closed form.
-  have hA {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1) : mellinConv (fun y => y) one t = 1 - t := by
+  have hA {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1) :
+      mellinConv (fun y => y) ((Ioc (0 : ℝ) 1).indicator 1) t = 1 - t := by
     simpa using mellinConv_pow_succ_indicator_one_apply_of_mem 0 ht
   have hB {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1) :
-      mellinConv (fun y => y ^ 2) one t = (1 - t ^ 2) / 2 := by
+      mellinConv (fun y => y ^ 2) ((Ioc (0 : ℝ) 1).indicator 1) t = (1 - t ^ 2) / 2 := by
     simpa [one_add_one_eq_two] using mellinConv_pow_succ_indicator_one_apply_of_mem 1 ht
   have h₁ : (1 / 2 : ℝ) ∈ Ioc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
   have h₂ : (1 / 4 : ℝ) ∈ Ioc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
-  refine ⟨fun y w => y * w ^ 2, one, one, 1 / 2, 1 / 4, ?_⟩
-  rw [doubleMellinConv_mul, doubleMellinConv_mul, hA h₁, hA h₂, hB h₁, hB h₂]
+  refine ⟨fun y w => y * w ^ 2, (Ioc (0 : ℝ) 1).indicator 1, (Ioc (0 : ℝ) 1).indicator 1, 1 / 2,
+    1 / 4, ?_⟩
+  rw [doubleMellinConv_prod_mul, doubleMellinConv_prod_mul, hA h₁, hA h₂, hB h₁, hB h₂]
   norm_num
 
 end Convolution
