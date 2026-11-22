@@ -54,7 +54,8 @@ form factor, and then its consequence for the photon energy in the collider fram
 
 ## References
 
-* J. D. Jackson, *Classical Electrodynamics*, 3rd ed., Wiley (1999), section 15.5.
+* J. D. Jackson, *Classical Electrodynamics*, 3rd ed., Wiley (1999), section 15.4,
+  *Weizsäcker–Williams method of virtual quanta*.
 * G. Baur, K. Hencken, D. Trautmann, S. Sadovsky and Y. Kharlov, *Coherent γγ and γA interactions
   in very peripheral collisions at relativistic ion colliders*, Phys. Rep. **364** (2002) 359,
   section 2.

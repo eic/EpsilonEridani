@@ -18,9 +18,7 @@ its second moment, `∫ ‖x‖² ∂(stdGaussian E) = dim E`
 `x ↦ σ • x`, the isotropic Gaussian of width `σ`,
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), whose root-mean-square norm is
-`|σ| √(dim E)`. The dilated measure is again Gaussian
-(`ProbabilityTheory.isGaussian_map_const_smul`), hence a probability measure, and the squared
-norm is integrable against any Gaussian measure (`ProbabilityTheory.IsGaussian.integrable_norm_sq`).
+`|σ| √(dim E)`.
 
 The characteristic function of the image under `x ↦ σ • x` — in physics the form factor of the
 isotropic Gaussian charge distribution of width `σ` — decays as a Gaussian in the momentum:
@@ -56,19 +54,6 @@ theorem integral_norm_sq_stdGaussian :
   simp_rw [← b.sum_sq_inner_left]
   rw [integral_finsetSum _ fun i _ ↦ hI i]
   simp [hL]
-
-/-- The image of a Gaussian measure under the dilation `x ↦ c • x` is Gaussian; in particular it
-is a probability measure. -/
-instance isGaussian_map_const_smul {μ : Measure E} [IsGaussian μ] (c : ℝ) :
-    IsGaussian (μ.map (c • ·)) := by
-  convert isGaussian_map (μ := μ) (c • ContinuousLinearMap.id ℝ E)
-  simp
-
-/-- The squared norm is integrable against a Gaussian measure: a Gaussian has a finite second
-moment. -/
-theorem IsGaussian.integrable_norm_sq (μ : Measure E) [IsGaussian μ] :
-    Integrable (fun x ↦ ‖x‖ ^ 2) μ :=
-  (memLp_two_iff_integrable_sq_norm (by fun_prop)).1 IsGaussian.memLp_two_id
 
 /-- The second moment of the standard Gaussian dilated by `σ` is `σ²` times the dimension:
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`. -/
