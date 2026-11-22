@@ -101,7 +101,10 @@ def equivProd : Dipole ≃ EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin
 instance : AddCommGroup Dipole := equivProd.addCommGroup
 
 /-- Endpointwise scaling of dipoles, transported from the product along `equivProd`; see
-`equivProd` for why a dipole carries it. -/
+`equivProd` for why a dipole carries it. The scaling is transported along `equivProd` viewed as
+an additive equivalence for the `AddCommGroup Dipole` instance above: that addition is
+`d + d' = equivProd.symm (equivProd d + equivProd d')` (`Equiv.addCommGroup`), so `equivProd`
+preserves it by `Equiv.apply_symm_apply`. -/
 instance : Module ℝ Dipole :=
   AddEquiv.module ℝ { equivProd with map_add' := fun _ _ => equivProd.apply_symm_apply _ }
 
