@@ -55,7 +55,9 @@ the system `u + v` of two four-vectors with spatial parts `a • n` and `b • n
 `(u + v)⁰ = u⁰ + v⁰` (`Lorentz.Vector.timeComponent_add`) in place of `a` and `v⁰`; `W > 0` for
 `|a + b| < u⁰ + v⁰` is `Lorentz.Vector.sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul`.
 For two null vectors of positive energy, one along and one against `n` (`a = u⁰`, `b = -v⁰`),
-they reduce to `e^{2y} = u⁰ / v⁰`, `2 u⁰ = W e^{y}` and `2 v⁰ = W e^{-y}`.
+they reduce to `e^{2y} = u⁰ / v⁰`, `2 u⁰ = W e^{y}` and `2 v⁰ = W e^{-y}`. For `u` null along `n`
+(`a = u⁰`) and any `v`, `u⁰ = e^{y} (W² - ⟪v, v⟫ₘ) / (2 W)`
+(`timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_self_of_spatialPart_eq_smul`).
 
 These are the variables in which collider kinematics along a beam axis is reported, and the form
 in which an invariant mass and a rapidity are traded for energies.
@@ -226,7 +228,8 @@ theorem exp_two_mul_rapidity_of_spatialPart_eq_smul {v : Vector d}
 /-- **A collinear four-vector from its invariant mass and rapidity, forward component.** If the
 spatial part of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then
 `v⁰ + a = W e^{y}`, with `W = √⟪v, v⟫ₘ` and `y` the rapidity along `n`. -/
-theorem timeComponent_add_eq_sqrt_minkowskiProduct_self_mul_exp_rapidity_of_spatialPart_eq_smul
+theorem
+    timeComponent_add_coeff_eq_sqrt_minkowskiProduct_self_mul_exp_rapidity_of_spatialPart_eq_smul
     {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ}
     (hv : v.spatialPart = a • n) (h : |a| < v.timeComponent) :
     v.timeComponent + a = √⟪v, v⟫ₘ * exp (v.rapidity n) := by
@@ -238,7 +241,8 @@ theorem timeComponent_add_eq_sqrt_minkowskiProduct_self_mul_exp_rapidity_of_spat
 /-- **A collinear four-vector from its invariant mass and rapidity, backward component.** If the
 spatial part of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then
 `v⁰ - a = W e^{-y}`, with `W = √⟪v, v⟫ₘ` and `y` the rapidity along `n`. -/
-theorem timeComponent_sub_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul
+theorem
+  timeComponent_sub_coeff_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul
     {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ}
     (hv : v.spatialPart = a • n) (h : |a| < v.timeComponent) :
     v.timeComponent - a = √⟪v, v⟫ₘ * exp (-v.rapidity n) := by
@@ -261,7 +265,7 @@ theorem timeComponent_eq_sqrt_minkowskiProduct_self_mul_cosh_rapidity_of_spatial
 /-- **A collinear four-vector from its invariant mass and rapidity, momentum.** If the spatial
 part of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then `a = W sinh y`, with
 `W = √⟪v, v⟫ₘ` and `y` the rapidity along `n`. -/
-theorem eq_sqrt_minkowskiProduct_self_mul_sinh_rapidity_of_spatialPart_eq_smul
+theorem coeff_eq_sqrt_minkowskiProduct_self_mul_sinh_rapidity_of_spatialPart_eq_smul
     {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ}
     (hv : v.spatialPart = a • n) (h : |a| < v.timeComponent) :
     a = √⟪v, v⟫ₘ * sinh (v.rapidity n) := by
@@ -269,6 +273,35 @@ theorem eq_sqrt_minkowskiProduct_self_mul_sinh_rapidity_of_spatialPart_eq_smul
     ← inner_spatialPart_eq_of_spatialPart_eq_smul hn hv]
   exact inner_spatialPart_eq_sqrt_mul_sinh_rapidity hn
     (abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul hn hv h)
+
+/-- **A null four-vector against a collinear partner from the invariant mass and rapidity.** If
+`u` is null along a unit vector `n`, with spatial part `u⁰ • n`, the spatial part of `v` is
+`b • n` and `|u⁰ + b| < u⁰ + v⁰`, then `u⁰ = e^{y} (W² - ⟪v, v⟫ₘ) / (2 W)`, with
+`W = √⟪u + v, u + v⟫ₘ` and `y` the rapidity of `u + v` along `n`. -/
+theorem
+    timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_self_of_spatialPart_eq_smul
+    {u v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {b : ℝ}
+    (hu : u.spatialPart = u.timeComponent • n) (hv : v.spatialPart = b • n)
+    (h : |u.timeComponent + b| < u.timeComponent + v.timeComponent) :
+    u.timeComponent = exp ((u + v).rapidity n) * (⟪u + v, u + v⟫ₘ - ⟪v, v⟫ₘ) /
+      (2 * √⟪u + v, u + v⟫ₘ) := by
+  -- `W² = ⟪v, v⟫ₘ + 2 u⁰ (v⁰ - b)`, since `u` is null with `⟪u.spatialPart, n⟫ = u⁰`
+  have hW := minkowskiProduct_add_self_of_spatialPart_eq_smul (u := u) hv
+  rw [minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul hn rfl hu,
+    inner_spatialPart_eq_of_spatialPart_eq_smul hn hu] at hW
+  -- `v⁰ - b = W e^{-y}`
+  have hB :=
+   timeComponent_sub_coeff_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul
+      hn (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) (by rwa [timeComponent_add])
+  rw [timeComponent_add] at hB
+  have hpos := sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul hn hu hv h
+  have he : exp ((u + v).rapidity n) * exp (-(u + v).rapidity n) = 1 := by
+    rw [← exp_add, add_neg_cancel, exp_zero]
+  rw [eq_div_iff (mul_ne_zero two_ne_zero hpos.ne')]
+  -- `e^{y} (W² - ⟪v, v⟫ₘ) = 2 u⁰ e^{y} (v⁰ - b) = 2 u⁰ W e^{y} e^{-y} = 2 u⁰ W`
+  linear_combination (-exp ((u + v).rapidity n)) * hW -
+    2 * u.timeComponent * exp ((u + v).rapidity n) * hB -
+    2 * u.timeComponent * √⟪u + v, u + v⟫ₘ * he
 
 end Vector
 end Lorentz

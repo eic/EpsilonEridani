@@ -140,23 +140,9 @@ theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_sel
     (h : |γ.energy - p| < γ.energy + E) :
     γ.energyFraction s = exp ((q + P).rapidity n) * (⟪q + P, q + P⟫ₘ - ⟪P, P⟫ₘ) /
       (2 * √⟪q + P, q + P⟫ₘ * s.energy) := by
-  have h' : |γ.energy + -p| < q.timeComponent + P.timeComponent := by
-    rwa [hq, hP, ← sub_eq_add_neg]
-  have hW := minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add hn hq hq' hP hP'
-  -- `E + p = W e^{-y}`
-  have hB :=
-    timeComponent_sub_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul hn
-      (spatialPart_add_eq_smul_of_spatialPart_eq_smul hq' hP') (by rwa [timeComponent_add])
-  rw [timeComponent_add, hq, hP] at hB
-  have hpos := sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul hn hq' hP' h'
-  have he : exp ((q + P).rapidity n) * exp (-(q + P).rapidity n) = 1 := by
-    rw [← exp_add, add_neg_cancel, exp_zero]
-  rw [energyFraction_def, ← div_div]
-  congr 1
-  rw [eq_div_iff (mul_ne_zero two_ne_zero hpos.ne')]
-  -- `e^{y} (W² - P²) = 2 k e^{y} (E + p) = 2 k W e^{y} e^{-y} = 2 k W`
-  linear_combination (-exp ((q + P).rapidity n)) * hW -
-    2 * γ.energy * exp ((q + P).rapidity n) * hB - 2 * γ.energy * √⟪q + P, q + P⟫ₘ * he
+  rw [energyFraction_def, ← div_div, ← hq,
+    timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_self_of_spatialPart_eq_smul
+      hn (by rw [hq', hq]) hP' (by rwa [hq, hP, ← sub_eq_add_neg])]
 
 end PhotonKinematics
 
