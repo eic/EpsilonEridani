@@ -37,9 +37,10 @@ convention.
   `EpsilonEridani.QFT.Scattering.Photoproduction.Kinematics.Basic`). For a photon null along the
   beam axis, `a = k`,
   `W² = M² + 2 k (E + p)`
-  (`PhotonKinematics.minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add`) and, with
-  `|k - p| < k + E`, the energy fraction is `x = e^{y} (W² - M²) / (2 W E_s)`
-  (`PhotonKinematics.energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_self`).
+  (`minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add_of_spatialPart_eq_energy_smul`) and,
+  with `|k - p| < k + E`, the energy fraction is `x = e^{y} (W² - M²) / (2 W E_s)`
+  (`energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_energy_smul`),
+  both in the `PhotonKinematics` namespace.
   For a massless target, `M = 0`, this is the familiar `x = W e^{y} / (2 E_s)`, that is
   `k = (W / 2) e^{y}`.
 
@@ -101,8 +102,8 @@ four-momentum `q` is null along the unit beam axis `n`, `q⁰ = γ.energy` and
 `p` against it form a system of invariant mass `W² = P² + 2 γ.energy (E + p)`, with `P² = M²` for a
 target of mass `M`. When moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real
 photon (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`). -/
-theorem minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add (hn : ‖n‖ = 1)
-    (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
+theorem minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add_of_spatialPart_eq_energy_smul
+    (hn : ‖n‖ = 1) (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n) :
     ⟪q + P, q + P⟫ₘ = ⟪P, P⟫ₘ + 2 * γ.energy * (E + p) := by
   rw [minkowskiProduct_add_self_of_spatialPart_eq_smul hP',
@@ -134,15 +135,15 @@ against it, with `|γ.energy - p| < γ.energy + E`, form a system of invariant m
 `E_s` of the source `s` carried by the photon and `P² = M²` for a target of mass `M`. When
 moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real photon
 (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`). -/
-theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_self
+theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_energy_smul
     (hn : ‖n‖ = 1) (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n)
     (h : |γ.energy - p| < γ.energy + E) :
     γ.energyFraction s = exp ((q + P).rapidity n) * (⟪q + P, q + P⟫ₘ - ⟪P, P⟫ₘ) /
       (2 * √⟪q + P, q + P⟫ₘ * s.energy) := by
   rw [energyFraction_def, ← div_div, ← hq,
-    timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_minkowskiProduct_add_self_of_spatialPart_eq_smul
-      hn (by rw [hq', hq]) hP' (by rwa [hq, hP, ← sub_eq_add_neg])]
+    timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_timeComponent_smul hn
+      (by rw [hq', hq]) hP' (by rwa [hq, hP, ← sub_eq_add_neg])]
 
 end PhotonKinematics
 

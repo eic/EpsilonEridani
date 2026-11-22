@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 
 /-!
 # Extensions of the Minkowski product on Lorentz vectors
