@@ -6,9 +6,12 @@ Authors: Wouter Deconinck
 module
 
 public import PhyslibAlpha.QuantumMechanics.AngularMomentum.SpinOrbit
-public import EpsilonEridani.Relativity.PauliMatrices.SelfAdjointExtensions
 public import EpsilonEridani.Mathematics.LinearAlgebra.TensorProduct.Symmetrizer
-public import EpsilonEridani.QuantumMechanics.AngularMomentum.AdditionExtensions
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Physlib.Relativity.PauliMatrices.Basic
+import EpsilonEridani.Relativity.PauliMatrices.BasicExtensions
+import EpsilonEridani.Relativity.PauliMatrices.SelfAdjointExtensions
+import Mathlib.LinearAlgebra.TensorProduct.Matrix
 
 /-!
 # The spin-`1/2` angular momentum representation
@@ -56,14 +59,18 @@ from `standard 1` and its components `stdJx`, `stdJy`, `stdJz`.
 
 ## Main definitions
 
-All declarations are in the namespace `PhyslibAlpha.Sl2.AngularMomentumRepresentation`, beside
-the spin-`n/2` representation `standard n` of PhyslibAlpha.
+Apart from the Pauli exchange identity, in the namespace `PauliMatrix`, all declarations are in
+the namespace `PhyslibAlpha.Sl2.AngularMomentumRepresentation`, beside the spin-`n/2`
+representation `standard n` of PhyslibAlpha.
 
 * `pauliSpinGen i`: the spin operator `pauliMatrix (Sum.inr i) / 2` on `ℂ²`.
 * `pauliSpinHalf`: the spin-`1/2` angular momentum representation on `ℂ²`.
 
 ## Main results
 
+* `PauliMatrix.sum_tensorProductMap_toEuclideanLin_pauliMatrix_inr`: the exchange identity
+  `Σᵢ σᵢ ⊗ σᵢ = 2 P₁₂ - 1` on `ℂ² ⊗ ℂ²`, from the completeness relation
+  `PauliMatrix.sum_pauliMatrix_inr_apply_mul_pauliMatrix_inr_apply`.
 * `sum_pauliSpinGen_mul_self`: `S₁ S₁ + S₂ S₂ + S₃ S₃ = 3/4` on `ℂ²`.
 * `lie_pauliSpinGen_zero_one`, `lie_pauliSpinGen_one_two`, `lie_pauliSpinGen_two_zero`: the su(2)
   commutation relations.
@@ -77,11 +84,40 @@ the spin-`n/2` representation `standard n` of PhyslibAlpha.
 * `Jsq_tensor_pauliSpinHalf_mul_antisymmetrizer`, `Jsq_tensor_pauliSpinHalf_mul_symmetrizer` and
   their right-multiplied forms: the total spin squared is `0` on the antisymmetric and `2` on the
   symmetric part.
+* `trace_antisymmetrizer_euclideanSpace_fin_two`, `trace_symmetrizer_euclideanSpace_fin_two`: the
+  antisymmetrizer and the symmetrizer of `ℂ² ⊗ ℂ²` have traces `1` and `3`.
+
+## References
+
+* P. A. M. Dirac, *Quantum mechanics of many-electron systems*, Proc. R. Soc. Lond. A 123 (1929)
+  714.
 -/
 
-@[expose] public section
+public section
 
 open Matrix TensorProduct PauliMatrix
+
+namespace PauliMatrix
+
+/-- The exchange identity of the spatial Pauli matrices: on `ℂ² ⊗ ℂ²`,
+`Σᵢ σᵢ ⊗ σᵢ = 2 P₁₂ - 1`, where `P₁₂` exchanges the two tensor factors. -/
+theorem sum_tensorProductMap_toEuclideanLin_pauliMatrix_inr :
+    ∑ i : Fin 3, TensorProduct.map (toEuclideanLin (pauliMatrix (Sum.inr i)))
+      (toEuclideanLin (pauliMatrix (Sum.inr i))) =
+      (2 : ℂ) • (TensorProduct.comm ℂ (EuclideanSpace ℂ (Fin 2))
+        (EuclideanSpace ℂ (Fin 2))).toLinearMap - 1 := by
+  -- Compare the matrices of both sides in the product basis `eₐ ⊗ e_b`.
+  let b := (EuclideanSpace.basisFun (Fin 2) ℂ).toBasis
+  apply (LinearMap.toMatrix (b.tensorProduct b) (b.tensorProduct b)).injective
+  simp only [map_sum, map_sub, map_smul, LinearMap.toMatrix_one, TensorProduct.toMatrix_comm,
+    TensorProduct.toMatrix_map, toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin, b]
+  ext ⟨α, α'⟩ ⟨β, β'⟩
+  simp only [Matrix.sum_apply, kroneckerMap_apply,
+    sum_pauliMatrix_inr_apply_mul_pauliMatrix_inr_apply, Matrix.sub_apply, Matrix.smul_apply,
+    submatrix_apply, Matrix.one_apply, Prod.swap_prod_mk, id, Prod.mk.injEq, smul_eq_mul]
+  grind
+
+end PauliMatrix
 
 namespace PhyslibAlpha.Sl2.AngularMomentumRepresentation
 
@@ -245,5 +281,23 @@ theorem symmetrizer_mul_Jsq_tensor_pauliSpinHalf :
       (AngularMomentumRepresentation.tensor pauliSpinHalf pauliSpinHalf).Jsq =
         (2 : ℂ) • TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2)) := by
   rw [Jsq_tensor_pauliSpinHalf, mul_smul_comm, symmetrizer_mul_self]
+
+/-- The antisymmetrizer of `ℂ² ⊗ ℂ²`, the projector onto the spin-singlet channel, has trace `1`,
+which over `ℂ` is the dimension of the singlet channel; that rank statement is not formalised
+here. -/
+@[simp]
+theorem trace_antisymmetrizer_euclideanSpace_fin_two :
+    LinearMap.trace ℂ _ (TensorProduct.antisymmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) = 1 := by
+  rw [trace_antisymmetrizer, finrank_euclideanSpace_fin, invOf_eq_inv]
+  norm_num
+
+/-- The symmetrizer of `ℂ² ⊗ ℂ²`, the projector onto the spin-triplet channel, has trace `3`,
+which over `ℂ` is the dimension of the triplet channel; that rank statement is not formalised
+here. -/
+@[simp]
+theorem trace_symmetrizer_euclideanSpace_fin_two :
+    LinearMap.trace ℂ _ (TensorProduct.symmetrizer ℂ (EuclideanSpace ℂ (Fin 2))) = 3 := by
+  rw [trace_symmetrizer, finrank_euclideanSpace_fin, invOf_eq_inv]
+  norm_num
 
 end PhyslibAlpha.Sl2.AngularMomentumRepresentation

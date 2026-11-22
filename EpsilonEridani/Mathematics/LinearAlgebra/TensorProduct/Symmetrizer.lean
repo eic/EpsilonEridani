@@ -63,7 +63,7 @@ antisymmetric parts; that rank statement is not formalised here.
   commute with the diagonal action `f ⊗ 1 + 1 ⊗ f` of an endomorphism `f` of `M`.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
