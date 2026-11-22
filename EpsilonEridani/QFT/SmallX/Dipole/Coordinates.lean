@@ -34,7 +34,9 @@ coincide; such a dipole sits on the diagonal at its impact parameter.
 ## Main definitions
 
 * `SmallX.Dipole`: a quark-antiquark pair of transverse positions, with the ℝ-vector-space
-  structure of pairs of points.
+  structure of pairs of points. Adding or scaling dipoles is not a physical operation on colour
+  dipoles; the structure is carried only so that the change of variables from endpoints to
+  `(r, b)` can be stated as the linear isomorphism `sizeImpactParameterEquiv`.
 * `SmallX.Dipole.size`, `SmallX.Dipole.impactParameter`: the dipole vector and the impact
   parameter.
 * `SmallX.Dipole.ofSizeImpactParameter`: the dipole with prescribed size and impact parameter.
@@ -85,15 +87,21 @@ namespace Dipole
 
 /-- A dipole as the pair `(x, y)` of its quark and antiquark positions. The vector-space structure
 of `Dipole` is the one of `EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)`, transported along
-this equivalence. -/
+this equivalence. This pairwise structure is not a physical operation on dipoles: it is carried
+only so that the change of variables from endpoints to `(r, b)` can be stated as the linear
+isomorphism `sizeImpactParameterEquiv`. -/
 def equivProd : Dipole ≃ EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) where
   toFun d := (d.quark, d.antiquark)
   invFun p := ⟨p.1, p.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
+/-- Endpointwise addition of dipoles, transported from the product along `equivProd`; see
+`equivProd` for why a dipole carries it. -/
 instance : AddCommGroup Dipole := equivProd.addCommGroup
 
+/-- Endpointwise scaling of dipoles, transported from the product along `equivProd`; see
+`equivProd` for why a dipole carries it. -/
 instance : Module ℝ Dipole := equivProd.addEquiv.module ℝ
 
 @[simp] lemma equivProd_apply (d : Dipole) : equivProd d = (d.quark, d.antiquark) := (rfl)
@@ -164,36 +172,14 @@ lemma size_eq_zero_iff_antiquark_eq_impactParameter {d : Dipole} :
     d.size = 0 ↔ d.antiquark = d.impactParameter := by
   rw [impactParameter_def, right_eq_midpoint_iff, size_eq_zero_iff]
 
-@[simp] lemma size_zero : (0 : Dipole).size = 0 := by simp [size_def]
-
-@[simp] lemma impactParameter_zero : (0 : Dipole).impactParameter = 0 := by
-  simp [impactParameter_def]
-
 @[simp] lemma size_add (d d' : Dipole) : (d + d').size = d.size + d'.size := by
   simp only [size_def, quark_add, antiquark_add]
   abel
 
 @[simp] lemma impactParameter_add (d d' : Dipole) :
     (d + d').impactParameter = d.impactParameter + d'.impactParameter := by
-  simpa only [impactParameter_def, quark_add, antiquark_add, vadd_eq_add] using
-    (midpoint_vadd_midpoint (R := ℝ) d.quark d.antiquark d'.quark d'.antiquark).symm
-
-@[simp] lemma size_neg (d : Dipole) : (-d).size = -d.size := by
-  simp only [size_def, quark_neg, antiquark_neg]
-  abel
-
-@[simp] lemma impactParameter_neg (d : Dipole) : (-d).impactParameter = -d.impactParameter := by
-  simp only [impactParameter_eq_smul_add, quark_neg, antiquark_neg]
+  simp only [impactParameter_eq_smul_add, quark_add, antiquark_add]
   module
-
-@[simp] lemma size_sub (d d' : Dipole) : (d - d').size = d.size - d'.size := by
-  simp only [size_def, quark_sub, antiquark_sub]
-  abel
-
-@[simp] lemma impactParameter_sub (d d' : Dipole) :
-    (d - d').impactParameter = d.impactParameter - d'.impactParameter := by
-  simpa only [impactParameter_def, quark_sub, antiquark_sub, vsub_eq_sub] using
-    (midpoint_vsub_midpoint (R := ℝ) d.quark d.antiquark d'.quark d'.antiquark).symm
 
 @[simp] lemma size_smul (c : ℝ) (d : Dipole) : (c • d).size = c • d.size := by
   simp only [size_def, quark_smul, antiquark_smul, smul_sub]
@@ -206,12 +192,14 @@ lemma size_eq_zero_iff_antiquark_eq_impactParameter {d : Dipole} :
 /-- The quark sits half the dipole vector beyond the impact parameter: `x = b + r / 2`. -/
 @[simp] lemma impactParameter_add_smul_size (d : Dipole) :
     d.impactParameter + (2 : ℝ)⁻¹ • d.size = d.quark := by
-  rw [impactParameter_def, size_def, ← invOf_eq_inv, ← left_sub_midpoint, add_sub_cancel]
+  rw [impactParameter_eq_smul_add, size_def]
+  module
 
 /-- The antiquark sits half the dipole vector before the impact parameter: `y = b - r / 2`. -/
 @[simp] lemma impactParameter_sub_smul_size (d : Dipole) :
     d.impactParameter - (2 : ℝ)⁻¹ • d.size = d.antiquark := by
-  rw [impactParameter_def, size_def, ← invOf_eq_inv, ← midpoint_sub_right, sub_sub_cancel]
+  rw [impactParameter_eq_smul_add, size_def]
+  module
 
 /-! ### Reconstruction from size and impact parameter -/
 
@@ -267,6 +255,36 @@ def sizeImpactParameterEquiv :
     (p : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
     sizeImpactParameterEquiv.symm p = ofSizeImpactParameter p.1 p.2 :=
   (rfl)
+
+/-! ### Consequences of linearity
+
+The remaining compatibilities of `size` and `impactParameter` with the vector-space operations are
+the corresponding properties of the linear map `sizeImpactParameterEquiv`. -/
+
+@[simp] lemma size_zero : (0 : Dipole).size = 0 := by
+  simpa only [sizeImpactParameterEquiv_apply, Prod.fst_zero] using
+    congrArg Prod.fst (map_zero sizeImpactParameterEquiv)
+
+@[simp] lemma impactParameter_zero : (0 : Dipole).impactParameter = 0 := by
+  simpa only [sizeImpactParameterEquiv_apply, Prod.snd_zero] using
+    congrArg Prod.snd (map_zero sizeImpactParameterEquiv)
+
+@[simp] lemma size_neg (d : Dipole) : (-d).size = -d.size := by
+  simpa only [sizeImpactParameterEquiv_apply, Prod.fst_neg] using
+    congrArg Prod.fst (map_neg sizeImpactParameterEquiv d)
+
+@[simp] lemma impactParameter_neg (d : Dipole) : (-d).impactParameter = -d.impactParameter := by
+  simpa only [sizeImpactParameterEquiv_apply, Prod.snd_neg] using
+    congrArg Prod.snd (map_neg sizeImpactParameterEquiv d)
+
+@[simp] lemma size_sub (d d' : Dipole) : (d - d').size = d.size - d'.size := by
+  simpa only [sizeImpactParameterEquiv_apply, Prod.fst_sub] using
+    congrArg Prod.fst (map_sub sizeImpactParameterEquiv d d')
+
+@[simp] lemma impactParameter_sub (d d' : Dipole) :
+    (d - d').impactParameter = d.impactParameter - d'.impactParameter := by
+  simpa only [sizeImpactParameterEquiv_apply, Prod.snd_sub] using
+    congrArg Prod.snd (map_sub sizeImpactParameterEquiv d d')
 
 /-- Two dipoles are equal exactly when they have the same dipole vector and the same impact
 parameter. -/

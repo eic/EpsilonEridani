@@ -16,11 +16,14 @@ High-energy evolution of the dipole amplitude runs in the rapidity
 Y = log (x₀ / x),
 ```
 
-the logarithm of the inverse momentum fraction measured from a fixed reference `x₀`. Rapidity
-increases towards small `x`; it is distinct from the logarithm of the hard scale,
+the logarithm of the inverse momentum fraction measured from a fixed reference `x₀ ≠ 0`.
+Rapidity then increases towards small `x`; it is distinct from the logarithm of the hard scale,
 `log (Q² / Q₀²)`, which is the evolution variable of collinear factorisation.
 
-This file defines `rapidity x₀ x` and proves the properties the evolution equations rely on:
+This file defines `rapidity x₀ x` and proves the properties the evolution equations rely on.
+`rapidity` is a total function of `x₀` and `x`, and takes junk values off the physical region
+(through `Real.log 0 = 0` and division by zero, e.g. `rapidity 0 x = 0` for every `x`), which is
+why the lemmas below carry hypotheses such as `x₀ ≠ 0` and `0 < x`. For a reference `x₀ ≠ 0`:
 
 * it is strictly antitone in `x` on `x > 0`, and tends to `+∞` as `x → 0⁺`;
 * the reference point only shifts it by a constant, through the chain rule
@@ -36,7 +39,7 @@ This file defines `rapidity x₀ x` and proves the properties the evolution equa
 
 ## Main results
 
-* `SmallX.strictAntiOn_rapidity`: rapidity is strictly antitone on `x > 0`.
+* `SmallX.strictAntiOn_rapidity`: for `x₀ ≠ 0`, rapidity is strictly antitone on `x > 0`.
 * `SmallX.rapidity_add_rapidity`: the chain rule for a change of reference.
 * `SmallX.rapidity_mul_exp_neg` and `SmallX.mul_exp_neg_rapidity`: rapidity and `Y ↦ x₀ e^{-Y}`
   are mutually inverse.
@@ -93,7 +96,8 @@ lemma rapidity_sub_rapidity {x₀ x x' : ℝ} (hx₀ : x₀ ≠ 0) (hx : x ≠ 0
   rw [← rapidity_add_rapidity hx₀ hx' hx]
   ring
 
-/-- Rapidity is strictly antitone in the momentum fraction on `x > 0`. -/
+/-- For a reference `x₀ ≠ 0`, rapidity is strictly antitone in the momentum fraction on `x > 0`.
+(At the junk reference `x₀ = 0` it is constant, `rapidity 0 x = 0`.) -/
 lemma strictAntiOn_rapidity {x₀ : ℝ} (hx₀ : x₀ ≠ 0) : StrictAntiOn (rapidity x₀) (Set.Ioi 0) := by
   intro x hx x' hx' hlt
   rw [rapidity_eq_log_sub_log hx₀ (ne_of_gt hx), rapidity_eq_log_sub_log hx₀ (ne_of_gt hx')]
@@ -118,8 +122,8 @@ lemma log_le_rapidity (x₀ : ℝ) {x : ℝ} (hx : 0 < x) (hx1 : x ≤ 1) :
     Real.log x₀ ≤ rapidity x₀ x := by
   rcases eq_or_ne x₀ 0 with rfl | hx₀
   · simp [rapidity_def]
-  · rw [rapidity_eq_log_sub_log hx₀ hx.ne']
-    linarith [Real.log_nonpos hx.le hx1]
+  · calc Real.log x₀ = rapidity x₀ 1 := by rw [rapidity_def, div_one]
+      _ ≤ rapidity x₀ x := (rapidity_le_rapidity_iff_ge hx₀ one_pos hx).2 hx1
 
 /-- The momentum fraction at rapidity `Y` is `x₀ e^{-Y}`. -/
 @[simp] lemma rapidity_mul_exp_neg {x₀ : ℝ} (hx₀ : x₀ ≠ 0) (Y : ℝ) :
@@ -154,16 +158,14 @@ variable {V : Type} [AddCommGroup V] [Module ℝ V]
 Bjorken variable is at least `log x₀`. -/
 lemma log_le_rapidity_xBj {g : Bilin V} {K : DisKinematics V} (h : BasicAssumptions g K)
     (x₀ : ℝ) : Real.log x₀ ≤ rapidity x₀ (K.xBj g) :=
-  log_le_rapidity x₀ (xBj_pos g K h.q2_pos h.p_dot_q_pos)
-    (xBj_le_one g K h.p_dot_q_pos h.q2_le_two_p_dot_q)
+  log_le_rapidity x₀ h.xBj_pos h.xBj_le_one
 
 /-- On the physical region of deep-inelastic scattering, ordering two configurations by the
 rapidity of their Bjorken variables reverses their ordering in `x`. -/
 lemma rapidity_xBj_lt_rapidity_xBj_iff_gt {g g' : Bilin V} {K K' : DisKinematics V}
     (h : BasicAssumptions g K) (h' : BasicAssumptions g' K') {x₀ : ℝ} (hx₀ : x₀ ≠ 0) :
     rapidity x₀ (K.xBj g) < rapidity x₀ (K'.xBj g') ↔ K'.xBj g' < K.xBj g :=
-  rapidity_lt_rapidity_iff_gt hx₀ (xBj_pos g K h.q2_pos h.p_dot_q_pos)
-    (xBj_pos g' K' h'.q2_pos h'.p_dot_q_pos)
+  rapidity_lt_rapidity_iff_gt hx₀ h.xBj_pos h'.xBj_pos
 
 end Scattering.DIS.Kinematics.DisKinematics.BasicAssumptions
 
