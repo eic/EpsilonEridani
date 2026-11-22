@@ -119,7 +119,6 @@ theorem abs_eval_legendre_le_one (n : ℕ) {x : ℝ} (hx : x ∈ Icc (-1 : ℝ) 
 private theorem sq_eval_legendre_lt_one_of_nonneg {n : ℕ} (hn : n ≠ 0) {x : ℝ}
     (hx : x ∈ Ico (0 : ℝ) 1) : (legendre n).eval x ^ 2 < 1 := by
   refine (sq_eval_legendre_le_one_of_nonneg n (Ico_subset_Icc_self hx)).lt_of_ne fun hP => hn ?_
-  have hl : (0 : ℝ) < n * (n + 1) := by positivity
   -- `Gₙ` is squeezed between `Gₙ (x) ≥ n (n + 1) = Gₙ (1)` and `Gₙ (1)` on `[x, 1]`.
   have hconst : ∀ y ∈ Icc x 1, (sonine n).eval y = (C ((n : ℝ) * (n + 1))).eval y := by
     intro y hy
@@ -138,7 +137,9 @@ private theorem sq_eval_legendre_lt_one_of_nonneg {n : ℕ} (hn : n ≠ 0) {x : 
     eq_of_infinite_eval_eq _ _ ((Icc_infinite hx.2).mono hconst)
   have hd := derivative_sonine n
   rw [hG, derivative_C, eq_comm] at hd
-  simpa [X_ne_zero] using hd
+  have hP' : derivative (legendre n) = 0 := by simpa [X_ne_zero] using hd
+  -- A polynomial of degree `n` with vanishing derivative has `n = 0`.
+  simpa [natDegree_legendre] using derivative_eq_zero.1 hP'
 
 /-- For `n ≠ 0`, the bound is strict in the open interval: `|Pₙ (x)| < 1` for `x ∈ (-1, 1)`. -/
 theorem abs_eval_legendre_lt_one {n : ℕ} (hn : n ≠ 0) {x : ℝ} (hx : x ∈ Ioo (-1 : ℝ) 1) :
