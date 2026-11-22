@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Distributions.Gaussian.Fernique
+public import EpsilonEridani.Mathematics.MeasureTheory.Integral.Bochner.BasicExtensions
 
 /-!
 # The second moment and the characteristic function of the standard Gaussian
@@ -18,13 +19,15 @@ its second moment, `∫ ‖x‖² ∂(stdGaussian E) = dim E`
 `x ↦ σ • x`, the isotropic Gaussian of width `σ`,
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), whose root-mean-square norm is
-`|σ| √(dim E)`.
+`|σ| √(dim E)`; the latter is the general dilation of a moment of the norm,
+`MeasureTheory.integral_norm_pow_map_const_smul`, applied to the former.
 
 The characteristic function of the image under `x ↦ σ • x` — in physics the form factor of the
 isotropic Gaussian charge distribution of width `σ` — decays as a Gaussian in the momentum:
 `charFun ((stdGaussian E).map (σ • ·)) t = exp (-σ² ‖t‖² / 2)`
-(`ProbabilityTheory.charFun_map_smul_stdGaussian`), with squared modulus
-`exp (-σ² ‖t‖²)` (`ProbabilityTheory.norm_sq_charFun_map_smul_stdGaussian`).
+(`ProbabilityTheory.charFun_map_smul_stdGaussian`), with modulus `exp (-σ² ‖t‖² / 2)`
+(`ProbabilityTheory.norm_charFun_map_smul_stdGaussian`) and squared modulus `exp (-σ² ‖t‖²)`
+(`ProbabilityTheory.norm_sq_charFun_map_smul_stdGaussian`).
 -/
 
 public section
@@ -60,9 +63,7 @@ theorem integral_norm_sq_stdGaussian :
 @[simp]
 theorem integral_norm_sq_map_smul_stdGaussian (σ : ℝ) :
     ∫ x, ‖x‖ ^ 2 ∂((stdGaussian E).map (σ • ·)) = σ ^ 2 * Module.finrank ℝ E := by
-  rw [integral_map (by fun_prop) (by fun_prop)]
-  simp_rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-  rw [integral_const_mul, integral_norm_sq_stdGaussian]
+  rw [integral_norm_pow_map_const_smul, integral_norm_sq_stdGaussian, Real.norm_eq_abs, sq_abs]
 
 /-- The characteristic function of the standard Gaussian dilated by `σ` — in physics the form
 factor of the isotropic Gaussian charge distribution of width `σ` — is the exponential of the
@@ -74,12 +75,19 @@ theorem charFun_map_smul_stdGaussian (σ : ℝ) (t : E) :
   push_cast
   ring_nf
 
+/-- The modulus of the characteristic function of the standard Gaussian dilated by `σ` — in
+physics the modulus of the form factor of the isotropic Gaussian charge distribution of width
+`σ` — is `exp (-σ² ‖t‖² / 2)`. -/
+theorem norm_charFun_map_smul_stdGaussian (σ : ℝ) (t : E) :
+    ‖charFun ((stdGaussian E).map (σ • ·)) t‖ = Real.exp (-(σ ^ 2 * ‖t‖ ^ 2) / 2) := by
+  rw [charFun_map_smul_stdGaussian, Complex.norm_exp_ofReal]
+
 /-- The squared modulus of the characteristic function of the standard Gaussian dilated by `σ`
 decays as `exp (-σ² ‖t‖²)`; in physics this is the factor by which the coherent rate of the
 isotropic Gaussian charge distribution of width `σ` is suppressed at momentum `t`. -/
 theorem norm_sq_charFun_map_smul_stdGaussian (σ : ℝ) (t : E) :
     ‖charFun ((stdGaussian E).map (σ • ·)) t‖ ^ 2 = Real.exp (-(σ ^ 2 * ‖t‖ ^ 2)) := by
-  rw [charFun_map_smul_stdGaussian, Complex.norm_exp_ofReal, ← Real.exp_nat_mul]
+  rw [norm_charFun_map_smul_stdGaussian, ← Real.exp_nat_mul]
   push_cast
   ring_nf
 

@@ -51,8 +51,8 @@ form factor, and then its consequence for the photon energy in the collider fram
   and does not decay at all.
 * The photon energy in the collider frame is bounded by the Lorentz factor over the radius. The
   `Kinematics.ChargedSource` lemmas
-  `energy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion` and
-  `energy_mul_radius_lt_gamma_of_virtuality_mul_radius_sq_le_one` bound the energy of a photon
+  `photonEnergy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion` and
+  `photonEnergy_mul_radius_lt_gamma_of_virtuality_mul_radius_sq_le_one` bound the energy of a photon
   in the photon region by the virtuality, `k² < γ² (1 - x) Q²`, and then, within the coherence
   bound `Q² R² ≤ 1`, by the Lorentz factor over the radius, `k R < γ`. Here `R` is the radius
   `s.radius` of the source: the charge radius that `ChargedSource` carries as an independent
@@ -136,10 +136,10 @@ variable {s : ChargedSource}
 /-- **The photon energy of coherent emission is bounded by the Lorentz factor over the radius.**
 If a massive source of radius `R` and Lorentz factor `γ` emits a photon of its photon region within
 the coherence bound `Q² R² ≤ 1`, the photon energy in the collider frame satisfies `k R < γ`. -/
-theorem energy_mul_radius_lt_gamma_of_virtuality_mul_radius_sq_le_one
+theorem photonEnergy_mul_radius_lt_gamma_of_virtuality_mul_radius_sq_le_one
     (hm : 0 < s.mass) {θmax : ℝ} {k : PhotonKinematics} (hk : k ∈ s.photonRegion θmax)
     (hcoh : k.virtuality * s.radius ^ 2 ≤ 1) : k.energy * s.radius < s.gamma := by
-  have hγ := gamma_pos_of_mem_photonRegion hm hk
+  have hγ := gamma_pos_of_mem_photonRegion hm.le hk
   have hx0 := energyFraction_pos_of_mem_photonRegion hm.le hk
   have hx1 := energyFraction_lt_one_of_mem_photonRegion hm.le hk
   have hc : 0 ≤ s.gamma ^ 2 * (1 - k.energyFraction s) :=
@@ -150,7 +150,7 @@ theorem energy_mul_radius_lt_gamma_of_virtuality_mul_radius_sq_le_one
       _ ≤ s.gamma ^ 2 * (1 - k.energyFraction s) * (k.virtuality * s.radius ^ 2) := by
         rw [← mul_assoc]
         exact mul_le_mul_of_nonneg_right
-          (energy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion
+          (photonEnergy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion
             hm hk).le (sq_nonneg _)
       _ ≤ s.gamma ^ 2 * (1 - k.energyFraction s) := mul_le_of_le_one_right hc hcoh
       _ < s.gamma ^ 2 := by nlinarith [mul_pos (pow_pos hγ 2) hx0]
