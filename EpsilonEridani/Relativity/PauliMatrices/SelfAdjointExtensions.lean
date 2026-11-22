@@ -5,9 +5,8 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Physlib.Relativity.PauliMatrices.Basic
+public import PhyslibAlpha.Relativity.PauliMatrices.SelfAdjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import PhyslibAlpha.Relativity.PauliMatrices.SelfAdjoint
 import Mathlib.LinearAlgebra.TensorProduct.Matrix
 
 /-!
@@ -21,8 +20,10 @@ completeness relation
 `Σᵢ (σᵢ)_{αβ} (σᵢ)_{α'β'} = 2 δ_{α'β} δ_{β'α} - δ_{αβ} δ_{α'β'}`,
 
 which is the Fierz relation `PauliMatrix.sum_pauliLower_mul_pauliLower` of PhyslibAlpha with the
-`σ0 ⊗ σ0` term split off. For two spin-`1/2` systems, with spin spaces `ℂ²`, the completeness
-relation expresses the scalar product of their Pauli vectors through the operator exchanging them:
+`σ0 ⊗ σ0` term split off; this module extends `PhyslibAlpha.Relativity.PauliMatrices.SelfAdjoint`,
+where that Fierz relation is stated. For two spin-`1/2` systems, with spin spaces `ℂ²`, the
+completeness relation expresses the scalar product of their Pauli vectors through the operator
+exchanging them:
 
 `σ(1) · σ(2) = Σᵢ σᵢ ⊗ σᵢ = 2 P₁₂ - 1`,
 

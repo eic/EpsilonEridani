@@ -55,6 +55,8 @@ antisymmetric parts; that rank statement is not formalised here.
   onto the symmetric and antisymmetric tensors.
 * `TensorProduct.trace_symmetrizer`, `TensorProduct.trace_antisymmetrizer`: the traces of the
   projectors.
+* `TensorProduct.symmetrizer_tmul`, `TensorProduct.antisymmetrizer_tmul`: the projectors on a
+  pure tensor, `x ⊗ y ↦ ⅟2 • (x ⊗ y ± y ⊗ x)`.
 * `TensorProduct.commute_rTensor_add_lTensor_comm`,
   `TensorProduct.commute_rTensor_add_lTensor_symmetrizer`,
   `TensorProduct.commute_rTensor_add_lTensor_antisymmetrizer`: the exchange and the two projectors
@@ -142,6 +144,18 @@ theorem symmetrizer_apply (x : M ⊗[R] M) :
 theorem antisymmetrizer_apply (x : M ⊗[R] M) :
     antisymmetrizer R M x = ⅟(2 : R) • (x - TensorProduct.comm R M M x) := by
   simp [antisymmetrizer_def]
+
+/-- The symmetrizer on a pure tensor: `S (x ⊗ y) = ⅟2 • (x ⊗ y + y ⊗ x)`. Not `@[simp]`: `simp`
+already derives it from `symmetrizer_apply` and `TensorProduct.comm_tmul`. -/
+theorem symmetrizer_tmul (x y : M) :
+    symmetrizer R M (x ⊗ₜ y) = ⅟(2 : R) • (x ⊗ₜ y + y ⊗ₜ x) := by
+  rw [symmetrizer_apply, comm_tmul]
+
+/-- The antisymmetrizer on a pure tensor: `A (x ⊗ y) = ⅟2 • (x ⊗ y - y ⊗ x)`. Not `@[simp]`:
+`simp` already derives it from `antisymmetrizer_apply` and `TensorProduct.comm_tmul`. -/
+theorem antisymmetrizer_tmul (x y : M) :
+    antisymmetrizer R M (x ⊗ₜ y) = ⅟(2 : R) • (x ⊗ₜ y - y ⊗ₜ x) := by
+  rw [antisymmetrizer_apply, comm_tmul]
 
 variable (R M)
 
