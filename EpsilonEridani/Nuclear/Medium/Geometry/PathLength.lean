@@ -59,7 +59,9 @@ The ambient space is any real normed space; the physical case is three-dimension
   supported in such a set, and a nonnegative central density `ρ₀`, the density-weighted path length
   is at most `M / ρ₀` times the geometric one.
 * `measurable_geometricPathLength`, `measurable_densityWeightedPathLength`: both functionals are
-  measurable in the pair `(x, v)`.
+  measurable in the pair `(x, v)`, with the dot-notation forms `Measurable.geometricPathLength`
+  and `Measurable.densityWeightedPathLength` along a measurably varying production point and
+  direction.
 * `densityWeightedPathLength_indicator_const`: for the uniform density `c` on `S`, the
   density-weighted path length is `c / ρ₀` times the geometric one.
 * `densityWeightedPathLength_smul`, `densityWeightedPathLength_smul_mul`: the density-weighted path
@@ -293,16 +295,16 @@ theorem measurable_densityWeightedPathLength (hρ : Measurable ρ) (ρ₀ : ℝ)
 /-- The geometric path length through a measurable set, along a measurably varying production
 point and direction, is measurable. -/
 @[fun_prop]
-theorem Measurable.geometricPathLength {α : Type*} [MeasurableSpace α] (hS : MeasurableSet S)
-    {g h : α → E} (hg : Measurable g) (hh : Measurable h) :
+theorem _root_.Measurable.geometricPathLength {α : Type*} [MeasurableSpace α]
+    {g h : α → E} (hg : Measurable g) (hh : Measurable h) (hS : MeasurableSet S) :
     Measurable fun a => Medium.geometricPathLength S (g a) (h a) :=
   (measurable_geometricPathLength hS).comp (hg.prodMk hh)
 
 /-- The density-weighted path length of a measurable density, along a measurably varying
 production point and direction, is measurable. -/
 @[fun_prop]
-theorem Measurable.densityWeightedPathLength {α : Type*} [MeasurableSpace α] (hρ : Measurable ρ)
-    (ρ₀ : ℝ) {g h : α → E} (hg : Measurable g) (hh : Measurable h) :
+theorem _root_.Measurable.densityWeightedPathLength {α : Type*} [MeasurableSpace α]
+    {g h : α → E} (hg : Measurable g) (hh : Measurable h) (hρ : Measurable ρ) (ρ₀ : ℝ) :
     Measurable fun a => Medium.densityWeightedPathLength ρ ρ₀ (g a) (h a) :=
   (measurable_densityWeightedPathLength hρ ρ₀).comp (hg.prodMk hh)
 
