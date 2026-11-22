@@ -70,11 +70,13 @@ Two operations act on the flavour charges.
 * `ellisJaffeSumRule_iff`: the existing `EllisJaffeSumRule` is the leading-twist decomposition
   together with `a₀ = a₈`; `firstMomentG1_eq_of_ellisJaffeSumRule` is its prediction
   `Γ₁ᵖ = ((1/12) a₃ + (5/36) a₈) (1 + Δ)`.
-* `deltaS_ne_zero_of_firstMomentG1_ne` and `deltaS_neg_of_firstMomentG1_lt`: a measured `Γ₁ᵖ`
-  that misses the Ellis–Jaffe value forces `Δs ≠ 0`, and one below it (with `1 + Δ > 0`) forces
-  `Δs < 0`. The derivation is sound; the hypothesis is what fails.
-* `a0_eq_of_firstMomentG1`: `a₀` is determined by `Γ₁ᵖ`, `a₃` and `a₈`, which is what makes the
-  quark spin content a measured rather than a predicted number.
+* `deltaS_ne_zero_of_firstMomentG1_ne` and `deltaS_neg_of_firstMomentG1_lt`: given the
+  leading-twist decomposition at `Q²`, a measured `Γ₁ᵖ` that misses the Ellis–Jaffe value forces
+  `Δs ≠ 0`, and one below it (with `1 + Δ > 0`) forces `Δs < 0`. The derivation is sound; the
+  hypothesis is what fails.
+* `a0_eq_of_firstMomentG1`: given the decomposition at `Q²` and `1 + Δ ≠ 0`, `a₀` is determined by
+  `Γ₁ᵖ`, `a₃` and `a₈`, which is what makes the quark spin content a measured rather than a
+  predicted number.
 * `firstMomentG1_sub_firstMomentG1_eq`: the measured isovector difference
   `Γ₁ᵖ − Γ₁ⁿ = (1/6) a₃ (1 + Δ)`, given the proton decomposition and its isospin conjugate for the
   neutron.
@@ -213,7 +215,8 @@ theorem a8_ofAxialCharges (a0 a3 a8 : ℝ → ℝ) : (ofAxialCharges a0 a3 a8).a
   rw [a8_apply, deltaU_ofAxialCharges, deltaD_ofAxialCharges, deltaS_ofAxialCharges]
   ring
 
-/-- Every charge record is determined by its axial charges. -/
+/-- Rebuilding the flavour charges from their own axial charges returns the original record:
+`ofAxialCharges` is a left inverse of `(a0, a3, a8)`. -/
 @[simp]
 theorem ofAxialCharges_a0_a3_a8 : ofAxialCharges a.a0 a.a3 a.a8 = a := by
   ext Q2
@@ -299,9 +302,19 @@ theorem deltaD_addUniform (s : ℝ → ℝ) (Q2 : ℝ) :
 theorem deltaS_addUniform (s : ℝ → ℝ) (Q2 : ℝ) :
     (a.addUniform s).deltaS Q2 = a.deltaS Q2 + s Q2 := (rfl)
 
+/-- A flavour-universal shift adds `s` to the helicity charge of every light flavour. -/
+@[simp]
+theorem delta_addUniform (s : ℝ → ℝ) (f : LightFlavor) (Q2 : ℝ) :
+    (a.addUniform s).delta f Q2 = a.delta f Q2 + s Q2 := by
+  cases f
+  · rw [delta_u, delta_u, deltaU_addUniform]
+  · rw [delta_d, delta_d, deltaD_addUniform]
+  · rw [delta_s, delta_s, deltaS_addUniform]
+
 /-- A flavour-universal shift by `s` shifts the singlet charge by `3 s`. -/
 @[simp]
-theorem a0_addUniform (s : ℝ → ℝ) (Q2 : ℝ) : (a.addUniform s).a0 Q2 = a.a0 Q2 + 3 * s Q2 := by
+theorem a0_addUniform (s : ℝ → ℝ) : (a.addUniform s).a0 = fun Q2 => a.a0 Q2 + 3 * s Q2 := by
+  funext Q2
   simp only [a0_apply, deltaU_addUniform, deltaD_addUniform, deltaS_addUniform]
   ring
 
@@ -327,8 +340,8 @@ theorem a3_eq_and_a8_eq_iff_exists_eq_addUniform :
   constructor
   · rintro ⟨h3, h8⟩
     refine ⟨fun Q2 => (b.a0 Q2 - a.a0 Q2) / 3, ext_a0_a3_a8 _ _ ?_ ?_ ?_⟩
-    · funext Q2
-      rw [a0_addUniform]
+    · rw [a0_addUniform]
+      funext Q2
       ring
     · rw [a3_addUniform, h3]
     · rw [a8_addUniform, h8]
@@ -342,16 +355,16 @@ are, before the radiative correction: `½ Σ_f e_f² Δ_f`, with `e_f` the quark
 `LightFlavor.charge`. -/
 def partonFirstMomentG1 : ℝ → ℝ := fun Q2 => (1 / 2) * ∑ f, LightFlavor.charge f ^ 2 * a.delta f Q2
 
-theorem partonFirstMomentG1_eq_sum (Q2 : ℝ) :
+theorem partonFirstMomentG1_apply (Q2 : ℝ) :
     a.partonFirstMomentG1 Q2 = (1 / 2) * ∑ f, LightFlavor.charge f ^ 2 * a.delta f Q2 := (rfl)
 
 /-- The parton-model first moment with the light-quark charges evaluated,
 `½ ((4/9) Δu + (1/9) Δd + (1/9) Δs)`: the combination in the field
 `EllisJaffeSumRule.moment_decomposition`. -/
-theorem partonFirstMomentG1_apply (Q2 : ℝ) :
+theorem partonFirstMomentG1_eq_helicityCharges (Q2 : ℝ) :
     a.partonFirstMomentG1 Q2
       = (1 / 2) * ((4 / 9) * a.deltaU Q2 + (1 / 9) * a.deltaD Q2 + (1 / 9) * a.deltaS Q2) := by
-  rw [partonFirstMomentG1_eq_sum, LightFlavor.sum_univ, LightFlavor.charge_u, LightFlavor.charge_d,
+  rw [partonFirstMomentG1_apply, LightFlavor.sum_univ, LightFlavor.charge_u, LightFlavor.charge_d,
     LightFlavor.charge_s, delta_u, delta_d, delta_s]
   ring
 
@@ -359,7 +372,7 @@ theorem partonFirstMomentG1_apply (Q2 : ℝ) :
 `(1/12) a₃ + (1/36) a₈ + (1/9) a₀`. -/
 theorem partonFirstMomentG1_eq_axialCharges (Q2 : ℝ) :
     a.partonFirstMomentG1 Q2 = (1 / 12) * a.a3 Q2 + (1 / 36) * a.a8 Q2 + (1 / 9) * a.a0 Q2 := by
-  rw [partonFirstMomentG1_apply, a0_apply, a3_apply, a8_apply]
+  rw [partonFirstMomentG1_eq_helicityCharges, a0_apply, a3_apply, a8_apply]
   ring
 
 /-- The parton-model first moment of the isospin-conjugate target,
@@ -392,8 +405,8 @@ singlet charge alone. -/
 @[simp]
 theorem partonFirstMomentG1_addUniform (s : ℝ → ℝ) (Q2 : ℝ) :
     (a.addUniform s).partonFirstMomentG1 Q2 = a.partonFirstMomentG1 Q2 + s Q2 / 3 := by
-  rw [partonFirstMomentG1_apply, partonFirstMomentG1_apply, deltaU_addUniform, deltaD_addUniform,
-    deltaS_addUniform]
+  rw [partonFirstMomentG1_eq_helicityCharges, partonFirstMomentG1_eq_helicityCharges,
+    deltaU_addUniform, deltaD_addUniform, deltaS_addUniform]
   ring
 
 /-- The parton-model first moment is the Ellis–Jaffe value `(1/12) a₃ + (5/36) a₈` plus `Δs / 3`. -/
@@ -423,7 +436,7 @@ theorem ellisJaffeSumRule_iff (Gp : StructureFunctions) (a : HelicityCharges) (c
     EllisJaffeSumRule Gp a.deltaU a.deltaD a.deltaS correction ↔
       (∀ Q2, firstMomentG1 Gp Q2 = a.partonFirstMomentG1 Q2 * (1 + correction Q2)) ∧
         ∀ Q2, a.a0 Q2 = a.a8 Q2 := by
-  simp only [← deltaS_eq_zero_iff_a0_eq_a8, partonFirstMomentG1_apply]
+  simp only [← deltaS_eq_zero_iff_a0_eq_a8, partonFirstMomentG1_eq_helicityCharges]
   exact ⟨fun h => ⟨h.moment_decomposition, h.strange_unpolarized⟩, fun h => ⟨h.1, h.2⟩⟩
 
 /-- **The measured first moment split at the Ellis–Jaffe value.** If the leading-twist
