@@ -8,15 +8,16 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-# Square-integrable functions: vanishing square integral and support in a set
+# Vanishing integral of a square, and `Lᵖ` functions supported in a set
 
-Two facts about square-integrable and `MemLp` functions used for wave functions on a half-line.
+Two measure-theory facts.
 
 * `integral_sq_eq_zero_iff`: a real function whose square is integrable has `∫ f ^ 2 = 0`
-  exactly when it vanishes almost everywhere, so a probability `∫ u ^ 2` is zero only for a null
-  amplitude.
+  exactly when it vanishes almost everywhere. So a channel weight `∫ u ^ 2` of a wave function,
+  or a profile overlap `∫ G ^ 2`, vanishes only for a null function.
 * `memLp_of_support_subset_of_restrict`: a function supported in a set `s` that is in `Lᵖ` for
-  the measure restricted to `s` is in `Lᵖ` for the whole measure.
+  the measure restricted to `s` is in `Lᵖ` for the whole measure. So an amplitude that is `L²`
+  on a half-line and vanishes off it is `L²` on all of `ℝ`.
 -/
 
 @[expose] public section

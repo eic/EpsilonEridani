@@ -15,7 +15,8 @@ functions piece by piece and to evaluate their moments.
 
 * `memLp_piecewise_Ioi_const`: the function equal to `v` on `(R, ∞)` and to a constant `a`
   elsewhere is in `Lᵖ` on `(b, ∞)`, for `b ≤ R`, when `v` is in `Lᵖ` on `(R, ∞)`.
-* `setIntegral_piecewise_Ioi_const_sq`: the integral of its square over `(b, ∞)` is
+* `setIntegral_piecewise_Ioi_const`: its integral over `(b, ∞)` is `(R - b) • a + ∫_R^∞ v`;
+  `setIntegral_piecewise_Ioi_const_sq`: the integral of its square is
   `(R - b) * a ^ 2 + ∫_R^∞ v ^ 2`.
 * `setIntegral_Ioi_pow_mul_exp_neg_pos`: `∫_a^∞ r ^ n * exp (-c * r) dr` is positive for
   `0 ≤ a` and `0 < c`.
@@ -37,23 +38,31 @@ theorem memLp_piecewise_Ioi_const {E : Type*} [NormedAddCommGroup E] {p : ENNRea
   · rw [Measure.restrict_restrict measurableSet_Ioi.compl, compl_Ioi, Iic_inter_Ioi]
     exact memLp_const a
 
+/-- The integral over the half-line `(b, ∞)` of the function equal to `f` on `(R, ∞)` and to
+the constant `a` elsewhere, for `b ≤ R`, is `(R - b) • a + ∫_R^∞ f`. -/
+theorem setIntegral_piecewise_Ioi_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {b R : ℝ} (hbR : b ≤ R) (a : E) {f : ℝ → E}
+    (hf : IntegrableOn f (Ioi R)) :
+    ∫ r in Ioi b, (Ioi R).piecewise f (fun _ => a) r = (R - b) • a + ∫ r in Ioi R, f r := by
+  have hIoc : EqOn ((Ioi R).piecewise f fun _ => a) (fun _ => a) (Ioc b R) :=
+    fun r hr => piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hr.2)
+  have hIoi : EqOn ((Ioi R).piecewise f fun _ => a) f (Ioi R) :=
+    fun r hr => piecewise_eq_of_mem _ _ _ hr
+  rw [← Ioc_union_Ioi_eq_Ioi hbR, setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
+    ((integrableOn_const measure_Ioc_lt_top.ne).congr_fun hIoc.symm measurableSet_Ioc)
+    (hf.congr_fun hIoi.symm measurableSet_Ioi),
+    setIntegral_congr_fun measurableSet_Ioc hIoc, setIntegral_congr_fun measurableSet_Ioi hIoi,
+    setIntegral_const, Real.volume_real_Ioc_of_le hbR]
+
 /-- The integral over the half-line `(b, ∞)` of the square of the function equal to `v` on
 `(R, ∞)` and to the constant `a` elsewhere, for `b ≤ R`, is `(R - b) * a ^ 2 + ∫_R^∞ v ^ 2`. -/
 theorem setIntegral_piecewise_Ioi_const_sq {b R : ℝ} (hbR : b ≤ R) (a : ℝ) {v : ℝ → ℝ}
     (hv : IntegrableOn (fun r => v r ^ 2) (Ioi R)) :
     ∫ r in Ioi b, (Ioi R).piecewise v (fun _ => a) r ^ 2 =
       (R - b) * a ^ 2 + ∫ r in Ioi R, v r ^ 2 := by
-  have hIoc : EqOn (fun r => (Ioi R).piecewise v (fun _ => a) r ^ 2) (fun _ => a ^ 2)
-      (Ioc b R) :=
-    fun r hr => by simp only [piecewise_eq_of_notMem _ _ _ (notMem_Ioi.2 hr.2)]
-  have hIoi : EqOn (fun r => (Ioi R).piecewise v (fun _ => a) r ^ 2) (fun r => v r ^ 2)
-      (Ioi R) :=
-    fun r hr => by simp only [piecewise_eq_of_mem _ _ _ hr]
-  rw [← Ioc_union_Ioi_eq_Ioi hbR, setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
-    ((integrableOn_const measure_Ioc_lt_top.ne).congr_fun hIoc.symm measurableSet_Ioc)
-    (hv.congr_fun hIoi.symm measurableSet_Ioi),
-    setIntegral_congr_fun measurableSet_Ioc hIoc, setIntegral_congr_fun measurableSet_Ioi hIoi,
-    setIntegral_const, Real.volume_real_Ioc_of_le hbR, smul_eq_mul]
+  rw [← smul_eq_mul, ← setIntegral_piecewise_Ioi_const hbR (a ^ 2) hv]
+  exact integral_congr_ae (ae_of_all _ fun _ =>
+    apply_piecewise (Ioi R) v (fun _ => a) fun _ x => x ^ 2)
 
 /-- The integral `∫_a^∞ r ^ n * exp (-c * r) dr` is positive for `0 ≤ a` and `0 < c`. -/
 theorem setIntegral_Ioi_pow_mul_exp_neg_pos (n : ℕ) {a c : ℝ} (ha : 0 ≤ a) (hc : 0 < c) :
