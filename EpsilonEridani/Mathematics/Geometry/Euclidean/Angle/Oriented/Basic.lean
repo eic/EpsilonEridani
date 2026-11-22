@@ -21,8 +21,8 @@ defined in scattering kinematics.
 ## Main statements
 
 * `Orientation.areaForm_eq_norm_mul_norm_mul_sin_oangle`: `ω(x, y) = ‖x‖ ‖y‖ sin ∡(x, y)`.
-* `Orientation.sin_oangle_eq_areaForm_div_norm_mul_norm`: for nonzero `x` and `y`,
-  `sin ∡(x, y) = ω(x, y) / (‖x‖ ‖y‖)`.
+* `Orientation.sin_oangle_eq_areaForm_div_norm_mul_norm`:
+  `sin ∡(x, y) = ω(x, y) / (‖x‖ ‖y‖)`, both sides being `0` when `x` or `y` is `0`.
 -/
 
 public section
@@ -44,10 +44,13 @@ theorem areaForm_eq_norm_mul_norm_mul_sin_oangle (x y : V) :
   field_simp
   ring
 
-/-- The sine of the oriented angle between two nonzero vectors is their area form divided by the
-product of their norms. -/
-theorem sin_oangle_eq_areaForm_div_norm_mul_norm {x y : V} (hx : x ≠ 0) (hy : y ≠ 0) :
+/-- The sine of the oriented angle between two vectors is their area form divided by the product
+of their norms. Unlike the cosine, this needs no nonvanishing hypotheses: both sides are `0` when
+either vector is `0`. -/
+theorem sin_oangle_eq_areaForm_div_norm_mul_norm (x y : V) :
     Real.Angle.sin (o.oangle x y) = o.areaForm x y / (‖x‖ * ‖y‖) := by
+  by_cases hx : x = 0; · simp [hx]
+  by_cases hy : y = 0; · simp [hy]
   rw [o.areaForm_eq_norm_mul_norm_mul_sin_oangle]
   field
 

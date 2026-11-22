@@ -391,12 +391,14 @@ lemma transversePart_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
   fin_cases i <;> simp [boost_inr_other_eq]
 
 /-- A boost along the `z`-axis with speed `β` rescales the plus component by `γ (1 - β)`. -/
+@[simp]
 lemma plusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
     plusComponent (boost (2 : Fin 3) β hβ • p) = γ β * (1 - β) * plusComponent p := by
   simp only [plusComponent_def, boost_time_eq, boost_inr_self_eq]
   ring
 
 /-- A boost along the `z`-axis with speed `β` rescales the minus component by `γ (1 + β)`. -/
+@[simp]
 lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
     minusComponent (boost (2 : Fin 3) β hβ • p) = γ β * (1 + β) * minusComponent p := by
   simp only [minusComponent_def, boost_time_eq, boost_inr_self_eq]
@@ -406,14 +408,14 @@ lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
 is positive. -/
 lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3} (hT : transversePart q = 0)
     (hq : ⟪q, q⟫ₘ < 0) : 0 < q (Sum.inr 2) ↔ 0 < plusComponent q := by
-  have h0 : q (Sum.inr 0) = 0 := by simpa using congrArg (· 0) hT
-  have h1 : q (Sum.inr 1) = 0 := by simpa using congrArg (· 1) hT
-  rw [minkowskiProduct_toCoord, Fin.sum_univ_three, h0, h1] at hq
-  rw [plusComponent_def, div_pos_iff_of_pos_right (by positivity)]
-  constructor <;> intro h
-  · nlinarith
-  · by_contra h'
-    nlinarith
+  have h2 : minusComponent q = plusComponent q - √2 * q (Sum.inr 2) := by
+    rw [plusComponent_def, minusComponent_def]
+    field_simp
+    rw [Real.sq_sqrt zero_le_two]
+    ring
+  rw [minkowskiProduct_self_eq_lightFront, hT, norm_zero, h2] at hq
+  rw [← mul_pos_iff_of_pos_left (show (0 : ℝ) < √2 by positivity)]
+  constructor <;> intro h <;> nlinarith
 
 /-- A boost along the `z`-axis does not reverse the direction of a spacelike four-vector along
 the `z`-axis. -/
