@@ -7,8 +7,6 @@ module
 
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import EpsilonEridani.Mathematics.MeasureTheory.Measure.CharacteristicFunction.BasicExtensions
-public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.BasicExtensions
-public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.FerniqueExtensions
 public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.MultivariateExtensions
 
 /-!
@@ -34,10 +32,9 @@ controlled by `Q² R²`, and beyond it the squared form factor of a Gaussian sou
   and `1 - ‖F(q)‖ ≤ ‖q‖² R² / 2` (`MeasureTheory.one_sub_norm_charFun_le`). Together they give
   `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) R² / 2` (`one_sub_norm_charFun_spatialPart_sub_le`). So
   `‖F‖` stays close to one, the value for a point charge, while `Q² R²` is small against one. For
-  the isotropic Gaussian charge distribution of width `σ`, whose squared norm is integrable
-  (`ProbabilityTheory.IsGaussian.integrable_norm_sq`, applied through the instance
-  `ProbabilityTheory.isGaussian_map_smul`), this reads
-  `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² d / 2`
+  the isotropic Gaussian charge distribution of width `σ` in `d` dimensions, the exact form
+  factor `ProbabilityTheory.norm_charFun_map_smul_stdGaussian` gives the bound sharper by the
+  factor `d`, `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`
   (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le`).
 * Beyond the scale the coherent rate is suppressed by the square of the form factor. For the
   isotropic Gaussian charge distribution of width `σ` in `d` dimensions,
@@ -101,16 +98,19 @@ theorem one_sub_norm_charFun_spatialPart_sub_le {d : ℕ} {μ : Measure (Euclide
 charge distribution of width `σ` in `d` dimensions, of mean square radius `R² = d σ²`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), a source of mass `m ≠ 0` at rest
 emitting the photon `q = p - p'` of virtuality `Q² = -⟪q, q⟫ₘ` has form factor
-`1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² d / 2`. -/
+`1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`, that is `Q² (1 + Q² / (4 m²)) R² / (2 d)`: isotropy
+improves the bound `one_sub_norm_charFun_spatialPart_sub_le` for a general charge distribution
+by the factor `d`. -/
 theorem one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le {d : ℕ} (σ : ℝ)
     {p p' : Lorentz.Vector d} {m : ℝ} (hm : m ≠ 0) (hp : p.spatialPart = 0)
     (hp0 : p.timeComponent = m) (hp' : ⟪p', p'⟫ₘ = m ^ 2) :
     1 - ‖charFun ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) (p - p').spatialPart‖ ≤
-      -⟪p - p', p - p'⟫ₘ * (1 + -⟪p - p', p - p'⟫ₘ / (4 * m ^ 2)) * (σ ^ 2 * d) / 2 := by
-  have h := one_sub_norm_charFun_spatialPart_sub_le
-    (IsGaussian.integrable_norm_sq ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)))
-    hm hp hp0 hp'
-  rwa [integral_norm_sq_map_smul_stdGaussian, finrank_euclideanSpace_fin] at h
+      -⟪p - p', p - p'⟫ₘ * (1 + -⟪p - p', p - p'⟫ₘ / (4 * m ^ 2)) * σ ^ 2 / 2 := by
+  rw [norm_charFun_map_smul_stdGaussian,
+    ← Lorentz.Vector.norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_minkowskiProduct_self_eq
+      hm hp hp0 hp']
+  -- `1 - exp (-y) ≤ y` for `y = σ² ‖q‖² / 2`
+  linarith [Real.add_one_le_exp (-(σ ^ 2 * ‖(p - p').spatialPart‖ ^ 2) / 2)]
 
 /-- **Beyond the coherence scale the coherent rate of a Gaussian source is exponentially
 suppressed.** For the isotropic Gaussian charge distribution of width `σ` in `d` dimensions, the

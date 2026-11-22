@@ -6,7 +6,7 @@ Authors: The EpsilonEridani contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
-public import Mathlib.Probability.Distributions.Gaussian.Fernique
+public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.FerniqueExtensions
 public import EpsilonEridani.Mathematics.MeasureTheory.Integral.Bochner.BasicExtensions
 
 /-!
@@ -42,14 +42,6 @@ namespace ProbabilityTheory
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- The square of a coordinate `⟪x, v⟫` is integrable under the standard Gaussian. -/
-theorem integrable_inner_sq_stdGaussian (v : E) :
-    Integrable (fun x : E ↦ ⟪x, v⟫ ^ 2) (stdGaussian E) := by
-  have h := (innerSL ℝ v).comp_memLp' (IsGaussian.memLp_two_id (μ := stdGaussian E))
-  refine h.integrable_sq.congr (Filter.Eventually.of_forall fun x ↦ ?_)
-  dsimp only
-  rw [Function.comp_apply, id_eq, innerSL_apply_apply, real_inner_comm v x]
-
 /-- The coordinate `⟪x, v⟫` of the standard Gaussian has second moment `‖v‖²`:
 `∫ ⟪x, v⟫² ∂(stdGaussian E) = ‖v‖²`. -/
 theorem integral_inner_sq_stdGaussian (v : E) :
@@ -70,7 +62,7 @@ theorem integral_norm_sq_stdGaussian :
     ∫ x, ‖x‖ ^ 2 ∂(stdGaussian E) = Module.finrank ℝ E := by
   let b := stdOrthonormalBasis ℝ E
   simp_rw [← b.sum_sq_inner_left]
-  rw [integral_finsetSum _ fun i _ ↦ integrable_inner_sq_stdGaussian (b i)]
+  rw [integral_finsetSum _ fun i _ ↦ IsGaussian.integrable_inner_sq (stdGaussian E) (b i)]
   simp [integral_inner_sq_stdGaussian, b.norm_eq_one]
 
 /-- The second moment of the standard Gaussian dilated by `σ` is `σ²` times the dimension:
