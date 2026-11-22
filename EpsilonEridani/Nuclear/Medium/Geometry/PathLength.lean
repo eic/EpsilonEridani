@@ -76,7 +76,10 @@ results; the physical case is three-dimensional space with
   parameters are star-shaped about `0` (for instance for a support star-shaped about `x`), the
   geometric path length is the supremum of the path parameters `s ≥ 0` with `x + s • v ∈ S`: the
   parameter at which the ray leaves `S`, which for `‖v‖ = 1` is the distance along the ray from `x`
-  to its exit point.
+  to its exit point. For a closed bounded convex `S`, a production point in its intrinsic interior
+  and a unit direction in the direction of its affine span, this supremum is
+  `TauCeti.compactConvexRadialReach` (TauCeti/Analysis/Convex/RadialReach.lean), which TauCeti
+  shows to be continuous in the direction.
 * `pathParameters_closedBall`, `geometricPathLength_closedBall`: in a real inner product space, for
   the hard sphere of radius `R` about `c` and a unit direction, the path parameters from a point
   `x` of the ball form the interval from `0` to `√(⟪x - c, v⟫² + R² - ‖x - c‖²) - ⟪x - c, v⟫`, which
@@ -132,8 +135,9 @@ theorem geometricPathLength_def (S : Set E) (x v : E) :
 `ρ`, normalised by the central density `ρ₀`: `ρ₀⁻¹ * ∫ s in Ici 0, ρ (x + s • v)`. For `‖v‖ = 1`
 this is the length of a uniform medium of density `ρ₀` containing as many nucleons per unit
 transverse area along the ray as `ρ` does. When `s ↦ ρ (x + s • v)` is not integrable on `Ici 0`,
-or `ρ₀ = 0`, the value is `0`; `integrableOn_Ici_comp_add_smul` gives integrability for a bounded
-density. -/
+or `ρ₀ = 0`, the value is `0`; `integrableOn_Ici_comp_add_smul` gives integrability for a
+measurable bounded density supported in a measurable set whose set of path parameters has finite
+measure. -/
 noncomputable def densityWeightedPathLength (ρ : E → ℝ) (ρ₀ : ℝ) (x v : E) : ℝ :=
   ρ₀⁻¹ * ∫ s in Ici (0 : ℝ), ρ (x + s • v)
 
@@ -188,8 +192,12 @@ theorem densityWeightedPathLength_smul_mul {c : ℝ} (hc : c ≠ 0) (ρ : E → 
 because `s ↦ x + s • v` is an isometry for `‖v‖ = 1`. -/
 theorem volume_pathParameters_le_ediam (hv : ‖v‖ = 1) :
     volume (pathParameters S x v) ≤ ediam S := by
-  have hiso : Isometry fun s : ℝ => x + s • v :=
-    (isometry_add_left x).comp (LinearIsometry.toSpanSingleton ℝ E hv).isometry
+  have hiso : Isometry fun s : ℝ => x + s • v := by
+    have hmap : (fun s : ℝ => x + s • v) = (x + ·) ∘ LinearIsometry.toSpanSingleton ℝ E hv := by
+      ext s
+      simp
+    rw [hmap]
+    exact (isometry_add_left x).comp (LinearIsometry.toSpanSingleton ℝ E hv).isometry
   calc volume (pathParameters S x v)
       ≤ ediam (pathParameters S x v) := Real.volume_le_diam _
     _ = ediam ((fun s : ℝ => x + s • v) '' pathParameters S x v) := (hiso.ediam_image _).symm
@@ -343,7 +351,8 @@ end Measurable
 about `0`: with `t` they contain `[0, t]`. -/
 theorem starConvex_pathParameters (hS : StarConvex ℝ x S) (v : E) :
     StarConvex ℝ 0 (pathParameters S x v) := by
-  rintro t ⟨ht0, ht⟩ a b ha hb hab
+  intro t ht a b ha hb hab
+  obtain ⟨ht0, ht⟩ := mem_pathParameters.1 ht
   rw [smul_zero, zero_add, smul_eq_mul, mem_pathParameters]
   refine ⟨mul_nonneg hb ht0, ?_⟩
   rw [← smul_smul]
@@ -434,7 +443,8 @@ theorem geometricPathLength_closedBall {c x v : F} {R : ℝ} (hx : x ∈ closedB
     geometricPathLength (closedBall c R) x v =
       √(⟪x - c, v⟫_ℝ ^ 2 + R ^ 2 - ‖x - c‖ ^ 2) - ⟪x - c, v⟫_ℝ := by
   -- The production point itself is in the ball, so the interval is nonempty.
-  have h0 : (0 : ℝ) ∈ pathParameters (closedBall c R) x v := ⟨le_rfl, by simpa using hx⟩
+  have h0 : (0 : ℝ) ∈ pathParameters (closedBall c R) x v :=
+    mem_pathParameters.2 ⟨le_rfl, by simpa using hx⟩
   rw [pathParameters_closedBall hx hv] at h0
   rw [geometricPathLength_def, pathParameters_closedBall hx hv, Real.volume_real_Icc_of_le h0.2,
     sub_zero]
