@@ -263,9 +263,9 @@ lemma minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self :
 
 /-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
 @[simp]
-lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 :=
-  minkowskiProduct_inv_two_smul_add_sub_eq_zero
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
+lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
+  rw [avgMomentum_def, delta_def, map_smul, _root_.smul_apply, minkowskiProduct_add_sub_eq,
+    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self, sub_self, _root_.smul_zero]
 
 /-- For an elastic transition the transfer is orthogonal to the average momentum, `Δ · P = 0`. -/
 @[simp]
@@ -275,9 +275,11 @@ lemma minkowskiProduct_delta_avgMomentum_eq_zero : ⟪K.delta, K.avgMomentum⟫�
 /-- The invariant mass squared of the average momentum, `P² = M² - t / 4`. -/
 @[simp]
 lemma minkowskiProduct_avgMomentum_self_eq :
-    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 :=
-  minkowskiProduct_inv_two_smul_add_self_eq K.minkowskiProduct_p_self
-    K.minkowskiProduct_pPrime_self
+    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 := by
+  rw [avgMomentum_def, minkowskiProduct_smul_self,
+    minkowskiProduct_add_self_eq_of_minkowskiProduct_self_eq K.minkowskiProduct_p_self
+      K.minkowskiProduct_pPrime_self, tMom_def, delta_def]
+  ring
 
 /-- The product of the two hadron momenta is `p · p' = M² - t / 2`. -/
 lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2 :=
@@ -286,12 +288,12 @@ lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2
 
 /-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
 lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 :=
-  minkowskiProduct_left_sub_eq_neg_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
 lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 :=
-  minkowskiProduct_right_sub_eq_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_self_sub_right_eq_minkowskiProduct_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The plus-component of the momentum transfer is `Δ⁺ = -2 ξ P⁺`. -/

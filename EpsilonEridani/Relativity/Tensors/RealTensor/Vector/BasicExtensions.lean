@@ -11,12 +11,15 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 # Extensions of the basic API of Lorentz vectors
 
 * Component lemmas for `Physlib`'s constructor `Lorentz.Vector.ofTemporalComponent`: the time
-  component and spatial part of a purely temporal vector `t e₀`, and the linearity of the
-  spatial part (`spatialPart_sub`, `spatialPart_add`, `spatialPart_smul`). They describe the
-  equal-time projection `v - ofTemporalComponent v.timeComponent` of a vector `v`, which has
-  vanishing time component
+  component and spatial part of a purely temporal vector `t e₀`, and the spatial part of a
+  difference (`spatialPart_sub`). They describe the equal-time projection
+  `v - ofTemporalComponent v.timeComponent` of a vector `v`, which has vanishing time component
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
+
+* The spatial part is `ℝ`-linear (`spatialPart_add`, `spatialPart_smul`, with `spatialPart_sub`
+  above), so the spatial part of a combination such as `(p + p') / 2` is the same combination of
+  the spatial parts.
 
 * The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
   (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from

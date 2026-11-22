@@ -20,9 +20,10 @@ declaration order, the file contains:
 
 * the expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`
   (`minkowskiProduct_sub_self`), companion to `Lorentz.Vector.minkowskiProduct_add_self`;
-* for two vectors `u`, `v` of equal Minkowski square, the orthogonality of the half-sum
-  `(u + v) / 2` to the difference `v - u`, the products `⟪u, v⟫ₘ`, `⟪u, v - u⟫ₘ`, `⟪v, v - u⟫ₘ`
-  and the square of the half-sum in terms of `⟪v - u, v - u⟫ₘ`, and the fact that a
+* the product of a sum with a difference, `⟪u + v, v - u⟫ₘ = ⟪v, v⟫ₘ - ⟪u, u⟫ₘ`
+  (`minkowskiProduct_add_sub_eq`), and, for two vectors `u`, `v` of equal Minkowski square, the
+  products `⟪u, v⟫ₘ`, `⟪u, v - u⟫ₘ`, `⟪v, v - u⟫ₘ`
+  and the square of the sum in terms of `⟪v - u, v - u⟫ₘ`, and the fact that a
   non-negative multiple of `u` with the same non-zero square is `u`
   (`eq_of_eq_smul_of_minkowskiProduct_self_eq`); these are the identities of the average
   momentum and momentum transfer of an elastic transition;
@@ -68,21 +69,20 @@ lemma minkowskiProduct_sub_self {d : ℕ} (u v : Vector d) :
 
 /-! ### Two vectors of equal Minkowski square
 
-For `u`, `v` with `⟪u, u⟫ₘ = ⟪v, v⟫ₘ`, such as the two momenta of an elastic transition, the
-half-sum `(u + v) / 2` and the difference `v - u` satisfy the identities below. They are the
-polarization identities of the Minkowski form; the average momentum `P` and the momentum transfer
-`Δ` of elastic and off-forward kinematics inherit them. -/
+For `u`, `v` with `⟪u, u⟫ₘ = ⟪v, v⟫ₘ`, such as the two momenta of an elastic transition, the sum
+`u + v` and the difference `v - u` satisfy the polarization identities below; the average
+momentum `P = (p + p') / 2` and the momentum transfer `Δ = p' - p` of elastic and off-forward
+kinematics inherit them. The section ends with a rigidity statement: for a vector of non-zero
+square, a non-negative multiple with the same square is the vector itself. -/
 
 section EqualSquare
 
 variable {d : ℕ} {u v : Vector d}
 
-/-- For two vectors of equal Minkowski square, the half-sum `(u + v) / 2` is orthogonal to the
-difference `v - u`. -/
-lemma minkowskiProduct_inv_two_smul_add_sub_eq_zero (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) :
-    ⟪(2⁻¹ : ℝ) • (u + v), v - u⟫ₘ = 0 := by
-  simp only [map_smul, map_add, map_sub, _root_.smul_apply, _root_.add_apply, smul_eq_mul, h,
-    minkowskiProduct_symm v u]
+/-- The product of a sum with a difference, `⟪u + v, v - u⟫ₘ = ⟪v, v⟫ₘ - ⟪u, u⟫ₘ`. -/
+lemma minkowskiProduct_add_sub_eq (u v : Vector d) :
+    ⟪u + v, v - u⟫ₘ = ⟪v, v⟫ₘ - ⟪u, u⟫ₘ := by
+  simp only [map_add, map_sub, _root_.add_apply, minkowskiProduct_symm v u]
   ring
 
 /-- For two vectors on a common shell `⟪u, u⟫ₘ = ⟪v, v⟫ₘ = m`, their product is
@@ -92,23 +92,22 @@ lemma minkowskiProduct_eq_of_minkowskiProduct_self_eq {m : ℝ} (hu : ⟪u, u⟫
   rw [minkowskiProduct_sub_self, hu, hv, minkowskiProduct_symm v u]
   ring
 
-/-- For two vectors on a common shell `⟪u, u⟫ₘ = ⟪v, v⟫ₘ = m`, the half-sum has Minkowski square
-`m - ⟪v - u, v - u⟫ₘ / 4`. -/
-lemma minkowskiProduct_inv_two_smul_add_self_eq {m : ℝ} (hu : ⟪u, u⟫ₘ = m) (hv : ⟪v, v⟫ₘ = m) :
-    ⟪(2⁻¹ : ℝ) • (u + v), (2⁻¹ : ℝ) • (u + v)⟫ₘ = m - ⟪v - u, v - u⟫ₘ / 4 := by
-  rw [minkowskiProduct_smul_self, minkowskiProduct_add_self, minkowskiProduct_sub_self, hu, hv,
-    minkowskiProduct_symm v u]
+/-- For two vectors on a common shell `⟪u, u⟫ₘ = ⟪v, v⟫ₘ = m`, the sum has Minkowski square
+`⟪u + v, u + v⟫ₘ = 4 m - ⟪v - u, v - u⟫ₘ`. -/
+lemma minkowskiProduct_add_self_eq_of_minkowskiProduct_self_eq {m : ℝ} (hu : ⟪u, u⟫ₘ = m)
+    (hv : ⟪v, v⟫ₘ = m) : ⟪u + v, u + v⟫ₘ = 4 * m - ⟪v - u, v - u⟫ₘ := by
+  rw [minkowskiProduct_add_self, minkowskiProduct_sub_self, hu, hv, minkowskiProduct_symm v u]
   ring
 
 /-- For two vectors of equal Minkowski square, `⟪u, v - u⟫ₘ = -⟪v - u, v - u⟫ₘ / 2`. -/
-lemma minkowskiProduct_left_sub_eq_neg_minkowskiProduct_sub_self_div_two (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) :
-    ⟪u, v - u⟫ₘ = -⟪v - u, v - u⟫ₘ / 2 := by
+lemma minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two
+    (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) : ⟪u, v - u⟫ₘ = -⟪v - u, v - u⟫ₘ / 2 := by
   rw [minkowskiProduct_sub_self, map_sub, ← h, minkowskiProduct_symm v u]
   ring
 
 /-- For two vectors of equal Minkowski square, `⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`. -/
-lemma minkowskiProduct_right_sub_eq_minkowskiProduct_sub_self_div_two (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) :
-    ⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2 := by
+lemma minkowskiProduct_self_sub_right_eq_minkowskiProduct_self_div_two
+    (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) : ⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2 := by
   rw [minkowskiProduct_sub_self, map_sub, h]
   ring
 

@@ -10,11 +10,11 @@ public import Physlib.Relativity.Tensors.RealTensor.Velocity.Basic
 /-!
 # Extensions of the basic API of four-velocities
 
-* The rest velocity `0 : Velocity d`, the vector `(1, 0)`, has vanishing spatial part
-  (`Velocity.zero_spatialPart`), companion to Physlib's `Velocity.zero_timeComponent`. It is the
-  fact that the generalised boost taking a velocity `u` to rest
-  (`EpsilonEridani.Relativity.LorentzGroup.Boosts.GeneralizedExtensions`) produces a vector with
-  no spatial part.
+* The rest velocity `0 : Velocity d` is the basis vector `e₀ = (1, 0)` (`Velocity.val_zero`), so
+  it has vanishing spatial part (`Velocity.zero_spatialPart`), companion to Physlib's
+  `Velocity.zero_timeComponent`. It is the fact that the generalised boost taking a velocity `u`
+  to rest (`EpsilonEridani.Relativity.LorentzGroup.Boosts.GeneralizedExtensions`) produces a
+  vector with no spatial part.
 -/
 
 public section
@@ -22,10 +22,13 @@ public section
 namespace Lorentz
 namespace Velocity
 
+/-- The rest velocity is the basis vector `e₀ = (1, 0)`. -/
+lemma val_zero {d : ℕ} : (0 : Velocity d).1 = Vector.basis (Sum.inl 0) := rfl
+
 /-- The rest velocity `(1, 0)` has vanishing spatial part. -/
 @[simp]
 lemma zero_spatialPart {d : ℕ} : (0 : Velocity d).1.spatialPart = 0 := by
-  change (Vector.basis (Sum.inl 0) : Vector d).spatialPart = 0
+  rw [val_zero]
   ext i
   exact Vector.spatialPart_basis_sum_inl i
 

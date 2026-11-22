@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.GeneralizedExtensions
+public import PhyslibAlpha.Relativity.Poincare.Causality
 public import Physlib.Relativity.Causality.CausallyFollows
 public import Physlib.Relativity.LorentzGroup.Restricted.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -42,10 +43,10 @@ the form factors are written.
   (`ElasticKinematics.tMom_eq_of_smul`).
 * `ofLiteratureT` turns a function of `t ≤ 0`, as the literature writes form factors, into a
   function of `Q² ≥ 0`. Its slope at the origin is minus the `t`-slope
-  (`hasDerivWithinAt_ofLiteratureT_iff`, `derivWithin_ofLiteratureT`), and `∫_0^∞ dQ²` of it is
-  `∫_{-∞}^0 dt` of the original (`setIntegral_ofLiteratureT`). A slope or a radius integral read
-  off in the wrong variable changes sign, which is why every transcribed formula goes through
-  this map.
+  (`hasDerivWithinAt_ofLiteratureT_toNNReal_iff`, `derivWithin_ofLiteratureT_toNNReal`), and
+  `∫_0^∞ dQ²` of it is `∫_{-∞}^0 dt` of the original (`setIntegral_ofLiteratureT_toNNReal`). A
+  slope or a radius integral read off in the wrong variable changes sign, which is why every
+  transcribed formula goes through this map.
 
 The momenta, `P`, `Δ` and `t` are named as in `EpsilonEridani.Particles.Parton.GPD.Kinematics`,
 whose `OffForwardKinematics` describes the same transition together with a light-like direction
@@ -141,9 +142,9 @@ lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = T.mass ^ 2 - K.tMo
 
 /-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
 @[simp]
-lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 :=
-  minkowskiProduct_inv_two_smul_add_sub_eq_zero
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
+lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
+  rw [avgMomentum_def, delta_def, map_smul, _root_.smul_apply, minkowskiProduct_add_sub_eq,
+    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self, sub_self, _root_.smul_zero]
 
 /-- For an elastic transition the transfer is orthogonal to the average momentum, `Δ · P = 0`. -/
 @[simp]
@@ -153,18 +154,20 @@ lemma minkowskiProduct_delta_avgMomentum_eq_zero : ⟪K.delta, K.avgMomentum⟫�
 /-- The invariant mass squared of the average momentum, `P² = M² - t / 4`. -/
 @[simp]
 lemma minkowskiProduct_avgMomentum_self_eq :
-    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = T.mass ^ 2 - K.tMom / 4 :=
-  minkowskiProduct_inv_two_smul_add_self_eq K.minkowskiProduct_p_self
-    K.minkowskiProduct_pPrime_self
+    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = T.mass ^ 2 - K.tMom / 4 := by
+  rw [avgMomentum_def, minkowskiProduct_smul_self,
+    minkowskiProduct_add_self_eq_of_minkowskiProduct_self_eq K.minkowskiProduct_p_self
+      K.minkowskiProduct_pPrime_self, tMom_def, delta_def]
+  ring
 
 /-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
 lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 :=
-  minkowskiProduct_left_sub_eq_neg_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
 lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 :=
-  minkowskiProduct_right_sub_eq_minkowskiProduct_sub_self_div_two
+  minkowskiProduct_self_sub_right_eq_minkowskiProduct_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The average momentum paired with the incoming momentum is `P · p = M² - t / 4`. -/
@@ -384,23 +387,28 @@ theorem exists_isBreitFrame :
       K'.p = Λ • K.p ∧ K'.pPrime = Λ • K.pPrime ∧ K'.IsBreitFrame := by
   -- the witness is the generalised boost taking the velocity `P / √(P²)` of the average momentum
   -- to rest
-  obtain ⟨Λ, hΛ, hΛP, hpos⟩ := LorentzGroup.exists_mem_restricted_spatialPart_smul_eq_zero
+  obtain ⟨Λ, hΛ, hΛP⟩ := LorentzGroup.exists_mem_restricted_spatialPart_smul_eq_zero
     K.minkowskiProduct_avgMomentum_self_pos K.timeComponent_avgMomentum_pos
-  have hM := pow_pos T.mass_pos 2
-  have hp : 0 < ⟪K.avgMomentum, K.p⟫ₘ := by
-    rw [K.minkowskiProduct_avgMomentum_p_eq]
-    linarith [K.tMom_nonpos]
-  have hp' : 0 < ⟪K.avgMomentum, K.pPrime⟫ₘ := by
-    rw [K.minkowskiProduct_avgMomentum_pPrime_eq]
-    linarith [K.tMom_nonpos]
+  -- `Λ` is orthochronous, so it keeps an on-shell momentum of positive energy in the future cone,
+  -- and the energy cannot vanish since `0 < M² ≤ ((Λ x)⁰)²`
+  have hpos : ∀ x : Vector d, causallyFollows 0 x → ⟪x, x⟫ₘ = T.mass ^ 2 →
+      0 < (Λ • x).timeComponent := by
+    intro x hx hxx
+    have h0 := (causallyFollows_zero_iff.mp (PoincareGroup.causallyFollows_zero_smul hΛ.2 hx)).2
+    have h2 := minkowskiProduct_self_le_timeComponent_sq (Λ • x)
+    rw [minkowskiProduct_invariant, hxx] at h2
+    refine h0.lt_of_ne fun h => ?_
+    rw [← h] at h2
+    nlinarith [T.mass_pos]
   let K' : ElasticKinematics T d :=
     { p := Λ • K.p
       pPrime := Λ • K.pPrime
       minkowskiProduct_p_self := by rw [minkowskiProduct_invariant, K.minkowskiProduct_p_self]
       minkowskiProduct_pPrime_self := by
         rw [minkowskiProduct_invariant, K.minkowskiProduct_pPrime_self]
-      timeComponent_p_pos := hpos _ hp
-      timeComponent_pPrime_pos := hpos _ hp' }
+      timeComponent_p_pos := hpos _ K.causallyFollows_zero_p K.minkowskiProduct_p_self
+      timeComponent_pPrime_pos :=
+        hpos _ K.causallyFollows_zero_pPrime K.minkowskiProduct_pPrime_self }
   have hav : K'.avgMomentum = Λ • K.avgMomentum := by
     rw [avgMomentum_def, avgMomentum_def, smul_comm, Lorentz.Vector.smul_add]
   exact ⟨Λ, hΛ, K', rfl, rfl, by rw [isBreitFrame_iff, hav, hΛP]⟩
@@ -444,7 +452,7 @@ lemma ofLiteratureT_eq_ofLiteratureT_iff {f g : ℝ → ℝ} :
 open scoped Pointwise in
 /-- The slope in `Q²` at the origin is minus the slope in `t`: `ofLiteratureT f`, read on `Q² ≥ 0`,
 has right derivative `f'` at `0` exactly when `f` has left derivative `-f'` at `0`. -/
-theorem hasDerivWithinAt_ofLiteratureT_iff {f : ℝ → ℝ} {f' : ℝ} :
+theorem hasDerivWithinAt_ofLiteratureT_toNNReal_iff {f : ℝ → ℝ} {f' : ℝ} :
     HasDerivWithinAt (fun q : ℝ => ofLiteratureT f q.toNNReal) f' (Ici 0) 0 ↔
       HasDerivWithinAt f (-f') (Iic 0) 0 := by
   rw [(Filter.eventuallyEq_of_mem self_mem_nhdsWithin (eqOn_ofLiteratureT_toNNReal f)
@@ -455,14 +463,14 @@ theorem hasDerivWithinAt_ofLiteratureT_iff {f : ℝ → ℝ} {f' : ℝ} :
       (x := 0)
 
 /-- The slope in `Q²` at the origin is minus the slope in `t` at the origin. -/
-theorem derivWithin_ofLiteratureT (f : ℝ → ℝ) :
+theorem derivWithin_ofLiteratureT_toNNReal (f : ℝ → ℝ) :
     derivWithin (fun q : ℝ => ofLiteratureT f q.toNNReal) (Ici 0) 0 =
       -derivWithin f (Iic 0) 0 := by
   rw [derivWithin_congr (eqOn_ofLiteratureT_toNNReal f) (by simp), derivWithin_comp_neg,
     neg_zero, Set.neg_Ici, neg_zero]
 
 /-- `∫_0^∞ dQ²` of the translated function is `∫_{-∞}^0 dt` of the original. -/
-theorem setIntegral_ofLiteratureT (f : ℝ → ℝ) :
+theorem setIntegral_ofLiteratureT_toNNReal (f : ℝ → ℝ) :
     ∫ q in Ioi (0 : ℝ), ofLiteratureT f q.toNNReal = ∫ t in Iic (0 : ℝ), f t := by
   rw [setIntegral_congr_fun measurableSet_Ioi
     (fun q (hq : q ∈ Ioi 0) => ofLiteratureT_toNNReal f (le_of_lt hq)), integral_comp_neg_Ioi,
