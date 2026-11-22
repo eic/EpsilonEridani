@@ -69,12 +69,6 @@ lemma mellinMoment_integrable
   MeasureTheory.Integrable (fun x : ℝ => x ^ n * f i x Q2) :=
   h.momentIntegrable n i Q2
 
-/-- Under the structural assumptions, each density is integrable: the zeroth Mellin-moment
-integrand. -/
-lemma Assumptions.integrable {f : Pdf Flavor} (h : Assumptions f) (i : Flavor) (Q2 : ℝ) :
-    MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
-  simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
-
 /-- The zeroth minus the first Mellin moment is the integral of `(1 - x) f(x)` over `[0, 1]`:
 `∫₀¹ f - ∫₀¹ x f = ∫₀¹ (1 - x) f`. -/
 lemma mellinMoment_zero_sub_mellinMoment_one_eq_setIntegral_one_sub_mul {f : Pdf Flavor}
@@ -132,6 +126,12 @@ lemma Assumptions.isPartonDensity {f : Pdf Flavor} (h : Assumptions f) :
 /-- The analytic half of a full assumption bundle. -/
 lemma Assumptions.regularity {f : Pdf Flavor} (h : Assumptions f) : Regularity f :=
   { measurable := h.measurable, momentIntegrable := h.momentIntegrable }
+
+/-- Under the analytic assumptions, each density is integrable: the zeroth Mellin-moment
+integrand. -/
+lemma Regularity.integrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ) :
+    MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
+  simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
 
 /-- The split is exact: `Assumptions` is the conjunction of the physical and the analytic
 half, with no residue. -/

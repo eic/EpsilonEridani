@@ -23,6 +23,14 @@ Fubini theorem `EpsilonEridani.setIntegral_prod_eq_integral_setIntegral_mk_preim
 measurable subset of a product, applied after exchanging the coordinates, once the slices of the
 triangle are computed.
 
+The same triangle appears in `ℂ` as `TauCeti.Green.standardTriangle`, whose graph-cell API
+(`TauCeti.Green.integral_horizontalRegion`, `TauCeti.Green.integrable_verticalRegion_fiberIntegral`,
+`TauCeti.Green.integral_comp_coordinateSwapCLE_verticalRegion`) gives the analogous Fubini and
+coordinate-swap statements. The `ℝ × ℝ` formulation here is deliberate: the integrands are
+functions of a pair of real momentum fractions, and with `ℝ × ℝ` the coordinate swap is
+Mathlib's measure-preserving `Prod.swap` and Fubini is the product-measure theorem directly, so no
+transport along `Complex.measurableEquivRealProd` is needed.
+
 ## Main definitions
 
 * `EpsilonEridani.unitTriangle`: the closed unit triangle, a compact set
@@ -51,23 +59,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The closed unit triangle `{(x, y) | 0 ≤ x, 0 ≤ y, x + y ≤ 1}`. -/
 def unitTriangle : Set (ℝ × ℝ) := {p | 0 ≤ p.1 ∧ 0 ≤ p.2 ∧ p.1 + p.2 ≤ 1}
 
+@[simp]
 theorem mem_unitTriangle {p : ℝ × ℝ} :
     p ∈ unitTriangle ↔ 0 ≤ p.1 ∧ 0 ≤ p.2 ∧ p.1 + p.2 ≤ 1 :=
   Iff.rfl
 
-@[simp, measurability]
-theorem measurableSet_unitTriangle : MeasurableSet unitTriangle := by
-  -- `unitTriangle` is the intersection of the three half-planes cut out by its inequalities.
-  simp only [unitTriangle, ofPred_and]
-  exact (measurableSet_le measurable_const measurable_fst).inter
-    ((measurableSet_le measurable_const measurable_snd).inter
-      (measurableSet_le (measurable_fst.add measurable_snd) measurable_const))
-
 theorem isClosed_unitTriangle : IsClosed unitTriangle := by
+  -- `unitTriangle` is the intersection of the three half-planes cut out by its inequalities.
   simp only [unitTriangle, ofPred_and]
   exact (isClosed_le continuous_const continuous_fst).inter
     ((isClosed_le continuous_const continuous_snd).inter
       (isClosed_le (continuous_fst.add continuous_snd) continuous_const))
+
+@[simp, measurability]
+theorem measurableSet_unitTriangle : MeasurableSet unitTriangle :=
+  isClosed_unitTriangle.measurableSet
 
 theorem unitTriangle_subset_Icc_prod_Icc :
     unitTriangle ⊆ Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1 := fun p ⟨h1, h2, h12⟩ =>
@@ -77,7 +83,6 @@ theorem isCompact_unitTriangle : IsCompact unitTriangle :=
   (isCompact_Icc.prod isCompact_Icc).of_isClosed_subset isClosed_unitTriangle
     unitTriangle_subset_Icc_prod_Icc
 
-@[simp]
 theorem swap_mem_unitTriangle {p : ℝ × ℝ} : p.swap ∈ unitTriangle ↔ p ∈ unitTriangle := by
   simp only [mem_unitTriangle, Prod.fst_swap, Prod.snd_swap, add_comm p.2]
   tauto
@@ -120,7 +125,7 @@ theorem mk_preimage_unitTriangle_eq_empty_of_notMem_Icc {y : ℝ} (hy : y ∉ Ic
 
 /-- The integral of `g (·, y)` over the slice of the unit triangle at `y`: the interval integral
 `∫_0^{1-y} dx g(x, y)` for `y ∈ [0, 1]`, and zero otherwise. -/
-theorem setIntegral_mk_preimage_unitTriangle (g : ℝ × ℝ → E) (y : ℝ) :
+private theorem setIntegral_mk_preimage_unitTriangle (g : ℝ × ℝ → E) (y : ℝ) :
     ∫ x in Prod.mk y ⁻¹' unitTriangle, g (x, y) =
       (Icc (0 : ℝ) 1).indicator (fun y => ∫ x in 0..1 - y, g (x, y)) y := by
   by_cases hy : y ∈ Icc (0 : ℝ) 1

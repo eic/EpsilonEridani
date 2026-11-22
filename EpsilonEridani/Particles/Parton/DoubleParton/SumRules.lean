@@ -129,7 +129,7 @@ triangle:
 `∫_{triangle} x₂ (F_{q_i a} - F_{qbar_i a})(x₁, x₂)
 = (N i + δ_{a qbar_i} - δ_{a q_i}) ∫₀¹ x f_a(x)`.
 -/
-theorem setIntegral_unitTriangle_snd_mul_sub_eq_mul_mellinMoment [DecidableEq Flavor]
+theorem setIntegral_unitTriangle_snd_mul_sub_eq_mul_mellinMoment_one [DecidableEq Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
     {N : Flavor → ℝ} (hN : NumberSumRule F f Q2 N) (i : Flavor) (a : Species Flavor)
     (hF : IntegrableOn (fun p : ℝ × ℝ => p.2 * (F (.quark i) a p.1 p.2 -
@@ -144,7 +144,7 @@ theorem setIntegral_unitTriangle_snd_mul_sub_eq_mul_mellinMoment [DecidableEq Fl
 
 /-- The momentum sum rule of the species `a`, integrated over the unit triangle:
 `∑_b ∫_{triangle} x₁ F_{b a}(x₁, x₂) = ∫₀¹ (1 - x) f_a(x) dx`. -/
-theorem sum_setIntegral_unitTriangle_fst_mul_eq_integral_one_sub_mul [Fintype Flavor]
+theorem sum_setIntegral_unitTriangle_fst_mul_eq_setIntegral_one_sub_mul [Fintype Flavor]
     {F : Species Flavor → Species Flavor → ℝ → ℝ → ℝ} {f : Pdf (Species Flavor)} {Q2 : ℝ}
     (hM : MomentumSumRule F f Q2) (a : Species Flavor)
     (hF : ∀ b, IntegrableOn (fun p : ℝ × ℝ => p.1 * F b a p.1 p.2) unitTriangle) :
@@ -189,7 +189,7 @@ theorem mul_sum_mellinMoment_one_eq_valenceNumber [Fintype Flavor] [DecidableEq 
       ∑ a, (N i + δ[a, .antiquark i] - δ[a, .quark i]) * mellinMoment f 1 a Q2 := by
     refine Finset.sum_congr rfl fun a _ => ?_
     rw [← setIntegral_unitTriangle_comp_swap, hswap]
-    refine setIntegral_unitTriangle_snd_mul_sub_eq_mul_mellinMoment hN i a ?_
+    refine setIntegral_unitTriangle_snd_mul_sub_eq_mul_mellinMoment_one hN i a ?_
     rw [← hswap]
     exact integrableOn_unitTriangle_comp_swap_iff.2 (hGint a)
   -- Second evaluation: through the momentum sum rules of `q_i` and `qbar_i`.
@@ -197,8 +197,8 @@ theorem mul_sum_mellinMoment_one_eq_valenceNumber [Fintype Flavor] [DecidableEq 
       (∫ x in Icc (0 : ℝ) 1, (1 - x) * f (.quark i) x Q2) -
         ∫ x in Icc (0 : ℝ) 1, (1 - x) * f (.antiquark i) x Q2 := by
     simp only [hG, integral_sub (hFq _) (hFqbar _), Finset.sum_sub_distrib]
-    rw [sum_setIntegral_unitTriangle_fst_mul_eq_integral_one_sub_mul hM _ hFq,
-      sum_setIntegral_unitTriangle_fst_mul_eq_integral_one_sub_mul hM _ hFqbar]
+    rw [sum_setIntegral_unitTriangle_fst_mul_eq_setIntegral_one_sub_mul hM _ hFq,
+      sum_setIntegral_unitTriangle_fst_mul_eq_setIntegral_one_sub_mul hM _ hFqbar]
   have hdelta : ∑ a, (N i + δ[a, .antiquark i] - δ[a, .quark i]) * mellinMoment f 1 a Q2 =
       N i * ∑ a, mellinMoment f 1 a Q2 + mellinMoment f 1 (.antiquark i) Q2 -
         mellinMoment f 1 (.quark i) Q2 := by
@@ -429,7 +429,7 @@ theorem integrableOn_fst_mul_threeQuarkDpd (a b : Species Unit) :
 /-- The single-parton densities of the three-quark model are integrable on `[0, 1]`. -/
 theorem integrableOn_threeQuarkPdf (a : Species Unit) (Q2 : ℝ) :
     IntegrableOn (fun x => threeQuarkPdf a x Q2) (Icc 0 1) :=
-  (assumptions_threeQuarkPdf.integrable a Q2).integrableOn
+  (assumptions_threeQuarkPdf.regularity.integrable a Q2).integrableOn
 
 /-- The quark of the three-quark model has the valence number `3`. -/
 @[simp]
