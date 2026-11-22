@@ -44,6 +44,8 @@ is determined by `t` modulo `π`.
 
 ## Main results
 
+* `sMatrix_conjTranspose`: `Sᴴ` is the S-matrix of `-Tᴴ`, and `conj_elasticSMatrix` its
+  single-channel form.
 * `sMatrix_mem_unitaryGroup_iff`: `S` is unitary iff `T - Tᴴ = 2 i Tᴴ ρ T`.
 * `sMatrix_mem_unitaryGroup_iff_inv`: for invertible `T`, `S` is unitary iff
   `T⁻¹ - (T⁻¹)ᴴ = -2 i ρ`.
@@ -82,7 +84,7 @@ public section
 
 namespace EpsilonEridani.QFT.Scattering.Amplitude
 
-open Complex Matrix ComplexStarModule
+open Complex ComplexConjugate Matrix ComplexStarModule
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
@@ -107,13 +109,23 @@ theorem sMatrix_apply (ρ : n → ℝ) (T : Matrix n n ℂ) (i j : n) :
   rw [sMatrix_def, Matrix.add_apply, Matrix.smul_apply, mul_diagonal, diagonal_mul, smul_eq_mul]
   ring
 
+/-- The conjugate transpose of the S-matrix of `T` is the S-matrix of `-Tᴴ`. -/
+@[simp]
+theorem sMatrix_conjTranspose (ρ : n → ℝ) (T : Matrix n n ℂ) :
+    (sMatrix ρ T)ᴴ = sMatrix ρ (-Tᴴ) := by
+  have hR : (diagonal (fun i ↦ (√(ρ i) : ℂ)))ᴴ = diagonal (fun i ↦ (√(ρ i) : ℂ)) :=
+    (isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ conj_ofReal _)).eq
+  have hc : star (2 * I) = -(2 * I) := by simp
+  rw [sMatrix_def, sMatrix_def, conjTranspose_add, conjTranspose_one, conjTranspose_smul,
+    conjTranspose_mul, conjTranspose_mul, hR, hc, Matrix.mul_neg, Matrix.neg_mul, smul_neg,
+    neg_smul, Matrix.mul_assoc]
+
 /-- **Unitarity in quadratic form.** For positive phase-space factors, the partial-wave S-matrix is
 unitary iff `T - Tᴴ = 2 i Tᴴ ρ T`. -/
 theorem sMatrix_mem_unitaryGroup_iff {ρ : n → ℝ} (hρ : ∀ i, 0 < ρ i) (T : Matrix n n ℂ) :
     sMatrix ρ T ∈ unitaryGroup n ℂ ↔
       T - Tᴴ = (2 * I) • (Tᴴ * diagonal (fun i ↦ (ρ i : ℂ)) * T) := by
-  set R := diagonal (fun i ↦ (√(ρ i) : ℂ))
-  have hRH : Rᴴ = R := (isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ conj_ofReal _)).eq
+  set R := diagonal (fun i ↦ (√(ρ i) : ℂ)) with hRdef
   have hRR : R * R = diagonal (fun i ↦ (ρ i : ℂ)) := by
     rw [diagonal_mul_diagonal]
     congr 1
@@ -125,11 +137,10 @@ theorem sMatrix_mem_unitaryGroup_iff {ρ : n → ℝ} (hρ : ∀ i, 0 < ρ i) (T
   -- `Sᴴ S = 1 + 2 i R (T - Tᴴ - 2 i Tᴴ R² T) R`, and `R` is invertible.
   have key : (sMatrix ρ T)ᴴ * sMatrix ρ T =
       1 + (2 * I) • (R * (T - Tᴴ - (2 * I) • (Tᴴ * (R * R) * T)) * R) := by
-    have hc : star (2 * I) = -(2 * I) := by simp
-    rw [sMatrix_def, conjTranspose_add, conjTranspose_one, conjTranspose_smul, conjTranspose_mul,
-      conjTranspose_mul, hRH, hc]
+    rw [sMatrix_conjTranspose, sMatrix_def, sMatrix_def, ← hRdef]
     simp only [Matrix.mul_add, Matrix.add_mul, Matrix.one_mul, Matrix.mul_one, Matrix.mul_sub,
-      Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_assoc]
+      Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_neg, Matrix.neg_mul,
+      Matrix.mul_assoc]
     module
   rw [mem_unitaryGroup_iff', star_eq_conjTranspose, key, add_eq_left, smul_eq_zero,
     or_iff_right (by simp), hR.mul_left_eq_zero, hR.mul_right_eq_zero, sub_eq_zero, hRR]
@@ -200,6 +211,15 @@ theorem elasticSMatrix_def (ρ : ℝ) (t : ℂ) : elasticSMatrix ρ t = 1 + 2 * 
 @[simp]
 theorem elasticSMatrix_zero (ρ : ℝ) : elasticSMatrix ρ 0 = 1 := by
   simp [elasticSMatrix_def]
+
+/-- The complex conjugate of the single-channel S-matrix of `t` is the single-channel S-matrix
+of `-conj t`. -/
+@[simp]
+theorem conj_elasticSMatrix (ρ : ℝ) (t : ℂ) :
+    conj (elasticSMatrix ρ t) = elasticSMatrix ρ (-conj t) := by
+  rw [elasticSMatrix_def, elasticSMatrix_def, map_add, map_one, map_mul, map_mul, map_mul,
+    conj_I, conj_ofReal, map_ofNat]
+  ring
 
 /-- A diagonal entry `S i i` of the partial-wave S-matrix is the single-channel S-matrix of the
 diagonal amplitude `T i i` with the phase-space factor of channel `i`. -/
