@@ -32,7 +32,11 @@ physical region of every massive source. Rewritten through the photon energy `k 
 same minimum bounds the photon energy by the virtuality, `k² < γ² (1 - x) Q²`, as the
 `ChargedSource` lemma
 `photonEnergy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion`
-states for a photon in the photon region.
+states for a photon in the photon region, from the region-level bound `m² x² / (1 - x) < Q²`
+(`ChargedSource.sq_mul_sq_div_one_sub_lt_virtuality_of_mem_photonRegion`). Under the coherence
+condition `Q² R² ≤ 1` on the radius `R` of the source, taken as a hypothesis, this bounds the
+photon energy by the Lorentz factor over the radius, `k R < γ`, the `ChargedSource` lemma
+`photonEnergy_mul_radius_lt_gamma_of_mem_photonRegion_of_virtuality_mul_radius_sq_le_one`.
 
 ## References
 
@@ -111,6 +115,11 @@ theorem energyFraction_def (k : PhotonKinematics) (s : ChargedSource) :
 theorem one_sub_energyFraction_mul_energy (k : PhotonKinematics) {s : ChargedSource}
     (hs : s.energy ≠ 0) : (1 - k.energyFraction s) * s.energy = s.energy - k.energy := by
   simp only [energyFraction, sub_mul, div_mul_cancel₀ _ hs, one_mul]
+
+/-- The photon energy is the fraction `x` of the source energy `γ m`: `k = γ m x`. -/
+theorem energy_eq_gamma_mul_mass_mul_energyFraction (k : PhotonKinematics) {s : ChargedSource}
+    (hs : s.energy ≠ 0) : k.energy = s.gamma * s.mass * k.energyFraction s := by
+  rw [energyFraction_def, ← ChargedSource.energy_def, mul_div_cancel₀ _ hs]
 
 /-- The photon `q = p - p'` emitted by a source going from four-momentum `p` to `p'`: its energy
 is the energy lost by the source, and its virtuality is `-q²`. -/
@@ -328,42 +337,69 @@ theorem gamma_pos_of_mem_photonRegion (hm : 0 ≤ s.mass) {θmax : ℝ} {k : Pho
   by_contra hγ
   nlinarith
 
+/-- **The virtuality strictly exceeds `m² x² / (1 - x)`.** Every photon in the photon region of a
+source of positive mass, carrying the fraction `x` of the energy of the source, has
+`m² x² / (1 - x) < Q²`: the kinematic minimum in its high-energy form bounds the virtuality. -/
+theorem sq_mul_sq_div_one_sub_lt_virtuality_of_mem_photonRegion (hm : 0 < s.mass) {θmax : ℝ}
+    {k : PhotonKinematics} (hk : k ∈ s.photonRegion θmax) :
+    s.mass ^ 2 * k.energyFraction s ^ 2 / (1 - k.energyFraction s) < k.virtuality :=
+  (sq_mul_sq_div_one_sub_lt_photonVirtualityMin hm (mass_lt_energy_of_mem_photonRegion hk).le
+    (energyFraction_pos_of_mem_photonRegion hm.le hk).ne'
+    (mass_lt_one_sub_energyFraction_mul_energy_of_mem_photonRegion hk).le).trans_le
+    (mem_photonRegion_iff.1 hk).2.2.1
+
 /-- **The photon energy is bounded by the virtuality.** A photon in the photon region of a source
 of positive mass, of energy `k` carrying the fraction `x` of the energy of the source with
 Lorentz factor `γ`, has `k² < γ² (1 - x) Q²`: in the collider frame, `k / γ` is at most of the
-order of `√(Q²)`. This is the kinematic minimum `m² x² / (1 - x) < Q²` rewritten through
-`k = γ m x`. -/
+order of `√(Q²)`. This is the bound `m² x² / (1 - x) < Q²`
+(`sq_mul_sq_div_one_sub_lt_virtuality_of_mem_photonRegion`) rewritten through `k = γ m x`. -/
 theorem photonEnergy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion
     (hm : 0 < s.mass) {θmax : ℝ} {k : PhotonKinematics} (hk : k ∈ s.photonRegion θmax) :
     k.energy ^ 2 < s.gamma ^ 2 * (1 - k.energyFraction s) * k.virtuality := by
   have hγ := gamma_pos_of_mem_photonRegion hm.le hk
-  have hx0 := energyFraction_pos_of_mem_photonRegion hm.le hk
   have hx1 := energyFraction_lt_one_of_mem_photonRegion hm.le hk
-  have hQ := (sq_mul_sq_div_one_sub_lt_photonVirtualityMin hm
-    (mass_lt_energy_of_mem_photonRegion hk).le hx0.ne'
-    (mass_lt_one_sub_energyFraction_mul_energy_of_mem_photonRegion hk).le).trans_le
-    (mem_photonRegion_iff.1 hk).2.2.1
-  rw [div_lt_iff₀ (by linarith)] at hQ
-  have hk' : k.energy = s.gamma * s.mass * k.energyFraction s := by
-    rw [PhotonKinematics.energyFraction_def, energy_def]
-    field_simp
-  rw [hk']
+  have hQ := sq_mul_sq_div_one_sub_lt_virtuality_of_mem_photonRegion hm hk
+  rw [div_lt_iff₀ (sub_pos.2 hx1)] at hQ
+  rw [k.energy_eq_gamma_mul_mass_mul_energyFraction
+    (hm.trans (mass_lt_energy_of_mem_photonRegion hk)).ne']
   nlinarith [mul_lt_mul_of_pos_left hQ (pow_pos hγ 2)]
 
 /-- **A massive source emits only at strictly positive virtuality.** Every photon in the photon
 region of a source of positive mass has strictly positive virtuality. -/
 theorem virtuality_pos_of_mem_photonRegion (hm : 0 < s.mass) {θmax : ℝ} {k : PhotonKinematics}
     (hk : k ∈ s.photonRegion θmax) : 0 < k.virtuality :=
-  (photonVirtualityMin_pos hm (mass_lt_energy_of_mem_photonRegion hk).le
-    (energyFraction_pos_of_mem_photonRegion hm.le hk).ne'
-    (mass_lt_one_sub_energyFraction_mul_energy_of_mem_photonRegion hk).le).trans_le
-    (mem_photonRegion_iff.1 hk).2.2.1
+  (div_pos (mul_pos (pow_pos hm 2) (pow_pos (energyFraction_pos_of_mem_photonRegion hm.le hk) 2))
+    (sub_pos.2 (energyFraction_lt_one_of_mem_photonRegion hm.le hk))).trans
+    (sq_mul_sq_div_one_sub_lt_virtuality_of_mem_photonRegion hm hk)
 
 /-- **A massive source never emits a real photon.** -/
 theorem not_isReal_of_mem_photonRegion (hm : 0 < s.mass) {θmax : ℝ} {k : PhotonKinematics}
     (hk : k ∈ s.photonRegion θmax) : ¬ k.IsReal := by
   rw [PhotonKinematics.isReal_iff]
   exact (virtuality_pos_of_mem_photonRegion hm hk).ne'
+
+/-- **The photon energy of coherent emission is bounded by the Lorentz factor over the radius.**
+If a massive source of radius `R` and Lorentz factor `γ` emits a photon of its photon region within
+the coherence bound `Q² R² ≤ 1`, the photon energy in the collider frame satisfies `k R < γ`. -/
+theorem photonEnergy_mul_radius_lt_gamma_of_mem_photonRegion_of_virtuality_mul_radius_sq_le_one
+    (hm : 0 < s.mass) {θmax : ℝ} {k : PhotonKinematics} (hk : k ∈ s.photonRegion θmax)
+    (hcoh : k.virtuality * s.radius ^ 2 ≤ 1) : k.energy * s.radius < s.gamma := by
+  have hγ := gamma_pos_of_mem_photonRegion hm.le hk
+  have hx0 := energyFraction_pos_of_mem_photonRegion hm.le hk
+  have hx1 := energyFraction_lt_one_of_mem_photonRegion hm.le hk
+  have hc : 0 ≤ s.gamma ^ 2 * (1 - k.energyFraction s) :=
+    mul_nonneg (sq_nonneg _) (by linarith)
+  -- `(k R)² ≤ γ² (1 - x) Q² R² ≤ γ² (1 - x) < γ²`
+  have hsq : (k.energy * s.radius) ^ 2 < s.gamma ^ 2 :=
+    calc (k.energy * s.radius) ^ 2 = k.energy ^ 2 * s.radius ^ 2 := mul_pow _ _ _
+      _ ≤ s.gamma ^ 2 * (1 - k.energyFraction s) * (k.virtuality * s.radius ^ 2) := by
+        rw [← mul_assoc]
+        exact mul_le_mul_of_nonneg_right
+          (photonEnergy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion
+            hm hk).le (sq_nonneg _)
+      _ ≤ s.gamma ^ 2 * (1 - k.energyFraction s) := mul_le_of_le_one_right hc hcoh
+      _ < s.gamma ^ 2 := by nlinarith [mul_pos (pow_pos hγ 2) hx0]
+  exact lt_of_abs_lt (abs_lt_of_sq_lt_sq hsq hγ.le)
 
 end ChargedSource
 

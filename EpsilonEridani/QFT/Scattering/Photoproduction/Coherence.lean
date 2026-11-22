@@ -5,7 +5,7 @@ Authors: The EpsilonEridani contributors
 -/
 module
 
-public import EpsilonEridani.QFT.Scattering.Photoproduction.Kinematics.Basic
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import EpsilonEridani.Mathematics.MeasureTheory.Measure.CharacteristicFunction.BasicExtensions
 public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.BasicExtensions
 public import EpsilonEridani.Mathematics.Probability.Distributions.Gaussian.FerniqueExtensions
@@ -23,42 +23,43 @@ of the source in its rest frame as a probability measure `μ` on space, with roo
 coherent emission amplitude is that of a point charge times `F(q)`, so the coherent rate carries
 `‖F(q)‖²`.
 
-This file derives the coherence bound `Q² ≲ 1 / R²` on the virtuality `Q² = -⟪q, q⟫ₘ` from the
-form factor, and then its consequence for the photon energy in the collider frame.
+This file bounds the form factor above and below the scale `Q² ~ 1 / R²` of the virtuality
+`Q² = -⟪q, q⟫ₘ`: below it the departure of the form factor from the point-charge value is
+controlled by `Q² R²`, and beyond it the squared form factor of a Gaussian source decays.
 
-* Below the bound the source is not resolved, for any charge distribution of finite radius:
+* Below the scale the source is not resolved, for any charge distribution of finite radius:
   in the source rest frame the spatial momentum transfer is fixed by the virtuality,
   `‖q‖² = Q² (1 + Q² / (4 m²))`
   (`Lorentz.Vector.norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_minkowskiProduct_self_eq`),
-  and `1 - ‖F(q)‖ ≤ ‖q‖² R² / 2`
-  (`one_sub_norm_charFun_spatialPart_sub_le`). So `‖F‖` stays close to one, the value for a point
-  charge, while `Q² R²` is small against one. For the isotropic Gaussian charge distribution of
-  width `σ`, whose squared norm is integrable
+  and `1 - ‖F(q)‖ ≤ ‖q‖² R² / 2` (`MeasureTheory.one_sub_norm_charFun_le`). Together they give
+  `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) R² / 2` (`one_sub_norm_charFun_spatialPart_sub_le`). So
+  `‖F‖` stays close to one, the value for a point charge, while `Q² R²` is small against one. For
+  the isotropic Gaussian charge distribution of width `σ`, whose squared norm is integrable
   (`ProbabilityTheory.IsGaussian.integrable_norm_sq`, applied through the instance
   `ProbabilityTheory.isGaussian_map_smul`), this reads
   `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² d / 2`
   (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le`).
-* Beyond the bound the coherent rate is suppressed by the square of the form factor. For the
+* Beyond the scale the coherent rate is suppressed by the square of the form factor. For the
   isotropic Gaussian charge distribution of width `σ` in `d` dimensions,
   `‖F(q)‖² ≤ exp (-σ² Q²)` (`norm_sq_charFun_map_smul_stdGaussian_spatialPart_le`); with
   `R² = d σ²` this is `exp (-Q² R² / d)`, which is `exp (-Q² R² / 3)` in three dimensions.
   It is composed from the general squared form factor
   `ProbabilityTheory.norm_sq_charFun_map_smul_stdGaussian` of the dilated Gaussian, whose second
-  moment `ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian` gives `R² = d σ²`, and uses
-  only `Q² ≤ ‖q‖²`, which holds in every frame
-  (`Lorentz.Vector.neg_minkowskiProduct_self_le_norm_spatialPart_sq`). Some shape assumption
-  is needed here: the form factor of two point charges a distance `2 R` apart is `cos ⟪r₀, q⟫`
-  and does not decay at all.
-* The photon energy in the collider frame is bounded by the Lorentz factor over the radius. The
-  `Kinematics.ChargedSource` lemmas
-  `photonEnergy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion` and
-  `photonEnergy_mul_radius_lt_gamma_of_virtuality_mul_radius_sq_le_one` bound the energy of a photon
-  in the photon region by the virtuality, `k² < γ² (1 - x) Q²`, and then, within the coherence
-  bound `Q² R² ≤ 1`, by the Lorentz factor over the radius, `k R < γ`. Here `R` is the radius
-  `s.radius` of the source: the charge radius that `ChargedSource` carries as an independent
-  datum, not a quantity derived from the charge measure `μ` of the opening paragraph, and the
-  coherence bound `Q² R² ≤ 1` enters as a hypothesis of the energy bound, not as a consequence
-  of the two form-factor bounds above.
+  moment `ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian` gives `R² = d σ²`, and from
+  `Q² ≤ ‖q‖²` (`Lorentz.Vector.neg_minkowskiProduct_self_le_norm_spatialPart_sq`). The inequality
+  itself is a frame-agnostic bound, holding for the spatial part of `q` in every frame; it reads
+  as the suppression factor of the coherent rate only when `q.spatialPart` is the momentum
+  transfer in the rest frame of the source, in which `μ` is its charge distribution. Some shape
+  assumption is needed here: the form factor of two point charges a distance `2 R` apart is
+  `cos ⟪r₀, q⟫` and does not decay at all.
+
+Within the coherence condition `Q² R² ≤ 1`, taken as a hypothesis on the photon variables, the
+photon energy in the collider frame is bounded by the Lorentz factor over the radius, `k R < γ`,
+as the `Kinematics.ChargedSource` lemma
+`photonEnergy_mul_radius_lt_gamma_of_mem_photonRegion_of_virtuality_mul_radius_sq_le_one` states.
+That kinematic consequence needs no form factor and lives with the photon kinematics; there `R`
+is the radius `s.radius` that `ChargedSource` carries as an independent datum, not a quantity
+derived from the charge measure `μ` of the opening paragraph.
 
 ## References
 
@@ -81,7 +82,7 @@ namespace Photoproduction
 open MeasureTheory ProbabilityTheory
 open scoped Lorentz.Vector
 
-/-- **Below the coherence bound the source is not resolved.** Let a source of mass `m ≠ 0` sit at
+/-- **Below the coherence scale the source is not resolved.** Let a source of mass `m ≠ 0` sit at
 rest with four-momentum `p` and recoil to `p'` on the same mass shell, emitting the photon
 `q = p - p'` of virtuality `Q² = -⟪q, q⟫ₘ`. For any normalised charge distribution `μ` of finite
 mean square radius `R² = ∫ ‖r‖² dμ`, the form factor at the photon momentum satisfies
@@ -96,7 +97,7 @@ theorem one_sub_norm_charFun_spatialPart_sub_le {d : ℕ} {μ : Measure (Euclide
     hm hp hp0 hp']
   exact one_sub_norm_charFun_le hμ _
 
-/-- **Below the coherence bound the Gaussian source is not resolved.** For the isotropic Gaussian
+/-- **Below the coherence scale the Gaussian source is not resolved.** For the isotropic Gaussian
 charge distribution of width `σ` in `d` dimensions, of mean square radius `R² = d σ²`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), a source of mass `m ≠ 0` at rest
 emitting the photon `q = p - p'` of virtuality `Q² = -⟪q, q⟫ₘ` has form factor
@@ -111,12 +112,15 @@ theorem one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le {d : ℕ} (
     hm hp hp0 hp'
   rwa [integral_norm_sq_map_smul_stdGaussian, finrank_euclideanSpace_fin] at h
 
-/-- **Beyond the coherence bound the coherent rate of a Gaussian source is exponentially
+/-- **Beyond the coherence scale the coherent rate of a Gaussian source is exponentially
 suppressed.** For the isotropic Gaussian charge distribution of width `σ` in `d` dimensions, the
 squared form factor at the spatial part of a four-momentum transfer `q` of virtuality
 `Q² = -⟪q, q⟫ₘ` is at most `exp (-σ² Q²)`. Since the mean square radius is `R² = d σ²`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), this is `exp (-Q² R² / d)` for
-`d ≠ 0`. -/
+`d ≠ 0`. As a mathematical statement the bound is frame-agnostic: it holds for the spatial part
+of `q` in every frame. It is the suppression factor of the coherent rate when `q.spatialPart` is
+the momentum transfer in the rest frame of the source, the frame in which the dilated Gaussian
+is its charge distribution. -/
 theorem norm_sq_charFun_map_smul_stdGaussian_spatialPart_le {d : ℕ} (σ : ℝ)
     (q : Lorentz.Vector d) :
     ‖charFun ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) q.spatialPart‖ ^ 2 ≤
@@ -127,37 +131,6 @@ theorem norm_sq_charFun_map_smul_stdGaussian_spatialPart_le {d : ℕ} (σ : ℝ)
   have hQ : -⟪q, q⟫ₘ ≤ ‖q.spatialPart‖ ^ 2 :=
     Lorentz.Vector.neg_minkowskiProduct_self_le_norm_spatialPart_sq q
   exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_left hQ (sq_nonneg σ)))
-
-namespace Kinematics
-namespace ChargedSource
-
-variable {s : ChargedSource}
-
-/-- **The photon energy of coherent emission is bounded by the Lorentz factor over the radius.**
-If a massive source of radius `R` and Lorentz factor `γ` emits a photon of its photon region within
-the coherence bound `Q² R² ≤ 1`, the photon energy in the collider frame satisfies `k R < γ`. -/
-theorem photonEnergy_mul_radius_lt_gamma_of_virtuality_mul_radius_sq_le_one
-    (hm : 0 < s.mass) {θmax : ℝ} {k : PhotonKinematics} (hk : k ∈ s.photonRegion θmax)
-    (hcoh : k.virtuality * s.radius ^ 2 ≤ 1) : k.energy * s.radius < s.gamma := by
-  have hγ := gamma_pos_of_mem_photonRegion hm.le hk
-  have hx0 := energyFraction_pos_of_mem_photonRegion hm.le hk
-  have hx1 := energyFraction_lt_one_of_mem_photonRegion hm.le hk
-  have hc : 0 ≤ s.gamma ^ 2 * (1 - k.energyFraction s) :=
-    mul_nonneg (sq_nonneg _) (by linarith)
-  -- `(k R)² ≤ γ² (1 - x) Q² R² ≤ γ² (1 - x) < γ²`
-  have hsq : (k.energy * s.radius) ^ 2 < s.gamma ^ 2 :=
-    calc (k.energy * s.radius) ^ 2 = k.energy ^ 2 * s.radius ^ 2 := mul_pow _ _ _
-      _ ≤ s.gamma ^ 2 * (1 - k.energyFraction s) * (k.virtuality * s.radius ^ 2) := by
-        rw [← mul_assoc]
-        exact mul_le_mul_of_nonneg_right
-          (photonEnergy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_photonRegion
-            hm hk).le (sq_nonneg _)
-      _ ≤ s.gamma ^ 2 * (1 - k.energyFraction s) := mul_le_of_le_one_right hc hcoh
-      _ < s.gamma ^ 2 := by nlinarith [mul_pos (pow_pos hγ 2) hx0]
-  exact lt_of_abs_lt (abs_lt_of_sq_lt_sq hsq hγ.le)
-
-end ChargedSource
-end Kinematics
 
 end Photoproduction
 end Scattering

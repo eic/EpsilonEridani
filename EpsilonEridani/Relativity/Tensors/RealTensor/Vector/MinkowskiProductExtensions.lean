@@ -95,7 +95,8 @@ lemma norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_minkowskiProduct_self_eq
     simp [minkowskiProduct_eq_timeComponent_spatialPart, hp, hp0]
   have hs := minkowskiProduct_self_eq_sq_sub (p - p')
   have ht : (p - p').timeComponent = m - p'.timeComponent := by
-    simp [timeComponent, ← hp0]
+    rw [show (p - p').timeComponent = p.timeComponent - p'.timeComponent from apply_sub p p' _,
+      hp0]
   rw [ht] at hs
   -- the virtuality fixes the energy transfer: `Q² = 2 m (p'⁰ - m)`
   have hQ : -⟪p - p', p - p'⟫ₘ = 2 * m * (p'.timeComponent - m) := by

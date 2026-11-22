@@ -15,7 +15,9 @@ public import EpsilonEridani.Mathematics.MeasureTheory.Integral.Bochner.BasicExt
 Mathlib's standard Gaussian measure `stdGaussian E` on a finite-dimensional real inner product
 space has independent standard normal coordinates in any orthonormal basis. This file computes
 its second moment, `∫ ‖x‖² ∂(stdGaussian E) = dim E`
-(`ProbabilityTheory.integral_norm_sq_stdGaussian`), and the same moment for its image under
+(`ProbabilityTheory.integral_norm_sq_stdGaussian`), as the sum over an orthonormal basis of the
+second moments `∫ ⟪x, v⟫² ∂(stdGaussian E) = ‖v‖²` of the coordinates
+(`ProbabilityTheory.integral_inner_sq_stdGaussian`), and the same moment for its image under
 `x ↦ σ • x`, the isotropic Gaussian of width `σ`,
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), whose root-mean-square norm is
@@ -40,23 +42,36 @@ namespace ProbabilityTheory
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+/-- The square of a coordinate `⟪x, v⟫` is integrable under the standard Gaussian. -/
+theorem integrable_inner_sq_stdGaussian (v : E) :
+    Integrable (fun x : E ↦ ⟪x, v⟫ ^ 2) (stdGaussian E) := by
+  have h := (innerSL ℝ v).comp_memLp' (IsGaussian.memLp_two_id (μ := stdGaussian E))
+  refine h.integrable_sq.congr (Filter.Eventually.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Function.comp_apply, id_eq, innerSL_apply_apply, real_inner_comm v x]
+
+/-- The coordinate `⟪x, v⟫` of the standard Gaussian has second moment `‖v‖²`:
+`∫ ⟪x, v⟫² ∂(stdGaussian E) = ‖v‖²`. -/
+theorem integral_inner_sq_stdGaussian (v : E) :
+    ∫ x, ⟪x, v⟫ ^ 2 ∂(stdGaussian E) = ‖v‖ ^ 2 := by
+  -- the coordinate is a centred random variable of variance `‖innerSL ℝ v‖² = ‖v‖²`
+  have hv := variance_dual_stdGaussian (innerSL ℝ v)
+  rw [variance_of_integral_eq_zero (by fun_prop) (integral_strongDual_stdGaussian _),
+    innerSL_apply_norm] at hv
+  rw [← hv]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [innerSL_apply_apply, real_inner_comm v x]
+
 /-- The second moment of the standard Gaussian is the dimension: `∫ ‖x‖² ∂(stdGaussian E) = dim E`.
 -/
 @[simp]
 theorem integral_norm_sq_stdGaussian :
     ∫ x, ‖x‖ ^ 2 ∂(stdGaussian E) = Module.finrank ℝ E := by
   let b := stdOrthonormalBasis ℝ E
-  -- each coordinate `⟪x, b i⟫` is a centred random variable of variance `‖b i‖² = 1`
-  have hL : ∀ i, ∫ x, ⟪x, b i⟫ ^ 2 ∂(stdGaussian E) = 1 := fun i ↦ by
-    have hv := variance_dual_stdGaussian (innerSL ℝ (b i))
-    rw [variance_of_integral_eq_zero (by fun_prop) (integral_strongDual_stdGaussian _)] at hv
-    simpa [b.norm_eq_one, real_inner_comm] using hv
-  have hI : ∀ i, Integrable (fun x : E ↦ ⟪x, b i⟫ ^ 2) (stdGaussian E) := fun i ↦ by
-    have := (innerSL ℝ (b i)).comp_memLp' (IsGaussian.memLp_two_id (μ := stdGaussian E))
-    simpa [Function.comp_def, real_inner_comm] using this.integrable_sq
   simp_rw [← b.sum_sq_inner_left]
-  rw [integral_finsetSum _ fun i _ ↦ hI i]
-  simp [hL]
+  rw [integral_finsetSum _ fun i _ ↦ integrable_inner_sq_stdGaussian (b i)]
+  simp [integral_inner_sq_stdGaussian, b.norm_eq_one]
 
 /-- The second moment of the standard Gaussian dilated by `σ` is `σ²` times the dimension:
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`. -/
@@ -72,8 +87,9 @@ theorem charFun_map_smul_stdGaussian (σ : ℝ) (t : E) :
     charFun ((stdGaussian E).map (σ • ·)) t = Complex.exp (-(σ ^ 2 * ‖t‖ ^ 2) / 2 : ℝ) := by
   rw [charFun_map_smul, charFun_stdGaussian, ← Complex.ofReal_pow, norm_smul, mul_pow,
     Real.norm_eq_abs, sq_abs]
+  congr 1
   push_cast
-  ring_nf
+  ring
 
 /-- The modulus of the characteristic function of the standard Gaussian dilated by `σ` — in
 physics the modulus of the form factor of the isotropic Gaussian charge distribution of width
@@ -88,7 +104,8 @@ isotropic Gaussian charge distribution of width `σ` is suppressed at momentum `
 theorem norm_sq_charFun_map_smul_stdGaussian (σ : ℝ) (t : E) :
     ‖charFun ((stdGaussian E).map (σ • ·)) t‖ ^ 2 = Real.exp (-(σ ^ 2 * ‖t‖ ^ 2)) := by
   rw [norm_charFun_map_smul_stdGaussian, ← Real.exp_nat_mul]
+  congr 1
   push_cast
-  ring_nf
+  ring
 
 end ProbabilityTheory
