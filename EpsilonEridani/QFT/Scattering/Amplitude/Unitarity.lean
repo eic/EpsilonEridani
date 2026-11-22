@@ -46,6 +46,7 @@ is determined by `t` modulo `π`.
 
 * `sMatrix_conjTranspose`: `Sᴴ` is the S-matrix of `-Tᴴ`, and `conj_elasticSMatrix` its
   single-channel form.
+* `sMatrix_injective`: for positive phase-space factors, `S` determines `T`.
 * `sMatrix_mem_unitaryGroup_iff`: `S` is unitary iff `T - Tᴴ = 2 i Tᴴ ρ T`.
 * `sMatrix_mem_unitaryGroup_iff_inv`: for invertible `T`, `S` is unitary iff
   `T⁻¹ - (T⁻¹)ᴴ = -2 i ρ`.
@@ -119,6 +120,15 @@ theorem sMatrix_conjTranspose (ρ : n → ℝ) (T : Matrix n n ℂ) :
   rw [sMatrix_def, sMatrix_def, conjTranspose_add, conjTranspose_one, conjTranspose_smul,
     conjTranspose_mul, conjTranspose_mul, hR, hc, Matrix.mul_neg, Matrix.neg_mul, smul_neg,
     neg_smul, Matrix.mul_assoc]
+
+/-- For positive phase-space factors the S-matrix determines the T-matrix. -/
+theorem sMatrix_injective {ρ : n → ℝ} (hρ : ∀ i, 0 < ρ i) : Function.Injective (sMatrix ρ) := by
+  intro T T' h
+  have hR : IsUnit (diagonal (fun i ↦ (√(ρ i) : ℂ))) :=
+    isUnit_diagonal.2 (Pi.isUnit_iff.2 fun i ↦ (ofReal_ne_zero.2
+      (Real.sqrt_pos.2 (hρ i)).ne').isUnit)
+  rw [sMatrix_def, sMatrix_def, add_right_inj, smul_right_inj (by simp)] at h
+  exact hR.mul_left_cancel (hR.mul_right_cancel h)
 
 /-- **Unitarity in quadratic form.** For positive phase-space factors, the partial-wave S-matrix is
 unitary iff `T - Tᴴ = 2 i Tᴴ ρ T`. -/
