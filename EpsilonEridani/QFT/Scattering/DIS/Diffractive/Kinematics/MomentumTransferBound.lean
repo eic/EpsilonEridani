@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis
-public import EpsilonEridani.Particles.Parton.GPD.Kinematics
 public import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics
 public import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics.Basic
 /-!
@@ -32,19 +31,18 @@ transfer is non-positive (`tMom_nonpos`). In the target-elastic case `M_Y = M` t
 
 Conversely, when the metric is negative semidefinite on transverse vectors and some transverse
 vector is space-like, every `t` below the boundary is the momentum transfer of some
-`DisKinematics` with the prescribed target-side data (`exists_tMom_eq_of_le_tMin`), so that the
-momentum transfers compatible with the target-side constraints `P`, `P'² = M_Y²` and `ξ < 1` are
-exactly the half-line `t ≤ tMin M M_Y ξ` (`setOf_tMom_eq_Iic_tMin`). Only the target-side momenta
-are constrained there: the lepton and photon momenta are left free (the exhibited witness takes
-`k = k' = q = 0`, so `Q² = 0`), and this converse is therefore a statement about the target-side
-kinematics, not attainability within the diffractive physical region (`Q² > 0`, `M_X² ≥ 0`).
-The bound `tMom_le_tMin` is unaffected by this caveat.
+`DisKinematics` with the prescribed target-side data and arbitrary prescribed lepton momenta
+`k`, `k'` (`exists_tMom_eq_of_le_tMin`), so that the momentum transfers compatible with the
+target-side constraints `P`, `P'² = M_Y²` and `ξ < 1` are exactly the half-line
+`t ≤ tMin M M_Y ξ` (`setOf_tMom_eq_Iic_tMin`). The photon-side mass `M_X² ≥ 0` is not imposed
+there, so this converse is a statement about the target-side kinematics, not attainability within
+the full diffractive physical region. The bound `tMom_le_tMin` is unaffected by this caveat.
 
 In the target-elastic case this is the same kinematic boundary as the off-forward
 `Particles.Parton.GPD.tZero` (with `Particles.Parton.GPD.OffForwardKinematics.tMom_le_tZero`):
 `tMinElastic M ξ = tZero M η` at skewness `η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)`
-(`tMinElastic_eq_tZero`). What is new here is the dissociated target, `M_Y ≠ M`, and the abstract
-bilinear form `g`.
+(`tMinElastic_eq_tZero`, in `Diffractive.Kinematics.OffForwardBoundary`). What is new here is
+the dissociated target, `M_Y ≠ M`, and the abstract bilinear form `g`.
 
 As in the rest of the DIS kinematics layer, scalar products are taken with respect to an abstract
 bilinear form `g`, here assumed reflexive, for which the scalar product splits as
@@ -95,12 +93,6 @@ theorem one_sub_xiLC (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K
   field_simp
   ring
 
-/-- The light-cone fraction lost by the target in terms of the plus momenta,
-`ξ = 1 - P'⁺/P⁺`. -/
-theorem xiLC_eq_one_sub_div (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K.p ≠ 0) :
-    xiLC L K = 1 - L.plus K.pPrime / L.plus K.p := by
-  rw [← one_sub_xiLC L K hp, sub_sub_cancel]
-
 /-- The plus momentum of the target-side system in terms of the fraction lost,
 `P'⁺ = (1 - ξ) P⁺`. -/
 theorem plus_pPrime_eq (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K.p ≠ 0) :
@@ -139,7 +131,7 @@ theorem transverseProj_deltaLost (L : LightConeBasis g) (K : DisKinematics V)
 
 /-- For a target with no transverse momentum, the transverse parts of `Δ = P - P'` and of `P'`
 have the same square (`transverseProj_deltaLost`). -/
-theorem apply_transverseProj_deltaLost (L : LightConeBasis g) (K : DisKinematics V)
+theorem apply_transverseProj_deltaLost_self (L : LightConeBasis g) (K : DisKinematics V)
     (hT : L.transverseProj K.p = 0) :
     g (L.transverseProj (deltaLost K)) (L.transverseProj (deltaLost K)) =
       g (L.transverseProj K.pPrime) (L.transverseProj K.pPrime) := by
@@ -156,13 +148,12 @@ theorem tMom_eq_tMin_add (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinemati
     tMom g K = tMin M MY (xiLC L K) +
       g (L.transverseProj (deltaLost K)) (L.transverseProj (deltaLost K)) / (1 - xiLC L K) := by
   have hp' := (plus_pPrime_ne_zero_iff L K hp).2 hξ1
-  have hξ := xiLC_eq_one_sub_div L K hp
   rw [MY2_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hMY
   rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hM
   simp only [hT, map_zero, add_zero] at hM
-  rw [apply_transverseProj_deltaLost L K hT, hξ, tMin_def, sub_sub_cancel, ← hM, ← hMY,
-    tMom_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg,
-    apply_transverseProj_deltaLost L K hT, deltaLost_def, map_sub, map_sub]
+  rw [apply_transverseProj_deltaLost_self L K hT, tMin_def, one_sub_xiLC L K hp, xiLC_def, ← hM,
+    ← hMY, tMom_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg,
+    apply_transverseProj_deltaLost_self L K hT, deltaLost_def, map_sub, map_sub]
   field_simp
   ring
 
@@ -207,19 +198,21 @@ theorem tMom_nonpos (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinematics V)
 /-! ### The momentum transfers compatible with the target-side kinematics -/
 
 /-- Every momentum transfer below the boundary is compatible with the target-side kinematics:
-for a target `P` with no transverse momentum, non-vanishing plus momentum and `P² = M²`, a final
-mass `M_Y`, a light-cone fraction `ξ < 1` and any `t ≤ tMin M M_Y ξ`, there is a
-`DisKinematics` with incoming target `P`, `P'² = M_Y²`, `Δ⁺/P⁺ = ξ` and momentum transfer `t`.
-The transverse momentum transfer is taken along a transverse vector `e` with `e · e < 0`.
+for a target `P` with no transverse momentum, non-vanishing plus momentum and `P² = M²`, any
+lepton momenta `k`, `k'`, a final mass `M_Y`, a light-cone fraction `ξ < 1` and any
+`t ≤ tMin M M_Y ξ`, there is a `DisKinematics` with incoming target `P`, lepton momenta `k`,
+`k'`, `P'² = M_Y²`, `Δ⁺/P⁺ = ξ` and momentum transfer `t`. The transverse momentum transfer is
+taken along a transverse vector `e` with `e · e < 0`.
 
-Only the target-side momenta are constrained: the witness takes `k = k' = q = 0`, so `Q² = 0`
-and it is not a diffractive DIS event; this is not attainability within the diffractive physical
-region (`Q² > 0`, `M_X² ≥ 0`). -/
+The lepton side, and hence `Q²`, is arbitrary, but the photon-side mass `M_X² = (q + Δ)²` is
+not constrained: this is not yet attainability within the diffractive physical region
+(`M_X² ≥ 0`). -/
 theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
-    (he : e ∈ L.transverse) (hee : g e e < 0) {P : V} {M MY ξ t : ℝ}
+    (he : e ∈ L.transverse) (hee : g e e < 0) {P : V} (k kPrime : V) {M MY ξ t : ℝ}
     (hT : L.transverseProj P = 0) (hp : L.plus P ≠ 0) (hM : g P P = M ^ 2) (hξ : ξ < 1)
     (ht : t ≤ tMin M MY ξ) :
-    ∃ K : DisKinematics V, K.p = P ∧ MY2 g K = MY ^ 2 ∧ xiLC L K = ξ ∧ tMom g K = t := by
+    ∃ K : DisKinematics V, K.p = P ∧ K.k = k ∧ K.kPrime = kPrime ∧ MY2 g K = MY ^ 2 ∧
+      xiLC L K = ξ ∧ tMom g K = t := by
   have h1ξ : 0 < 1 - ξ := sub_pos.mpr hξ
   -- The target-side momentum is `P' = (1 - ξ) P⁺ n₊ + c n₋ + s e`, with the transverse size `s`
   -- fixed by `t` and the minus component `c` by the on-shell condition `P'² = M_Y²`.
@@ -234,8 +227,8 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
   have heT : L.transverseProj e = e := L.isProj_transverseProj.map_id e he
   obtain ⟨hep, hem⟩ := L.mem_transverse_iff.1 he
   let K : DisKinematics V :=
-    { p := P, pPrime := a • L.nPlus + c • L.nMinus + s • e, k := 0, kPrime := 0, q := 0,
-      hq := by simp }
+    { p := P, pPrime := a • L.nPlus + c • L.nMinus + s • e, k := k, kPrime := kPrime,
+      q := k - kPrime, hq := rfl }
   have hKp : L.plus K.pPrime = a := by simp [K, hep]
   have hKm : L.minus K.pPrime = c := by simp [K, hem]
   have hKT : L.transverseProj K.pPrime = s • e := by simp [K, heT]
@@ -248,9 +241,9 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
     have := plus_pPrime_eq L K hp
     rw [hKp, ha] at this
     linarith [mul_right_cancel₀ hp this]
-  refine ⟨K, rfl, hMY, hξK, ?_⟩
+  refine ⟨K, rfl, rfl, rfl, hMY, hξK, ?_⟩
   rw [tMom_eq_tMin_add hg L K hT hp (hξK ▸ hξ.ne) hM hMY, hξK,
-    apply_transverseProj_deltaLost L K hT, hKT]
+    apply_transverseProj_deltaLost_self L K hT, hKT]
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← sq, hs2]
   field_simp
@@ -258,48 +251,28 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
 
 /-- The momentum transfers compatible with the target-side kinematics are exactly the half-line
 below the boundary: for a target `P` with no transverse momentum, non-vanishing plus momentum and
-`P² = M²`, a final mass `M_Y`, and a light-cone fraction `ξ < 1`, the momentum transfers `t` of
-the `DisKinematics` with incoming target `P`, `P'² = M_Y²` and `Δ⁺/P⁺ = ξ` form
-`Set.Iic (tMin M M_Y ξ)`. The metric is assumed negative semidefinite on transverse vectors and to
-admit one space-like transverse vector `e`, as the Minkowski metric of signature `(+, -, -, -)`
-does in more than two dimensions. In the target-elastic case `M_Y = M` the right-hand side is
-`Set.Iic (tMinElastic M ξ)` by `tMin_self`.
+`P² = M²`, any lepton momenta `k`, `k'`, a final mass `M_Y`, and a light-cone fraction `ξ < 1`,
+the momentum transfers `t` of the `DisKinematics` with incoming target `P`, lepton momenta `k`,
+`k'`, `P'² = M_Y²` and `Δ⁺/P⁺ = ξ` form `Set.Iic (tMin M M_Y ξ)`. The metric is assumed
+negative semidefinite on transverse vectors and to admit one space-like transverse vector `e`, as
+the Minkowski metric of signature `(+, -, -, -)` does in more than two dimensions. In the
+target-elastic case `M_Y = M` the right-hand side is `Set.Iic (tMinElastic M ξ)` by `tMin_self`.
 
-The set constrains only the target-side momenta: the lepton and photon momenta are free (the
-witness of `exists_tMom_eq_of_le_tMin` takes them zero), so this characterises the target-side
-kinematics, not the diffractive physical region (`Q² > 0`, `M_X² ≥ 0`). -/
+The lepton momenta, and hence `Q²`, are prescribed arbitrarily, but the photon-side mass
+`M_X² ≥ 0` is not imposed, so this characterises the target-side kinematics, not the full
+diffractive physical region. -/
 theorem setOf_tMom_eq_Iic_tMin (hg : g.IsRefl) (L : LightConeBasis g)
     (htr : ∀ w ∈ L.transverse, g w w ≤ 0) {e : V} (he : e ∈ L.transverse) (hee : g e e < 0)
-    {P : V} {M MY ξ : ℝ} (hT : L.transverseProj P = 0) (hp : L.plus P ≠ 0)
+    {P : V} (k kPrime : V) {M MY ξ : ℝ} (hT : L.transverseProj P = 0) (hp : L.plus P ≠ 0)
     (hM : g P P = M ^ 2) (hξ : ξ < 1) :
-    {t | ∃ K : DisKinematics V, K.p = P ∧ MY2 g K = MY ^ 2 ∧ xiLC L K = ξ ∧ tMom g K = t} =
-      Set.Iic (tMin M MY ξ) := by
+    {t | ∃ K : DisKinematics V, K.p = P ∧ K.k = k ∧ K.kPrime = kPrime ∧ MY2 g K = MY ^ 2 ∧
+      xiLC L K = ξ ∧ tMom g K = t} = Set.Iic (tMin M MY ξ) := by
   ext t
-  refine ⟨?_, exists_tMom_eq_of_le_tMin hg L he hee hT hp hM hξ⟩
-  rintro ⟨K, rfl, hMY, rfl, rfl⟩
+  refine ⟨?_, exists_tMom_eq_of_le_tMin hg L he hee k kPrime hT hp hM hξ⟩
+  rintro ⟨K, rfl, -, -, hMY, rfl, rfl⟩
   exact tMom_le_tMin hg L K hT hp hξ hM hMY (htr _ (L.isProj_transverseProj.map_mem _))
 
 end Kinematics
-
-/-! ### Relation to the off-forward boundary -/
-
-/-- The target-elastic boundary is the off-forward boundary `Particles.Parton.GPD.tZero` at
-skewness `η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)`: `-ξ²M²/(1-ξ) = -4η²M²/(1-η²)`. The light-cone
-fraction `ξ = Δ⁺/P⁺` and the skewness `η = Δ⁺/(P + P')⁺` parametrize the same boundary. The
-excluded value `ξ = 2` is where the change of variables is singular. -/
-theorem tMinElastic_eq_tZero (M : ℝ) {ξ : ℝ} (hξ : ξ ≠ 2) :
-    tMinElastic M ξ = Particles.Parton.GPD.tZero M (ξ / (2 - ξ)) := by
-  have h2 : 2 - ξ ≠ 0 := sub_ne_zero.mpr (Ne.symm hξ)
-  rw [tMinElastic_def, Particles.Parton.GPD.tZero_def]
-  by_cases h1 : ξ = 1
-  · subst h1
-    norm_num
-  have h1' : 1 - ξ ≠ 0 := sub_ne_zero.mpr (Ne.symm h1)
-  have hη : 1 - (ξ / (2 - ξ)) ^ 2 = 4 * (1 - ξ) / (2 - ξ) ^ 2 := by
-    field_simp
-    ring
-  rw [hη]
-  field_simp
 
 end Diffractive
 end DIS
