@@ -11,9 +11,10 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 # Extensions of the basic API of Lorentz vectors
 
 * Component lemmas for `Physlib`'s constructor `Lorentz.Vector.ofTemporalComponent`: the time
-  component and spatial part of a purely temporal vector `t e₀`, and the spatial part of a
-  difference (`spatialPart_sub`). They describe the equal-time projection
-  `v - ofTemporalComponent v.timeComponent` of a vector `v`, which has vanishing time component
+  component and spatial part of a purely temporal vector `t e₀`, and the linearity of the
+  spatial part (`spatialPart_sub`, `spatialPart_add`, `spatialPart_smul`). They describe the
+  equal-time projection `v - ofTemporalComponent v.timeComponent` of a vector `v`, which has
+  vanishing time component
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
 
@@ -55,6 +56,20 @@ lemma spatialPart_sub {d : ℕ} (v w : Vector d) :
     (v - w).spatialPart = v.spatialPart - w.spatialPart := by
   ext i
   simp
+
+/-- The spatial part of a sum is the sum of the spatial parts.
+
+This is not a `@[simp]` lemma, for the same reason as `spatialPart_sub`. -/
+lemma spatialPart_add {d : ℕ} (v w : Vector d) :
+    (v + w).spatialPart = v.spatialPart + w.spatialPart :=
+  map_add (spatialCLM d) v w
+
+/-- The spatial part of a scalar multiple is the multiple of the spatial part.
+
+This is not a `@[simp]` lemma, for the same reason as `spatialPart_sub`. -/
+lemma spatialPart_smul {d : ℕ} (c : ℝ) (v : Vector d) :
+    (c • v).spatialPart = c • v.spatialPart :=
+  map_smul (spatialCLM d) c v
 
 /-- The equal-time projection `v - v⁰ e₀` has vanishing time component.
 

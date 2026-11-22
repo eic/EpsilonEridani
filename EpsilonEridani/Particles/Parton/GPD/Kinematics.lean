@@ -256,49 +256,43 @@ lemma abs_skewness_lt_one : |K.skewness| < 1 := by
   · rw [div_lt_one h]
     linarith
 
+/-- The two hadron momenta have the same Minkowski square. -/
+lemma minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self :
+    ⟪K.p, K.p⟫ₘ = ⟪K.pPrime, K.pPrime⟫ₘ := by
+  rw [K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self]
+
 /-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
 @[simp]
-lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
-  have h : ⟪K.avgMomentum, K.delta⟫ₘ = (⟪K.pPrime, K.pPrime⟫ₘ - ⟪K.p, K.p⟫ₘ) / 2 := by
-    simp only [avgMomentum_def, delta_def, map_smul, map_add, map_sub, _root_.smul_apply,
-      _root_.add_apply, smul_eq_mul]
-    rw [minkowskiProduct_symm K.pPrime K.p]
-    ring
-  simp [h, K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self]
+lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 :=
+  minkowskiProduct_inv_two_smul_add_sub_eq_zero
+    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- For an elastic transition the transfer is orthogonal to the average momentum, `Δ · P = 0`. -/
 @[simp]
 lemma minkowskiProduct_delta_avgMomentum_eq_zero : ⟪K.delta, K.avgMomentum⟫ₘ = 0 := by
-  rw [minkowskiProduct_symm]
-  simp
+  rw [minkowskiProduct_symm, minkowskiProduct_avgMomentum_delta_eq_zero]
 
 /-- The invariant mass squared of the average momentum, `P² = M² - t / 4`. -/
 @[simp]
 lemma minkowskiProduct_avgMomentum_self_eq :
-    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 := by
-  have h := K.minkowskiProduct_p_self
-  rw [p_eq_avgMomentum_sub, minkowskiProduct_sub_self, map_smul, smul_eq_mul,
-    minkowskiProduct_smul_self, K.minkowskiProduct_avgMomentum_delta_eq_zero] at h
-  rw [tMom_def]
-  linarith
+    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 :=
+  minkowskiProduct_inv_two_smul_add_self_eq K.minkowskiProduct_p_self
+    K.minkowskiProduct_pPrime_self
 
 /-- The product of the two hadron momenta is `p · p' = M² - t / 2`. -/
-lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2 := by
-  have h := minkowskiProduct_sub_self K.pPrime K.p
-  rw [← delta_def, ← tMom_def, K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self,
-    minkowskiProduct_symm K.pPrime K.p] at h
-  linarith
+lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2 :=
+  minkowskiProduct_eq_of_minkowskiProduct_self_eq K.minkowskiProduct_p_self
+    K.minkowskiProduct_pPrime_self
 
 /-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
-lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 := by
-  simp only [delta_def, map_sub, minkowskiProduct_p_pPrime_eq, K.minkowskiProduct_p_self]
-  ring
+lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 :=
+  minkowskiProduct_sub_eq_neg_minkowskiProduct_sub_self_div_two
+    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
-lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 := by
-  simp only [delta_def, map_sub, minkowskiProduct_symm K.pPrime K.p, minkowskiProduct_p_pPrime_eq,
-    K.minkowskiProduct_pPrime_self]
-  ring
+lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 :=
+  minkowskiProduct_sub_eq_minkowskiProduct_sub_self_div_two
+    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The plus-component of the momentum transfer is `Δ⁺ = -2 ξ P⁺`. -/
 lemma minkowskiProduct_n_delta_eq :
