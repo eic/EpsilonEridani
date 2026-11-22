@@ -209,8 +209,10 @@ and `y_Σ` are exact after collinear initial-state radiation
 `Q²_Σ = Q²_e` is not: for massless leptons the true virtuality is `Q² = z Q²_e`
 (`RadiativeEvent.trueInvariants_Q2_of_collinear_initialState`), which is below `Q²_e` for `z < 1`
 and `Q²_e > 0` (`RadiativeEvent.trueInvariants_Q2_lt_electronMethod_Q2_of_collinear_initialState`).
-That failure is an artifact of the choice `Q²_Σ := Q²_e`, not of the method of Bassler and
-Bernardi. -/
+Keeping `x_Σ = Q²_Σ / (2 (p·k) y_Σ)`, another virtuality does not remove that shift but moves it:
+for `Q²_e ≠ 0` any other `Q²_Σ` gives `x_Σ = x · Q²_Σ / Q²_e`, so the virtuality of Bassler and
+Bernardi makes `Q²_Σ` exact at the cost of `x_Σ = z x`. Exactness in both `x` and `Q²`
+additionally requires replacing the nominal `2 p·k` by the radiatively reduced `2 p·(z k)`. -/
 @[simps]
 def sigmaMethod (g : Bilin V) (k p kPrime pX : V) : ReconstructedInvariants where
   x := (electronMethod g k p kPrime).Q2 /

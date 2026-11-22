@@ -504,8 +504,11 @@ emission, for massless leptons (`k² = k'² = 0`). With
 `sigmaMethod_y_eq_trueInvariants_y_initialState`, the Sigma method is exact in `(x, y)`
 (`shiftXY_sigmaMethod_eq_zero_of_collinear_initialState`). Its virtuality `Q²_Σ := Q²_e` is taken
 from the electron method (`sigmaMethod`), and so exceeds the true `Q² = z Q²_e` for `z < 1` and
-`Q²_e > 0` (`trueInvariants_Q2_lt_electronMethod_Q2_of_collinear_initialState`); this is an
-artifact of that choice, not of the transverse-momentum virtuality of Bassler and Bernardi. -/
+`Q²_e > 0` (`trueInvariants_Q2_lt_electronMethod_Q2_of_collinear_initialState`). The exactness of
+`x` proved here depends on that choice: with `x_Σ = Q²_Σ / (2 (p·k) y_Σ)`
+(`sigmaMethod_x_eq_Q2_div`) only one of `x` and `Q²` can be exact for `z < 1`, `Q²_e > 0` and
+`x ≠ 0`, and the transverse-momentum virtuality of Bassler and Bernardi, which gives the true
+`Q²`, would instead give `x_Σ = z x`. -/
 theorem sigmaMethod_x_eq_trueInvariants_x_of_collinear_initialState (hk : g e.k e.k = 0)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • e.k) (hpk : g e.p e.k ≠ 0) :
     (sigmaMethod g e.k e.p e.kPrime e.pX).x = (e.trueInvariants g .initialState).x := by
