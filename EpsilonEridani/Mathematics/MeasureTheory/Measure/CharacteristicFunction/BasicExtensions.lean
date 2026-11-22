@@ -15,7 +15,7 @@ For a probability measure `μ` on a real inner product space with finite second 
 characteristic function `charFun μ t = ∫ x, exp (i ⟪x, t⟫) ∂μ` stays close to its value `1` at the
 origin as long as `‖t‖² ∫ ‖x‖² ∂μ` is small:
 
-* `MeasureTheory.one_sub_re_charFun_le`: `1 - Re (charFun μ t) ≤ ‖t‖² (∫ ‖x‖² ∂μ) / 2`;
+* `MeasureTheory.one_sub_charFun_re_le`: `1 - Re (charFun μ t) ≤ ‖t‖² (∫ ‖x‖² ∂μ) / 2`;
 * `MeasureTheory.one_sub_norm_charFun_le`: the same bound for `1 - ‖charFun μ t‖`.
 
 Both follow by integrating `1 - cos y ≤ y² / 2` at `y = ⟪x, t⟫` and Cauchy–Schwarz. No assumption
@@ -36,7 +36,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
 
 /-- **The characteristic function near the origin.** For a probability measure with finite second
 moment, `1 - Re (charFun μ t) ≤ ‖t‖² (∫ ‖x‖² ∂μ) / 2`. -/
-theorem one_sub_re_charFun_le (hμ : Integrable (fun x ↦ ‖x‖ ^ 2) μ) (t : E) :
+theorem one_sub_charFun_re_le (hμ : Integrable (fun x ↦ ‖x‖ ^ 2) μ) (t : E) :
     1 - (charFun μ t).re ≤ ‖t‖ ^ 2 * (∫ x, ‖x‖ ^ 2 ∂μ) / 2 := by
   have hint : Integrable (fun x ↦ exp (⟪x, t⟫ * I)) μ :=
     BoundedContinuousFunction.integrable μ (BoundedContinuousFunction.innerProbChar t)
@@ -59,6 +59,6 @@ theorem one_sub_re_charFun_le (hμ : Integrable (fun x ↦ ‖x‖ ^ 2) μ) (t :
 `1 - ‖charFun μ t‖ ≤ ‖t‖² (∫ ‖x‖² ∂μ) / 2`. -/
 theorem one_sub_norm_charFun_le (hμ : Integrable (fun x ↦ ‖x‖ ^ 2) μ) (t : E) :
     1 - ‖charFun μ t‖ ≤ ‖t‖ ^ 2 * (∫ x, ‖x‖ ^ 2 ∂μ) / 2 :=
-  (sub_le_sub_left (re_le_norm _) 1).trans (one_sub_re_charFun_le hμ t)
+  (sub_le_sub_left (re_le_norm _) 1).trans (one_sub_charFun_re_le hμ t)
 
 end MeasureTheory

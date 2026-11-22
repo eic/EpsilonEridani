@@ -27,7 +27,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   {μ : Measure E} [IsGaussian μ]
 
 /-- The image of a Gaussian measure under the dilation `x ↦ c • x` is Gaussian. -/
-instance isGaussian_map_const_smul (c : ℝ) : IsGaussian (μ.map (c • ·)) := by
+instance isGaussian_map_smul (c : ℝ) : IsGaussian (μ.map (c • ·)) := by
   -- the dilation is the continuous linear map `c • id`
   convert isGaussian_map (μ := μ) (c • ContinuousLinearMap.id ℝ E)
   simp

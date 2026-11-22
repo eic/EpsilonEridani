@@ -20,7 +20,7 @@ its second moment, `∫ ‖x‖² ∂(stdGaussian E) = dim E`
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), whose root-mean-square norm is
 `|σ| √(dim E)`; the latter is the general dilation of a moment of the norm,
-`MeasureTheory.integral_norm_pow_map_const_smul`, applied to the former.
+`MeasureTheory.integral_norm_pow_map_smul`, applied to the former.
 
 The characteristic function of the image under `x ↦ σ • x` — in physics the form factor of the
 isotropic Gaussian charge distribution of width `σ` — decays as a Gaussian in the momentum:
@@ -63,7 +63,7 @@ theorem integral_norm_sq_stdGaussian :
 @[simp]
 theorem integral_norm_sq_map_smul_stdGaussian (σ : ℝ) :
     ∫ x, ‖x‖ ^ 2 ∂((stdGaussian E).map (σ • ·)) = σ ^ 2 * Module.finrank ℝ E := by
-  rw [integral_norm_pow_map_const_smul, integral_norm_sq_stdGaussian, Real.norm_eq_abs, sq_abs]
+  rw [integral_norm_pow_map_smul, integral_norm_sq_stdGaussian, Real.norm_eq_abs, sq_abs]
 
 /-- The characteristic function of the standard Gaussian dilated by `σ` — in physics the form
 factor of the isotropic Gaussian charge distribution of width `σ` — is the exponential of the

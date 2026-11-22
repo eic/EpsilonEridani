@@ -35,7 +35,7 @@ form factor, and then its consequence for the photon energy in the collider fram
   charge, while `Q² R²` is small against one. For the isotropic Gaussian charge distribution of
   width `σ`, whose squared norm is integrable
   (`ProbabilityTheory.IsGaussian.integrable_norm_sq`, applied through the instance
-  `ProbabilityTheory.isGaussian_map_const_smul`), this reads
+  `ProbabilityTheory.isGaussian_map_smul`), this reads
   `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² d / 2`
   (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le`).
 * Beyond the bound the coherent rate is suppressed by the square of the form factor. For the
