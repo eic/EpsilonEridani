@@ -130,8 +130,6 @@ theorem integral_cexp_mul_legendre (l : ℕ) (x : ℝ) :
 every real `x`. It is attained at `l = 0`, `x = 0`, where `j_0(0) = 1`. -/
 theorem sq_sphericalBesselJ_le (l : ℕ) (x : ℝ) : sphericalBesselJ l x ^ 2 ≤ 1 / (2 * l + 1) := by
   set A := ∫ t in (-1 : ℝ)..1, |(legendre l).eval t|
-  set B := ∫ t in (-1 : ℝ)..1, (legendre l).eval t * (legendre l).eval t
-  have hB : B = 2 / (2 * l + 1) := integral_legendre_mul_self l
   -- `|e^{i x t}| = 1`, so `2 |j_l(x)| ≤ ∫₋₁¹ |P_l|`
   have hA : 2 * |sphericalBesselJ l x| ≤ A := by
     have h := intervalIntegral.norm_integral_le_integral_norm (μ := volume) (a := -1) (b := 1)
@@ -145,7 +143,7 @@ theorem sq_sphericalBesselJ_le (l : ℕ) (x : ℝ) : sphericalBesselJ l x ^ 2 �
     rw [integral_cexp_mul_legendre, integral_congr fun t _ => hnorm t] at h
     simpa [abs_mul] using h
   -- Cauchy–Schwarz on `[-1, 1]`, of length `2`: `(∫₋₁¹ |P_l|) ^ 2 ≤ 2 ∫₋₁¹ P_l ^ 2`
-  have hAB : A ^ 2 ≤ 2 * B := by
+  have hAB : A ^ 2 ≤ 2 * (2 / (2 * l + 1)) := by
     have h := CauchySchwarz.sq_setIntegral_abs_le_measureReal_mul_setIntegral_sq
       (μ := volume) (S := Set.Icc (-1 : ℝ) 1) (G := fun t => (legendre l).eval t)
       measure_Icc_lt_top.ne ((memLp_two_iff_integrable_sq
@@ -154,19 +152,19 @@ theorem sq_sphericalBesselJ_le (l : ℕ) (x : ℝ) : sphericalBesselJ l x ^ 2 �
     have hI : volume.real (Set.Icc (-1 : ℝ) 1) = 2 := by
       rw [Real.volume_real_Icc_of_le (by norm_num)]
       norm_num
-    have e : ∀ g : ℝ → ℝ, ∫ t in Set.Icc (-1 : ℝ) 1, g t = ∫ t in (-1 : ℝ)..1, g t := fun g => by
-      rw [integral_Icc_eq_integral_Ioc, intervalIntegral.integral_of_le (by norm_num)]
-    rw [hI, e, e] at h
-    exact h.trans_eq (congrArg (2 * ·) (integral_congr fun t _ => sq _))
-  have hB' : B * (2 * l + 1) = 2 := by
-    rw [hB]
+    -- the Legendre normalisation as a set integral over `[-1, 1]`
+    have hN : ∫ t in Set.Icc (-1 : ℝ) 1, (legendre l).eval t ^ 2 = 2 / (2 * l + 1) := by
+      simpa [sq] using setIntegral_Icc_legendre_mul_legendre l l
+    rwa [hI, hN, integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by norm_num)]
+      at h
+  have hN' : 2 / (2 * l + 1) * (2 * l + 1) = (2 : ℝ) := by
     field_simp
   have hsq : (2 * |sphericalBesselJ l x|) ^ 2 ≤ A ^ 2 :=
     pow_le_pow_left₀ (by positivity) hA 2
   rw [mul_pow, sq_abs] at hsq
   have hl : (0 : ℝ) ≤ 2 * l + 1 := by positivity
   rw [le_div_iff₀ (by positivity)]
-  nlinarith [mul_le_mul_of_nonneg_right hsq hl, mul_le_mul_of_nonneg_right hAB hl]
+  nlinarith [mul_le_mul_of_nonneg_right hsq hl, mul_le_mul_of_nonneg_right hAB hl, hN']
 
 /-- The spherical Bessel functions are bounded by one: `|j_l(x)| ≤ 1` for every real `x`. -/
 theorem abs_sphericalBesselJ_le_one (l : ℕ) (x : ℝ) : |sphericalBesselJ l x| ≤ 1 := by
