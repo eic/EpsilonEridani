@@ -295,26 +295,18 @@ theorem integrable_woodsSaxonDensity_norm (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a)
     Integrable fun x : Space => woodsSaxonDensity ρ₀ R a ‖x‖ := by
   simp_rw [woodsSaxonDensity_eq_mul ρ₀]
   refine Integrable.const_mul ?_ ρ₀
-  rw [integrable_fun_norm_addHaar, Space.finrank_eq_dim]
-  -- The radial exponent `dim Space - 1` is the literal `3 - 1 = 2`.
-  simp only [Nat.reduceSub]
-  -- Compare with `exp (R / a) * r² exp(-r / a)`, integrable on `(0, ∞)` as a Gamma integral.
-  have hg : IntegrableOn (fun r : ℝ => exp (R / a) * (r ^ 2 * exp (-a⁻¹ * r))) (Ioi 0) := by
-    simp only [neg_mul]
-    exact (TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi 2 (inv_pos.2 ha)).const_mul _
-  refine hg.mono' ?_ (ae_restrict_of_forall_mem measurableSet_Ioi fun r _ => ?_)
-  · exact ((continuous_pow 2).smul
-      (continuous_woodsSaxonDensity 1 R a)).aestronglyMeasurable.restrict
-  · have h0 : 0 ≤ woodsSaxonDensity 1 R a r := woodsSaxonDensity_nonneg zero_le_one R a r
-    rw [smul_eq_mul, Real.norm_of_nonneg (mul_nonneg (sq_nonneg r) h0)]
-    calc r ^ 2 * woodsSaxonDensity 1 R a r ≤ r ^ 2 * (1 * exp (-((r - R) / a))) := by
-          gcongr; exact woodsSaxonDensity_le_mul_exp zero_le_one R a r
-      _ = exp (R / a) * (r ^ 2 * exp (-a⁻¹ * r)) := by
-          have hexp : -((r - R) / a) = R / a + -a⁻¹ * r := by
-            field_simp
-            ring
-          rw [one_mul, hexp, exp_add]
+  -- Dominate by `exp (R / a) * exp (-(a⁻¹ * ‖x‖))`, a multiple of the radial exponential.
+  refine ((TauCeti.integrable_exp_neg_mul_norm volume (inv_pos.2 ha)).const_mul
+    (exp (R / a))).mono' ((continuous_woodsSaxonDensity 1 R a).comp
+    continuous_norm).aestronglyMeasurable (.of_forall fun x => ?_)
+  rw [Real.norm_of_nonneg (woodsSaxonDensity_nonneg zero_le_one R a _)]
+  calc woodsSaxonDensity 1 R a ‖x‖ ≤ 1 * exp (-((‖x‖ - R) / a)) :=
+        woodsSaxonDensity_le_mul_exp zero_le_one R a ‖x‖
+    _ = exp (R / a) * exp (-(a⁻¹ * ‖x‖)) := by
+        have hexp : -((‖x‖ - R) / a) = R / a + -(a⁻¹ * ‖x‖) := by
+          field_simp
           ring
+        rw [one_mul, hexp, exp_add]
 
 /-- The integral over space of the Woods–Saxon profile with `ρ₀ = 1`. -/
 def woodsSaxonUnitDensityIntegral (R a : ℝ) : ℝ :=
