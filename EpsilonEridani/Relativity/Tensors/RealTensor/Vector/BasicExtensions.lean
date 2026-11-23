@@ -10,9 +10,10 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 # Extensions of the basic API of Lorentz vectors
 
-* Component lemmas for `Physlib`'s constructor `Lorentz.Vector.ofTemporalComponent`: the time
-  component and spatial part of a purely temporal vector `t e₀`, and the spatial part of a
-  difference (`spatialPart_sub`). They describe the equal-time projection
+* Component lemmas for `Physlib`'s constructors `Lorentz.Vector.ofTemporalComponent` and
+  `Lorentz.Vector.ofSpatialComponent`: the time component and spatial part of a purely temporal
+  vector `t e₀`, the spatial part of a purely spatial vector (`spatialPart_ofSpatialComponent`),
+  and the spatial part of a difference (`spatialPart_sub`). They describe the equal-time projection
   `v - ofTemporalComponent v.timeComponent` of a vector `v`, which has vanishing time component
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
@@ -46,6 +47,13 @@ lemma spatialPart_ofTemporalComponent {d : ℕ} (t : ℝ) :
     (ofTemporalComponent t : Vector d).spatialPart = 0 := by
   ext i
   simp [ofTemporalComponent, basis_apply]
+
+/-- The purely spatial vector `ofSpatialComponent s` has spatial part `s`. -/
+@[simp]
+lemma spatialPart_ofSpatialComponent {d : ℕ} (s : EuclideanSpace ℝ (Fin d)) :
+    (ofSpatialComponent s : Vector d).spatialPart = s := by
+  ext i
+  simp [ofSpatialComponent, apply_sum, basis_apply]
 
 /-- The spatial part of a difference is the difference of the spatial parts.
 
