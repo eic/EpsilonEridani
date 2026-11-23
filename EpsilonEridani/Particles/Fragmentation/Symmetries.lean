@@ -341,7 +341,7 @@ theorem unfavored_conj_of_chargeConjRelation (C : HadronMultiplet Hadron Flavor)
 symmetry, the favoured combination of the relabelled flavour in the image hadron is the favoured
 combination of the flavour in the hadron. -/
 theorem favored_map_of_flavorSymmetryRelation {τ : Hadron → Hadron} {ρ : Flavor → Flavor}
-    (hv : ∀ h s, Species.map ρ s ∈ valence (τ h) ↔ s ∈ valence h)
+    (hv : ValenceInvariant valence τ (Species.map ρ))
     (hFS : FlavorSymmetryRelation τ ρ D) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
     favored valence D (τ h) (ρ i) z Q2 = favored valence D h i z Q2 := by
   have hs : Species.flavorPair (ρ i) ∩ valence (τ h)
@@ -351,9 +351,9 @@ theorem favored_map_of_flavorSymmetryRelation {τ : Hadron → Hadron} {ρ : Fla
     simp only [Finset.mem_inter, Finset.mem_image]
     constructor
     · rintro ⟨⟨t, ht, rfl⟩, hs⟩
-      exact ⟨t, ⟨ht, (hv h t).1 hs⟩, rfl⟩
+      exact ⟨t, ⟨ht, (hv.mem_iff h t).1 hs⟩, rfl⟩
     · rintro ⟨t, ⟨ht, hth⟩, rfl⟩
-      exact ⟨⟨t, ht, rfl⟩, (hv h t).2 hth⟩
+      exact ⟨⟨t, ht, rfl⟩, (hv.mem_iff h t).2 hth⟩
   rw [favored_def, favored_def, hs,
     Finset.sum_image ((Species.injOn_map_flavorPair ρ i).mono (by simp))]
   exact Finset.sum_congr rfl fun s _ => hFS.apply h s z Q2
@@ -362,7 +362,7 @@ theorem favored_map_of_flavorSymmetryRelation {τ : Hadron → Hadron} {ρ : Fla
 symmetry, the unfavoured combination of the relabelled flavour in the image hadron is the
 unfavoured combination of the flavour in the hadron. -/
 theorem unfavored_map_of_flavorSymmetryRelation {τ : Hadron → Hadron} {ρ : Flavor → Flavor}
-    (hv : ∀ h s, Species.map ρ s ∈ valence (τ h) ↔ s ∈ valence h)
+    (hv : ValenceInvariant valence τ (Species.map ρ))
     (hFS : FlavorSymmetryRelation τ ρ D) (h : Hadron) (i : Flavor) (z Q2 : ℝ) :
     unfavored valence D (τ h) (ρ i) z Q2 = unfavored valence D h i z Q2 := by
   have hs : Species.flavorPair (ρ i) \ valence (τ h)
@@ -372,9 +372,9 @@ theorem unfavored_map_of_flavorSymmetryRelation {τ : Hadron → Hadron} {ρ : F
     simp only [Finset.mem_sdiff, Finset.mem_image]
     constructor
     · rintro ⟨⟨t, ht, rfl⟩, hs⟩
-      exact ⟨t, ⟨ht, mt (hv h t).2 hs⟩, rfl⟩
+      exact ⟨t, ⟨ht, mt (hv.mem_iff h t).2 hs⟩, rfl⟩
     · rintro ⟨t, ⟨ht, hth⟩, rfl⟩
-      exact ⟨⟨t, ht, rfl⟩, mt (hv h t).1 hth⟩
+      exact ⟨⟨t, ht, rfl⟩, mt (hv.mem_iff h t).1 hth⟩
   rw [unfavored_def, unfavored_def, hs,
     Finset.sum_image ((Species.injOn_map_flavorPair ρ i).mono (by simp))]
   exact Finset.sum_congr rfl fun s _ => hFS.apply h s z Q2
@@ -418,18 +418,18 @@ theorem assumptions_valenceStepFrag (valence : Hadron → Finset (Species Flavor
 because the valence assignment is. -/
 theorem invariant_valenceStepFrag (valence : Hadron → Finset (Species Flavor))
     {τ : Hadron → Hadron} {σ : Species Flavor → Species Flavor}
-    (hv : ∀ h s, σ s ∈ valence (τ h) ↔ s ∈ valence h) :
+    (hv : ValenceInvariant valence τ σ) :
     Invariant τ σ (valenceStepFrag valence) := by
   rw [invariant_def, valenceStepFrag_def, comap_indicatorUnitInterval]
   congr 1
   funext h s z _
-  simp only [comap_apply, hv]
+  simp only [comap_apply, hv.mem_iff]
 
 /-- `valenceStepFrag` satisfies the charge-conjugation relation of a multiplet, because the
 valence content does. -/
 theorem chargeConjRelation_valenceStepFrag (C : HadronMultiplet Hadron Flavor) :
     ChargeConjRelation C.conj (valenceStepFrag C.valence) :=
-  invariant_valenceStepFrag C.valence fun h s => by rw [C.mem_valence_conj, Species.conj_conj]
+  invariant_valenceStepFrag C.valence C.valenceInvariant_conj
 
 /-- On a valence flavour the favoured combination of `valenceStepFrag` is `2 z`. -/
 theorem favored_valenceStepFrag (hi : IsValenceFlavor valence h i) {z : ℝ}
@@ -560,10 +560,8 @@ theorem exists_chargeConjRelation_and_flavorSymmetryRelation_favored_ne_unfavore
       ∀ Q2 : ℝ, favored Pion.valence D .plus .up (1 / 2) Q2
         ≠ unfavored Pion.valence D .plus .up (1 / 2) Q2 :=
   ⟨valenceStepFrag Pion.valence, assumptions_valenceStepFrag _,
-    by
-      rw [← pionMultiplet_conj, ← pionMultiplet_valence]
-      exact chargeConjRelation_valenceStepFrag pionMultiplet,
-    invariant_valenceStepFrag _ pion_map_swap_mem_valence_conj_iff,
+    invariant_valenceStepFrag _ valenceInvariant_pion_conj,
+    invariant_valenceStepFrag _ valenceInvariant_pion_swap,
     fun Q2 => favored_valenceStepFrag_ne_unfavored (isValenceFlavor_pion_plus .up) Q2⟩
 
 end Fragmentation

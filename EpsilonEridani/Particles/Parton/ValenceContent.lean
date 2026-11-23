@@ -19,6 +19,10 @@ A flavour for which exactly one of the quark and the antiquark is a valence cons
 `IsValenceFlavor`. This holds for each flavour of a flavoured meson and fails for a flavour-neutral
 hadron.
 
+A valence assignment is a `ValenceInvariant` of a map `τ` of the hadrons and a map `σ` of the
+species when `σ s` is a valence constituent of `τ h` exactly when `s` is one of `h`. This is the
+compatibility of the valence content with a symmetry, such as charge conjugation or isospin.
+
 A multiplet of hadrons closed under taking the antiparticle is a `HadronMultiplet`: the
 antiparticle involution `conj` on the hadrons, the valence content, and the compatibility of the
 two, that the valence constituents of the antiparticle are the antiparticles of the valence
@@ -40,6 +44,8 @@ the charged pions is that of `Meson.piPlus` and `Meson.piMinus`.
 
 * `EpsilonEridani.Particles.Parton.IsValenceFlavor`: exactly one of the quark and the antiquark of a
   flavour is a valence constituent of a hadron.
+* `EpsilonEridani.Particles.Parton.ValenceInvariant`: the valence content is compatible with a map
+  of the hadrons and a map of the species.
 * `EpsilonEridani.Particles.Parton.HadronMultiplet`: a hadron multiplet with its antiparticle map
   and valence content.
 * `EpsilonEridani.Particles.Parton.Pion`, `EpsilonEridani.Particles.Parton.PionFlavor` and
@@ -50,17 +56,24 @@ the charged pions is that of `Meson.piPlus` and `Meson.piMinus`.
 
 * `IsValenceFlavor.image_conj_inter_valence`: at a valence flavour, conjugation carries the valence
   species of that flavour in a hadron to its non-valence species.
+* `ValenceInvariant.image_valence`: a compatible surjective map of the species carries the valence
+  content of a hadron to that of its image.
+* `HadronMultiplet.valenceInvariant_conj`: the valence content of a multiplet is compatible with
+  taking the antiparticle.
 * `HadronMultiplet.image_conj_valence`: conjugation carries the valence content of a hadron to that
   of its antiparticle.
 * `HadronMultiplet.image_conj_inter_valence` and `HadronMultiplet.image_conj_sdiff_valence`:
   conjugation carries the valence and the non-valence species of a flavour in a hadron to those in
   its antiparticle.
-* `IsValenceFlavor.conj`: a valence flavour of a hadron is a valence flavour of its antiparticle.
+* `IsValenceFlavor.conj`: for a valence content compatible with conjugation, a valence flavour of a
+  hadron is a valence flavour of its antiparticle.
 * `IsValenceFlavor.inter_valence_conj_eq_sdiff`: at a valence flavour, the valence species of the
   antiparticle are the non-valence species of the hadron.
 * `isValenceFlavor_pion_plus`, `isValenceFlavor_pion_minus` and `not_isValenceFlavor_pion_zero`:
   every light flavour is a valence flavour of each charged pion and none is a valence flavour of
   the neutral pion.
+* `valenceInvariant_pion_conj` and `valenceInvariant_pion_swap`: the valence content of the pion
+  triplet is compatible with charge conjugation and with the isospin reflection.
 * `Pion.image_map_valence_plus` and `Pion.image_map_valence_minus`: the valence content of the
   charged pions, read as light flavours, is that of `Meson.piPlus` and `Meson.piMinus`.
 -/
@@ -124,6 +137,40 @@ theorem IsValenceFlavor.image_conj_inter_valence [DecidableEq Flavor]
 
 end IsValenceFlavor
 
+/-- The valence content `valence` is *invariant* under a map `τ` of the hadrons and a map `σ` of the
+species when `σ s` is a valence constituent of `τ h` exactly when `s` is a valence constituent of
+`h`. This is the compatibility of the valence content with a symmetry `(τ, σ)` of the hadrons and
+the partons, such as charge conjugation or a relabelling of the quark flavours. -/
+def ValenceInvariant (valence : Hadron → Finset (Species Flavor)) (τ : Hadron → Hadron)
+    (σ : Species Flavor → Species Flavor) : Prop :=
+  ∀ h s, σ s ∈ valence (τ h) ↔ s ∈ valence h
+
+section ValenceInvariant
+
+variable {valence : Hadron → Finset (Species Flavor)} {τ : Hadron → Hadron}
+  {σ : Species Flavor → Species Flavor}
+
+theorem valenceInvariant_iff : ValenceInvariant valence τ σ ↔
+    ∀ h s, σ s ∈ valence (τ h) ↔ s ∈ valence h :=
+  Iff.rfl
+
+theorem ValenceInvariant.mem_iff (hv : ValenceInvariant valence τ σ) (h : Hadron)
+    (s : Species Flavor) : σ s ∈ valence (τ h) ↔ s ∈ valence h :=
+  hv h s
+
+/-- A compatible surjective map of the species carries the valence content of a hadron to that of
+its image. -/
+theorem ValenceInvariant.image_valence [DecidableEq Flavor] (hv : ValenceInvariant valence τ σ)
+    (hσ : Function.Surjective σ) (h : Hadron) : (valence h).image σ = valence (τ h) := by
+  ext s
+  obtain ⟨t, rfl⟩ := hσ s
+  rw [hv.mem_iff, Finset.mem_image]
+  refine ⟨?_, fun ht => ⟨t, ht, rfl⟩⟩
+  rintro ⟨a, ha, hat⟩
+  rwa [← hv.mem_iff h, ← hat, hv.mem_iff]
+
+end ValenceInvariant
+
 /-- The discrete data of a multiplet of observed hadrons closed under taking the antiparticle: the
 antiparticle map `conj` on the hadrons and the valence content `valence h`, the finite set of
 parton species that are valence constituents of `h`. The two are tied by `mem_valence_conj`: the
@@ -149,16 +196,15 @@ variable (C : HadronMultiplet Hadron Flavor)
 theorem conj_conj (h : Hadron) : C.conj (C.conj h) = h :=
   C.conj_involutive h
 
+/-- The valence content of a multiplet is compatible with taking the antiparticle of the hadron
+and of the parton together. -/
+theorem valenceInvariant_conj : ValenceInvariant C.valence C.conj Species.conj := fun h s => by
+  rw [C.mem_valence_conj, Species.conj_conj]
+
 /-- Conjugation carries the valence content of a hadron to that of its antiparticle. -/
 theorem image_conj_valence [DecidableEq Flavor] (h : Hadron) :
-    (C.valence h).image Species.conj = C.valence (C.conj h) := by
-  ext s
-  rw [C.mem_valence_conj, Finset.mem_image]
-  constructor
-  · rintro ⟨a, ha, rfl⟩
-    rwa [Species.conj_conj]
-  · intro hs
-    exact ⟨Species.conj s, hs, Species.conj_conj s⟩
+    (C.valence h).image Species.conj = C.valence (C.conj h) :=
+  C.valenceInvariant_conj.image_valence Species.conj_involutive.surjective h
 
 /-- Conjugation carries the valence species of a flavour in a hadron to the valence species of
 that flavour in its antiparticle. -/
@@ -180,21 +226,27 @@ end HadronMultiplet
 
 namespace IsValenceFlavor
 
-variable {C : HadronMultiplet Hadron Flavor} {h : Hadron} {i : Flavor}
+variable {valence : Hadron → Finset (Species Flavor)} {τ : Hadron → Hadron} {h : Hadron}
+  {i : Flavor}
 
-/-- A valence flavour of a hadron is a valence flavour of its antiparticle. -/
-theorem conj (hi : IsValenceFlavor C.valence h i) : IsValenceFlavor C.valence (C.conj h) i := by
-  simp only [IsValenceFlavor, C.mem_valence_conj, Species.conj_quark, Species.conj_antiquark]
-  rw [xor_comm]
-  exact hi
+/-- For a valence content compatible with the antiparticle map `τ`, a valence flavour of a hadron
+is a valence flavour of its antiparticle. -/
+theorem conj (hv : ValenceInvariant valence τ Species.conj) (hi : IsValenceFlavor valence h i) :
+    IsValenceFlavor valence (τ h) i := by
+  rw [isValenceFlavor_iff, ← hv.mem_iff h, ← hv.mem_iff h, Species.conj_quark,
+    Species.conj_antiquark] at hi
+  rwa [isValenceFlavor_iff, xor_comm]
 
 variable [DecidableEq Flavor]
 
-/-- At a valence flavour, the valence species of that flavour in the antiparticle are the
-non-valence species of that flavour in the hadron. -/
-theorem inter_valence_conj_eq_sdiff (hi : IsValenceFlavor C.valence h i) :
-    Species.flavorPair i ∩ C.valence (C.conj h) = Species.flavorPair i \ C.valence h :=
-  (C.image_conj_inter_valence h i).symm.trans hi.image_conj_inter_valence
+/-- For a valence content compatible with the antiparticle map `τ`, at a valence flavour the
+valence species of that flavour in the antiparticle are the non-valence species of that flavour in
+the hadron. -/
+theorem inter_valence_conj_eq_sdiff (hv : ValenceInvariant valence τ Species.conj)
+    (hi : IsValenceFlavor valence h i) :
+    Species.flavorPair i ∩ valence (τ h) = Species.flavorPair i \ valence h := by
+  rw [← hi.image_conj_inter_valence, Finset.image_inter _ _ Species.conj_involutive.injective,
+    Species.image_conj_flavorPair, hv.image_valence Species.conj_involutive.surjective]
 
 end IsValenceFlavor
 
@@ -225,10 +277,13 @@ theorem PionFlavor.swap_up : swap .up = .down :=
 theorem PionFlavor.swap_down : swap .down = .up :=
   (rfl)
 
-/-- The isospin reflection is an involution. -/
-theorem PionFlavor.swap_involutive : Function.Involutive swap := by
-  intro i
+@[simp]
+theorem PionFlavor.swap_swap (i : PionFlavor) : swap (swap i) = i := by
   cases i <;> rfl
+
+/-- The isospin reflection is an involution. -/
+theorem PionFlavor.swap_involutive : Function.Involutive swap :=
+  PionFlavor.swap_swap
 
 /-- The pion flavours as light flavours: the up and the down flavour, leaving out the strange
 flavour. -/
@@ -281,10 +336,13 @@ theorem Pion.conj_zero : conj .zero = .zero :=
 theorem Pion.conj_minus : conj .minus = .plus :=
   (rfl)
 
-/-- Taking the antiparticle of a pion twice returns the pion. -/
-theorem Pion.conj_involutive : Function.Involutive Pion.conj := by
-  intro h
+@[simp]
+theorem Pion.conj_conj (h : Pion) : conj (conj h) = h := by
   cases h <;> rfl
+
+/-- Taking the antiparticle of a pion twice returns the pion. -/
+theorem Pion.conj_involutive : Function.Involutive Pion.conj :=
+  Pion.conj_conj
 
 /-- The valence content of the pions: `π⁺ = u dbar` and `π⁻ = d ubar`, while the neutral pion, a
 superposition of `u ubar` and `d dbar`, has all four light species as valence constituents. -/
@@ -362,10 +420,15 @@ theorem not_isValenceFlavor_pion_zero (i : PionFlavor) :
   · exact hq' (by cases i <;> simp)
   · exact hq (by cases i <;> simp)
 
+/-- The valence content of the pion triplet is compatible with charge conjugation. -/
+theorem valenceInvariant_pion_conj : ValenceInvariant Pion.valence Pion.conj Species.conj :=
+  pionMultiplet.valenceInvariant_conj
+
 /-- The valence content of the pion triplet is compatible with the isospin reflection, which acts
 on the triplet as the antiparticle map. -/
-theorem pion_map_swap_mem_valence_conj_iff (h : Pion) (s : Species PionFlavor) :
-    Species.map PionFlavor.swap s ∈ Pion.valence (Pion.conj h) ↔ s ∈ Pion.valence h := by
+theorem valenceInvariant_pion_swap :
+    ValenceInvariant Pion.valence Pion.conj (Species.map PionFlavor.swap) := by
+  intro h s
   cases h
   all_goals
     simp only [Pion.conj, Pion.valence, Finset.mem_insert,
