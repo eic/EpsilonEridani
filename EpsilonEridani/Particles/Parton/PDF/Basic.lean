@@ -77,6 +77,18 @@ lemma mellinMoment_integrable
   MeasureTheory.Integrable (fun x : ℝ => x ^ n * f i x Q2) :=
   h.momentIntegrable n i Q2
 
+/-- The zeroth minus the first Mellin moment is the integral of `(1 - x) f(x)` over `[0, 1]`:
+`∫₀¹ f - ∫₀¹ x f = ∫₀¹ (1 - x) f`. -/
+lemma mellinMoment_zero_sub_mellinMoment_one_eq_setIntegral_one_sub_mul {f : Pdf Flavor}
+    {i : Flavor} {Q2 : ℝ}
+    (h : MeasureTheory.IntegrableOn (fun x => f i x Q2) (Set.Icc 0 1)) :
+    mellinMoment f 0 i Q2 - mellinMoment f 1 i Q2 =
+      ∫ x in Set.Icc (0 : ℝ) 1, (1 - x) * f i x Q2 := by
+  have hx : MeasureTheory.IntegrableOn (fun x => x * f i x Q2) (Set.Icc 0 1) :=
+    h.continuousOn_mul continuousOn_id isCompact_Icc
+  simp only [mellinMoment, pow_zero, one_mul, pow_one, sub_mul]
+  exact (MeasureTheory.integral_sub h hx).symm
+
 /-! ### The analytic/physical split of `Assumptions`
 
 `Assumptions` bundles two kinds of hypothesis, and the difference decides what can be
@@ -123,11 +135,17 @@ lemma Assumptions.isPartonDensity {f : Pdf Flavor} (h : Assumptions f) :
 lemma Assumptions.regularity {f : Pdf Flavor} (h : Assumptions f) : Regularity f :=
   { measurable := h.measurable, momentIntegrable := h.momentIntegrable }
 
+/-- Under the analytic assumptions, each density is integrable: the zeroth Mellin-moment
+integrand. -/
+lemma Regularity.integrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ) :
+    MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
+  simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
+
 /-- Under the analytic half of the assumptions, every density is interval integrable, on any
-interval: this is the zeroth-moment case of `Regularity.momentIntegrable`. -/
+interval: the interval form of `Regularity.integrable`. -/
 lemma Regularity.intervalIntegrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 a b : ℝ) :
-    IntervalIntegrable (fun x => f i x Q2) MeasureTheory.volume a b := by
-  simpa using (h.momentIntegrable 0 i Q2).intervalIntegrable (a := a) (b := b)
+    IntervalIntegrable (fun x => f i x Q2) MeasureTheory.volume a b :=
+  (h.integrable i Q2).intervalIntegrable
 
 /-- The split is exact: `Assumptions` is the conjunction of the physical and the analytic
 half, with no residue. -/

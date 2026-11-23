@@ -110,13 +110,13 @@ lemma adjointMatrix_mul_transpose (U : unitaryGroup (Fin N) ℂ) :
     simp only [Matrix.mul_assoc]
   ext a b
   apply Complex.ofReal_injective
-  rw [mul_apply, Complex.ofReal_sum]
+  rw [Matrix.mul_apply, Complex.ofReal_sum]
   simp only [transpose_apply, Complex.ofReal_mul, ofReal_adjointMatrix_apply, hc]
   have h4 : ∀ c : SUNIndex N, 2 * trace (star U.1 * genM N a * U.1 * genM N c) *
       (2 * trace (star U.1 * genM N b * U.1 * genM N c)) =
       4 * (trace (star U.1 * genM N a * U.1 * genM N c) *
         trace (star U.1 * genM N b * U.1 * genM N c)) := fun c => by ring
-  simp only [h4, ← Finset.mul_sum, sum_trace_pair, hpair, htr, one_apply]
+  simp only [h4, ← Finset.mul_sum, sum_trace_pair, hpair, htr, Matrix.one_apply]
   by_cases h : a = b
   · subst h
     norm_num [kdA]
@@ -133,7 +133,7 @@ lemma adjointMatrix_one : adjointMatrix (1 : unitaryGroup (Fin N) ℂ) = 1 := by
   ext a b
   apply Complex.ofReal_injective
   rw [ofReal_adjointMatrix_apply]
-  simp only [UnitaryGroup.one_val, Matrix.mul_one, star_one, trace_genM_mul, kdA, one_apply]
+  simp only [UnitaryGroup.one_val, Matrix.mul_one, star_one, trace_genM_mul, kdA, Matrix.one_apply]
   split_ifs <;> simp
 
 /-- The adjoint matrix is multiplicative, `Ad (U V) = Ad U Ad V`. -/
@@ -142,7 +142,7 @@ lemma adjointMatrix_mul (U V : unitaryGroup (Fin N) ℂ) :
     adjointMatrix (U * V) = adjointMatrix U * adjointMatrix V := by
   ext a b
   apply Complex.ofReal_injective
-  simp only [ofReal_adjointMatrix_apply (U * V), mul_apply, Complex.ofReal_sum]
+  simp only [ofReal_adjointMatrix_apply (U * V), Matrix.mul_apply, Complex.ofReal_sum]
   have h : genM N a * (U * V).1 * genM N b * star (U * V).1 =
       genM N a * U.1 * (V.1 * genM N b * star V.1) * star U.1 := by
     simp only [Submonoid.coe_mul, star_mul, Matrix.mul_assoc]

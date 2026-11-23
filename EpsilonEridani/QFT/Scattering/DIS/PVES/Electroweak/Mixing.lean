@@ -97,7 +97,7 @@ theorem neutralMassMatrix_mulVec_eq_zero_iff {g g' v : ℝ} (hv : v ≠ 0) (hg :
     (w : Fin 2 → ℝ) :
     neutralMassMatrix g g' v *ᵥ w = 0 ↔ ∃ c : ℝ, w = c • ![g', g] := by
   have hu : ![g, -g'] ≠ 0 := by
-    rw [cons_nonzero_iff, cons_nonzero_iff, neg_ne_zero]
+    rw [cons_ne_zero_iff, cons_ne_zero_iff, neg_ne_zero]
     exact hg.imp_right Or.inl
   have hsq : g ^ 2 + g' ^ 2 ≠ 0 := by
     rcases hg with hg | hg <;> positivity

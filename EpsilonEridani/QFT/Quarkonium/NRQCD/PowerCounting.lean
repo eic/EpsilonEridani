@@ -124,8 +124,8 @@ theorem totalDegree_le_totalDegree_compositeDeg {o : FreeMonoid B} {b : B} (hb :
 /-- If every bilinear is suppressed, the number of factors of a composite operator is at most its
 total degree. -/
 theorem length_le_totalDegree_compositeDeg (hpos : ∀ b, 0 < totalDegree (deg b))
-    (o : FreeMonoid B) : o.length ≤ totalDegree (compositeDeg deg o) := by
-  rw [totalDegree_compositeDeg, FreeMonoid.length,
+    (o : FreeMonoid B) : o.toList.length ≤ totalDegree (compositeDeg deg o) := by
+  rw [totalDegree_compositeDeg,
     ← List.length_map (f := fun b => totalDegree (deg b))]
   refine List.length_le_sum_of_one_le _ fun _ hi => ?_
   obtain ⟨b, -, rfl⟩ := List.mem_map.1 hi
@@ -146,7 +146,7 @@ theorem finite_totalDegree_compositeDeg_le (hpos : ∀ b, 0 < totalDegree (deg b
   have hmem : ∀ b ∈ o.toList, b ∈ S := fun b hb =>
     (totalDegree_le_totalDegree_compositeDeg deg hb).trans ho
   refine ⟨o.toList.pmap Subtype.mk hmem, ?_, ?_⟩
-  · simpa [FreeMonoid.length] using (length_le_totalDegree_compositeDeg deg hpos o).trans ho
+  · simpa using (length_le_totalDegree_compositeDeg deg hpos o).trans ho
   · simp [List.map_pmap]
 
 /-- An unsuppressed bilinear spoils finiteness: if the composite operators of total degree zero
@@ -157,7 +157,7 @@ theorem totalDegree_pos_of_finite_totalDegree_compositeDeg_le
   refine Nat.pos_of_ne_zero fun hb => h.not_infinite ?_
   refine Set.infinite_of_injective_forall_mem
     (f := fun k : ℕ => FreeMonoid.ofList (List.replicate k b))
-    (fun k k' hk => List.replicate_left_injective b (FreeMonoid.ofList.injective hk)) fun k => ?_
+    (fun k k' hk => List.replicate_left_injective b (FreeMonoid.ofList.inj hk)) fun k => ?_
   simp [compositeDeg_def, List.map_replicate, List.sum_replicate, hb]
 
 /-- If the composite operators up to total degree `n` form a finite set, so do the bilinears up to
@@ -290,8 +290,8 @@ theorem truncation_zero : P.truncation 0 = {1} := by
   simp only [mem_truncation, nonpos_iff_eq_zero, Finset.mem_singleton]
   refine ⟨fun h => ?_, fun h => by simp [h]⟩
   have := length_le_totalDegree_compositeDeg P.deg P.totalDegree_pos o
-  rw [h, nonpos_iff_eq_zero, FreeMonoid.length_eq_zero] at this
-  exact this
+  rw [h, nonpos_iff_eq_zero, List.length_eq_zero_iff] at this
+  exact FreeMonoid.ext (this.trans FreeMonoid.toList_one.symm)
 
 end PowerCounting
 
