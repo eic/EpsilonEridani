@@ -27,24 +27,33 @@ regular parts add up to the same function. In moment space this is
 which hold at `N = 2` for every choice of colour factors, it constrains the kernels at every `N`:
 changing a single coefficient of one of the four kernels breaks it.
 
-**Large-`N` behaviour of the diagonal moments.** The moments `γ_qq(N)` and `γ_gg(N)` fall like
-`-2 C log N`, with `C` the colour charge of the radiating parton, as the coefficients `2 C_F` and
-`2 C_A` of `[1 / (1 - z)]₊` dictate:
+**Large-`N` behaviour of the diagonal moments.** For any kernel whose regular part has moments
+`O(1/N)`, the moment is `-p (log N + γ_E) + d + O(1/N)` as `N → ∞` through the natural numbers,
+with `p` and `d` the coefficients of `[1 / (1 - z)]₊` and `δ(1 - z)` and `γ_E` the
+Euler–Mascheroni constant. So the moments `γ_qq(N)` and `γ_gg(N)` fall like `-2 C log N`, with
+`C` the colour charge of the radiating parton, as the plus coefficients `2 C_F` and `2 C_A`
+dictate: at natural `N`,
 
   `γ_qq(N) = -2 C_F (log N + γ_E) + (3/2) C_F + O(1/N)`,
   `γ_gg(N) = -2 C_A (log N + γ_E) + β₀ / 2 + O(1/N)`,
 
-with `γ_E` the Euler–Mascheroni constant. The growth is only logarithmic, so evolution changes
-high moments, which govern the large-momentum-fraction region, slowly.
+and in particular `γ_qq(N) = -2 C_F log N + O(1)` and `γ_gg(N) = -2 C_A log N + O(1)`. The growth
+is only logarithmic, so evolution changes high moments, which govern the large-momentum-fraction
+region, slowly.
 
 ## Main results
 
-* `pairing_pqq_add_pairing_pgq`: the supersymmetric relation for the pairing with any test
-  function `φ` for which `φ z / z` is integrable on `[0, 1]`.
-* `moment_pqq_add_moment_pgq`: the supersymmetric relation for the moments, at every real
-  `N > 1`.
-* `isBigO_moment_pqq_add_log_inv`, `isBigO_moment_pgg_add_log_inv`: the large-`N` expansions
-  of the diagonal moments.
+* `pairing_pqq_add_pairing_pgq_eq_pairing_pqgSinglet_add_pairing_pgg`: the supersymmetric
+  relation for the pairing with any test function `φ` for which `φ z / z` is integrable on
+  `[0, 1]`.
+* `moment_pqq_add_moment_pgq_eq_moment_pqgSinglet_add_moment_pgg`: the supersymmetric relation
+  for the moments, at every real `N > 1`.
+* `KernelForm.isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`:
+  the large-`N` expansion of the moments of a kernel, at natural `N`.
+* `isBigO_moment_pqq_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`,
+  `isBigO_moment_pgg_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`: the
+  large-`N` expansions of the diagonal moments, at natural `N`, and their leading forms
+  `isBigO_moment_pqq_add_const_mul_log_one`, `isBigO_moment_pgg_add_const_mul_log_one`.
 
 ## References
 
@@ -74,11 +83,11 @@ variable {c : ColorFactors}
 `C_F = C_A = 2 n_f T_F`, `P_qq + P_gq = 2 n_f P_qg + P_gg`: the two pair equally with every test
 function `φ` for which `φ z / z` is integrable on `[0, 1]`, which makes the `1 / z` singularities
 of `P_gq` and `P_gg` integrable against `φ`. -/
-theorem pairing_pqq_add_pairing_pgq (hc : c.IsSupersymmetric) {φ : ℝ → ℝ}
-    (hφ : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
+theorem pairing_pqq_add_pairing_pgq_eq_pairing_pqgSinglet_add_pairing_pgg
+    (hc : c.IsSupersymmetric) {φ : ℝ → ℝ} (hφ : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
     (pqq c).pairing φ + (pgq c).pairing φ = (pqgSinglet c).pairing φ + (pgg c).pairing φ := by
   have hφ' : IntervalIntegrable φ volume 0 1 :=
-    (hφ.continuousOn_mul (g := fun z => z) continuousOn_id).congr fun z hz => by
+    (hφ.continuousOn_mul (g := fun z => z) (continuousOn_id' _)).congr fun z hz => by
       rw [uIoc_of_le zero_le_one] at hz
       field_simp [hz.1.ne']
   have hqq : IntervalIntegrable (fun z => (pqq c).regular z * φ z) volume 0 1 := by
@@ -118,10 +127,11 @@ theorem pairing_pqq_add_pairing_pgq (hc : c.IsSupersymmetric) {φ : ℝ → ℝ}
 /-- **The supersymmetric relation.** At the supersymmetric point `C_F = C_A = 2 n_f T_F`, the
 leading-order moments satisfy `γ_qq(N) + γ_gq(N) = γ_qg(N) + γ_gg(N)` at every real `N > 1`, with
 `γ_qg` the singlet-normalised moment. -/
-theorem moment_pqq_add_moment_pgq (hc : c.IsSupersymmetric) {N : ℝ} (hN : 1 < N) :
+theorem moment_pqq_add_moment_pgq_eq_moment_pqgSinglet_add_moment_pgg (hc : c.IsSupersymmetric)
+    {N : ℝ} (hN : 1 < N) :
     (pqq c).moment N + (pgq c).moment N = (pqgSinglet c).moment N + (pgg c).moment N := by
   simp only [KernelForm.moment_def]
-  refine pairing_pqq_add_pairing_pgq hc ?_
+  refine pairing_pqq_add_pairing_pgq_eq_pairing_pqgSinglet_add_pairing_pgg hc ?_
   refine (intervalIntegral.intervalIntegrable_rpow' (r := N - 2) (by linarith)).congr
     fun z hz => ?_
   rw [uIoc_of_le zero_le_one] at hz
@@ -130,58 +140,106 @@ theorem moment_pqq_add_moment_pgq (hc : c.IsSupersymmetric) {N : ℝ} (hN : 1 < 
 
 /-! ### Large-`N` behaviour of the diagonal moments -/
 
-/-- **The large-`N` expansion of `γ_qq`.** `γ_qq(N) = -2 C_F (log N + γ_E) + (3/2) C_F + O(1/N)`,
-with `γ_E` the Euler–Mascheroni constant. -/
-theorem isBigO_moment_pqq_add_log_inv (c : ColorFactors) :
-    (fun N : ℕ => (pqq c).moment N + 2 * c.cF * (Real.log N + Real.eulerMascheroniConstant) -
-      3 / 2 * c.cF) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
-  have hrat : (fun N : ℕ => 1 / ((N : ℝ) * (N + 1))) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
-    refine IsBigO.of_bound 1 ?_
-    filter_upwards [eventually_ge_atTop 1] with N hN
-    have hN' : (1 : ℝ) ≤ N := by exact_mod_cast hN
-    rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), one_mul,
-      one_div]
-    exact inv_anti₀ (by positivity) (by nlinarith)
-  refine ((isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_inv.const_mul_left
-    (-2 * c.cF)).add (hrat.const_mul_left c.cF)).congr' ?_
-    EventuallyEq.rfl
+namespace KernelForm
+
+/-- **The large-`N` expansion of a kernel's moments.** If the moment
+`∫₀¹ r z z ^ (N - 1) dz` of the regular part `r` is `O(1/N)`, then
+`P.moment N = -p (log N + γ_E) + d + O(1/N)` as `N → ∞` through the natural numbers, with `p` the
+coefficient of `[1 / (1 - z)]₊`, `d` that of `δ(1 - z)`, and `γ_E` the Euler–Mascheroni constant:
+the plus part contributes `-p S₁(N - 1)`, which grows like `-p log N`. -/
+theorem isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
+    (P : KernelForm)
+    (hr : (fun N : ℕ => ∫ z in (0 : ℝ)..1, P.regular z * z ^ ((N : ℝ) - 1)) =O[atTop]
+      fun N : ℕ => (N : ℝ)⁻¹) :
+    (fun N : ℕ => P.moment N + P.plusCoeff * (Real.log N + Real.eulerMascheroniConstant) -
+      P.deltaCoeff) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
+  -- `P.moment N = r_N - p S₁(N - 1) + d` and `S₁(N - 1) = S₁(N) - 1/N`
+  refine ((hr.sub (isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_inv.const_mul_left
+    P.plusCoeff)).add ((isBigO_refl (fun N : ℕ => (N : ℝ)⁻¹) atTop).const_mul_left
+    P.plusCoeff)).congr' ?_ EventuallyEq.rfl
   filter_upwards [eventually_ne_atTop 0] with N hN
-  rw [moment_pqq c hN]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
+  rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
+    KernelForm.pairing_pow, harmonic_succ]
+  simp only [add_sub_cancel_right, Real.rpow_natCast]
+  push_cast
   ring
 
-/-- **The large-`N` expansion of `γ_gg`.** `γ_gg(N) = -2 C_A (log N + γ_E) + β₀ / 2 + O(1/N)`,
-with `γ_E` the Euler–Mascheroni constant and `β₀ / 2 = (11/6) C_A - (2/3) n_f T_F` the delta
-coefficient of `P_gg`. -/
-theorem isBigO_moment_pgg_add_log_inv (c : ColorFactors) :
-    (fun N : ℕ => (pgg c).moment N + 2 * c.cA * (Real.log N + Real.eulerMascheroniConstant) -
-      beta0 c / 2) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
-  -- `1/(N-1) - 1/N + 1/(N+1) - 1/(N+2) = 1/((N-1) N) + 1/((N+1) (N+2))` lies in `[0, 2/N]`.
-  have hrat : (fun N : ℕ => 1 / ((N : ℝ) - 1) - 1 / N + 1 / (N + 1) - 1 / (N + 2)) =O[atTop]
-      fun N : ℕ => (N : ℝ)⁻¹ := by
-    refine IsBigO.of_bound 2 ?_
-    filter_upwards [eventually_ge_atTop 2] with N hN
-    have hN' : (2 : ℝ) ≤ N := by exact_mod_cast hN
-    have hsplit : 1 / ((N : ℝ) - 1) - 1 / N + 1 / (N + 1) - 1 / (N + 2) =
-        1 / ((N - 1) * N) + 1 / ((N + 1) * (N + 2)) := by
-      have h1 : (N : ℝ) - 1 ≠ 0 := by linarith
-      field_simp
-      ring
-    have hle₁ : 1 / (((N : ℝ) - 1) * N) ≤ (N : ℝ)⁻¹ := by
-      rw [one_div]
-      exact inv_anti₀ (by positivity) (by nlinarith)
-    have hle₂ : 1 / (((N : ℝ) + 1) * (N + 2)) ≤ (N : ℝ)⁻¹ := by
-      rw [one_div]
-      exact inv_anti₀ (by positivity) (by nlinarith)
-    have h₁ : 0 ≤ 1 / (((N : ℝ) - 1) * N) := by
-      have : (0 : ℝ) ≤ N - 1 := by linarith
-      positivity
-    rw [hsplit, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
-    linarith
-  refine ((isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_inv.const_mul_left
-    (-2 * c.cA)).add (hrat.const_mul_left (2 * c.cA))).congr' ?_ EventuallyEq.rfl
-  filter_upwards [eventually_ge_atTop 2] with N hN
-  rw [moment_pgg c hN, beta0]
+end KernelForm
+
+/-- **The large-`N` expansion of `γ_qq`.** `γ_qq(N) = -2 C_F (log N + γ_E) + (3/2) C_F + O(1/N)`
+as `N → ∞` through the natural numbers, with `γ_E` the Euler–Mascheroni constant and
+`(3/2) C_F` the delta coefficient of `P_qq`. -/
+theorem isBigO_moment_pqq_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
+    (c : ColorFactors) :
+    (fun N : ℕ => (pqq c).moment N + 2 * c.cF * (Real.log N + Real.eulerMascheroniConstant) -
+      (pqq c).deltaCoeff) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
+  rw [← pqq_plusCoeff]
+  refine (pqq c).isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
+    ?_
+  -- The regular part `-C_F (1 + z)` has moment `-C_F (1/N + 1/(N + 1))`.
+  refine (((isBigO_inv_natCast_add_inv 0).add (isBigO_inv_natCast_add_inv 1)).const_mul_left
+    (-c.cF)).congr' ?_ EventuallyEq.rfl
+  filter_upwards [eventually_ne_atTop 0] with N hN
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
+  have h := moment_pqq c hN
+  rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
+    KernelForm.pairing_pow, harmonic_succ, pqq_plusCoeff, pqq_deltaCoeff] at h
+  simp only [Nat.succ_eq_add_one, Nat.cast_add_one, add_sub_cancel_right, Real.rpow_natCast]
+  push_cast at h ⊢
+  have hn : (n : ℝ) + 1 ≠ 0 := by positivity
+  have hn' : (n : ℝ) + 1 + 1 ≠ 0 := by positivity
+  linear_combination (norm := skip) -h
+  field_simp
   ring
+
+/-- **The large-`N` expansion of `γ_gg`.** `γ_gg(N) = -2 C_A (log N + γ_E) + β₀ / 2 + O(1/N)`
+as `N → ∞` through the natural numbers, with `γ_E` the Euler–Mascheroni constant and
+`β₀ / 2 = (11/6) C_A - (2/3) n_f T_F` the delta coefficient of `P_gg`. -/
+theorem isBigO_moment_pgg_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
+    (c : ColorFactors) :
+    (fun N : ℕ => (pgg c).moment N + 2 * c.cA * (Real.log N + Real.eulerMascheroniConstant) -
+      (pgg c).deltaCoeff) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
+  rw [← pgg_plusCoeff]
+  refine (pgg c).isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
+    ?_
+  -- The regular part has moment `2 C_A (1/(N - 1) - 2/N + 1/(N + 1) - 1/(N + 2))`.
+  refine (((((isBigO_inv_natCast_add_inv (-1)).sub
+    ((isBigO_inv_natCast_add_inv 0).const_mul_left 2)).add (isBigO_inv_natCast_add_inv 1)).sub
+    (isBigO_inv_natCast_add_inv 2)).const_mul_left (2 * c.cA)).congr' ?_ EventuallyEq.rfl
+  filter_upwards [eventually_ge_atTop 2] with N hN
+  have hN0 : N ≠ 0 := by omega
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN0
+  have h := moment_pgg c hN
+  rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
+    KernelForm.pairing_pow, harmonic_succ, pgg_plusCoeff, pgg_deltaCoeff] at h
+  simp only [Nat.succ_eq_add_one, Nat.cast_add_one, add_sub_cancel_right, Real.rpow_natCast]
+  have hn₀ : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+  have hn₁ : (n : ℝ) + 1 ≠ 0 := by positivity
+  have hn₂ : (n : ℝ) + 1 + 1 ≠ 0 := by positivity
+  have hn₃ : (n : ℝ) + 1 + 2 ≠ 0 := by positivity
+  push_cast at h ⊢
+  linear_combination (norm := skip) -h
+  field_simp
+  ring
+
+/-- **The leading large-`N` behaviour of `γ_qq`.** `γ_qq(N) = -2 C_F log N + O(1)` as `N → ∞`
+through the natural numbers. -/
+theorem isBigO_moment_pqq_add_const_mul_log_one (c : ColorFactors) :
+    (fun N : ℕ => (pqq c).moment N + 2 * c.cF * Real.log N) =O[atTop] fun _ : ℕ => (1 : ℝ) :=
+  (((isBigO_moment_pqq_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv c).trans
+    (tendsto_inv_atTop_nhds_zero_nat.isBigO_one ℝ)).add
+    (isBigO_const_const ((pqq c).deltaCoeff - 2 * c.cF * Real.eulerMascheroniConstant)
+      one_ne_zero atTop)).congr_left fun N => by ring
+
+/-- **The leading large-`N` behaviour of `γ_gg`.** `γ_gg(N) = -2 C_A log N + O(1)` as `N → ∞`
+through the natural numbers. -/
+theorem isBigO_moment_pgg_add_const_mul_log_one (c : ColorFactors) :
+    (fun N : ℕ => (pgg c).moment N + 2 * c.cA * Real.log N) =O[atTop] fun _ : ℕ => (1 : ℝ) :=
+  (((isBigO_moment_pgg_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv c).trans
+    (tendsto_inv_atTop_nhds_zero_nat.isBigO_one ℝ)).add
+    (isBigO_const_const ((pgg c).deltaCoeff - 2 * c.cA * Real.eulerMascheroniConstant)
+      one_ne_zero atTop)).congr_left fun N => by ring
 
 end Evolution
 end Factorization

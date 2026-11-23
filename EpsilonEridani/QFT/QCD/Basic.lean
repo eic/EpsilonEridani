@@ -123,6 +123,22 @@ structure ColorFactors.IsSupersymmetric (cf : ColorFactors) : Prop where
   /-- The flavors contribute `2 n_f T_F = C_A`, as one adjoint Majorana fermion. -/
   two_mul_nF_mul_tF_eq_cA : 2 * cf.nF * cf.tF = cf.cA
 
+/-- The supersymmetric point with `n_f` flavors, normalized by `C_F = C_A = 1`, so that
+`T_F = 1 / (2 n_f)`. -/
+def susyColorFactors (nF : ℝ) : ColorFactors where
+  nF := nF
+  cF := 1
+  cA := 1
+  tF := 1 / (2 * nF)
+
+/-- `susyColorFactors nF` is a supersymmetric point whenever there is at least one flavor. -/
+lemma isSupersymmetric_susyColorFactors {nF : ℝ} (h : nF ≠ 0) :
+    (susyColorFactors nF).IsSupersymmetric where
+  cF_eq_cA := rfl
+  two_mul_nF_mul_tF_eq_cA := by
+    simp only [susyColorFactors]
+    field_simp
+
 /-- At the supersymmetric point the one-loop beta-function coefficient is `β₀ = 3 C_A`, that of
 `𝒩 = 1` super-Yang–Mills theory. -/
 lemma ColorFactors.IsSupersymmetric.beta0_eq {cf : ColorFactors} (h : cf.IsSupersymmetric) :

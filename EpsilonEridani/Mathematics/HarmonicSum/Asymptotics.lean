@@ -34,6 +34,8 @@ singularities of the splitting kernels.
 * `EpsilonEridani.isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_inv`:
   `S₁(N) = log N + γ + O(1/N)`, and its second-order refinement
   `EpsilonEridani.isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_sub_inv_two_mul_inv_sq`.
+* `EpsilonEridani.isBigO_inv_natCast_add_inv`: `1/(N + a) = O(1/N)` for every real shift `a`,
+  which bounds the rational terms that accompany `S₁(N)` in closed-form moments.
 
 ## References
 
@@ -185,5 +187,18 @@ theorem isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_inv :
   refine ((isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_sub_inv_two_mul_inv_sq.trans
     h₁).add h₂).congr_left fun n => ?_
   ring
+
+/-- **A shifted reciprocal decays like the reciprocal**: `1/(N + a) = O(1/N)` as `N → ∞` through
+the natural numbers, for every real shift `a`. -/
+theorem isBigO_inv_natCast_add_inv (a : ℝ) :
+    (fun n : ℕ => ((n : ℝ) + a)⁻¹) =O[atTop] (fun n : ℕ => (n : ℝ)⁻¹) := by
+  -- once `n ≥ 2 |a| + 1`, `n + a ≥ n / 2 > 0`, so `1/(n + a) ≤ 2/n`
+  refine IsBigO.of_bound 2 ?_
+  filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop (2 * |a| + 1)] with n hn
+  have hn₀ : (0 : ℝ) < n := by linarith [abs_nonneg a]
+  have hna : (n : ℝ) / 2 ≤ n + a := by linarith [neg_abs_le a]
+  rw [Real.norm_of_nonneg (inv_nonneg.2 (by linarith)), Real.norm_of_nonneg (inv_nonneg.2 hn₀.le)]
+  calc ((n : ℝ) + a)⁻¹ ≤ ((n : ℝ) / 2)⁻¹ := inv_anti₀ (by positivity) hna
+    _ = 2 * (n : ℝ)⁻¹ := by rw [inv_div, div_eq_mul_inv]
 
 end EpsilonEridani
