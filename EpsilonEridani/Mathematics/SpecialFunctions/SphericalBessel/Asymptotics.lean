@@ -85,7 +85,7 @@ theorem isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact (l : ℕ) :
     refine ⟨ih.2, ?_⟩
     -- `x j_{l + 1}(x)` is bounded, so `(2 l + 3) j_{l + 1}(x) = O(1 / x)`
     have hj : sphericalBesselJ (l + 1) =O[cocompact ℝ] fun x => x⁻¹ :=
-      isBigO_inv_of_isBigO_mul_sub_one ih.2 (isBigO_sin_comp_one _ _)
+      isBigO_inv_of_isBigO_mul_sub_inv ih.2 (isBigO_sin_comp_one _ _)
     refine ((hj.const_mul_left (2 * l + 3)).sub ih.1).congr_left fun x => ?_
     -- the remainders obey the recurrence up to `(2 l + 3) j_{l + 1}(x)`, since two right angles
     -- more in the phase flip the sign of the shifted sine; the index `l + 1 + 1` is restated as
@@ -98,7 +98,7 @@ theorem isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact (l : ℕ) :
 `j_l(x) = O(1 / x)`. -/
 theorem isBigO_sphericalBesselJ_inv_cocompact (l : ℕ) :
     sphericalBesselJ l =O[cocompact ℝ] fun x => x⁻¹ :=
-  isBigO_inv_of_isBigO_mul_sub_one (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l)
+  isBigO_inv_of_isBigO_mul_sub_inv (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l)
     (isBigO_sin_comp_one _ _)
 
 /-- Every spherical Bessel function tends to zero as `|x| → ∞`. -/

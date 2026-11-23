@@ -20,7 +20,7 @@ as `‖x‖ → ∞`, the limit expressed by the filter `cocompact 𝕜`:
 * `Filter.tendsto_inv₀_cocompact`: `x⁻¹ → 0` along `cocompact 𝕜`;
 * `Asymptotics.isBigO_inv_of_isBigO_mul_one`: if `x f(x)` is bounded along `cocompact 𝕜`, then
   `f(x) = O(1 / x)`;
-* `Asymptotics.isBigO_inv_of_isBigO_mul_sub_one`: if `x f(x)` is within `O(1 / x)` of a bounded
+* `Asymptotics.isBigO_inv_of_isBigO_mul_sub_inv`: if `x f(x)` is within `O(1 / x)` of a bounded
   function along `cocompact 𝕜`, then `f(x) = O(1 / x)`;
 * `Asymptotics.isBigO_inv_mul_inv_sq`: multiplying an `O(1 / x)` function by `x⁻¹` gives an
   `O(1 / x ^ 2)` function;
@@ -65,7 +65,7 @@ theorem isBigO_inv_of_isBigO_mul_one [ProperSpace 𝕜] {f : 𝕜 → 𝕜}
 
 /-- If `x f(x)` is within `O(1 / x)` of a bounded function `g` along `cocompact 𝕜`, then
 `f(x) = O(1 / x)`: `x f(x)` is then itself bounded. -/
-theorem isBigO_inv_of_isBigO_mul_sub_one [ProperSpace 𝕜] {f g : 𝕜 → 𝕜}
+theorem isBigO_inv_of_isBigO_mul_sub_inv [ProperSpace 𝕜] {f g : 𝕜 → 𝕜}
     (h : (fun x => x * f x - g x) =O[cocompact 𝕜] fun x => x⁻¹)
     (hg : g =O[cocompact 𝕜] fun _ => (1 : 𝕜)) :
     f =O[cocompact 𝕜] fun x => x⁻¹ :=
