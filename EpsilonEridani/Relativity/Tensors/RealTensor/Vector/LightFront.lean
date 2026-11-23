@@ -7,7 +7,7 @@ module
 
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 public import Physlib.Relativity.LorentzGroup.Boosts.Apply
-public import EpsilonEridani.Relativity.LorentzGroup.Boosts.BasicExtensions
+public import EpsilonEridani.Relativity.LorentzGroup.Boosts.ApplyExtensions
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 
 /-!
@@ -133,6 +133,13 @@ lemma apply_inr_two (p : Vector 3) :
     p (Sum.inr 2) = (plusComponent p - minusComponent p) / √2 := by
   rw [plusComponent_def, minusComponent_def, ← sub_div, div_div,
     Real.mul_self_sqrt zero_le_two]
+  ring
+
+/-- The product of the light-front components is half the longitudinal Minkowski square:
+`p⁺ p⁻ = ((p⁰)² - (p³)²) / 2`. -/
+lemma plusComponent_mul_minusComponent (p : Vector 3) :
+    plusComponent p * minusComponent p = (p (Sum.inl 0) ^ 2 - p (Sum.inr 2) ^ 2) / 2 := by
+  rw [plusComponent_def, minusComponent_def, div_mul_div_comm, Real.mul_self_sqrt zero_le_two]
   ring
 
 lemma transversePart_def (p : Vector 3) :
@@ -438,14 +445,22 @@ lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
 part is spacelike. -/
 lemma boost_two_inr_two_pos_iff {q : Vector 3} (hq : plusComponent q * minusComponent q < 0)
     (β : ℝ) (hβ : |β| < 1) : 0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
-  have hq' : plusComponent (boost (2 : Fin 3) β hβ • q) *
-      minusComponent (boost (2 : Fin 3) β hβ • q) < 0 := by
-    rw [plusComponent_boost_two, minusComponent_boost_two,
-      show γ β * (1 - β) * plusComponent q * (γ β * (1 + β) * minusComponent q) =
-        (γ β * (1 - β) * (γ β * (1 + β))) * (plusComponent q * minusComponent q) by ring]
-    exact mul_neg_of_pos_of_neg (mul_pos (γ_mul_one_sub_pos hβ) (γ_mul_one_add_pos hβ)) hq
-  rw [inr_two_pos_iff_plusComponent_pos hq', plusComponent_boost_two,
-    mul_pos_iff_of_pos_left (γ_mul_one_sub_pos hβ), inr_two_pos_iff_plusComponent_pos hq]
+  rw [boost_inr_self_pos_iff]
+  have hq' : |q (Sum.inl 0)| < |q (Sum.inr 2)| := by
+    rw [plusComponent_mul_minusComponent] at hq
+    exact sq_lt_sq.1 (by linarith)
+  -- `|β q⁰| < |q³|`, so `β q⁰ < q³` exactly when `0 < q³`.
+  have h : |β * q (Sum.inl 0)| < |q (Sum.inr 2)| := by
+    rw [abs_mul]
+    exact (mul_le_of_le_one_left (abs_nonneg _) hβ.le).trans_lt hq'
+  constructor
+  · intro hlt
+    refine lt_of_not_ge fun hle => ?_
+    rw [abs_of_nonpos hle] at h
+    linarith [neg_abs_le (β * q (Sum.inl 0))]
+  · intro hpos
+    rw [abs_of_pos hpos] at h
+    exact (le_abs_self _).trans_lt h
 
 end LongitudinalBoost
 
