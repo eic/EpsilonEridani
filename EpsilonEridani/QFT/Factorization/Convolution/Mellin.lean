@@ -187,18 +187,6 @@ lemma mellinDis_natCast_add_one_eq_ofReal (f : ℝ → ℝ) (n : ℕ) :
   rw [mellinDis_natCast_add_one]
   exact integral_ofReal
 
-/-- At index `1` the Mellin transform is the complexified integral of `f` over `(0,1]`. -/
-lemma mellinDis_one_eq_ofReal (f : ℝ → ℝ) :
-    mellinDis f 1 = ((∫ x in Set.Ioc (0 : ℝ) 1, f x : ℝ) : ℂ) := by
-  simpa using mellinDis_natCast_add_one_eq_ofReal f 0
-
-/-- At index `1` convergence of the Mellin transform is integrability of `f` on `(0,1]`. -/
-lemma mellinDisConvergent_one_iff {f : ℝ → ℝ} :
-    MellinDisConvergent f 1 ↔ MeasureTheory.IntegrableOn f (Set.Ioc (0 : ℝ) 1) := by
-  rw [mellinDisConvergent_def, sub_self]
-  simp_rw [Complex.cpow_zero, one_mul]
-  exact MeasureTheory.Integrable.iff_ofReal.symm
-
 /-- **Bridge to the repository's integer moments.** `mellinMoment f n` is
 `∫_{[0,1]} x ^ n * f x dx`, so it is the Mellin transform at index `n + 1`, *not* at index `n`.
 Note that no assumption on the PDF is needed: the two domains `[0,1]` and `(0,1]` differ by a
@@ -415,10 +403,15 @@ endpoints of `(0,1]`. For `0 < b` its Mellin transform is a ratio of Gamma funct
 half plane `1 - a < Re N` where it converges (`mellinDis_betaPDFReal`). At `N = 1` the ratio is
 one, which is the normalisation of the density (`mellinDis_betaPDFReal_one`).
 
-`mellinDis_betaPDFReal` is the complex-index version of TauCeti's
-`TauCeti.Probability.integral_pow_betaMeasure`, which gives the natural raw moments of the Beta
-distribution as the same quotient of Gamma functions; the proof follows the same route through
-Euler's beta integral.
+`mellinDis_betaPDFReal` and `mellinDisConvergent_betaPDFReal` are the complex-index versions of
+TauCeti's real-exponent moments of the Beta distribution:
+`TauCeti.Probability.integral_rpow_mul_one_sub_rpow_betaMeasure` gives
+`∫ x ^ q (1 - x) ^ s` against the Beta measure as `Β(a + q, b + s) / Β(a, b)` (the real-`N` case
+is `q = N - 1`, `s = 0`), and `TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff`
+is the matching integrability criterion `0 < a + q ∧ 0 < b + s`, whose `s = 0` case is the real
+trace of the half plane above.
+`TauCeti.Probability.integral_pow_betaMeasure` is their natural-index case, the raw moments as a
+quotient of Gamma functions. The proofs follow the same route through Euler's beta integral.
 
 -/
 

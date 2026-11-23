@@ -16,7 +16,7 @@ for the real-valued density `ProbabilityTheory.betaPDFReal`, and its complexifie
 integrand of Euler's beta integral `Complex.betaIntegral`:
 
 * `EpsilonEridani.betaPDFReal_of_mem_Ioo`: `x ^ (a - 1) (1 - x) ^ (b - 1) / Β(a, b)` on `(0, 1)`.
-* `EpsilonEridani.betaPDFReal_of_notMem_Ioo`: `0` off `(0, 1)`.
+* `EpsilonEridani.betaPDFReal_eq_zero_of_notMem_Ioo`: `0` off `(0, 1)`.
 * `EpsilonEridani.cpow_mul_betaPDFReal_of_mem_Ioo`: `x ^ (N - 1)` times the density is
   `1 / Β(a, b)` times the integrand of `Complex.betaIntegral (N + a - 1) b`.
 -/
@@ -34,7 +34,7 @@ lemma betaPDFReal_of_mem_Ioo (a b : ℝ) {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) 
   rw [ProbabilityTheory.betaPDFReal, ite_eq_left (mem_Ioo.mp hx)]
 
 /-- The real Beta density vanishes off the open unit interval. -/
-lemma betaPDFReal_of_notMem_Ioo (a b : ℝ) {x : ℝ} (hx : x ∉ Ioo (0 : ℝ) 1) :
+lemma betaPDFReal_eq_zero_of_notMem_Ioo (a b : ℝ) {x : ℝ} (hx : x ∉ Ioo (0 : ℝ) 1) :
     ProbabilityTheory.betaPDFReal a b x = 0 := by
   rw [ProbabilityTheory.betaPDFReal, ite_eq_right (by simpa only [mem_Ioo] using hx)]
 
