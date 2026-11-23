@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Joseph Tooby-Smith
+Authors: Wouter Deconinck
 -/
 module
 
@@ -110,7 +110,10 @@ theorem exp_smul_apply_of_row_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
       (NormedSpace.exp (u • A) i j) := by
     -- As in `Matrix.hasDerivAt_exp_smul_const'`, the `CompleteSpace` instance is passed
     -- explicitly; the five `_` are exactly the `NontriviallyNormedField 𝕂`, `CharZero 𝕂`,
-    -- `ContinuousSMul ℚ 𝕂`, `NormedRing` and `NormedAlgebra 𝕂` instances.
+    -- `ContinuousSMul ℚ 𝕂`, `NormedRing` and `NormedAlgebra 𝕂` instances. `Pi.hasSum` then reads
+    -- off the entries: it treats `Matrix m m 𝔸` as `m → m → 𝔸` and the operator-norm topology as
+    -- the product topology, which holds definitionally because
+    -- `Matrix.linftyOpNormedAddCommGroup` is built from `Pi.normedAddCommGroup`.
     open scoped Norms.Operator in
     exact Pi.hasSum.1 (Pi.hasSum.1 (@NormedSpace.exp_series_hasSum_exp' 𝕂 (Matrix m m 𝔸)
       _ _ _ _ _ (inferInstance : CompleteSpace (Matrix m m 𝔸)) (u • A)) i) j
