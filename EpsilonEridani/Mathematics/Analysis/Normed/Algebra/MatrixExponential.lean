@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Topology.UniformSpace.Matrix
+import EpsilonEridani.Mathematics.Data.Matrix.Basic
 
 /-!
 # Derivatives of the matrix exponential along a scalar path
@@ -98,15 +99,10 @@ row `i` of `exp (u • A)` is `exp (u • A i i)` on the diagonal and zero elsew
 theorem exp_smul_apply_of_row_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
     (h : ∀ j, j ≠ i → A i j = 0) (u : 𝕂) (j : m) :
     NormedSpace.exp (u • A) i j = if i = j then NormedSpace.exp (u • A i i) else 0 := by
-  -- row `i` of every power of `u • A` is that of the scalar diagonal matrix `u • A i i`
-  have hp (k : ℕ) : ((u • A) ^ k) i j = if i = j then (u • A i i) ^ k else 0 := by
-    induction k generalizing j with
-    | zero => rw [pow_zero, pow_zero, Matrix.one_apply]
-    | succ k ih =>
-      rw [pow_succ', Matrix.mul_apply, Finset.sum_eq_single i
-        (fun l _ hl => by rw [Matrix.smul_apply, h l hl, smul_zero, zero_mul])
-        (fun hi => absurd (Finset.mem_univ i) hi), ih, Matrix.smul_apply, pow_succ', mul_ite,
-        mul_zero]
+  -- row `i` of `u • A` is unmixed, so row `i` of each of its powers is that of the scalar
+  -- diagonal matrix `u • A i i` (`Matrix.pow_apply_of_row_apply_eq_zero_of_ne`)
+  have hrow (l : m) (hl : l ≠ i) : (u • A) i l = 0 := by
+    rw [Matrix.smul_apply, h l hl, smul_zero]
   -- so the exponential series agree entrywise. This is TauCeti's
   -- `Matrix.exp_apply_eq_of_forall_pow_apply_eq`, whose module cannot be imported together with
   -- `Physlib.Mathematics.ForMathlib.DataStructures.Matrix.LieTrace`: both declare `Matrix.det_exp`.
@@ -118,7 +114,8 @@ theorem exp_smul_apply_of_row_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
     open scoped Norms.Operator in
     exact Pi.hasSum.1 (Pi.hasSum.1 (@NormedSpace.exp_series_hasSum_exp' 𝕂 (Matrix m m 𝔸)
       _ _ _ _ _ (inferInstance : CompleteSpace (Matrix m m 𝔸)) (u • A)) i) j
-  simp only [hp, smul_ite, smul_zero] at hs
+  simp only [pow_apply_of_row_apply_eq_zero_of_ne hrow, Matrix.smul_apply, smul_ite,
+    smul_zero] at hs
   refine hs.unique ?_
   split_ifs
   · exact NormedSpace.exp_series_hasSum_exp' _

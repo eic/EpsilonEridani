@@ -375,8 +375,10 @@ lemma momentEvolution_eq_diagonal_of_gamma_eq_diagonal {S : DglapMomentSystem ι
     momentEvolution S N τ₀ τ =
       Matrix.diagonal fun i =>
         Complex.exp (integratedCouplingLogScale S.alphaSLogScale τ₀ τ * d i) := by
-  rw [momentEvolution_def, h, ← Matrix.diagonal_smul, Matrix.exp_diagonal, Pi.exp_def]
-  simp only [Pi.smul_apply, smul_eq_mul, Complex.exp_eq_exp_ℂ]
+  ext i j
+  rw [momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne
+      (fun k hk => by rw [h, Matrix.diagonal_apply_ne _ (Ne.symm hk)]) τ₀ τ j,
+    Matrix.diagonal_apply, h, Matrix.diagonal_apply_eq]
 
 end momentEvolution
 
