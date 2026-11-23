@@ -18,8 +18,8 @@ as `‖x‖ → ∞`, the limit expressed by the filter `cocompact 𝕜`:
 
 * `Filter.eventually_ne_cocompact`: a point is eventually avoided along `cocompact X`;
 * `Filter.tendsto_inv₀_cocompact`: `x⁻¹ → 0` along `cocompact 𝕜`;
-* `Asymptotics.isBigO_inv_of_isBigO_mul_one`: if `x f(x)` is bounded along `cocompact 𝕜`, then
-  `f(x) = O(1 / x)`;
+* `Asymptotics.isBigO_inv_of_isBigO_mul_one`: if `x f(x)` is bounded along a filter on which `x`
+  is eventually nonzero, such as `cocompact 𝕜`, then `f(x) = O(1 / x)`;
 * `Asymptotics.isBigO_inv_of_isBigO_mul_sub_inv`: if `x f(x)` is within `O(1 / x)` of a bounded
   function along `cocompact 𝕜`, then `f(x) = O(1 / x)`;
 * `Asymptotics.isBigO_inv_mul_inv_sq`: multiplying an `O(1 / x)` function by `x⁻¹` gives an
@@ -54,13 +54,13 @@ namespace Asymptotics
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜]
 
-/-- If `x f(x)` is bounded along `cocompact 𝕜`, then `f(x) = O(1 / x)`, since
-`f(x) = x⁻¹ (x f(x))` for `x ≠ 0`. -/
-theorem isBigO_inv_of_isBigO_mul_one [ProperSpace 𝕜] {f : 𝕜 → 𝕜}
-    (h : (fun x => x * f x) =O[cocompact 𝕜] fun _ => (1 : 𝕜)) :
-    f =O[cocompact 𝕜] fun x => x⁻¹ := by
+/-- If `x f(x)` is bounded along a filter on which `x` is eventually nonzero, then
+`f(x) = O(1 / x)` there, since `f(x) = x⁻¹ (x f(x))` for `x ≠ 0`. -/
+theorem isBigO_inv_of_isBigO_mul_one {l : Filter 𝕜} {f : 𝕜 → 𝕜} (h₀ : ∀ᶠ x in l, x ≠ 0)
+    (h : (fun x => x * f x) =O[l] fun _ => (1 : 𝕜)) :
+    f =O[l] fun x => x⁻¹ := by
   refine ((isBigO_refl (fun x : 𝕜 => x⁻¹) _).mul h).congr' ?_ (.of_forall fun x => mul_one _)
-  filter_upwards [eventually_ne_cocompact 0] with x hx
+  filter_upwards [h₀] with x hx
   rw [inv_mul_cancel_left₀ hx]
 
 /-- If `x f(x)` is within `O(1 / x)` of a bounded function `g` along `cocompact 𝕜`, then
@@ -69,8 +69,8 @@ theorem isBigO_inv_of_isBigO_mul_sub_inv [ProperSpace 𝕜] {f g : 𝕜 → 𝕜
     (h : (fun x => x * f x - g x) =O[cocompact 𝕜] fun x => x⁻¹)
     (hg : g =O[cocompact 𝕜] fun _ => (1 : 𝕜)) :
     f =O[cocompact 𝕜] fun x => x⁻¹ :=
-  isBigO_inv_of_isBigO_mul_one <| ((h.trans (tendsto_inv₀_cocompact.isBigO_one 𝕜)).add
-    hg).congr_left fun _ => sub_add_cancel _ _
+  isBigO_inv_of_isBigO_mul_one (eventually_ne_cocompact 0) <|
+    ((h.trans (tendsto_inv₀_cocompact.isBigO_one 𝕜)).add hg).congr_left fun _ => sub_add_cancel _ _
 
 /-- Multiplying an `O(1 / x)` function by `x⁻¹` gives an `O(1 / x ^ 2)` function. -/
 theorem isBigO_inv_mul_inv_sq {l : Filter 𝕜} {f : 𝕜 → 𝕜} (h : f =O[l] fun x => x⁻¹) :
