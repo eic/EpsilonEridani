@@ -8,6 +8,7 @@ module
 public import EpsilonEridani.Particles.Parton.PDF.Basic
 public import EpsilonEridani.QFT.Factorization.Convolution.Collinear
 public import EpsilonEridani.Mathematics.Probability.Distributions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 /-!
 
 # The Mellin transform of a collinear convolution
@@ -400,8 +401,9 @@ theorem mellinMoment_convolveAt {Flavor : Type} (C : ℝ → ℝ)
 The density `x ^ (a - 1) (1 - x) ^ (b - 1) / Β(a, b)` of the Beta distribution,
 `ProbabilityTheory.betaPDFReal a b`, is the standard shape of a parton or lepton density at the
 endpoints of `(0,1]`. For `0 < b` its Mellin transform is a ratio of Gamma functions, on the
-half plane `1 - a < Re N` where it converges (`mellinDis_betaPDFReal`). At `N = 1` the ratio is
-one, which is the normalisation of the density (`mellinDis_betaPDFReal_one`).
+half plane `1 - a < Re N` where it converges (`mellinDis_betaPDFReal`); when `Β(a, b) ≠ 0` this
+half plane is exactly the region of convergence (`mellinDisConvergent_betaPDFReal_iff`). At
+`N = 1` the ratio is one, which is the normalisation of the density (`mellinDis_betaPDFReal_one`).
 
 `mellinDis_betaPDFReal` and `mellinDisConvergent_betaPDFReal` are the complex-index versions of
 TauCeti's real-exponent moments of the Beta distribution:
@@ -409,7 +411,8 @@ TauCeti's real-exponent moments of the Beta distribution:
 `∫ x ^ q (1 - x) ^ s` against the Beta measure as `Β(a + q, b + s) / Β(a, b)` (the real-`N` case
 is `q = N - 1`, `s = 0`), and `TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff`
 is the matching integrability criterion `0 < a + q ∧ 0 < b + s`, whose `s = 0` case is the real
-trace of the half plane above.
+trace of the half plane above; `mellinDisConvergent_betaPDFReal_iff` reduces to TauCeti's
+`TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff`.
 `TauCeti.Probability.integral_pow_betaMeasure` is their natural-index case, the raw moments as a
 quotient of Gamma functions. The proofs follow the same route through Euler's beta integral.
 
@@ -427,6 +430,34 @@ theorem mellinDisConvergent_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ}
   rw [mellinDisConvergent_def, integrableOn_Ioc_iff_integrableOn_Ioo]
   exact h.congr_fun (fun x hx => (cpow_mul_betaPDFReal_of_mem_Ioo a b N hx).symm)
     measurableSet_Ioo
+
+/-- For `0 < b` and `Β(a, b) ≠ 0` (for instance `0 < a`), the Mellin transform of the Beta density
+converges exactly on the half plane `1 - a < Re N`. When `Β(a, b) = 0` the density is identically
+zero and its transform converges everywhere, so the hypothesis cannot be dropped. -/
+theorem mellinDisConvergent_betaPDFReal_iff {a b : ℝ} (hab : ProbabilityTheory.beta a b ≠ 0)
+    (hb : 0 < b) {N : ℂ} :
+    MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N ↔ 0 < N.re + a - 1 := by
+  -- Pass to the norm of the integrand, which on `(0, 1)` is `|1 / Β(a, b)|` times the real
+  -- Beta integrand `x ^ ((Re N + a - 1) - 1) (1 - x) ^ (b - 1)`, and apply TauCeti's sharp
+  -- integrability criterion for the latter.
+  rw [mellinDisConvergent_def, MeasureTheory.IntegrableOn,
+    ← MeasureTheory.integrable_norm_iff (by fun_prop), ← MeasureTheory.IntegrableOn,
+    integrableOn_Ioc_iff_integrableOn_Ioo,
+    MeasureTheory.integrableOn_congr_fun (g := fun x : ℝ => |1 / ProbabilityTheory.beta a b| *
+      (x ^ ((N.re + a - 1) - 1) * (1 - x) ^ (b - 1))) _ measurableSet_Ioo,
+    MeasureTheory.IntegrableOn, MeasureTheory.integrable_const_mul_iff
+      (isUnit_iff_ne_zero.mpr (by simpa using hab)), ← MeasureTheory.IntegrableOn,
+    TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff]
+  · simp [hb]
+  · intro x hx
+    dsimp only
+    rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hx.1, Complex.norm_real,
+      Real.norm_eq_abs, betaPDFReal_of_mem_Ioo a b hx, abs_mul, abs_mul,
+      abs_of_pos (Real.rpow_pos_of_pos hx.1 _),
+      abs_of_pos (Real.rpow_pos_of_pos (sub_pos.mpr hx.2) _),
+      show (N.re + a - 1) - 1 = (N - 1).re + (a - 1) by simp; ring,
+      Real.rpow_add hx.1]
+    ring
 
 /-- **Mellin moments of the Beta density.** For `0 < b`, on the half plane `1 - a < Re N`,
 `∫_{(0,1]} x ^ (N - 1) x ^ (a - 1) (1 - x) ^ (b - 1) dx / Β(a, b)

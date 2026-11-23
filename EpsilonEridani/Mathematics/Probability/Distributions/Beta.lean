@@ -17,6 +17,8 @@ integrand of Euler's beta integral `Complex.betaIntegral`:
 
 * `EpsilonEridani.betaPDFReal_of_mem_Ioo`: `x ^ (a - 1) (1 - x) ^ (b - 1) / Β(a, b)` on `(0, 1)`.
 * `EpsilonEridani.betaPDFReal_eq_zero_of_notMem_Ioo`: `0` off `(0, 1)`.
+* `EpsilonEridani.ofReal_betaPDFReal_of_mem_Ioo`: the complexified density
+  `x ^ (a - 1) (1 - x) ^ (b - 1) / Β(a, b)` on `(0, 1)`, with complex powers.
 * `EpsilonEridani.cpow_mul_betaPDFReal_of_mem_Ioo`: `x ^ (N - 1)` times the density is
   `1 / Β(a, b)` times the integrand of `Complex.betaIntegral (N + a - 1) b`.
 -/
@@ -38,18 +40,25 @@ lemma betaPDFReal_eq_zero_of_notMem_Ioo (a b : ℝ) {x : ℝ} (hx : x ∉ Ioo (0
     ProbabilityTheory.betaPDFReal a b x = 0 := by
   rw [ProbabilityTheory.betaPDFReal, ite_eq_right (by simpa only [mem_Ioo] using hx)]
 
+/-- The complexified real Beta density on the open unit interval, written with complex powers. -/
+lemma ofReal_betaPDFReal_of_mem_Ioo (a b : ℝ) {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) :
+    ((ProbabilityTheory.betaPDFReal a b x : ℝ) : ℂ) =
+      ((1 / ProbabilityTheory.beta a b : ℝ) : ℂ) * (x : ℂ) ^ ((a : ℂ) - 1) *
+        (1 - (x : ℂ)) ^ ((b : ℂ) - 1) := by
+  rw [betaPDFReal_of_mem_Ioo a b hx]
+  push_cast
+  rw [Complex.ofReal_cpow hx.1.le, Complex.ofReal_cpow (sub_nonneg.mpr hx.2.le)]
+  push_cast
+  ring
+
 /-- On the open unit interval, `x ^ (N - 1)` times the Beta density is the normalising constant
 `1 / Β(a, b)` times the integrand of Euler's beta integral `Complex.betaIntegral (N + a - 1) b`. -/
 lemma cpow_mul_betaPDFReal_of_mem_Ioo (a b : ℝ) (N : ℂ) {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) :
     (x : ℂ) ^ (N - 1) * (ProbabilityTheory.betaPDFReal a b x : ℂ) =
       ((1 / ProbabilityTheory.beta a b : ℝ) : ℂ) *
         ((x : ℂ) ^ (N + a - 1 - 1) * (1 - (x : ℂ)) ^ ((b : ℂ) - 1)) := by
-  have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.1.ne'
-  rw [betaPDFReal_of_mem_Ioo a b hx, Complex.ofReal_mul, Complex.ofReal_mul,
-    Complex.ofReal_cpow hx.1.le, Complex.ofReal_cpow (sub_nonneg.mpr hx.2.le), Complex.ofReal_sub,
-    Complex.ofReal_one,
-    show N + a - 1 - 1 = (N - 1) + ((a : ℂ) - 1) by ring, Complex.cpow_add _ _ hx0]
-  push_cast
+  rw [ofReal_betaPDFReal_of_mem_Ioo a b hx, show N + a - 1 - 1 = (N - 1) + ((a : ℂ) - 1) by ring,
+    Complex.cpow_add _ _ (Complex.ofReal_ne_zero.mpr hx.1.ne')]
   ring
 
 end EpsilonEridani
