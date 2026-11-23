@@ -45,7 +45,8 @@ azimuths satisfy the two formulas above (`norm_mul_norm_mul_cos_azimuth_of_lepto
 
 Two properties make the pair `(φ_h, φ_S)` a usable set of variables. First, it is invariant
 under boosts along the photon direction. Such a boost does not change transverse parts. It also
-cannot reverse the direction of the spacelike photon momentum. So it maps the Trento frame of
+cannot reverse the direction of the photon momentum, whose longitudinal part is spacelike or
+lightlike. So it maps the Trento frame of
 `(l, q)` to the Trento frame of the boosted momenta, and it preserves every azimuth
 (`azimuth_trento_boost_two`). The azimuthal analysis is therefore the same in the target rest frame
 and in any collinear frame reached from it along the photon axis. Second, the opposite
@@ -340,11 +341,11 @@ theorem abs_inr_two_mul_norm_mul_norm_mul_sin_azimuth_trento (l q p : Lorentz.Ve
 /-! ### Invariance under boosts along the photon direction -/
 
 /-- A boost along the photon direction maps the Trento frame of `(l, q)` to the Trento frame of
-the boosted momenta, for a photon momentum `q` whose longitudinal part is spacelike,
-`q⁺ q⁻ < 0`. A spacelike `q` along the `z`-axis is of this kind
+the boosted momenta, for a photon momentum `q` whose longitudinal part is spacelike or lightlike,
+`q⁺ q⁻ ≤ 0`. A lightlike or spacelike `q` along the `z`-axis is of this kind
 (`Lorentz.Vector.minkowskiProduct_self_eq_lightFront`). -/
 theorem trento_boost_two (l : Lorentz.Vector 3) {q : Lorentz.Vector 3}
-    (hq : Lorentz.Vector.plusComponent q * Lorentz.Vector.minusComponent q < 0) (β : ℝ)
+    (hq : Lorentz.Vector.plusComponent q * Lorentz.Vector.minusComponent q ≤ 0) (β : ℝ)
     (hβ : |β| < 1) :
     trento (boost (2 : Fin 3) β hβ • l) (boost (2 : Fin 3) β hβ • q) = trento l q := by
   ext1
@@ -353,9 +354,10 @@ theorem trento_boost_two (l : Lorentz.Vector 3) {q : Lorentz.Vector 3}
 
 /-- The azimuths `φ_h` and `φ_S` are invariant under boosts along the photon direction: boosting
 the lepton, the photon and the four-vector `p` together leaves the Trento azimuth of `p`
-unchanged, for a photon momentum `q` whose longitudinal part is spacelike, `q⁺ q⁻ < 0`. -/
+unchanged, for a photon momentum `q` whose longitudinal part is spacelike or lightlike,
+`q⁺ q⁻ ≤ 0`. -/
 theorem azimuth_trento_boost_two (l : Lorentz.Vector 3) {q : Lorentz.Vector 3}
-    (hq : Lorentz.Vector.plusComponent q * Lorentz.Vector.minusComponent q < 0) (β : ℝ)
+    (hq : Lorentz.Vector.plusComponent q * Lorentz.Vector.minusComponent q ≤ 0) (β : ℝ)
     (hβ : |β| < 1) (p : Lorentz.Vector 3) :
     (trento (boost (2 : Fin 3) β hβ • l) (boost (2 : Fin 3) β hβ • q)).azimuth
         (transversePart (boost (2 : Fin 3) β hβ • p)) =

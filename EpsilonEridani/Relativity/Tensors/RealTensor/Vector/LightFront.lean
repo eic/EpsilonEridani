@@ -86,7 +86,7 @@ its plus component is positive, so such a boost never reverses its direction.
 * `Lorentz.Vector.inr_two_pos_iff_minusComponent_lt_plusComponent`: a four-vector points along
   `+z` exactly when `p⁻ < p⁺`.
 * `Lorentz.Vector.boost_two_inr_two_pos_iff`: a boost along the `z`-axis does not reverse the
-  direction of a four-vector whose longitudinal part is spacelike.
+  direction of a four-vector whose longitudinal part is spacelike or lightlike.
 * `EpsilonEridani.LightFront.areaForm_relativeTransverse_transverseIsometry`,
   `EpsilonEridani.LightFront.areaForm_transversePart_relativeTransverse_transverseIsometry`: the
   same two areas are invariant under orientation-preserving isometries of the transverse plane.
@@ -442,8 +442,8 @@ lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
     exact (neg_of_mul_neg_right hq hP.le).trans hP
 
 /-- A boost along the `z`-axis does not reverse the direction of a four-vector whose longitudinal
-part is spacelike. -/
-lemma boost_two_inr_two_pos_iff {q : Vector 3} (hq : plusComponent q * minusComponent q < 0)
+part is spacelike or lightlike. -/
+lemma boost_two_inr_two_pos_iff {q : Vector 3} (hq : plusComponent q * minusComponent q ≤ 0)
     (β : ℝ) (hβ : |β| < 1) : 0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
   refine boost_inr_self_pos_iff_of_abs_le 2 hβ (sq_le_sq.1 ?_)
   rw [plusComponent_mul_minusComponent] at hq
