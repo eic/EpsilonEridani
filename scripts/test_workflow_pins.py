@@ -25,7 +25,7 @@ WORKFLOWS = (
 )
 # Workflows that check EpsilonEridaniReview out directly, with their number of checkouts. They
 # follow auto-merge.yml's pin, the merge policy whose readiness rule they report on or test.
-STATUS_READERS = (("pr-labels.yml", 3), ("pages.yml", 1), ("ci.yml", 1))
+STATUS_READERS = (("pr-labels.yml", 3), ("pages.yml", 1), ("ci.yml", 1), ("pr-board.yml", 1))
 CALL_PIN = re.compile(
     r"uses:\s+eic/EpsilonEridaniReview/\.github/workflows/[^@\s]+@([0-9a-f]{40})"
 )

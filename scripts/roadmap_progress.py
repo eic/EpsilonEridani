@@ -615,8 +615,9 @@ def activity(prs: list[dict], cutoff: dt.datetime, weeks: int = WEEKS, known: se
 
 def git_head(repo_dir: pathlib.Path) -> str | None:
     try:
-        return subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "HEAD"],
-                              check=True, text=True, stdout=subprocess.PIPE).stdout.strip()
+        return subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "HEAD"], check=True,
+                              text=True, stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL).stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
 

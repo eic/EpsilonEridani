@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Joseph Tooby-Smith
+Authors: Joseph Tooby-Smith, The EpsilonEridani contributors
 -/
 module
 
@@ -14,7 +14,19 @@ public import Mathlib.Tactic.Ring
 # PVES Electroweak Parameters
 
 This module defines electroweak parameter and effective neutral-current coupling
-interfaces used by parity-violating electron scattering (PVES) contracts.
+interfaces used by parity-violating electron scattering (PVES) contracts, together with the
+left- and right-handed couplings `g_L = (g_V + g_A) / 2` and `g_R = (g_V - g_A) / 2` of a
+vector/axial coupling pair.
+
+It also defines the neutral-current couplings of an arbitrary fermion as functions of its quantum
+numbers: `chiralCoupling t3 q s2 = T³ - Q sin²θ_W` is the `Z` coupling of a chiral field, and
+`FermionNeutralCurrentCouplings.ofQuantumNumbers t3 q s2` is the pair
+`g_V = T³ - 2 Q sin²θ_W`, `g_A = T³` of a fermion whose left-handed component has weak-isospin
+third component `t3`, whose right-handed component is a singlet, and whose electric charge is `q`.
+Its chiral couplings are `chiralCoupling t3 q s2` and `-Q sin²θ_W`, the value
+`chiralCoupling 0 q s2` of a singlet (`FermionNeutralCurrentCouplings.ofQuantumNumbers_gL`,
+`FermionNeutralCurrentCouplings.ofQuantumNumbers_gR`), and
+`FermionNeutralCurrentCouplings.eq_ofQuantumNumbers_iff` characterises it by these two values.
 
 -/
 
@@ -45,11 +57,59 @@ structure Parameters where
   mW : ℝ
 
 /-- Effective vector/axial neutral-current couplings for one fermion species. -/
+@[ext]
 structure FermionNeutralCurrentCouplings where
   /-- Vector coupling. -/
   gV : ℝ
   /-- Axial coupling. -/
   gA : ℝ
+
+namespace FermionNeutralCurrentCouplings
+
+variable (c d : FermionNeutralCurrentCouplings)
+
+/-- The left-handed neutral-current coupling `g_L = (g_V + g_A) / 2`. -/
+@[no_expose] def gL : ℝ := (c.gV + c.gA) / 2
+
+/-- The right-handed neutral-current coupling `g_R = (g_V - g_A) / 2`. -/
+@[no_expose] def gR : ℝ := (c.gV - c.gA) / 2
+
+/-- The left-handed coupling unfolded. -/
+theorem gL_def : c.gL = (c.gV + c.gA) / 2 :=
+  (rfl)
+
+/-- The right-handed coupling unfolded. -/
+theorem gR_def : c.gR = (c.gV - c.gA) / 2 :=
+  (rfl)
+
+/-- The vector coupling is the sum of the chiral couplings, `g_V = g_L + g_R`. -/
+@[simp]
+theorem gL_add_gR : c.gL + c.gR = c.gV := by
+  rw [gL_def, gR_def]
+  ring
+
+/-- The axial coupling is the difference of the chiral couplings, `g_A = g_L - g_R`. -/
+@[simp]
+theorem gL_sub_gR : c.gL - c.gR = c.gA := by
+  rw [gL_def, gR_def]
+  ring
+
+variable {c d} in
+/-- A vector/axial coupling pair is determined by its two chiral couplings. -/
+theorem ext_gL_gR (hL : c.gL = d.gL) (hR : c.gR = d.gR) : c = d := by
+  have hV : c.gV = d.gV := by rw [← gL_add_gR c, ← gL_add_gR d, hL, hR]
+  have hA : c.gA = d.gA := by rw [← gL_sub_gR c, ← gL_sub_gR d, hL, hR]
+  obtain ⟨cV, cA⟩ := c
+  obtain ⟨dV, dA⟩ := d
+  rw [mk.injEq]
+  exact ⟨hV, hA⟩
+
+variable {c d} in
+/-- Two vector/axial coupling pairs are equal exactly when their chiral couplings agree. -/
+theorem ext_gL_gR_iff : c = d ↔ c.gL = d.gL ∧ c.gR = d.gR :=
+  ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun h => ext_gL_gR h.1 h.2⟩
+
+end FermionNeutralCurrentCouplings
 
 /-- Effective neutral-current coupling bundle used in PVES channels. -/
 structure NeutralCurrentCouplings where
@@ -229,108 +289,112 @@ lemma sin2ThetaW_eq_one_sub_massSqRatio (P : Parameters)
 
 /-!
 
-## Tree-level couplings and weak charges
+## Tree-level couplings
 
 Conventions follow the Particle Data Group review of the electroweak model:
-`g_V^f = T_3^f - 2 Q_f sin^2(theta_W)` and `g_A^f = T_3^f`, and the low-energy
-electron-quark couplings `C_{1q} = 2 g_A^e g_V^q`.  The weak charges below are the
-quantities parity-violating electron scattering actually reports.
+`g_V^f = T_3^f - 2 Q_f sin^2(theta_W)` and `g_A^f = T_3^f`.
 
 -/
 
+/-- The neutral-current coupling `T³ - Q sin²θ_W` of a chiral fermion field with weak-isospin
+third component `t3` and electric charge `q`, at `sin²θ_W = s2`. It is the charge with which the
+field couples to the `Z` boson, in units of `g / cos θ_W`; a weak-isospin singlet has `t3 = 0`. -/
+@[no_expose] def chiralCoupling (t3 q s2 : ℝ) : ℝ := t3 - q * s2
+
+/-- The chiral coupling unfolded. -/
+theorem chiralCoupling_def (t3 q s2 : ℝ) : chiralCoupling t3 q s2 = t3 - q * s2 :=
+  (rfl)
+
+/-- A weak-isospin singlet of charge `q` couples to the `Z` boson with `-Q sin²θ_W`. -/
+@[simp]
+theorem chiralCoupling_isospin_zero (q s2 : ℝ) : chiralCoupling 0 q s2 = -(q * s2) := by
+  rw [chiralCoupling_def, zero_sub]
+
+/-- An electrically neutral field couples to the `Z` boson with its weak isospin `T³`. -/
+@[simp]
+theorem chiralCoupling_charge_zero (t3 s2 : ℝ) : chiralCoupling t3 0 s2 = t3 := by
+  rw [chiralCoupling_def, zero_mul, sub_zero]
+
+namespace FermionNeutralCurrentCouplings
+
+/-- The neutral-current couplings `g_V = T³ - 2 Q sin²θ_W` and `g_A = T³` of a fermion whose
+left-handed component has weak-isospin third component `t3`, whose right-handed component is a
+weak-isospin singlet, and whose electric charge is `q`, at `sin²θ_W = s2`. The normalisation is
+that of the Particle Data Group: the `Z` vertex is `-i (g / (2 cos θ_W)) γ^μ (g_V - g_A γ⁵)`. -/
+@[no_expose] def ofQuantumNumbers (t3 q s2 : ℝ) : FermionNeutralCurrentCouplings where
+  gV := t3 - 2 * q * s2
+  gA := t3
+
+/-- The vector coupling `g_V = T³ - 2 Q sin²θ_W`. -/
+@[simp]
+theorem ofQuantumNumbers_gV (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gV = t3 - 2 * q * s2 :=
+  (rfl)
+
+/-- The axial coupling `g_A = T³`. -/
+@[simp]
+theorem ofQuantumNumbers_gA (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gA = t3 :=
+  (rfl)
+
+/-- The left-handed coupling of `ofQuantumNumbers t3 q s2` is the `Z` coupling of a field with
+weak-isospin third component `t3` and charge `q`. -/
+@[simp]
+theorem ofQuantumNumbers_gL (t3 q s2 : ℝ) :
+    (ofQuantumNumbers t3 q s2).gL = chiralCoupling t3 q s2 := by
+  rw [gL_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA, chiralCoupling_def]
+  ring
+
+/-- The right-handed coupling of `ofQuantumNumbers t3 q s2` is `-Q sin²θ_W`, the `Z` coupling
+`chiralCoupling 0 q s2` of a weak-isospin singlet of charge `q` (`chiralCoupling_isospin_zero`). -/
+@[simp]
+theorem ofQuantumNumbers_gR (t3 q s2 : ℝ) : (ofQuantumNumbers t3 q s2).gR = -(q * s2) := by
+  rw [gR_def, ofQuantumNumbers_gV, ofQuantumNumbers_gA]
+  ring
+
+/-- A vector/axial coupling pair is that of the quantum numbers `(t3, q)` exactly when its
+left-handed coupling is the `Z` coupling of a field with these quantum numbers and its
+right-handed coupling is `-Q sin²θ_W`, the `Z` coupling of a singlet of the same charge. -/
+theorem eq_ofQuantumNumbers_iff {c : FermionNeutralCurrentCouplings} {t3 q s2 : ℝ} :
+    c = ofQuantumNumbers t3 q s2 ↔ c.gL = chiralCoupling t3 q s2 ∧ c.gR = -(q * s2) := by
+  rw [ext_gL_gR_iff, ofQuantumNumbers_gL, ofQuantumNumbers_gR]
+
+/-- An electrically neutral fermion couples to the `Z` only through its left-handed component:
+its vector and axial couplings both equal `T³`, whatever the value of `sin²θ_W`. -/
+theorem ofQuantumNumbers_charge_zero (t3 s2 : ℝ) :
+    ofQuantumNumbers t3 0 s2 = { gV := t3, gA := t3 } := by
+  rw [ofQuantumNumbers]
+  simp
+
+end FermionNeutralCurrentCouplings
+
 /-- Standard-model tree-level neutral-current couplings at a given `sin^2(theta_W)`. -/
-def smTreeLevelCouplings (s2 : ℝ) : NeutralCurrentCouplings where
+@[no_expose] def smTreeLevelCouplings (s2 : ℝ) : NeutralCurrentCouplings where
   electron := { gV := -1 / 2 + 2 * s2, gA := -1 / 2 }
   upType := { gV := 1 / 2 - 4 / 3 * s2, gA := 1 / 2 }
   downType := { gV := -1 / 2 + 2 / 3 * s2, gA := -1 / 2 }
 
-/-- Low-energy electron-up-quark coupling `C_{1u} = -1/2 + (4/3) sin^2(theta_W)`. -/
-def c1Up (s2 : ℝ) : ℝ :=
-  -1 / 2 + 4 / 3 * s2
+/-- The tabulated electron couplings: `g_V^e = -1/2 + 2 sin²θ_W` and `g_A^e = -1/2`. -/
+@[simp]
+theorem smTreeLevelCouplings_electron (s2 : ℝ) :
+    (smTreeLevelCouplings s2).electron = { gV := -1 / 2 + 2 * s2, gA := -1 / 2 } :=
+  (rfl)
 
-/-- Low-energy electron-down-quark coupling `C_{1d} = 1/2 - (2/3) sin^2(theta_W)`. -/
-def c1Down (s2 : ℝ) : ℝ :=
-  1 / 2 - 2 / 3 * s2
+/-- The tabulated up-quark couplings: `g_V^u = 1/2 - (4/3) sin²θ_W` and `g_A^u = 1/2`. -/
+@[simp]
+theorem smTreeLevelCouplings_upType (s2 : ℝ) :
+    (smTreeLevelCouplings s2).upType = { gV := 1 / 2 - 4 / 3 * s2, gA := 1 / 2 } :=
+  (rfl)
 
-lemma c1Up_eq_two_mul_gA_mul_gV (s2 : ℝ) :
-    c1Up s2
-      = 2 * (smTreeLevelCouplings s2).electron.gA * (smTreeLevelCouplings s2).upType.gV := by
-  simp only [c1Up, smTreeLevelCouplings]
-  ring
+/-- The tabulated down-quark couplings: `g_V^d = -1/2 + (2/3) sin²θ_W` and `g_A^d = -1/2`. -/
+@[simp]
+theorem smTreeLevelCouplings_downType (s2 : ℝ) :
+    (smTreeLevelCouplings s2).downType = { gV := -1 / 2 + 2 / 3 * s2, gA := -1 / 2 } :=
+  (rfl)
 
-lemma c1Down_eq_two_mul_gA_mul_gV (s2 : ℝ) :
-    c1Down s2
-      = 2 * (smTreeLevelCouplings s2).electron.gA * (smTreeLevelCouplings s2).downType.gV := by
-  simp only [c1Down, smTreeLevelCouplings]
-  ring
-
-/-- Weak charge of the electron, `Q_W^e = 1 - 4 sin^2(theta_W)`. -/
-def electronWeakCharge (s2 : ℝ) : ℝ :=
-  1 - 4 * s2
-
-/-- Weak charge of the proton, `Q_W^p = -2 (2 C_{1u} + C_{1d})`. -/
-def protonWeakCharge (s2 : ℝ) : ℝ :=
-  -2 * (2 * c1Up s2 + c1Down s2)
-
-/-- Weak charge of the neutron, `Q_W^n = -2 (C_{1u} + 2 C_{1d})`. -/
-def neutronWeakCharge (s2 : ℝ) : ℝ :=
-  -2 * (c1Up s2 + 2 * c1Down s2)
-
-/-- Weak charge of a nucleus with `Z` protons and `N` neutrons. -/
-def nuclearWeakCharge (Z N s2 : ℝ) : ℝ :=
-  Z * protonWeakCharge s2 + N * neutronWeakCharge s2
-
-/-- The electron weak charge is four times the product of its tree-level neutral-current
-couplings. -/
-lemma electronWeakCharge_eq_four_mul_gA_mul_gV (s2 : ℝ) :
-    electronWeakCharge s2
-      = 4 * (smTreeLevelCouplings s2).electron.gA
-          * (smTreeLevelCouplings s2).electron.gV := by
-  simp only [electronWeakCharge, smTreeLevelCouplings]
-  ring
-
-/-- At tree level the proton weak charge equals `1 - 4 sin^2(theta_W)`. -/
-lemma protonWeakCharge_eq (s2 : ℝ) : protonWeakCharge s2 = 1 - 4 * s2 := by
-  simp only [protonWeakCharge, c1Up, c1Down]
-  ring
-
-/-- At tree level the proton and the electron carry the same weak charge. -/
-lemma protonWeakCharge_eq_electronWeakCharge (s2 : ℝ) :
-    protonWeakCharge s2 = electronWeakCharge s2 := by
-  rw [protonWeakCharge_eq, electronWeakCharge]
-
-/-- **The neutron weak charge is `-1`, independently of the weak-mixing angle.** The
-`sin^2(theta_W)` dependence of `C_{1u}` and `C_{1d}` cancels in the combination
-`C_{1u} + 2 C_{1d}`.  This is why a heavy nucleus, whose weak charge is dominated by `-N`,
-is a weak-mixing-angle probe only through its proton term. -/
-lemma neutronWeakCharge_eq_neg_one (s2 : ℝ) : neutronWeakCharge s2 = -1 := by
-  simp only [neutronWeakCharge, c1Up, c1Down]
-  ring
-
-/-- Nuclear weak charge in the form used by parity-violating electron-nucleus scattering,
-`Q_W(Z, N) = Z (1 - 4 sin^2(theta_W)) - N`. -/
-lemma nuclearWeakCharge_eq (Z N s2 : ℝ) :
-    nuclearWeakCharge Z N s2 = Z * (1 - 4 * s2) - N := by
-  rw [nuclearWeakCharge, protonWeakCharge_eq, neutronWeakCharge_eq_neg_one]
-  ring
-
-/-- The electron weak charge vanishes exactly at `sin^2(theta_W) = 1/4`.  Its accidental
-smallness at the physical value is the reason the Moller asymmetry is a sensitive
-weak-mixing-angle probe, and the reason the electron's tree-level *vector* coupling nearly
-vanishes there as well. -/
-lemma electronWeakCharge_eq_zero_iff (s2 : ℝ) :
-    electronWeakCharge s2 = 0 ↔ s2 = 1 / 4 := by
-  unfold electronWeakCharge
-  constructor
-  · intro h
-    linarith
-  · intro h
-    rw [h]
-    ring
-
+/-- The electron's tree-level vector coupling `g_V^e = -1/2 + 2 sin²θ_W` vanishes exactly at
+`sin²θ_W = 1/4`. -/
 lemma electron_gV_eq_zero_iff (s2 : ℝ) :
     (smTreeLevelCouplings s2).electron.gV = 0 ↔ s2 = 1 / 4 := by
-  simp only [smTreeLevelCouplings]
+  simp only [smTreeLevelCouplings_electron]
   constructor
   · intro h
     linarith
