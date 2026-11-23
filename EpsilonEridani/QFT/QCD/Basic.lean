@@ -123,17 +123,19 @@ structure ColorFactors.IsSupersymmetric (cf : ColorFactors) : Prop where
   /-- The flavors contribute `2 n_f T_F = C_A`, as one adjoint Majorana fermion. -/
   two_mul_nF_mul_tF_eq_cA : 2 * cf.nF * cf.tF = cf.cA
 
-/-- The supersymmetric point with `n_f` flavors, normalized by `C_F = C_A = 1`, so that
-`T_F = 1 / (2 n_f)`. -/
-def supersymmetricColorFactors (nF : ℝ) : ColorFactors where
+/-- The color factors with common Casimir `C_F = C_A = cA` and `n_f` flavors of trace
+normalization `T_F = C_A / (2 n_f)`. For `n_f ≠ 0` this is a supersymmetric point
+(`isSupersymmetric_supersymmetricColorFactors`); `cA = nF = N_c` gives the `𝒩 = 1` point of
+`SU(N_c)` with `T_F = 1/2`. -/
+def supersymmetricColorFactors (cA nF : ℝ) : ColorFactors where
   nF := nF
-  cF := 1
-  cA := 1
-  tF := 1 / (2 * nF)
+  cF := cA
+  cA := cA
+  tF := cA / (2 * nF)
 
-/-- `supersymmetricColorFactors nF` is a supersymmetric point whenever `n_f ≠ 0`. -/
-lemma isSupersymmetric_supersymmetricColorFactors {nF : ℝ} (h : nF ≠ 0) :
-    (supersymmetricColorFactors nF).IsSupersymmetric where
+/-- `supersymmetricColorFactors cA nF` is a supersymmetric point whenever `n_f ≠ 0`. -/
+lemma isSupersymmetric_supersymmetricColorFactors {cA nF : ℝ} (h : nF ≠ 0) :
+    (supersymmetricColorFactors cA nF).IsSupersymmetric where
   cF_eq_cA := rfl
   two_mul_nF_mul_tF_eq_cA := by
     simp only [supersymmetricColorFactors]
