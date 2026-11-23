@@ -57,23 +57,6 @@ open Filter Topology Real Asymptotics
 
 namespace EpsilonEridani
 
-/-- Two right angles more in the phase flip the sign of the shifted sine:
-`sin (x - (l + 2) π / 2) = -sin (x - l π / 2)`. -/
-private theorem sin_sub_add_two_mul_pi_div_two (l : ℕ) (x : ℝ) :
-    sin (x - ((l + 2 : ℕ) : ℝ) * (π / 2)) = -sin (x - l * (π / 2)) := by
-  rw [← sin_sub_pi]
-  congr 1
-  push_cast
-  ring
-
-/-- If `x f(x)` stays within `O(1 / x)` of a shifted sine along `cocompact ℝ`, then
-`f(x) = O(1 / x)`: the remainder and the shifted sine are both bounded. -/
-private theorem isBigO_inv_of_isBigO_mul_sub_sin {f : ℝ → ℝ} {c : ℝ}
-    (h : (fun x => x * f x - sin (x - c)) =O[cocompact ℝ] fun x => x⁻¹) :
-    f =O[cocompact ℝ] fun x => x⁻¹ :=
-  isBigO_inv_of_isBigO_mul_one <| ((h.trans (tendsto_inv₀_cocompact.isBigO_one ℝ)).add
-    (isBigO_sin_comp_one _ fun x => x - c)).congr_left fun _ => sub_add_cancel _ _
-
 /-- **The Riccati-Bessel form of the large-argument asymptotics**: along `cocompact ℝ`,
 `x j_l(x) = sin (x - l π / 2) + O(1 / x)`. -/
 theorem isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact (l : ℕ) :
@@ -102,19 +85,21 @@ theorem isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact (l : ℕ) :
     refine ⟨ih.2, ?_⟩
     -- `x j_{l + 1}(x)` is bounded, so `(2 l + 3) j_{l + 1}(x) = O(1 / x)`
     have hj : sphericalBesselJ (l + 1) =O[cocompact ℝ] fun x => x⁻¹ :=
-      isBigO_inv_of_isBigO_mul_sub_sin ih.2
+      isBigO_inv_of_isBigO_mul_sub_one ih.2 (isBigO_sin_comp_one _ _)
     refine ((hj.const_mul_left (2 * l + 3)).sub ih.1).congr_left fun x => ?_
-    -- the remainders obey the recurrence up to `(2 l + 3) j_{l + 1}(x)`
-    have h := mul_sphericalBesselJ_add_two l x
-    -- restate the index `l + 1 + 1` as `l + 2`, the form the two rewriting lemmas expect
-    rw [show l + 1 + 1 = l + 2 by rfl, sin_sub_add_two_mul_pi_div_two, h]
+    -- the remainders obey the recurrence up to `(2 l + 3) j_{l + 1}(x)`, since two right angles
+    -- more in the phase flip the sign of the shifted sine; the index `l + 1 + 1` is restated as
+    -- `l + 2`, the form `mul_sphericalBesselJ_add_two` expects
+    rw [show l + 1 + 1 = l + 2 by rfl, mul_sphericalBesselJ_add_two,
+      show x - ((l + 2 : ℕ) : ℝ) * (π / 2) = x - l * (π / 2) - π by push_cast; ring, sin_sub_pi]
     ring
 
 /-- **The spherical Bessel functions decay like `1 / x`**: along `cocompact ℝ`,
 `j_l(x) = O(1 / x)`. -/
 theorem isBigO_sphericalBesselJ_inv_cocompact (l : ℕ) :
     sphericalBesselJ l =O[cocompact ℝ] fun x => x⁻¹ :=
-  isBigO_inv_of_isBigO_mul_sub_sin (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l)
+  isBigO_inv_of_isBigO_mul_sub_one (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l)
+    (isBigO_sin_comp_one _ _)
 
 /-- Every spherical Bessel function tends to zero as `|x| → ∞`. -/
 theorem tendsto_sphericalBesselJ_cocompact (l : ℕ) :

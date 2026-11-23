@@ -20,6 +20,8 @@ as `‖x‖ → ∞`, the limit expressed by the filter `cocompact 𝕜`:
 * `Filter.tendsto_inv₀_cocompact`: `x⁻¹ → 0` along `cocompact 𝕜`;
 * `Asymptotics.isBigO_inv_of_isBigO_mul_one`: if `x f(x)` is bounded along `cocompact 𝕜`, then
   `f(x) = O(1 / x)`;
+* `Asymptotics.isBigO_inv_of_isBigO_mul_sub_one`: if `x f(x)` is within `O(1 / x)` of a bounded
+  function along `cocompact 𝕜`, then `f(x) = O(1 / x)`;
 * `Asymptotics.isBigO_inv_mul_inv_sq`: multiplying an `O(1 / x)` function by `x⁻¹` gives an
   `O(1 / x ^ 2)` function;
 * `Real.isBigO_sin_comp_one`: `sin (f x)` is bounded along any filter.
@@ -28,7 +30,7 @@ They are the estimates by which large-argument asymptotics of special functions,
 spherical Bessel functions, are reduced from `O(1 / x)` bounds on `x f(x)` to bounds on `f(x)`.
 -/
 
-@[expose] public section
+public section
 
 open Filter Topology Asymptotics
 
@@ -60,6 +62,15 @@ theorem isBigO_inv_of_isBigO_mul_one [ProperSpace 𝕜] {f : 𝕜 → 𝕜}
   refine ((isBigO_refl (fun x : 𝕜 => x⁻¹) _).mul h).congr' ?_ (.of_forall fun x => mul_one _)
   filter_upwards [eventually_ne_cocompact 0] with x hx
   rw [inv_mul_cancel_left₀ hx]
+
+/-- If `x f(x)` is within `O(1 / x)` of a bounded function `g` along `cocompact 𝕜`, then
+`f(x) = O(1 / x)`: `x f(x)` is then itself bounded. -/
+theorem isBigO_inv_of_isBigO_mul_sub_one [ProperSpace 𝕜] {f g : 𝕜 → 𝕜}
+    (h : (fun x => x * f x - g x) =O[cocompact 𝕜] fun x => x⁻¹)
+    (hg : g =O[cocompact 𝕜] fun _ => (1 : 𝕜)) :
+    f =O[cocompact 𝕜] fun x => x⁻¹ :=
+  isBigO_inv_of_isBigO_mul_one <| ((h.trans (tendsto_inv₀_cocompact.isBigO_one 𝕜)).add
+    hg).congr_left fun _ => sub_add_cancel _ _
 
 /-- Multiplying an `O(1 / x)` function by `x⁻¹` gives an `O(1 / x ^ 2)` function. -/
 theorem isBigO_inv_mul_inv_sq {l : Filter 𝕜} {f : 𝕜 → 𝕜} (h : f =O[l] fun x => x⁻¹) :
