@@ -39,8 +39,8 @@ unique.
   `one_sub_X_sq_mul_derivative_legendre_succ`: the ladder relations for the derivatives;
 * `derivative_one_sub_X_sq_mul_derivative_legendre`: Legendre's differential equation
   `((1 - X²) Pₙ')' = -n (n + 1) Pₙ`;
-* `add_two_smul_integral_legendre_add_two_smul`: Bonnet's recurrence integrated against a
-  continuous weight over `[-1, 1]`;
+* `add_two_smul_integral_legendre_add_two_smul`: Bonnet's recurrence integrated over `[-1, 1]`
+  against a weight integrable on `[-1, 1]`, with values in a real normed space;
 * `integral_legendre_mul_legendre`, `setIntegral_Icc_legendre_mul_legendre`: the orthogonality
   relation `∫₋₁¹ Pₘ Pₙ = if m = n then 2 / (2n + 1) else 0`, as an interval integral and as a set
   integral over `Set.Icc (-1) 1`.

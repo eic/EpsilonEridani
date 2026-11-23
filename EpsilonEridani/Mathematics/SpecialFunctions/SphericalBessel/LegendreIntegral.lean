@@ -29,8 +29,6 @@ origin, only by `j_0`.
 ## Main statements
 
 * `integral_cexp_mul_legendre`: `∫₋₁¹ e^{i x t} P_l(t) dt = 2 i ^ l j_l(x)` for every real `x`.
-* `ofReal_sphericalBesselJ_eq_integral`: the same identity solved for `j_l(x)`,
-  `j_l(x) = (-i) ^ l / 2 ∫₋₁¹ e^{i x t} P_l(t) dt`.
 * `sq_sphericalBesselJ_le`: `j_l(x) ^ 2 ≤ 1 / (2 l + 1)`.
 * `abs_sphericalBesselJ_le_one` and `abs_sphericalBesselJ_lt_one`: `|j_l(x)| ≤ 1`, strictly for
   `l ≠ 0`.
@@ -128,16 +126,6 @@ theorem integral_cexp_mul_legendre (l : ℕ) (x : ℝ) :
     refine mul_left_cancel₀ (by norm_cast : ((n : ℂ) + 2) ≠ 0) ?_
     linear_combination hr + (2 * n + 3) * hK + 2 * I ^ n * hl
 
-/-- The Legendre integral representation solved for the spherical Bessel function:
-`j_l(x) = (-i) ^ l / 2 ∫₋₁¹ e^{i x t} P_l(t) dt` (DLMF 10.54.2). -/
-theorem ofReal_sphericalBesselJ_eq_integral (l : ℕ) (x : ℝ) :
-    (sphericalBesselJ l x : ℂ) = (-I) ^ l / 2 *
-      ∫ t in (-1 : ℝ)..1, Complex.exp (I * x * t) * (((legendre l).eval t : ℝ) : ℂ) := by
-  have h : (-I) ^ l * I ^ l = 1 := by
-    rw [← mul_pow, neg_mul, Complex.I_mul_I, neg_neg, one_pow]
-  rw [integral_cexp_mul_legendre]
-  linear_combination (-(sphericalBesselJ l x : ℂ)) * h
-
 /-- **The uniform bound on the spherical Bessel functions**: `j_l(x) ^ 2 ≤ 1 / (2 l + 1)` for
 every real `x`. It is attained at `l = 0`, `x = 0`, where `j_0(0) = 1`. -/
 theorem sq_sphericalBesselJ_le (l : ℕ) (x : ℝ) : sphericalBesselJ l x ^ 2 ≤ 1 / (2 * l + 1) := by
@@ -193,6 +181,7 @@ theorem abs_sphericalBesselJ_lt_one {l : ℕ} (hl : l ≠ 0) (x : ℝ) : |spheri
 
 /-- The bound `|j_l(x)| ≤ 1` is attained only by `j_0` at the origin: `|j_l(x)| = 1` if and only
 if `l = 0` and `x = 0`. -/
+@[simp]
 theorem abs_sphericalBesselJ_eq_one_iff (l : ℕ) (x : ℝ) :
     |sphericalBesselJ l x| = 1 ↔ l = 0 ∧ x = 0 := by
   refine ⟨fun h => ?_, fun ⟨hl, hx⟩ => by simp [hl, hx]⟩
@@ -206,6 +195,6 @@ theorem abs_sphericalBesselJ_eq_one_iff (l : ℕ) (x : ℝ) :
 /-- Some `|j_l(x)|` equals `1` if and only if `l = 0`. -/
 theorem exists_abs_sphericalBesselJ_eq_one_iff (l : ℕ) :
     (∃ x, |sphericalBesselJ l x| = 1) ↔ l = 0 := by
-  simp [abs_sphericalBesselJ_eq_one_iff]
+  simp
 
 end EpsilonEridani
