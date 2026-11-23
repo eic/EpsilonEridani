@@ -84,6 +84,13 @@ private theorem measurable_density (m : ℝ) :
     Measurable fun p : EuclideanSpace ℝ (Fin d) => ENNReal.ofReal (2 * onShellEnergy m p)⁻¹ :=
   ENNReal.measurable_ofReal.comp ((continuous_onShellEnergy m).measurable.const_mul 2).inv
 
+/-- The `oneBodyMeasure m` of a measurable set is the integral of the weight `1 / (2E)` over
+it. -/
+theorem oneBodyMeasure_apply (m : ℝ) {s : Set (EuclideanSpace ℝ (Fin d))}
+    (hs : MeasurableSet s) :
+    oneBodyMeasure m s = ∫⁻ p in s, ENNReal.ofReal (2 * onShellEnergy m p)⁻¹ := by
+  rw [oneBodyMeasure_def, withDensity_apply _ hs]
+
 /-- Integrating against `oneBodyMeasure m` is integrating against Lebesgue measure with the
 weight `1 / (2E)`. -/
 theorem lintegral_oneBodyMeasure (m : ℝ) (f : EuclideanSpace ℝ (Fin d) → ℝ≥0∞) :
@@ -92,12 +99,6 @@ theorem lintegral_oneBodyMeasure (m : ℝ) (f : EuclideanSpace ℝ (Fin d) → �
     (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top) f
 
 /-! ### Boosts along a coordinate axis -/
-
-private theorem mul_lt_sqrt_add_sq {a β q : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) (hq : q ≠ 0) :
-    β * q < √(a + q ^ 2) := by
-  refine ((le_abs_self _).trans_lt ?_).trans_le (Real.abs_le_sqrt (by linarith))
-  rw [abs_mul]
-  exact mul_lt_of_lt_one_left (abs_pos.2 hq) hβ
 
 /-- On the line `d = 1`, the energy at mass `√a` of the momentum `q` is `√(a + q²)`. -/
 private theorem onShellEnergy_sqrt_single {a : ℝ} (ha : 0 ≤ a) (q : ℝ) :
@@ -113,13 +114,6 @@ private theorem massShellAction_boost_single {a β : ℝ} (ha : 0 ≤ a) (hβ : 
   obtain rfl := Subsingleton.elim j 0
   rw [massShellAction_boost_apply_self, onShellEnergy_sqrt_single ha]
   simp
-
-private theorem mul_le_sqrt_add_sq {a β q : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) :
-    β * q ≤ √(a + q ^ 2) := by
-  have h := abs_mul_apply_le_onShellEnergy hβ.le √a
-    (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1)) 0
-  rw [onShellEnergy_sqrt_single ha] at h
-  exact (le_abs_self _).trans (by simpa using h)
 
 /-- In `1 + 1` dimensions with transverse mass `√a`, the boosted momentum
 `q' = γ (q - β E)` has energy `E' = γ (E - β q)`: the case `d = 1`, `m = √a` of
@@ -180,15 +174,21 @@ private theorem lintegral_comp_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1
   have hq : q ≠ 0 := Set.mem_compl_singleton_iff.mp hq
   -- the Jacobian `E' / E` cancels against the density `1 / (2 E')` at the image point
   have hE : 0 < √(a + q ^ 2) := Real.sqrt_pos.2 (by positivity)
-  have hE' : 0 < √(a + q ^ 2) - β * q := sub_pos.2 (mul_lt_sqrt_add_sq ha hβ hq)
+  have hE' : 0 < √(a + q ^ 2) - β * q := by
+    have h := abs_mul_apply_lt_onShellEnergy hβ √a
+      (p := (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1))) (by simpa using hq) 0
+    rw [onShellEnergy_sqrt_single ha] at h
+    exact sub_pos.2 ((le_abs_self _).trans_lt (by simpa using h))
   have hγ := γ_pos hβ
   have hd : γ β * (1 - β * (q / √(a + q ^ 2))) =
       γ β * (√(a + q ^ 2) - β * q) / √(a + q ^ 2) := by
-    field_simp
+    field_simp [hE.ne']
+  -- with `E = √(a + q²)` and `E' = γ (E - β q)`: `(E' / E) / (2 E') = 1 / (2 E)`
   have hJ : γ β * (√(a + q ^ 2) - β * q) / √(a + q ^ 2) *
       (2 * (γ β * (√(a + q ^ 2) - β * q)))⁻¹ = (2 * √(a + q ^ 2))⁻¹ := by
-    have hE'' : √(a + q ^ 2) - q * β ≠ 0 := by rw [mul_comm q β]; exact hE'.ne'
-    field_simp
+    have key : ∀ {E y g : ℝ}, E ≠ 0 → y ≠ 0 → g ≠ 0 → g * y / E * (2 * (g * y))⁻¹ = (2 * E)⁻¹ :=
+      fun hE hy hg => by field_simp
+    exact key hE.ne' hE'.ne' hγ.ne'
   simp only [hg]
   rw [sqrt_add_sq_boost q ha hβ, mul_left_comm, ← ENNReal.ofReal_mul (abs_nonneg _), hd,
     abs_of_pos (by positivity), hJ]

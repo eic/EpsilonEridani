@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Physlib.Relativity.LorentzGroup.Boosts.Apply
+public import Physlib.Relativity.Tensors.RealTensor.Velocity.Basic
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.BasicExtensions
 public import EpsilonEridani.Relativity.LorentzGroup.RotationsExtensions
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
@@ -20,7 +21,9 @@ Lorentz transformation `Λ` moves the point `(E(p), p)` to another point of the 
 * `onShellEnergy m p` is `E(p)`, and `onShellMomentum m p : Lorentz.Vector d` is the on-shell
   four-momentum `(E(p), p)`, built with `Lorentz.Vector.ofTimeAndSpatial`.
   `onShellMomentum_spatialPart` says that every four-vector with Minkowski square `m²` and
-  non-negative energy is of this form.
+  non-negative energy is of this form. At `m = 1` it is Physlib's unit four-velocity
+  `Lorentz.Velocity.ofSpatialPart` (`onShellMomentum_one`); the general mass, `m = 0` included,
+  is what phase space needs.
 * `massShellAction Λ m p` is the spatial momentum of `Λ • onShellMomentum m p`: the action of `Λ`
   on the shell, read in the chart `p`. `onShellMomentum_massShellAction` identifies it with the
   Lorentz action when `Λ` keeps the energy non-negative, and `massShellAction_mul` shows that it
@@ -65,7 +68,7 @@ theorem onShellEnergy_nonneg (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) : 0 ≤ 
   Real.sqrt_nonneg _
 
 /-- The energy of a massive particle is strictly positive. -/
-theorem onShellEnergy_pos {m : ℝ} (hm : m ≠ 0) (p : EuclideanSpace ℝ (Fin d)) :
+theorem onShellEnergy_pos_of_mass_ne_zero {m : ℝ} (hm : m ≠ 0) (p : EuclideanSpace ℝ (Fin d)) :
     0 < onShellEnergy m p :=
   Real.sqrt_pos.2 (by positivity)
 
@@ -90,6 +93,16 @@ theorem abs_mul_apply_le_onShellEnergy {β : ℝ} (hβ : |β| ≤ 1) (m : ℝ)
   have hpi : |p i| ≤ ‖p‖ := by simpa using PiLp.norm_apply_le p i
   rw [abs_mul]
   exact (mul_le_of_le_one_left (abs_nonneg _) hβ).trans (hpi.trans (norm_le_onShellEnergy m p))
+
+/-- For a non-zero momentum, a component scaled by a subluminal factor is strictly dominated by
+the energy. -/
+theorem abs_mul_apply_lt_onShellEnergy {β : ℝ} (hβ : |β| < 1) (m : ℝ)
+    {p : EuclideanSpace ℝ (Fin d)} (hp : p ≠ 0) (i : Fin d) : |β * p i| < onShellEnergy m p := by
+  have hpi : |p i| ≤ ‖p‖ := by simpa using PiLp.norm_apply_le p i
+  rw [abs_mul]
+  calc |β| * |p i| ≤ |β| * ‖p‖ := mul_le_mul_of_nonneg_left hpi (abs_nonneg _)
+    _ < ‖p‖ := mul_lt_of_lt_one_left (norm_pos_iff.2 hp) hβ
+    _ ≤ onShellEnergy m p := norm_le_onShellEnergy m p
 
 /-- The energy depends continuously on the spatial momentum. -/
 @[fun_prop]
@@ -132,6 +145,14 @@ theorem continuous_onShellMomentum (m : ℝ) : Continuous (onShellMomentum (d :=
   simp only [Lorentz.Vector.ofTimeAndSpatial_def]
   exact (Lorentz.Vector.ofTemporalComponent.continuous.comp (continuous_onShellEnergy m)).add
     Lorentz.Vector.ofSpatialComponent.continuous
+
+/-- At unit mass, the on-shell four-momentum is Physlib's unit four-velocity with spatial
+part `p`. -/
+theorem onShellMomentum_one (p : EuclideanSpace ℝ (Fin d)) :
+    onShellMomentum 1 p = (Lorentz.Velocity.ofSpatialPart p).1 := by
+  rw [← Lorentz.Vector.ofTimeAndSpatial_timeComponent_spatialPart_eq
+      (Lorentz.Velocity.ofSpatialPart p).1, Lorentz.Velocity.timeComponent_ofSpatialPart,
+    Lorentz.Velocity.spatialPart_ofSpatialPart, onShellMomentum_def, onShellEnergy_def, one_pow]
 
 /-- The on-shell four-momentum has Minkowski square `m²`. -/
 @[simp]
@@ -189,16 +210,16 @@ theorem massShellAction_mul {Λ₁ Λ₂ : LorentzGroup d} {m : ℝ} {p : Euclid
     massShellAction (Λ₁ * Λ₂) m p = massShellAction Λ₁ m (massShellAction Λ₂ m p) := by
   rw [massShellAction_def, massShellAction_def, onShellMomentum_massShellAction h, mul_smul]
 
-/-- The action on the shell is continuous in the spatial momentum: it is the composite of
-Physlib's continuous linear maps `spatialCLM` and `actionCLM Λ` with `onShellMomentum m`. -/
+/-- The action on the shell is continuous in the spatial momentum. -/
 @[fun_prop]
 theorem continuous_massShellAction (Λ : LorentzGroup d) (m : ℝ) :
     Continuous (massShellAction Λ m) := by
+  -- it is the composite of Physlib's continuous linear maps `spatialCLM` and `actionCLM Λ`
   have h : massShellAction Λ m =
       Lorentz.Vector.spatialCLM d ∘ Lorentz.Vector.actionCLM Λ ∘ onShellMomentum m := by
     funext p
     rw [massShellAction_def, Function.comp_apply, Function.comp_apply,
-      Lorentz.Vector.spatialCLM_eq_spatialPart, Lorentz.Vector.actionCLM_apply]
+      Lorentz.Vector.spatialCLM_apply, Lorentz.Vector.actionCLM_apply]
   rw [h]
   exact (Lorentz.Vector.spatialCLM d).continuous.comp
     ((Lorentz.Vector.actionCLM Λ).continuous.comp (continuous_onShellMomentum m))
@@ -276,16 +297,14 @@ theorem onShellMomentum_massShellAction_rotation (Λ : Rotations d) (m : ℝ)
 theorem massShellAction_rotation_apply (Λ : Rotations d) (m : ℝ) (p : EuclideanSpace ℝ (Fin d))
     (j : Fin d) :
     massShellAction Λ m p j = ∑ k, (Λ : LorentzGroup d).1 (Sum.inr j) (Sum.inr k) * p k := by
-  rw [massShellAction_def, spatialPart_rotation_smul_apply, spatialPart_onShellMomentum]
+  rw [massShellAction_apply, rotation_inr_inl_eq_zero, zero_mul, zero_add]
 
 /-- For every mass, a rotation acts on the shell as its linear isometry equivalence of spatial
 momenta. -/
 theorem massShellAction_rotation (Λ : Rotations d) (m : ℝ) :
     massShellAction Λ m = Rotations.toLinearIsometryEquiv Λ := by
   funext p
-  ext j
-  rw [Rotations.toLinearIsometryEquiv_apply, spatialPart_rotation_smul_apply,
-    Lorentz.Vector.spatialPart_ofSpatialComponent, massShellAction_rotation_apply]
+  rw [massShellAction_def, spatialPart_rotation_smul, spatialPart_onShellMomentum]
 
 /-- A rotation preserves the size of the spatial momentum. -/
 @[simp]

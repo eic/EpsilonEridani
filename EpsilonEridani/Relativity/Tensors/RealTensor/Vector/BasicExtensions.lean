@@ -10,15 +10,17 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 /-!
 # Extensions of the basic API of Lorentz vectors
 
-* Component lemmas for `Physlib`'s constructors `Lorentz.Vector.ofTemporalComponent` and
-  `Lorentz.Vector.ofSpatialComponent`: the time component and spatial part of a purely temporal
-  vector `t e₀`, the time component and spatial part of a purely spatial vector
-  (`timeComponent_ofSpatialComponent`, `spatialPart_ofSpatialComponent`), the identification of
-  Physlib's `spatialCLM` with `spatialPart` (`spatialCLM_eq_spatialPart`), and the spatial part
-  of a difference (`spatialPart_sub`). They describe the equal-time projection
+* Component lemmas for `Physlib`'s constructor `Lorentz.Vector.ofTemporalComponent`: the time
+  component and spatial part of a purely temporal vector `t e₀`, and the spatial part of a
+  difference (`spatialPart_sub`). They describe the equal-time projection
   `v - ofTemporalComponent v.timeComponent` of a vector `v`, which has vanishing time component
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
+
+* Component lemmas for `Physlib`'s constructor `Lorentz.Vector.ofSpatialComponent`: a purely
+  spatial vector has vanishing time component (`timeComponent_ofSpatialComponent`) and spatial
+  part `s` (`spatialPart_ofSpatialComponent`). Physlib's continuous linear map `spatialCLM`
+  evaluates to `spatialPart` (`spatialCLM_apply`).
 
 * The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
   (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from
@@ -65,7 +67,7 @@ lemma spatialPart_ofSpatialComponent {d : ℕ} (s : EuclideanSpace ℝ (Fin d)) 
 
 /-- Physlib's continuous linear map `spatialCLM` is the spatial part. -/
 @[simp]
-lemma spatialCLM_eq_spatialPart {d : ℕ} (v : Vector d) : spatialCLM d v = v.spatialPart := by
+lemma spatialCLM_apply {d : ℕ} (v : Vector d) : spatialCLM d v = v.spatialPart := by
   ext i
   exact spatialCLM_apply_eq_spatialPart v i
 

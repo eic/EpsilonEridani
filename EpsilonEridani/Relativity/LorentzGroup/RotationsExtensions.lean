@@ -19,7 +19,8 @@ component of every vector unchanged (`timeComponent_rotation_smul`), acts on the
 through its spatial block alone (`spatialPart_rotation_smul_apply`), and, since it also preserves
 the Minkowski product, preserves the Euclidean norm of the spatial part
 (`norm_spatialPart_rotation_smul`). Hence a rotation acts on `EuclideanSpace ℝ (Fin d)` as the
-linear isometry equivalence `Rotations.toLinearIsometryEquiv Λ`, `v ↦ (Λ • (0, v))ₛ`.
+linear isometry equivalence `Rotations.toLinearIsometryEquiv Λ`, `v ↦ (Λ • (0, v))ₛ`, through
+which it acts on the spatial part of every vector (`spatialPart_rotation_smul`).
 -/
 
 public section
@@ -72,19 +73,27 @@ noncomputable def Rotations.toLinearIsometryEquiv (Λ : Rotations d) :
         Lorentz.Vector.ofSpatialComponent)).toLinearMap
       norm_map' v := by
         simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
-          Function.comp_apply, Lorentz.Vector.spatialCLM_eq_spatialPart,
+          Function.comp_apply, Lorentz.Vector.spatialCLM_apply,
           Lorentz.Vector.actionCLM_apply, norm_spatialPart_rotation_smul,
           Lorentz.Vector.spatialPart_ofSpatialComponent] }
     rfl
 
 /-- The linear isometry equivalence of a rotation sends `v` to the spatial part of
 `Λ • (0, v)`. -/
+@[simp]
 theorem Rotations.toLinearIsometryEquiv_apply (Λ : Rotations d) (v : EuclideanSpace ℝ (Fin d)) :
     Rotations.toLinearIsometryEquiv Λ v =
       ((Λ : LorentzGroup d) • Lorentz.Vector.ofSpatialComponent v).spatialPart := by
   simp only [Rotations.toLinearIsometryEquiv, LinearIsometry.coe_toLinearIsometryEquiv,
     LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
-    Function.comp_apply, Lorentz.Vector.spatialCLM_eq_spatialPart,
+    Function.comp_apply, Lorentz.Vector.spatialCLM_apply,
     Lorentz.Vector.actionCLM_apply]
+
+/-- A rotation acts on the spatial part of every vector as its linear isometry equivalence. -/
+theorem spatialPart_rotation_smul (Λ : Rotations d) (v : Lorentz.Vector d) :
+    ((Λ : LorentzGroup d) • v).spatialPart = Rotations.toLinearIsometryEquiv Λ v.spatialPart := by
+  ext j
+  rw [Rotations.toLinearIsometryEquiv_apply, spatialPart_rotation_smul_apply,
+    spatialPart_rotation_smul_apply, Lorentz.Vector.spatialPart_ofSpatialComponent]
 
 end LorentzGroup
