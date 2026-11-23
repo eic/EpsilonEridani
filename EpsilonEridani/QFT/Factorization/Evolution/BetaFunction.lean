@@ -224,6 +224,8 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta (F :
   have h₀ := coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta F hβ
   have h₁ := coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
   simp only [betaCoeff_def, Nat.reduceAdd] at h₀ h₁ ⊢
+  -- Multiply the `a⁴` comparison `h` by `u`, then eliminate the lower-order unknowns `β₀'` and
+  -- `β₁'` (the coefficients of `a²` and `a³` in `β'`) with `h₀` and `h₁`.
   linear_combination -coeff 1 F.toPowerSeries * h -
     (coeff 2 F.toPowerSeries ^ 2 + 2 * coeff 1 F.toPowerSeries * coeff 3 F.toPowerSeries) * h₀ -
     3 * coeff 1 F.toPowerSeries * coeff 2 F.toPowerSeries * h₁
@@ -239,22 +241,20 @@ theorem betaCoeff_zero_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X
 /-- The two-loop coefficient under a redefinition of the coupling: `β₁' = u⁻² β₁`, where
 `u = F'(0)`. -/
 theorem betaCoeff_one_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
-    betaCoeff (transformBeta F β) 1 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 2 * betaCoeff β 1 := by
-  rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_inv_mul_iff_mul_eq,
-    Units.val_pow_eq_pow_val, SubstGroup.coe_linearCoeff]
-  exact coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
+    betaCoeff (transformBeta F β) 1 = ↑(SubstGroup.linearCoeff F ^ 2)⁻¹ * betaCoeff β 1 :=
+  (Units.eq_inv_mul_iff_mul_eq _).mpr <| by
+    simpa using coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
 
 /-- The three-loop coefficient under a redefinition `F(a) = u a + c₁ a² + c₂ a³ + ⋯` of the
 coupling: `β₂' = u⁻⁵ (u² β₂ - u c₁ β₁ + (u c₂ - c₁²) β₀)`. -/
 theorem betaCoeff_two_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
-    betaCoeff (transformBeta F β) 2 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 5 *
+    betaCoeff (transformBeta F β) 2 = ↑(SubstGroup.linearCoeff F ^ 5)⁻¹ *
       (coeff 1 F.toPowerSeries ^ 2 * betaCoeff β 2 -
         coeff 1 F.toPowerSeries * coeff 2 F.toPowerSeries * betaCoeff β 1 +
         (coeff 1 F.toPowerSeries * coeff 3 F.toPowerSeries - coeff 2 F.toPowerSeries ^ 2) *
-          betaCoeff β 0) := by
-  rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_inv_mul_iff_mul_eq,
-    Units.val_pow_eq_pow_val, SubstGroup.coe_linearCoeff]
-  exact coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ
+          betaCoeff β 0) :=
+  (Units.eq_inv_mul_iff_mul_eq _).mpr <| by
+    simpa using coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ
 
 /-! ### Scheme independence -/
 
@@ -356,10 +356,9 @@ private theorem pow_mul_betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β 
 `a' = 2a = α_s/(2π)`, `u = 2`, so `β₀` halves. -/
 theorem betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β : R⟦X⟧) (n : ℕ) :
     betaCoeff (transformBeta (SubstGroup.rescale u) β) n =
-      (↑u⁻¹ : R) ^ (n + 1) * betaCoeff β n := by
-  rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_inv_mul_iff_mul_eq,
-    Units.val_pow_eq_pow_val]
-  exact pow_mul_betaCoeff_transformBeta_substGroupRescale u β n
+      ↑(u ^ (n + 1))⁻¹ * betaCoeff β n :=
+  (Units.eq_inv_mul_iff_mul_eq _).mpr <| by
+    simpa using pow_mul_betaCoeff_transformBeta_substGroupRescale u β n
 
 end Evolution
 end Factorization
