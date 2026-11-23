@@ -73,7 +73,8 @@ singularity `x = 0`. The Rayleigh formula above supplies both directly.
   `hasDerivAt_sphericalBesselJ_succ'_of_ne_zero` are their forms for `x ≠ 0`, and the derivative
   at the origin is `hasDerivAt_sphericalBesselJ_apply_zero`. With the recurrence they give
   `two_mul_add_three_mul_deriv_sphericalBesselJ_succ`, the symmetric form
-  `(2 l + 3) j_{l + 1}' = (l + 1) j_l - (l + 2) j_{l + 2}`, which keeps its content at the origin.
+  `(2 l + 3) j_{l + 1}' = (l + 1) j_l - (l + 2) j_{l + 2}`, which keeps its content at the origin,
+  and its derivative form `hasDerivAt_sphericalBesselJ_succ`.
 * `hasDerivAt_sphericalBesselJ` with `deriv_sphericalBesselJ`: the derivative of `j_l` on the
   whole line, the origin included, by the product rule for
   `j_l(x) = x ^ l * sphericalBesselJDivPow l x`. At order zero it is the ladder relation
@@ -424,6 +425,16 @@ theorem two_mul_add_three_mul_deriv_sphericalBesselJ_succ (l : ℕ) (x : ℝ) :
   simp only [sphericalBesselJ_def]
   push_cast
   linear_combination -(l + 1) * x ^ l * sq_mul_sphericalBesselJDivPow_add_two l x
+
+/-- The symmetric derivative relation as a derivative,
+`j_{l + 1}'(x) = ((l + 1) j_l(x) - (l + 2) j_{l + 2}(x)) / (2 l + 3)` (DLMF 10.51.2), on the whole
+line, the origin included. -/
+theorem hasDerivAt_sphericalBesselJ_succ (l : ℕ) (x : ℝ) :
+    HasDerivAt (sphericalBesselJ (l + 1))
+      (((l + 1) * sphericalBesselJ l x - (l + 2) * sphericalBesselJ (l + 2) x) / (2 * l + 3))
+      x := by
+  refine (differentiable_sphericalBesselJ (l + 1) x).hasDerivAt.congr_deriv ?_
+  rw [eq_div_iff (by positivity), mul_comm, two_mul_add_three_mul_deriv_sphericalBesselJ_succ]
 
 /-- The derivative relation raising the order, `j_l' = l / x * j_l - j_{l + 1}` for `x ≠ 0`. -/
 theorem hasDerivAt_sphericalBesselJ_of_ne_zero (l : ℕ) {x : ℝ} (hx : x ≠ 0) :

@@ -40,10 +40,10 @@ origin, only by `j_0`.
 The representation is proved by induction on `l`. Differentiating under the integral sign
 (`hasDerivAt_integral_cexp_mul`) turns multiplication of `P_l(t)` by `t` into `-i d/dx`, so
 Bonnet's recurrence for the Legendre polynomials, integrated against `e^{i x t}`
-(`Polynomial.add_two_smul_integral_legendre_add_two_smul`), becomes the derivative relation
-`(2 l + 3) j_{l + 1}' = (l + 1) j_l - (l + 2) j_{l + 2}`
-(`two_mul_add_three_mul_deriv_sphericalBesselJ_succ`), which determines `j_{l + 2}` from `j_l` and
-`j_{l + 1}`. The base case is the elementary integral `∫₋₁¹ e^{i x t} dt = 2 sin x / x`
+(`EpsilonEridani.Polynomial.add_two_smul_integral_legendre_add_two_smul`), becomes the
+derivative relation `(2 l + 3) j_{l + 1}' = (l + 1) j_l - (l + 2) j_{l + 2}`
+(`two_mul_add_three_mul_deriv_sphericalBesselJ_succ`), which determines `j_{l + 2}` from `j_l`
+and `j_{l + 1}`. The base case is the elementary integral `∫₋₁¹ e^{i x t} dt = 2 sin x / x`
 (`integral_cexp_eq_two_mul_sinc`).
 
 ## References
