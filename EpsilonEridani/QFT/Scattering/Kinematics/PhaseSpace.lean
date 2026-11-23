@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MassShell
@@ -25,13 +26,16 @@ the point `(E(p), p)` to another point of the shell. The induced map on spatial 
 preserve `d^d p`, but its Jacobian `E(Λp) / E(p)` is cancelled exactly by the density.
 
 * `oneBodyMeasure m` is `d^d p / (2E)`, a σ-finite measure on `EuclideanSpace ℝ (Fin d)`. The
-  massless case `m = 0` is included. There the density is singular at `p = 0`, a null set.
+  massless case `m = 0` is included: `1 / (2E)` blows up as `p → 0`, but the density is
+  evaluated as `0` at `p = 0` itself (the real inverse of `0` is `0`), and for `d ≥ 1` the
+  point `{0}` is Lebesgue-null anyway.
 * `measurePreserving_massShellAction_boost`: a boost along any coordinate axis preserves
   `oneBodyMeasure m`. Along the boost axis, at fixed transverse momentum `p_⊥`, the energy is
   `√(m² + |p_⊥|² + q²)` and the boost acts as `q ↦ γ (q - β E)`, a bijection of the line with
   derivative `E' / E`, where `E' = γ (E - β q)` is the boosted energy.
 * `measurePreserving_massShellAction_rotation`: a spatial rotation preserves it, since it acts on
-  `p` as the linear isometry `massShellActionₗᵢ` and leaves `E` unchanged.
+  `p` as the linear isometry `LorentzGroup.Rotations.toLinearIsometryEquiv` and leaves `E`
+  unchanged.
 
 This file proves invariance only for these two generating cases. Both keep the energy
 non-negative, so for a finite product of them `massShellAction_mul` writes the action as the
@@ -66,6 +70,7 @@ momenta of a particle of mass `m`. -/
 def oneBodyMeasure (m : ℝ) : Measure (EuclideanSpace ℝ (Fin d)) :=
   volume.withDensity fun p => ENNReal.ofReal (2 * onShellEnergy m p)⁻¹
 
+/-- Defining expression for `oneBodyMeasure`. -/
 theorem oneBodyMeasure_def (m : ℝ) :
     oneBodyMeasure (d := d) m =
       volume.withDensity fun p => ENNReal.ofReal (2 * onShellEnergy m p)⁻¹ :=
@@ -94,30 +99,48 @@ private theorem mul_lt_sqrt_add_sq {a β q : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1
   rw [abs_mul]
   exact mul_lt_of_lt_one_left (abs_pos.2 hq) hβ
 
+/-- On the line `d = 1`, the energy at mass `√a` of the momentum `q` is `√(a + q²)`. -/
+private theorem onShellEnergy_sqrt_single {a : ℝ} (ha : 0 ≤ a) (q : ℝ) :
+    onShellEnergy √a (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1)) = √(a + q ^ 2) := by
+  rw [onShellEnergy_def, Real.sq_sqrt ha, EuclideanSpace.norm_sq_eq]
+  simp
+
+/-- On the line `d = 1` at mass `√a`, the boost acts as `q ↦ γ (q - β √(a + q²))`. -/
+private theorem massShellAction_boost_single {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) (q : ℝ) :
+    massShellAction (boost 0 β hβ) √a (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1)) =
+      WithLp.toLp 2 ![γ β * (q - β * √(a + q ^ 2))] := by
+  ext j
+  obtain rfl := Subsingleton.elim j 0
+  rw [massShellAction_boost_apply_self, onShellEnergy_sqrt_single ha]
+  simp
+
 private theorem mul_le_sqrt_add_sq {a β q : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) :
     β * q ≤ √(a + q ^ 2) := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · simp
-  · exact (mul_lt_sqrt_add_sq ha hβ hq).le
+  have h := abs_mul_apply_le_onShellEnergy hβ.le √a
+    (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1)) 0
+  rw [onShellEnergy_sqrt_single ha] at h
+  exact (le_abs_self _).trans (by simpa using h)
 
 /-- In `1 + 1` dimensions with transverse mass `√a`, the boosted momentum
-`q' = γ (q - β E)` has energy `E' = γ (E - β q)`. -/
+`q' = γ (q - β E)` has energy `E' = γ (E - β q)`: the case `d = 1`, `m = √a` of
+`onShellEnergy_massShellAction_boost`. -/
 private theorem sqrt_add_sq_boost {a β : ℝ} (q : ℝ) (ha : 0 ≤ a) (hβ : |β| < 1) :
     √(a + (γ β * (q - β * √(a + q ^ 2))) ^ 2) = γ β * (√(a + q ^ 2) - β * q) := by
-  have h1 := γ_sq_mul_one_sub_sq hβ
-  have hE : √(a + q ^ 2) ^ 2 = a + q ^ 2 := Real.sq_sqrt (by positivity)
-  rw [← Real.sqrt_sq (mul_nonneg (γ_pos hβ).le (sub_nonneg.2 (mul_le_sqrt_add_sq ha hβ)))]
-  congr 1
-  linear_combination (-a) * h1 + (-(γ β ^ 2 * (1 - β ^ 2))) * hE
+  have h := onShellEnergy_massShellAction_boost 0 hβ √a
+    (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1))
+  rw [massShellAction_boost_single ha, onShellEnergy_sqrt_single ha,
+    onShellEnergy_sqrt_single ha] at h
+  simpa using h
 
 /-- The boost with velocity `-β` undoes the boost with velocity `β` on the line of transverse
-mass `√a`. -/
+mass `√a`: the case `d = 1`, `m = √a` of `massShellAction_boost_neg_boost`. -/
 private theorem boost_neg_boost {a β : ℝ} (q : ℝ) (ha : 0 ≤ a) (hβ : |β| < 1) :
     γ (-β) * (γ β * (q - β * √(a + q ^ 2)) - -β * √(a + (γ β * (q - β * √(a + q ^ 2))) ^ 2))
       = q := by
-  have h1 := γ_sq_mul_one_sub_sq hβ
-  rw [sqrt_add_sq_boost q ha hβ, γ_neg]
-  linear_combination q * h1
+  have h := congrArg (· 0) (massShellAction_boost_neg_boost 0 hβ √a
+    (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1)))
+  simp only [massShellAction_boost_single ha] at h
+  simpa using h
 
 /-- The one-dimensional core of boost invariance: on the line of transverse mass `√a`, the
 measure `dq / (2 √(a + q²))` is invariant under the boost `q ↦ γ (q - β √(a + q²))`. -/
@@ -162,12 +185,13 @@ private theorem lintegral_comp_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1
   have hd : γ β * (1 - β * (q / √(a + q ^ 2))) =
       γ β * (√(a + q ^ 2) - β * q) / √(a + q ^ 2) := by
     field_simp
+  have hJ : γ β * (√(a + q ^ 2) - β * q) / √(a + q ^ 2) *
+      (2 * (γ β * (√(a + q ^ 2) - β * q)))⁻¹ = (2 * √(a + q ^ 2))⁻¹ := by
+    have hE'' : √(a + q ^ 2) - q * β ≠ 0 := by rw [mul_comm q β]; exact hE'.ne'
+    field_simp
   simp only [hg]
   rw [sqrt_add_sq_boost q ha hβ, mul_left_comm, ← ENNReal.ofReal_mul (abs_nonneg _), hd,
-    abs_of_pos (by positivity)]
-  congr 2
-  field_simp
-  rw [mul_comm q β, div_self hE'.ne']
+    abs_of_pos (by positivity), hJ]
 
 private theorem lintegral_comp_massShellAction_boost (i : Fin d) {β : ℝ} (hβ : |β| < 1) (m : ℝ)
     {f : EuclideanSpace ℝ (Fin d) → ℝ≥0∞} (hf : Measurable f) :
@@ -232,8 +256,8 @@ theorem measurePreserving_massShellAction_rotation (Λ : Rotations d) (m : ℝ) 
       (oneBodyMeasure m) := by
   -- on spatial momenta the rotation is a linear isometry, so it preserves Lebesgue measure
   have hL : MeasurePreserving (massShellAction (Λ : LorentzGroup d) m) volume volume := by
-    rw [← coe_massShellActionₗᵢ Λ m]
-    exact ((massShellActionₗᵢ Λ).toLinearIsometryEquiv rfl).measurePreserving
+    rw [massShellAction_rotation Λ m]
+    exact (Rotations.toLinearIsometryEquiv Λ).measurePreserving
   refine ⟨hL.measurable, Measure.ext_of_lintegral _ fun f hf => ?_⟩
   rw [lintegral_map hf hL.measurable, lintegral_oneBodyMeasure, lintegral_oneBodyMeasure]
   -- and it leaves the energy, hence the density, unchanged
