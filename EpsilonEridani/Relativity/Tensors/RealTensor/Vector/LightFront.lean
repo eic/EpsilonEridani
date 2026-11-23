@@ -7,6 +7,7 @@ module
 
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 public import Physlib.Relativity.LorentzGroup.Boosts.Apply
+public import EpsilonEridani.Relativity.LorentzGroup.Boosts.BasicExtensions
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 
 /-!
@@ -82,6 +83,8 @@ its plus component is positive, so such a boost never reverses its direction.
   the area between a light-front position and a relative transverse momentum.
 * `Lorentz.Vector.transversePart_boost_two`, `Lorentz.Vector.plusComponent_boost_two`,
   `Lorentz.Vector.minusComponent_boost_two`: a boost along the `z`-axis in light-front components.
+* `Lorentz.Vector.inr_two_pos_iff_minusComponent_lt_plusComponent`: a four-vector points along
+  `+z` exactly when `p⁻ < p⁺`.
 * `Lorentz.Vector.boost_two_inr_two_pos_iff`: a boost along the `z`-axis does not reverse the
   direction of a four-vector whose longitudinal part is spacelike.
 * `EpsilonEridani.LightFront.areaForm_relativeTransverse_transverseIsometry`,
@@ -124,6 +127,13 @@ lemma plusComponent_def (p : Vector 3) :
 
 lemma minusComponent_def (p : Vector 3) :
     minusComponent p = (p (Sum.inl 0) - p (Sum.inr 2)) / √2 := (rfl)
+
+/-- The `z`-component of a four-vector in light-front components: `p³ = (p⁺ - p⁻) / √2`. -/
+lemma apply_inr_two (p : Vector 3) :
+    p (Sum.inr 2) = (plusComponent p - minusComponent p) / √2 := by
+  rw [plusComponent_def, minusComponent_def, ← sub_div, div_div,
+    Real.mul_self_sqrt zero_le_two]
+  ring
 
 lemma transversePart_def (p : Vector 3) :
     transversePart p = !₂[p (Sum.inr 0), p (Sum.inr 1)] := (rfl)
@@ -404,12 +414,17 @@ lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
   simp only [minusComponent_def, boost_time_eq, boost_inr_self_eq]
   ring
 
+/-- A four-vector points along `+z` exactly when its plus component exceeds its minus
+component. -/
+lemma inr_two_pos_iff_minusComponent_lt_plusComponent (q : Vector 3) :
+    0 < q (Sum.inr 2) ↔ minusComponent q < plusComponent q := by
+  rw [apply_inr_two q, div_pos_iff_of_pos_right (by positivity), sub_pos]
+
 /-- A four-vector whose plus and minus components have opposite signs, i.e. whose longitudinal
 part is spacelike, points along `+z` exactly when its plus component is positive. -/
 lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
     (hq : plusComponent q * minusComponent q < 0) : 0 < q (Sum.inr 2) ↔ 0 < plusComponent q := by
-  rw [← add_div_sqrt_two_sub_sub_div_sqrt_two (q (Sum.inl 0)) (q (Sum.inr 2)),
-    ← plusComponent_def, ← minusComponent_def, div_pos_iff_of_pos_right (by positivity), sub_pos]
+  rw [inr_two_pos_iff_minusComponent_lt_plusComponent]
   constructor
   · -- `p⁻ < p⁺ ≤ 0` would make `p⁺ p⁻` nonnegative.
     intro h
@@ -423,20 +438,14 @@ lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
 part is spacelike. -/
 lemma boost_two_inr_two_pos_iff {q : Vector 3} (hq : plusComponent q * minusComponent q < 0)
     (β : ℝ) (hβ : |β| < 1) : 0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
-  have hβ' := abs_lt.1 hβ
-  have hγ : 0 < γ β := by
-    simp only [γ, one_div, inv_pos, Real.sqrt_pos]
-    nlinarith
-  have hm : 0 < γ β * (1 - β) := mul_pos hγ (by linarith)
-  have hp : 0 < γ β * (1 + β) := mul_pos hγ (by linarith)
   have hq' : plusComponent (boost (2 : Fin 3) β hβ • q) *
       minusComponent (boost (2 : Fin 3) β hβ • q) < 0 := by
     rw [plusComponent_boost_two, minusComponent_boost_two,
       show γ β * (1 - β) * plusComponent q * (γ β * (1 + β) * minusComponent q) =
         (γ β * (1 - β) * (γ β * (1 + β))) * (plusComponent q * minusComponent q) by ring]
-    exact mul_neg_of_pos_of_neg (mul_pos hm hp) hq
+    exact mul_neg_of_pos_of_neg (mul_pos (γ_mul_one_sub_pos hβ) (γ_mul_one_add_pos hβ)) hq
   rw [inr_two_pos_iff_plusComponent_pos hq', plusComponent_boost_two,
-    mul_pos_iff_of_pos_left hm, inr_two_pos_iff_plusComponent_pos hq]
+    mul_pos_iff_of_pos_left (γ_mul_one_sub_pos hβ), inr_two_pos_iff_plusComponent_pos hq]
 
 end LongitudinalBoost
 

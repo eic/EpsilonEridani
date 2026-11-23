@@ -24,9 +24,10 @@ are then oriented angles in the transverse plane `EuclideanSpace ℝ (Fin 2)`.
 An `AzimuthalFrame` is the data such an angle needs beyond the photon axis: the reference
 direction `leptonDir` in the transverse plane and an orientation of that plane. In a physical
 frame `leptonDir` is the transverse part of the incoming lepton momentum, so the half-plane it
-spans with the photon axis is the lepton plane. The azimuth of a four-vector `p` is the oriented
-angle from `leptonDir` to `p_T`. Then `φ_h = F.azimuth P_h` and `φ_S = F.azimuth S`. They take
-values in `Real.Angle`, so no branch cut is chosen.
+spans with the photon axis is the lepton plane. The azimuth of a vector of the transverse plane is
+the oriented angle from `leptonDir` to it, and the azimuth of a four-vector `p` is that of its
+transverse part `p_T`. Then `φ_h = F.azimuth P_hT` and `φ_S = F.azimuth S_T`. They take values in
+`Real.Angle`, so no branch cut is chosen.
 
 The orientation is a genuine choice. The Trento convention (Bacchetta, D'Alesio, Diehl and
 Miller) measures azimuths in a right-handed frame whose `z`-axis points along the virtual-photon
@@ -59,7 +60,8 @@ asymmetries quoted in the two conventions differ.
 
 * `EpsilonEridani.QFT.Scattering.DIS.SIDIS.AzimuthalFrame`: a reference direction and an
   orientation of the transverse plane.
-* `AzimuthalFrame.azimuth F p`: the azimuth of the four-vector `p` about the photon axis.
+* `AzimuthalFrame.azimuth F v`: the azimuth of the vector `v` of the transverse plane about the
+  photon axis.
 * `AzimuthalFrame.negOrientation F`: the frame with the opposite orientation.
 * `AzimuthalFrame.trentoOrientation q`: the orientation fixed by the Trento convention for a
   photon momentum `q` along the `z`-axis.
@@ -80,6 +82,7 @@ asymmetries quoted in the two conventions differ.
 * `AzimuthalFrame.azimuth_negOrientation`: the opposite orientation negates every azimuth.
 * `AzimuthalFrame.sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation`,
   `AzimuthalFrame.cos_zsmul_azimuth_add_zsmul_azimuth_negOrientation`,
+  `AzimuthalFrame.mul_cos_add_mul_sin_negOrientation`,
   `AzimuthalFrame.sum_cos_add_sin_negOrientation`: under the opposite orientation the sine
   modulations change sign and the cosine modulations do not.
 
@@ -120,66 +123,57 @@ namespace AzimuthalFrame
 
 /-! ### Azimuths -/
 
-/-- The azimuth of a four-vector `p` about the photon axis: the oriented angle from the reference
-direction of the frame to the transverse part of `p`. The hadron azimuth `φ_h` is the azimuth of
-the hadron momentum and the spin azimuth `φ_S` that of the target spin vector. It is `0` when `p`
-or the reference direction has no transverse part. -/
-def azimuth (F : AzimuthalFrame) (p : Lorentz.Vector 3) : Real.Angle :=
-  F.orientation.oangle F.leptonDir (transversePart p)
+/-- The azimuth of a vector `v` of the transverse plane: the oriented angle from the reference
+direction of the frame to `v`. The azimuth of a four-vector `p` about the photon axis is that of
+its transverse part, `F.azimuth (transversePart p)`. The hadron azimuth `φ_h` is the azimuth of the
+transverse hadron momentum and the spin azimuth `φ_S` that of the transverse target spin; the
+azimuth of a transverse momentum such as `Lorentz.Vector.relativeTransverse k P` is defined in the
+same way. It is `0` when `v` or the reference direction is `0`. -/
+def azimuth (F : AzimuthalFrame) (v : E²) : Real.Angle :=
+  F.orientation.oangle F.leptonDir v
 
-lemma azimuth_def (F : AzimuthalFrame) (p : Lorentz.Vector 3) :
-    F.azimuth p = F.orientation.oangle F.leptonDir (transversePart p) := (rfl)
+lemma azimuth_def (F : AzimuthalFrame) (v : E²) :
+    F.azimuth v = F.orientation.oangle F.leptonDir v := (rfl)
 
-/-- A four-vector whose transverse part is the reference direction lies at azimuth zero. -/
-lemma azimuth_eq_zero_of_transversePart_eq_leptonDir {F : AzimuthalFrame} {p : Lorentz.Vector 3}
-    (hp : transversePart p = F.leptonDir) : F.azimuth p = 0 := by
-  rw [azimuth_def, hp, Orientation.oangle_self]
-
-/-- A four-vector with no transverse part lies at azimuth zero. -/
+/-- The reference direction lies at azimuth zero. -/
 @[simp]
-lemma azimuth_eq_zero_of_transversePart_eq_zero {F : AzimuthalFrame} {p : Lorentz.Vector 3}
-    (hp : transversePart p = 0) : F.azimuth p = 0 := by
-  rw [azimuth_def, hp, Orientation.oangle_zero_right]
+lemma azimuth_leptonDir (F : AzimuthalFrame) : F.azimuth F.leptonDir = 0 := by
+  rw [azimuth_def, Orientation.oangle_self]
+
+/-- The zero vector lies at azimuth zero. -/
+@[simp]
+lemma azimuth_zero (F : AzimuthalFrame) : F.azimuth 0 = 0 := by
+  rw [azimuth_def, Orientation.oangle_zero_right]
 
 /-- In a frame whose reference direction is zero every azimuth is zero. -/
 @[simp]
-lemma azimuth_eq_zero_of_leptonDir_eq_zero {F : AzimuthalFrame} (hF : F.leptonDir = 0)
-    (p : Lorentz.Vector 3) : F.azimuth p = 0 := by
+lemma azimuth_eq_zero_of_leptonDir_eq_zero {F : AzimuthalFrame} (hF : F.leptonDir = 0) (v : E²) :
+    F.azimuth v = 0 := by
   rw [azimuth_def, hF, Orientation.oangle_zero_left]
 
-/-- The cosine of an azimuth: `l_T · p_T = |l_T| |p_T| cos φ`, where `l_T` is the reference
+/-- The cosine of an azimuth: `l_T · v = |l_T| |v| cos φ`, where `l_T` is the reference
 direction. It does not depend on the orientation of the frame. -/
-theorem inner_eq_norm_mul_norm_mul_cos_azimuth (F : AzimuthalFrame) (p : Lorentz.Vector 3) :
-    inner ℝ F.leptonDir (transversePart p) =
-      ‖F.leptonDir‖ * ‖transversePart p‖ * Real.Angle.cos (F.azimuth p) := by
+theorem inner_eq_norm_mul_norm_mul_cos_azimuth (F : AzimuthalFrame) (v : E²) :
+    inner ℝ F.leptonDir v = ‖F.leptonDir‖ * ‖v‖ * Real.Angle.cos (F.azimuth v) := by
   rw [azimuth_def, Orientation.inner_eq_norm_mul_norm_mul_cos_oangle]
 
-/-- The sine of an azimuth: `ω(l_T, p_T) = |l_T| |p_T| sin φ`, where `l_T` is the reference
-direction and `ω` the area form of the orientation of the frame. -/
-theorem areaForm_eq_norm_mul_norm_mul_sin_azimuth (F : AzimuthalFrame) (p : Lorentz.Vector 3) :
-    F.orientation.areaForm F.leptonDir (transversePart p) =
-      ‖F.leptonDir‖ * ‖transversePart p‖ * Real.Angle.sin (F.azimuth p) := by
+/-- The sine of an azimuth: `ω(l_T, v) = |l_T| |v| sin φ`, where `l_T` is the reference direction
+and `ω` the area form of the orientation of the frame. -/
+theorem areaForm_eq_norm_mul_norm_mul_sin_azimuth (F : AzimuthalFrame) (v : E²) :
+    F.orientation.areaForm F.leptonDir v = ‖F.leptonDir‖ * ‖v‖ * Real.Angle.sin (F.azimuth v) := by
   rw [azimuth_def, Orientation.areaForm_eq_norm_mul_norm_mul_sin_oangle]
 
-/-- Rescaling a four-vector by a positive factor does not change its azimuth. -/
+/-- Rescaling a vector by a positive factor does not change its azimuth. -/
 @[simp]
-lemma azimuth_smul_of_pos (F : AzimuthalFrame) {c : ℝ} (hc : 0 < c) (p : Lorentz.Vector 3) :
-    F.azimuth (c • p) = F.azimuth p := by
-  rw [azimuth_def, Lorentz.Vector.transversePart_smul,
-    Orientation.oangle_smul_right_of_pos _ _ _ hc, azimuth_def]
+lemma azimuth_smul_of_pos (F : AzimuthalFrame) {c : ℝ} (hc : 0 < c) (v : E²) :
+    F.azimuth (c • v) = F.azimuth v := by
+  rw [azimuth_def, Orientation.oangle_smul_right_of_pos _ _ _ hc, azimuth_def]
 
-/-- Negating a four-vector with a transverse part shifts its azimuth by `π`, in a frame with a
-nonzero reference direction. -/
-lemma azimuth_neg {F : AzimuthalFrame} (hF : F.leptonDir ≠ 0) {p : Lorentz.Vector 3}
-    (hp : transversePart p ≠ 0) : F.azimuth (-p) = F.azimuth p + (Real.pi : Real.Angle) := by
-  rw [azimuth_def, Lorentz.Vector.transversePart_neg, Orientation.oangle_neg_right _ hF hp,
-    azimuth_def]
-
-/-- A boost along the photon axis does not change any azimuth. -/
-@[simp]
-lemma azimuth_boost_two (F : AzimuthalFrame) (β : ℝ) (hβ : |β| < 1) (p : Lorentz.Vector 3) :
-    F.azimuth (boost (2 : Fin 3) β hβ • p) = F.azimuth p := by
-  rw [azimuth_def, Lorentz.Vector.transversePart_boost_two, azimuth_def]
+/-- Negating a nonzero vector shifts its azimuth by `π`, in a frame with a nonzero reference
+direction. -/
+lemma azimuth_neg {F : AzimuthalFrame} (hF : F.leptonDir ≠ 0) {v : E²} (hv : v ≠ 0) :
+    F.azimuth (-v) = F.azimuth v + (Real.pi : Real.Angle) := by
+  rw [azimuth_def, Orientation.oangle_neg_right _ hF hv, azimuth_def]
 
 /-! ### Reversing the orientation -/
 
@@ -205,14 +199,14 @@ lemma negOrientation_negOrientation (F : AzimuthalFrame) :
 
 /-- Reversing the orientation negates every azimuth. -/
 @[simp]
-lemma azimuth_negOrientation (F : AzimuthalFrame) (p : Lorentz.Vector 3) :
-    F.negOrientation.azimuth p = -F.azimuth p := by
+lemma azimuth_negOrientation (F : AzimuthalFrame) (v : E²) :
+    F.negOrientation.azimuth v = -F.azimuth v := by
   rw [azimuth_def, azimuth_def, orientation_negOrientation, leptonDir_negOrientation,
     Orientation.oangle_neg_orientation_eq_neg]
 
 /-- Under the opposite orientation every sine modulation `sin(m φ_h + n φ_S)` changes sign. -/
 lemma sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation (F : AzimuthalFrame) (m n : ℤ)
-    (Ph S : Lorentz.Vector 3) :
+    (Ph S : E²) :
     Real.Angle.sin (m • F.negOrientation.azimuth Ph + n • F.negOrientation.azimuth S) =
       -Real.Angle.sin (m • F.azimuth Ph + n • F.azimuth S) := by
   rw [azimuth_negOrientation, azimuth_negOrientation, smul_neg, smul_neg, ← neg_add,
@@ -220,27 +214,36 @@ lemma sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation (F : AzimuthalFrame) (m
 
 /-- Under the opposite orientation every cosine modulation `cos(m φ_h + n φ_S)` is unchanged. -/
 lemma cos_zsmul_azimuth_add_zsmul_azimuth_negOrientation (F : AzimuthalFrame) (m n : ℤ)
-    (Ph S : Lorentz.Vector 3) :
+    (Ph S : E²) :
     Real.Angle.cos (m • F.negOrientation.azimuth Ph + n • F.negOrientation.azimuth S) =
       Real.Angle.cos (m • F.azimuth Ph + n • F.azimuth S) := by
   rw [azimuth_negOrientation, azimuth_negOrientation, smul_neg, smul_neg, ← neg_add,
     Real.Angle.cos_neg]
+
+/-- A single modulation in the two orientations: cosine amplitude `A` and sine amplitude `B` of
+the harmonic `m φ_h + n φ_S` become, in the azimuths of the oppositely oriented frame, the cosine
+amplitude `A` and the sine amplitude `-B`. -/
+lemma mul_cos_add_mul_sin_negOrientation (F : AzimuthalFrame) (m n : ℤ) (A B : ℝ) (Ph S : E²) :
+    A * Real.Angle.cos (m • F.azimuth Ph + n • F.azimuth S) +
+        B * Real.Angle.sin (m • F.azimuth Ph + n • F.azimuth S) =
+      A * Real.Angle.cos (m • F.negOrientation.azimuth Ph + n • F.negOrientation.azimuth S) +
+        -B * Real.Angle.sin (m • F.negOrientation.azimuth Ph + n • F.negOrientation.azimuth S) := by
+  rw [cos_zsmul_azimuth_add_zsmul_azimuth_negOrientation,
+    sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation, neg_mul_neg]
 
 /-- The structure functions in the two orientations. A finite sum of modulations with cosine
 amplitudes `A i` and sine amplitudes `B i` of the harmonics `m i φ_h + n i φ_S` is, written in the
 azimuths of the oppositely oriented frame, the sum with the same cosine amplitudes and the sine
 amplitudes `-B i`. -/
 theorem sum_cos_add_sin_negOrientation (F : AzimuthalFrame) {ι : Type*} (s : Finset ι)
-    (m n : ι → ℤ) (A B : ι → ℝ) (Ph S : Lorentz.Vector 3) :
+    (m n : ι → ℤ) (A B : ι → ℝ) (Ph S : E²) :
     ∑ i ∈ s, (A i * Real.Angle.cos (m i • F.azimuth Ph + n i • F.azimuth S) +
         B i * Real.Angle.sin (m i • F.azimuth Ph + n i • F.azimuth S)) =
       ∑ i ∈ s, (A i * Real.Angle.cos
           (m i • F.negOrientation.azimuth Ph + n i • F.negOrientation.azimuth S) +
         -B i * Real.Angle.sin
-          (m i • F.negOrientation.azimuth Ph + n i • F.negOrientation.azimuth S)) := by
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [cos_zsmul_azimuth_add_zsmul_azimuth_negOrientation,
-    sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation, neg_mul_neg]
+          (m i • F.negOrientation.azimuth Ph + n i • F.negOrientation.azimuth S)) :=
+  Finset.sum_congr rfl fun i _ => F.mul_cos_add_mul_sin_negOrientation (m i) (n i) (A i) (B i) Ph S
 
 /-! ### The Trento convention -/
 
@@ -285,8 +288,9 @@ lemma orientation_trento (l q : Lorentz.Vector 3) :
 
 /-- The incoming lepton lies at azimuth zero in its Trento frame. -/
 @[simp]
-lemma azimuth_trento_self_eq_zero (l q : Lorentz.Vector 3) : (trento l q).azimuth l = 0 :=
-  azimuth_eq_zero_of_transversePart_eq_leptonDir (leptonDir_trento l q).symm
+lemma azimuth_trento_self_eq_zero (l q : Lorentz.Vector 3) :
+    (trento l q).azimuth (transversePart l) = 0 := by
+  rw [← leptonDir_trento l q, azimuth_leptonDir]
 
 /-- In a frame where the photon has no transverse part, the scattered lepton `l' = l - q` defines
 the same Trento frame as the incoming one: both span the lepton plane with the photon axis. -/
@@ -299,7 +303,7 @@ a Trento azimuth (`leptonDir_trento`): `|l_T| |p_T| cos φ = l_T · p_T`. It doe
 orientation of the frame. -/
 theorem norm_mul_norm_mul_cos_azimuth_of_leptonDir_eq {F : AzimuthalFrame} {l : Lorentz.Vector 3}
     (hF : F.leptonDir = transversePart l) (p : Lorentz.Vector 3) :
-    ‖transversePart l‖ * ‖transversePart p‖ * Real.Angle.cos (F.azimuth p) =
+    ‖transversePart l‖ * ‖transversePart p‖ * Real.Angle.cos (F.azimuth (transversePart p)) =
       l (Sum.inr 0) * p (Sum.inr 0) + l (Sum.inr 1) * p (Sum.inr 1) := by
   rw [← hF, ← inner_eq_norm_mul_norm_mul_cos_azimuth, hF]
   simp only [PiLp.inner_apply, Fin.sum_univ_two, RCLike.inner_apply, conj_trivial,
@@ -311,7 +315,7 @@ theorem norm_mul_norm_mul_cos_azimuth_of_leptonDir_eq {F : AzimuthalFrame} {l : 
 `q³ (l¹ p² - l² p¹)` when `q = q³ e_z`. -/
 theorem abs_inr_two_mul_norm_mul_norm_mul_sin_azimuth_trento (l q p : Lorentz.Vector 3) :
     |q (Sum.inr 2)| * (‖transversePart l‖ * ‖transversePart p‖ *
-        Real.Angle.sin ((trento l q).azimuth p)) =
+        Real.Angle.sin ((trento l q).azimuth (transversePart p))) =
       q (Sum.inr 2) * (l (Sum.inr 0) * p (Sum.inr 1) - l (Sum.inr 1) * p (Sum.inr 0)) := by
   rw [← leptonDir_trento l q, ← areaForm_eq_norm_mul_norm_mul_sin_azimuth, leptonDir_trento,
     orientation_trento]
@@ -346,8 +350,9 @@ theorem azimuth_trento_boost_two (l : Lorentz.Vector 3) {q : Lorentz.Vector 3}
     (hq : Lorentz.Vector.plusComponent q * Lorentz.Vector.minusComponent q < 0) (β : ℝ)
     (hβ : |β| < 1) (p : Lorentz.Vector 3) :
     (trento (boost (2 : Fin 3) β hβ • l) (boost (2 : Fin 3) β hβ • q)).azimuth
-        (boost (2 : Fin 3) β hβ • p) = (trento l q).azimuth p := by
-  rw [trento_boost_two l hq, azimuth_boost_two]
+        (transversePart (boost (2 : Fin 3) β hβ • p)) =
+      (trento l q).azimuth (transversePart p) := by
+  rw [trento_boost_two l hq, Lorentz.Vector.transversePart_boost_two]
 
 end AzimuthalFrame
 
