@@ -21,7 +21,7 @@ This file relates `ξ` to the plus momenta, `1 - ξ = P'⁺/P⁺` (`one_sub_xiLC
 `plus_pPrime_eq`), and characterises `ξ ≠ 1` as `P'⁺ ≠ 0` (`plus_pPrime_ne_zero_iff`). It bounds
 `ξ < 1` for positive plus momenta (`xiLC_lt_one`) and `0 ≤ ξ` when the target does not gain plus
 momentum, `P'⁺ ≤ P⁺` with `0 < P⁺` (`xiLC_nonneg`). It also defines the transverse momentum
-transfer relative to the target direction, `Δ_T - ξ P_T` (`deltaLostTransverse`), which is
+transfer relative to the target direction, `Δ_T - ξ P_T` (`deltaLostRelTransverse`), which is
 `Δ_T` for a target with no transverse momentum.
 
 -/
@@ -92,26 +92,26 @@ theorem xiLC_nonneg (L : LightConeBasis g) (K : DisKinematics V) (hp : 0 < L.plu
 `Δ_T` and `P_T` are the transverse parts of `Δ = P - P'` (`deltaLost`) and of `P` and
 `ξ = Δ⁺/P⁺` (`xiLC`). It is the transverse part of `Δ - ξ P`, the component of the momentum
 transfer not carried along the target's plus direction. -/
-def deltaLostTransverse (L : LightConeBasis g) (K : DisKinematics V) : V :=
+def deltaLostRelTransverse (L : LightConeBasis g) (K : DisKinematics V) : V :=
   L.transverseProj (deltaLost K) - xiLC L K • L.transverseProj K.p
 
-/-- Defining expression for `deltaLostTransverse`. -/
-theorem deltaLostTransverse_def (L : LightConeBasis g) (K : DisKinematics V) :
-    deltaLostTransverse L K = L.transverseProj (deltaLost K) - xiLC L K • L.transverseProj K.p :=
+/-- Defining expression for `deltaLostRelTransverse`. -/
+theorem deltaLostRelTransverse_def (L : LightConeBasis g) (K : DisKinematics V) :
+    deltaLostRelTransverse L K = L.transverseProj (deltaLost K) - xiLC L K • L.transverseProj K.p :=
   (rfl)
 
 /-- The relative transverse momentum transfer is a transverse vector. -/
-theorem deltaLostTransverse_mem_transverse (L : LightConeBasis g) (K : DisKinematics V) :
-    deltaLostTransverse L K ∈ L.transverse :=
+theorem deltaLostRelTransverse_mem_transverse (L : LightConeBasis g) (K : DisKinematics V) :
+    deltaLostRelTransverse L K ∈ L.transverse :=
   sub_mem (L.isProj_transverseProj.map_mem _)
     (L.transverse.smul_mem _ (L.isProj_transverseProj.map_mem _))
 
 /-- For a target with no transverse momentum the relative transverse momentum transfer is the
 transverse part `Δ_T` of `Δ = P - P'`. -/
-theorem deltaLostTransverse_of_transverseProj_p_eq_zero (L : LightConeBasis g)
+theorem deltaLostRelTransverse_of_transverseProj_p_eq_zero (L : LightConeBasis g)
     (K : DisKinematics V) (hT : L.transverseProj K.p = 0) :
-    deltaLostTransverse L K = L.transverseProj (deltaLost K) := by
-  rw [deltaLostTransverse_def, hT, smul_zero, sub_zero]
+    deltaLostRelTransverse L K = L.transverseProj (deltaLost K) := by
+  rw [deltaLostRelTransverse_def, hT, smul_zero, sub_zero]
 
 end Kinematics
 end Diffractive

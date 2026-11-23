@@ -20,7 +20,7 @@ with respect to a light-cone basis `(n₊, n₋)`, the target loses the light-co
 
   `t = tMin M M_Y ξ + w² / (1 - ξ)`  (`tMom_eq_tMin_add`),
 
-where `w = Δ_T - ξ P_T` (`deltaLostTransverse`) is the transverse momentum transfer relative to
+where `w = Δ_T - ξ P_T` (`deltaLostRelTransverse`) is the transverse momentum transfer relative to
 the target direction, `Δ_T` and `P_T` being the transverse parts of `Δ` and of `P`; for a basis
 along the collision axis the target has no transverse momentum and `w = Δ_T`. For `ξ < 1` and
 `w² ≤ 0`, as for a metric of signature `(+, -, -, -)`, this is the two-body threshold condition
@@ -84,11 +84,11 @@ theorem tMom_eq_tMin_add (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinemati
     {M MY : ℝ} (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K ≠ 1)
     (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2) :
     tMom g K = tMin M MY (xiLC L K) +
-      g (deltaLostTransverse L K) (deltaLostTransverse L K) / (1 - xiLC L K) := by
+      g (deltaLostRelTransverse L K) (deltaLostRelTransverse L K) / (1 - xiLC L K) := by
   have hp' := (plus_pPrime_ne_zero_iff L K hp).2 hξ1
   rw [MY2_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hMY
   rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg] at hM
-  rw [deltaLostTransverse_def, tMin_def, one_sub_xiLC L K hp, xiLC_def, ← hM, ← hMY, tMom_def,
+  rw [deltaLostRelTransverse_def, tMin_def, one_sub_xiLC L K hp, xiLC_def, ← hM, ← hMY, tMom_def,
     L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg, deltaLost_def]
   simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
   field_simp
@@ -101,7 +101,7 @@ momentum transfer lies below the boundary, `t ≤ tMin M M_Y ξ`. -/
 theorem tMom_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinematics V) {M MY : ℝ}
     (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K < 1)
     (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2)
-    (hw : g (deltaLostTransverse L K) (deltaLostTransverse L K) ≤ 0) :
+    (hw : g (deltaLostRelTransverse L K) (deltaLostRelTransverse L K) ≤ 0) :
     tMom g K ≤ tMin M MY (xiLC L K) := by
   rw [tMom_eq_tMin_add hg L K hp hξ1.ne hM hMY, add_le_iff_nonpos_right]
   exact div_nonpos_of_nonpos_of_nonneg hw (sub_nonneg.mpr hξ1.le)
@@ -113,7 +113,7 @@ theorem tMom_eq_tMin_iff (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinemati
     {M MY : ℝ} (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K ≠ 1)
     (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2) :
     tMom g K = tMin M MY (xiLC L K) ↔
-      g (deltaLostTransverse L K) (deltaLostTransverse L K) = 0 := by
+      g (deltaLostRelTransverse L K) (deltaLostRelTransverse L K) = 0 := by
   rw [tMom_eq_tMin_add hg L K hp hξ1 hM hMY, add_eq_left, div_eq_zero_iff,
     or_iff_left (sub_ne_zero.mpr (Ne.symm hξ1))]
 
@@ -126,7 +126,7 @@ target-side system lies above the threshold `(1 - ξ) M² ≤ M_Y²`, in particu
 theorem tMom_nonpos (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinematics V) {M MY : ℝ}
     (hp : L.plus K.p ≠ 0) (hξ1 : xiLC L K < 1)
     (hM : g K.p K.p = M ^ 2) (hMY : MY2 g K = MY ^ 2)
-    (hw : g (deltaLostTransverse L K) (deltaLostTransverse L K) ≤ 0)
+    (hw : g (deltaLostRelTransverse L K) (deltaLostRelTransverse L K) ≤ 0)
     (hξ : 0 ≤ xiLC L K) (hth : (1 - xiLC L K) * M ^ 2 ≤ MY ^ 2) :
     tMom g K ≤ 0 :=
   (tMom_le_tMin hg L K hp hξ1 hM hMY hw).trans (tMin_nonpos_of_threshold hξ hξ1.le hth)
@@ -138,7 +138,7 @@ for a target `P` with non-vanishing plus momentum and `P² = M²`, any lepton mo
 final mass `M_Y`, a light-cone fraction `ξ < 1` and any `t ≤ tMin M M_Y ξ`, there is a
 `DisKinematics` with incoming target `P`, lepton momenta `k`, `k'`, `P'² = M_Y²`, `Δ⁺/P⁺ = ξ` and
 momentum transfer `t`. The relative transverse momentum transfer `Δ_T - ξ P_T`
-(`deltaLostTransverse`) is taken along a transverse vector `e` with `e · e < 0`.
+(`deltaLostRelTransverse`) is taken along a transverse vector `e` with `e · e < 0`.
 
 The lepton side, and hence `Q²`, is arbitrary, but the photon-side mass `M_X² = (q + Δ)²` is
 not constrained: this is not yet attainability within the diffractive physical region
@@ -179,8 +179,8 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
     have := plus_pPrime_eq L K hp
     rw [hKp, ha] at this
     linarith [mul_right_cancel₀ hp this]
-  have hw : deltaLostTransverse L K = s • e := by
-    rw [deltaLostTransverse_def, hξK, deltaLost_def, map_sub, hKT, hpT]
+  have hw : deltaLostRelTransverse L K = s • e := by
+    rw [deltaLostRelTransverse_def, hξK, deltaLost_def, map_sub, hKT, hpT]
     module
   refine ⟨K, rfl, rfl, rfl, hMY, hξK, ?_⟩
   rw [tMom_eq_tMin_add hg L K hp (hξK ▸ hξ.ne) hM hMY, hξK, hw]
@@ -209,7 +209,7 @@ theorem setOf_tMom_eq_Iic_tMin (hg : g.IsRefl) (L : LightConeBasis g)
   ext t
   refine ⟨?_, exists_tMom_eq_of_le_tMin hg L he hee k kPrime hp hM hξ⟩
   rintro ⟨K, rfl, -, -, hMY, rfl, rfl⟩
-  exact tMom_le_tMin hg L K hp hξ hM hMY (htr _ (deltaLostTransverse_mem_transverse L K))
+  exact tMom_le_tMin hg L K hp hξ hM hMY (htr _ (deltaLostRelTransverse_mem_transverse L K))
 
 end Kinematics
 
