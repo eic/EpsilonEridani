@@ -8,9 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Topology.UniformSpace.Matrix
 
@@ -101,33 +98,30 @@ row `i` of `exp (u • A)` is `exp (u • A i i)` on the diagonal and zero elsew
 theorem exp_smul_apply_of_row_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
     (h : ∀ j, j ≠ i → A i j = 0) (u : 𝕂) (j : m) :
     NormedSpace.exp (u • A) i j = if i = j then NormedSpace.exp (u • A i i) else 0 := by
-  set a := A i i
-  -- entry `(i, j)` of `exp (s • A)` solves the scalar equation `g' = a * g`, since row `i` of `A`
-  -- is `a` on the diagonal
-  have hg (s : 𝕂) : HasDerivAt (fun s : 𝕂 => NormedSpace.exp (s • A) i j)
-      (a * NormedSpace.exp (s • A) i j) s := by
-    have hv := hasDerivAt_pi.1
-      ((hasDerivAt_id s).matrix_exp_smul_const_mulVec' A (Pi.single j 1)) i
-    rw [mulVec_mulVec] at hv
-    simp only [id, one_smul, mulVec_single_one, col_apply] at hv
-    rwa [Matrix.mul_apply, Finset.sum_eq_single i (fun k _ hk => by rw [h k hk, zero_mul])
-      (fun hi => absurd (Finset.mem_univ i) hi)] at hv
-  -- so `exp (s • -a) * g s` has derivative zero, `a` commuting with its own exponential
-  have hc (s : 𝕂) : HasDerivAt
-      (fun s : 𝕂 => NormedSpace.exp (s • -a) * NormedSpace.exp (s • A) i j) 0 s := by
-    have hcomm : Commute a (NormedSpace.exp (s • -a)) :=
-      ((Commute.refl a).neg_right.smul_right s).exp_right
-    convert (_root_.hasDerivAt_exp_smul_const' (-a) s).mul (hg s) using 1
-    rw [neg_mul, neg_mul, hcomm.eq, mul_assoc, neg_add_cancel]
-  have hconst := is_const_of_deriv_eq_zero (fun s => (hc s).differentiableAt)
-    (fun s => (hc s).deriv) u 0
-  simp only [zero_smul, NormedSpace.exp_zero, one_mul, Matrix.one_apply] at hconst
-  -- `exp (u • a)` inverts `exp (u • -a)`; `NormedSpace.exp_add_of_commute` is stated over `ℚ`
-  let : NormedAlgebra ℚ 𝔸 := NormedAlgebra.restrictScalars ℚ 𝕂 𝔸
-  have hinv : NormedSpace.exp (u • a) * NormedSpace.exp (u • -a) = 1 := by
-    rw [smul_neg, ← NormedSpace.exp_add_of_commute ((Commute.refl (u • a)).neg_right),
-      add_neg_cancel, NormedSpace.exp_zero]
-  rw [← one_mul (NormedSpace.exp (u • A) i j), ← hinv, mul_assoc, hconst, mul_ite, mul_one,
-    mul_zero]
+  -- row `i` of every power of `u • A` is that of the scalar diagonal matrix `u • A i i`
+  have hp (k : ℕ) : ((u • A) ^ k) i j = if i = j then (u • A i i) ^ k else 0 := by
+    induction k generalizing j with
+    | zero => rw [pow_zero, pow_zero, Matrix.one_apply]
+    | succ k ih =>
+      rw [pow_succ', Matrix.mul_apply, Finset.sum_eq_single i
+        (fun l _ hl => by rw [Matrix.smul_apply, h l hl, smul_zero, zero_mul])
+        (fun hi => absurd (Finset.mem_univ i) hi), ih, Matrix.smul_apply, pow_succ', mul_ite,
+        mul_zero]
+  -- so the exponential series agree entrywise. This is TauCeti's
+  -- `Matrix.exp_apply_eq_of_forall_pow_apply_eq`, whose module cannot be imported together with
+  -- `Physlib.Mathematics.ForMathlib.DataStructures.Matrix.LieTrace`: both declare `Matrix.det_exp`.
+  have hs : HasSum (fun k : ℕ => (k.factorial⁻¹ : 𝕂) • ((u • A) ^ k) i j)
+      (NormedSpace.exp (u • A) i j) := by
+    -- As in `Matrix.hasDerivAt_exp_smul_const'`, the `CompleteSpace` instance is passed
+    -- explicitly; the five `_` are exactly the `NontriviallyNormedField 𝕂`, `CharZero 𝕂`,
+    -- `ContinuousSMul ℚ 𝕂`, `NormedRing` and `NormedAlgebra 𝕂` instances.
+    open scoped Norms.Operator in
+    exact Pi.hasSum.1 (Pi.hasSum.1 (@NormedSpace.exp_series_hasSum_exp' 𝕂 (Matrix m m 𝔸)
+      _ _ _ _ _ (inferInstance : CompleteSpace (Matrix m m 𝔸)) (u • A)) i) j
+  simp only [hp, smul_ite, smul_zero] at hs
+  refine hs.unique ?_
+  split_ifs
+  · exact NormedSpace.exp_series_hasSum_exp' _
+  · exact hasSum_zero
 
 end Matrix
