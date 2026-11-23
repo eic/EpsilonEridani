@@ -74,11 +74,6 @@ lemma neutronNumber_def : nuc.neutronNumber = nuc.massNumber - nuc.protonNumber 
 theorem protonNumber_add_neutronNumber : nuc.protonNumber + nuc.neutronNumber = nuc.massNumber :=
   Nat.add_sub_cancel' nuc.protonNumber_le_massNumber
 
-/-- The neutron and proton numbers add up to the mass number. -/
-@[simp]
-theorem neutronNumber_add_protonNumber : nuc.neutronNumber + nuc.protonNumber = nuc.massNumber := by
-  rw [Nat.add_comm, protonNumber_add_neutronNumber]
-
 lemma neutronNumber_le_massNumber : nuc.neutronNumber ≤ nuc.massNumber :=
   Nat.sub_le _ _
 

@@ -106,6 +106,7 @@ namespace DensityProfile
 variable {nuc : Nucleus} (ρ : DensityProfile nuc)
 
 /-- The density of a density profile is integrable over space. -/
+@[fun_prop]
 lemma integrable : Integrable ρ.density := by
   -- The Bochner integral of a non-integrable function is `0`, so a nonzero integral forces
   -- integrability.
@@ -200,8 +201,9 @@ lemma gaussianDensity_nonneg {m : ℝ} (hm : 0 ≤ m) (R r : ℝ) : 0 ≤ gaussi
 
 /-- The Gaussian profile is continuous in the radius. -/
 @[fun_prop]
-lemma continuous_gaussianDensity (m R : ℝ) : Continuous (gaussianDensity m R) :=
-  continuous_const.mul (continuous_exp.comp ((continuous_id.div_const R).pow 2).neg)
+lemma continuous_gaussianDensity (m R : ℝ) : Continuous (gaussianDensity m R) := by
+  rw [funext (gaussianDensity_def m R)]
+  fun_prop
 
 /-- On space, the Gaussian profile is a multiple of `exp (-b ‖x‖²)` with `b = (R²)⁻¹`. -/
 lemma gaussianDensity_norm_eq (m R : ℝ) :
@@ -268,6 +270,13 @@ lemma woodsSaxonDensity_nonneg {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ
   rw [woodsSaxonDensity_def]
   exact mul_nonneg hρ₀ (Real.sigmoid_nonneg _)
 
+/-- The Woods–Saxon profile never exceeds its parameter `ρ₀`, the plateau value it approaches
+deep inside the nucleus. -/
+lemma woodsSaxonDensity_le {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
+    woodsSaxonDensity ρ₀ R a r ≤ ρ₀ := by
+  rw [woodsSaxonDensity_def]
+  exact mul_le_of_le_one_right hρ₀ (Real.sigmoid_le_one _)
+
 lemma woodsSaxonDensity_pos {ρ₀ : ℝ} (hρ₀ : 0 < ρ₀) (R a r : ℝ) :
     0 < woodsSaxonDensity ρ₀ R a r := by
   rw [woodsSaxonDensity_def]
@@ -275,9 +284,9 @@ lemma woodsSaxonDensity_pos {ρ₀ : ℝ} (hρ₀ : 0 < ρ₀) (R a r : ℝ) :
 
 /-- The Woods–Saxon profile is continuous in the radius, for every surface diffuseness. -/
 @[fun_prop]
-lemma continuous_woodsSaxonDensity (ρ₀ R a : ℝ) : Continuous (woodsSaxonDensity ρ₀ R a) :=
-  continuous_const.mul
-    (continuous_sigmoid.comp ((continuous_const.sub continuous_id).div_const a))
+lemma continuous_woodsSaxonDensity (ρ₀ R a : ℝ) : Continuous (woodsSaxonDensity ρ₀ R a) := by
+  rw [funext (woodsSaxonDensity_def ρ₀ R a)]
+  fun_prop
 
 /-- The Woods–Saxon profile is linear in its parameter `ρ₀`. -/
 lemma woodsSaxonDensity_eq_mul (ρ₀ R a r : ℝ) :
@@ -299,9 +308,9 @@ theorem integrable_woodsSaxonDensity_norm (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a)
   simp_rw [woodsSaxonDensity_eq_mul ρ₀]
   refine Integrable.const_mul ?_ ρ₀
   -- Dominate by `exp (R / a) * exp (-(a⁻¹ * ‖x‖))`, a multiple of the radial exponential.
-  refine ((TauCeti.integrable_exp_neg_mul_norm volume (inv_pos.2 ha)).const_mul
-    (exp (R / a))).mono' ((continuous_woodsSaxonDensity 1 R a).comp
-    continuous_norm).aestronglyMeasurable (.of_forall fun x => ?_)
+  have hdom : Integrable fun x : Space => exp (R / a) * exp (-(a⁻¹ * ‖x‖)) :=
+    (TauCeti.integrable_exp_neg_mul_norm volume (inv_pos.2 ha)).const_mul _
+  refine hdom.mono' (by fun_prop) (.of_forall fun x => ?_)
   rw [Real.norm_of_nonneg (woodsSaxonDensity_nonneg zero_le_one R a _)]
   calc woodsSaxonDensity 1 R a ‖x‖ ≤ 1 * exp (-((‖x‖ - R) / a)) :=
         woodsSaxonDensity_le_mul_exp zero_le_one R a ‖x‖
