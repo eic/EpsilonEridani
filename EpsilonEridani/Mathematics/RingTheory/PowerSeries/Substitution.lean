@@ -211,9 +211,7 @@ coefficient. -/
 @[simp]
 lemma coeff_one_toPowerSeries_inv (F : SubstGroup R) :
     coeff 1 F⁻¹.toPowerSeries = ((linearCoeff F)⁻¹ : Rˣ) := by
-  rw [toPowerSeries_inv, coeff_one_substInvOfIsUnit,
-    show F.isUnit_coeff_one_toPowerSeries.unit = linearCoeff F from
-      Units.ext (coe_linearCoeff F).symm]
+  rw [← coe_linearCoeff, map_inv]
 
 lemma mem_ker_linearCoeff_iff {F : SubstGroup R} :
     F ∈ linearCoeff.ker ↔ coeff 1 F.toPowerSeries = 1 := by

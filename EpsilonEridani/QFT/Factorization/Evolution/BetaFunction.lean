@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.RingTheory.PowerSeries.Derivative
-public import EpsilonEridani.Mathematics.Algebra.Group.Units.Basic
 public import EpsilonEridani.Mathematics.RingTheory.PowerSeries.Basic
 public import EpsilonEridani.Mathematics.RingTheory.PowerSeries.Substitution
 import Mathlib.Tactic.LinearCombination
@@ -146,18 +145,18 @@ lemma smul_eq_transformBeta (F : SubstGroup R) (β : R⟦X⟧) : F • β = tran
 /-- Redefining the coupling by `F` and then back by `F⁻¹` recovers the original beta function. -/
 @[simp]
 theorem transformBeta_inv_transformBeta (F : SubstGroup R) (β : R⟦X⟧) :
-    transformBeta F⁻¹ (transformBeta F β) = β :=
-  inv_smul_smul F β
+    transformBeta F⁻¹ (transformBeta F β) = β := by
+  simpa using inv_smul_smul F β
 
 /-- Redefining the coupling by `F⁻¹` and then by `F` recovers the original beta function. -/
 @[simp]
 theorem transformBeta_transformBeta_inv (F : SubstGroup R) (β : R⟦X⟧) :
-    transformBeta F (transformBeta F⁻¹ β) = β :=
-  smul_inv_smul F β
+    transformBeta F (transformBeta F⁻¹ β) = β := by
+  simpa using smul_inv_smul F β
 
 /-- A redefinition of the coupling determines the original beta function from the new one. -/
-theorem transformBeta_injective (F : SubstGroup R) : Function.Injective (transformBeta F) :=
-  MulAction.injective F
+theorem transformBeta_injective (F : SubstGroup R) : Function.Injective (transformBeta F) := by
+  simpa [Function.Injective] using MulAction.injective (α := SubstGroup R) (β := R⟦X⟧) F
 
 /-! ### The first three coefficients -/
 
@@ -235,10 +234,10 @@ theorem betaCoeff_zero_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X
 /-- The two-loop coefficient under a redefinition of the coupling: `β₁' = u⁻² β₁`, where
 `u = F'(0)`. -/
 theorem betaCoeff_one_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
-    betaCoeff (transformBeta F β) 1 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 2 * betaCoeff β 1 :=
-  (Units.eq_inv_pow_mul_iff_pow_mul_eq _ 2).mpr <| by
-    rw [SubstGroup.coe_linearCoeff]
-    exact coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
+    betaCoeff (transformBeta F β) 1 = ↑(SubstGroup.linearCoeff F)⁻¹ ^ 2 * betaCoeff β 1 := by
+  rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_inv_mul_iff_mul_eq,
+    Units.val_pow_eq_pow_val, SubstGroup.coe_linearCoeff]
+  exact coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta F hβ
 
 /-- The three-loop coefficient under a redefinition `F(a) = u a + c₁ a² + c₂ a³ + ⋯` of the
 coupling: `β₂' = u⁻⁵ (u² β₂ - u c₁ β₁ + (u c₂ - c₁²) β₀)`. -/
@@ -247,10 +246,10 @@ theorem betaCoeff_two_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (hβ : X 
       (coeff 1 F.toPowerSeries ^ 2 * betaCoeff β 2 -
         coeff 1 F.toPowerSeries * coeff 2 F.toPowerSeries * betaCoeff β 1 +
         (coeff 1 F.toPowerSeries * coeff 3 F.toPowerSeries - coeff 2 F.toPowerSeries ^ 2) *
-          betaCoeff β 0) :=
-  (Units.eq_inv_pow_mul_iff_pow_mul_eq _ 5).mpr <| by
-    rw [SubstGroup.coe_linearCoeff]
-    exact coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ
+          betaCoeff β 0) := by
+  rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_inv_mul_iff_mul_eq,
+    Units.val_pow_eq_pow_val, SubstGroup.coe_linearCoeff]
+  exact coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta F hβ
 
 /-! ### Scheme independence -/
 
@@ -352,9 +351,10 @@ private theorem pow_mul_betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β 
 `a' = 2a = α_s/(2π)`, `u = 2`, so `β₀` halves. -/
 theorem betaCoeff_transformBeta_substGroupRescale (u : Rˣ) (β : R⟦X⟧) (n : ℕ) :
     betaCoeff (transformBeta (SubstGroup.rescale u) β) n =
-      (↑u⁻¹ : R) ^ (n + 1) * betaCoeff β n :=
-  (Units.eq_inv_pow_mul_iff_pow_mul_eq u (n + 1)).mpr
-    (pow_mul_betaCoeff_transformBeta_substGroupRescale u β n)
+      (↑u⁻¹ : R) ^ (n + 1) * betaCoeff β n := by
+  rw [← Units.val_pow_eq_pow_val, inv_pow, Units.eq_inv_mul_iff_mul_eq,
+    Units.val_pow_eq_pow_val]
+  exact pow_mul_betaCoeff_transformBeta_substGroupRescale u β n
 
 end Evolution
 end Factorization
