@@ -34,7 +34,8 @@ origin, only by `j_0`.
 * `sq_sphericalBesselJ_le`: `j_l(x) ^ 2 ≤ 1 / (2 l + 1)`.
 * `abs_sphericalBesselJ_le_one` and `abs_sphericalBesselJ_lt_one`: `|j_l(x)| ≤ 1`, strictly for
   `l ≠ 0`.
-* `exists_abs_sphericalBesselJ_eq_one_iff`: some `|j_l(x)|` equals `1` if and only if `l = 0`.
+* `abs_sphericalBesselJ_eq_one_iff`: `|j_l(x)| = 1` if and only if `l = 0` and `x = 0`; and
+  `exists_abs_sphericalBesselJ_eq_one_iff`: some `|j_l(x)|` equals `1` if and only if `l = 0`.
 
 ## Implementation notes
 
@@ -44,7 +45,8 @@ Bonnet's recurrence for the Legendre polynomials, integrated against `e^{i x t}`
 (`Polynomial.add_two_smul_integral_legendre_add_two_smul`), becomes the derivative relation
 `(2 l + 3) j_{l + 1}' = (l + 1) j_l - (l + 2) j_{l + 2}`
 (`two_mul_add_three_mul_deriv_sphericalBesselJ_succ`), which determines `j_{l + 2}` from `j_l` and
-`j_{l + 1}`. The base case is the elementary integral `∫₋₁¹ e^{i x t} dt = 2 sin x / x`.
+`j_{l + 1}`. The base case is the elementary integral `∫₋₁¹ e^{i x t} dt = 2 sin x / x`
+(`integral_cexp_eq_two_mul_sinc`).
 
 ## References
 
@@ -60,25 +62,21 @@ open Polynomial EpsilonEridani.Polynomial
 
 namespace EpsilonEridani
 
-/-- The order-zero case: `∫₋₁¹ e^{i x t} dt = 2 sinc x`. -/
-private theorem integral_cexp_mul_legendre_zero (x : ℝ) :
-    ∫ t in (-1 : ℝ)..1, Complex.exp (I * x * t) * (((legendre 0).eval t : ℝ) : ℂ) =
-      2 * (Real.sinc x : ℂ) := by
-  simp only [legendre_zero, eval_one, Complex.ofReal_one, mul_one]
-  rcases eq_or_ne x 0 with rfl | hx
-  · norm_num
-  · -- rescale `t ↦ x t` to Mathlib's `∫₋ₓˣ e^{i u} du = 2 x sinc x`
-    have h := smul_integral_comp_mul_left (a := -1) (b := 1)
-      (fun u : ℝ => Complex.exp (u * I)) x
-    rw [mul_neg_one, mul_one, integral_exp_mul_I_eq_sinc] at h
-    have hx' : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx
-    rw [Complex.real_smul] at h
-    refine mul_left_cancel₀ hx' ?_
-    have e : ∫ t in (-1 : ℝ)..1, Complex.exp (I * x * t) =
-        ∫ t in (-1 : ℝ)..1, Complex.exp ((x * t : ℝ) * I) :=
-      integral_congr fun t _ => by push_cast; ring_nf
-    rw [e]
-    linear_combination h
+/-- Differentiating the representation at order `n`: if `∫₋₁¹ e^{i y t} P_n(t) dt = 2 i ^ n j_n(y)`
+for every `y`, then the `t`-weighted integral satisfies
+`i ∫₋₁¹ t e^{i x t} P_n(t) dt = 2 i ^ n j_n'(x)`. -/
+private theorem I_mul_integral_mul_cexp_mul_legendre {n : ℕ}
+    (h : ∀ y : ℝ, ∫ t in (-1 : ℝ)..1, Complex.exp (I * y * t) * (((legendre n).eval t : ℝ) : ℂ) =
+      2 * I ^ n * sphericalBesselJ n y) (x : ℝ) :
+    I * ∫ t in (-1 : ℝ)..1, (t : ℂ) * (Complex.exp (I * x * t) *
+      (((legendre n).eval t : ℝ) : ℂ)) = 2 * I ^ n * deriv (sphericalBesselJ n) x := by
+  have hj : HasDerivAt (fun y : ℝ => 2 * I ^ n * (sphericalBesselJ n y : ℂ))
+      (2 * I ^ n * deriv (sphericalBesselJ n) x) x :=
+    ((differentiable_sphericalBesselJ n x).hasDerivAt.ofReal_comp).const_mul _
+  rw [← intervalIntegral.integral_const_mul, ← (hasDerivAt_integral_cexp_mul
+    (f := fun t => (((legendre n).eval t : ℝ) : ℂ)) (by fun_prop) x).unique
+    (hj.congr_of_eventuallyEq (.of_forall h))]
+  exact integral_congr fun t _ => by ring
 
 /-- **The Legendre integral representation of the spherical Bessel functions**:
 `∫₋₁¹ e^{i x t} P_l(t) dt = 2 i ^ l j_l(x)` for every real `x` (DLMF 10.54.2). Multiplied by
@@ -86,40 +84,27 @@ private theorem integral_cexp_mul_legendre_zero (x : ℝ) :
 theorem integral_cexp_mul_legendre (l : ℕ) (x : ℝ) :
     ∫ t in (-1 : ℝ)..1, Complex.exp (I * x * t) * (((legendre l).eval t : ℝ) : ℂ) =
       2 * I ^ l * sphericalBesselJ l x := by
-  -- the derivative of the right side, through the derivative of `j_l`
-  have hj : ∀ (l : ℕ) (y : ℝ), HasDerivAt (fun y : ℝ => 2 * I ^ l * (sphericalBesselJ l y : ℂ))
-      (2 * I ^ l * deriv (sphericalBesselJ l) y) y := fun l y =>
-    ((differentiable_sphericalBesselJ l y).hasDerivAt.ofReal_comp).const_mul _
-  -- if the representation holds at order `n`, differentiating it identifies the
-  -- `t`-weighted integral of order `n` with the derivative of `j_n`
-  have hdiff : ∀ (n : ℕ), (∀ y : ℝ, ∫ t in (-1 : ℝ)..1, Complex.exp (I * y * t) *
-      (((legendre n).eval t : ℝ) : ℂ) = 2 * I ^ n * sphericalBesselJ n y) → ∀ y : ℝ,
-      I * ∫ t in (-1 : ℝ)..1, (t : ℂ) * (Complex.exp (I * y * t) *
-        (((legendre n).eval t : ℝ) : ℂ)) =
-        2 * I ^ n * deriv (sphericalBesselJ n) y := fun n h y => by
-    rw [← intervalIntegral.integral_const_mul, ← (hasDerivAt_integral_cexp_mul
-      (f := fun t => (((legendre n).eval t : ℝ) : ℂ)) (by fun_prop) (-1) 1 y).unique
-      ((hj n y).congr_of_eventuallyEq (.of_forall fun z => h z))]
-    exact integral_congr fun t _ => by ring
+  have h0 : ∀ y : ℝ, ∫ t in (-1 : ℝ)..1, Complex.exp (I * y * t) *
+      (((legendre 0).eval t : ℝ) : ℂ) = 2 * I ^ 0 * sphericalBesselJ 0 y := fun y => by
+    simpa using integral_cexp_eq_two_mul_sinc y
   induction l using Nat.twoStepInduction generalizing x with
-  | zero => simpa using integral_cexp_mul_legendre_zero x
+  | zero => exact h0 x
   | one =>
-    have h0 := hdiff 0 (fun y => by simpa using integral_cexp_mul_legendre_zero y) x
+    have h := I_mul_integral_mul_cexp_mul_legendre h0 x
     simp only [legendre_zero, legendre_one, eval_one, eval_X, Complex.ofReal_one, mul_one,
-      pow_zero, pow_one, deriv_sphericalBesselJ_zero, Complex.ofReal_neg] at h0 ⊢
-    -- multiply by `i`: the left side becomes `i ∫ t e^{i x t} = -2 j_1(x)`, and `i · i = -1`
+      pow_zero, pow_one, deriv_sphericalBesselJ_zero, Complex.ofReal_neg] at h ⊢
+    -- multiply by `i`: the left side becomes `i ∫ t e^{i x t} = -2 j_1(x)`, the right side
+    -- `i · 2 i j_1(x) = 2 i ^ 2 j_1(x)`, and `i ^ 2 = -1`
     refine mul_left_cancel₀ Complex.I_ne_zero ?_
-    rw [integral_congr fun t _ => mul_comm _ _, h0,
-      show I * (2 * I * (sphericalBesselJ 1 x : ℂ)) = 2 * (I * I) * sphericalBesselJ 1 x by ring,
-      Complex.I_mul_I]
-    ring
+    rw [integral_congr fun t _ => mul_comm _ _, h]
+    linear_combination (-2 * (sphericalBesselJ 1 x : ℂ)) * Complex.I_sq
   | more n h₀ h₁ =>
     set K := ∫ t in (-1 : ℝ)..1, (t : ℂ) * (Complex.exp (I * x * t) *
       (((legendre (n + 1)).eval t : ℝ) : ℂ))
     -- differentiating the order-`n + 1` representation: `K = 2 i ^ n j_{n + 1}'(x)`
     have hK : K = 2 * I ^ n * deriv (sphericalBesselJ (n + 1)) x := by
       refine mul_left_cancel₀ Complex.I_ne_zero ?_
-      rw [hdiff (n + 1) h₁ x, pow_succ]
+      rw [I_mul_integral_mul_cexp_mul_legendre h₁ x, pow_succ]
       ring
     -- Bonnet's recurrence against the weight `e^{i x t}`
     have hr := add_two_smul_integral_legendre_add_two_smul n
@@ -174,12 +159,13 @@ theorem sq_sphericalBesselJ_le (l : ℕ) (x : ℝ) : sphericalBesselJ l x ^ 2 �
       measure_Icc_lt_top.ne ((memLp_two_iff_integrable_sq
         (legendre l).continuous.aestronglyMeasurable).2
         (by fun_prop : Continuous _).integrableOn_Icc)
-    simp only [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le
-      (by norm_num : (-1 : ℝ) ≤ 1), Real.volume_real_Icc_of_le (by norm_num : (-1 : ℝ) ≤ 1),
-      sq] at h
-    norm_num at h
-    rw [sq]
-    exact h
+    have hI : volume.real (Set.Icc (-1 : ℝ) 1) = 2 := by
+      rw [Real.volume_real_Icc_of_le (by norm_num)]
+      norm_num
+    have e : ∀ g : ℝ → ℝ, ∫ t in Set.Icc (-1 : ℝ) 1, g t = ∫ t in (-1 : ℝ)..1, g t := fun g => by
+      rw [integral_Icc_eq_integral_Ioc, intervalIntegral.integral_of_le (by norm_num)]
+    rw [hI, e, e] at h
+    exact h.trans_eq (congrArg (2 * ·) (integral_congr fun t _ => sq _))
   have hB' : B * (2 * l + 1) = 2 := by
     rw [hB]
     field_simp
@@ -201,11 +187,21 @@ theorem abs_sphericalBesselJ_lt_one {l : ℕ} (hl : l ≠ 0) (x : ℝ) : |spheri
   have : (1 : ℝ) ≤ l := Nat.one_le_cast.mpr (Nat.one_le_iff_ne_zero.mpr hl)
   exact (sq_sphericalBesselJ_le l x).trans_lt ((div_lt_one (by positivity)).mpr (by linarith))
 
-/-- The bound `|j_l(x)| ≤ 1` is attained only at order zero: some `|j_l(x)|` equals `1` if and
-only if `l = 0`, and then at `x = 0`, where `j_0(0) = 1`. -/
+/-- The bound `|j_l(x)| ≤ 1` is attained only by `j_0` at the origin: `|j_l(x)| = 1` if and only
+if `l = 0` and `x = 0`. -/
+theorem abs_sphericalBesselJ_eq_one_iff (l : ℕ) (x : ℝ) :
+    |sphericalBesselJ l x| = 1 ↔ l = 0 ∧ x = 0 := by
+  refine ⟨fun h => ?_, fun ⟨hl, hx⟩ => by simp [hl, hx]⟩
+  obtain rfl : l = 0 := by_contra fun hl => (abs_sphericalBesselJ_lt_one hl x).ne h
+  refine ⟨rfl, by_contra fun hx => ?_⟩
+  -- away from the origin `|j_0(x)| = |sin x| / |x| < 1`
+  rw [sphericalBesselJ_zero, Real.sinc_of_ne_zero hx, abs_div,
+    div_eq_one_iff_eq (abs_ne_zero.mpr hx)] at h
+  exact (Real.abs_sin_lt_abs hx).ne h
+
+/-- Some `|j_l(x)|` equals `1` if and only if `l = 0`. -/
 theorem exists_abs_sphericalBesselJ_eq_one_iff (l : ℕ) :
     (∃ x, |sphericalBesselJ l x| = 1) ↔ l = 0 := by
-  refine ⟨fun ⟨x, hx⟩ => by_contra fun hl => (abs_sphericalBesselJ_lt_one hl x).ne hx,
-    fun hl => ⟨0, by simp [hl]⟩⟩
+  simp [abs_sphericalBesselJ_eq_one_iff]
 
 end EpsilonEridani

@@ -301,18 +301,21 @@ theorem integral_legendre_mul_legendre_of_ne {m n : ℕ} (h : m ≠ n) :
     ∫ x in (-1 : ℝ)..1, (legendre m).eval x * (legendre n).eval x = 0)).resolve_left
     (sub_ne_zero.mpr hmn.symm)
 
-/-- **Bonnet's recurrence against a weight**: for a continuous `w : ℝ → E` with values in a real
-normed space, Bonnet's recurrence `(n + 2) Pₙ₊₂ = (2n + 3) X Pₙ₊₁ - (n + 1) Pₙ` integrated
-against `w` over `[-1, 1]`. With `w` a Legendre polynomial it computes the Legendre normalisation;
-with `w = e^{i x t}` it relates the Fourier transforms of consecutive Legendre polynomials. -/
+/-- **Bonnet's recurrence against a weight**: for `w : ℝ → E` with values in a real normed space
+and continuous on `[-1, 1]`, Bonnet's recurrence `(n + 2) Pₙ₊₂ = (2n + 3) X Pₙ₊₁ - (n + 1) Pₙ`
+integrated against `w` over `[-1, 1]`. With `w` a Legendre polynomial it computes the Legendre
+normalisation; with `w = e^{i x t}` it relates the Fourier transforms of consecutive Legendre
+polynomials. -/
 theorem add_two_smul_integral_legendre_add_two_smul {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (n : ℕ) {w : ℝ → E} (hw : Continuous w) :
+    [NormedSpace ℝ E] (n : ℕ) {w : ℝ → E}
+    (hw : ContinuousOn w (Set.Icc (-1) 1)) :
     ((n : ℝ) + 2) • ∫ x in (-1 : ℝ)..1, (legendre (n + 2)).eval x • w x =
       (2 * n + 3 : ℝ) • (∫ x in (-1 : ℝ)..1, (x * (legendre (n + 1)).eval x) • w x) -
         ((n : ℝ) + 1) • ∫ x in (-1 : ℝ)..1, (legendre n).eval x • w x := by
+  have hw' : ContinuousOn w (Set.uIcc (-1) 1) := by rwa [Set.uIcc_of_le (by norm_num)]
   simp_rw [← intervalIntegral.integral_smul]
-  rw [← integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
-    (Continuous.intervalIntegrable (by fun_prop) _ _)]
+  rw [← integral_sub (ContinuousOn.intervalIntegrable (by fun_prop))
+    (ContinuousOn.intervalIntegrable (by fun_prop))]
   refine integral_congr fun x _ => ?_
   rw [smul_smul, smul_smul, smul_smul, ← sub_smul]
   congr 1
@@ -330,8 +333,10 @@ theorem integral_legendre_mul_self (n : ℕ) :
   | more n _ h₁ =>
     -- pair the recurrence for `Pₙ₊₂` with `Pₙ₊₂`, and the one for `Pₙ₊₃` with `Pₙ₊₁`;
     -- both produce the mixed integral `K = ∫ x Pₙ₊₁ Pₙ₊₂`
-    have hA := add_two_smul_integral_legendre_add_two_smul n (legendre (n + 2)).continuous
-    have hB := add_two_smul_integral_legendre_add_two_smul (n + 1) (legendre (n + 1)).continuous
+    have hA := add_two_smul_integral_legendre_add_two_smul n
+      (legendre (n + 2)).continuous.continuousOn
+    have hB := add_two_smul_integral_legendre_add_two_smul (n + 1)
+      (legendre (n + 1)).continuous.continuousOn
     simp only [smul_eq_mul] at hA hB
     rw [integral_legendre_mul_legendre_of_ne (by omega : n ≠ n + 2), mul_zero, sub_zero] at hA
     rw [integral_legendre_mul_legendre_of_ne (by omega : n + 1 + 2 ≠ n + 1), h₁, mul_zero] at hB
