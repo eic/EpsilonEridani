@@ -7,8 +7,6 @@ module
 
 public import EpsilonEridani.Particles.Parton.PDF.Basic
 public import EpsilonEridani.QFT.Factorization.Convolution.Collinear
-public import EpsilonEridani.Mathematics.Probability.Distributions.Beta
-import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 /-!
 
 # The Mellin transform of a collinear convolution
@@ -62,7 +60,6 @@ transform. Extending the theorem to distributional kernels is a separate develop
 - C. Natural indices and the bridge to `mellinMoment`
 - D. The convolution theorem
 - E. Moment-space corollaries
-- F. The Beta density
 
 -/
 
@@ -108,6 +105,20 @@ theorem mellinDis_def {f : ℝ → ℝ} {N : ℂ} :
     mellinDis f N = ∫ x in Set.Ioc (0 : ℝ) 1, (x : ℂ) ^ (N - 1) * (f x : ℂ) :=
   (rfl)
 
+/-- The Mellin transform only sees `f` on the open unit interval. -/
+theorem mellinDis_congr {f g : ℝ → ℝ} (h : Set.EqOn f g (Set.Ioo (0 : ℝ) 1)) (N : ℂ) :
+    mellinDis f N = mellinDis g N := by
+  rw [mellinDis_def, mellinDis_def, MeasureTheory.integral_Ioc_eq_integral_Ioo,
+    MeasureTheory.integral_Ioc_eq_integral_Ioo]
+  exact MeasureTheory.setIntegral_congr_fun measurableSet_Ioo fun x hx => by rw [h hx]
+
+/-- Convergence of the Mellin transform only depends on `f` on the open unit interval. -/
+theorem mellinDisConvergent_congr {f g : ℝ → ℝ} (h : Set.EqOn f g (Set.Ioo (0 : ℝ) 1)) {N : ℂ} :
+    MellinDisConvergent f N ↔ MellinDisConvergent g N := by
+  rw [mellinDisConvergent_def, mellinDisConvergent_def, integrableOn_Ioc_iff_integrableOn_Ioo,
+    integrableOn_Ioc_iff_integrableOn_Ioo]
+  exact MeasureTheory.integrableOn_congr_fun (fun x hx => by rw [h hx]) measurableSet_Ioo
+
 /-- The Mellin transform of the zero distribution vanishes. -/
 lemma mellinDis_zero (N : ℂ) : mellinDis (fun _ => 0) N = 0 := by
   simp [mellinDis]
@@ -118,27 +129,32 @@ lemma mellinDis_zero (N : ℂ) : mellinDis (fun _ => 0) N = 0 := by
 
 -/
 
+/-- The Mellin integrand of `c * f` is `c` times the Mellin integrand of `f`. -/
+private lemma cpow_mul_ofReal_const_mul (c : ℝ) (f : ℝ → ℝ) (N : ℂ) :
+    (fun x : ℝ => (x : ℂ) ^ (N - 1) * ((c * f x : ℝ) : ℂ))
+      = fun x : ℝ => (c : ℂ) * ((x : ℂ) ^ (N - 1) * (f x : ℂ)) := by
+  funext x
+  push_cast
+  ring
+
 /-- The Mellin transform is homogeneous. No convergence hypothesis is needed: both sides are the
 same Bochner integral. -/
 lemma mellinDis_const_mul (c : ℝ) (f : ℝ → ℝ) (N : ℂ) :
     mellinDis (fun x => c * f x) N = (c : ℂ) * mellinDis f N := by
-  have h : (fun x : ℝ => (x : ℂ) ^ (N - 1) * ((c * f x : ℝ) : ℂ))
-      = fun x : ℝ => (c : ℂ) • ((x : ℂ) ^ (N - 1) * (f x : ℂ)) := by
-    funext x
-    simp only [Complex.ofReal_mul, smul_eq_mul]
-    ring
-  rw [mellinDis, h, MeasureTheory.integral_smul, mellinDis, smul_eq_mul]
+  rw [mellinDis, cpow_mul_ofReal_const_mul, MeasureTheory.integral_const_mul, mellinDis]
 
 /-- Convergence of the Mellin transform is preserved by constant multiples. -/
 lemma MellinDisConvergent.const_mul {f : ℝ → ℝ} {N : ℂ} (h : MellinDisConvergent f N) (c : ℝ) :
     MellinDisConvergent (fun x => c * f x) N := by
-  rw [mellinDisConvergent_def] at h ⊢
-  have hc : MeasureTheory.IntegrableOn
-      (fun x : ℝ => (c : ℂ) * ((x : ℂ) ^ (N - 1) * (f x : ℂ))) (Set.Ioc (0 : ℝ) 1) :=
-    h.const_mul _
-  refine hc.congr_fun (fun x _ => ?_) measurableSet_Ioc
-  simp only [Complex.ofReal_mul]
-  ring
+  rw [mellinDisConvergent_def, cpow_mul_ofReal_const_mul]
+  exact (mellinDisConvergent_def.mp h).const_mul _
+
+/-- For a nonzero constant `c`, the transform of `c * f` converges exactly where that of `f`
+does. -/
+lemma mellinDisConvergent_const_mul_iff {f : ℝ → ℝ} {N : ℂ} {c : ℝ} (hc : c ≠ 0) :
+    MellinDisConvergent (fun x => c * f x) N ↔ MellinDisConvergent f N := by
+  refine ⟨fun h => ?_, fun h => h.const_mul c⟩
+  simpa [inv_mul_cancel_left₀ hc] using h.const_mul c⁻¹
 
 /-- The Mellin transform is additive on the convergence strip. -/
 lemma mellinDis_add (f g : ℝ → ℝ) (N : ℂ)
@@ -393,105 +409,6 @@ theorem mellinMoment_convolveAt {Flavor : Type} (C : ℝ → ℝ)
   congr 1
   simp only [EpsilonEridani.Particles.Parton.PDF.mellinMoment]
   rw [MeasureTheory.integral_Icc_eq_integral_Ioc]
-
-/-!
-
-## F. The Beta density
-
-The density `x ^ (a - 1) (1 - x) ^ (b - 1) / Β(a, b)` of the Beta distribution,
-`ProbabilityTheory.betaPDFReal a b`, is the standard shape of a parton or lepton density at the
-endpoints of `(0,1]`. For `0 < b` its Mellin transform is a ratio of Gamma functions, on the
-half plane `1 - a < Re N` where it converges (`mellinDis_betaPDFReal`); when `Β(a, b) ≠ 0` this
-half plane is exactly the region of convergence (`mellinDisConvergent_betaPDFReal_iff`). At
-`N = 1` the ratio is one, which is the normalisation of the density (`mellinDis_betaPDFReal_one`).
-
-`mellinDis_betaPDFReal` and `mellinDisConvergent_betaPDFReal` are the complex-index versions of
-TauCeti's real-exponent moments of the Beta distribution:
-`TauCeti.Probability.integral_rpow_mul_one_sub_rpow_betaMeasure` gives
-`∫ x ^ q (1 - x) ^ s` against the Beta measure as `Β(a + q, b + s) / Β(a, b)` (the real-`N` case
-is `q = N - 1`, `s = 0`), and `TauCeti.Probability.integrable_rpow_mul_one_sub_rpow_betaMeasure_iff`
-is the matching integrability criterion `0 < a + q ∧ 0 < b + s`, whose `s = 0` case is the real
-trace of the half plane above; `mellinDisConvergent_betaPDFReal_iff` reduces to TauCeti's
-`TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff`.
-`TauCeti.Probability.integral_pow_betaMeasure` is their natural-index case, the raw moments as a
-quotient of Gamma functions. The proofs follow the same route through Euler's beta integral.
-
--/
-
-/-- For `0 < b`, the Mellin transform of the Beta density converges on the half plane
-`1 - a < Re N`. -/
-theorem mellinDisConvergent_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ}
-    (hN : 0 < N.re + a - 1) :
-    MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N := by
-  have h := (Complex.betaIntegral_convergent (u := N + a - 1) (v := b) (by simpa using hN)
-    (by simpa using hb)).const_mul ((1 / ProbabilityTheory.beta a b : ℝ) : ℂ)
-  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one,
-    integrableOn_Ioc_iff_integrableOn_Ioo] at h
-  rw [mellinDisConvergent_def, integrableOn_Ioc_iff_integrableOn_Ioo]
-  exact h.congr_fun (fun x hx => (cpow_mul_betaPDFReal_of_mem_Ioo a b N hx).symm)
-    measurableSet_Ioo
-
-/-- For `0 < b` and `Β(a, b) ≠ 0` (for instance `0 < a`), the Mellin transform of the Beta density
-converges exactly on the half plane `1 - a < Re N`. When `Β(a, b) = 0` the density is identically
-zero and its transform converges everywhere, so the hypothesis cannot be dropped. -/
-theorem mellinDisConvergent_betaPDFReal_iff {a b : ℝ} (hab : ProbabilityTheory.beta a b ≠ 0)
-    (hb : 0 < b) {N : ℂ} :
-    MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N ↔ 0 < N.re + a - 1 := by
-  -- Pass to the norm of the integrand, which on `(0, 1)` is `|1 / Β(a, b)|` times the real
-  -- Beta integrand `x ^ ((Re N + a - 1) - 1) (1 - x) ^ (b - 1)`, and apply TauCeti's sharp
-  -- integrability criterion for the latter.
-  rw [mellinDisConvergent_def, MeasureTheory.IntegrableOn,
-    ← MeasureTheory.integrable_norm_iff (by fun_prop), ← MeasureTheory.IntegrableOn,
-    integrableOn_Ioc_iff_integrableOn_Ioo,
-    MeasureTheory.integrableOn_congr_fun (g := fun x : ℝ => |1 / ProbabilityTheory.beta a b| *
-      (x ^ ((N.re + a - 1) - 1) * (1 - x) ^ (b - 1))) _ measurableSet_Ioo,
-    MeasureTheory.IntegrableOn, MeasureTheory.integrable_const_mul_iff
-      (isUnit_iff_ne_zero.mpr (by simpa using hab)), ← MeasureTheory.IntegrableOn,
-    TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff]
-  · simp [hb]
-  · intro x hx
-    dsimp only
-    rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hx.1, Complex.norm_real,
-      Real.norm_eq_abs, betaPDFReal_of_mem_Ioo a b hx, abs_mul, abs_mul,
-      abs_of_pos (Real.rpow_pos_of_pos hx.1 _),
-      abs_of_pos (Real.rpow_pos_of_pos (sub_pos.mpr hx.2) _),
-      show (N.re + a - 1) - 1 = (N - 1).re + (a - 1) by simp; ring,
-      Real.rpow_add hx.1]
-    ring
-
-/-- **Mellin moments of the Beta density.** For `0 < b`, on the half plane `1 - a < Re N`,
-`∫_{(0,1]} x ^ (N - 1) x ^ (a - 1) (1 - x) ^ (b - 1) dx / Β(a, b)
-  = Γ(N + a - 1) Γ(a + b) / (Γ(a) Γ(N + a + b - 1))`,
-the ratio `Β(N + a - 1, b) / Β(a, b)` of Beta functions written through the Gamma function. -/
-theorem mellinDis_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ} (hN : 0 < N.re + a - 1) :
-    mellinDis (ProbabilityTheory.betaPDFReal a b) N =
-      Complex.Gamma (N + a - 1) * Complex.Gamma (a + b) /
-        (Complex.Gamma a * Complex.Gamma (N + a + b - 1)) := by
-  have hu : 0 < (N + a - 1).re := by simpa using hN
-  have hv : 0 < (b : ℂ).re := by simpa using hb
-  have hΓb : Complex.Gamma b ≠ 0 := Complex.Gamma_ne_zero_of_re_pos hv
-  have hB := Complex.betaIntegral_eq_Gamma_mul_div _ _ hu hv
-  rw [Complex.betaIntegral, intervalIntegral.integral_of_le zero_le_one,
-    MeasureTheory.integral_Ioc_eq_integral_Ioo] at hB
-  rw [mellinDis, MeasureTheory.integral_Ioc_eq_integral_Ioo,
-    MeasureTheory.setIntegral_congr_fun measurableSet_Ioo
-      (fun x hx => cpow_mul_betaPDFReal_of_mem_Ioo a b N hx),
-    MeasureTheory.integral_const_mul, hB, ProbabilityTheory.beta]
-  push_cast
-  simp only [← Complex.Gamma_ofReal]
-  rw [show N + a - 1 + b = N + a + b - 1 by ring]
-  push_cast
-  field_simp
-
-/-- **The Beta density is normalised**: its Mellin transform at `N = 1` is one. -/
-@[simp]
-theorem mellinDis_betaPDFReal_one {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    mellinDis (ProbabilityTheory.betaPDFReal a b) 1 = 1 := by
-  have hΓa : Complex.Gamma a ≠ 0 := Complex.Gamma_ne_zero_of_re_pos (by simpa using ha)
-  have hΓab : Complex.Gamma (a + b) ≠ 0 :=
-    Complex.Gamma_ne_zero_of_re_pos (by simpa using add_pos ha hb)
-  rw [mellinDis_betaPDFReal hb (by simpa using ha), add_sub_cancel_left,
-    show (1 : ℂ) + a + b - 1 = a + b by ring, div_self (mul_ne_zero hΓa hΓab)]
 
 end Convolution
 end Factorization
