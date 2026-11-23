@@ -9,12 +9,9 @@ public import EpsilonEridani.Mathematics.SpecialFunctions.SigmoidExtensions
 public import EpsilonEridani.Particles.Nuclei.Basic
 public import Physlib.SpaceAndTime.Space.Module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Physlib.SpaceAndTime.Space.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
-import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -155,6 +152,7 @@ lemma hardSphereDensity_nonneg {m R : ℝ} (hm : 0 ≤ m) (hR : 0 ≤ R) (r : �
   exact indicator_nonneg (fun _ _ => by positivity) r
 
 /-- The hard-sphere profile is measurable in the radius. -/
+@[fun_prop]
 lemma measurable_hardSphereDensity (m R : ℝ) : Measurable (hardSphereDensity m R) :=
   measurable_const.indicator measurableSet_Iic
 
@@ -169,6 +167,7 @@ lemma hardSphereDensity_norm_eq_indicator (m R : ℝ) :
   · simp [hx, hardSphereDensity_of_gt (not_le.1 hx)]
 
 /-- The hard-sphere profile is integrable over space. -/
+@[fun_prop]
 theorem integrable_hardSphereDensity_norm (m R : ℝ) :
     Integrable fun x : Space => hardSphereDensity m R ‖x‖ := by
   rw [hardSphereDensity_norm_eq_indicator]
@@ -200,6 +199,7 @@ lemma gaussianDensity_nonneg {m : ℝ} (hm : 0 ≤ m) (R r : ℝ) : 0 ≤ gaussi
   positivity
 
 /-- The Gaussian profile is continuous in the radius. -/
+@[fun_prop]
 lemma continuous_gaussianDensity (m R : ℝ) : Continuous (gaussianDensity m R) :=
   continuous_const.mul (continuous_exp.comp ((continuous_id.div_const R).pow 2).neg)
 
@@ -222,6 +222,7 @@ theorem integral_gaussianDensity_norm (m : ℝ) {R : ℝ} (hR : R ≠ 0) :
   exact div_mul_cancel₀ m hc.ne'
 
 /-- The Gaussian profile is integrable over space. -/
+@[fun_prop]
 theorem integrable_gaussianDensity_norm (m R : ℝ) :
     Integrable fun x : Space => gaussianDensity m R ‖x‖ := by
   rcases eq_or_ne R 0 with rfl | hR
@@ -273,6 +274,7 @@ lemma woodsSaxonDensity_pos {ρ₀ : ℝ} (hρ₀ : 0 < ρ₀) (R a r : ℝ) :
   exact mul_pos hρ₀ (Real.sigmoid_pos _)
 
 /-- The Woods–Saxon profile is continuous in the radius, for every surface diffuseness. -/
+@[fun_prop]
 lemma continuous_woodsSaxonDensity (ρ₀ R a : ℝ) : Continuous (woodsSaxonDensity ρ₀ R a) :=
   continuous_const.mul
     (continuous_sigmoid.comp ((continuous_const.sub continuous_id).div_const a))
@@ -291,6 +293,7 @@ lemma woodsSaxonDensity_le_mul_exp {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r :
 
 /-- The Woods–Saxon profile is integrable over space whenever the surface diffuseness is
 positive. -/
+@[fun_prop]
 theorem integrable_woodsSaxonDensity_norm (ρ₀ R : ℝ) {a : ℝ} (ha : 0 < a) :
     Integrable fun x : Space => woodsSaxonDensity ρ₀ R a ‖x‖ := by
   simp_rw [woodsSaxonDensity_eq_mul ρ₀]

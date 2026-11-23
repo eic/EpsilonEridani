@@ -21,6 +21,7 @@ public section
 namespace Real
 
 /-- The logistic function is bounded by the exponential: `Real.sigmoid x ≤ Real.exp x`. -/
+@[bound]
 lemma sigmoid_le_exp (x : ℝ) : sigmoid x ≤ exp x := by
   calc sigmoid x = (1 + exp (-x))⁻¹ := sigmoid_def x
     _ ≤ (exp (-x))⁻¹ := inv_anti₀ (exp_pos _) (le_add_of_nonneg_left zero_le_one)
