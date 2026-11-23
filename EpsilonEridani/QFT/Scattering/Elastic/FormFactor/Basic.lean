@@ -374,7 +374,8 @@ theorem formFactor_eq_of_apply_eq_smul (hF : HasFormFactor g m2 J F) {p p' : V}
 /-- The forward matrix element of a family with a form factor is `2 F(0) p`. -/
 theorem apply_self (hF : HasFormFactor g m2 J F) {p : V} (hp : g p p = m2) :
     J p p = (2 * F 0) • p := by
-  rw [hF p p hp hp, sub_self, map_zero, ← two_smul ℝ p, smul_smul, mul_comm]
+  rw [hF p p hp hp, sub_self, map_zero]
+  module
 
 /-- **Charge normalisation.** The form factor at zero momentum transfer is `e` exactly when the
 forward matrix element at a non-zero momentum `p` on the mass shell is `2 e p`. That forward

@@ -234,10 +234,10 @@ lemma isSpectatorSplit_of_gram_ne_zero (g : Bilin V) {a b : V}
   set y := (g a a * g b v - g b a * g a v) / (g a a * g b b - g a b * g b a)
   refine ⟨x, y, v - x • a - y • b, ?_, ?_, by abel⟩
   · simp only [map_sub, map_smul, smul_eq_mul, x, y]
-    field_simp
+    field_simp [h']
     ring
   · simp only [map_sub, map_smul, smul_eq_mul, x, y]
-    field_simp
+    field_simp [h']
     ring
 
 /-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`. -/
