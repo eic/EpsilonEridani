@@ -445,22 +445,9 @@ lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
 part is spacelike. -/
 lemma boost_two_inr_two_pos_iff {q : Vector 3} (hq : plusComponent q * minusComponent q < 0)
     (β : ℝ) (hβ : |β| < 1) : 0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
-  rw [boost_inr_self_pos_iff]
-  have hq' : |q (Sum.inl 0)| < |q (Sum.inr 2)| := by
-    rw [plusComponent_mul_minusComponent] at hq
-    exact sq_lt_sq.1 (by linarith)
-  -- `|β q⁰| < |q³|`, so `β q⁰ < q³` exactly when `0 < q³`.
-  have h : |β * q (Sum.inl 0)| < |q (Sum.inr 2)| := by
-    rw [abs_mul]
-    exact (mul_le_of_le_one_left (abs_nonneg _) hβ.le).trans_lt hq'
-  constructor
-  · intro hlt
-    refine lt_of_not_ge fun hle => ?_
-    rw [abs_of_nonpos hle] at h
-    linarith [neg_abs_le (β * q (Sum.inl 0))]
-  · intro hpos
-    rw [abs_of_pos hpos] at h
-    exact (le_abs_self _).trans_lt h
+  refine boost_inr_self_pos_iff_of_abs_le 2 hβ (sq_le_sq.1 ?_)
+  rw [plusComponent_mul_minusComponent] at hq
+  linarith
 
 end LongitudinalBoost
 

@@ -80,7 +80,8 @@ asymmetries quoted in the two conventions differ.
 * `AzimuthalFrame.trento_boost_two`, `AzimuthalFrame.azimuth_trento_boost_two`: the Trento frame
   and the azimuths it defines are invariant under boosts along the photon direction.
 * `AzimuthalFrame.azimuth_negOrientation`: the opposite orientation negates every azimuth.
-* `AzimuthalFrame.sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation`,
+* `AzimuthalFrame.zsmul_azimuth_add_zsmul_azimuth_negOrientation`,
+  `AzimuthalFrame.sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation`,
   `AzimuthalFrame.cos_zsmul_azimuth_add_zsmul_azimuth_negOrientation`,
   `AzimuthalFrame.mul_cos_add_mul_sin_negOrientation`,
   `AzimuthalFrame.sum_cos_add_sin_negOrientation`: under the opposite orientation the sine
@@ -194,8 +195,11 @@ lemma orientation_negOrientation (F : AzimuthalFrame) :
 lemma negOrientation_negOrientation (F : AzimuthalFrame) :
     F.negOrientation.negOrientation = F := by
   ext1
-  · simp
-  · exact neg_neg F.orientation
+  · rw [leptonDir_negOrientation, leptonDir_negOrientation]
+  · rw [orientation_negOrientation, orientation_negOrientation]
+    -- `simp` and `rw [neg_neg]` do not see `Orientation`'s negation as an `InvolutiveNeg`
+    -- instance syntactically; `Module.Ray`'s `neg_neg` applies by unification.
+    exact neg_neg F.orientation
 
 /-- Reversing the orientation negates every azimuth. -/
 @[simp]
@@ -204,21 +208,25 @@ lemma azimuth_negOrientation (F : AzimuthalFrame) (v : E²) :
   rw [azimuth_def, azimuth_def, orientation_negOrientation, leptonDir_negOrientation,
     Orientation.oangle_neg_orientation_eq_neg]
 
+/-- Under the opposite orientation every harmonic `m φ_h + n φ_S` changes sign. -/
+lemma zsmul_azimuth_add_zsmul_azimuth_negOrientation (F : AzimuthalFrame) (m n : ℤ) (Ph S : E²) :
+    m • F.negOrientation.azimuth Ph + n • F.negOrientation.azimuth S =
+      -(m • F.azimuth Ph + n • F.azimuth S) := by
+  rw [azimuth_negOrientation, azimuth_negOrientation, smul_neg, smul_neg, neg_add]
+
 /-- Under the opposite orientation every sine modulation `sin(m φ_h + n φ_S)` changes sign. -/
 lemma sin_zsmul_azimuth_add_zsmul_azimuth_negOrientation (F : AzimuthalFrame) (m n : ℤ)
     (Ph S : E²) :
     Real.Angle.sin (m • F.negOrientation.azimuth Ph + n • F.negOrientation.azimuth S) =
       -Real.Angle.sin (m • F.azimuth Ph + n • F.azimuth S) := by
-  rw [azimuth_negOrientation, azimuth_negOrientation, smul_neg, smul_neg, ← neg_add,
-    Real.Angle.sin_neg]
+  rw [zsmul_azimuth_add_zsmul_azimuth_negOrientation, Real.Angle.sin_neg]
 
 /-- Under the opposite orientation every cosine modulation `cos(m φ_h + n φ_S)` is unchanged. -/
 lemma cos_zsmul_azimuth_add_zsmul_azimuth_negOrientation (F : AzimuthalFrame) (m n : ℤ)
     (Ph S : E²) :
     Real.Angle.cos (m • F.negOrientation.azimuth Ph + n • F.negOrientation.azimuth S) =
       Real.Angle.cos (m • F.azimuth Ph + n • F.azimuth S) := by
-  rw [azimuth_negOrientation, azimuth_negOrientation, smul_neg, smul_neg, ← neg_add,
-    Real.Angle.cos_neg]
+  rw [zsmul_azimuth_add_zsmul_azimuth_negOrientation, Real.Angle.cos_neg]
 
 /-- A single modulation in the two orientations: cosine amplitude `A` and sine amplitude `B` of
 the harmonic `m φ_h + n φ_S` become, in the azimuths of the oppositely oriented frame, the cosine
