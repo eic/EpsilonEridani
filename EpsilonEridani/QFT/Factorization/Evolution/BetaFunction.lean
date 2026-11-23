@@ -155,8 +155,8 @@ theorem transformBeta_transformBeta_inv (F : SubstGroup R) (β : R⟦X⟧) :
   simpa using smul_inv_smul F β
 
 /-- A redefinition of the coupling determines the original beta function from the new one. -/
-theorem transformBeta_injective (F : SubstGroup R) : Function.Injective (transformBeta F) := by
-  simpa [Function.Injective] using MulAction.injective (α := SubstGroup R) (β := R⟦X⟧) F
+theorem transformBeta_injective (F : SubstGroup R) : Function.Injective (transformBeta F) :=
+  fun β β' h => by rw [← transformBeta_inv_transformBeta F β, h, transformBeta_inv_transformBeta]
 
 /-! ### The first three coefficients -/
 
@@ -169,6 +169,11 @@ theorem X_pow_dvd_transformBeta (F : SubstGroup R) {β : R⟦X⟧} (n : ℕ) (h�
     subst_X F⁻¹.hasSubst]
   exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr F⁻¹.constantCoeff_toPowerSeries) n).mul_right _
 
+/-- A redefined beta function, like the original one, has no linear term. -/
+private theorem coeff_one_transformBeta_eq_zero (F : SubstGroup R) {β : R⟦X⟧} (hβ : X ^ 2 ∣ β) :
+    coeff 1 (transformBeta F β) = 0 :=
+  X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num)
+
 /-- The one-loop coefficient under a redefinition of the coupling: `u β₀' = β₀`, where
 `u = F'(0)`; the coefficient of `a²` in `β'(F(a)) = F'(a) β(a)`. -/
 private theorem coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta (F : SubstGroup R)
@@ -176,7 +181,7 @@ private theorem coeff_one_toPowerSeries_mul_betaCoeff_zero_transformBeta (F : Su
     coeff 1 F.toPowerSeries * betaCoeff (transformBeta F β) 0 = betaCoeff β 0 := by
   have h := congrArg (coeff 2) (subst_transformBeta F β)
   rw [coeff_two_subst F.constantCoeff_toPowerSeries,
-    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
+    coeff_one_transformBeta_eq_zero F hβ,
     coeff_mul_of_X_pow_dvd hβ _ 0] at h
   simp only [Finset.HasAntidiagonal.antidiagonal_zero, Finset.sum_singleton, coeff_derivative,
     smul_eq_mul, zero_add, Nat.cast_zero] at h
@@ -190,7 +195,7 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_one_transformBeta (F :
     coeff 1 F.toPowerSeries ^ 2 * betaCoeff (transformBeta F β) 1 = betaCoeff β 1 := by
   have h := congrArg (coeff 3) (subst_transformBeta F β)
   rw [coeff_three_subst F.constantCoeff_toPowerSeries,
-    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
+    coeff_one_transformBeta_eq_zero F hβ,
     coeff_mul_of_X_pow_dvd hβ _ 1] at h
   simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
     Finset.sum_singleton, coeff_derivative, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one] at h
@@ -211,7 +216,7 @@ private theorem coeff_one_toPowerSeries_pow_mul_betaCoeff_two_transformBeta (F :
           betaCoeff β 0 := by
   have h := congrArg (coeff 4) (subst_transformBeta F β)
   rw [coeff_four_subst F.constantCoeff_toPowerSeries,
-    X_pow_dvd_iff.mp (X_pow_dvd_transformBeta F 2 hβ) 1 (by norm_num),
+    coeff_one_transformBeta_eq_zero F hβ,
     coeff_mul_of_X_pow_dvd hβ _ 2] at h
   simp only [Finset.Nat.sum_antidiagonal_succ, Finset.HasAntidiagonal.antidiagonal_zero,
     Finset.sum_singleton, coeff_derivative, smul_eq_mul, zero_add, Nat.cast_zero, Nat.cast_one,
