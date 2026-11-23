@@ -73,9 +73,10 @@ private theorem I_mul_integral_mul_cexp_mul_legendre {n : ℕ}
   have hj : HasDerivAt (fun y : ℝ => 2 * I ^ n * (sphericalBesselJ n y : ℂ))
       (2 * I ^ n * deriv (sphericalBesselJ n) x) x :=
     ((differentiable_sphericalBesselJ n x).hasDerivAt.ofReal_comp).const_mul _
-  rw [← intervalIntegral.integral_const_mul, ← (hasDerivAt_integral_cexp_mul
-    (f := fun t => (((legendre n).eval t : ℝ) : ℂ)) (by fun_prop) x).unique
-    (hj.congr_of_eventuallyEq (.of_forall h))]
+  have hP : IntervalIntegrable (fun t : ℝ => (((legendre n).eval t : ℝ) : ℂ)) volume (-1) 1 :=
+    (by fun_prop : Continuous _).intervalIntegrable _ _
+  rw [← intervalIntegral.integral_const_mul,
+    ← (hasDerivAt_integral_cexp_mul hP x).unique (hj.congr_of_eventuallyEq (.of_forall h))]
   exact integral_congr fun t _ => by ring
 
 /-- **The Legendre integral representation of the spherical Bessel functions**:
@@ -86,7 +87,7 @@ theorem integral_cexp_mul_legendre (l : ℕ) (x : ℝ) :
       2 * I ^ l * sphericalBesselJ l x := by
   have h0 : ∀ y : ℝ, ∫ t in (-1 : ℝ)..1, Complex.exp (I * y * t) *
       (((legendre 0).eval t : ℝ) : ℂ) = 2 * I ^ 0 * sphericalBesselJ 0 y := fun y => by
-    simpa using integral_cexp_eq_two_mul_sinc y
+    simpa using integral_cexp_eq_two_mul_sinc 1 y
   induction l using Nat.twoStepInduction generalizing x with
   | zero => exact h0 x
   | one =>
@@ -108,7 +109,7 @@ theorem integral_cexp_mul_legendre (l : ℕ) (x : ℝ) :
       ring
     -- Bonnet's recurrence against the weight `e^{i x t}`
     have hr := add_two_smul_integral_legendre_add_two_smul n
-      (w := fun t : ℝ => Complex.exp (I * x * t)) (by fun_prop)
+      ((by fun_prop : Continuous fun t : ℝ => Complex.exp (I * x * t)).intervalIntegrable _ _)
     have e : ∀ p : ℝ[X], ∫ t in (-1 : ℝ)..1, p.eval t • Complex.exp (I * x * t) =
         ∫ t in (-1 : ℝ)..1, Complex.exp (I * x * t) * ((p.eval t : ℝ) : ℂ) :=
       fun p => integral_congr fun t _ => by rw [Complex.real_smul, mul_comm]
@@ -148,10 +149,13 @@ theorem sq_sphericalBesselJ_le (l : ℕ) (x : ℝ) : sphericalBesselJ l x ^ 2 �
     have h := intervalIntegral.norm_integral_le_integral_norm (μ := volume) (a := -1) (b := 1)
       (f := fun t : ℝ => Complex.exp (I * x * t) * (((legendre l).eval t : ℝ) : ℂ))
       (by norm_num)
-    rw [integral_cexp_mul_legendre] at h
-    refine le_of_le_of_eq (by simpa [abs_mul] using h) (integral_congr fun t _ => ?_)
-    rw [Complex.norm_exp]
-    simp
+    have hnorm : ∀ t : ℝ,
+        ‖Complex.exp (I * x * t) * (((legendre l).eval t : ℝ) : ℂ)‖ = |(legendre l).eval t| :=
+      fun t => by
+        rw [norm_mul, Complex.norm_exp, Complex.norm_real, Real.norm_eq_abs]
+        simp
+    rw [integral_cexp_mul_legendre, integral_congr fun t _ => hnorm t] at h
+    simpa [abs_mul] using h
   -- Cauchy–Schwarz on `[-1, 1]`, of length `2`: `(∫₋₁¹ |P_l|) ^ 2 ≤ 2 ∫₋₁¹ P_l ^ 2`
   have hAB : A ^ 2 ≤ 2 * B := by
     have h := CauchySchwarz.sq_setIntegral_abs_le_measureReal_mul_setIntegral_sq
