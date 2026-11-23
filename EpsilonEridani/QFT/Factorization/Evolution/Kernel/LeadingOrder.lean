@@ -200,6 +200,12 @@ theorem pgg_deltaCoeff_eq_beta0_div_two : (pgg c).deltaCoeff = beta0 c / 2 := by
 
 /-! ### The unregularised forms -/
 
+/-- The regular part `-C_F (1 + z)` of `P_qq` is bounded, so it is integrable against every
+function integrable on `[0, 1]`. -/
+theorem intervalIntegrable_pqq_regular_mul {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1) :
+    IntervalIntegrable (fun z => (pqq c).regular z * φ z) volume 0 1 := by
+  simpa only [pqq_regular] using hφ.continuousOn_mul (g := fun z => -c.cF * (1 + z)) (by fun_prop)
+
 /-- **`P_qq` is `C_F [(1 + z²)/(1 - z)]₊`.** The normal form of `P_qq` pairs with a test
 function `φ` as the plus functional of `C_F (1 + z²)/(1 - z)`, for every `φ` whose pairing with
 `[1/(1-z)]₊` converges; such a `φ` is integrable on `[0, 1]` by
@@ -208,8 +214,7 @@ theorem pairing_pqq {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1) :
     (pqq c).pairing φ = c.cF * plusFunctional (fun z => (1 + z ^ 2) / (1 - z)) φ := by
   have hφ := intervalIntegrable_of_plusOneMinus_integrand hφ₁
-  have hrφ : IntervalIntegrable (fun z => (pqq c).regular z * φ z) volume 0 1 := by
-    simpa only [pqq_regular] using hφ.continuousOn_mul (g := fun z => -c.cF * (1 + z)) (by fun_prop)
+  have hrφ := intervalIntegrable_pqq_regular_mul c hφ
   have hr : IntervalIntegrable (pqq c).regular volume 0 1 :=
     (by fun_prop : Continuous fun z : ℝ => -c.cF * (1 + z)).intervalIntegrable 0 1
   -- Off `z = 1`, `2 C_F / (1 - z) - C_F (1 + z) = C_F (1 + z²)/(1 - z)`.

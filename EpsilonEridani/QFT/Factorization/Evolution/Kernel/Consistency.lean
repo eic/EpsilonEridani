@@ -50,10 +50,11 @@ region, slowly.
   for the moments, at every real `N > 1`.
 * `KernelForm.isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`:
   the large-`N` expansion of the moments of a kernel, at natural `N`.
-* `isBigO_moment_pqq_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`,
-  `isBigO_moment_pgg_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`: the
+  Its leading form `KernelForm.isBigO_moment_add_plusCoeff_mul_log_one`.
+* `isBigO_moment_pqq_add_two_mul_cF_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`,
+  `isBigO_moment_pgg_add_two_mul_cA_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv`: the
   large-`N` expansions of the diagonal moments, at natural `N`, and their leading forms
-  `isBigO_moment_pqq_add_const_mul_log_one`, `isBigO_moment_pgg_add_const_mul_log_one`.
+  `isBigO_moment_pqq_add_two_mul_cF_mul_log_one`, `isBigO_moment_pgg_add_two_mul_cA_mul_log_one`.
 
 ## References
 
@@ -90,9 +91,7 @@ theorem pairing_pqq_add_pairing_pgq_eq_pairing_pqgSinglet_add_pairing_pgg
     (hφ.continuousOn_mul (g := fun z => z) (continuousOn_id' _)).congr fun z hz => by
       rw [uIoc_of_le zero_le_one] at hz
       field_simp [hz.1.ne']
-  have hqq : IntervalIntegrable (fun z => (pqq c).regular z * φ z) volume 0 1 := by
-    simpa only [pqq_regular] using
-      hφ'.continuousOn_mul (g := fun z => -c.cF * (1 + z)) (by fun_prop)
+  have hqq := intervalIntegrable_pqq_regular_mul c hφ'
   have hgq : IntervalIntegrable (fun z => (pgq c).regular z * φ z) volume 0 1 :=
     (hφ.continuousOn_mul (g := fun z => c.cF * (1 + (1 - z) ^ 2)) (by fun_prop)).congr
       fun z _ => by simp only [pgq_regular]; ring
@@ -118,7 +117,7 @@ theorem pairing_pqq_add_pairing_pgq_eq_pairing_pqgSinglet_add_pairing_pgg
     ring
   -- The delta coefficients agree because `β₀ = 3 C_A` at the supersymmetric point.
   have hdelta : (pgg c).deltaCoeff = (pqq c).deltaCoeff := by
-    rw [pgg_deltaCoeff_eq_beta0_div_two, hc.beta0_eq, pqq_deltaCoeff, hc.cF_eq_cA]
+    rw [pgg_deltaCoeff_eq_beta0_div_two, hc.beta0_eq_three_mul_cA, pqq_deltaCoeff, hc.cF_eq_cA]
     ring
   simp only [KernelForm.pairing_def, hdelta, pqq_plusCoeff, pgq_plusCoeff, pgq_deltaCoeff,
     pqgSinglet_plusCoeff, pqgSinglet_deltaCoeff, pgg_plusCoeff, hc.cF_eq_cA]
@@ -142,104 +141,110 @@ theorem moment_pqq_add_moment_pgq_eq_moment_pqgSinglet_add_moment_pgg (hc : c.Is
 
 namespace KernelForm
 
-/-- **The large-`N` expansion of a kernel's moments.** If the moment
-`∫₀¹ r z z ^ (N - 1) dz` of the regular part `r` is `O(1/N)`, then
-`P.moment N = -p (log N + γ_E) + d + O(1/N)` as `N → ∞` through the natural numbers, with `p` the
-coefficient of `[1 / (1 - z)]₊`, `d` that of `δ(1 - z)`, and `γ_E` the Euler–Mascheroni constant:
-the plus part contributes `-p S₁(N - 1)`, which grows like `-p log N`. -/
+/-- **The large-`N` expansion of a kernel's moments.** If the moments `∫₀¹ r z z ^ n dz` of the
+regular part `r` are `O(1/n)`, then `P.moment N = -p (log N + γ_E) + d + O(1/N)` as `N → ∞`
+through the natural numbers, with `p` the coefficient of `[1 / (1 - z)]₊`, `d` that of
+`δ(1 - z)`, and `γ_E` the Euler–Mascheroni constant: the plus part contributes `-p S₁(N - 1)`,
+which grows like `-p log N`. -/
 theorem isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
     (P : KernelForm)
-    (hr : (fun N : ℕ => ∫ z in (0 : ℝ)..1, P.regular z * z ^ ((N : ℝ) - 1)) =O[atTop]
-      fun N : ℕ => (N : ℝ)⁻¹) :
+    (hr : (fun n : ℕ => ∫ z in (0 : ℝ)..1, P.regular z * z ^ n) =O[atTop]
+      fun n : ℕ => (n : ℝ)⁻¹) :
     (fun N : ℕ => P.moment N + P.plusCoeff * (Real.log N + Real.eulerMascheroniConstant) -
       P.deltaCoeff) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
-  -- `P.moment N = r_N - p S₁(N - 1) + d` and `S₁(N - 1) = S₁(N) - 1/N`
-  refine ((hr.sub (isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_inv.const_mul_left
+  -- The regular moment at `N - 1` is `O(1/(N - 1)) = O(1/N)`.
+  have hr' : (fun N : ℕ => ∫ z in (0 : ℝ)..1, P.regular z * z ^ (N - 1)) =O[atTop]
+      fun N : ℕ => (N : ℝ)⁻¹ := by
+    refine (hr.comp_tendsto (tendsto_sub_atTop_nat 1)).trans
+      (((isBigO_inv_add_inv (-1)).comp_tendsto tendsto_natCast_atTop_atTop).congr' ?_
+        EventuallyEq.rfl)
+    filter_upwards [eventually_ge_atTop 1] with N hN
+    simp only [Function.comp_apply, Nat.cast_sub hN, Nat.cast_one, sub_eq_add_neg]
+  -- `P.moment N = r_{N-1} - p S₁(N - 1) + d` and `S₁(N - 1) = S₁(N) - 1/N`.
+  refine ((hr'.sub (isBigO_harmonic_sub_log_sub_eulerMascheroniConstant_inv.const_mul_left
     P.plusCoeff)).add ((isBigO_refl (fun N : ℕ => (N : ℝ)⁻¹) atTop).const_mul_left
     P.plusCoeff)).congr' ?_ EventuallyEq.rfl
   filter_upwards [eventually_ne_atTop 0] with N hN
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
-  rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
-    KernelForm.pairing_pow, harmonic_succ]
-  simp only [add_sub_cancel_right, Real.rpow_natCast]
+  rw [Nat.succ_sub_one, integral_regular_mul_pow, harmonic_succ]
   push_cast
   ring
+
+/-- **The leading large-`N` behaviour of a kernel's moments.** If
+`P.moment N = -p (log N + γ_E) + d + O(1/N)` as `N → ∞` through the natural numbers, then
+`P.moment N = -p log N + O(1)`. -/
+theorem isBigO_moment_add_plusCoeff_mul_log_one (P : KernelForm)
+    (h : (fun N : ℕ => P.moment N + P.plusCoeff * (Real.log N + Real.eulerMascheroniConstant) -
+      P.deltaCoeff) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹) :
+    (fun N : ℕ => P.moment N + P.plusCoeff * Real.log N) =O[atTop] fun _ : ℕ => (1 : ℝ) :=
+  ((h.trans (tendsto_inv_atTop_nhds_zero_nat.isBigO_one ℝ)).add
+    (isBigO_const_const (P.deltaCoeff - P.plusCoeff * Real.eulerMascheroniConstant)
+      one_ne_zero atTop)).congr_left fun N => by ring
 
 end KernelForm
 
 /-- **The large-`N` expansion of `γ_qq`.** `γ_qq(N) = -2 C_F (log N + γ_E) + (3/2) C_F + O(1/N)`
 as `N → ∞` through the natural numbers, with `γ_E` the Euler–Mascheroni constant and
 `(3/2) C_F` the delta coefficient of `P_qq`. -/
-theorem isBigO_moment_pqq_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
+theorem isBigO_moment_pqq_add_two_mul_cF_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
     (c : ColorFactors) :
     (fun N : ℕ => (pqq c).moment N + 2 * c.cF * (Real.log N + Real.eulerMascheroniConstant) -
       (pqq c).deltaCoeff) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
+  have hinv (a : ℝ) := (isBigO_inv_add_inv a).comp_tendsto tendsto_natCast_atTop_atTop
   rw [← pqq_plusCoeff]
   refine (pqq c).isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
     ?_
-  -- The regular part `-C_F (1 + z)` has moment `-C_F (1/N + 1/(N + 1))`.
-  refine (((isBigO_inv_natCast_add_inv 0).add (isBigO_inv_natCast_add_inv 1)).const_mul_left
-    (-c.cF)).congr' ?_ EventuallyEq.rfl
-  filter_upwards [eventually_ne_atTop 0] with N hN
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
-  have h := moment_pqq c hN
-  rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
-    KernelForm.pairing_pow, harmonic_succ, pqq_plusCoeff, pqq_deltaCoeff] at h
-  simp only [Nat.succ_eq_add_one, Nat.cast_add_one, add_sub_cancel_right, Real.rpow_natCast]
-  push_cast at h ⊢
-  have hn : (n : ℝ) + 1 ≠ 0 := by positivity
-  have hn' : (n : ℝ) + 1 + 1 ≠ 0 := by positivity
-  linear_combination (norm := skip) -h
+  -- The regular part `-C_F (1 + z)` has moments `-C_F (1/(n + 1) + 1/(n + 2))`.
+  refine (((hinv 1).add (hinv 2)).const_mul_left (-c.cF)).congr' ?_ EventuallyEq.rfl
+  filter_upwards with n
+  rw [KernelForm.integral_regular_mul_pow, ← Nat.cast_add_one, moment_pqq c n.succ_ne_zero,
+    pqq_plusCoeff, pqq_deltaCoeff, harmonic_succ]
+  simp only [Function.comp_apply]
+  push_cast
   field_simp
   ring
 
 /-- **The large-`N` expansion of `γ_gg`.** `γ_gg(N) = -2 C_A (log N + γ_E) + β₀ / 2 + O(1/N)`
 as `N → ∞` through the natural numbers, with `γ_E` the Euler–Mascheroni constant and
 `β₀ / 2 = (11/6) C_A - (2/3) n_f T_F` the delta coefficient of `P_gg`. -/
-theorem isBigO_moment_pgg_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
+theorem isBigO_moment_pgg_add_two_mul_cA_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
     (c : ColorFactors) :
     (fun N : ℕ => (pgg c).moment N + 2 * c.cA * (Real.log N + Real.eulerMascheroniConstant) -
       (pgg c).deltaCoeff) =O[atTop] fun N : ℕ => (N : ℝ)⁻¹ := by
+  have hinv (a : ℝ) := (isBigO_inv_add_inv a).comp_tendsto tendsto_natCast_atTop_atTop
   rw [← pgg_plusCoeff]
   refine (pgg c).isBigO_moment_add_plusCoeff_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv
     ?_
-  -- The regular part has moment `2 C_A (1/(N - 1) - 2/N + 1/(N + 1) - 1/(N + 2))`.
-  refine (((((isBigO_inv_natCast_add_inv (-1)).sub
-    ((isBigO_inv_natCast_add_inv 0).const_mul_left 2)).add (isBigO_inv_natCast_add_inv 1)).sub
-    (isBigO_inv_natCast_add_inv 2)).const_mul_left (2 * c.cA)).congr' ?_ EventuallyEq.rfl
-  filter_upwards [eventually_ge_atTop 2] with N hN
-  have hN0 : N ≠ 0 := by omega
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN0
-  have h := moment_pgg c hN
-  rw [Nat.succ_eq_add_one, Nat.cast_add_one, KernelForm.moment_natCast_add_one,
-    KernelForm.pairing_pow, harmonic_succ, pgg_plusCoeff, pgg_deltaCoeff] at h
-  simp only [Nat.succ_eq_add_one, Nat.cast_add_one, add_sub_cancel_right, Real.rpow_natCast]
-  have hn₀ : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-  have hn₁ : (n : ℝ) + 1 ≠ 0 := by positivity
-  have hn₂ : (n : ℝ) + 1 + 1 ≠ 0 := by positivity
-  have hn₃ : (n : ℝ) + 1 + 2 ≠ 0 := by positivity
-  push_cast at h ⊢
-  linear_combination (norm := skip) -h
+  -- The regular part has moments `2 C_A (1/n - 2/(n + 1) + 1/(n + 2) - 1/(n + 3))`.
+  refine (((((isBigO_refl _ _).sub ((hinv 1).const_mul_left 2)).add (hinv 2)).sub
+    (hinv 3)).const_mul_left (2 * c.cA)).congr' ?_ EventuallyEq.rfl
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  have hn₀ : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
+  rw [KernelForm.integral_regular_mul_pow, ← Nat.cast_add_one,
+    moment_pgg c (Nat.succ_le_succ (Nat.one_le_iff_ne_zero.2 hn)), pgg_plusCoeff, pgg_deltaCoeff,
+    harmonic_succ]
+  push_cast
+  simp only [Function.comp_apply, add_sub_cancel_right]
   field_simp
   ring
 
 /-- **The leading large-`N` behaviour of `γ_qq`.** `γ_qq(N) = -2 C_F log N + O(1)` as `N → ∞`
 through the natural numbers. -/
-theorem isBigO_moment_pqq_add_const_mul_log_one (c : ColorFactors) :
-    (fun N : ℕ => (pqq c).moment N + 2 * c.cF * Real.log N) =O[atTop] fun _ : ℕ => (1 : ℝ) :=
-  (((isBigO_moment_pqq_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv c).trans
-    (tendsto_inv_atTop_nhds_zero_nat.isBigO_one ℝ)).add
-    (isBigO_const_const ((pqq c).deltaCoeff - 2 * c.cF * Real.eulerMascheroniConstant)
-      one_ne_zero atTop)).congr_left fun N => by ring
+theorem isBigO_moment_pqq_add_two_mul_cF_mul_log_one (c : ColorFactors) :
+    (fun N : ℕ => (pqq c).moment N + 2 * c.cF * Real.log N) =O[atTop] fun _ : ℕ => (1 : ℝ) := by
+  rw [← pqq_plusCoeff]
+  refine (pqq c).isBigO_moment_add_plusCoeff_mul_log_one ?_
+  rw [pqq_plusCoeff]
+  exact isBigO_moment_pqq_add_two_mul_cF_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv c
 
 /-- **The leading large-`N` behaviour of `γ_gg`.** `γ_gg(N) = -2 C_A log N + O(1)` as `N → ∞`
 through the natural numbers. -/
-theorem isBigO_moment_pgg_add_const_mul_log_one (c : ColorFactors) :
-    (fun N : ℕ => (pgg c).moment N + 2 * c.cA * Real.log N) =O[atTop] fun _ : ℕ => (1 : ℝ) :=
-  (((isBigO_moment_pgg_add_const_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv c).trans
-    (tendsto_inv_atTop_nhds_zero_nat.isBigO_one ℝ)).add
-    (isBigO_const_const ((pgg c).deltaCoeff - 2 * c.cA * Real.eulerMascheroniConstant)
-      one_ne_zero atTop)).congr_left fun N => by ring
+theorem isBigO_moment_pgg_add_two_mul_cA_mul_log_one (c : ColorFactors) :
+    (fun N : ℕ => (pgg c).moment N + 2 * c.cA * Real.log N) =O[atTop] fun _ : ℕ => (1 : ℝ) := by
+  rw [← pgg_plusCoeff]
+  refine (pgg c).isBigO_moment_add_plusCoeff_mul_log_one ?_
+  rw [pgg_plusCoeff]
+  exact isBigO_moment_pgg_add_two_mul_cA_mul_log_add_eulerMascheroniConstant_sub_deltaCoeff_inv c
 
 end Evolution
 end Factorization

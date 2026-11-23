@@ -125,23 +125,24 @@ structure ColorFactors.IsSupersymmetric (cf : ColorFactors) : Prop where
 
 /-- The supersymmetric point with `n_f` flavors, normalized by `C_F = C_A = 1`, so that
 `T_F = 1 / (2 n_f)`. -/
-def susyColorFactors (nF : ℝ) : ColorFactors where
+def supersymmetricColorFactors (nF : ℝ) : ColorFactors where
   nF := nF
   cF := 1
   cA := 1
   tF := 1 / (2 * nF)
 
-/-- `susyColorFactors nF` is a supersymmetric point whenever there is at least one flavor. -/
-lemma isSupersymmetric_susyColorFactors {nF : ℝ} (h : nF ≠ 0) :
-    (susyColorFactors nF).IsSupersymmetric where
+/-- `supersymmetricColorFactors nF` is a supersymmetric point whenever `n_f ≠ 0`. -/
+lemma isSupersymmetric_supersymmetricColorFactors {nF : ℝ} (h : nF ≠ 0) :
+    (supersymmetricColorFactors nF).IsSupersymmetric where
   cF_eq_cA := rfl
   two_mul_nF_mul_tF_eq_cA := by
-    simp only [susyColorFactors]
+    simp only [supersymmetricColorFactors]
     field_simp
 
 /-- At the supersymmetric point the one-loop beta-function coefficient is `β₀ = 3 C_A`, that of
 `𝒩 = 1` super-Yang–Mills theory. -/
-lemma ColorFactors.IsSupersymmetric.beta0_eq {cf : ColorFactors} (h : cf.IsSupersymmetric) :
+lemma ColorFactors.IsSupersymmetric.beta0_eq_three_mul_cA {cf : ColorFactors}
+    (h : cf.IsSupersymmetric) :
     beta0 cf = 3 * cf.cA := by
   rw [beta0, ← h.two_mul_nF_mul_tF_eq_cA]
   ring
