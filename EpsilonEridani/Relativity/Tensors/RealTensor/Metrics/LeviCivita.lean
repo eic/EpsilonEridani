@@ -5,7 +5,6 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import Mathlib
 public import Physlib.Relativity.MinkowskiMatrix
 public import Physlib.Mathematics.KroneckerDelta.Basic
 public import Physlib.Mathematics.LeviCivita.Basic

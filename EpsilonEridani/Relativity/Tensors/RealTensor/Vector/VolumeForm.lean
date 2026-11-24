@@ -6,12 +6,9 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
-public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Nondegenerate
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import Mathlib.LinearAlgebra.Determinant
-public import Physlib.Mathematics.LeviCivita.Basic
-public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import PhyslibAlpha.Mathematics.LeviCivita.Basic
 
 /-!
 # The volume form of four-dimensional Minkowski space
@@ -33,9 +30,10 @@ components in the standard basis `e₀, e₁, e₂, e₃`.
 The integer Levi-Civita symbols of
 `EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita` use the opposite convention:
 `realLorentzTensor.leviCivita4UpInt`, documented there as the contravariant symbol, is
-`-leviCivitaSymbol`, i.e. `ε^{0123} = -1`. Numerically, the covariant components of
-`minkowskiVolumeForm` are the values of `leviCivita4UpInt`, as that module proves
-(`EpsilonEridani.minkowskiVolumeForm_minkowskiBasisFin4_eq_leviCivita4UpInt`).
+`-leviCivitaSymbol`, i.e. `ε^{0123} = -1`, while the covariant components of `minkowskiVolumeForm`
+are `-leviCivita4Int`, as
+`EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita.VolumeForm` proves
+(`EpsilonEridani.minkowskiVolumeForm_minkowskiBasisFin4_eq_neg_leviCivita4Int`).
 
 Every alternating four-form on Minkowski space is a multiple of this one
 (`AlternatingMap.eq_smul_minkowskiVolumeForm`), so statements about contractions of the
@@ -150,17 +148,10 @@ components are `leviCivitaSymbol` (`realLorentzTensor.leviCivita_basis_repr_eq_l
 theorem minkowskiVolumeForm_minkowskiBasisFin4_comp (g : Fin 4 → Fin 4) :
     minkowskiVolumeForm (fun i => minkowskiBasisFin4 (g i)) = -(leviCivitaSymbol g : ℝ) := by
   rw [minkowskiVolumeForm, _root_.neg_apply, Module.Basis.det_apply, neg_inj,
-    leviCivitaSymbol_eq_det]
-  -- `leviCivitaSymbol_eq_det` writes the determinant of a bare `Fin 4 → Fin 4 → ℤ` function,
-  -- which `rw` cannot match against the `Matrix`-typed argument of `Int.cast_det` (the `Matrix`
-  -- type synonym is not unfolded at `rw`'s transparency); the `change` only inserts the
-  -- definitionally equal `Matrix.of` wrapper, exposing the matrix to the cast push.
-  change _ = ((Matrix.of fun i j => ((KroneckerDelta.kroneckerDelta (g i) j : ℕ) : ℤ)).det : ℝ)
-  rw [Int.cast_det, ← Matrix.det_transpose]
+    cast_leviCivitaSymbol, ← Matrix.det_transpose]
   congr 1
   ext i j
-  simp [Module.Basis.toMatrix_apply, Finsupp.single_apply,
-    KroneckerDelta.kroneckerDelta, eq_comm]
+  simp [Module.Basis.toMatrix_apply, Finsupp.single_apply, eq_comm]
 
 /-- The normalisation of the volume form: `ε(e₀, e₁, e₂, e₃) = ε_{0123} = -1`. -/
 @[simp]
@@ -195,10 +186,8 @@ theorem minkowskiVolumeFormRaise_def (a b : Vector 3) :
 @[simp]
 theorem minkowskiProduct_minkowskiVolumeFormRaise (a b u v : Vector 3) :
     ⟪minkowskiVolumeFormRaise a b u, v⟫ₘ = minkowskiVolumeForm ![u, v, a, b] := by
-  have h := minkowskiVolumeForm.bilinForm_bilinMapRaise_apply ![a, b]
-    nondegenerate_toBilinForm_minkowskiProduct u v
-  rwa [ContinuousLinearMap.toBilinForm_apply, AlternatingMap.bilinMap_apply,
-    ← minkowskiVolumeFormRaise_def] at h
+  rw [minkowskiVolumeFormRaise_def, AlternatingMap.minkowskiProduct_bilinMapRaise,
+    AlternatingMap.bilinMap_apply]
 
 /-- `minkowskiVolumeFormRaise a b u` is the unique vector `w` with `⟪w, v⟫ₘ = ε(u, v, a, b)` for
 all `v`. -/
@@ -267,9 +256,7 @@ theorem minkowskiVolumeFormRaise_swap (a b : Vector 3) :
 theorem minkowskiVolumeFormRaise_apply (a b u : Vector 3) (μ : Fin 1 ⊕ Fin 3) :
     minkowskiVolumeFormRaise a b u μ =
       minkowskiMatrix μ μ * minkowskiVolumeForm ![u, basis μ, a, b] := by
-  rw [minkowskiVolumeFormRaise_def, AlternatingMap.bilinMapRaise_def,
-    LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply,
-    AlternatingMap.bilinMap_apply]
+  rw [minkowskiVolumeFormRaise_def, AlternatingMap.bilinMapRaise_minkowskiProduct_apply]
 
 /-! The explicit components of `minkowskiVolumeFormRaise a b u`: up to sign, the `μ`-th component
 is the `3 × 3` minor of the component matrix of `(u, a, b)` with row `μ` deleted. -/

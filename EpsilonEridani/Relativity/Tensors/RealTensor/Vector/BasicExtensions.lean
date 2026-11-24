@@ -28,9 +28,11 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
 
 * The standard basis of four-dimensional Minkowski space indexed by `Fin 4`,
   `EpsilonEridani.minkowskiBasisFin4 = basis.reindex finSumFinEquiv`, with `e₀` the time direction,
-  and its vectors `minkowskiBasisFin4_apply_zero`, …, `minkowskiBasisFin4_apply_three`. It is the
-  basis in which the volume form of
-  `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm` is a determinant.
+  and its vectors `minkowskiBasisFin4_apply_zero`, …, `minkowskiBasisFin4_apply_three`. The volume
+  form of `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm` is minus the
+  determinant in this basis. The definition and its `_apply_*` lemmas mirror, for real Lorentz
+  vectors, Physlib's `Lorentz.ComplexVector.basisFin4` and its `_apply_*` lemmas in
+  `Physlib.Relativity.Tensors.ComplexTensor.Vector.Basic`.
 -/
 
 public section

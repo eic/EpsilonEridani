@@ -7,7 +7,6 @@ module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Projection
 
 /-!

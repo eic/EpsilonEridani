@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
@@ -42,7 +43,10 @@ declaration order, the file contains:
   witnesses that supply the `IsRefl` and `Nondegenerate` hypotheses of the results about
   light-cone bases in `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`;
 * the components `(E u)^μ = η^{μμ} F(u, e_μ)` of a bilinear form `F` with its second index raised
-  by the Minkowski metric (`LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply`).
+  by the Minkowski metric (`LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply`),
+  and in particular of an alternating map with all but two arguments fixed
+  (`AlternatingMap.bilinMapRaise_minkowskiProduct_apply`,
+  `AlternatingMap.minkowskiProduct_bilinMapRaise`).
 -/
 
 public section
@@ -186,3 +190,27 @@ theorem symmCompOfNondegenerate_minkowskiProduct_apply {d : ℕ}
   rw [← h, ← _root_.mul_assoc, minkowskiMatrix.η_apply_mul_η_apply_diag, one_mul]
 
 end LinearMap.BilinForm
+
+namespace AlternatingMap
+
+open Lorentz.Vector EpsilonEridani
+open scoped Lorentz.Vector
+
+/-- The characteristic property of `f.bilinMapRaise m` raised by the Minkowski metric, stated with
+the Minkowski product: `⟪E u, v⟫ₘ = f.bilinMap m u v`. -/
+theorem minkowskiProduct_bilinMapRaise {d n : ℕ} (f : Lorentz.Vector d [⋀^Fin (n + 2)]→ₗ[ℝ] ℝ)
+    (m : Fin n → Lorentz.Vector d) (u v : Lorentz.Vector d) :
+    ⟪f.bilinMapRaise m nondegenerate_toBilinForm_minkowskiProduct u, v⟫ₘ = f.bilinMap m u v := by
+  rw [← ContinuousLinearMap.toBilinForm_apply, bilinForm_bilinMapRaise_apply]
+
+/-- The components of `f.bilinMapRaise m` raised by the Minkowski metric:
+`(E u)^μ = η^{μμ} f(u, e_μ, m 0, …, m (n - 1))`. -/
+theorem bilinMapRaise_minkowskiProduct_apply {d n : ℕ}
+    (f : Lorentz.Vector d [⋀^Fin (n + 2)]→ₗ[ℝ] ℝ) (m : Fin n → Lorentz.Vector d)
+    (u : Lorentz.Vector d) (μ : Fin 1 ⊕ Fin d) :
+    f.bilinMapRaise m nondegenerate_toBilinForm_minkowskiProduct u μ =
+      minkowskiMatrix μ μ * f (Matrix.vecCons u (Matrix.vecCons (basis μ) m)) := by
+  rw [bilinMapRaise_def, LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply,
+    bilinMap_apply]
+
+end AlternatingMap
