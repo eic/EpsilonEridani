@@ -281,9 +281,8 @@ theorem analyticAt_gammaGG {N : ℂ} (h : N ≠ 1) (hN : ∀ m : ℕ, N ≠ -m) 
 
 /-- `γ_qq` is analytic at `N = 1`. -/
 @[fun_prop]
-theorem analyticAt_gammaQQ_one : AnalyticAt ℂ (gammaQQ c) 1 := by
-  unfold gammaQQ
-  fun_prop (disch := norm_num)
+theorem analyticAt_gammaQQ_one : AnalyticAt ℂ (gammaQQ c) 1 :=
+  analyticAt_gammaQQ c fun m h => Nat.cast_add_one_ne_zero (R := ℂ) m (by linear_combination h)
 
 /-- `γ_qg` is analytic at `N = 1`. -/
 @[fun_prop]
@@ -325,7 +324,8 @@ theorem tendsto_sub_one_mul_gammaGQ :
 /-- **`γ_gq` has a simple pole at `N = 1`** whenever `C_F ≠ 0`. -/
 theorem meromorphicOrderAt_gammaGQ_one (hc : c.cF ≠ 0) :
     meromorphicOrderAt (gammaGQ c) 1 = -1 :=
-  (analyticAt_gammaGQAnalyticFactor c).meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul
+  AnalyticAt.meromorphicOrderAt_eq_neg_one_of_ne_zero_of_eventually_eq_inv_smul
+    (analyticAt_gammaGQAnalyticFactor c)
     (by simp [gammaGQAnalyticFactor_one, hc])
     (Eventually.of_forall (gammaGQ_eq_inv_smul c))
 
@@ -336,7 +336,8 @@ theorem meromorphicTrailingCoeffAt_gammaGQ_one :
   · have h0 : gammaGQ c = fun _ => 0 := funext fun N => by simp [gammaGQ_apply, hc]
     simp [h0, meromorphicTrailingCoeffAt_const, hc]
   rw [← gammaGQAnalyticFactor_one]
-  exact (analyticAt_gammaGQAnalyticFactor c).meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul
+  exact AnalyticAt.meromorphicTrailingCoeffAt_of_ne_zero_of_eventually_eq_inv_smul
+    (analyticAt_gammaGQAnalyticFactor c)
     (by simp [gammaGQAnalyticFactor_one, hc])
     (Eventually.of_forall (gammaGQ_eq_inv_smul c))
 
@@ -386,7 +387,8 @@ theorem tendsto_sub_one_mul_gammaGG :
 /-- **`γ_gg` has a simple pole at `N = 1`** whenever `C_A ≠ 0`. -/
 theorem meromorphicOrderAt_gammaGG_one (hc : c.cA ≠ 0) :
     meromorphicOrderAt (gammaGG c) 1 = -1 :=
-  (analyticAt_gammaGGAnalyticFactor c).meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul
+  AnalyticAt.meromorphicOrderAt_eq_neg_one_of_ne_zero_of_eventually_eq_inv_smul
+    (analyticAt_gammaGGAnalyticFactor c)
     (by simp [gammaGGAnalyticFactor_one, hc])
     (gammaGG_eq_inv_smul c)
 
@@ -394,7 +396,8 @@ theorem meromorphicOrderAt_gammaGG_one (hc : c.cA ≠ 0) :
 theorem meromorphicTrailingCoeffAt_gammaGG_one (hc : c.cA ≠ 0) :
     meromorphicTrailingCoeffAt (gammaGG c) 1 = 2 * c.cA := by
   rw [← gammaGGAnalyticFactor_one]
-  exact (analyticAt_gammaGGAnalyticFactor c).meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul
+  exact AnalyticAt.meromorphicTrailingCoeffAt_of_ne_zero_of_eventually_eq_inv_smul
+    (analyticAt_gammaGGAnalyticFactor c)
     (by simp [gammaGGAnalyticFactor_one, hc])
     (gammaGG_eq_inv_smul c)
 

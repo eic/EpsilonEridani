@@ -218,13 +218,13 @@ private theorem complexHarmonic_presentation (m : ℕ) :
 theorem meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicTrailingCoeffAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
   obtain ⟨g, hg, hg₁, hg₂, h⟩ := complexHarmonic_presentation m
-  exact (hg.meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul hg₂ h).trans hg₁
+  exact (hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eventually_eq_inv_smul hg₂ h).trans hg₁
 
 /-- **The pole structure**: the continuation has a simple pole at every negative integer. -/
 theorem meromorphicOrderAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicOrderAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
   obtain ⟨g, hg, -, hg₂, h⟩ := complexHarmonic_presentation m
-  exact hg.meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul hg₂ h
+  exact hg.meromorphicOrderAt_eq_neg_one_of_ne_zero_of_eventually_eq_inv_smul hg₂ h
 
 /-- **The residue** of the continuation at every negative integer is `-1`:
 `(s + m + 1) S₁(s) → -1` as `s → -(m + 1)`. -/
