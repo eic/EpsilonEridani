@@ -153,7 +153,7 @@ def ofTendsto (v : ι → ℝ) (hM : ∀ᶠ a in l, (M a).PosSemidef) (hS : Tend
     EuclideanDataset ι where
   value := v
   covariance := S
-  posSemidef_covariance := posSemidef_is_closed.mem_of_tendsto hS hM
+  posSemidef_covariance := isClosed_setOfPred_posSemidef.mem_of_tendsto hS hM
 
 /-- The central values of `ofTendsto v hM hS` are `v`. -/
 @[simp]
