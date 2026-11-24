@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Particles.Parton.GPD.Kinematics
-public import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics
+public import EpsilonEridani.QFT.Scattering.DIS.Diffractive.Kinematics.Boundary
 /-!
 
 # The target-elastic diffractive boundary as the off-forward boundary
@@ -15,9 +15,9 @@ The target-elastic boundary `tMinElastic M ξ = -ξ²M²/(1-ξ)` of diffractive 
 light-cone fraction `ξ = Δ⁺/P⁺` lost by the target, and the boundary
 `Particles.Parton.GPD.tZero M η = -4η²M²/(1-η²)` of the off-forward kinematics, a function of the
 skewness `η = Δ⁺/(P + P')⁺`, are the same kinematic boundary under the change of variables
-`η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)` (`tMinElastic_eq_tZero`).
+`η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)` (`tMinElastic_eq_tZero`, `tZero_eq_tMinElastic`).
 
-This bridge is kept apart from `Diffractive.Kinematics` and
+This bridge is kept apart from `Diffractive.Kinematics.Boundary` and
 `Diffractive.Kinematics.MomentumTransferBound` so that the abstract bilinear-form development
 there does not import the Minkowski-space GPD kinematics.
 
@@ -48,6 +48,23 @@ theorem tMinElastic_eq_tZero (M : ℝ) {ξ : ℝ} (hξ : ξ ≠ 2) :
     ring
   rw [hη]
   field_simp
+
+/-- The off-forward boundary `Particles.Parton.GPD.tZero` at skewness `η` is the target-elastic
+boundary at light-cone fraction `ξ = 2η/(1+η)`, the inverse change of variables of
+`tMinElastic_eq_tZero`. The excluded value `η = -1` is where the change of variables is
+singular. -/
+theorem tZero_eq_tMinElastic (M : ℝ) {η : ℝ} (hη : η ≠ -1) :
+    Particles.Parton.GPD.tZero M η = tMinElastic M (2 * η / (1 + η)) := by
+  have h1 : 1 + η ≠ 0 := fun h => hη (by linarith)
+  have h2 : 2 * η / (1 + η) ≠ 2 := by
+    rw [Ne, div_eq_iff h1]
+    intro h
+    linarith
+  have h3 : 2 - 2 * η / (1 + η) = 2 / (1 + η) := by
+    field_simp
+    ring
+  rw [tMinElastic_eq_tZero M h2, h3, div_div_div_cancel_right₀ h1]
+  ring_nf
 
 end Diffractive
 end DIS
