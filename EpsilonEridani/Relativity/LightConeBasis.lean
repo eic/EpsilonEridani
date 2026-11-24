@@ -236,9 +236,12 @@ theorem transverseEpsRaise_minkowskiVolumeForm_transverseEpsRaise_minkowskiVolum
     L.transverseEpsRaise minkowskiVolumeForm nondegenerate_toBilinForm_minkowskiProduct
       (L.transverseEpsRaise minkowskiVolumeForm nondegenerate_toBilinForm_minkowskiProduct u) =
       -L.transverseProj u := by
-  have hpp : ⟪L.nPlus, L.nPlus⟫ₘ = 0 := L.nPlus_nPlus_eq_zero
-  have hmm : ⟪L.nMinus, L.nMinus⟫ₘ = 0 := L.nMinus_nMinus_eq_zero
-  have hpm : ⟪L.nPlus, L.nMinus⟫ₘ = 1 := L.nPlus_nMinus_eq_one
+  have hpp : ⟪L.nPlus, L.nPlus⟫ₘ = 0 := by
+    rw [← ContinuousLinearMap.toBilinForm_apply]; exact L.nPlus_nPlus_eq_zero
+  have hmm : ⟪L.nMinus, L.nMinus⟫ₘ = 0 := by
+    rw [← ContinuousLinearMap.toBilinForm_apply]; exact L.nMinus_nMinus_eq_zero
+  have hpm : ⟪L.nPlus, L.nMinus⟫ₘ = 1 := by
+    rw [← ContinuousLinearMap.toBilinForm_apply]; exact L.nPlus_nMinus_eq_one
   simp only [transverseEpsRaise_minkowskiVolumeForm,
     minkowskiVolumeFormRaise_minkowskiVolumeFormRaise, hpp, hmm, hpm, transverseProj_apply,
     plus_apply, minus_apply, ContinuousLinearMap.toBilinForm_apply]

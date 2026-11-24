@@ -25,6 +25,12 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
   `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`. It gives
   explicit configurations, such as light-cone frames, in any spacetime with at least two spatial
   dimensions.
+
+* The standard basis of four-dimensional Minkowski space indexed by `Fin 4`,
+  `EpsilonEridani.minkowskiBasisFin4 = basis.reindex finSumFinEquiv`, with `e₀` the time direction,
+  and its vectors `minkowskiBasisFin4_apply_zero`, …, `minkowskiBasisFin4_apply_three`. It is the
+  basis in which the volume form of
+  `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm` is a determinant.
 -/
 
 public section
@@ -103,3 +109,54 @@ lemma ofTimeAndSpatial_timeComponent_spatialPart_eq {d : ℕ} (v : Vector d) :
 
 end Vector
 end Lorentz
+
+namespace EpsilonEridani
+
+open Lorentz Vector
+
+/-- The standard basis of four-dimensional Minkowski space indexed by `Fin 4`, with `e₀` the
+time direction and `e₁, e₂, e₃` the spatial directions. -/
+noncomputable def minkowskiBasisFin4 : Module.Basis (Fin 4) ℝ (Vector 3) :=
+  basis.reindex finSumFinEquiv
+
+/-- The `i`-th vector of `minkowskiBasisFin4` is the standard basis vector with the Minkowski index
+`finSumFinEquiv.symm i : Fin 1 ⊕ Fin 3`. -/
+theorem minkowskiBasisFin4_apply (i : Fin 4) :
+    minkowskiBasisFin4 i = basis (finSumFinEquiv.symm i) := by
+  simp [minkowskiBasisFin4]
+
+/-- The coordinates of `v` in `minkowskiBasisFin4` are its components, `v^{finSumFinEquiv.symm i}`.
+-/
+@[simp]
+theorem minkowskiBasisFin4_repr_apply (v : Vector 3) (i : Fin 4) :
+    minkowskiBasisFin4.repr v i = v (finSumFinEquiv.symm i) := by
+  simp [minkowskiBasisFin4, basis_repr_apply]
+
+/-- `e₀` is the time basis vector. -/
+@[simp]
+theorem minkowskiBasisFin4_apply_zero : minkowskiBasisFin4 0 = basis (Sum.inl 0) :=
+  minkowskiBasisFin4_apply 0
+
+/-- `e₁` is the first spatial basis vector. -/
+@[simp]
+theorem minkowskiBasisFin4_apply_one : minkowskiBasisFin4 1 = basis (Sum.inr 0) :=
+  minkowskiBasisFin4_apply 1
+
+/-- `e₂` is the second spatial basis vector. -/
+@[simp]
+theorem minkowskiBasisFin4_apply_two : minkowskiBasisFin4 2 = basis (Sum.inr 1) :=
+  minkowskiBasisFin4_apply 2
+
+/-- `e₃` is the third spatial basis vector. -/
+@[simp]
+theorem minkowskiBasisFin4_apply_three : minkowskiBasisFin4 3 = basis (Sum.inr 2) :=
+  minkowskiBasisFin4_apply 3
+
+/-- `e_{i+1}` is the `i`-th spatial basis vector. -/
+@[simp]
+theorem minkowskiBasisFin4_apply_succ (i : Fin 3) :
+    minkowskiBasisFin4 i.succ = basis (Sum.inr i) := by
+  rw [minkowskiBasisFin4_apply]
+  fin_cases i <;> rfl
+
+end EpsilonEridani

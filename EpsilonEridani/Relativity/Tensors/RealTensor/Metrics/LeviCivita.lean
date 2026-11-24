@@ -5,10 +5,10 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm
 public import Mathlib
 public import Physlib.Relativity.MinkowskiMatrix
 public import Physlib.Mathematics.KroneckerDelta.Basic
+public import Physlib.Mathematics.LeviCivita.Basic
 
 /-!
 # The Levi-Civita symbol
@@ -18,13 +18,9 @@ delta so that its contraction identities follow from the determinant formula in
 `Physlib.Mathematics.KroneckerDelta.Basic` rather than from case analysis on
 permutations.
 
-The last section relates these integer symbols to the volume form
-`EpsilonEridani.minkowskiVolumeForm` (`ε^{0123} = +1`) of
-`EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm`. The two use opposite sign
-conventions: `leviCivita4Int` is `leviCivitaSymbol`, and `leviCivita4UpInt`, documented as the
-contravariant symbol, is its negative, i.e. `ε^{0123} = -1`. Numerically, the covariant components
-`ε_{μνρσ} = -leviCivitaSymbol (μ, ν, ρ, σ)` of `minkowskiVolumeForm` are therefore the values of
-`leviCivita4UpInt` (`EpsilonEridani.minkowskiVolumeForm_minkowskiBasisFin4_eq_leviCivita4UpInt`).
+The covariant symbol `leviCivita4Int` is Physlib's `leviCivitaSymbol` on `Fin 4`
+(`leviCivita4Int_eq_leviCivitaSymbol`); its relation to the volume form of Minkowski space is in
+`EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita.VolumeForm`.
 -/
 
 @[expose] public section
@@ -46,6 +42,12 @@ generalized Kronecker delta are equivalent abstractions for capturing permutatio
 abbrev leviCivita4Int (μ ν ρ σ : Fin 4) : ℤ :=
   generalizedKroneckerDelta ![μ, ν, ρ, σ] id
 
+/-- The covariant symbol is Physlib's Levi-Civita symbol on `Fin 4`: both are, by definition,
+`generalizedKroneckerDelta ![μ, ν, ρ, σ] id`. -/
+lemma leviCivita4Int_eq_leviCivitaSymbol (μ ν ρ σ : Fin 4) :
+    leviCivita4Int μ ν ρ σ = leviCivitaSymbol ![μ, ν, ρ, σ] :=
+  rfl
+
 /-- The diagonal Minkowski metric entry `η i i` as an integer (`1` for `i = 0`, else `-1`), with
 `i : Fin 4` read as the Minkowski index `finSumFinEquiv.symm i : Fin 1 ⊕ Fin 3`: `0` is the time
 index and `1, 2, 3` are the spatial indices. -/
@@ -55,11 +57,7 @@ def metricDiagSignInt (i : Fin 4) : ℤ :=
 
 lemma metricDiagSignInt_eq_if_zero (i : Fin 4) :
     metricDiagSignInt i = if i.1 = 0 then 1 else -1 := by
-  have h : ⇑(finSumFinEquiv (m := 1) (n := 3)).symm =
-      ![Sum.inl 0, Sum.inr 0, Sum.inr 1, Sum.inr 2] := by
-    ext i
-    fin_cases i <;> rfl
-  fin_cases i <;> simp [metricDiagSignInt, h] <;> norm_num
+  fin_cases i <;> simp [metricDiagSignInt, finSumFinEquiv, Fin.addCases] <;> norm_num
 
 /-- The rank-4 contravariant Levi-Civita symbol in 3+1 dimensions.
 With signature `(+, -, -, -)`, each index raise contributes a diagonal metric factor,
@@ -136,24 +134,3 @@ lemma leviCivita4UpInt_contract_four :
   simpa [leviCivita4UpInt_eq_neg] using h
 
 end realLorentzTensor
-
-/-! ### The integer symbols and the volume form -/
-
-namespace EpsilonEridani
-
-/-- The covariant components of the volume form are the values of the integer symbol
-`leviCivita4UpInt`: `ε_{μνρσ} = leviCivita4UpInt μ ν ρ σ = -leviCivitaSymbol (μ, ν, ρ, σ)`. -/
-theorem minkowskiVolumeForm_minkowskiBasisFin4_eq_leviCivita4UpInt (μ ν ρ σ : Fin 4) :
-    minkowskiVolumeForm ![minkowskiBasisFin4 μ, minkowskiBasisFin4 ν, minkowskiBasisFin4 ρ,
-        minkowskiBasisFin4 σ] = (realLorentzTensor.leviCivita4UpInt μ ν ρ σ : ℝ) := by
-  have h : ![minkowskiBasisFin4 μ, minkowskiBasisFin4 ν, minkowskiBasisFin4 ρ,
-      minkowskiBasisFin4 σ] = fun i => minkowskiBasisFin4 (![μ, ν, ρ, σ] i) := by
-    funext i
-    fin_cases i <;> rfl
-  rw [h, minkowskiVolumeForm_minkowskiBasisFin4_comp ![μ, ν, ρ, σ],
-    realLorentzTensor.leviCivita4UpInt_eq_neg, Int.cast_neg]
-  -- `leviCivita4Int μ ν ρ σ` and `leviCivitaSymbol ![μ, ν, ρ, σ]` are both, by definition,
-  -- `generalizedKroneckerDelta ![μ, ν, ρ, σ] id`.
-  rfl
-
-end EpsilonEridani

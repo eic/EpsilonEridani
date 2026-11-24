@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
-public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Nondegenerate
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Projection
@@ -427,9 +426,8 @@ theorem eq_transverseEpsRaise_iff {u w : V} :
   ε.eq_bilinMapRaise_iff _ hB
 
 theorem bilinForm_transverseEpsRaise_apply_swap (u v : V) :
-    B (L.transverseEpsRaise ε hB u) v = -B (L.transverseEpsRaise ε hB v) u := by
-  rw [transverseEpsRaise_def, AlternatingMap.bilinMapRaise_def]
-  exact (L.isAlt_transverseEps ε).symmCompOfNondegenerate_apply_swap hB u v
+    B (L.transverseEpsRaise ε hB u) v = -B (L.transverseEpsRaise ε hB v) u :=
+  ε.bilinForm_bilinMapRaise_apply_swap _ hB u v
 
 @[simp]
 theorem transverseEpsRaise_nPlus_eq_zero : L.transverseEpsRaise ε hB L.nPlus = 0 :=
@@ -477,9 +475,8 @@ end IsRefl
 
 /-- For a symmetric form the raised transverse antisymmetric tensor is skew-adjoint. -/
 theorem isSkewAdjoint_transverseEpsRaise (hB' : B.IsSymm) :
-    B.IsSkewAdjoint (L.transverseEpsRaise ε hB) := by
-  rw [transverseEpsRaise_def, AlternatingMap.bilinMapRaise_def]
-  exact (L.isAlt_transverseEps ε).isSkewAdjoint_symmCompOfNondegenerate hB hB'
+    B.IsSkewAdjoint (L.transverseEpsRaise ε hB) :=
+  ε.isSkewAdjoint_bilinMapRaise _ hB hB'
 
 end Field
 

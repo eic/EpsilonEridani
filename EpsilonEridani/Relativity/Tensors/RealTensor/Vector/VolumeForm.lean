@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
 public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Nondegenerate
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
 public import Mathlib.LinearAlgebra.Determinant
 public import Physlib.Mathematics.LeviCivita.Basic
@@ -53,8 +54,6 @@ Levi-Civita tensors.
 
 ## Main definitions
 
-* `EpsilonEridani.minkowskiBasisFin4`: the standard basis `e₀, e₁, e₂, e₃` of Minkowski space
-  indexed by `Fin 4`.
 * `EpsilonEridani.minkowskiVolumeForm`: the volume form `ε` of four-dimensional Minkowski space,
   with `ε^{0123} = +1`.
 * `EpsilonEridani.minkowskiVolumeFormRaise`: the linear map `u ↦ ε_ν{}^μ{}_{ρσ} u^ν a^ρ b^σ`.
@@ -95,37 +94,6 @@ namespace EpsilonEridani
 open Lorentz Vector
 open scoped Lorentz.Vector
 
-/-- The standard basis of four-dimensional Minkowski space indexed by `Fin 4`, with `e₀` the
-time direction and `e₁, e₂, e₃` the spatial directions. -/
-noncomputable def minkowskiBasisFin4 : Module.Basis (Fin 4) ℝ (Vector 3) :=
-  basis.reindex finSumFinEquiv
-
-theorem minkowskiBasisFin4_apply (i : Fin 4) :
-    minkowskiBasisFin4 i = basis (finSumFinEquiv.symm i) := by
-  simp [minkowskiBasisFin4]
-
-@[simp]
-theorem minkowskiBasisFin4_apply_zero : minkowskiBasisFin4 0 = basis (Sum.inl 0) :=
-  minkowskiBasisFin4_apply 0
-
-@[simp]
-theorem minkowskiBasisFin4_apply_one : minkowskiBasisFin4 1 = basis (Sum.inr 0) :=
-  minkowskiBasisFin4_apply 1
-
-@[simp]
-theorem minkowskiBasisFin4_apply_two : minkowskiBasisFin4 2 = basis (Sum.inr 1) :=
-  minkowskiBasisFin4_apply 2
-
-@[simp]
-theorem minkowskiBasisFin4_apply_three : minkowskiBasisFin4 3 = basis (Sum.inr 2) :=
-  minkowskiBasisFin4_apply 3
-
-@[simp]
-theorem minkowskiBasisFin4_apply_succ (i : Fin 3) :
-    minkowskiBasisFin4 i.succ = basis (Sum.inr i) := by
-  rw [minkowskiBasisFin4_apply]
-  fin_cases i <;> rfl
-
 /-- The volume form `ε` of four-dimensional Minkowski space, `ε(a, b, c, d) = ε_{μνρσ} a^μ b^ν c^ρ
 d^σ` with `ε^{0123} = +1`, hence `ε_{0123} = -1`: minus the determinant of the components in the
 standard basis. -/
@@ -139,7 +107,7 @@ theorem minkowskiVolumeForm_apply (v : Fin 4 → Vector 3) :
   rw [minkowskiVolumeForm, _root_.neg_apply, Module.Basis.det_apply, neg_inj]
   refine congrArg Matrix.det ?_
   ext i j
-  simp [Module.Basis.toMatrix_apply, minkowskiBasisFin4, Lorentz.Vector.basis_repr_apply]
+  simp [Module.Basis.toMatrix_apply]
 
 /-- The Laplace expansion of the volume form along the time components: `ε(x, y, z, w)` is minus
 the alternating sum of the time components times the `3 × 3` determinants of the spatial
@@ -290,9 +258,7 @@ theorem minkowskiVolumeFormRaise_self (a : Vector 3) : minkowskiVolumeFormRaise 
 /-- `minkowskiVolumeFormRaise a b` is antisymmetric in `a` and `b`. -/
 theorem minkowskiVolumeFormRaise_swap (a b : Vector 3) :
     minkowskiVolumeFormRaise a b = -minkowskiVolumeFormRaise b a := by
-  have h : ![a, b] = ![b, a] ∘ Equiv.swap 0 1 := by
-    funext i
-    fin_cases i <;> rfl
+  have h : ![a, b] = ![b, a] ∘ Equiv.swap 0 1 := (Matrix.cons_cons_comp_swap_zero_one b a ![]).symm
   rw [minkowskiVolumeFormRaise_def, minkowskiVolumeFormRaise_def, h]
   exact minkowskiVolumeForm.bilinMapRaise_comp_swap _ _ (by decide)
 

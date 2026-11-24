@@ -42,6 +42,8 @@ parity-odd parts of the leptonic and hadronic tensors of deep-inelastic scatteri
 - `AlternatingMap.bilinForm_bilinMapRaise_apply`, `AlternatingMap.eq_bilinMapRaise_iff`: the
   characteristic property `B (f.bilinMapRaise m hB v) w = f.bilinMap m v w` of the raised map,
   which determines it.
+- `AlternatingMap.bilinForm_bilinMapRaise_apply_swap`, `AlternatingMap.isSkewAdjoint_bilinMapRaise`:
+  the raised map is antisymmetric for `B`, and skew-adjoint when `B` is symmetric.
 - `AlternatingMap.bilinMapRaise_apply_eq_zero`: the raised map kills the fixed vectors.
 -/
 
@@ -119,18 +121,7 @@ theorem bilinMap_comp_swap (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (m : Fin n → M
   ext v w
   have h : Matrix.vecCons v (Matrix.vecCons w (m ∘ Equiv.swap i j)) =
       Matrix.vecCons v (Matrix.vecCons w m) ∘ Equiv.swap i.succ.succ j.succ.succ := by
-    funext k
-    refine Fin.cases ?_ (Fin.cases ?_ fun k => ?_) k
-    · rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _).symm
-        (Fin.succ_ne_zero _).symm]
-      rfl
-    · rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
-        ((Fin.succ_injective _).ne (Fin.succ_ne_zero _)).symm
-        ((Fin.succ_injective _).ne (Fin.succ_ne_zero _)).symm]
-      rfl
-    · rw [Function.comp_apply, (Fin.succ_injective _).swap_apply,
-        (Fin.succ_injective _).swap_apply]
-      simp
+    rw [Matrix.cons_swap, Matrix.cons_swap]
   rw [bilinMap_apply, h, f.map_swap _ (by simpa using hij), LinearMap.neg_apply,
     LinearMap.neg_apply, bilinMap_apply]
 
@@ -165,6 +156,17 @@ theorem eq_bilinMapRaise_iff (f : M [⋀^Fin (n + 2)]→ₗ[K] K) (m : Fin n →
     (hB : B.Nondegenerate) {u v : M} :
     u = f.bilinMapRaise m hB v ↔ ∀ w, B u w = f.bilinMap m v w :=
   LinearMap.BilinForm.eq_symmCompOfNondegenerate_iff _ hB
+
+/-- The raised map of an alternating map satisfies `B (E v) w = -B (E w) v`. -/
+theorem bilinForm_bilinMapRaise_apply_swap (f : M [⋀^Fin (n + 2)]→ₗ[K] K) (m : Fin n → M)
+    (hB : B.Nondegenerate) (v w : M) :
+    B (f.bilinMapRaise m hB v) w = -B (f.bilinMapRaise m hB w) v :=
+  LinearMap.BilinForm.IsAlt.symmCompOfNondegenerate_apply_swap (f.isAlt_bilinMap m) hB v w
+
+/-- For a symmetric `B`, the raised map is skew-adjoint. -/
+theorem isSkewAdjoint_bilinMapRaise (f : M [⋀^Fin (n + 2)]→ₗ[K] K) (m : Fin n → M)
+    (hB : B.Nondegenerate) (hB' : B.IsSymm) : B.IsSkewAdjoint (f.bilinMapRaise m hB) :=
+  LinearMap.BilinForm.IsAlt.isSkewAdjoint_symmCompOfNondegenerate (f.isAlt_bilinMap m) hB hB'
 
 /-- The raised map kills the fixed vectors. -/
 @[simp]
