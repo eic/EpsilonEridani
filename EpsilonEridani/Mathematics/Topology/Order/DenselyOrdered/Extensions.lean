@@ -14,8 +14,8 @@ Mathlib proves that a neighbourhood of a point contains a closed interval that i
 neighbourhood of the point (`exists_Icc_mem_subset_of_mem_nhds`). This file combines it with
 order-connectedness:
 
-* `IsOpen.exists_Icc_subset`: an open order-connected set containing two points contains a closed
-  interval whose interior contains both.
+* `IsOpen.exists_Icc_subset_mem_Ioo`: an open order-connected set containing two points contains a
+  closed interval whose interior contains both.
 
 A preconnected set in an order-closed linear order is order-connected
 (`IsPreconnected.ordConnected`), so this applies in particular to open connected sets. This is the
@@ -34,7 +34,7 @@ variable {α : Type*} [TopologicalSpace α] [LinearOrder α] [OrderTopology α] 
 
 /-- An open order-connected set containing two points contains a closed interval whose interior
 contains both. -/
-theorem _root_.IsOpen.exists_Icc_subset {s : Set α} {x y : α} (hs : IsOpen s)
+theorem _root_.IsOpen.exists_Icc_subset_mem_Ioo {s : Set α} {x y : α} (hs : IsOpen s)
     (hs' : s.OrdConnected) (hx : x ∈ s) (hy : y ∈ s) :
     ∃ a b : α, Icc a b ⊆ s ∧ x ∈ Ioo a b ∧ y ∈ Ioo a b := by
   obtain ⟨a₁, b₁, -, hn₁, hsub₁⟩ := exists_Icc_mem_subset_of_mem_nhds (hs.mem_nhds hx)
