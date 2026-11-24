@@ -32,15 +32,17 @@ Minkowski space, `n± = (e₀ ± eᵢ)/√2`, is constructed in `EpsilonEridani.
 Contracting an alternating four-form `ε` with the two basis vectors gives the *transverse
 antisymmetric tensor* `ε_{T μν} = ε_{μνρσ} n₊^ρ n₋^σ`, the bilinear form
 `(u, v) ↦ ε(u, v, n₊, n₋)`. It is alternating, vanishes on the longitudinal subspace and only sees
-the transverse parts of its arguments. When `B` is nondegenerate its second index can be raised,
-giving the endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
+the transverse parts of its arguments. When `V` is finite-dimensional over a field and `B` is
+nondegenerate, its second index can be raised (`AlternatingMap.bilinMapRaise`), giving the
+endomorphism `E` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
 `(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`; it kills `n₊` and `n₋`, for a reflexive
 form it takes values in the transverse subspace, and for a symmetric form it is skew-adjoint. In
 four-dimensional Minkowski space, with `ε` the volume form, `E` is a rotation by a right angle
 of the transverse plane: it squares to minus the transverse projector
 (`EpsilonEridani.Relativity.LightConeBasis`).
 
-The material is stated for an arbitrary bilinear form over a commutative ring. The pairing is
+The material is stated for an arbitrary bilinear form over a commutative ring, except the raised
+transverse antisymmetric tensor, which needs a finite-dimensional space over a field. The pairing is
 required in both orders, so no symmetry of `B` is needed for the decomposition itself; the
 splitting `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T` of the scalar product uses only reflexivity.
 The transverse subspace is Mathlib's `LinearMap.BilinForm.orthogonal`, which puts the basis
@@ -406,37 +408,36 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensiona
 the endomorphism `E` of `V` with `B (E u) v = ε(u, v, n₊, n₋)`, i.e.
 `(E u)^μ = ε_{T ν}{}^{μ} u^ν = -ε_T^{μ}{}_{ν} u^ν`. -/
 noncomputable def transverseEpsRaise : V →ₗ[K] V :=
-  (L.transverseEps ε).symmCompOfNondegenerate B hB
+  ε.bilinMapRaise ![L.nPlus, L.nMinus] hB
 
 /-- Unfolding lemma for `transverseEpsRaise`, whose body is not exposed. -/
 theorem transverseEpsRaise_def :
-    L.transverseEpsRaise ε hB = (L.transverseEps ε).symmCompOfNondegenerate B hB :=
+    L.transverseEpsRaise ε hB = ε.bilinMapRaise ![L.nPlus, L.nMinus] hB :=
   (rfl)
 
 /-- The characteristic property of the raised transverse antisymmetric tensor. -/
 @[simp]
 theorem bilinForm_transverseEpsRaise_apply (u v : V) :
     B (L.transverseEpsRaise ε hB u) v = L.transverseEps ε u v :=
-  symmCompOfNondegenerate_left_apply _ hB v u
+  ε.bilinForm_bilinMapRaise_apply _ hB u v
 
 /-- `E u` is the unique vector `w` with `B w v = ε(u, v, n₊, n₋)` for all `v`. -/
 theorem eq_transverseEpsRaise_iff {u w : V} :
-    w = L.transverseEpsRaise ε hB u ↔ ∀ v, B w v = L.transverseEps ε u v := by
-  rw [transverseEpsRaise_def]
-  exact eq_symmCompOfNondegenerate_iff _ hB
+    w = L.transverseEpsRaise ε hB u ↔ ∀ v, B w v = L.transverseEps ε u v :=
+  ε.eq_bilinMapRaise_iff _ hB
 
 theorem bilinForm_transverseEpsRaise_apply_swap (u v : V) :
     B (L.transverseEpsRaise ε hB u) v = -B (L.transverseEpsRaise ε hB v) u := by
-  rw [bilinForm_transverseEpsRaise_apply, bilinForm_transverseEpsRaise_apply,
-    transverseEps_apply_swap]
+  rw [transverseEpsRaise_def, AlternatingMap.bilinMapRaise_def]
+  exact (L.isAlt_transverseEps ε).symmCompOfNondegenerate_apply_swap hB u v
 
 @[simp]
 theorem transverseEpsRaise_nPlus_eq_zero : L.transverseEpsRaise ε hB L.nPlus = 0 :=
-  ((L.eq_transverseEpsRaise_iff ε hB).2 fun v => by simp).symm
+  ε.bilinMapRaise_apply_eq_zero ![L.nPlus, L.nMinus] hB 0
 
 @[simp]
 theorem transverseEpsRaise_nMinus_eq_zero : L.transverseEpsRaise ε hB L.nMinus = 0 :=
-  ((L.eq_transverseEpsRaise_iff ε hB).2 fun v => by simp).symm
+  ε.bilinMapRaise_apply_eq_zero ![L.nPlus, L.nMinus] hB 1
 
 /-- The raised transverse antisymmetric tensor only sees the transverse part of its argument. -/
 @[simp]
@@ -449,12 +450,8 @@ theorem transverseEpsRaise_comp_transverseProj :
   LinearMap.ext (L.transverseEpsRaise_transverseProj ε hB)
 
 theorem transverseEpsRaise_smul (c : K) :
-    L.transverseEpsRaise (c • ε) hB = c • L.transverseEpsRaise ε hB := by
-  ext u
-  symm
-  rw [eq_transverseEpsRaise_iff, transverseEps_smul]
-  intro v
-  simp
+    L.transverseEpsRaise (c • ε) hB = c • L.transverseEpsRaise ε hB :=
+  ε.bilinMapRaise_smul _ hB c
 
 section IsRefl
 
@@ -481,9 +478,8 @@ end IsRefl
 /-- For a symmetric form the raised transverse antisymmetric tensor is skew-adjoint. -/
 theorem isSkewAdjoint_transverseEpsRaise (hB' : B.IsSymm) :
     B.IsSkewAdjoint (L.transverseEpsRaise ε hB) := by
-  intro u v
-  have h := hB'.eq u (L.transverseEpsRaise ε hB v)
-  rw [Pi.neg_apply, map_neg, h, ← bilinForm_transverseEpsRaise_apply_swap]
+  rw [transverseEpsRaise_def, AlternatingMap.bilinMapRaise_def]
+  exact (L.isAlt_transverseEps ε).isSkewAdjoint_symmCompOfNondegenerate hB hB'
 
 end Field
 

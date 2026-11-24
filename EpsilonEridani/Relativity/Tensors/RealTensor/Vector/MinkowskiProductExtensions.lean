@@ -42,7 +42,7 @@ declaration order, the file contains:
   witnesses that supply the `IsRefl` and `Nondegenerate` hypotheses of the results about
   light-cone bases in `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`;
 * the components `(E u)^μ = η^{μμ} F(u, e_μ)` of a bilinear form `F` with its second index raised
-  by the Minkowski metric (`symmCompOfNondegenerate_minkowskiProduct_apply`).
+  by the Minkowski metric (`LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply`).
 -/
 
 public section
@@ -166,6 +166,13 @@ theorem nondegenerate_toBilinForm_minkowskiProduct {d : ℕ} :
     isSymm_toBilinForm_minkowskiProduct.isRefl).2 fun p hp =>
       (minkowskiProduct_eq_zero_forall_iff p).1 hp
 
+end EpsilonEridani
+
+namespace LinearMap.BilinForm
+
+open Lorentz.Vector EpsilonEridani
+open scoped Lorentz.Vector
+
 /-- A bilinear form `F` with its second index raised by the Minkowski metric, in components: the
 endomorphism `E` with `⟪E u, v⟫ₘ = F u v` has `(E u)^μ = η^{μμ} F(u, e_μ)`. -/
 theorem symmCompOfNondegenerate_minkowskiProduct_apply {d : ℕ}
@@ -173,9 +180,9 @@ theorem symmCompOfNondegenerate_minkowskiProduct_apply {d : ℕ}
     F.symmCompOfNondegenerate (minkowskiProduct (d := d)).toBilinForm
         nondegenerate_toBilinForm_minkowskiProduct u μ =
       minkowskiMatrix μ μ * F u (basis μ) := by
-  have h := LinearMap.BilinForm.symmCompOfNondegenerate_left_apply F
+  have h := symmCompOfNondegenerate_left_apply F
     nondegenerate_toBilinForm_minkowskiProduct (basis μ) u
   rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_basis_right] at h
   rw [← h, ← _root_.mul_assoc, minkowskiMatrix.η_apply_mul_η_apply_diag, one_mul]
 
-end EpsilonEridani
+end LinearMap.BilinForm

@@ -33,8 +33,8 @@ The integer Levi-Civita symbols of
 `EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita` use the opposite convention:
 `realLorentzTensor.leviCivita4UpInt`, documented there as the contravariant symbol, is
 `-leviCivitaSymbol`, i.e. `ε^{0123} = -1`. Numerically, the covariant components of
-`minkowskiVolumeForm` are the values of `leviCivita4UpInt`; the bridge is
-`EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivitaVolumeForm`.
+`minkowskiVolumeForm` are the values of `leviCivita4UpInt`, as that module proves
+(`EpsilonEridani.minkowskiVolumeForm_minkowskiBasisFin4_eq_leviCivita4UpInt`).
 
 Every alternating four-form on Minkowski space is a multiple of this one
 (`AlternatingMap.eq_smul_minkowskiVolumeForm`), so statements about contractions of the
@@ -45,9 +45,9 @@ light-cone basis, are contractions of this form with two vectors (`AlternatingMa
 The contraction with two vectors `a`, `b`, with its second remaining index raised by the Minkowski
 metric, is the linear map `minkowskiVolumeFormRaise a b`, characterised by
 `⟪minkowskiVolumeFormRaise a b u, v⟫ₘ = ε(u, v, a, b)`
-(`minkowskiProduct_minkowskiVolumeFormRaise`); it is built with the same combinator,
-`LinearMap.BilinForm.symmCompOfNondegenerate`, as the raised transverse antisymmetric tensor of a
-light-cone basis. Applying it twice is a polynomial identity in Minkowski products
+(`minkowskiProduct_minkowskiVolumeFormRaise`); it is `AlternatingMap.bilinMapRaise`, the same
+construction as the raised transverse antisymmetric tensor of a light-cone basis. Applying it
+twice is a polynomial identity in Minkowski products
 (`minkowskiVolumeFormRaise_minkowskiVolumeFormRaise`), the one-index contraction of two
 Levi-Civita tensors.
 
@@ -103,6 +103,28 @@ noncomputable def minkowskiBasisFin4 : Module.Basis (Fin 4) ℝ (Vector 3) :=
 theorem minkowskiBasisFin4_apply (i : Fin 4) :
     minkowskiBasisFin4 i = basis (finSumFinEquiv.symm i) := by
   simp [minkowskiBasisFin4]
+
+@[simp]
+theorem minkowskiBasisFin4_apply_zero : minkowskiBasisFin4 0 = basis (Sum.inl 0) :=
+  minkowskiBasisFin4_apply 0
+
+@[simp]
+theorem minkowskiBasisFin4_apply_one : minkowskiBasisFin4 1 = basis (Sum.inr 0) :=
+  minkowskiBasisFin4_apply 1
+
+@[simp]
+theorem minkowskiBasisFin4_apply_two : minkowskiBasisFin4 2 = basis (Sum.inr 1) :=
+  minkowskiBasisFin4_apply 2
+
+@[simp]
+theorem minkowskiBasisFin4_apply_three : minkowskiBasisFin4 3 = basis (Sum.inr 2) :=
+  minkowskiBasisFin4_apply 3
+
+@[simp]
+theorem minkowskiBasisFin4_apply_succ (i : Fin 3) :
+    minkowskiBasisFin4 i.succ = basis (Sum.inr i) := by
+  rw [minkowskiBasisFin4_apply]
+  fin_cases i <;> rfl
 
 /-- The volume form `ε` of four-dimensional Minkowski space, `ε(a, b, c, d) = ε_{μνρσ} a^μ b^ν c^ρ
 d^σ` with `ε^{0123} = +1`, hence `ε_{0123} = -1`: minus the determinant of the components in the
@@ -192,14 +214,12 @@ second index raised by the Minkowski metric: the bilinear form `(u, v) ↦ ε(u,
 the endomorphism `E` with `⟪E u, v⟫ₘ = ε(u, v, a, b)`
 (`minkowskiProduct_minkowskiVolumeFormRaise`). -/
 noncomputable def minkowskiVolumeFormRaise (a b : Vector 3) : Vector 3 →ₗ[ℝ] Vector 3 :=
-  LinearMap.BilinForm.symmCompOfNondegenerate (minkowskiVolumeForm.bilinMap ![a, b])
-    (minkowskiProduct (d := 3)).toBilinForm nondegenerate_toBilinForm_minkowskiProduct
+  minkowskiVolumeForm.bilinMapRaise ![a, b] nondegenerate_toBilinForm_minkowskiProduct
 
 /-- Unfolding lemma for `minkowskiVolumeFormRaise`, whose body is not exposed. -/
 theorem minkowskiVolumeFormRaise_def (a b : Vector 3) :
     minkowskiVolumeFormRaise a b =
-      LinearMap.BilinForm.symmCompOfNondegenerate (minkowskiVolumeForm.bilinMap ![a, b])
-        (minkowskiProduct (d := 3)).toBilinForm nondegenerate_toBilinForm_minkowskiProduct :=
+      minkowskiVolumeForm.bilinMapRaise ![a, b] nondegenerate_toBilinForm_minkowskiProduct :=
   (rfl)
 
 /-- The characteristic property of `minkowskiVolumeFormRaise a b`:
@@ -207,17 +227,17 @@ theorem minkowskiVolumeFormRaise_def (a b : Vector 3) :
 @[simp]
 theorem minkowskiProduct_minkowskiVolumeFormRaise (a b u v : Vector 3) :
     ⟪minkowskiVolumeFormRaise a b u, v⟫ₘ = minkowskiVolumeForm ![u, v, a, b] := by
-  have h := LinearMap.BilinForm.symmCompOfNondegenerate_left_apply
-    (minkowskiVolumeForm.bilinMap ![a, b]) nondegenerate_toBilinForm_minkowskiProduct v u
-  rw [ContinuousLinearMap.toBilinForm_apply, AlternatingMap.bilinMap_apply] at h
-  rwa [minkowskiVolumeFormRaise]
+  have h := minkowskiVolumeForm.bilinForm_bilinMapRaise_apply ![a, b]
+    nondegenerate_toBilinForm_minkowskiProduct u v
+  rwa [ContinuousLinearMap.toBilinForm_apply, AlternatingMap.bilinMap_apply,
+    ← minkowskiVolumeFormRaise_def] at h
 
 /-- `minkowskiVolumeFormRaise a b u` is the unique vector `w` with `⟪w, v⟫ₘ = ε(u, v, a, b)` for
 all `v`. -/
 theorem eq_minkowskiVolumeFormRaise_iff {a b u w : Vector 3} :
     w = minkowskiVolumeFormRaise a b u ↔ ∀ v, ⟪w, v⟫ₘ = minkowskiVolumeForm ![u, v, a, b] := by
   rw [minkowskiVolumeFormRaise_def]
-  refine (LinearMap.BilinForm.eq_symmCompOfNondegenerate_iff _
+  refine (minkowskiVolumeForm.eq_bilinMapRaise_iff _
     nondegenerate_toBilinForm_minkowskiProduct).trans (forall_congr' fun v => ?_)
   simp only [ContinuousLinearMap.toBilinForm_apply, AlternatingMap.bilinMap_apply]
 
@@ -230,65 +250,59 @@ these pairings directly. -/
 @[simp high]
 theorem minkowskiProduct_minkowskiVolumeFormRaise_self (a b u : Vector 3) :
     ⟪minkowskiVolumeFormRaise a b u, u⟫ₘ = 0 := by
-  rw [minkowskiProduct_minkowskiVolumeFormRaise]
-  exact minkowskiVolumeForm.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl (by decide)
+  rw [minkowskiProduct_minkowskiVolumeFormRaise, ← AlternatingMap.bilinMap_apply]
+  exact minkowskiVolumeForm.bilinMap_apply_self ![a, b] u
 
 /-- `⟪minkowskiVolumeFormRaise a b u, a⟫ₘ = ε(u, a, a, b) = 0`. -/
 @[simp high]
 theorem minkowskiProduct_minkowskiVolumeFormRaise_left_eq_zero (a b u : Vector 3) :
     ⟪minkowskiVolumeFormRaise a b u, a⟫ₘ = 0 := by
-  rw [minkowskiProduct_minkowskiVolumeFormRaise]
-  exact minkowskiVolumeForm.map_eq_zero_of_eq _ (i := 1) (j := 2) rfl (by decide)
+  rw [minkowskiProduct_minkowskiVolumeFormRaise, ← AlternatingMap.bilinMap_apply]
+  exact minkowskiVolumeForm.bilinMap_apply_right_eq_zero ![a, b] 0 u
 
 /-- `⟪minkowskiVolumeFormRaise a b u, b⟫ₘ = ε(u, b, a, b) = 0`. -/
 @[simp high]
 theorem minkowskiProduct_minkowskiVolumeFormRaise_right_eq_zero (a b u : Vector 3) :
     ⟪minkowskiVolumeFormRaise a b u, b⟫ₘ = 0 := by
-  rw [minkowskiProduct_minkowskiVolumeFormRaise]
-  exact minkowskiVolumeForm.map_eq_zero_of_eq _ (i := 1) (j := 3) rfl (by decide)
+  rw [minkowskiProduct_minkowskiVolumeFormRaise, ← AlternatingMap.bilinMap_apply]
+  exact minkowskiVolumeForm.bilinMap_apply_right_eq_zero ![a, b] 1 u
 
 /-- `minkowskiVolumeFormRaise a b` kills `a`. -/
 @[simp]
 theorem minkowskiVolumeFormRaise_apply_left_eq_zero (a b : Vector 3) :
     minkowskiVolumeFormRaise a b a = 0 := by
-  refine (eq_minkowskiVolumeFormRaise_iff.2 fun v => ?_).symm
-  rw [map_zero, _root_.zero_apply]
-  exact (minkowskiVolumeForm.map_eq_zero_of_eq _ (i := 0) (j := 2) rfl (by decide)).symm
+  rw [minkowskiVolumeFormRaise_def]
+  exact minkowskiVolumeForm.bilinMapRaise_apply_eq_zero ![a, b] _ 0
 
 /-- `minkowskiVolumeFormRaise a b` kills `b`. -/
 @[simp]
 theorem minkowskiVolumeFormRaise_apply_right_eq_zero (a b : Vector 3) :
     minkowskiVolumeFormRaise a b b = 0 := by
-  refine (eq_minkowskiVolumeFormRaise_iff.2 fun v => ?_).symm
-  rw [map_zero, _root_.zero_apply]
-  exact (minkowskiVolumeForm.map_eq_zero_of_eq _ (i := 0) (j := 3) rfl (by decide)).symm
+  rw [minkowskiVolumeFormRaise_def]
+  exact minkowskiVolumeForm.bilinMapRaise_apply_eq_zero ![a, b] _ 1
 
 /-- The contraction of the volume form with the same vector twice vanishes. -/
 @[simp]
 theorem minkowskiVolumeFormRaise_self (a : Vector 3) : minkowskiVolumeFormRaise a a = 0 := by
-  ext1 u
-  refine (eq_minkowskiVolumeFormRaise_iff.2 fun v => ?_).symm
-  rw [LinearMap.zero_apply, map_zero, _root_.zero_apply]
-  exact (minkowskiVolumeForm.map_eq_zero_of_eq _ (i := 2) (j := 3) rfl (by decide)).symm
+  rw [minkowskiVolumeFormRaise_def]
+  exact minkowskiVolumeForm.bilinMapRaise_eq_zero_of_eq _ (i := 0) (j := 1) rfl (by decide)
 
 /-- `minkowskiVolumeFormRaise a b` is antisymmetric in `a` and `b`. -/
 theorem minkowskiVolumeFormRaise_swap (a b : Vector 3) :
     minkowskiVolumeFormRaise a b = -minkowskiVolumeFormRaise b a := by
-  ext1 u
-  refine (eq_minkowskiVolumeFormRaise_iff.2 fun v => ?_).symm
-  have h : ![u, v, b, a] = ![u, v, a, b] ∘ Equiv.swap 2 3 := by
+  have h : ![a, b] = ![b, a] ∘ Equiv.swap 0 1 := by
     funext i
     fin_cases i <;> rfl
-  rw [LinearMap.neg_apply, map_neg, _root_.neg_apply,
-    minkowskiProduct_minkowskiVolumeFormRaise, h, minkowskiVolumeForm.map_swap _ (by decide),
-    neg_neg]
+  rw [minkowskiVolumeFormRaise_def, minkowskiVolumeFormRaise_def, h]
+  exact minkowskiVolumeForm.bilinMapRaise_comp_swap _ _ (by decide)
 
 /-- The components of `minkowskiVolumeFormRaise a b u`:
 `(minkowskiVolumeFormRaise a b u)^μ = η^{μμ} ε(u, e_μ, a, b)`. -/
 theorem minkowskiVolumeFormRaise_apply (a b u : Vector 3) (μ : Fin 1 ⊕ Fin 3) :
     minkowskiVolumeFormRaise a b u μ =
       minkowskiMatrix μ μ * minkowskiVolumeForm ![u, basis μ, a, b] := by
-  rw [minkowskiVolumeFormRaise, symmCompOfNondegenerate_minkowskiProduct_apply,
+  rw [minkowskiVolumeFormRaise_def, AlternatingMap.bilinMapRaise_def,
+    LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply,
     AlternatingMap.bilinMap_apply]
 
 /-! The explicit components of `minkowskiVolumeFormRaise a b u`: up to sign, the `μ`-th component
@@ -300,8 +314,10 @@ theorem minkowskiVolumeFormRaise_apply_inl (a b u : Vector 3) :
       u (Sum.inr 0) * (a (Sum.inr 1) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 1))
         - u (Sum.inr 1) * (a (Sum.inr 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 0))
         + u (Sum.inr 2) * (a (Sum.inr 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inr 0)) := by
-  simp [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
-    Matrix.det_fin_three, basis_apply]
+  simp only [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
+    Matrix.det_fin_three, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.cons_val, basis_apply,
+    minkowskiMatrix.inl_0_inl_0, reduceCtorEq, ↓reduceIte, Fin.isValue]
   ring
 
 /-- The first spatial component of `minkowskiVolumeFormRaise a b u`: the minor with row `1`
@@ -311,8 +327,11 @@ theorem minkowskiVolumeFormRaise_apply_inr_zero (a b u : Vector 3) :
       u (Sum.inl 0) * (a (Sum.inr 1) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 1))
         - u (Sum.inr 1) * (a (Sum.inl 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inl 0))
         + u (Sum.inr 2) * (a (Sum.inl 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inl 0)) := by
-  simp [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
-    Matrix.det_fin_three, basis_apply]
+  simp only [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
+    Matrix.det_fin_three, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.cons_val, basis_apply,
+    minkowskiMatrix.inr_i_inr_i, Sum.inr.injEq, reduceCtorEq, Fin.reduceEq, zero_ne_one, ↓reduceIte,
+    Fin.isValue]
   ring
 
 /-- The second spatial component of `minkowskiVolumeFormRaise a b u`: minus the minor with row `2`
@@ -322,8 +341,11 @@ theorem minkowskiVolumeFormRaise_apply_inr_one (a b u : Vector 3) :
       -(u (Sum.inl 0) * (a (Sum.inr 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inr 0))
         - u (Sum.inr 0) * (a (Sum.inl 0) * b (Sum.inr 2) - a (Sum.inr 2) * b (Sum.inl 0))
         + u (Sum.inr 2) * (a (Sum.inl 0) * b (Sum.inr 0) - a (Sum.inr 0) * b (Sum.inl 0))) := by
-  simp [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
-    Matrix.det_fin_three, basis_apply]
+  simp only [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
+    Matrix.det_fin_three, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.cons_val, basis_apply,
+    minkowskiMatrix.inr_i_inr_i, Sum.inr.injEq, reduceCtorEq, Fin.reduceEq, one_ne_zero, ↓reduceIte,
+    Fin.isValue]
   ring
 
 /-- The third spatial component of `minkowskiVolumeFormRaise a b u`: the minor with row `3`
@@ -333,8 +355,10 @@ theorem minkowskiVolumeFormRaise_apply_inr_two (a b u : Vector 3) :
       u (Sum.inl 0) * (a (Sum.inr 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inr 0))
         - u (Sum.inr 0) * (a (Sum.inl 0) * b (Sum.inr 1) - a (Sum.inr 1) * b (Sum.inl 0))
         + u (Sum.inr 1) * (a (Sum.inl 0) * b (Sum.inr 0) - a (Sum.inr 0) * b (Sum.inl 0)) := by
-  simp [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
-    Matrix.det_fin_three, basis_apply]
+  simp only [minkowskiVolumeFormRaise_apply, minkowskiVolumeForm_eq_sum_timeComponent_mul_det,
+    Matrix.det_fin_three, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.cons_val, basis_apply,
+    minkowskiMatrix.inr_i_inr_i, Sum.inr.injEq, reduceCtorEq, Fin.reduceEq, ↓reduceIte, Fin.isValue]
   ring
 
 /-- The square of `minkowskiVolumeFormRaise a b` for arbitrary `a`, `b`: the contraction of two
@@ -343,17 +367,19 @@ theorem minkowskiVolumeFormRaise_minkowskiVolumeFormRaise (a b u : Vector 3) :
     minkowskiVolumeFormRaise a b (minkowskiVolumeFormRaise a b u) =
       (⟪a, a⟫ₘ * ⟪b, b⟫ₘ - ⟪a, b⟫ₘ ^ 2) • u - (⟪a, a⟫ₘ * ⟪b, u⟫ₘ) • b
         + ⟪a, b⟫ₘ • (⟪a, u⟫ₘ • b + ⟪b, u⟫ₘ • a) - (⟪b, b⟫ₘ * ⟪a, u⟫ₘ) • a := by
-  funext μ
+  ext μ
   rcases μ with i | j
   · fin_cases i
-    simp [minkowskiVolumeFormRaise_apply_inl, minkowskiVolumeFormRaise_apply_inr_zero,
-      minkowskiVolumeFormRaise_apply_inr_one, minkowskiVolumeFormRaise_apply_inr_two,
-      minkowskiProduct_toCoord, Fin.sum_univ_three]
+    simp only [Fin.zero_eta, Fin.isValue, minkowskiVolumeFormRaise_apply_inl,
+      minkowskiVolumeFormRaise_apply_inr_zero, minkowskiVolumeFormRaise_apply_inr_one,
+      minkowskiVolumeFormRaise_apply_inr_two, minkowskiProduct_toCoord, Fin.sum_univ_three,
+      apply_add, apply_sub, apply_smul]
     ring
   · fin_cases j <;>
-      simp [minkowskiVolumeFormRaise_apply_inl, minkowskiVolumeFormRaise_apply_inr_zero,
+      simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
+        minkowskiVolumeFormRaise_apply_inl, minkowskiVolumeFormRaise_apply_inr_zero,
         minkowskiVolumeFormRaise_apply_inr_one, minkowskiVolumeFormRaise_apply_inr_two,
-        minkowskiProduct_toCoord, Fin.sum_univ_three] <;>
+        minkowskiProduct_toCoord, Fin.sum_univ_three, apply_add, apply_sub, apply_smul] <;>
       ring
 
 end EpsilonEridani
