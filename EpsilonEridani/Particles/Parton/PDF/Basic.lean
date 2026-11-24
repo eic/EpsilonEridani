@@ -69,6 +69,18 @@ lemma mellinMoment_integrable
   MeasureTheory.Integrable (fun x : ℝ => x ^ n * f i x Q2) :=
   h.momentIntegrable n i Q2
 
+/-- The zeroth minus the first Mellin moment is the integral of `(1 - x) f(x)` over `[0, 1]`:
+`∫₀¹ f - ∫₀¹ x f = ∫₀¹ (1 - x) f`. -/
+lemma mellinMoment_zero_sub_mellinMoment_one_eq_setIntegral_one_sub_mul {f : Pdf Flavor}
+    {i : Flavor} {Q2 : ℝ}
+    (h : MeasureTheory.IntegrableOn (fun x => f i x Q2) (Set.Icc 0 1)) :
+    mellinMoment f 0 i Q2 - mellinMoment f 1 i Q2 =
+      ∫ x in Set.Icc (0 : ℝ) 1, (1 - x) * f i x Q2 := by
+  have hx : MeasureTheory.IntegrableOn (fun x => x * f i x Q2) (Set.Icc 0 1) :=
+    h.continuousOn_mul continuousOn_id isCompact_Icc
+  simp only [mellinMoment, pow_zero, one_mul, pow_one, sub_mul]
+  exact (MeasureTheory.integral_sub h hx).symm
+
 /-! ### The analytic/physical split of `Assumptions`
 
 `Assumptions` bundles two kinds of hypothesis, and the difference decides what can be
@@ -114,6 +126,12 @@ lemma Assumptions.isPartonDensity {f : Pdf Flavor} (h : Assumptions f) :
 /-- The analytic half of a full assumption bundle. -/
 lemma Assumptions.regularity {f : Pdf Flavor} (h : Assumptions f) : Regularity f :=
   { measurable := h.measurable, momentIntegrable := h.momentIntegrable }
+
+/-- Under the analytic assumptions, each density is integrable: the zeroth Mellin-moment
+integrand. -/
+lemma Regularity.integrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ) :
+    MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
+  simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
 
 /-- The split is exact: `Assumptions` is the conjunction of the physical and the analytic
 half, with no residue. -/
@@ -171,6 +189,10 @@ lemma comap_apply (σ : κ → ι) (f : Pdf ι) (k : κ) (x Q2 : ℝ) :
     comap σ f k x Q2 = f (σ k) x Q2 :=
   rfl
 
+/-- The pullback of a density along `σ` is its composition with `σ`. -/
+lemma comap_eq_comp (σ : κ → ι) (f : Pdf ι) : comap σ f = f ∘ σ :=
+  rfl
+
 @[simp]
 lemma comap_id (f : Pdf ι) : comap id f = f :=
   rfl
@@ -224,6 +246,66 @@ lemma SumRuleAssumptions.comap_valenceTarget [Fintype ι] [Fintype κ] {f : Pdf 
   rfl
 
 end Comap
+
+/-! ### Rescaling a density parton by parton
+
+A weight `w : ι → ℝ` rescales a density over `ι` parton by parton, `weight w f i x Q2 =
+w i * f i x Q2`, and rescales every moment of each parton by the same factor. The density
+assumptions survive a nonnegative weight, and a pullback of a rescaling is the rescaling of the
+pullback by the pulled-back weight (`comap_weight`). A model density populating only some partons
+is built this way. -/
+
+section Weight
+
+variable {ι κ : Type}
+
+/-- The density whose parton `i` carries `w i` times the density of `i` in `f`. -/
+def weight (w : ι → ℝ) (f : Pdf ι) : Pdf ι := fun i x Q2 => w i * f i x Q2
+
+@[simp]
+lemma weight_apply (w : ι → ℝ) (f : Pdf ι) (i : ι) (x Q2 : ℝ) :
+    weight w f i x Q2 = w i * f i x Q2 :=
+  rfl
+
+/-- Rescaling a parton rescales each of its moments by the same factor. -/
+@[simp]
+lemma mellinMoment_weight (w : ι → ℝ) (f : Pdf ι) (n : ℕ) (i : ι) (Q2 : ℝ) :
+    mellinMoment (weight w f) n i Q2 = w i * mellinMoment f n i Q2 := by
+  rw [mellinMoment, mellinMoment, ← MeasureTheory.integral_const_mul]
+  exact MeasureTheory.setIntegral_congr_fun measurableSet_Icc fun x _ => by
+    rw [weight_apply]; ring
+
+/-- Pulling back a rescaled density rescales the pullback, by the pulled-back weight. -/
+@[simp]
+lemma comap_weight (σ : κ → ι) (w : ι → ℝ) (f : Pdf ι) :
+    comap σ (weight w f) = weight (w ∘ σ) (comap σ f) :=
+  rfl
+
+/-- A nonnegative weight preserves the physical half of the assumptions. -/
+lemma IsPartonDensity.weight {f : Pdf ι} (h : IsPartonDensity f) {w : ι → ℝ}
+    (hw : ∀ i, 0 ≤ w i) : IsPartonDensity (PDF.weight w f) where
+  support i x Q2 hx := by rw [weight_apply, h.support i x Q2 hx, mul_zero]
+  nonneg i x Q2 hx₀ hx₁ := mul_nonneg (hw i) (h.nonneg i x Q2 hx₀ hx₁)
+
+/-- Any weight preserves the analytic half of the assumptions. -/
+lemma Regularity.weight {f : Pdf ι} (h : Regularity f) (w : ι → ℝ) :
+    Regularity (PDF.weight w f) where
+  measurable i Q2 := (h.measurable i Q2).const_mul _
+  momentIntegrable n i Q2 := by
+    have hrw : (fun x : ℝ => x ^ n * PDF.weight w f i x Q2)
+        = fun x : ℝ => w i * (x ^ n * f i x Q2) := by
+      funext x
+      rw [weight_apply]
+      ring
+    rw [hrw]
+    exact (h.momentIntegrable n i Q2).const_mul _
+
+/-- A nonnegative weight preserves the density assumptions. -/
+lemma Assumptions.weight {f : Pdf ι} (h : Assumptions f) {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) :
+    Assumptions (PDF.weight w f) :=
+  assumptions_iff.2 ⟨h.isPartonDensity.weight hw, h.regularity.weight w⟩
+
+end Weight
 
 end PDF
 end Parton

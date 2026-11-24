@@ -133,8 +133,6 @@ import EpsilonEridani.Relativity.Fermions.Weyl.RightHandedExtensions
 import EpsilonEridani.Relativity.Fermions.Weyl.TwoExtensions
 import EpsilonEridani.Relativity.Fermions.Weyl.UnitExtensions
 import EpsilonEridani.Relativity.LorentzGroup.Restricted.FromBoostRotationExtensions
-import EpsilonEridani.Relativity.PauliMatrices.AsTensorExtensions
-import EpsilonEridani.Relativity.PauliMatrices.RelationsExtensions
 import EpsilonEridani.Relativity.SL2C.BasicExtensions
 import EpsilonEridani.Relativity.Tensors.LeviCivita.ContractionsExtensions
 import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.BasicExtensions
