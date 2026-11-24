@@ -25,6 +25,8 @@ are developed in TauCeti (`TauCeti.Contour.meromorphicOrderAt_div_eq_neg_one`,
 
 * `ContinuousAt.tendsto_sub_smul_of_eventually_eq_inv_smul`: `(w - z) • f(w) → g(z)` as `w → z`,
   for `g` merely continuous at `z`.
+* `eventuallyEq_zpow_neg_one_smul_of_eventually_eq_inv_smul`: the inverse presentation as the
+  integer-exponent presentation `f(w) = (w - z) ^ (-1) • g(w)`.
 * `MeromorphicAt.meromorphicAt_of_eventually_eq_inv_smul`: `f` is meromorphic at `z` when `g` is.
 * `AnalyticAt.meromorphicOrderAt_eq_neg_one_of_ne_zero_of_eventually_eq_inv_smul`: `f` has order
   `-1` at `z` when `g` is analytic at `z` with `g(z) ≠ 0`.
@@ -48,7 +50,10 @@ theorem ContinuousAt.tendsto_sub_smul_of_eventually_eq_inv_smul (hg : Continuous
   filter_upwards [h, self_mem_nhdsWithin] with w hw hne
   rw [hw, smul_inv_smul₀ (sub_ne_zero.2 hne)]
 
-private theorem eventuallyEq_zpow_neg_one_smul (h : ∀ᶠ w in 𝓝[≠] z, f w = (w - z)⁻¹ • g w) :
+/-- The inverse presentation `f(w) = (w - z)⁻¹ • g(w)` is the integer-exponent presentation
+`f(w) = (w - z) ^ (-1) • g(w)` that Mathlib's order and trailing-coefficient API consumes. -/
+theorem eventuallyEq_zpow_neg_one_smul_of_eventually_eq_inv_smul
+    (h : ∀ᶠ w in 𝓝[≠] z, f w = (w - z)⁻¹ • g w) :
     f =ᶠ[𝓝[≠] z] fun w => (w - z) ^ (-1 : ℤ) • g w :=
   h.mono fun w hw => by simp only [hw, zpow_neg_one]
 
@@ -56,7 +61,8 @@ private theorem eventuallyEq_zpow_neg_one_smul (h : ∀ᶠ w in 𝓝[≠] z, f w
 at `z`. -/
 theorem MeromorphicAt.meromorphicAt_of_eventually_eq_inv_smul (hg : MeromorphicAt g z)
     (h : ∀ᶠ w in 𝓝[≠] z, f w = (w - z)⁻¹ • g w) : MeromorphicAt f z := by
-  rw [MeromorphicAt.meromorphicAt_congr (eventuallyEq_zpow_neg_one_smul h)]
+  rw [MeromorphicAt.meromorphicAt_congr
+    (eventuallyEq_zpow_neg_one_smul_of_eventually_eq_inv_smul h)]
   fun_prop
 
 /-- **A simple pole.** If `f(w) = (w - z)⁻¹ • g(w)` near `z` with `g` analytic at `z` and
@@ -66,7 +72,7 @@ theorem AnalyticAt.meromorphicOrderAt_eq_neg_one_of_ne_zero_of_eventually_eq_inv
     meromorphicOrderAt f z = -1 := by
   rw [show (-1 : WithTop ℤ) = ((-1 : ℤ) : WithTop ℤ) by norm_cast,
     meromorphicOrderAt_eq_int_iff (hg.meromorphicAt.meromorphicAt_of_eventually_eq_inv_smul h)]
-  exact ⟨g, hg, hgz, eventuallyEq_zpow_neg_one_smul h⟩
+  exact ⟨g, hg, hgz, eventuallyEq_zpow_neg_one_smul_of_eventually_eq_inv_smul h⟩
 
 /-- **The residue at a simple pole as a trailing coefficient.** If `f(w) = (w - z)⁻¹ • g(w)` near
 `z` with `g` analytic at `z` and `g(z) ≠ 0`, then the trailing coefficient of `f` at `z` is
@@ -74,4 +80,5 @@ theorem AnalyticAt.meromorphicOrderAt_eq_neg_one_of_ne_zero_of_eventually_eq_inv
 theorem AnalyticAt.meromorphicTrailingCoeffAt_of_ne_zero_of_eventually_eq_inv_smul
     (hg : AnalyticAt 𝕜 g z) (hgz : g z ≠ 0) (h : ∀ᶠ w in 𝓝[≠] z, f w = (w - z)⁻¹ • g w) :
     meromorphicTrailingCoeffAt f z = g z :=
-  hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hgz (eventuallyEq_zpow_neg_one_smul h)
+  hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hgz
+    (eventuallyEq_zpow_neg_one_smul_of_eventually_eq_inv_smul h)

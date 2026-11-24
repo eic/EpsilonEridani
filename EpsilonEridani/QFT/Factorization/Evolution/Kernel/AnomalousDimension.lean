@@ -235,7 +235,6 @@ theorem analyticAt_gammaQQ {N : ℂ} (hN : ∀ m : ℕ, N ≠ -m) : AnalyticAt �
   have h0 : N ≠ 0 := by simpa using hN 0
   have h1 : N + 1 ≠ 0 := by simpa [add_eq_zero_iff_eq_neg] using hN 1
   have hd : N * (N + 1) ≠ 0 := mul_ne_zero h0 h1
-  have hS : AnalyticAt ℂ complexHarmonic N := analyticAt_complexHarmonic_of_ne_neg_natCast hN
   unfold gammaQQ
   fun_prop (disch := assumption)
 
@@ -275,7 +274,6 @@ theorem analyticAt_gammaGG {N : ℂ} (h : N ≠ 1) (hN : ∀ m : ℕ, N ≠ -m) 
   have h0 : N ≠ 0 := by simpa using hN 0
   have h1 : N + 1 ≠ 0 := by simpa [add_eq_zero_iff_eq_neg] using hN 1
   have h2 : N + 2 ≠ 0 := by simpa [add_eq_zero_iff_eq_neg] using hN 2
-  have hS : AnalyticAt ℂ complexHarmonic N := analyticAt_complexHarmonic_of_ne_neg_natCast hN
   unfold gammaGG
   fun_prop (disch := assumption)
 

@@ -167,6 +167,7 @@ theorem continuousAt_complexHarmonic {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)
 
 /-- The continuation is analytic away from the non-positive integers: `analyticAt_complexHarmonic`
 under the hypothesis `∀ m : ℕ, s ≠ -m` that the rational factors next to `S₁(s)` need. -/
+@[fun_prop]
 theorem analyticAt_complexHarmonic_of_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) :
     AnalyticAt ℂ complexHarmonic s :=
   analyticAt_complexHarmonic fun m h => hs (m + 1) (by push_cast; exact h)
