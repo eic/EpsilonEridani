@@ -165,16 +165,20 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
     (mul_ne_zero h1ξ.ne' hp) hpTmem (MY ^ 2)
   let K : DisKinematics V :=
     { p := P, pPrime := pPrime, k := k, kPrime := kPrime, q := k - kPrime, hq := rfl }
-  have hMYK : MY2 g K = MY ^ 2 := (MY2_def g K).trans hMY
+  have hKP : K.p = P := rfl
+  have hKP' : K.pPrime = pPrime := rfl
+  have hpK : L.plus K.p ≠ 0 := by rwa [hKP]
+  have hMK : g K.p K.p = M ^ 2 := by rwa [hKP]
+  have hMYK : MY2 g K = MY ^ 2 := by rwa [MY2_def, hKP']
   have hξK : xiLC L K = ξ := by
-    have := plus_pPrime_eq L K hp
-    rw [hKp] at this
+    have := plus_pPrime_eq L K hpK
+    rw [hKP', hKp, hKP] at this
     linarith [mul_right_cancel₀ hp this]
   have hw : deltaLostRelativeTransverse L K = s • e := by
-    rw [deltaLostRelativeTransverse_def, hξK, deltaLost_def, map_sub, hKT, hpT]
+    rw [deltaLostRelativeTransverse_def, hξK, deltaLost_def, hKP, hKP', map_sub, hKT, hpT]
     module
-  refine ⟨K, rfl, rfl, rfl, hMYK, hξK, ?_⟩
-  rw [tMom_eq_tMin_add hg L K hp (hξK ▸ hξ.ne) hM hMYK, hξK, hw]
+  refine ⟨K, hKP, rfl, rfl, hMYK, hξK, ?_⟩
+  rw [tMom_eq_tMin_add hg L K hpK (hξK ▸ hξ.ne) hMK hMYK, hξK, hw]
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← sq, hs2]
   field_simp
