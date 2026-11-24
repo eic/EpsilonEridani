@@ -41,7 +41,7 @@ the full diffractive physical region. The bound `tMom_le_tMin` is unaffected by 
 In the target-elastic case this is the same kinematic boundary as the off-forward
 `Particles.Parton.GPD.tZero` (with `Particles.Parton.GPD.OffForwardKinematics.tMom_le_tZero`):
 `tMinElastic M ξ = tZero M η` at skewness `η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)`
-(`tMinElastic_eq_tZero`, in `Diffractive.OffForwardBoundary`). What is new here is
+(`tMinElastic_eq_tZero`, in `Diffractive.Kinematics.OffForwardBoundary`). What is new here is
 the dissociated target, `M_Y ≠ M`, and the abstract bilinear form `g`.
 
 As in the rest of the DIS kinematics layer, scalar products are taken with respect to an abstract
@@ -91,7 +91,7 @@ theorem tMom_eq_tMin_add (hg : g.IsRefl) (L : LightConeBasis g) (K : DisKinemati
   rw [deltaLostRelativeTransverse_def, tMin_def, one_sub_xiLC L K hp, xiLC_def, ← hM, ← hMY,
     tMom_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg, deltaLost_def]
   simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
-  field_simp
+  field_simp [hp']
   ring
 
 /-- The two-body threshold condition: for non-vanishing plus momentum `P⁺`, a light-cone fraction
@@ -149,39 +149,32 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
     ∃ K : DisKinematics V, K.p = P ∧ K.k = k ∧ K.kPrime = kPrime ∧ MY2 g K = MY ^ 2 ∧
       xiLC L K = ξ ∧ tMom g K = t := by
   have h1ξ : 0 < 1 - ξ := sub_pos.mpr hξ
-  -- The target-side momentum is `P' = (1 - ξ) P⁺ n₊ + c n₋ + P'_T` with
-  -- `P'_T = (1 - ξ) P_T - s e`, so that `Δ_T - ξ P_T = s e`; the transverse size `s` is fixed
-  -- by `t` and the minus component `c` by the on-shell condition `P'² = M_Y²`.
+  -- The target-side momentum `P'` has plus component `(1 - ξ) P⁺`, transverse part
+  -- `P'_T = (1 - ξ) P_T - s e`, so that `Δ_T - ξ P_T = s e`, and square `M_Y²`; the transverse
+  -- size `s` is fixed by `t`.
   set s := √((tMin M MY ξ - t) * (1 - ξ) / -g e e) with hs
   have hs2 : s ^ 2 * g e e = -((tMin M MY ξ - t) * (1 - ξ)) := by
     rw [hs, Real.sq_sqrt (div_nonneg (mul_nonneg (sub_nonneg.mpr ht) h1ξ.le)
       (neg_nonneg.mpr hee.le))]
     field_simp [hee.ne]
-  set a := (1 - ξ) * L.plus P with ha
-  have ha0 : a ≠ 0 := mul_ne_zero h1ξ.ne' hp
   set pT := (1 - ξ) • L.transverseProj P - s • e with hpT
-  set c := (MY ^ 2 - g pT pT) / (2 * a) with hc
   have hpTmem : pT ∈ L.transverse :=
     sub_mem (L.transverse.smul_mem _ (L.isProj_transverseProj.map_mem _))
       (L.transverse.smul_mem _ he)
+  obtain ⟨pPrime, hKp, hKT, hMY⟩ := L.exists_plus_eq_transverseProj_eq_bilinForm_self_eq hg
+    (mul_ne_zero h1ξ.ne' hp) hpTmem (MY ^ 2)
   let K : DisKinematics V :=
-    { p := P, pPrime := a • L.nPlus + c • L.nMinus + pT, k := k, kPrime := kPrime,
-      q := k - kPrime, hq := rfl }
-  have hK : a • L.nPlus + c • L.nMinus + pT = K.pPrime := rfl
-  obtain ⟨hKp, hKm, hKT⟩ := (L.smul_add_smul_add_eq_iff hpTmem).1 hK
-  have hMY : MY2 g K = MY ^ 2 := by
-    rw [MY2_def, L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg, ← hKp, ← hKm, ← hKT, hc]
-    field_simp
-    ring
+    { p := P, pPrime := pPrime, k := k, kPrime := kPrime, q := k - kPrime, hq := rfl }
+  have hMYK : MY2 g K = MY ^ 2 := (MY2_def g K).trans hMY
   have hξK : xiLC L K = ξ := by
     have := plus_pPrime_eq L K hp
-    rw [← hKp, ha] at this
+    rw [hKp] at this
     linarith [mul_right_cancel₀ hp this]
   have hw : deltaLostRelativeTransverse L K = s • e := by
-    rw [deltaLostRelativeTransverse_def, hξK, deltaLost_def, map_sub, ← hKT, hpT]
+    rw [deltaLostRelativeTransverse_def, hξK, deltaLost_def, map_sub, hKT, hpT]
     module
-  refine ⟨K, rfl, rfl, rfl, hMY, hξK, ?_⟩
-  rw [tMom_eq_tMin_add hg L K hp (hξK ▸ hξ.ne) hM hMY, hξK, hw]
+  refine ⟨K, rfl, rfl, rfl, hMYK, hξK, ?_⟩
+  rw [tMom_eq_tMin_add hg L K hp (hξK ▸ hξ.ne) hM hMYK, hξK, hw]
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← sq, hs2]
   field_simp

@@ -54,6 +54,9 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
 * `LightConeBasis.smul_add_smul_add_eq_iff`: uniqueness of the decomposition
   `v = v⁺ n₊ + v⁻ n₋ + v_T`.
 * `LightConeBasis.bilinForm_eq_plus_mul_minus_add`: `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T`.
+* `LightConeBasis.exists_plus_eq_transverseProj_eq_bilinForm_self_eq`: over a field of
+  characteristic not two, a vector with prescribed non-zero plus component, transverse part and
+  square.
 * `LightConeBasis.bilinForm_self_eq_two_mul_plus_mul_minus_add`: `v · v = 2 v⁺ v⁻ + v_T · v_T`.
 * `LightConeBasis.isSelfAdjoint_transverseProj`: for a reflexive form the transverse projector is
   self-adjoint.
@@ -308,6 +311,22 @@ theorem finrank_transverse_add_two_eq [FiniteDimensional K V] :
     finrank K L.transverse + 2 = finrank K V := by
   rw [← L.finrank_longitudinal_eq_two, add_comm]
   exact Submodule.finrank_add_eq_of_isCompl L.isCompl_longitudinal_transverse
+
+/-! ### Vectors with prescribed components and square -/
+
+/-- For a reflexive form over a field of characteristic not two, there is a vector with any
+prescribed non-zero plus component `a`, transverse part `w` and square `m`: the minus component
+is fixed by `m = 2 a v⁻ + w · w`. In kinematics this puts a momentum with given plus and transverse
+components on the mass shell `v · v = m`. -/
+theorem exists_plus_eq_transverseProj_eq_bilinForm_self_eq [NeZero (2 : K)] (hB : B.IsRefl)
+    {a : K} (ha : a ≠ 0) {w : V} (hw : w ∈ L.transverse) (m : K) :
+    ∃ v, L.plus v = a ∧ L.transverseProj v = w ∧ B v v = m := by
+  obtain ⟨hp, hm, hT⟩ := (L.smul_add_smul_add_eq_iff hw).1
+    (rfl : a • L.nPlus + ((m - B w w) / (2 * a)) • L.nMinus + w = _)
+  refine ⟨_, hp.symm, hT.symm, ?_⟩
+  rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hB, ← hp, ← hm, ← hT]
+  field_simp
+  ring
 
 end Field
 

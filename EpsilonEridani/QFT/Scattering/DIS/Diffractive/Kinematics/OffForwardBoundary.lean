@@ -17,10 +17,6 @@ light-cone fraction `ξ = Δ⁺/P⁺` lost by the target, and the boundary
 skewness `η = Δ⁺/(P + P')⁺`, are the same kinematic boundary under the change of variables
 `η = ξ/(2-ξ)`, i.e. `ξ = 2η/(1+η)` (`tMinElastic_eq_tZero`, `tZero_eq_tMinElastic`).
 
-This bridge is kept apart from `Diffractive.Kinematics.Boundary` and
-`Diffractive.Kinematics.MomentumTransferBound` so that the abstract bilinear-form development
-there does not import the Minkowski-space GPD kinematics.
-
 -/
 
 public section
@@ -64,7 +60,8 @@ theorem tZero_eq_tMinElastic (M : ℝ) {η : ℝ} (hη : η ≠ -1) :
     field_simp
     ring
   rw [tMinElastic_eq_tZero M h2, h3, div_div_div_cancel_right₀ h1]
-  ring_nf
+  congr 1
+  ring
 
 end Diffractive
 end DIS
