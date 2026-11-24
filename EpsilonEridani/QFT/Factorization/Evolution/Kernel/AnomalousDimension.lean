@@ -61,10 +61,13 @@ the real index `N` decreases to `1`.
   `γ^S(N)`.
 * `gammaS_natCast_eq_moment`: `γ^S(N)` is the matrix of the kernel moments at natural `N ≥ 2`.
 * `gammaQQ_one`: quark-number conservation, `γ_qq(1) = 0`.
-* `meromorphic_gammaQQ`, `meromorphic_gammaGQ`, `meromorphic_gammaQG`, `meromorphic_gammaGG`:
-  the entries of `γ^S` are meromorphic on `ℂ`.
-* `analyticAt_gammaQQ`, `analyticAt_gammaQG`, `analyticAt_gammaGQ`, `analyticAt_gammaGG`: the
-  regions of analyticity; in particular `γ_qq`, `γ_qg` and `2 n_f γ_qg` are analytic at `N = 1`.
+* `meromorphic_gammaQQ`, `meromorphic_gammaGQ`, `meromorphic_gammaQG`, `meromorphic_gammaGG`,
+  `meromorphic_gammaQGSinglet`: the four anomalous dimensions and the singlet-normalised
+  `2 n_f γ_qg` are meromorphic on `ℂ`.
+* `analyticAt_gammaQQ`, `analyticAt_gammaQG`, `analyticAt_gammaQGSinglet`, `analyticAt_gammaGQ`,
+  `analyticAt_gammaGG`: the regions of analyticity.
+* `analyticAt_gammaQQ_one`, `analyticAt_gammaQG_one`, `analyticAt_gammaQGSinglet_one`: `γ_qq`,
+  `γ_qg` and `2 n_f γ_qg` are analytic at `N = 1`.
 * `meromorphicOrderAt_gammaGQ_one`, `meromorphicOrderAt_gammaGG_one`: simple poles at `N = 1`
   (for `C_F ≠ 0`, resp. `C_A ≠ 0`).
 * `meromorphicTrailingCoeffAt_gammaGQ_one`, `meromorphicTrailingCoeffAt_gammaGG_one`,
@@ -230,7 +233,7 @@ theorem meromorphic_gammaGG : Meromorphic (gammaGG c) := by
 @[fun_prop]
 theorem analyticAt_gammaQQ {N : ℂ} (hN : ∀ m : ℕ, N ≠ -m) : AnalyticAt ℂ (gammaQQ c) N := by
   have h0 : N ≠ 0 := by simpa using hN 0
-  have h1 : N + 1 ≠ 0 := by simpa using add_natCast_ne_zero hN 1
+  have h1 : N + 1 ≠ 0 := by simpa [add_eq_zero_iff_eq_neg] using hN 1
   have hd : N * (N + 1) ≠ 0 := mul_ne_zero h0 h1
   have hS : AnalyticAt ℂ complexHarmonic N := analyticAt_complexHarmonic_of_ne_neg_natCast hN
   unfold gammaQQ
@@ -270,16 +273,17 @@ theorem analyticAt_gammaGG {N : ℂ} (h : N ≠ 1) (hN : ∀ m : ℕ, N ≠ -m) 
     AnalyticAt ℂ (gammaGG c) N := by
   replace h : N - 1 ≠ 0 := sub_ne_zero.2 h
   have h0 : N ≠ 0 := by simpa using hN 0
-  have h1 : N + 1 ≠ 0 := by simpa using add_natCast_ne_zero hN 1
-  have h2 : N + 2 ≠ 0 := by simpa using add_natCast_ne_zero hN 2
+  have h1 : N + 1 ≠ 0 := by simpa [add_eq_zero_iff_eq_neg] using hN 1
+  have h2 : N + 2 ≠ 0 := by simpa [add_eq_zero_iff_eq_neg] using hN 2
   have hS : AnalyticAt ℂ complexHarmonic N := analyticAt_complexHarmonic_of_ne_neg_natCast hN
   unfold gammaGG
   fun_prop (disch := assumption)
 
 /-- `γ_qq` is analytic at `N = 1`. -/
 @[fun_prop]
-theorem analyticAt_gammaQQ_one : AnalyticAt ℂ (gammaQQ c) 1 :=
-  analyticAt_gammaQQ c one_ne_neg_natCast
+theorem analyticAt_gammaQQ_one : AnalyticAt ℂ (gammaQQ c) 1 := by
+  unfold gammaQQ
+  fun_prop (disch := norm_num)
 
 /-- `γ_qg` is analytic at `N = 1`. -/
 @[fun_prop]
@@ -315,13 +319,13 @@ theorem tendsto_sub_one_mul_gammaGQ :
     Tendsto (fun N => (N - 1) * gammaGQ c N) (𝓝[≠] 1) (𝓝 (2 * c.cF)) := by
   rw [← gammaGQAnalyticFactor_one]
   simpa only [smul_eq_mul] using
-    tendsto_sub_smul_of_eventually_eq_inv_smul (analyticAt_gammaGQAnalyticFactor c).continuousAt
+    (analyticAt_gammaGQAnalyticFactor c).continuousAt.tendsto_sub_smul_of_eventually_eq_inv_smul
       (Eventually.of_forall (gammaGQ_eq_inv_smul c))
 
 /-- **`γ_gq` has a simple pole at `N = 1`** whenever `C_F ≠ 0`. -/
 theorem meromorphicOrderAt_gammaGQ_one (hc : c.cF ≠ 0) :
     meromorphicOrderAt (gammaGQ c) 1 = -1 :=
-  meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul (analyticAt_gammaGQAnalyticFactor c)
+  (analyticAt_gammaGQAnalyticFactor c).meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul
     (by simp [gammaGQAnalyticFactor_one, hc])
     (Eventually.of_forall (gammaGQ_eq_inv_smul c))
 
@@ -332,8 +336,8 @@ theorem meromorphicTrailingCoeffAt_gammaGQ_one :
   · have h0 : gammaGQ c = fun _ => 0 := funext fun N => by simp [gammaGQ_apply, hc]
     simp [h0, meromorphicTrailingCoeffAt_const, hc]
   rw [← gammaGQAnalyticFactor_one]
-  exact meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul
-    (analyticAt_gammaGQAnalyticFactor c) (by simp [gammaGQAnalyticFactor_one, hc])
+  exact (analyticAt_gammaGQAnalyticFactor c).meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul
+    (by simp [gammaGQAnalyticFactor_one, hc])
     (Eventually.of_forall (gammaGQ_eq_inv_smul c))
 
 /-- The moments of `P_gq` themselves have the pole: `(N - 1) M[P_gq](N) → 2 C_F` as the real
@@ -376,13 +380,13 @@ theorem tendsto_sub_one_mul_gammaGG :
     Tendsto (fun N => (N - 1) * gammaGG c N) (𝓝[≠] 1) (𝓝 (2 * c.cA)) := by
   rw [← gammaGGAnalyticFactor_one]
   simpa only [smul_eq_mul] using
-    tendsto_sub_smul_of_eventually_eq_inv_smul (analyticAt_gammaGGAnalyticFactor c).continuousAt
+    (analyticAt_gammaGGAnalyticFactor c).continuousAt.tendsto_sub_smul_of_eventually_eq_inv_smul
       (gammaGG_eq_inv_smul c)
 
 /-- **`γ_gg` has a simple pole at `N = 1`** whenever `C_A ≠ 0`. -/
 theorem meromorphicOrderAt_gammaGG_one (hc : c.cA ≠ 0) :
     meromorphicOrderAt (gammaGG c) 1 = -1 :=
-  meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul (analyticAt_gammaGGAnalyticFactor c)
+  (analyticAt_gammaGGAnalyticFactor c).meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul
     (by simp [gammaGGAnalyticFactor_one, hc])
     (gammaGG_eq_inv_smul c)
 
@@ -390,8 +394,8 @@ theorem meromorphicOrderAt_gammaGG_one (hc : c.cA ≠ 0) :
 theorem meromorphicTrailingCoeffAt_gammaGG_one (hc : c.cA ≠ 0) :
     meromorphicTrailingCoeffAt (gammaGG c) 1 = 2 * c.cA := by
   rw [← gammaGGAnalyticFactor_one]
-  exact meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul
-    (analyticAt_gammaGGAnalyticFactor c) (by simp [gammaGGAnalyticFactor_one, hc])
+  exact (analyticAt_gammaGGAnalyticFactor c).meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul
+    (by simp [gammaGGAnalyticFactor_one, hc])
     (gammaGG_eq_inv_smul c)
 
 /-! ### The singlet matrix -/
@@ -404,7 +408,7 @@ noncomputable def gammaS (N : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   Particles.Parton.Species.singletGluonMatrix (gammaQQ c N) (gammaQG c N) (gammaGQ c N)
     (gammaGG c N) c.nF
 
-theorem gammaS_def (N : ℂ) :
+theorem gammaS_apply (N : ℂ) :
     gammaS c N = Particles.Parton.Species.singletGluonMatrix (gammaQQ c N) (gammaQG c N)
       (gammaGQ c N) (gammaGG c N) c.nF :=
   (rfl)
@@ -412,22 +416,22 @@ theorem gammaS_def (N : ℂ) :
 /-- The quark-from-quark entry of `γ^S(N)` is `γ_qq(N)`. -/
 @[simp]
 theorem gammaS_zero_zero (N : ℂ) : gammaS c N 0 0 = gammaQQ c N := by
-  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_zero_zero]
+  rw [gammaS_apply, Particles.Parton.Species.singletGluonMatrix_zero_zero]
 
 /-- The quark-from-gluon entry of `γ^S(N)` is the singlet-normalised `2 n_f γ_qg(N)`. -/
 @[simp]
 theorem gammaS_zero_one (N : ℂ) : gammaS c N 0 1 = gammaQGSinglet c N := by
-  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_zero_one, gammaQGSinglet_apply]
+  rw [gammaS_apply, Particles.Parton.Species.singletGluonMatrix_zero_one, gammaQGSinglet_apply]
 
 /-- The gluon-from-quark entry of `γ^S(N)` is `γ_gq(N)`. -/
 @[simp]
 theorem gammaS_one_zero (N : ℂ) : gammaS c N 1 0 = gammaGQ c N := by
-  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_one_zero]
+  rw [gammaS_apply, Particles.Parton.Species.singletGluonMatrix_one_zero]
 
 /-- The gluon-from-gluon entry of `γ^S(N)` is `γ_gg(N)`. -/
 @[simp]
 theorem gammaS_one_one (N : ℂ) : gammaS c N 1 1 = gammaGG c N := by
-  rw [gammaS_def, Particles.Parton.Species.singletGluonMatrix_one_one]
+  rw [gammaS_apply, Particles.Parton.Species.singletGluonMatrix_one_one]
 
 open Particles.Parton.Species in
 /-- When `n_f` is the number of quark flavours, `γ^S(N)` is the matrix by which the
@@ -438,7 +442,7 @@ theorem singletGluon_flavorBlindMatrix_mulVec_eq_gammaS_mulVec {Flavor : Type} [
     singletGluon
         (flavorBlindMatrix (gammaQQ c N) (gammaQG c N) (gammaGQ c N) (gammaGG c N) *ᵥ v) =
       gammaS c N *ᵥ singletGluon v := by
-  rw [singletGluon_flavorBlindMatrix_mulVec, h, gammaS_def]
+  rw [singletGluon_flavorBlindMatrix_mulVec, h, gammaS_apply]
 
 /-- At natural `N ≥ 2`, where all four kernel moments converge, `γ^S(N)` is the matrix of the
 moments of the four kernels, with the singlet-normalised `2 n_f P_qg` in the quark-from-gluon

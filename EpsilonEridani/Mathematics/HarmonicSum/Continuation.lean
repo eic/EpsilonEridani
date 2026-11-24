@@ -50,8 +50,6 @@ plane is what controls the behaviour of the densities in momentum-fraction space
 * `EpsilonEridani.analyticAt_complexHarmonic`: analyticity away from the negative integers, with
   `analyticAt_complexHarmonic_of_ne_neg_natCast` for the hypothesis form excluding all
   non-positive integers and `analyticAt_complexHarmonic_one` at `s = 1`.
-* `EpsilonEridani.add_natCast_ne_zero`, `EpsilonEridani.one_ne_neg_natCast`: the side conditions
-  `s + k ≠ 0` away from the non-positive integers, and `1 ≠ -m`, for analyticity statements.
 * `EpsilonEridani.meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ`:
   the trailing coefficient at each negative integer is `-1`.
 * `EpsilonEridani.meromorphicOrderAt_complexHarmonic_neg_nat_succ` and
@@ -115,15 +113,6 @@ theorem complexHarmonic_ofNat (n : ℕ) [n.AtLeastTwo] :
 private theorem add_one_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) (m : ℕ) :
     s + 1 ≠ -(m : ℂ) := fun h => hs m (by linear_combination h)
 
-/-- Away from the non-positive integers, every shift `s + k` by a natural number is nonzero: the
-side condition that rational factors such as `1 / (s (s + 1))` need next to `S₁(s)`. -/
-theorem add_natCast_ne_zero {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) (k : ℕ) : s + k ≠ 0 :=
-  fun h => hs k (eq_neg_of_add_eq_zero_left h)
-
-/-- `1` is not a non-positive integer: the hypothesis `∀ m : ℕ, s ≠ -m` holds at `s = 1`. -/
-theorem one_ne_neg_natCast (m : ℕ) : (1 : ℂ) ≠ -(m : ℂ) := fun h =>
-  Nat.cast_add_one_ne_zero (R := ℂ) m (by linear_combination h)
-
 /-- **The recurrence** `S₁(s + 1) = S₁(s) + 1/(s + 1)`, away from the negative integers. -/
 theorem complexHarmonic_add_one {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m + 1)) :
     complexHarmonic (s + 1) = complexHarmonic s + (s + 1)⁻¹ := by
@@ -185,7 +174,8 @@ theorem analyticAt_complexHarmonic_of_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ
 /-- The continuation is analytic at `s = 1`. -/
 @[fun_prop]
 theorem analyticAt_complexHarmonic_one : AnalyticAt ℂ complexHarmonic 1 :=
-  analyticAt_complexHarmonic_of_ne_neg_natCast one_ne_neg_natCast
+  analyticAt_complexHarmonic_of_ne_neg_natCast fun m h =>
+    Nat.cast_add_one_ne_zero (R := ℂ) m (by linear_combination h)
 
 /-- The regular part at the negative integer `-(m + 1)`: the function
 `s ↦ S₁(s + m + 1) - ∑_{k<m} 1/(s + k + 1)`, which differs from `S₁` by the polar term
@@ -228,20 +218,20 @@ private theorem complexHarmonic_presentation (m : ℕ) :
 theorem meromorphicTrailingCoeffAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicTrailingCoeffAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
   obtain ⟨g, hg, hg₁, hg₂, h⟩ := complexHarmonic_presentation m
-  exact (meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul hg hg₂ h).trans hg₁
+  exact (hg.meromorphicTrailingCoeffAt_eq_of_eventually_eq_inv_smul hg₂ h).trans hg₁
 
 /-- **The pole structure**: the continuation has a simple pole at every negative integer. -/
 theorem meromorphicOrderAt_complexHarmonic_neg_nat_succ (m : ℕ) :
     meromorphicOrderAt complexHarmonic (-(m + 1 : ℂ)) = -1 := by
   obtain ⟨g, hg, -, hg₂, h⟩ := complexHarmonic_presentation m
-  exact meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul hg hg₂ h
+  exact hg.meromorphicOrderAt_eq_neg_one_of_eventually_eq_inv_smul hg₂ h
 
 /-- **The residue** of the continuation at every negative integer is `-1`:
 `(s + m + 1) S₁(s) → -1` as `s → -(m + 1)`. -/
 theorem tendsto_mul_complexHarmonic_neg_nat_succ (m : ℕ) :
     Tendsto (fun s => (s + (m + 1)) * complexHarmonic s) (𝓝[≠] (-(m + 1 : ℂ))) (𝓝 (-1)) := by
   obtain ⟨g, hg, hg₁, -, h⟩ := complexHarmonic_presentation m
-  have ht := tendsto_sub_smul_of_eventually_eq_inv_smul hg.continuousAt h
+  have ht := hg.continuousAt.tendsto_sub_smul_of_eventually_eq_inv_smul h
   rw [hg₁] at ht
   simpa only [sub_neg_eq_add, smul_eq_mul] using ht
 
