@@ -191,12 +191,6 @@ lemma fromF1F2_add_smul_apply_of_spectator (A : Bilin V) {e e' : V} (heq : g K.q
   simp only [LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, fromF1F2_apply,
     transverseMetric_apply, heq, heT, hee', mul_zero, zero_mul, neg_zero, add_zero, zero_add]
 
-/-- Exchanging the slots of the transverse pair plus a multiple of an alternating structure
-reverses only the alternating term. -/
-lemma fromF1F2_add_smul_flip {A : Bilin V} (hSymm : g.IsSymm) (hA : A.IsAlt) (F1 F2 c : ℝ) :
-    (fromF1F2 g K F1 F2 + c • A).flip = fromF1F2 g K F1 F2 - c • A :=
-  Bilin.flip_add_smul_of_isSymm_of_isAlt (fromF1F2_isSymm g K hSymm F1 F2) hA c
-
 /-- The symmetric part of the transverse pair plus a multiple of an alternating structure is the
 transverse pair. -/
 theorem inv_two_smul_fromF1F2_add_smul_add_flip {A : Bilin V} (hSymm : g.IsSymm) (hA : A.IsAlt)
@@ -263,12 +257,12 @@ theorem exists_eq_fromF1F2_add_smul {W A : Bilin V} (hSymm : g.IsSymm) (hQ2 : g 
     ∃ F1 F2 c : ℝ, W = fromF1F2 g K F1 F2 + c • A :=
   ⟨_, _, _, hcov.eq_fromF1F2_add_div_smul hSymm hQ2 hP hsign hTT hA hA0 hleft hright⟩
 
-/-- **The three coefficients are determined by the tensor.** For a non-null spectator `e` and a
-vector `e'` orthogonal to it with `A e e' ≠ 0`, and with `Q² ≠ 0` and `p_T` non-null, the map
-`(F₁, F₂, c) ↦ fromF1F2 g K F₁ F₂ + c • A` is injective. -/
-theorem fromF1F2_add_smul_injective {A : Bilin V} (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0)
-    (hTT : g (pTransverse g K) (pTransverse g K) ≠ 0) {e e' : V} (heq : g K.q e = 0)
-    (heT : g (pTransverse g K) e = 0) (he : g e e ≠ 0) (hee' : g e e' = 0)
+/-- **The three coefficients are determined by the tensor.** Given probe pairs `hU` that
+separate the two transverse structures (`uniquenessAssumptionsOfSpectator` builds them from
+one non-null spectator), and a spectator `e` with a vector `e'` `g`-orthogonal to it such that
+`A e e' ≠ 0`, the map `(F₁, F₂, c) ↦ fromF1F2 g K F₁ F₂ + c • A` is injective. -/
+theorem fromF1F2_add_smul_injective {A : Bilin V} (hU : UniquenessAssumptions g K) {e e' : V}
+    (heq : g K.q e = 0) (heT : g (pTransverse g K) e = 0) (hee' : g e e' = 0)
     (hA : A e e' ≠ 0) :
     Function.Injective fun F : ℝ × ℝ × ℝ => fromF1F2 g K F.1 F.2.1 + F.2.2 • A := by
   rintro ⟨F1, F2, c⟩ ⟨F1', F2', c'⟩ h
@@ -279,13 +273,15 @@ theorem fromF1F2_add_smul_injective {A : Bilin V} (hSymm : g.IsSymm) (hQ2 : g K.
   rw [fromF1F2_add_smul_apply_of_spectator A heq heT hee',
     fromF1F2_add_smul_apply_of_spectator A heq heT hee'] at hee
   obtain rfl : c = c' := mul_right_cancel₀ hA hee
-  -- The other two then follow from `decomposition_unique`.
-  -- Cancel `c • A`.
-  have h' : fromF1F2 g K F1 F2 = fromF1F2 g K F1' F2' := LinearMap.ext₂ fun v w => by
-    simpa using LinearMap.congr_fun₂ h v w
+  -- Cancel `c • A` in the additive group `Bilin V`; the other two coefficients then follow
+  -- from `decomposition_unique`.
+  have h' : fromF1F2 g K F1 F2 = fromF1F2 g K F1' F2' := by
+    have h2 := congrArg (fun x : Bilin V => x + -(c • A)) h
+    rw [add_neg_cancel_right (fromF1F2 g K F1 F2) (c • A),
+      add_neg_cancel_right (fromF1F2 g K F1' F2') (c • A)] at h2
+    exact h2
   obtain ⟨rfl, rfl⟩ := decomposition_unique g K _ F1 F2 F1' F2'
-    (fromF1F2_isDecomposition g K F1 F2) (h' ▸ fromF1F2_isDecomposition g K F1' F2')
-    (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT heq heT he)
+    (fromF1F2_isDecomposition g K F1 F2) (h' ▸ fromF1F2_isDecomposition g K F1' F2') hU
   rfl
 
 /-- **The hadronic tensor has exactly three invariant coefficients.** Under a `SpectatorPlane`
@@ -302,9 +298,10 @@ theorem existsUnique_eq_fromF1F2_add_smul {W A : Bilin V} (hSymm : g.IsSymm)
   obtain ⟨F1, F2, c, hW⟩ :=
     exists_eq_fromF1F2_add_smul hSymm hQ2 hP hsign hTT hA hA0 hcov hleft hright
   exact ⟨(F1, F2, c), hW, fun F hF =>
-    fromF1F2_add_smul_injective hSymm hQ2 hTT hP.q_orthogonal_e₁ hP.pT_orthogonal_e₁
-      hP.e₁_self_ne_zero hP.e₁_orthogonal_e₂ (hA.apply_e₁_e₂_ne_zero hSymm hP hA0)
-      (hF.symm.trans hW)⟩
+    fromF1F2_add_smul_injective
+      (uniquenessAssumptionsOfSpectator hSymm hQ2 hTT hP.q_orthogonal_e₁ hP.pT_orthogonal_e₁
+        hP.e₁_self_ne_zero) hP.q_orthogonal_e₁ hP.pT_orthogonal_e₁ hP.e₁_orthogonal_e₂
+      (hA.apply_e₁_e₂_ne_zero hSymm hP hA0) (hF.symm.trans hW)⟩
 
 /-- **Characterization of the hadronic tensor.** Under a `SpectatorPlane` whose two norms have
 the same sign, with `Q² ≠ 0` and `p_T` non-null, a tensor is the transverse pair plus a
