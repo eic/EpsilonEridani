@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Mathematics.Analysis.Asymptotics.Cocompact
 public import EpsilonEridani.Mathematics.SpecialFunctions.SphericalBessel.Basic
+public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Large-argument asymptotics of the spherical Bessel functions
@@ -43,7 +44,10 @@ the whole line with no division. The shifted sines satisfy
 * `isBigO_sphericalBesselJ_inv_cocompact`: `j_l(x) = O(1 / x)`, and
   `tendsto_sphericalBesselJ_cocompact`: `j_l(x) → 0` as `|x| → ∞`.
 * `isBigO_deriv_sphericalBesselJ_sub_cos_div_inv_sq_cocompact`: the derivative,
-  `j_l'(x) - cos (x - l π / 2) / x = O(1 / x ^ 2)`.
+  `j_l'(x) - cos (x - l π / 2) / x = O(1 / x ^ 2)`, and
+  `isLittleO_deriv_sphericalBesselJ_sub_cos_div_inv_cocompact`: its weaker form, the difference
+  decays faster than `1 / x`.
+* `isBigO_deriv_sphericalBesselJ_inv_cocompact`: `j_l'(x) = O(1 / x)`.
 
 ## References
 
@@ -85,7 +89,8 @@ theorem isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact (l : ℕ) :
     refine ⟨ih.2, ?_⟩
     -- `x j_{l + 1}(x)` is bounded, so `(2 l + 3) j_{l + 1}(x) = O(1 / x)`
     have hj : sphericalBesselJ (l + 1) =O[cocompact ℝ] fun x => x⁻¹ :=
-      isBigO_inv_of_isBigO_mul_sub_inv ih.2 (isBigO_sin_comp_one _ _)
+      ih.2.isBigO_inv (isBigO_sin_comp_one _ _) (eventually_ne_cocompact 0)
+        (tendsto_inv₀_cocompact.isBigO_one ℝ)
     refine ((hj.const_mul_left (2 * l + 3)).sub ih.1).congr_left fun x => ?_
     -- the remainders obey the recurrence up to `(2 l + 3) j_{l + 1}(x)`, since two right angles
     -- more in the phase flip the sign of the shifted sine; the index `l + 1 + 1` is restated as
@@ -98,8 +103,8 @@ theorem isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact (l : ℕ) :
 `j_l(x) = O(1 / x)`. -/
 theorem isBigO_sphericalBesselJ_inv_cocompact (l : ℕ) :
     sphericalBesselJ l =O[cocompact ℝ] fun x => x⁻¹ :=
-  isBigO_inv_of_isBigO_mul_sub_inv (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l)
-    (isBigO_sin_comp_one _ _)
+  (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l).isBigO_inv (isBigO_sin_comp_one _ _)
+    (eventually_ne_cocompact 0) (tendsto_inv₀_cocompact.isBigO_one ℝ)
 
 /-- Every spherical Bessel function tends to zero as `|x| → ∞`. -/
 theorem tendsto_sphericalBesselJ_cocompact (l : ℕ) :
@@ -111,7 +116,7 @@ theorem tendsto_sphericalBesselJ_cocompact (l : ℕ) :
 theorem isBigO_sphericalBesselJ_sub_sin_div_inv_sq_cocompact (l : ℕ) :
     (fun x => sphericalBesselJ l x - sin (x - l * (π / 2)) / x) =O[cocompact ℝ]
       fun x => (x ^ 2)⁻¹ := by
-  refine (isBigO_inv_mul_inv_sq (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l)).congr' ?_
+  refine (isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact l).inv_mul_inv_sq.congr' ?_
     (EventuallyEq.refl _ _)
   filter_upwards [eventually_ne_cocompact 0] with x hx
   field_simp
@@ -121,12 +126,9 @@ theorem isBigO_sphericalBesselJ_sub_sin_div_inv_sq_cocompact (l : ℕ) :
 than `1 / x`. -/
 theorem isLittleO_sphericalBesselJ_sub_sin_div_inv_cocompact (l : ℕ) :
     (fun x => sphericalBesselJ l x - sin (x - l * (π / 2)) / x) =o[cocompact ℝ]
-      fun x => x⁻¹ := by
-  refine (isBigO_sphericalBesselJ_sub_sin_div_inv_sq_cocompact l).trans_isLittleO ?_
-  have h : (fun x : ℝ => x⁻¹) =o[cocompact ℝ] fun _ => (1 : ℝ) :=
-    isLittleO_one_iff ℝ |>.2 tendsto_inv₀_cocompact
-  exact ((isBigO_refl (fun x : ℝ => x⁻¹) _).mul_isLittleO h).congr
-    (fun x => by rw [← sq, inv_pow]) fun _ => mul_one _
+      fun x => x⁻¹ :=
+  (isBigO_sphericalBesselJ_sub_sin_div_inv_sq_cocompact l).trans_isLittleO
+    (isLittleO_inv_sq_inv tendsto_inv₀_cocompact)
 
 /-- **The large-argument asymptotics of the derivative**: along `cocompact ℝ`,
 `j_l'(x) = cos (x - l π / 2) / x + O(1 / x ^ 2)`. -/
@@ -136,7 +138,7 @@ theorem isBigO_deriv_sphericalBesselJ_sub_cos_div_inv_sq_cocompact (l : ℕ) :
   -- `j_l' = (l / x) j_l - j_{l + 1}` and `sin (x - (l + 1) π / 2) = -cos (x - l π / 2)`
   have h₁ : (fun x => (l : ℝ) * x⁻¹ * sphericalBesselJ l x) =O[cocompact ℝ]
       fun x => (x ^ 2)⁻¹ := by
-    refine ((isBigO_inv_mul_inv_sq (isBigO_sphericalBesselJ_inv_cocompact l)).const_mul_left
+    refine ((isBigO_sphericalBesselJ_inv_cocompact l).inv_mul_inv_sq.const_mul_left
       (l : ℝ)).congr_left fun x => by ring
   refine (h₁.sub (isBigO_sphericalBesselJ_sub_sin_div_inv_sq_cocompact (l + 1))).congr' ?_
     (EventuallyEq.refl _ _)
@@ -145,5 +147,25 @@ theorem isBigO_deriv_sphericalBesselJ_sub_cos_div_inv_sq_cocompact (l : ℕ) :
     show x - ((l + 1 : ℕ) : ℝ) * (π / 2) = x - l * (π / 2) - π / 2 by push_cast; ring,
     sin_sub_pi_div_two]
   ring
+
+/-- **The large-argument asymptotics of the derivative**, in the form
+`j_l'(x) - cos (x - l π / 2) / x = o(1 / x)` along `cocompact ℝ`: the difference decays faster
+than `1 / x`. -/
+theorem isLittleO_deriv_sphericalBesselJ_sub_cos_div_inv_cocompact (l : ℕ) :
+    (fun x => deriv (sphericalBesselJ l) x - cos (x - l * (π / 2)) / x) =o[cocompact ℝ]
+      fun x => x⁻¹ :=
+  (isBigO_deriv_sphericalBesselJ_sub_cos_div_inv_sq_cocompact l).trans_isLittleO
+    (isLittleO_inv_sq_inv tendsto_inv₀_cocompact)
+
+/-- **The derivatives of the spherical Bessel functions decay like `1 / x`**: along
+`cocompact ℝ`, `j_l'(x) = O(1 / x)`. -/
+theorem isBigO_deriv_sphericalBesselJ_inv_cocompact (l : ℕ) :
+    deriv (sphericalBesselJ l) =O[cocompact ℝ] fun x => x⁻¹ := by
+  -- `j_l'(x)` is `cos (x - l π / 2) / x = O(1 / x)` up to an `o(1 / x)` remainder
+  have hcos : (fun x => cos (x - l * (π / 2)) / x) =O[cocompact ℝ] fun x => x⁻¹ :=
+    ((isBigO_cos_comp_one _ _).mul (isBigO_refl (fun x : ℝ => x⁻¹) _)).congr
+      (fun _ => (div_eq_mul_inv _ _).symm) fun _ => one_mul _
+  exact ((isLittleO_deriv_sphericalBesselJ_sub_cos_div_inv_cocompact l).isBigO.add
+    hcos).congr_left fun _ => sub_add_cancel _ _
 
 end EpsilonEridani
