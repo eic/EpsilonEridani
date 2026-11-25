@@ -38,8 +38,8 @@ derivation from the coupled states is not part of this module. The generalised P
 The deuteron has total angular momentum `1`, positive parity and isospin `0`. Total angular
 momentum `1` and positive parity alone, with no input from the nucleon-nucleon interaction, admit
 exactly the two channels `³S₁` and `³D₁` (`ChannelLabel.eq_tripletS1_or_eq_tripletD1_iff`), both
-Pauli-allowed in isospin `0` (`ChannelLabel.pauliAllowed_tripletS1`,
-`ChannelLabel.pauliAllowed_tripletD1`), so a deuteron wave function consists of the two radial
+Pauli-allowed in isospin `0` (`ChannelLabel.pauliAllowed_tripletS1_zero`,
+`ChannelLabel.pauliAllowed_tripletD1_zero`), so a deuteron wave function consists of the two radial
 amplitudes of these channels; the spin-singlet channel with `J = 1` is `¹P₁`, of negative parity.
 A two-nucleon channel with `J = 1` and positive parity is allowed by the Pauli principle exactly
 in isospin `0` (`ChannelLabel.pauliAllowed_iff_isospin_eq_zero_of_J_eq_one_of_parity_eq_one`):
@@ -284,12 +284,12 @@ def tripletD1 : ChannelLabel := mk' 1 2 1 le_rfl (by omega) (by omega) (by omega
 
 /-- The channel `³S₁` is allowed by the Pauli principle in isospin `0`, the isospin of the
 deuteron. -/
-@[simp high] theorem pauliAllowed_tripletS1 : tripletS1.PauliAllowed 0 := by
+@[simp high] theorem pauliAllowed_tripletS1_zero : tripletS1.PauliAllowed 0 := by
   simp
 
 /-- The channel `³D₁` is allowed by the Pauli principle in isospin `0`, the isospin of the
 deuteron. -/
-@[simp high] theorem pauliAllowed_tripletD1 : tripletD1.PauliAllowed 0 := by
+@[simp high] theorem pauliAllowed_tripletD1_zero : tripletD1.PauliAllowed 0 := by
   simp [Nat.odd_iff]
 
 /-- The two deuteron channels are distinct. -/
