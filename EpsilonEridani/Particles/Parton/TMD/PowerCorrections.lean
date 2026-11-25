@@ -36,16 +36,18 @@ live in `EpsilonEridani.Mathematics.Analysis.Asymptotics.ApproximatesToOrder`:
 
 * `EpsilonEridani.ApproximatesToOrder.coeff_unique`: the coefficient of the order-`n`
   correction is fixed by the structure function and the leading-power term. It is not a
-  scheme choice.
-* `EpsilonEridani.ApproximatesToOrder.not_approximatesToOrder_succ_of_coeff_ne_zero`: if that
+  scheme choice. Taking the leading-power term to be zero, a structure function that vanishes
+  at leading power is determined at its first nonvanishing order entirely by its kinematic power
+  correction; arXiv:2510.14496 reports this situation for SIDIS, where structure functions that
+  vanish in the leading-power TMD factorization theorem, the longitudinal-photon contributions
+  among them, receive their first prediction from the kinematic power corrections.
+* `EpsilonEridani.ApproximatesToOrder.not_succ_of_coeff_ne_zero`: if that
   coefficient is nonzero, the leading-power term on its own is *not* accurate at the next
   order. A correction that could be dropped without changing the accuracy order would not
   be a correction.
 * `EpsilonEridani.ApproximatesToOrder.of_add_mul_pow`: the complementary
   fact that the correction is genuinely subleading — adding it does not disturb the accuracy
   the leading-power term already had.
-* `coeff_unique_of_leadingPower_zero`: when the structure function vanishes at leading power, its
-  first nonvanishing correction is unique.
 * `monomialKpc` and `monomialKpc_leadingPower_not_approx_succ`: the interface is inhabited
   with a *nonzero* coefficient, so the sharpness statement is not vacuously true.
 
@@ -131,22 +133,9 @@ lemma coeff_eq (K L : Kpc W n) (h : K.leadingPower = L.leadingPower) : K.coeff =
 not accurate to order `n + 1`. -/
 lemma leadingPower_not_approx_succ (K : Kpc W n) (hc : K.coeff ≠ 0) :
     ¬ ApproximatesToOrder W K.leadingPower (n + 1) :=
-  K.remainder.not_approximatesToOrder_succ_of_coeff_ne_zero hc
+  K.remainder.not_succ_of_coeff_ne_zero hc
 
 end Kpc
-
-/-- **A structure function that vanishes at leading power is determined, at the first
-nonvanishing order, entirely by its kinematic power correction.**
-
-arXiv:2510.14496 reports exactly this situation for SIDIS: structure functions that vanish
-in the leading-power TMD factorization theorem, the longitudinal-photon contributions among
-them, receive their first prediction from the kinematic power corrections. What is proved
-here is that such a prediction is unique — there is no freedom left in the coefficient. -/
-lemma coeff_unique_of_leadingPower_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
-    (h₁ : ApproximatesToOrder W (fun lam => c₁ * lam ^ n) (n + 1))
-    (h₂ : ApproximatesToOrder W (fun lam => c₂ * lam ^ n) (n + 1)) :
-    c₁ = c₂ :=
-  ApproximatesToOrder.coeff_unique (Wlp := fun _ => 0) (by simpa using h₁) (by simpa using h₂)
 
 /-- A structure function whose leading-power term vanishes and whose order-`n` kinematic
 power correction is the whole of it.

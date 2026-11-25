@@ -40,7 +40,7 @@ such expansions depends.
   and its lower-order approximation, and is not a convention.
 * `ApproximatesToOrder.of_add_mul_pow`: a correction is genuinely subleading: without it, the
   approximation is still accurate to order `n`.
-* `ApproximatesToOrder.not_approximatesToOrder_succ_of_coeff_ne_zero`: a nonvanishing correction
+* `ApproximatesToOrder.not_succ_of_coeff_ne_zero`: a nonvanishing correction
   is detectable: without it, the approximation is not accurate to order `n + 1`.
 -/
 
@@ -130,7 +130,7 @@ lower-order approximation alone is *not* accurate to order `n + 1`.
 
 Together with `ApproximatesToOrder.coeff_unique` this is what keeps an interface of correction
 coefficients from being vacuous: the correction can neither be dropped nor be chosen. -/
-lemma ApproximatesToOrder.not_approximatesToOrder_succ_of_coeff_ne_zero {W Wlp : ℝ → ℝ} {n : ℕ}
+lemma ApproximatesToOrder.not_succ_of_coeff_ne_zero {W Wlp : ℝ → ℝ} {n : ℕ}
     {c : ℝ} (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1))
     (hc : c ≠ 0) : ¬ ApproximatesToOrder W Wlp (n + 1) := by
   intro hlp

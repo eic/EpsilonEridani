@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Normed.Module.Basic
-import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Truncated expansions that are small at the origin
@@ -24,7 +23,7 @@ instead compares two expansions that both converge on a whole neighbourhood of t
 
 ## Main results
 
-* `Asymptotics.apply_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow`: the constant term of a
+* `Asymptotics.coeff_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow`: the constant term of a
   polynomial of degree at most `n` that is `o(x ^ n)` along a nontrivial filter on the
   neighbourhoods of `0`, punctured or not, vanishes.
 * `Asymptotics.isLittleO_sum_range_pow_smul_pow_iff`: a polynomial of degree at most `n` is
@@ -47,11 +46,12 @@ section PowPow
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜]
 
-/-- Near `0` a higher power is dominated by a lower one. This is the restatement, for powers in a
-normed division ring, of `TauCeti`'s `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`, from
-which it is derived; it is the non-strict companion of Mathlib's `Asymptotics.isLittleO_pow_pow`. -/
-theorem isBigO_pow_pow {m n : ℕ} (h : m ≤ n) : (fun x : 𝕜 => x ^ n) =O[𝓝 0] fun x => x ^ m :=
-  isBigO_norm_norm.1 (by simpa only [norm_pow] using isBigO_norm_pow_norm_pow_nhds_zero_of_le h)
+/-- Near `0` a higher power is dominated by a lower one: the non-strict companion of Mathlib's
+`Asymptotics.isLittleO_pow_pow`, from which it is derived. -/
+theorem isBigO_pow_pow {m n : ℕ} (h : m ≤ n) : (fun x : 𝕜 => x ^ n) =O[𝓝 0] fun x => x ^ m := by
+  rcases h.eq_or_lt with rfl | h
+  · exact isBigO_refl _ _
+  · exact (isLittleO_pow_pow h).isBigO
 
 end PowPow
 
@@ -61,7 +61,7 @@ variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace
 /-- The constant term of a polynomial of degree at most `n` that is `o(x ^ n)` along a nontrivial
 filter on the neighbourhoods of `0` vanishes. The filter need not be punctured, so this applies
 along `𝓝 0` itself, where only the constant term is determined. -/
-theorem apply_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl₀ : l ≤ 𝓝 0) {n : ℕ}
+theorem coeff_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl₀ : l ≤ 𝓝 0) {n : ℕ}
     {a : ℕ → E} (h : (fun x => ∑ k ∈ range (n + 1), x ^ k • a k) =o[l] fun x => x ^ n) :
     a 0 = 0 := by
   have hc : Continuous fun x : 𝕜 => ∑ k ∈ range (n + 1), x ^ k • a k := by fun_prop
@@ -86,9 +86,9 @@ private theorem eq_zero_of_isLittleO_sum_range_pow_smul_pow (hl : l ≤ 𝓝[≠
   | zero =>
     intro k hk
     rw [Nat.le_zero.1 hk]
-    exact apply_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow hl₀ h
+    exact coeff_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow hl₀ h
   | succ m ih =>
-    have ha₀ := apply_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow hl₀ h
+    have ha₀ := coeff_zero_eq_zero_of_isLittleO_sum_range_pow_smul_pow hl₀ h
     -- divide off the vanishing constant term: the sum is `x` times a polynomial of degree `≤ m`
     have hsplit : ∀ x : 𝕜, ∑ k ∈ range (m + 1 + 1), x ^ k • a k =
         x • ∑ k ∈ range (m + 1), x ^ k • a (k + 1) := fun x => by

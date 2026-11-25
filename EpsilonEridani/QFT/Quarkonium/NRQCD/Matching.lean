@@ -42,7 +42,7 @@ operators of total degree exactly `k` (`PowerCounting.totalDegreePiece k`), and 
 velocity-stripped matrix elements; the set of amplitudes need not be finite. Given one matching
 assignment `c`, another assignment `c'` matches if and only if, at every total degree `k ≤ n`, the
 difference `c' - c` lies in the kernel of the matching matrix
-(`IsMatching.isMatching_iff_mulVec_sub_eq_zero`). Hence the matching coefficients of the operators
+(`IsMatching.iff_mulVec_sub_eq_zero`). Hence the matching coefficients of the operators
 of a total degree `k ≤ n` are unique exactly when the matching matrix at total degree `k` has full
 column rank, that is when no nonzero combination of the operators of total degree `k` has a
 vanishing matrix element in every amplitude
@@ -63,7 +63,10 @@ are unique on the whole truncation exactly when this holds at every total degree
   every total degree `m ≤ n`.
 * `PowerCounting.isMatching_effectiveAmplitude`: every coefficient assignment matches the
   amplitudes it generates itself, so the matching condition is inhabited.
-* `PowerCounting.IsMatching.isMatching_iff_mulVec_sub_eq_zero`: on the truncation, the matching
+* `PowerCounting.forall_approximatesToOrder_effectiveAmplitude_iff`: two coefficient assignments
+  give effective amplitudes agreeing to order `n + 1` exactly when their difference lies in the
+  kernels of the matching matrices up to total degree `n`.
+* `PowerCounting.IsMatching.iff_mulVec_sub_eq_zero`: on the truncation, the matching
   assignments are the translates of one of them by the kernels of the matching matrices.
 * `PowerCounting.IsMatching.eqOn_totalDegreePiece`: **uniqueness** at one total degree — under
   the rank condition at that degree, two matching assignments agree on its operators.
@@ -248,11 +251,12 @@ theorem effectiveAmplitude_eq_sum_range_mulVec (n : ℕ) (M : A → FreeMonoid B
 
 variable {P} {n : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ} {c c' : FreeMonoid B → ℝ}
 
-/-- **The space of matching coefficients.** Given one assignment `c` matching through total
-degree `n`, an assignment `c'` matches as well exactly when, at every total degree `k ≤ n`, the
-difference `c' - c` lies in the kernel of the matching matrix. -/
-theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c) :
-    P.IsMatching n F M c' ↔
+/-- Two coefficient assignments give effective-theory amplitudes agreeing to order `n + 1` in
+every amplitude exactly when, at every total degree `k ≤ n`, their difference lies in the kernel
+of the matching matrix. -/
+theorem forall_approximatesToOrder_effectiveAmplitude_iff :
+    (∀ a, ApproximatesToOrder (P.effectiveAmplitude n (M a) c) (P.effectiveAmplitude n (M a) c')
+        (n + 1)) ↔
       ∀ k ≤ n, (P.matchingMatrix M k).mulVec (fun o => c' o - c o) = 0 := by
   have hl : 𝓝[>] (0 : ℝ) ≤ 𝓝[≠] 0 := nhdsGT_le_nhdsNE 0
   -- the difference of the effective amplitudes, as a polynomial with the matching-matrix
@@ -263,17 +267,27 @@ theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c)
       rw [← effectiveAmplitude_sub_right, effectiveAmplitude_eq_sum_range_mulVec]
       simp only [Pi.sub_apply]
   constructor
-  · intro hc' k hk
+  · intro happ k hk
     funext a
     rw [Pi.zero_apply]
     refine (isBigO_sum_range_pow_smul_pow_succ_iff hl
       (a := fun k => (P.matchingMatrix M k).mulVec (fun o => c' o - c o) a)).1 ?_ k hk
-    refine (approximatesToOrder_def.1 ((hc' a).symm.trans (hc a))).congr_left (hdiff a)
+    exact (approximatesToOrder_def.1 (happ a).symm).congr_left (hdiff a)
   · intro h a
-    refine (hc a).congr_sub fun ε => ?_
-    rw [← sub_eq_zero, sub_sub_sub_cancel_left, hdiff]
+    refine (ApproximatesToOrder.refl (P.effectiveAmplitude n (M a) c) _).congr_sub fun ε => ?_
+    rw [sub_self, eq_comm, ← neg_sub, neg_eq_zero, hdiff]
     exact sum_eq_zero fun k hk => by
       rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), Pi.zero_apply, smul_zero]
+
+/-- **The space of matching coefficients.** Given one assignment `c` matching through total
+degree `n`, an assignment `c'` matches as well exactly when, at every total degree `k ≤ n`, the
+difference `c' - c` lies in the kernel of the matching matrix. -/
+theorem IsMatching.iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c) :
+    P.IsMatching n F M c' ↔
+      ∀ k ≤ n, (P.matchingMatrix M k).mulVec (fun o => c' o - c o) = 0 :=
+  ⟨fun hc' => forall_approximatesToOrder_effectiveAmplitude_iff.1 fun a =>
+      (hc a).symm.trans (hc' a),
+    fun h a => (hc a).trans (forall_approximatesToOrder_effectiveAmplitude_iff.2 h a)⟩
 
 /-- **Uniqueness of the matching coefficients at one total degree.** If the matching matrix at a
 total degree `k ≤ n` has full column rank — no nonzero combination of the operators of total
@@ -287,7 +301,7 @@ theorem IsMatching.eqOn_totalDegreePiece (hc : P.IsMatching n F M c)
   have hinj := (Matrix.rank_eq_card_iff_mulVec_injective (P.matchingMatrix M k)).1
     (by simpa only [Fintype.card_coe] using hrank)
   have h0 : (fun o : P.totalDegreePiece k => c' o - c o) = 0 :=
-    hinj <| by rw [(hc.isMatching_iff_mulVec_sub_eq_zero).1 hc' k hk, Matrix.mulVec_zero]
+    hinj <| by rw [(hc.iff_mulVec_sub_eq_zero).1 hc' k hk, Matrix.mulVec_zero]
   exact (sub_eq_zero.1 (congrFun h0 ⟨o, ho⟩)).symm
 
 /-- **Uniqueness of the matching coefficients.** If at every total degree `k ≤ n` the matching
@@ -321,7 +335,7 @@ theorem IsMatching.forall_eqOn_totalDegreePiece_iff (hc : P.IsMatching n F M c) 
   -- shifting `c` by `d` on the operators of total degree `k` keeps the matching condition
   set c' : FreeMonoid B → ℝ := fun o => c o + if h : o ∈ P.totalDegreePiece k then d ⟨o, h⟩ else 0
   have hc' : P.IsMatching n F M c' := by
-    refine (hc.isMatching_iff_mulVec_sub_eq_zero).2 fun j _ => ?_
+    refine (hc.iff_mulVec_sub_eq_zero).2 fun j _ => ?_
     by_cases hjk : j = k
     · subst hjk
       have : (fun o : P.totalDegreePiece j => c' o - c o) = d := funext fun o => by
