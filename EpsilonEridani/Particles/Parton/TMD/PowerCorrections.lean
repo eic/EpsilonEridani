@@ -7,7 +7,6 @@ module
 
 public import EpsilonEridani.Particles.Parton.TMD.Basic
 public import EpsilonEridani.Mathematics.Analysis.Asymptotics.ApproximatesToOrder
-import EpsilonEridani.Mathematics.Analysis.Asymptotics.TruncatedExpansion
 /-!
 
 # Kinematic Power Corrections to TMD Factorization
@@ -31,26 +30,29 @@ here. This module does not know what a twist-two distribution is, carries no Lor
 and has no notion of a soft function.
 
 What is here is the *shape* of the resulting statement — an approximation carrying an
-explicit remainder bound — together with the results that make a power correction a
-determination rather than a convention:
+explicit remainder bound — together with the TMD interface built on the results that make
+a power correction a determination rather than a convention; those results are generic and
+live in `EpsilonEridani.Mathematics.Analysis.Asymptotics.ApproximatesToOrder`:
 
-* `coeff_unique`: the coefficient of the order-`n` correction is fixed by the structure
-  function and the leading-power term. It is not a scheme choice.
-* `not_approximatesToOrder_succ_of_coeff_ne_zero`: if that coefficient is nonzero, the
-  leading-power term on its own is *not* accurate at the next order. A correction that
-  could be dropped without changing the accuracy order would not be a correction.
-* `leadingPower_approximatesToOrder`: the complementary fact that the correction is
-  genuinely subleading — adding it does not disturb the accuracy the leading-power term
-  already had.
+* `EpsilonEridani.ApproximatesToOrder.coeff_unique`: the coefficient of the order-`n`
+  correction is fixed by the structure function and the leading-power term. It is not a
+  scheme choice.
+* `EpsilonEridani.ApproximatesToOrder.not_approximatesToOrder_succ_of_coeff_ne_zero`: if that
+  coefficient is nonzero, the leading-power term on its own is *not* accurate at the next
+  order. A correction that could be dropped without changing the accuracy order would not
+  be a correction.
+* `EpsilonEridani.ApproximatesToOrder.leadingPower_approximatesToOrder`: the complementary
+  fact that the correction is genuinely subleading — adding it does not disturb the accuracy
+  the leading-power term already had.
 * `monomialKpc` and `monomialKpc_leadingPower_not_approx_succ`: the interface is inhabited
   with a *nonzero* coefficient, so the sharpness statement is not vacuously true.
 
 The remainder bound is `EpsilonEridani.ApproximatesToOrder` in the power-counting ratio
 `λ = q_T / Q`. These are statements of real analysis about the `λ → 0⁺` expansion; they are
-not statements about QCD. They are placed in the TMD namespace because the power counting they
-encode is the TMD power counting, and because `Kpc` is the interface that a future derivation of a
-factorization theorem in this library should be asked to produce. A definition that merely
-named a correction term without bounding anything would carry none of this content.
+not statements about QCD. The interface below stays in the TMD namespace because the power
+counting it encodes is the TMD power counting, and because `Kpc` is the interface that a future
+derivation of a factorization theorem in this library should be asked to produce. A definition
+that merely named a correction term without bounding anything would carry none of this content.
 
 ## B. Not captured
 
@@ -92,84 +94,6 @@ theorem is an expansion in this ratio, and the limit in which the theorem is a t
 `λ → 0⁺`. -/
 def powerRatio (qT Q : ℝ) : ℝ := qT / Q
 
-/-- A monomial `c λ ^ n` that is bounded by `λ ^ (n + 1)` as `λ → 0⁺` has vanishing
-coefficient.
-
-This is the analytic fact behind every statement in this module. It is what forbids two
-different power corrections at the same order, and what makes a nonzero correction
-detectable in the accuracy of the leading-power term. -/
-lemma eq_zero_of_isBigO_pow_succ {n : ℕ} {c : ℝ}
-    (h : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ (n + 1)) :
-    c = 0 := by
-  have hsum : ∀ lam : ℝ, ∑ k ∈ Finset.range (n + 1), lam ^ k • Pi.single n c k = c * lam ^ n :=
-    fun lam => by simp [Pi.single_apply, mul_comm]
-  have := (isBigO_sum_range_pow_smul_pow_succ_iff (nhdsGT_le_nhdsNE 0) (a := Pi.single n c)).1
-    (h.congr_left fun lam => (hsum lam).symm) n le_rfl
-  rwa [Pi.single_eq_same] at this
-
-/-- **The kinematic power correction at a given order is unique.** If two coefficients each
-improve the leading-power approximation from order `n` to order `n + 1`, they are equal.
-
-The correction is therefore a determination made by the structure function together with
-its leading-power term, and not a convention of whoever writes the expansion down. -/
-lemma coeff_unique {W Wlp : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
-    (h₁ : ApproximatesToOrder W (fun lam => Wlp lam + c₁ * lam ^ n) (n + 1))
-    (h₂ : ApproximatesToOrder W (fun lam => Wlp lam + c₂ * lam ^ n) (n + 1)) :
-    c₁ = c₂ := by
-  have h₁' : (fun lam : ℝ => W lam - (Wlp lam + c₁ * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 h₁
-  have h₂' : (fun lam : ℝ => W lam - (Wlp lam + c₂ * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := approximatesToOrder_iff.1 h₂
-  have hdiff : (fun lam : ℝ => (c₂ - c₁) * lam ^ n) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ (n + 1) := by
-    refine (h₁'.sub h₂').congr_left ?_
-    intro lam
-    ring
-  have hz := eq_zero_of_isBigO_pow_succ hdiff
-  linarith
-
-/-- **A structure function that vanishes at leading power is determined, at the first
-nonvanishing order, entirely by its kinematic power correction.**
-
-arXiv:2510.14496 reports exactly this situation for SIDIS: structure functions that vanish
-in the leading-power TMD factorization theorem, the longitudinal-photon contributions among
-them, receive their first prediction from the kinematic power corrections. What is proved
-here is that such a prediction is unique — there is no freedom left in the coefficient. -/
-lemma coeff_unique_of_leadingPower_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
-    (h₁ : ApproximatesToOrder W (fun lam => c₁ * lam ^ n) (n + 1))
-    (h₂ : ApproximatesToOrder W (fun lam => c₂ * lam ^ n) (n + 1)) :
-    c₁ = c₂ :=
-  coeff_unique (Wlp := fun _ => 0) (by simpa using h₁) (by simpa using h₂)
-
-/-- **The leading-power term keeps its own accuracy.** If including the order-`n` correction
-gives an approximation accurate to order `n + 1`, then the leading-power term on its own is
-accurate to order `n`: the correction is genuinely subleading. -/
-lemma leadingPower_approximatesToOrder {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
-    (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) :
-    ApproximatesToOrder W Wlp n := by
-  have hlow : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ n := approximatesToOrder_iff.1 (h.mono (Nat.le_succ n))
-  have hcorr : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n :=
-    (isBigO_refl (fun lam : ℝ => lam ^ n) (𝓝[>] 0)).const_mul_left c
-  have hsum : (fun lam : ℝ => W lam - Wlp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n := by
-    refine (hlow.add hcorr).congr_left ?_
-    intro lam
-    ring
-  exact approximatesToOrder_iff.2 hsum
-
-/-- **A nonvanishing power correction is detectable.** If the order-`n` coefficient is
-nonzero then the leading-power term alone is *not* accurate to order `n + 1`.
-
-Together with `coeff_unique` this is what keeps the interface from being empty: the
-correction can neither be dropped nor be chosen. -/
-lemma not_approximatesToOrder_succ_of_coeff_ne_zero {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
-    (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) (hc : c ≠ 0) :
-    ¬ ApproximatesToOrder W Wlp (n + 1) := by
-  intro hlp
-  have hzero : ApproximatesToOrder W (fun lam => Wlp lam + 0 * lam ^ n) (n + 1) :=
-    hlp.congr fun lam => by ring
-  exact hc (coeff_unique h hzero)
-
 /-- The data of a TMD factorization formula at one order in the power counting: a
 leading-power term, the coefficient of the kinematic power correction at order `n`, and the
 remainder bound that is their joint content.
@@ -192,12 +116,12 @@ variable {W : ℝ → ℝ} {n : ℕ}
 
 /-- The leading-power term of a `Kpc` is itself accurate to order `n`. -/
 lemma leadingPower_approx (K : Kpc W n) : ApproximatesToOrder W K.leadingPower n :=
-  leadingPower_approximatesToOrder K.remainder
+  K.remainder.leadingPower_approximatesToOrder
 
 /-- Two power-correction data for the same structure function with the same leading-power
 term carry the same coefficient. -/
 lemma coeff_eq (K L : Kpc W n) (h : K.leadingPower = L.leadingPower) : K.coeff = L.coeff := by
-  refine coeff_unique (Wlp := K.leadingPower) K.remainder ?_
+  refine K.remainder.coeff_unique (Wlp := K.leadingPower) ?_
   rw [h]
   exact L.remainder
 
@@ -205,7 +129,7 @@ lemma coeff_eq (K L : Kpc W n) (h : K.leadingPower = L.leadingPower) : K.coeff =
 not accurate to order `n + 1`. -/
 lemma leadingPower_not_approx_succ (K : Kpc W n) (hc : K.coeff ≠ 0) :
     ¬ ApproximatesToOrder W K.leadingPower (n + 1) :=
-  not_approximatesToOrder_succ_of_coeff_ne_zero K.remainder hc
+  K.remainder.not_approximatesToOrder_succ_of_coeff_ne_zero hc
 
 end Kpc
 

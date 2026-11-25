@@ -44,7 +44,8 @@ assignment `c`, another assignment `c'` matches if and only if, at every total d
 difference `c' - c` lies in the kernel of the matching matrix
 (`IsMatching.isMatching_iff_mulVec_sub_eq_zero`). Hence the matching coefficients of the operators
 of a total degree `k ≤ n` are unique exactly when the matching matrix at total degree `k` has full
-column rank, that is when the amplitudes separate the operators of total degree `k`
+column rank, that is when no nonzero combination of the operators of total degree `k` has a
+vanishing matrix element in every amplitude
 (`IsMatching.eqOn_totalDegreePiece` and `IsMatching.forall_eqOn_totalDegreePiece_iff`), and they
 are unique on the whole truncation exactly when this holds at every total degree `k ≤ n`
 (`IsMatching.eqOn_truncation` and `IsMatching.forall_eqOn_truncation_iff`).
@@ -60,6 +61,8 @@ are unique on the whole truncation exactly when this holds at every total degree
 
 * `PowerCounting.IsMatching.mono`: matching through total degree `n` implies matching through
   every total degree `m ≤ n`.
+* `PowerCounting.isMatching_effectiveAmplitude`: every coefficient assignment matches the
+  amplitudes it generates itself, so the matching condition is inhabited.
 * `PowerCounting.IsMatching.isMatching_iff_mulVec_sub_eq_zero`: on the truncation, the matching
   assignments are the translates of one of them by the kernels of the matching matrices.
 * `PowerCounting.IsMatching.eqOn_totalDegreePiece`: **uniqueness** at one total degree — under
@@ -76,7 +79,9 @@ The renormalisation scale and the coupling are held fixed: `F` and `M` are the a
 matrix elements at the stated order in the coupling and at one scale, and every statement applies
 at each scale separately, so a scale-dependent assignment `c : FreeMonoid B → ℝ → ℝ` is unique
 when each `c · μ` is. Existence of a matching assignment is not claimed in general; it is a
-property of the full theory, not of this linear algebra.
+property of the full theory, not of this linear algebra, and the one existence fact proved here
+is that every assignment matches the amplitudes it generates itself
+(`isMatching_effectiveAmplitude`).
 
 The full-theory amplitudes `F` and the velocity-stripped matrix elements `M` are given data: nothing
 here derives them from QCD or NRQCD, and no dynamics, renormalisation or operator mixing is
@@ -253,10 +258,7 @@ theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c)
     rw [Pi.zero_apply]
     refine (isBigO_sum_range_pow_smul_pow_succ_iff hl
       (a := fun k => (P.matchingMatrix M k).mulVec (fun o => c' o - c o) a)).1 ?_ k hk
-    refine ((approximatesToOrder_iff.1 (hc a)).sub
-      (approximatesToOrder_iff.1 (hc' a))).congr_left fun ε => ?_
-    rw [← hdiff]
-    ring
+    refine (approximatesToOrder_iff.1 ((hc' a).symm.trans (hc a))).congr_left (hdiff a)
   · intro h a
     refine (hc a).congr fun ε => ?_
     rw [← sub_eq_zero, sub_sub_sub_cancel_left, hdiff]
@@ -264,14 +266,16 @@ theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c)
       rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), Pi.zero_apply, smul_zero]
 
 /-- **Uniqueness of the matching coefficients at one total degree.** If the matching matrix at a
-total degree `k ≤ n` has full column rank — the amplitudes separate the operators of total
-degree `k` — then two coefficient assignments matching the same amplitudes through total degree `n`
+total degree `k ≤ n` has full column rank — no nonzero combination of the operators of total
+degree `k` has a vanishing matrix element in every amplitude — then two coefficient assignments
+matching the same amplitudes through total degree `n`
 agree on every operator of total degree `k`. -/
 theorem IsMatching.eqOn_totalDegreePiece (hc : P.IsMatching n F M c)
     (hc' : P.IsMatching n F M c') {k : ℕ} (hk : k ≤ n)
-    (hrank : (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k)) :
+    (hrank : (P.matchingMatrix M k).rank = (P.totalDegreePiece k).card) :
     Set.EqOn c c' (P.totalDegreePiece k) := fun o ho => by
-  have hinj := (Matrix.rank_eq_card_iff_mulVec_injective _).1 hrank
+  have hinj := (Matrix.rank_eq_card_iff_mulVec_injective (P.matchingMatrix M k)).1
+    (by simpa only [Fintype.card_coe] using hrank)
   have h0 : (fun o : P.totalDegreePiece k => c' o - c o) = 0 :=
     hinj <| by rw [(hc.isMatching_iff_mulVec_sub_eq_zero).1 hc' k hk, Matrix.mulVec_zero]
   exact (sub_eq_zero.1 (congrFun h0 ⟨o, ho⟩)).symm
@@ -280,7 +284,7 @@ theorem IsMatching.eqOn_totalDegreePiece (hc : P.IsMatching n F M c)
 matrix has full column rank, then two coefficient assignments matching the same amplitudes through
 total degree `n` agree on every operator of the truncation. -/
 theorem IsMatching.eqOn_truncation (hc : P.IsMatching n F M c) (hc' : P.IsMatching n F M c')
-    (hrank : ∀ k ≤ n, (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k)) :
+    (hrank : ∀ k ≤ n, (P.matchingMatrix M k).rank = (P.totalDegreePiece k).card) :
     Set.EqOn c c' (P.truncation n) := fun _ ho =>
   hc.eqOn_totalDegreePiece hc' (P.mem_truncation.1 ho) (hrank _ (P.mem_truncation.1 ho))
     ((P.mem_totalDegreePiece).2 rfl)
@@ -292,10 +296,11 @@ full column rank. -/
 theorem IsMatching.forall_eqOn_totalDegreePiece_iff (hc : P.IsMatching n F M c) {k : ℕ}
     (hk : k ≤ n) :
     (∀ c', P.IsMatching n F M c' → Set.EqOn c c' (P.totalDegreePiece k)) ↔
-      (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k) := by
+      (P.matchingMatrix M k).rank = (P.totalDegreePiece k).card := by
   refine ⟨fun huniq => ?_, fun hrank c' hc' => hc.eqOn_totalDegreePiece hc' hk hrank⟩
   classical
   by_contra hrank
+  rw [← Fintype.card_coe] at hrank
   -- a nonzero kernel vector `d` of the matching matrix at total degree `k`
   obtain ⟨d₁, d₂, hd, hne⟩ :=
     Function.not_injective_iff.1 (mt (Matrix.rank_eq_card_iff_mulVec_injective _).2 hrank)
@@ -326,7 +331,7 @@ total degree `n`, every matching assignment agrees with it on the truncation exa
 matching matrix has full column rank at every total degree `k ≤ n`. -/
 theorem IsMatching.forall_eqOn_truncation_iff (hc : P.IsMatching n F M c) :
     (∀ c', P.IsMatching n F M c' → Set.EqOn c c' (P.truncation n)) ↔
-      ∀ k ≤ n, (P.matchingMatrix M k).rank = Fintype.card (P.totalDegreePiece k) :=
+      ∀ k ≤ n, (P.matchingMatrix M k).rank = (P.totalDegreePiece k).card :=
   ⟨fun huniq _ hk => (hc.forall_eqOn_totalDegreePiece_iff hk).1 fun c' hc' =>
       (huniq c' hc').mono (Finset.coe_subset.2 (P.totalDegreePiece_subset_truncation hk)),
     fun hrank _ hc' => hc.eqOn_truncation hc' hrank⟩

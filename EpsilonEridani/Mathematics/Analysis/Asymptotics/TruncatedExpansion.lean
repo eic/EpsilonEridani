@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Truncated expansions that are small at the origin
@@ -40,9 +41,12 @@ namespace Asymptotics
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {l : Filter 𝕜} [l.NeBot]
 
-/-- Near `0` a higher power is dominated by a lower one. -/
+/-- Near `0` a higher power is dominated by a lower one. This is the field-valued restatement of
+`TauCeti`'s `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`, from which it is derived, kept
+beside it the way Mathlib keeps `Asymptotics.isLittleO_pow_pow` beside
+`Asymptotics.isLittleO_norm_pow_norm_pow`. -/
 theorem isBigO_pow_pow {m n : ℕ} (h : m ≤ n) : (fun x : 𝕜 => x ^ n) =O[𝓝 0] fun x => x ^ m :=
-  h.lt_or_eq.elim (fun h => (isLittleO_pow_pow h).isBigO) fun h => h ▸ isBigO_refl _ _
+  isBigO_norm_norm.1 (by simpa only [norm_pow] using isBigO_norm_pow_norm_pow_nhds_zero_of_le h)
 
 /-- The constant term of a polynomial that is `o(x ^ n)` along a nontrivial filter on the
 neighbourhoods of `0` vanishes: it is the limit of the sum at `0`, while the sum tends to `0` along
