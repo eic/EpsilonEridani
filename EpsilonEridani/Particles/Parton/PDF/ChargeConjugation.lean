@@ -61,8 +61,10 @@ only one scale.
   density.
 * `PDF.valenceNumber_eq_intervalIntegral`: for separately integrable quark and antiquark densities,
   the valence number is the interval integral of their difference.
-* `PDF.quarkAddAntiquark_chargeConj`: `q_i + qbar_i` is invariant under charge conjugation, and
-  `PDF.Assumptions.quarkAddAntiquark` and its companions: it inherits the density assumptions.
+* `PDF.quarkAddAntiquark_chargeConj`: `q_i + qbar_i` is invariant under charge conjugation;
+  `PDF.mellinMoment_quarkAddAntiquark`: for a regular density its moments are the sums of the
+  quark and antiquark moments; and `PDF.Assumptions.quarkAddAntiquark` and its companions: it
+  inherits the density assumptions.
 
 ## References
 
@@ -222,9 +224,9 @@ couples to quarks and antiquarks with the same squared charge sees, for instance
 -/
 
 /-- The quark plus antiquark density of each flavour, `q_i + qbar_i`, as a density over the
-flavours. -/
+flavours: the sum of the pullbacks of the quark and of the antiquark densities. -/
 def quarkAddAntiquark (f : Pdf (Species Flavor)) : Pdf Flavor :=
-  fun i x Q2 => f (.quark i) x Q2 + f (.antiquark i) x Q2
+  comap Species.quark f + comap Species.antiquark f
 
 @[simp]
 theorem quarkAddAntiquark_apply (f : Pdf (Species Flavor)) (i : Flavor) (x Q2 : ℝ) :
@@ -239,25 +241,29 @@ theorem quarkAddAntiquark_chargeConj (f : Pdf (Species Flavor)) :
   ext i x Q2
   simp [add_comm]
 
+/-- For a regular density, each moment of `q_i + qbar_i` is the sum of the moments of the quark
+and of the antiquark density. -/
+theorem mellinMoment_quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Regularity f) (n : ℕ)
+    (i : Flavor) (Q2 : ℝ) :
+    mellinMoment (quarkAddAntiquark f) n i Q2
+      = mellinMoment f n (.quark i) Q2 + mellinMoment f n (.antiquark i) Q2 := by
+  rw [quarkAddAntiquark, mellinMoment_add (h.comap _) (h.comap _), mellinMoment_comap,
+    mellinMoment_comap]
+
 /-- The quark plus antiquark density of a parton density is a parton density. -/
 theorem IsPartonDensity.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : IsPartonDensity f) :
-    IsPartonDensity (quarkAddAntiquark f) where
-  support i x Q2 hx := by
-    simp [h.support _ x Q2 hx]
-  nonneg i x Q2 h0 h1 := add_nonneg (h.nonneg _ x Q2 h0 h1) (h.nonneg _ x Q2 h0 h1)
+    IsPartonDensity (quarkAddAntiquark f) :=
+  (h.comap _).add (h.comap _)
 
 /-- The quark plus antiquark density of a regular density is regular. -/
 theorem Regularity.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Regularity f) :
-    Regularity (quarkAddAntiquark f) where
-  measurable i Q2 := (h.measurable _ Q2).add (h.measurable _ Q2)
-  momentIntegrable n i Q2 := by
-    simpa only [quarkAddAntiquark_apply, mul_add, Pi.add_def] using
-      (h.momentIntegrable n (.quark i) Q2).add (h.momentIntegrable n (.antiquark i) Q2)
+    Regularity (quarkAddAntiquark f) :=
+  (h.comap _).add (h.comap _)
 
 /-- The quark plus antiquark density preserves the density assumptions. -/
 theorem Assumptions.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Assumptions f) :
     Assumptions (quarkAddAntiquark f) :=
-  assumptions_iff.2 ⟨h.isPartonDensity.quarkAddAntiquark, h.regularity.quarkAddAntiquark⟩
+  (h.comap _).add (h.comap _)
 
 end PDF
 

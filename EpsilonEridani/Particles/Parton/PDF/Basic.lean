@@ -321,6 +321,46 @@ lemma Assumptions.weight {f : Pdf ι} (h : Assumptions f) {w : ι → ℝ} (hw :
 
 end Weight
 
+/-! ### Adding densities
+
+Two densities over the same partons add parton by parton, `(f + g) i x Q2 = f i x Q2 + g i x Q2`.
+Both halves of the density assumptions survive addition, and for regular densities every moment
+of the sum is the sum of the moments. A combination of partons such as `q_i + qbar_i` is built as
+a sum of pullbacks. -/
+
+section Add
+
+variable {ι : Type}
+
+/-- For regular densities, each moment of the sum is the sum of the moments. -/
+lemma mellinMoment_add {f g : Pdf ι} (hf : Regularity f) (hg : Regularity g) (n : ℕ) (i : ι)
+    (Q2 : ℝ) : mellinMoment (f + g) n i Q2 = mellinMoment f n i Q2 + mellinMoment g n i Q2 := by
+  simp only [mellinMoment, Pi.add_apply, mul_add]
+  exact MeasureTheory.integral_add (hf.momentIntegrable n i Q2).integrableOn
+    (hg.momentIntegrable n i Q2).integrableOn
+
+/-- The sum of two densities satisfying the physical half of the assumptions satisfies it. -/
+lemma IsPartonDensity.add {f g : Pdf ι} (hf : IsPartonDensity f) (hg : IsPartonDensity g) :
+    IsPartonDensity (f + g) where
+  support i x Q2 hx := by
+    simp only [Pi.add_apply, hf.support i x Q2 hx, hg.support i x Q2 hx, add_zero]
+  nonneg i x Q2 hx₀ hx₁ := add_nonneg (hf.nonneg i x Q2 hx₀ hx₁) (hg.nonneg i x Q2 hx₀ hx₁)
+
+/-- The sum of two regular densities is regular. -/
+lemma Regularity.add {f g : Pdf ι} (hf : Regularity f) (hg : Regularity g) :
+    Regularity (f + g) where
+  measurable i Q2 := (hf.measurable i Q2).add (hg.measurable i Q2)
+  momentIntegrable n i Q2 := by
+    simp only [Pi.add_apply, mul_add]
+    exact (hf.momentIntegrable n i Q2).add (hg.momentIntegrable n i Q2)
+
+/-- The sum of two densities satisfying the density assumptions satisfies them. -/
+lemma Assumptions.add {f g : Pdf ι} (hf : Assumptions f) (hg : Assumptions g) :
+    Assumptions (f + g) :=
+  assumptions_iff.2 ⟨hf.isPartonDensity.add hg.isPartonDensity, hf.regularity.add hg.regularity⟩
+
+end Add
+
 end PDF
 end Parton
 end Particles
