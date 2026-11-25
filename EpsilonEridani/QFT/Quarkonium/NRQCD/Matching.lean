@@ -198,6 +198,7 @@ theorem isMatching_congr {n : ℕ} {F : A → ℝ → ℝ} {M M' : A → FreeMon
     P.IsMatching n F M c ↔ P.IsMatching n F M' c' :=
   forall_congr' fun a => by rw [funext (P.effectiveAmplitude_congr (hM a) hc)]
 
+variable {P} in
 /-- **Matching to a lower order.** An assignment matching the full-theory amplitudes through
 total degree `n` matches them through every total degree `m ≤ n`. -/
 theorem IsMatching.mono {n m : ℕ} {F : A → ℝ → ℝ} {M : A → FreeMonoid B → ℝ}

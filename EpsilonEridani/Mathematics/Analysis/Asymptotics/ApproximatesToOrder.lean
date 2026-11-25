@@ -38,10 +38,10 @@ such expansions depends.
 * `ApproximatesToOrder.coeff_unique`: the coefficient of a correction that improves an
   approximation from order `n` to order `n + 1` is unique: it is fixed by the expanded function
   and its lower-order approximation, and is not a convention.
-* `ApproximatesToOrder.coeff_unique_of_leadingPower_zero`: the same uniqueness when the
-  lower-order approximation vanishes.
-* `ApproximatesToOrder.leadingPower_approximatesToOrder`: a correction is genuinely subleading:
-  without it, the approximation is still accurate to order `n`.
+* `ApproximatesToOrder.coeff_unique_zero`: the same uniqueness when the lower-order
+  approximation vanishes.
+* `ApproximatesToOrder.of_add_mul_pow`: a correction is genuinely subleading: without it, the
+  approximation is still accurate to order `n`.
 * `ApproximatesToOrder.not_approximatesToOrder_succ_of_coeff_ne_zero`: a nonvanishing correction
   is detectable: without it, the approximation is not accurate to order `n + 1`.
 -/
@@ -127,7 +127,7 @@ lemma ApproximatesToOrder.coeff_unique {W Wlp : ℝ → ℝ} {n : ℕ} {c₁ c�
 /-- **A function that vanishes at lower order is determined, at the first nonvanishing order,
 entirely by its correction coefficient.** If two monomial corrections each approximate it to
 order `n + 1`, their coefficients are equal, so no freedom is left in the coefficient. -/
-lemma ApproximatesToOrder.coeff_unique_of_leadingPower_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
+lemma ApproximatesToOrder.coeff_unique_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
     (h₁ : ApproximatesToOrder W (fun lam => c₁ * lam ^ n) (n + 1))
     (h₂ : ApproximatesToOrder W (fun lam => c₂ * lam ^ n) (n + 1)) :
     c₁ = c₂ :=
@@ -136,7 +136,7 @@ lemma ApproximatesToOrder.coeff_unique_of_leadingPower_zero {W : ℝ → ℝ} {n
 /-- **The lower-order approximation keeps its own accuracy.** If including the order-`n`
 coefficient gives an approximation accurate to order `n + 1`, then the lower-order approximation
 on its own is accurate to order `n`: the correction is genuinely subleading. -/
-lemma ApproximatesToOrder.leadingPower_approximatesToOrder {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
+lemma ApproximatesToOrder.of_add_mul_pow {W Wlp : ℝ → ℝ} {n : ℕ} {c : ℝ}
     (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) :
     ApproximatesToOrder W Wlp n := by
   have hlow : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]

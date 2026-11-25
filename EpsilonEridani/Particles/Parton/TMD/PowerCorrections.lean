@@ -41,7 +41,7 @@ live in `EpsilonEridani.Mathematics.Analysis.Asymptotics.ApproximatesToOrder`:
   coefficient is nonzero, the leading-power term on its own is *not* accurate at the next
   order. A correction that could be dropped without changing the accuracy order would not
   be a correction.
-* `EpsilonEridani.ApproximatesToOrder.leadingPower_approximatesToOrder`: the complementary
+* `EpsilonEridani.ApproximatesToOrder.of_add_mul_pow`: the complementary
   fact that the correction is genuinely subleading — adding it does not disturb the accuracy
   the leading-power term already had.
 * `monomialKpc` and `monomialKpc_leadingPower_not_approx_succ`: the interface is inhabited
@@ -116,7 +116,7 @@ variable {W : ℝ → ℝ} {n : ℕ}
 
 /-- The leading-power term of a `Kpc` is itself accurate to order `n`. -/
 lemma leadingPower_approx (K : Kpc W n) : ApproximatesToOrder W K.leadingPower n :=
-  K.remainder.leadingPower_approximatesToOrder
+  K.remainder.of_add_mul_pow
 
 /-- Two power-correction data for the same structure function with the same leading-power
 term carry the same coefficient. -/
