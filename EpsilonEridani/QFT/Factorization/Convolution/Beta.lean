@@ -14,8 +14,8 @@ import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 The endpoint kernel `x ^ a (1 - x) ^ b` is the standard shape of a parton or lepton
 density at the endpoints of `(0, 1]`, and powers of `1 - x` are the building blocks, next to the
-powers of `x` of `mellinDis_rpow`, of the regular parts of evolution kernels. Its Mellin transform
-is Euler's beta integral at `(N + a, b + 1)`, a ratio of Gamma functions.
+powers of `x` of `mellinDis_rpow`, of the regular parts of the leading-order splitting kernels.
+Its Mellin transform is Euler's beta integral at `(N + a, b + 1)`, a ratio of Gamma functions.
 
 ## Main results
 
@@ -25,8 +25,9 @@ is Euler's beta integral at `(N + a, b + 1)`, a ratio of Gamma functions.
   `Complex.betaIntegral (N + a) (b + 1)`, at every `N`;
   `mellinDis_rpow_mul_one_sub_rpow`: on the half plane of convergence it is
   `Γ(N + a) Γ(b + 1) / Γ(N + a + b + 1)`.
-* `mellinDisConvergent_one_sub_rpow_iff`, `mellinDis_one_sub_rpow`: at `a = 0`, the transform of
-  `(1 - x) ^ b` converges exactly when `0 < Re N` and `-1 < b`, and is `B(N, b + 1)`.
+* `mellinDisConvergent_one_sub_rpow_iff`, `mellinDis_one_sub_rpow_eq_betaIntegral`: at `a = 0`,
+  the transform of `(1 - x) ^ b` converges exactly when `0 < Re N` and `-1 < b`, and is
+  `B(N, b + 1)`.
 
 The convergence criterion reduces to TauCeti's `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff`,
 and the values are the complex-index versions of TauCeti's real Euler beta integral
@@ -91,8 +92,9 @@ theorem mellinDisConvergent_one_sub_rpow_iff {b : ℝ} {N : ℂ} :
 
 /-- The transform of `(1 - x) ^ b` is Euler's beta integral `B(N, b + 1)`, at every `N`: the Beta
 kernel with `a = 0`. Together with `mellinDis_rpow` for `x ^ a`, it gives the transforms of the
-two families of powers of which the regular parts of evolution kernels are finite combinations. -/
-theorem mellinDis_one_sub_rpow (b : ℝ) (N : ℂ) :
+two families of powers of which the regular parts of the leading-order splitting kernels are
+finite combinations. -/
+theorem mellinDis_one_sub_rpow_eq_betaIntegral (b : ℝ) (N : ℂ) :
     mellinDis (fun x => (1 - x) ^ b) N = Complex.betaIntegral N (b + 1) := by
   simpa using mellinDis_rpow_mul_one_sub_rpow_eq_betaIntegral 0 b N
 
