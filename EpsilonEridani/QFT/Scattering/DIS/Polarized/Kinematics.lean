@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Bounds
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.TargetMass
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness
 public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 
 /-!

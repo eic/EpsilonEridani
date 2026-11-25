@@ -36,7 +36,7 @@ is `LinearMap.BilinForm.LightConeBasis.transverseProj` in
   `ker_projOrthogonal`, `range_projOrthogonal`: for `g u u ≠ 0` the projection is an idempotent
   with kernel `ℝ ∙ u` and range `g.flip.orthogonal (ℝ ∙ u)`.
 * `LinearMap.BilinForm.projOrthogonal_pairing`: `g (P v) (P w) = g v w - g v u * g u w / g u u`.
-* `LinearMap.BilinForm.reflect_reflect`, `reflect_isometry`, `det_reflect`: for `g u u ≠ 0` the
+* `LinearMap.BilinForm.reflect_reflect`, `isOrthogonal_reflect`, `det_reflect`: for `g u u ≠ 0` the
   reflection is an involution and, for symmetric `g`, a `g`-isometry (`LinearMap.IsOrthogonal`),
   of determinant `-1` in finite dimension.
 -/
@@ -132,7 +132,7 @@ lemma projOrthogonal_smul (g : BilinForm ℝ V) {c : ℝ} (hc : c ≠ 0) (u : V)
 /-- Reflection of `V` in the `g`-orthogonal hyperplane to `u`, `v ↦ v - 2 (g u v / g u u) u`:
 `Module.preReflection u f` for the functional `f = 2 g u · / g u u`, which satisfies `f u = 2`
 when `g u u ≠ 0`. The definition is unconditional; it is a `g`-isometry
-(`LinearMap.IsOrthogonal`) when `g` is symmetric and `g u u ≠ 0` (`reflect_isometry`), and
+(`LinearMap.IsOrthogonal`) when `g` is symmetric and `g u u ≠ 0` (`isOrthogonal_reflect`), and
 degenerates to the identity when `g u u = 0`, since `(0 : ℝ)⁻¹ = 0`. -/
 noncomputable def reflect (g : BilinForm ℝ V) (u : V) : V →ₗ[ℝ] V :=
   Module.preReflection u ((2 * (g u u)⁻¹) • g u)
@@ -157,16 +157,12 @@ lemma reflect_apply_of_orthogonal (g : BilinForm ℝ V) (u v : V) (h : g u v = 0
 /-- A reflection in a non-null direction is an involution. -/
 @[simp]
 lemma reflect_reflect (g : BilinForm ℝ V) {u : V} (hu : g u u ≠ 0) (v : V) :
-    reflect g u (reflect g u v) = v := by
-  have h : g u (reflect g u v) = -g u v := by
-    simp only [reflect_apply, map_sub, map_smul, smul_eq_mul]
-    field_simp
-    ring
-  rw [reflect_apply g u (reflect g u v), h, reflect_apply]
-  module
+    reflect g u (reflect g u v) = v :=
+  Module.involutive_preReflection
+    (by rw [LinearMap.smul_apply, smul_eq_mul, mul_assoc, inv_mul_cancel₀ hu, mul_one]) v
 
 /-- A reflection in a non-null direction is a `g`-isometry when `g` is symmetric. -/
-lemma reflect_isometry (g : BilinForm ℝ V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0) :
+lemma isOrthogonal_reflect (g : BilinForm ℝ V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 0) :
     g.IsOrthogonal (reflect g u) := by
   intro v w
   have hc : (g u u)⁻¹ * g u u = 1 := inv_mul_cancel₀ hu

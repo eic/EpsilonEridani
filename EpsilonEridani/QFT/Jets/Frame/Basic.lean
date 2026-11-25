@@ -47,7 +47,7 @@ without that hypothesis `spatialNorm` and `cosAngle` are just the stated formula
 * `Frame.spatialNorm`, `Frame.cosAngle`: the magnitude of the spatial part and the cosine of the
   opening angle between two momenta.
 
-The frame vector is data only up to positive rescaling: `Frame.energy_eq_of_n_eq_smul`,
+The frame vector is data only up to positive rescaling: `Frame.energy_eq_of_n_eq_smul_of_pos`,
 `Frame.spatialPart_eq_of_n_eq_smul`, `Frame.spatialNorm_eq_of_n_eq_smul` and
 `Frame.cosAngle_eq_of_n_eq_smul` show that all four are unchanged when `n` is replaced by `c • n`
 with `0 < c` (`c ≠ 0` for the last three).
@@ -196,8 +196,8 @@ theorem spatialNorm_nonneg (p : V) : 0 ≤ F.spatialNorm p := by
 
 @[simp]
 theorem spatialNorm_pos_iff (p : V) :
-    0 < F.spatialNorm p ↔ 0 < -g (F.spatialPart p) (F.spatialPart p) := by
-  rw [spatialNorm_def, Real.sqrt_pos]
+    0 < F.spatialNorm p ↔ g (F.spatialPart p) (F.spatialPart p) < 0 := by
+  rw [spatialNorm_def, Real.sqrt_pos, neg_pos]
 
 /-- The frame vector has no spatial extent. -/
 @[simp]
@@ -217,6 +217,11 @@ theorem spatialNorm_zero : F.spatialNorm 0 = 0 := by
 theorem spatialNorm_smul (c : ℝ) (p : V) : F.spatialNorm (c • p) = |c| * F.spatialNorm p := by
   simp only [spatialNorm_def, map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← mul_neg, Real.sqrt_mul (mul_self_nonneg c), Real.sqrt_mul_self_eq_abs]
+
+/-- Reversing a momentum does not change its spatial norm. -/
+@[simp]
+theorem spatialNorm_neg (p : V) : F.spatialNorm (-p) = F.spatialNorm p := by
+  simp only [spatialNorm_def, map_neg, LinearMap.neg_apply, neg_neg]
 
 /-- The spatial norm in terms of the energy and the invariant mass, `|p_s| = √(E(p)² - g p p)`. -/
 theorem spatialNorm_eq_sqrt_energy_sq_sub (hg : g.IsSymm) (p : V) :
@@ -256,7 +261,7 @@ theorem cosAngle_comm (hg : g.IsSymm) (a b : V) : F.cosAngle a b = F.cosAngle b 
 /-- A momentum of nonzero spatial norm makes angle zero with itself. -/
 theorem cosAngle_self {p : V} (hp : F.spatialNorm p ≠ 0) : F.cosAngle p p = 1 := by
   have hpos : 0 < -g (F.spatialPart p) (F.spatialPart p) :=
-    (F.spatialNorm_pos_iff p).mp ((F.spatialNorm_nonneg p).lt_of_ne' hp)
+    neg_pos.mpr ((F.spatialNorm_pos_iff p).mp ((F.spatialNorm_nonneg p).lt_of_ne' hp))
   rw [cosAngle_def, spatialNorm_def, Real.mul_self_sqrt hpos.le, div_self hpos.ne']
 
 /-- Rescaling a momentum by a positive factor does not change its direction. -/
@@ -270,6 +275,14 @@ theorem cosAngle_smul_right_of_pos {c : ℝ} (hc : 0 < c) (a b : V) :
     F.cosAngle a (c • b) = F.cosAngle a b := by
   simp only [cosAngle_def, spatialNorm_smul, abs_of_pos hc, map_smul, smul_eq_mul]
   rw [mul_left_comm, ← mul_neg, mul_div_mul_left _ _ hc.ne']
+
+/-- Reversing the first momentum reverses the direction: `cos θ` changes sign. -/
+theorem cosAngle_neg_left (a b : V) : F.cosAngle (-a) b = -F.cosAngle a b := by
+  simp only [cosAngle_def, spatialNorm_neg, map_neg, LinearMap.neg_apply, neg_div]
+
+/-- Reversing the second momentum reverses the direction: `cos θ` changes sign. -/
+theorem cosAngle_neg_right (a b : V) : F.cosAngle a (-b) = -F.cosAngle a b := by
+  simp only [cosAngle_def, spatialNorm_neg, map_neg, neg_div]
 
 /-- The cosine of the opening angle in terms of energies and the invariant `g a b`,
 `cos θ_ab = (E(a) E(b) - g a b) / (|a_s| |b_s|)`, for arbitrary (massive or massless) momenta. -/
@@ -289,7 +302,7 @@ theorem one_sub_cosAngle_of_massless (hg : g.IsSymm) {a b : V} (ha : g a a = 0)
 /-! ### Rescaling the frame vector -/
 
 /-- The energy is unchanged when the frame vector is rescaled by a positive factor. -/
-theorem energy_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : 0 < c) (h : F'.n = c • F.n) :
+theorem energy_eq_of_n_eq_smul_of_pos (F' : Frame g) {c : ℝ} (hc : 0 < c) (h : F'.n = c • F.n) :
     F'.energy = F.energy := by
   ext p
   simp only [energy_apply, h, map_smul, LinearMap.smul_apply, smul_eq_mul]

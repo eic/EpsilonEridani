@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Jets.Frame.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness
 
 /-!
 # A witness for reference frames

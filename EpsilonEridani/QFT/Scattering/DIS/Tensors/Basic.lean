@@ -8,6 +8,7 @@ module
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
 public import EpsilonEridani.Mathematics.LinearAlgebra.SesquilinearForm.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness
 /-!
 
 # DIS Tensors
@@ -93,6 +94,7 @@ namespace Tensors
 variable (V : Type) [AddCommGroup V] [Module ℝ V]
 
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
+open LinearMap.BilinForm (linMulLin linMulLin_apply)
 
 namespace Leptonic
 
@@ -102,7 +104,7 @@ open Kinematics
 
 /-- A symmetric model leptonic tensor used in the inclusive DIS derivation. -/
 def lMuNu (g : Bilin V) (K : Kinematics.DisKinematics V) : Bilin V :=
-  g.rankOne K.k K.kPrime + g.rankOne K.kPrime K.k - (g K.k K.kPrime) • g
+  linMulLin (g K.k) (g K.kPrime) + linMulLin (g K.kPrime) (g K.k) - (g K.k K.kPrime) • g
 
 @[simp] lemma lMuNu_apply (g : Bilin V) (K : Kinematics.DisKinematics V) (v w : V) :
     lMuNu g K v w = g K.k v * g K.kPrime w + g K.kPrime v * g K.k w
@@ -351,13 +353,13 @@ lemma q_sq_ne_zero_iff (g : Bilin V) (K : DisKinematics V) :
 convention of `Kinematics` (so the `q ⊗ q` coefficient is `(g q q)⁻¹ = -(Q²)⁻¹`). It is
 transverse to `q` in both slots whenever `g q q ≠ 0`. -/
 noncomputable def transverseMetric (g : Bilin V) (K : DisKinematics V) : Bilin V :=
-  (-1 : ℝ) • g + (g K.q K.q)⁻¹ • g.rankOne K.q K.q
+  (-1 : ℝ) • g + (g K.q K.q)⁻¹ • linMulLin (g K.q) (g K.q)
 
 /-- Pointwise value of the transverse metric projector. -/
 lemma transverseMetric_apply (g : Bilin V) (K : DisKinematics V) (v w : V) :
     transverseMetric g K v w = -g v w + (g K.q K.q)⁻¹ * (g K.q v * g K.q w) := by
   simp only [transverseMetric, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    LinearMap.BilinForm.rankOne_apply]
+    linMulLin_apply]
   ring
 
 /-- The transverse metric projector written with `Q² = - q²`, for comparison with the
@@ -445,7 +447,7 @@ the kinematics inside the isometry group of `g`. -/
 structure IsKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (f : V →ₗ[ℝ] V) :
     Prop where
   /-- `f` preserves the background form. -/
-  isometry : g.IsOrthogonal f
+  isOrthogonal : g.IsOrthogonal f
   /-- `f` fixes the hadron momentum. -/
   fixes_p : f K.p = K.p
   /-- `f` fixes the momentum transfer. -/
@@ -507,7 +509,7 @@ lemma pairing_invariant_of_fixed (g : Bilin V) (K : DisKinematics V) {f : V →�
     (hf : IsKinematicStabilizer g K f) {a : V} (ha : f a = a) (v : V) :
     g a (f v) = g a v := by
   calc g a (f v) = g (f a) (f v) := by rw [ha]
-    _ = g a v := hf.isometry a v
+    _ = g a v := hf.isOrthogonal a v
 
 /-- A stabilizer element fixes the transverse hadron momentum. -/
 lemma stabilizer_fixes_pTransverse (g : Bilin V) (K : DisKinematics V) {f : V →ₗ[ℝ] V}
@@ -530,15 +532,15 @@ lemma IsProperLorentzCovariant.apply_pTransverse_eq_zero_of_apply_eq_neg {g : Bi
 lemma transverseMetric_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
     IsLorentzCovariant g K (transverseMetric g K) := by
   intro f hf v w
-  rw [transverseMetric_apply, transverseMetric_apply, hf.isometry v w,
+  rw [transverseMetric_apply, transverseMetric_apply, hf.isOrthogonal v w,
     pairing_invariant_of_fixed g K hf hf.fixes_q v,
     pairing_invariant_of_fixed g K hf hf.fixes_q w]
 
 /-- The transverse hadron rank-one tensor is Lorentz covariant. -/
-lemma rankOne_pTransverse_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
-    IsLorentzCovariant g K (g.rankOne (pTransverse g K) (pTransverse g K)) := by
+lemma linMulLin_pTransverse_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) :
+    IsLorentzCovariant g K (linMulLin (g (pTransverse g K)) (g (pTransverse g K))) := by
   intro f hf v w
-  rw [LinearMap.BilinForm.rankOne_apply, LinearMap.BilinForm.rankOne_apply,
+  rw [linMulLin_apply, linMulLin_apply,
     pairing_invariant_of_fixed g K hf (stabilizer_fixes_pTransverse g K hf) v,
     pairing_invariant_of_fixed g K hf (stabilizer_fixes_pTransverse g K hf) w]
 
@@ -548,7 +550,7 @@ constraints used by `covariant_spectator_offDiagonal_zero`. -/
 lemma reflect_isKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (u : V) (hu : g u u ≠ 0) (hup : g u K.p = 0) (huq : g u K.q = 0) :
     IsKinematicStabilizer g K (g.reflect u) where
-  isometry := g.reflect_isometry hSymm u hu
+  isOrthogonal := g.isOrthogonal_reflect hSymm u hu
   fixes_p := g.reflect_apply_of_orthogonal u K.p hup
   fixes_q := g.reflect_apply_of_orthogonal u K.q huq
 
@@ -609,14 +611,15 @@ def IsF1F2Decomposition
 basis. `F2` carries the literature's `1/(p·q)` normalization. -/
 noncomputable def fromF1F2
     (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ) : Bilin V :=
-  F1 • transverseMetric g K + F2 • g.rankOne (pTransverse g K) (pTransverse g K)
+  F1 • transverseMetric g K +
+    F2 • linMulLin (g (pTransverse g K)) (g (pTransverse g K))
 
 /-- Pointwise value of the transverse-basis representative. -/
 lemma fromF1F2_apply (g : Bilin V) (K : DisKinematics V) (F1 F2 : ℝ) (v w : V) :
     fromF1F2 g K F1 F2 v w = F1 * transverseMetric g K v w
       + F2 * (g (pTransverse g K) v * g (pTransverse g K) w) := by
   simp only [fromF1F2, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    LinearMap.BilinForm.rankOne_apply]
+    linMulLin_apply]
 
 /-- The transverse-basis representative decomposes with the coefficients it was built from. -/
 lemma fromF1F2_isDecomposition
@@ -659,7 +662,8 @@ lemma fromF1F2_isLorentzCovariant (g : Bilin V) (K : DisKinematics V) (F1 F2 : �
 
 /-- **`Assumptions` is instantiable in the transverse basis, for every pair of structure
 functions.** This is the statement that fails in the non-transverse basis
-`F1 • g + F2 • rankOne g p p`, where `conserved_left` forces `F1 = 0` and `F2 * g p q = 0`.
+`F1 • g + F2 • linMulLin (g p) (g p)`, where `conserved_left` forces `F1 = 0` and
+`F2 * g p q = 0`.
 The only hypotheses are symmetry of `g` and `Q² ≠ 0`. -/
 theorem assumptions_fromF1F2 (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (hQ2 : g K.q K.q ≠ 0) (F1 F2 : ℝ) :
@@ -986,7 +990,7 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
   refine ⟨g.reflect u ∘ₗ g.reflect u',
-    ⟨by rw [LinearMap.coe_comp]; exact h₁.isometry.comp h₂.isometry,
+    ⟨by rw [LinearMap.coe_comp]; exact h₁.isOrthogonal.comp h₂.isOrthogonal,
       by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
       by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩, ?_, ?_, ?_⟩
   · by_cases hfin : Module.Finite ℝ V
@@ -1245,7 +1249,7 @@ def kLine : DisKinematics ℝ where
   hq := by norm_num
 
 /-- On the line, a kinematic stabilizer element is the identity: it fixes `p = 1`, and `1`
-spans. Note that the isometry field is not even needed. -/
+spans. Note that the `isOrthogonal` field is not even needed. -/
 lemma stabilizer_line_eq_id (f : ℝ →ₗ[ℝ] ℝ) (hf : IsKinematicStabilizer gLine kLine f) :
     f = LinearMap.id := by
   have h1 : f 1 = 1 := hf.fixes_q
