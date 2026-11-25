@@ -76,10 +76,7 @@ results; the physical case is three-dimensional space with
   parameters are star-shaped about `0` (for instance for a support star-shaped about `x`), the
   geometric path length is the supremum of the path parameters `s ≥ 0` with `x + s • v ∈ S`: the
   parameter at which the ray leaves `S`, which for `‖v‖ = 1` is the distance along the ray from `x`
-  to its exit point. For a closed bounded convex `S`, a production point in its intrinsic interior
-  and a unit direction in the direction of its affine span, this supremum is
-  `TauCeti.compactConvexRadialReach` (TauCeti/Analysis/Convex/RadialReach.lean), which TauCeti
-  shows to be continuous in the direction.
+  to its exit point.
 * `pathParameters_closedBall`, `geometricPathLength_closedBall`: in a real inner product space, for
   the hard sphere of radius `R` about `c` and a unit direction, the path parameters from a point
   `x` of the ball form the interval from `0` to `√(⟪x - c, v⟫² + R² - ‖x - c‖²) - ⟪x - c, v⟫`, which
@@ -262,15 +259,6 @@ theorem densityWeightedPathLength_indicator_const (hS : MeasurableSet S) (c ρ�
   rw [indicator_const_comp_ray, integral_indicator_const _ hpre, smul_eq_mul]
   ring
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A function bounded by `M` and supported in `S` is pointwise at most the uniform profile
-`S.indicator (fun _ => M)`. -/
-private theorem le_indicator_const_of_support_subset {f : E → ℝ} {M : ℝ}
-    (hfS : Function.support f ⊆ S) (hfM : ∀ y, f y ≤ M) (y : E) :
-    f y ≤ S.indicator (fun _ => M) y :=
-  Set.le_indicator_apply (fun _ => hfM y) fun hy =>
-    (Function.notMem_support.1 fun h => hy (hfS h)).le
-
 /-- A measurable density bounded by `M` and supported in a measurable set `S` is integrable along
 the ray from `x` in direction `v` when the set of path parameters in `S` has finite measure (for a
 bounded `S` and `‖v‖ = 1`, see `volume_pathParameters_ne_top_of_isBounded`). The density-weighted
@@ -284,7 +272,8 @@ theorem integrableOn_Ici_comp_add_smul (hS : MeasurableSet S)
   exact (integrableOn_indicator_const hS hfin M).mono'
     (hρm.comp (measurable_ray x v)).aestronglyMeasurable
     (Filter.Eventually.of_forall fun s => (Real.norm_eq_abs _).trans_le <|
-      le_indicator_const_of_support_subset (f := fun y => |ρ y|) habs hρM (x + s • v))
+      Set.le_indicator_apply (fun _ => hρM _) fun hy =>
+        (Function.notMem_support.1 fun h => hy (habs h)).le)
 
 /-- For a nonnegative density bounded by `M`, supported in a measurable set `S` whose set of path
 parameters along the ray has finite measure (for a bounded `S` and `‖v‖ = 1`, see
@@ -299,7 +288,8 @@ theorem densityWeightedPathLength_le_mul_geometricPathLength (hS : MeasurableSet
   refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hρ₀)
   exact integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ => hρ _)
     (integrableOn_indicator_const hS hfin M) (Filter.Eventually.of_forall fun s =>
-      le_indicator_const_of_support_subset (f := ρ) hρS hρM (x + s • v))
+      Set.le_indicator_apply (fun _ => hρM _) fun hy =>
+        (Function.notMem_support.1 fun h => hy (hρS h)).le)
 
 variable [SecondCountableTopology E]
 
