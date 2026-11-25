@@ -30,7 +30,7 @@ each sum rule has a structure-function form and a density form, and they are the
 
 ## Main statements
 
-* `momentF_f2LO_pow`: for a regular density, `∫₀¹ xⁿ F₂ = Σᵢ eᵢ² ∫₀¹ x^(n+1) qᵢ`, the
+* `momentF_f2LO_pow`: for integrable moment integrands, `∫₀¹ xⁿ F₂ = Σᵢ eᵢ² ∫₀¹ x^(n+1) qᵢ`, the
   structure-function moment as a charge-weighted sum of `PDF.mellinMoment`s.
 -/
 
@@ -44,7 +44,7 @@ namespace Scattering
 namespace DIS
 namespace Inclusive
 
-open Particles.Parton.PDF (Pdf Regularity mellinMoment mellinMoment_eq_intervalIntegral)
+open Particles.Parton.PDF (Pdf mellinMoment mellinMoment_eq_intervalIntegral)
 
 /-- **The weighted moment of a structure function**, `∫₀¹ dx w(x) F(x, Q²)`, at the scale `Q2`.
 It is the interval integral, so it is `0` when the integrand is not integrable; the statements
@@ -56,15 +56,16 @@ theorem momentF_def (F : ℝ → ℝ → ℝ) (w : ℝ → ℝ) (Q2 : ℝ) :
     momentF F w Q2 = ∫ x in (0 : ℝ)..1, w x * F x Q2 :=
   (rfl)
 
-/-- **The moments of `F₂` are the Mellin moments of the densities.** For a regular density `q`
-and the quark charges `e`, the `xⁿ`-weighted moment of the leading-order `F₂ = x Σᵢ eᵢ² qᵢ` is
-`Σᵢ eᵢ² ∫₀¹ x^(n+1) qᵢ`. -/
-theorem momentF_f2LO_pow {ι : Type} [Fintype ι] {q : Pdf ι} (h : Regularity q) (e : ι → ℝ)
-    (n : ℕ) (Q2 : ℝ) :
+/-- **The moments of `F₂` are the Mellin moments of the densities.** For the quark charges `e`
+and a density `q` whose `(n + 1)`-th moment integrands are integrable on the unit interval (every
+regular density, by `PDF.Regularity.momentIntegrable`), the `xⁿ`-weighted moment of the
+leading-order `F₂ = x Σᵢ eᵢ² qᵢ` is `Σᵢ eᵢ² ∫₀¹ x^(n+1) qᵢ`. -/
+theorem momentF_f2LO_pow {ι : Type} [Fintype ι] {q : Pdf ι} {n : ℕ} {Q2 : ℝ}
+    (h : ∀ i, IntervalIntegrable (fun x => x ^ (n + 1) * q i x Q2) MeasureTheory.volume 0 1)
+    (e : ι → ℝ) :
     momentF (f2LO e q) (fun x => x ^ n) Q2 = ∑ i, e i ^ 2 * mellinMoment q (n + 1) i Q2 := by
   simp only [momentF_def, mellinMoment_eq_intervalIntegral, ← intervalIntegral.integral_const_mul]
-  rw [← intervalIntegral.integral_finsetSum fun i _ =>
-    ((h.momentIntegrable (n + 1) i Q2).intervalIntegrable).const_mul _]
+  rw [← intervalIntegral.integral_finsetSum fun i _ => (h i).const_mul _]
   refine intervalIntegral.integral_congr fun x _ => ?_
   simp only [f2LO_def, Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ => by ring

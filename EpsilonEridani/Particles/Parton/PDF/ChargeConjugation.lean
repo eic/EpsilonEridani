@@ -62,9 +62,9 @@ only one scale.
 * `PDF.valenceNumber_eq_intervalIntegral`: for separately integrable quark and antiquark densities,
   the valence number is the interval integral of their difference.
 * `PDF.quarkAddAntiquark_chargeConj`: `q_i + qbar_i` is invariant under charge conjugation;
-  `PDF.mellinMoment_quarkAddAntiquark`: for a regular density its moments are the sums of the
-  quark and antiquark moments; and `PDF.Assumptions.quarkAddAntiquark` and its companions: it
-  inherits the density assumptions.
+  `PDF.mellinMoment_quarkAddAntiquark`: its moments are the sums of the quark and antiquark
+  moments, when those integrands are integrable; and `PDF.Assumptions.quarkAddAntiquark` and its
+  companions: it inherits the density assumptions.
 
 ## References
 
@@ -241,14 +241,16 @@ theorem quarkAddAntiquark_chargeConj (f : Pdf (Species Flavor)) :
   ext i x Q2
   simp [add_comm]
 
-/-- For a regular density, each moment of `q_i + qbar_i` is the sum of the moments of the quark
-and of the antiquark density. -/
-theorem mellinMoment_quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Regularity f) (n : ℕ)
-    (i : Flavor) (Q2 : ℝ) :
+/-- When the quark and the antiquark moment integrands are integrable on the unit interval, the
+moment of `q_i + qbar_i` is the sum of the moments of the quark and of the antiquark density. -/
+theorem mellinMoment_quarkAddAntiquark {f : Pdf (Species Flavor)} {n : ℕ} {i : Flavor} {Q2 : ℝ}
+    (hq : MeasureTheory.IntegrableOn (fun x => x ^ n * f (.quark i) x Q2) (Set.Icc 0 1))
+    (hqbar : MeasureTheory.IntegrableOn (fun x => x ^ n * f (.antiquark i) x Q2) (Set.Icc 0 1)) :
     mellinMoment (quarkAddAntiquark f) n i Q2
       = mellinMoment f n (.quark i) Q2 + mellinMoment f n (.antiquark i) Q2 := by
-  rw [quarkAddAntiquark, mellinMoment_add (h.comap _) (h.comap _), mellinMoment_comap,
-    mellinMoment_comap]
+  rw [quarkAddAntiquark,
+    mellinMoment_add (f := comap Species.quark f) (g := comap Species.antiquark f) hq hqbar,
+    mellinMoment_comap, mellinMoment_comap]
 
 /-- The quark plus antiquark density of a parton density is a parton density. -/
 theorem IsPartonDensity.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : IsPartonDensity f) :

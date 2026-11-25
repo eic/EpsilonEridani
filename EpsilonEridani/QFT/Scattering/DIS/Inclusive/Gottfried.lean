@@ -29,15 +29,15 @@ integrals of the valence differences and of the light-sea asymmetry. For the lig
 It is an identity, not an approximation: the value is `1/3` exactly when the light sea is
 flavour-symmetric in the sense `∫₀¹ (ubar - dbar) = 0`, and a measured departure from `1/3` is a
 measurement of that integral rather than a failure of the parton model. Flavour symmetry of the
-light sea is therefore never assumed here; it is the hypothesis of
-`gottfriedSum_lightFlavorCharge_quarkAddAntiquark_eq_one_third_iff` only.
+light sea is therefore never assumed here; it appears only as one side of the equivalence
+`gottfriedSum_lightFlavorCharge_quarkAddAntiquark_eq_one_third_iff`.
 
 ## Convergence
 
 The `1/x` weight is the one that can fail to converge, and a sea that rises like `1/x` at small
 `x` has no zeroth moment: it is not integrable on the unit interval. What the sum rule needs is
 weaker: only the nonsinglet differences `u - ubar`, `d - dbar` and `ubar - dbar` have to be
-integrable, and these are the fields of `GottfriedIntegrable`. Separately integrable densities
+integrable, and these are the fields of `GottfriedIntegrable`. Regular densities (`PDF.Regularity`)
 supply them (`PDF.Regularity.gottfriedIntegrable`), but they are strictly weaker:
 `gottfriedModel` is a density whose every species rises like `1/x`, so that the up antiquark
 density is not integrable and `PDF.Regularity` fails, while the differences are constants, the
@@ -62,9 +62,9 @@ sea asymmetry `dbar - ubar = a`.
   `gottfriedSum_lightFlavorCharge_quarkAddAntiquark_eq_one_third_iff`: `S_G = 1/3` exactly for a
   flavour-symmetric light sea.
 * `gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity`: the same in terms of
-  `PDF.valenceNumber` and `PDF.mellinMoment`, for separately integrable densities.
-* `gottfriedSum_gottfriedModel`, `not_regularity_gottfriedModel`: the sum rule applies to a
-  density without integrable antiquark densities.
+  `PDF.valenceNumber` and `PDF.mellinMoment`, for regular densities.
+* `gottfriedSum_gottfriedModel`, `not_regularity_gottfriedModel`, `valenceNumber_gottfriedModel`:
+  the sum rule applies to a density none of whose species is integrable.
 
 ## References
 
@@ -90,7 +90,7 @@ open MeasureTheory
 open Particles.Parton (Species LightFlavor)
 open Particles.Parton.PDF (Pdf IsPartonDensity Regularity isospinConj mellinMoment
   mellinMoment_eq_intervalIntegral quarkAddAntiquark quarkAddAntiquark_apply valenceNumber
-  valenceNumber_eq_intervalIntegral)
+  valenceNumber_def valenceNumber_eq_intervalIntegral)
 
 /-!
 ## The Gottfried sum of a quark plus antiquark density
@@ -116,7 +116,7 @@ structure GottfriedIntegrable (f : Pdf (Species ι)) (u d : ι) (Q2 : ℝ) : Pro
   seaAsymmetry :
     IntervalIntegrable (fun x => f (.antiquark u) x Q2 - f (.antiquark d) x Q2) volume 0 1
 
-/-- Separately integrable densities satisfy the convergence hypotheses of the Gottfried sum rule
+/-- Regular densities satisfy the convergence hypotheses of the Gottfried sum rule
 at every scale. -/
 theorem _root_.EpsilonEridani.Particles.Parton.PDF.Regularity.gottfriedIntegrable
     {f : Pdf (Species ι)} (h : Regularity f) (u d : ι) (Q2 : ℝ) :
@@ -204,8 +204,8 @@ theorem gottfriedSum_lightFlavorCharge_quarkAddAntiquark_eq_one_third_iff
   rw [gottfriedSum_lightFlavorCharge_quarkAddAntiquark h hu hd]
   constructor <;> intro h' <;> linarith
 
-/-- **The Gottfried sum rule for separately integrable densities.** If every density is
-integrable and the up and down valence numbers are `2` and `1`, the sea asymmetry is the
+/-- **The Gottfried sum rule for regular densities.** If the density is regular (`PDF.Regularity`)
+and the up and down valence numbers are `2` and `1`, the sea asymmetry is the
 difference of the zeroth moments of the antiquark densities:
 `S_G = 1/3 + (2/3) (∫₀¹ ubar - ∫₀¹ dbar)`. -/
 theorem gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity (h : Regularity f)
@@ -226,39 +226,60 @@ theorem gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity (h : Regu
 ## A density without integrable antiquark densities
 -/
 
+/-- The constant that each species of `gottfriedModel a` carries on top of its `1/x` rise: `2` for
+the up quark, `1 + a` for the down quark, `a` for the down antiquark and `0` otherwise. -/
+def gottfriedModelShift (a : ℝ) : Species LightFlavor → ℝ
+  | .quark .u => 2
+  | .quark .d => 1 + a
+  | .antiquark .d => a
+  | _ => 0
+
+/-- For a nonnegative sea asymmetry `a`, every shift of `gottfriedModel a` is nonnegative. -/
+lemma gottfriedModelShift_nonneg {a : ℝ} (ha : 0 ≤ a) (s : Species LightFlavor) :
+    0 ≤ gottfriedModelShift a s := by
+  cases s with
+  | quark i => cases i <;> simp only [gottfriedModelShift] <;> linarith
+  | antiquark i => cases i <;> simp only [gottfriedModelShift] <;> linarith
+  | gluon => simp only [gottfriedModelShift, le_refl]
+
 /-- **A density with a `1/x` sea.** Every species has the density `1/x` on the unit interval,
-on top of which the up and down quarks carry `2` and `1 + a` and the down antiquark carries `a`.
-The nonsinglet differences are constants there: `q_i - qbar_i` integrates to `2`, `1` and `0` on
-the unit interval for `u`, `d` and `s`, and the light-sea asymmetry is `dbar - ubar = a`. The
-densities themselves have no zeroth moment: they are not integrable on the unit interval. So
+on top of which it carries the constant `gottfriedModelShift a`: `2` and `1 + a` for the up and
+down quarks and `a` for the down antiquark. The nonsinglet differences are constants there:
+`q_i - qbar_i` integrates to `2`, `1` and `0` on the unit interval for `u`, `d` and `s`, and the
+light-sea asymmetry is `dbar - ubar = a`. The densities themselves have no zeroth moment: they are
+not integrable on the unit interval (`not_intervalIntegrable_gottfriedModel`). So
 `PDF.valenceNumber` of this model, a difference of two zeroth `PDF.mellinMoment`s, is `0` for
-every flavour, and `gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity` does not
-apply to it. -/
+every flavour (`valenceNumber_gottfriedModel`), and
+`gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity` does not apply to it. -/
 def gottfriedModel (a : ℝ) : Pdf (Species LightFlavor) := fun s x _ =>
-  (Set.Icc (0 : ℝ) 1).indicator
-    (fun x => x⁻¹ + match s with
-      | .quark .u => 2
-      | .quark .d => 1 + a
-      | .antiquark .d => a
-      | _ => 0) x
+  (Set.Icc (0 : ℝ) 1).indicator (fun x => x⁻¹ + gottfriedModelShift a s) x
+
+/-- On the unit interval, each species of `gottfriedModel a` is `1/x` plus its shift. -/
+lemma gottfriedModel_apply_of_mem (a : ℝ) (s : Species LightFlavor) {x : ℝ}
+    (hx : x ∈ Set.Icc (0 : ℝ) 1) (Q2 : ℝ) :
+    gottfriedModel a s x Q2 = x⁻¹ + gottfriedModelShift a s :=
+  Set.indicator_of_mem hx _
+
+/-- Outside the unit interval, `gottfriedModel a` vanishes. -/
+lemma gottfriedModel_apply_of_notMem (a : ℝ) (s : Species LightFlavor) {x : ℝ}
+    (hx : x ∉ Set.Icc (0 : ℝ) 1) (Q2 : ℝ) : gottfriedModel a s x Q2 = 0 :=
+  Set.indicator_of_notMem hx _
 
 /-- For a nonnegative sea asymmetry `a`, `gottfriedModel a` is a parton density. -/
 theorem isPartonDensity_gottfriedModel {a : ℝ} (ha : 0 ≤ a) :
     IsPartonDensity (gottfriedModel a) where
-  support s x Q2 hx := by
-    have : x ∉ Set.Icc (0 : ℝ) 1 := fun h => by rcases hx with hx | hx <;> linarith [h.1, h.2]
-    simp only [gottfriedModel, Set.indicator_of_notMem this]
+  support s x Q2 hx := gottfriedModel_apply_of_notMem a s
+    (fun h => by rcases hx with hx | hx <;> linarith [h.1, h.2]) Q2
   nonneg s x Q2 h0 h1 := by
-    simp only [gottfriedModel, Set.indicator_of_mem (Set.mem_Icc.2 ⟨h0, h1⟩)]
-    have := inv_nonneg.2 h0
-    rcases s with ((_ | _ | _) | (_ | _ | _) | _) <;> dsimp only <;> linarith
+    rw [gottfriedModel_apply_of_mem a s ⟨h0, h1⟩]
+    exact add_nonneg (inv_nonneg.2 h0) (gottfriedModelShift_nonneg ha s)
 
 /-- The up valence density of `gottfriedModel a` is `2` on the unit interval. -/
 lemma gottfriedModel_quark_u_sub_antiquark_u_eqOn (a Q2 : ℝ) :
     Set.EqOn (fun x => gottfriedModel a (.quark u) x Q2 - gottfriedModel a (.antiquark u) x Q2)
       (fun _ => 2) (Set.uIcc 0 1) := fun x hx => by
   rw [Set.uIcc_of_le zero_le_one] at hx
-  simp only [gottfriedModel, Set.indicator_of_mem hx]
+  simp only [gottfriedModel_apply_of_mem a _ hx, gottfriedModelShift]
   ring
 
 /-- The down valence density of `gottfriedModel a` is `1` on the unit interval. -/
@@ -266,7 +287,7 @@ lemma gottfriedModel_quark_d_sub_antiquark_d_eqOn (a Q2 : ℝ) :
     Set.EqOn (fun x => gottfriedModel a (.quark d) x Q2 - gottfriedModel a (.antiquark d) x Q2)
       (fun _ => 1) (Set.uIcc 0 1) := fun x hx => by
   rw [Set.uIcc_of_le zero_le_one] at hx
-  simp only [gottfriedModel, Set.indicator_of_mem hx]
+  simp only [gottfriedModel_apply_of_mem a _ hx, gottfriedModelShift]
   ring
 
 /-- The light-sea asymmetry `ubar - dbar` of `gottfriedModel a` is `-a` on the unit interval. -/
@@ -274,7 +295,7 @@ lemma gottfriedModel_antiquark_u_sub_antiquark_d_eqOn (a Q2 : ℝ) :
     Set.EqOn (fun x => gottfriedModel a (.antiquark u) x Q2 - gottfriedModel a (.antiquark d) x Q2)
       (fun _ => -a) (Set.uIcc 0 1) := fun x hx => by
   rw [Set.uIcc_of_le zero_le_one] at hx
-  simp only [gottfriedModel, Set.indicator_of_mem hx]
+  simp only [gottfriedModel_apply_of_mem a _ hx, gottfriedModelShift]
   ring
 
 /-- `gottfriedModel a` satisfies the convergence hypotheses of the Gottfried sum rule. -/
@@ -290,20 +311,29 @@ theorem gottfriedIntegrable_gottfriedModel (a Q2 : ℝ) :
     ((gottfriedModel_antiquark_u_sub_antiquark_d_eqOn a Q2).mono Set.uIoc_subset_uIcc)).2
       intervalIntegrable_const
 
-/-- The up antiquark density of `gottfriedModel a` is not integrable on the unit interval: it is
-`1/x` there. -/
-theorem not_intervalIntegrable_gottfriedModel_antiquark_u (a Q2 : ℝ) :
-    ¬ IntervalIntegrable (fun x => gottfriedModel a (.antiquark u) x Q2) volume 0 1 := by
+/-- No species of `gottfriedModel a` is integrable on the unit interval: each is `1/x` plus a
+constant there. -/
+theorem not_intervalIntegrable_gottfriedModel (a Q2 : ℝ) (s : Species LightFlavor) :
+    ¬ IntervalIntegrable (fun x => gottfriedModel a s x Q2) volume 0 1 := by
   intro h
-  have hinv : IntervalIntegrable (fun x : ℝ => x⁻¹) volume 0 1 := h.congr fun x hx => by
-    rw [Set.uIoc_of_le zero_le_one] at hx
-    simp [gottfriedModel, Set.indicator_of_mem (Set.Ioc_subset_Icc_self hx)]
+  have hinv : IntervalIntegrable (fun x : ℝ => x⁻¹) volume 0 1 :=
+    (h.sub (intervalIntegrable_const (c := gottfriedModelShift a s))).congr fun x hx => by
+      rw [Set.uIoc_of_le zero_le_one] at hx
+      simp only [gottfriedModel_apply_of_mem a s (Set.Ioc_subset_Icc_self hx), add_sub_cancel_right]
   simp at hinv
 
 /-- `gottfriedModel a` is not a regular density, so the Gottfried sum rule for it does not follow
 from `gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity`. -/
 theorem not_regularity_gottfriedModel (a : ℝ) : ¬ Regularity (gottfriedModel a) := fun h =>
-  not_intervalIntegrable_gottfriedModel_antiquark_u a 0 (h.intervalIntegrable _ 0 0 1)
+  not_intervalIntegrable_gottfriedModel a 0 (.antiquark u) (h.intervalIntegrable _ 0 0 1)
+
+/-- Every valence number of `gottfriedModel a` is `0`: its zeroth moments do not exist, so each
+`PDF.mellinMoment` in `PDF.valenceNumber` is `0`, although `q_i - qbar_i` integrates to `2` and
+`1` for `u` and `d`. -/
+theorem valenceNumber_gottfriedModel (a : ℝ) (i : LightFlavor) (Q2 : ℝ) :
+    valenceNumber (gottfriedModel a) i Q2 = 0 := by
+  simp only [valenceNumber_def, mellinMoment_eq_intervalIntegral, pow_zero, one_mul,
+    intervalIntegral.integral_undef (not_intervalIntegrable_gottfriedModel a Q2 _), sub_self]
 
 /-- **The Gottfried sum of the `1/x`-sea model** is `1/3 - 2a/3`: it differs from `1/3` by `2/3`
 times the light-sea asymmetry `∫₀¹ (ubar - dbar) = -a`, although no antiquark density of the model

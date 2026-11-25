@@ -324,20 +324,22 @@ end Weight
 /-! ### Adding densities
 
 Two densities over the same partons add parton by parton, `(f + g) i x Q2 = f i x Q2 + g i x Q2`.
-Both halves of the density assumptions survive addition, and for regular densities every moment
-of the sum is the sum of the moments. A combination of partons such as `q_i + qbar_i` is built as
-a sum of pullbacks. -/
+Both halves of the density assumptions survive addition, and a moment of the sum is the sum of
+the moments whenever both moment integrands are integrable. A combination of partons such as
+`q_i + qbar_i` is built as a sum of pullbacks. -/
 
 section Add
 
 variable {ι : Type}
 
-/-- For regular densities, each moment of the sum is the sum of the moments. -/
-lemma mellinMoment_add {f g : Pdf ι} (hf : Regularity f) (hg : Regularity g) (n : ℕ) (i : ι)
-    (Q2 : ℝ) : mellinMoment (f + g) n i Q2 = mellinMoment f n i Q2 + mellinMoment g n i Q2 := by
+/-- When both moment integrands are integrable on the unit interval, the moment of the sum is the
+sum of the moments. -/
+lemma mellinMoment_add {f g : Pdf ι} {n : ℕ} {i : ι} {Q2 : ℝ}
+    (hf : MeasureTheory.IntegrableOn (fun x => x ^ n * f i x Q2) (Set.Icc 0 1))
+    (hg : MeasureTheory.IntegrableOn (fun x => x ^ n * g i x Q2) (Set.Icc 0 1)) :
+    mellinMoment (f + g) n i Q2 = mellinMoment f n i Q2 + mellinMoment g n i Q2 := by
   simp only [mellinMoment, Pi.add_apply, mul_add]
-  exact MeasureTheory.integral_add (hf.momentIntegrable n i Q2).integrableOn
-    (hg.momentIntegrable n i Q2).integrableOn
+  exact MeasureTheory.integral_add hf hg
 
 /-- The sum of two densities satisfying the physical half of the assumptions satisfies it. -/
 lemma IsPartonDensity.add {f g : Pdf ι} (hf : IsPartonDensity f) (hg : IsPartonDensity g) :
