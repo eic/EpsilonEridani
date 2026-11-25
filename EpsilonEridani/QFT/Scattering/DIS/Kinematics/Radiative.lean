@@ -44,7 +44,7 @@ the shift `ReconstructedInvariants.shiftXQ2` (or `ReconstructedInvariants.shiftX
   rescales the virtuality by the fraction `z` of the hard outgoing lepton momentum retained by the
   measured `k'`, up to explicit lepton-mass remainders
   (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState`), and `Q²_e = z Q²` for massless
-  leptons (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState_of_kPrime_sq_eq_zero`).
+  leptons (`RadiativeEvent.electronMethod_Q2_of_collinear_finalState_of_apply_kPrime_self_eq_zero`).
   Collinear final-state emission is the condition `z ℓ = (1 - z) k'` on the measured momenta
   (`RadiativeEvent.photon_eq_smul_kPrime_add_photon_iff`), under which the hard lepton leaves
   with `k' / z` (`RadiativeEvent.leptonOut_of_collinear_finalState`).
@@ -564,7 +564,7 @@ theorem pX_sub_p_of_collinear_finalState (hcol : e.photon = (1 - z) • (e.kPrim
 /-- After exactly collinear final-state emission of the fraction `1 - z ≠ 1` of the outgoing hard
 lepton momentum from a massless measured lepton (`k'² = 0`), the hard outgoing lepton is massless
 too. -/
-theorem leptonOut_sq_eq_zero_of_collinear_finalState (g : Bilin V)
+theorem apply_leptonOut_self_eq_zero_of_collinear_finalState (g : Bilin V)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • (e.kPrime + e.photon))
     (hz : z ≠ 0) : g (e.leptonOut .finalState) (e.leptonOut .finalState) = 0 := by
   rw [kPrime_eq_smul_leptonOut_of_collinear_finalState hcol] at hk'
@@ -588,13 +588,13 @@ theorem electronMethod_Q2_of_collinear_finalState (g : Bilin V)
 lepton momentum from a massless measured lepton (`k'² = 0`), the electron method rescales the
 virtuality by `z` up to the mass of the incoming lepton: `Q²_e = z Q² - (1 - z) k²`, and
 `Q²_e = z Q²` for a massless incoming lepton. -/
-theorem electronMethod_Q2_of_collinear_finalState_of_kPrime_sq_eq_zero (g : Bilin V)
+theorem electronMethod_Q2_of_collinear_finalState_of_apply_kPrime_self_eq_zero (g : Bilin V)
     (hk' : g e.kPrime e.kPrime = 0) (hcol : e.photon = (1 - z) • (e.kPrime + e.photon))
     (hz : z ≠ 0) :
     (electronMethod g e.k e.p e.kPrime).Q2 =
       z * (e.trueInvariants g .finalState).Q2 - (1 - z) * g e.k e.k := by
   rw [electronMethod_Q2_of_collinear_finalState g hcol,
-    leptonOut_sq_eq_zero_of_collinear_finalState g hk' hcol hz, mul_zero, add_zero]
+    apply_leptonOut_self_eq_zero_of_collinear_finalState g hk' hcol hz, mul_zero, add_zero]
 
 end FinalState
 
