@@ -97,7 +97,7 @@ theorem dipoleS_self [NeZero Nc] (U : WilsonConfiguration Nc) (x : EuclideanSpac
 /-- The dipole operator is symmetric under exchange of the quark and antiquark positions. -/
 theorem dipoleS_comm (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)) :
     dipoleS U x y = dipoleS U y x := by
-  rw [dipoleS_eq_multipoleS, multipoleS_reverse, multipoleS_fin_one]
+  rw [dipoleS_eq_multipoleS, ← multipoleS_comp_rev, multipoleS_fin_one]
   simp
 
 /-- **Unitarity bound** on the dipole operator of a single configuration: `|S U x y| ≤ 1`. -/

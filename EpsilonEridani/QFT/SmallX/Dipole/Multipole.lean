@@ -57,11 +57,12 @@ Wilson lines:
 - `SmallX.multipoleS_self`: colour transparency, pairwise coincident endpoints give `1`.
 - `SmallX.multipoleS_fin_zero`: the correlator with no lines is `1`.
 - `SmallX.abs_multipoleS_le_one`: the unitarity bound.
-- `SmallX.multipoleS_of_apply_zero_eq`, `SmallX.multipoleS_of_apply_zero_eq_apply_one`:
-  cancellation of two adjacent coincident Wilson lines.
+- `SmallX.multipoleS_of_quark_zero_eq_antiquark_zero`,
+  `SmallX.multipoleS_of_antiquark_zero_eq_quark_one`: cancellation of two adjacent coincident
+  Wilson lines.
 - `SmallX.multipoleS_cons_eq_snoc`, `SmallX.multipoleS_comp_finRotate`: invariance under the
   cyclic shift of the pairs.
-- `SmallX.multipoleS_reverse`: invariance under reversal of the order of the arguments.
+- `SmallX.multipoleS_comp_rev`: invariance under reversal of the order of the arguments.
 - `SmallX.multipoleS_gaugeTransform`: gauge invariance.
 -/
 
@@ -107,7 +108,8 @@ theorem multipoleS_self [NeZero Nc] (U : WilsonConfiguration Nc) {n : ℕ}
 @[simp]
 theorem multipoleS_fin_zero [NeZero Nc] (U : WilsonConfiguration Nc)
     (x y : Fin 0 → EuclideanSpace ℝ (Fin 2)) : multipoleS U x y = 1 := by
-  simp [multipoleS_def, NeZero.ne Nc]
+  rw [Subsingleton.elim x y]
+  exact multipoleS_self U y
 
 /-- **Unitarity bound** on every Wilson-line correlator of a single configuration:
 its modulus is at most one. -/
@@ -120,7 +122,7 @@ theorem abs_multipoleS_le_one (U : WilsonConfiguration Nc) {n : ℕ}
 their Wilson lines cancel and the `2(n + 1)`-point correlator is the `2n`-point correlator of the
 remaining pairs. -/
 @[simp]
-theorem multipoleS_of_apply_zero_eq (U : WilsonConfiguration Nc) {n : ℕ}
+theorem multipoleS_of_quark_zero_eq_antiquark_zero (U : WilsonConfiguration Nc) {n : ℕ}
     {x y : Fin (n + 1) → EuclideanSpace ℝ (Fin 2)} (h : x 0 = y 0) :
     multipoleS U x y = multipoleS U (Fin.tail x) (Fin.tail y) := by
   simp only [multipoleS_def, List.ofFn_succ, List.prod_cons, h, Unitary.mul_star_self, one_mul,
@@ -129,7 +131,7 @@ theorem multipoleS_of_apply_zero_eq (U : WilsonConfiguration Nc) {n : ℕ}
 /-- Coincidence limit: when the first antiquark and the second quark sit at the same position,
 the lines `U(y 0)† U(x 1)` cancel and the first quark pairs with the second antiquark. -/
 @[simp]
-theorem multipoleS_of_apply_zero_eq_apply_one (U : WilsonConfiguration Nc) {n : ℕ}
+theorem multipoleS_of_antiquark_zero_eq_quark_one (U : WilsonConfiguration Nc) {n : ℕ}
     {x y : Fin (n + 2) → EuclideanSpace ℝ (Fin 2)} (h : y 0 = x 1) :
     multipoleS U x y = multipoleS U (Fin.cons (x 0) (Fin.tail (Fin.tail x))) (Fin.tail y) := by
   simp only [multipoleS_def, List.ofFn_succ, Fin.cons_zero, Fin.cons_succ, Fin.tail,
@@ -162,11 +164,11 @@ theorem multipoleS_comp_finRotate (U : WilsonConfiguration Nc) {n : ℕ}
 /-- The correlator is invariant under reversal of the order of all its arguments, which
 exchanges the roles of quarks and antiquarks: the traced product at the reversed positions is
 the Hermitian conjugate of the original one, so the two traces have the same real part. -/
-theorem multipoleS_reverse (U : WilsonConfiguration Nc) {n : ℕ}
+theorem multipoleS_comp_rev (U : WilsonConfiguration Nc) {n : ℕ}
     (x y : Fin n → EuclideanSpace ℝ (Fin 2)) :
-    multipoleS U x y = multipoleS U (y ∘ Fin.rev) (x ∘ Fin.rev) := by
-  have h : (List.ofFn fun i => U ((y ∘ Fin.rev) i) * star (U ((x ∘ Fin.rev) i))).prod =
-      star (List.ofFn fun i => U (x i) * star (U (y i))).prod := by
+    multipoleS U (x ∘ Fin.rev) (y ∘ Fin.rev) = multipoleS U y x := by
+  have h : (List.ofFn fun i => U ((x ∘ Fin.rev) i) * star (U ((y ∘ Fin.rev) i))).prod =
+      star (List.ofFn fun i => U (y i) * star (U (x i))).prod := by
     simp only [Unitary.star_eq_inv, ← List.prod_ofFn_inv_rev, Function.comp_apply,
       _root_.mul_inv_rev, inv_inv]
   rw [multipoleS_def, multipoleS_def, h, Unitary.coe_star, star_eq_conjTranspose,

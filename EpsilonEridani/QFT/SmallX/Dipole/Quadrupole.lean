@@ -105,7 +105,8 @@ the quadrupole is the dipole of the second pair. -/
 @[simp]
 theorem quadrupoleS_self_left (U : WilsonConfiguration Nc) (x z w : EuclideanSpace ℝ (Fin 2)) :
     quadrupoleS U x x z w = dipoleS U z w := by
-  rw [quadrupoleS_eq_multipoleS, multipoleS_of_apply_zero_eq U (by simp), multipoleS_fin_one]
+  rw [quadrupoleS_eq_multipoleS, multipoleS_of_quark_zero_eq_antiquark_zero U (by simp),
+    multipoleS_fin_one]
   simp [Fin.tail]
 
 /-- Coincidence limit of the quadrupole: when the second quark and the second antiquark
@@ -120,7 +121,7 @@ coincide, the lines `U(y)† U(y)` cancel and the quadrupole is the dipole `S U 
 @[simp]
 theorem quadrupoleS_self_mid (U : WilsonConfiguration Nc) (x y w : EuclideanSpace ℝ (Fin 2)) :
     quadrupoleS U x y y w = dipoleS U x w := by
-  rw [quadrupoleS_eq_multipoleS, multipoleS_of_apply_zero_eq_apply_one U (by simp),
+  rw [quadrupoleS_eq_multipoleS, multipoleS_of_antiquark_zero_eq_quark_one U (by simp),
     multipoleS_fin_one]
   simp [Fin.tail]
 
@@ -138,7 +139,7 @@ exchanges the roles of quarks and antiquarks: `Q U x y z w = Q U w z y x`. The t
 so their traces have the same real part. -/
 theorem quadrupoleS_reverse (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :
     quadrupoleS U x y z w = quadrupoleS U w z y x := by
-  rw [quadrupoleS_eq_multipoleS, quadrupoleS_eq_multipoleS, multipoleS_reverse]
+  rw [quadrupoleS_eq_multipoleS, quadrupoleS_eq_multipoleS, ← multipoleS_comp_rev]
   simp
 
 /-- **Gauge invariance** of the quadrupole operator: under `U(v) ↦ Ω₊(v) U(v) Ω₋(v)†`, the
