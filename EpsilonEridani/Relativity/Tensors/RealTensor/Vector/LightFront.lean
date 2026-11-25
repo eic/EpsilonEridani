@@ -8,6 +8,7 @@ module
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.ApplyExtensions
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
+import EpsilonEridani.Mathematics.InnerProductSpace.Orientation
 
 /-!
 # Light-front components and transverse boosts
@@ -84,10 +85,12 @@ its plus component is positive, so such a boost never reverses its direction.
   `Lorentz.Vector.minusComponent_boost_two`: a boost along the `z`-axis in light-front components.
 * `Lorentz.Vector.inr_two_pos_iff_minusComponent_lt_plusComponent`: a four-vector points along
   `+z` exactly when `p⁻ < p⁺`.
-* `Lorentz.Vector.boost_two_inr_two_pos_iff`: a boost along the `z`-axis does not reverse the
-  direction of a four-vector whose longitudinal part is spacelike or lightlike.
-* `Lorentz.Vector.plusComponent_mul_minusComponent_nonpos_iff`: a four-vector with no transverse
-  part has a spacelike or lightlike longitudinal part exactly when it is spacelike or lightlike.
+* `Lorentz.Vector.boost_two_inr_two_pos_iff_of_plusComponent_mul_minusComponent_nonpos`: a boost
+  along the `z`-axis does not reverse the direction of a four-vector whose longitudinal part is
+  spacelike or lightlike.
+* `Lorentz.Vector.plusComponent_mul_minusComponent_nonpos_iff_of_transversePart_eq_zero`: a
+  four-vector with no transverse part has a spacelike or lightlike longitudinal part,
+  `p⁺ p⁻ ≤ 0`, exactly when it is spacelike or lightlike, `p · p ≤ 0`.
 * `EpsilonEridani.LightFront.areaForm_relativeTransverse_transverseIsometry`,
   `EpsilonEridani.LightFront.areaForm_transversePart_relativeTransverse_transverseIsometry`: the
   same two areas are invariant under orientation-preserving isometries of the transverse plane.
@@ -142,7 +145,7 @@ private lemma add_div_sqrt_two_sub_sub_div_sqrt_two (x y : ℝ) :
   ring
 
 /-- The `z`-component of a four-vector in light-front components: `p³ = (p⁺ - p⁻) / √2`. -/
-lemma apply_inr_two_eq_plusComponent_sub_minusComponent (p : Vector 3) :
+lemma apply_inr_two_eq_plusComponent_sub_minusComponent_div_sqrt_two (p : Vector 3) :
     p (Sum.inr 2) = (plusComponent p - minusComponent p) / √2 := by
   rw [plusComponent_def, minusComponent_def, add_div_sqrt_two_sub_sub_div_sqrt_two]
 
@@ -161,14 +164,6 @@ lemma transversePart_apply_zero (p : Vector 3) : transversePart p 0 = p (Sum.inr
 
 @[simp]
 lemma transversePart_apply_one (p : Vector 3) : transversePart p 1 = p (Sum.inr 1) := (rfl)
-
-/-- The inner product of a transverse part with a vector of the transverse plane, in
-coordinates: `p_T · v = p¹ v₀ + p² v₁`. -/
-lemma inner_transversePart_left (p : Vector 3) (v : E²) :
-    inner ℝ (transversePart p) v = p (Sum.inr 0) * v 0 + p (Sum.inr 1) * v 1 := by
-  simp only [PiLp.inner_apply, Fin.sum_univ_two, RCLike.inner_apply, conj_trivial,
-    transversePart_apply_zero, transversePart_apply_one]
-  ring
 
 @[simp]
 lemma plusComponent_add (p q : Vector 3) :
@@ -316,7 +311,7 @@ lemma ofLightFront_plusComponent_minusComponent_transversePart (p : Vector 3) :
     · simp
     · simp
     · simp only [Fin.reduceFinMk, ofLightFront_inr_two]
-      exact (apply_inr_two_eq_plusComponent_sub_minusComponent p).symm
+      exact (apply_inr_two_eq_plusComponent_sub_minusComponent_div_sqrt_two p).symm
 
 /-- A four-vector is determined by its light-front components. -/
 lemma ext_lightFront {p q : Vector 3} (hplus : plusComponent p = plusComponent q)
@@ -335,7 +330,7 @@ lemma minkowskiProduct_eq_lightFront (p q : Vector 3) :
     ⟪p, q⟫ₘ = plusComponent p * minusComponent q + minusComponent p * plusComponent q -
       inner ℝ (transversePart p) (transversePart q) := by
   simp only [minkowskiProduct_toCoord, plusComponent_def, minusComponent_def,
-    inner_transversePart_left, Fin.sum_univ_three, transversePart_apply_zero,
+    EuclideanSpace.real_inner_fin_two, Fin.sum_univ_three, transversePart_apply_zero,
     transversePart_apply_one]
   field_simp
   rw [Real.sq_sqrt zero_le_two]
@@ -432,12 +427,12 @@ lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
 component. -/
 lemma inr_two_pos_iff_minusComponent_lt_plusComponent (q : Vector 3) :
     0 < q (Sum.inr 2) ↔ minusComponent q < plusComponent q := by
-  rw [apply_inr_two_eq_plusComponent_sub_minusComponent q,
+  rw [apply_inr_two_eq_plusComponent_sub_minusComponent_div_sqrt_two q,
     div_pos_iff_of_pos_right (by positivity), sub_pos]
 
 /-- A four-vector whose plus and minus components have opposite signs, i.e. whose longitudinal
 part is spacelike, points along `+z` exactly when its plus component is positive. -/
-lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
+lemma inr_two_pos_iff_plusComponent_pos_of_plusComponent_mul_minusComponent_neg {q : Vector 3}
     (hq : plusComponent q * minusComponent q < 0) : 0 < q (Sum.inr 2) ↔ 0 < plusComponent q := by
   rw [inr_two_pos_iff_minusComponent_lt_plusComponent]
   constructor
@@ -451,16 +446,19 @@ lemma inr_two_pos_iff_plusComponent_pos {q : Vector 3}
 
 /-- A boost along the `z`-axis does not reverse the direction of a four-vector whose longitudinal
 part is spacelike or lightlike. -/
-lemma boost_two_inr_two_pos_iff {q : Vector 3} (hq : plusComponent q * minusComponent q ≤ 0)
-    (β : ℝ) (hβ : |β| < 1) : 0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
+lemma boost_two_inr_two_pos_iff_of_plusComponent_mul_minusComponent_nonpos {q : Vector 3}
+    (hq : plusComponent q * minusComponent q ≤ 0) (β : ℝ) (hβ : |β| < 1) :
+    0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
   refine boost_inr_self_pos_iff_of_abs_le_abs 2 hβ (sq_le_sq.1 ?_)
   rw [plusComponent_mul_minusComponent] at hq
   linarith
 
 /-- For a four-vector with no transverse part, the longitudinal part is spacelike or lightlike,
 `p⁺ p⁻ ≤ 0`, exactly when the four-vector is: `p · p ≤ 0`. This discharges the hypothesis of
-`boost_two_inr_two_pos_iff` for a spacelike or lightlike vector along the `z`-axis. -/
-lemma plusComponent_mul_minusComponent_nonpos_iff {p : Vector 3} (hT : transversePart p = 0) :
+`boost_two_inr_two_pos_iff_of_plusComponent_mul_minusComponent_nonpos` for a spacelike or
+lightlike vector along the `z`-axis. -/
+lemma plusComponent_mul_minusComponent_nonpos_iff_of_transversePart_eq_zero {p : Vector 3}
+    (hT : transversePart p = 0) :
     plusComponent p * minusComponent p ≤ 0 ↔ ⟪p, p⟫ₘ ≤ 0 := by
   rw [minkowskiProduct_self_eq_lightFront, hT, norm_zero]
   constructor <;> intro h <;> linarith
