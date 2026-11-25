@@ -5,9 +5,9 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Physlib.Relativity.Causality.CausallyFollows
 public import Physlib.Relativity.LorentzGroup.Boosts.Apply
 public import Physlib.Relativity.Tensors.RealTensor.Velocity.Basic
+public import PhyslibAlpha.Relativity.Poincare.Causality
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.BasicExtensions
 public import EpsilonEridani.Relativity.LorentzGroup.RotationsExtensions
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
@@ -193,16 +193,10 @@ non-negative. -/
 theorem timeComponent_smul_onShellMomentum_nonneg {Λ : LorentzGroup d} (hΛ : IsOrthochronous Λ)
     (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) :
     0 ≤ (Λ • onShellMomentum m p).timeComponent := by
-  rw [smul_timeComponent_eq_toVector_minkowskiProduct]
-  -- both `toVector Λ⁻¹` and `(E(p), p)` are future causal, so the reverse Cauchy–Schwarz
-  -- inequality bounds their Minkowski product below by a product of square roots
-  have h := (isOrthochronous_iff_ge_one _).mp (isOrthochronous_inv_iff.mpr hΛ)
-  rw [← toVector_timeComponent] at h
-  refine (by positivity : (0 : ℝ) ≤ _ * _).trans
-    (Lorentz.Vector.sqrt_mul_sqrt_le_minkowskiProduct_of_causallyFollows
-      (Lorentz.Vector.causallyFollows_zero_iff.2 ⟨by simp, by linarith⟩)
-      (Lorentz.Vector.causallyFollows_zero_iff.2 ⟨by simp [sq_nonneg],
-        by simp [onShellEnergy_nonneg]⟩))
+  -- `Λ` preserves the closed future light cone, which contains `(E(p), p)`
+  exact (Lorentz.Vector.causallyFollows_zero_iff.1 (PoincareGroup.causallyFollows_zero_smul hΛ
+    (Lorentz.Vector.causallyFollows_zero_iff.2
+      ⟨by simp [sq_nonneg], by simp [onShellEnergy_nonneg]⟩))).2
 
 /-- When `Λ` keeps the energy of `(E(p), p)` non-negative, `massShellMap` is the Lorentz
 action on the shell: `Λ` sends `(E(p), p)` to the on-shell four-momentum of
@@ -262,10 +256,8 @@ theorem timeComponent_boost_smul_onShellMomentum (i : Fin d) {β : ℝ} (hβ : |
 /-- A boost along a coordinate axis keeps the energy of an on-shell momentum non-negative. -/
 theorem timeComponent_boost_smul_onShellMomentum_nonneg (i : Fin d) {β : ℝ} (hβ : |β| < 1)
     (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) :
-    0 ≤ (boost i β hβ • onShellMomentum m p).timeComponent := by
-  refine timeComponent_smul_onShellMomentum_nonneg ?_ m p
-  rw [IsOrthochronous, boost_inl_0_inl_0]
-  exact (γ_pos hβ).le
+    0 ≤ (boost i β hβ • onShellMomentum m p).timeComponent :=
+  timeComponent_smul_onShellMomentum_nonneg (isOrthochronous_boost i hβ) m p
 
 /-- A boost along axis `i` keeps the energy non-negative, so it acts on the shell through
 `massShellMap`. -/
@@ -300,8 +292,7 @@ theorem onShellMomentum_massShellMap_of_timeComponent_eq_one {Λ : LorentzGroup 
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) :
     onShellMomentum m (massShellMap Λ m p) = Λ • onShellMomentum m p :=
   onShellMomentum_massShellMap
-    (timeComponent_smul_onShellMomentum_nonneg (by rw [IsOrthochronous, hΛ]; exact zero_le_one)
-      m p)
+    (timeComponent_smul_onShellMomentum_nonneg (isOrthochronous_of_timeComponent_eq_one hΛ) m p)
 
 /-- For every mass, a Lorentz transformation with time-time entry `1` acts on the shell as its
 linear isometry equivalence of spatial momenta. -/
