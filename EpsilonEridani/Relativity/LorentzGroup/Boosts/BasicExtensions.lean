@@ -12,8 +12,8 @@ public import Physlib.Relativity.LorentzGroup.Boosts.Basic
 
 Physlib's `LorentzGroup.γ β = 1 / √(1 - β²)` is the Lorentz factor of a boost with speed `β`.
 This module records that it is strictly positive for every subluminal speed `|β| < 1`
-(`γ_pos`). Positivity of `γ` is one of the two ingredients in the non-negativity of
-the boosted energy `γ (E - β pᵢ)` of an on-shell momentum, the other being `|β pᵢ| ≤ E`.
+(`γ_pos`). The time-time entry of a boost is `γ β`, so positivity of `γ` makes a boost
+orthochronous, keeping the energy of an on-shell momentum non-negative.
 -/
 
 public section
