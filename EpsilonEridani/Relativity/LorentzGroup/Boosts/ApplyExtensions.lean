@@ -21,7 +21,7 @@ it cannot when `|p⁰| ≤ |pⁱ|`, for instance for a spacelike or lightlike ve
 
 * `Lorentz.Vector.boost_inr_self_pos_iff`: `0 < (Λ p)ⁱ ↔ β p⁰ < pⁱ` for the boost `Λ` with speed
   `β` along the axis `i`.
-* `Lorentz.Vector.boost_inr_self_pos_iff_of_abs_le`: if `|p⁰| ≤ |pⁱ|`, the boost along the axis
+* `Lorentz.Vector.boost_inr_self_pos_iff_of_abs_le_abs`: if `|p⁰| ≤ |pⁱ|`, the boost along the axis
   `i` does not change the sign of `pⁱ`.
 -/
 
@@ -41,7 +41,7 @@ lemma boost_inr_self_pos_iff (i : Fin d) {β : ℝ} (hβ : |β| < 1) (p : Vector
 
 /-- A boost along the axis `i` does not reverse the direction of a four-vector with
 `|p⁰| ≤ |pⁱ|`, such as a spacelike or lightlike vector along that axis. -/
-lemma boost_inr_self_pos_iff_of_abs_le (i : Fin d) {β : ℝ} (hβ : |β| < 1) {p : Vector d}
+lemma boost_inr_self_pos_iff_of_abs_le_abs (i : Fin d) {β : ℝ} (hβ : |β| < 1) {p : Vector d}
     (hp : |p (Sum.inl 0)| ≤ |p (Sum.inr i)|) :
     0 < (boost i β hβ • p) (Sum.inr i) ↔ 0 < p (Sum.inr i) := by
   rw [boost_inr_self_pos_iff]
