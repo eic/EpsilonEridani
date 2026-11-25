@@ -48,9 +48,9 @@ and behind `ω(b_T, k_T)` as the weight of parton orbital angular momentum.
 
 The boosts along the longitudinal axis are Physlib's `LorentzGroup.boost 2 β`. In light-front
 components the boost with speed `β` multiplies `p⁺` by `γ (1 - β)` and `p⁻` by `γ (1 + β)`, both
-positive, and leaves `p_T` unchanged. A spacelike vector along the `z`-axis, such as the
-virtual-photon momentum in a frame where it has no transverse part, points along `+z` exactly when
-its plus component is positive, so such a boost never reverses its direction.
+positive, and leaves `p_T` unchanged. Such a boost never reverses the direction of a four-vector
+whose longitudinal part is spacelike or lightlike, `p⁺ p⁻ ≤ 0`, such as the virtual-photon
+momentum in a frame where it has no transverse part.
 
 ## Main definitions
 
@@ -83,8 +83,6 @@ its plus component is positive, so such a boost never reverses its direction.
   the area between a light-front position and a relative transverse momentum.
 * `Lorentz.Vector.transversePart_boost_two`, `Lorentz.Vector.plusComponent_boost_two`,
   `Lorentz.Vector.minusComponent_boost_two`: a boost along the `z`-axis in light-front components.
-* `Lorentz.Vector.inr_two_pos_iff_minusComponent_lt_plusComponent`: a four-vector points along
-  `+z` exactly when `p⁻ < p⁺`.
 * `Lorentz.Vector.boost_two_inr_two_pos_iff_of_plusComponent_mul_minusComponent_nonpos`: a boost
   along the `z`-axis does not reverse the direction of a four-vector whose longitudinal part is
   spacelike or lightlike.
@@ -330,8 +328,8 @@ lemma minkowskiProduct_eq_lightFront (p q : Vector 3) :
     ⟪p, q⟫ₘ = plusComponent p * minusComponent q + minusComponent p * plusComponent q -
       inner ℝ (transversePart p) (transversePart q) := by
   simp only [minkowskiProduct_toCoord, plusComponent_def, minusComponent_def,
-    EuclideanSpace.real_inner_fin_two, Fin.sum_univ_three, transversePart_apply_zero,
-    transversePart_apply_one]
+    EuclideanSpace.real_inner_eq_sum, Fin.sum_univ_two, Fin.sum_univ_three,
+    transversePart_apply_zero, transversePart_apply_one]
   field_simp
   rw [Real.sq_sqrt zero_le_two]
   ring
@@ -422,27 +420,6 @@ lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
     minusComponent (boost (2 : Fin 3) β hβ • p) = γ β * (1 + β) * minusComponent p := by
   simp only [minusComponent_def, boost_time_eq, boost_inr_self_eq]
   ring
-
-/-- A four-vector points along `+z` exactly when its plus component exceeds its minus
-component. -/
-lemma inr_two_pos_iff_minusComponent_lt_plusComponent (q : Vector 3) :
-    0 < q (Sum.inr 2) ↔ minusComponent q < plusComponent q := by
-  rw [apply_inr_two_eq_plusComponent_sub_minusComponent_div_sqrt_two q,
-    div_pos_iff_of_pos_right (by positivity), sub_pos]
-
-/-- A four-vector whose plus and minus components have opposite signs, i.e. whose longitudinal
-part is spacelike, points along `+z` exactly when its plus component is positive. -/
-lemma inr_two_pos_iff_plusComponent_pos_of_plusComponent_mul_minusComponent_neg {q : Vector 3}
-    (hq : plusComponent q * minusComponent q < 0) : 0 < q (Sum.inr 2) ↔ 0 < plusComponent q := by
-  rw [inr_two_pos_iff_minusComponent_lt_plusComponent]
-  constructor
-  · -- `p⁻ < p⁺ ≤ 0` would make `p⁺ p⁻` nonnegative.
-    intro h
-    refine lt_of_not_ge fun hP => ?_
-    exact hq.not_ge (mul_nonneg_of_nonpos_of_nonpos hP (h.le.trans hP))
-  · -- `0 < p⁺` forces `p⁻ < 0`.
-    intro hP
-    exact (neg_of_mul_neg_right hq hP.le).trans hP
 
 /-- A boost along the `z`-axis does not reverse the direction of a four-vector whose longitudinal
 part is spacelike or lightlike. -/

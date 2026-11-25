@@ -55,8 +55,10 @@ modulations are `cos(m φ_h + n φ_S)` and `sin(m φ_h + n φ_S)` keeps its cosi
 the sign of its sine amplitudes when it is written in the other convention
 (`sum_mul_cos_add_mul_sin_negOrientation`, from the orientation-free
 `Real.Angle.sum_mul_cos_neg_add_mul_sin_neg`). The Sivers modulation `sin(φ_h - φ_S)` and the
-Collins modulation `sin(φ_h + φ_S)` are of this kind. This is the sign by which
-single-transverse-spin asymmetries quoted in the two conventions differ.
+Collins modulation `sin(φ_h + φ_S)` are of this kind; on azimuths they are the harmonics
+`sinPhiDiff` and `sinPhiSum` of `EpsilonEridani.QFT.Scattering.DIS.SIDIS.Asymmetries.Harmonics`
+(`Asymmetries.Harmonics.sinPhiDiff_toReal`, `Asymmetries.Harmonics.sinPhiSum_toReal`). This is
+the sign by which single-transverse-spin asymmetries quoted in the two conventions differ.
 
 ## Main definitions
 
@@ -76,7 +78,8 @@ single-transverse-spin asymmetries quoted in the two conventions differ.
   `AzimuthalFrame.areaForm_eq_norm_mul_norm_mul_sin_azimuth`: the cosine and the sine of an azimuth
   in any frame.
 * `AzimuthalFrame.norm_mul_norm_mul_cos_azimuth`,
-  `AzimuthalFrame.norm_mul_norm_mul_sin_azimuth_of_orientation_eq`,
+  `AzimuthalFrame.norm_mul_norm_mul_sin_azimuth_of_orientation_eq_orientation`,
+  `AzimuthalFrame.norm_mul_norm_mul_sin_azimuth_of_orientation_eq_neg_orientation`,
   `abs_inr_two_mul_norm_mul_norm_mul_sin_azimuth_of_orientation_eq_trentoOrientation`:
   the cosine and the sine of an azimuth in coordinates, in particular in the Trento convention.
 * `AzimuthalFrame.azimuth_sub_azimuth`: the difference of two azimuths, such as the Sivers angle
@@ -193,16 +196,27 @@ reference direction. It does not depend on the orientation of the frame. In the 
 theorem norm_mul_norm_mul_cos_azimuth (F : AzimuthalFrame) (v : E²) :
     ‖F.referenceDirection‖ * ‖v‖ * Real.Angle.cos (F.azimuth v) =
       F.referenceDirection 0 * v 0 + F.referenceDirection 1 * v 1 := by
-  rw [← inner_eq_norm_mul_norm_mul_cos_azimuth, EuclideanSpace.real_inner_fin_two]
+  rw [← inner_eq_norm_mul_norm_mul_cos_azimuth, EuclideanSpace.real_inner_eq_sum, Fin.sum_univ_two]
 
 /-- The sine of an azimuth in coordinates, in a frame with the standard orientation of the
 transverse plane: `|r| |v| sin φ = r₀ v₁ - r₁ v₀`, where `r` is the reference direction. The Trento
 frame of a photon moving along `+z` has this orientation (`trentoOrientation_of_inr_two_pos`). -/
-theorem norm_mul_norm_mul_sin_azimuth_of_orientation_eq {F : AzimuthalFrame}
+theorem norm_mul_norm_mul_sin_azimuth_of_orientation_eq_orientation {F : AzimuthalFrame}
     (hF : F.orientation = EuclideanSpace.orientation (Fin 2)) (v : E²) :
     ‖F.referenceDirection‖ * ‖v‖ * Real.Angle.sin (F.azimuth v) =
       F.referenceDirection 0 * v 1 - F.referenceDirection 1 * v 0 := by
   rw [← areaForm_eq_norm_mul_norm_mul_sin_azimuth, hF, EuclideanSpace.areaForm_orientation_apply]
+
+/-- The sine of an azimuth in coordinates, in a frame with the opposite of the standard
+orientation: `|r| |v| sin φ = -(r₀ v₁ - r₁ v₀)`, where `r` is the reference direction. The Trento
+frame of a photon not moving along `+z` has this orientation
+(`trentoOrientation_of_inr_two_nonpos`). -/
+theorem norm_mul_norm_mul_sin_azimuth_of_orientation_eq_neg_orientation {F : AzimuthalFrame}
+    (hF : F.orientation = -EuclideanSpace.orientation (Fin 2)) (v : E²) :
+    ‖F.referenceDirection‖ * ‖v‖ * Real.Angle.sin (F.azimuth v) =
+      -(F.referenceDirection 0 * v 1 - F.referenceDirection 1 * v 0) := by
+  rw [← areaForm_eq_norm_mul_norm_mul_sin_azimuth, hF, Orientation.areaForm_neg_orientation]
+  simp only [LinearMap.neg_apply, EuclideanSpace.areaForm_orientation_apply]
 
 /-! ### Reversing the orientation -/
 
@@ -308,7 +322,7 @@ lemma azimuth_trento_self (l q : Lorentz.Vector 3) :
 
 /-- In a frame where the photon has no transverse part, the scattered lepton `l' = l - q` defines
 the same Trento frame as the incoming one: both span the lepton plane with the photon axis. -/
-lemma trento_sub_photon (l : Lorentz.Vector 3) {q : Lorentz.Vector 3}
+lemma trento_sub_of_transversePart_eq_zero (l : Lorentz.Vector 3) {q : Lorentz.Vector 3}
     (hq : transversePart q = 0) : trento (l - q) q = trento l q := by
   ext1 <;> simp [hq]
 
@@ -316,21 +330,19 @@ lemma trento_sub_photon (l : Lorentz.Vector 3) {q : Lorentz.Vector 3}
 the `z`-axis, such as the Trento frame `trento l q`: `|q| |r| |v| sin φ = (q × r) · v` for the
 reference direction `r`, whose right-hand side is `q³ (r₀ v₁ - r₁ v₀)` when `q = q³ e_z`. In the
 Trento frame `r = l_T`, so this is `(q × l) · v`. For a photon moving along `+z` the factor `|q³|`
-cancels: `norm_mul_norm_mul_sin_azimuth_of_orientation_eq` with
+cancels: `norm_mul_norm_mul_sin_azimuth_of_orientation_eq_orientation` with
 `trentoOrientation_of_inr_two_pos`. -/
 theorem abs_inr_two_mul_norm_mul_norm_mul_sin_azimuth_of_orientation_eq_trentoOrientation
     {F : AzimuthalFrame} {q : Lorentz.Vector 3} (hF : F.orientation = trentoOrientation q)
     (v : E²) :
     |q (Sum.inr 2)| * (‖F.referenceDirection‖ * ‖v‖ * Real.Angle.sin (F.azimuth v)) =
       q (Sum.inr 2) * (F.referenceDirection 0 * v 1 - F.referenceDirection 1 * v 0) := by
-  rw [← areaForm_eq_norm_mul_norm_mul_sin_azimuth, hF]
   rcases le_or_gt (q (Sum.inr 2)) 0 with hle | hpos
-  · rw [trentoOrientation_of_inr_two_nonpos hle, Orientation.areaForm_neg_orientation,
-      abs_of_nonpos hle]
-    simp only [LinearMap.neg_apply, EuclideanSpace.areaForm_orientation_apply]
+  · rw [norm_mul_norm_mul_sin_azimuth_of_orientation_eq_neg_orientation
+      (hF.trans (trentoOrientation_of_inr_two_nonpos hle)), abs_of_nonpos hle]
     ring
-  · rw [trentoOrientation_of_inr_two_pos hpos, abs_of_pos hpos,
-      EuclideanSpace.areaForm_orientation_apply]
+  · rw [norm_mul_norm_mul_sin_azimuth_of_orientation_eq_orientation
+      (hF.trans (trentoOrientation_of_inr_two_pos hpos)), abs_of_pos hpos]
 
 /-! ### Invariance under boosts along the photon direction -/
 
