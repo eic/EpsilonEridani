@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.MeasureTheory.Measure.WithDensity
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MassShell
 
 /-!
@@ -33,9 +34,9 @@ preserve `d^d p`, but its Jacobian `E(Λp) / E(p)` is cancelled exactly by the d
   `oneBodyMeasure m`. Along the boost axis, at fixed transverse momentum `p_⊥`, the energy is
   `√(m² + |p_⊥|² + q²)` and the boost acts as `q ↦ γ (q - β E)`, a bijection of the line with
   derivative `E' / E`, where `E' = γ (E - β q)` is the boosted energy.
-* `measurePreserving_massShellMap_rotation`: a spatial rotation preserves it, since it acts on
-  `p` as the linear isometry `LorentzGroup.Rotations.toLinearIsometryEquiv` and leaves `E`
-  unchanged.
+* `measurePreserving_massShellMap_of_timeComponent_eq_one`: a Lorentz transformation with
+  time-time entry `1`, a spatial rotation or reflection, preserves it, since it acts on `p` as the
+  linear isometry `LorentzGroup.spatialLinearIsometryEquiv` and leaves `E` unchanged.
 
 This file proves invariance only for these two generating cases. Both keep the energy
 non-negative, so for a finite product of them `massShellMap_mul` writes the map as the
@@ -84,12 +85,10 @@ private theorem measurable_density (m : ℝ) :
     Measurable fun p : EuclideanSpace ℝ (Fin d) => ENNReal.ofReal (2 * onShellEnergy m p)⁻¹ :=
   ENNReal.measurable_ofReal.comp ((continuous_onShellEnergy m).measurable.const_mul 2).inv
 
-/-- The `oneBodyMeasure m` of a measurable set is the integral of the weight `1 / (2E)` over
-it. -/
-theorem oneBodyMeasure_apply (m : ℝ) {s : Set (EuclideanSpace ℝ (Fin d))}
-    (hs : MeasurableSet s) :
+/-- The `oneBodyMeasure m` of a set is the integral of the weight `1 / (2E)` over it. -/
+theorem oneBodyMeasure_apply (m : ℝ) (s : Set (EuclideanSpace ℝ (Fin d))) :
     oneBodyMeasure m s = ∫⁻ p in s, ENNReal.ofReal (2 * onShellEnergy m p)⁻¹ := by
-  rw [oneBodyMeasure_def, withDensity_apply _ hs]
+  rw [oneBodyMeasure_def, withDensity_apply' _ s]
 
 /-- Integrating against `oneBodyMeasure m` is integrating against Lebesgue measure with the
 weight `1 / (2E)`. -/
@@ -138,10 +137,12 @@ private theorem boost_neg_boost {a β : ℝ} (q : ℝ) (ha : 0 ≤ a) (hβ : |β
 
 /-- The one-dimensional core of boost invariance: on the line of transverse mass `√a`, the
 measure `dq / (2 √(a + q²))` is invariant under the boost `q ↦ γ (q - β √(a + q²))`. -/
-private theorem lintegral_comp_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) (h : ℝ → ℝ≥0∞) :
-    ∫⁻ q, ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ * h (γ β * (q - β * √(a + q ^ 2))) =
-      ∫⁻ q, ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ * h q := by
+private theorem map_withDensity_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) :
+    (volume.withDensity fun q => ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹).map
+        (fun q => γ β * (q - β * √(a + q ^ 2))) =
+      volume.withDensity fun q => ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ := by
   set g : ℝ → ℝ := fun q => γ β * (q - β * √(a + q ^ 2)) with hg
+  set w : ℝ → ℝ≥0∞ := fun q => ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ with hw
   have hβ' : |-β| < 1 := by rwa [abs_neg]
   -- `g` is a bijection of `ℝ`, with inverse the boost with velocity `-β`
   have hinv : Function.LeftInverse (fun y => γ (-β) * (y - -β * √(a + y ^ 2))) g :=
@@ -162,17 +163,15 @@ private theorem lintegral_comp_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1
       field_simp
       ring
     exact (((hasDerivAt_id' q).sub (hs.const_mul β)).const_mul (γ β)).hasDerivWithinAt
-  have key := lintegral_image_eq_lintegral_abs_deriv_mul (measurableSet_singleton 0).compl
-    hderiv hbij.injective.injOn (fun y => h y * ENNReal.ofReal (2 * √(a + y ^ 2))⁻¹)
-  rw [Set.image_compl_eq hbij, Set.image_singleton, restrict_compl_singleton] at key
-  have hL : ∫⁻ q, h (g q) * ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ =
-      ∫⁻ q in {0}ᶜ, h (g q) * ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ := by
-    rw [restrict_compl_singleton]
-  simp_rw [mul_comm (ENNReal.ofReal _)]
-  rw [key, hL]
-  refine setLIntegral_congr_fun (measurableSet_singleton 0).compl fun q hq => ?_
+  have key := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul (f := w)
+    (measurableSet_singleton 0).compl (by fun_prop) hderiv hbij.injective.injOn
+  rw [Set.image_compl_eq hbij, Set.image_singleton, restrict_compl_singleton,
+    restrict_compl_singleton] at key
+  refine (congrArg (Measure.map g) ?_).trans key
+  -- off `q = 0`, the Jacobian `E' / E` cancels against the density `1 / (2 E')` at the image
+  refine withDensity_congr_ae ?_
+  filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : ℝ))] with q hq
   have hq : q ≠ 0 := Set.mem_compl_singleton_iff.mp hq
-  -- the Jacobian `E' / E` cancels against the density `1 / (2 E')` at the image point
   have hE : 0 < √(a + q ^ 2) := Real.sqrt_pos.2 (by positivity)
   have hE' : 0 < √(a + q ^ 2) - β * q := by
     have h := abs_mul_apply_lt_onShellEnergy hβ √a
@@ -190,9 +189,25 @@ private theorem lintegral_comp_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1
     have key : ∀ {E y g : ℝ}, E ≠ 0 → y ≠ 0 → g ≠ 0 → g * y / E * (2 * (g * y))⁻¹ = (2 * E)⁻¹ :=
       fun hE hy hg => by field_simp
     exact key hE.ne' hE'.ne' hγ.ne'
-  simp only [hg]
-  rw [sqrt_add_sq_boost q ha hβ, mul_left_comm, ← ENNReal.ofReal_mul (abs_nonneg _), hd,
+  simp only [hg, hw]
+  rw [sqrt_add_sq_boost q ha hβ, ← ENNReal.ofReal_mul (abs_nonneg _), hd,
     abs_of_pos (by positivity), hJ]
+
+/-- The one-dimensional boost invariance, integrated against a measurable function. -/
+private theorem lintegral_comp_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) {h : ℝ → ℝ≥0∞}
+    (hh : Measurable h) :
+    ∫⁻ q, ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ * h (γ β * (q - β * √(a + q ^ 2))) =
+      ∫⁻ q, ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ * h q := by
+  have hw : Measurable fun q : ℝ => ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ := by fun_prop
+  have hfin : ∀ᵐ q : ℝ, ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹ < ∞ :=
+    Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top
+  have hmp : MeasurePreserving (fun q => γ β * (q - β * √(a + q ^ 2)))
+      (volume.withDensity fun q => ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹)
+      (volume.withDensity fun q => ENNReal.ofReal (2 * √(a + q ^ 2))⁻¹) :=
+    ⟨by fun_prop, map_withDensity_boost ha hβ⟩
+  exact ((lintegral_withDensity_eq_lintegral_mul_non_measurable _ hw hfin _).symm.trans
+    (hmp.lintegral_comp hh)).trans
+      (lintegral_withDensity_eq_lintegral_mul_non_measurable _ hw hfin h)
 
 private theorem lintegral_comp_massShellMap_boost (i : Fin d) {β : ℝ} (hβ : |β| < 1) (m : ℝ)
     {f : EuclideanSpace ℝ (Fin d) → ℝ≥0∞} (hf : Measurable f) :
@@ -238,7 +253,8 @@ private theorem lintegral_comp_massShellMap_boost (i : Fin d) {β : ℝ} (hβ : 
   -- at fixed transverse momentum this is the one-dimensional statement
   refine lintegral_congr fun r => ?_
   simp only [hT, hE]
-  exact lintegral_comp_boost (by positivity) hβ fun y => f (e.symm (y, r))
+  exact lintegral_comp_boost (by positivity) hβ
+    (hf.comp (e.symm.measurable.comp measurable_prodMk_right))
 
 /-- **Boost invariance.** A boost along a coordinate axis preserves the one-body measure
 `d^d p / (2E)`, for every mass `m`, the massless case included. -/
@@ -249,25 +265,24 @@ theorem measurePreserving_massShellMap_boost (i : Fin d) {β : ℝ} (hβ : |β| 
     rw [lintegral_map hf (continuous_massShellMap _ m).measurable]
     exact lintegral_comp_massShellMap_boost i hβ m hf⟩
 
-/-! ### Rotations -/
+/-! ### Rotations and spatial reflections -/
 
-/-- **Rotation invariance.** A spatial rotation preserves the one-body measure. -/
-theorem measurePreserving_massShellMap_rotation (Λ : Rotations d) (m : ℝ) :
-    MeasurePreserving (massShellMap (Λ : LorentzGroup d) m) (oneBodyMeasure m)
-      (oneBodyMeasure m) := by
-  -- on spatial momenta the rotation is a linear isometry, so it preserves Lebesgue measure
-  have hL : MeasurePreserving (massShellMap (Λ : LorentzGroup d) m) volume volume := by
-    rw [massShellMap_rotation Λ m]
-    exact (Rotations.toLinearIsometryEquiv Λ).measurePreserving
-  refine ⟨hL.measurable, Measure.ext_of_lintegral _ fun f hf => ?_⟩
-  rw [lintegral_map hf hL.measurable, lintegral_oneBodyMeasure, lintegral_oneBodyMeasure]
-  -- and it leaves the energy, hence the density, unchanged
-  calc _ = ∫⁻ p, ENNReal.ofReal (2 * onShellEnergy m (massShellMap Λ m p))⁻¹ *
-        f (massShellMap (Λ : LorentzGroup d) m p) := by
-        simp only [onShellEnergy_massShellMap_of_timeComponent_eq_one
-          (rotation_timeComponent_eq_one Λ)]
-    _ = _ := hL.lintegral_comp (f := fun q => ENNReal.ofReal (2 * onShellEnergy m q)⁻¹ * f q)
-        ((measurable_density m).mul hf)
+/-- **Rotation invariance.** A Lorentz transformation with time-time entry `1` — a spatial
+rotation or reflection — preserves the one-body measure. -/
+theorem measurePreserving_massShellMap_of_timeComponent_eq_one {Λ : LorentzGroup d}
+    (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (m : ℝ) :
+    MeasurePreserving (massShellMap Λ m) (oneBodyMeasure m) (oneBodyMeasure m) := by
+  set L := spatialLinearIsometryEquiv hΛ
+  rw [massShellMap_of_timeComponent_eq_one hΛ m]
+  refine ⟨L.continuous.measurable, ?_⟩
+  -- `L` preserves Lebesgue measure and, leaving the energy unchanged, the density
+  rw [oneBodyMeasure_def, ← L.coe_toMeasurableEquiv, MeasurableEquiv.map_withDensity,
+    L.coe_toMeasurableEquiv, L.measurePreserving.map_eq]
+  congr 1
+  funext q
+  rw [L.coe_symm_toMeasurableEquiv,
+    ← onShellEnergy_massShellMap_of_timeComponent_eq_one hΛ m (L.symm q),
+    massShellMap_of_timeComponent_eq_one hΛ m, L.apply_symm_apply]
 
 end PhaseSpace
 end Kinematics

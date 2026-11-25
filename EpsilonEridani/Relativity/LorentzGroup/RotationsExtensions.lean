@@ -21,10 +21,10 @@ time-space entries vanish (`inl_inr_eq_zero_of_timeComponent_eq_one` and
 unchanged (`timeComponent_smul_of_timeComponent_eq_one`), acts on the spatial part through its
 spatial block alone (`spatialPart_smul_apply_of_timeComponent_eq_one`), and, since it also
 preserves the Minkowski product, preserves the Euclidean norm of the spatial part
-(`norm_spatialPart_smul_of_timeComponent_eq_one`). Hence a rotation acts on
-`EuclideanSpace ℝ (Fin d)` as the linear isometry equivalence `Rotations.toLinearIsometryEquiv
-Λ`, `v ↦ (Λ • (0, v))ₛ`, through which it acts on the spatial part of every vector
-(`spatialPart_rotation_smul`).
+(`norm_spatialPart_smul_of_timeComponent_eq_one`). Hence such a `Λ` acts on
+`EuclideanSpace ℝ (Fin d)` as the linear isometry equivalence `spatialLinearIsometryEquiv hΛ`,
+`v ↦ (Λ • (0, v))ₛ`, through which it acts on the spatial part of every vector
+(`spatialPart_smul_of_timeComponent_eq_one`).
 -/
 
 public section
@@ -86,9 +86,10 @@ theorem norm_spatialPart_smul_of_timeComponent_eq_one {Λ : LorentzGroup d}
     timeComponent_smul_of_timeComponent_eq_one hΛ, sub_right_inj] at h
   exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h
 
-/-- The action of a rotation `Λ` on spatial vectors, `v ↦ (Λ • (0, v))ₛ`, as a linear isometry
-equivalence of `EuclideanSpace ℝ (Fin d)`. -/
-noncomputable def Rotations.toLinearIsometryEquiv (Λ : Rotations d) :
+/-- The action of a Lorentz transformation `Λ` with time-time entry `1` on spatial vectors,
+`v ↦ (Λ • (0, v))ₛ`, as a linear isometry equivalence of `EuclideanSpace ℝ (Fin d)`. -/
+noncomputable def spatialLinearIsometryEquiv {Λ : LorentzGroup d}
+    (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) :
     EuclideanSpace ℝ (Fin d) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin d) :=
   LinearIsometry.toLinearIsometryEquiv
     { toLinearMap := ((Lorentz.Vector.spatialCLM d).comp ((Lorentz.Vector.actionCLM Λ).comp
@@ -96,29 +97,28 @@ noncomputable def Rotations.toLinearIsometryEquiv (Λ : Rotations d) :
       norm_map' v := by
         simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
           Function.comp_apply, Lorentz.Vector.spatialCLM_apply,
-          Lorentz.Vector.actionCLM_apply,
-          norm_spatialPart_smul_of_timeComponent_eq_one (rotation_timeComponent_eq_one Λ),
+          Lorentz.Vector.actionCLM_apply, norm_spatialPart_smul_of_timeComponent_eq_one hΛ,
           Lorentz.Vector.spatialPart_ofSpatialComponent] }
     rfl
 
-/-- The linear isometry equivalence of a rotation sends `v` to the spatial part of
-`Λ • (0, v)`. -/
+/-- The linear isometry equivalence of `Λ` sends `v` to the spatial part of `Λ • (0, v)`. -/
 @[simp]
-theorem Rotations.toLinearIsometryEquiv_apply (Λ : Rotations d) (v : EuclideanSpace ℝ (Fin d)) :
-    Rotations.toLinearIsometryEquiv Λ v =
-      ((Λ : LorentzGroup d) • Lorentz.Vector.ofSpatialComponent v).spatialPart := by
-  simp only [Rotations.toLinearIsometryEquiv, LinearIsometry.coe_toLinearIsometryEquiv,
+theorem spatialLinearIsometryEquiv_apply {Λ : LorentzGroup d}
+    (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (v : EuclideanSpace ℝ (Fin d)) :
+    spatialLinearIsometryEquiv hΛ v = (Λ • Lorentz.Vector.ofSpatialComponent v).spatialPart := by
+  simp only [spatialLinearIsometryEquiv, LinearIsometry.coe_toLinearIsometryEquiv,
     LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
     Function.comp_apply, Lorentz.Vector.spatialCLM_apply,
     Lorentz.Vector.actionCLM_apply]
 
-/-- A rotation acts on the spatial part of every vector as its linear isometry equivalence. -/
-theorem spatialPart_rotation_smul (Λ : Rotations d) (v : Lorentz.Vector d) :
-    ((Λ : LorentzGroup d) • v).spatialPart = Rotations.toLinearIsometryEquiv Λ v.spatialPart := by
+/-- A Lorentz transformation with time-time entry `1` acts on the spatial part of every vector
+as its linear isometry equivalence. -/
+theorem spatialPart_smul_of_timeComponent_eq_one {Λ : LorentzGroup d}
+    (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (v : Lorentz.Vector d) :
+    (Λ • v).spatialPart = spatialLinearIsometryEquiv hΛ v.spatialPart := by
   ext j
-  rw [Rotations.toLinearIsometryEquiv_apply,
-    spatialPart_smul_apply_of_timeComponent_eq_one (rotation_timeComponent_eq_one Λ),
-    spatialPart_smul_apply_of_timeComponent_eq_one (rotation_timeComponent_eq_one Λ),
+  rw [spatialLinearIsometryEquiv_apply, spatialPart_smul_apply_of_timeComponent_eq_one hΛ,
+    spatialPart_smul_apply_of_timeComponent_eq_one hΛ,
     Lorentz.Vector.spatialPart_ofSpatialComponent]
 
 end LorentzGroup
