@@ -7,7 +7,7 @@ module
 
 public import EpsilonEridani.Mathematics.Analysis.Asymptotics.Cocompact
 public import EpsilonEridani.Mathematics.SpecialFunctions.SphericalBessel.Basic
-public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Bounds
+public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Bounded
 
 /-!
 # Large-argument asymptotics of the spherical Bessel functions
@@ -73,8 +73,7 @@ theorem isBigO_mul_sphericalBesselJ_sub_sin_inv_cocompact (l : ℕ) :
     exact (isBigO_zero _ _).congr_left fun x => by simp
   | one =>
     -- `x j_1(x) - sin (x - π / 2) = sin x / x` for `x ≠ 0`
-    refine ((isBigO_sin_comp_one _ fun x => x).mul (isBigO_refl (fun x : ℝ => x⁻¹) _)).congr' ?_
-      (.of_forall fun x => one_mul _)
+    refine (isBigO_sin_comp_one _ fun x => x).div_inv.congr' ?_ (EventuallyEq.refl _ _)
     filter_upwards [eventually_ne_cocompact 0] with x hx
     rw [Nat.cast_one, one_mul, sin_sub_pi_div_two, sphericalBesselJ_one]
     field_simp
@@ -153,10 +152,7 @@ theorem isLittleO_deriv_sphericalBesselJ_sub_cos_div_inv_cocompact (l : ℕ) :
 theorem isBigO_deriv_sphericalBesselJ_inv_cocompact (l : ℕ) :
     deriv (sphericalBesselJ l) =O[cocompact ℝ] fun x => x⁻¹ := by
   -- `j_l'(x)` is `cos (x - l π / 2) / x = O(1 / x)` up to an `o(1 / x)` remainder
-  have hcos : (fun x => cos (x - l * (π / 2)) / x) =O[cocompact ℝ] fun x => x⁻¹ :=
-    ((isBigO_cos_comp_one _ _).mul (isBigO_refl (fun x : ℝ => x⁻¹) _)).congr
-      (fun _ => (div_eq_mul_inv _ _).symm) fun _ => one_mul _
   exact ((isLittleO_deriv_sphericalBesselJ_sub_cos_div_inv_cocompact l).isBigO.add
-    hcos).congr_left fun _ => sub_add_cancel _ _
+    (isBigO_cos_comp_one _ _).div_inv).congr_left fun _ => sub_add_cancel _ _
 
 end EpsilonEridani

@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.Asymptotics.Defs
 
 /-!
