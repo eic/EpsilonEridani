@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 /-!
@@ -50,7 +51,7 @@ without that hypothesis `spatialNorm` and `cosAngle` are just the stated formula
 The frame vector is data only up to positive rescaling: `Frame.energy_eq_of_n_eq_smul_of_pos`,
 `Frame.spatialPart_eq_of_n_eq_smul`, `Frame.spatialNorm_eq_of_n_eq_smul` and
 `Frame.cosAngle_eq_of_n_eq_smul` show that all four are unchanged when `n` is replaced by `c • n`
-with `0 < c` (`c ≠ 0` for the last three).
+with `0 < c`; the last three hold for any `c` such that `c • n` is again a frame.
 
 ## Main statements
 
@@ -315,23 +316,27 @@ theorem energy_eq_of_n_eq_smul_of_pos (F' : Frame g) {c : ℝ} (hc : 0 < c) (h :
   rw [← mul_assoc, Real.sqrt_mul (mul_self_nonneg c), Real.sqrt_mul_self hc.le,
     mul_div_mul_left _ _ hc.ne']
 
-/-- The spatial part is unchanged when the frame vector is rescaled by a nonzero factor. -/
-theorem spatialPart_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :
+/-- The spatial part is unchanged when the frame vector is rescaled by any factor; the factor is
+nonzero because `F'.n` is timelike. -/
+theorem spatialPart_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (h : F'.n = c • F.n) :
     F'.spatialPart = F.spatialPart := by
-  rw [spatialPart_def, spatialPart_def, h, g.orthogonalProjectionCompl_smul hc]
+  have hc : c ≠ 0 := by
+    rintro rfl
+    simpa [h] using F'.timelike
+  rw [spatialPart_def, spatialPart_def, h, g.orthogonalProjectionCompl_smul_eq hc]
 
-/-- The spatial norm is unchanged when the frame vector is rescaled by a nonzero factor. -/
-theorem spatialNorm_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :
+/-- The spatial norm is unchanged when the frame vector is rescaled. -/
+theorem spatialNorm_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (h : F'.n = c • F.n) :
     F'.spatialNorm = F.spatialNorm := by
   ext p
-  rw [spatialNorm_def, spatialNorm_def, F.spatialPart_eq_of_n_eq_smul F' hc h]
+  rw [spatialNorm_def, spatialNorm_def, F.spatialPart_eq_of_n_eq_smul F' h]
 
-/-- The opening angle is unchanged when the frame vector is rescaled by a nonzero factor. -/
-theorem cosAngle_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :
+/-- The opening angle is unchanged when the frame vector is rescaled. -/
+theorem cosAngle_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (h : F'.n = c • F.n) :
     F'.cosAngle = F.cosAngle := by
   ext a b
-  rw [cosAngle_def, cosAngle_def, F.spatialPart_eq_of_n_eq_smul F' hc h,
-    F.spatialNorm_eq_of_n_eq_smul F' hc h]
+  rw [cosAngle_def, cosAngle_def, F.spatialPart_eq_of_n_eq_smul F' h,
+    F.spatialNorm_eq_of_n_eq_smul F' h]
 
 end Frame
 

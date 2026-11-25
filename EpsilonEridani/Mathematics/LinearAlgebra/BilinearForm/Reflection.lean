@@ -6,11 +6,12 @@ Authors: Joseph Tooby-Smith, Wouter Deconinck
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Reflection
 public import Mathlib.LinearAlgebra.RootSystem.OfBilinear
-public import Mathlib.LinearAlgebra.Transvection.Basic
-public import Mathlib.Tactic.FieldSimp
-public import Mathlib.Tactic.Module
+import Mathlib.LinearAlgebra.Transvection.Basic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Module
 
 /-!
 # Reflection in the hyperplane orthogonal to a non-null vector

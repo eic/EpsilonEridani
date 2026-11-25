@@ -6,8 +6,6 @@ Authors: Joseph Tooby-Smith
 module
 
 public import Mathlib
-public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection
-public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection
 /-!
 
 # Deep Inelastic Scattering Kinematics
@@ -16,12 +14,9 @@ This module introduces the abstract bilinear form `Bilin` used to evaluate Loren
 scalar products, with its symmetric square expansions, and a minimal kinematic record with the
 canonical DIS invariants.
 
-Since `Bilin V` is an abbreviation for `LinearMap.BilinForm ℝ V`, the generic API of
-`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection` and
-`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection` applies to it by dot notation:
-the projection `g.orthogonalProjectionCompl u` onto the `g`-orthogonal complement of a non-null
-vector and the reflections `g.reflection u`. Rank-one forms `(v, w) ↦ g a v * g b w` are Mathlib's
-`LinearMap.BilinForm.linMulLin (g a) (g b)`.
+Since `Bilin V` is an abbreviation for `LinearMap.BilinForm ℝ V`, the `LinearMap.BilinForm` API
+applies to it by dot notation; for instance, rank-one forms `(v, w) ↦ g a v * g b w` are
+Mathlib's `LinearMap.BilinForm.linMulLin (g a) (g b)`.
 
 -/
 

@@ -5,11 +5,10 @@ Authors: Wouter Deconinck, Joseph Tooby-Smith
 -/
 module
 
-public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.BasicExtensions
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
-public import Mathlib.LinearAlgebra.Reflection
-public import Mathlib.Tactic.FieldSimp
-public import Mathlib.Tactic.Module
+import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.BasicExtensions
+import Mathlib.LinearAlgebra.Reflection
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Orthogonal projection along a non-null vector
@@ -20,7 +19,7 @@ For a bilinear form `g` on a vector space `V` over a field `K` and a vector `u` 
 onto the `g`-orthogonal complement of `u`, the vectors `v` with `g v u = 0`. It is
 `Module.preReflection u f` for the functional `f = g · u / g u u`, and its pairing reduces to the
 expansion `LinearMap.BilinForm.apply_sub_smul_sub_smul` of `g` on two vectors shifted along `u`.
-The reflection in the same hyperplane is `LinearMap.BilinForm.reflection` in
+For symmetric `g`, the reflection in the same hyperplane is `LinearMap.BilinForm.reflection` in
 `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection`. The two-vector analogue of
 the projection, along a light-cone pair, is `LinearMap.BilinForm.LightConeBasis.transverseProj` in
 `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
@@ -130,7 +129,7 @@ lemma orthogonalProjectionCompl_pairing (g : BilinForm K V) (u v w : V) :
   ring
 
 /-- The projection depends on `u` only through the line `K ∙ u`. -/
-lemma orthogonalProjectionCompl_smul (g : BilinForm K V) {c : K} (hc : c ≠ 0) (u : V) :
+lemma orthogonalProjectionCompl_smul_eq (g : BilinForm K V) {c : K} (hc : c ≠ 0) (u : V) :
     g.orthogonalProjectionCompl (c • u) = g.orthogonalProjectionCompl u := by
   ext v
   rcases eq_or_ne (g u u) 0 with hu | hu

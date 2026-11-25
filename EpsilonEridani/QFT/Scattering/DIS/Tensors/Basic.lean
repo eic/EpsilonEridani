@@ -6,9 +6,11 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
-public import EpsilonEridani.Mathematics.LinearAlgebra.SesquilinearForm.Basic
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness
+import EpsilonEridani.Mathematics.LinearAlgebra.SesquilinearForm.Basic
 /-!
 
 # DIS Tensors
@@ -19,7 +21,7 @@ This module introduces tensor objects for inclusive DIS:
   to a vector/axial-vector exchange, whose parity-odd part is the contraction
   `ε(·, ·, k, k')` of a supplied alternating four-form `ε`.
 - Uses the reflections `LinearMap.BilinForm.reflection` of
-  `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection` as concrete
+  `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection` as concrete
   elements of the stabilizer of the kinematics inside the `g`-isometry group
   (`reflection_isKinematicStabilizer`).
 - An abstract hadronic tensor with explicit Lorentz-covariance, symmetry and
@@ -405,14 +407,14 @@ lemma pTransverse_def (g : Bilin V) (K : DisKinematics V) :
   (rfl)
 
 /-- The explicit formula `p_T = p - (p·q / q²) q` for the transverse hadron momentum. -/
-lemma pTransverse_apply (g : Bilin V) (K : DisKinematics V) :
+lemma pTransverse_eq_sub_smul (g : Bilin V) (K : DisKinematics V) :
     pTransverse g K = K.p - (g K.p K.q / g K.q K.q) • K.q :=
   g.orthogonalProjectionCompl_apply _ _
 
 /-- Pointwise pairing of the transverse hadron momentum against a vector. -/
 lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
     g (pTransverse g K) v = g K.p v - (g K.p K.q / g K.q K.q) * g K.q v := by
-  simp only [pTransverse_apply, map_sub, map_smul,
+  simp only [pTransverse_eq_sub_smul, map_sub, map_smul,
     LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
 
 /-- The transverse hadron momentum is `g`-orthogonal to `q`. -/
@@ -425,7 +427,7 @@ lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q 
 lemma apply_p_eq_apply_pTransverse {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
     {v : V} (hleft : W K.q v = 0) : W K.p v = W (pTransverse g K) v := by
   have hp : K.p = pTransverse g K + (g K.p K.q / g K.q K.q) • K.q := by
-    rw [pTransverse_apply, sub_add_cancel]
+    rw [pTransverse_eq_sub_smul, sub_add_cancel]
   rw [hp, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hleft, smul_zero,
     add_zero]
 
@@ -515,7 +517,7 @@ lemma pairing_invariant_of_fixed (g : Bilin V) (K : DisKinematics V) {f : V →�
 lemma stabilizer_fixes_pTransverse (g : Bilin V) (K : DisKinematics V) {f : V →ₗ[ℝ] V}
     (hf : IsKinematicStabilizer g K f) :
     f (pTransverse g K) = pTransverse g K := by
-  simp only [pTransverse_apply, map_sub, map_smul, hf.fixes_p,
+  simp only [pTransverse_eq_sub_smul, map_sub, map_smul, hf.fixes_p,
     hf.fixes_q]
 
 /-- A properly covariant tensor annihilates `p_T` against any vector that a determinant-one
@@ -1153,7 +1155,7 @@ lemma not_isLorentzCovariant_wWit : ¬ IsLorentzCovariant gWit kWit wWit := by
   have h : wWit ((0, 0, 1) : ℝ × ℝ × ℝ) ((1, 0, 0) : ℝ × ℝ × ℝ) = 0 :=
     covariant_spectator_offDiagonal_zero gWit kWit wWit gWit_isSymm hW
       (u := (0, 0, 1)) (v := (1, 0, 0)) (fun _ => by norm_num) (by simp)
-      (by simp [pTransverse_apply]) (by norm_num)
+      (by simp [pTransverse_eq_sub_smul]) (by norm_num)
   norm_num at h
 
 /-- Corollary: `Hadronic.Assumptions` is not satisfied by every symmetric conserved tensor,
@@ -1181,7 +1183,7 @@ def uniquenessWit : UniquenessAssumptions gWit kWit where
 /-- The transverse hadron momentum of the witness kinematics is `p` itself, since `p` is
 already `gWit`-orthogonal to `q`. -/
 @[simp] lemma pTransverse_kWit : pTransverse gWit kWit = ((1, 0, 0) : ℝ × ℝ × ℝ) := by
-  rw [pTransverse_apply]
+  rw [pTransverse_eq_sub_smul]
   simp
 
 /-- **`SpectatorAssumptions` is satisfiable.** On the witness kinematics the spectator
