@@ -44,6 +44,8 @@ live in `EpsilonEridani.Mathematics.Analysis.Asymptotics.ApproximatesToOrder`:
 * `EpsilonEridani.ApproximatesToOrder.of_add_mul_pow`: the complementary
   fact that the correction is genuinely subleading — adding it does not disturb the accuracy
   the leading-power term already had.
+* `coeff_unique_of_leadingPower_zero`: when the structure function vanishes at leading power, its
+  first nonvanishing correction is unique.
 * `monomialKpc` and `monomialKpc_leadingPower_not_approx_succ`: the interface is inhabited
   with a *nonzero* coefficient, so the sharpness statement is not vacuously true.
 
@@ -133,6 +135,19 @@ lemma leadingPower_not_approx_succ (K : Kpc W n) (hc : K.coeff ≠ 0) :
 
 end Kpc
 
+/-- **A structure function that vanishes at leading power is determined, at the first
+nonvanishing order, entirely by its kinematic power correction.**
+
+arXiv:2510.14496 reports exactly this situation for SIDIS: structure functions that vanish
+in the leading-power TMD factorization theorem, the longitudinal-photon contributions among
+them, receive their first prediction from the kinematic power corrections. What is proved
+here is that such a prediction is unique — there is no freedom left in the coefficient. -/
+lemma coeff_unique_of_leadingPower_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
+    (h₁ : ApproximatesToOrder W (fun lam => c₁ * lam ^ n) (n + 1))
+    (h₂ : ApproximatesToOrder W (fun lam => c₂ * lam ^ n) (n + 1)) :
+    c₁ = c₂ :=
+  ApproximatesToOrder.coeff_unique (Wlp := fun _ => 0) (by simpa using h₁) (by simpa using h₂)
+
 /-- A structure function whose leading-power term vanishes and whose order-`n` kinematic
 power correction is the whole of it.
 
@@ -141,7 +156,8 @@ This witnesses that `Kpc` is inhabited with a *nonzero* coefficient, so that
 def monomialKpc (n : ℕ) : Kpc (fun lam : ℝ => lam ^ n) n where
   leadingPower := fun _ => 0
   coeff := 1
-  remainder := (ApproximatesToOrder.refl (fun lam : ℝ => lam ^ n) (n + 1)).congr fun lam => by ring
+  remainder :=
+    (ApproximatesToOrder.refl (fun lam : ℝ => lam ^ n) (n + 1)).congr_sub fun lam => by ring
 
 /-- **The order gap is real.** `λ ^ n` is not `O(λ ^ (n + 1))` as `λ → 0⁺`, so the vanishing
 leading-power term of `monomialKpc` is accurate to order `n` and no further.
@@ -176,7 +192,7 @@ lemma isBigO_inv_pow_atTop {W Wapp : ℝ → ℝ} {n : ℕ} (h : ApproximatesToO
     (fun Q : ℝ => W (powerRatio qT Q) - Wapp (powerRatio qT Q)) =O[atTop]
       fun Q : ℝ => (Q ^ n)⁻¹ := by
   have h' : (fun lam : ℝ => W lam - Wapp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n :=
-    approximatesToOrder_iff.1 h
+    approximatesToOrder_def.1 h
   have hcomp := h'.comp_tendsto (tendsto_powerRatio_atTop hqT)
   have hconv : (fun Q : ℝ => powerRatio qT Q ^ n) =O[atTop] fun Q : ℝ => (Q ^ n)⁻¹ := by
     refine ((isBigO_refl (fun Q : ℝ => (Q ^ n)⁻¹) atTop).const_mul_left (qT ^ n)).congr_left ?_

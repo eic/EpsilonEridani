@@ -157,7 +157,7 @@ theorem approximatesToOrder_effectiveAmplitude {m n : ℕ} (hmn : m ≤ n) (M c 
     fun ε => by
       simp only [effectiveAmplitude_eq_sum_range, add_right_comm m d 1, sum_range_add,
         add_sub_cancel_left, smul_eq_mul, mul_comm (ε ^ _)]
-  refine approximatesToOrder_iff.2 <|
+  refine approximatesToOrder_def.2 <|
     (IsBigO.fun_sum fun j _ => ?_).congr_left fun ε => (hdiff ε).symm
   exact ((isBigO_pow_pow (Nat.le_add_right (m + 1) j)).mono nhdsWithin_le_nhds).const_mul_left _
 
@@ -224,14 +224,25 @@ def matchingMatrix (M : A → FreeMonoid B → ℝ) (k : ℕ) : Matrix A (P.tota
 theorem matchingMatrix_apply (M : A → FreeMonoid B → ℝ) (k : ℕ) (a : A)
     (o : P.totalDegreePiece k) : P.matchingMatrix M k a o = M a o := (rfl)
 
-/-- Applying the matching matrix at total degree `k` to a coefficient assignment gives, for each
-amplitude, the sum of `c o * M a o` over the operators `o` of total degree `k`: when `k ≤ n`, this
-is the coefficient of `ε ^ k` in the effective-theory amplitude through total degree `n`. -/
-theorem matchingMatrix_mulVec_apply (M : A → FreeMonoid B → ℝ) (k : ℕ) (c : FreeMonoid B → ℝ)
-    (a : A) :
-    (P.matchingMatrix M k).mulVec (fun o => c o) a = ∑ o ∈ P.totalDegreePiece k, c o * M a o := by
-  simp only [Matrix.mulVec_apply_eq_sum, matchingMatrix_apply, mul_comm (M a _)]
-  exact sum_coe_sort (P.totalDegreePiece k) fun o => c o * M a o
+/-- Applying the matching matrix at total degree `k` to a vector `v` of coefficients of the
+operators of total degree `k` gives, for each amplitude `a`, the sum of `M a o * v o` over those
+operators. -/
+theorem matchingMatrix_mulVec_apply (M : A → FreeMonoid B → ℝ) (k : ℕ)
+    (v : P.totalDegreePiece k → ℝ) (a : A) :
+    (P.matchingMatrix M k).mulVec v a = ∑ o : P.totalDegreePiece k, M a o * v o := by
+  simp only [Matrix.mulVec_apply_eq_sum, matchingMatrix_apply]
+
+/-- The effective-theory amplitude as a polynomial in the power-counting parameter whose
+coefficient of `ε ^ k` is the matching matrix at total degree `k` applied to the coefficient
+assignment. -/
+theorem effectiveAmplitude_eq_sum_range_mulVec (n : ℕ) (M : A → FreeMonoid B → ℝ)
+    (c : FreeMonoid B → ℝ) (a : A) (ε : ℝ) :
+    P.effectiveAmplitude n (M a) c ε =
+      ∑ k ∈ range (n + 1), ε ^ k • (P.matchingMatrix M k).mulVec (fun o => c o) a := by
+  rw [effectiveAmplitude_eq_sum_range]
+  refine sum_congr rfl fun k _ => ?_
+  rw [matchingMatrix_mulVec_apply, ← sum_coe_sort (P.totalDegreePiece k)]
+  simp only [mul_comm]
 
 /-! ### Uniqueness -/
 
@@ -249,19 +260,17 @@ theorem IsMatching.isMatching_iff_mulVec_sub_eq_zero (hc : P.IsMatching n F M c)
   have hdiff : ∀ a ε, P.effectiveAmplitude n (M a) c' ε - P.effectiveAmplitude n (M a) c ε =
       ∑ k ∈ range (n + 1), ε ^ k • (P.matchingMatrix M k).mulVec (fun o => c' o - c o) a :=
     fun a ε => by
-      have hk := fun k => P.matchingMatrix_mulVec_apply M k (c' - c) a
-      simp only [Pi.sub_apply] at hk
-      rw [← effectiveAmplitude_sub_right, effectiveAmplitude_eq_sum_range]
-      simp only [hk, Pi.sub_apply]
+      rw [← effectiveAmplitude_sub_right, effectiveAmplitude_eq_sum_range_mulVec]
+      simp only [Pi.sub_apply]
   constructor
   · intro hc' k hk
     funext a
     rw [Pi.zero_apply]
     refine (isBigO_sum_range_pow_smul_pow_succ_iff hl
       (a := fun k => (P.matchingMatrix M k).mulVec (fun o => c' o - c o) a)).1 ?_ k hk
-    refine (approximatesToOrder_iff.1 ((hc' a).symm.trans (hc a))).congr_left (hdiff a)
+    refine (approximatesToOrder_def.1 ((hc' a).symm.trans (hc a))).congr_left (hdiff a)
   · intro h a
-    refine (hc a).congr fun ε => ?_
+    refine (hc a).congr_sub fun ε => ?_
     rw [← sub_eq_zero, sub_sub_sub_cancel_left, hdiff]
     exact sum_eq_zero fun k hk => by
       rw [h k (Nat.lt_succ_iff.1 (mem_range.1 hk)), Pi.zero_apply, smul_zero]

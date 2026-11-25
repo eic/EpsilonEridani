@@ -26,7 +26,7 @@ such expansions depends.
 ## Main definitions
 
 * `ApproximatesToOrder W Wapp n`: `W λ - Wapp λ = O(λ ^ n)` as `λ → 0⁺`
-  (`approximatesToOrder_iff`).
+  (`approximatesToOrder_def`).
 
 ## Main results
 
@@ -34,12 +34,10 @@ such expansions depends.
   order.
 * `ApproximatesToOrder.refl`, `ApproximatesToOrder.symm`, `ApproximatesToOrder.trans`: the
   relation to a fixed order is reflexive, symmetric and transitive.
-* `ApproximatesToOrder.congr`: it depends on the two functions only through their difference.
+* `ApproximatesToOrder.congr_sub`: it depends on the two functions only through their difference.
 * `ApproximatesToOrder.coeff_unique`: the coefficient of a correction that improves an
   approximation from order `n` to order `n + 1` is unique: it is fixed by the expanded function
   and its lower-order approximation, and is not a convention.
-* `ApproximatesToOrder.coeff_unique_of_approx_zero`: the same uniqueness when the lower-order
-  approximation vanishes.
 * `ApproximatesToOrder.of_add_mul_pow`: a correction is genuinely subleading: without it, the
   approximation is still accurate to order `n`.
 * `ApproximatesToOrder.not_approximatesToOrder_succ_of_coeff_ne_zero`: a nonvanishing correction
@@ -59,7 +57,7 @@ def ApproximatesToOrder (W Wapp : ℝ → ℝ) (n : ℕ) : Prop :=
   (fun lam => W lam - Wapp lam) =O[𝓝[>] 0] fun lam => lam ^ n
 
 /-- Unfolding `ApproximatesToOrder` into its remainder bound. -/
-theorem approximatesToOrder_iff {W Wapp : ℝ → ℝ} {n : ℕ} :
+theorem approximatesToOrder_def {W Wapp : ℝ → ℝ} {n : ℕ} :
     ApproximatesToOrder W Wapp n ↔ (fun lam => W lam - Wapp lam) =O[𝓝[>] 0] fun lam => lam ^ n :=
   Iff.rfl
 
@@ -75,7 +73,7 @@ lemma ApproximatesToOrder.mono {W Wapp : ℝ → ℝ} {m n : ℕ}
 
 /-- An approximation accurate to order `n` stays so when the functions are changed without
 changing their difference. -/
-lemma ApproximatesToOrder.congr {W Wapp W' Wapp' : ℝ → ℝ} {n : ℕ}
+lemma ApproximatesToOrder.congr_sub {W Wapp W' Wapp' : ℝ → ℝ} {n : ℕ}
     (h : ApproximatesToOrder W Wapp n) (he : ∀ lam, W lam - Wapp lam = W' lam - Wapp' lam) :
     ApproximatesToOrder W' Wapp' n :=
   Asymptotics.IsBigO.congr_left h he
@@ -106,19 +104,10 @@ lemma ApproximatesToOrder.coeff_unique {W Wlp : ℝ → ℝ} {n : ℕ} {c₁ c�
     c₁ = c₂ := by
   have hdiff : (fun lam : ℝ => (c₂ - c₁) * lam ^ n) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) :=
-    (approximatesToOrder_iff.1 (h₂.symm.trans h₁)).congr_left fun lam => by ring
+    (approximatesToOrder_def.1 (h₂.symm.trans h₁)).congr_left fun lam => by ring
   have hz := eq_zero_of_isBigO_pow_smul_pow_succ (nhdsGT_le_nhdsNE 0)
     (hdiff.congr_left fun lam => by rw [smul_eq_mul, mul_comm])
   linarith
-
-/-- **A function that vanishes at lower order is determined, at the first nonvanishing order,
-entirely by its correction coefficient.** If two monomial corrections each approximate it to
-order `n + 1`, their coefficients are equal, so no freedom is left in the coefficient. -/
-lemma ApproximatesToOrder.coeff_unique_of_approx_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
-    (h₁ : ApproximatesToOrder W (fun lam => c₁ * lam ^ n) (n + 1))
-    (h₂ : ApproximatesToOrder W (fun lam => c₂ * lam ^ n) (n + 1)) :
-    c₁ = c₂ :=
-  ApproximatesToOrder.coeff_unique (Wlp := fun _ => 0) (by simpa using h₁) (by simpa using h₂)
 
 /-- **The lower-order approximation keeps its own accuracy.** If including the order-`n`
 coefficient gives an approximation accurate to order `n + 1`, then the lower-order approximation
@@ -127,14 +116,14 @@ lemma ApproximatesToOrder.of_add_mul_pow {W Wlp : ℝ → ℝ} {n : ℕ} {c : �
     (h : ApproximatesToOrder W (fun lam => Wlp lam + c * lam ^ n) (n + 1)) :
     ApproximatesToOrder W Wlp n := by
   have hlow : (fun lam : ℝ => W lam - (Wlp lam + c * lam ^ n)) =O[𝓝[>] 0]
-      fun lam : ℝ => lam ^ n := approximatesToOrder_iff.1 (h.mono (Nat.le_succ n))
+      fun lam : ℝ => lam ^ n := approximatesToOrder_def.1 (h.mono (Nat.le_succ n))
   have hcorr : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n :=
     (isBigO_refl (fun lam : ℝ => lam ^ n) (𝓝[>] 0)).const_mul_left c
   have hsum : (fun lam : ℝ => W lam - Wlp lam) =O[𝓝[>] 0] fun lam : ℝ => lam ^ n := by
     refine (hlow.add hcorr).congr_left ?_
     intro lam
     ring
-  exact approximatesToOrder_iff.2 hsum
+  exact approximatesToOrder_def.2 hsum
 
 /-- **A nonvanishing correction is detectable.** If the order-`n` coefficient is nonzero then the
 lower-order approximation alone is *not* accurate to order `n + 1`.
@@ -146,7 +135,7 @@ lemma ApproximatesToOrder.not_approximatesToOrder_succ_of_coeff_ne_zero {W Wlp :
     (hc : c ≠ 0) : ¬ ApproximatesToOrder W Wlp (n + 1) := by
   intro hlp
   have hzero : ApproximatesToOrder W (fun lam => Wlp lam + 0 * lam ^ n) (n + 1) :=
-    hlp.congr fun lam => by ring
+    hlp.congr_sub fun lam => by ring
   exact hc (h.coeff_unique hzero)
 
 end EpsilonEridani
