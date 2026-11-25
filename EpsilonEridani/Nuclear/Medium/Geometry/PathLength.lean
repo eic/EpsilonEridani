@@ -112,7 +112,7 @@ def pathParameters (S : Set E) (x v : E) : Set ℝ :=
 @[simp]
 theorem mem_pathParameters {S : Set E} {x v : E} {s : ℝ} :
     s ∈ pathParameters S x v ↔ 0 ≤ s ∧ x + s • v ∈ S :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- The set of path parameters is the preimage of `S` under the ray map, restricted to `Ici 0`. -/
 theorem pathParameters_eq_preimage_inter (S : Set E) (x v : E) :
