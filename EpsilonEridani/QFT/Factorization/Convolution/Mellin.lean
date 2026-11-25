@@ -105,20 +105,6 @@ theorem mellinDis_def {f : ℝ → ℝ} {N : ℂ} :
     mellinDis f N = ∫ x in Set.Ioc (0 : ℝ) 1, (x : ℂ) ^ (N - 1) * (f x : ℂ) :=
   (rfl)
 
-/-- The Mellin transform only sees `f` on the open unit interval. -/
-theorem mellinDis_congr {f g : ℝ → ℝ} (h : Set.EqOn f g (Set.Ioo (0 : ℝ) 1)) (N : ℂ) :
-    mellinDis f N = mellinDis g N := by
-  rw [mellinDis_def, mellinDis_def, MeasureTheory.integral_Ioc_eq_integral_Ioo,
-    MeasureTheory.integral_Ioc_eq_integral_Ioo]
-  exact MeasureTheory.setIntegral_congr_fun measurableSet_Ioo fun x hx => by rw [h hx]
-
-/-- Convergence of the Mellin transform only depends on `f` on the open unit interval. -/
-theorem mellinDisConvergent_congr {f g : ℝ → ℝ} (h : Set.EqOn f g (Set.Ioo (0 : ℝ) 1)) {N : ℂ} :
-    MellinDisConvergent f N ↔ MellinDisConvergent g N := by
-  rw [mellinDisConvergent_def, mellinDisConvergent_def, integrableOn_Ioc_iff_integrableOn_Ioo,
-    integrableOn_Ioc_iff_integrableOn_Ioo]
-  exact MeasureTheory.integrableOn_congr_fun (fun x hx => by rw [h hx]) measurableSet_Ioo
-
 /-- The Mellin transform of the zero distribution vanishes. -/
 lemma mellinDis_zero (N : ℂ) : mellinDis (fun _ => 0) N = 0 := by
   simp [mellinDis]
@@ -129,32 +115,16 @@ lemma mellinDis_zero (N : ℂ) : mellinDis (fun _ => 0) N = 0 := by
 
 -/
 
-/-- The Mellin integrand of `c * f` is `c` times the Mellin integrand of `f`. -/
-private lemma cpow_mul_ofReal_const_mul (c : ℝ) (f : ℝ → ℝ) (N : ℂ) :
-    (fun x : ℝ => (x : ℂ) ^ (N - 1) * ((c * f x : ℝ) : ℂ))
-      = fun x : ℝ => (c : ℂ) * ((x : ℂ) ^ (N - 1) * (f x : ℂ)) := by
-  funext x
-  push_cast
-  ring
-
 /-- The Mellin transform is homogeneous. No convergence hypothesis is needed: both sides are the
 same Bochner integral. -/
 lemma mellinDis_const_mul (c : ℝ) (f : ℝ → ℝ) (N : ℂ) :
     mellinDis (fun x => c * f x) N = (c : ℂ) * mellinDis f N := by
-  rw [mellinDis, cpow_mul_ofReal_const_mul, MeasureTheory.integral_const_mul, mellinDis]
-
-/-- Convergence of the Mellin transform is preserved by constant multiples. -/
-lemma MellinDisConvergent.const_mul {f : ℝ → ℝ} {N : ℂ} (h : MellinDisConvergent f N) (c : ℝ) :
-    MellinDisConvergent (fun x => c * f x) N := by
-  rw [mellinDisConvergent_def, cpow_mul_ofReal_const_mul]
-  exact (mellinDisConvergent_def.mp h).const_mul _
-
-/-- For a nonzero constant `c`, the transform of `c * f` converges exactly where that of `f`
-does. -/
-lemma mellinDisConvergent_const_mul_iff {f : ℝ → ℝ} {N : ℂ} {c : ℝ} (hc : c ≠ 0) :
-    MellinDisConvergent (fun x => c * f x) N ↔ MellinDisConvergent f N := by
-  refine ⟨fun h => ?_, fun h => h.const_mul c⟩
-  simpa [inv_mul_cancel_left₀ hc] using h.const_mul c⁻¹
+  have h : (fun x : ℝ => (x : ℂ) ^ (N - 1) * ((c * f x : ℝ) : ℂ))
+      = fun x : ℝ => (c : ℂ) • ((x : ℂ) ^ (N - 1) * (f x : ℂ)) := by
+    funext x
+    simp only [Complex.ofReal_mul, smul_eq_mul]
+    ring
+  rw [mellinDis, h, MeasureTheory.integral_smul, mellinDis, smul_eq_mul]
 
 /-- The Mellin transform is additive on the convergence strip. -/
 lemma mellinDis_add (f g : ℝ → ℝ) (N : ℂ)
