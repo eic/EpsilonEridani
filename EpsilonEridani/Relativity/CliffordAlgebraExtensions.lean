@@ -53,6 +53,10 @@ computations, the chiral projectors in the Dirac representation, and the Dirac a
   `spaceTime.diracAdjoint_γ_mul_leftChiralProjector`: `\bar{γ}^μ = γ^μ`, the Dirac adjoint
   exchanges the chiral projectors, and the `V - A` vertex `γ^μ P_L` is its own Dirac adjoint
   (as is `γ^μ P_R`, `spaceTime.diracAdjoint_γ_mul_rightChiralProjector`).
+- `spaceTime.diracBilinear_mul_leftChiralProjector_rightChiralProjector_mulVec`,
+  `spaceTime.diracBilinear_rightChiralProjector_mulVec_rightChiralProjector_mul`: a vertex
+  `Γ P_L`, equivalently `P_R Γ` on the left, annihilates right-handed spinors on either side, and
+  sees only the left-handed parts of the spinors.
 
 ## Implementation notes
 
@@ -692,14 +696,12 @@ lemma isHermitian_rightChiralProjector : rightChiralProjector.IsHermitian := by
   exact (isHermitian_one.add isHermitian_γ5).smul (by simp [IsSelfAdjoint])
 
 /-- Moving a gamma matrix across a chiral projector flips its chirality: `γ^μ P_L = P_R γ^μ`. -/
-@[simp]
 lemma γ_mul_leftChiralProjector (μ : Fin 4) :
     γ μ * leftChiralProjector = rightChiralProjector * γ μ := by
   rw [leftChiralProjector_eq, rightChiralProjector_eq, mul_smul_comm, smul_mul_assoc, mul_sub,
     add_mul, mul_one, one_mul, γ5_mul_γ, sub_eq_add_neg]
 
 /-- Moving a gamma matrix across a chiral projector flips its chirality: `γ^μ P_R = P_L γ^μ`. -/
-@[simp]
 lemma γ_mul_rightChiralProjector (μ : Fin 4) :
     γ μ * rightChiralProjector = leftChiralProjector * γ μ := by
   rw [leftChiralProjector_eq, rightChiralProjector_eq, mul_smul_comm, smul_mul_assoc, mul_add,
@@ -724,7 +726,6 @@ lemma diracAdjoint_diracAdjoint (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
   rw [mul_assoc, γ0_mul_γ0, mul_one]
 
 /-- The Dirac adjoint reverses products. -/
-@[simp]
 lemma diracAdjoint_mul (A B : Matrix (Fin 4) (Fin 4) ℂ) :
     diracAdjoint (A * B) = diracAdjoint B * diracAdjoint A := by
   simp only [diracAdjoint, conjTranspose_mul, mul_assoc]
@@ -799,26 +800,29 @@ lemma diracBilinear_def (ψ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) (
     diracBilinear ψ Γ χ = star ψ ⬝ᵥ (γ0 * Γ) *ᵥ χ := (rfl)
 
 /-- Complex conjugation of a Dirac bilinear: `(\bar{ψ} Γ χ)* = \bar{χ} \bar{Γ} ψ`. -/
+@[simp]
 lemma star_diracBilinear (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
     star (diracBilinear ψ Γ χ) = diracBilinear χ (diracAdjoint Γ) ψ := by
   have hM : γ0 * diracAdjoint Γ = (γ0 * Γ)ᴴ := by
-    rw [diracAdjoint, conjTranspose_mul, isHermitian_γ0.eq, ← mul_assoc, ← mul_assoc,
-      γ0_mul_γ0, one_mul]
+    rw [diracAdjoint_def, conjTranspose_mul, isHermitian_γ0.eq]
+    simp only [← mul_assoc, γ0_mul_γ0, one_mul]
   rw [diracBilinear, diracBilinear, hM, ← star_dotProduct_star, star_mulVec, star_star,
     dotProduct_mulVec]
 
 /-- A matrix acting on the right spinor moves into the bilinear:
 `\bar{ψ} Γ (M χ) = \bar{ψ} (Γ M) χ`. -/
+@[simp]
 lemma diracBilinear_mulVec_right (ψ χ : Fin 4 → ℂ) (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
     diracBilinear ψ Γ (M *ᵥ χ) = diracBilinear ψ (Γ * M) χ := by
   rw [diracBilinear, diracBilinear, mulVec_mulVec, mul_assoc]
 
 /-- A matrix acting on the left spinor moves into the bilinear through its Dirac adjoint:
 `\overline{M ψ} Γ χ = \bar{ψ} (\bar{M} Γ) χ`. -/
+@[simp]
 lemma diracBilinear_mulVec_left (ψ χ : Fin 4 → ℂ) (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
     diracBilinear (M *ᵥ ψ) Γ χ = diracBilinear ψ (diracAdjoint M * Γ) χ := by
   have hM : γ0 * (diracAdjoint M * Γ) = Mᴴ * (γ0 * Γ) := by
-    rw [diracAdjoint, ← mul_assoc, ← mul_assoc, ← mul_assoc, γ0_mul_γ0, one_mul, mul_assoc]
+    simp only [diracAdjoint_def, ← mul_assoc, γ0_mul_γ0, one_mul]
   rw [diracBilinear, diracBilinear, hM, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec]
 
 /-- A Dirac bilinear is conjugate-linear in its left spinor. -/
@@ -862,13 +866,84 @@ lemma diracBilinear_zero_right (ψ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4)
     diracBilinear ψ Γ 0 = 0 := by
   simp [diracBilinear]
 
+/-- A Dirac bilinear is additive in its matrix. -/
+@[simp]
+lemma diracBilinear_add (ψ χ : Fin 4 → ℂ) (Γ Γ' : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ (Γ + Γ') χ = diracBilinear ψ Γ χ + diracBilinear ψ Γ' χ := by
+  simp [diracBilinear, mul_add, add_mulVec, dotProduct_add]
+
+/-- A Dirac bilinear is linear in its matrix. -/
+@[simp]
+lemma diracBilinear_smul (c : ℂ) (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ (c • Γ) χ = c * diracBilinear ψ Γ χ := by
+  simp [diracBilinear, smul_mulVec, dotProduct_smul]
+
+/-- A Dirac bilinear commutes with negation of its left spinor. -/
+@[simp]
+lemma diracBilinear_neg_left (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear (-ψ) Γ χ = -diracBilinear ψ Γ χ := by
+  simp [diracBilinear]
+
+/-- A Dirac bilinear commutes with negation of its right spinor. -/
+@[simp]
+lemma diracBilinear_neg_right (ψ χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ Γ (-χ) = -diracBilinear ψ Γ χ := by
+  simp [diracBilinear, mulVec_neg]
+
+/-- A Dirac bilinear commutes with subtraction in its left spinor. -/
+@[simp]
+lemma diracBilinear_sub_left (ψ ψ' χ : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear (ψ - ψ') Γ χ = diracBilinear ψ Γ χ - diracBilinear ψ' Γ χ := by
+  simp [sub_eq_add_neg]
+
+/-- A Dirac bilinear commutes with subtraction in its right spinor. -/
+@[simp]
+lemma diracBilinear_sub_right (ψ χ χ' : Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ Γ (χ - χ') = diracBilinear ψ Γ χ - diracBilinear ψ Γ χ' := by
+  simp [sub_eq_add_neg]
+
+/-- A vertex ending in `P_L` sees only the left-handed part of the right spinor:
+`\bar{ψ} Γ P_L (P_L χ) = \bar{ψ} Γ P_L χ`. -/
+lemma diracBilinear_mul_leftChiralProjector_leftChiralProjector_mulVec (ψ χ : Fin 4 → ℂ)
+    (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ (Γ * leftChiralProjector) (leftChiralProjector *ᵥ χ) =
+      diracBilinear ψ (Γ * leftChiralProjector) χ := by
+  rw [diracBilinear_mulVec_right, mul_assoc, leftChiralProjector_mul_self]
+
+/-- A vertex ending in `P_L` annihilates a right-handed right spinor:
+`\bar{ψ} Γ P_L (P_R χ) = 0`. -/
+lemma diracBilinear_mul_leftChiralProjector_rightChiralProjector_mulVec (ψ χ : Fin 4 → ℂ)
+    (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear ψ (Γ * leftChiralProjector) (rightChiralProjector *ᵥ χ) = 0 := by
+  rw [diracBilinear_mulVec_right, mul_assoc, leftChiralProjector_mul_rightChiralProjector,
+    mul_zero, diracBilinear_zero]
+
+/-- A vertex starting with `P_R` sees only the left-handed part of the left spinor, since
+`\overline{P_L ψ} = \bar{ψ} P_R`: `\overline{P_L ψ} P_R Γ χ = \bar{ψ} P_R Γ χ`. -/
+lemma diracBilinear_leftChiralProjector_mulVec_rightChiralProjector_mul (ψ χ : Fin 4 → ℂ)
+    (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear (leftChiralProjector *ᵥ ψ) (rightChiralProjector * Γ) χ =
+      diracBilinear ψ (rightChiralProjector * Γ) χ := by
+  rw [diracBilinear_mulVec_left, diracAdjoint_leftChiralProjector, ← mul_assoc,
+    rightChiralProjector_mul_self]
+
+/-- A vertex starting with `P_R` annihilates a right-handed left spinor:
+`\overline{P_R ψ} P_R Γ χ = 0`. -/
+lemma diracBilinear_rightChiralProjector_mulVec_rightChiralProjector_mul (ψ χ : Fin 4 → ℂ)
+    (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+    diracBilinear (rightChiralProjector *ᵥ ψ) (rightChiralProjector * Γ) χ = 0 := by
+  rw [diracBilinear_mulVec_left, diracAdjoint_rightChiralProjector, ← mul_assoc,
+    leftChiralProjector_mul_rightChiralProjector, zero_mul, diracBilinear_zero]
+
 /-- The `V - A` vertex `γ^μ P_L` is its own Dirac adjoint. -/
+@[simp]
 lemma diracAdjoint_γ_mul_leftChiralProjector (μ : Fin 4) :
     diracAdjoint (γ μ * leftChiralProjector) = γ μ * leftChiralProjector := by
   rw [diracAdjoint_mul, diracAdjoint_leftChiralProjector, diracAdjoint_γ,
     γ_mul_leftChiralProjector]
 
 /-- The `V + A` vertex `γ^μ P_R` is its own Dirac adjoint. -/
+@[simp]
 lemma diracAdjoint_γ_mul_rightChiralProjector (μ : Fin 4) :
     diracAdjoint (γ μ * rightChiralProjector) = γ μ * rightChiralProjector := by
   rw [diracAdjoint_mul, diracAdjoint_rightChiralProjector, diracAdjoint_γ,
