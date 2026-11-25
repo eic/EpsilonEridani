@@ -14,6 +14,10 @@ This module introduces the abstract bilinear form `Bilin` used to evaluate Loren
 scalar products, with its symmetric square expansions, and a minimal kinematic record with the
 canonical DIS invariants.
 
+Since `Bilin V` is an abbreviation for `LinearMap.BilinForm ℝ V`, the `LinearMap.BilinForm` API
+applies to it by dot notation; for instance, rank-one forms `(v, w) ↦ g a v * g b w` are
+Mathlib's `LinearMap.BilinForm.linMulLin (g a) (g b)`.
+
 -/
 
 @[expose] public section

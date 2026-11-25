@@ -441,7 +441,7 @@ noncomputable def kFour : DisKinematics (Fin 4 → ℝ) where
 `q`-component of `p` is exactly cancelled. -/
 @[simp] lemma pTransverse_kFour : pTransverse gFour kFour = ![1, 0, 0, 0] := by
   ext i
-  fin_cases i <;> simp [pTransverse]
+  fin_cases i <;> simp [pTransverse_eq_sub_smul]
 
 /-- The parity-odd structure `ε(v, w, p, q)` of the witness kinematics on `ℝ⁴`: `aOfAlt` at
 the volume form of the standard basis `Pi.basisFun ℝ (Fin 4)`, whose contraction with
