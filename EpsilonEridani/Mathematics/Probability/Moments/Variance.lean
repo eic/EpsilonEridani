@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.Probability.Moments.Variance
 
 /-!
 # The variance of a function with values in a real inner product space
@@ -29,6 +30,8 @@ coherent/incoherent decomposition of a configuration-averaged cross section.
 ## Main results
 
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq`: `∫ ‖f - ∫ f‖² = ∫ ‖f‖² - ‖∫ f‖²`.
+* `MeasureTheory.MemLp.norm_integral_sq_le_integral_norm_sq`: `‖∫ f‖² ≤ ∫ ‖f‖²`, the
+  non-negativity of the mean squared deviation; this holds in any real normed space.
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq_eq_zero_iff`: the mean squared deviation
   vanishes if and only if `f` is almost everywhere equal to its mean; this holds in any real
   normed space.
@@ -61,6 +64,19 @@ theorem integral_norm_sub_integral_sq [InnerProductSpace ℝ E] [CompleteSpace E
     integral_inner hf₁, real_inner_self_eq_norm_sq, integral_const]
   simp only [probReal_univ, one_smul]
   ring
+
+/-- **The squared mean is at most the second moment.** For a square-integrable function `f` with
+values in a real normed space and a probability measure `μ`, `‖∫ f dμ‖² ≤ ∫ ‖f‖² dμ`. In an inner
+product space the difference is the mean squared deviation `integral_norm_sub_integral_sq`; in
+general, `‖∫ f‖ ≤ ∫ ‖f‖` reduces the claim to the non-negativity of the real variance of `‖f‖`. -/
+theorem norm_integral_sq_le_integral_norm_sq [NormedSpace ℝ E] [IsProbabilityMeasure μ]
+    (hf : MemLp f 2 μ) : ‖∫ x, f x ∂μ‖ ^ 2 ≤ ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  have h := ProbabilityTheory.variance_nonneg (fun x ↦ ‖f x‖) μ
+  rw [ProbabilityTheory.variance_eq_sub hf.norm, sub_nonneg] at h
+  calc ‖∫ x, f x ∂μ‖ ^ 2 ≤ (∫ x, ‖f x‖ ∂μ) ^ 2 := by
+        gcongr
+        exact norm_integral_le_integral_norm _
+    _ ≤ ∫ x, ‖f x‖ ^ 2 ∂μ := by simpa using h
 
 /-- **Vanishing of the variance.** For a square-integrable function `f` with values in a real
 normed space and a finite measure `μ`, the mean squared deviation of `f` from its mean vanishes

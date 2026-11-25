@@ -156,13 +156,8 @@ cross section. -/
 theorem coherentCrossSection_le_totalDiffractiveCrossSection [IsProbabilityMeasure μ]
     {A : Ω → E} (hA : MemLp A 2 μ) :
     coherentCrossSection μ A ≤ totalDiffractiveCrossSection μ A := by
-  have h := variance_nonneg (fun ω ↦ ‖A ω‖) μ
-  rw [variance_eq_sub hA.norm, sub_nonneg] at h
   rw [coherentCrossSection_def, totalDiffractiveCrossSection_def]
-  calc ‖∫ ω, A ω ∂μ‖ ^ 2 ≤ (∫ ω, ‖A ω‖ ∂μ) ^ 2 := by
-        gcongr
-        exact norm_integral_le_integral_norm _
-    _ ≤ ∫ ω, ‖A ω‖ ^ 2 ∂μ := by simpa using h
+  exact hA.norm_integral_sq_le_integral_norm_sq
 
 /-- The incoherent cross section of a square-integrable amplitude is non-negative. -/
 theorem incoherentCrossSection_nonneg [IsProbabilityMeasure μ] {A : Ω → E} (hA : MemLp A 2 μ) :
