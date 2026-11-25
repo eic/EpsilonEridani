@@ -33,11 +33,12 @@ the vertex `Γ`, and is proved for `flavorBilinear`.
 ## Main results
 
 * Rephasing. Multiplying the quark spinors by scalars changes the flavour-summed bilinear exactly as
-  multiplying `V` by diagonal matrices on both sides does (`flavorBilinear_smul`,
-  `chargedCurrent_smul`). So a rephasing of the quark spinors combined with the compensating change
-  `V ↦ diag(a) V diag(b)⁻¹` of the mixing matrix leaves it invariant (`flavorBilinear_rephase`,
-  `chargedCurrent_rephase`). For a unitary `V` the compensating matrix is the action of TauCeti's
-  diagonal torus `TauCeti.unitaryTorusHom` on `U(n)`, so it is again unitary
+  multiplying `V` by diagonal matrices on both sides does (`flavorBilinear_smul_smul`,
+  `chargedCurrent_smul_smul`). So a rephasing of the quark spinors combined with the compensating
+  change `V ↦ diag(a) V diag(b)⁻¹` of the mixing matrix leaves it invariant
+  (`flavorBilinear_rephase`, `chargedCurrent_rephase`). For a unitary `V` the compensating matrix
+  is the action of TauCeti's diagonal torus `TauCeti.unitaryTorusHom` on `U(n)`, so it is again
+  unitary
   (`flavorBilinear_unitaryTorusHom_mul_mul_inv`, `chargedCurrent_unitaryTorusHom_mul_mul_inv`).
 * Chirality. Only left-handed components contribute: projecting the up- or down-type spinors onto
   their left-handed parts leaves the current unchanged (`chargedCurrent_leftChiralProjector_up`,
@@ -82,22 +83,44 @@ lemma flavorBilinear_def (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : 
 
 /-- The flavor-summed bilinear is additive in the vertex. -/
 @[simp]
-lemma flavorBilinear_add_vertex (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ)
+lemma flavorBilinear_add (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ)
     (Γ Γ' : Matrix (Fin 4) (Fin 4) ℂ) :
     flavorBilinear V u d (Γ + Γ') = flavorBilinear V u d Γ + flavorBilinear V u d Γ' := by
   simp only [flavorBilinear_def, diracBilinear_add, mul_add, Finset.sum_add_distrib]
 
 /-- The flavor-summed bilinear is linear in the vertex. -/
 @[simp]
-lemma flavorBilinear_smul_vertex (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ)
+lemma flavorBilinear_smul (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ)
     (c : ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
     flavorBilinear V u d (c • Γ) = c * flavorBilinear V u d Γ := by
   simp only [flavorBilinear_def, diracBilinear_smul, Finset.mul_sum, mul_left_comm]
 
+/-- The flavor-summed bilinear with the zero vertex vanishes. -/
+@[simp]
+lemma flavorBilinear_zero (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ) :
+    flavorBilinear V u d 0 = 0 := by
+  simp only [flavorBilinear_def, diracBilinear_zero, mul_zero, Finset.sum_const_zero]
+
+/-- A matrix acting on the down-type spinors moves into the vertex:
+`Σᵢⱼ ū_i Γ V_ij (M d_j) = Σᵢⱼ ū_i (Γ M) V_ij d_j`. -/
+@[simp]
+lemma flavorBilinear_mulVec_right (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ)
+    (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
+    flavorBilinear V u (fun j => M *ᵥ d j) Γ = flavorBilinear V u d (Γ * M) := by
+  simp only [flavorBilinear_def, diracBilinear_mulVec_right]
+
+/-- A matrix acting on the up-type spinors moves into the vertex through its Dirac adjoint:
+`Σᵢⱼ \overline{M u_i} Γ V_ij d_j = Σᵢⱼ ū_i (\bar{M} Γ) V_ij d_j`. -/
+@[simp]
+lemma flavorBilinear_mulVec_left (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ)
+    (Γ M : Matrix (Fin 4) (Fin 4) ℂ) :
+    flavorBilinear V (fun i => M *ᵥ u i) d Γ = flavorBilinear V u d (diracAdjoint M * Γ) := by
+  simp only [flavorBilinear_def, diracBilinear_mulVec_left]
+
 /-- Rescaling the spinors, `u_i ↦ a_i u_i` and `d_j ↦ b_j d_j`, changes the flavour-summed
 bilinear as the change `V ↦ diag(a*) V diag(b)` of the mixing matrix does. -/
-theorem flavorBilinear_smul [DecidableEq ι] [DecidableEq κ] (V : Matrix ι κ ℂ) (a : ι → ℂ)
-    (b : κ → ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
+theorem flavorBilinear_smul_smul [DecidableEq ι] [DecidableEq κ] (V : Matrix ι κ ℂ)
+    (a : ι → ℂ) (b : κ → ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ) (Γ : Matrix (Fin 4) (Fin 4) ℂ) :
     flavorBilinear V (fun i => a i • u i) (fun j => b j • d j) Γ =
       flavorBilinear (diagonal (star a) * V * diagonal b) u d Γ := by
   simp only [flavorBilinear_def, diracBilinear_smul_left, diracBilinear_smul_right, mul_diagonal,
@@ -121,7 +144,7 @@ theorem flavorBilinear_rephase [DecidableEq ι] [DecidableEq κ] (V : Matrix ι 
     simp only [diagonal_mul_diagonal, Pi.star_apply, hstar, diagonal_one]
   have hb : diagonal (fun j => ((b j)⁻¹ : ℂ)) * diagonal (fun j => (b j : ℂ)) = 1 := by
     simp only [diagonal_mul_diagonal, hinv, diagonal_one]
-  rw [flavorBilinear_smul]
+  rw [flavorBilinear_smul_smul]
   simp only [← Matrix.mul_assoc, ha, Matrix.one_mul]
   rw [Matrix.mul_assoc, hb, Matrix.mul_one]
 
@@ -136,7 +159,8 @@ theorem flavorBilinear_unitaryTorusHom_mul_mul_inv [DecidableEq ι] (V : unitary
   have hV : ((TauCeti.unitaryTorusHom ι a * V * (TauCeti.unitaryTorusHom ι b)⁻¹ :
       unitaryGroup ι ℂ) : Matrix ι ι ℂ) =
         diagonal (fun i => (a i : ℂ)) * V * diagonal (fun j => ((b j : ℂ))⁻¹) := by
-    simp [← map_inv, Circle.coe_inv]
+    simp only [← map_inv, Submonoid.coe_mul, TauCeti.coe_unitaryTorusHom, Pi.inv_apply,
+      Circle.coe_inv]
   rw [hV, flavorBilinear_rephase]
 
 /-- The complex conjugate of the flavour-summed bilinear exchanges the spinors and replaces the
@@ -168,11 +192,11 @@ lemma chargedCurrent_def (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ) (d : 
 
 /-- Rescaling the quark spinors, `u_i ↦ a_i u_i` and `d_j ↦ b_j d_j`, changes the charged current
 as the change `V ↦ diag(a*) V diag(b)` of the mixing matrix does. -/
-theorem chargedCurrent_smul [DecidableEq ι] [DecidableEq κ] (V : Matrix ι κ ℂ) (a : ι → ℂ)
-    (b : κ → ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
+theorem chargedCurrent_smul_smul [DecidableEq ι] [DecidableEq κ] (V : Matrix ι κ ℂ)
+    (a : ι → ℂ) (b : κ → ℂ) (u : ι → Fin 4 → ℂ) (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V (fun i => a i • u i) (fun j => b j • d j) μ =
       chargedCurrent (diagonal (star a) * V * diagonal b) u d μ := by
-  rw [chargedCurrent_def, chargedCurrent_def, flavorBilinear_smul]
+  rw [chargedCurrent_def, chargedCurrent_def, flavorBilinear_smul_smul]
 
 /-- Rephasing invariance of the charged current: rephasing the quark spinors,
 `u_i ↦ a_i u_i` and `d_j ↦ b_j d_j` with `|a_i| = |b_j| = 1`, together with the compensating change
@@ -201,34 +225,34 @@ theorem chargedCurrent_unitaryTorusHom_mul_mul_inv [DecidableEq ι] (V : unitary
 theorem chargedCurrent_leftChiralProjector_down (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V u (fun j => leftChiralProjector *ᵥ d j) μ = chargedCurrent V u d μ := by
-  simp only [chargedCurrent_def, flavorBilinear_def,
-    diracBilinear_mul_leftChiralProjector_leftChiralProjector_mulVec]
+  rw [chargedCurrent_def, chargedCurrent_def, flavorBilinear_mulVec_right, mul_assoc,
+    leftChiralProjector_mul_self]
 
 /-- Right-handed down-type spinors do not enter the charged current. -/
 @[simp]
 theorem chargedCurrent_rightChiralProjector_down_eq_zero (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V u (fun j => rightChiralProjector *ᵥ d j) μ = 0 := by
-  simp only [chargedCurrent_def, flavorBilinear_def,
-    diracBilinear_mul_leftChiralProjector_rightChiralProjector_mulVec, mul_zero,
-    Finset.sum_const_zero]
+  rw [chargedCurrent_def, flavorBilinear_mulVec_right, mul_assoc,
+    leftChiralProjector_mul_rightChiralProjector, mul_zero, flavorBilinear_zero]
 
 /-- Only the left-handed parts of the up-type spinors enter the charged current. -/
 @[simp]
 theorem chargedCurrent_leftChiralProjector_up (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V (fun i => leftChiralProjector *ᵥ u i) d μ = chargedCurrent V u d μ := by
-  simp only [chargedCurrent_def, flavorBilinear_def, γ_mul_leftChiralProjector,
-    diracBilinear_leftChiralProjector_mulVec_rightChiralProjector_mul]
+  rw [chargedCurrent_def, chargedCurrent_def, flavorBilinear_mulVec_left,
+    diracAdjoint_leftChiralProjector, γ_mul_leftChiralProjector, ← mul_assoc,
+    rightChiralProjector_mul_self]
 
 /-- Right-handed up-type spinors do not enter the charged current. -/
 @[simp]
 theorem chargedCurrent_rightChiralProjector_up_eq_zero (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V (fun i => rightChiralProjector *ᵥ u i) d μ = 0 := by
-  simp only [chargedCurrent_def, flavorBilinear_def, γ_mul_leftChiralProjector,
-    diracBilinear_rightChiralProjector_mulVec_rightChiralProjector_mul, mul_zero,
-    Finset.sum_const_zero]
+  rw [chargedCurrent_def, flavorBilinear_mulVec_left, diracAdjoint_rightChiralProjector,
+    γ_mul_leftChiralProjector, ← mul_assoc, leftChiralProjector_mul_rightChiralProjector,
+    zero_mul, flavorBilinear_zero]
 
 /-! ### Hermitian conjugation -/
 
