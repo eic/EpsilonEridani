@@ -25,8 +25,10 @@ integral at `(N + a - 1, b)`, a ratio of Gamma functions.
   `Complex.betaIntegral (N + a - 1) b`, at every `N`;
   `mellinDis_rpow_mul_one_sub_rpow`: on the half plane of convergence it is
   `Γ(N + a - 1) Γ(b) / Γ(N + a + b - 1)`.
-* `mellinDisConvergent_betaPDFReal`, `mellinDisConvergent_betaPDFReal_iff`, `mellinDis_betaPDFReal`:
-  the same for the Beta density, whose transform is `Β(N + a - 1, b) / Β(a, b)`;
+* `mellinDis_one_sub_rpow`: at `a = 1`, the transform of `(1 - x) ^ b` is `B(N, b + 1)`.
+* `mellinDisConvergent_betaPDFReal`, `mellinDisConvergent_betaPDFReal_iff`,
+  `mellinDis_betaPDFReal_eq_betaIntegral`, `mellinDis_betaPDFReal`: the same for the Beta density,
+  whose transform is `Β(N + a - 1, b) / Β(a, b)`;
   `mellinDis_betaPDFReal_one`: at `N = 1` this is one, the normalisation of the density.
 
 `mellinDis_betaPDFReal` and `mellinDisConvergent_betaPDFReal_iff` are the complex-index versions
@@ -91,33 +93,42 @@ theorem mellinDis_rpow_mul_one_sub_rpow {a b : ℝ} (hb : 0 < b) {N : ℂ} (hN :
     Complex.betaIntegral_eq_Gamma_mul_div _ _ (by simpa using hN) (by simpa using hb),
     show N + a - 1 + b = N + a + b - 1 by ring]
 
+/-- The transform of `(1 - x) ^ b` is Euler's beta integral `B(N, b + 1)`, at every `N`: the Beta
+kernel with `a = 1`. Together with `mellinDis_rpow` for `x ^ a`, this evaluates the transform of
+every finite combination of powers of `x` and of `1 - x`. -/
+theorem mellinDis_one_sub_rpow (b : ℝ) (N : ℂ) :
+    mellinDis (fun x => (1 - x) ^ b) N = Complex.betaIntegral N (b + 1) := by
+  simpa using mellinDis_rpow_mul_one_sub_rpow_eq_betaIntegral 1 (b + 1) N
+
 /-!
 ## The Beta density
 -/
-
-/-- On the open unit interval the Beta density is `1 / Β(a, b)` times the Beta kernel. -/
-private lemma eqOn_betaPDFReal (a b : ℝ) :
-    EqOn (ProbabilityTheory.betaPDFReal a b)
-      (fun x => 1 / ProbabilityTheory.beta a b * (x ^ (a - 1) * (1 - x) ^ (b - 1))) (Ioo 0 1) :=
-  fun x hx => by rw [betaPDFReal_of_mem_Ioo a b hx, mul_assoc]
 
 /-- For `0 < b`, the Mellin transform of the Beta density converges on the half plane
 `1 - a < Re N`. -/
 theorem mellinDisConvergent_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ}
     (hN : 0 < N.re + a - 1) :
     MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N :=
-  (mellinDisConvergent_congr (eqOn_betaPDFReal a b)).mpr
+  (mellinDisConvergent_congr (betaPDFReal_eqOn_Ioo a b)).mpr
     ((mellinDisConvergent_rpow_mul_one_sub_rpow_iff.mpr ⟨hN, hb⟩).const_mul _)
 
-/-- For `0 < b` and `Β(a, b) ≠ 0` (for instance `0 < a`), the Mellin transform of the Beta density
-converges exactly on the half plane `1 - a < Re N`. When `Β(a, b) = 0` the density is identically
-zero and its transform converges everywhere, so the hypothesis cannot be dropped. -/
+/-- For `Β(a, b) ≠ 0` (for instance `0 < a` and `0 < b`), the Mellin transform of the Beta density
+converges exactly when `1 - a < Re N` and `0 < b`, as for the kernel. When `Β(a, b) = 0` the density
+is identically zero and its transform converges everywhere, so the hypothesis cannot be dropped. -/
 theorem mellinDisConvergent_betaPDFReal_iff {a b : ℝ} (hab : ProbabilityTheory.beta a b ≠ 0)
-    (hb : 0 < b) {N : ℂ} :
-    MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N ↔ 0 < N.re + a - 1 := by
-  rw [mellinDisConvergent_congr (eqOn_betaPDFReal a b),
+    {N : ℂ} :
+    MellinDisConvergent (ProbabilityTheory.betaPDFReal a b) N ↔ 0 < N.re + a - 1 ∧ 0 < b := by
+  rw [mellinDisConvergent_congr (betaPDFReal_eqOn_Ioo a b),
     mellinDisConvergent_const_mul_iff (one_div_ne_zero hab),
-    mellinDisConvergent_rpow_mul_one_sub_rpow_iff, and_iff_left hb]
+    mellinDisConvergent_rpow_mul_one_sub_rpow_iff]
+
+/-- The transform of the Beta density is Euler's beta integral at `(N + a - 1, b)` divided by
+`Β(a, b)`. No convergence hypothesis is needed: both sides are the same integral. -/
+theorem mellinDis_betaPDFReal_eq_betaIntegral (a b : ℝ) (N : ℂ) :
+    mellinDis (ProbabilityTheory.betaPDFReal a b) N =
+      ((1 / ProbabilityTheory.beta a b : ℝ) : ℂ) * Complex.betaIntegral (N + a - 1) b := by
+  rw [mellinDis_congr (betaPDFReal_eqOn_Ioo a b), mellinDis_const_mul,
+    mellinDis_rpow_mul_one_sub_rpow_eq_betaIntegral]
 
 /-- **Mellin moments of the Beta density.** For `0 < b`, on the half plane `1 - a < Re N`,
 `∫_{(0,1]} x ^ (N - 1) x ^ (a - 1) (1 - x) ^ (b - 1) dx / Β(a, b)
@@ -128,11 +139,9 @@ theorem mellinDis_betaPDFReal {a b : ℝ} (hb : 0 < b) {N : ℂ} (hN : 0 < N.re 
       Complex.Gamma (N + a - 1) * Complex.Gamma (a + b) /
         (Complex.Gamma a * Complex.Gamma (N + a + b - 1)) := by
   have hΓb : Complex.Gamma b ≠ 0 := Complex.Gamma_ne_zero_of_re_pos (by simpa using hb)
-  rw [mellinDis_congr (eqOn_betaPDFReal a b), mellinDis_const_mul,
-    mellinDis_rpow_mul_one_sub_rpow hb hN, ProbabilityTheory.beta]
-  push_cast
-  simp only [← Complex.Gamma_ofReal]
-  push_cast
+  rw [mellinDis_betaPDFReal_eq_betaIntegral,
+    Complex.betaIntegral_eq_Gamma_mul_div _ _ (by simpa using hN) (by simpa using hb),
+    Complex.ofReal_div, Complex.ofReal_one, ofReal_beta, show N + a - 1 + b = N + a + b - 1 by ring]
   field_simp
 
 /-- **The Beta density is normalised**: its Mellin transform at `N = 1` is one. -/
