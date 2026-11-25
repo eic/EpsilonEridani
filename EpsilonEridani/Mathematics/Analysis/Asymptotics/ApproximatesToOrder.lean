@@ -38,7 +38,7 @@ such expansions depends.
 * `ApproximatesToOrder.coeff_unique`: the coefficient of a correction that improves an
   approximation from order `n` to order `n + 1` is unique: it is fixed by the expanded function
   and its lower-order approximation, and is not a convention.
-* `ApproximatesToOrder.coeff_unique_zero`: the same uniqueness when the lower-order
+* `ApproximatesToOrder.coeff_unique_of_approx_zero`: the same uniqueness when the lower-order
   approximation vanishes.
 * `ApproximatesToOrder.of_add_mul_pow`: a correction is genuinely subleading: without it, the
   approximation is still accurate to order `n`.
@@ -95,20 +95,6 @@ lemma ApproximatesToOrder.trans {W₁ W₂ W₃ : ℝ → ℝ} {n : ℕ}
 
 /-! ### Uniqueness of the coefficient of a correction -/
 
-/-- A monomial `c λ ^ n` that is bounded by `λ ^ (n + 1)` as `λ → 0⁺` has vanishing coefficient.
-
-This is the analytic fact behind the uniqueness results that follow: it is what forbids two
-different coefficients of a correction at the same order, and what makes a nonzero coefficient
-detectable in the accuracy of an approximation. -/
-lemma eq_zero_of_isBigO_pow_succ {n : ℕ} {c : ℝ}
-    (h : (fun lam : ℝ => c * lam ^ n) =O[𝓝[>] 0] fun lam : ℝ => lam ^ (n + 1)) :
-    c = 0 := by
-  have hsum : ∀ lam : ℝ, ∑ k ∈ Finset.range (n + 1), lam ^ k • Pi.single n c k = c * lam ^ n :=
-    fun lam => by simp [Pi.single_apply, mul_comm]
-  have := (isBigO_sum_range_pow_smul_pow_succ_iff (nhdsGT_le_nhdsNE 0) (a := Pi.single n c)).1
-    (h.congr_left fun lam => (hsum lam).symm) n le_rfl
-  rwa [Pi.single_eq_same] at this
-
 /-- **The coefficient of a correction at a given order is unique.** If two coefficients each
 improve an approximation from order `n` to order `n + 1`, they are equal.
 
@@ -121,13 +107,14 @@ lemma ApproximatesToOrder.coeff_unique {W Wlp : ℝ → ℝ} {n : ℕ} {c₁ c�
   have hdiff : (fun lam : ℝ => (c₂ - c₁) * lam ^ n) =O[𝓝[>] 0]
       fun lam : ℝ => lam ^ (n + 1) :=
     (approximatesToOrder_iff.1 (h₂.symm.trans h₁)).congr_left fun lam => by ring
-  have hz := eq_zero_of_isBigO_pow_succ hdiff
+  have hz := eq_zero_of_isBigO_pow_smul_pow_succ (nhdsGT_le_nhdsNE 0)
+    (hdiff.congr_left fun lam => by rw [smul_eq_mul, mul_comm])
   linarith
 
 /-- **A function that vanishes at lower order is determined, at the first nonvanishing order,
 entirely by its correction coefficient.** If two monomial corrections each approximate it to
 order `n + 1`, their coefficients are equal, so no freedom is left in the coefficient. -/
-lemma ApproximatesToOrder.coeff_unique_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
+lemma ApproximatesToOrder.coeff_unique_of_approx_zero {W : ℝ → ℝ} {n : ℕ} {c₁ c₂ : ℝ}
     (h₁ : ApproximatesToOrder W (fun lam => c₁ * lam ^ n) (n + 1))
     (h₂ : ApproximatesToOrder W (fun lam => c₂ * lam ^ n) (n + 1)) :
     c₁ = c₂ :=

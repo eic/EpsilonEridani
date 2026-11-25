@@ -141,15 +141,7 @@ This witnesses that `Kpc` is inhabited with a *nonzero* coefficient, so that
 def monomialKpc (n : ℕ) : Kpc (fun lam : ℝ => lam ^ n) n where
   leadingPower := fun _ => 0
   coeff := 1
-  remainder := by
-    have hz : (fun _ : ℝ => (0 : ℝ)) =O[𝓝[>] 0] fun lam : ℝ => lam ^ (n + 1) :=
-      isBigO_zero _ _
-    have hcast : (fun lam : ℝ => lam ^ n - ((fun _ : ℝ => (0 : ℝ)) lam + 1 * lam ^ n))
-        =O[𝓝[>] 0] fun lam : ℝ => lam ^ (n + 1) := by
-      refine hz.congr_left ?_
-      intro lam
-      ring
-    exact approximatesToOrder_iff.2 hcast
+  remainder := (ApproximatesToOrder.refl (fun lam : ℝ => lam ^ n) (n + 1)).congr fun lam => by ring
 
 /-- **The order gap is real.** `λ ^ n` is not `O(λ ^ (n + 1))` as `λ → 0⁺`, so the vanishing
 leading-power term of `monomialKpc` is accurate to order `n` and no further.
