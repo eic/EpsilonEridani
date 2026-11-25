@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.SmallX.Dipole.Multipole
+public import Mathlib.Data.Fin.Tuple.Reflection
 
 /-!
 # The colour-dipole operator
@@ -83,8 +84,8 @@ lemma dipoleS_def (U : WilsonConfiguration Nc) (x y : EuclideanSpace ℝ (Fin 2)
 @[simp]
 theorem multipoleS_fin_one (U : WilsonConfiguration Nc) (x y : Fin 1 → EuclideanSpace ℝ (Fin 2)) :
     multipoleS U x y = dipoleS U (x 0) (y 0) := by
-  have hx : x = ![x 0] := funext fun i => by rw [Matrix.cons_val_fin_one, Subsingleton.elim i 0]
-  have hy : y = ![y 0] := funext fun i => by rw [Matrix.cons_val_fin_one, Subsingleton.elim i 0]
+  have hx : x = ![x 0] := (FinVec.etaExpand_eq x).symm
+  have hy : y = ![y 0] := (FinVec.etaExpand_eq y).symm
   rw [dipoleS_eq_multipoleS, ← hx, ← hy]
 
 /-- **Colour transparency** of a single configuration: a dipole of zero size does not
