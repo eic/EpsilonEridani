@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
-public import Physlib.Relativity.LorentzGroup.Boosts.Apply
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.ApplyExtensions
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 
@@ -128,12 +127,22 @@ lemma plusComponent_def (p : Vector 3) :
 lemma minusComponent_def (p : Vector 3) :
     minusComponent p = (p (Sum.inl 0) - p (Sum.inr 2)) / √2 := (rfl)
 
+private lemma add_div_sqrt_two_add_sub_div_sqrt_two (x y : ℝ) :
+    ((x + y) / √2 + (x - y) / √2) / √2 = x := by
+  field_simp
+  rw [Real.sq_sqrt zero_le_two]
+  ring
+
+private lemma add_div_sqrt_two_sub_sub_div_sqrt_two (x y : ℝ) :
+    ((x + y) / √2 - (x - y) / √2) / √2 = y := by
+  field_simp
+  rw [Real.sq_sqrt zero_le_two]
+  ring
+
 /-- The `z`-component of a four-vector in light-front components: `p³ = (p⁺ - p⁻) / √2`. -/
 lemma apply_inr_two (p : Vector 3) :
     p (Sum.inr 2) = (plusComponent p - minusComponent p) / √2 := by
-  rw [plusComponent_def, minusComponent_def, ← sub_div, div_div,
-    Real.mul_self_sqrt zero_le_two]
-  ring
+  rw [plusComponent_def, minusComponent_def, add_div_sqrt_two_sub_sub_div_sqrt_two]
 
 /-- The product of the light-front components is half the longitudinal Minkowski square:
 `p⁺ p⁻ = ((p⁰)² - (p³)²) / 2`. -/
@@ -259,18 +268,6 @@ lemma ofLightFront_inr_two (a b : ℝ) (kT : E²) :
 
 /-! ### Light-front components as coordinates -/
 
-private lemma add_div_sqrt_two_add_sub_div_sqrt_two (x y : ℝ) :
-    ((x + y) / √2 + (x - y) / √2) / √2 = x := by
-  field_simp
-  rw [Real.sq_sqrt zero_le_two]
-  ring
-
-private lemma add_div_sqrt_two_sub_sub_div_sqrt_two (x y : ℝ) :
-    ((x + y) / √2 - (x - y) / √2) / √2 = y := by
-  field_simp
-  rw [Real.sq_sqrt zero_le_two]
-  ring
-
 @[simp]
 lemma plusComponent_ofLightFront (a b : ℝ) (kT : E²) : plusComponent (ofLightFront a b kT) = a := by
   rw [plusComponent_def, ofLightFront_inl, ofLightFront_inr_two,
@@ -308,8 +305,8 @@ lemma ofLightFront_plusComponent_minusComponent_transversePart (p : Vector 3) :
   · fin_cases i
     · simp
     · simp
-    · simp only [Fin.reduceFinMk, ofLightFront_inr_two, plusComponent_def, minusComponent_def,
-        add_div_sqrt_two_sub_sub_div_sqrt_two]
+    · simp only [Fin.reduceFinMk, ofLightFront_inr_two]
+      exact (apply_inr_two p).symm
 
 /-- A four-vector is determined by its light-front components. -/
 lemma ext_lightFront {p q : Vector 3} (hplus : plusComponent p = plusComponent q)
