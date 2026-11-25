@@ -68,10 +68,12 @@ theorem linearIndependent_pair_of_probes {B₁ B₂ : M →ₗ[R] N →ₗ[R] P}
     LinearIndependent R ![B₁, B₂] := by
   refine LinearIndependent.pair_iff.mpr fun s t hst => ⟨?_, ?_⟩
   · have h := congr_fun₂ hst v₁ w₁
-    simp only [add_apply, smul_apply, h₂, smul_zero, add_zero, zero_apply] at h
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, h₂, smul_zero, add_zero,
+      LinearMap.zero_apply] at h
     exact (smul_eq_zero.mp h).resolve_right h₁
   · have h := congr_fun₂ hst v₂ w₂
-    simp only [add_apply, smul_apply, h₃, smul_zero, zero_add, zero_apply] at h
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, h₃, smul_zero, zero_add,
+      LinearMap.zero_apply] at h
     exact (smul_eq_zero.mp h).resolve_right h₄
 
 /-- Two bilinear maps separated by probe pairs are linearly independent. -/
