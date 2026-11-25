@@ -58,7 +58,8 @@ with `0 < c`; the last three hold for any `c` such that `c • n` is again a fra
 * `Frame.spatialPart_orthogonal_n`, `Frame.energy_spatialPart`: the spatial part is orthogonal to
   the frame vector and carries no energy.
 * `Frame.ker_spatialPart`, `Frame.range_spatialPart`: the spatial projection has kernel `ℝ ∙ n`
-  and range the momenta `p` with `g p n = 0`.
+  and range the momenta `p` with `g p n = 0`, which by `Frame.ker_energy` are the momenta of zero
+  energy.
 * `Frame.spatialPart_pairing_spatialPart`: `g a_s b_s = g a b - E(a) E(b)`.
 * `Frame.spatialNorm_eq_sqrt_energy_sq_sub`: `|p_s| = √(E(p)² - g p p)`, and
   `Frame.spatialNorm_eq_abs_energy_of_massless`: a massless momentum has `|p_s| = |E(p)|`.
@@ -119,6 +120,10 @@ theorem energy_n_pos : 0 < F.energy F.n := by
   rw [energy_n]
   exact Real.sqrt_pos.mpr F.timelike
 
+/-- A momentum carries no energy exactly when it is `g`-orthogonal to the frame vector. -/
+theorem energy_eq_zero_iff {p : V} : F.energy p = 0 ↔ g p F.n = 0 := by
+  rw [energy_apply, div_eq_zero_iff, or_iff_left (Real.sqrt_pos.mpr F.timelike).ne']
+
 /-- The frame vector is nonzero. -/
 theorem n_ne_zero : F.n ≠ 0 :=
   LinearMap.BilinForm.ne_zero_of_not_isOrtho_self F.n F.timelike.ne'
@@ -173,6 +178,14 @@ complement of `ℝ ∙ n` for `g.flip` in the sense of `LinearMap.BilinForm.orth
 symmetric form this is `g.orthogonal (ℝ ∙ n)`. -/
 theorem range_spatialPart : LinearMap.range F.spatialPart = g.flip.orthogonal (ℝ ∙ F.n) :=
   g.range_orthogonalProjectionCompl F.timelike.ne'
+
+/-- The momenta of zero energy are the spatial momenta: the kernel of the energy is the range
+`g.flip.orthogonal (ℝ ∙ n)` of the spatial projection. -/
+theorem ker_energy : LinearMap.ker F.energy = g.flip.orthogonal (ℝ ∙ F.n) := by
+  rw [← F.range_spatialPart]
+  ext p
+  rw [LinearMap.mem_ker, F.energy_eq_zero_iff, ← F.spatialPart_eq_self_iff]
+  exact ⟨fun h ↦ ⟨p, h⟩, by rintro ⟨w, rfl⟩; exact F.spatialPart_spatialPart w⟩
 
 /-- The spatial part is a projection onto `g.flip.orthogonal (ℝ ∙ n)` in the sense of
 `LinearMap.IsProj`, splitting `V` as `ℝ ∙ n ⊕` (spatial momenta). -/
@@ -284,10 +297,12 @@ theorem cosAngle_smul_right_of_pos {c : ℝ} (hc : 0 < c) (a b : V) :
   rw [mul_left_comm, ← mul_neg, mul_div_mul_left _ _ hc.ne']
 
 /-- Reversing the first momentum reverses the direction: `cos θ` changes sign. -/
+@[simp]
 theorem cosAngle_neg_left (a b : V) : F.cosAngle (-a) b = -F.cosAngle a b := by
   simp only [cosAngle_def, spatialNorm_neg, map_neg, LinearMap.neg_apply, neg_div]
 
 /-- Reversing the second momentum reverses the direction: `cos θ` changes sign. -/
+@[simp]
 theorem cosAngle_neg_right (a b : V) : F.cosAngle a (-b) = -F.cosAngle a b := by
   simp only [cosAngle_def, spatialNorm_neg, map_neg, neg_div]
 

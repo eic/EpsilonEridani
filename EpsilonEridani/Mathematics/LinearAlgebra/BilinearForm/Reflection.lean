@@ -25,7 +25,7 @@ vector `u` is reflective in the sense of `LinearMap.IsReflective`, and the refle
 
 ## Main statements
 
-* `LinearMap.BilinForm.isReflective_of_ne_zero`, `reflection_eq_moduleReflection`: for
+* `LinearMap.BilinForm.isReflective_of_apply_self_ne_zero`, `reflection_eq_moduleReflection`: for
   `g u u ≠ 0`, `u` is reflective and `g.reflection u` is the corresponding `Module.reflection`.
 * `LinearMap.BilinForm.reflection_reflection_apply`, `isOrthogonal_reflection`: the reflection is
   an involution and, for symmetric `g`, a `g`-isometry (`LinearMap.IsOrthogonal`).
@@ -67,7 +67,7 @@ lemma reflection_apply_of_orthogonal (g : BilinForm K V) (u v : V) (h : g u v = 
   rw [reflection_apply, h, mul_zero, zero_smul, sub_zero]
 
 /-- A non-null vector is reflective for `g` in the sense of `LinearMap.IsReflective`. -/
-lemma isReflective_of_ne_zero (g : BilinForm K V) {u : V} (hu : g u u ≠ 0) :
+lemma isReflective_of_apply_self_ne_zero (g : BilinForm K V) {u : V} (hu : g u u ≠ 0) :
     LinearMap.IsReflective g u where
   regular := (isUnit_iff_ne_zero.mpr hu).isRegular
   dvd_two_mul _ := (isUnit_iff_ne_zero.mpr hu).dvd
@@ -75,11 +75,11 @@ lemma isReflective_of_ne_zero (g : BilinForm K V) {u : V} (hu : g u u ≠ 0) :
 /-- For non-null `u`, `g.reflection u` is Mathlib's `Module.reflection` along the coroot of the
 reflective vector `u`. -/
 lemma reflection_eq_moduleReflection (g : BilinForm K V) {u : V} (hu : g u u ≠ 0) :
-    g.reflection u = (Module.reflection
-      (LinearMap.IsReflective.coroot_apply_self g (g.isReflective_of_ne_zero hu)) : V →ₗ[K] V) := by
+    g.reflection u = (Module.reflection (LinearMap.IsReflective.coroot_apply_self g
+      (g.isReflective_of_apply_self_ne_zero hu)) : V →ₗ[K] V) := by
   ext v
-  have h := LinearMap.IsReflective.apply_self_mul_coroot_apply g (g.isReflective_of_ne_zero hu)
-    (y := v)
+  have h := LinearMap.IsReflective.apply_self_mul_coroot_apply g
+    (g.isReflective_of_apply_self_ne_zero hu) (y := v)
   rw [reflection_apply, LinearEquiv.coe_coe, Module.reflection_apply]
   congr 2
   field_simp
