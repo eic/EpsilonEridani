@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Inclusive.CrossSection
-public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.NeutralCurrent
+public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
 
 /-!
 # The electroweak neutral-current cross section and its three terms
@@ -49,9 +49,7 @@ used in this file.
 * `CrossSection.neutralCurrent_eq_add`: by the linearity of `Inclusive.dSigmaDxDQ2` in the
   structure functions, the defining expression of `neutralCurrent` regroups into the sum of
   `photonTerm`, `gammaZTerm` and `zBosonTerm`, with coupling factors `q²`, `q (g_V - λ g_A)` and
-  `(g_V - λ g_A)²` and propagator factors `1`, `η` and `η²`. The three terms are the
-  `photon`, `gammaZInterference` and `zBoson` fields of
-  `CrossSection.neutralCurrentDecomposition`, an `Electroweak.NeutralCurrentDecomposition`.
+  `(g_V - λ g_A)²` and propagator factors `1`, `η` and `η²`.
 * `CrossSection.photonTerm_eq_sq_mul_loNCdSigma`: at the photon flux factor `K = 2π α² / Q²`,
   zero target mass and with the Callan-Gross relation, the pure-photon term is `q²` times the
   one-photon-exchange cross section `loNCdSigma` of
@@ -68,14 +66,19 @@ used in this file.
 * `CrossSection.gammaZTerm_true_add_false` and `CrossSection.zBosonTerm_true_add_false`: the
   helicity sums `σ_R + σ_L`, twice the helicity-even parts. The interference term is therefore
   not purely odd: its even part is `η q (K / (x Q²)) (g_V B^{γZ} + g_A Y₋ x F₃^{γZ})`, with
-  `B^{γZ}` the parity-even bracket, and it is odd exactly where this vanishes
-  (`CrossSection.gammaZTerm_true_eq_neg_false_of_even_eq_zero`). All four follow from the
-  closed forms at a general helicity, `CrossSection.gammaZTerm_eq_crossSectionBracket_sub` and
-  `CrossSection.zBosonTerm_eq_crossSectionBracket_sub`.
+  `B^{γZ}` the parity-even bracket, and where the prefactor `η q K / (x Q²)` does not vanish it
+  is odd exactly where this combination vanishes
+  (`CrossSection.gammaZTerm_true_eq_neg_false_iff`). The four helicity lemmas and the closed
+  forms at a general helicity, `CrossSection.gammaZTerm_eq_crossSectionBracket_sub` and
+  `CrossSection.zBosonTerm_eq_crossSectionBracket_sub`, are instances of one fact about a
+  coupling `a + λ b` affine in the helicity sign
+  (`CrossSection.add_helicitySign_mul_mul_dSigmaDxDQ2` and its `true_sub_false` and
+  `true_add_false` corollaries).
 * `CrossSection.neutralCurrent_true_add_false_div_two`: the helicity average is the unpolarised
-  cross section `Inclusive.dSigmaDxDQ2` with the electron sign `-1`, with the familiar effective
-  structure functions `q² F^γ + q g_V η F^{γZ} + (g_V² + g_A²) η² F^Z` and
-  `q g_A η F₃^{γZ} + 2 g_V g_A η² F₃^Z`.
+  cross section `Inclusive.dSigmaDxDQ2` at the fixed sign `-1` of the parity-odd term, whatever
+  the beam charge (it enters through `q` in the effective structure functions; for an electron
+  this is the usual electron sign), with the familiar effective structure functions
+  `q² F^γ + q g_V η F^{γZ} + (g_V² + g_A²) η² F^Z` and `q g_A η F₃^{γZ} + 2 g_V g_A η² F₃^Z`.
 * `CrossSection.gammaZTerm_electron_true_sub_false`: for the Standard Model electron,
   `σ_R - σ_L` of the interference term is `-η K/(xQ²) (B^{γZ} + Q_W^e Y₋ x F₃^{γZ})`, which
   exhibits the suppression of the parity-odd structure function by the electron weak charge
@@ -214,8 +217,7 @@ parity-odd term, since its parity-odd structure function vanishes. -/
 theorem photonTerm_eq_sq_mul_dSigmaDxDQ2 (s : ℝ) :
     photonTerm K M x Q2 y q H =
       q ^ 2 * dSigmaDxDQ2 K M s x Q2 y H.photonF1 H.photonF2 0 := by
-  rw [photonTerm_def, dSigmaDxDQ2_def, dSigmaDxDQ2_def,
-    crossSectionBracket_eq_sign_zero_sub M s, mul_zero, mul_zero, sub_zero]
+  rw [photonTerm_def, dSigmaDxDQ2_parityOdd_zero K M s]
 
 /-- **The three terms.** The defining expression of the neutral-current cross section, a single
 contraction with the coupling-weighted structure functions of the three pairs of currents,
@@ -229,58 +231,13 @@ theorem neutralCurrent_eq_add :
   rw [photonTerm_eq_sq_mul_dSigmaDxDQ2 _ _ _ _ _ _ _ (helicitySign h), gammaZTerm_def,
     zBosonTerm_def, ← dSigmaDxDQ2_const_mul, ← dSigmaDxDQ2_const_mul, ← dSigmaDxDQ2_const_mul,
     ← dSigmaDxDQ2_add, ← dSigmaDxDQ2_add, neutralCurrent_def]
+  -- Both sides are now one `dSigmaDxDQ2` at the same kinematics and sign; the residual goals are
+  -- its `F₁`, `F₂` and `F₃` arguments, the `F₃` one differing by the photon's `q ^ 2 * 0`.
   congr 1 <;> ring
 
-/-- The three terms of the neutral-current cross section at a fixed coupling, propagator ratio
-and helicity, as the `photon`, `zBoson` and `gammaZInterference` fields of an
-`Electroweak.NeutralCurrentDecomposition` over the Bjorken variable `x` and the inelasticity `y`,
-for structure functions `HF x y` given at each such point. All three fields are evaluated at the
-same helicity `h`, so `gammaZInterference` here is not the helicity-odd coefficient that
-`Interference.helicityResolvedTotal` and `Interference.HelicityInterferenceIsolationAssumptions`
-assume: the interference term is not odd in general (`gammaZTerm_true_add_false`), and the
-actual helicity difference is `neutralCurrent_true_sub_false`. -/
-def neutralCurrentDecomposition (HF : ℝ → ℝ → NeutralCurrentStructureFunctions) :
-    NeutralCurrentDecomposition where
-  photon x y := photonTerm K M x Q2 y q (HF x y)
-  zBoson x y := zBosonTerm K M x Q2 y η ℓ (HF x y) h
-  gammaZInterference x y := gammaZTerm K M x Q2 y q η ℓ (HF x y) h
-
-section neutralCurrentDecomposition
-
-variable (HF : ℝ → ℝ → NeutralCurrentStructureFunctions)
-
-@[simp]
-theorem neutralCurrentDecomposition_photon :
-    (neutralCurrentDecomposition K M Q2 q η ℓ h HF).photon x y =
-      photonTerm K M x Q2 y q (HF x y) :=
-  (rfl)
-
-@[simp]
-theorem neutralCurrentDecomposition_zBoson :
-    (neutralCurrentDecomposition K M Q2 q η ℓ h HF).zBoson x y =
-      zBosonTerm K M x Q2 y η ℓ (HF x y) h :=
-  (rfl)
-
-@[simp]
-theorem neutralCurrentDecomposition_gammaZInterference :
-    (neutralCurrentDecomposition K M Q2 q η ℓ h HF).gammaZInterference x y =
-      gammaZTerm K M x Q2 y q η ℓ (HF x y) h :=
-  (rfl)
-
-/-- The total of `neutralCurrentDecomposition` is the neutral-current cross section. -/
-@[simp]
-theorem totalNeutralCurrent_neutralCurrentDecomposition :
-    totalNeutralCurrent (neutralCurrentDecomposition K M Q2 q η ℓ h HF) x y =
-      neutralCurrent K M x Q2 y q η ℓ (HF x y) h := by
-  rw [totalNeutralCurrent_decompose, neutralCurrentDecomposition_photon,
-    neutralCurrentDecomposition_zBoson, neutralCurrentDecomposition_gammaZInterference,
-    neutralCurrent_eq_add, add_right_comm]
-
-end neutralCurrentDecomposition
-
-/-- At zero target mass and with electromagnetic structure functions obeying the Callan-Gross
-relation, the pure-photon term is `q²` times the one-photon-exchange cross section
-`loNCdSigma`. -/
+/-- At zero target mass, at the photon flux factor `K = 2π α² / Q²` and with electromagnetic
+structure functions obeying the Callan-Gross relation, the pure-photon term is `q²` times the
+one-photon-exchange cross section `loNCdSigma`. -/
 theorem photonTerm_eq_sq_mul_loNCdSigma (α : ℝ)
     (hCG : Tensors.Longitudinal.IsCallanGross x H.photonF1 H.photonF2) :
     photonTerm (2 * Real.pi * α ^ 2 / Q2) 0 x Q2 y q H =
@@ -288,8 +245,8 @@ theorem photonTerm_eq_sq_mul_loNCdSigma (α : ℝ)
   rw [photonTerm_eq_sq_mul_dSigmaDxDQ2 (s := 0), dSigmaDxDQ2_eq_loNCdSigma _ _ _ _ _ _ _ hCG]
 
 /-- **The pure-photon term is the one-photon-exchange cross section.** For a beam of unit charge,
-zero target mass and electromagnetic structure functions obeying the Callan-Gross relation, it
-is `loNCdSigma`, with no residual factor. -/
+zero target mass, the photon flux factor `K = 2π α² / Q²` and electromagnetic structure functions
+obeying the Callan-Gross relation, it is `loNCdSigma`, with no residual factor. -/
 theorem photonTerm_eq_loNCdSigma_of_sq_eq_one (α : ℝ) {q : ℝ} (hq : q ^ 2 = 1)
     (hCG : Tensors.Longitudinal.IsCallanGross x H.photonF1 H.photonF2) :
     photonTerm (2 * Real.pi * α ^ 2 / Q2) 0 x Q2 y q H = loNCdSigma α x Q2 y H.photonF2 := by
@@ -298,27 +255,69 @@ theorem photonTerm_eq_loNCdSigma_of_sq_eq_one (α : ℝ) {q : ℝ} (hq : q ^ 2 =
 /-- Without `Z` exchange the interference term vanishes. -/
 @[simp]
 theorem gammaZTerm_eta_zero : gammaZTerm K M x Q2 y q 0 ℓ H h = 0 := by
-  rw [gammaZTerm_def, zero_mul, zero_mul]
+  simp [gammaZTerm_def]
 
 /-- Without `Z` exchange the pure-`Z` term vanishes. -/
 @[simp]
 theorem zBosonTerm_eta_zero : zBosonTerm K M x Q2 y 0 ℓ H h = 0 := by
-  rw [zBosonTerm_def, zero_pow two_ne_zero, zero_mul, zero_mul]
+  simp [zBosonTerm_def]
 
 /-- Without `Z` exchange the neutral-current cross section is its pure-photon term. -/
 @[simp]
 theorem neutralCurrent_eta_zero :
     neutralCurrent K M x Q2 y q 0 ℓ H h = photonTerm K M x Q2 y q H := by
-  rw [neutralCurrent_eq_add, gammaZTerm_eta_zero, zBosonTerm_eta_zero, add_zero, add_zero]
+  simp [neutralCurrent_eq_add]
 
 /-- **The electromagnetic limit.** Switching off the `Z` exchange, a beam of unit charge at zero
-target mass and with Callan-Gross structure functions has the one-photon-exchange cross section
-`loNCdSigma`, whatever its helicity and its neutral-current couplings. -/
+target mass, at the photon flux factor `K = 2π α² / Q²` and with Callan-Gross structure functions
+has the one-photon-exchange cross section `loNCdSigma`, whatever its helicity and its
+neutral-current couplings. -/
 theorem neutralCurrent_eq_loNCdSigma_of_eta_zero (α : ℝ) {q : ℝ} (hq : q ^ 2 = 1)
     (hCG : Tensors.Longitudinal.IsCallanGross x H.photonF1 H.photonF2) :
     neutralCurrent (2 * Real.pi * α ^ 2 / Q2) 0 x Q2 y q 0 ℓ H h =
       loNCdSigma α x Q2 y H.photonF2 := by
   rw [neutralCurrent_eta_zero, photonTerm_eq_loNCdSigma_of_sq_eq_one (hq := hq) (hCG := hCG)]
+
+section helicityAffine
+
+variable (a b F1 F2 F3 : ℝ)
+
+/-- **A coupling affine in the helicity sign.** For `λ = helicitySign h`, the contraction at sign
+`λ` weighted by a coupling `a + λ b` splits into its parity-even and parity-odd parts as
+`(K / (x Q²)) ((a + λ b) B - (λ a + b) Y₋ x F₃)`, with `B` the parity-even bracket; the
+parity-odd coefficient uses `λ² = 1`. The interference and pure-`Z` terms are the instances
+`(a, b) = (η q g_V, -η q g_A)` and `(η² (g_V² + g_A²), -2 η² g_V g_A)`. -/
+theorem add_helicitySign_mul_mul_dSigmaDxDQ2 :
+    (a + helicitySign h * b) * dSigmaDxDQ2 K M (helicitySign h) x Q2 y F1 F2 F3 =
+      K / (x * Q2) * ((a + helicitySign h * b) * crossSectionBracket M 0 x Q2 y F1 F2 0
+        - (helicitySign h * a + b) * (Yminus y * (x * F3))) := by
+  cases h <;>
+    simp only [dSigmaDxDQ2_def, crossSectionBracket_def, helicitySign_true, helicitySign_false] <;>
+    ring
+
+/-- The helicity difference of a contraction weighted by a coupling affine in the helicity sign:
+`σ_R - σ_L = (K / (x Q²)) (2 b B - 2 a Y₋ x F₃)`. -/
+theorem add_helicitySign_mul_mul_dSigmaDxDQ2_true_sub_false :
+    (a + helicitySign true * b) * dSigmaDxDQ2 K M (helicitySign true) x Q2 y F1 F2 F3
+        - (a + helicitySign false * b) * dSigmaDxDQ2 K M (helicitySign false) x Q2 y F1 F2 F3 =
+      K / (x * Q2) * (2 * b * crossSectionBracket M 0 x Q2 y F1 F2 0
+        - 2 * a * (Yminus y * (x * F3))) := by
+  rw [add_helicitySign_mul_mul_dSigmaDxDQ2, add_helicitySign_mul_mul_dSigmaDxDQ2,
+    helicitySign_true, helicitySign_false]
+  ring
+
+/-- The helicity sum of a contraction weighted by a coupling affine in the helicity sign:
+`σ_R + σ_L = (K / (x Q²)) (2 a B - 2 b Y₋ x F₃)`. -/
+theorem add_helicitySign_mul_mul_dSigmaDxDQ2_true_add_false :
+    (a + helicitySign true * b) * dSigmaDxDQ2 K M (helicitySign true) x Q2 y F1 F2 F3
+        + (a + helicitySign false * b) * dSigmaDxDQ2 K M (helicitySign false) x Q2 y F1 F2 F3 =
+      K / (x * Q2) * (2 * a * crossSectionBracket M 0 x Q2 y F1 F2 0
+        - 2 * b * (Yminus y * (x * F3))) := by
+  rw [add_helicitySign_mul_mul_dSigmaDxDQ2, add_helicitySign_mul_mul_dSigmaDxDQ2,
+    helicitySign_true, helicitySign_false]
+  ring
+
+end helicityAffine
 
 /-- The interference term at helicity `λ = helicitySign h`, split into its parity-even and
 parity-odd parts:
@@ -329,10 +328,9 @@ theorem gammaZTerm_eq_crossSectionBracket_sub :
       η * q * (K / (x * Q2)) *
         ((ℓ.gV - helicitySign h * ℓ.gA) * crossSectionBracket M 0 x Q2 y H.gammaZF1 H.gammaZF2 0
           - (helicitySign h * ℓ.gV - ℓ.gA) * (Yminus y * (x * H.gammaZF3))) := by
-  rw [gammaZTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_def, dSigmaDxDQ2_def,
-    crossSectionBracket_eq_sign_zero_sub M (helicitySign h)]
-  linear_combination
-    η * q * (K / (x * Q2)) * ℓ.gA * (Yminus y * (x * H.gammaZF3)) * helicitySign_sq h
+  rw [gammaZTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_def]
+  linear_combination add_helicitySign_mul_mul_dSigmaDxDQ2 K M x Q2 y h
+    (η * q * ℓ.gV) (-(η * q * ℓ.gA)) H.gammaZF1 H.gammaZF2 H.gammaZF3
 
 /-- The pure-`Z` term at helicity `λ = helicitySign h`, split into its parity-even and
 parity-odd parts:
@@ -344,11 +342,10 @@ theorem zBosonTerm_eq_crossSectionBracket_sub :
             * crossSectionBracket M 0 x Q2 y H.zBosonF1 H.zBosonF2 0
           - (helicitySign h * (ℓ.gV ^ 2 + ℓ.gA ^ 2) - 2 * ℓ.gV * ℓ.gA)
             * (Yminus y * (x * H.zBosonF3))) := by
-  rw [zBosonTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_def, dSigmaDxDQ2_def,
-    crossSectionBracket_eq_sign_zero_sub M (helicitySign h)]
-  linear_combination η ^ 2 * (K / (x * Q2)) * ℓ.gA *
-    (ℓ.gA * crossSectionBracket M 0 x Q2 y H.zBosonF1 H.zBosonF2 0
-      - (helicitySign h * ℓ.gA - 2 * ℓ.gV) * (Yminus y * (x * H.zBosonF3))) * helicitySign_sq h
+  rw [zBosonTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_sq]
+  linear_combination add_helicitySign_mul_mul_dSigmaDxDQ2 K M x Q2 y h
+    (η ^ 2 * (ℓ.gV ^ 2 + ℓ.gA ^ 2)) (-(2 * η ^ 2 * ℓ.gV * ℓ.gA))
+    H.zBosonF1 H.zBosonF2 H.zBosonF3
 
 /-- The helicity difference of the interference term. The parity-even structure functions enter
 through the axial coupling and the parity-odd one through the vector coupling:
@@ -359,31 +356,34 @@ theorem gammaZTerm_true_sub_false :
       -2 * η * q * (K / (x * Q2)) *
         (ℓ.gA * crossSectionBracket M 0 x Q2 y H.gammaZF1 H.gammaZF2 0
           + ℓ.gV * (Yminus y * (x * H.gammaZF3))) := by
-  rw [gammaZTerm_eq_crossSectionBracket_sub, gammaZTerm_eq_crossSectionBracket_sub,
-    helicitySign_true, helicitySign_false]
-  ring
+  simp only [gammaZTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_def]
+  linear_combination add_helicitySign_mul_mul_dSigmaDxDQ2_true_sub_false K M x Q2 y
+    (η * q * ℓ.gV) (-(η * q * ℓ.gA)) H.gammaZF1 H.gammaZF2 H.gammaZF3
 
 /-- The helicity sum of the interference term:
-`σ_R + σ_L = 2 η q (K / (x Q²)) (g_V B^{γZ} + g_A Y₋ x F₃^{γZ})`. The interference term is
-therefore odd under helicity reversal only where this combination vanishes. -/
+`σ_R + σ_L = 2 η q (K / (x Q²)) (g_V B^{γZ} + g_A Y₋ x F₃^{γZ})`. Where the prefactor
+`η q K / (x Q²)` does not vanish, the interference term is therefore odd under helicity reversal
+exactly where this combination vanishes (`gammaZTerm_true_eq_neg_false_iff`). -/
 theorem gammaZTerm_true_add_false :
     gammaZTerm K M x Q2 y q η ℓ H true + gammaZTerm K M x Q2 y q η ℓ H false =
       2 * η * q * (K / (x * Q2)) *
         (ℓ.gV * crossSectionBracket M 0 x Q2 y H.gammaZF1 H.gammaZF2 0
           + ℓ.gA * (Yminus y * (x * H.gammaZF3))) := by
-  rw [gammaZTerm_eq_crossSectionBracket_sub, gammaZTerm_eq_crossSectionBracket_sub,
-    helicitySign_true, helicitySign_false]
-  ring
+  simp only [gammaZTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_def]
+  linear_combination add_helicitySign_mul_mul_dSigmaDxDQ2_true_add_false K M x Q2 y
+    (η * q * ℓ.gV) (-(η * q * ℓ.gA)) H.gammaZF1 H.gammaZF2 H.gammaZF3
 
-/-- **Oddness of the interference term.** Where the helicity-even combination
-`g_V B^{γZ} + g_A Y₋ x F₃^{γZ}` of `gammaZTerm_true_add_false` vanishes, the interference term
-is odd under reversal of the beam helicity. -/
-theorem gammaZTerm_true_eq_neg_false_of_even_eq_zero
-    (hEven : ℓ.gV * crossSectionBracket M 0 x Q2 y H.gammaZF1 H.gammaZF2 0
-      + ℓ.gA * (Yminus y * (x * H.gammaZF3)) = 0) :
-    gammaZTerm K M x Q2 y q η ℓ H true = -gammaZTerm K M x Q2 y q η ℓ H false := by
-  linear_combination gammaZTerm_true_add_false K M x Q2 y q η ℓ H
-    + 2 * η * q * (K / (x * Q2)) * hEven
+/-- **When the interference term is odd.** Where the prefactor `η q K / (x Q²)` does not vanish,
+the interference term is odd under reversal of the beam helicity if and only if the
+helicity-even combination `g_V B^{γZ} + g_A Y₋ x F₃^{γZ}` of `gammaZTerm_true_add_false`
+vanishes, so it is not odd for general couplings and structure functions. -/
+theorem gammaZTerm_true_eq_neg_false_iff (hK : η * q * (K / (x * Q2)) ≠ 0) :
+    gammaZTerm K M x Q2 y q η ℓ H true = -gammaZTerm K M x Q2 y q η ℓ H false ↔
+      ℓ.gV * crossSectionBracket M 0 x Q2 y H.gammaZF1 H.gammaZF2 0
+        + ℓ.gA * (Yminus y * (x * H.gammaZF3)) = 0 := by
+  have h2 : 2 * η * q * (K / (x * Q2)) ≠ 0 := by
+    simpa only [mul_assoc] using mul_ne_zero two_ne_zero hK
+  rw [← add_eq_zero_iff_eq_neg, gammaZTerm_true_add_false, mul_eq_zero_iff_left h2]
 
 /-- The helicity difference of the pure-`Z` term:
 `σ_R - σ_L = -2 η² (K / (x Q²)) (2 g_V g_A B^Z + (g_V² + g_A²) Y₋ x F₃^Z)`. -/
@@ -392,9 +392,10 @@ theorem zBosonTerm_true_sub_false :
       -2 * η ^ 2 * (K / (x * Q2)) *
         (2 * ℓ.gV * ℓ.gA * crossSectionBracket M 0 x Q2 y H.zBosonF1 H.zBosonF2 0
           + (ℓ.gV ^ 2 + ℓ.gA ^ 2) * (Yminus y * (x * H.zBosonF3))) := by
-  rw [zBosonTerm_eq_crossSectionBracket_sub, zBosonTerm_eq_crossSectionBracket_sub,
-    helicitySign_true, helicitySign_false]
-  ring
+  simp only [zBosonTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_sq]
+  linear_combination add_helicitySign_mul_mul_dSigmaDxDQ2_true_sub_false K M x Q2 y
+    (η ^ 2 * (ℓ.gV ^ 2 + ℓ.gA ^ 2)) (-(2 * η ^ 2 * ℓ.gV * ℓ.gA))
+    H.zBosonF1 H.zBosonF2 H.zBosonF3
 
 /-- The helicity sum of the pure-`Z` term:
 `σ_R + σ_L = 2 η² (K / (x Q²)) ((g_V² + g_A²) B^Z + 2 g_V g_A Y₋ x F₃^Z)`. -/
@@ -403,9 +404,10 @@ theorem zBosonTerm_true_add_false :
       2 * η ^ 2 * (K / (x * Q2)) *
         ((ℓ.gV ^ 2 + ℓ.gA ^ 2) * crossSectionBracket M 0 x Q2 y H.zBosonF1 H.zBosonF2 0
           + 2 * ℓ.gV * ℓ.gA * (Yminus y * (x * H.zBosonF3))) := by
-  rw [zBosonTerm_eq_crossSectionBracket_sub, zBosonTerm_eq_crossSectionBracket_sub,
-    helicitySign_true, helicitySign_false]
-  ring
+  simp only [zBosonTerm_def, FermionNeutralCurrentCouplings.helicityCoupling_sq]
+  linear_combination add_helicitySign_mul_mul_dSigmaDxDQ2_true_add_false K M x Q2 y
+    (η ^ 2 * (ℓ.gV ^ 2 + ℓ.gA ^ 2)) (-(2 * η ^ 2 * ℓ.gV * ℓ.gA))
+    H.zBosonF1 H.zBosonF2 H.zBosonF3
 
 /-- **The helicity difference comes from `Z` exchange alone.** The pure-photon term cancels from
 `σ_R - σ_L`, which is the sum of the helicity differences of the interference and pure-`Z`
@@ -417,9 +419,10 @@ theorem neutralCurrent_true_sub_false :
   rw [neutralCurrent_eq_add, neutralCurrent_eq_add]
   ring
 
-/-- **The unpolarised cross section.** The helicity average of the neutral-current cross section
-is the inclusive cross section with the electron sign `-1` of the parity-odd term and the
-effective structure functions `q² F_i^γ + q g_V η F_i^{γZ} + (g_V² + g_A²) η² F_i^Z` for
+/-- **The unpolarised cross section.** The helicity average of the neutral-current cross section,
+for a beam of either charge, is the inclusive cross section at the fixed sign `-1` of the
+parity-odd term, the charge dependence being carried by `q` inside the effective structure
+functions `q² F_i^γ + q g_V η F_i^{γZ} + (g_V² + g_A²) η² F_i^Z` for
 `i = 1, 2` and `q g_A η F₃^{γZ} + 2 g_V g_A η² F₃^Z`. -/
 theorem neutralCurrent_true_add_false_div_two :
     (neutralCurrent K M x Q2 y q η ℓ H true + neutralCurrent K M x Q2 y q η ℓ H false) / 2 =
@@ -439,9 +442,8 @@ theorem neutralCurrent_true_add_false_div_two :
         + q * ℓ.gV * η * crossSectionBracket M 0 x Q2 y H.gammaZF1 H.gammaZF2 0
         + (ℓ.gV ^ 2 + ℓ.gA ^ 2) * η ^ 2
           * crossSectionBracket M 0 x Q2 y H.zBosonF1 H.zBosonF2 0 := by
-    rw [← crossSectionBracket_const_mul, ← crossSectionBracket_const_mul,
-      ← crossSectionBracket_const_mul, ← crossSectionBracket_add, ← crossSectionBracket_add,
-      mul_zero, mul_zero, mul_zero, add_zero, add_zero]
+    simp only [crossSectionBracket_def]
+    ring
   rw [neutralCurrent_eq_add, neutralCurrent_eq_add, photonTerm_def, dSigmaDxDQ2_def,
     dSigmaDxDQ2_def, crossSectionBracket_eq_sign_zero_sub M (-1), hB]
   linear_combination (gammaZTerm_true_add_false K M x Q2 y q η ℓ H

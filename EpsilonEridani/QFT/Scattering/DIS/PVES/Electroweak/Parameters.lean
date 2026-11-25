@@ -134,6 +134,13 @@ theorem helicityCoupling_def (h : Bool) :
     c.helicityCoupling h = c.gV - helicitySign h * c.gA :=
   (rfl)
 
+/-- The square of the helicity coupling: `(g_V - λ g_A)² = g_V² + g_A² - 2 λ g_V g_A`, since
+`λ² = 1`. -/
+theorem helicityCoupling_sq (h : Bool) :
+    c.helicityCoupling h ^ 2 = c.gV ^ 2 + c.gA ^ 2 - 2 * helicitySign h * c.gV * c.gA := by
+  rw [helicityCoupling_def, sub_sq, mul_pow, helicitySign_sq]
+  ring
+
 /-- A right-handed fermion couples to the `Z` with `2 g_R`. -/
 @[simp]
 theorem helicityCoupling_true : c.helicityCoupling true = 2 * c.gR := by

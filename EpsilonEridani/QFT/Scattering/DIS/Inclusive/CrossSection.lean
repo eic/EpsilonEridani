@@ -28,7 +28,8 @@ and proves the algebraic facts about the inelasticity dependence on which the ex
 structure functions from measured cross sections rests. The bracket and the cross section are
 linear in the structure functions (`crossSectionBracket_add`, `crossSectionBracket_const_mul`),
 and depend on the sign `s` only through the parity-odd term
-(`crossSectionBracket_eq_sign_zero_sub`).
+(`crossSectionBracket_eq_sign_zero_sub`), so not at all when `F₃ = 0`
+(`crossSectionBracket_parityOdd_zero`, `dSigmaDxDQ2_parityOdd_zero`).
 
 ## Main results
 
@@ -222,6 +223,13 @@ lemma crossSectionBracket_eq_sign_zero_sub (M s x Q2 y F1 F2 F3 : ℝ) :
   simp only [crossSectionBracket_def]
   ring
 
+/-- Without a parity-odd structure function the bracket does not depend on the sign `s`: it is
+the parity-even bracket at `s = 0`. -/
+lemma crossSectionBracket_parityOdd_zero (M s x Q2 y F1 F2 : ℝ) :
+    crossSectionBracket M s x Q2 y F1 F2 0 = crossSectionBracket M 0 x Q2 y F1 F2 0 := by
+  simp only [crossSectionBracket_def]
+  ring
+
 /-- The bracket is additive in the structure functions. -/
 lemma crossSectionBracket_add (M s x Q2 y F1 F2 F3 G1 G2 G3 : ℝ) :
     crossSectionBracket M s x Q2 y (F1 + G1) (F2 + G2) (F3 + G3) =
@@ -268,6 +276,12 @@ lemma dSigmaDxDQ2_const_mul (K M s x Q2 y c F1 F2 F3 : ℝ) :
     dSigmaDxDQ2 K M s x Q2 y (c * F1) (c * F2) (c * F3) =
       c * dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 := by
   rw [dSigmaDxDQ2_def, dSigmaDxDQ2_def, crossSectionBracket_const_mul, mul_left_comm]
+
+/-- Without a parity-odd structure function the inclusive cross section does not depend on the
+sign `s`: it is the cross section at `s = 0`. -/
+lemma dSigmaDxDQ2_parityOdd_zero (K M s x Q2 y F1 F2 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 y F1 F2 0 = dSigmaDxDQ2 K M 0 x Q2 y F1 F2 0 := by
+  rw [dSigmaDxDQ2_def, dSigmaDxDQ2_def, crossSectionBracket_parityOdd_zero M s]
 
 /-- **The inclusive cross section in terms of `F_L`.** The bracket's `F_L` form
 (`crossSectionBracket_eq_FL`) scaled by the flux factor, exactly in the target mass. -/
