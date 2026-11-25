@@ -30,8 +30,9 @@ coherent/incoherent decomposition of a configuration-averaged cross section.
 ## Main results
 
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq`: `∫ ‖f - ∫ f‖² = ∫ ‖f‖² - ‖∫ f‖²`.
-* `MeasureTheory.MemLp.norm_integral_sq_le_integral_norm_sq`: `‖∫ f‖² ≤ ∫ ‖f‖²`, the
-  non-negativity of the mean squared deviation; this holds in any real normed space.
+* `MeasureTheory.MemLp.norm_integral_sq_le_integral_norm_sq`: `‖∫ f‖² ≤ ∫ ‖f‖²` in any real
+  normed space; in an inner product space this is the non-negativity of the mean squared
+  deviation.
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq_eq_zero_iff`: the mean squared deviation
   vanishes if and only if `f` is almost everywhere equal to its mean; this holds in any real
   normed space.
@@ -67,10 +68,10 @@ theorem integral_norm_sub_integral_sq [InnerProductSpace ℝ E] [CompleteSpace E
 
 /-- **The squared mean is at most the second moment.** For a square-integrable function `f` with
 values in a real normed space and a probability measure `μ`, `‖∫ f dμ‖² ≤ ∫ ‖f‖² dμ`. In an inner
-product space the difference is the mean squared deviation `integral_norm_sub_integral_sq`; in
-general, `‖∫ f‖ ≤ ∫ ‖f‖` reduces the claim to the non-negativity of the real variance of `‖f‖`. -/
+product space the difference is the mean squared deviation, see `integral_norm_sub_integral_sq`. -/
 theorem norm_integral_sq_le_integral_norm_sq [NormedSpace ℝ E] [IsProbabilityMeasure μ]
     (hf : MemLp f 2 μ) : ‖∫ x, f x ∂μ‖ ^ 2 ≤ ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  -- `‖∫ f‖ ≤ ∫ ‖f‖`, and `(∫ ‖f‖)² ≤ ∫ ‖f‖²` is the non-negativity of the variance of `‖f‖`.
   have h := ProbabilityTheory.variance_nonneg (fun x ↦ ‖f x‖) μ
   rw [ProbabilityTheory.variance_eq_sub hf.norm, sub_nonneg] at h
   calc ‖∫ x, f x ∂μ‖ ^ 2 ≤ (∫ x, ‖f x‖ ∂μ) ^ 2 := by
@@ -79,8 +80,9 @@ theorem norm_integral_sq_le_integral_norm_sq [NormedSpace ℝ E] [IsProbabilityM
     _ ≤ ∫ x, ‖f x‖ ^ 2 ∂μ := by simpa using h
 
 /-- **Vanishing of the variance.** For a square-integrable function `f` with values in a real
-normed space and a finite measure `μ`, the mean squared deviation of `f` from its mean vanishes
-if and only if `f` is almost everywhere equal to its mean. -/
+normed space and a finite measure `μ`, the integral `∫ ‖f - ∫ f dμ‖² dμ` vanishes if and only if
+`f` is almost everywhere equal to the vector `∫ f dμ`. For a probability measure this integral is
+the variance of `f` and `∫ f dμ` is its mean. -/
 theorem integral_norm_sub_integral_sq_eq_zero_iff [NormedSpace ℝ E] [IsFiniteMeasure μ]
     (hf : MemLp f 2 μ) :
     ∫ x, ‖f x - ∫ y, f y ∂μ‖ ^ 2 ∂μ = 0 ↔ f =ᵐ[μ] fun _ ↦ ∫ y, f y ∂μ := by
