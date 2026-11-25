@@ -227,8 +227,8 @@ lemma crossSectionBracket_eq_sign_zero_sub (M s x Q2 y F1 F2 F3 : ℝ) :
 the parity-even bracket at `s = 0`. -/
 lemma crossSectionBracket_F3_zero (M s x Q2 y F1 F2 : ℝ) :
     crossSectionBracket M s x Q2 y F1 F2 0 = crossSectionBracket M 0 x Q2 y F1 F2 0 := by
-  simp only [crossSectionBracket_def]
-  ring
+  rw [crossSectionBracket_eq_sign_zero_sub M s]
+  simp
 
 /-- The bracket is additive in the structure functions. -/
 lemma crossSectionBracket_add (M s x Q2 y F1 F2 F3 G1 G2 G3 : ℝ) :

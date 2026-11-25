@@ -69,6 +69,7 @@ right-handed beam and `helicitySign false = -1` for a left-handed one. -/
 /-- A left-handed beam has helicity sign `-1`. -/
 @[simp] lemma helicitySign_false : helicitySign false = -1 := by simp [helicitySign]
 
+/-- The helicity sign squares to `1`. -/
 @[simp] lemma helicitySign_sq (h : Bool) : helicitySign h ^ 2 = 1 := by
   by_cases hh : h
   · simp [helicitySign, hh]
