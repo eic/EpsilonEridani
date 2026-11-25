@@ -141,11 +141,17 @@ lemma Regularity.integrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2
     MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
   simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
 
+/-- Under the analytic half of the assumptions, every Mellin-moment integrand is interval
+integrable, on any interval: the interval form of `Regularity.momentIntegrable`. -/
+lemma Regularity.momentIntervalIntegrable {f : Pdf Flavor} (h : Regularity f) (n : ℕ) (i : Flavor)
+    (Q2 a b : ℝ) : IntervalIntegrable (fun x => x ^ n * f i x Q2) MeasureTheory.volume a b :=
+  (h.momentIntegrable n i Q2).intervalIntegrable
+
 /-- Under the analytic half of the assumptions, every density is interval integrable, on any
-interval: the interval form of `Regularity.integrable`. -/
+interval: the zeroth case of `Regularity.momentIntervalIntegrable`. -/
 lemma Regularity.intervalIntegrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 a b : ℝ) :
-    IntervalIntegrable (fun x => f i x Q2) MeasureTheory.volume a b :=
-  (h.integrable i Q2).intervalIntegrable
+    IntervalIntegrable (fun x => f i x Q2) MeasureTheory.volume a b := by
+  simpa only [pow_zero, one_mul] using h.momentIntervalIntegrable 0 i Q2 a b
 
 /-- The split is exact: `Assumptions` is the conjunction of the physical and the analytic
 half, with no residue. -/

@@ -228,6 +228,12 @@ flavours: the sum of the pullbacks of the quark and of the antiquark densities. 
 def quarkAddAntiquark (f : Pdf (Species Flavor)) : Pdf Flavor :=
   comap Species.quark f + comap Species.antiquark f
 
+/-- The quark plus antiquark density is the sum of the pullbacks of the quark and of the
+antiquark densities. -/
+theorem quarkAddAntiquark_eq_comap_add_comap (f : Pdf (Species Flavor)) :
+    quarkAddAntiquark f = comap Species.quark f + comap Species.antiquark f :=
+  (rfl)
+
 @[simp]
 theorem quarkAddAntiquark_apply (f : Pdf (Species Flavor)) (i : Flavor) (x Q2 : ℝ) :
     quarkAddAntiquark f i x Q2 = f (.quark i) x Q2 + f (.antiquark i) x Q2 :=
@@ -248,24 +254,27 @@ theorem mellinMoment_quarkAddAntiquark {f : Pdf (Species Flavor)} {n : ℕ} {i :
     (hqbar : MeasureTheory.IntegrableOn (fun x => x ^ n * f (.antiquark i) x Q2) (Set.Icc 0 1)) :
     mellinMoment (quarkAddAntiquark f) n i Q2
       = mellinMoment f n (.quark i) Q2 + mellinMoment f n (.antiquark i) Q2 := by
-  rw [quarkAddAntiquark,
+  rw [quarkAddAntiquark_eq_comap_add_comap,
     mellinMoment_add (f := comap Species.quark f) (g := comap Species.antiquark f) hq hqbar,
     mellinMoment_comap, mellinMoment_comap]
 
 /-- The quark plus antiquark density of a parton density is a parton density. -/
 theorem IsPartonDensity.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : IsPartonDensity f) :
-    IsPartonDensity (quarkAddAntiquark f) :=
-  (h.comap _).add (h.comap _)
+    IsPartonDensity (quarkAddAntiquark f) := by
+  rw [quarkAddAntiquark_eq_comap_add_comap]
+  exact (h.comap _).add (h.comap _)
 
 /-- The quark plus antiquark density of a regular density is regular. -/
 theorem Regularity.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Regularity f) :
-    Regularity (quarkAddAntiquark f) :=
-  (h.comap _).add (h.comap _)
+    Regularity (quarkAddAntiquark f) := by
+  rw [quarkAddAntiquark_eq_comap_add_comap]
+  exact (h.comap _).add (h.comap _)
 
 /-- The quark plus antiquark density preserves the density assumptions. -/
 theorem Assumptions.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Assumptions f) :
-    Assumptions (quarkAddAntiquark f) :=
-  (h.comap _).add (h.comap _)
+    Assumptions (quarkAddAntiquark f) := by
+  rw [quarkAddAntiquark_eq_comap_add_comap]
+  exact (h.comap _).add (h.comap _)
 
 end PDF
 

@@ -53,7 +53,7 @@ sea asymmetry `dbar - ubar = a`.
 
 ## Main statements
 
-* `gottfriedSum_eq_integral_sub`: the structure-function form is the density form,
+* `gottfriedSum_eq_mul_integral_sub`: the structure-function form is the density form,
   `S_G = (e_u² - e_d²) ∫₀¹ (q_u - q_d)`, with no hypothesis.
 * `gottfriedSum_quarkAddAntiquark`: the general identity
   `S_G = (e_u² - e_d²) (∫(u - ubar) - ∫(d - dbar) + 2 ∫(ubar - dbar))`.
@@ -141,11 +141,11 @@ theorem gottfriedSum_def (e : ι → ℝ) (u d : ι) (q : Pdf ι) (Q2 : ℝ) :
 /-- **The Gottfried sum in terms of the densities.** Dividing the proton-neutron difference
 `x (e_u² - e_d²) (q_u - q_d)` by `x` gives `S_G = (e_u² - e_d²) ∫₀¹ (q_u - q_d)`. No hypothesis is
 needed: the two integrands agree on `(0, 1]`, so either both integrals exist or both are `0`. -/
-theorem gottfriedSum_eq_integral_sub (e : ι → ℝ) (u d : ι) (q : Pdf ι) (Q2 : ℝ) :
+theorem gottfriedSum_eq_mul_integral_sub (e : ι → ℝ) (u d : ι) (q : Pdf ι) (Q2 : ℝ) :
     gottfriedSum e u d q Q2 = (e u ^ 2 - e d ^ 2) * ∫ x in (0 : ℝ)..1, (q u x Q2 - q d x Q2) := by
-  rw [gottfriedSum_def, momentF_def, ← intervalIntegral.integral_const_mul]
-  refine intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun x hx => ?_)
-  rw [Set.uIoc_of_le zero_le_one] at hx
+  rw [gottfriedSum_def, momentF_congr (G := fun x Q2 => q u x Q2 - q d x Q2)
+    (v := fun _ => e u ^ 2 - e d ^ 2) fun x hx => ?_, momentF_def,
+    intervalIntegral.integral_const_mul]
   rw [f2LO_sub_f2LO_isospinConj]
   field_simp [hx.1.ne']
 
@@ -159,7 +159,7 @@ theorem gottfriedSum_quarkAddAntiquark {f : Pdf (Species ι)} {u d : ι} {Q2 : �
           ((∫ x in (0 : ℝ)..1, (f (.quark u) x Q2 - f (.antiquark u) x Q2))
             - (∫ x in (0 : ℝ)..1, (f (.quark d) x Q2 - f (.antiquark d) x Q2))
             + 2 * ∫ x in (0 : ℝ)..1, (f (.antiquark u) x Q2 - f (.antiquark d) x Q2)) := by
-  rw [gottfriedSum_eq_integral_sub]
+  rw [gottfriedSum_eq_mul_integral_sub]
   congr 1
   rw [← intervalIntegral.integral_const_mul,
     ← intervalIntegral.integral_sub h.valenceUp h.valenceDown,
@@ -223,7 +223,7 @@ theorem gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity (h : Regu
   all_goals simpa using hi _
 
 /-!
-## A density without integrable antiquark densities
+## A density none of whose species is integrable
 -/
 
 /-- The constant that each species of `gottfriedModel a` carries on top of its `1/x` rise: `2` for
@@ -234,13 +234,45 @@ def gottfriedModelShift (a : ℝ) : Species LightFlavor → ℝ
   | .antiquark .d => a
   | _ => 0
 
+@[simp]
+lemma gottfriedModelShift_quark_u (a : ℝ) : gottfriedModelShift a (.quark .u) = 2 :=
+  (rfl)
+
+@[simp]
+lemma gottfriedModelShift_quark_d (a : ℝ) : gottfriedModelShift a (.quark .d) = 1 + a :=
+  (rfl)
+
+@[simp]
+lemma gottfriedModelShift_antiquark_d (a : ℝ) : gottfriedModelShift a (.antiquark .d) = a :=
+  (rfl)
+
+@[simp]
+lemma gottfriedModelShift_antiquark_u (a : ℝ) : gottfriedModelShift a (.antiquark .u) = 0 :=
+  (rfl)
+
+@[simp]
+lemma gottfriedModelShift_quark_s (a : ℝ) : gottfriedModelShift a (.quark .s) = 0 :=
+  (rfl)
+
+@[simp]
+lemma gottfriedModelShift_antiquark_s (a : ℝ) : gottfriedModelShift a (.antiquark .s) = 0 :=
+  (rfl)
+
+@[simp]
+lemma gottfriedModelShift_gluon (a : ℝ) : gottfriedModelShift a (.gluon) = 0 :=
+  (rfl)
+
 /-- For a nonnegative sea asymmetry `a`, every shift of `gottfriedModel a` is nonnegative. -/
 lemma gottfriedModelShift_nonneg {a : ℝ} (ha : 0 ≤ a) (s : Species LightFlavor) :
     0 ≤ gottfriedModelShift a s := by
-  cases s with
-  | quark i => cases i <;> simp only [gottfriedModelShift] <;> linarith
-  | antiquark i => cases i <;> simp only [gottfriedModelShift] <;> linarith
-  | gluon => simp only [gottfriedModelShift, le_refl]
+  rcases s with (_ | _ | _) | (_ | _ | _) | _
+  · rw [gottfriedModelShift_quark_u]; norm_num
+  · rw [gottfriedModelShift_quark_d]; linarith
+  · rw [gottfriedModelShift_quark_s]
+  · rw [gottfriedModelShift_antiquark_u]
+  · rwa [gottfriedModelShift_antiquark_d]
+  · rw [gottfriedModelShift_antiquark_s]
+  · rw [gottfriedModelShift_gluon]
 
 /-- **A density with a `1/x` sea.** Every species has the density `1/x` on the unit interval,
 on top of which it carries the constant `gottfriedModelShift a`: `2` and `1 + a` for the up and
@@ -274,42 +306,35 @@ theorem isPartonDensity_gottfriedModel {a : ℝ} (ha : 0 ≤ a) :
     rw [gottfriedModel_apply_of_mem a s ⟨h0, h1⟩]
     exact add_nonneg (inv_nonneg.2 h0) (gottfriedModelShift_nonneg ha s)
 
-/-- The up valence density of `gottfriedModel a` is `2` on the unit interval. -/
-lemma gottfriedModel_quark_u_sub_antiquark_u_eqOn (a Q2 : ℝ) :
-    Set.EqOn (fun x => gottfriedModel a (.quark u) x Q2 - gottfriedModel a (.antiquark u) x Q2)
-      (fun _ => 2) (Set.uIcc 0 1) := fun x hx => by
+/-- The `1/x` rise cancels in the difference of any two species of `gottfriedModel a`: on the unit
+interval the difference is the difference of their shifts. -/
+lemma gottfriedModel_sub_eqOn (a Q2 : ℝ) (s t : Species LightFlavor) :
+    Set.EqOn (fun x => gottfriedModel a s x Q2 - gottfriedModel a t x Q2)
+      (fun _ => gottfriedModelShift a s - gottfriedModelShift a t) (Set.uIcc 0 1) := fun x hx => by
   rw [Set.uIcc_of_le zero_le_one] at hx
-  simp only [gottfriedModel_apply_of_mem a _ hx, gottfriedModelShift]
-  ring
+  simp only [gottfriedModel_apply_of_mem a _ hx, add_sub_add_left_eq_sub]
 
-/-- The down valence density of `gottfriedModel a` is `1` on the unit interval. -/
-lemma gottfriedModel_quark_d_sub_antiquark_d_eqOn (a Q2 : ℝ) :
-    Set.EqOn (fun x => gottfriedModel a (.quark d) x Q2 - gottfriedModel a (.antiquark d) x Q2)
-      (fun _ => 1) (Set.uIcc 0 1) := fun x hx => by
-  rw [Set.uIcc_of_le zero_le_one] at hx
-  simp only [gottfriedModel_apply_of_mem a _ hx, gottfriedModelShift]
-  ring
+/-- The difference of any two species of `gottfriedModel a` is integrable on the unit interval. -/
+theorem intervalIntegrable_gottfriedModel_sub (a Q2 : ℝ) (s t : Species LightFlavor) :
+    IntervalIntegrable (fun x => gottfriedModel a s x Q2 - gottfriedModel a t x Q2) volume 0 1 :=
+  (intervalIntegrable_congr ((gottfriedModel_sub_eqOn a Q2 s t).mono Set.uIoc_subset_uIcc)).2
+    intervalIntegrable_const
 
-/-- The light-sea asymmetry `ubar - dbar` of `gottfriedModel a` is `-a` on the unit interval. -/
-lemma gottfriedModel_antiquark_u_sub_antiquark_d_eqOn (a Q2 : ℝ) :
-    Set.EqOn (fun x => gottfriedModel a (.antiquark u) x Q2 - gottfriedModel a (.antiquark d) x Q2)
-      (fun _ => -a) (Set.uIcc 0 1) := fun x hx => by
-  rw [Set.uIcc_of_le zero_le_one] at hx
-  simp only [gottfriedModel_apply_of_mem a _ hx, gottfriedModelShift]
-  ring
+/-- The difference of any two species of `gottfriedModel a` integrates over the unit interval to
+the difference of their shifts. For `q_i - qbar_i` this is `2`, `1` and `0` for `u`, `d` and `s`,
+and for `ubar - dbar` it is `-a`. -/
+theorem integral_gottfriedModel_sub (a Q2 : ℝ) (s t : Species LightFlavor) :
+    ∫ x in (0 : ℝ)..1, (gottfriedModel a s x Q2 - gottfriedModel a t x Q2)
+      = gottfriedModelShift a s - gottfriedModelShift a t := by
+  rw [intervalIntegral.integral_congr (gottfriedModel_sub_eqOn a Q2 s t),
+    intervalIntegral.integral_const, sub_zero, one_smul]
 
 /-- `gottfriedModel a` satisfies the convergence hypotheses of the Gottfried sum rule. -/
 theorem gottfriedIntegrable_gottfriedModel (a Q2 : ℝ) :
     GottfriedIntegrable (gottfriedModel a) u d Q2 where
-  valenceUp := (intervalIntegrable_congr
-    ((gottfriedModel_quark_u_sub_antiquark_u_eqOn a Q2).mono Set.uIoc_subset_uIcc)).2
-      intervalIntegrable_const
-  valenceDown := (intervalIntegrable_congr
-    ((gottfriedModel_quark_d_sub_antiquark_d_eqOn a Q2).mono Set.uIoc_subset_uIcc)).2
-      intervalIntegrable_const
-  seaAsymmetry := (intervalIntegrable_congr
-    ((gottfriedModel_antiquark_u_sub_antiquark_d_eqOn a Q2).mono Set.uIoc_subset_uIcc)).2
-      intervalIntegrable_const
+  valenceUp := intervalIntegrable_gottfriedModel_sub a Q2 _ _
+  valenceDown := intervalIntegrable_gottfriedModel_sub a Q2 _ _
+  seaAsymmetry := intervalIntegrable_gottfriedModel_sub a Q2 _ _
 
 /-- No species of `gottfriedModel a` is integrable on the unit interval: each is `1/x` plus a
 constant there. -/
@@ -320,7 +345,10 @@ theorem not_intervalIntegrable_gottfriedModel (a Q2 : ℝ) (s : Species LightFla
     (h.sub (intervalIntegrable_const (c := gottfriedModelShift a s))).congr fun x hx => by
       rw [Set.uIoc_of_le zero_le_one] at hx
       simp only [gottfriedModel_apply_of_mem a s (Set.Ioc_subset_Icc_self hx), add_sub_cancel_right]
-  simp at hinv
+  rw [intervalIntegrable_inv_iff] at hinv
+  rcases hinv with h01 | h0
+  · exact zero_ne_one h01
+  · exact h0 (Set.left_mem_uIcc)
 
 /-- `gottfriedModel a` is not a regular density, so the Gottfried sum rule for it does not follow
 from `gottfriedSum_lightFlavorCharge_quarkAddAntiquark_of_regularity`. -/
@@ -341,12 +369,11 @@ has a zeroth moment. -/
 theorem gottfriedSum_gottfriedModel (a Q2 : ℝ) :
     gottfriedSum charge u d (quarkAddAntiquark (gottfriedModel a)) Q2 = 1 / 3 - 2 / 3 * a := by
   rw [gottfriedSum_lightFlavorCharge_quarkAddAntiquark (gottfriedIntegrable_gottfriedModel a Q2)
-    ((intervalIntegral.integral_congr (gottfriedModel_quark_u_sub_antiquark_u_eqOn a Q2)).trans
-      (by simp))
-    ((intervalIntegral.integral_congr (gottfriedModel_quark_d_sub_antiquark_d_eqOn a Q2)).trans
-      (by simp)),
-    intervalIntegral.integral_congr (gottfriedModel_antiquark_u_sub_antiquark_d_eqOn a Q2)]
-  simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul, one_mul]
+    (by rw [integral_gottfriedModel_sub, gottfriedModelShift_quark_u,
+      gottfriedModelShift_antiquark_u, sub_zero])
+    (by rw [integral_gottfriedModel_sub, gottfriedModelShift_quark_d,
+      gottfriedModelShift_antiquark_d, add_sub_cancel_right]),
+    integral_gottfriedModel_sub, gottfriedModelShift_antiquark_u, gottfriedModelShift_antiquark_d]
   ring
 
 end LightFlavor
