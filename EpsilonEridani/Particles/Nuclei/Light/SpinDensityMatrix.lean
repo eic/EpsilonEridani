@@ -217,7 +217,7 @@ lemma spinOneMatrix_mul_spinOneMatrix_apply (i j a b : Fin 3) :
 
 /-- The entries of a spin-one matrix are antisymmetric: `(Sₖ)ᵦₐ = -(Sₖ)ₐᵦ`. -/
 lemma spinOneMatrix_apply_swap (k a b : Fin 3) : spinOneMatrix k b a = -spinOneMatrix k a b := by
-  rw [← transpose_apply (spinOneMatrix k), transpose_spinOneMatrix, neg_apply]
+  rw [← transpose_apply (spinOneMatrix k), transpose_spinOneMatrix, Matrix.neg_apply]
 
 /-- The diagonal entries of a spin-one matrix vanish. -/
 @[simp]
@@ -414,7 +414,8 @@ lemma re_tensorPolarization_spinOneMatrix_self (ρ : Matrix (Fin 3) (Fin 3) ℂ)
 /-- The tensor polarization of a spin-one state is at most one: `Pᵢᵢ ≤ 1`. -/
 theorem re_tensorPolarization_spinOneMatrix_le_one (hρ : ρ.PosSemidef) (htr : ρ.trace = 1)
     (i : Fin 3) : (tensorPolarization spinOneMatrix ρ i i).re ≤ 1 := by
-  have := (Complex.nonneg_iff.mp (hρ.diag_nonneg (i := i))).1
+  have := hρ.re_apply_self_nonneg i
+  simp only [RCLike.re_to_complex] at this
   rw [re_tensorPolarization_spinOneMatrix_self, htr, one_re]
   linarith
 

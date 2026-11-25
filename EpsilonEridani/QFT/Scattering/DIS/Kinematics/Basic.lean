@@ -56,7 +56,7 @@ lemma apply_eq_zero_of_apply_eq_self_of_apply_eq_neg {W : Bilin V} {f : V →ₗ
 end Bilin
 
 /-- Minimal process-level kinematics for inclusive DIS. -/
-structure DisKinematics where
+@[ext] structure DisKinematics where
   /-- Incoming hadron momentum. -/
   p : V
   /-- Outgoing hadron momentum in exclusive/semi-inclusive projections.
@@ -79,13 +79,19 @@ variable {V}
 def Q2 (g : Bilin V) (K : DisKinematics V) : ℝ :=
   - g K.q K.q
 
+lemma Q2_def (g : Bilin V) (K : DisKinematics V) : K.Q2 g = - g K.q K.q := (rfl)
+
 /-- The Bjorken scaling variable `xBj := Q2 / (2 p·q)`. -/
 noncomputable def xBj (g : Bilin V) (K : DisKinematics V) : ℝ :=
   K.Q2 g / (2 * g K.p K.q)
 
+lemma xBj_def (g : Bilin V) (K : DisKinematics V) : K.xBj g = K.Q2 g / (2 * g K.p K.q) := (rfl)
+
 /-- The inelasticity variable `y := (p·q)/(p·k)`. -/
 noncomputable def yInel (g : Bilin V) (K : DisKinematics V) : ℝ :=
   g K.p K.q / g K.p K.k
+
+lemma yInel_def (g : Bilin V) (K : DisKinematics V) : K.yInel g = g K.p K.q / g K.p K.k := (rfl)
 
 /-- The hadronic invariant mass squared `W2 := (p + q)^2`. -/
 def W2 (g : Bilin V) (K : DisKinematics V) : ℝ :=

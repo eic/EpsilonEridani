@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.BasicExtensions
 public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearMap
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 /-!
@@ -129,18 +130,6 @@ lemma rankOne_isSymm (g : Bilin V) (a : V) : (rankOne g a a).IsSymm := by
   intro v w
   simp [rankOne_apply, mul_comm]
 
-/-- Expansion of a bilinear form on a pair of vectors each shifted along `u`. -/
-lemma apply_sub_smul_pair (g : Bilin V) (u x y : V) (a b : ℝ) :
-    g (x - a • u) (y - b • u)
-      = g x y - b * g x u - a * g u y + a * b * g u u := by
-  have h1 : g (x - a • u) = g x - a • g u := by
-    rw [map_sub, map_smul]
-  have h3 : ∀ z : V, g z (y - b • u) = g z y - b * g z u := by
-    intro z
-    rw [map_sub, map_smul, smul_eq_mul]
-  rw [h1, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, h3 x, h3 u]
-  ring
-
 /-- A linear endomorphism preserving the background form `g`. For `g` a Lorentz metric these
 are exactly the (linear) Lorentz transformations. -/
 def IsIsometry (g : Bilin V) (f : V →ₗ[ℝ] V) : Prop :=
@@ -193,7 +182,7 @@ lemma reflect_isometry (g : Bilin V) (hSymm : g.IsSymm) (u : V) (hu : g u u ≠ 
     IsIsometry g (reflect g u) := by
   intro v w
   have hc : (g u u)⁻¹ * g u u = 1 := inv_mul_cancel₀ hu
-  rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
+  rw [reflect_apply, reflect_apply, LinearMap.BilinForm.apply_sub_smul_sub_smul, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
 /-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`. -/
