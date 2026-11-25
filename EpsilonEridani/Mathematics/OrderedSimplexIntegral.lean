@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import EpsilonEridani.Mathematics.MeasureTheory.FinRev
+public import EpsilonEridani.Mathematics.MeasureTheory.SetIntegralProd
 public import EpsilonEridani.Mathematics.MeasureTheory.StrictMono
 
 /-!
@@ -270,8 +271,9 @@ lemma integrableOn_orderedRegion_prod (hf : Continuous f) (T : ℝ) (n : ℕ) (t
 normed space over `ℝ`, over the `(n + 1)`-coordinate ordered region equals the integral over
 `x ∈ (t, T)` of the integral of `q ↦ g (Fin.cons x q)` over the `n`-coordinate ordered region
 with lower endpoint `x`: splitting off the smallest coordinate `p 0`, a volume-preserving
-`Fin.cons` decomposition followed by Fubini, leaves exactly that nested integral.  This is
-the measure-theoretic counterpart of `orderedProdIntegral_succ`.  The integrability
+`Fin.cons` decomposition followed by the slice-by-slice Fubini theorem
+`setIntegral_prod_eq_integral_setIntegral_mk_preimage`, leaves exactly that nested integral.
+This is the measure-theoretic counterpart of `orderedProdIntegral_succ`.  The integrability
 hypothesis holds for any integrand continuous on the cube `[t, T] ^ (n + 1)`, by
 `integrableOn_orderedRegion`; for the product integrand of a continuous `f` it is
 `integrableOn_orderedRegion_prod`. -/
@@ -295,31 +297,27 @@ theorem setIntegral_orderedRegion_succ {E : Type*} [NormedAddCommGroup E] [Norme
   set h : ℝ × (Fin n → ℝ) → E := fun z => g (Fin.cons z.1 z.2)
   have hh (z : ℝ × (Fin n → ℝ)) : g (e.symm z) = h z := by
     simp [h, he_apply]
-  have hint : Integrable (S.indicator h) (volume.prod volume) := by
+  have hint : IntegrableOn h S (volume.prod volume) := by
     rw [← he.integrableOn_comp_preimage e.symm.measurableEmbedding] at hg
-    rw [integrable_indicator_iff hS]
     exact hg.congr_fun (fun z _ => hh z) hS
   -- At fixed `x`, the slice of `S` is the ordered region with lower endpoint `x`, or empty.
-  have hslice (x : ℝ) : ∫ q, S.indicator h (x, q) =
+  have hslice (x : ℝ) : ∫ q in Prod.mk x ⁻¹' S, h (x, q) =
       (Set.Ioo t T).indicator (fun x => ∫ q in orderedRegion T n x, g (Fin.cons x q)) x := by
-    simp_rw [← Set.indicator_comp_right (Prod.mk x) (g := h)]
     by_cases hx : x ∈ Set.Ioo t T
     · have hpre : Prod.mk x ⁻¹' S = orderedRegion T n x := by
         ext q
         simp [hmemS, hx]
-      rw [hpre, MeasureTheory.integral_indicator (measurableSet_orderedRegion T n x),
-        Set.indicator_of_mem hx]
-      rfl
+      rw [hpre, Set.indicator_of_mem hx]
     · have hpre : Prod.mk x ⁻¹' S = ∅ := by
         ext q
         simp [hmemS, hx]
-      rw [hpre, Set.indicator_empty, MeasureTheory.integral_zero, Set.indicator_of_notMem hx]
+      rw [hpre, MeasureTheory.setIntegral_empty, Set.indicator_of_notMem hx]
   calc ∫ p in orderedRegion T (n + 1) t, g p
       = ∫ z in S, h z ∂(volume.prod volume) := by
         rw [← he.setIntegral_preimage_emb e.symm.measurableEmbedding]
         exact setIntegral_congr_fun hS fun z _ => hh z
-    _ = ∫ x, ∫ q, S.indicator h (x, q) := by
-        rw [← MeasureTheory.integral_indicator hS, integral_prod _ hint]
+    _ = ∫ x, ∫ q in Prod.mk x ⁻¹' S, h (x, q) :=
+        setIntegral_prod_eq_integral_setIntegral_mk_preimage hS hint
     _ = ∫ x in Set.Ioo t T, ∫ q in orderedRegion T n x, g (Fin.cons x q) := by
         simp_rw [hslice, MeasureTheory.integral_indicator measurableSet_Ioo]
 

@@ -6,7 +6,7 @@ Authors: Joseph Tooby-Smith
 module
 
 public import EpsilonEridani.Particles.Parton.PDF.Positivity
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 /-!
 
 # An explicit collinear PDF model

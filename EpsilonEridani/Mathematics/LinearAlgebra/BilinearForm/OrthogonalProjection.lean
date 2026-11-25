@@ -5,6 +5,7 @@ Authors: Wouter Deconinck, Joseph Tooby-Smith
 -/
 module
 
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.BasicExtensions
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Reflection
@@ -23,9 +24,9 @@ For a real bilinear form `g` on `V` and a vector `u` with `g u u ≠ 0`, this fi
 * the reflection `LinearMap.BilinForm.reflect g u : v ↦ v - 2 (g u v / g u u) • u` in the
   `g`-orthogonal hyperplane of `u`,
 
-both as `Module.preReflection u f` for the appropriate functional `f`, together with the
-expansion `LinearMap.BilinForm.apply_sub_smul_pair` of `g` on two vectors shifted along `u` that
-their pairings reduce to. The two-vector analogue of the projection, along a light-cone pair,
+both as `Module.preReflection u f` for the appropriate functional `f`, their pairings
+reducing to the expansion `LinearMap.BilinForm.apply_sub_smul_sub_smul` of `g` on two vectors
+shifted along `u`. The two-vector analogue of the projection, along a light-cone pair,
 is `LinearMap.BilinForm.LightConeBasis.transverseProj` in
 `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
 
@@ -47,13 +48,6 @@ namespace LinearMap.BilinForm
 open LinearMap (BilinForm)
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- Expansion of a bilinear form on a pair of vectors each shifted along `u`. -/
-lemma apply_sub_smul_pair (g : BilinForm ℝ V) (u x y : V) (a b : ℝ) :
-    g (x - a • u) (y - b • u)
-      = g x y - b * g x u - a * g u y + a * b * g u u := by
-  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
-  ring
 
 /-- The projection along `ℝ ∙ u` onto the `g`-orthogonal complement of `u`,
 `v ↦ v - (g v u / g u u) • u`. It is `Module.preReflection u f` for the functional
@@ -121,7 +115,7 @@ lemma projOrthogonal_pairing (g : BilinForm ℝ V) (u v w : V) :
     g (g.projOrthogonal u v) (g.projOrthogonal u w) = g v w - g v u * g u w / g u u := by
   rcases eq_or_ne (g u u) 0 with hu | hu
   · simp [projOrthogonal_apply, hu]
-  rw [projOrthogonal_apply, projOrthogonal_apply, apply_sub_smul_pair]
+  rw [projOrthogonal_apply, projOrthogonal_apply, apply_sub_smul_sub_smul]
   field_simp
   ring
 
@@ -176,7 +170,7 @@ lemma reflect_isometry (g : BilinForm ℝ V) (hSymm : g.IsSymm) (u : V) (hu : g 
     g.IsOrthogonal (reflect g u) := by
   intro v w
   have hc : (g u u)⁻¹ * g u u = 1 := inv_mul_cancel₀ hu
-  rw [reflect_apply, reflect_apply, apply_sub_smul_pair, hSymm.eq v u]
+  rw [reflect_apply, reflect_apply, apply_sub_smul_sub_smul, hSymm.eq v u]
   linear_combination (4 * (g u u)⁻¹ * g u v * g u w) * hc
 
 /-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`. -/
