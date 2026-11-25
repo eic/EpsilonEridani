@@ -92,6 +92,7 @@ jobs:
           python3 scripts/test_lake_requires.py
           python3 scripts/test_lean_versions.py
           python3 scripts/test_toolchain_tags.py
+          python3 scripts/test_merge_queue_report.py
 
       # The two-library split is build convenience, not a trust boundary.
       # This guard is what actually stops the AI-owned library from inheriting

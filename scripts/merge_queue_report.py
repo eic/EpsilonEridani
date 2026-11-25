@@ -26,11 +26,12 @@ block, with any fence in them defused, and never interpreted.
 
 from __future__ import annotations
 
-import json
 import os
 import re
-import subprocess
 import sys
+
+import merge_group_prs
+from gh_utils import gh, gh_json, upsert_marked_comment
 
 MARKER = "<!--merge-queue-failure:v1 {head}-->"
 MARKER_RE = re.compile(r"<!--merge-queue-failure:v1 ([0-9a-f]{40})-->")
@@ -43,27 +44,10 @@ ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 ERROR_RE = re.compile(r"^(error(\[[^\]]*\])?:|##\[error\]|✖ )")
 # Exit-code noise that every failed step prints and that says nothing about the cause.
 NOISE_RE = re.compile(r"^##\[error\]Process completed with exit code \d+\.?$")
-SQUASH_PR_RE = re.compile(r"\(#(\d+)\)\s*$")
 
 MAX_JOBS = 3
 MAX_LINES = 25
 MAX_LINE_CHARS = 400
-
-
-def gh(args, token=None, stdin=None):
-    env = dict(os.environ)
-    if token:
-        env["GH_TOKEN"] = token
-    r = subprocess.run(["gh", *args], capture_output=True, text=True, env=env, input=stdin,
-                       timeout=120)
-    if r.returncode != 0:
-        raise RuntimeError(f"gh {' '.join(args[:2])} failed: {r.stderr.strip()[:500]}")
-    return r.stdout
-
-
-def gh_json(args, token=None):
-    out = gh(args, token)
-    return json.loads(out) if out.strip() else None
 
 
 def parse_branch(branch):
@@ -73,17 +57,19 @@ def parse_branch(branch):
 
 
 def extract_errors(log, max_lines=MAX_LINES):
-    """The distinct error lines of a job log, in order, without timestamps or colour codes."""
-    seen, out = set(), []
+    """(the distinct error lines of a job log, in order, without timestamps or colour codes;
+    whether yet more distinct error lines followed past the cap)."""
+    seen, out, more = set(), [], False
     for raw in log.splitlines():
         line = ANSI_RE.sub("", STAMP_RE.sub("", raw)).rstrip()
         if not ERROR_RE.match(line) or NOISE_RE.match(line) or line in seen:
             continue
         seen.add(line)
-        out.append(line if len(line) <= MAX_LINE_CHARS else line[:MAX_LINE_CHARS] + " …")
         if len(out) >= max_lines:
+            more = True
             break
-    return out
+        out.append(line if len(line) <= MAX_LINE_CHARS else line[:MAX_LINE_CHARS] + " …")
+    return out, more
 
 
 def defuse(text):
@@ -92,17 +78,22 @@ def defuse(text):
 
 
 def group_prs(subjects, this_pr):
-    """PR numbers of the squash commits in the group, other than this PR, in queue order."""
+    """PR numbers of the squash commits in the group, other than this PR, in queue order.
+    A subject that carries no number is skipped — this report only names the group's other
+    PRs — while scripts/lint-scope.sh fails closed on the same case; the shared convention
+    lives in scripts/merge_group_prs.py."""
     seen = []
-    for s in subjects:
-        m = SQUASH_PR_RE.search(s or "")
-        if m and int(m[1]) != this_pr and int(m[1]) not in seen:
-            seen.append(int(m[1]))
+    for n in merge_group_prs.pr_numbers(subjects):
+        if n is not None and n != this_pr and n not in seen:
+            seen.append(n)
     return seen
 
 
-def render(*, pr_head, run_url, base_branch, base_sha, group_sha, jobs, others):
-    """The comment body. `jobs` is a list of {name, url, steps: [str], errors: [str]}."""
+def render(*, pr_head, run_url, base_branch, base_sha, group_sha, jobs, others,
+           total_failed=None):
+    """The comment body. `jobs` is a list of {name, url, steps, errors, truncated}: the
+    first MAX_JOBS of the run's `total_failed` failed jobs, each holding at most MAX_LINES
+    error lines; where a cap bites, the body says so."""
     lines = [
         f"### Merge queue: build failed for head `{pr_head[:7]}`",
         "",
@@ -120,9 +111,15 @@ def render(*, pr_head, run_url, base_branch, base_sha, group_sha, jobs, others):
         steps = ", ".join(f"`{s}`" for s in j["steps"]) or "unknown step"
         lines += [f"**[{j['name']}]({j['url']})** failed in {steps}.", ""]
         if j["errors"]:
-            lines += ["```text", *(defuse(e) for e in j["errors"]), "```", ""]
+            lines += ["```text", *(defuse(e) for e in j["errors"]), "```"]
+            if j.get("truncated"):
+                lines += [f"(first {MAX_LINES} error lines; see the job log for the rest)"]
+            lines += [""]
         else:
             lines += ["No error lines were found in the job log; see the job for details.", ""]
+    if total_failed and total_failed > len(jobs):
+        lines += [f"And {total_failed - len(jobs)} more failed job(s); see the "
+                  f"[pr-build run]({run_url}).", ""]
     lines += [
         "A PR's own `pr-build` builds its exact head, not head + current "
         f"`{base_branch}`; if `{base_branch}` has moved (for example a dependency bump), merge it "
@@ -134,47 +131,40 @@ def render(*, pr_head, run_url, base_branch, base_sha, group_sha, jobs, others):
 
 
 def failed_jobs(repo, run_id):
+    """(the first MAX_JOBS failed jobs of the run, each {name, url, steps, errors, truncated},
+    and the run's total number of failed jobs)."""
     jobs = []
     pages = gh_json(["api", "--paginate", "--slurp",
                      f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100"]) or []
     for page in pages:
         jobs += page.get("jobs") or []
+    failed = [j for j in jobs if j.get("conclusion") == "failure"]
     out = []
-    for j in jobs:
-        if j.get("conclusion") != "failure":
-            continue
+    for j in failed[:MAX_JOBS]:
         steps = [s["name"] for s in j.get("steps") or [] if s.get("conclusion") == "failure"]
         try:
-            errors = extract_errors(gh(["api", f"repos/{repo}/actions/jobs/{j['id']}/logs"]))
+            errors, truncated = extract_errors(
+                gh(["api", f"repos/{repo}/actions/jobs/{j['id']}/logs"]))
         except RuntimeError as e:
             print(f"::warning::could not read the log of job {j['id']}: {e}", file=sys.stderr)
-            errors = []
+            errors, truncated = [], False
         out.append({"name": j.get("name") or str(j["id"]), "url": j.get("html_url") or "",
-                    "steps": steps, "errors": errors})
-        if len(out) >= MAX_JOBS:
-            break
-    return out
+                    "steps": steps, "errors": errors, "truncated": truncated})
+    return out, len(failed)
 
 
 def group_subjects(repo, base_sha, group_sha):
+    """The subjects of the group's squash commits, in queue order."""
     cmp = gh_json(["api", f"repos/{repo}/compare/{base_sha}...{group_sha}"]) or {}
-    return [(c.get("commit") or {}).get("message", "").split("\n", 1)[0]
-            for c in cmp.get("commits") or []]
+    return merge_group_prs.commit_subjects(cmp)
 
 
 def upsert_comment(repo, pr, head, body, token):
-    """Edit this head's report if one exists, else create it."""
-    comments = gh_json(["api", "--paginate", "--slurp",
-                        f"repos/{repo}/issues/{pr}/comments?per_page=100"], token) or []
-    for c in (c for page in comments for c in page):
-        m = MARKER_RE.search(c.get("body") or "")
-        if m and m[1] == head:
-            gh(["api", "-X", "PATCH", f"repos/{repo}/issues/comments/{c['id']}",
-                "--input", "-"], token, stdin=json.dumps({"body": body}))
-            return "edited"
-    gh(["api", "-X", "POST", f"repos/{repo}/issues/{pr}/comments", "--input", "-"], token,
-       stdin=json.dumps({"body": body}))
-    return "created"
+    """Edit this head's report if one exists, else create it: the marker-keyed upsert is
+    scripts/gh_utils.py's, keyed here by the PR head."""
+    action, _ = upsert_marked_comment(repo, pr, re.compile(re.escape(MARKER.format(head=head))),
+                                      body, token)
+    return action
 
 
 def main():
@@ -195,9 +185,10 @@ def main():
     except RuntimeError as e:
         print(f"::warning::could not list the group's commits: {e}", file=sys.stderr)
         others = []
+    jobs, total_failed = failed_jobs(repo, run_id)
     body = render(pr_head=pr_head, run_url=f"https://github.com/{repo}/actions/runs/{run_id}",
                   base_branch=base_branch, base_sha=base_sha, group_sha=group_sha,
-                  jobs=failed_jobs(repo, run_id), others=others)
+                  jobs=jobs, others=others, total_failed=total_failed)
     if os.environ.get("DRY_RUN") == "1":
         print(body)
         return 0

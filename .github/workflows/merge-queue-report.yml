@@ -9,8 +9,9 @@ name: Merge queue report
 # read from its head branch, gh-readonly-queue/<base>/pr-<N>-<base sha>. A cancelled group (one
 # invalidated by a failure ahead of it) is not reported: only conclusion == failure.
 #
-# Trusted context only: this runs main's copy of the workflow and script, never PR code. Job logs
-# are untrusted text and are only quoted inside a code fence (see scripts/merge_queue_report.py).
+# Trusted context only: no PR code runs here. The `workflow_run` trigger uses main's copy of
+# this workflow, and the checkout below pins the script to `main` as well. Job logs are untrusted
+# text and are only quoted inside a code fence (see scripts/merge_queue_report.py).
 
 on:
   workflow_run:
@@ -58,8 +59,8 @@ jobs:
           repositories: EpsilonEridani
           # Commenting on a PR is governed by the pull requests permission.
           permission-pull-requests: write
-      # The trusted base checkout; `ref` is explicit so a dispatch from a branch cannot run that
-      # branch's copy of the script with the App token.
+      # The trusted base checkout: `ref: main` so a dispatch from any branch still runs main's
+      # script; dispatching itself is restricted to users with write access.
       - uses: actions/checkout@v7
         with:
           ref: main

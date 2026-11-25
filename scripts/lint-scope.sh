@@ -50,12 +50,13 @@ case "$EVENT" in
     [[ "${BASE:-}" =~ ^[0-9a-f]{40}$ && ! "$BASE" =~ ^0+$ ]] || full "no base commit"
     [[ "${HEAD:-}" =~ ^[0-9a-f]{40}$ ]] || full "no head commit"
     compare=$(gh api "repos/$REPO/compare/$BASE...$HEAD")
-    # Each PR lands as one squashed commit titled `... (#N)`.
-    prs=$(jq -r '.commits[].commit.message | split("\n")[0]' <<<"$compare" \
-      | sed -nE 's/.*\(#([0-9]+)\)$/\1/p' | sort -u)
-    ncommits=$(jq '.commits | length' <<<"$compare")
-    nprs=$(grep -c . <<<"$prs" || true)
-    [ "$nprs" -eq "$ncommits" ] || full "$ncommits commit(s) but $nprs PR number(s) in their titles"
+    # Each PR lands as one squashed commit titled `... (#N)`; the convention and the fail-closed
+    # check that every commit carries exactly one number live in scripts/merge_group_prs.py,
+    # shared with scripts/merge_queue_report.py. Resolved next to this script so the trusted
+    # checkout's copy runs (pr-build.yml invokes this as gate/scripts/lint-scope.sh), never a
+    # candidate's.
+    prs=$(python3 "$(dirname "$0")/merge_group_prs.py" <<<"$compare") \
+      || full "a commit subject carries no unique PR number"
     [ "$(jq '.files | length' <<<"$compare")" -lt 300 ] || full "the compare API's 300-file cap"
     files=$(jq -r '.files[] | [.status, .filename] | @tsv' <<<"$compare")
     ;;

@@ -164,6 +164,7 @@ jobs:
           python3 scripts/test_resolve_deps.py
           python3 scripts/test_bump_excludes.py
           python3 scripts/test_write_bump.py
+          python3 scripts/test_merge_queue_report.py
 
       # The two-library split is build convenience, not a trust boundary.
       # This guard is what actually stops the AI-owned library from inheriting
