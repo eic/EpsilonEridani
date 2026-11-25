@@ -28,7 +28,7 @@ contracted here are `ε_{μνρσ} = -leviCivitaSymbol (μ, ν, ρ, σ)`
 components in the standard basis `e₀, e₁, e₂, e₃`.
 
 The integer Levi-Civita symbols of
-`EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita` use the opposite convention:
+`EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita.Basic` use the opposite convention:
 `realLorentzTensor.leviCivita4UpInt`, documented there as the contravariant symbol, is
 `-leviCivitaSymbol`, i.e. `ε^{0123} = -1`, while the covariant components of `minkowskiVolumeForm`
 are `-leviCivita4Int`, as
@@ -73,7 +73,8 @@ Levi-Civita tensors.
   vector with this property.
 * `EpsilonEridani.minkowskiVolumeFormRaise_apply_left_eq_zero`,
   `EpsilonEridani.minkowskiVolumeFormRaise_apply_right_eq_zero`,
-  `EpsilonEridani.minkowskiVolumeFormRaise_self`, `EpsilonEridani.minkowskiVolumeFormRaise_swap`:
+  `EpsilonEridani.minkowskiVolumeFormRaise_self_eq_zero`,
+  `EpsilonEridani.minkowskiVolumeFormRaise_swap`:
   it kills `a` and `b`, vanishes for `a = b`, and is antisymmetric in `a` and `b`.
 * `EpsilonEridani.minkowskiVolumeFormRaise_apply`: its components `η^{μμ} ε(u, e_μ, a, b)`.
 * `EpsilonEridani.minkowskiVolumeFormRaise_minkowskiVolumeFormRaise`: the square of
@@ -125,10 +126,6 @@ theorem minkowskiVolumeForm_eq_sum_timeComponent_mul_det (x y z w : Vector 3) :
           x (Sum.inr 1), y (Sum.inr 1), z (Sum.inr 1);
           x (Sum.inr 2), y (Sum.inr 2), z (Sum.inr 2)] := by
   -- The index bookkeeping of the Laplace expansion, tabulated on `Fin 4`.
-  have h : ⇑(finSumFinEquiv (m := 1) (n := 3)).symm =
-      ![Sum.inl 0, Sum.inr 0, Sum.inr 1, Sum.inr 2] := by
-    ext i
-    fin_cases i <;> rfl
   have hsuccAbove : ∀ (j : Fin 4) (k : Fin 3),
       Fin.succAbove j k = ![![1, 2, 3], ![0, 2, 3], ![0, 1, 3], ![0, 1, 2]] j k := by
     decide
@@ -136,7 +133,8 @@ theorem minkowskiVolumeForm_eq_sum_timeComponent_mul_det (x y z w : Vector 3) :
   have hsign : ∀ j : Fin 4, (-1 : ℝ) ^ (j : ℕ) = ![1, -1, 1, -1] j := by
     intro j
     fin_cases j <;> norm_num
-  rw [minkowskiVolumeForm_apply, h, Matrix.det_succ_row_zero, Fin.sum_univ_four]
+  rw [minkowskiVolumeForm_apply, finSumFinEquiv_symm_minkowski, Matrix.det_succ_row_zero,
+    Fin.sum_univ_four]
   simp only [Matrix.det_fin_three, Matrix.submatrix_apply, Matrix.of_apply, hsuccAbove, hsucc,
     hsign, Matrix.cons_val]
   ring
@@ -205,7 +203,7 @@ these pairings directly. -/
 
 /-- `⟪minkowskiVolumeFormRaise a b u, u⟫ₘ = ε(u, u, a, b) = 0`. -/
 @[simp high]
-theorem minkowskiProduct_minkowskiVolumeFormRaise_self (a b u : Vector 3) :
+theorem minkowskiProduct_minkowskiVolumeFormRaise_apply_self (a b u : Vector 3) :
     ⟪minkowskiVolumeFormRaise a b u, u⟫ₘ = 0 := by
   rw [minkowskiProduct_minkowskiVolumeFormRaise, ← AlternatingMap.bilinMap_apply]
   exact minkowskiVolumeForm.bilinMap_apply_self ![a, b] u
@@ -240,7 +238,8 @@ theorem minkowskiVolumeFormRaise_apply_right_eq_zero (a b : Vector 3) :
 
 /-- The contraction of the volume form with the same vector twice vanishes. -/
 @[simp]
-theorem minkowskiVolumeFormRaise_self (a : Vector 3) : minkowskiVolumeFormRaise a a = 0 := by
+theorem minkowskiVolumeFormRaise_self_eq_zero (a : Vector 3) :
+    minkowskiVolumeFormRaise a a = 0 := by
   rw [minkowskiVolumeFormRaise_def]
   exact minkowskiVolumeForm.bilinMapRaise_eq_zero_of_eq _ (i := 0) (j := 1) rfl (by decide)
 

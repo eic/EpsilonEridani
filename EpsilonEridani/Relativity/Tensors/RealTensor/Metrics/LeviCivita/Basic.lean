@@ -56,7 +56,23 @@ def metricDiagSignInt (i : Fin 4) : ℤ :=
 
 lemma metricDiagSignInt_eq_if_zero (i : Fin 4) :
     metricDiagSignInt i = if i.1 = 0 then 1 else -1 := by
-  fin_cases i <;> simp [metricDiagSignInt, finSumFinEquiv, Fin.addCases] <;> norm_num
+  unfold metricDiagSignInt
+  rcases h : (finSumFinEquiv (m := 1) (n := 3)).symm i with j | j
+  · -- The time index: `finSumFinEquiv.symm i = Sum.inl 0`, so `i = 0` and `η 00 = 1`.
+    have hj : j = 0 := Fin.fin_one_eq_zero j
+    have hi : i.1 = 0 := by
+      have h' := (Equiv.symm_apply_eq (e := finSumFinEquiv (m := 1) (n := 3))).mp h
+      rw [h', hj, finSumFinEquiv_apply_left, Fin.val_castAdd, Fin.val_zero]
+    rw [hj, minkowskiMatrix.inl_0_inl_0, hi]
+    norm_num
+  · -- A spatial index: `finSumFinEquiv.symm i = Sum.inr j`, so `i ≠ 0` and `η jj = -1`.
+    have hi : i.1 = 1 + j.1 := by
+      have h' := (Equiv.symm_apply_eq (e := finSumFinEquiv (m := 1) (n := 3))).mp h
+      rw [h', finSumFinEquiv_apply_right, Fin.val_natAdd]
+    rw [minkowskiMatrix.inr_i_inr_i]
+    have hinz : i.1 ≠ 0 := by omega
+    have hm1 : (-1 : ℝ) ≠ 1 := by norm_num
+    simp [hinz, hm1]
 
 /-- The rank-4 contravariant Levi-Civita symbol in 3+1 dimensions.
 With signature `(+, -, -, -)`, each index raise contributes a diagonal metric factor,

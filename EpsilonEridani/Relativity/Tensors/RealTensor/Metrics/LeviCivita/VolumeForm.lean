@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
+public import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita.Basic
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm
 
 /-!
@@ -13,7 +13,8 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm
 
 Relates the volume form `EpsilonEridani.minkowskiVolumeForm` of four-dimensional Minkowski space
 (`EpsilonEridani.Relativity.Tensors.RealTensor.Vector.VolumeForm`, with `ε^{0123} = +1`) to the
-integer Levi-Civita symbols of `EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita`.
+integer Levi-Civita symbols of
+`EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita.Basic`.
 
 The two use opposite sign conventions. There, `realLorentzTensor.leviCivita4Int`, documented as
 the covariant symbol, is `leviCivitaSymbol` (`ε_{0123} = +1`), and
@@ -21,9 +22,9 @@ the covariant symbol, is `leviCivitaSymbol` (`ε_{0123} = +1`), and
 The covariant components `ε_{μνρσ} = -leviCivitaSymbol (μ, ν, ρ, σ)` of `minkowskiVolumeForm` are
 therefore `-leviCivita4Int`.
 
-This bridge is a module of its own so that the volume form does not import `LeviCivita`, and
-`LeviCivita`, which is in Physlib's `realLorentzTensor` namespace, imports nothing from
-EpsilonEridani.
+This bridge is a module of its own so that the volume form does not import `LeviCivita.Basic`,
+and `LeviCivita.Basic`, which is in Physlib's `realLorentzTensor` namespace, imports nothing
+from EpsilonEridani.
 
 ## Main statements
 

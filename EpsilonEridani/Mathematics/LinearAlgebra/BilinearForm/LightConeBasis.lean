@@ -39,8 +39,9 @@ four-dimensional Minkowski space, with `ε` the volume form, `E` is a rotation b
 of the transverse plane: it squares to minus the transverse projector
 (`EpsilonEridani.Relativity.LightConeBasis`).
 
-The material is stated for an arbitrary bilinear form over a commutative ring, except the raised
-transverse antisymmetric tensor, which needs a finite-dimensional space over a field. The pairing is
+The material is stated for an arbitrary bilinear form over a commutative ring, except the
+dimension results and the raised transverse antisymmetric tensor, which need a field (and, for
+the latter and `finrank_transverse_add_two_eq`, finite-dimensionality). The pairing is
 required in both orders, so no symmetry of `B` is needed for the decomposition itself; the
 splitting `u · v = u⁺ v⁻ + u⁻ v⁺ + u_T · v_T` of the scalar product uses only reflexivity.
 The transverse subspace is Mathlib's `LinearMap.BilinForm.orthogonal`, which puts the basis

@@ -41,7 +41,7 @@ transverse projector, `ε_T^{μν} ε_{Tν}{}^{ρ} = -g_T^{μρ}`
 (`transverseEpsRaise_minkowskiVolumeForm_comp_self_apply`): it is a
 rotation by a right angle of the transverse plane. For an alternating four-form with another
 normalisation `c = ε(e₀, e₁, e₂, e₃)` the square is `-c²` times the projector
-(`transverseEpsRaise_minkowskiProduct_comp_self`), so the identity is insensitive to the sign
+(`transverseEpsRaise_comp_self`), so the identity is insensitive to the sign
 convention chosen for the Levi-Civita tensor. This is the tensor in which the T-odd structures of
 transverse-momentum-dependent distributions are written.
 
@@ -67,7 +67,7 @@ transverse-momentum-dependent distributions are written.
 * `LightConeBasis.transverseEpsRaise_minkowskiVolumeForm_comp_self_apply`,
   `LightConeBasis.transverseEpsRaise_minkowskiVolumeForm_comp_self`: the transverse antisymmetric
   tensor squares to minus the transverse projector, `ε_T ∘ ε_T = -g_T`.
-* `LightConeBasis.transverseEpsRaise_minkowskiProduct_comp_self`: for an alternating four-form
+* `LightConeBasis.transverseEpsRaise_comp_self`: for an alternating four-form
   with normalisation `c = ε(e₀, e₁, e₂, e₃)`, the square is `-c²` times the transverse projector.
 
 ## References
@@ -194,22 +194,22 @@ variable (L : LightConeBasis (minkowskiProduct (d := d)).toBilinForm)
 
 /-- `n₊` is light-like: `⟪n₊, n₊⟫ₘ = 0`. -/
 @[simp]
-theorem minkowskiProduct_nPlus_nPlus : ⟪L.nPlus, L.nPlus⟫ₘ = 0 := by
+theorem minkowskiProduct_nPlus_nPlus_eq_zero : ⟪L.nPlus, L.nPlus⟫ₘ = 0 := by
   rw [← ContinuousLinearMap.toBilinForm_apply, L.nPlus_nPlus_eq_zero]
 
 /-- `n₋` is light-like: `⟪n₋, n₋⟫ₘ = 0`. -/
 @[simp]
-theorem minkowskiProduct_nMinus_nMinus : ⟪L.nMinus, L.nMinus⟫ₘ = 0 := by
+theorem minkowskiProduct_nMinus_nMinus_eq_zero : ⟪L.nMinus, L.nMinus⟫ₘ = 0 := by
   rw [← ContinuousLinearMap.toBilinForm_apply, L.nMinus_nMinus_eq_zero]
 
 /-- `⟪n₊, n₋⟫ₘ = 1`. -/
 @[simp]
-theorem minkowskiProduct_nPlus_nMinus : ⟪L.nPlus, L.nMinus⟫ₘ = 1 := by
+theorem minkowskiProduct_nPlus_nMinus_eq_one : ⟪L.nPlus, L.nMinus⟫ₘ = 1 := by
   rw [← ContinuousLinearMap.toBilinForm_apply, L.nPlus_nMinus_eq_one]
 
 /-- `⟪n₋, n₊⟫ₘ = 1`. -/
 @[simp]
-theorem minkowskiProduct_nMinus_nPlus : ⟪L.nMinus, L.nPlus⟫ₘ = 1 := by
+theorem minkowskiProduct_nMinus_nPlus_eq_one : ⟪L.nMinus, L.nPlus⟫ₘ = 1 := by
   rw [← ContinuousLinearMap.toBilinForm_apply, L.nMinus_nPlus_eq_one]
 
 end Relations
@@ -262,8 +262,9 @@ theorem transverseEpsRaise_minkowskiVolumeForm_comp_self_apply
       (L.transverseEpsRaise minkowskiVolumeForm nondegenerate_toBilinForm_minkowskiProduct u) =
       -L.transverseProj u := by
   simp only [transverseEpsRaise_minkowskiVolumeForm_eq_minkowskiVolumeFormRaise,
-    minkowskiVolumeFormRaise_minkowskiVolumeFormRaise, minkowskiProduct_nPlus_nPlus,
-    minkowskiProduct_nMinus_nMinus, minkowskiProduct_nPlus_nMinus, transverseProj_apply,
+    minkowskiVolumeFormRaise_minkowskiVolumeFormRaise, minkowskiProduct_nPlus_nPlus_eq_zero,
+    minkowskiProduct_nMinus_nMinus_eq_zero, minkowskiProduct_nPlus_nMinus_eq_one,
+    transverseProj_apply,
     plus_apply, minus_apply, ContinuousLinearMap.toBilinForm_apply]
   module
 
@@ -278,7 +279,7 @@ theorem transverseEpsRaise_minkowskiVolumeForm_comp_self :
 /-- For any alternating four-form `ε` on four-dimensional Minkowski space, with normalisation
 `c = ε(e₀, e₁, e₂, e₃)`, the raised transverse antisymmetric tensor squares to `-c²` times the
 transverse projector. In particular the square does not depend on the sign convention for `ε`. -/
-theorem transverseEpsRaise_minkowskiProduct_comp_self_apply (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ)
+theorem transverseEpsRaise_comp_self_apply (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ)
     (u : Vector 3) :
     L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct
       (L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct u) =
@@ -292,11 +293,11 @@ theorem transverseEpsRaise_minkowskiProduct_comp_self_apply (ε : Vector 3 [⋀^
 
 /-- For any alternating four-form `ε` on four-dimensional Minkowski space, with normalisation
 `c = ε(e₀, e₁, e₂, e₃)`, `E ∘ E = -c² g_T`; for the volume form, `c = -1` and `ε_T ∘ ε_T = -g_T`. -/
-theorem transverseEpsRaise_minkowskiProduct_comp_self (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ) :
+theorem transverseEpsRaise_comp_self (ε : Vector 3 [⋀^Fin 4]→ₗ[ℝ] ℝ) :
     L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct ∘ₗ
       L.transverseEpsRaise ε nondegenerate_toBilinForm_minkowskiProduct =
       -(ε minkowskiBasisFin4 ^ 2) • L.transverseProj :=
-  LinearMap.ext (L.transverseEpsRaise_minkowskiProduct_comp_self_apply ε)
+  LinearMap.ext (L.transverseEpsRaise_comp_self_apply ε)
 
 end TransverseEps
 
