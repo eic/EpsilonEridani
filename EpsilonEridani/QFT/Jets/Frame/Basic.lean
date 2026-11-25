@@ -17,7 +17,7 @@ relative to a frame, and the frame is always an explicit argument. Over the abst
 
 * the **energy** of `p` is `E(p) = g p n / √(g n n)`, a linear functional;
 * the **spatial part** of `p` is `p_s = p - (g p n / g n n) • n`, the projection
-  `LinearMap.BilinForm.projOrthogonal g n` along `ℝ ∙ n` onto the `g`-orthogonal complement
+  `LinearMap.BilinForm.orthogonalProjection g n` along `ℝ ∙ n` onto the `g`-orthogonal complement
   of `n`;
 * the **spatial norm** of `p` is `|p_s| = √(-g p_s p_s)`, and the **cosine of the opening angle** of
   `a` and `b` is `cos θ_ab = -g a_s b_s / (|a_s| |b_s|)`.
@@ -125,25 +125,26 @@ theorem n_ne_zero : F.n ≠ 0 :=
 /-! ### The spatial part -/
 
 /-- The spatial part of a momentum relative to the frame, `p - (g p n / g n n) • n`: the projection
-`LinearMap.BilinForm.projOrthogonal g n` along `ℝ ∙ n` onto the `g`-orthogonal complement of `n`. -/
+`LinearMap.BilinForm.orthogonalProjection g n` along `ℝ ∙ n` onto the `g`-orthogonal complement of
+`n`. -/
 def spatialPart : V →ₗ[ℝ] V :=
-  g.projOrthogonal F.n
+  g.orthogonalProjection F.n
 
-theorem spatialPart_def : F.spatialPart = g.projOrthogonal F.n :=
+theorem spatialPart_def : F.spatialPart = g.orthogonalProjection F.n :=
   (rfl)
 
 theorem spatialPart_apply (p : V) : F.spatialPart p = p - (g p F.n / g F.n F.n) • F.n :=
-  g.projOrthogonal_apply F.n p
+  g.orthogonalProjection_apply F.n p
 
 /-- A momentum is the sum of its time part, along the frame vector, and its spatial part. -/
-theorem energy_div_smul_add_spatialPart (p : V) :
+theorem energy_div_smul_add_spatialPart_eq (p : V) :
     (F.energy p / Real.sqrt (g F.n F.n)) • F.n + F.spatialPart p = p := by
   simp [energy_apply, spatialPart_apply, div_div, Real.mul_self_sqrt F.timelike.le]
 
 /-- The spatial part is `g`-orthogonal to the frame vector. -/
 @[simp]
 theorem spatialPart_orthogonal_n (p : V) : g (F.spatialPart p) F.n = 0 :=
-  g.projOrthogonal_orthogonal F.timelike.ne' p
+  g.orthogonalProjection_apply_eq_zero F.timelike.ne' p
 
 /-- The spatial part carries no energy. -/
 @[simp]
@@ -152,31 +153,36 @@ theorem energy_spatialPart (p : V) : F.energy (F.spatialPart p) = 0 := by
 
 @[simp]
 theorem spatialPart_n : F.spatialPart F.n = 0 :=
-  g.projOrthogonal_apply_self F.timelike.ne'
+  g.orthogonalProjection_apply_self F.timelike.ne'
 
 theorem spatialPart_eq_self_iff {p : V} : F.spatialPart p = p ↔ g p F.n = 0 :=
-  g.projOrthogonal_eq_self_iff F.timelike.ne'
+  g.orthogonalProjection_eq_self_iff F.timelike.ne'
 
 /-- The spatial projection is idempotent. -/
 @[simp]
 theorem spatialPart_spatialPart (p : V) : F.spatialPart (F.spatialPart p) = F.spatialPart p :=
-  g.projOrthogonal_projOrthogonal F.timelike.ne' p
+  g.orthogonalProjection_orthogonalProjection F.timelike.ne' p
 
 /-- The momenta with vanishing spatial part are the multiples of the frame vector. -/
 theorem ker_spatialPart : LinearMap.ker F.spatialPart = ℝ ∙ F.n :=
-  g.ker_projOrthogonal F.timelike.ne'
+  g.ker_orthogonalProjection F.timelike.ne'
 
 /-- The spatial parts are exactly the momenta `p` with `g p n = 0`, that is, the orthogonal
 complement of `ℝ ∙ n` for `g.flip` in the sense of `LinearMap.BilinForm.orthogonal`. For a
 symmetric form this is `g.orthogonal (ℝ ∙ n)`. -/
 theorem range_spatialPart : LinearMap.range F.spatialPart = g.flip.orthogonal (ℝ ∙ F.n) :=
-  g.range_projOrthogonal F.timelike.ne'
+  g.range_orthogonalProjection F.timelike.ne'
+
+/-- The spatial part is a projection onto `g.flip.orthogonal (ℝ ∙ n)` in the sense of
+`LinearMap.IsProj`, splitting `V` as `ℝ ∙ n ⊕` (spatial momenta). -/
+theorem isProj_spatialPart : LinearMap.IsProj (g.flip.orthogonal (ℝ ∙ F.n)) F.spatialPart :=
+  g.isProj_orthogonalProjection F.timelike.ne'
 
 /-- The `g`-product of two spatial parts, `g a_s b_s = g a b - E(a) E(b)`. For `a = b` this is the
 mass-shell relation `g p_s p_s = m² - E(p)²`. -/
 theorem spatialPart_pairing_spatialPart (hg : g.IsSymm) (a b : V) :
     g (F.spatialPart a) (F.spatialPart b) = g a b - F.energy a * F.energy b := by
-  rw [spatialPart_def, g.projOrthogonal_pairing F.n a b, energy_apply, energy_apply,
+  rw [spatialPart_def, g.orthogonalProjection_pairing F.n a b, energy_apply, energy_apply,
     hg.eq F.n b, div_mul_div_comm _ (Real.sqrt _), Real.mul_self_sqrt F.timelike.le]
 
 /-! ### The spatial norm and the opening angle -/
@@ -312,7 +318,7 @@ theorem energy_eq_of_n_eq_smul_of_pos (F' : Frame g) {c : ℝ} (hc : 0 < c) (h :
 /-- The spatial part is unchanged when the frame vector is rescaled by a nonzero factor. -/
 theorem spatialPart_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :
     F'.spatialPart = F.spatialPart := by
-  rw [spatialPart_def, spatialPart_def, h, g.projOrthogonal_smul hc]
+  rw [spatialPart_def, spatialPart_def, h, g.orthogonalProjection_smul hc]
 
 /-- The spatial norm is unchanged when the frame vector is rescaled by a nonzero factor. -/
 theorem spatialNorm_eq_of_n_eq_smul (F' : Frame g) {c : ℝ} (hc : c ≠ 0) (h : F'.n = c • F.n) :

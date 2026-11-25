@@ -18,10 +18,10 @@ This module introduces tensor objects for inclusive DIS:
 - A leptonic tensor model built from incoming and outgoing lepton momenta, and its extension
   to a vector/axial-vector exchange, whose parity-odd part is the contraction
   `ε(·, ·, k, k')` of a supplied alternating four-form `ε`.
-- Uses the reflections `LinearMap.BilinForm.reflect` of
+- Uses the reflections `LinearMap.BilinForm.reflection` of
   `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection` as concrete
   elements of the stabilizer of the kinematics inside the `g`-isometry group
-  (`reflect_isKinematicStabilizer`).
+  (`reflection_isKinematicStabilizer`).
 - An abstract hadronic tensor with explicit Lorentz-covariance, symmetry and
   current-conservation assumptions.
 - The *transverse* basis `{-g + q ⊗ q / q², p_T ⊗ p_T}` and the decomposition interface in
@@ -393,21 +393,21 @@ lemma transverseMetric_isSymm (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsS
   have hg : ∀ x y : V, g x y = g y x := hSymm.eq
   simp [transverseMetric_apply, hg, mul_comm]
 
-/-- The transverse part of the hadron momentum: the projection `g.projOrthogonal K.q`
+/-- The transverse part of the hadron momentum: the projection `g.orthogonalProjection K.q`
 of `p` onto the `g`-orthogonal complement of `q`, `p^μ - (p·q / q²) q^μ`. -/
 noncomputable def pTransverse (g : Bilin V) (K : DisKinematics V) : V :=
-  g.projOrthogonal K.q K.p
+  g.orthogonalProjection K.q K.p
 
 /-- The transverse hadron momentum is the projection of `p` onto the `g`-orthogonal complement
 of `q`. -/
 lemma pTransverse_def (g : Bilin V) (K : DisKinematics V) :
-    pTransverse g K = g.projOrthogonal K.q K.p :=
+    pTransverse g K = g.orthogonalProjection K.q K.p :=
   (rfl)
 
 /-- The explicit formula `p_T = p - (p·q / q²) q` for the transverse hadron momentum. -/
 lemma pTransverse_apply (g : Bilin V) (K : DisKinematics V) :
     pTransverse g K = K.p - (g K.p K.q / g K.q K.q) • K.q :=
-  g.projOrthogonal_apply _ _
+  g.orthogonalProjection_apply _ _
 
 /-- Pointwise pairing of the transverse hadron momentum against a vector. -/
 lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
@@ -419,7 +419,7 @@ lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
 lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q K.q ≠ 0) :
     g (pTransverse g K) K.q = 0 := by
   rw [pTransverse_def]
-  exact g.projOrthogonal_orthogonal hQ2 K.p
+  exact g.orthogonalProjection_apply_eq_zero hQ2 K.p
 
 /-- A form conserved in its first slot does not distinguish `p` from `p_T` there. -/
 lemma apply_p_eq_apply_pTransverse {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
@@ -547,12 +547,12 @@ lemma linMulLin_pTransverse_isLorentzCovariant (g : Bilin V) (K : DisKinematics 
 /-- Reflection in a spectator direction — a direction `g`-orthogonal to both `p` and `q` —
 is an element of the kinematic stabilizer. This is the concrete supply of covariance
 constraints used by `covariant_spectator_offDiagonal_zero`. -/
-lemma reflect_isKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
+lemma reflection_isKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
     (u : V) (hu : g u u ≠ 0) (hup : g u K.p = 0) (huq : g u K.q = 0) :
-    IsKinematicStabilizer g K (g.reflect u) where
-  isOrthogonal := g.isOrthogonal_reflect hSymm u hu
-  fixes_p := g.reflect_apply_of_orthogonal u K.p hup
-  fixes_q := g.reflect_apply_of_orthogonal u K.q huq
+    IsKinematicStabilizer g K (g.reflection u) where
+  isOrthogonal := g.isOrthogonal_reflection hSymm u hu
+  fixes_p := g.reflection_apply_of_orthogonal u K.p hup
+  fixes_q := g.reflection_apply_of_orthogonal u K.q huq
 
 /-- A spectator vector — one `g`-orthogonal to `q` and to `p_T` — is `g`-orthogonal to `p`. -/
 lemma apply_p_eq_zero_of_spectator (g : Bilin V) (K : DisKinematics V)
@@ -573,10 +573,10 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
     W u v = 0 := by
   by_cases hu0 : u = 0
   · simp [hu0]
-  have hf := reflect_isKinematicStabilizer g K hSymm u (hu hu0)
+  have hf := reflection_isKinematicStabilizer g K hSymm u (hu hu0)
     (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
   have h := hW _ hf u v
-  rw [g.reflect_apply_self u (hu hu0), g.reflect_apply_of_orthogonal u v huv,
+  rw [g.reflection_apply_self u (hu hu0), g.reflection_apply_of_orthogonal u v huv,
     map_neg, LinearMap.neg_apply] at h
   -- `h : -W u v = W u v`
   linarith
@@ -854,7 +854,7 @@ structure SpectatorAssumptions (g : Bilin V) (K : DisKinematics V) : Prop
     extends SpectatorSplitting g K where
   /-- The spectator subspace is negative definite — spacelike, in the `+---` convention of
   `Kinematics`. In particular every non-zero spectator direction is non-null, so
-  `LinearMap.BilinForm.reflect` supplies a stabilizer element for it. -/
+  `LinearMap.BilinForm.reflection` supplies a stabilizer element for it. -/
   definite : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u < 0
   /-- Witt-type transitivity: the kinematic stabilizer acts transitively on spectator
   vectors of equal norm. -/
@@ -984,25 +984,25 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     (huu' : g u u' = 0) :
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
       f u = -u ∧ f u' = -u' := by
-  have h₁ := reflect_isKinematicStabilizer g K hSymm _ hu
+  have h₁ := reflection_isKinematicStabilizer g K hSymm _ hu
     (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
-  have h₂ := reflect_isKinematicStabilizer g K hSymm _ hu'
+  have h₂ := reflection_isKinematicStabilizer g K hSymm _ hu'
     (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
-  refine ⟨g.reflect u ∘ₗ g.reflect u',
+  refine ⟨g.reflection u ∘ₗ g.reflection u',
     ⟨by rw [LinearMap.coe_comp]; exact h₁.isOrthogonal.comp h₂.isOrthogonal,
       by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
       by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩, ?_, ?_, ?_⟩
   · by_cases hfin : Module.Finite ℝ V
-    · rw [LinearMap.det_comp, g.det_reflect hu, g.det_reflect hu']
+    · rw [LinearMap.det_comp, g.det_reflection hu, g.det_reflection hu']
       norm_num
     · -- Mathlib defines `LinearMap.det` to be `1` outside finite dimension, so this branch
       -- is vacuous and carries no geometric content.
       exact LinearMap.det_eq_one_of_not_module_finite hfin _
-  · rw [LinearMap.comp_apply, g.reflect_apply_of_orthogonal _ _ hu'u,
-      g.reflect_apply_self _ hu]
-  · rw [LinearMap.comp_apply, g.reflect_apply_self _ hu', map_neg,
-      g.reflect_apply_of_orthogonal _ _ huu']
+  · rw [LinearMap.comp_apply, g.reflection_apply_of_orthogonal _ _ hu'u,
+      g.reflection_apply_self _ hu]
+  · rw [LinearMap.comp_apply, g.reflection_apply_self _ hu', map_neg,
+      g.reflection_apply_of_orthogonal _ _ huu']
 
 /-- Two spectator directions `e₁`, `e₂` for the kinematics, non-null and `g`-orthogonal to each
 other and to `p_T` and `q`. They supply the half-turn of `exists_half_turn` that a parity-odd
@@ -1207,10 +1207,10 @@ lemma spectatorAssumptions_kWit : SpectatorAssumptions gWit kWit where
     · refine ⟨LinearMap.id,
         ⟨by rw [LinearMap.id_coe]; exact LinearMap.isOrthogonal_id gWit, rfl, rfl⟩, ?_⟩
       ext <;> simp <;> linarith
-    · refine ⟨gWit.reflect (0, 0, 1),
-        reflect_isKinematicStabilizer gWit kWit gWit_isSymm (0, 0, 1)
+    · refine ⟨gWit.reflection (0, 0, 1),
+        reflection_isKinematicStabilizer gWit kWit gWit_isSymm (0, 0, 1)
           (by norm_num) (by norm_num) (by norm_num), ?_⟩
-      ext <;> simp [LinearMap.BilinForm.reflect_apply] <;> linarith
+      ext <;> simp [LinearMap.BilinForm.reflection_apply] <;> linarith
 
 /-!
 

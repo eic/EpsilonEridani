@@ -17,8 +17,8 @@ canonical DIS invariants.
 
 Since `Bilin V` is an abbreviation for `LinearMap.BilinForm ℝ V`, the generic API of
 `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection` applies to it by dot
-notation: the projection `g.projOrthogonal u` onto the `g`-orthogonal complement of a non-null
-vector and the reflections `g.reflect u`. Rank-one forms `(v, w) ↦ g a v * g b w` are Mathlib's
+notation: the projection `g.orthogonalProjection u` onto the `g`-orthogonal complement of a non-null
+vector and the reflections `g.reflection u`. Rank-one forms `(v, w) ↦ g a v * g b w` are Mathlib's
 `LinearMap.BilinForm.linMulLin (g a) (g b)`.
 
 -/

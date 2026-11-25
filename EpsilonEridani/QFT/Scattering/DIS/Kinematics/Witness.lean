@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Copyright (c) 2026 Joseph Tooby-Smith. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wouter Deconinck
+Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
@@ -15,7 +15,7 @@ directions, in the `Kinematics` sign convention. It is the concrete form on whic
 polarized-kinematics and jet-frame witnesses are evaluated.
 -/
 
-@[expose] public section
+public section
 
 namespace EpsilonEridani
 namespace QFT
@@ -37,7 +37,7 @@ noncomputable def gWit : Bilin (ℝ × ℝ × ℝ) :=
     (fun _ _ _ => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
 
 @[simp] lemma gWit_apply (v w : ℝ × ℝ × ℝ) :
-    gWit v w = v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2 := rfl
+    gWit v w = v.1 * w.1 - v.2.1 * w.2.1 - v.2.2 * w.2.2 := (rfl)
 
 /-- `gWit` is symmetric, as a metric must be. -/
 lemma gWit_isSymm : gWit.IsSymm := by
