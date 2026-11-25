@@ -58,12 +58,15 @@ structure Parameters where
   /-- W-boson mass parameter. -/
   mW : ℝ
 
-/-- Helicity sign convention for right/left polarized beam labels. -/
+/-- The beam-helicity sign `λ` of a polarized-beam label: `helicitySign true = 1` for a
+right-handed beam and `helicitySign false = -1` for a left-handed one. -/
 @[no_expose] def helicitySign (h : Bool) : ℝ :=
   if h then 1 else -1
 
+/-- A right-handed beam has helicity sign `1`. -/
 @[simp] lemma helicitySign_true : helicitySign true = 1 := by simp [helicitySign]
 
+/-- A left-handed beam has helicity sign `-1`. -/
 @[simp] lemma helicitySign_false : helicitySign false = -1 := by simp [helicitySign]
 
 @[simp] lemma helicitySign_sq (h : Bool) : helicitySign h ^ 2 = 1 := by
@@ -142,13 +145,11 @@ theorem helicityCoupling_sq (h : Bool) :
   ring
 
 /-- A right-handed fermion couples to the `Z` with `2 g_R`. -/
-@[simp]
 theorem helicityCoupling_true : c.helicityCoupling true = 2 * c.gR := by
   rw [helicityCoupling_def, gR_def, helicitySign_true]
   ring
 
 /-- A left-handed fermion couples to the `Z` with `2 g_L`. -/
-@[simp]
 theorem helicityCoupling_false : c.helicityCoupling false = 2 * c.gL := by
   rw [helicityCoupling_def, gL_def, helicitySign_false]
   ring
