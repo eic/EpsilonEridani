@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.Convex.Between
 public import Mathlib.Analysis.Convex.Segment
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
@@ -28,7 +29,10 @@ has along a straight line:
   `[x, y]`.
 
 The structural results below follow from these two properties alone, so any later analytic
-construction of the link from a gauge potential only has to supply them. The concrete link
+construction of the link from a gauge potential only has to supply them. Multiplicativity
+extends from the segment to every point of the line through `x` and `y`
+(`GaugeLink.apply_mul_apply_of_mem_line`); reducing a path whose legs run along the same line in
+opposite senses, as the staple's do, needs this off-segment form. The concrete link
 `GaugeLink.ofBilin` of a linear abelian gauge potential and its flux formula are a witness, not a
 consequence of them.
 
@@ -37,7 +41,7 @@ A piecewise-linear path is recorded by the list of its corners, and the link alo
 structural properties of the link: composition under concatenation (`pathLink_append_cons`), the
 reversed path giving the inverse link (`pathLink_reverse`), conjugation by the gauge
 transformation at the two endpoints (`pathLink_smul`), and independence of how a segment is
-subdivided (`pathLink_subdivide_of_mem_segment`).
+subdivided (`pathLink_subdivide_of_mem_line`).
 
 The staple path `staplePath v w x y` runs from `x` along `v` to `x + v`, along the far segment `w`
 to `x + v + w`, and back to `y`. For a light-like direction `n` (`n₋`), a separation
@@ -52,9 +56,10 @@ legs have trivial links, the whole staple link is carried by the transverse link
 (`IsAxialGauge`), which is light-cone gauge for the light-like `n` and where the links along `n`
 are trivial, this holds for every staple of the above shape
 (`pathLink_staplePath_eq_transverseLink_of_isAxialGauge`). The transverse link cannot be dropped
-there: the link of a linear abelian gauge potential (`GaugeLink.ofBilin`) gives
-a gauge link in axial gauge whose staple link differs from the product of its two longitudinal
-legs (`exists_isAxialGauge_pathLink_staplePath_ne_one`).
+there: the link of a linear abelian gauge potential (`GaugeLink.ofBilin`) gives a gauge link in
+axial gauge whose staple link and whose transverse link are non-trivial
+(`exists_isAxialGauge_pathLink_staplePath_ne_one`), so the staple link differs from the product
+of its two legs, which is trivial in that gauge.
 
 The space `V` carries no metric here, so "light-like", "transverse" and "light-cone distance" are
 the intended physical reading of the arbitrary vectors `n`, `w` and scalar `L`, not hypotheses of
@@ -126,10 +131,37 @@ theorem ext {W₁ W₂ : GaugeLink V G} (h : ∀ x y, W₁ x y = W₂ x y) : W�
 theorem apply_swap (W : GaugeLink V G) (x y : V) : W y x = (W x y)⁻¹ :=
   W.toFun_swap' x y
 
+/-- The link is multiplicative under subdivision of a segment at any point of the line through
+its endpoints: `W x m * W m y = W x y` also when `m` lies outside the segment `[x, y]`. -/
+theorem apply_mul_apply_of_mem_line (W : GaugeLink V G) {x y m : V} (hm : m ∈ line[ℝ, x, y]) :
+    W x m * W m y = W x y := by
+  obtain ⟨t, ht⟩ := mem_affineSpan_pair_iff_exists_lineMap_eq.1 hm
+  rw [AffineMap.lineMap_apply_module] at ht
+  rcases le_or_gt t 0 with ht0 | ht0
+  · -- `x` lies between `m` and `y`, so subdivide the segment from `m` to `y` at `x`.
+    have hx : x ∈ segment ℝ m y := by
+      rw [mem_segment_iff_sameRay, ← ht]
+      have h' : x - ((1 - t) • x + t • y) = -t • (y - x) := by module
+      rw [h']
+      exact (sameRay_smul_left_iff (r := -t)).2 (Or.inl (by linarith))
+    have hW : W m x * W x y = W m y := W.toFun_mul_toFun' m y x hx
+    rw [← hW, W.apply_swap x m, mul_inv_cancel_left]
+  · rcases le_or_gt t 1 with ht1 | ht1
+    · -- `m` lies between `x` and `y`: this is the subdivision property itself.
+      exact W.toFun_mul_toFun' x y m ⟨1 - t, t, by linarith, by linarith, by ring, ht⟩
+    · -- `y` lies between `x` and `m`, so subdivide the segment from `x` to `m` at `y`.
+      have hy : y ∈ segment ℝ x m := by
+        rw [mem_segment_iff_sameRay, ← ht]
+        have h' : (1 - t) • x + t • y - y = (t - 1) • (y - x) := by module
+        rw [h']
+        exact (sameRay_smul_right_iff (r := t - 1)).2 (Or.inl (by linarith))
+      have hW : W x y * W y m = W x m := W.toFun_mul_toFun' x m y hy
+      rw [← hW, W.apply_swap m y, inv_mul_cancel_right]
+
 /-- The link is multiplicative under subdivision of a segment. -/
 theorem apply_mul_apply_of_mem_segment (W : GaugeLink V G) {x y m : V} (hm : m ∈ segment ℝ x y) :
     W x m * W m y = W x y :=
-  W.toFun_mul_toFun' x y m hm
+  W.apply_mul_apply_of_mem_line ((mem_segment_iff_wbtw.1 hm).mem_affineSpan)
 
 /-- The link along a degenerate segment is trivial. -/
 @[simp]
@@ -219,15 +251,22 @@ theorem pathLink_smul (Ω : V → G) (W : GaugeLink V G) (x : V) (l : List V) :
       smul_apply]
     group
 
-/-- **Independence of the subdivision**: inserting a corner on a segment of a path does not
-change the link along it. In particular a corner followed by a later corner may be repeated
-(take `m = x`). -/
-theorem pathLink_subdivide_of_mem_segment (W : GaugeLink V G) (l₁ l₂ : List V) {x y m : V}
-    (hm : m ∈ segment ℝ x y) :
+/-- **Independence of the subdivision**: inserting a corner anywhere on the line through a
+segment of a path does not change the link along it. In particular a corner followed by a later
+corner may be repeated (take `m = x`). -/
+theorem pathLink_subdivide_of_mem_line (W : GaugeLink V G) (l₁ l₂ : List V) {x y m : V}
+    (hm : m ∈ line[ℝ, x, y]) :
     W.pathLink (l₁ ++ x :: m :: y :: l₂) = W.pathLink (l₁ ++ x :: y :: l₂) := by
   rw [pathLink_append_cons, pathLink_append_cons W l₁ (y :: l₂), pathLink_cons_cons,
     pathLink_cons_cons,
-    pathLink_cons_cons, ← mul_assoc (W x m), W.apply_mul_apply_of_mem_segment hm]
+    pathLink_cons_cons, ← mul_assoc (W x m), W.apply_mul_apply_of_mem_line hm]
+
+/-- **Independence of the subdivision of a segment**: inserting a corner on a segment of a path
+does not change the link along it. -/
+theorem pathLink_subdivide_of_mem_segment (W : GaugeLink V G) (l₁ l₂ : List V) {x y m : V}
+    (hm : m ∈ segment ℝ x y) :
+    W.pathLink (l₁ ++ x :: m :: y :: l₂) = W.pathLink (l₁ ++ x :: y :: l₂) :=
+  W.pathLink_subdivide_of_mem_line l₁ l₂ ((mem_segment_iff_wbtw.1 hm).mem_affineSpan)
 
 /-! ### Staples and the transverse link -/
 
@@ -285,8 +324,7 @@ conjugated by the gauge transformation at its two endpoints. -/
 theorem pathLink_staplePath_smul (Ω : V → G) (W : GaugeLink V G) (v w x y : V) :
     (Ω • W).pathLink (staplePath v w x y) = Ω x * W.pathLink (staplePath v w x y) * (Ω y)⁻¹ := by
   rw [staplePath_def, pathLink_smul]
-  rw [List.getLast_cons_cons, List.getLast_cons_cons, List.getLast_cons_cons,
-    List.getLast_singleton]
+  simp only [List.getLast_cons_cons, List.getLast_singleton]
 
 /-- The link along the reverse of a staple path, the staple from `y` back to `x` with leg
 `x + v + w - y` and far segment `-w` (`reverse_staplePath`), is the inverse of the staple link. -/
@@ -381,27 +419,33 @@ theorem pathLink_staplePath_ofBilin (B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (v w x
   simp only [map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply, LinearMap.flip_apply]
   ring
 
-/-- **The transverse link cannot be omitted.** There is a gauge link in axial gauge whose
-staple link is non-trivial, so it differs from the product of the two longitudinal legs of the
-staple, which is trivial in that gauge. -/
+/-- **The transverse link cannot be omitted.** There is a gauge link in axial gauge for `(1, 0)`
+whose staple link and whose transverse link are non-trivial. The legs of the staple are trivial
+in that gauge, so the staple link is the transverse link
+(`pathLink_staplePath_eq_transverseLink_of_isAxialGauge`): dropping the transverse link from the
+staple changes the result. -/
 theorem exists_isAxialGauge_pathLink_staplePath_ne_one :
     ∃ W : GaugeLink (ℝ × ℝ) Circle, W.IsAxialGauge (1, 0) ∧
-      W.pathLink (staplePath (1, 0) (0, 1) 0 (0, 1)) ≠ 1 := by
+      W.pathLink (staplePath (1, 0) (0, 1) 0 (0, 1)) ≠ 1 ∧
+      W.transverseLink (1, 0) (0, 1) 0 ≠ 1 := by
   set B : (ℝ × ℝ) →ₗ[ℝ] (ℝ × ℝ) →ₗ[ℝ] ℝ :=
     (LinearMap.mul ℝ ℝ).compl₁₂ (LinearMap.fst ℝ ℝ ℝ) (LinearMap.snd ℝ ℝ ℝ)
   have hB (z w : ℝ × ℝ) : B z w = z.1 * w.2 := by simp [B]
-  refine ⟨ofBilin B, isAxialGauge_ofBilin fun z => by simp [hB], fun h => ?_⟩
-  -- The straight link from `0` to `(0, 1)` is trivial and the flux through the unit square is
-  -- `1`, so the staple link is `exp(-1)`.
-  rw [pathLink_staplePath_ofBilin, ofBilin_apply, ← Circle.exp_add] at h
-  have hphase : B (0 + (0, 1)) (0 - (0, 1)) / 2 + -(((B - B.flip) (1, 0) (0, 1) +
-      (B - B.flip) (1, 0) ((0, 1) - 0) + (B - B.flip) (0, 1) ((0, 1) - 0)) / 2) = -1 := by
-    simp [hB]
-  rw [hphase] at h
-  have h1 : Circle.exp (-1) = Circle.exp 0 := by rw [h, Circle.exp_zero]
-  have h2 := Circle.exp_injOn_Icc (a := -1) (b := 0) (by linarith [Real.two_le_pi])
-    (by norm_num) (by norm_num) h1
-  norm_num at h2
+  -- The flux of the field strength through the unit square is `1`, so the staple link is the
+  -- trivial straight link times `exp(-1)`, and the transverse link is `exp(-1)` too.
+  have hstaple : (ofBilin B).pathLink (staplePath (1, 0) (0, 1) 0 (0, 1)) = Circle.exp (-1 : ℝ) :=
+    by rw [pathLink_staplePath_ofBilin, ofBilin_apply, ← Circle.exp_add]; congr 1; simp [hB]
+  have htrans : (ofBilin B).transverseLink (1, 0) (0, 1) 0 = Circle.exp (-1 : ℝ) := by
+    rw [transverseLink_def, ofBilin_apply]; congr 1; simp [hB]
+  have hexp : Circle.exp (-1 : ℝ) ≠ 1 := by
+    intro h
+    have h1 : Circle.exp (-1) = Circle.exp 0 := by rw [h, Circle.exp_zero]
+    have h2 := Circle.exp_injOn_Icc (a := -1) (b := 0) (by linarith [Real.two_le_pi])
+      (by norm_num) (by norm_num) h1
+    norm_num at h2
+  refine ⟨ofBilin B, isAxialGauge_ofBilin fun z => by simp [hB], ?_, ?_⟩
+  · rw [hstaple]; exact hexp
+  · rw [htrans]; exact hexp
 
 end GaugeLink
 
