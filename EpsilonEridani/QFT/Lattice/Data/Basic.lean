@@ -7,9 +7,9 @@ module
 
 public import EpsilonEridani.Mathematics.DataStructures.Matrix.Extend
 public import EpsilonEridani.Mathematics.Probability.Moments.CovarianceMatrix
-public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 /-!
 
