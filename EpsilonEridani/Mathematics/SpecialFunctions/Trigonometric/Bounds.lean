@@ -5,8 +5,8 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import Mathlib.Analysis.Asymptotics.Defs
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
 # Boundedness of `Real.sin` and `Real.cos` along a filter
