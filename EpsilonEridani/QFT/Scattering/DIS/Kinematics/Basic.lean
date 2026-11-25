@@ -7,6 +7,7 @@ module
 
 public import Mathlib
 public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection
 /-!
 
 # Deep Inelastic Scattering Kinematics
@@ -16,8 +17,9 @@ scalar products, with its symmetric square expansions, and a minimal kinematic r
 canonical DIS invariants.
 
 Since `Bilin V` is an abbreviation for `LinearMap.BilinForm ℝ V`, the generic API of
-`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection` applies to it by dot
-notation: the projection `g.orthogonalProjection u` onto the `g`-orthogonal complement of a non-null
+`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalProjection` and
+`EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection` applies to it by dot notation:
+the projection `g.orthogonalProjectionCompl u` onto the `g`-orthogonal complement of a non-null
 vector and the reflections `g.reflection u`. Rank-one forms `(v, w) ↦ g a v * g b w` are Mathlib's
 `LinearMap.BilinForm.linMulLin (g a) (g b)`.
 

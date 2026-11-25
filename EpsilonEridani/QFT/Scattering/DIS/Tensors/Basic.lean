@@ -393,21 +393,21 @@ lemma transverseMetric_isSymm (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsS
   have hg : ∀ x y : V, g x y = g y x := hSymm.eq
   simp [transverseMetric_apply, hg, mul_comm]
 
-/-- The transverse part of the hadron momentum: the projection `g.orthogonalProjection K.q`
+/-- The transverse part of the hadron momentum: the projection `g.orthogonalProjectionCompl K.q`
 of `p` onto the `g`-orthogonal complement of `q`, `p^μ - (p·q / q²) q^μ`. -/
 noncomputable def pTransverse (g : Bilin V) (K : DisKinematics V) : V :=
-  g.orthogonalProjection K.q K.p
+  g.orthogonalProjectionCompl K.q K.p
 
 /-- The transverse hadron momentum is the projection of `p` onto the `g`-orthogonal complement
 of `q`. -/
 lemma pTransverse_def (g : Bilin V) (K : DisKinematics V) :
-    pTransverse g K = g.orthogonalProjection K.q K.p :=
+    pTransverse g K = g.orthogonalProjectionCompl K.q K.p :=
   (rfl)
 
 /-- The explicit formula `p_T = p - (p·q / q²) q` for the transverse hadron momentum. -/
 lemma pTransverse_apply (g : Bilin V) (K : DisKinematics V) :
     pTransverse g K = K.p - (g K.p K.q / g K.q K.q) • K.q :=
-  g.orthogonalProjection_apply _ _
+  g.orthogonalProjectionCompl_apply _ _
 
 /-- Pointwise pairing of the transverse hadron momentum against a vector. -/
 lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
@@ -419,7 +419,7 @@ lemma pTransverse_pairing (g : Bilin V) (K : DisKinematics V) (v : V) :
 lemma pTransverse_orthogonal_q (g : Bilin V) (K : DisKinematics V) (hQ2 : g K.q K.q ≠ 0) :
     g (pTransverse g K) K.q = 0 := by
   rw [pTransverse_def]
-  exact g.orthogonalProjection_apply_eq_zero hQ2 K.p
+  exact g.apply_orthogonalProjectionCompl_eq_zero hQ2 K.p
 
 /-- A form conserved in its first slot does not distinguish `p` from `p_T` there. -/
 lemma apply_p_eq_apply_pTransverse {g : Bilin V} {K : DisKinematics V} {W : Bilin V}
@@ -548,9 +548,9 @@ lemma linMulLin_pTransverse_isLorentzCovariant (g : Bilin V) (K : DisKinematics 
 is an element of the kinematic stabilizer. This is the concrete supply of covariance
 constraints used by `covariant_spectator_offDiagonal_zero`. -/
 lemma reflection_isKinematicStabilizer (g : Bilin V) (K : DisKinematics V) (hSymm : g.IsSymm)
-    (u : V) (hu : g u u ≠ 0) (hup : g u K.p = 0) (huq : g u K.q = 0) :
+    (u : V) (hup : g u K.p = 0) (huq : g u K.q = 0) :
     IsKinematicStabilizer g K (g.reflection u) where
-  isOrthogonal := g.isOrthogonal_reflection hSymm u hu
+  isOrthogonal := g.isOrthogonal_reflection hSymm u
   fixes_p := g.reflection_apply_of_orthogonal u K.p hup
   fixes_q := g.reflection_apply_of_orthogonal u K.q huq
 
@@ -573,7 +573,7 @@ theorem covariant_spectator_offDiagonal_zero (g : Bilin V) (K : DisKinematics V)
     W u v = 0 := by
   by_cases hu0 : u = 0
   · simp [hu0]
-  have hf := reflection_isKinematicStabilizer g K hSymm u (hu hu0)
+  have hf := reflection_isKinematicStabilizer g K hSymm u
     (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
   have h := hW _ hf u v
   rw [g.reflection_apply_self u (hu hu0), g.reflection_apply_of_orthogonal u v huv,
@@ -984,9 +984,9 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     (huu' : g u u' = 0) :
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
       f u = -u ∧ f u' = -u' := by
-  have h₁ := reflection_isKinematicStabilizer g K hSymm _ hu
+  have h₁ := reflection_isKinematicStabilizer g K hSymm u
     (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
-  have h₂ := reflection_isKinematicStabilizer g K hSymm _ hu'
+  have h₂ := reflection_isKinematicStabilizer g K hSymm u'
     (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
   refine ⟨g.reflection u ∘ₗ g.reflection u',
@@ -1209,7 +1209,7 @@ lemma spectatorAssumptions_kWit : SpectatorAssumptions gWit kWit where
       ext <;> simp <;> linarith
     · refine ⟨gWit.reflection (0, 0, 1),
         reflection_isKinematicStabilizer gWit kWit gWit_isSymm (0, 0, 1)
-          (by norm_num) (by norm_num) (by norm_num), ?_⟩
+          (by norm_num) (by norm_num), ?_⟩
       ext <;> simp [LinearMap.BilinForm.reflection_apply] <;> linarith
 
 /-!
