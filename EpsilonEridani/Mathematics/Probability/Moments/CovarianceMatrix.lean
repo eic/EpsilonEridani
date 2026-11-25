@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.DataStructures.Matrix.PosSemidef
 public import EpsilonEridani.Mathematics.Probability.Moments.Variance
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.Matrix.PosDef
@@ -118,12 +119,17 @@ theorem variance_dotProduct (hX : ∀ i, MemLp (X i) 2 μ) (c : ι → ℝ) :
   rw [← covariance_dotProduct_dotProduct hX, covariance_self (memLp_dotProduct hX c).aemeasurable]
 
 omit [Fintype ι] in
-/-- The covariance matrix of square-integrable random variables is positive semidefinite. -/
-theorem posSemidef_covarianceMatrix [Finite ι] (hX : ∀ i, MemLp (X i) 2 μ) :
+/-- The covariance matrix of square-integrable random variables is positive semidefinite. For an
+infinite family this is the statement that every finite principal submatrix, the covariance
+matrix of a finite subfamily, is positive semidefinite. -/
+theorem posSemidef_covarianceMatrix (hX : ∀ i, MemLp (X i) 2 μ) :
     (covarianceMatrix X μ).PosSemidef :=
-  have := Fintype.ofFinite ι
-  .of_dotProduct_mulVec_nonneg (isHermitian_covarianceMatrix X μ) fun c => by
-    simpa [variance_dotProduct hX] using variance_nonneg (fun ω => c ⬝ᵥ (X · ω)) μ
+  .of_submatrix_dotProduct_mulVec_nonneg (isHermitian_covarianceMatrix X μ)
+    fun {κ : Type} [Fintype κ] v x => by
+      have h0 : 0 ≤ x ⬝ᵥ covarianceMatrix (X ∘ v) μ *ᵥ x := by
+        rw [← variance_dotProduct (X := X ∘ v) (fun k => hX (v k)) x]
+        exact variance_nonneg (fun ω => x ⬝ᵥ ((X ∘ v) · ω)) μ
+      simpa using h0
 
 /-- A linear combination of square-integrable random variables has zero variance exactly when its
 coefficient vector lies in the kernel of the covariance matrix. -/
