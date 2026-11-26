@@ -77,6 +77,7 @@ time-reversal-invariant specialisation.
 
 - `EpsilonEridani.Particles.Parton.PDF.f1_nonneg`
 - `EpsilonEridani.Particles.Parton.PDF.abs_g1_le_f1`
+- `EpsilonEridani.Particles.Parton.PDF.g1_eq_zero_of_f1_eq_zero`
 - `EpsilonEridani.Particles.Parton.PDF.soffer_bound`
 - `EpsilonEridani.Particles.Parton.PDF.pdfOfSpinDensity_nonneg`
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_pdfOfSpinDensity`
@@ -191,6 +192,13 @@ theorem abs_g1_le_f1 (ρ : SpinDensity) : |g1 ρ| ≤ f1 ρ := by
     linarith
   rw [abs_le]
   exact ⟨by linarith, by linarith⟩
+
+/-- The helicity distribution vanishes wherever the unpolarized one does: helicity dominance
+`|g₁| ≤ f₁` squeezes it to zero, at fixed `(x, Q²)`. -/
+theorem g1_eq_zero_of_f1_eq_zero (ρ : SpinDensity) (h : f1 ρ = 0) : g1 ρ = 0 := by
+  have hle := abs_g1_le_f1 ρ
+  rw [h] at hle
+  exact abs_nonpos_iff.mp hle
 
 /-- The positive-semidefiniteness content of the Soffer bound, before any discrete symmetry is
 used: twice the double-helicity-flip entry is bounded by the sum of the two aligned diagonal
@@ -349,10 +357,8 @@ particular it vanishes outside the physical support as soon as the unpolarized d
 which is the `support` field of `SpinDensityAssumptions`. -/
 theorem helicityPdfOfSpinDensity_eq_zero {ρ : Flavor → ℝ → ℝ → SpinDensity} {i : Flavor}
     {x Q2 : ℝ} (hs : pdfOfSpinDensity ρ i x Q2 = 0) :
-    helicityPdfOfSpinDensity ρ i x Q2 = 0 := by
-  have hle := abs_helicityPdf_le_pdf ρ i x Q2
-  rw [hs] at hle
-  exact abs_nonpos_iff.mp hle
+    helicityPdfOfSpinDensity ρ i x Q2 = 0 :=
+  g1_eq_zero_of_f1_eq_zero (ρ i x Q2) hs
 
 /-- The helicity distribution of a spin-density family inherits the analytic half of
 `PDF.Assumptions` from a regular unpolarized density, through helicity dominance `|g₁| ≤ f₁`;
