@@ -18,7 +18,11 @@ The explicit data of the subject are a `ChargedSource` (charge, mass, charge rad
 factor in the collider frame), the photon variables `PhotonKinematics` (energy in the collider
 frame and virtuality, with the real-photon point `PhotonKinematics.IsReal`, which for a photon of
 four-momentum `q` is the length of `q.spatialPart` equal to the photon energy,
-`PhotonKinematics.isReal_iff_norm_spatialPart_eq_energy`), and the photon energy
+`PhotonKinematics.isReal_iff_norm_spatialPart_eq_energy`, and for momentum `a` along a unit axis
+`n` is `|a|` equal to the photon energy,
+`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`, so that a real photon moving
+forward along `n` has spatial part `γ.energy • n`,
+`PhotonKinematics.spatialPart_eq_energy_smul_of_isReal`), and the photon energy
 fraction `PhotonKinematics.energyFraction`. The kinematic minimum of the virtuality is strictly
 positive for a massive source (`ChargedSource.photonVirtualityMin_pos`) and strictly exceeds the
 familiar `m² x² / (1 - x)` in terms of the energy fraction `x` carried by the photon
@@ -105,6 +109,27 @@ theorem isReal_iff_norm_spatialPart_eq_energy {d : ℕ} {q : Lorentz.Vector d}
     (hk : 0 ≤ γ.energy) : γ.IsReal ↔ ‖q.spatialPart‖ = γ.energy := by
   rw [isReal_iff, hγ, neg_eq_zero, Lorentz.Vector.minkowskiProduct_self_eq_zero_iff, hq,
     abs_of_nonneg hk]
+
+/-- **A photon along an axis is real exactly when its momentum equals its energy.** A photon `γ`
+of four-momentum `q`, with `q⁰ = γ.energy ≥ 0`, virtuality `Q² = -q²` and momentum `a` along a
+unit vector `n`, `q.spatialPart = a • n`, is real exactly when `|a| = γ.energy`. -/
+theorem isReal_iff_abs_eq_energy_of_spatialPart_eq_smul {d : ℕ} {q : Lorentz.Vector d}
+    {γ : PhotonKinematics} {n : EuclideanSpace ℝ (Fin d)} {a : ℝ} (hn : ‖n‖ = 1)
+    (hq : q.timeComponent = γ.energy) (hγ : γ.virtuality = -⟪q, q⟫ₘ) (hk : 0 ≤ γ.energy)
+    (hq' : q.spatialPart = a • n) : γ.IsReal ↔ |a| = γ.energy := by
+  rw [isReal_iff_norm_spatialPart_eq_energy hq hγ hk, hq', norm_smul, hn, mul_one,
+    Real.norm_eq_abs]
+
+/-- **A real photon moving forward along an axis is null along it.** A real photon `γ` of
+four-momentum `q`, with `q⁰ = γ.energy ≥ 0`, virtuality `Q² = -q²` and momentum `a ≥ 0` along a
+unit vector `n`, `q.spatialPart = a • n`, has `q.spatialPart = γ.energy • n`. -/
+theorem spatialPart_eq_energy_smul_of_isReal {d : ℕ} {q : Lorentz.Vector d}
+    {γ : PhotonKinematics} {n : EuclideanSpace ℝ (Fin d)} {a : ℝ} (hn : ‖n‖ = 1)
+    (hq : q.timeComponent = γ.energy) (hγ : γ.virtuality = -⟪q, q⟫ₘ) (hk : 0 ≤ γ.energy)
+    (hq' : q.spatialPart = a • n) (ha : 0 ≤ a) (hr : γ.IsReal) :
+    q.spatialPart = γ.energy • n := by
+  rw [hq', ← (isReal_iff_abs_eq_energy_of_spatialPart_eq_smul hn hq hγ hk hq').1 hr,
+    abs_of_nonneg ha]
 
 /-- The fraction `x = k / E` of the source energy carried by the photon. -/
 def energyFraction (k : PhotonKinematics) (s : ChargedSource) : ℝ := k.energy / s.energy

@@ -23,8 +23,7 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
   `u.spatialPart = a • n` and `v.spatialPart = b • n`
   (`spatialPart_add_eq_smul_of_spatialPart_eq_smul`); and the component `⟪v.spatialPart, n⟫ = a`
   along a unit vector `n` of the spatial part `a • n` of a four-vector
-  (`inner_spatialPart_eq_of_spatialPart_eq_smul`), so that `|⟪v.spatialPart, n⟫| < v⁰` when
-  `|a| < v⁰` (`abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul`).
+  (`inner_spatialPart_eq_of_spatialPart_eq_smul`).
 
 * The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
   (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from
@@ -110,13 +109,6 @@ theorem inner_spatialPart_eq_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
     ⟪v.spatialPart, n⟫_ℝ = a := by
   rw [hv, real_inner_smul_self_left, hn, mul_one, mul_one]
-
-/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < v⁰` has
-`|⟪v.spatialPart, n⟫| < v⁰`. -/
-theorem abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
-    (h : |a| < v.timeComponent) : |⟪v.spatialPart, n⟫_ℝ| < v.timeComponent := by
-  rwa [inner_spatialPart_eq_of_spatialPart_eq_smul hn hv]
 
 /-- The vector with time component `x` and spatial part `s`, assembled from Physlib's
 `ofTemporalComponent` and `ofSpatialComponent`. -/

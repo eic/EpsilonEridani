@@ -30,10 +30,9 @@ declaration order, the file contains:
   (`minkowskiProduct_eq_mul_sub_mul_of_spatialPart_eq_smul`);
 * the factorisation `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial
   part is `a • n` along a unit vector `n` into its light-cone components
-  (`minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul`), its nullness exactly when
-  `|a| = |v⁰|` (`minkowskiProduct_self_eq_zero_iff_of_spatialPart_eq_smul`, the case along an axis
-  of `⟪v, v⟫ₘ = 0 ↔ ‖v.spatialPart‖ = |v⁰|`, `minkowskiProduct_self_eq_zero_iff`,
-  `minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul`);
+  (`minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul`), and its nullness when `a = v⁰`
+  (`minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul`); for any vector,
+  `⟪v, v⟫ₘ = 0 ↔ ‖v.spatialPart‖ = |v⁰|` (`minkowskiProduct_self_eq_zero_iff`);
 * the positivity of `√⟪v, v⟫ₘ` inside the forward light cone `‖v.spatialPart‖ < v⁰`
   (`sqrt_minkowskiProduct_self_pos`), so in particular when `|a| < v⁰`, also for a sum of two such
   vectors (`sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul`,
@@ -122,13 +121,6 @@ theorem minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul {d : ℕ} {v
 theorem minkowskiProduct_self_eq_zero_iff {d : ℕ} (v : Vector d) :
     ⟪v, v⟫ₘ = 0 ↔ ‖v.spatialPart‖ = |v.timeComponent| := by
   rw [minkowskiProduct_self_eq_sq_sub, sub_eq_zero, sq_eq_sq_iff_abs_eq_abs, abs_norm, eq_comm]
-
-/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, is null exactly when
-`|a| = |v⁰|`. -/
-theorem minkowskiProduct_self_eq_zero_iff_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
-    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n) :
-    ⟪v, v⟫ₘ = 0 ↔ |a| = |v.timeComponent| := by
-  rw [minkowskiProduct_self_eq_zero_iff, hv, norm_smul, hn, mul_one, Real.norm_eq_abs]
 
 /-- A four-vector of time component `a` whose spatial part is `a • n`, for a unit vector `n`, is
 null: `⟪v, v⟫ₘ = 0`. -/

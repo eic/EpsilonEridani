@@ -18,24 +18,24 @@ The rapidity of a four-vector `v` along a spatial direction `n` is
 `y = artanh (⟪v.spatialPart, n⟫ / (‖n‖ v⁰))` (`Lorentz.Vector.rapidity`). The direction is
 normalised in the definition, so the rapidity along `n` depends only on the direction of `n`
 (`Lorentz.Vector.rapidity_smul_right_of_pos`); for a unit vector `n` it is `artanh (v_∥ / v⁰)`,
-where `v_∥ = ⟪v.spatialPart, n⟫` is the component of the spatial part along `n`
-(`Lorentz.Vector.rapidity_eq_artanh_of_norm_eq_one`). The value is the rapidity of `v` only for
-`|v_∥| < v⁰`. For `|v⁰| ≤ |v_∥|` (on or outside the light cone along `n` in either time direction,
-so for a null vector along `n`, whose rapidity is physically infinite, and at `v⁰ = 0`) and for
-`n = 0` it is the junk value `0` of Mathlib's `Real.artanh`
-(`Lorentz.Vector.rapidity_eq_zero_of_abs_timeComponent_le`, `Lorentz.Vector.rapidity_zero_right`);
-for a past-directed `v` with `|v_∥| < -v⁰` it is the rapidity `artanh (v_∥ / v⁰)` of `-v`.
+where `v_∥ = ⟪v.spatialPart, n⟫` is the component of the spatial part along `n`. The value is the
+rapidity of `v` only for `|v_∥| < v⁰`. For `|v⁰| ≤ |v_∥|` (on or outside the light cone along `n`
+in either time direction, so for a null vector along `n`, whose rapidity is physically infinite,
+and at `v⁰ = 0`) and for `n = 0` it is the junk value `0` of Mathlib's `Real.artanh`
+(`Lorentz.Vector.rapidity_eq_zero_of_abs_timeComponent_le`, `Lorentz.Vector.rapidity_zero_right`).
+The rapidity is unchanged by `v ↦ -v` (`Lorentz.Vector.rapidity_neg_left`), so for a
+past-directed `v` with `|v_∥| < -v⁰` it is the rapidity of `-v`.
 
-For `|v_∥| < v⁰` along a unit vector `n` (the forward cone of the projection of `v` onto the plane
-spanned by the time axis and `n`), the rapidity recovers the velocity, `tanh y = v_∥ / v⁰`
-(`Lorentz.Vector.tanh_rapidity`), which characterises it
-(`Lorentz.Vector.rapidity_eq_of_tanh_eq`), and it is half the logarithm of the ratio of the two
-light-cone components along `n`: `e^{y} = √(v⁰ + v_∥) / √(v⁰ - v_∥)`
-(`Lorentz.Vector.exp_rapidity`), so `e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)`
-(`Lorentz.Vector.exp_two_mul_rapidity`) and `y = ½ log ((v⁰ + v_∥) / (v⁰ - v_∥))`
-(`Lorentz.Vector.rapidity_eq_half_log`). These five lemmas, and the junk-value lemma
-`Lorentz.Vector.rapidity_eq_zero_of_abs_timeComponent_le`, are stated for any `n`, with `‖n‖ v⁰`
-in place of `v⁰`.
+For `|v_∥| < |v⁰|` along a unit vector `n` (inside the light cone of the projection of `v` onto
+the plane spanned by the time axis and `n`, in either time direction), the rapidity recovers the
+velocity, `tanh y = v_∥ / v⁰` (`Lorentz.Vector.tanh_rapidity`); any real `y` with
+`tanh y = v_∥ / v⁰` is the rapidity (`Lorentz.Vector.rapidity_eq_of_tanh_eq`). For `|v_∥| < v⁰`
+it is half the logarithm of the ratio of the two light-cone components along `n`:
+`e^{y} = √(v⁰ + v_∥) / √(v⁰ - v_∥)` (`Lorentz.Vector.exp_rapidity`), so
+`e^{2y} = (v⁰ + v_∥) / (v⁰ - v_∥)` (`Lorentz.Vector.exp_two_mul_rapidity`) and
+`y = ½ log ((v⁰ + v_∥) / (v⁰ - v_∥))` (`Lorentz.Vector.rapidity_eq_half_log`). These five lemmas,
+and the junk-value lemma `Lorentz.Vector.rapidity_eq_zero_of_abs_timeComponent_le`, are stated for
+any `n`, with `‖n‖ v⁰` in place of `v⁰`.
 
 The two light-cone components multiply to the square `m_T² = (v⁰)² - v_∥²` of the transverse mass
 along `n`, so for `|v_∥| < v⁰` the energy and the component along `n` of a four-vector are fixed
@@ -89,7 +89,7 @@ spatial direction `n`; for a unit vector `n` it is `artanh (v_∥ / v⁰)`, with
 only for `|v_∥| < v⁰`. For `|v⁰| ≤ |v_∥|` (on or outside the light cone along `n`, so for a null
 vector along `n`, whose rapidity is physically infinite, and at `v⁰ = 0`) and at `n = 0` it is the
 junk value `0` of `Real.artanh`; for a past-directed `v` with `|v_∥| < -v⁰` it is the rapidity of
-`-v`. -/
+`-v` (`Lorentz.Vector.rapidity_neg_left`). -/
 def rapidity (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) : ℝ :=
   artanh (⟪v.spatialPart, n⟫_ℝ / (‖n‖ * v.timeComponent))
 
@@ -98,17 +98,22 @@ theorem rapidity_def (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) :
     v.rapidity n = artanh (⟪v.spatialPart, n⟫_ℝ / (‖n‖ * v.timeComponent)) :=
   (rfl)
 
-/-- Along a unit vector `n`, the rapidity is `artanh (v_∥ / v⁰)`. -/
-theorem rapidity_eq_artanh_of_norm_eq_one (v : Vector d) {n : EuclideanSpace ℝ (Fin d)}
-    (hn : ‖n‖ = 1) : v.rapidity n = artanh (⟪v.spatialPart, n⟫_ℝ / v.timeComponent) := by
-  rw [rapidity_def, hn, one_mul]
-
 /-- The rapidity along `n` depends only on the direction of `n`: rescaling `n` by a positive
 factor leaves it unchanged. -/
 theorem rapidity_smul_right_of_pos (v : Vector d) {c : ℝ} (hc : 0 < c)
     (n : EuclideanSpace ℝ (Fin d)) : v.rapidity (c • n) = v.rapidity n := by
   rw [rapidity_def, rapidity_def, real_inner_smul_right, norm_smul, Real.norm_of_nonneg hc.le,
     mul_assoc, mul_div_mul_left _ _ hc.ne']
+
+/-- Reversing a four-vector leaves its rapidity unchanged: `(-v).rapidity n = v.rapidity n`. In
+particular, a past-directed `v` with `|v_∥| < -v⁰` has the rapidity of the future-directed `-v`. -/
+theorem rapidity_neg_left (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) :
+    (-v).rapidity n = v.rapidity n := by
+  have hs : (-v).spatialPart = -v.spatialPart := by
+    ext i
+    simp
+  have ht : (-v).timeComponent = -v.timeComponent := by simp
+  rw [rapidity_def, rapidity_def, hs, ht, inner_neg_left, mul_neg, neg_div_neg_eq]
 
 /-- Along the zero vector the rapidity is the junk value `0`. -/
 @[simp]
@@ -129,20 +134,20 @@ theorem rapidity_eq_zero_of_abs_timeComponent_le (v : Vector d) {n : EuclideanSp
     · exact Or.inl h1
     · exact Or.inr (Or.inr h1)
 
-/-- For `|⟪v.spatialPart, n⟫| < ‖n‖ v⁰`, the rapidity `y` along `n` recovers the velocity along
-`n`, `tanh y = ⟪v.spatialPart, n⟫ / (‖n‖ v⁰)`; for a unit vector `n` this is `v_∥ / v⁰`. -/
+/-- For `|⟪v.spatialPart, n⟫| < |‖n‖ v⁰|`, the rapidity `y` along `n` recovers the velocity
+along `n`, `tanh y = ⟪v.spatialPart, n⟫ / (‖n‖ v⁰)`; for a unit vector `n` this is `v_∥ / v⁰`,
+for `v` inside the light cone along `n` in either time direction. -/
 theorem tanh_rapidity {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
-    (h : |⟪v.spatialPart, n⟫_ℝ| < ‖n‖ * v.timeComponent) :
+    (h : |⟪v.spatialPart, n⟫_ℝ| < |‖n‖ * v.timeComponent|) :
     tanh (v.rapidity n) = ⟪v.spatialPart, n⟫_ℝ / (‖n‖ * v.timeComponent) :=
-  tanh_artanh (div_mem_Ioo_neg_one_one_of_abs_lt_abs (h.trans_le (le_abs_self _)))
+  tanh_artanh (div_mem_Ioo_neg_one_one_of_abs_lt_abs h)
 
-/-- **The rapidity is determined by the velocity.** For `|⟪v.spatialPart, n⟫| < ‖n‖ v⁰`, a real
-`y` with `tanh y = ⟪v.spatialPart, n⟫ / (‖n‖ v⁰)` (for a unit vector `n`, `tanh y = v_∥ / v⁰`) is
-the rapidity of `v` along `n`. -/
-theorem rapidity_eq_of_tanh_eq {v : Vector d} {n : EuclideanSpace ℝ (Fin d)}
-    (h : |⟪v.spatialPart, n⟫_ℝ| < ‖n‖ * v.timeComponent) {y : ℝ}
-    (hy : tanh y = ⟪v.spatialPart, n⟫_ℝ / (‖n‖ * v.timeComponent)) : v.rapidity n = y :=
-  tanh_injective ((tanh_rapidity h).trans hy.symm)
+/-- **The rapidity is determined by the velocity.** A real `y` with
+`tanh y = ⟪v.spatialPart, n⟫ / (‖n‖ v⁰)` (for a unit vector `n`, `tanh y = v_∥ / v⁰`) is the
+rapidity of `v` along `n`. -/
+theorem rapidity_eq_of_tanh_eq {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} {y : ℝ}
+    (hy : tanh y = ⟪v.spatialPart, n⟫_ℝ / (‖n‖ * v.timeComponent)) : v.rapidity n = y := by
+  rw [rapidity_def, ← hy, artanh_tanh]
 
 /-- For `|⟪v.spatialPart, n⟫| < ‖n‖ v⁰`,
 `e^{y} = √(‖n‖ v⁰ + ⟪v.spatialPart, n⟫) / √(‖n‖ v⁰ - ⟪v.spatialPart, n⟫)`; for a unit vector `n`
@@ -239,7 +244,7 @@ theorem
   rw [minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv,
     ← inner_spatialPart_eq_of_spatialPart_eq_smul hn hv]
   exact timeComponent_sub_inner_spatialPart_eq_sqrt_mul_exp_neg_rapidity hn
-    (abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul hn hv h)
+    (by rwa [inner_spatialPart_eq_of_spatialPart_eq_smul hn hv])
 
 /-- **A collinear four-vector from its invariant mass and rapidity, energy.** If the spatial part
 of `v` is `a • n` for a unit vector `n` and `|a| < v⁰`, then `v⁰ = W cosh y`, with
@@ -250,7 +255,7 @@ theorem timeComponent_eq_sqrt_minkowskiProduct_self_mul_cosh_rapidity_of_spatial
     v.timeComponent = √⟪v, v⟫ₘ * cosh (v.rapidity n) := by
   rw [minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul hn hv]
   exact timeComponent_eq_sqrt_mul_cosh_rapidity hn
-    (abs_inner_spatialPart_lt_timeComponent_of_spatialPart_eq_smul hn hv h)
+    (by rwa [inner_spatialPart_eq_of_spatialPart_eq_smul hn hv])
 
 /-- **A null four-vector against a collinear partner from the invariant mass and rapidity.** If
 `u` is null along a unit vector `n`, with spatial part `u⁰ • n`, the spatial part of `v` is
