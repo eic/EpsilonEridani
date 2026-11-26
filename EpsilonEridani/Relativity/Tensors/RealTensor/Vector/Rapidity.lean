@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import TauCeti.Analysis.SpecialFunctions.Artanh
 public import EpsilonEridani.Mathematics.Algebra.Order.Field.Basic
 public import EpsilonEridani.Mathematics.Analysis.Real.Sqrt
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
@@ -24,7 +24,8 @@ in either time direction, so for a null vector along `n`, whose rapidity is phys
 and at `v⁰ = 0`) and for `n = 0` it is the junk value `0` of Mathlib's `Real.artanh`
 (`Lorentz.Vector.rapidity_eq_zero_of_abs_timeComponent_le`, `Lorentz.Vector.rapidity_zero_right`).
 The rapidity is unchanged by `v ↦ -v` (`Lorentz.Vector.rapidity_neg_left`), so for a
-past-directed `v` with `|v_∥| < -v⁰` it is the rapidity of `-v`.
+past-directed `v` with `|v_∥| < -v⁰` it is the rapidity of `-v`, and it changes sign when the axis
+is reversed (`Lorentz.Vector.rapidity_neg_right`).
 
 For `|v_∥| < |v⁰|` along a unit vector `n` (inside the light cone of the projection of `v` onto
 the plane spanned by the time axis and `n`, in either time direction), the rapidity recovers the
@@ -107,6 +108,7 @@ theorem rapidity_smul_right_of_pos (v : Vector d) {c : ℝ} (hc : 0 < c)
 
 /-- Reversing a four-vector leaves its rapidity unchanged: `(-v).rapidity n = v.rapidity n`. In
 particular, a past-directed `v` with `|v_∥| < -v⁰` has the rapidity of the future-directed `-v`. -/
+@[simp]
 theorem rapidity_neg_left (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) :
     (-v).rapidity n = v.rapidity n := by
   have hs : (-v).spatialPart = -v.spatialPart := by
@@ -114,6 +116,12 @@ theorem rapidity_neg_left (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) :
     simp
   have ht : (-v).timeComponent = -v.timeComponent := by simp
   rw [rapidity_def, rapidity_def, hs, ht, inner_neg_left, mul_neg, neg_div_neg_eq]
+
+/-- Reversing the axis reverses the sign of the rapidity: `v.rapidity (-n) = -v.rapidity n`. -/
+@[simp]
+theorem rapidity_neg_right (v : Vector d) (n : EuclideanSpace ℝ (Fin d)) :
+    v.rapidity (-n) = -v.rapidity n := by
+  rw [rapidity_def, rapidity_def, inner_neg_right, norm_neg, neg_div, artanh_neg_eq_neg_artanh]
 
 /-- Along the zero vector the rapidity is the junk value `0`. -/
 @[simp]
@@ -267,10 +275,8 @@ theorem timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_timeCom
     (h : |u.timeComponent + b| < u.timeComponent + v.timeComponent) :
     u.timeComponent = exp ((u + v).rapidity n) * (⟪u + v, u + v⟫ₘ - ⟪v, v⟫ₘ) /
       (2 * √⟪u + v, u + v⟫ₘ) := by
-  -- `W² = ⟪v, v⟫ₘ + 2 u⁰ (v⁰ - b)`, since `u` is null with `⟪u.spatialPart, n⟫ = u⁰`
-  have hW := minkowskiProduct_add_self_of_spatialPart_eq_smul (u := u) hv
-  rw [minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul hn rfl hu,
-    inner_spatialPart_eq_of_spatialPart_eq_smul hn hu] at hW
+  -- `W² = ⟪v, v⟫ₘ + 2 u⁰ (v⁰ - b)`, since `u` is null along `n`
+  have hW := minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul hn hu hv
   -- `v⁰ - b = W e^{-y}`
   have hB :=
    timeComponent_sub_coeff_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul

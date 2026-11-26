@@ -31,7 +31,10 @@ declaration order, the file contains:
 * the factorisation `⟪v, v⟫ₘ = (v⁰ + a) (v⁰ - a)` of the Minkowski square of a vector whose spatial
   part is `a • n` along a unit vector `n` into its light-cone components
   (`minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul`), and its nullness when `a = v⁰`
-  (`minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul`); for any vector,
+  (`minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul`), so that the sum of
+  such a null vector `u` and a vector `v` with spatial part `b • n` has
+  `⟪u + v, u + v⟫ₘ = ⟪v, v⟫ₘ + 2 u⁰ (v⁰ - b)`
+  (`minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul`); for any vector,
   `⟪v, v⟫ₘ = 0 ↔ ‖v.spatialPart‖ = |v⁰|` (`minkowskiProduct_self_eq_zero_iff`);
 * the positivity of `√⟪v, v⟫ₘ` inside the forward light cone `‖v.spatialPart‖ < v⁰`
   (`sqrt_minkowskiProduct_self_pos`), so in particular when `|a| < v⁰`, also for a sum of two such
@@ -128,6 +131,18 @@ theorem minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul
     {v : Vector d} {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (ht : v.timeComponent = a)
     (hv : v.spatialPart = a • n) : ⟪v, v⟫ₘ = 0 := by
   rw [minkowskiProduct_self_eq_add_mul_sub_of_spatialPart_eq_smul hn hv, ht, sub_self, mul_zero]
+
+/-- The Minkowski square of the sum of a four-vector `u` null along a unit vector `n`, with spatial
+part `u⁰ • n`, and a four-vector `v` with spatial part `b • n` is
+`⟪u + v, u + v⟫ₘ = ⟪v, v⟫ₘ + 2 u⁰ (v⁰ - b)`. -/
+theorem minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul {d : ℕ} {u v : Vector d}
+    {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {b : ℝ}
+    (hu : u.spatialPart = u.timeComponent • n) (hv : v.spatialPart = b • n) :
+    ⟪u + v, u + v⟫ₘ = ⟪v, v⟫ₘ + 2 * u.timeComponent * (v.timeComponent - b) := by
+  rw [minkowskiProduct_add_self_of_spatialPart_eq_smul hv,
+    minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul hn rfl hu,
+    inner_spatialPart_eq_of_spatialPart_eq_smul hn hu]
+  ring
 
 /-- A four-vector inside the forward light cone, `‖v.spatialPart‖ < v⁰`, has positive invariant
 mass: `0 < √⟪v, v⟫ₘ`. -/

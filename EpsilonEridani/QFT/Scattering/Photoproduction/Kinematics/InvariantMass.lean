@@ -104,18 +104,18 @@ theorem minkowskiProduct_add_self_eq_sub_virtuality_add_two_mul (hq : q.timeComp
 four-momentum `q` is null along the unit beam axis `n`, `q⁰ = γ.energy` and
 `q.spatialPart = γ.energy • n`, and a target of energy `E` and momentum
 `p` against it form a system of invariant mass `W² = P² + 2 γ.energy (E + p)`, with `P² = M²` for a
-target of mass `M`. When moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real
-photon (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`); conversely a real
-photon moving forward along `n` satisfies `hq'`
-(`PhotonKinematics.spatialPart_eq_energy_smul_of_isReal`). -/
+target of mass `M`; this is
+`Lorentz.Vector.minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul` for a photon.
+When moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real photon
+(`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`); conversely a real photon
+moving forward along `n` satisfies `hq'` (`PhotonKinematics.spatialPart_eq_energy_smul_of_isReal`).
+-/
 theorem minkowskiProduct_add_self_eq_add_two_mul_energy_mul_add_of_spatialPart_eq_energy_smul
     (hn : ‖n‖ = 1) (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
     (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n) :
     ⟪q + P, q + P⟫ₘ = ⟪P, P⟫ₘ + 2 * γ.energy * (E + p) := by
-  rw [minkowskiProduct_add_self_of_spatialPart_eq_smul hP',
-    minkowskiProduct_self_eq_zero_of_timeComponent_eq_of_spatialPart_eq_smul hn hq hq',
-    inner_spatialPart_eq_of_spatialPart_eq_smul hn hq', hq, hP]
-  ring
+  rw [minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul hn (by rw [hq', hq]) hP', hq,
+    hP, sub_neg_eq_add]
 
 /-- **The energy fraction from the invariant mass and the rapidity.** A photon `γ` of
 four-momentum `q`, with `q⁰ = γ.energy` and momentum `a` along the unit beam axis `n`, of any
