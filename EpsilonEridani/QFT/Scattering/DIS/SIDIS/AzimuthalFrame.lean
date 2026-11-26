@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.Mathematics.Geometry.Euclidean.Angle.Oriented.Basic
 public import EpsilonEridani.Mathematics.InnerProductSpace.Orientation
+public import EpsilonEridani.Mathematics.InnerProductSpace.PiL2
 public import EpsilonEridani.Mathematics.SpecialFunctions.Trigonometric.Angle
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.LightFront
 

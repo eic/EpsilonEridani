@@ -29,8 +29,6 @@ on `EuclideanSpace ℝ (Fin 2)` the area form is the cross product `u₀ v₁ - 
   the determinant of the coordinate matrix.
 * `EuclideanSpace.areaForm_orientation_apply`: in the plane, the area form of the standard
   orientation is `u 0 * v 1 - u 1 * v 0`.
-* `EuclideanSpace.real_inner_eq_sum`: the inner product in coordinates, `∑ i, u i * v i`; in the
-  plane it is the companion `u 0 * v 0 + u 1 * v 1` of the area form.
 -/
 
 @[expose] public section
@@ -62,10 +60,5 @@ theorem areaForm_orientation_apply (u v : EuclideanSpace ℝ (Fin 2)) :
     (EuclideanSpace.orientation (Fin 2)).areaForm u v = u 0 * v 1 - u 1 * v 0 := by
   rw [Orientation.areaForm_to_volumeForm, volumeForm_orientation_apply, Matrix.det_fin_two]
   simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
-
-/-- The inner product of `EuclideanSpace ℝ ι` in coordinates: `∑ i, u i * v i`. -/
-theorem real_inner_eq_sum {ι : Type*} [Fintype ι] (u v : EuclideanSpace ℝ ι) :
-    inner ℝ u v = ∑ i, u i * v i := by
-  simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial, mul_comm]
 
 end EuclideanSpace

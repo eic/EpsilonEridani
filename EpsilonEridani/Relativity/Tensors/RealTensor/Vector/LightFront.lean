@@ -8,7 +8,7 @@ module
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.ApplyExtensions
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
-import EpsilonEridani.Mathematics.InnerProductSpace.Orientation
+import EpsilonEridani.Mathematics.InnerProductSpace.PiL2
 
 /-!
 # Light-front components and transverse boosts
