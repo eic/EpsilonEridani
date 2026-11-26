@@ -24,14 +24,10 @@ examples there integrate continuous targets against the standard uniform law.
 * `EpsilonEridani.integrable_uniformMeasure_iff`: on a nondegenerate interval, integrability
   against the uniform law is integrability on `Set.Ioc a b` for Lebesgue measure.
 * `ContinuousOn.integrable_uniformMeasure`: a function continuous on `Set.Icc a b` is integrable
-  against every uniform measure.
+  against `uniformMeasure a b`, with no nondegeneracy hypothesis on the interval.
 * `EpsilonEridani.lintegral_ofReal_uniformMeasure`: the lower integral of an integrable,
   almost everywhere nonnegative function against the uniform law, as an interval integral
   divided by the interval length.
-* `EpsilonEridani.lintegral_one_add_sq_div_two_uniformMeasure_zero_one` and
-  `EpsilonEridani.lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one`: the integrals of
-  the acceptance–rejection example targets against the standard uniform law, with
-  `EpsilonEridani.ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one`, the bound of the first.
 * `MeasureTheory.Measure.map_fst_restrict_setOf_le_prod_uniformMeasure_zero_one`: thinning by a
   uniform variate. Keeping a proposal `x` when an independent standard uniform variate lies
   below `a x` multiplies its law by the density `min (a x) 1`, clipped at `0`.
@@ -53,9 +49,8 @@ theorem integrable_uniformMeasure_iff {E : Type*} [NormedAddCommGroup E] {f : �
 
 end EpsilonEridani
 
-/-- A function continuous on `Set.Icc a b` is integrable against the uniform measure on any
-interval: on a nondegenerate interval it is bounded there, and on a degenerate one the measure
-is zero. -/
+/-- A function continuous on `Set.Icc a b` is integrable against `uniformMeasure a b`, with no
+nondegeneracy hypothesis on the interval: the degenerate case is the zero measure. -/
 theorem ContinuousOn.integrable_uniformMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
     {a b : ℝ} (hf : ContinuousOn f (Set.Icc a b)) : Integrable f (uniformMeasure a b) := by
   rcases le_or_gt b a with hba | hab
@@ -89,49 +84,6 @@ theorem lintegral_ofReal_uniformMeasure {f : ℝ → ℝ} {a b : ℝ} (hab : a <
     ← ofReal_integral_eq_lintegral_ofReal ((integrable_uniformMeasure_iff hab).mp hf) hf₀,
     ← intervalIntegral.integral_of_le hab.le, ENNReal.ofReal_div_of_pos (sub_pos.mpr hab),
     ENNReal.div_eq_inv_mul]
-
-/-- The function `(1 + z ^ 2) / 2` is bounded by `1` almost everywhere for the standard uniform
-law. It is the bound hypothesis of the acceptance–rejection example in
-`EpsilonEridani.Mathematics.Probability.AcceptReject` with constant proposal and bound `1`. -/
-theorem ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one :
-    ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 := by
-  filter_upwards [ae_mem_Ioc_uniformMeasure] with z hz
-  nlinarith [hz.1, hz.2]
-
-/-- The function `(1 + z ^ 2) / 2` has integral `2 / 3` over `[0, 1]`. It is the target of the
-acceptance–rejection example in `EpsilonEridani.Mathematics.Probability.AcceptReject`, and its
-integral is that example's acceptance probability. -/
-theorem lintegral_one_add_sq_div_two_uniformMeasure_zero_one :
-    ∫⁻ z, ENNReal.ofReal ((1 + z ^ 2) / 2) ∂uniformMeasure 0 1 = ENNReal.ofReal (2 / 3) := by
-  have hcont : Continuous fun z : ℝ => (1 + z ^ 2) / 2 := by fun_prop
-  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn.integrable_uniformMeasure
-    (ae_of_all _ fun z => by positivity), sub_zero, div_one]
-  norm_num [intervalIntegral.integral_div, integral_pow]
-
-/-- The clipped function `min (2 * z) (3 / 2)` has integral `15 / 16` over `[0, 1]`. It is the
-clipped target of the acceptance–rejection example in
-`EpsilonEridani.Mathematics.Probability.AcceptReject`. -/
-theorem lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one :
-    ∫⁻ z, ENNReal.ofReal (min (2 * z) (3 / 2)) ∂uniformMeasure 0 1 = ENNReal.ofReal (15 / 16) := by
-  have hcont : Continuous fun z : ℝ => min (2 * z) (3 / 2) := by fun_prop
-  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn.integrable_uniformMeasure
-    (by
-      filter_upwards [ae_mem_Ioc_uniformMeasure] with x hx
-      rw [Pi.zero_apply]
-      exact le_min (by linarith [hx.1]) (by norm_num)), sub_zero, div_one]
-  -- Split `[0, 1]` at the crossing point `3 / 4`, where `2 * z` meets the bound.
-  have hlo : ∫ z in (0 : ℝ)..3 / 4, min (2 * z) (3 / 2) = ∫ z in (0 : ℝ)..3 / 4, 2 * z :=
-    intervalIntegral.integral_congr fun z hz => by
-      rw [Set.uIcc_of_le (by norm_num)] at hz
-      exact min_eq_left (by linarith [hz.2])
-  have hhi : ∫ z in (3 / 4 : ℝ)..1, min (2 * z) (3 / 2) = ∫ _ in (3 / 4 : ℝ)..1, (3 / 2 : ℝ) :=
-    intervalIntegral.integral_congr fun z hz => by
-      rw [Set.uIcc_of_le (by norm_num)] at hz
-      exact min_eq_right (by linarith [hz.1])
-  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 3 / 4)
-      (hcont.intervalIntegrable _ _) (hcont.intervalIntegrable _ _), hlo, hhi,
-    intervalIntegral.integral_const_mul, integral_id, intervalIntegral.integral_const]
-  norm_num
 
 end EpsilonEridani
 
