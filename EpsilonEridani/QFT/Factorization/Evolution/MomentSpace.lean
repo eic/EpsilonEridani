@@ -43,7 +43,8 @@ here.
   condition, and `IsMomentSolution.eq_momentEvolution_mulVec` identifies every solution with
   the evolution operator applied to its value at a reference scale.
 - `IsMomentSolution.apply_eq_exp_mul_of_gamma_row_apply_eq_zero_of_ne` is the closed form for a
-  channel that mixes with no other: it evolves by the scalar exponential of the integrated coupling
+  channel whose evolution receives no contribution from any other channel (row `i` of `γ(N)` has
+  no off-diagonal entries): it evolves by the scalar exponential of the integrated coupling
   times its own anomalous dimension. `momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne` is
   the same fact for the corresponding row of the evolution operator, and
   `momentEvolution_eq_diagonal_of_gamma_eq_diagonal` is the evolution operator of a diagonal
@@ -353,8 +354,9 @@ lemma momentEvolution_apply_of_gamma_row_apply_eq_zero_of_ne {S : DglapMomentSys
     smul_eq_mul, Complex.exp_eq_exp_ℂ]
 
 omit [DecidableEq ι] in
-/-- **The closed form for an unmixed channel.** If channel `i` mixes with no other channel at
-`N`, that is if the off-diagonal entries of row `i` of the anomalous-dimension matrix vanish,
+/-- **The closed form for an unmixed channel.** If the evolution of channel `i` receives no
+contribution from any other channel at `N`, that is if the off-diagonal entries of row `i` of the
+anomalous-dimension matrix vanish (column `i` may be nonzero),
 channel `i` of a solution evolves multiplicatively:
 `F τ i = exp ((∫ s in τ₀..τ, S.alphaSLogScale s / (2π)) * γ i i) * F τ₀ i`.
 

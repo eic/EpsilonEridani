@@ -23,8 +23,9 @@ exponential of a matrix `A` with entries in a complete normed algebra `𝔸`:
   system `x' = A x`, in matrix form and applied to an initial vector;
 * its entries on a row `i` whose off-diagonal entries vanish: such a row of `exp A` is
   `exp (A i i)` on the diagonal and zero elsewhere. This is the closed form of a component of a
-  linear system that mixes with no other component, e.g. a non-singlet channel of DGLAP
-  evolution in moment space, inside a system whose other components mix.
+  linear system whose evolution receives no contribution from any other component, e.g. a
+  non-singlet channel of DGLAP evolution in moment space, inside a system whose other components
+  mix.
 
 Mathlib computes the derivative in a normed algebra (`hasDerivAt_exp_smul_const'`), and
 matrices carry no global norm instance. `HasDerivAt` itself needs only a topological vector space
@@ -72,8 +73,8 @@ variable {𝕜 𝕂 𝔸 m : Type*} [NontriviallyNormedField 𝕜]
 
 section RCLike
 
-variable [Fintype m] [DecidableEq m] [RCLike 𝕂] [NormedAlgebra 𝕜 𝕂] [NormedRing 𝔸]
-  [NormedAlgebra 𝕂 𝔸] [CompleteSpace 𝔸]
+variable [Fintype m] [DecidableEq m] [RCLike 𝕂] [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
+  [CompleteSpace 𝔸]
 
 namespace Matrix
 
@@ -86,7 +87,7 @@ theorem hasDerivAt_exp_smul_const' (A : Matrix m m 𝔸) (t : 𝕂) :
 
 end Matrix
 
-variable [NormedSpace 𝕜 𝔸] [IsScalarTower 𝕜 𝕂 𝔸]
+variable [NormedAlgebra 𝕜 𝕂] [NormedSpace 𝕜 𝔸] [IsScalarTower 𝕜 𝕂 𝔸]
 
 /-- The matrix exponential along a differentiable scalar path `f`: the derivative of
 `s ↦ exp (f s • A)` at `t` is `f' • (A * exp (f t • A))`. -/
@@ -113,7 +114,10 @@ theorem HasDerivAt.mulVec_const {n : Type*} [Finite m] [Fintype n] [NormedRing �
     fun M => by
       rw [LinearMap.flip_apply, mulVecBilin_apply, mul_comm]
       exact linfty_opNorm_mulVec M v
-  exact L.hasFDerivAt.comp_hasDerivAt t hM
+  have hL (M : Matrix m n 𝔸) : L M = M *ᵥ v := by
+    simp only [L, LinearMap.mkContinuous_apply, LinearMap.flip_apply, mulVecBilin_apply]
+  have h := L.hasFDerivAt.comp_hasDerivAt t hM
+  simpa only [Function.comp_def, hL] using h
 
 namespace Matrix
 
@@ -128,9 +132,13 @@ theorem exp_apply_of_row_apply_eq_zero_of_ne {A : Matrix m m 𝔸} {i : m}
   -- the operator-norm topology, which is the product topology
   have hs : HasSum (fun k : ℕ => (k.factorial⁻¹ : ℚ) • (A ^ k) i j) (NormedSpace.exp A i j) := by
     open scoped Norms.Operator in
-    exact (exp_series_hasSum_exp_of_completeSpace
+    have h := (exp_series_hasSum_exp_of_completeSpace
       (inferInstance : CompleteSpace (Matrix m m 𝔸)) A).map
-        (entryLinearMap ℚ 𝔸 i j).toAddMonoidHom (continuous_id.matrix_elem i j)
+        (entryAddMonoidHom 𝔸 i j) (continuous_id.matrix_elem i j)
+    -- `simp only` reads the entrywise `•`; the final `exact` (not `simpa`) matches the topology
+    -- of `𝔸` reached through the operator norm with that of the statement by unfolding
+    simp only [Function.comp_def, entryAddMonoidHom_apply, Matrix.smul_apply] at h
+    exact h
   -- row `i` of each power of `A` is that of the scalar diagonal matrix `A i i`
   simp only [pow_apply_of_row_apply_eq_zero_of_ne h, smul_ite, smul_zero] at hs
   refine hs.unique ?_

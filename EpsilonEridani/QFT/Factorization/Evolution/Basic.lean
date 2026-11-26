@@ -36,8 +36,8 @@ a coupled system of integro-differential equations, one per flavor channel.
   `τ = log Q2`.
 - `integratedCouplingLogScale` is the integral of the prefactor `a τ / (2 * π)` of a log-scale
   coupling `a` (for a running coupling `αs`, `a τ = αs (exp τ)`) between two log scales; for a
-  continuous, positive `a` it is strictly increasing (`strictMono_integratedCouplingLogScale`), an
-  admissible reparametrisation of the log scale.
+  continuous, positive `a` it is strictly increasing (`strictMono_integratedCouplingLogScale`),
+  hence injective, so it can serve as an evolution variable on its range.
 - `IsDGLAPFixedPoint` is the scale-local fixed-point condition that
   `IsDGLAPLogScaleEquation` used to assert before this module was corrected; it is retained
   under a name that describes it.
@@ -308,8 +308,8 @@ lemma hasDerivAt_integratedCouplingLogScale {a : ℝ → ℝ} (ha : Continuous a
     ((ha.div_const (2 * Real.pi)).integral_hasStrictDerivAt τ₀ τ).hasDerivAt
 
 /-- For a continuous, everywhere positive log-scale coupling, the integrated coupling is
-strictly increasing in its upper limit, so it is an admissible reparametrisation of the log
-scale. -/
+strictly increasing in its upper limit, hence injective, so it can serve as an evolution
+variable on its range. -/
 lemma strictMono_integratedCouplingLogScale {a : ℝ → ℝ} (ha : Continuous a) (hpos : ∀ τ, 0 < a τ)
     (τ₀ : ℝ) : StrictMono (integratedCouplingLogScale a τ₀) :=
   strictMono_of_hasDerivAt_pos (hasDerivAt_integratedCouplingLogScale ha τ₀) fun τ =>
