@@ -12,9 +12,9 @@ public import Physlib.Relativity.Tensors.RealTensor.Velocity.Basic
 
 * The rest velocity `0 : Velocity d` is the basis vector `e₀ = (1, 0)` (`Velocity.val_zero`), so
   it has vanishing spatial part (`Velocity.zero_spatialPart`), companion to Physlib's
-  `Velocity.zero_timeComponent`. It is the fact that the generalised boost taking a velocity `u`
-  to rest (`EpsilonEridani.Relativity.LorentzGroup.Boosts.GeneralizedExtensions`) produces a
-  vector with no spatial part.
+  `Velocity.zero_timeComponent`. It is why the generalised boost taking a velocity `u` to rest
+  (`EpsilonEridani.Relativity.LorentzGroup.Boosts.GeneralizedExtensions`) maps `u` to a vector
+  with no spatial part.
 -/
 
 public section

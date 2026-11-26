@@ -5,7 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
+public import EpsilonEridani.Particles.OnShellPair
 
 /-!
 # Off-forward kinematics and the minimal momentum transfer
@@ -16,16 +16,17 @@ module defines the hadron-side variables and proves the kinematic constraint tha
 `t`.
 
 The data (`OffForwardKinematics d M`) are two on-shell momenta `p`, `p'` of a hadron of mass `M`
-in `d + 1`-dimensional Minkowski space and a light-like vector `n`; the plus-component of a
-momentum `a` is `a⁺ = ⟪n, a⟫ₘ`, and both hadrons carry positive plus-momentum. The derived
-variables are
+in `d + 1`-dimensional Minkowski space (an `EpsilonEridani.Particles.OnShellPair d M`, which it
+extends) and a light-like vector `n`; the plus-component of a momentum `a` is `a⁺ = ⟪n, a⟫ₘ`,
+and both hadrons carry positive plus-momentum. The derived variables are
 
-* the average momentum `P = (p + p') / 2` and the momentum transfer `Δ = p' - p`,
-* the invariant `tMom = t = Δ²`,
+* the average momentum `P = (p + p') / 2` and the momentum transfer `Δ = p' - p`, with the
+  invariant `tMom = t = Δ²`, inherited from `OnShellPair` together with the pairings
+  `P · Δ = 0`, `P² = M² - t / 4`, `p · p' = M² - t / 2`, `p · Δ = -t / 2` and `p' · Δ = t / 2`,
 * the skewness `ξ = -Δ⁺ / (2 P⁺)`, so that `p⁺ = (1 + ξ) P⁺` and `p'⁺ = (1 - ξ) P⁺`.
 
 The Minkowski pairings among these vectors are stated once, with the arguments in the order
-`n`, `p`, `p'`, `P`, `Δ`, `w` (for instance `minkowskiProduct_p_delta_eq` and
+`n`, `p`, `p'`, `P`, `Δ`, `w` (for instance `OnShellPair.minkowskiProduct_p_delta_eq` and
 `minkowskiProduct_delta_deltaOrthN_eq`); the other order follows from
 `Lorentz.Vector.minkowskiProduct_symm`. Since `simp` cannot reorient a pairing, these one-sided
 pairings are rewrite lemmas, not `@[simp]`. The exceptions are the squares, such as
@@ -143,17 +144,9 @@ lemma physicalRegion_nonempty (M : ℝ) : (physicalRegion M).Nonempty :=
 plus-momenta `a⁺ = ⟪n, a⟫ₘ`. Both hadrons are on their mass shell and carry positive
 plus-momentum. -/
 @[ext]
-structure OffForwardKinematics (d : ℕ) (M : ℝ) where
-  /-- The incoming hadron momentum. -/
-  p : Vector d
-  /-- The outgoing hadron momentum. -/
-  pPrime : Vector d
+structure OffForwardKinematics (d : ℕ) (M : ℝ) extends OnShellPair d M where
   /-- The light-like direction defining plus-momenta. -/
   n : Vector d
-  /-- The incoming hadron is on its mass shell. -/
-  minkowskiProduct_p_self : ⟪p, p⟫ₘ = M ^ 2
-  /-- The outgoing hadron is on its mass shell. -/
-  minkowskiProduct_pPrime_self : ⟪pPrime, pPrime⟫ₘ = M ^ 2
   /-- The direction `n` is light-like. -/
   minkowskiProduct_n_self : ⟪n, n⟫ₘ = 0
   /-- The incoming hadron has positive plus-momentum. -/
@@ -163,24 +156,11 @@ structure OffForwardKinematics (d : ℕ) (M : ℝ) where
 
 namespace OffForwardKinematics
 
-attribute [simp] minkowskiProduct_p_self minkowskiProduct_pPrime_self minkowskiProduct_n_self
+open OnShellPair
+
+attribute [simp] minkowskiProduct_n_self
 
 variable {d : ℕ} {M : ℝ} (K : OffForwardKinematics d M)
-
-/-- The average hadron momentum `P = (p + p') / 2`. -/
-def avgMomentum : Vector d := (2⁻¹ : ℝ) • (K.p + K.pPrime)
-
-lemma avgMomentum_def : K.avgMomentum = (2⁻¹ : ℝ) • (K.p + K.pPrime) := (rfl)
-
-/-- The momentum transfer `Δ = p' - p`. -/
-def delta : Vector d := K.pPrime - K.p
-
-lemma delta_def : K.delta = K.pPrime - K.p := (rfl)
-
-/-- The invariant momentum transfer `t = Δ²`. -/
-def tMom : ℝ := ⟪K.delta, K.delta⟫ₘ
-
-lemma tMom_def : K.tMom = ⟪K.delta, K.delta⟫ₘ := (rfl)
 
 /-- The skewness `ξ = -Δ⁺ / (2 P⁺)`, with plus-components taken along `n`. -/
 def skewness : ℝ := -⟪K.n, K.delta⟫ₘ / (2 * ⟪K.n, K.avgMomentum⟫ₘ)
@@ -196,14 +176,6 @@ def deltaOrthN : Vector d := K.delta + (2 * K.skewness) • K.avgMomentum
 
 lemma deltaOrthN_def : K.deltaOrthN = K.delta + (2 * K.skewness) • K.avgMomentum :=
   (rfl)
-
-lemma p_eq_avgMomentum_sub : K.p = K.avgMomentum - (2⁻¹ : ℝ) • K.delta := by
-  simp only [avgMomentum_def, delta_def]
-  module
-
-lemma pPrime_eq_avgMomentum_add : K.pPrime = K.avgMomentum + (2⁻¹ : ℝ) • K.delta := by
-  simp only [avgMomentum_def, delta_def]
-  module
 
 lemma minkowskiProduct_n_avgMomentum_eq :
     ⟪K.n, K.avgMomentum⟫ₘ = (⟪K.n, K.p⟫ₘ + ⟪K.n, K.pPrime⟫ₘ) / 2 := by
@@ -255,46 +227,6 @@ lemma abs_skewness_lt_one : |K.skewness| < 1 := by
     linarith
   · rw [div_lt_one h]
     linarith
-
-/-- The two hadron momenta have the same Minkowski square. -/
-lemma minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self :
-    ⟪K.p, K.p⟫ₘ = ⟪K.pPrime, K.pPrime⟫ₘ := by
-  rw [K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self]
-
-/-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
-@[simp]
-lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
-  rw [avgMomentum_def, delta_def, map_smul, _root_.smul_apply, minkowskiProduct_add_sub_eq,
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self, sub_self, _root_.smul_zero]
-
-/-- For an elastic transition the transfer is orthogonal to the average momentum, `Δ · P = 0`. -/
-@[simp]
-lemma minkowskiProduct_delta_avgMomentum_eq_zero : ⟪K.delta, K.avgMomentum⟫ₘ = 0 := by
-  rw [minkowskiProduct_symm, minkowskiProduct_avgMomentum_delta_eq_zero]
-
-/-- The invariant mass squared of the average momentum, `P² = M² - t / 4`. -/
-@[simp]
-lemma minkowskiProduct_avgMomentum_self_eq :
-    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = M ^ 2 - K.tMom / 4 := by
-  rw [avgMomentum_def, minkowskiProduct_smul_self,
-    minkowskiProduct_add_self_eq_of_minkowskiProduct_self_eq K.minkowskiProduct_p_self
-      K.minkowskiProduct_pPrime_self, tMom_def, delta_def]
-  ring
-
-/-- The product of the two hadron momenta is `p · p' = M² - t / 2`. -/
-lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 2 :=
-  minkowskiProduct_eq_of_minkowskiProduct_self_eq K.minkowskiProduct_p_self
-    K.minkowskiProduct_pPrime_self
-
-/-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
-lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 :=
-  minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
-
-/-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
-lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 :=
-  minkowskiProduct_self_sub_right_eq_minkowskiProduct_self_div_two
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
 /-- The plus-component of the momentum transfer is `Δ⁺ = -2 ξ P⁺`. -/
 lemma minkowskiProduct_n_delta_eq :
@@ -414,7 +346,7 @@ theorem exists_of_mem_physicalRegion (hd : 2 ≤ d) {q : ℝ × ℝ} (hq : q ∈
     simp only [hp₀, hp₀', hv]
     linear_combination -2 * (1 + ξ ^ 2) * hA2B2 - 2 * (1 + ξ ^ 2) * hm2 - (1 / 2 : ℝ) * hD
   let K₀ : OffForwardKinematics d M :=
-    ⟨p₀, p₀', n₀, hp, hp', hnn, by rw [hnp]; linarith, by rw [hnp']; linarith⟩
+    ⟨⟨p₀, p₀', hp, hp'⟩, n₀, hnn, by rw [hnp]; linarith, by rw [hnp']; linarith⟩
   have hnpK : ⟪K₀.n, K₀.p⟫ₘ = 1 + ξ := hnp
   have hnpK' : ⟪K₀.n, K₀.pPrime⟫ₘ = 1 - ξ := hnp'
   refine ⟨K₀, ?_, ?_⟩

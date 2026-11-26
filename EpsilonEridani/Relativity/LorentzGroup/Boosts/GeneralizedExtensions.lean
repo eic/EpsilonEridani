@@ -12,12 +12,12 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Velocity.BasicExtensi
 /-!
 # Extensions of the generalised boosts
 
-* The generalised boost `generalizedBoost u 0` takes the velocity `u` to rest, so the image of
-  `u` has no spatial part (`LorentzGroup.spatialPart_generalizedBoost_smul_eq_zero`).
 * A time-like vector `P` of positive energy is brought to rest by a restricted Lorentz
   transformation (`LorentzGroup.exists_mem_restricted_spatialPart_smul_eq_zero`), namely the
-  generalised boost taking its velocity `P / √(P²)` to rest. This is how an elastic transition is
-  brought to its Breit frame.
+  generalised boost `generalizedBoost u 0` taking its velocity `u = P / √(P²)` to rest, which maps
+  `u` to the rest velocity `0` (Physlib's `generalizedBoost_apply_fst`), whose spatial part
+  vanishes (`Lorentz.Velocity.zero_spatialPart`). This is how an elastic transition is brought to
+  its Breit frame.
 -/
 
 public section
@@ -25,11 +25,6 @@ public section
 namespace LorentzGroup
 
 open Lorentz Lorentz.Vector
-
-/-- The generalised boost taking a velocity `u` to rest leaves `u` with no spatial part. -/
-lemma spatialPart_generalizedBoost_smul_eq_zero {d : ℕ} (u : Velocity d) :
-    (generalizedBoost u 0 • u.1).spatialPart = 0 := by
-  rw [generalizedBoost_apply_fst, Velocity.zero_spatialPart]
 
 /-- A time-like vector `P` of positive energy is brought to rest by a restricted Lorentz
 transformation `Λ`: `Λ P` has no spatial part. -/
@@ -48,7 +43,7 @@ lemma exists_mem_restricted_spatialPart_smul_eq_zero {d : ℕ} {P : Vector d}
   have hP : P = m • u.1 := by
     rw [hu1, smul_smul, mul_inv_cancel₀ hm0.ne', one_smul]
   refine ⟨generalizedBoost u 0, generalizedBoost_mem_restricted u 0, ?_⟩
-  rw [hP, smul_comm, spatialPart_smul, spatialPart_generalizedBoost_smul_eq_zero,
+  rw [hP, smul_comm, spatialPart_smul, generalizedBoost_apply_fst, Velocity.zero_spatialPart,
     _root_.smul_zero]
 
 end LorentzGroup

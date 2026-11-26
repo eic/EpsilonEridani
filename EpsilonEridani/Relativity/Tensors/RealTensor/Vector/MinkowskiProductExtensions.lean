@@ -21,12 +21,18 @@ declaration order, the file contains:
 * the expansion of the square of a difference, `⟪u - v, u - v⟫ₘ = ⟪u, u⟫ₘ - 2 ⟪u, v⟫ₘ + ⟪v, v⟫ₘ`
   (`minkowskiProduct_sub_self`), companion to `Lorentz.Vector.minkowskiProduct_add_self`;
 * the product of a sum with a difference, `⟪u + v, v - u⟫ₘ = ⟪v, v⟫ₘ - ⟪u, u⟫ₘ`
-  (`minkowskiProduct_add_sub_eq`), and, for two vectors `u`, `v` of equal Minkowski square, the
-  products `⟪u, v⟫ₘ`, `⟪u, v - u⟫ₘ`, `⟪v, v - u⟫ₘ`
-  and the square of the sum in terms of `⟪v - u, v - u⟫ₘ`, and the fact that a
-  non-negative multiple of `u` with the same non-zero square is `u`
-  (`eq_of_eq_smul_of_minkowskiProduct_self_eq`); these are the identities of the average
-  momentum and momentum transfer of an elastic transition;
+  (`minkowskiProduct_add_sub_eq`), and, for two vectors `u`, `v` on a common shell
+  `⟪u, u⟫ₘ = ⟪v, v⟫ₘ = m`, the products in terms of `⟪v - u, v - u⟫ₘ`:
+  `⟪u, v⟫ₘ = m - ⟪v - u, v - u⟫ₘ / 2` (`minkowskiProduct_eq_of_minkowskiProduct_self_eq`),
+  `⟪u + v, u + v⟫ₘ = 4 m - ⟪v - u, v - u⟫ₘ`
+  (`minkowskiProduct_add_self_eq_of_minkowskiProduct_self_eq`),
+  `⟪u, v - u⟫ₘ = -⟪v - u, v - u⟫ₘ / 2`
+  (`minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two`) and
+  `⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`
+  (`minkowskiProduct_sub_left_eq_minkowskiProduct_self_div_two`; the last two need only
+  `⟪u, u⟫ₘ = ⟪v, v⟫ₘ`). These are the identities of the average momentum and momentum transfer
+  of an elastic transition. The bullet ends with the fact that a non-negative multiple of `x`
+  with the same non-zero square is `x` (`eq_of_nonneg_of_minkowskiProduct_self_eq_of_eq_smul`);
 * the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on
   the mass shell `⟪p, p⟫ₘ = m²` (`norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self`);
 * the Minkowski product of the vector `ofTimeAndSpatial x s` with time component `x` and spatial
@@ -106,14 +112,14 @@ lemma minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two
   ring
 
 /-- For two vectors of equal Minkowski square, `⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`. -/
-lemma minkowskiProduct_self_sub_right_eq_minkowskiProduct_self_div_two
+lemma minkowskiProduct_sub_left_eq_minkowskiProduct_self_div_two
     (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) : ⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2 := by
   rw [minkowskiProduct_sub_self, map_sub, h]
   ring
 
 /-- A non-negative multiple `y = μ x` of a vector `x` with `⟪x, x⟫ₘ ≠ 0` that has the same
 Minkowski square as `x` is `x` itself. -/
-lemma eq_of_eq_smul_of_minkowskiProduct_self_eq {x y : Vector d} {μ : ℝ} (hμ : 0 ≤ μ)
+lemma eq_of_nonneg_of_minkowskiProduct_self_eq_of_eq_smul {x y : Vector d} {μ : ℝ} (hμ : 0 ≤ μ)
     (hx : ⟪x, x⟫ₘ ≠ 0) (hxy : ⟪y, y⟫ₘ = ⟪x, x⟫ₘ) (hyx : y = μ • x) : y = x := by
   rw [hyx, minkowskiProduct_smul_self] at hxy
   have hμ2 : μ ^ 2 = 1 := mul_right_cancel₀ hx (hxy.trans (one_mul _).symm)

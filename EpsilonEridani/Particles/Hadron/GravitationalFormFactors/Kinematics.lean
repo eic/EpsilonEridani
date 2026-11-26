@@ -5,10 +5,10 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions
+public import EpsilonEridani.Particles.OnShellPair
+public import EpsilonEridani.Relativity.Causality.CausallyFollowsExtensions
 public import EpsilonEridani.Relativity.LorentzGroup.Boosts.GeneralizedExtensions
 public import PhyslibAlpha.Relativity.Poincare.Causality
-public import Physlib.Relativity.Causality.CausallyFollows
 public import Physlib.Relativity.LorentzGroup.Restricted.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Shift
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
@@ -22,16 +22,19 @@ data, the kinematics of the transition, the frame in which spatial densities are
 dictionary between the variable `t ≤ 0` of the literature and the variable `Q² = -t ≥ 0` in which
 the form factors are written.
 
-* `Target` records the mass `M > 0` and the spin of the hadron (as `twiceSpin = 2 s`), so that a
-  statement about a spin-zero and one about a spin-half target take visibly different arguments.
-* `ElasticKinematics T d` is a pair of on-shell momenta `p`, `p'` of the target `T` in
-  `d + 1`-dimensional Minkowski space, both with positive energy. It defines the average momentum
-  `P = (p + p') / 2`, the transfer `Δ = p' - p`, `t = Δ²` and `qSq = Q² = -t` as an element of
-  `ℝ≥0`. The identities `P · Δ = 0`, `P² = M² - t / 4`, `p · p' = M² - t / 2` hold for any two
-  vectors on a common mass shell and are taken from
-  `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`. The constraint
-  `t ≤ 0` (`ElasticKinematics.tMom_nonpos`) is proved from the mass shell and positive energy, by
-  the reverse Cauchy–Schwarz inequality `M² ≤ p · p'`, and `t = 0` exactly in the forward
+* `Target` records the mass `M > 0` and the spin of the hadron (as `twiceSpin = 2 s`). The spin is
+  carried by the target data so that spin-dependent statements can constrain it, by a hypothesis
+  such as `T.twiceSpin = 0` for the pion or `T.twiceSpin = 1` for the nucleon.
+* `ElasticKinematics T d` extends `EpsilonEridani.Particles.OnShellPair d T.mass`, a pair of
+  on-shell momenta `p`, `p'` of the target `T` in `d + 1`-dimensional Minkowski space, by the
+  condition that both have positive energy. From `OnShellPair` it inherits the average momentum
+  `P = (p + p') / 2`, the transfer `Δ = p' - p`, `t = Δ²` and the identities `P · Δ = 0`,
+  `P² = M² - t / 4`, `p · p' = M² - t / 2`, `p · Δ = -t / 2`, `p' · Δ = t / 2`, which hold for any
+  two vectors on a common mass shell. It defines `qSq = Q² = -t` as an element of `ℝ≥0`, and
+  restates every one of these products in terms of `Q²`
+  (`ElasticKinematics.minkowskiProduct_avgMomentum_self_eq_add_qSq` and its siblings). The
+  constraint `t ≤ 0` (`ElasticKinematics.tMom_nonpos`) is proved from the mass shell and positive
+  energy, by the reverse Cauchy–Schwarz inequality `M² ≤ p · p'`, and `t = 0` exactly in the forward
   direction `p = p'` (`ElasticKinematics.tMom_eq_zero_iff`). Every `Q² ≥ 0` is attained once there
   is a spatial dimension (`ElasticKinematics.range_qSq`).
 * `ElasticKinematics.IsBreitFrame` is the frame in which `P` has no spatial part. In it
@@ -39,19 +42,19 @@ the form factors are written.
   square of the three-momentum transfer
   (`ElasticKinematics.IsBreitFrame.coe_qSq_eq_sq_norm_spatialPart_delta`). Every transition is
   carried by some restricted Lorentz transformation to a transition of the same target in its
-  Breit frame (`ElasticKinematics.exists_isBreitFrame`), and `t` is unchanged by it
+  Breit frame (`ElasticKinematics.exists_mem_restricted_isBreitFrame`), and `t` is unchanged by it
   (`ElasticKinematics.tMom_eq_of_smul`).
 * `ofLiteratureT` turns a function of `t ≤ 0`, as the literature writes form factors, into a
-  function of `Q² ≥ 0`. Its slope at the origin is minus the `t`-slope
+  function of `Q² ≥ 0`; on a transition its value at `Q²` is the original's value at `t`
+  (`ofLiteratureT_qSq`, the `simp` normal form). Its slope at the origin is minus the `t`-slope
   (`hasDerivWithinAt_ofLiteratureT_toNNReal_iff`, `derivWithin_ofLiteratureT_toNNReal`), and
   `∫_0^∞ dQ²` of it is `∫_{-∞}^0 dt` of the original (`setIntegral_ofLiteratureT_toNNReal`). A
   slope or a radius integral read off in the wrong variable changes sign, which is why every
   transcribed formula goes through this map.
 
-The momenta, `P`, `Δ` and `t` are named as in `EpsilonEridani.Particles.Parton.GPD.Kinematics`,
-whose `OffForwardKinematics` describes the same transition together with a light-like direction
-and positive plus-momenta; the form factors depend on neither, and here `t ≤ 0` comes from
-positive energy.
+The off-forward kinematics `EpsilonEridani.Particles.Parton.GPD.OffForwardKinematics` extends the
+same `OnShellPair` by a light-like direction and positive plus-momenta; the form factors depend on
+neither, and here `t ≤ 0` comes from positive energy.
 
 ## References
 
@@ -85,17 +88,10 @@ structure Target where
   twiceSpin : ℕ
 
 /-- Elastic kinematics `h(p) → h(p')` of a target `T` in `d + 1`-dimensional Minkowski space:
-both momenta are on the mass shell of `T` and carry positive energy. -/
+both momenta are on the mass shell of `T` (an `OnShellPair d T.mass`) and carry positive
+energy. -/
 @[ext]
-structure ElasticKinematics (T : Target) (d : ℕ) where
-  /-- The incoming target momentum. -/
-  p : Vector d
-  /-- The outgoing target momentum. -/
-  pPrime : Vector d
-  /-- The incoming target is on its mass shell. -/
-  minkowskiProduct_p_self : ⟪p, p⟫ₘ = T.mass ^ 2
-  /-- The outgoing target is on its mass shell. -/
-  minkowskiProduct_pPrime_self : ⟪pPrime, pPrime⟫ₘ = T.mass ^ 2
+structure ElasticKinematics (T : Target) (d : ℕ) extends Particles.OnShellPair d T.mass where
   /-- The incoming target has positive energy. -/
   timeComponent_p_pos : 0 < p.timeComponent
   /-- The outgoing target has positive energy. -/
@@ -103,81 +99,9 @@ structure ElasticKinematics (T : Target) (d : ℕ) where
 
 namespace ElasticKinematics
 
-attribute [simp] minkowskiProduct_p_self minkowskiProduct_pPrime_self
+open Particles.OnShellPair
 
 variable {T : Target} {d : ℕ} (K : ElasticKinematics T d)
-
-/-- The average target momentum `P = (p + p') / 2`. -/
-def avgMomentum : Vector d := (2⁻¹ : ℝ) • (K.p + K.pPrime)
-
-lemma avgMomentum_def : K.avgMomentum = (2⁻¹ : ℝ) • (K.p + K.pPrime) := (rfl)
-
-/-- The momentum transfer `Δ = p' - p`. -/
-def delta : Vector d := K.pPrime - K.p
-
-lemma delta_def : K.delta = K.pPrime - K.p := (rfl)
-
-/-- The invariant momentum transfer `t = Δ²`. -/
-def tMom : ℝ := ⟪K.delta, K.delta⟫ₘ
-
-lemma tMom_def : K.tMom = ⟪K.delta, K.delta⟫ₘ := (rfl)
-
-lemma p_eq_avgMomentum_sub : K.p = K.avgMomentum - (2⁻¹ : ℝ) • K.delta := by
-  rw [avgMomentum_def, delta_def]
-  module
-
-lemma pPrime_eq_avgMomentum_add : K.pPrime = K.avgMomentum + (2⁻¹ : ℝ) • K.delta := by
-  rw [avgMomentum_def, delta_def]
-  module
-
-/-- The two target momenta have the same Minkowski square. -/
-lemma minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self :
-    ⟪K.p, K.p⟫ₘ = ⟪K.pPrime, K.pPrime⟫ₘ := by
-  rw [K.minkowskiProduct_p_self, K.minkowskiProduct_pPrime_self]
-
-/-- The product of the two target momenta is `p · p' = M² - t / 2`. -/
-lemma minkowskiProduct_p_pPrime_eq : ⟪K.p, K.pPrime⟫ₘ = T.mass ^ 2 - K.tMom / 2 :=
-  minkowskiProduct_eq_of_minkowskiProduct_self_eq K.minkowskiProduct_p_self
-    K.minkowskiProduct_pPrime_self
-
-/-- For an elastic transition the average momentum is orthogonal to the transfer, `P · Δ = 0`. -/
-@[simp]
-lemma minkowskiProduct_avgMomentum_delta_eq_zero : ⟪K.avgMomentum, K.delta⟫ₘ = 0 := by
-  rw [avgMomentum_def, delta_def, map_smul, _root_.smul_apply, minkowskiProduct_add_sub_eq,
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self, sub_self, _root_.smul_zero]
-
-/-- For an elastic transition the transfer is orthogonal to the average momentum, `Δ · P = 0`. -/
-@[simp]
-lemma minkowskiProduct_delta_avgMomentum_eq_zero : ⟪K.delta, K.avgMomentum⟫ₘ = 0 := by
-  rw [minkowskiProduct_symm, minkowskiProduct_avgMomentum_delta_eq_zero]
-
-/-- The invariant mass squared of the average momentum, `P² = M² - t / 4`. -/
-@[simp]
-lemma minkowskiProduct_avgMomentum_self_eq :
-    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = T.mass ^ 2 - K.tMom / 4 := by
-  rw [avgMomentum_def, minkowskiProduct_smul_self,
-    minkowskiProduct_add_self_eq_of_minkowskiProduct_self_eq K.minkowskiProduct_p_self
-      K.minkowskiProduct_pPrime_self, tMom_def, delta_def]
-  ring
-
-/-- The incoming momentum paired with the transfer is `p · Δ = -t / 2`. -/
-lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 :=
-  minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
-
-/-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
-lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 :=
-  minkowskiProduct_self_sub_right_eq_minkowskiProduct_self_div_two
-    K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
-
-/-- The average momentum paired with the incoming momentum is `P · p = M² - t / 4`. -/
-lemma minkowskiProduct_avgMomentum_p_eq : ⟪K.avgMomentum, K.p⟫ₘ = T.mass ^ 2 - K.tMom / 4 := by
-  simp [K.p_eq_avgMomentum_sub]
-
-/-- The average momentum paired with the outgoing momentum is `P · p' = M² - t / 4`. -/
-lemma minkowskiProduct_avgMomentum_pPrime_eq :
-    ⟪K.avgMomentum, K.pPrime⟫ₘ = T.mass ^ 2 - K.tMom / 4 := by
-  simp [K.pPrime_eq_avgMomentum_add]
 
 /-- The incoming momentum lies in the causal future of the origin. -/
 lemma causallyFollows_zero_p : causallyFollows 0 K.p :=
@@ -215,8 +139,8 @@ theorem tMom_eq_zero_iff : K.tMom = 0 ↔ K.p = K.pPrime := by
   have hpp := K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
   obtain ⟨μ, hμ, h | h⟩ := (minkowskiProduct_eq_iff_of_causallyFollows K.causallyFollows_zero_p
     K.causallyFollows_zero_pPrime).mp heq
-  · exact (eq_of_eq_smul_of_minkowskiProduct_self_eq hμ hp hpp.symm h).symm
-  · exact eq_of_eq_smul_of_minkowskiProduct_self_eq hμ hp' hpp h
+  · exact (eq_of_nonneg_of_minkowskiProduct_self_eq_of_eq_smul hμ hp hpp.symm h).symm
+  · exact eq_of_nonneg_of_minkowskiProduct_self_eq_of_eq_smul hμ hp' hpp h
 
 /-- The non-negative momentum-transfer variable `Q² = -t ≥ 0`, in which the gravitational form
 factors are written. -/
@@ -226,6 +150,14 @@ def qSq : ℝ≥0 := ⟨-K.tMom, neg_nonneg.mpr K.tMom_nonpos⟩
 which statements about form factors are written, so `simp` should not rewrite it into `t`. -/
 lemma coe_qSq : (K.qSq : ℝ) = -K.tMom := (rfl)
 
+/-- The dictionary `t = -Q²`, for rewriting `t` into the variable `Q²`. -/
+lemma tMom_eq_neg_qSq : K.tMom = -(K.qSq : ℝ) := by
+  rw [coe_qSq, neg_neg]
+
+/-- The invariant square of the momentum transfer in terms of `Q²`, `Δ² = -Q²`. -/
+lemma minkowskiProduct_delta_self_eq_neg_qSq : ⟪K.delta, K.delta⟫ₘ = -(K.qSq : ℝ) := by
+  rw [← tMom_def, tMom_eq_neg_qSq]
+
 /-- `Q² = 0` exactly in the forward direction `p = p'`. -/
 lemma qSq_eq_zero_iff : K.qSq = 0 ↔ K.p = K.pPrime := by
   rw [← NNReal.coe_eq_zero, coe_qSq, neg_eq_zero, tMom_eq_zero_iff]
@@ -234,6 +166,34 @@ lemma qSq_eq_zero_iff : K.qSq = 0 ↔ K.p = K.pPrime := by
 lemma minkowskiProduct_avgMomentum_self_eq_add_qSq :
     ⟪K.avgMomentum, K.avgMomentum⟫ₘ = T.mass ^ 2 + K.qSq / 4 := by
   rw [minkowskiProduct_avgMomentum_self_eq, coe_qSq]
+  ring
+
+/-- The product of the two target momenta in terms of `Q²`, `p · p' = M² + Q² / 2`. -/
+lemma minkowskiProduct_p_pPrime_eq_add_qSq : ⟪K.p, K.pPrime⟫ₘ = T.mass ^ 2 + K.qSq / 2 := by
+  rw [minkowskiProduct_p_pPrime_eq, tMom_eq_neg_qSq]
+  ring
+
+/-- The incoming momentum paired with the transfer in terms of `Q²`, `p · Δ = Q² / 2`. -/
+lemma minkowskiProduct_p_delta_eq_qSq_div_two : ⟪K.p, K.delta⟫ₘ = K.qSq / 2 := by
+  rw [minkowskiProduct_p_delta_eq, tMom_eq_neg_qSq, neg_neg]
+
+/-- The outgoing momentum paired with the transfer in terms of `Q²`, `p' · Δ = -Q² / 2`. -/
+lemma minkowskiProduct_pPrime_delta_eq_neg_qSq_div_two :
+    ⟪K.pPrime, K.delta⟫ₘ = -(K.qSq : ℝ) / 2 := by
+  rw [minkowskiProduct_pPrime_delta_eq, tMom_eq_neg_qSq]
+
+/-- The average momentum paired with the incoming momentum in terms of `Q²`,
+`P · p = M² + Q² / 4`. -/
+lemma minkowskiProduct_avgMomentum_p_eq_add_qSq :
+    ⟪K.avgMomentum, K.p⟫ₘ = T.mass ^ 2 + K.qSq / 4 := by
+  rw [minkowskiProduct_avgMomentum_p_eq, tMom_eq_neg_qSq]
+  ring
+
+/-- The average momentum paired with the outgoing momentum in terms of `Q²`,
+`P · p' = M² + Q² / 4`. -/
+lemma minkowskiProduct_avgMomentum_pPrime_eq_add_qSq :
+    ⟪K.avgMomentum, K.pPrime⟫ₘ = T.mass ^ 2 + K.qSq / 4 := by
+  rw [minkowskiProduct_avgMomentum_pPrime_eq, tMom_eq_neg_qSq]
   ring
 
 /-- The average momentum is time-like, `0 < P²`. -/
@@ -382,7 +342,7 @@ end IsBreitFrame
 /-- Every elastic transition is carried by some restricted Lorentz transformation `Λ` to an elastic
 transition of the same target, with momenta `Λ p`, `Λ p'`, in its Breit frame. By
 `tMom_eq_of_smul` the transformed transition has the same `t`. -/
-theorem exists_isBreitFrame :
+theorem exists_mem_restricted_isBreitFrame :
     ∃ Λ ∈ LorentzGroup.restricted d, ∃ K' : ElasticKinematics T d,
       K'.p = Λ • K.p ∧ K'.pPrime = Λ • K.pPrime ∧ K'.IsBreitFrame := by
   -- the witness is the generalised boost taking the velocity `P / √(P²)` of the average momentum
@@ -390,16 +350,11 @@ theorem exists_isBreitFrame :
   obtain ⟨Λ, hΛ, hΛP⟩ := LorentzGroup.exists_mem_restricted_spatialPart_smul_eq_zero
     K.minkowskiProduct_avgMomentum_self_pos K.timeComponent_avgMomentum_pos
   -- `Λ` is orthochronous, so it keeps an on-shell momentum of positive energy in the future cone,
-  -- and the energy cannot vanish since `0 < M² ≤ ((Λ x)⁰)²`
+  -- where a vector of positive square `M²` has positive energy
   have hpos : ∀ x : Vector d, causallyFollows 0 x → ⟪x, x⟫ₘ = T.mass ^ 2 →
-      0 < (Λ • x).timeComponent := by
-    intro x hx hxx
-    have h0 := (causallyFollows_zero_iff.mp (PoincareGroup.causallyFollows_zero_smul hΛ.2 hx)).2
-    have h2 := minkowskiProduct_self_le_timeComponent_sq (Λ • x)
-    rw [minkowskiProduct_invariant, hxx] at h2
-    refine h0.lt_of_ne fun h => ?_
-    rw [← h] at h2
-    nlinarith [T.mass_pos]
+      0 < (Λ • x).timeComponent := fun x hx hxx =>
+    timeComponent_pos_of_causallyFollows_zero (PoincareGroup.causallyFollows_zero_smul hΛ.2 hx)
+      (by rw [minkowskiProduct_invariant, hxx]; positivity [T.mass_pos])
   let K' : ElasticKinematics T d :=
     { p := Λ • K.p
       pPrime := Λ • K.pPrime
@@ -422,11 +377,12 @@ becomes the function `Q² ↦ f (-Q²)` on `ℝ≥0`. Only the values of `f` on 
 (`ofLiteratureT_eq_ofLiteratureT_iff`). -/
 def ofLiteratureT (f : ℝ → ℝ) : ℝ≥0 → ℝ := fun q => f (-(q : ℝ))
 
-@[simp]
+/-- The translated function evaluated at `Q²` is the original evaluated at `-Q²`. -/
 lemma ofLiteratureT_apply (f : ℝ → ℝ) (q : ℝ≥0) : ofLiteratureT f q = f (-(q : ℝ)) := (rfl)
 
 /-- On an elastic transition, the translated function evaluated at `Q²` is the original evaluated
-at `t`. This is not a `simp` lemma: its left-hand side is rewritten by `ofLiteratureT_apply`. -/
+at `t`. -/
+@[simp]
 lemma ofLiteratureT_qSq {T : Target} {d : ℕ} (f : ℝ → ℝ) (K : ElasticKinematics T d) :
     ofLiteratureT f K.qSq = f K.tMom := by
   rw [ofLiteratureT_apply, ElasticKinematics.coe_qSq, neg_neg]
@@ -466,8 +422,9 @@ theorem hasDerivWithinAt_ofLiteratureT_toNNReal_iff {f : ℝ → ℝ} {f' : ℝ}
 theorem derivWithin_ofLiteratureT_toNNReal (f : ℝ → ℝ) :
     derivWithin (fun q : ℝ => ofLiteratureT f q.toNNReal) (Ici 0) 0 =
       -derivWithin f (Iic 0) 0 := by
-  rw [derivWithin_congr (eqOn_ofLiteratureT_toNNReal f) (by simp), derivWithin_comp_neg,
-    neg_zero, Set.neg_Ici, neg_zero]
+  rw [derivWithin_congr (eqOn_ofLiteratureT_toNNReal f)
+    (eqOn_ofLiteratureT_toNNReal f self_mem_Ici), derivWithin_comp_neg, neg_zero, Set.neg_Ici,
+    neg_zero]
 
 /-- `∫_0^∞ dQ²` of the translated function is `∫_{-∞}^0 dt` of the original. -/
 theorem setIntegral_ofLiteratureT_toNNReal (f : ℝ → ℝ) :
