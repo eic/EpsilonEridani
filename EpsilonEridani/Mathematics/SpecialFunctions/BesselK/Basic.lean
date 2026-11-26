@@ -344,7 +344,7 @@ theorem neg_log_mul_exp_neg_one_le_besselK (ν : ℝ) {x : ℝ} (hx : 0 < x) :
             exact one_le_cosh _
     _ ≤ besselK ν x :=
         setIntegral_mono_set hint (ae_of_all _ fun t ↦ by positivity)
-          (Ioc_subset_Ioi_self.eventuallyLE)
+          (Ioc_subset_Ioi_self.eventuallySubset)
 
 /-- Every `K_ν` diverges at the origin. -/
 theorem tendsto_besselK_nhdsGT_zero (ν : ℝ) : Tendsto (besselK ν) (𝓝[>] 0) atTop := by

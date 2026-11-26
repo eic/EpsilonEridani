@@ -242,7 +242,7 @@ variable [Fintype n]
 theorem quarkKinetic_sum_smul (ψ : m → ℂ) (Dψ : n → m → ℂ) (c : Matrix n n ℝ) :
     quarkKinetic β γ ψ (fun ν => ∑ α, (c α ν : ℂ) • Dψ α) = quarkKinetic β γ ψ Dψ * c := by
   ext μ ν
-  simp only [quarkKinetic_apply, mul_apply, mulVec_sum, mulVec_smul, dotProduct_sum,
+  simp only [quarkKinetic_apply, Matrix.mul_apply, mulVec_sum, mulVec_smul, dotProduct_sum,
     dotProduct_smul, star_sum, star_smul, sum_dotProduct, smul_dotProduct, Complex.star_def,
     conj_ofReal, smul_eq_mul, re_I_mul_sum_sub_sum_div_two]
   exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
@@ -255,9 +255,9 @@ theorem quarkKinetic_mulVec_eq_transpose_mul {S : Matrix m m ℂ} {Λ : Matrix n
     (Dψ : n → m → ℂ) :
     quarkKinetic β γ (S *ᵥ ψ) (fun ν => S *ᵥ Dψ ν) = Λᵀ * quarkKinetic β γ ψ Dψ := by
   ext μ ν
-  simp only [quarkKinetic_apply, mul_apply, transpose_apply, star_mulVec_dotProduct_mulVec_mulVec,
-    hS, sum_mulVec, smul_mulVec, dotProduct_sum, dotProduct_smul, smul_eq_mul,
-    re_I_mul_sum_sub_sum_div_two]
+  simp only [quarkKinetic_apply, Matrix.mul_apply, transpose_apply,
+    star_mulVec_dotProduct_mulVec_mulVec, hS, sum_mulVec, smul_mulVec, dotProduct_sum,
+    dotProduct_smul, smul_eq_mul, re_I_mul_sum_sub_sum_div_two]
 
 /-- The kinetic tensor transforms with two lower indices, `K ↦ Λᵀ * K * Λ`, when the
 field transforms by `S` and the bilinears `ψ‾ γ_μ χ` transform as a vector under `S`,
@@ -293,7 +293,7 @@ lemma diracOpApply_def (g : Matrix n n ℝ) (γ : n → Matrix m m ℂ) (Dψ : n
 theorem trace_quarkKinetic (hγ : ∀ μ, (β * γ μ).IsHermitian) (g : Matrix n n ℝ)
     (ψ : m → ℂ) (Dψ : n → m → ℂ) :
     trace (g⁻¹ * quarkKinetic β γ ψ Dψ) = (star ψ ⬝ᵥ β *ᵥ diracOpApply g γ Dψ).re := by
-  simp only [trace, diag, mul_apply,
+  simp only [trace, diag, Matrix.mul_apply,
     fun μ ν => quarkKinetic_apply_of_isHermitian ψ Dψ μ ν (hγ μ), diracOpApply_def,
     mulVec_smul, mulVec_sum, mulVec_mulVec, dotProduct_smul, dotProduct_sum, Finset.smul_sum,
     smul_eq_mul, re_sum, re_I_mul_ofReal_mul]

@@ -205,8 +205,8 @@ lemma su3TraceStatement : SU3TraceStatement := by
   fin_cases a <;> fin_cases b <;>
     simp [gellMann3, Matrix.trace_fin_three, su3DeltaAdj]
   all_goals ring_nf
-  all_goals simp [invSqrt3_sq]
-  all_goals ring_nf
+  simp [invSqrt3_sq]
+  ring_nf
 
 /-- The fundamental `su(3)` Casimir: `Σₐ (λᵃ/2)(λᵃ/2) = (4/3) · 1`. -/
 lemma su3FundamentalStatement : SU3FundamentalStatement := by

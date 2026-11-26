@@ -27,6 +27,14 @@ Hilbert-space-valued functions, as needed for quantum-mechanical amplitudes. Tog
 distance between two independent samples, they are the moment identities behind the
 coherent/incoherent decomposition of a configuration-averaged cross section.
 
+The file also records, in the namespace `EpsilonEridani.ProbabilityTheory`, the real-valued
+equivalence between zero variance and almost-sure constancy for a square-integrable random
+variable, in which form it enters the covariance matrix of a finite family
+(`EpsilonEridani.ProbabilityTheory.ae_eq_integral_iff_covarianceMatrix_mulVec_eq_zero`).
+Mathlib's `ProbabilityTheory.evariance_eq_zero_iff` characterises the random variables of zero
+extended variance, and `ProbabilityTheory.ae_eq_integral_of_variance_eq_zero` gives one direction
+for the real variance.
+
 ## Main results
 
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq`: `∫ ‖f - ∫ f‖² = ∫ ‖f‖² - ‖∫ f‖²`.
@@ -36,6 +44,8 @@ coherent/incoherent decomposition of a configuration-averaged cross section.
 * `MeasureTheory.MemLp.integral_norm_sub_integral_sq_eq_zero_iff`: the mean squared deviation
   vanishes if and only if `f` is almost everywhere equal to its mean; this holds in any real
   normed space.
+* `EpsilonEridani.ProbabilityTheory.variance_eq_zero_iff`: a square-integrable real random
+  variable has zero variance exactly when it is almost surely equal to its integral.
 -/
 
 public section
@@ -99,3 +109,20 @@ theorem integral_norm_sub_integral_sq_eq_zero_iff [NormedSpace ℝ E] [IsFiniteM
     simp [hx]
 
 end MeasureTheory.MemLp
+
+namespace EpsilonEridani
+namespace ProbabilityTheory
+
+open MeasureTheory _root_.ProbabilityTheory
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsFiniteMeasure μ]
+
+/-- A square-integrable random variable has zero variance exactly when it is almost surely equal
+to its integral `μ[·]`. -/
+theorem variance_eq_zero_iff {Y : Ω → ℝ} (hY : MemLp Y 2 μ) :
+    Var[Y; μ] = 0 ↔ Y =ᵐ[μ] fun _ => μ[Y] := by
+  rw [← evariance_eq_zero_iff hY.aemeasurable, variance, ENNReal.toReal_eq_zero_iff,
+    or_iff_left (evariance_lt_top hY).ne]
+
+end ProbabilityTheory
+end EpsilonEridani

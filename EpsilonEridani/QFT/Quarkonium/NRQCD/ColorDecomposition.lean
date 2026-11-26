@@ -114,13 +114,13 @@ theorem colorOctetProj_eq : colorOctetProj N = 1 - colorSingletProj N := by
   rw [colorOctetProj_apply_eq_sum]
   simp only [mul_smul, ← Finset.smul_sum]
   rw [sum_genM_proj, smul_smul, mul_one_div_cancel two_ne_zero, one_smul, LinearMap.sub_apply,
-    Module.End.one_apply, colorSingletProj_apply]
+    one_apply_eq_self, colorSingletProj_apply]
 
 /-- The octet projector in closed form: `P₈ ψ = ψ - (Tr ψ / N) · 1`. -/
 @[simp]
 theorem colorOctetProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
     colorOctetProj N ψ = ψ - ((N : ℂ)⁻¹ * ψ.trace) • 1 := by
-  rw [colorOctetProj_eq, LinearMap.sub_apply, Module.End.one_apply, colorSingletProj_apply]
+  rw [colorOctetProj_eq, LinearMap.sub_apply, one_apply_eq_self, colorSingletProj_apply]
 
 /-- The two colour channels exhaust the pair's colour space. -/
 @[simp]
@@ -137,7 +137,7 @@ theorem isIdempotentElem_colorSingletProj : IsIdempotentElem (colorSingletProj N
   refine LinearMap.ext fun ψ ↦ ?_
   rcases eq_or_ne (N : ℂ) 0 with hN | hN
   · simp [hN]
-  · simp only [Module.End.mul_apply, colorSingletProj_apply, trace_smul, trace_one,
+  · simp only [mul_apply_eq_comp, colorSingletProj_apply, trace_smul, trace_one,
       Fintype.card_fin, smul_eq_mul]
     field_simp
 
@@ -207,7 +207,7 @@ theorem colorSingletState_def :
 @[simp]
 theorem colorSingletState_apply (i j : Fin N) :
     colorSingletState N i j = if i = j then (((√N)⁻¹ : ℝ) : ℂ) else 0 := by
-  simp [colorSingletState, one_apply]
+  simp [colorSingletState, Matrix.one_apply]
 
 /-- The colour-singlet state is self-adjoint. -/
 theorem conjTranspose_colorSingletState : (colorSingletState N)ᴴ = colorSingletState N := by
@@ -302,7 +302,7 @@ theorem casimir_genM_eq :
     LieModule.casimir ℂ _ _ (genM N) (genM N) = (N : ℂ) • colorOctetProj N := by
   ext ψ : 1
   rw [casimir_genM_apply, colorOctetProj_eq, LinearMap.smul_apply, LinearMap.sub_apply,
-    Module.End.one_apply, colorSingletProj_apply]
+    one_apply_eq_self, colorSingletProj_apply]
   rcases eq_or_ne (N : ℂ) 0 with hN | hN
   · obtain rfl : N = 0 := Nat.cast_eq_zero.1 hN
     simp
