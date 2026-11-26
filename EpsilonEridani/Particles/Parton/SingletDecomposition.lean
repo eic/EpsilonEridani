@@ -445,30 +445,31 @@ theorem transpose_flavorBlindMatrix :
   cases s <;> cases t <;> simp [eq_comm]
 
 /-- The `2 × 2` matrix by which a flavour-blind kernel acts on the pair `(Σ, g)` of the quark
-singlet and the gluon, for `n_f` quark flavours: its quark-from-gluon entry is the singlet
-combination `2 n_f qg`. -/
-def singletGluonMatrix (nf : ℕ) : Matrix (Fin 2) (Fin 2) R :=
+singlet and the gluon: its quark-from-gluon entry is the singlet combination `2 n_f qg`. The flavour
+number `nf` is a scalar, `Fintype.card Flavor` in `singletGluon_flavorBlindMatrix_mulVec`, and may
+be a real parameter such as the `n_f` of a set of colour factors. -/
+def singletGluonMatrix (nf : R) : Matrix (Fin 2) (Fin 2) R :=
   !![qq, 2 * nf * qg; gq, gg]
 
-theorem singletGluonMatrix_def (nf : ℕ) :
+theorem singletGluonMatrix_def (nf : R) :
     singletGluonMatrix qq qg gq gg nf = !![qq, 2 * nf * qg; gq, gg] := (rfl)
 
 @[simp]
-theorem singletGluonMatrix_zero_zero (nf : ℕ) : singletGluonMatrix qq qg gq gg nf 0 0 = qq := (rfl)
+theorem singletGluonMatrix_zero_zero (nf : R) : singletGluonMatrix qq qg gq gg nf 0 0 = qq := (rfl)
 
 @[simp]
-theorem singletGluonMatrix_zero_one (nf : ℕ) :
+theorem singletGluonMatrix_zero_one (nf : R) :
     singletGluonMatrix qq qg gq gg nf 0 1 = 2 * nf * qg := (rfl)
 
 @[simp]
-theorem singletGluonMatrix_one_zero (nf : ℕ) : singletGluonMatrix qq qg gq gg nf 1 0 = gq := (rfl)
+theorem singletGluonMatrix_one_zero (nf : R) : singletGluonMatrix qq qg gq gg nf 1 0 = gq := (rfl)
 
 @[simp]
-theorem singletGluonMatrix_one_one (nf : ℕ) : singletGluonMatrix qq qg gq gg nf 1 1 = gg := (rfl)
+theorem singletGluonMatrix_one_one (nf : R) : singletGluonMatrix qq qg gq gg nf 1 1 = gg := (rfl)
 
 /-- `singletGluonMatrix` acting on a pair `(a, b)`. Not a `@[simp]` lemma: `Matrix.mulVec_fin_two`
 together with the entry lemmas above already reduces it, so the attribute would be redundant. -/
-theorem singletGluonMatrix_mulVec (nf : ℕ) (a b : R) :
+theorem singletGluonMatrix_mulVec (nf a b : R) :
     singletGluonMatrix qq qg gq gg nf *ᵥ ![a, b] =
       ![qq * a + 2 * nf * qg * b, gq * a + gg * b] := by
   ext k
@@ -510,7 +511,7 @@ of `P *ᵥ v` are obtained from those of `v` by `singletGluonMatrix`; no non-sin
 enters. -/
 theorem singletGluon_flavorBlindMatrix_mulVec (v : Species Flavor → R) :
     singletGluon (flavorBlindMatrix qq qg gq gg *ᵥ v) =
-      singletGluonMatrix qq qg gq gg (Fintype.card Flavor) *ᵥ singletGluon v := by
+      singletGluonMatrix qq qg gq gg (Fintype.card Flavor : R) *ᵥ singletGluon v := by
   rw [singletGluon_apply, singletGluon_apply, singlet_flavorBlindMatrix_mulVec,
     flavorBlindMatrix_mulVec_gluon, singletGluonMatrix_mulVec]
 
