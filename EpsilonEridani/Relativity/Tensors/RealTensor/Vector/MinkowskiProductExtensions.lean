@@ -36,9 +36,10 @@ declaration order, the file contains:
   `⟪u + v, u + v⟫ₘ = ⟪v, v⟫ₘ + 2 u⁰ (v⁰ - b)`
   (`minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul`); for any vector,
   `⟪v, v⟫ₘ = 0 ↔ ‖v.spatialPart‖ = |v⁰|` (`minkowskiProduct_self_eq_zero_iff`);
-* the positivity of `√⟪v, v⟫ₘ` inside the forward light cone `‖v.spatialPart‖ < v⁰`
-  (`sqrt_minkowskiProduct_self_pos`), so in particular when `|a| < v⁰`, also for a sum of two such
-  vectors (`sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul`,
+* the positivity of `⟪v, v⟫ₘ` and of `√⟪v, v⟫ₘ` inside the forward light cone
+  `‖v.spatialPart‖ < v⁰` (`minkowskiProduct_self_pos`, `sqrt_minkowskiProduct_self_pos`), so in
+  particular when `|a| < v⁰`, also for a sum of two such vectors
+  (`sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul`,
   `sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul`), and the form
   `⟪v, v⟫ₘ = (v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component along `n`
   (`minkowskiProduct_self_eq_sq_sub_inner_sq_of_spatialPart_eq_smul`);
@@ -144,12 +145,18 @@ theorem minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul {d : ℕ}
     inner_spatialPart_eq_of_spatialPart_eq_smul hn hu]
   ring
 
+/-- A four-vector inside the forward light cone, `‖v.spatialPart‖ < v⁰`, is timelike:
+`0 < ⟪v, v⟫ₘ`. -/
+theorem minkowskiProduct_self_pos {d : ℕ} {v : Vector d}
+    (h : ‖v.spatialPart‖ < v.timeComponent) : 0 < ⟪v, v⟫ₘ := by
+  rw [minkowskiProduct_self_eq_sq_sub, sub_pos]
+  exact pow_lt_pow_left₀ h (norm_nonneg _) two_ne_zero
+
 /-- A four-vector inside the forward light cone, `‖v.spatialPart‖ < v⁰`, has positive invariant
 mass: `0 < √⟪v, v⟫ₘ`. -/
 theorem sqrt_minkowskiProduct_self_pos {d : ℕ} {v : Vector d}
-    (h : ‖v.spatialPart‖ < v.timeComponent) : 0 < √⟪v, v⟫ₘ := by
-  rw [Real.sqrt_pos, minkowskiProduct_self_eq_sq_sub, sub_pos]
-  exact pow_lt_pow_left₀ h (norm_nonneg _) two_ne_zero
+    (h : ‖v.spatialPart‖ < v.timeComponent) : 0 < √⟪v, v⟫ₘ :=
+  Real.sqrt_pos.2 (minkowskiProduct_self_pos h)
 
 /-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < v⁰` has positive
 invariant mass: `0 < √⟪v, v⟫ₘ`. -/
