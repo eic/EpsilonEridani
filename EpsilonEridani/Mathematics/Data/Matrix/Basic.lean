@@ -27,7 +27,7 @@ the diagonal and zero elsewhere. -/
 theorem pow_apply_of_row_apply_eq_zero_of_ne {A : Matrix m m R} {i : m}
     (h : ∀ j, j ≠ i → A i j = 0) (k : ℕ) (j : m) :
     (A ^ k) i j = if i = j then A i i ^ k else 0 := by
-  induction k generalizing j with
+  induction k with
   | zero => rw [pow_zero, pow_zero, Matrix.one_apply]
   | succ k ih =>
     -- only the diagonal entry of row `i` of `A` contributes to row `i` of `A * A ^ k`

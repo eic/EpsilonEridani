@@ -38,8 +38,8 @@ topology, and no matrix norm appears in any statement.
 - `Matrix.hasDerivAt_exp_smul_const'`: `d/du exp (u • A) = A * exp (u • A)`.
 - `HasDerivAt.matrix_exp_smul_const'`: along a scalar path `f` with derivative `f'` at `t`,
   `d/ds exp (f s • A) = f' • (A * exp (f t • A))` at `t`.
-- `HasDerivAt.mulVec_const`: a differentiable matrix path `M` applied to a fixed vector `v` has
-  derivative `M' *ᵥ v`.
+- `HasDerivAt.mulVec_const`: a differentiable (possibly rectangular) matrix path `M` applied to
+  a fixed vector `v` has derivative `M' *ᵥ v`.
 - `Matrix.exp_apply_of_row_apply_eq_zero_of_ne`: if the off-diagonal entries of row `i` of `A`
   vanish, row `i` of `exp A` is `exp (A i i)` on the diagonal and zero elsewhere.
 -/
@@ -68,12 +68,12 @@ private theorem exp_series_hasSum_exp_of_completeSpace {A : Type*} [NormedRing A
   have := hA
   exact NormedSpace.exp_series_hasSum_exp' x
 
-variable {𝕜 𝕂 𝔸 m : Type*} [NontriviallyNormedField 𝕜] [Fintype m]
+variable {𝕜 𝕂 𝔸 m : Type*} [NontriviallyNormedField 𝕜]
 
 section RCLike
 
-variable [DecidableEq m] [RCLike 𝕂] [NormedAlgebra 𝕜 𝕂] [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
-  [CompleteSpace 𝔸]
+variable [Fintype m] [DecidableEq m] [RCLike 𝕂] [NormedAlgebra 𝕜 𝕂] [NormedRing 𝔸]
+  [NormedAlgebra 𝕂 𝔸] [CompleteSpace 𝔸]
 
 namespace Matrix
 
@@ -86,7 +86,7 @@ theorem hasDerivAt_exp_smul_const' (A : Matrix m m 𝔸) (t : 𝕂) :
 
 end Matrix
 
-variable [NormedAlgebra 𝕜 𝔸] [IsScalarTower 𝕜 𝕂 𝔸]
+variable [NormedSpace 𝕜 𝔸] [IsScalarTower 𝕜 𝕂 𝔸]
 
 /-- The matrix exponential along a differentiable scalar path `f`: the derivative of
 `s ↦ exp (f s • A)` at `t` is `f' • (A * exp (f t • A))`. -/
@@ -102,12 +102,14 @@ open Matrix
 
 /-- A differentiable matrix path applied to a fixed vector: the derivative of `s ↦ M s *ᵥ v` at
 `t` is `M' *ᵥ v`. -/
-theorem HasDerivAt.mulVec_const [NormedRing 𝔸] [NormedAlgebra 𝕜 𝔸] {M : 𝕜 → Matrix m m 𝔸}
-    {M' : Matrix m m 𝔸} {t : 𝕜} (hM : HasDerivAt M M' t) (v : m → 𝔸) :
+theorem HasDerivAt.mulVec_const {n : Type*} [Finite m] [Fintype n] [NormedRing 𝔸]
+    [NormedAlgebra 𝕜 𝔸]
+    {M : 𝕜 → Matrix m n 𝔸} {M' : Matrix m n 𝔸} {t : 𝕜} (hM : HasDerivAt M M' t) (v : n → 𝔸) :
     HasDerivAt (fun s => M s *ᵥ v) (M' *ᵥ v) t := by
+  have := Fintype.ofFinite m
   open scoped Norms.Operator in
   -- applying a matrix to `v` is a bounded linear map for the operator norm
-  let L := LinearMap.mkContinuous ((mulVecBilin 𝕜 𝕜).flip v : Matrix m m 𝔸 →ₗ[𝕜] m → 𝔸) ‖v‖
+  let L := LinearMap.mkContinuous ((mulVecBilin 𝕜 𝕜).flip v : Matrix m n 𝔸 →ₗ[𝕜] m → 𝔸) ‖v‖
     fun M => by
       rw [LinearMap.flip_apply, mulVecBilin_apply, mul_comm]
       exact linfty_opNorm_mulVec M v
@@ -115,7 +117,7 @@ theorem HasDerivAt.mulVec_const [NormedRing 𝔸] [NormedAlgebra 𝕜 𝔸] {M :
 
 namespace Matrix
 
-variable [DecidableEq m] [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+variable [Fintype m] [DecidableEq m] [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
 
 /-- **The exponential of an unmixed row.** If the off-diagonal entries of row `i` of `A` vanish,
 row `i` of `exp A` is `exp (A i i)` on the diagonal and zero elsewhere. -/
