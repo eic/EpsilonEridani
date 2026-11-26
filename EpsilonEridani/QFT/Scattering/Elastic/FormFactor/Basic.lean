@@ -31,13 +31,13 @@ convention, so that the invariant momentum transfer `t = g q q` of `q = p' - p` 
 the spacelike region where the form factor is measured. Covariance at the transition `p → p'` is
 `FormFactor.IsLorentzCovariant`: the matrix element is fixed by every element of the stabilizer
 `Bilin.IsPairStabilizer g p p'` of the two momenta. Its content comes from the reflections
-`Bilin.reflect` in the *spectator* directions, those `g`-orthogonal to both momenta, each of
-which is such a stabilizer element (`Bilin.reflect_isPairStabilizer`). The linear algebra that
-turns this into the two-structure form is collected in `FormFactor.SpectatorAssumptions`:
-every vector is a combination of the two momenta plus a spectator, and no non-zero spectator is
-null. These are statements about `g`, `p` and `p'`, not about the matrix element. They hold in
-Minkowski space whenever `p` is timelike, and they are verified below for an explicit
-transition on the `+--` form of `Hadronic.Witness.gWit`
+`LinearMap.BilinForm.reflection` in the *spectator* directions, those `g`-orthogonal to both
+momenta, each of which is such a stabilizer element (`Bilin.reflection_isPairStabilizer`). The
+linear algebra that turns this into the two-structure form is collected in
+`FormFactor.SpectatorAssumptions`: every vector is a combination of the two momenta plus a
+spectator, and no non-zero spectator is null. These are statements about `g`, `p` and `p'`, not
+about the matrix element. They hold in Minkowski space whenever `p` is timelike, and they are
+verified below for an explicit transition on the `+--` form of `Kinematics.Witness.gWit`
 (`FormFactor.Witness.spectatorAssumptions_pWit`).
 
 ## The two steps
@@ -105,8 +105,7 @@ namespace EpsilonEridani.QFT.Scattering.Elastic.FormFactor
 open Filter Topology
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
 open EpsilonEridani.QFT.Scattering.DIS.Tensors (Bilin.IsPairStabilizer Bilin.IsSpectatorSplit
-  Bilin.isSpectatorSplit_of_gram_ne_zero Bilin.reflect Bilin.reflect_apply
-  Bilin.reflect_isPairStabilizer)
+  Bilin.isSpectatorSplit_of_gram_ne_zero Bilin.reflection_isPairStabilizer)
 
 variable {V : Type} [AddCommGroup V] [Module ℝ V]
 
@@ -148,9 +147,9 @@ spectator direction: the reflection in that direction fixes both momenta and rev
 theorem IsLorentzCovariant.apply_spectator_eq_zero {g : Bilin V} (hSymm : g.IsSymm) {p p' J u : V}
     (hJ : IsLorentzCovariant g p p' J) (hu : g u u ≠ 0) (hpu : g p u = 0) (hp'u : g p' u = 0) :
     g u J = 0 := by
-  have h := hJ _ (Bilin.reflect_isPairStabilizer g hSymm u hu
+  have h := hJ _ (Bilin.reflection_isPairStabilizer g hSymm u
     (by rwa [hSymm.eq]) (by rwa [hSymm.eq]))
-  rw [Bilin.reflect_apply, sub_eq_self, smul_eq_zero] at h
+  rw [LinearMap.BilinForm.reflection_apply, sub_eq_self, smul_eq_zero] at h
   rcases h with h | h
   · simpa [hu] using h
   · simp [h] at hu
@@ -174,7 +173,7 @@ momenta then contains a timelike vector, so its orthogonal complement is spaceli
 complementary to it. -/
 structure SpectatorAssumptions (g : Bilin V) (p p' : V) : Prop
     extends Bilin.IsSpectatorSplit g p p' where
-  /-- No non-zero spectator is null, so the reflection in it is an isometry. -/
+  /-- No non-zero spectator is null, so the reflection in it reverses it. -/
   anisotropic : ∀ u : V, g p u = 0 → g p' u = 0 → u ≠ 0 → g u u ≠ 0
 
 /-- Under `SpectatorAssumptions`, a covariant combination of the two momenta plus a spectator
@@ -245,13 +244,13 @@ theorem IsLorentzCovariant.existsUnique_eq_smul {g : Bilin V} (hSymm : g.IsSymm)
 
 /-! ### The witness transition
 
-On the `+--` form `gWit` of `Hadronic.Witness`, the transition from `p = (3, 0, 0)` at rest to
+On the `+--` form `gWit` of `Kinematics.Witness`, the transition from `p = (3, 0, 0)` at rest to
 `p' = (5, 4, 0)` is between momenta of equal mass squared `9`, with spacelike momentum transfer
 `q = (2, 4, 0)`, `t = -12`, and the single spectator direction `(0, 0, 1)`. -/
 
 namespace Witness
 
-open EpsilonEridani.QFT.Scattering.DIS.Tensors.Hadronic.Witness (gWit gWit_apply gWit_isSymm)
+open EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness (gWit gWit_apply gWit_isSymm)
 
 /-- The incoming momentum of the witness transition, at rest with mass `3`. -/
 def pWit : ℝ × ℝ × ℝ := (3, 0, 0)

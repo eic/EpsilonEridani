@@ -319,8 +319,8 @@ theorem moment_pqg {N : ℝ} (hN : 0 < N) :
   field_simp
   ring
 
-/-- The singlet quark-in-gluon moment `γ_qg(N) = 2 n_f T_F (N² + N + 2) / (N (N + 1) (N + 2))`,
-at every real `N > 0`. -/
+/-- The singlet quark-in-gluon moment
+`2 n_f γ_qg(N) = 2 n_f T_F (N² + N + 2) / (N (N + 1) (N + 2))`, at every real `N > 0`. -/
 theorem moment_pqgSinglet {N : ℝ} (hN : 0 < N) :
     (pqgSinglet c).moment N = 2 * c.nF * c.tF * (N ^ 2 + N + 2) / (N * (N + 1) * (N + 2)) := by
   rw [pqgSinglet_def, KernelForm.moment_smul, moment_pqg c hN]
