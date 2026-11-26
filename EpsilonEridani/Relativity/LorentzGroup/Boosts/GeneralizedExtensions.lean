@@ -37,7 +37,7 @@ lemma exists_mem_restricted_spatialPart_smul_eq_zero {d : ℕ} {P : Vector d}
   have hu : m⁻¹ • P ∈ Velocity d := by
     refine Velocity.mem_iff.mpr ⟨?_, ?_⟩
     · rw [minkowskiProduct_smul_self, inv_pow, hm, Real.sq_sqrt hPP.le, inv_mul_cancel₀ hPP.ne']
-    · simp only [timeComponent, apply_smul]
+    · rw [timeComponent_smul]
       exact mul_pos (inv_pos.mpr hm0) hP0
   obtain ⟨u, hu1⟩ : ∃ u : Velocity d, u.1 = m⁻¹ • P := ⟨⟨m⁻¹ • P, hu⟩, rfl⟩
   have hP : P = m • u.1 := by

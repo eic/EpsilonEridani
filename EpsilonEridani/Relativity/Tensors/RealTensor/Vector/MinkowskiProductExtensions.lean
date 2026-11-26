@@ -28,7 +28,7 @@ declaration order, the file contains:
   (`minkowskiProduct_add_self_eq_of_minkowskiProduct_self_eq`),
   `⟪u, v - u⟫ₘ = -⟪v - u, v - u⟫ₘ / 2`
   (`minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two`) and
-  `⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`
+  `⟪v - u, v⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`
   (`minkowskiProduct_sub_left_eq_minkowskiProduct_self_div_two`; the last two need only
   `⟪u, u⟫ₘ = ⟪v, v⟫ₘ`). These are the identities of the average momentum and momentum transfer
   of an elastic transition. The bullet ends with the fact that a non-negative multiple of `x`
@@ -111,10 +111,13 @@ lemma minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two
   rw [minkowskiProduct_sub_self, map_sub, ← h, minkowskiProduct_symm v u]
   ring
 
-/-- For two vectors of equal Minkowski square, `⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`. -/
+/-- For two vectors of equal Minkowski square, `⟪v - u, v⟫ₘ = ⟪v - u, v - u⟫ₘ / 2`. With the
+difference in the left slot it is the companion of
+`minkowskiProduct_sub_right_eq_neg_minkowskiProduct_self_div_two`, which has it in the right
+slot. -/
 lemma minkowskiProduct_sub_left_eq_minkowskiProduct_self_div_two
-    (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) : ⟪v, v - u⟫ₘ = ⟪v - u, v - u⟫ₘ / 2 := by
-  rw [minkowskiProduct_sub_self, map_sub, h]
+    (h : ⟪u, u⟫ₘ = ⟪v, v⟫ₘ) : ⟪v - u, v⟫ₘ = ⟪v - u, v - u⟫ₘ / 2 := by
+  rw [minkowskiProduct_symm, minkowskiProduct_sub_self, map_sub, h]
   ring
 
 /-- A non-negative multiple `y = μ x` of a vector `x` with `⟪x, x⟫ₘ ≠ 0` that has the same

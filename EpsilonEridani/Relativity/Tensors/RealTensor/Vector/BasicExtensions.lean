@@ -18,8 +18,9 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
   (`spatialPart_sub_ofTemporalComponent`).
 
 * The spatial part is `ℝ`-linear (`spatialPart_add`, `spatialPart_smul`, with `spatialPart_sub`
-  above), so the spatial part of a combination such as `(p + p') / 2` is the same combination of
-  the spatial parts.
+  above), and so is the time component (`timeComponent_add`, `timeComponent_sub`,
+  `timeComponent_smul`, from Physlib's `temporalCLM`), so the spatial part and the time component
+  of a combination such as `(p + p') / 2` are the same combination of those of `p` and `p'`.
 
 * The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
   (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from
@@ -73,6 +74,28 @@ This is not a `@[simp]` lemma, for the same reason as `spatialPart_sub`. -/
 lemma spatialPart_smul {d : ℕ} (c : ℝ) (v : Vector d) :
     (c • v).spatialPart = c • v.spatialPart :=
   map_smul (spatialCLM d) c v
+
+/-- The time component of a sum is the sum of the time components.
+
+This is not a `@[simp]` lemma: the reducible `timeComponent` head unfolds to evaluation at
+`Sum.inl 0`, which `apply_add` already rewrites. -/
+lemma timeComponent_add {d : ℕ} (v w : Vector d) :
+    (v + w).timeComponent = v.timeComponent + w.timeComponent :=
+  map_add (temporalCLM d) v w
+
+/-- The time component of a difference is the difference of the time components.
+
+This is not a `@[simp]` lemma, for the same reason as `timeComponent_add`. -/
+lemma timeComponent_sub {d : ℕ} (v w : Vector d) :
+    (v - w).timeComponent = v.timeComponent - w.timeComponent :=
+  map_sub (temporalCLM d) v w
+
+/-- The time component of a scalar multiple is the multiple of the time component.
+
+This is not a `@[simp]` lemma, for the same reason as `timeComponent_add`. -/
+lemma timeComponent_smul {d : ℕ} (c : ℝ) (v : Vector d) :
+    (c • v).timeComponent = c * v.timeComponent :=
+  map_smul (temporalCLM d) c v
 
 /-- The equal-time projection `v - v⁰ e₀` has vanishing time component.
 

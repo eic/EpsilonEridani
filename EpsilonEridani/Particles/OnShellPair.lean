@@ -27,6 +27,9 @@ They are the identities for two vectors of equal Minkowski square of
 stated with the arguments in the order `p`, `p'`, `P`, `Δ`; the other order follows from
 `Lorentz.Vector.minkowskiProduct_symm`, except for `P · Δ = 0`, which is stated in both orders.
 
+The spatial part of `P` is the average of those of `p` and `p'` (`spatialPart_avgMomentum_eq`),
+and `t` is invariant under Lorentz transformations of the pair (`tMom_eq_of_smul`).
+
 ## References
 
 * M. Diehl, *Generalized parton distributions*, Phys. Rept. **388** (2003) 41
@@ -124,7 +127,7 @@ lemma minkowskiProduct_p_delta_eq : ⟪K.p, K.delta⟫ₘ = -K.tMom / 2 := by
 
 /-- The outgoing momentum paired with the transfer is `p' · Δ = t / 2`. -/
 lemma minkowskiProduct_pPrime_delta_eq : ⟪K.pPrime, K.delta⟫ₘ = K.tMom / 2 := by
-  rw [tMom_def, delta_def]
+  rw [tMom_def, delta_def, minkowskiProduct_symm]
   exact minkowskiProduct_sub_left_eq_minkowskiProduct_self_div_two
     K.minkowskiProduct_p_self_eq_minkowskiProduct_pPrime_self
 
@@ -136,6 +139,19 @@ lemma minkowskiProduct_avgMomentum_p_eq : ⟪K.avgMomentum, K.p⟫ₘ = M ^ 2 - 
 lemma minkowskiProduct_avgMomentum_pPrime_eq :
     ⟪K.avgMomentum, K.pPrime⟫ₘ = M ^ 2 - K.tMom / 4 := by
   simp [K.pPrime_eq_avgMomentum_add]
+
+/-- The spatial part of the average momentum is the average of the two spatial momenta. -/
+lemma spatialPart_avgMomentum_eq :
+    K.avgMomentum.spatialPart = (2⁻¹ : ℝ) • (K.p.spatialPart + K.pPrime.spatialPart) := by
+  rw [avgMomentum_def, spatialPart_smul, spatialPart_add]
+
+/-! ### Lorentz invariance of the momentum transfer -/
+
+/-- Two pairs related by a Lorentz transformation `Λ`, `p₂ = Λ p₁` and `p₂' = Λ p₁'`, have the
+same `t`. -/
+lemma tMom_eq_of_smul {K' : OnShellPair d M} {Λ : LorentzGroup d}
+    (hp : K'.p = Λ • K.p) (hp' : K'.pPrime = Λ • K.pPrime) : K'.tMom = K.tMom := by
+  rw [tMom_def, tMom_def, delta_def, delta_def, hp, hp', ← smul_sub, minkowskiProduct_invariant]
 
 end OnShellPair
 

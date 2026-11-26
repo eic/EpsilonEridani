@@ -33,6 +33,10 @@ the form factors are written.
   two vectors on a common mass shell. It defines `qSq = Q² = -t` as an element of `ℝ≥0`, and
   restates every one of these products in terms of `Q²`
   (`ElasticKinematics.minkowskiProduct_avgMomentum_self_eq_add_qSq` and its siblings). The
+  `simp` normal form of the products is the `t`-form, through the inherited `@[simp]` lemmas such
+  as `P² = M² - t / 4`, and `simp` does not convert between `t` and `Q²` in either direction
+  (`coe_qSq` and `tMom_eq_neg_qSq` are rewrite lemmas); the `Q²`-forms are rewrite lemmas for
+  statements written in `Q²`, which is the variable of the form factors. The
   constraint `t ≤ 0` (`ElasticKinematics.tMom_nonpos`) is proved from the mass shell and positive
   energy, by the reverse Cauchy–Schwarz inequality `M² ≤ p · p'`, and `t = 0` exactly in the forward
   direction `p = p'` (`ElasticKinematics.tMom_eq_zero_iff`). Every `Q² ≥ 0` is attained once there
@@ -43,7 +47,7 @@ the form factors are written.
   (`ElasticKinematics.IsBreitFrame.coe_qSq_eq_sq_norm_spatialPart_delta`). Every transition is
   carried by some restricted Lorentz transformation to a transition of the same target in its
   Breit frame (`ElasticKinematics.exists_mem_restricted_isBreitFrame`), and `t` is unchanged by it
-  (`ElasticKinematics.tMom_eq_of_smul`).
+  (`OnShellPair.tMom_eq_of_smul`).
 * `ofLiteratureT` turns a function of `t ≤ 0`, as the literature writes form factors, into a
   function of `Q² ≥ 0`; on a transition its value at `Q²` is the original's value at `t`
   (`ofLiteratureT_qSq`, the `simp` normal form). Its slope at the origin is minus the `t`-slope
@@ -86,6 +90,14 @@ structure Target where
   mass_pos : 0 < mass
   /-- Twice the spin of the target. -/
   twiceSpin : ℕ
+
+namespace Target
+
+/-- The mass of a target is non-zero. -/
+@[simp]
+theorem mass_ne_zero (T : Target) : T.mass ≠ 0 := T.mass_pos.ne'
+
+end Target
 
 /-- Elastic kinematics `h(p) → h(p')` of a target `T` in `d + 1`-dimensional Minkowski space:
 both momenta are on the mass shell of `T` (an `OnShellPair d T.mass`) and carry positive
@@ -205,7 +217,7 @@ lemma minkowskiProduct_avgMomentum_self_pos : 0 < ⟪K.avgMomentum, K.avgMomentu
 lemma timeComponent_avgMomentum_pos : 0 < K.avgMomentum.timeComponent := by
   have h1 := K.timeComponent_p_pos
   have h2 := K.timeComponent_pPrime_pos
-  simp only [avgMomentum_def, timeComponent, apply_smul, apply_add]
+  rw [avgMomentum_def, timeComponent_smul, timeComponent_add]
   positivity
 
 /-! ### Attained momentum transfers -/
@@ -251,15 +263,10 @@ theorem range_qSq (hd : 1 ≤ d) : range (qSq : ElasticKinematics T d → ℝ≥
 
 /-! ### Lorentz invariance of the momentum transfer -/
 
-/-- Two elastic transitions related by a Lorentz transformation have the same `t`. -/
-lemma tMom_eq_of_smul {K' : ElasticKinematics T d} {Λ : LorentzGroup d}
-    (hp : K'.p = Λ • K.p) (hp' : K'.pPrime = Λ • K.pPrime) : K'.tMom = K.tMom := by
-  rw [tMom_def, tMom_def, delta_def, delta_def, hp, hp', ← smul_sub, minkowskiProduct_invariant]
-
 /-- Two elastic transitions related by a Lorentz transformation have the same `Q²`. -/
 lemma qSq_eq_of_smul {K' : ElasticKinematics T d} {Λ : LorentzGroup d}
     (hp : K'.p = Λ • K.p) (hp' : K'.pPrime = Λ • K.pPrime) : K'.qSq = K.qSq :=
-  NNReal.eq <| by rw [coe_qSq, coe_qSq, K.tMom_eq_of_smul hp hp']
+  NNReal.eq <| by rw [coe_qSq, coe_qSq, K.tMom_eq_of_smul (K' := K'.toOnShellPair) hp hp']
 
 /-! ### The Breit frame -/
 
@@ -270,11 +277,6 @@ def IsBreitFrame : Prop := K.avgMomentum.spatialPart = 0
 
 /-- The defining property of the Breit frame, `P = (P⁰, 0)`. -/
 lemma isBreitFrame_iff : K.IsBreitFrame ↔ K.avgMomentum.spatialPart = 0 := Iff.rfl
-
-/-- The spatial part of the average momentum is the average of the two three-momenta. -/
-lemma spatialPart_avgMomentum_eq :
-    K.avgMomentum.spatialPart = (2⁻¹ : ℝ) • (K.p.spatialPart + K.pPrime.spatialPart) := by
-  rw [avgMomentum_def, spatialPart_smul, spatialPart_add]
 
 /-- The Breit frame is the frame in which the two target three-momenta are opposite. -/
 lemma isBreitFrame_iff_spatialPart_pPrime_eq_neg :
@@ -314,16 +316,14 @@ lemma timeComponent_avgMomentum_eq (h : K.IsBreitFrame) :
 /-- In the Breit frame the incoming energy is `p⁰ = √(M² + Q² / 4)`. -/
 lemma timeComponent_p_eq (h : K.IsBreitFrame) :
     K.p.timeComponent = √(T.mass ^ 2 + K.qSq / 4) := by
-  rw [← h.timeComponent_avgMomentum_eq]
-  conv_lhs => rw [K.p_eq_avgMomentum_sub]
-  simp [timeComponent, h.timeComponent_delta_eq_zero]
+  rw [K.p_eq_avgMomentum_sub, timeComponent_sub, timeComponent_smul,
+    h.timeComponent_delta_eq_zero, mul_zero, sub_zero, h.timeComponent_avgMomentum_eq]
 
 /-- In the Breit frame the outgoing energy is `p'⁰ = √(M² + Q² / 4)`. -/
 lemma timeComponent_pPrime_eq (h : K.IsBreitFrame) :
     K.pPrime.timeComponent = √(T.mass ^ 2 + K.qSq / 4) := by
-  rw [← h.timeComponent_avgMomentum_eq]
-  conv_lhs => rw [K.pPrime_eq_avgMomentum_add]
-  simp [timeComponent, h.timeComponent_delta_eq_zero]
+  rw [K.pPrime_eq_avgMomentum_add, timeComponent_add, timeComponent_smul,
+    h.timeComponent_delta_eq_zero, mul_zero, add_zero, h.timeComponent_avgMomentum_eq]
 
 /-- In the Breit frame the incoming three-momentum is `-Δ / 2`. -/
 lemma spatialPart_p_eq (h : K.IsBreitFrame) :
@@ -341,7 +341,7 @@ end IsBreitFrame
 
 /-- Every elastic transition is carried by some restricted Lorentz transformation `Λ` to an elastic
 transition of the same target, with momenta `Λ p`, `Λ p'`, in its Breit frame. By
-`tMom_eq_of_smul` the transformed transition has the same `t`. -/
+`OnShellPair.tMom_eq_of_smul` the transformed transition has the same `t`. -/
 theorem exists_mem_restricted_isBreitFrame :
     ∃ Λ ∈ LorentzGroup.restricted d, ∃ K' : ElasticKinematics T d,
       K'.p = Λ • K.p ∧ K'.pPrime = Λ • K.pPrime ∧ K'.IsBreitFrame := by
