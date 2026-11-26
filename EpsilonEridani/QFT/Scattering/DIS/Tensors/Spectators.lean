@@ -6,6 +6,7 @@ Authors: Joseph Tooby-Smith, Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
+import EpsilonEridani.Mathematics.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
 # Spectator frames and turns of the spectator plane
@@ -25,9 +26,9 @@ hadronic tensor; they supply the determinant-one stabilizer elements that
 
 ## Main results
 
-- `reflect_comp_reflect_isKinematicStabilizer`: the composite of the reflections in two
-  non-null spectators is a stabilizer element, of determinant one by
-  `Bilin.det_reflect_comp_reflect`.
+- `reflection_comp_reflection_isKinematicStabilizer`: the composite of the reflections in two
+  spectators is a stabilizer element, for non-null spectators of determinant one by
+  `Bilin.det_reflection_comp_reflection`.
 - `exists_half_turn`: two orthogonal spectators are both reversed by such an element.
 - `exists_quarter_turn`: two orthogonal spectators of equal norm are turned into each other,
   `u ↦ u' ↦ -u`, by such an element.
@@ -56,18 +57,18 @@ open Kinematics
 ## Turns of the spectator plane
 -/
 
-/-- The composite of the reflections in two non-null spectators `u` and `u'` is a kinematic
-stabilizer element; its determinant is one by `Bilin.det_reflect_comp_reflect`. -/
-lemma reflect_comp_reflect_isKinematicStabilizer {g : Bilin V} {K : DisKinematics V}
+/-- The composite of the reflections in two spectators `u` and `u'` is a kinematic stabilizer
+element; for non-null `u`, `u'` its determinant is one by
+`Bilin.det_reflection_comp_reflection`. -/
+lemma reflection_comp_reflection_isKinematicStabilizer {g : Bilin V} {K : DisKinematics V}
     (hSymm : g.IsSymm) {u u' : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0)
-    (hu : g u u ≠ 0) (hu'q : g K.q u' = 0) (hu'T : g (pTransverse g K) u' = 0)
-    (hu' : g u' u' ≠ 0) :
-    IsKinematicStabilizer g K (Bilin.reflect g u ∘ₗ Bilin.reflect g u') := by
-  have h₁ := reflect_isKinematicStabilizer g K hSymm _ hu
+    (hu'q : g K.q u' = 0) (hu'T : g (pTransverse g K) u' = 0) :
+    IsKinematicStabilizer g K (g.reflection u ∘ₗ g.reflection u') := by
+  have h₁ := reflection_isKinematicStabilizer g K hSymm u
     (apply_p_eq_zero_of_spectator g K hSymm huq huT) (by rw [hSymm.eq, huq])
-  have h₂ := reflect_isKinematicStabilizer g K hSymm _ hu'
+  have h₂ := reflection_isKinematicStabilizer g K hSymm u'
     (apply_p_eq_zero_of_spectator g K hSymm hu'q hu'T) (by rw [hSymm.eq, hu'q])
-  exact ⟨fun v w => by simp only [LinearMap.comp_apply, h₁.isometry _ _, h₂.isometry _ _],
+  exact ⟨by rw [LinearMap.coe_comp]; exact h₁.isOrthogonal.comp h₂.isOrthogonal,
     by rw [LinearMap.comp_apply, h₂.fixes_p, h₁.fixes_p],
     by rw [LinearMap.comp_apply, h₂.fixes_q, h₁.fixes_q]⟩
 
@@ -80,12 +81,12 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     ∃ f : V →ₗ[ℝ] V, IsKinematicStabilizer g K f ∧ LinearMap.det f = 1 ∧
       f u = -u ∧ f u' = -u' := by
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
-  refine ⟨_, reflect_comp_reflect_isKinematicStabilizer hSymm huq huT hu hu'q hu'T hu',
-    Bilin.det_reflect_comp_reflect g hu hu', ?_, ?_⟩
-  · rw [LinearMap.comp_apply, Bilin.reflect_apply_of_orthogonal g _ _ hu'u,
-      Bilin.reflect_apply_self g _ hu]
-  · rw [LinearMap.comp_apply, Bilin.reflect_apply_self g _ hu', map_neg,
-      Bilin.reflect_apply_of_orthogonal g _ _ huu']
+  refine ⟨_, reflection_comp_reflection_isKinematicStabilizer hSymm huq huT hu'q hu'T,
+    Bilin.det_reflection_comp_reflection g hu hu', ?_, ?_⟩
+  · rw [LinearMap.comp_apply, g.reflection_apply_of_orthogonal _ _ hu'u,
+      g.reflection_apply_self _ hu]
+  · rw [LinearMap.comp_apply, g.reflection_apply_self _ hu', map_neg,
+      g.reflection_apply_of_orthogonal _ _ huu']
 
 /-- Two orthogonal spectators `u` and `u'` of equal non-zero norm give a kinematic stabilizer
 element of determinant one with `u ↦ u' ↦ -u`: the reflection in `u - u'` exchanges `u` and
@@ -104,12 +105,12 @@ lemma exists_quarter_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
     exact mul_ne_zero two_ne_zero hu
   have hdq : g K.q (u - u') = 0 := by rw [map_sub, huq, hu'q, sub_zero]
   have hdT : g (pTransverse g K) (u - u') = 0 := by rw [map_sub, huT, hu'T, sub_zero]
-  refine ⟨_, reflect_comp_reflect_isKinematicStabilizer hSymm huq huT hu hdq hdT hdd0,
-    Bilin.det_reflect_comp_reflect g hu hdd0, ?_, ?_⟩
-  · rw [LinearMap.comp_apply, Bilin.reflect_sub_apply_left g hSymm hnorm hdd0,
-      Bilin.reflect_apply_of_orthogonal g _ _ huu']
-  · rw [LinearMap.comp_apply, Bilin.reflect_sub_apply_right g hSymm hnorm hdd0,
-      Bilin.reflect_apply_self g _ hu]
+  refine ⟨_, reflection_comp_reflection_isKinematicStabilizer hSymm huq huT hdq hdT,
+    Bilin.det_reflection_comp_reflection g hu hdd0, ?_, ?_⟩
+  · rw [LinearMap.comp_apply, Bilin.reflection_sub_apply_left g hSymm hnorm hdd0,
+      g.reflection_apply_of_orthogonal _ _ huu']
+  · rw [LinearMap.comp_apply, Bilin.reflection_sub_apply_right g hSymm hnorm hdd0,
+      g.reflection_apply_self _ hu]
 
 /-!
 ## Spectator pairs and planes
