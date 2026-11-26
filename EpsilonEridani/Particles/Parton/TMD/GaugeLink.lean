@@ -50,7 +50,7 @@ run along `n` and the far segment is the transverse displacement `w` at light-co
 `L > 0` gives the future-pointing staple of semi-inclusive deep-inelastic scattering, cut off at
 light-cone distance `L`, and `L < 0` the past-pointing staple of the Drell-Yan process. The link
 along the far segment is the transverse link, `GaugeLink.transverseLink`. The staple traversed
-backwards, from `y` to `x`, gives the inverse link (`pathLink_staplePath_swap_eq_inv`). When both
+backwards, from `y` to `x`, gives the inverse link (`pathLink_reverse_staplePath`). When both
 legs have trivial links, the whole staple link is carried by the transverse link
 (`pathLink_staplePath_eq_transverseLink_of_legs_eq_one`); in axial gauge for `n`
 (`IsAxialGauge`), which is light-cone gauge for the light-like `n` and where the links along `n`
@@ -123,6 +123,9 @@ instance : FunLike (GaugeLink V G) V (V → G) where
 @[simp]
 theorem toFun_eq_coe (W : GaugeLink V G) : W.toFun = W := (rfl)
 
+@[simp]
+theorem coe_mk (f : V → V → G) (h₁ h₂) : ⇑(⟨f, h₁, h₂⟩ : GaugeLink V G) = f := (rfl)
+
 @[ext]
 theorem ext {W₁ W₂ : GaugeLink V G} (h : ∀ x y, W₁ x y = W₂ x y) : W₁ = W₂ :=
   DFunLike.ext _ _ fun x => funext (h x)
@@ -135,33 +138,20 @@ theorem apply_swap (W : GaugeLink V G) (x y : V) : W y x = (W x y)⁻¹ :=
 its endpoints: `W x m * W m y = W x y` also when `m` lies outside the segment `[x, y]`. -/
 theorem apply_mul_apply_of_mem_line (W : GaugeLink V G) {x y m : V} (hm : m ∈ line[ℝ, x, y]) :
     W x m * W m y = W x y := by
-  obtain ⟨t, ht⟩ := mem_affineSpan_pair_iff_exists_lineMap_eq.1 hm
-  rw [AffineMap.lineMap_apply_module] at ht
-  rcases le_or_gt t 0 with ht0 | ht0
+  rcases (collinear_insert_of_mem_affineSpan_pair hm).wbtw_or_wbtw_or_wbtw with h | h | h
   · -- `x` lies between `m` and `y`, so subdivide the segment from `m` to `y` at `x`.
-    have hx : x ∈ segment ℝ m y := by
-      rw [mem_segment_iff_sameRay, ← ht]
-      have h' : x - ((1 - t) • x + t • y) = -t • (y - x) := by module
-      rw [h']
-      exact (sameRay_smul_left_iff (r := -t)).2 (Or.inl (by linarith))
-    have hW : W m x * W x y = W m y := W.toFun_mul_toFun' m y x hx
+    have hW : W m x * W x y = W m y := W.toFun_mul_toFun' m y x (mem_segment_iff_wbtw.2 h)
     rw [← hW, W.apply_swap x m, mul_inv_cancel_left]
-  · rcases le_or_gt t 1 with ht1 | ht1
-    · -- `m` lies between `x` and `y`: this is the subdivision property itself.
-      exact W.toFun_mul_toFun' x y m ⟨1 - t, t, by linarith, by linarith, by ring, ht⟩
-    · -- `y` lies between `x` and `m`, so subdivide the segment from `x` to `m` at `y`.
-      have hy : y ∈ segment ℝ x m := by
-        rw [mem_segment_iff_sameRay, ← ht]
-        have h' : (1 - t) • x + t • y - y = (t - 1) • (y - x) := by module
-        rw [h']
-        exact (sameRay_smul_right_iff (r := t - 1)).2 (Or.inl (by linarith))
-      have hW : W x y * W y m = W x m := W.toFun_mul_toFun' x m y hy
-      rw [← hW, W.apply_swap m y, inv_mul_cancel_right]
+  · -- `y` lies between `x` and `m`, so subdivide the segment from `x` to `m` at `y`.
+    have hW : W x y * W y m = W x m := W.toFun_mul_toFun' x m y (mem_segment_iff_wbtw.2 h)
+    rw [← hW, W.apply_swap m y, inv_mul_cancel_right]
+  · -- `m` lies between `x` and `y`: this is the subdivision property itself.
+    exact W.toFun_mul_toFun' x y m (segment_symm ℝ y x ▸ mem_segment_iff_wbtw.2 h)
 
 /-- The link is multiplicative under subdivision of a segment. -/
 theorem apply_mul_apply_of_mem_segment (W : GaugeLink V G) {x y m : V} (hm : m ∈ segment ℝ x y) :
     W x m * W m y = W x y :=
-  W.apply_mul_apply_of_mem_line ((mem_segment_iff_wbtw.1 hm).mem_affineSpan)
+  W.toFun_mul_toFun' x y m hm
 
 /-- The link along a degenerate segment is trivial. -/
 @[simp]
@@ -328,7 +318,7 @@ theorem pathLink_staplePath_smul (Ω : V → G) (W : GaugeLink V G) (v w x y : V
 
 /-- The link along the reverse of a staple path, the staple from `y` back to `x` with leg
 `x + v + w - y` and far segment `-w` (`reverse_staplePath`), is the inverse of the staple link. -/
-theorem pathLink_staplePath_swap_eq_inv (W : GaugeLink V G) (v w x y : V) :
+theorem pathLink_reverse_staplePath (W : GaugeLink V G) (v w x y : V) :
     W.pathLink (staplePath (x + v + w - y) (-w) y x) = (W.pathLink (staplePath v w x y))⁻¹ := by
   rw [← reverse_staplePath, pathLink_reverse]
 
