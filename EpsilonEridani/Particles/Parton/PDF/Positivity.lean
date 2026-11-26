@@ -81,6 +81,7 @@ time-reversal-invariant specialisation.
 - `EpsilonEridani.Particles.Parton.PDF.pdfOfSpinDensity_nonneg`
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_pdfOfSpinDensity`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_iff_assumptions`
+- `EpsilonEridani.Particles.Parton.PDF.helicityPdfOfSpinDensity_eq_zero`
 - `EpsilonEridani.Particles.Parton.PDF.regularity_helicityPdfOfSpinDensity`
 
 -/
@@ -271,6 +272,11 @@ lemma helicityPdfOfSpinDensity_apply (ρ : Flavor → ℝ → ℝ → SpinDensit
 collinear distribution with the same index conventions as `Pdf`. -/
 def transversityPdfOfSpinDensity (ρ : Flavor → ℝ → ℝ → SpinDensity) : Pdf Flavor :=
   fun i x Q2 => h1 (ρ i x Q2)
+
+@[simp]
+lemma transversityPdfOfSpinDensity_apply (ρ : Flavor → ℝ → ℝ → SpinDensity) (i : Flavor)
+    (x Q2 : ℝ) : transversityPdfOfSpinDensity ρ i x Q2 = h1 (ρ i x Q2) :=
+  rfl
 
 /-- **Positivity of an induced PDF is a theorem, not an assumption.** Compare the `nonneg`
 field of `PDF.Assumptions`, which posits it. Note that no restriction to `x ∈ [0, 1]` is
