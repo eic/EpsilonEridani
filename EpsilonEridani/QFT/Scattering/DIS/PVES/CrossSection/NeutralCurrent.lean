@@ -500,21 +500,22 @@ variable (Hx : ℝ → NeutralCurrentStructureFunctions)
 
 /-- The neutral-current cross section at fixed flux factor `K`, target mass `M`, virtuality `Q²`,
 charge `q`, propagator ratio `η` and couplings `ℓ`, with structure functions `Hx x` at Bjorken
-`x`, as a decomposition in `(x, y)`. Since the interference term is not helicity-odd
+`x`, as a decomposition in `(x, y)`, its fields built with `Interference.parityEvenPart` and
+`Interference.parityOddPart`. Since the interference term is not helicity-odd
 (`gammaZTerm_true_eq_neg_false_iff`), the fields are read by helicity parity: `photon` is the
 pure-photon term, `zBoson` the helicity-even part of the interference and pure-`Z` terms together,
 and `gammaZInterference` their helicity-odd part, half of `σ_R - σ_L`
 (`neutralCurrent_true_sub_false`). -/
 def neutralCurrentDecomposition : NeutralCurrentDecomposition where
   photon x y := photonTerm K M x Q2 y q (Hx x).photonF1 (Hx x).photonF2
-  zBoson x y :=
-    (gammaZTerm K M x Q2 y q η ℓ true (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
-      + gammaZTerm K M x Q2 y q η ℓ false (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
-      + zBosonTerm K M x Q2 y η ℓ true (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3
-      + zBosonTerm K M x Q2 y η ℓ false (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3) / 2
-  gammaZInterference x y :=
-    (neutralCurrent K M x Q2 y q η ℓ (Hx x) true
-      - neutralCurrent K M x Q2 y q η ℓ (Hx x) false) / 2
+  zBoson := Interference.parityEvenPart
+    (fun x y => gammaZTerm K M x Q2 y q η ℓ true (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
+      + zBosonTerm K M x Q2 y η ℓ true (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3)
+    (fun x y => gammaZTerm K M x Q2 y q η ℓ false (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
+      + zBosonTerm K M x Q2 y η ℓ false (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3)
+  gammaZInterference := Interference.parityOddPart
+    (fun x y => neutralCurrent K M x Q2 y q η ℓ (Hx x) true)
+    (fun x y => neutralCurrent K M x Q2 y q η ℓ (Hx x) false)
 
 /-- The `photon` field of `neutralCurrentDecomposition` is the pure-photon term. -/
 @[simp]
@@ -529,9 +530,9 @@ interference and pure-`Z` terms together. -/
 theorem neutralCurrentDecomposition_zBoson :
     (neutralCurrentDecomposition K M Q2 q η ℓ Hx).zBoson x y =
       (gammaZTerm K M x Q2 y q η ℓ true (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
-        + gammaZTerm K M x Q2 y q η ℓ false (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
-        + zBosonTerm K M x Q2 y η ℓ true (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3
-        + zBosonTerm K M x Q2 y η ℓ false (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3) / 2 :=
+          + zBosonTerm K M x Q2 y η ℓ true (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3
+        + (gammaZTerm K M x Q2 y q η ℓ false (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
+          + zBosonTerm K M x Q2 y η ℓ false (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3)) / 2 :=
   (rfl)
 
 /-- The `gammaZInterference` field of `neutralCurrentDecomposition` is the helicity-odd part
