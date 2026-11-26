@@ -28,7 +28,7 @@ hadronic tensor; they supply the determinant-one stabilizer elements that
 
 - `reflection_comp_reflection_isKinematicStabilizer`: the composite of the reflections in two
   spectators is a stabilizer element, for non-null spectators of determinant one by
-  `Bilin.det_reflection_comp_reflection`.
+  `LinearMap.BilinForm.det_reflection_comp_reflection`.
 - `exists_half_turn`: two orthogonal spectators are both reversed by such an element.
 - `exists_quarter_turn`: two orthogonal spectators of equal norm are turned into each other,
   `u ↦ u' ↦ -u`, by such an element.
@@ -59,7 +59,7 @@ open Kinematics
 
 /-- The composite of the reflections in two spectators `u` and `u'` is a kinematic stabilizer
 element; for non-null `u`, `u'` its determinant is one by
-`Bilin.det_reflection_comp_reflection`. -/
+`LinearMap.BilinForm.det_reflection_comp_reflection`. -/
 lemma reflection_comp_reflection_isKinematicStabilizer {g : Bilin V} {K : DisKinematics V}
     (hSymm : g.IsSymm) {u u' : V} (huq : g K.q u = 0) (huT : g (pTransverse g K) u = 0)
     (hu'q : g K.q u' = 0) (hu'T : g (pTransverse g K) u' = 0) :
@@ -82,7 +82,7 @@ lemma exists_half_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
       f u = -u ∧ f u' = -u' := by
   have hu'u : g u' u = 0 := by rw [hSymm.eq, huu']
   refine ⟨_, reflection_comp_reflection_isKinematicStabilizer hSymm huq huT hu'q hu'T,
-    Bilin.det_reflection_comp_reflection g hu hu', ?_, ?_⟩
+    g.det_reflection_comp_reflection hu hu', ?_, ?_⟩
   · rw [LinearMap.comp_apply, g.reflection_apply_of_orthogonal _ _ hu'u,
       g.reflection_apply_self _ hu]
   · rw [LinearMap.comp_apply, g.reflection_apply_self _ hu', map_neg,
@@ -106,10 +106,10 @@ lemma exists_quarter_turn {g : Bilin V} {K : DisKinematics V} (hSymm : g.IsSymm)
   have hdq : g K.q (u - u') = 0 := by rw [map_sub, huq, hu'q, sub_zero]
   have hdT : g (pTransverse g K) (u - u') = 0 := by rw [map_sub, huT, hu'T, sub_zero]
   refine ⟨_, reflection_comp_reflection_isKinematicStabilizer hSymm huq huT hdq hdT,
-    Bilin.det_reflection_comp_reflection g hu hdd0, ?_, ?_⟩
-  · rw [LinearMap.comp_apply, Bilin.reflection_sub_apply_left g hSymm hnorm hdd0,
+    g.det_reflection_comp_reflection hu hdd0, ?_, ?_⟩
+  · rw [LinearMap.comp_apply, g.reflection_sub_apply_left hSymm hnorm hdd0,
       g.reflection_apply_of_orthogonal _ _ huu']
-  · rw [LinearMap.comp_apply, Bilin.reflection_sub_apply_right g hSymm hnorm hdd0,
+  · rw [LinearMap.comp_apply, g.reflection_sub_apply_right hSymm hnorm hdd0,
       g.reflection_apply_self _ hu]
 
 /-!

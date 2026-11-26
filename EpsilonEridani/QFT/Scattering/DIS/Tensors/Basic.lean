@@ -97,46 +97,6 @@ variable (V : Type) [AddCommGroup V] [Module ℝ V]
 open EpsilonEridani.QFT.Scattering.DIS.Kinematics (Bilin)
 open LinearMap.BilinForm (linMulLin linMulLin_apply)
 
-namespace Bilin
-
-variable {V}
-
-/-- The composite of two reflections in non-null directions has determinant one. -/
-lemma det_reflection_comp_reflection (g : Bilin V) {u u' : V} (hu : g u u ≠ 0)
-    (hu' : g u' u' ≠ 0) : LinearMap.det (g.reflection u ∘ₗ g.reflection u') = 1 := by
-  by_cases hfin : Module.Finite ℝ V
-  · rw [LinearMap.det_comp, g.det_reflection hu, g.det_reflection hu']
-    norm_num
-  · -- Mathlib defines `LinearMap.det` to be `1` outside finite dimension, so this branch
-    -- is vacuous and carries no geometric content.
-    exact LinearMap.det_eq_one_of_not_module_finite hfin _
-
-/-- For `g` symmetric and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in
-`u - u'` sends `u` to `u'`. -/
-lemma reflection_sub_apply_left (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
-    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) :
-    g.reflection (u - u') u = u' := by
-  have hdd : g (u - u') (u - u') = 2 * g (u - u') u := by
-    rw [Kinematics.Bilin.apply_sub_self g hSymm, map_sub, LinearMap.sub_apply, hSymm.eq u u',
-      ← hnorm]
-    ring
-  have h0 : g (u - u') u ≠ 0 := fun h => hd (by rw [hdd, h, mul_zero])
-  have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u = 1 := by
-    rw [hdd]
-    field_simp [h0]
-  rw [LinearMap.BilinForm.reflection_apply, hc, one_smul]
-  abel
-
-/-- For `g` symmetric and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in
-`u - u'` sends `u'` to `u`. -/
-lemma reflection_sub_apply_right (g : Bilin V) (hSymm : g.IsSymm) {u u' : V}
-    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) :
-    g.reflection (u - u') u' = u :=
-  (congrArg (g.reflection (u - u')) (reflection_sub_apply_left g hSymm hnorm hd)).symm.trans
-    (g.reflection_reflection_apply (u - u') u)
-
-end Bilin
-
 namespace Leptonic
 
 variable {V}

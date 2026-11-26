@@ -30,7 +30,11 @@ vector `u` is reflective in the sense of `LinearMap.IsReflective`, and the refle
 * `LinearMap.BilinForm.reflection_reflection_apply`, `isOrthogonal_reflection`: the reflection is
   an involution and, for symmetric `g`, a `g`-isometry (`LinearMap.IsOrthogonal`).
 * `LinearMap.BilinForm.det_reflection`: for `g u u ≠ 0` it has determinant `-1` in finite
-  dimension.
+  dimension, and `LinearMap.BilinForm.det_reflection_comp_reflection`: the composite of two
+  reflections in non-null directions has determinant one.
+* `LinearMap.BilinForm.reflection_sub_apply_left`, `reflection_sub_apply_right`: for symmetric
+  `g` and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in `u - u'` exchanges
+  `u` and `u'`.
 -/
 
 public section
@@ -104,6 +108,29 @@ lemma isOrthogonal_reflection (g : BilinForm K V) (hSymm : g.IsSymm) (u : V) :
   rw [g.reflection_eq_moduleReflection hu, LinearEquiv.coe_coe]
   exact LinearMap.IsReflective.isOrthogonal_reflection g _ (isSymm_iff.mp hSymm)
 
+/-- For `g` symmetric and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in
+`u - u'` sends `u` to `u'`. -/
+lemma reflection_sub_apply_left (g : BilinForm K V) (hSymm : g.IsSymm) {u u' : V}
+    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) :
+    reflection g (u - u') u = u' := by
+  have hdd : g (u - u') (u - u') = 2 * g (u - u') u := by
+    simp only [map_sub, LinearMap.sub_apply]
+    rw [hSymm.eq u' u, ← hnorm]
+    ring
+  have hc : 2 * (g (u - u') (u - u'))⁻¹ * g (u - u') u
+      = (g (u - u') (u - u'))⁻¹ * g (u - u') (u - u') := by
+    rw [hdd]; ring
+  rw [reflection_apply, hc, inv_mul_cancel₀ hd, one_smul]
+  abel
+
+/-- For `g` symmetric and `u`, `u'` of equal norm with `u - u'` non-null, the reflection in
+`u - u'` sends `u'` to `u`. -/
+lemma reflection_sub_apply_right (g : BilinForm K V) (hSymm : g.IsSymm) {u u' : V}
+    (hnorm : g u u = g u' u') (hd : g (u - u') (u - u') ≠ 0) :
+    reflection g (u - u') u' = u :=
+  (congrArg (reflection g (u - u')) (reflection_sub_apply_left g hSymm hnorm hd)).symm.trans
+    (reflection_reflection_apply g (u - u') u)
+
 /-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`. -/
 @[simp]
 lemma det_reflection [FiniteDimensional K V] (g : BilinForm K V) {u : V} (hu : g u u ≠ 0) :
@@ -115,5 +142,15 @@ lemma det_reflection [FiniteDimensional K V] (g : BilinForm K V) {u : V} (hu : g
   rw [h, LinearMap.transvection.det, LinearMap.smul_apply, smul_eq_mul]
   field_simp
   ring
+
+/-- The composite of two reflections in non-null directions has determinant one. -/
+lemma det_reflection_comp_reflection (g : BilinForm K V) {u u' : V} (hu : g u u ≠ 0)
+    (hu' : g u' u' ≠ 0) : LinearMap.det (reflection g u ∘ₗ reflection g u') = 1 := by
+  by_cases hfin : Module.Finite K V
+  · rw [LinearMap.det_comp, g.det_reflection hu, g.det_reflection hu']
+    norm_num
+  · -- Mathlib defines `LinearMap.det` to be `1` outside finite dimension, so this branch
+    -- is vacuous and carries no geometric content.
+    exact LinearMap.det_eq_one_of_not_module_finite hfin _
 
 end LinearMap.BilinForm
