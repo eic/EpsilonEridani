@@ -26,7 +26,7 @@ and both hadrons carry positive plus-momentum. The derived variables are
 * the skewness `ξ = -Δ⁺ / (2 P⁺)`, so that `p⁺ = (1 + ξ) P⁺` and `p'⁺ = (1 - ξ) P⁺`.
 
 The Minkowski pairings among these vectors are stated once, with the arguments in the order
-`n`, `p`, `p'`, `P`, `Δ`, `w` (for instance `OnShellPair.minkowskiProduct_p_delta_eq` and
+`n`, `P`, `p`, `p'`, `Δ`, `w` (for instance `OnShellPair.minkowskiProduct_p_delta_eq` and
 `minkowskiProduct_delta_deltaOrthN_eq`); the other order follows from
 `Lorentz.Vector.minkowskiProduct_symm`. Since `simp` cannot reorient a pairing, these one-sided
 pairings are rewrite lemmas, not `@[simp]`. The exceptions are the squares, such as

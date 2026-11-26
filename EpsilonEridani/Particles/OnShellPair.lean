@@ -20,12 +20,14 @@ form factors, which adds positive energies.
 
 The derived vectors are the average momentum `P = (p + p') / 2` (`avgMomentum`) and the momentum
 transfer `Δ = p' - p` (`delta`), with the invariant `t = Δ²` (`tMom`). Every Minkowski pairing
-among `p`, `p'`, `P`, `Δ` is a function of `M²` and `t`: `P · Δ = 0`, `P² = M² - t / 4`,
+among `p`, `p'`, `P`, `Δ` is a function of `M²` and `t`: `Δ² = t`, `P · Δ = 0`, `P² = M² - t / 4`,
 `p · p' = M² - t / 2`, `p · Δ = -t / 2`, `p' · Δ = t / 2` and `P · p = P · p' = M² - t / 4`.
 They are the identities for two vectors of equal Minkowski square of
 `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MinkowskiProductExtensions`. Pairings are
-stated with the arguments in the order `p`, `p'`, `P`, `Δ`; the other order follows from
+stated with the arguments in the order `P`, `p`, `p'`, `Δ`; the other order follows from
 `Lorentz.Vector.minkowskiProduct_symm`, except for `P · Δ = 0`, which is stated in both orders.
+The squares and `P · Δ = 0` are `@[simp]`; the other pairings are rewrite lemmas, since `simp`
+cannot reorient a pairing.
 
 The spatial part of `P` is the average of those of `p` and `p'` (`spatialPart_avgMomentum_eq`),
 and `t` is invariant under Lorentz transformations of the pair (`tMom_eq_of_smul`).
@@ -79,6 +81,10 @@ lemma delta_def : K.delta = K.pPrime - K.p := (rfl)
 def tMom : ℝ := ⟪K.delta, K.delta⟫ₘ
 
 lemma tMom_def : K.tMom = ⟪K.delta, K.delta⟫ₘ := (rfl)
+
+/-- The invariant square of the momentum transfer is `t`, `Δ² = t`. -/
+@[simp]
+lemma minkowskiProduct_delta_self_eq : ⟪K.delta, K.delta⟫ₘ = K.tMom := (rfl)
 
 lemma p_eq_avgMomentum_sub : K.p = K.avgMomentum - (2⁻¹ : ℝ) • K.delta := by
   rw [avgMomentum_def, delta_def]

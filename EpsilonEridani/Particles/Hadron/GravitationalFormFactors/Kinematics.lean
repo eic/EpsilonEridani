@@ -30,27 +30,28 @@ the form factors are written.
   condition that both have positive energy. From `OnShellPair` it inherits the average momentum
   `P = (p + p') / 2`, the transfer `Δ = p' - p`, `t = Δ²` and the identities `P · Δ = 0`,
   `P² = M² - t / 4`, `p · p' = M² - t / 2`, `p · Δ = -t / 2`, `p' · Δ = t / 2`, which hold for any
-  two vectors on a common mass shell. It defines `qSq = Q² = -t` as an element of `ℝ≥0`, and
+  two vectors on a common mass shell. It defines `Q2 = Q² = -t` as an element of `ℝ≥0`, and
   restates every one of these products in terms of `Q²`
-  (`ElasticKinematics.minkowskiProduct_avgMomentum_self_eq_add_qSq` and its siblings). The
-  `simp` normal form of the products is the `t`-form, through the inherited `@[simp]` lemmas such
-  as `P² = M² - t / 4`, and `simp` does not convert between `t` and `Q²` in either direction
-  (`coe_qSq` and `tMom_eq_neg_qSq` are rewrite lemmas); the `Q²`-forms are rewrite lemmas for
-  statements written in `Q²`, which is the variable of the form factors. The
-  constraint `t ≤ 0` (`ElasticKinematics.tMom_nonpos`) is proved from the mass shell and positive
+  (`ElasticKinematics.minkowskiProduct_avgMomentum_self_eq_add_Q2` and its siblings). On
+  `OnShellPair` only the squares `⟪Δ, Δ⟫ₘ = t`, `P² = M² - t / 4` and `P · Δ = 0` are `@[simp]`;
+  the one-sided pairings are rewrite lemmas, in both the `t`- and the `Q²`-form. On elastic
+  kinematics `t = -Q²` (`ElasticKinematics.tMom_eq_neg_Q2`) is `@[simp]` as well, so `simp`
+  writes every invariant in `Q²`, the variable of the form factors, while `Q² = -t`
+  (`ElasticKinematics.coe_Q2`) is a rewrite lemma. The constraint `t ≤ 0`
+  (`ElasticKinematics.tMom_nonpos`) is proved from the mass shell and positive
   energy, by the reverse Cauchy–Schwarz inequality `M² ≤ p · p'`, and `t = 0` exactly in the forward
   direction `p = p'` (`ElasticKinematics.tMom_eq_zero_iff`). Every `Q² ≥ 0` is attained once there
-  is a spatial dimension (`ElasticKinematics.range_qSq`).
+  is a spatial dimension (`ElasticKinematics.range_Q2`).
 * `ElasticKinematics.IsBreitFrame` is the frame in which `P` has no spatial part. In it
   `Δ⁰ = 0`, `p = (E, -Δ/2)`, `p' = (E, Δ/2)` with `E = √(M² + Q²/4)`, and `Q² = |Δ|²` is the
   square of the three-momentum transfer
-  (`ElasticKinematics.IsBreitFrame.coe_qSq_eq_sq_norm_spatialPart_delta`). Every transition is
+  (`ElasticKinematics.IsBreitFrame.coe_Q2_eq_sq_norm_spatialPart_delta`). Every transition is
   carried by some restricted Lorentz transformation to a transition of the same target in its
   Breit frame (`ElasticKinematics.exists_mem_restricted_isBreitFrame`), and `t` is unchanged by it
   (`OnShellPair.tMom_eq_of_smul`).
 * `ofLiteratureT` turns a function of `t ≤ 0`, as the literature writes form factors, into a
   function of `Q² ≥ 0`; on a transition its value at `Q²` is the original's value at `t`
-  (`ofLiteratureT_qSq`, the `simp` normal form). Its slope at the origin is minus the `t`-slope
+  (`ofLiteratureT_Q2`). Its slope at the origin is minus the `t`-slope
   (`hasDerivWithinAt_ofLiteratureT_toNNReal_iff`, `derivWithin_ofLiteratureT_toNNReal`), and
   `∫_0^∞ dQ²` of it is `∫_{-∞}^0 dt` of the original (`setIntegral_ofLiteratureT_toNNReal`). A
   slope or a radius integral read off in the wrong variable changes sign, which is why every
@@ -156,61 +157,59 @@ theorem tMom_eq_zero_iff : K.tMom = 0 ↔ K.p = K.pPrime := by
 
 /-- The non-negative momentum-transfer variable `Q² = -t ≥ 0`, in which the gravitational form
 factors are written. -/
-def qSq : ℝ≥0 := ⟨-K.tMom, neg_nonneg.mpr K.tMom_nonpos⟩
+def Q2 : ℝ≥0 := ⟨-K.tMom, neg_nonneg.mpr K.tMom_nonpos⟩
 
 /-- The dictionary `Q² = -t`. This is deliberately not a `simp` lemma: `Q²` is the variable in
 which statements about form factors are written, so `simp` should not rewrite it into `t`. -/
-lemma coe_qSq : (K.qSq : ℝ) = -K.tMom := (rfl)
+lemma coe_Q2 : (K.Q2 : ℝ) = -K.tMom := (rfl)
 
-/-- The dictionary `t = -Q²`, for rewriting `t` into the variable `Q²`. -/
-lemma tMom_eq_neg_qSq : K.tMom = -(K.qSq : ℝ) := by
-  rw [coe_qSq, neg_neg]
-
-/-- The invariant square of the momentum transfer in terms of `Q²`, `Δ² = -Q²`. -/
-lemma minkowskiProduct_delta_self_eq_neg_qSq : ⟪K.delta, K.delta⟫ₘ = -(K.qSq : ℝ) := by
-  rw [← tMom_def, tMom_eq_neg_qSq]
+/-- The dictionary `t = -Q²`. It is a `simp` lemma, so that on elastic kinematics `simp` writes
+every invariant in the variable `Q²` of the form factors. -/
+@[simp]
+lemma tMom_eq_neg_Q2 : K.tMom = -(K.Q2 : ℝ) := by
+  rw [coe_Q2, neg_neg]
 
 /-- `Q² = 0` exactly in the forward direction `p = p'`. -/
-lemma qSq_eq_zero_iff : K.qSq = 0 ↔ K.p = K.pPrime := by
-  rw [← NNReal.coe_eq_zero, coe_qSq, neg_eq_zero, tMom_eq_zero_iff]
+lemma Q2_eq_zero_iff : K.Q2 = 0 ↔ K.p = K.pPrime := by
+  rw [← NNReal.coe_eq_zero, coe_Q2, neg_eq_zero, tMom_eq_zero_iff]
 
 /-- The invariant mass squared of the average momentum in terms of `Q²`, `P² = M² + Q² / 4`. -/
-lemma minkowskiProduct_avgMomentum_self_eq_add_qSq :
-    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = T.mass ^ 2 + K.qSq / 4 := by
-  rw [minkowskiProduct_avgMomentum_self_eq, coe_qSq]
+lemma minkowskiProduct_avgMomentum_self_eq_add_Q2 :
+    ⟪K.avgMomentum, K.avgMomentum⟫ₘ = T.mass ^ 2 + K.Q2 / 4 := by
+  rw [minkowskiProduct_avgMomentum_self_eq, coe_Q2]
   ring
 
 /-- The product of the two target momenta in terms of `Q²`, `p · p' = M² + Q² / 2`. -/
-lemma minkowskiProduct_p_pPrime_eq_add_qSq : ⟪K.p, K.pPrime⟫ₘ = T.mass ^ 2 + K.qSq / 2 := by
-  rw [minkowskiProduct_p_pPrime_eq, tMom_eq_neg_qSq]
+lemma minkowskiProduct_p_pPrime_eq_add_Q2 : ⟪K.p, K.pPrime⟫ₘ = T.mass ^ 2 + K.Q2 / 2 := by
+  rw [minkowskiProduct_p_pPrime_eq, tMom_eq_neg_Q2]
   ring
 
 /-- The incoming momentum paired with the transfer in terms of `Q²`, `p · Δ = Q² / 2`. -/
-lemma minkowskiProduct_p_delta_eq_qSq_div_two : ⟪K.p, K.delta⟫ₘ = K.qSq / 2 := by
-  rw [minkowskiProduct_p_delta_eq, tMom_eq_neg_qSq, neg_neg]
+lemma minkowskiProduct_p_delta_eq_Q2_div_two : ⟪K.p, K.delta⟫ₘ = K.Q2 / 2 := by
+  rw [minkowskiProduct_p_delta_eq, tMom_eq_neg_Q2, neg_neg]
 
 /-- The outgoing momentum paired with the transfer in terms of `Q²`, `p' · Δ = -Q² / 2`. -/
-lemma minkowskiProduct_pPrime_delta_eq_neg_qSq_div_two :
-    ⟪K.pPrime, K.delta⟫ₘ = -(K.qSq : ℝ) / 2 := by
-  rw [minkowskiProduct_pPrime_delta_eq, tMom_eq_neg_qSq]
+lemma minkowskiProduct_pPrime_delta_eq_neg_Q2_div_two :
+    ⟪K.pPrime, K.delta⟫ₘ = -(K.Q2 : ℝ) / 2 := by
+  rw [minkowskiProduct_pPrime_delta_eq, tMom_eq_neg_Q2]
 
 /-- The average momentum paired with the incoming momentum in terms of `Q²`,
 `P · p = M² + Q² / 4`. -/
-lemma minkowskiProduct_avgMomentum_p_eq_add_qSq :
-    ⟪K.avgMomentum, K.p⟫ₘ = T.mass ^ 2 + K.qSq / 4 := by
-  rw [minkowskiProduct_avgMomentum_p_eq, tMom_eq_neg_qSq]
+lemma minkowskiProduct_avgMomentum_p_eq_add_Q2 :
+    ⟪K.avgMomentum, K.p⟫ₘ = T.mass ^ 2 + K.Q2 / 4 := by
+  rw [minkowskiProduct_avgMomentum_p_eq, tMom_eq_neg_Q2]
   ring
 
 /-- The average momentum paired with the outgoing momentum in terms of `Q²`,
 `P · p' = M² + Q² / 4`. -/
-lemma minkowskiProduct_avgMomentum_pPrime_eq_add_qSq :
-    ⟪K.avgMomentum, K.pPrime⟫ₘ = T.mass ^ 2 + K.qSq / 4 := by
-  rw [minkowskiProduct_avgMomentum_pPrime_eq, tMom_eq_neg_qSq]
+lemma minkowskiProduct_avgMomentum_pPrime_eq_add_Q2 :
+    ⟪K.avgMomentum, K.pPrime⟫ₘ = T.mass ^ 2 + K.Q2 / 4 := by
+  rw [minkowskiProduct_avgMomentum_pPrime_eq, tMom_eq_neg_Q2]
   ring
 
 /-- The average momentum is time-like, `0 < P²`. -/
 lemma minkowskiProduct_avgMomentum_self_pos : 0 < ⟪K.avgMomentum, K.avgMomentum⟫ₘ := by
-  rw [minkowskiProduct_avgMomentum_self_eq_add_qSq]
+  rw [minkowskiProduct_avgMomentum_self_eq_add_Q2]
   positivity [T.mass_pos]
 
 /-- The average momentum has positive energy. -/
@@ -235,7 +234,7 @@ instance : Nonempty (ElasticKinematics T d) :=
 /-- With at least one spatial dimension every `Q² ≥ 0` is the momentum transfer of an elastic
 transition of `T`: the transition with energies `√(M² + Q² / 4)` and opposite three-momenta of
 length `√Q² / 2`. -/
-theorem range_qSq (hd : 1 ≤ d) : range (qSq : ElasticKinematics T d → ℝ≥0) = univ := by
+theorem range_Q2 (hd : 1 ≤ d) : range (Q2 : ElasticKinematics T d → ℝ≥0) = univ := by
   refine eq_univ_of_forall fun q => ?_
   set E := √(T.mass ^ 2 + q / 4)
   set s : EuclideanSpace ℝ (Fin d) := (√(q : ℝ) / 2) • EuclideanSpace.single ⟨0, hd⟩ 1
@@ -245,28 +244,31 @@ theorem range_qSq (hd : 1 ≤ d) : range (qSq : ElasticKinematics T d → ℝ≥
     norm_num
   have hE : E * E = T.mass ^ 2 + q / 4 := Real.mul_self_sqrt (by positivity)
   have hE0 : 0 < E := Real.sqrt_pos.mpr (by positivity [T.mass_pos])
+  -- the Minkowski product of two vectors of energy `E` is `M² + Q² / 4` minus the spatial product
+  have hmink (a b : EuclideanSpace ℝ (Fin d)) :
+      ⟪ofTimeAndSpatial E a, ofTimeAndSpatial E b⟫ₘ = T.mass ^ 2 + q / 4 - ⟪a, b⟫_ℝ := by
+    rw [minkowskiProduct_ofTimeAndSpatial_eq, hE]
   refine ⟨{ p := ofTimeAndSpatial E (-s)
             pPrime := ofTimeAndSpatial E s
             minkowskiProduct_p_self := ?_
             minkowskiProduct_pPrime_self := ?_
             timeComponent_p_pos := by simpa using hE0
             timeComponent_pPrime_pos := by simpa using hE0 }, ?_⟩
-  · rw [minkowskiProduct_ofTimeAndSpatial_eq, inner_neg_left, inner_neg_right, neg_neg, hE, hs]
+  · rw [hmink, inner_neg_left, inner_neg_right, neg_neg, hs]
     ring
-  · rw [minkowskiProduct_ofTimeAndSpatial_eq, hE, hs]
+  · rw [hmink, hs]
     ring
   · refine NNReal.eq ?_
-    rw [coe_qSq, tMom_def, delta_def, minkowskiProduct_sub_self]
-    simp only [minkowskiProduct_ofTimeAndSpatial_eq, inner_neg_left, inner_neg_right, neg_neg,
-      hE, hs]
+    rw [coe_Q2, tMom_def, delta_def, minkowskiProduct_sub_self]
+    simp only [hmink, inner_neg_left, inner_neg_right, neg_neg, hs]
     ring
 
 /-! ### Lorentz invariance of the momentum transfer -/
 
 /-- Two elastic transitions related by a Lorentz transformation have the same `Q²`. -/
-lemma qSq_eq_of_smul {K' : ElasticKinematics T d} {Λ : LorentzGroup d}
-    (hp : K'.p = Λ • K.p) (hp' : K'.pPrime = Λ • K.pPrime) : K'.qSq = K.qSq :=
-  NNReal.eq <| by rw [coe_qSq, coe_qSq, K.tMom_eq_of_smul (K' := K'.toOnShellPair) hp hp']
+lemma Q2_eq_of_smul {K' : ElasticKinematics T d} {Λ : LorentzGroup d}
+    (hp : K'.p = Λ • K.p) (hp' : K'.pPrime = Λ • K.pPrime) : K'.Q2 = K.Q2 :=
+  NNReal.eq <| by rw [coe_Q2, coe_Q2, K.tMom_eq_of_smul (K' := K'.toOnShellPair) hp hp']
 
 /-! ### The Breit frame -/
 
@@ -282,8 +284,8 @@ lemma isBreitFrame_iff : K.IsBreitFrame ↔ K.avgMomentum.spatialPart = 0 := Iff
 lemma isBreitFrame_iff_spatialPart_pPrime_eq_neg :
     K.IsBreitFrame ↔ K.pPrime.spatialPart = -K.p.spatialPart := by
   rw [isBreitFrame_iff, spatialPart_avgMomentum_eq, smul_eq_zero, eq_neg_iff_add_eq_zero,
-    add_comm]
-  simp
+    add_comm K.p.spatialPart K.pPrime.spatialPart]
+  exact or_iff_right (inv_ne_zero two_ne_zero)
 
 namespace IsBreitFrame
 
@@ -301,27 +303,27 @@ lemma timeComponent_delta_eq_zero (h : K.IsBreitFrame) : K.delta.timeComponent =
   exact (mul_eq_zero.mp hPΔ).resolve_left K.timeComponent_avgMomentum_pos.ne'
 
 /-- In the Breit frame `Q²` is the square of the three-momentum transfer, `Q² = |Δ|²`. -/
-lemma coe_qSq_eq_sq_norm_spatialPart_delta (h : K.IsBreitFrame) :
-    (K.qSq : ℝ) = ‖K.delta.spatialPart‖ ^ 2 := by
-  rw [coe_qSq, tMom_def, minkowskiProduct_self_eq_sq_sub, h.timeComponent_delta_eq_zero]
+lemma coe_Q2_eq_sq_norm_spatialPart_delta (h : K.IsBreitFrame) :
+    (K.Q2 : ℝ) = ‖K.delta.spatialPart‖ ^ 2 := by
+  rw [coe_Q2, tMom_def, minkowskiProduct_self_eq_sq_sub, h.timeComponent_delta_eq_zero]
   ring
 
 /-- In the Breit frame the energy of the average momentum is `P⁰ = √(M² + Q² / 4)`. -/
 lemma timeComponent_avgMomentum_eq (h : K.IsBreitFrame) :
-    K.avgMomentum.timeComponent = √(T.mass ^ 2 + K.qSq / 4) := by
-  have hP := K.minkowskiProduct_avgMomentum_self_eq_add_qSq
+    K.avgMomentum.timeComponent = √(T.mass ^ 2 + K.Q2 / 4) := by
+  have hP := K.minkowskiProduct_avgMomentum_self_eq_add_Q2
   rw [minkowskiProduct_self_eq_sq_sub, h.spatialPart_avgMomentum_eq_zero, norm_zero] at hP
   rw [← hP, zero_pow two_ne_zero, sub_zero, Real.sqrt_sq K.timeComponent_avgMomentum_pos.le]
 
 /-- In the Breit frame the incoming energy is `p⁰ = √(M² + Q² / 4)`. -/
 lemma timeComponent_p_eq (h : K.IsBreitFrame) :
-    K.p.timeComponent = √(T.mass ^ 2 + K.qSq / 4) := by
+    K.p.timeComponent = √(T.mass ^ 2 + K.Q2 / 4) := by
   rw [K.p_eq_avgMomentum_sub, timeComponent_sub, timeComponent_smul,
     h.timeComponent_delta_eq_zero, mul_zero, sub_zero, h.timeComponent_avgMomentum_eq]
 
 /-- In the Breit frame the outgoing energy is `p'⁰ = √(M² + Q² / 4)`. -/
 lemma timeComponent_pPrime_eq (h : K.IsBreitFrame) :
-    K.pPrime.timeComponent = √(T.mass ^ 2 + K.qSq / 4) := by
+    K.pPrime.timeComponent = √(T.mass ^ 2 + K.Q2 / 4) := by
   rw [K.pPrime_eq_avgMomentum_add, timeComponent_add, timeComponent_smul,
     h.timeComponent_delta_eq_zero, mul_zero, add_zero, h.timeComponent_avgMomentum_eq]
 
@@ -381,11 +383,11 @@ def ofLiteratureT (f : ℝ → ℝ) : ℝ≥0 → ℝ := fun q => f (-(q : ℝ))
 lemma ofLiteratureT_apply (f : ℝ → ℝ) (q : ℝ≥0) : ofLiteratureT f q = f (-(q : ℝ)) := (rfl)
 
 /-- On an elastic transition, the translated function evaluated at `Q²` is the original evaluated
-at `t`. -/
-@[simp]
-lemma ofLiteratureT_qSq {T : Target} {d : ℕ} (f : ℝ → ℝ) (K : ElasticKinematics T d) :
-    ofLiteratureT f K.qSq = f K.tMom := by
-  rw [ofLiteratureT_apply, ElasticKinematics.coe_qSq, neg_neg]
+at `t`. It is a rewrite lemma, not a `simp` lemma: `simp` keeps elastic kinematics in the variable
+`Q²` (`ElasticKinematics.tMom_eq_neg_Q2`), and this lemma goes the other way. -/
+lemma ofLiteratureT_Q2 {T : Target} {d : ℕ} (f : ℝ → ℝ) (K : ElasticKinematics T d) :
+    ofLiteratureT f K.Q2 = f K.tMom := by
+  rw [ofLiteratureT_apply, ElasticKinematics.coe_Q2, neg_neg]
 
 /-- On `Q² ≥ 0` read as a real number, the translated function is `Q² ↦ f (-Q²)`. -/
 lemma ofLiteratureT_toNNReal (f : ℝ → ℝ) {q : ℝ} (hq : 0 ≤ q) :

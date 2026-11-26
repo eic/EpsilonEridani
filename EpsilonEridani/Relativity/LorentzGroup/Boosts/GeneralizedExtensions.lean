@@ -43,7 +43,7 @@ lemma exists_mem_restricted_spatialPart_smul_eq_zero {d : ℕ} {P : Vector d}
   have hP : P = m • u.1 := by
     rw [hu1, smul_smul, mul_inv_cancel₀ hm0.ne', one_smul]
   refine ⟨generalizedBoost u 0, generalizedBoost_mem_restricted u 0, ?_⟩
-  rw [hP, smul_comm, spatialPart_smul, generalizedBoost_apply_fst, Velocity.zero_spatialPart,
-    _root_.smul_zero]
+  rw [hP, smul_comm (generalizedBoost u 0) m u.1, spatialPart_smul, generalizedBoost_apply_fst,
+    Velocity.zero_spatialPart, _root_.smul_zero]
 
 end LorentzGroup
