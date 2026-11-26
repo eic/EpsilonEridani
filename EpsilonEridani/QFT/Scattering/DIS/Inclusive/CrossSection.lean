@@ -202,7 +202,8 @@ lemma abs_mul_Yminus_mul_sqrt_le {s : ℝ} (hs : |s| ≤ 1) (y : ℝ) {G : ℝ} 
 /-- The bracket of the inclusive cross section `d²σ/dx dQ²`,
 `2 x y² F₁ + 2 (1 - y - M² x² y² / Q²) F₂ - s Y₋ x F₃`, exact in the target mass `M`, at Bjorken
 variable `x`, virtuality `Q²` and inelasticity `y`. The sign `s` of the parity-odd term is `1`
-for a positron or antineutrino beam and `-1` for an electron or neutrino beam. -/
+for a positron or antineutrino beam and `-1` for an electron or neutrino beam; a consumer may put
+another sign here, as `PVES.CrossSection.neutralCurrent` puts the beam helicity in this slot. -/
 def crossSectionBracket (M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
   2 * x * y ^ 2 * F1 + 2 * (1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) * F2 - s * Yminus y * (x * F3)
 

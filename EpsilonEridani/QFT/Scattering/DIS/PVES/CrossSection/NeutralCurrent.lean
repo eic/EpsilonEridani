@@ -465,7 +465,10 @@ theorem neutralCurrent_true_add_false_div_two :
         + q * ℓ.gV * η * crossSectionBracket M 0 x Q2 y H.gammaZF1 H.gammaZF2 0
         + (ℓ.gV ^ 2 + ℓ.gA ^ 2) * η ^ 2
           * crossSectionBracket M 0 x Q2 y H.zBosonF1 H.zBosonF2 0 := by
-    simp only [crossSectionBracket_def]
+    rw [← crossSectionBracket_const_mul, ← crossSectionBracket_const_mul,
+      ← crossSectionBracket_const_mul, ← crossSectionBracket_add, ← crossSectionBracket_add]
+    -- Only the `F₃` slot differs: `0` against the scaled sum `q² * 0 + … * 0 + … * 0`.
+    congr 1
     ring
   -- Each helicity is the sum of the three terms; the photon term is helicity-independent and the
   -- other two average to their helicity sums.
@@ -547,11 +550,14 @@ theorem helicityResolvedTotal_neutralCurrentDecomposition :
     Interference.helicityResolvedTotal
         (Interference.canonicalHelicityModel (neutralCurrentDecomposition K M Q2 q η ℓ Hx)) h x y =
       neutralCurrent K M x Q2 y q η ℓ (Hx x) h := by
-  cases h <;>
-  · simp only [Interference.helicityResolvedTotal, Interference.canonicalHelicityModel,
-      neutralCurrentDecomposition_photon, neutralCurrentDecomposition_zBoson,
-      neutralCurrentDecomposition_gammaZInterference, helicitySign_true, helicitySign_false,
-      neutralCurrent_eq_add]
+  cases h
+  · rw [Interference.canonicalMinus_eq_total]
+    simp only [neutralCurrentDecomposition_photon, neutralCurrentDecomposition_zBoson,
+      neutralCurrentDecomposition_gammaZInterference, neutralCurrent_eq_add]
+    ring
+  · rw [Interference.canonicalPlus_eq_total]
+    simp only [neutralCurrentDecomposition_photon, neutralCurrentDecomposition_zBoson,
+      neutralCurrentDecomposition_gammaZInterference, neutralCurrent_eq_add]
     ring
 
 /-- The neutral-current cross sections of the two helicities satisfy the isolation hypothesis
