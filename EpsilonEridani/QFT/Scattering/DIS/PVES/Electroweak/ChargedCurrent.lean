@@ -225,34 +225,34 @@ theorem chargedCurrent_unitaryTorusHom_mul_mul_inv [DecidableEq ι] (V : unitary
 theorem chargedCurrent_leftChiralProjector_down (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V u (fun j => leftChiralProjector *ᵥ d j) μ = chargedCurrent V u d μ := by
-  rw [chargedCurrent_def, chargedCurrent_def, flavorBilinear_mulVec_right, mul_assoc,
-    leftChiralProjector_mul_self]
+  simp only [chargedCurrent_def, flavorBilinear_def,
+    diracBilinear_mul_leftChiralProjector_leftChiralProjector_mulVec]
 
 /-- Right-handed down-type spinors do not enter the charged current. -/
 @[simp]
 theorem chargedCurrent_rightChiralProjector_down_eq_zero (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V u (fun j => rightChiralProjector *ᵥ d j) μ = 0 := by
-  rw [chargedCurrent_def, flavorBilinear_mulVec_right, mul_assoc,
-    leftChiralProjector_mul_rightChiralProjector, mul_zero, flavorBilinear_zero]
+  simp only [chargedCurrent_def, flavorBilinear_def,
+    diracBilinear_mul_leftChiralProjector_rightChiralProjector_mulVec_eq_zero, mul_zero,
+    Finset.sum_const_zero]
 
 /-- Only the left-handed parts of the up-type spinors enter the charged current. -/
 @[simp]
 theorem chargedCurrent_leftChiralProjector_up (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V (fun i => leftChiralProjector *ᵥ u i) d μ = chargedCurrent V u d μ := by
-  rw [chargedCurrent_def, chargedCurrent_def, flavorBilinear_mulVec_left,
-    diracAdjoint_leftChiralProjector, γ_mul_leftChiralProjector, ← mul_assoc,
-    rightChiralProjector_mul_self]
+  simp only [chargedCurrent_def, flavorBilinear_def,
+    diracBilinear_leftChiralProjector_mulVec_γ_mul_leftChiralProjector]
 
 /-- Right-handed up-type spinors do not enter the charged current. -/
 @[simp]
 theorem chargedCurrent_rightChiralProjector_up_eq_zero (V : Matrix ι κ ℂ) (u : ι → Fin 4 → ℂ)
     (d : κ → Fin 4 → ℂ) (μ : Fin 4) :
     chargedCurrent V (fun i => rightChiralProjector *ᵥ u i) d μ = 0 := by
-  rw [chargedCurrent_def, flavorBilinear_mulVec_left, diracAdjoint_rightChiralProjector,
-    γ_mul_leftChiralProjector, ← mul_assoc, leftChiralProjector_mul_rightChiralProjector,
-    zero_mul, flavorBilinear_zero]
+  simp only [chargedCurrent_def, flavorBilinear_def,
+    diracBilinear_rightChiralProjector_mulVec_γ_mul_leftChiralProjector_eq_zero, mul_zero,
+    Finset.sum_const_zero]
 
 /-! ### Hermitian conjugation -/
 

@@ -53,10 +53,17 @@ computations, the chiral projectors in the Dirac representation, and the Dirac a
   `spaceTime.diracAdjoint_γ_mul_leftChiralProjector`: `\bar{γ}^μ = γ^μ`, the Dirac adjoint
   exchanges the chiral projectors, and the `V - A` vertex `γ^μ P_L` is its own Dirac adjoint
   (as is `γ^μ P_R`, `spaceTime.diracAdjoint_γ_mul_rightChiralProjector`).
-- `spaceTime.diracBilinear_mul_leftChiralProjector_rightChiralProjector_mulVec_eq_zero`,
+- `spaceTime.diracBilinear_mul_leftChiralProjector_leftChiralProjector_mulVec`,
+  `spaceTime.diracBilinear_mul_leftChiralProjector_rightChiralProjector_mulVec_eq_zero`,
+  `spaceTime.diracBilinear_leftChiralProjector_mulVec_rightChiralProjector_mul`,
   `spaceTime.diracBilinear_rightChiralProjector_mulVec_rightChiralProjector_mul_eq_zero`: a vertex
-  `Γ P_L`, equivalently `P_R Γ` on the left, annihilates right-handed spinors on either side, and
-  sees only the left-handed parts of the spinors.
+  `Γ P_L` sees only the left-handed part of the right spinor and annihilates its right-handed
+  part, and a vertex `P_R Γ` does the same for the left spinor.
+- `spaceTime.diracBilinear_leftChiralProjector_mulVec_γ_mul_leftChiralProjector`,
+  `spaceTime.diracBilinear_rightChiralProjector_mulVec_γ_mul_leftChiralProjector_eq_zero`: for the
+  `V - A` vertex `γ^μ P_L`, where the two vertex shapes coincide by
+  `spaceTime.γ_mul_leftChiralProjector`, only the left-handed part of either spinor enters the
+  bilinear.
 
 ## Implementation notes
 
@@ -943,6 +950,25 @@ lemma diracBilinear_rightChiralProjector_mulVec_rightChiralProjector_mul_eq_zero
     diracBilinear (rightChiralProjector *ᵥ ψ) (rightChiralProjector * Γ) χ = 0 := by
   rw [diracBilinear_mulVec_left, diracAdjoint_rightChiralProjector, ← mul_assoc,
     leftChiralProjector_mul_rightChiralProjector, zero_mul, diracBilinear_zero]
+
+/-- The `V - A` vertex `γ^μ P_L` sees only the left-handed part of the left spinor: since
+`γ^μ P_L = P_R γ^μ` (`γ_mul_leftChiralProjector`),
+`\overline{P_L ψ} γ^μ P_L χ = \bar{ψ} γ^μ P_L χ`. -/
+@[simp high]
+lemma diracBilinear_leftChiralProjector_mulVec_γ_mul_leftChiralProjector
+    (ψ χ : Fin 4 → ℂ) (μ : Fin 4) :
+    diracBilinear (leftChiralProjector *ᵥ ψ) (γ μ * leftChiralProjector) χ =
+      diracBilinear ψ (γ μ * leftChiralProjector) χ := by
+  rw [γ_mul_leftChiralProjector, diracBilinear_leftChiralProjector_mulVec_rightChiralProjector_mul]
+
+/-- The `V - A` vertex `γ^μ P_L` annihilates a right-handed left spinor:
+`\overline{P_R ψ} γ^μ P_L χ = 0`. -/
+@[simp high]
+lemma diracBilinear_rightChiralProjector_mulVec_γ_mul_leftChiralProjector_eq_zero
+    (ψ χ : Fin 4 → ℂ) (μ : Fin 4) :
+    diracBilinear (rightChiralProjector *ᵥ ψ) (γ μ * leftChiralProjector) χ = 0 := by
+  rw [γ_mul_leftChiralProjector,
+    diracBilinear_rightChiralProjector_mulVec_rightChiralProjector_mul_eq_zero]
 
 /-- The `V - A` vertex `γ^μ P_L` is its own Dirac adjoint. -/
 @[simp]
