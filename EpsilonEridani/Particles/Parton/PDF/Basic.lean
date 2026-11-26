@@ -35,6 +35,12 @@ abbrev Pdf (Flavor : Type) : Type := Flavor → ℝ → ℝ → ℝ
 def mellinMoment (f : Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) : ℝ :=
   ∫ x in Set.Icc (0 : ℝ) 1, x ^ n * f i x Q2
 
+/-- The zeroth Mellin moment is the integral of the density over the physical support. -/
+@[simp]
+lemma mellinMoment_zero (f : Pdf Flavor) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment f 0 i Q2 = ∫ x in Set.Icc (0 : ℝ) 1, f i x Q2 := by
+  simp only [mellinMoment, pow_zero, one_mul]
+
 /-- Structural assumptions for a collinear PDF object.
 
 The `nonneg` field is derivable, not fundamental. Positivity of a leading-twist parton density
@@ -131,11 +137,11 @@ lemma Regularity.integrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2
     MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
   simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
 
-/-- A density of a regular family is integrable on the physical support `[0, 1]`. This is the
-form in which the regularity of a density feeds the integrability statements of the
-structure-function layer. -/
-lemma Regularity.integrableOn {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ) :
-    MeasureTheory.IntegrableOn (fun x : ℝ => f i x Q2) (Set.Icc (0 : ℝ) 1) :=
+/-- A density of a regular family is integrable on every set, in particular on the physical
+support `[0, 1]`, which is the form in which the regularity of a density feeds the
+integrability statements of the structure-function layer. -/
+lemma Regularity.integrableOn {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ)
+    {s : Set ℝ} : MeasureTheory.IntegrableOn (fun x : ℝ => f i x Q2) s :=
   (h.integrable i Q2).integrableOn
 
 /-- Sum-rule assumptions used by the PDF interfaces. -/

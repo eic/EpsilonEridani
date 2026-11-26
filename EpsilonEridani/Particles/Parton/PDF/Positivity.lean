@@ -80,6 +80,7 @@ time-reversal-invariant specialisation.
 - `EpsilonEridani.Particles.Parton.PDF.soffer_bound`
 - `EpsilonEridani.Particles.Parton.PDF.pdfOfSpinDensity_nonneg`
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_pdfOfSpinDensity`
+- `EpsilonEridani.Particles.Parton.PDF.SpinDensityAssumptions.comap`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_iff_assumptions`
 - `EpsilonEridani.Particles.Parton.PDF.helicityPdfOfSpinDensity_eq_zero`
 - `EpsilonEridani.Particles.Parton.PDF.regularity_helicityPdfOfSpinDensity`
@@ -308,6 +309,15 @@ structure SpinDensityAssumptions (ρ : Flavor → ℝ → ℝ → SpinDensity) :
   momentIntegrable : ∀ n i Q2,
     MeasureTheory.Integrable (fun x : ℝ => x ^ n * f1 (ρ i x Q2))
 
+/-- Restricting a spin-density family along a map of parton indices preserves the structural
+assumptions; compare `PDF.Assumptions.comap`. -/
+lemma SpinDensityAssumptions.comap {κ : Type} {ρ : Flavor → ℝ → ℝ → SpinDensity}
+    (h : SpinDensityAssumptions ρ) (σ : κ → Flavor) :
+    SpinDensityAssumptions fun k => ρ (σ k) where
+  support k x Q2 hx := h.support (σ k) x Q2 hx
+  measurable k Q2 := h.measurable (σ k) Q2
+  momentIntegrable n k Q2 := h.momentIntegrable n (σ k) Q2
+
 /-- A family of spin-density matrices satisfying the structural assumptions induces a
 collinear PDF satisfying the full `PDF.Assumptions` bundle, with the `nonneg` field
 **discharged** by `pdfOfSpinDensity_nonneg` rather than assumed. -/
@@ -337,12 +347,11 @@ lemma spinDensityAssumptions_iff_assumptions (ρ : Flavor → ℝ → ℝ → Sp
 unpolarized density does: helicity dominance `|g₁| ≤ f₁` squeezes it to zero there. In
 particular it vanishes outside the physical support as soon as the unpolarized density does,
 which is the `support` field of `SpinDensityAssumptions`. -/
-theorem helicityPdfOfSpinDensity_eq_zero {ρ : Flavor → ℝ → ℝ → SpinDensity}
-    (hs : ∀ i x Q2, x < 0 ∨ 1 < x → pdfOfSpinDensity ρ i x Q2 = 0) (i : Flavor) (x Q2 : ℝ)
-    (hx : x < 0 ∨ 1 < x) :
+theorem helicityPdfOfSpinDensity_eq_zero {ρ : Flavor → ℝ → ℝ → SpinDensity} {i : Flavor}
+    {x Q2 : ℝ} (hs : pdfOfSpinDensity ρ i x Q2 = 0) :
     helicityPdfOfSpinDensity ρ i x Q2 = 0 := by
   have hle := abs_helicityPdf_le_pdf ρ i x Q2
-  rw [hs i x Q2 hx] at hle
+  rw [hs] at hle
   exact abs_nonpos_iff.mp hle
 
 /-- The helicity distribution of a spin-density family inherits the analytic half of
