@@ -145,8 +145,9 @@ theorem apply_mul_apply_of_mem_line (W : GaugeLink V G) {x y m : V} (hm : m ∈ 
   · -- `y` lies between `x` and `m`, so subdivide the segment from `x` to `m` at `y`.
     have hW : W x y * W y m = W x m := W.toFun_mul_toFun' x m y (mem_segment_iff_wbtw.2 h)
     rw [← hW, W.apply_swap m y, inv_mul_cancel_right]
-  · -- `m` lies between `x` and `y`: this is the subdivision property itself.
-    exact W.toFun_mul_toFun' x y m (segment_symm ℝ y x ▸ mem_segment_iff_wbtw.2 h)
+  · -- `m` lies between `y` and `x`; reversing the order of the endpoints, this is the
+    -- subdivision property itself.
+    exact W.toFun_mul_toFun' x y m (mem_segment_iff_wbtw.2 h.symm)
 
 /-- The link is multiplicative under subdivision of a segment. -/
 theorem apply_mul_apply_of_mem_segment (W : GaugeLink V G) {x y m : V} (hm : m ∈ segment ℝ x y) :
