@@ -88,14 +88,11 @@ of `P_gq` and `P_gg` integrable against `φ`. -/
 theorem pairing_pqq_add_pairing_pgq_eq_pairing_pqgSinglet_add_pairing_pgg
     (hc : c.IsSupersymmetric) {φ : ℝ → ℝ} (hφ : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
     (pqq c).pairing φ + (pgq c).pairing φ = (pqgSinglet c).pairing φ + (pgg c).pairing φ := by
-  have hφ' : IntervalIntegrable φ volume 0 1 :=
-    (hφ.continuousOn_mul (g := fun z => z) (continuousOn_id' _)).congr fun z hz => by
-      rw [uIoc_of_le zero_le_one] at hz
-      field_simp [hz.1.ne']
+  have hφ' : IntervalIntegrable φ volume 0 1 := intervalIntegrable_of_one_div_z_integrand hφ
   have hqq := intervalIntegrable_pqq_regular_mul c hφ'
   have hgq := intervalIntegrable_pgq_regular_mul c hφ
   have hqg := intervalIntegrable_pqgSinglet_regular_mul c hφ'
-  have hgg := intervalIntegrable_pgg_regular_mul c hφ' hφ
+  have hgg := intervalIntegrable_pgg_regular_mul c hφ
   -- The regular parts add up to the same function on `(0, 1]`.
   have hreg : (∫ z in (0 : ℝ)..1, (pqq c).regular z * φ z) +
       ∫ z in (0 : ℝ)..1, (pgq c).regular z * φ z =

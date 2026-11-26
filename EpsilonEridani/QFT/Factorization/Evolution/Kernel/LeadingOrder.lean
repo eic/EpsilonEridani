@@ -47,6 +47,8 @@ what makes the second momentum identity hold.
 
 * `pairing_pqq`: `P_qq` is the plus distribution `C_F [(1 + z²)/(1 - z)]₊`.
 * `pairing_pgg`: `P_gg` is `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)]` plus its delta term.
+* `intervalIntegrable_of_one_div_z_integrand`: a test function whose `φ z / z` integrand is
+  integrable on `[0, 1]` is integrable there itself.
 * `intervalIntegrable_pqq_regular_mul`, `intervalIntegrable_pgq_regular_mul`,
   `intervalIntegrable_pqgSinglet_regular_mul`, `intervalIntegrable_pgg_regular_mul`: the test
   functions against which each regular part is integrable.
@@ -225,11 +227,23 @@ theorem intervalIntegrable_pqgSinglet_regular_mul {φ : ℝ → ℝ}
   simpa only [pqgSinglet_regular] using
     hφ.continuousOn_mul (g := fun z => 2 * c.nF * c.tF * (z ^ 2 + (1 - z) ^ 2)) (by fun_prop)
 
+/-- A test function whose integrand `φ z / z` against the `1 / z` weight is integrable on
+`[0, 1]` is itself integrable there: `φ z` is that integrand times the bounded factor `z`,
+which is nonzero on `(0, 1]`. The kernels with a `1 / z` singularity therefore need no
+separate integrability hypothesis on the test function. -/
+theorem intervalIntegrable_of_one_div_z_integrand {φ : ℝ → ℝ}
+    (hφz : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
+    IntervalIntegrable φ volume 0 1 :=
+  (hφz.continuousOn_mul (g := fun z => z) (continuousOn_id' _)).congr_ae <| by
+    filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (0 : ℝ))] with z hz
+    field_simp [hz]
+
 /-- The regular part `2 C_A (-1 + (1 - z) / z + z (1 - z))` of `P_gg` is integrable against every
-`φ` integrable on `[0, 1]` for which `φ z / z` is integrable there too. -/
-theorem intervalIntegrable_pgg_regular_mul {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1)
+`φ` for which `φ z / z` is integrable on `[0, 1]`. -/
+theorem intervalIntegrable_pgg_regular_mul {φ : ℝ → ℝ}
     (hφz : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
     IntervalIntegrable (fun z => (pgg c).regular z * φ z) volume 0 1 :=
+  have hφ : IntervalIntegrable φ volume 0 1 := intervalIntegrable_of_one_div_z_integrand hφz
   ((hφ.continuousOn_mul (g := fun z => 2 * c.cA * (-1 + z * (1 - z))) (by fun_prop)).add
     (hφz.continuousOn_mul (g := fun z => 2 * c.cA * (1 - z)) (by fun_prop))).congr
     fun z _ => by simp only [pgg_regular]; ring
