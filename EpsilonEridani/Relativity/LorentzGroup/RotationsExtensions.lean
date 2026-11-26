@@ -13,9 +13,9 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtension
 # Lorentz transformations with time-time entry one
 
 An element of Physlib's subgroup `LorentzGroup.Rotations d` has time-time entry `1`
-(`rotation_timeComponent_eq_one`). This module records the consequences of that entry for
-every `Λ : LorentzGroup d` with time-time entry `1`, so for spatial reflections as well as
-rotations: `Λ` is orthochronous (`isOrthochronous_of_timeComponent_eq_one`), the mixed
+(Physlib's `LorentzGroup.mem_rotations_iff`). This module records the consequences of that
+entry for every `Λ : LorentzGroup d` with time-time entry `1`, so for spatial reflections as
+well as rotations: `Λ` is orthochronous (`isOrthochronous_of_timeComponent_eq_one`), the mixed
 time-space entries vanish (`inl_inr_eq_zero_of_timeComponent_eq_one` and
 `inr_inl_eq_zero_of_timeComponent_eq_one`), so `Λ` leaves the time component of every vector
 unchanged (`timeComponent_smul_of_timeComponent_eq_one`), acts on the spatial part through its
@@ -32,12 +32,6 @@ public section
 namespace LorentzGroup
 
 variable {d : ℕ}
-
-/-- A rotation has time-time entry `1`. -/
-@[simp]
-theorem rotation_timeComponent_eq_one (Λ : Rotations d) :
-    (Λ : LorentzGroup d).1 (Sum.inl 0) (Sum.inl 0) = 1 :=
-  ((mem_rotations_iff _).1 Λ.2).1
 
 /-- A Lorentz transformation with time-time entry `1` is orthochronous. -/
 theorem isOrthochronous_of_timeComponent_eq_one {Λ : LorentzGroup d}

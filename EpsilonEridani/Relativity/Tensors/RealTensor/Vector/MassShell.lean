@@ -30,13 +30,14 @@ Lorentz transformation `Λ` moves the point `(E(p), p)` to another point of the 
   `Λ` it does not compose. Every orthochronous `Λ` — every element of the restricted group in
   particular — keeps the energy of an on-shell momentum non-negative
   (`timeComponent_smul_onShellMomentum_nonneg`); whenever the energy stays non-negative,
-  `onShellMomentum_massShellMap` identifies the map with the Lorentz action, and `massShellMap_mul`
-  composes.
+  `onShellMomentum_massShellMap` identifies the map with the Lorentz action, `massShellMap_mul`
+  composes and `massShellMap_inv_massShellMap` inverts an orthochronous `Λ`.
 * A boost along the coordinate axis `i` with velocity `β` sends `pᵢ` to `γ (pᵢ - β E)`, fixes the
   other components, and sends the energy to `E' = γ (E - β pᵢ)`
   (`onShellEnergy_massShellMap_boost`), which is non-negative
   (`timeComponent_boost_smul_onShellMomentum_nonneg`, the boost case of the orthochronous
-  lemma). The boost with velocity `-β` undoes it (`massShellMap_boost_neg_boost`).
+  lemma). The boost with velocity `-β` undoes it (`massShellMap_boost_neg_boost`, the boost case
+  of `massShellMap_inv_massShellMap`).
 * A Lorentz transformation `Λ` with time-time entry `1` — a rotation or a spatial reflection —
   keeps the energy non-negative (`onShellMomentum_massShellMap_of_timeComponent_eq_one`), acts
   on spatial momenta, independently of the mass, as the linear isometry equivalence
@@ -130,9 +131,9 @@ theorem spatialPart_onShellMomentum (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) :
     (onShellMomentum m p).spatialPart = p := by
   rw [onShellMomentum_def, Lorentz.Vector.spatialPart_ofTimeAndSpatial_eq]
 
-/-- The spatial component `i` of the on-shell four-momentum is `pᵢ`. -/
-@[simp]
-theorem onShellMomentum_inr (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) (i : Fin d) :
+/-- The spatial component `i` of the on-shell four-momentum is `pᵢ`: `spatialPart_onShellMomentum`
+in components, through Physlib's `Lorentz.Vector.spatialPart_apply_eq_toCoord`, which is `rfl`. -/
+private theorem onShellMomentum_apply_inr (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) (i : Fin d) :
     onShellMomentum m p (Sum.inr i) = p i := by
   rw [← Lorentz.Vector.spatialPart_apply_eq_toCoord (onShellMomentum m p),
     spatialPart_onShellMomentum]
@@ -186,7 +187,8 @@ theorem massShellMap_apply (Λ : LorentzGroup d) (m : ℝ) (p : EuclideanSpace �
     massShellMap Λ m p j =
       Λ.1 (Sum.inr j) (Sum.inl 0) * onShellEnergy m p +
         ∑ k, Λ.1 (Sum.inr j) (Sum.inr k) * p k := by
-  simp [massShellMap, Lorentz.Vector.smul_eq_sum, Fintype.sum_sum_type]
+  simp [massShellMap, Lorentz.Vector.smul_eq_sum, Fintype.sum_sum_type,
+    onShellMomentum_apply_inr m p]
 
 /-- An orthochronous Lorentz transformation keeps the energy of an on-shell momentum
 non-negative. -/
@@ -219,6 +221,13 @@ theorem massShellMap_mul {Λ₁ Λ₂ : LorentzGroup d} {m : ℝ} {p : Euclidean
     massShellMap (Λ₁ * Λ₂) m p = massShellMap Λ₁ m (massShellMap Λ₂ m p) := by
   rw [massShellMap_def, massShellMap_def, onShellMomentum_massShellMap h, mul_smul]
 
+/-- An orthochronous Lorentz transformation is undone, on the shell, by its own inverse. -/
+theorem massShellMap_inv_massShellMap {Λ : LorentzGroup d} (hΛ : IsOrthochronous Λ) (m : ℝ)
+    (p : EuclideanSpace ℝ (Fin d)) :
+    massShellMap Λ⁻¹ m (massShellMap Λ m p) = p := by
+  rw [← massShellMap_mul (timeComponent_smul_onShellMomentum_nonneg hΛ m p), inv_mul_cancel,
+    massShellMap_one]
+
 /-- The map on the shell is continuous in the spatial momentum. -/
 @[fun_prop]
 theorem continuous_massShellMap (Λ : LorentzGroup d) (m : ℝ) :
@@ -239,19 +248,20 @@ theorem continuous_massShellMap (Λ : LorentzGroup d) (m : ℝ) :
 theorem massShellMap_boost_apply_self (i : Fin d) {β : ℝ} (hβ : |β| < 1) (m : ℝ)
     (p : EuclideanSpace ℝ (Fin d)) :
     massShellMap (boost i β hβ) m p i = γ β * (p i - β * onShellEnergy m p) := by
-  simp [massShellMap, Lorentz.Vector.boost_inr_self_eq]
+  simp [massShellMap, Lorentz.Vector.boost_inr_self_eq, onShellMomentum_apply_inr m p]
 
 /-- A boost along axis `i` fixes the components transverse to it. -/
 theorem massShellMap_boost_apply_of_ne {i j : Fin d} (hji : j ≠ i) {β : ℝ} (hβ : |β| < 1)
     (m : ℝ) (p : EuclideanSpace ℝ (Fin d)) : massShellMap (boost i β hβ) m p j = p j := by
-  simp [massShellMap, Lorentz.Vector.boost_inr_other_eq _ _ hji]
+  simp [massShellMap, Lorentz.Vector.boost_inr_other_eq _ _ hji, onShellMomentum_apply_inr m p]
 
 /-- The energy after a boost along axis `i`: `E' = γ (E - β pᵢ)`. -/
 theorem timeComponent_boost_smul_onShellMomentum (i : Fin d) {β : ℝ} (hβ : |β| < 1) (m : ℝ)
     (p : EuclideanSpace ℝ (Fin d)) :
     (boost i β hβ • onShellMomentum m p).timeComponent =
       γ β * (onShellEnergy m p - β * p i) := by
-  simp [Lorentz.Vector.timeComponent, Lorentz.Vector.boost_time_eq]
+  simp [Lorentz.Vector.timeComponent, Lorentz.Vector.boost_time_eq,
+    onShellMomentum_apply_inr m p]
 
 /-- A boost along a coordinate axis keeps the energy of an on-shell momentum non-negative. -/
 theorem timeComponent_boost_smul_onShellMomentum_nonneg (i : Fin d) {β : ℝ} (hβ : |β| < 1)
@@ -276,13 +286,13 @@ theorem onShellEnergy_massShellMap_boost (i : Fin d) {β : ℝ} (hβ : |β| < 1)
   rwa [timeComponent_onShellMomentum, timeComponent_boost_smul_onShellMomentum] at h
 
 /-- The boost with velocity `-β` along axis `i` undoes the boost with velocity `β` on the
-shell. -/
+shell: the boost case of `massShellMap_inv_massShellMap`. -/
 theorem massShellMap_boost_neg_boost (i : Fin d) {β : ℝ} (hβ : |β| < 1) (m : ℝ)
     (p : EuclideanSpace ℝ (Fin d)) :
     massShellMap (boost i (-β) (by rwa [abs_neg])) m (massShellMap (boost i β hβ) m p) =
       p := by
-  rw [← massShellMap_mul (timeComponent_boost_smul_onShellMomentum_nonneg i hβ m p),
-    ← boost_inverse i hβ, inv_mul_cancel, massShellMap_one]
+  rw [← boost_inverse i hβ]
+  exact massShellMap_inv_massShellMap (isOrthochronous_boost i hβ) m p
 
 /-! ### Rotations and spatial reflections -/
 
