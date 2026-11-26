@@ -11,8 +11,9 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Row and column norms of the identity matrix
 
-Every row and every column of the identity matrix `1 : Matrix n n α` over a seminormed ring with
-`‖1‖ = 1` has unit squared norm, `∑ j, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1`. These discharge, for
+Every row and every column of the identity matrix `1 : Matrix n n α` over a seminormed
+additive group with a one of norm one has unit squared norm,
+`∑ j, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1`. These discharge, for
 the identity, the unit-norm row and column conditions implied by unitarity (the diagonal entries
 of `V * Vᴴ = 1` and `Vᴴ * V = 1`).
 
@@ -26,7 +27,8 @@ public section
 
 namespace Matrix
 
-variable {n α : Type*} [Fintype n] [DecidableEq n] [SeminormedRing α] [NormOneClass α]
+variable {n α : Type*} [Fintype n] [DecidableEq n] [SeminormedAddCommGroup α] [One α]
+  [NormOneClass α]
 
 /-- Each row of the identity matrix has unit squared norm. -/
 @[simp]
