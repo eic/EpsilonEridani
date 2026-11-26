@@ -86,7 +86,9 @@ lemma quadrupoleS_def (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ
 @[simp]
 theorem multipoleS_fin_two (U : WilsonConfiguration Nc) (x y : Fin 2 → EuclideanSpace ℝ (Fin 2)) :
     multipoleS U x y = quadrupoleS U (x 0) (y 0) (x 1) (y 1) := by
-  simp [quadrupoleS_def, multipoleS_def, mul_assoc]
+  have hx : x = ![x 0, x 1] := (FinVec.etaExpand_eq x).symm
+  have hy : y = ![y 0, y 1] := (FinVec.etaExpand_eq y).symm
+  rw [quadrupoleS_eq_multipoleS, ← hx, ← hy]
 
 /-- **Unitarity bound** on the quadrupole operator of a single configuration. -/
 theorem abs_quadrupoleS_le_one (U : WilsonConfiguration Nc) (x y z w : EuclideanSpace ℝ (Fin 2)) :

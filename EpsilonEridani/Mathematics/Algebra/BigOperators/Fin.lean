@@ -12,7 +12,8 @@ public import Mathlib.Algebra.BigOperators.Fin
 
 Two identities for the product of a list `List.ofFn f` in a (not necessarily commutative) group:
 a telescoping product of factors `aᵢ Aᵢ aᵢ₊₁⁻¹`, and the inverse of a product as the product of
-the inverses in reversed order.
+the inverses in reversed order. The latter rests on the structure-free fact that reindexing
+`List.ofFn f` by `Fin.rev` reverses the list.
 
 Both are needed for traced products of Wilson lines. The telescoping identity turns a chain of
 gauge-transformed factors `Ωᵢ Aᵢ Ωᵢ₊₁⁻¹` into the single two-sided factor `Ω₀ (∏ᵢ Aᵢ) Ωₖ⁻¹`, a
@@ -26,6 +27,7 @@ reversal of the order of the arguments.
 
 - `List.prod_ofFn_mul_mul_inv`: a product `∏ᵢ aᵢ Aᵢ (aᵢ₊₁)⁻¹` telescopes to
   `a₀ (∏ᵢ Aᵢ) (a (Fin.last k))⁻¹`.
+- `List.ofFn_rev`: reindexing `List.ofFn f` by `Fin.rev` reverses the list.
 - `List.prod_ofFn_inv_rev`: the product of the `(f i.rev)⁻¹` is the inverse of the product of
   the `f i`.
 -/
@@ -49,14 +51,20 @@ lemma prod_ofFn_mul_mul_inv {G : Type*} [Group G] :
     simp only [Fin.succ_zero_eq_one, Fin.succ_last, Fin.castSucc_zero, mul_assoc,
       inv_mul_cancel_left]
 
+/-- Reindexing `List.ofFn` by `Fin.rev` reverses the list. -/
+lemma ofFn_rev {α : Type*} {n : ℕ} (f : Fin n → α) :
+    List.ofFn (fun i => f i.rev) = (List.ofFn f).reverse :=
+  List.ext_getElem (by simp) fun i h₁ h₂ => by
+    simp only [List.getElem_ofFn, List.getElem_reverse, List.length_ofFn]
+    congr 1
+    ext
+    simp only [Fin.val_rev]
+    omega
+
 /-- The inverse of a product in a group is the product of the inverses in reversed order,
 stated for the list `List.ofFn f`. -/
-lemma prod_ofFn_inv_rev {G : Type*} [Group G] :
-    ∀ {n : ℕ} (f : Fin n → G), (List.ofFn fun i => (f i.rev)⁻¹).prod = (List.ofFn f).prod⁻¹
-  | 0, f => by simp
-  | n + 1, f => by
-    rw [List.ofFn_succ, List.prod_cons, List.ofFn_succ', List.prod_concat, _root_.mul_inv_rev]
-    simp only [Fin.rev_zero, Fin.rev_succ]
-    rw [← prod_ofFn_inv_rev (fun i => f i.castSucc)]
+lemma prod_ofFn_inv_rev {G : Type*} [Group G] {n : ℕ} (f : Fin n → G) :
+    (List.ofFn fun i => (f i.rev)⁻¹).prod = (List.ofFn f).prod⁻¹ := by
+  rw [List.prod_inv_reverse, List.map_ofFn, ← List.ofFn_rev, Function.comp_def]
 
 end List
