@@ -69,8 +69,7 @@ trial law is one too.
 * `AcceptReject.lintegral_one_add_sq_div_two_uniformMeasure_zero_one` and
   `AcceptReject.lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one`: the integrals of
   the two example targets against the standard uniform law, with
-  `AcceptReject.ae_one_add_sq_div_two_le_one_mul_one_uniformMeasure_zero_one`, the bound of the
-  first.
+  `AcceptReject.ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one`, the bound of the first.
 
 The bound hypothesis is taken almost everywhere. A bound checked at every point, which is what
 an implementation can verify, is the case `Filter.Eventually.of_forall`.
@@ -293,14 +292,14 @@ theorem measureReal_trialLaw_acceptSet_of_ae_le (hc : 0 < c) (hf : Measurable f)
 
 /-- **The silent bias.** Let the target `f` have finite mass `∫⁻ f`. Suppose the bound
 `f ≤ c * g` fails on a set of positive measure where `f` is positive, and holds on a set of
-positive measure where `f` is positive. Then the accepted law is not `f` normalised: by
-`acceptedLaw_eq_smul_withDensity_min` it is `min f (c * g)` normalised, and the two differ. No
-sign hypothesis on the proposal `g` is needed.
+positive measure where `f` is positive. Then the accepted law is not `f` normalised. No sign
+hypothesis on the proposal `g` is needed.
 
-Both set hypotheses are needed. Without the first, the bound holds almost everywhere and
-`acceptedLaw_eq_smul_withDensity_of_ae_le` gives equality. Without the second, take `f = 2 * g`
-and `c = 1`: the bound fails wherever `g` is positive, yet every proposal is accepted and the
-accepted law is `g` normalised, which is `f` normalised. -/
+Both set hypotheses are needed. Without the first, `ENNReal.ofReal (min (f x) (c * g x))` and
+`ENNReal.ofReal (f x)` agree almost everywhere: where `f` is positive the bound holds almost
+everywhere, and elsewhere both are `0`. The two laws then coincide. Without the second, take
+`f = 2 * g` and `c = 1`: the bound fails wherever `g` is positive, yet every proposal is accepted
+and the accepted law is `g` normalised, which is `f` normalised. -/
 theorem acceptedLaw_ne_of_measure_setOf_lt_ne_zero (hc : 0 < c) (hf : Measurable f)
     (hg : Measurable g) (hfi : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ ∞)
     (hviol : μ {x | c * g x < f x ∧ 0 < f x} ≠ 0) (hresp : μ {x | 0 < f x ∧ f x ≤ c * g x} ≠ 0) :
@@ -339,14 +338,19 @@ theorem acceptedLaw_ne_of_measure_setOf_lt_ne_zero (hc : 0 < c) (hf : Measurable
   have hinv := (ENNReal.mul_left_inj hX₀ hXfin).mp hS_eq
   exact hlt.ne (inv_injective hinv)
 
-/-- The function `(1 + z ^ 2) / 2` is bounded by `1 * 1` almost everywhere for the standard
-uniform law. This is the bound hypothesis `f ≤ c * g` of the acceptance–rejection example below,
-with bound constant `c = 1` and constant proposal `g = 1`, in the shape the acceptance–rejection
-results consume. -/
-theorem ae_one_add_sq_div_two_le_one_mul_one_uniformMeasure_zero_one :
-    ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 * 1 := by
+/-- The function `(1 + z ^ 2) / 2` is bounded by `1` almost everywhere for the standard uniform
+law. It is the bound hypothesis of the acceptance–rejection example below, with constant
+proposal and bound `1`. -/
+theorem ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one :
+    ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 := by
   filter_upwards [ae_mem_Ioc_uniformMeasure] with z hz
   nlinarith [hz.1, hz.2]
+
+/-- `ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one` in the shape `f ≤ c * g` with
+`c = g = 1` that the acceptance–rejection results consume. -/
+private theorem ae_one_add_sq_div_two_le_one_mul_one :
+    ∀ᵐ z ∂uniformMeasure 0 1, (1 + z ^ 2) / 2 ≤ 1 * 1 := by
+  simpa only [mul_one] using ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one
 
 /-- The function `(1 + z ^ 2) / 2` has integral `2 / 3` over `[0, 1]`. It is the target of the
 acceptance–rejection example below, and its integral is that example's acceptance
@@ -388,10 +392,10 @@ ratio of the quark splitting kernel `(1 + z ^ 2) / (1 - z)` to its overestimate 
 theorem measureReal_trialLaw_acceptSet_one_add_sq_div_two :
     (trialLaw (uniformMeasure 0 1) fun _ => 1).real
       (acceptSet (fun z => (1 + z ^ 2) / 2) (fun _ => 1) 1) = 2 / 3 := by
-  rw [measureReal_def, trialLaw_acceptSet_of_ae_le one_pos (by fun_prop) measurable_const
-    ae_one_add_sq_div_two_le_one_mul_one_uniformMeasure_zero_one,
-    lintegral_one_add_sq_div_two_uniformMeasure_zero_one, ENNReal.ofReal_one, div_one,
-    ENNReal.toReal_ofReal (by norm_num)]
+  rw [measureReal_trialLaw_acceptSet one_pos (by fun_prop) measurable_const,
+    lintegral_congr_ae (ofReal_min_ae_eq_of_ae_le ae_one_add_sq_div_two_le_one_mul_one),
+    lintegral_one_add_sq_div_two_uniformMeasure_zero_one, ENNReal.toReal_ofReal (by norm_num),
+    div_one]
 
 /-- A uniform proposal on `[0, 1]` with the constant bound `1` produces the target
 `(1 + z ^ 2) / 2` normalised by its integral `2 / 3`. -/
@@ -400,7 +404,7 @@ theorem acceptedLaw_one_add_sq_div_two :
       (ENNReal.ofReal (2 / 3))⁻¹ •
         (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal ((1 + z ^ 2) / 2) := by
   rw [acceptedLaw_eq_smul_withDensity_of_ae_le one_pos (by fun_prop) measurable_const
-    ae_one_add_sq_div_two_le_one_mul_one_uniformMeasure_zero_one,
+    ae_one_add_sq_div_two_le_one_mul_one,
     lintegral_one_add_sq_div_two_uniformMeasure_zero_one]
 
 /-- The accepted law of the `(1 + z ^ 2) / 2` example is a probability measure: the target's
@@ -409,7 +413,7 @@ instance isProbabilityMeasure_acceptedLaw_one_add_sq_div_two :
     IsProbabilityMeasure (acceptedLaw (uniformMeasure 0 1) (fun z => (1 + z ^ 2) / 2)
       (fun _ => 1) 1) :=
   isProbabilityMeasure_acceptedLaw_of_ae_le one_pos (by fun_prop) measurable_const
-    ae_one_add_sq_div_two_le_one_mul_one_uniformMeasure_zero_one
+    ae_one_add_sq_div_two_le_one_mul_one
     (by norm_num [lintegral_one_add_sq_div_two_uniformMeasure_zero_one])
     (by simp [lintegral_one_add_sq_div_two_uniformMeasure_zero_one])
 

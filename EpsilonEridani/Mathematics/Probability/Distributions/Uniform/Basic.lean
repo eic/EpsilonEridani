@@ -25,6 +25,9 @@ examples there integrate continuous targets against the standard uniform law.
   against the uniform law is integrability on `Set.Ioc a b` for Lebesgue measure.
 * `ContinuousOn.integrable_uniformMeasure`: a function continuous on `Set.Icc a b` is integrable
   against `uniformMeasure a b`, with no nondegeneracy hypothesis on the interval.
+* `EpsilonEridani.lintegral_uniformMeasure`: the lower integral of any extended nonnegative
+  function against the uniform law, as a lower integral over `Set.Ioc a b` divided by the
+  interval length, with no hypothesis.
 * `EpsilonEridani.lintegral_ofReal_uniformMeasure`: the lower integral of an integrable,
   almost everywhere nonnegative function against the uniform law, as an interval integral
   divided by the interval length.
@@ -36,6 +39,8 @@ examples there integrate continuous targets against the standard uniform law.
 public section
 
 open MeasureTheory TauCeti.Probability
+
+open scoped ENNReal
 
 namespace EpsilonEridani
 
@@ -71,6 +76,12 @@ theorem uniformMeasure_Iic {a b : ℝ} (hab : a < b) (t : ℝ) :
   rw [uniformMeasure_apply measurableSet_Iic, hset, Real.volume_Ioc,
     ENNReal.ofReal_div_of_pos (sub_pos.mpr hab), ENNReal.div_eq_inv_mul]
 
+/-- The lower integral of any `k : ℝ → ℝ≥0∞` against the uniform law on `Set.Ioc a b` is its
+lower integral over `Set.Ioc a b` for Lebesgue measure, divided by the interval length. -/
+theorem lintegral_uniformMeasure (k : ℝ → ℝ≥0∞) (a b : ℝ) :
+    ∫⁻ x, k x ∂uniformMeasure a b = (ENNReal.ofReal (b - a))⁻¹ * ∫⁻ x in Set.Ioc a b, k x := by
+  rw [uniformMeasure_eq_smul, lintegral_smul_measure, smul_eq_mul]
+
 /-- The lower integral of an integrable, almost everywhere nonnegative `f` against the uniform
 law on `Set.Ioc a b` is the interval integral of `f` over `[a, b]` divided by the interval
 length. -/
@@ -80,7 +91,7 @@ theorem lintegral_ofReal_uniformMeasure {f : ℝ → ℝ} {a b : ℝ} (hab : a <
       ENNReal.ofReal ((∫ x in a..b, f x) / (b - a)) := by
   rw [uniformMeasure_eq_smul,
     Measure.ae_ennreal_smul_measure_eq (ENNReal.inv_ne_zero.mpr ENNReal.ofReal_ne_top)] at hf₀
-  rw [uniformMeasure_eq_smul, lintegral_smul_measure, smul_eq_mul,
+  rw [lintegral_uniformMeasure,
     ← ofReal_integral_eq_lintegral_ofReal ((integrable_uniformMeasure_iff hab).mp hf) hf₀,
     ← intervalIntegral.integral_of_le hab.le, ENNReal.ofReal_div_of_pos (sub_pos.mpr hab),
     ENNReal.div_eq_inv_mul]
