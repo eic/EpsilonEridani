@@ -6,7 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Inclusive.CrossSection
-public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.Parameters
+public import EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
 
 /-!
 # The electroweak neutral-current cross section and its three terms
@@ -33,9 +33,11 @@ the term with currents `i, j` is the product `c_i c_j` of the beam couplings `c_
 from the leptonic tensor: it is taken as the definition of `CrossSection.neutralCurrent`, whose
 structure functions are the coupling-weighted sums of those of the individual pairs of
 currents. That contraction is
-`Inclusive.dSigmaDxDQ2` with the helicity sign `λ` in the slot of the parity-odd sign: its
-parity-odd term `-λ Y₋ x F₃` is `+Y₋ x F₃` for a left-handed beam, the sign that
-`Inclusive.crossSectionBracket` assigns to an electron or neutrino.
+`Inclusive.dSigmaDxDQ2` with the helicity sign `λ` in the slot of the parity-odd sign, so its
+parity-odd term is `-λ Y₋ x F₃`. In this file that slot carries the beam helicity, not the beam
+species: the species enters only through the charge `q` and the couplings `ℓ`. A right-handed
+electron therefore sits at `s = +1`, the value `Inclusive.crossSectionBracket` documents for a
+positron beam.
 
 An antilepton beam is described by the same formulas with the charge-conjugate couplings: charge
 `-q`, vector coupling `-g_V` and axial coupling `g_A`.
@@ -80,6 +82,18 @@ used in this file.
   `-1` of the parity-odd term (the beam enters only through `q` and `ℓ`, charge-conjugated for an
   antilepton as above), with the familiar effective structure functions
   `q² F^γ + q g_V η F^{γZ} + (g_V² + g_A²) η² F^Z` and `q g_A η F₃^{γZ} + 2 g_V g_A η² F₃^Z`.
+* `CrossSection.neutralCurrentDecomposition`: the neutral-current cross section as an
+  instance of the abstract `Electroweak.NeutralCurrentDecomposition` on which the asymmetry
+  chain of `Interference` and `Processes` is stated, with
+  `CrossSection.helicityResolvedTotal_neutralCurrentDecomposition` identifying its
+  helicity-resolved total with `neutralCurrent` and
+  `CrossSection.helicityInterferenceIsolation_neutralCurrentDecomposition` discharging the
+  isolation hypothesis of that chain. Because the interference term is not helicity-odd
+  (`CrossSection.gammaZTerm_true_eq_neg_false_iff`), its fields are read by helicity parity, not
+  by exchange: `photon` is `photonTerm`, `zBoson` the helicity-even part of the interference and
+  pure-`Z` terms together, and `gammaZInterference` their helicity-odd part, half of
+  `σ_R - σ_L`. In particular `gammaZInterference` is not the fixed-helicity interference term
+  `gammaZTerm`.
 * `CrossSection.gammaZTerm_electron_true_sub_false`: for the Standard Model electron,
   `σ_R - σ_L` of the interference term is `-η K/(xQ²) (B^{γZ} + Q_W^e Y₋ x F₃^{γZ})`, which
   exhibits the suppression of the parity-odd structure function by the electron weak charge
@@ -472,6 +486,89 @@ theorem gammaZTerm_electron_true_sub_false (s2 : ℝ) :
           + electronWeakCharge s2 * (Yminus y * (x * F3))) := by
   rw [gammaZTerm_true_sub_false, smTreeLevelCouplings_electron, electronWeakCharge]
   ring
+
+/-!
+## The neutral-current cross section as a `NeutralCurrentDecomposition`
+-/
+
+section decomposition
+
+variable (Hx : ℝ → NeutralCurrentStructureFunctions)
+
+/-- The neutral-current cross section at fixed flux factor `K`, target mass `M`, virtuality `Q²`,
+charge `q`, propagator ratio `η` and couplings `ℓ`, with structure functions `Hx x` at Bjorken
+`x`, as a decomposition in `(x, y)`. Since the interference term is not helicity-odd
+(`gammaZTerm_true_eq_neg_false_iff`), the fields are read by helicity parity: `photon` is the
+pure-photon term, `zBoson` the helicity-even part of the interference and pure-`Z` terms together,
+and `gammaZInterference` their helicity-odd part, half of `σ_R - σ_L`
+(`neutralCurrent_true_sub_false`). -/
+def neutralCurrentDecomposition : NeutralCurrentDecomposition where
+  photon x y := photonTerm K M x Q2 y q (Hx x).photonF1 (Hx x).photonF2
+  zBoson x y :=
+    (gammaZTerm K M x Q2 y q η ℓ true (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
+      + gammaZTerm K M x Q2 y q η ℓ false (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
+      + zBosonTerm K M x Q2 y η ℓ true (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3
+      + zBosonTerm K M x Q2 y η ℓ false (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3) / 2
+  gammaZInterference x y :=
+    (neutralCurrent K M x Q2 y q η ℓ (Hx x) true
+      - neutralCurrent K M x Q2 y q η ℓ (Hx x) false) / 2
+
+/-- The `photon` field of `neutralCurrentDecomposition` is the pure-photon term. -/
+@[simp]
+theorem neutralCurrentDecomposition_photon :
+    (neutralCurrentDecomposition K M Q2 q η ℓ Hx).photon x y =
+      photonTerm K M x Q2 y q (Hx x).photonF1 (Hx x).photonF2 :=
+  (rfl)
+
+/-- The `zBoson` field of `neutralCurrentDecomposition` is the helicity-even part of the
+interference and pure-`Z` terms together. -/
+@[simp]
+theorem neutralCurrentDecomposition_zBoson :
+    (neutralCurrentDecomposition K M Q2 q η ℓ Hx).zBoson x y =
+      (gammaZTerm K M x Q2 y q η ℓ true (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
+        + gammaZTerm K M x Q2 y q η ℓ false (Hx x).gammaZF1 (Hx x).gammaZF2 (Hx x).gammaZF3
+        + zBosonTerm K M x Q2 y η ℓ true (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3
+        + zBosonTerm K M x Q2 y η ℓ false (Hx x).zBosonF1 (Hx x).zBosonF2 (Hx x).zBosonF3) / 2 :=
+  (rfl)
+
+/-- The `gammaZInterference` field of `neutralCurrentDecomposition` is the helicity-odd part
+`(σ_R - σ_L) / 2` of the neutral-current cross section. -/
+@[simp]
+theorem neutralCurrentDecomposition_gammaZInterference :
+    (neutralCurrentDecomposition K M Q2 q η ℓ Hx).gammaZInterference x y =
+      (neutralCurrent K M x Q2 y q η ℓ (Hx x) true
+        - neutralCurrent K M x Q2 y q η ℓ (Hx x) false) / 2 :=
+  (rfl)
+
+/-- **The bridge to the abstract decomposition.** The helicity-resolved total
+`photon + zBoson + λ gammaZInterference` of `neutralCurrentDecomposition` is the neutral-current
+cross section at helicity `λ = helicitySign h`. -/
+theorem helicityResolvedTotal_neutralCurrentDecomposition :
+    Interference.helicityResolvedTotal
+        (Interference.canonicalHelicityModel (neutralCurrentDecomposition K M Q2 q η ℓ Hx)) h x y =
+      neutralCurrent K M x Q2 y q η ℓ (Hx x) h := by
+  cases h <;>
+  · simp only [Interference.helicityResolvedTotal, Interference.canonicalHelicityModel,
+      neutralCurrentDecomposition_photon, neutralCurrentDecomposition_zBoson,
+      neutralCurrentDecomposition_gammaZInterference, helicitySign_true, helicitySign_false,
+      neutralCurrent_eq_add]
+    ring
+
+/-- The neutral-current cross sections of the two helicities satisfy the isolation hypothesis
+of the asymmetry chain of `Interference` and `Processes` against
+`neutralCurrentDecomposition`. -/
+theorem helicityInterferenceIsolation_neutralCurrentDecomposition :
+    Interference.HelicityInterferenceIsolationAssumptions
+      (neutralCurrentDecomposition K M Q2 q η ℓ Hx)
+      (fun x y => neutralCurrent K M x Q2 y q η ℓ (Hx x) true)
+      (fun x y => neutralCurrent K M x Q2 y q η ℓ (Hx x) false) := by
+  refine ⟨fun x y => ?_, fun x y => ?_⟩
+  · rw [← helicityResolvedTotal_neutralCurrentDecomposition (h := true)]
+    exact Interference.canonicalPlus_eq_total _ x y
+  · rw [← helicityResolvedTotal_neutralCurrentDecomposition (h := false)]
+    exact Interference.canonicalMinus_eq_total _ x y
+
+end decomposition
 
 end CrossSection
 
