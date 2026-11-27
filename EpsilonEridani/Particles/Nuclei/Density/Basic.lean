@@ -5,13 +5,13 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.Gaussian
 public import EpsilonEridani.Mathematics.SpecialFunctions.SigmoidExtensions
 public import EpsilonEridani.Particles.Nuclei.Basic
 public import Physlib.SpaceAndTime.Space.Module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Physlib.SpaceAndTime.Space.Integrals.Basic
-import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -205,37 +205,27 @@ lemma continuous_gaussianDensity (m R : ℝ) : Continuous (gaussianDensity m R) 
   rw [funext (gaussianDensity_def m R)]
   fun_prop
 
-/-- On space, the Gaussian profile is a multiple of `exp (-b ‖x‖²)` with `b = (R²)⁻¹`. -/
+/-- On space, the Gaussian profile is the isotropic Gaussian density `Gaussian.gaussianDensity`
+of the same mass and range. -/
 lemma gaussianDensity_norm_eq (m R : ℝ) :
-    (fun x : Space => gaussianDensity m R ‖x‖) =
-      fun x => m / (π * R ^ 2) ^ (3 / 2 : ℝ) * exp (-(R ^ 2)⁻¹ * ‖x‖ ^ 2) := by
+    (fun x : Space => gaussianDensity m R ‖x‖) = Gaussian.gaussianDensity m R := by
   ext x
-  simp only [gaussianDensity_def, div_pow, neg_mul, inv_mul_eq_div]
+  rw [gaussianDensity_def, Gaussian.gaussianDensity_def, Space.finrank_eq_dim, div_pow, neg_mul,
+    inv_mul_eq_div]
+  norm_num
 
 /-- The Gaussian profile of range `R ≠ 0` integrates to `m` over space. -/
 @[simp]
 theorem integral_gaussianDensity_norm (m : ℝ) {R : ℝ} (hR : R ≠ 0) :
     ∫ x : Space, gaussianDensity m R ‖x‖ = m := by
-  have hR2 : 0 < (R ^ 2)⁻¹ := by positivity
-  have hc : 0 < (π * R ^ 2) ^ (3 / 2 : ℝ) := by positivity
-  simp only [gaussianDensity_norm_eq, integral_const_mul,
-    GaussianFourier.integral_rexp_neg_mul_sq_norm hR2, Space.finrank_eq_dim, div_inv_eq_mul,
-    Nat.cast_ofNat]
-  exact div_mul_cancel₀ m hc.ne'
+  rw [gaussianDensity_norm_eq, Gaussian.integral_gaussianDensity m hR]
 
 /-- The Gaussian profile is integrable over space. -/
 @[fun_prop]
 theorem integrable_gaussianDensity_norm (m R : ℝ) :
     Integrable fun x : Space => gaussianDensity m R ‖x‖ := by
-  rcases eq_or_ne R 0 with rfl | hR
-  · simp [gaussianDensity_def]
-  have hR2 : 0 < (R ^ 2)⁻¹ := by positivity
   rw [gaussianDensity_norm_eq]
-  -- The Bochner integral of a non-integrable function is `0`, so a nonzero integral forces
-  -- integrability.
-  refine Integrable.const_mul (Integrable.of_integral_ne_zero ?_) _
-  rw [GaussianFourier.integral_rexp_neg_mul_sq_norm hR2]
-  positivity
+  exact Gaussian.integrable_gaussianDensity m R
 
 /-! ### The Woods–Saxon profile -/
 
@@ -272,7 +262,7 @@ lemma woodsSaxonDensity_nonneg {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ
 
 /-- The Woods–Saxon profile never exceeds its parameter `ρ₀`, the plateau value it approaches
 deep inside the nucleus. -/
-lemma woodsSaxonDensity_le {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
+lemma woodsSaxonDensity_le_centralDensity {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r ≤ ρ₀ := by
   rw [woodsSaxonDensity_def]
   exact mul_le_of_le_one_right hρ₀ (Real.sigmoid_le_one _)
