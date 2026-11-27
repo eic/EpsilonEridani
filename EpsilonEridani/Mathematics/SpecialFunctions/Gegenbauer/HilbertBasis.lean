@@ -228,7 +228,8 @@ theorem inner_normalizedGegenbauerThreeHalvesLp {𝕜 : Type*} [RCLike 𝕜] (m 
   orthonormal_iff_ite.mp orthonormal_normalizedGegenbauerThreeHalvesLp m n
 
 /-- **Orthonormality of the normalized Gegenbauer modes** as a weighted integral:
-`∫ C̃_m C̃_n d(gegenbauerThreeHalvesMeasure) = δ_{mn}`. This is the real case of
+`∫ x, normalizedGegenbauerThreeHalves m x * normalizedGegenbauerThreeHalves n x
+∂gegenbauerThreeHalvesMeasure = δ_{mn}`. This is the real case of
 `inner_normalizedGegenbauerThreeHalvesLp`, read through
 `inner_normalizedGegenbauerThreeHalvesLp_eq_integral`. -/
 @[simp]
