@@ -9,13 +9,13 @@ public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 public import EpsilonEridani.QFT.Scattering.DIS.Exclusive.Kinematics.Basic
 /-!
 
-# Diffractive DIS Kinematics
+# The invariants of diffractive DIS
 
-This module introduces the kinematics of diffractive DIS: the invariant scalar products of a
-diffractive event, from which the momentum fractions `x`, `ξ` and `β` are derived, and the
-target-elastic boundary of the physical region in `t`. That boundary, `tMinElastic`, is a function
-of the light-cone momentum fraction lost by the target, which is not the invariant `ξ = Δ·q / P·q`
-of `Invariants.xi`: the two agree only in the Bjorken limit.
+This module introduces the invariant scalar products of a diffractive event, from which the
+momentum fractions `x`, `ξ` and `β` are derived. The invariant fraction `ξ = Δ·q / P·q` of
+`Invariants.xi` is not the light-cone momentum fraction lost by the target that parametrizes the
+boundaries `tMin` and `tMinElastic` in `t` (in `Diffractive.Kinematics.Boundary`): the two agree
+only in the Bjorken limit.
 
 The kinematics are carried by the invariant scalar products rather than by the momentum
 fractions, so that the fundamental relation `x = ξ β` is a theorem about the definitions and not
@@ -30,8 +30,7 @@ with the inclusive `DisKinematics.xBj` of the same momenta (`Invariants.ofExclKi
   Collider: EIC Yellow Report*, Nucl. Phys. A **1026** (2022) 122447, §7.1.6 "Inclusive and hard
   diffraction", for the diffractive variables and their physical region.
 * G. Wolf, *Review of high energy diffraction in real and virtual photon proton scattering at
-  HERA*, Rept. Prog. Phys. **73** (2010) 116202, §2, for the `ξ`–`β` kinematics and the
-  target-elastic boundary in `t`.
+  HERA*, Rept. Prog. Phys. **73** (2010) 116202, §2, for the `ξ`–`β` kinematics.
 * V. Barone and E. Predazzi, *High-Energy Particle Diffraction*, Springer, 2002, ch. 1–2, for
   the kinematics of the diffractive final state.
 -/
@@ -233,64 +232,6 @@ theorem ofExclKinematics_absT (g : Bilin V) (K : ExclKinematics V)
   rw [absT_def, ofExclKinematics_t]
 
 end Invariants
-
-/-! ## The target-elastic boundary in `t` -/
-
-/-- The kinematic boundary in `t` at fixed light-cone momentum fraction in the target-elastic
-case (`M_Y = M`), with `M` the target mass: `tMinElastic M ξ = -ξ²M²/(1-ξ)`.
-
-The argument `xiLC` is the light-cone momentum fraction `ξ = Δ⁺/P⁺` lost by the target, named
-apart from the invariant `Invariants.xi = Δ·q / P·q`, with which it agrees only up to relative
-corrections of order `Q²M²/(P·q)²`, so exactly only in the Bjorken limit; at finite energy the
-target-elastic boundary is not exactly `tMinElastic M (Invariants.xi i)`. Nor is `xiLC` the
-skewness `ExclKinematics.xiSkew` (Belitsky-Müller-Kirchner's `η`), a different variable that also
-carries a `ξ` in the exclusive kinematics and for which the target-elastic boundary is a different
-function.
-
-For a light-cone fraction `ξ < 1`, the accessible momentum transfers of the target-elastic physical
-region are `t ≤ tMinElastic M ξ`, equivalently `|t| ≥ ξ²M²/(1-ξ)` (`le_tMinElastic_iff`, with
-`t ≤ 0` throughout); the boundary value is attained in the forward configuration, which is the
-point of minimum `|t|`. At the pole `ξ = 1` the true boundary diverges, whereas, like any real
-division in Lean, `tMinElastic M 1` is `0`; the characterisation is therefore stated only for
-`ξ < 1`.
-
-The boundary is obtained from the two-body threshold condition at fixed `(ξ, M, M_Y)`, and in
-the target-elastic case `M_Y = M` it reduces to `ξ²M²/(1-ξ)`; see Wolf, *Rept. Prog. Phys.*
-**73** (2010) 116202, §2.
-
-See `tMinElastic_def` for the defining expression and `tMinElastic_nonpos` for the sign
-property. -/
-def tMinElastic (M xiLC : ℝ) : ℝ := -(xiLC ^ 2 * M ^ 2) / (1 - xiLC)
-
-/-- Defining expression for `tMinElastic`. -/
-theorem tMinElastic_def (M xiLC : ℝ) :
-    tMinElastic M xiLC = -(xiLC ^ 2 * M ^ 2) / (1 - xiLC) := (rfl)
-
-/-- The negated target-elastic boundary, `-tMinElastic M ξ = ξ²M²/(1-ξ)`. The identity is
-unconditional; `-tMinElastic M ξ` is a (non-negative) magnitude only for `ξ ≤ 1`
-(`tMinElastic_nonpos`). -/
-theorem neg_tMinElastic (M xiLC : ℝ) : -tMinElastic M xiLC = xiLC ^ 2 * M ^ 2 / (1 - xiLC) := by
-  rw [tMinElastic_def, neg_div, neg_neg]
-
-/-- The boundary condition `t ≤ tMinElastic M ξ` for a real momentum transfer `t`, in terms of its
-magnitude: `-t ≥ ξ²M²/(1-ξ)`. Here `M` and `xiLC` are arbitrary parameters, `xiLC` being the
-light-cone fraction of `tMinElastic`, and the equivalence holds for any choice of them. -/
-theorem le_tMinElastic_iff (M xiLC t : ℝ) :
-    t ≤ tMinElastic M xiLC ↔ xiLC ^ 2 * M ^ 2 / (1 - xiLC) ≤ -t := by
-  rw [← neg_tMinElastic, neg_le_neg_iff]
-
-/-- At vanishing momentum loss `ξ = 0` the target-elastic boundary degenerates to `t = 0`. -/
-@[simp]
-theorem tMinElastic_xiLC_zero (M : ℝ) : tMinElastic M 0 = 0 := by
-  rw [tMinElastic_def]
-  norm_num
-
-/-- The target-elastic boundary lies on the non-positive side of zero whenever `xiLC ≤ 1`, in
-particular throughout the physical range `ξ ∈ [0, 1)`: the boundary of the physical region is on
-the same side of zero as the region it bounds. At `xiLC = 1` the value is the division junk `0`. -/
-theorem tMinElastic_nonpos (M xiLC : ℝ) (h : xiLC ≤ 1) : tMinElastic M xiLC ≤ 0 := by
-  rw [tMinElastic_def, neg_div, neg_nonpos]
-  exact div_nonneg (mul_nonneg (sq_nonneg xiLC) (sq_nonneg M)) (sub_nonneg.mpr h)
 
 end Diffractive
 end DIS
