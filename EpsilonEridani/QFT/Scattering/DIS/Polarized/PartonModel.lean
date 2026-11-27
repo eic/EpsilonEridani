@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.Particles.Parton.Flavor
+public import EpsilonEridani.Particles.Parton.PDF.ChargeConjugation
 public import EpsilonEridani.Particles.Parton.PDF.Positivity
 public import EpsilonEridani.Particles.Parton.Species
 public import EpsilonEridani.QFT.Scattering.DIS.Polarized.SumRules
@@ -48,13 +49,13 @@ part, `PDF.helicityPdfOfSpinDensity fun s x Q2 => (ρ s x Q2).re`,
 whose entries are `(ρ s x Q2).deltaQ`.
 
 The first moment of the parton-model `g₁` is the charge-weighted sum of the helicity charges
-`∫₀¹ dx (Δq + Δqbar)` (`firstMomentG1_partonModel`). For the light flavours this is the
-leading-order form of the flavour decomposition carried by `Polarized.EllisJaffeSumRule`, so the
-parton model discharges its `moment_decomposition` field with vanishing perturbative correction,
-and the Ellis–Jaffe sum rule holds for it exactly when the strange helicity charge vanishes
-(`ellisJaffeSumRule_partonModel_iff`). Because `g₂` vanishes identically in this model, its
-first moment vanishes and the Burkhardt-Cottingham sum rule holds unconditionally
-(`firstMomentG2_partonModel`, `burkhardtCottingham_partonModel`).
+`PDF.helicityCharge Δ q = ∫₀¹ dx (Δq + Δqbar)` (`firstMomentG1_partonModel`). For the light
+flavours this is the leading-order form of the flavour decomposition carried by
+`Polarized.EllisJaffeSumRule`, so the parton model discharges its `moment_decomposition` field
+with vanishing perturbative correction, and the Ellis–Jaffe sum rule holds for it exactly when
+the strange helicity charge vanishes (`ellisJaffeSumRule_partonModel_iff`). Because `g₂`
+vanishes identically in this model, its first moment vanishes and the Burkhardt-Cottingham sum
+rule holds unconditionally (`firstMomentG2_partonModel`, `burkhardtCottingham_partonModel`).
 
 ## Main definitions
 
@@ -98,7 +99,7 @@ namespace DIS
 namespace Polarized
 
 open EpsilonEridani.Particles.Parton
-open EpsilonEridani.Particles.Parton.PDF (Pdf mellinMoment SpinDensity SpinDensityAssumptions
+open EpsilonEridani.Particles.Parton.PDF (Pdf helicityCharge SpinDensity SpinDensityAssumptions
   helicityPdfOfSpinDensity)
 open MeasureTheory
 
@@ -219,25 +220,23 @@ theorem assumptions_partonModel_helicityPdfOfSpinDensity (charge : Flavor → �
     simpa only [PDF.helicityPdfOfSpinDensity_apply] using hmq f Q2
   have hrbar := PDF.regularity_helicityPdfOfSpinDensity hAbar.regularity fun f Q2 => by
     simpa only [PDF.helicityPdfOfSpinDensity_apply] using hmqbar f Q2
-  refine assumptions_partonModel charge (fun f x Q2 hx => ?_) (fun f x Q2 hx => ?_) hmq hmqbar
-    (fun f Q2 => ?_) fun f Q2 => ?_
+  rw [← PDF.comap_helicityPdfOfSpinDensity] at hr hrbar
+  refine assumptions_partonModel_of_pdfRegularity charge (fun f x Q2 hx => ?_)
+    (fun f x Q2 hx => ?_) hr hrbar
   · simpa only [PDF.helicityPdfOfSpinDensity_apply] using
-      PDF.helicityPdfOfSpinDensity_eq_zero (hA.support f x Q2 hx)
+      PDF.helicityPdfOfSpinDensity_eq_zero_of_pdfOfSpinDensity_eq_zero (hA.support f x Q2 hx)
   · simpa only [PDF.helicityPdfOfSpinDensity_apply] using
-      PDF.helicityPdfOfSpinDensity_eq_zero (hAbar.support f x Q2 hx)
-  · simpa only [PDF.helicityPdfOfSpinDensity_apply] using hr.integrableOn f Q2
-  · simpa only [PDF.helicityPdfOfSpinDensity_apply] using hrbar.integrableOn f Q2
+      PDF.helicityPdfOfSpinDensity_eq_zero_of_pdfOfSpinDensity_eq_zero (hAbar.support f x Q2 hx)
 
 /-- **The first moment of the parton-model `g₁`** is half the charge-weighted sum of the helicity
-charges `∫₀¹ dx (Δq + Δqbar)`, written as the zeroth Mellin moments of the quark and antiquark
-helicity densities. Only the quark and antiquark densities need be integrable. -/
+charges `PDF.helicityCharge Δ q = ∫₀¹ dx (Δq + Δqbar)`. Only the quark and antiquark densities
+need be integrable. -/
 theorem firstMomentG1_partonModel (charge : Flavor → ℝ) {Δ : Pdf (Species Flavor)} {Q2 : ℝ}
     (hiq : ∀ f, IntegrableOn (fun x : ℝ => Δ (.quark f) x Q2) (Set.Icc 0 1))
     (hiqbar : ∀ f, IntegrableOn (fun x : ℝ => Δ (.antiquark f) x Q2) (Set.Icc 0 1)) :
     firstMomentG1 (partonModel charge Δ) Q2 =
-      (1 / 2) * ∑ f, charge f ^ 2 *
-        (mellinMoment Δ 0 (.quark f) Q2 + mellinMoment Δ 0 (.antiquark f) Q2) := by
-  simp only [firstMomentG1, partonModel_g1, PDF.mellinMoment_zero]
+      (1 / 2) * ∑ f, charge f ^ 2 * helicityCharge Δ f Q2 := by
+  simp only [firstMomentG1, partonModel_g1, PDF.helicityCharge_def, PDF.mellinMoment_zero]
   rw [integral_const_mul, integral_finsetSum]
   · congr 1
     refine Finset.sum_congr rfl fun f _ => ?_
@@ -252,9 +251,8 @@ theorem firstMomentG1_partonModel_lightFlavor {Δ : Pdf (Species LightFlavor)} {
     (hiqbar : ∀ f, IntegrableOn (fun x : ℝ => Δ (.antiquark f) x Q2) (Set.Icc 0 1)) :
     firstMomentG1 (partonModel LightFlavor.charge Δ) Q2 =
       (1 / 2) *
-        ((4 / 9) * (mellinMoment Δ 0 (.quark .u) Q2 + mellinMoment Δ 0 (.antiquark .u) Q2) +
-          (1 / 9) * (mellinMoment Δ 0 (.quark .d) Q2 + mellinMoment Δ 0 (.antiquark .d) Q2) +
-          (1 / 9) * (mellinMoment Δ 0 (.quark .s) Q2 + mellinMoment Δ 0 (.antiquark .s) Q2)) := by
+        ((4 / 9) * helicityCharge Δ .u Q2 + (1 / 9) * helicityCharge Δ .d Q2 +
+          (1 / 9) * helicityCharge Δ .s Q2) := by
   rw [firstMomentG1_partonModel _ hiq hiqbar, LightFlavor.sum_univ, LightFlavor.charge_u,
     LightFlavor.charge_d, LightFlavor.charge_s]
   ring
@@ -280,12 +278,9 @@ hypothesis the parton model does not supply. -/
 theorem ellisJaffeSumRule_partonModel_iff {Δ : Pdf (Species LightFlavor)}
     (hiq : ∀ f Q2, IntegrableOn (fun x : ℝ => Δ (.quark f) x Q2) (Set.Icc 0 1))
     (hiqbar : ∀ f Q2, IntegrableOn (fun x : ℝ => Δ (.antiquark f) x Q2) (Set.Icc 0 1)) :
-    EllisJaffeSumRule (partonModel LightFlavor.charge Δ)
-        (fun Q2 => mellinMoment Δ 0 (.quark .u) Q2 + mellinMoment Δ 0 (.antiquark .u) Q2)
-        (fun Q2 => mellinMoment Δ 0 (.quark .d) Q2 + mellinMoment Δ 0 (.antiquark .d) Q2)
-        (fun Q2 => mellinMoment Δ 0 (.quark .s) Q2 + mellinMoment Δ 0 (.antiquark .s) Q2)
-        (fun _ => 0) ↔
-      ∀ Q2, mellinMoment Δ 0 (.quark .s) Q2 + mellinMoment Δ 0 (.antiquark .s) Q2 = 0 := by
+    EllisJaffeSumRule (partonModel LightFlavor.charge Δ) (helicityCharge Δ .u)
+        (helicityCharge Δ .d) (helicityCharge Δ .s) (fun _ => 0) ↔
+      ∀ Q2, helicityCharge Δ .s Q2 = 0 := by
   refine ⟨fun h => h.strange_unpolarized, fun hs => ⟨fun Q2 => ?_, hs⟩⟩
   rw [firstMomentG1_partonModel_lightFlavor (hiq · Q2) (hiqbar · Q2), add_zero, mul_one]
 
