@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+public import TauCeti.Analysis.PDE.HeatKernel.Basic
 
 /-!
 # Normalised isotropic Gaussians
@@ -13,7 +14,8 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 The centred isotropic Gaussian density on a finite-dimensional real inner product space `V`,
 `gaussianDensity m R x = m (π R²)^{-n/2} exp(-‖x‖²/R²)` with `n = finrank ℝ V`, normalised to
 integral `m` against Lebesgue measure when `R ≠ 0` (`integral_gaussianDensity`) and integrable
-for every range `R` (`integrable_gaussianDensity`).
+for every range `R` (`integrable_gaussianDensity`). It is `m` times TauCeti's heat kernel
+`TauCeti.heatKernel` at time `R² / 4`, whose normalisation it inherits.
 
 On the Euclidean plane, `gaussianProfile w y = exp (-‖y‖ ^ 2 / (2 * w ^ 2)) / (2 * π * w ^ 2)`
 is the unit-mass Gaussian parametrised by its width `w`, normalised to unit integral when
@@ -41,19 +43,18 @@ section Density
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- The centred isotropic Gaussian of range `R` and mass `m` on `V`,
-`m (π R²)^{-n/2} exp(-‖x‖²/R²)` with `n = finrank ℝ V`. For `R ≠ 0` it integrates to `m`
-(`integral_gaussianDensity`). -/
+`m (π R²)^{-n/2} exp(-‖x‖²/R²)` with `n = finrank ℝ V`: `m` times the heat kernel at time
+`R² / 4`. For `R ≠ 0` it integrates to `m` (`integral_gaussianDensity`). -/
 def gaussianDensity (m R : ℝ) (x : V) : ℝ :=
-  m / (π * R ^ 2) ^ (Module.finrank ℝ V / 2 : ℝ) * exp (-(R ^ 2)⁻¹ * ‖x‖ ^ 2)
+  m * TauCeti.heatKernel (R ^ 2 / 4) x
 
 theorem gaussianDensity_def (m R : ℝ) (x : V) :
-    gaussianDensity m R x =
-      m / (π * R ^ 2) ^ (Module.finrank ℝ V / 2 : ℝ) * exp (-(R ^ 2)⁻¹ * ‖x‖ ^ 2) :=
+    gaussianDensity m R x = m * TauCeti.heatKernel (R ^ 2 / 4) x :=
   (rfl)
 
 theorem gaussianDensity_nonneg {m : ℝ} (hm : 0 ≤ m) (R : ℝ) (x : V) :
     0 ≤ gaussianDensity m R x := by
-  rw [gaussianDensity_def]
+  rw [gaussianDensity_def, TauCeti.heatKernel_apply]
   positivity
 
 variable [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
@@ -62,11 +63,8 @@ variable [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
 @[simp]
 theorem integral_gaussianDensity (m : ℝ) {R : ℝ} (hR : R ≠ 0) :
     ∫ x : V, gaussianDensity m R x = m := by
-  have hc : 0 < (π * R ^ 2) ^ (Module.finrank ℝ V / 2 : ℝ) := by positivity
   simp only [gaussianDensity_def, integral_const_mul,
-    GaussianFourier.integral_rexp_neg_mul_sq_norm (by positivity : 0 < (R ^ 2)⁻¹),
-    div_inv_eq_mul]
-  exact div_mul_cancel₀ m hc.ne'
+    TauCeti.integral_heatKernel (by positivity : 0 < R ^ 2 / 4), mul_one]
 
 /-- The Gaussian density is integrable, for every range `R`. -/
 theorem integrable_gaussianDensity (m R : ℝ) : Integrable (gaussianDensity (V := V) m R) := by
@@ -75,15 +73,12 @@ theorem integrable_gaussianDensity (m R : ℝ) : Integrable (gaussianDensity (V 
     · -- On the zero space every function is integrable: the space is a point of finite volume.
       have : Subsingleton V := Module.finrank_zero_iff.1 hV
       exact Integrable.of_subsingleton
-    · -- In positive dimension the coefficient `m / 0 ^ (n / 2)` vanishes.
-      have hV' : (Module.finrank ℝ V / 2 : ℝ) ≠ 0 := by positivity
+    · -- In positive dimension the heat kernel at time `0` vanishes: `0 ^ (-n / 2) = 0`.
+      have hV' : (-(Module.finrank ℝ V : ℝ) / 2) ≠ 0 := by
+        simp [hV]
       refine (integrable_zero V ℝ volume).congr (.of_forall fun x => ?_)
-      simp [gaussianDensity_def, zero_rpow hV']
-  · -- The Bochner integral of a non-integrable function is `0`, so a nonzero integral forces
-    -- integrability.
-    refine Integrable.const_mul (Integrable.of_integral_ne_zero ?_) _
-    rw [GaussianFourier.integral_rexp_neg_mul_sq_norm (by positivity : 0 < (R ^ 2)⁻¹)]
-    positivity
+      simp [gaussianDensity_def, TauCeti.heatKernel_apply, zero_rpow hV']
+  · exact (TauCeti.integrable_heatKernel (by positivity : 0 < R ^ 2 / 4)).const_mul m
 
 end Density
 
@@ -118,9 +113,9 @@ theorem integral_exp_neg_mul_sq_norm_plane {b : ℝ} (hb : 0 < b) :
 theorem gaussianProfile_eq_gaussianDensity (w : ℝ) :
     gaussianProfile w = gaussianDensity 1 (√2 * w) := by
   ext y
-  rw [gaussianProfile_def, gaussianDensity_def, finrank_euclideanSpace_fin, mul_pow,
-    sq_sqrt zero_le_two]
-  norm_num
+  rw [gaussianProfile_def, gaussianDensity_def, TauCeti.heatKernel_apply,
+    finrank_euclideanSpace_fin, mul_pow, sq_sqrt zero_le_two]
+  norm_num [rpow_neg_one]
   ring_nf
 
 /-- The Gaussian profile is normalised. -/
