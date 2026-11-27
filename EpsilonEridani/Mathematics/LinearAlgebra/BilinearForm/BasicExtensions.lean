@@ -5,7 +5,7 @@ Authors: Joseph Tooby-Smith, Wouter Deconinck
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearForm.Basic
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.Tactic.Ring
 
 /-!
@@ -29,6 +29,9 @@ the virtuality `-(k - k')²` computed from the lepton momenta before the emissio
   `B (u - z v) (u - z v) = z B (u - v) (u - v) + (1 - z) (B u u - z B v v)`.
 * `LinearMap.BilinForm.apply_smul_sub_self`:
   `B (z u - v) (z u - v) = z B (u - v) (u - v) + (1 - z) (B v v - z B u u)`.
+* `LinearMap.BilinForm.apply_sub_smul_add_add_smul_sub`: for symmetric `B`,
+  `B (b - a) (x (a + b) + y (b - a)) = x (B b b - B a a) + y B (b - a) (b - a)`; for momenta `a`,
+  `b` of equal mass the sum `a + b` is orthogonal to the difference `b - a`.
 -/
 
 public section
@@ -59,5 +62,15 @@ theorem apply_smul_sub_self (B : BilinForm R M) (u v : M) (z : R) :
   rw [← neg_sub v (z • u), ← neg_sub v u]
   simp only [map_neg, LinearMap.neg_apply, neg_neg]
   exact apply_sub_smul_self B v u z
+
+/-- Contraction of a combination of the sum and difference of two vectors with their difference,
+for a symmetric form: `(b - a) · (x (a + b) + y (b - a)) = x (b² - a²) + y (b - a)²`. -/
+theorem apply_sub_smul_add_add_smul_sub (B : BilinForm R M) (hSymm : B.IsSymm) (a b : M)
+    (x y : R) :
+    B (b - a) (x • (a + b) + y • (b - a)) = x * (B b b - B a a) + y * B (b - a) (b - a) := by
+  have h : B b a = B a b := hSymm.eq b a
+  simp only [map_add, map_sub, map_smul, LinearMap.sub_apply, smul_eq_mul]
+  rw [h]
+  ring
 
 end LinearMap.BilinForm

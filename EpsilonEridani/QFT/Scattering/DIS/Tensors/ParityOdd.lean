@@ -43,11 +43,11 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
 
 The kinematic hypotheses come from `Tensors.Basic`: `SpectatorPair` (two non-null, mutually
 orthogonal spectator directions `e₁`, `e₂`), `SpectatorPlane` (a `SpectatorPair` completing
-`p_T`, `q` to a frame of `V`) and `SpectatorSplitting` (every vector splits into `p_T`, `q`
-and spectator parts), together with the determinant-one half-turn `exists_half_turn`. A
-`SpectatorPlane` is the only place where four-dimensionality enters the hypotheses on the
-tensor `W`; the canonical structure `A` needs an alternating four-form — and, for its proper
-covariance, a basis of four vectors — separately.
+`p_T`, `q` to a frame of `V`) and `LinearMap.BilinForm.IsOrthogonalSpanning` (every vector splits
+into `p_T`, `q` and spectator parts), together with the determinant-one half-turn
+`exists_half_turn`. A `SpectatorPlane` is the only place where four-dimensionality enters the
+hypotheses on the tensor `W`; the canonical structure `A` needs an alternating four-form — and,
+for its proper covariance, a basis of four vectors — separately.
 
 ## Main results
 
@@ -64,9 +64,10 @@ covariance, a basis of four vectors — separately.
   `ParityOddAssumptions.apply_pTransverse_right_eq_zero_of_spectatorPlane`,
   `ParityOddAssumptions.apply_p_right_eq_zero_of_spectatorPlane` (second slot): a parity-odd
   tensor annihilates `p_T` and `p` in both slots under a `SpectatorPlane`.
-- `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under a `SpectatorSplitting` in which
-  non-zero spectators are non-null, the parity-odd part vanishes under
-  full covariance. No four-dimensionality enters.
+- `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under a
+  `LinearMap.BilinForm.IsOrthogonalSpanning` in which non-zero spectators are non-null
+  (`LinearMap.BilinForm.IsAnisotropicOrthogonalCompl`), the parity-odd part vanishes under full
+  covariance. No four-dimensionality enters.
 - `Witness.aFour`: on Minkowski space `ℝ⁴` at the witness kinematics `kFour` — where
   `p·q ≠ 0`, so the DIS invariants are non-degenerate — the determinant contraction
   `ε(·, ·, p, q)` is a non-zero parity-odd tensor (`Witness.parityOddAssumptions_aFour`,
@@ -256,29 +257,31 @@ theorem existsUnique_eq_smul (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
   simp only [LinearMap.smul_apply, smul_eq_mul]
   field_simp [hA.apply_e₁_e₂_ne_zero hSymm hP hA0]
 
-/-- **Parity conservation removes the parity-odd sector.** Under a `SpectatorSplitting` in
-which every non-zero spectator is non-null, a parity-odd tensor
-that is covariant under every stabilizer element, reflections included, vanishes. No
-dimension hypothesis is needed. -/
-theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm) (hS : SpectatorSplitting g K)
-    (hnull : ∀ u : V, g K.q u = 0 → g (pTransverse g K) u = 0 → u ≠ 0 → g u u ≠ 0)
+/-- **Parity conservation removes the parity-odd sector.** Under a
+`LinearMap.BilinForm.IsOrthogonalSpanning` in which every non-zero spectator is non-null
+(`LinearMap.BilinForm.IsAnisotropicOrthogonalCompl`), a parity-odd tensor that is covariant under
+every stabilizer element, reflections included, vanishes. No dimension hypothesis is needed. -/
+theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm)
+    (hS : g.IsOrthogonalSpanning (pTransverse g K) K.q)
+    (hnull : g.IsAnisotropicOrthogonalCompl (pTransverse g K) K.q)
     (hW : ParityOddAssumptions g K W) (hcov : IsLorentzCovariant g K W) : W = 0 := by
   -- The reflection in a spectator `u` kills every component of `W` between `u` and `u^⊥`.
   have hperp : ∀ u v : V, g K.q u = 0 → g (pTransverse g K) u = 0 → g u v = 0 →
       W u v = 0 := fun u _ huq huT huv =>
-    covariant_spectator_offDiagonal_zero g K W hSymm hcov (hnull u huq huT) huq huT huv
+    covariant_spectator_offDiagonal_zero g K W hSymm hcov (hnull.apply_self_ne_zero u huT huq) huq
+      huT huv
   -- Two spectators: split `u'` along `u` and its orthogonal complement.
   have hspec : ∀ u u' : V, g K.q u = 0 → g (pTransverse g K) u = 0 → W u u' = 0 := by
     intro u u' huq huT
     by_cases hu : u = 0
     · simp [hu]
-    have huu := hnull u huq huT hu
+    have huu := hnull.apply_self_ne_zero u huT huq hu
     have h := hperp u (u' - (g u u' / g u u) • u) huq huT (by
       rw [map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ huu, sub_self])
     rwa [map_sub, map_smul, hW.isAlt.self_eq_zero, smul_zero, sub_zero] at h
   refine LinearMap.ext₂ fun v w => ?_
-  obtain ⟨a, b, u, huq, huT, rfl⟩ := hS.span v
-  obtain ⟨a', b', u', hu'q, hu'T, rfl⟩ := hS.span w
+  obtain ⟨a, b, u, huT, huq, rfl⟩ := hS.span v
+  obtain ⟨a', b', u', hu'T, hu'q, rfl⟩ := hS.span w
   have hTu' : W (pTransverse g K) u' = 0 := hW.isAlt.isRefl.eq_zero (hspec u' _ hu'q hu'T)
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
     hW.conserved_left, hW.conserved_right, hW.isAlt.self_eq_zero, hTu', hspec u _ huq huT,
@@ -374,7 +377,7 @@ lemma parityOddAssumptions_aOfAlt (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] �
   proper_covariant f hf hdet v w := by
     have hvec : ![f v, f w, K.p, K.q] = f ∘ ![v, w, K.p, K.q] := by
       ext1 i
-      fin_cases i <;> simp [hf.fixes_p, hf.fixes_q]
+      fin_cases i <;> simp [hf.fixes_left, hf.fixes_right]
     obtain ⟨c, hc⟩ : ∃ c : ℝ, ε = c • b.det := ⟨ε b, ε.eq_smul_basis_det b⟩
     simp only [aOfAlt_apply, hc, IsSMulApply.smul_apply, smul_eq_mul, hvec,
       Module.Basis.det_comp, hdet, one_mul]
@@ -523,8 +526,8 @@ lemma gFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
 non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
 lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour aFour := fun h =>
   aFour_ne_zero (parityOddAssumptions_aFour.eq_zero_of_isLorentzCovariant gFour_isSymm
-    spectatorPlaneFour.toSpectatorSplitting
-    (fun _ hq hT hu => gFour_self_ne_zero_of_spectator hq hT hu) h)
+    spectatorPlaneFour.isOrthogonalSpanning
+    ⟨fun _ hT hq hu => gFour_self_ne_zero_of_spectator hq hT hu⟩ h)
 
 end Witness
 
