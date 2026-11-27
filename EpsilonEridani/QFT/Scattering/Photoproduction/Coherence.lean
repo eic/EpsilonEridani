@@ -16,10 +16,10 @@ A source of finite size emits an equivalent photon coherently, from its whole ch
 if the photon does not resolve the charge distribution. Write the normalised charge distribution
 of the source in its rest frame as a probability measure `μ` on space, with root-mean-square radius
 `R`, `R² = ∫ ‖r‖² dμ`. A photon that leaves the source with four-momentum transfer `q` probes
-`μ` through its form factor `F(q) = ∫ exp (i ⟪r, q⟫) dμ`, Mathlib's characteristic function
-`MeasureTheory.charFun μ` evaluated at the spatial momentum `q` of the photon in that frame. The
-coherent emission amplitude is that of a point charge times `F(q)`, so the coherent rate carries
-`‖F(q)‖²`.
+`μ` through its form factor `F(q) = ∫ exp (i ⟪r, q.spatialPart⟫) dμ`, Mathlib's characteristic
+function `MeasureTheory.charFun μ` evaluated at the spatial momentum `q.spatialPart` of the photon
+in that frame. The coherent emission amplitude is that of a point charge times `F(q)`, so the
+coherent rate carries `‖F(q)‖²`.
 
 This file bounds the form factor above and below the scale `Q² ~ 1 / R²` of the virtuality
 `Q² = -⟪q, q⟫ₘ`: below it the departure of the form factor from the point-charge value is
@@ -27,15 +27,15 @@ controlled by `Q² R²`, and beyond it the squared form factor of a Gaussian sou
 
 * Below the scale the source is not resolved, for any charge distribution of finite radius:
   in the source rest frame the spatial momentum transfer is fixed by the virtuality,
-  `‖q‖² = Q² (1 + Q² / (4 m²))`
+  `‖q.spatialPart‖² = Q² (1 + Q² / (4 m²))`
   (`Lorentz.Vector.norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_massShell`),
-  and `1 - ‖F(q)‖ ≤ ‖q‖² R² / 2` (`MeasureTheory.one_sub_norm_charFun_le`). Together they give
-  `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) R² / 2` (`one_sub_norm_charFun_spatialPart_sub_le`). So
-  `‖F‖` stays close to one, the value for a point charge, while `Q² R²` is small against one and
+  and `1 - ‖F(q)‖ ≤ ‖q.spatialPart‖² R² / 2` (`MeasureTheory.one_sub_norm_charFun_le`). Together
+  they give `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) R² / 2` (`one_sub_norm_charFun_spatialPart_sub_le`).
+  So `‖F‖` stays close to one, the value for a point charge, while `Q² R²` is small against one and
   the recoil factor `1 + Q² / (4 m²)` stays bounded; under `Q² R² ≲ 1` the latter holds for a
   source with `m R ≳ 1`. For the isotropic Gaussian charge distribution of width `σ` in `d`
   dimensions, the exact form factor `ProbabilityTheory.norm_charFun_map_smul_stdGaussian` gives
-  the bound sharper by the factor `d`, `1 - ‖F(q)‖ ≤ ‖q‖² σ² / 2`
+  the bound sharper by the factor `d`, `1 - ‖F(q)‖ ≤ ‖q.spatialPart‖² σ² / 2`
   (`ProbabilityTheory.one_sub_norm_charFun_map_smul_stdGaussian_le`), that is
   `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`
   (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le`), or in its mean square radius
@@ -50,12 +50,12 @@ controlled by `Q² R²`, and beyond it the squared form factor of a Gaussian sou
   It is composed from the general squared form factor
   `ProbabilityTheory.norm_sq_charFun_map_smul_stdGaussian` of the dilated Gaussian, whose second
   moment `ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian` gives `R² = d σ²`, and from
-  `Q² ≤ ‖q‖²` (`Lorentz.Vector.neg_minkowskiProduct_self_le_norm_spatialPart_sq`). The inequality
-  itself is a frame-agnostic bound, holding for the spatial part of `q` in every frame; it reads
-  as the suppression factor of the coherent rate only when `q.spatialPart` is the momentum
-  transfer in the rest frame of the source, in which `μ` is its charge distribution. Some shape
-  assumption is needed here: the form factor of two point charges a distance `2 R` apart is
-  `cos ⟪r₀, q⟫` and does not decay at all.
+  `Q² ≤ ‖q.spatialPart‖²` (`Lorentz.Vector.neg_minkowskiProduct_self_le_norm_spatialPart_sq`).
+  The inequality itself is a frame-agnostic bound, holding for the spatial part of `q` in every
+  frame; it reads as the suppression factor of the coherent rate only when `q.spatialPart` is the
+  momentum transfer in the rest frame of the source, in which `μ` is its charge distribution. Some
+  shape assumption is needed here: the form factor of two point charges a distance `2 R` apart is
+  `cos ⟪r₀, q.spatialPart⟫` and does not decay at all.
 
 Within the coherence condition `Q² R² ≤ 1`, taken as a hypothesis on the photon variables, the
 photon energy in the collider frame is bounded by the Lorentz factor over the radius, `k R < γ`,
@@ -158,8 +158,8 @@ theorem norm_sq_charFun_map_smul_stdGaussian_spatialPart_le {d : ℕ} (σ : ℝ)
     ‖charFun ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) q.spatialPart‖ ^ 2 ≤
       Real.exp (-(σ ^ 2 * -⟪q, q⟫ₘ)) := by
   rw [norm_sq_charFun_map_smul_stdGaussian]
-  -- the virtuality is at most the squared spatial momentum, `Q² = ‖q‖² - (q⁰)² ≤ ‖q‖²`, in
-  -- every frame
+  -- the virtuality is at most the squared spatial momentum,
+  -- `Q² = ‖q.spatialPart‖² - (q⁰)² ≤ ‖q.spatialPart‖²`, in every frame
   have hQ : -⟪q, q⟫ₘ ≤ ‖q.spatialPart‖ ^ 2 :=
     Lorentz.Vector.neg_minkowskiProduct_self_le_norm_spatialPart_sq q
   exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_left hQ (sq_nonneg σ)))
