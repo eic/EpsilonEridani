@@ -53,6 +53,9 @@ only one scale.
   momentum sum.
 * `PDF.chargeConj_weight`: it commutes with a species-wise rescaling, conjugating the weight.
 * `PDF.valenceNumber_chargeConj`: it negates the valence numbers.
+* `PDF.helicityCharge_chargeConj`: it preserves the helicity charges.
+* `PDF.helicityCharge_eq_integral`: for integrable densities the helicity charge is
+  `∫₀¹ (Δq_i + Δqbar_i)`.
 * `PDF.valenceNumber_eq_sub_valenceTarget`: under the sum-rule bundle, the valence number is the
   quark target minus the antiquark target.
 * `PDF.forall_valenceNumber_eq_iff_valenceTarget`: under the sum-rule bundle, prescribed valence
@@ -213,6 +216,23 @@ def helicityCharge (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) : ℝ :=
 theorem helicityCharge_def (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) :
     helicityCharge f i Q2 = mellinMoment f 0 (.quark i) Q2 + mellinMoment f 0 (.antiquark i) Q2 :=
   (rfl)
+
+/-- When the quark and antiquark densities of flavour `i` are integrable on the unit interval, the
+helicity charge is the single integral `∫₀¹ (Δq_i(x, Q²) + Δqbar_i(x, Q²)) dx`. -/
+theorem helicityCharge_eq_integral {f : Pdf (Species Flavor)} {i : Flavor} {Q2 : ℝ}
+    (hq : MeasureTheory.IntegrableOn (fun x : ℝ => f (.quark i) x Q2) (Set.Icc 0 1))
+    (hqbar : MeasureTheory.IntegrableOn (fun x : ℝ => f (.antiquark i) x Q2) (Set.Icc 0 1)) :
+    helicityCharge f i Q2 =
+      ∫ x in Set.Icc (0 : ℝ) 1, (f (.quark i) x Q2 + f (.antiquark i) x Q2) := by
+  rw [helicityCharge_def, mellinMoment_zero, mellinMoment_zero,
+    MeasureTheory.integral_add hq hqbar]
+
+/-- Charge conjugation preserves the helicity charge of every flavour: it exchanges the quark and
+antiquark terms of the sum. -/
+@[simp]
+theorem helicityCharge_chargeConj (f : Pdf (Species Flavor)) (i : Flavor) (Q2 : ℝ) :
+    helicityCharge (chargeConj f) i Q2 = helicityCharge f i Q2 := by
+  simp [helicityCharge_def, add_comm]
 
 end PDF
 

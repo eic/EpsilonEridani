@@ -236,11 +236,9 @@ theorem firstMomentG1_partonModel (charge : Flavor → ℝ) {Δ : Pdf (Species F
     (hiqbar : ∀ f, IntegrableOn (fun x : ℝ => Δ (.antiquark f) x Q2) (Set.Icc 0 1)) :
     firstMomentG1 (partonModel charge Δ) Q2 =
       (1 / 2) * ∑ f, charge f ^ 2 * helicityCharge Δ f Q2 := by
-  simp only [firstMomentG1, partonModel_g1, PDF.helicityCharge_def, PDF.mellinMoment_zero]
+  simp only [firstMomentG1, partonModel_g1, PDF.helicityCharge_eq_integral (hiq _) (hiqbar _)]
   rw [integral_const_mul, integral_finsetSum]
-  · congr 1
-    refine Finset.sum_congr rfl fun f _ => ?_
-    rw [integral_const_mul, integral_add (hiq f) (hiqbar f)]
+  · simp only [integral_const_mul]
   · exact fun f _ => ((hiq f).add (hiqbar f)).const_mul _
 
 /-- For the light flavours with their physical charges, the first moment of the parton-model
