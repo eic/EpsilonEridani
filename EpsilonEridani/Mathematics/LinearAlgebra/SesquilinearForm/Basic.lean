@@ -14,7 +14,8 @@ The maps `f` preserving a bilinear form `B`, `LinearMap.IsOrthogonal B f`, conta
 (`LinearMap.isOrthogonal_id`) and are closed under composition (`LinearMap.IsOrthogonal.comp`).
 The same holds for the stabilizer `LinearMap.BilinForm.IsPairStabilizer B a b` of a pair of
 vectors inside the isometries (`LinearMap.BilinForm.isPairStabilizer_id`,
-`LinearMap.BilinForm.IsPairStabilizer.comp`).
+`LinearMap.BilinForm.IsPairStabilizer.comp`), which fixes every combination of the two vectors
+(`LinearMap.BilinForm.IsPairStabilizer.apply_smul_add_smul`).
 -/
 
 public section
@@ -60,6 +61,11 @@ lemma IsPairStabilizer.comp {a b : M} {f f' : M →ₗ[R] M}
   isOrthogonal := by rw [LinearMap.coe_comp]; exact hf.isOrthogonal.comp hf'.isOrthogonal
   fixes_left := by rw [LinearMap.comp_apply, hf'.fixes_left, hf.fixes_left]
   fixes_right := by rw [LinearMap.comp_apply, hf'.fixes_right, hf.fixes_right]
+
+/-- A stabilizer of the pair `(a, b)` fixes every combination of `a` and `b`. -/
+lemma IsPairStabilizer.apply_smul_add_smul {a b : M} {f : M →ₗ[R] M}
+    (hf : B.IsPairStabilizer a b f) (x y : R) : f (x • a + y • b) = x • a + y • b := by
+  rw [map_add, map_smul, map_smul, hf.fixes_left, hf.fixes_right]
 
 end BilinForm
 

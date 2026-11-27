@@ -43,7 +43,7 @@ The parity-odd sector is governed instead by `IsProperLorentzCovariant` (from
 
 The kinematic hypotheses come from `Tensors.Basic`: `SpectatorPair` (two non-null, mutually
 orthogonal spectator directions `e₁`, `e₂`), `SpectatorPlane` (a `SpectatorPair` completing
-`p_T`, `q` to a frame of `V`) and `LinearMap.BilinForm.IsOrthogonalSplit` (every vector splits
+`p_T`, `q` to a frame of `V`) and `LinearMap.BilinForm.IsOrthogonalSpanning` (every vector splits
 into `p_T`, `q` and spectator parts), together with the determinant-one half-turn
 `exists_half_turn`. A `SpectatorPlane` is the only place where four-dimensionality enters the
 hypotheses on the tensor `W`; the canonical structure `A` needs an alternating four-form — and,
@@ -65,8 +65,8 @@ for its proper covariance, a basis of four vectors — separately.
   `ParityOddAssumptions.apply_p_right_eq_zero_of_spectatorPlane` (second slot): a parity-odd
   tensor annihilates `p_T` and `p` in both slots under a `SpectatorPlane`.
 - `ParityOddAssumptions.eq_zero_of_isLorentzCovariant`: under a
-  `LinearMap.BilinForm.IsOrthogonalSplit` in which non-zero spectators are non-null
-  (`LinearMap.BilinForm.IsAnisotropicOrthogonal`), the parity-odd part vanishes under full
+  `LinearMap.BilinForm.IsOrthogonalSpanning` in which non-zero spectators are non-null
+  (`LinearMap.BilinForm.IsAnisotropicOrthogonalCompl`), the parity-odd part vanishes under full
   covariance. No four-dimensionality enters.
 - `Witness.aFour`: on Minkowski space `ℝ⁴` at the witness kinematics `kFour` — where
   `p·q ≠ 0`, so the DIS invariants are non-degenerate — the determinant contraction
@@ -258,12 +258,12 @@ theorem existsUnique_eq_smul (hSymm : g.IsSymm) (hP : SpectatorPlane g K)
   field_simp [hA.apply_e₁_e₂_ne_zero hSymm hP hA0]
 
 /-- **Parity conservation removes the parity-odd sector.** Under a
-`LinearMap.BilinForm.IsOrthogonalSplit` in which every non-zero spectator is non-null
-(`LinearMap.BilinForm.IsAnisotropicOrthogonal`), a parity-odd tensor that is covariant under every
-stabilizer element, reflections included, vanishes. No dimension hypothesis is needed. -/
+`LinearMap.BilinForm.IsOrthogonalSpanning` in which every non-zero spectator is non-null
+(`LinearMap.BilinForm.IsAnisotropicOrthogonalCompl`), a parity-odd tensor that is covariant under
+every stabilizer element, reflections included, vanishes. No dimension hypothesis is needed. -/
 theorem eq_zero_of_isLorentzCovariant (hSymm : g.IsSymm)
-    (hS : g.IsOrthogonalSplit (pTransverse g K) K.q)
-    (hnull : g.IsAnisotropicOrthogonal (pTransverse g K) K.q)
+    (hS : g.IsOrthogonalSpanning (pTransverse g K) K.q)
+    (hnull : g.IsAnisotropicOrthogonalCompl (pTransverse g K) K.q)
     (hW : ParityOddAssumptions g K W) (hcov : IsLorentzCovariant g K W) : W = 0 := by
   -- The reflection in a spectator `u` kills every component of `W` between `u` and `u^⊥`.
   have hperp : ∀ u v : V, g K.q u = 0 → g (pTransverse g K) u = 0 → g u v = 0 →
@@ -526,7 +526,7 @@ lemma gFour_self_ne_zero_of_spectator {u : Fin 4 → ℝ}
 non-zero tensor `aFour` is not `IsLorentzCovariant`. -/
 lemma not_isLorentzCovariant_aFour : ¬ IsLorentzCovariant gFour kFour aFour := fun h =>
   aFour_ne_zero (parityOddAssumptions_aFour.eq_zero_of_isLorentzCovariant gFour_isSymm
-    spectatorPlaneFour.isOrthogonalSplit
+    spectatorPlaneFour.isOrthogonalSpanning
     ⟨fun _ hT hq hu => gFour_self_ne_zero_of_spectator hq hT hu⟩ h)
 
 end Witness
