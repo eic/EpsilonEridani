@@ -5,8 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
-public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.Reflection
-public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.SpectatorSplit
+public import EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.OrthogonalSplit
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness
 
 /-!
@@ -36,11 +35,14 @@ the spacelike region where the form factor is measured. Covariance at the transi
 reflections `LinearMap.BilinForm.reflection` in the *spectator* directions, those `g`-orthogonal
 to both momenta, each of which is such a stabilizer element
 (`LinearMap.BilinForm.reflection_isPairStabilizer`). The linear algebra that turns this into the
-two-structure form is collected in `FormFactor.SpectatorAssumptions`: every vector is a
-combination of the two momenta plus a spectator, and no non-zero spectator is null. These are
-statements about `g`, `p` and `p'`, not about the matrix element. They hold in Minkowski space
-whenever `p` is timelike, and they are verified below for an explicit transition on the `+--`
-form of `Kinematics.Witness.gWit` (`FormFactor.Witness.spectatorAssumptions_pWit`).
+two-structure form takes two hypotheses on the pair of momenta: every vector is a combination of
+the two momenta plus a spectator (`LinearMap.BilinForm.IsOrthogonalSplit`), and no non-zero
+spectator is null (`LinearMap.BilinForm.IsAnisotropicOrthogonal`). These are statements about
+`g`, `p` and `p'`, not about the matrix element. In Minkowski space they hold as soon as `p` is
+timelike: the plane spanned by the momenta then contains a timelike vector, so its orthogonal
+complement is spacelike and complementary to it. They are verified below for an explicit
+transition on the `+--` form of `Kinematics.Witness.gWit`
+(`FormFactor.Witness.isOrthogonalSplit_pWit`, `FormFactor.Witness.isAnisotropicOrthogonal_pWit`).
 
 ## The two steps
 
@@ -143,62 +145,27 @@ theorem isLorentzCovariant_smul_sub (g : Bilin V) (p p' : V) (B : ℝ) :
   exact isLorentzCovariant_smul_add_smul g p p' (-B) B
 
 /-- **Covariance has content.** A covariant matrix element has no component along a non-null
-spectator direction: the reflection in that direction fixes both momenta and reverses it. -/
+spectator direction: the reflection in that direction fixes both momenta and reverses it
+(`LinearMap.BilinForm.apply_eq_zero_of_forall_isPairStabilizer`). -/
 theorem IsLorentzCovariant.apply_spectator_eq_zero {g : Bilin V} (hSymm : g.IsSymm) {p p' J u : V}
     (hJ : IsLorentzCovariant g p p' J) (hu : g u u ≠ 0) (hpu : g p u = 0) (hp'u : g p' u = 0) :
-    g u J = 0 := by
-  have h := hJ _ (g.reflection_isPairStabilizer hSymm u (by rwa [hSymm.eq]) (by rwa [hSymm.eq]))
-  rw [LinearMap.BilinForm.reflection_apply, sub_eq_self, smul_eq_zero] at h
-  rcases h with h | h
-  · simpa [hu] using h
-  · simp [h] at hu
+    g u J = 0 :=
+  LinearMap.BilinForm.apply_eq_zero_of_forall_isPairStabilizer two_ne_zero hSymm hJ hu hpu hp'u
 
-/-- A covariant combination of the two momenta plus a spectator `u` has a null spectator part:
-were `u` non-null, the reflection in it would reverse it. -/
-theorem IsLorentzCovariant.apply_spectator_self_eq_zero {g : Bilin V} (hSymm : g.IsSymm)
-    {p p' u : V} (hpu : g p u = 0) (hp'u : g p' u = 0) {a b : ℝ}
-    (hJ : IsLorentzCovariant g p p' (a • p + b • p' + u)) : g u u = 0 := by
-  have hup : g u p = 0 := by rwa [hSymm.eq]
-  have hup' : g u p' = 0 := by rwa [hSymm.eq]
-  by_contra huu
-  exact huu (by simpa [map_add, map_smul, hup, hup'] using
-    hJ.apply_spectator_eq_zero hSymm huu hpu hp'u)
-
-/-- Linear-algebra inputs about the spectator subspace `{p, p'}^⊥` of an elastic transition that
-turn covariance into the two-structure form: the momenta split `V`
-(`LinearMap.BilinForm.IsSpectatorSplit`), and no non-zero spectator is null
-(`LinearMap.BilinForm.IsAnisotropicSpectator`). They are facts about `g`, `p` and `p'`, not about
-the matrix element. In Minkowski space they hold as soon as `p` is timelike: the plane spanned by
-the momenta then contains a timelike vector, so its orthogonal complement is spacelike and
-complementary to it. -/
-structure SpectatorAssumptions (g : Bilin V) (p p' : V) : Prop
-    extends g.IsSpectatorSplit p p' where
-  /-- No non-zero spectator is null, so the reflection in it reverses it. -/
-  anisotropic : g.IsAnisotropicSpectator p p'
-
-/-- A covariant combination of the two momenta plus a spectator `u` that is non-null unless zero
-has zero spectator part. -/
-theorem IsLorentzCovariant.spectator_eq_zero {g : Bilin V} (hSymm : g.IsSymm) {p p' u : V}
-    (hu : u ≠ 0 → g u u ≠ 0) (hpu : g p u = 0) (hp'u : g p' u = 0) {a b : ℝ}
-    (hJ : IsLorentzCovariant g p p' (a • p + b • p' + u)) : u = 0 := by
-  by_contra hu0
-  exact hu hu0 (hJ.apply_spectator_self_eq_zero hSymm hpu hp'u)
-
-/-- **Covariance leaves the two momenta.** Under `SpectatorAssumptions`, a covariant
-matrix element is a combination of `p` and `p'`. -/
+/-- **Covariance leaves the two momenta.** If the momenta split `V` and no non-zero spectator is
+null, a covariant matrix element is a combination of `p` and `p'`
+(`LinearMap.BilinForm.IsOrthogonalSplit.exists_eq_smul_add_smul`). -/
 theorem IsLorentzCovariant.exists_eq_smul_add_smul {g : Bilin V} (hSymm : g.IsSymm) {p p' J : V}
-    (hS : SpectatorAssumptions g p p') (hJ : IsLorentzCovariant g p p' J) :
-    ∃ a b : ℝ, J = a • p + b • p' := by
-  obtain ⟨a, b, u, hpu, hp'u, rfl⟩ := hS.span J
-  obtain rfl := hJ.spectator_eq_zero hSymm (hS.anisotropic u hpu hp'u) hpu hp'u
-  exact ⟨a, b, add_zero _⟩
+    (hS : g.IsOrthogonalSplit p p') (han : g.IsAnisotropicOrthogonal p p')
+    (hJ : IsLorentzCovariant g p p' J) : ∃ a b : ℝ, J = a • p + b • p' :=
+  hS.exists_eq_smul_add_smul han two_ne_zero hSymm hJ
 
-/-- Under `SpectatorAssumptions`, covariance leaves the sum and the difference of the
-momenta. -/
+/-- If the momenta split `V` and no non-zero spectator is null, covariance leaves the sum and the
+difference of the momenta. -/
 theorem IsLorentzCovariant.exists_eq_smul_add_add_smul_sub {g : Bilin V} (hSymm : g.IsSymm)
-    {p p' J : V} (hS : SpectatorAssumptions g p p') (hJ : IsLorentzCovariant g p p' J) :
-    ∃ A B : ℝ, J = A • (p + p') + B • (p' - p) := by
-  obtain ⟨a, b, rfl⟩ := hJ.exists_eq_smul_add_smul hSymm hS
+    {p p' J : V} (hS : g.IsOrthogonalSplit p p') (han : g.IsAnisotropicOrthogonal p p')
+    (hJ : IsLorentzCovariant g p p' J) : ∃ A B : ℝ, J = A • (p + p') + B • (p' - p) := by
+  obtain ⟨a, b, rfl⟩ := hJ.exists_eq_smul_add_smul hSymm hS han
   refine ⟨(a + b) / 2, (b - a) / 2, ?_⟩
   module
 
@@ -228,14 +195,15 @@ theorem smul_add_conserved {g : Bilin V} (hSymm : g.IsSymm) {p p' : V}
     (hm : g p p = g p' p') (A : ℝ) : g (p' - p) (A • (p + p')) = 0 := by
   simpa [hm] using apply_sub_smul_add_add_smul_sub hSymm p p' A 0
 
-/-- **One elastic form factor.** Under `SpectatorAssumptions`, at a transition between
-states of equal mass with non-zero momentum transfer and `p + p' ≠ 0`, a covariant and conserved
-matrix element of a vector current is a multiple of `p + p'`, by a unique coefficient. -/
+/-- **One elastic form factor.** If the momenta split `V` and no non-zero spectator is null, at a
+transition between states of equal mass with non-zero momentum transfer and `p + p' ≠ 0`, a
+covariant and conserved matrix element of a vector current is a multiple of `p + p'`, by a unique
+coefficient. -/
 theorem IsLorentzCovariant.existsUnique_eq_smul {g : Bilin V} (hSymm : g.IsSymm) {p p' J : V}
-    (hS : SpectatorAssumptions g p p') (hm : g p p = g p' p')
+    (hS : g.IsOrthogonalSplit p p') (han : g.IsAnisotropicOrthogonal p p') (hm : g p p = g p' p')
     (ht : g (p' - p) (p' - p) ≠ 0) (hP : p + p' ≠ 0) (hJ : IsLorentzCovariant g p p' J)
     (hcons : g (p' - p) J = 0) : ∃! A : ℝ, J = A • (p + p') := by
-  obtain ⟨A, B, rfl⟩ := hJ.exists_eq_smul_add_add_smul_sub hSymm hS
+  obtain ⟨A, B, rfl⟩ := hJ.exists_eq_smul_add_add_smul_sub hSymm hS han
   obtain rfl := eq_zero_of_smul_add_add_smul_sub_conserved hSymm hm ht hcons
   refine ⟨A, by rw [zero_smul, add_zero], fun A' hA' => ?_⟩
   rw [zero_smul, add_zero] at hA'
@@ -281,24 +249,29 @@ theorem gWit_pWitPrime_sub_pWit_self_eq_neg_twelve :
 theorem pWit_add_pWitPrime_ne_zero : pWit + pWitPrime ≠ 0 := by
   norm_num [Prod.ext_iff]
 
-/-- The spectator assumptions hold at the witness transition. -/
-theorem spectatorAssumptions_pWit : SpectatorAssumptions gWit pWit pWitPrime := by
-  -- The Gram determinant of the two momenta is `9 · 9 - 15 · 15 = -144`.
-  refine ⟨gWit.isSpectatorSplit_of_gramDet_ne_zero (by norm_num), fun u hup hup' hu => ?_⟩
-  · obtain ⟨u₀, u₁, u₂⟩ := u
-    simp only [gWit_apply, pWit_def, pWitPrime_def] at hup hup' ⊢
-    have h₀ : u₀ = 0 := by linarith
-    have h₁ : u₁ = 0 := by subst h₀; linarith
-    subst h₀ h₁
-    have h₂ : u₂ ≠ 0 := fun h => hu (by simp [h])
-    simpa using h₂
+/-- The witness momenta split the space: their Gram determinant is
+`9 · 9 - 15 · 15 = -144 ≠ 0`. -/
+theorem isOrthogonalSplit_pWit : gWit.IsOrthogonalSplit pWit pWitPrime :=
+  gWit.isOrthogonalSplit_of_gramDet_ne_zero (by norm_num)
+
+/-- No non-zero spectator of the witness transition is null: the spectators are the multiples of
+`(0, 0, 1)`. -/
+theorem isAnisotropicOrthogonal_pWit : gWit.IsAnisotropicOrthogonal pWit pWitPrime := by
+  refine ⟨fun u hup hup' hu => ?_⟩
+  obtain ⟨u₀, u₁, u₂⟩ := u
+  simp only [gWit_apply, pWit_def, pWitPrime_def] at hup hup' ⊢
+  have h₀ : u₀ = 0 := by linarith
+  have h₁ : u₁ = 0 := by subst h₀; linarith
+  subst h₀ h₁
+  have h₂ : u₂ ≠ 0 := fun h => hu (by simp [h])
+  simpa using h₂
 
 /-- **One elastic form factor at the witness transition.** A covariant and conserved matrix
 element at the witness transition is a unique multiple of `pWit + pWitPrime`. -/
 theorem existsUnique_eq_smul_pWit {J : ℝ × ℝ × ℝ}
     (hJ : IsLorentzCovariant gWit pWit pWitPrime J) (hcons : gWit (pWitPrime - pWit) J = 0) :
     ∃! A : ℝ, J = A • (pWit + pWitPrime) :=
-  hJ.existsUnique_eq_smul gWit_isSymm spectatorAssumptions_pWit
+  hJ.existsUnique_eq_smul gWit_isSymm isOrthogonalSplit_pWit isAnisotropicOrthogonal_pWit
     (gWit_pWit_self_eq_nine.trans gWit_pWitPrime_self_eq_nine.symm)
     (by rw [gWit_pWitPrime_sub_pWit_self_eq_neg_twelve]; norm_num) pWit_add_pWitPrime_ne_zero hcons
 
@@ -395,7 +368,9 @@ end HasFormFactor
 /-- Six times the slope at zero, `6 dF/dt (0)`, of a form factor `F` of the invariant momentum
 transfer `t`. For a form factor normalised to unit charge, `F 0 = 1`, this is the squared charge
 radius `⟨r²⟩`; for a form factor of charge `F 0 = e` it is the charge-weighted second moment
-`e ⟨r²⟩`, so the squared radius is `chargeRadiusSq F / e`. For a form factor not differentiable
+`e ⟨r²⟩`, so the squared radius is `chargeRadiusSq F / e`. For a neutral state, `F 0 = 0`, it is
+the conventional mean squared charge radius itself (negative for the neutral kaon), which is why
+the definition does not divide by the charge. For a form factor not differentiable
 at zero this is `0` by the convention of `deriv`; the statements below carry the
 differentiability as a hypothesis. -/
 noncomputable def chargeRadiusSq (F : ℝ → ℝ) : ℝ := 6 * deriv F 0
