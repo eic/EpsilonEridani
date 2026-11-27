@@ -38,7 +38,7 @@ def mellinMoment (f : Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) : ℝ :=
 /-- The zeroth Mellin moment is the integral of the density over the physical support. Not a
 `simp` lemma: `mellinMoment` stays folded under `simp`, as in `mellinMoment_comap` and
 `mellinMoment_weight`. -/
-lemma mellinMoment_zero (f : Pdf Flavor) (i : Flavor) (Q2 : ℝ) :
+lemma mellinMoment_zero_eq_integral (f : Pdf Flavor) (i : Flavor) (Q2 : ℝ) :
     mellinMoment f 0 i Q2 = ∫ x in Set.Icc (0 : ℝ) 1, f i x Q2 := by
   simp only [mellinMoment, pow_zero, one_mul]
 

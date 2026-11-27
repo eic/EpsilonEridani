@@ -224,7 +224,7 @@ theorem helicityCharge_eq_integral {f : Pdf (Species Flavor)} {i : Flavor} {Q2 :
     (hqbar : MeasureTheory.IntegrableOn (fun x : ℝ => f (.antiquark i) x Q2) (Set.Icc 0 1)) :
     helicityCharge f i Q2 =
       ∫ x in Set.Icc (0 : ℝ) 1, (f (.quark i) x Q2 + f (.antiquark i) x Q2) := by
-  rw [helicityCharge_def, mellinMoment_zero, mellinMoment_zero,
+  rw [helicityCharge_def, mellinMoment_zero_eq_integral, mellinMoment_zero_eq_integral,
     MeasureTheory.integral_add hq hqbar]
 
 /-- Charge conjugation preserves the helicity charge of every flavour: it exchanges the quark and

@@ -55,7 +55,7 @@ flavours this is the leading-order form of the flavour decomposition carried by
 with vanishing perturbative correction, and the Ellis–Jaffe sum rule holds for it exactly when
 the strange helicity charge vanishes (`ellisJaffeSumRule_partonModel_iff`). Because `g₂`
 vanishes identically in this model, its first moment vanishes and the Burkhardt-Cottingham sum
-rule holds unconditionally (`firstMomentG2_partonModel`, `burkhardtCottingham_partonModel`).
+rule holds unconditionally (`firstMomentG2_partonModel_eq_zero`, `burkhardtCottingham_partonModel`).
 
 ## Main definitions
 
@@ -64,6 +64,9 @@ rule holds unconditionally (`firstMomentG2_partonModel`, `burkhardtCottingham_pa
 ## Main statements
 
 * `Polarized.partonModel_g1`: `g₁ = (1/2) ∑_q e_q² (Δq + Δqbar)`.
+* `Polarized.partonModel_g2`: `g₂ = 0`.
+* `Polarized.hasPhysicalSupport_partonModel`, `Polarized.regularity_partonModel`: support and
+  regularity of the quark and antiquark helicity distributions pass to the parton-model pair.
 * `Polarized.assumptions_partonModel`: support, measurability and integrability on `[0, 1]` of
   the quark and antiquark helicity distributions give `Polarized.Assumptions`.
 * `Polarized.assumptions_partonModel_of_pdfRegularity`: the same, from the support postulate and
@@ -72,7 +75,9 @@ rule holds unconditionally (`firstMomentG2_partonModel`, `burkhardtCottingham_pa
   integrability discharged from the structural assumptions of the quark and antiquark
   spin-density families, and measurability of their helicity densities supplied.
 * `Polarized.firstMomentG1_partonModel`: `Γ₁ = (1/2) ∑_q e_q² ∫₀¹ dx (Δq + Δqbar)`.
-* `Polarized.firstMomentG2_partonModel`: `Γ₂ = 0`.
+* `Polarized.firstMomentG1_partonModel_lightFlavor`: for the light flavours,
+  `Γ₁ = (1/2) ((4/9) Δu + (1/9) Δd + (1/9) Δs)`.
+* `Polarized.firstMomentG2_partonModel_eq_zero`: `Γ₂ = 0`.
 * `Polarized.burkhardtCottingham_partonModel`: the Burkhardt-Cottingham sum rule,
   unconditionally.
 * `Polarized.ellisJaffeSumRule_partonModel_iff`: the light-flavour parton model satisfies the
@@ -224,9 +229,9 @@ theorem assumptions_partonModel_helicityPdfOfSpinDensity (charge : Flavor → �
   refine assumptions_partonModel_of_pdfRegularity charge (fun f x Q2 hx => ?_)
     (fun f x Q2 hx => ?_) hr hrbar
   · simpa only [PDF.helicityPdfOfSpinDensity_apply] using
-      PDF.helicityPdfOfSpinDensity_eq_zero_of_pdfOfSpinDensity_eq_zero (hA.support f x Q2 hx)
+      PDF.g1_eq_zero_of_f1_eq_zero _ (hq.support f x Q2 hx)
   · simpa only [PDF.helicityPdfOfSpinDensity_apply] using
-      PDF.helicityPdfOfSpinDensity_eq_zero_of_pdfOfSpinDensity_eq_zero (hAbar.support f x Q2 hx)
+      PDF.g1_eq_zero_of_f1_eq_zero _ (hqbar.support f x Q2 hx)
 
 /-- **The first moment of the parton-model `g₁`** is half the charge-weighted sum of the helicity
 charges `PDF.helicityCharge Δ q = ∫₀¹ dx (Δq + Δqbar)`. Only the quark and antiquark densities
@@ -258,15 +263,15 @@ theorem firstMomentG1_partonModel_lightFlavor {Δ : Pdf (Species LightFlavor)} {
 /-- **The first moment of the parton-model `g₂`** vanishes at every scale, unconditionally:
 `g₂` is identically zero at leading order, so no integrability hypothesis is needed. -/
 @[simp]
-theorem firstMomentG2_partonModel (charge : Flavor → ℝ) (Δ : Pdf (Species Flavor)) (Q2 : ℝ) :
-    firstMomentG2 (partonModel charge Δ) Q2 = 0 := by
+theorem firstMomentG2_partonModel_eq_zero (charge : Flavor → ℝ) (Δ : Pdf (Species Flavor))
+    (Q2 : ℝ) : firstMomentG2 (partonModel charge Δ) Q2 = 0 := by
   simp [firstMomentG2]
 
 /-- **The parton model satisfies the Burkhardt-Cottingham sum rule**, unconditionally: `g₂`
 vanishes identically at leading order, so its first moment vanishes at every scale. -/
 theorem burkhardtCottingham_partonModel (charge : Flavor → ℝ) (Δ : Pdf (Species Flavor)) :
     BurkhardtCottingham (partonModel charge Δ) :=
-  ⟨fun Q2 => firstMomentG2_partonModel charge Δ Q2⟩
+  ⟨fun Q2 => firstMomentG2_partonModel_eq_zero charge Δ Q2⟩
 
 /-- **The parton model and the Ellis–Jaffe sum rule.** For the light flavours, the leading-order
 parton-model `g₁` carries the flavour decomposition of `EllisJaffeSumRule` with vanishing
