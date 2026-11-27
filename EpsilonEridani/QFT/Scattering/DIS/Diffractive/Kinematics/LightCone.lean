@@ -118,8 +118,8 @@ theorem bilinForm_deltaLostRelativeTransverse_self_eq_sub_smul (hg : g.IsRefl)
       g (deltaLost K - xiLC L K • K.p) (deltaLost K - xiLC L K • K.p) := by
   have h : L.plus (deltaLost K - xiLC L K • K.p) = 0 := by
     rw [map_sub, map_smul, smul_eq_mul, xiLC_def, div_mul_cancel₀ _ hp, sub_self]
-  rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg (deltaLost K - xiLC L K • K.p), h,
-    mul_zero, zero_mul, zero_add, deltaLostRelativeTransverse_eq_transverseProj_sub_smul]
+  rw [L.bilinForm_self_eq_transverseProj_self_of_plus_eq_zero hg h,
+    deltaLostRelativeTransverse_eq_transverseProj_sub_smul]
 
 /-- The relative transverse momentum transfer is a transverse vector. -/
 theorem deltaLostRelativeTransverse_mem_transverse (L : LightConeBasis g) (K : DisKinematics V) :

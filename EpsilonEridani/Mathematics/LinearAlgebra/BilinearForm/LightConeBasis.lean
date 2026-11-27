@@ -58,6 +58,8 @@ vectors in the left argument: `v` is transverse iff `B n₊ v = B n₋ v = 0`. T
   characteristic not two, a vector with prescribed non-zero plus component, transverse part and
   square.
 * `LightConeBasis.bilinForm_self_eq_two_mul_plus_mul_minus_add`: `v · v = 2 v⁺ v⁻ + v_T · v_T`.
+* `LightConeBasis.bilinForm_self_eq_transverseProj_self_of_plus_eq_zero`: `v · v = v_T · v_T`
+  when `v⁺ = 0`.
 * `LightConeBasis.isSelfAdjoint_transverseProj`: for a reflexive form the transverse projector is
   self-adjoint.
 * `LightConeBasis.finrank_transverse_add_two_eq`: the transverse subspace has codimension two.
@@ -281,6 +283,12 @@ theorem bilinForm_self_eq_two_mul_plus_mul_minus_add (v : V) :
     B v v = 2 * L.plus v * L.minus v + B (L.transverseProj v) (L.transverseProj v) := by
   rw [L.bilinForm_eq_plus_mul_minus_add hB]
   ring
+
+/-- A vector with vanishing plus component has the square of its transverse part:
+`v⁺ = 0 → v · v = v_T · v_T`. -/
+theorem bilinForm_self_eq_transverseProj_self_of_plus_eq_zero {v : V} (h : L.plus v = 0) :
+    B v v = B (L.transverseProj v) (L.transverseProj v) := by
+  rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hB, h, mul_zero, zero_mul, zero_add]
 
 /-- The transverse projector is self-adjoint. -/
 theorem isSelfAdjoint_transverseProj : B.IsSelfAdjoint L.transverseProj := by
