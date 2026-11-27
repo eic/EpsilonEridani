@@ -14,9 +14,9 @@ This module introduces minimal fragmentation-function interfaces for
 semi-inclusive DIS extensions.
 
 It also provides basic lemmas about the `z`-moments `zMoment` (as interval integrals,
-non-negativity, and the moments of monomials `c zᵐ`), and the construction
-`indicatorUnitInterval`, which cuts a family off outside the unit interval and is used to build
-explicit fragmentation families satisfying `Assumptions`.
+non-negativity, domination by a second family, and the moments of monomials `c zᵐ`), and the
+construction `indicatorUnitInterval`, which cuts a family off outside the unit interval and is
+used to build explicit fragmentation families satisfying `Assumptions`.
 
 -/
 

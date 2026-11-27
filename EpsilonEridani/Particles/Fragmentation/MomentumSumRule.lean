@@ -38,6 +38,9 @@ completeness: `MomentumSumRule` is the identity itself.
   non-negative and sum to one, the first moment of each species is at most one. Its packaged form
   `Fragmentation.MomentumSumRule.zMoment_one_le_one` takes the sum rule and `Assumptions`. This
   needs only non-negativity, not completeness.
+* `Fragmentation.MomentumSumRule.abs_zMoment_one_le_one`: if a family is dominated in absolute
+  value on the unit interval by one satisfying the sum rule, the first moment of each of its
+  species is at most one in absolute value.
 * `Fragmentation.momentumSumRule_twoSpeciesFrag` and
   `Fragmentation.not_momentumSumRule_single_twoSpeciesFrag`: for `D₀(z) = 2z` and
   `D₁(z) = 2(1 - z)` the sum rule holds for the pair and fails for each member alone, so the sum
@@ -108,6 +111,21 @@ theorem MomentumSumRule.zMoment_one_le_one [Fintype Hadron] {D : Frag Hadron Fla
     zMoment D 1 h i Q2 ≤ 1 :=
   zMoment_one_le_one_of_sum_eq_one ((momentumSumRule_iff D).1 hsum i Q2).2
     (fun h' => zMoment_nonneg (fun z hz => hD.nonneg h' i z Q2 hz.1 hz.2) 1) h
+
+/-- **The first moment of a dominated family is bounded by one.** Under the momentum sum rule for
+`D`, the first `z`-moment of a family `G` dominated in absolute value by `D` on the unit interval
+is at most one in absolute value. Non-negativity of `D` on the unit interval is not a separate
+hypothesis: it follows from the domination. -/
+theorem MomentumSumRule.abs_zMoment_one_le_one [Fintype Hadron] {D G : Frag Hadron Flavor}
+    (hsum : MomentumSumRule D)
+    (hGD : ∀ h i z Q2, z ∈ Icc (0 : ℝ) 1 → |G h i z Q2| ≤ D h i z Q2)
+    (h : Hadron) (i : Flavor) (Q2 : ℝ) : |zMoment G 1 h i Q2| ≤ 1 := by
+  obtain ⟨hint, hone⟩ := (momentumSumRule_iff D).1 hsum i Q2
+  refine (abs_zMoment_le (by simpa only [pow_one] using hint h)
+    (fun z hz => hGD h i z Q2 hz)).trans ?_
+  exact zMoment_one_le_one_of_sum_eq_one hone
+    (fun h' => zMoment_nonneg
+      (fun z hz => (abs_nonneg (G h' i z Q2)).trans (hGD h' i z Q2 hz)) 1) h
 
 /-! ### The sum rule is not a per-species statement -/
 

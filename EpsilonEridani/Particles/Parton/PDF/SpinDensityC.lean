@@ -53,15 +53,6 @@ only bounds the real part of `h₁`. The entrywise content of the Soffer bound,
 whose real specialisation `Matrix.PosSemidef.two_mul_abs_apply_le` is the inequality behind the
 real `two_mul_abs_h1_le_diag`.
 
-Positive semidefiniteness is the statement that the matrix is a sum over unobserved states of
-products of amplitudes. `SpinDensityC.ofAmplitudes A` is the matrix `Aᴴ A` of the amplitudes
-`A x a` for the unobserved state `x` in the helicity configuration `a`; its quadratic form is a
-total rate (`SpinDensityC.star_dotProduct_mulVec_ofAmplitudes`), and its `f₁`, `Δq` and `h₁` are
-rates and an interference summed over the states (`SpinDensityC.f1_ofAmplitudes`,
-`SpinDensityC.deltaQ_ofAmplitudes`, `SpinDensityC.transversity_ofAmplitudes`). Every
-helicity-amplitude matrix arises in this way from four states
-(`SpinDensityC.exists_eq_ofAmplitudes`).
-
 As in `EpsilonEridani.Particles.Parton.PDF.Positivity`, every statement here is at fixed
 `(x, Q²)` and per flavour.
 
@@ -247,84 +238,6 @@ lemma deltaQ_eq_zero_of_f1_eq_zero (h : ρ.f1 = 0) : ρ.deltaQ = 0 :=
 by `norm_transversity_le_f1`. -/
 lemma transversity_eq_zero_of_f1_eq_zero (h : ρ.f1 = 0) : ρ.transversity = 0 :=
   norm_le_zero_iff.mp (h ▸ ρ.norm_transversity_le_f1)
-
-/-! ### Sums over unobserved states
-
-A helicity-amplitude matrix is a sum over unobserved states: if `A x a` is the amplitude for the
-unobserved state `x` in the helicity configuration `a`, the entry at `(a, b)` is
-`∑ₓ conj (A x a) * A x b`, that is, the matrix is `Aᴴ A` (`ofAmplitudes`). Positive
-semidefiniteness is what this form provides: at a superposition `c` of helicity configurations
-the quadratic form is the total rate `∑ₓ ‖(A *ᵥ c) x‖²`, a sum of non-negative terms
-(`star_dotProduct_mulVec_ofAmplitudes`). Conversely, every helicity-amplitude matrix is such a
-sum over four states (`exists_eq_ofAmplitudes`), so the field `posSemidef` assumes exactly the
-existence of such a decomposition and nothing more.
--/
-
-section ofAmplitudes
-
-variable {X : Type*} [Fintype X] (A : Matrix X (Fin 4) ℂ)
-
-/-- The helicity-amplitude matrix `Aᴴ A` of a finite sum over unobserved states `x : X`, where
-`A x a` is the amplitude for the unobserved state `x` in the helicity configuration `a`. It is
-positive semidefinite because each rate is a sum of squared moduli
-(`star_dotProduct_mulVec_ofAmplitudes`). -/
-def ofAmplitudes : SpinDensityC where
-  mat := Aᴴ * A
-  posSemidef := posSemidef_conjTranspose_mul_self A
-
-@[simp]
-lemma mat_ofAmplitudes : (ofAmplitudes A).mat = Aᴴ * A := (rfl)
-
-/-- Each entry of `ofAmplitudes A` is a sum over the unobserved states. -/
-lemma mat_ofAmplitudes_apply (a b : Fin 4) :
-    (ofAmplitudes A).mat a b = ∑ x, conj (A x a) * A x b := by
-  simp [mul_apply]
-
-/-- The quadratic form of `ofAmplitudes A` at a superposition `c` of helicity configurations is
-the total rate `∑ₓ ‖(A *ᵥ c) x‖²` of that superposition. -/
-lemma star_dotProduct_mulVec_ofAmplitudes (c : Fin 4 → ℂ) :
-    star c ⬝ᵥ (ofAmplitudes A).mat *ᵥ c = ∑ x, ((‖(A *ᵥ c) x‖ ^ 2 : ℝ) : ℂ) := by
-  rw [mat_ofAmplitudes, ← mulVec_mulVec, dotProduct_mulVec, vecMul_conjTranspose, star_star]
-  simp [dotProduct, Complex.conj_mul']
-
-/-- A diagonal entry of `ofAmplitudes A` is the rate `∑ₓ ‖A x a‖²` of its helicity
-configuration. -/
-lemma re_mat_ofAmplitudes_apply_self (a : Fin 4) :
-    ((ofAmplitudes A).mat a a).re = ∑ x, ‖A x a‖ ^ 2 := by
-  simp [mat_ofAmplitudes_apply, Complex.conj_mul', ← Complex.ofReal_pow]
-
-/-- The unpolarized density of a sum over unobserved states is half its total rate, summed over
-the states and the four helicity configurations. -/
-@[simp]
-lemma f1_ofAmplitudes : (ofAmplitudes A).f1 = (∑ x, ∑ a, ‖A x a‖ ^ 2) / 2 := by
-  simp only [f1_def, re_mat_ofAmplitudes_apply_self, Fin.sum_univ_four, Finset.sum_add_distrib,
-    idxPP, idxPM, idxMP, idxMM]
-
-/-- The helicity density of a sum over unobserved states is half the difference of the rates of
-the aligned and the anti-aligned helicity configurations. -/
-@[simp]
-lemma deltaQ_ofAmplitudes :
-    (ofAmplitudes A).deltaQ = (∑ x, (‖A x idxPP‖ ^ 2 - ‖A x idxPM‖ ^ 2 - ‖A x idxMP‖ ^ 2
-      + ‖A x idxMM‖ ^ 2)) / 2 := by
-  simp only [deltaQ_def, re_mat_ofAmplitudes_apply_self, Finset.sum_add_distrib,
-    Finset.sum_sub_distrib]
-
-/-- The transversity of a sum over unobserved states is the interference, summed over the states,
-of the two amplitudes in which both helicities are reversed. -/
-@[simp]
-lemma transversity_ofAmplitudes :
-    (ofAmplitudes A).transversity = ∑ x, conj (A x idxPP) * A x idxMM :=
-  mat_ofAmplitudes_apply A idxPP idxMM
-
-end ofAmplitudes
-
-open scoped MatrixOrder in
-/-- Every helicity-amplitude matrix is a sum over four unobserved states. The amplitudes are a
-square root of the matrix, which exists by positive semidefiniteness. -/
-theorem exists_eq_ofAmplitudes (ρ : SpinDensityC) :
-    ∃ A : Matrix (Fin 4) (Fin 4) ℂ, ρ = ofAmplitudes A := by
-  obtain ⟨A, hA⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp ρ.posSemidef.nonneg
-  exact ⟨A, SpinDensityC.ext (by rw [hA, mat_ofAmplitudes, star_eq_conjTranspose])⟩
 
 /-! ### Parity -/
 
