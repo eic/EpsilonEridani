@@ -66,11 +66,13 @@ what lets the results below carry no sign hypothesis on `f` or `g`.
   `[0, 1]` with bound `1` accepts the target `(1 + z ^ 2) / 2` with probability `2 / 3`, and the
   accepted law is the target normalised, a probability measure by
   `AcceptReject.isProbabilityMeasure_acceptedLaw_one_add_sq_div_two`.
-* `AcceptReject.acceptedLaw_two_mul_bound_three_div_two_eq_smul_withDensity_min` and
-  `AcceptReject.measureReal_trialLaw_acceptSet_two_mul_bound_three_div_two`: a bound that is too
-  small. Sampling `2 * z` on `[0, 1]` against the bound `3 / 2` accepts with probability `5 / 8` and
+* `AcceptReject.acceptedLaw_two_mul_bound_three_div_two_eq_smul_withDensity_min`,
+  `AcceptReject.measureReal_trialLaw_acceptSet_two_mul_bound_three_div_two` and
+  `AcceptReject.acceptedLaw_two_mul_bound_three_div_two_ne_smul_withDensity`: a bound that is too
+  small. Sampling `2 * z` on `[0, 1]` against the bound `3 / 2` accepts with probability `5 / 8`,
   yields `min (2 * z) (3 / 2)` normalised, of mass `15 / 16`, a probability measure by
-  `AcceptReject.isProbabilityMeasure_acceptedLaw_two_mul_bound_three_div_two`.
+  `AcceptReject.isProbabilityMeasure_acceptedLaw_two_mul_bound_three_div_two` — and the accepted
+  law is not the target `2 * z` normalised, the silent bias realised.
 * `AcceptReject.lintegral_ofReal_one_add_sq_div_two_uniformMeasure_zero_one` and
   `AcceptReject.lintegral_ofReal_min_two_mul_three_div_two_uniformMeasure_zero_one`: the integrals
   of the two example targets against the standard uniform law, with
@@ -446,6 +448,58 @@ theorem measureReal_trialLaw_acceptSet_two_mul_bound_three_div_two :
   rw [lintegral_ofReal_min_two_mul_three_div_two_uniformMeasure_zero_one,
     ENNReal.toReal_ofReal (by norm_num)]
   norm_num
+
+/-- **The silent bias, realised.** Sampling the target `2 * z` on `[0, 1]` from a uniform
+proposal against the bound `3 / 2` does not produce the target normalised: the bound fails
+above `z = 3 / 4`, so the accepted law is the clipped target `min (2 * z) (3 / 2)` normalised of
+`acceptedLaw_two_mul_bound_three_div_two_eq_smul_withDensity_min` instead. This is the `2 * z`
+instance of the silent bias
+`acceptedLaw_ne_smul_withDensity_of_measure_lt_ne_zero_of_measure_le_ne_zero`: the bound
+fails on `Set.Ioi (3 / 4)` and holds on `Set.Ioc 0 (3 / 4)`, with the target positive on
+both. -/
+theorem acceptedLaw_two_mul_bound_three_div_two_ne_smul_withDensity :
+    acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1) (3 / 2) ≠
+      (∫⁻ z, ENNReal.ofReal (2 * z) ∂uniformMeasure 0 1)⁻¹ •
+        (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal (2 * z) := by
+  refine acceptedLaw_ne_smul_withDensity_of_measure_lt_ne_zero_of_measure_le_ne_zero
+    (by norm_num) (by fun_prop) measurable_const ?_ ?_ ?_
+  · -- The target has finite mass against the standard uniform law.
+    show ∫⁻ z, ENNReal.ofReal (2 * z) ∂uniformMeasure 0 1 ≠ ∞
+    have hcont : Continuous fun z : ℝ => 2 * z := by fun_prop
+    rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn.integrable_uniformMeasure
+      (by
+        filter_upwards [ae_mem_Ioc_uniformMeasure] with x hx
+        rw [Pi.zero_apply]
+        linarith [hx.1])]
+    exact ENNReal.ofReal_ne_top
+  · -- The bound fails above `z = 3 / 4`, on the set `Set.Ioi (3 / 4)`.
+    show uniformMeasure 0 1 {x | (3 / 2 : ℝ) * 1 < 2 * x ∧ 0 < 2 * x} ≠ 0
+    have hset : {x : ℝ | (3 / 2 : ℝ) * 1 < 2 * x ∧ 0 < 2 * x} = Set.Ioi (3 / 4) := by
+      ext x
+      simp only [Set.mem_ofPred_eq, Set.mem_Ioi, mul_one]
+      exact ⟨fun h => by linarith [h.1], fun h => ⟨by linarith, by linarith⟩⟩
+    have hinter : Set.Ioi (3 / 4 : ℝ) ∩ Set.Ioc 0 1 = Set.Ioc (3 / 4) 1 := by
+      ext x
+      simp only [Set.mem_inter_iff, Set.mem_Ioi, Set.mem_Ioc]
+      exact ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, by linarith [h.1], h.2⟩⟩
+    rw [hset, uniformMeasure_apply measurableSet_Ioi, hinter, Real.volume_Ioc]
+    simp only [sub_zero, ENNReal.ofReal_one, inv_one, one_mul]
+    exact ENNReal.ofReal_ne_zero_iff.mpr (by norm_num)
+  · -- The bound holds on `Set.Ioc 0 (3 / 4)`, where the target is positive.
+    show uniformMeasure 0 1 {x | (0 : ℝ) < 2 * x ∧ 2 * x ≤ 3 / 2 * 1} ≠ 0
+    have hset : {x : ℝ | (0 : ℝ) < 2 * x ∧ 2 * x ≤ 3 / 2 * 1} = Set.Ioc 0 (3 / 4) := by
+      ext x
+      simp only [Set.mem_ofPred_eq, Set.mem_Ioc, mul_one]
+      exact ⟨fun h => ⟨by linarith [h.1], by linarith [h.2]⟩,
+        fun h => ⟨by linarith [h.1], by linarith [h.2]⟩⟩
+    have hsub : Set.Ioc (0 : ℝ) (3 / 4) ⊆ Set.Ioc 0 1 := by
+      intro x hx
+      simp only [Set.mem_Ioc] at hx ⊢
+      exact ⟨hx.1, by linarith [hx.2]⟩
+    rw [hset, uniformMeasure_apply measurableSet_Ioc, Set.inter_eq_self_of_subset_left hsub,
+      Real.volume_Ioc]
+    simp only [sub_zero, ENNReal.ofReal_one, inv_one, one_mul]
+    exact ENNReal.ofReal_ne_zero_iff.mpr (by norm_num)
 
 /-- The accepted law of the bound-that-is-too-small example is a probability measure: the
 clipped target has mass `15 / 16`, positive and finite. The bound failing above `z = 3 / 4`
