@@ -6,7 +6,6 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
-public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.MassShell
@@ -34,11 +33,12 @@ preserve `d^d p`, but its Jacobian `E(Λp) / E(p)` is cancelled exactly by the d
   `oneBodyMeasure m`. Along the boost axis, at fixed transverse momentum `p_⊥`, the energy is
   `√(m² + |p_⊥|² + q²)` and the boost acts as `q ↦ γ (q - β E)`, a bijection of the line with
   derivative `E' / E`, where `E' = γ (E - β q)` is the boosted energy.
-* `measurePreserving_linearIsometryEquiv`: every linear isometry of the spatial momenta, a
-  rotation or reflection, preserves it, since it preserves `d^d p` and `|p|`, hence `E`. A Lorentz
-  transformation with time-time entry `1` acts on `p` as such an isometry,
+* `measurePreserving_oneBodyMeasure_linearIsometryEquiv`: every linear isometry of the spatial
+  momenta, a rotation or reflection, preserves it, since it preserves `d^d p` and `|p|`, hence
+  `E`. A Lorentz transformation with time-time entry `1` acts on `p` as such an isometry,
   `LorentzGroup.spatialLinearIsometryEquiv`, so it preserves the measure as well
-  (`measurePreserving_massShellMap_of_timeComponent_eq_one`).
+  (`measurePreserving_massShellMap_of_timeComponent_eq_one`), in particular every element of
+  Physlib's subgroup `LorentzGroup.Rotations d` (`measurePreserving_massShellMap_rotation`).
 
 This file proves invariance only for these two generating cases. Both keep the energy
 non-negative, so for a finite product of them `massShellMap_mul` writes the map as the
@@ -269,10 +269,10 @@ theorem measurePreserving_massShellMap_boost (i : Fin d) {β : ℝ} (hβ : |β| 
 
 /-! ### Rotations and spatial reflections -/
 
-/-- **Rotation invariance.** A linear isometry of the spatial momenta — a rotation or
+/-- A linear isometry of the spatial momenta — a rotation or
 reflection — preserves the one-body measure, since it preserves Lebesgue measure and `|p|`, hence
 the energy. -/
-theorem measurePreserving_linearIsometryEquiv
+theorem measurePreserving_oneBodyMeasure_linearIsometryEquiv
     (L : EuclideanSpace ℝ (Fin d) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin d)) (m : ℝ) :
     MeasurePreserving L (oneBodyMeasure m) (oneBodyMeasure m) := by
   refine ⟨L.continuous.measurable, ?_⟩
@@ -288,7 +288,14 @@ theorem measurePreserving_massShellMap_of_timeComponent_eq_one {Λ : LorentzGrou
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (m : ℝ) :
     MeasurePreserving (massShellMap Λ m) (oneBodyMeasure m) (oneBodyMeasure m) := by
   rw [massShellMap_of_timeComponent_eq_one hΛ m]
-  exact measurePreserving_linearIsometryEquiv _ m
+  exact measurePreserving_oneBodyMeasure_linearIsometryEquiv _ m
+
+/-- **Rotation invariance.** An element of Physlib's rotation subgroup preserves the one-body
+measure. -/
+theorem measurePreserving_massShellMap_rotation (Λ : Rotations d) (m : ℝ) :
+    MeasurePreserving (massShellMap (Λ : LorentzGroup d) m) (oneBodyMeasure m)
+      (oneBodyMeasure m) :=
+  measurePreserving_massShellMap_of_timeComponent_eq_one (rotation_timeComponent_eq_one Λ) m
 
 end PhaseSpace
 end Kinematics

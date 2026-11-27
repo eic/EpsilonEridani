@@ -13,14 +13,15 @@ public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtension
 # Lorentz transformations with time-time entry one
 
 An element of Physlib's subgroup `LorentzGroup.Rotations d` has time-time entry `1`
-(Physlib's `LorentzGroup.mem_rotations_iff`). This module records the consequences of that
-entry for every `Λ : LorentzGroup d` with time-time entry `1`, so for spatial reflections as
+(`rotation_timeComponent_eq_one`, read off Physlib's `LorentzGroup.mem_rotations_iff`; as a `simp`
+lemma it discharges the hypothesis of the `simp` lemmas below). This module records the consequences
+of that entry for every `Λ : LorentzGroup d` with time-time entry `1`, so for spatial reflections as
 well as rotations: `Λ` is orthochronous (`isOrthochronous_of_timeComponent_eq_one`), the mixed
-time-space entries vanish (`inl_inr_eq_zero_of_timeComponent_eq_one` and
-`inr_inl_eq_zero_of_timeComponent_eq_one`), so `Λ` leaves the time component of every vector
+time-space entries vanish (`inl_0_inr_eq_zero_of_timeComponent_eq_one` and
+`inr_inl_0_eq_zero_of_timeComponent_eq_one`), so `Λ` leaves the time component of every vector
 unchanged (`timeComponent_smul_of_timeComponent_eq_one`), acts on the spatial part through its
-spatial block alone (`spatialPart_smul_apply_of_timeComponent_eq_one`), and, since it also
-preserves the Minkowski product, preserves the Euclidean norm of the spatial part
+spatial block alone (`spatialPart_smul_apply_of_timeComponent_eq_one`), and, since it also preserves
+the Minkowski product, preserves the Euclidean norm of the spatial part
 (`norm_spatialPart_smul_of_timeComponent_eq_one`). Hence such a `Λ` acts on
 `EuclideanSpace ℝ (Fin d)` as the linear isometry equivalence `spatialLinearIsometryEquiv hΛ`,
 `v ↦ (Λ • (0, v))ₛ`, through which it acts on the spatial part of every vector
@@ -33,6 +34,12 @@ namespace LorentzGroup
 
 variable {d : ℕ}
 
+/-- A rotation has time-time entry `1`. -/
+@[simp]
+theorem rotation_timeComponent_eq_one (Λ : Rotations d) :
+    (Λ : LorentzGroup d).1 (Sum.inl 0) (Sum.inl 0) = 1 :=
+  ((mem_rotations_iff _).1 Λ.2).1
+
 /-- A Lorentz transformation with time-time entry `1` is orthochronous. -/
 theorem isOrthochronous_of_timeComponent_eq_one {Λ : LorentzGroup d}
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) : IsOrthochronous Λ := by
@@ -41,7 +48,7 @@ theorem isOrthochronous_of_timeComponent_eq_one {Λ : LorentzGroup d}
 
 /-- The space-time entries of a Lorentz transformation with time-time entry `1` vanish. -/
 @[simp]
-theorem inr_inl_eq_zero_of_timeComponent_eq_one {Λ : LorentzGroup d}
+theorem inr_inl_0_eq_zero_of_timeComponent_eq_one {Λ : LorentzGroup d}
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (j : Fin d) :
     Λ.1 (Sum.inr j) (Sum.inl 0) = 0 := by
   simpa [toVector_apply] using
@@ -49,7 +56,7 @@ theorem inr_inl_eq_zero_of_timeComponent_eq_one {Λ : LorentzGroup d}
 
 /-- The time-space entries of a Lorentz transformation with time-time entry `1` vanish. -/
 @[simp]
-theorem inl_inr_eq_zero_of_timeComponent_eq_one {Λ : LorentzGroup d}
+theorem inl_0_inr_eq_zero_of_timeComponent_eq_one {Λ : LorentzGroup d}
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (j : Fin d) :
     Λ.1 (Sum.inl 0) (Sum.inr j) = 0 := by
   have hT : (transpose Λ).1 (Sum.inl 0) (Sum.inl 0) = 1 := by
@@ -64,7 +71,7 @@ theorem timeComponent_smul_of_timeComponent_eq_one {Λ : LorentzGroup d}
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (v : Lorentz.Vector d) :
     (Λ • v).timeComponent = v.timeComponent := by
   simp [Lorentz.Vector.timeComponent, Lorentz.Vector.smul_eq_sum, Fintype.sum_sum_type, hΛ,
-    inl_inr_eq_zero_of_timeComponent_eq_one hΛ]
+    inl_0_inr_eq_zero_of_timeComponent_eq_one hΛ]
 
 /-- A Lorentz transformation with time-time entry `1` acts on the spatial part of a vector
 through its spatial block. -/
@@ -72,7 +79,7 @@ theorem spatialPart_smul_apply_of_timeComponent_eq_one {Λ : LorentzGroup d}
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (v : Lorentz.Vector d) (j : Fin d) :
     (Λ • v).spatialPart j = ∑ k, Λ.1 (Sum.inr j) (Sum.inr k) * v.spatialPart k := by
   simp [Lorentz.Vector.smul_eq_sum, Fintype.sum_sum_type,
-    inr_inl_eq_zero_of_timeComponent_eq_one hΛ]
+    inr_inl_0_eq_zero_of_timeComponent_eq_one hΛ]
 
 /-- A Lorentz transformation with time-time entry `1` preserves the Euclidean norm of the
 spatial part of a vector. -/
