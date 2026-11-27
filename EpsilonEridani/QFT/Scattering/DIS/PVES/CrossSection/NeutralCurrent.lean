@@ -6,6 +6,7 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Inclusive.CrossSection
+public import EpsilonEridani.QFT.Scattering.DIS.PVES.Electroweak.LowEnergyCouplings
 public import EpsilonEridani.QFT.Scattering.DIS.PVES.Interference.Basic
 
 /-!
@@ -97,7 +98,7 @@ used in this file.
 * `CrossSection.gammaZTerm_electron_true_sub_false`: for the Standard Model electron,
   `σ_R - σ_L` of the interference term is `-η K/(xQ²) (B^{γZ} + Q_W^e Y₋ x F₃^{γZ})`, which
   exhibits the suppression of the parity-odd structure function by the electron weak charge
-  `Q_W^e = 1 - 4 sin²θ_W` (`Electroweak.electronWeakCharge`).
+  `Q_W^e = 1 - 4 sin²θ_W` (`FermionNeutralCurrentCouplings.leptonWeakCharge`).
 
 ## Conventions
 
@@ -481,15 +482,17 @@ theorem neutralCurrent_true_add_false_div_two :
 
 /-- **The electron's interference asymmetry.** For the Standard Model electron (`q = -1`,
 `g_V = -1/2 + 2 sin²θ_W`, `g_A = -1/2`) the helicity difference of the interference term is
-`-η (K / (x Q²)) (B^{γZ} + (1 - 4 sin²θ_W) Y₋ x F₃^{γZ})`: the parity-odd structure function
-enters suppressed by the electron weak charge `Q_W^e = 1 - 4 sin²θ_W`. -/
+`-η (K / (x Q²)) (B^{γZ} + Q_W^e Y₋ x F₃^{γZ})`: the parity-odd structure function
+enters suppressed by the electron weak charge `Q_W^e = 1 - 4 sin²θ_W`, the tree-level
+`leptonWeakCharge` of the electron's own coupling pair. -/
 theorem gammaZTerm_electron_true_sub_false (s2 : ℝ) :
     gammaZTerm K M x Q2 y (-1) η (smTreeLevelCouplings s2).electron true F1 F2 F3
         - gammaZTerm K M x Q2 y (-1) η (smTreeLevelCouplings s2).electron false F1 F2 F3 =
       -η * (K / (x * Q2)) *
         (crossSectionBracket M 0 x Q2 y F1 F2 0
-          + electronWeakCharge s2 * (Yminus y * (x * F3))) := by
-  rw [gammaZTerm_true_sub_false, smTreeLevelCouplings_electron, electronWeakCharge]
+          + (smTreeLevelCouplings s2).electron.leptonWeakCharge * (Yminus y * (x * F3))) := by
+  rw [gammaZTerm_true_sub_false, smTreeLevelCouplings_electron_leptonWeakCharge,
+    smTreeLevelCouplings_electron]
   ring
 
 end
