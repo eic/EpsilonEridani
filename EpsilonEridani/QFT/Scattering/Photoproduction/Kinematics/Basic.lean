@@ -36,8 +36,8 @@ states for a photon in the photon region, from the region-level bound `m² x² /
 (`ChargedSource.sq_mul_sq_div_one_sub_lt_virtuality_of_mem_photonRegion`). Under the coherence
 condition `Q² R² ≤ 1` for a radius `R` of the source, any real number taken as a hypothesis on
 the photon variables, this bounds the photon energy by the Lorentz factor over the radius,
-`k R < γ`, the `PhotonKinematics` lemma
-`energy_mul_radius_lt_gamma_of_mem_photonRegion_of_virtuality_mul_radius_sq_le_one`.
+`|k R| < γ`, the `PhotonKinematics` lemma
+`abs_energy_mul_lt_gamma_of_mem_photonRegion_of_virtuality_mul_sq_le_one`.
 
 ## References
 
@@ -396,12 +396,12 @@ theorem energy_sq_lt_gamma_sq_mul_one_sub_energyFraction_mul_virtuality_of_mem_p
 
 /-- **The photon energy of coherent emission is bounded by the Lorentz factor over the radius.**
 If a massive source of Lorentz factor `γ` emits a photon of its photon region within the coherence
-bound `Q² R² ≤ 1` for a radius `R`, the photon energy in the collider frame satisfies `k R < γ`.
-The radius `R` is any real number: the charge radius `s.radius` of the source, or the
-root-mean-square radius of its charge distribution. -/
-theorem energy_mul_radius_lt_gamma_of_mem_photonRegion_of_virtuality_mul_radius_sq_le_one
+bound `Q² R² ≤ 1` for a radius `R`, the photon energy in the collider frame satisfies
+`|k R| < γ`. The radius `R` is any real number, of either sign: the charge radius `s.radius` of
+the source, or a root-mean-square radius of its charge distribution. -/
+theorem abs_energy_mul_lt_gamma_of_mem_photonRegion_of_virtuality_mul_sq_le_one
     (k : PhotonKinematics) (hm : 0 < s.mass) {θmax R : ℝ} (hk : k ∈ s.photonRegion θmax)
-    (hcoh : k.virtuality * R ^ 2 ≤ 1) : k.energy * R < s.gamma := by
+    (hcoh : k.virtuality * R ^ 2 ≤ 1) : |k.energy * R| < s.gamma := by
   have hE := ChargedSource.mass_lt_energy_of_mem_photonRegion hk
   have hγ := zero_lt_one.trans (ChargedSource.one_lt_gamma_of_mass_lt_energy hm.le hE)
   have hx0 := ChargedSource.energyFraction_pos_of_mem_photonRegion hm.le hk
@@ -418,7 +418,7 @@ theorem energy_mul_radius_lt_gamma_of_mem_photonRegion_of_virtuality_mul_radius_
             hm hk).le (sq_nonneg _)
       _ ≤ s.gamma ^ 2 * (1 - k.energyFraction s) := mul_le_of_le_one_right hc hcoh
       _ < s.gamma ^ 2 := by nlinarith [mul_pos (pow_pos hγ 2) hx0]
-  exact lt_of_abs_lt (abs_lt_of_sq_lt_sq hsq hγ.le)
+  exact abs_lt_of_sq_lt_sq hsq hγ.le
 
 end PhotonKinematics
 
