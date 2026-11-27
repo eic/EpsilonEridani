@@ -144,7 +144,7 @@ theorem maxwellTensor_minkowski_inl_inl {F : Matrix (Fin 1 ⊕ Fin d) (Fin 1 ⊕
     linarith
   rw [maxwellTensor, fieldStrengthSq, Matrix.inv_eq_left_inv sq, as_diagonal]
   simp only [Matrix.add_apply, Matrix.neg_apply, Matrix.smul_apply, smul_eq_mul]
-  simp only [mul_apply, transpose_apply, trace, diag_apply, diagonal_apply, ite_mul, mul_ite,
+  simp only [Matrix.mul_apply, transpose_apply, trace, diag_apply, diagonal_apply, ite_mul, mul_ite,
     zero_mul, mul_zero, Finset.sum_ite_eq, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   simp only [Fintype.sum_sum_type, Finset.univ_unique, Finset.sum_singleton, Sum.elim_inl,
     Sum.elim_inr, Pi.one_apply, Pi.neg_apply, Fin.default_eq_zero, h00,

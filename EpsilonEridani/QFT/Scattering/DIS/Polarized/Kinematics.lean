@@ -7,6 +7,7 @@ module
 
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Bounds
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.TargetMass
+public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Witness
 public import EpsilonEridani.QFT.Scattering.DIS.Tensors.Basic
 
 /-!
@@ -283,7 +284,7 @@ end PolarizedKinematics
 
 namespace Witness
 
-open Tensors.Hadronic.Witness (gWit gWit_apply gWit_isSymm)
+open Kinematics.Witness (gWit gWit_apply gWit_isSymm)
 
 /-- Witness kinematics in `ℝ¹'²` with the metric `gWit`: a target of unit mass at rest,
 `p = (1, 0, 0)`, struck by a massless lepton moving along the first spatial axis,
@@ -307,8 +308,6 @@ lemma kPol_M2 : kPol.M2 gWit = 1 := by simp [DisKinematics.M2_def, kPol]
 `BasicAssumptions`. -/
 lemma basicAssumptions_kPol : DisKinematics.BasicAssumptions gWit kPol where
   q2_pos := by norm_num [DisKinematics.Q2, kPol]
-  p_dot_q_pos := by norm_num [kPol]
-  p_dot_k_pos := by norm_num [kPol]
   q2_le_two_p_dot_q := by norm_num [DisKinematics.Q2, kPol]
   p_dot_q_le_p_dot_k := by norm_num [kPol]
 

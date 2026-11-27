@@ -342,7 +342,7 @@ def affineTrajectory (twist a b : ℂ) (ha : ‖a‖₊ < 1) : ReggeTrajectory w
     refine LipschitzWith.of_dist_le_mul fun x y => ?_
     have he : a * x + b - (a * y + b) = a * (x - y) := by ring
     have hEq : dist (a * x + b) (a * y + b) = (‖a‖₊ : ℝ) * dist x y := by
-      rw [dist_eq_norm, dist_eq_norm, he, norm_mul, coe_nnnorm]
+      rw [dist_eq_norm, dist_eq_norm, he, norm_mul, coe_nnNorm]
     exact hEq.le
   lip_lt_one := ha
 

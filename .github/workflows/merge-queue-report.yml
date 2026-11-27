@@ -1,0 +1,107 @@
+name: Merge queue report
+
+# When the merge queue's pr-build of a PR fails, post the failing run, its failed jobs and steps,
+# and the first error lines of their logs as a comment on the PR. Without this the PR only shows
+# "removed from the merge queue": the run and the `build` status linking to it sit on the queue's
+# temporary gh-readonly-queue/... commit, which the PR page never shows.
+#
+# A merge-group pr-build run has no pull_requests[] in its workflow_run payload; the PR number is
+# read from its head branch, gh-readonly-queue/<base>/pr-<N>-<base sha>. A cancelled group (one
+# invalidated by a failure ahead of it) is not reported: only conclusion == failure.
+#
+# Trusted context only: no PR code runs here. The `workflow_run` trigger uses main's copy of
+# this workflow, and the checkout below pins the script to `main` as well. Job logs are untrusted
+# text and are only quoted inside a code fence (see scripts/merge_queue_report.py).
+
+on:
+  workflow_run:
+    workflows: ["pr-build"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: "A failed merge-group pr-build run id to report"
+        required: true
+        type: string
+      dry-run:
+        description: "Print the comment instead of posting it"
+        type: boolean
+        default: false
+
+# The default GITHUB_TOKEN reads the run, its jobs and logs; the comment goes through the scoped
+# App token, like every other PR write here.
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: merge-queue-report-${{ github.event.workflow_run.id || inputs.run-id }}
+  cancel-in-progress: false
+
+jobs:
+  report:
+    if: >-
+      github.repository == 'eic/EpsilonEridani' && (
+        github.event_name == 'workflow_dispatch'
+        || (github.event.workflow_run.event == 'merge_group'
+            && github.event.workflow_run.conclusion == 'failure'))
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      # Pinned to a full SHA: this step receives the App private key.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: eic
+          repositories: EpsilonEridani
+          # Commenting on a PR is governed by the pull requests permission.
+          permission-pull-requests: write
+      # The trusted base checkout: `ref: main` so a dispatch from any branch still runs main's
+      # script; dispatching itself is restricted to users with write access.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          sparse-checkout: scripts
+          persist-credentials: false
+      - name: Resolve the run
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+          EVENT_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EVENT_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          INPUT_RUN_ID: ${{ inputs.run-id }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "$INPUT_RUN_ID" in ''|*[!0-9]*) echo "::error::run-id must be numeric"; exit 1;; esac
+            run=$(gh api "repos/${{ github.repository }}/actions/runs/$INPUT_RUN_ID")
+            [ "$(jq -r .event <<<"$run")" = merge_group ] \
+              || { echo "::error::run $INPUT_RUN_ID is not a merge_group run"; exit 1; }
+            [ "$(jq -r .path <<<"$run")" = .github/workflows/pr-build.yml ] \
+              || { echo "::error::run $INPUT_RUN_ID is not a pr-build run"; exit 1; }
+            {
+              echo "id=$INPUT_RUN_ID"
+              echo "head_branch=$(jq -r .head_branch <<<"$run")"
+              echo "head_sha=$(jq -r .head_sha <<<"$run")"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "id=$EVENT_RUN_ID"
+              echo "head_branch=$EVENT_HEAD_BRANCH"
+              echo "head_sha=$EVENT_HEAD_SHA"
+            } >> "$GITHUB_OUTPUT"
+          fi
+      - name: Comment on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMENT_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ steps.run.outputs.id }}
+          HEAD_BRANCH: ${{ steps.run.outputs.head_branch }}
+          HEAD_SHA: ${{ steps.run.outputs.head_sha }}
+          DRY_RUN: ${{ inputs.dry-run && '1' || '0' }}
+        run: python3 scripts/merge_queue_report.py

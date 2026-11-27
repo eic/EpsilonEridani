@@ -57,6 +57,7 @@ jobs:
         run: |
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
+          PYTHONPATH=scripts python3 scripts/test_module_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
           PYTHONPATH=scripts python3 scripts/test_participant_graph.py
           PYTHONPATH=scripts python3 scripts/test_pr_stats_graphs.py
@@ -86,11 +87,12 @@ jobs:
           PYTHONPATH=. python3 scripts/perf/test_perf.py
           PYTHONPATH=scripts python3 scripts/test_claims_access.py
           python3 scripts/test_lint_dot_notation.py
-          python3 scripts/test_check_expired_mathlib_shims.py
+          python3 scripts/test_check_expired_upstream_shims.py
           python3 scripts/test_bump_moves.py
           python3 scripts/test_lake_requires.py
           python3 scripts/test_lean_versions.py
           python3 scripts/test_toolchain_tags.py
+          python3 scripts/test_merge_queue_report.py
 
       # The two-library split is build convenience, not a trust boundary.
       # This guard is what actually stops the AI-owned library from inheriting

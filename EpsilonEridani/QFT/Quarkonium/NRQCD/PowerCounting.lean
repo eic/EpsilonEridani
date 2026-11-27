@@ -45,6 +45,7 @@ zero, its powers. The structure `PowerCounting` bundles a grading with these two
 * `PowerCounting`: a grading of bilinears in which every bilinear is suppressed and each total
   degree is reached by finitely many bilinears.
 * `PowerCounting.truncation`: the finite set of composite operators up to a given total degree.
+* `PowerCounting.totalDegreePiece`: the finite set of composite operators of a given total degree.
 
 ## Main results
 
@@ -124,8 +125,8 @@ theorem totalDegree_le_totalDegree_compositeDeg {o : FreeMonoid B} {b : B} (hb :
 /-- If every bilinear is suppressed, the number of factors of a composite operator is at most its
 total degree. -/
 theorem length_le_totalDegree_compositeDeg (hpos : ∀ b, 0 < totalDegree (deg b))
-    (o : FreeMonoid B) : o.length ≤ totalDegree (compositeDeg deg o) := by
-  rw [totalDegree_compositeDeg, FreeMonoid.length,
+    (o : FreeMonoid B) : o.toList.length ≤ totalDegree (compositeDeg deg o) := by
+  rw [totalDegree_compositeDeg,
     ← List.length_map (f := fun b => totalDegree (deg b))]
   refine List.length_le_sum_of_one_le _ fun _ hi => ?_
   obtain ⟨b, -, rfl⟩ := List.mem_map.1 hi
@@ -146,7 +147,7 @@ theorem finite_totalDegree_compositeDeg_le (hpos : ∀ b, 0 < totalDegree (deg b
   have hmem : ∀ b ∈ o.toList, b ∈ S := fun b hb =>
     (totalDegree_le_totalDegree_compositeDeg deg hb).trans ho
   refine ⟨o.toList.pmap Subtype.mk hmem, ?_, ?_⟩
-  · simpa [FreeMonoid.length] using (length_le_totalDegree_compositeDeg deg hpos o).trans ho
+  · simpa using (length_le_totalDegree_compositeDeg deg hpos o).trans ho
   · simp [List.map_pmap]
 
 /-- An unsuppressed bilinear spoils finiteness: if the composite operators of total degree zero
@@ -157,7 +158,7 @@ theorem totalDegree_pos_of_finite_totalDegree_compositeDeg_le
   refine Nat.pos_of_ne_zero fun hb => h.not_infinite ?_
   refine Set.infinite_of_injective_forall_mem
     (f := fun k : ℕ => FreeMonoid.ofList (List.replicate k b))
-    (fun k k' hk => List.replicate_left_injective b (FreeMonoid.ofList.injective hk)) fun k => ?_
+    (fun k k' hk => List.replicate_left_injective b (FreeMonoid.ofList.inj hk)) fun k => ?_
   simp [compositeDeg_def, List.map_replicate, List.sum_replicate, hb]
 
 /-- If the composite operators up to total degree `n` form a finite set, so do the bilinears up to
@@ -290,8 +291,40 @@ theorem truncation_zero : P.truncation 0 = {1} := by
   simp only [mem_truncation, nonpos_iff_eq_zero, Finset.mem_singleton]
   refine ⟨fun h => ?_, fun h => by simp [h]⟩
   have := length_le_totalDegree_compositeDeg P.deg P.totalDegree_pos o
-  rw [h, nonpos_iff_eq_zero, FreeMonoid.length_eq_zero] at this
-  exact this
+  rw [h, nonpos_iff_eq_zero, List.length_eq_zero_iff] at this
+  exact FreeMonoid.ext (this.trans FreeMonoid.toList_one.symm)
+
+/-! ### Operators of a fixed total degree -/
+
+/-- The composite operators of total degree exactly `k`: the operators retained by the
+truncation at total degree `k` and by no truncation at lower total degree. -/
+noncomputable def totalDegreePiece (k : ℕ) : Finset (FreeMonoid B) :=
+  {o ∈ P.truncation k | totalDegree (compositeDeg P.deg o) = k}
+
+@[simp]
+theorem mem_totalDegreePiece {k : ℕ} {o : FreeMonoid B} :
+    o ∈ P.totalDegreePiece k ↔ totalDegree (compositeDeg P.deg o) = k := by
+  simp +contextual [totalDegreePiece]
+
+/-- The operators of total degree `k`, as a set of composite operators. -/
+@[simp]
+theorem coe_totalDegreePiece (k : ℕ) :
+    (P.totalDegreePiece k : Set (FreeMonoid B)) = {o | totalDegree (compositeDeg P.deg o) = k} :=
+  Set.ext fun _ => P.mem_totalDegreePiece
+
+/-- The operators of total degree `k` are retained by every truncation at total degree `n ≥ k`. -/
+theorem totalDegreePiece_subset_truncation {k n : ℕ} (hk : k ≤ n) :
+    P.totalDegreePiece k ⊆ P.truncation n := fun o ho => by
+  rw [mem_totalDegreePiece] at ho
+  simpa [ho] using hk
+
+/-- The operators of a truncation at total degree `n ≥ k` that have total degree `k` are the
+operators of total degree `k`. -/
+theorem filter_truncation_eq_totalDegreePiece {k n : ℕ} (hk : k ≤ n) :
+    {o ∈ P.truncation n | totalDegree (compositeDeg P.deg o) = k} = P.totalDegreePiece k := by
+  ext o
+  simp only [Finset.mem_filter, mem_truncation, mem_totalDegreePiece, and_iff_right_iff_imp]
+  exact fun h => h ▸ hk
 
 end PowerCounting
 
