@@ -35,6 +35,7 @@ theorem tMinElastic_eq_tZero (M : ℝ) {ξ : ℝ} (hξ : ξ ≠ 2) :
     tMinElastic M ξ = Particles.Parton.GPD.tZero M (ξ / (2 - ξ)) := by
   have h2 : 2 - ξ ≠ 0 := sub_ne_zero.mpr (Ne.symm hξ)
   rw [tMinElastic_def, Particles.Parton.GPD.tZero_def]
+  -- At the pole `ξ = 1` both sides are the division junk value `0`.
   by_cases h1 : ξ = 1
   · subst h1
     norm_num

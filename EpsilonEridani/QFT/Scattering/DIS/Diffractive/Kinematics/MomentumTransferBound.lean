@@ -226,7 +226,7 @@ theorem exists_tMom_eq_of_le_tMin (hg : g.IsRefl) (L : LightConeBasis g) {e : V}
     rw [deltaLostRelativeTransverse_def, hξK, deltaLost_def, hKP, hKP', map_sub, hKT, hpT]
     module
   refine ⟨K, hKP, rfl, rfl, hMYK, hξK, ?_⟩
-  rw [tMom_eq_tMin_xiLC_add hg L K hpK (hξK ▸ hξ.ne) hMK hMYK, hξK, hw]
+  rw [tMom_eq_tMin_xiLC_add hg L K hpK (ne_of_eq_of_ne hξK hξ.ne) hMK hMYK, hξK, hw]
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← sq, hs2]
   field_simp
