@@ -21,9 +21,10 @@ a *proposal* law `μ.withDensity g`, with `g` a density against `μ`, and gives 
 *weight* `f x / g x` (`ImportanceSampling.weight f g`). The weight is real-valued and may be
 negative, as the weights of an event generator with negative-weight events are.
 
-The standing hypotheses are the ones an implementation needs: `g` is almost everywhere finite,
-and `g` vanishes only where `f` does (`∀ᵐ x ∂μ, g x = 0 → f x = 0`), so that every region where
-`f` has mass is ever proposed. Under them:
+The standing hypotheses are the ones an implementation needs: `g` is almost everywhere measurable
+and almost everywhere finite, and `g` vanishes only where `f` does
+(`∀ᵐ x ∂μ, g x = 0 → f x = 0`), so that every region where `f` has mass is ever proposed.
+Under them:
 
 * `integral_weight`: the expected weight under the proposal is `∫ f dμ`, so the mean weight is an
   unbiased estimator of the integral. An observable `O` is estimated with the weight of `f * O`,
@@ -43,9 +44,13 @@ The variance results additionally assume a normalised proposal (`∫⁻ g dμ = 
   The optimal proposal gives every point the weight `(∫ |f| dμ) · sign (f x)`
   (`weight_optimalProposal`), so for a non-negative `f` it has zero variance
   (`variance_weight_optimalProposal_eq_zero_of_nonneg`).
-* `variance_weight_mul` and `variance_weight_mul_optimalProposal`: the same for an observable
-  `O`, whose weighted value `weight f g * O` has variance `∫ (f O)² / g dμ - (∫ f O dμ)²`,
-  equal to `(∫ |f O| dμ)² - (∫ f O dμ)²` for the proposal `|f O| / ∫ |f O| dμ`.
+* `variance_weight_optimalProposal_le_variance_weight`: hence the optimal proposal minimises the
+  variance over all such proposals.
+* `variance_weight_mul`, `sq_integral_abs_sub_sq_integral_le_variance_weight_mul`,
+  `variance_weight_mul_optimalProposal` and
+  `variance_weight_mul_optimalProposal_le_variance_weight_mul`: the same for an observable `O`,
+  whose weighted value `weight f g * O` has variance `∫ (f O)² / g dμ - (∫ f O dμ)²`, at least
+  `(∫ |f O| dμ)² - (∫ f O dμ)²`, with equality for the proposal `|f O| / ∫ |f O| dμ`.
 
 For the estimator built from draws `X i`:
 
@@ -96,13 +101,15 @@ functions. -/
 theorem weight_mul' (f O : α → ℝ) (g : α → ℝ≥0∞) : weight (f * O) g = weight f g * O :=
   funext (weight_mul f O g)
 
-theorem abs_weight (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) :
-    |weight f g x| = weight (fun y => |f y|) g x := by
+/-- The weight for `|f|` is the absolute value of the weight for `f`. -/
+@[simp]
+theorem weight_abs_apply (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) :
+    weight (fun y => |f y|) g x = |weight f g x| := by
   simp only [weight_apply, abs_div, ENNReal.abs_toReal]
 
 /-- The weight for `|f|` is the absolute value of the weight for `f`, as functions. -/
 theorem weight_abs (f : α → ℝ) (g : α → ℝ≥0∞) : weight (fun y => |f y|) g = |weight f g| :=
-  funext fun x => (abs_weight f g x).symm
+  funext (weight_abs_apply f g)
 
 /-- Away from the points where `g` is infinite, or zero while `f` is not, the density times the
 weight recovers the target. -/
@@ -193,7 +200,7 @@ theorem variance_weight (hg : AEMeasurable g μ) (hg1 : ∫⁻ x, g x ∂μ = 1)
     (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) (hw : MemLp (weight f g) 2 (μ.withDensity g)) :
     variance (weight f g) (μ.withDensity g) =
       ∫ x, f x ^ 2 / (g x).toReal ∂μ - (∫ x, f x ∂μ) ^ 2 := by
-  have := isProbabilityMeasure_withDensity hg1
+  have := isProbabilityMeasure_withDensity_iff.2 hg1
   have hg_top : ∀ᵐ x ∂μ, g x < ∞ := ae_lt_top' hg (by simp [hg1])
   rw [variance_eq_sub hw]
   simp only [Pi.pow_apply]
@@ -226,7 +233,21 @@ theorem sq_integral_abs_sub_sq_integral_le_variance_weight (hg : AEMeasurable g 
   simp only [sq_abs] at h
   linarith
 
-/-- The variance-minimising proposal density `|f| / ∫ |f| dμ`. -/
+/-- **No proposal beats `|f O|` for an observable.** For every normalised proposal density that
+vanishes only where `f` does, and an observable `O` whose weighted value is square-integrable, the
+variance of `weight f g * O` is at least `(∫ |f O| dμ)² - (∫ f O dμ)²`. -/
+theorem sq_integral_abs_sub_sq_integral_le_variance_weight_mul (hg : AEMeasurable g μ)
+    (hg1 : ∫⁻ x, g x ∂μ = 1) (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) (O : α → ℝ)
+    (hw : MemLp (weight f g * O) 2 (μ.withDensity g)) :
+    (∫ x, |f x * O x| ∂μ) ^ 2 - (∫ x, f x * O x ∂μ) ^ 2 ≤
+      variance (weight f g * O) (μ.withDensity g) := by
+  rw [← weight_mul'] at hw ⊢
+  exact sq_integral_abs_sub_sq_integral_le_variance_weight hg hg1
+    (by filter_upwards [hfg] with x hx h0 using by simp [hx h0]) hw
+
+/-- The variance-minimising proposal density `|f| / ∫ |f| dμ`. It is `0` when `∫ |f| dμ = 0`, in
+particular when `f` is not integrable; the optimality results assume `Integrable f μ` and
+`∫ |f| dμ ≠ 0`. -/
 def optimalProposal (f : α → ℝ) (μ : Measure α) (x : α) : ℝ≥0∞ :=
   ENNReal.ofReal (|f x| / ∫ y, |f y| ∂μ)
 
@@ -264,7 +285,7 @@ theorem lintegral_optimalProposal_eq_one (hf : Integrable f μ) (hf0 : ∫ x, |f
 /-- The optimal proposal law is a probability measure. -/
 theorem isProbabilityMeasure_withDensity_optimalProposal (hf : Integrable f μ)
     (hf0 : ∫ x, |f x| ∂μ ≠ 0) : IsProbabilityMeasure (μ.withDensity (optimalProposal f μ)) :=
-  isProbabilityMeasure_withDensity (lintegral_optimalProposal_eq_one hf hf0)
+  isProbabilityMeasure_withDensity_iff.2 (lintegral_optimalProposal_eq_one hf hf0)
 
 /-- The optimal proposal vanishes exactly where `f` does. -/
 theorem optimalProposal_eq_zero_iff (hf0 : ∫ x, |f x| ∂μ ≠ 0) {x : α} :
@@ -324,6 +345,17 @@ theorem variance_weight_optimalProposal (hf : Integrable f μ) (hf0 : ∫ x, |f 
   rw [variance_weight hg (lintegral_optimalProposal_eq_one hf hf0) hfg hw, hsq, integral_const_mul]
   ring
 
+/-- **The optimal proposal minimises the variance.** Its weight has variance at most that of the
+weight against any normalised proposal density that vanishes only where `f` does and whose weight
+is square-integrable. -/
+theorem variance_weight_optimalProposal_le_variance_weight (hf : Integrable f μ)
+    (hf0 : ∫ x, |f x| ∂μ ≠ 0) (hg : AEMeasurable g μ) (hg1 : ∫⁻ x, g x ∂μ = 1)
+    (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0) (hw : MemLp (weight f g) 2 (μ.withDensity g)) :
+    variance (weight f (optimalProposal f μ)) (μ.withDensity (optimalProposal f μ)) ≤
+      variance (weight f g) (μ.withDensity g) := by
+  rw [variance_weight_optimalProposal hf hf0]
+  exact sq_integral_abs_sub_sq_integral_le_variance_weight hg hg1 hfg hw
+
 /-- For a non-negative target density, the optimal proposal has zero variance. -/
 theorem variance_weight_optimalProposal_eq_zero_of_nonneg (hf : Integrable f μ)
     (hf0 : ∫ x, |f x| ∂μ ≠ 0) (hpos : 0 ≤ᵐ[μ] f) :
@@ -332,7 +364,8 @@ theorem variance_weight_optimalProposal_eq_zero_of_nonneg (hf : Integrable f μ)
     integral_congr_ae (hpos.mono fun x hx => abs_of_nonneg hx), sub_self]
 
 /-- **The optimal proposal for an observable.** With the proposal `|f O| / ∫ |f O| dμ`, the
-variance of `weight f g * O` is exactly `(∫ |f O| dμ)² - (∫ f O dμ)²`. -/
+variance of the weight against that proposal, times `O`, is exactly
+`(∫ |f O| dμ)² - (∫ f O dμ)²`. -/
 theorem variance_weight_mul_optimalProposal {O : α → ℝ} (hf : Integrable (f * O) μ)
     (hf0 : ∫ x, |f x * O x| ∂μ ≠ 0) :
     variance (weight f (optimalProposal (f * O) μ) * O)
@@ -340,6 +373,20 @@ theorem variance_weight_mul_optimalProposal {O : α → ℝ} (hf : Integrable (f
       (∫ x, |f x * O x| ∂μ) ^ 2 - (∫ x, f x * O x ∂μ) ^ 2 := by
   rw [← weight_mul']
   exact variance_weight_optimalProposal hf hf0
+
+/-- **The optimal proposal for an observable minimises its variance.** With the proposal
+`|f O| / ∫ |f O| dμ`, the weight times `O` has variance at most that of `weight f g * O` for any
+normalised proposal density `g` that vanishes only where `f` does and makes `weight f g * O`
+square-integrable. -/
+theorem variance_weight_mul_optimalProposal_le_variance_weight_mul {O : α → ℝ}
+    (hf : Integrable (f * O) μ) (hf0 : ∫ x, |f x * O x| ∂μ ≠ 0) (hg : AEMeasurable g μ)
+    (hg1 : ∫⁻ x, g x ∂μ = 1) (hfg : ∀ᵐ x ∂μ, g x = 0 → f x = 0)
+    (hw : MemLp (weight f g * O) 2 (μ.withDensity g)) :
+    variance (weight f (optimalProposal (f * O) μ) * O)
+        (μ.withDensity (optimalProposal (f * O) μ)) ≤
+      variance (weight f g * O) (μ.withDensity g) := by
+  rw [variance_weight_mul_optimalProposal hf hf0]
+  exact sq_integral_abs_sub_sq_integral_le_variance_weight_mul hg hg1 hfg O hw
 
 section Estimator
 

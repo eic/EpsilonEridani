@@ -10,8 +10,8 @@ public import Mathlib.MeasureTheory.VectorMeasure.WithDensity
 /-!
 # Measures with a density
 
-A density `g` against `μ` whose lower integral is `1` defines a probability measure
-`μ.withDensity g` (`isProbabilityMeasure_withDensity`). Mathlib has the finite-measure version
+A density `g` against `μ` defines a probability measure `μ.withDensity g` exactly when its lower
+integral is `1` (`isProbabilityMeasure_withDensity_iff`). Mathlib has the finite-measure version
 (`MeasureTheory.isFiniteMeasure_withDensity`) but not the normalised one.
 
 The signed measure `μ.withDensityᵥ f` of a non-integrable `f` is `0`
@@ -27,10 +27,10 @@ open scoped ENNReal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
-/-- A density with lower integral `1` defines a probability measure. -/
-theorem isProbabilityMeasure_withDensity {g : α → ℝ≥0∞} (hg1 : ∫⁻ x, g x ∂μ = 1) :
-    IsProbabilityMeasure (μ.withDensity g) :=
-  ⟨by rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, hg1]⟩
+/-- A density defines a probability measure exactly when its lower integral is `1`. -/
+theorem isProbabilityMeasure_withDensity_iff {g : α → ℝ≥0∞} :
+    IsProbabilityMeasure (μ.withDensity g) ↔ ∫⁻ x, g x ∂μ = 1 := by
+  rw [isProbabilityMeasure_iff, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
 
 /-- The signed measure with a non-integrable density is `0`. -/
 theorem withDensityᵥ_eq_zero_of_not_integrable {E : Type*} [NormedAddCommGroup E]
