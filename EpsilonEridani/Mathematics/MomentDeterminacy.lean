@@ -12,22 +12,23 @@ public import TauCeti.Probability.Moments.VanishingMoments
 # The moment problem on a compact interval
 
 An integrable function on a compact interval `[a, b]` is determined almost everywhere by the
-numbers `∫_a^b x^n f(x) dx`, `n ∈ ℕ`: this is the uniqueness half of the Hausdorff moment
-problem, and `ae_eq_of_forall_setIntegral_Icc_pow_mul_eq` is the form proved here. The analytic
-work is done by TauCeti's `TauCeti.ae_eq_zero_of_forall_moment_eq_zero`, which kills a function
-with vanishing moments against an arbitrary measure on `ℝ` provided some exponential weight
-`e^{a|x|}` keeps it integrable. On a compact interval that weight is free: a continuous factor
-against a function integrable on a compact set stays integrable, so the only hypothesis left
-here is integrability on `[a, b]`.
+numbers `∫_a^b x^n f(x) dμ(x)`, `n ∈ ℕ`: this is the uniqueness half of the Hausdorff moment
+problem, and `ae_eq_of_forall_setIntegral_Icc_pow_mul_eq` is the form proved here, against an
+arbitrary measure `μ` on `ℝ` (Lebesgue measure, or a weight such as Chebyshev's on `[-1, 1]`).
+The analytic work is done by TauCeti's `TauCeti.ae_eq_zero_of_forall_moment_eq_zero`, which
+kills a function with vanishing moments against an arbitrary measure on `ℝ` provided some
+exponential weight `e^{a|x|}` keeps it integrable. On a compact interval that weight is free: a
+continuous factor against a function integrable on a compact set stays integrable, so the only
+hypothesis left here is integrability on `[a, b]`.
 
 Determinacy is sharp in the number of moments used: **no finite set of moments determines the
-function.** For every `N`, the polynomials of degree at most `N + 1` annihilated by the moments
-of order `0, …, N` form a nonzero subspace of the `(N + 2)`-dimensional space
-`Polynomial.degreeLT ℝ (N + 2)`, namely the kernel there of the moment map
-`polynomialMomentsIcc a b N`, because `N + 2` coefficients have only `N + 1` moments to match
-(`ker_polynomialMomentsIcc_inf_degreeLT_ne_bot`). On a nondegenerate interval each nonzero member
-is a counterexample that is not almost everywhere zero
-(`exists_polynomial_ne_zero_forall_le_setIntegral_Icc_pow_mul_eq_zero`).
+function.** For Lebesgue measure and every `N`, the polynomials of degree at most `N + 1`
+annihilated by the moments of order `0, …, N` form a nonzero subspace of the
+`(N + 2)`-dimensional space `Polynomial.degreeLT ℝ (N + 2)`, namely the kernel there of the
+moment map `polynomialMomentsIcc a b N`, because `N + 2` coefficients have only `N + 1` moments
+to match (`ker_polynomialMomentsIcc_inf_degreeLT_ne_bot`). On a nondegenerate interval each
+nonzero member is a counterexample that is not almost everywhere zero
+(`exists_polynomial_not_ae_eq_zero_forall_le_setIntegral_Icc_pow_mul_eq_zero`).
 
 The two statements together are what separates a moment *constraint* from moment *knowledge*: a
 function on a bounded interval is determined by all of its moments and by no finite part of
@@ -38,10 +39,11 @@ them.
 - `ae_eq_zero_of_forall_setIntegral_Icc_pow_mul_eq_zero` and
   `ae_eq_of_forall_setIntegral_Icc_pow_mul_eq`: **moment determinacy.**
 - `polynomialMomentsIcc`: the moments of order `0, …, N` of a polynomial, as a linear map.
+- `mem_ker_polynomialMomentsIcc_iff`: membership in its kernel, as vanishing of the moments.
 - `ker_polynomialMomentsIcc_inf_degreeLT_ne_bot`: the counterexamples of degree at most `N + 1`
   form a nonzero subspace.
-- `exists_polynomial_ne_zero_forall_le_setIntegral_Icc_pow_mul_eq_zero`: **failure of determinacy
-  from finitely many moments.**
+- `exists_polynomial_not_ae_eq_zero_forall_le_setIntegral_Icc_pow_mul_eq_zero`: **failure of
+  determinacy from finitely many moments.**
 - `not_eval_ae_eq_zero_of_ne_zero`: a nonzero polynomial is not almost everywhere zero on a
   nondegenerate interval.
 
@@ -62,32 +64,32 @@ open MeasureTheory Set
 
 namespace EpsilonEridani
 
-variable {a b : ℝ} {f g : ℝ → ℝ}
+variable {a b : ℝ} {f g : ℝ → ℝ} {μ : Measure ℝ}
 
 /-- Every moment of a function integrable on a compact interval is finite: `x ^ n * f x` is
 integrable on `[a, b]` whenever `f` is, because `x ^ n` is continuous. -/
-theorem integrableOn_Icc_pow_mul (hf : IntegrableOn f (Icc a b)) (n : ℕ) :
-    IntegrableOn (fun x => x ^ n * f x) (Icc a b) :=
+theorem integrableOn_Icc_pow_mul (hf : IntegrableOn f (Icc a b) μ) (n : ℕ) :
+    IntegrableOn (fun x => x ^ n * f x) (Icc a b) μ :=
   IntegrableOn.continuousOn_mul (by fun_prop) hf isCompact_Icc
 
 /-- **Determinacy of the Hausdorff moment problem.** An integrable function on a compact
 interval all of whose moments vanish is almost everywhere zero.
 
-This is `TauCeti.ae_eq_zero_of_forall_moment_eq_zero` at `volume.restrict (Icc a b)`: the
+This is `TauCeti.ae_eq_zero_of_forall_moment_eq_zero` at `μ.restrict (Icc a b)`: the
 exponential weight it asks for costs nothing on a compact interval, since multiplying an
 integrable function there by a continuous one preserves integrability. -/
-theorem ae_eq_zero_of_forall_setIntegral_Icc_pow_mul_eq_zero (hf : IntegrableOn f (Icc a b))
-    (hmom : ∀ n : ℕ, ∫ x in Icc a b, x ^ n * f x = 0) :
-    f =ᵐ[volume.restrict (Icc a b)] 0 :=
+theorem ae_eq_zero_of_forall_setIntegral_Icc_pow_mul_eq_zero (hf : IntegrableOn f (Icc a b) μ)
+    (hmom : ∀ n : ℕ, ∫ x in Icc a b, x ^ n * f x ∂μ = 0) :
+    f =ᵐ[μ.restrict (Icc a b)] 0 :=
   TauCeti.ae_eq_zero_of_forall_moment_eq_zero f
     ⟨1, one_pos, IntegrableOn.continuousOn_mul (by fun_prop) hf isCompact_Icc⟩ hmom
 
 /-- **An integrable function on a compact interval is determined by its moments.** -/
-theorem ae_eq_of_forall_setIntegral_Icc_pow_mul_eq (hf : IntegrableOn f (Icc a b))
-    (hg : IntegrableOn g (Icc a b))
-    (hmom : ∀ n : ℕ, ∫ x in Icc a b, x ^ n * f x = ∫ x in Icc a b, x ^ n * g x) :
-    f =ᵐ[volume.restrict (Icc a b)] g := by
-  have hdiff : (fun x => f x - g x) =ᵐ[volume.restrict (Icc a b)] 0 := by
+theorem ae_eq_of_forall_setIntegral_Icc_pow_mul_eq (hf : IntegrableOn f (Icc a b) μ)
+    (hg : IntegrableOn g (Icc a b) μ)
+    (hmom : ∀ n : ℕ, ∫ x in Icc a b, x ^ n * f x ∂μ = ∫ x in Icc a b, x ^ n * g x ∂μ) :
+    f =ᵐ[μ.restrict (Icc a b)] g := by
+  have hdiff : (fun x => f x - g x) =ᵐ[μ.restrict (Icc a b)] 0 := by
     refine ae_eq_zero_of_forall_setIntegral_Icc_pow_mul_eq_zero (hf.sub hg) fun n => ?_
     simp_rw [mul_sub]
     rw [integral_sub (integrableOn_Icc_pow_mul hf n) (integrableOn_Icc_pow_mul hg n), hmom n,
@@ -115,6 +117,14 @@ def polynomialMomentsIcc (a b : ℝ) (N : ℕ) : Polynomial ℝ →ₗ[ℝ] Fin 
 theorem polynomialMomentsIcc_apply (N : ℕ) (p : Polynomial ℝ) (n : Fin (N + 1)) :
     polynomialMomentsIcc a b N p n = ∫ x in Icc a b, x ^ (n : ℕ) * p.eval x :=
   (rfl)
+
+/-- A polynomial lies in the kernel of `polynomialMomentsIcc a b N` exactly when its moments of
+order `0, …, N` on `[a, b]` all vanish. -/
+theorem mem_ker_polynomialMomentsIcc_iff {N : ℕ} {p : Polynomial ℝ} :
+    p ∈ LinearMap.ker (polynomialMomentsIcc a b N) ↔
+      ∀ n ≤ N, ∫ x in Icc a b, x ^ n * p.eval x = 0 := by
+  simp only [LinearMap.mem_ker, funext_iff, polynomialMomentsIcc_apply, Pi.zero_apply]
+  exact ⟨fun h n hn => h ⟨n, Nat.lt_succ_of_le hn⟩, fun h n => h n (Nat.le_of_lt_succ n.2)⟩
 
 /-- **The counterexamples to determinacy from `N + 1` moments form a nonzero subspace.** The
 polynomials of degree at most `N + 1` whose moments of order `0, …, N` on `[a, b]` all vanish are
@@ -152,7 +162,7 @@ what makes this sharp: the counterexample is not a null perturbation of `0`, so 
 known.
 
 Any nonzero element of the subspace of `ker_polynomialMomentsIcc_inf_degreeLT_ne_bot` will do. -/
-theorem exists_polynomial_ne_zero_forall_le_setIntegral_Icc_pow_mul_eq_zero (hab : a < b)
+theorem exists_polynomial_not_ae_eq_zero_forall_le_setIntegral_Icc_pow_mul_eq_zero (hab : a < b)
     (N : ℕ) :
     ∃ p : Polynomial ℝ, p ≠ 0 ∧ p.natDegree ≤ N + 1 ∧
       ¬ (fun x => p.eval x) =ᵐ[volume.restrict (Icc a b)] 0 ∧
@@ -160,10 +170,10 @@ theorem exists_polynomial_ne_zero_forall_le_setIntegral_Icc_pow_mul_eq_zero (hab
   obtain ⟨p, ⟨hker, hdeg⟩, hp⟩ :=
     (Submodule.ne_bot_iff _).mp
       (ker_polynomialMomentsIcc_inf_degreeLT_ne_bot (a := a) (b := b) N)
-  refine ⟨p, hp, ?_, not_eval_ae_eq_zero_of_ne_zero hab hp, fun n hn => ?_⟩
-  · rw [SetLike.mem_coe, Polynomial.mem_degreeLT,
-      ← Polynomial.natDegree_lt_iff_degree_lt hp] at hdeg
-    omega
-  · simpa using congrFun (LinearMap.mem_ker.mp hker) ⟨n, Nat.lt_succ_of_le hn⟩
+  refine ⟨p, hp, ?_, not_eval_ae_eq_zero_of_ne_zero hab hp,
+    mem_ker_polynomialMomentsIcc_iff.mp hker⟩
+  rw [SetLike.mem_coe, Polynomial.mem_degreeLT,
+    ← Polynomial.natDegree_lt_iff_degree_lt hp] at hdeg
+  omega
 
 end EpsilonEridani
