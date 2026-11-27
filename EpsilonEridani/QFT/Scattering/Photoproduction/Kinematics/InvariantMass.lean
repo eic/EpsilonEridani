@@ -135,9 +135,9 @@ theorem energyFraction_eq_sqrt_minkowskiProduct_add_self_mul_cosh_rapidity_sub_d
 
 /-- **The energy fraction of a photon null along the beam axis from the invariant mass and the
 rapidity.** A photon `γ` whose four-momentum `q` is null along the unit beam axis `n`,
-`q⁰ = γ.energy` and `q.spatialPart = γ.energy • n`, and a target of energy `E` and momentum `p`
-against it, with `|γ.energy - p| < γ.energy + E`, form a system of invariant mass `W` and rapidity
-`y` along `n` with `x = e^{y} (W² - P²) / (2 W E_s)`, where `x` is the fraction of the energy
+`q⁰ = γ.energy` and `q.spatialPart = γ.energy • n`, and a target of momentum `p` against it,
+with `|γ.energy - p| < γ.energy + P⁰`, form a system of invariant mass `W` and rapidity `y` along
+`n` with `x = e^{y} (W² - P²) / (2 W E_s)`, where `x` is the fraction of the energy
 `E_s` of the source `s` carried by the photon and `P² = M²` for a target of mass `M`. When
 moreover `γ.virtuality = -⟪q, q⟫ₘ` and `0 ≤ γ.energy`, `γ` is a real photon
 (`PhotonKinematics.isReal_iff_abs_eq_energy_of_spatialPart_eq_smul`); conversely a real photon
@@ -145,13 +145,12 @@ moving forward along `n` satisfies `hq'` (`PhotonKinematics.spatialPart_eq_energ
 -/
 theorem energyFraction_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_energy_smul
     (hn : ‖n‖ = 1) (hq : q.timeComponent = γ.energy) (hq' : q.spatialPart = γ.energy • n)
-    (hP : P.timeComponent = E) (hP' : P.spatialPart = -p • n)
-    (h : |γ.energy - p| < γ.energy + E) :
+    (hP' : P.spatialPart = -p • n) (h : |γ.energy - p| < γ.energy + P.timeComponent) :
     γ.energyFraction s = exp ((q + P).rapidity n) * (⟪q + P, q + P⟫ₘ - ⟪P, P⟫ₘ) /
       (2 * √⟪q + P, q + P⟫ₘ * s.energy) := by
   rw [energyFraction_def, ← div_div, ← hq,
     timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_timeComponent_smul hn
-      (by rw [hq', hq]) hP' (by rwa [hq, hP, ← sub_eq_add_neg])]
+      (by rw [hq', hq]) hP' (by rwa [hq, ← sub_eq_add_neg])]
 
 end PhotonKinematics
 

@@ -62,7 +62,7 @@ Collinearity is preserved by sums
 (`Lorentz.Vector.spatialPart_add_eq_smul_of_spatialPart_eq_smul`), so these relations apply to
 the system `u + v` of two four-vectors with spatial parts `a • n` and `b • n`, with `a + b` and
 `(u + v)⁰ = u⁰ + v⁰` (`Lorentz.Vector.timeComponent_add`) in place of `a` and `v⁰`; `W > 0` for
-`|a + b| < u⁰ + v⁰` is `Lorentz.Vector.sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul`.
+`|a + b| < |u⁰ + v⁰|` is `Lorentz.Vector.sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul`.
 For two null vectors of positive energy, one along and one against `n` (`a = u⁰`, `b = -v⁰`),
 they reduce to `e^{2y} = u⁰ / v⁰`, `2 u⁰ = W e^{y}` and `2 v⁰ = W e^{-y}`. For `u` null along `n`
 (`a = u⁰`) and any `v`, `u⁰ = e^{y} (W² - ⟪v, v⟫ₘ) / (2 W)`
@@ -282,7 +282,8 @@ theorem timeComponent_eq_exp_rapidity_mul_sub_div_sqrt_of_spatialPart_eq_timeCom
    timeComponent_sub_coeff_eq_sqrt_minkowskiProduct_self_mul_exp_neg_rapidity_of_spatialPart_eq_smul
       hn (spatialPart_add_eq_smul_of_spatialPart_eq_smul hu hv) (by rwa [timeComponent_add])
   rw [timeComponent_add] at hB
-  have hpos := sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul hn hu hv h
+  have hpos := sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul hn hu hv
+    (h.trans_le (le_abs_self _))
   have he : exp ((u + v).rapidity n) * exp (-(u + v).rapidity n) = 1 := by
     rw [← exp_add, add_neg_cancel, exp_zero]
   rw [eq_div_iff (mul_ne_zero two_ne_zero hpos.ne')]

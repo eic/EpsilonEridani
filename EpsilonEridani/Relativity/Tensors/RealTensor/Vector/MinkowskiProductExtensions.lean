@@ -36,9 +36,9 @@ declaration order, the file contains:
   `⟪u + v, u + v⟫ₘ = ⟪v, v⟫ₘ + 2 u⁰ (v⁰ - b)`
   (`minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul`); for any vector,
   `⟪v, v⟫ₘ = 0 ↔ ‖v.spatialPart‖ = |v⁰|` (`minkowskiProduct_self_eq_zero_iff`);
-* the positivity of `⟪v, v⟫ₘ` and of `√⟪v, v⟫ₘ` inside the forward light cone
-  `‖v.spatialPart‖ < v⁰` (`minkowskiProduct_self_pos`, `sqrt_minkowskiProduct_self_pos`), so in
-  particular when `|a| < v⁰`, also for a sum of two such vectors
+* the positivity of `⟪v, v⟫ₘ` and of `√⟪v, v⟫ₘ` inside the light cone in either time direction,
+  `‖v.spatialPart‖ < |v⁰|` (`minkowskiProduct_self_pos_iff`, `sqrt_minkowskiProduct_self_pos`),
+  so in particular when `|a| < |v⁰|`, also for a sum of two such vectors
   (`sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul`,
   `sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul`), and the form
   `⟪v, v⟫ₘ = (v⁰)² - ⟪v.spatialPart, n⟫²` in terms of the component along `n`
@@ -145,31 +145,30 @@ theorem minkowskiProduct_add_self_of_spatialPart_eq_timeComponent_smul {d : ℕ}
     inner_spatialPart_eq_of_spatialPart_eq_smul hn hu]
   ring
 
-/-- A four-vector inside the forward light cone, `‖v.spatialPart‖ < v⁰`, is timelike:
-`0 < ⟪v, v⟫ₘ`. -/
-theorem minkowskiProduct_self_pos {d : ℕ} {v : Vector d}
-    (h : ‖v.spatialPart‖ < v.timeComponent) : 0 < ⟪v, v⟫ₘ := by
-  rw [minkowskiProduct_self_eq_sq_sub, sub_pos]
-  exact pow_lt_pow_left₀ h (norm_nonneg _) two_ne_zero
+/-- A four-vector is timelike, `0 < ⟪v, v⟫ₘ`, exactly when the length of its spatial part is
+less than `|v⁰|`, inside the light cone in either time direction. -/
+theorem minkowskiProduct_self_pos_iff {d : ℕ} (v : Vector d) :
+    0 < ⟪v, v⟫ₘ ↔ ‖v.spatialPart‖ < |v.timeComponent| := by
+  rw [minkowskiProduct_self_eq_sq_sub, sub_pos, sq_lt_sq, abs_norm]
 
-/-- A four-vector inside the forward light cone, `‖v.spatialPart‖ < v⁰`, has positive invariant
-mass: `0 < √⟪v, v⟫ₘ`. -/
+/-- A four-vector inside the light cone in either time direction, `‖v.spatialPart‖ < |v⁰|`, has
+positive invariant mass: `0 < √⟪v, v⟫ₘ`. -/
 theorem sqrt_minkowskiProduct_self_pos {d : ℕ} {v : Vector d}
-    (h : ‖v.spatialPart‖ < v.timeComponent) : 0 < √⟪v, v⟫ₘ :=
-  Real.sqrt_pos.2 (minkowskiProduct_self_pos h)
+    (h : ‖v.spatialPart‖ < |v.timeComponent|) : 0 < √⟪v, v⟫ₘ :=
+  Real.sqrt_pos.2 ((minkowskiProduct_self_pos_iff v).mpr h)
 
-/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < v⁰` has positive
-invariant mass: `0 < √⟪v, v⟫ₘ`. -/
+/-- A four-vector whose spatial part is `a • n`, for a unit vector `n`, with `|a| < |v⁰|` has
+positive invariant mass: `0 < √⟪v, v⟫ₘ`. -/
 theorem sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul {d : ℕ} {v : Vector d}
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a : ℝ} (hv : v.spatialPart = a • n)
-    (h : |a| < v.timeComponent) : 0 < √⟪v, v⟫ₘ :=
+    (h : |a| < |v.timeComponent|) : 0 < √⟪v, v⟫ₘ :=
   sqrt_minkowskiProduct_self_pos (by rwa [hv, norm_smul, hn, mul_one, Real.norm_eq_abs])
 
 /-- Two four-vectors whose spatial parts are `a • n` and `b • n`, for a unit vector `n`, with
-`|a + b| < u⁰ + v⁰` form a system of positive invariant mass: `0 < √⟪u + v, u + v⟫ₘ`. -/
+`|a + b| < |u⁰ + v⁰|` form a system of positive invariant mass: `0 < √⟪u + v, u + v⟫ₘ`. -/
 theorem sqrt_minkowskiProduct_add_self_pos_of_spatialPart_eq_smul {d : ℕ} {u v : Vector d}
     {n : EuclideanSpace ℝ (Fin d)} (hn : ‖n‖ = 1) {a b : ℝ} (hu : u.spatialPart = a • n)
-    (hv : v.spatialPart = b • n) (h : |a + b| < u.timeComponent + v.timeComponent) :
+    (hv : v.spatialPart = b • n) (h : |a + b| < |u.timeComponent + v.timeComponent|) :
     0 < √⟪u + v, u + v⟫ₘ := by
   rw [← timeComponent_add] at h
   exact sqrt_minkowskiProduct_self_pos_of_spatialPart_eq_smul hn
