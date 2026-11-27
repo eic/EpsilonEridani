@@ -34,9 +34,11 @@ preserve `d^d p`, but its Jacobian `E(Λp) / E(p)` is cancelled exactly by the d
   `oneBodyMeasure m`. Along the boost axis, at fixed transverse momentum `p_⊥`, the energy is
   `√(m² + |p_⊥|² + q²)` and the boost acts as `q ↦ γ (q - β E)`, a bijection of the line with
   derivative `E' / E`, where `E' = γ (E - β q)` is the boosted energy.
-* `measurePreserving_massShellMap_of_timeComponent_eq_one`: a Lorentz transformation with
-  time-time entry `1`, a spatial rotation or reflection, preserves it, since it acts on `p` as the
-  linear isometry `LorentzGroup.spatialLinearIsometryEquiv` and leaves `E` unchanged.
+* `measurePreserving_linearIsometryEquiv`: every linear isometry of the spatial momenta, a
+  rotation or reflection, preserves it, since it preserves `d^d p` and `|p|`, hence `E`. A Lorentz
+  transformation with time-time entry `1` acts on `p` as such an isometry,
+  `LorentzGroup.spatialLinearIsometryEquiv`, so it preserves the measure as well
+  (`measurePreserving_massShellMap_of_timeComponent_eq_one`).
 
 This file proves invariance only for these two generating cases. Both keep the energy
 non-negative, so for a finite product of them `massShellMap_mul` writes the map as the
@@ -267,22 +269,26 @@ theorem measurePreserving_massShellMap_boost (i : Fin d) {β : ℝ} (hβ : |β| 
 
 /-! ### Rotations and spatial reflections -/
 
-/-- **Rotation invariance.** A Lorentz transformation with time-time entry `1` — a spatial
-rotation or reflection — preserves the one-body measure. -/
-theorem measurePreserving_massShellMap_of_timeComponent_eq_one {Λ : LorentzGroup d}
-    (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (m : ℝ) :
-    MeasurePreserving (massShellMap Λ m) (oneBodyMeasure m) (oneBodyMeasure m) := by
-  set L := spatialLinearIsometryEquiv hΛ
-  rw [massShellMap_of_timeComponent_eq_one hΛ m]
+/-- **Rotation invariance.** A linear isometry of the spatial momenta — a rotation or
+reflection — preserves the one-body measure, since it preserves Lebesgue measure and `|p|`, hence
+the energy. -/
+theorem measurePreserving_linearIsometryEquiv
+    (L : EuclideanSpace ℝ (Fin d) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin d)) (m : ℝ) :
+    MeasurePreserving L (oneBodyMeasure m) (oneBodyMeasure m) := by
   refine ⟨L.continuous.measurable, ?_⟩
-  -- `L` preserves Lebesgue measure and, leaving the energy unchanged, the density
   rw [oneBodyMeasure_def, ← L.coe_toMeasurableEquiv, MeasurableEquiv.map_withDensity,
     L.coe_toMeasurableEquiv, L.measurePreserving.map_eq]
   congr 1
   funext q
-  rw [L.coe_symm_toMeasurableEquiv,
-    ← onShellEnergy_massShellMap_of_timeComponent_eq_one hΛ m (L.symm q),
-    massShellMap_of_timeComponent_eq_one hΛ m, L.apply_symm_apply]
+  rw [L.coe_symm_toMeasurableEquiv, onShellEnergy_def, onShellEnergy_def, L.symm.norm_map]
+
+/-- A Lorentz transformation with time-time entry `1` — a spatial rotation or reflection —
+preserves the one-body measure. -/
+theorem measurePreserving_massShellMap_of_timeComponent_eq_one {Λ : LorentzGroup d}
+    (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (m : ℝ) :
+    MeasurePreserving (massShellMap Λ m) (oneBodyMeasure m) (oneBodyMeasure m) := by
+  rw [massShellMap_of_timeComponent_eq_one hΛ m]
+  exact measurePreserving_linearIsometryEquiv _ m
 
 end PhaseSpace
 end Kinematics
