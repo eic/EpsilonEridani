@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Reflection
 public import Mathlib.LinearAlgebra.RootSystem.OfBilinear
+import EpsilonEridani.Mathematics.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.LinearAlgebra.Transvection.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Module
@@ -29,6 +30,10 @@ vector `u` is reflective in the sense of `LinearMap.IsReflective`, and the refle
   `g u u ≠ 0`, `u` is reflective and `g.reflection u` is the corresponding `Module.reflection`.
 * `LinearMap.BilinForm.reflection_reflection_apply`, `isOrthogonal_reflection`: the reflection is
   an involution and, for symmetric `g`, a `g`-isometry (`LinearMap.IsOrthogonal`).
+* `LinearMap.BilinForm.IsPairStabilizer`, `isPairStabilizer_id`, `IsPairStabilizer.comp`: the
+  stabilizer of a pair of vectors in the `g`-isometry group, which contains the identity and is
+  closed under composition; `reflection_isPairStabilizer`: the reflection in a direction
+  `g`-orthogonal to both vectors lies in it.
 * `LinearMap.BilinForm.det_reflection`: for `g u u ≠ 0` it has determinant `-1` in finite
   dimension.
 -/
@@ -103,6 +108,40 @@ lemma isOrthogonal_reflection (g : BilinForm K V) (hSymm : g.IsSymm) (u : V) :
     simp [reflection_apply, hu]
   rw [g.reflection_eq_moduleReflection hu, LinearEquiv.coe_coe]
   exact LinearMap.IsReflective.isOrthogonal_reflection g _ (isSymm_iff.mp hSymm)
+
+/-- A `g`-isometry fixing the two vectors `a` and `b`: an element of the stabilizer of the pair
+`(a, b)` inside the isometry group of `g`. -/
+structure IsPairStabilizer (g : BilinForm K V) (a b : V) (f : V →ₗ[K] V) : Prop where
+  /-- `f` preserves the background form. -/
+  isOrthogonal : g.IsOrthogonal f
+  /-- `f` fixes the first vector of the pair. -/
+  fixes_left : f a = a
+  /-- `f` fixes the second vector of the pair. -/
+  fixes_right : f b = b
+
+/-- The identity stabilizes every pair. -/
+lemma isPairStabilizer_id (g : BilinForm K V) (a b : V) :
+    g.IsPairStabilizer a b LinearMap.id where
+  isOrthogonal := by rw [LinearMap.id_coe]; exact LinearMap.isOrthogonal_id g
+  fixes_left := rfl
+  fixes_right := rfl
+
+/-- The stabilizer of a pair is closed under composition. -/
+lemma IsPairStabilizer.comp {g : BilinForm K V} {a b : V} {f f' : V →ₗ[K] V}
+    (hf : g.IsPairStabilizer a b f) (hf' : g.IsPairStabilizer a b f') :
+    g.IsPairStabilizer a b (f ∘ₗ f') where
+  isOrthogonal := by rw [LinearMap.coe_comp]; exact hf.isOrthogonal.comp hf'.isOrthogonal
+  fixes_left := by rw [LinearMap.comp_apply, hf'.fixes_left, hf.fixes_left]
+  fixes_right := by rw [LinearMap.comp_apply, hf'.fixes_right, hf.fixes_right]
+
+/-- Reflection in a spectator direction — a direction `g`-orthogonal to both `a` and `b` — is a
+stabilizer of the pair `(a, b)`. -/
+lemma reflection_isPairStabilizer (g : BilinForm K V) (hSymm : g.IsSymm) (u : V)
+    {a b : V} (hua : g u a = 0) (hub : g u b = 0) :
+    g.IsPairStabilizer a b (g.reflection u) where
+  isOrthogonal := g.isOrthogonal_reflection hSymm u
+  fixes_left := g.reflection_apply_of_orthogonal u a hua
+  fixes_right := g.reflection_apply_of_orthogonal u b hub
 
 /-- A reflection in a non-null direction of a finite-dimensional space has determinant `-1`. -/
 @[simp]
