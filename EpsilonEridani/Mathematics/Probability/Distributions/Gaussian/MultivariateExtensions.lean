@@ -17,12 +17,14 @@ space has independent standard normal coordinates in any orthonormal basis. This
 its second moment, `∫ ‖x‖² ∂(stdGaussian E) = dim E`
 (`ProbabilityTheory.integral_norm_sq_stdGaussian`), as the sum over an orthonormal basis of the
 second moments `∫ ⟪x, v⟫² ∂(stdGaussian E) = ‖v‖²` of the coordinates
-(`ProbabilityTheory.integral_inner_sq_stdGaussian`), and the same moment for its image under
+(`ProbabilityTheory.integral_inner_sq_stdGaussian`), themselves the case `L = innerSL ℝ v` of the
+second moment `∫ (L x)² ∂(stdGaussian E) = ‖L‖²` of a continuous linear functional `L`
+(`ProbabilityTheory.integral_dual_sq_stdGaussian`), and the same moment for its image under
 `x ↦ σ • x`, the isotropic Gaussian of width `σ`,
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), whose root-mean-square norm is
-`|σ| √(dim E)`; the latter is the general dilation of a moment of the norm,
-`MeasureTheory.integral_norm_pow_map_smul`, applied to the former.
+`|σ| √(dim E)`; this dilated moment is the general dilation of a moment of the norm,
+`MeasureTheory.integral_norm_pow_map_smul`, applied to the undilated one.
 
 The characteristic function of the image under `x ↦ σ • x` — in physics the form factor of the
 isotropic Gaussian charge distribution of width `σ` — decays as a Gaussian in the momentum:
@@ -43,18 +45,22 @@ namespace ProbabilityTheory
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+/-- A continuous linear functional `L` of the standard Gaussian has second moment `‖L‖²`:
+`∫ (L x)² ∂(stdGaussian E) = ‖L‖²`. -/
+@[simp]
+theorem integral_dual_sq_stdGaussian (L : StrongDual ℝ E) :
+    ∫ x, L x ^ 2 ∂(stdGaussian E) = ‖L‖ ^ 2 := by
+  -- `L` is a centred random variable of variance `‖L‖²`
+  rw [← variance_of_integral_eq_zero (by fun_prop) (integral_strongDual_stdGaussian L),
+    variance_dual_stdGaussian]
+
 /-- The coordinate `⟪x, v⟫` of the standard Gaussian has second moment `‖v‖²`:
 `∫ ⟪x, v⟫² ∂(stdGaussian E) = ‖v‖²`. -/
+@[simp]
 theorem integral_inner_sq_stdGaussian (v : E) :
     ∫ x, ⟪x, v⟫ ^ 2 ∂(stdGaussian E) = ‖v‖ ^ 2 := by
-  -- the coordinate is a centred random variable of variance `‖innerSL ℝ v‖² = ‖v‖²`
-  have hv := variance_dual_stdGaussian (innerSL ℝ v)
-  rw [variance_of_integral_eq_zero (by fun_prop) (integral_strongDual_stdGaussian _),
-    innerSL_apply_norm] at hv
-  rw [← hv]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  dsimp only
-  rw [innerSL_apply_apply, real_inner_comm v x]
+  -- the coordinate is the continuous linear functional `innerSL ℝ v`, up to symmetry
+  simpa [real_inner_comm] using integral_dual_sq_stdGaussian (innerSL ℝ v)
 
 /-- The second moment of the standard Gaussian is the dimension: `∫ ‖x‖² ∂(stdGaussian E) = dim E`.
 -/
@@ -63,13 +69,8 @@ theorem integral_norm_sq_stdGaussian :
     ∫ x, ‖x‖ ^ 2 ∂(stdGaussian E) = Module.finrank ℝ E := by
   let b := stdOrthonormalBasis ℝ E
   simp_rw [← b.sum_sq_inner_left]
-  -- each coordinate `⟪x, b i⟫ = innerSL ℝ (b i) x` is a continuous linear functional
-  rw [integral_finsetSum _ fun i _ ↦
-    (IsGaussian.integrable_dual_sq (stdGaussian E) (innerSL ℝ (b i))).congr
-      (.of_forall fun x ↦ by
-        dsimp only
-        rw [innerSL_apply_apply, real_inner_comm x (b i)])]
-  simp [integral_inner_sq_stdGaussian, b.norm_eq_one]
+  rw [integral_finsetSum _ fun i _ ↦ IsGaussian.integrable_inner_sq _ (b i)]
+  simp [b.norm_eq_one]
 
 /-- The second moment of the standard Gaussian dilated by `σ` is `σ²` times the dimension:
 `∫ ‖x‖² ∂((stdGaussian E).map (σ • ·)) = σ² dim E`. -/

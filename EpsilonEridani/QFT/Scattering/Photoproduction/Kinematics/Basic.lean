@@ -44,6 +44,12 @@ photon energy by the Lorentz factor over the radius, `k R < γ`, the `ChargedSou
   production mechanism. Physical problems. Applications. Equivalent photon approximation*,
   Phys. Rep. **15** (1975) 181, section 2, where the minimum is quoted in its high-energy form
   `m² ω² / (E (E - ω))`.
+* J. D. Jackson, *Classical Electrodynamics*, 3rd ed., Wiley (1999), section 15.4,
+  *Weizsäcker–Williams method of virtual quanta*, for the bound `ω ≲ γ / R` on the photon energy
+  under the coherence condition.
+* G. Baur, K. Hencken, D. Trautmann, S. Sadovsky and Y. Kharlov, *Coherent γγ and γA interactions
+  in very peripheral collisions at relativistic ion colliders*, Phys. Rep. **364** (2002) 359,
+  section 2, for the same bound `ω ≲ γ / R` and the coherence condition `Q² ≲ 1 / R²`.
 -/
 
 public section
