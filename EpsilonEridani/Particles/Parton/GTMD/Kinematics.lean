@@ -44,7 +44,7 @@ the GPD conventions for `ξ` and `t` are adopted unchanged.
 
 The variables are invariant under the light-front transverse boosts, provided `P⁺ ≠ 0`
 (`Kinematics.ofMomenta_transverseBoost`). Exchanging the two hadrons reverses the skewness and the
-transverse momentum transfer (`Kinematics.ofMomenta_reverse`), the operation `Kinematics.reverse`
+transverse momentum transfer (`Kinematics.reverse_ofMomenta`), the operation `Kinematics.reverse`
 against which hermiticity of an off-forward correlator is stated; it preserves the physical domain
 (`Kinematics.isPhysical_reverse`).
 
@@ -133,21 +133,14 @@ relation `(1 - ξ²) t + 4 ξ² M² = -ΔT²`. -/
 lemma tMom_eq_iff (hξ : |K.skewness| ≠ 1) (t : ℝ) :
     K.tMom M = t ↔
       ‖K.deltaT‖ ^ 2 = -((1 - K.skewness ^ 2) * t + 4 * K.skewness ^ 2 * M ^ 2) := by
-  have h : 1 - K.skewness ^ 2 ≠ 0 :=
-    sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
-      ⟨fun h' => hξ (by simp [h']), fun h' => hξ (by simp [h'])⟩))
+  have h : 1 - K.skewness ^ 2 ≠ 0 := GPD.one_sub_sq_ne_zero hξ
   rw [tMom_def, div_eq_iff h]
   constructor <;> intro h <;> linarith
-
-/-- The covariant form of the momentum transfer: `ΔT² = -((1 - ξ²) t + 4 ξ² M²)`. -/
-lemma norm_deltaT_sq_eq (hξ : |K.skewness| ≠ 1) :
-    ‖K.deltaT‖ ^ 2 = -((1 - K.skewness ^ 2) * K.tMom M + 4 * K.skewness ^ 2 * M ^ 2) :=
-  (K.tMom_eq_iff M hξ _).mp rfl
 
 /-- In the physical range `|ξ| < 1` the momentum transfer is bounded by the minimal momentum
 transfer, `t ≤ t₀(ξ)`. -/
 theorem tMom_le_tZero (hξ : |K.skewness| < 1) : K.tMom M ≤ tZero M K.skewness := by
-  have h : 0 < 1 - K.skewness ^ 2 := sub_pos.mpr ((sq_lt_one_iff_abs_lt_one _).mpr hξ)
+  have h : 0 < 1 - K.skewness ^ 2 := GPD.one_sub_sq_pos hξ
   rw [tMom_eq_tZero_sub, sub_le_self_iff]
   positivity
 
@@ -155,9 +148,7 @@ theorem tMom_le_tZero (hξ : |K.skewness| < 1) : K.tMom M ≤ tZero M K.skewness
 `ΔT = 0`; in the physical range `|ξ| < 1` this is where the bound `t ≤ t₀(ξ)` is attained. -/
 theorem tMom_eq_tZero_iff (hξ : |K.skewness| ≠ 1) :
     K.tMom M = tZero M K.skewness ↔ K.deltaT = 0 := by
-  have h : 1 - K.skewness ^ 2 ≠ 0 :=
-    sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
-      ⟨fun h' => hξ (by simp [h']), fun h' => hξ (by simp [h'])⟩))
+  have h : 1 - K.skewness ^ 2 ≠ 0 := GPD.one_sub_sq_ne_zero hξ
   rw [tMom_eq_tZero_sub, sub_eq_self, div_eq_zero_iff, or_iff_left h]
   simp
 
@@ -202,9 +193,7 @@ lemma tMom_eq_tZero_of_mem_zeroDeltaT (hK : K ∈ zeroDeltaT) :
 skewness and zero transverse momentum transfer. -/
 theorem tMom_eq_zero_iff (hM : M ≠ 0) (hξ : |K.skewness| ≠ 1) :
     K.tMom M = 0 ↔ K ∈ zeroSkewness ∩ zeroDeltaT := by
-  have h : 1 - K.skewness ^ 2 ≠ 0 :=
-    sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
-      ⟨fun h' => hξ (by simp [h']), fun h' => hξ (by simp [h'])⟩))
+  have h : 1 - K.skewness ^ 2 ≠ 0 := GPD.one_sub_sq_ne_zero hξ
   have h₁ : 0 ≤ 4 * K.skewness ^ 2 * M ^ 2 := by positivity
   have h₂ : 0 ≤ ‖K.deltaT‖ ^ 2 := by positivity
   rw [tMom_def, div_eq_zero_iff, or_iff_left h, neg_eq_zero,
@@ -232,7 +221,7 @@ theorem isPhysical_iff :
 
 /-- The kinematics with the skewness and the transverse momentum transfer reversed,
 `(x, ξ, kT, ΔT) ↦ (x, -ξ, kT, -ΔT)`: the same transition with the two hadrons exchanged
-(`ofMomenta_reverse`). -/
+(`reverse_ofMomenta`). -/
 def reverse : Kinematics := ⟨K.x, -K.skewness, K.kT, -K.deltaT⟩
 
 @[simp]
@@ -292,10 +281,10 @@ lemma deltaT_ofMomenta :
     (ofMomenta p p' k).deltaT = relativeTransverse (p' - p) ((2⁻¹ : ℝ) • (p + p')) := (rfl)
 
 /-- Exchanging the two hadrons reverses the skewness and the transverse momentum transfer. -/
-theorem ofMomenta_reverse : ofMomenta p' p k = (ofMomenta p p' k).reverse := by
+theorem reverse_ofMomenta : (ofMomenta p p' k).reverse = ofMomenta p' p k := by
   apply Kinematics.ext
   · simp [add_comm p']
-  · simp only [skewness_ofMomenta, skewness_reverse, add_comm (plusComponent p'), ← neg_div,
+  · simp only [skewness_reverse, skewness_ofMomenta, add_comm (plusComponent p'), ← neg_div,
       neg_sub]
   · simp [add_comm p']
   · simp [add_comm p']
@@ -330,7 +319,7 @@ lemma skewness_ofMomenta_eq_skewness {M : ℝ} (F : OffForwardKinematics 3 M) (c
     (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) :
     (ofMomenta F.p F.pPrime k).skewness = F.skewness := by
   rw [F.skewness_eq_div, skewness_ofMomenta, hn, hn, ← mul_sub, ← mul_add,
-    mul_div_mul_left _ _ (F.ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent hn)]
+    mul_div_mul_left _ _ (F.scale_ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent hn)]
 
 /-- For off-forward kinematics whose light-like direction `n` defines the light-front plus
 component up to a scale `c`, `⟪n, q⟫ₘ = c q⁺`, the GTMD transverse momentum transfer is the

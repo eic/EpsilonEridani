@@ -67,9 +67,9 @@ The bridge to the light-front components of
 kinematics of two on-shell hadron momenta with positive plus components along the light-like
 direction `ofLightFront 0 1 0` that defines them, and, for a light-like direction with
 `⟪n, q⟫ₘ = c q⁺`, the scale is non-zero
-(`OffForwardKinematics.ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent`), the average momentum
-has non-zero plus component (`OffForwardKinematics.plusComponent_avgMomentum_ne_zero`) and the
-vector `w = Δ + 2 ξ P` has vanishing plus component
+(`OffForwardKinematics.scale_ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent`), the average
+momentum has non-zero plus component (`OffForwardKinematics.plusComponent_avgMomentum_ne_zero`)
+and the vector `w = Δ + 2 ξ P` has vanishing plus component
 (`OffForwardKinematics.plusComponent_deltaOrthN_eq_zero`).
 
 ## References
@@ -99,6 +99,17 @@ the largest value of `t` (the smallest value of `|t|`) compatible with the kinem
 def tZero (M ξ : ℝ) : ℝ := -4 * ξ ^ 2 * M ^ 2 / (1 - ξ ^ 2)
 
 lemma tZero_def (M ξ : ℝ) : tZero M ξ = -4 * ξ ^ 2 * M ^ 2 / (1 - ξ ^ 2) := (rfl)
+
+/-- The denominator `1 - ξ²` of the minimal momentum transfer `t₀(ξ)` is non-zero away from
+`|ξ| = 1`. -/
+lemma one_sub_sq_ne_zero {ξ : ℝ} (hξ : |ξ| ≠ 1) : 1 - ξ ^ 2 ≠ 0 :=
+  sub_ne_zero.mpr (Ne.symm (sq_ne_one_iff.mpr
+    ⟨fun h' => hξ (by simp [h']), fun h' => hξ (by simp [h'])⟩))
+
+/-- The denominator `1 - ξ²` of the minimal momentum transfer `t₀(ξ)` is positive in the physical
+range `|ξ| < 1`. -/
+lemma one_sub_sq_pos {ξ : ℝ} (hξ : |ξ| < 1) : 0 < 1 - ξ ^ 2 :=
+  sub_pos.mpr ((sq_lt_one_iff_abs_lt_one ξ).mpr hξ)
 
 @[simp]
 lemma tZero_zero_right (M : ℝ) : tZero M 0 = 0 := by
@@ -506,7 +517,7 @@ variable (F : OffForwardKinematics 3 M) {c : ℝ}
 
 /-- If the light-like direction `n` defines the light-front plus component up to a scale `c`,
 `⟪n, q⟫ₘ = c q⁺`, the scale is non-zero. -/
-lemma ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent
+lemma scale_ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent
     (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusComponent q) : c ≠ 0 :=
   left_ne_zero_of_mul (by rw [← hn]; exact F.minkowskiProduct_n_avgMomentum_pos.ne')
 
@@ -522,7 +533,7 @@ lemma plusComponent_deltaOrthN_eq_zero (hn : ∀ q, ⟪F.n, q⟫ₘ = c * plusCo
     plusComponent F.deltaOrthN = 0 := by
   have h := F.minkowskiProduct_n_deltaOrthN_eq_zero
   rw [hn, mul_eq_zero] at h
-  exact h.resolve_left (F.ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent hn)
+  exact h.resolve_left (F.scale_ne_zero_of_minkowskiProduct_n_eq_mul_plusComponent hn)
 
 end OffForwardKinematics
 
