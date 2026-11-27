@@ -113,6 +113,15 @@ theorem trialLaw_def (μ : Measure α) (g : α → ℝ) :
     trialLaw μ g = (μ.withDensity fun x => ENNReal.ofReal (g x)).prod (uniformMeasure 0 1) :=
   (rfl)
 
+/-- The trial law of a proposal of constant density `1` is the proposal measure itself times the
+standard uniform law: a density-`1` proposal leaves the proposal measure unchanged. This is the
+trial law of the worked examples below. -/
+@[simp]
+theorem trialLaw_one (μ : Measure α) :
+    trialLaw μ (fun _ => 1) = μ.prod (uniformMeasure 0 1) := by
+  rw [trialLaw_def]
+  simp only [ENNReal.ofReal_one, withDensity_const, one_smul]
+
 /-- A probability proposal law gives a probability trial law. -/
 instance isProbabilityMeasure_trialLaw (μ : Measure α) (g : α → ℝ)
     [IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (g x))] :
@@ -126,8 +135,7 @@ worked examples, whose proposal is uniform on `[0, 1]` with density `1`, is a pr
 measure, so their acceptance masses are probabilities. -/
 instance isProbabilityMeasure_trialLaw_one (μ : Measure α) [IsProbabilityMeasure μ] :
     IsProbabilityMeasure (trialLaw μ (fun _ => 1)) := by
-  rw [trialLaw_def]
-  simp only [ENNReal.ofReal_one, withDensity_const, one_smul]
+  rw [trialLaw_one]
   infer_instance
 
 /-- The proposal is the first marginal of the trial law. -/
@@ -287,7 +295,8 @@ theorem isProbabilityMeasure_acceptedLaw_of_ae_le (hc : 0 < c) (hf : Measurable 
     IsProbabilityMeasure (acceptedLaw μ f g c) := by
   have h : ∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ = ∫⁻ x, ENNReal.ofReal (f x) ∂μ :=
     lintegral_congr_ae (ofReal_min_ae_eq_of_ae_le hle)
-  exact isProbabilityMeasure_acceptedLaw_of_lintegral_min hc hf hg (h ▸ h₀) (h ▸ hfin)
+  exact isProbabilityMeasure_acceptedLaw_of_lintegral_min hc hf hg (by rw [h]; exact h₀)
+    (by rw [h]; exact hfin)
 
 /-- For an integrable, almost everywhere non-negative target dominated almost everywhere by
 `c * g`, the trial law's measure of the acceptance event is `(∫ f) / c`. -/
@@ -461,6 +470,8 @@ theorem acceptedLaw_two_mul_bound_three_div_two_ne_smul_withDensity :
     acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1) (3 / 2) ≠
       (∫⁻ z, ENNReal.ofReal (2 * z) ∂uniformMeasure 0 1)⁻¹ •
         (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal (2 * z) := by
+  -- The three `show` steps below only beta-reduce the lambdas `fun z => 2 * z` and `fun _ => 1`
+  -- substituted for `f` and `g` in the hypotheses of the silent bias.
   refine acceptedLaw_ne_smul_withDensity_of_measure_lt_ne_zero_of_measure_le_ne_zero
     (by norm_num) (by fun_prop) measurable_const ?_ ?_ ?_
   · -- The target has finite mass against the standard uniform law.
@@ -472,34 +483,24 @@ theorem acceptedLaw_two_mul_bound_three_div_two_ne_smul_withDensity :
         rw [Pi.zero_apply]
         linarith [hx.1])]
     exact ENNReal.ofReal_ne_top
-  · -- The bound fails above `z = 3 / 4`, on the set `Set.Ioi (3 / 4)`.
+  · -- The bound fails on `Set.Ioc (3 / 4) 1`, of uniform measure `1 / 4`: that interval lies in
+    -- the violation set, where the target `2 * z` is positive.
     show uniformMeasure 0 1 {x | (3 / 2 : ℝ) * 1 < 2 * x ∧ 0 < 2 * x} ≠ 0
-    have hset : {x : ℝ | (3 / 2 : ℝ) * 1 < 2 * x ∧ 0 < 2 * x} = Set.Ioi (3 / 4) := by
-      ext x
-      simp only [Set.mem_ofPred_eq, Set.mem_Ioi, mul_one]
-      exact ⟨fun h => by linarith [h.1], fun h => ⟨by linarith, by linarith⟩⟩
-    have hinter : Set.Ioi (3 / 4 : ℝ) ∩ Set.Ioc 0 1 = Set.Ioc (3 / 4) 1 := by
-      ext x
-      simp only [Set.mem_inter_iff, Set.mem_Ioi, Set.mem_Ioc]
-      exact ⟨fun h => ⟨h.1, h.2.2⟩, fun h => ⟨h.1, by linarith [h.1], h.2⟩⟩
-    rw [hset, uniformMeasure_apply measurableSet_Ioi, hinter, Real.volume_Ioc]
-    simp only [sub_zero, ENNReal.ofReal_one, inv_one, one_mul]
-    exact ENNReal.ofReal_ne_zero_iff.mpr (by norm_num)
-  · -- The bound holds on `Set.Ioc 0 (3 / 4)`, where the target is positive.
+    have hsub : Set.Ioc (3 / 4 : ℝ) 1 ⊆ {x : ℝ | (3 / 2 : ℝ) * 1 < 2 * x ∧ 0 < 2 * x} :=
+      fun _ hx => ⟨by linarith [hx.1], by linarith [hx.1]⟩
+    have hpos : 0 < uniformMeasure 0 1 (Set.Ioc (3 / 4 : ℝ) 1) := by
+      rw [uniformMeasure_Ioc zero_lt_one, ENNReal.ofReal_pos]
+      norm_num
+    exact ne_of_gt (lt_of_lt_of_le hpos (measure_mono hsub))
+  · -- The bound holds on `Set.Ioc 0 (3 / 4)`, of uniform measure `3 / 4`, where the target
+    -- `2 * z` is positive.
     show uniformMeasure 0 1 {x | (0 : ℝ) < 2 * x ∧ 2 * x ≤ 3 / 2 * 1} ≠ 0
-    have hset : {x : ℝ | (0 : ℝ) < 2 * x ∧ 2 * x ≤ 3 / 2 * 1} = Set.Ioc 0 (3 / 4) := by
-      ext x
-      simp only [Set.mem_ofPred_eq, Set.mem_Ioc, mul_one]
-      exact ⟨fun h => ⟨by linarith [h.1], by linarith [h.2]⟩,
-        fun h => ⟨by linarith [h.1], by linarith [h.2]⟩⟩
-    have hsub : Set.Ioc (0 : ℝ) (3 / 4) ⊆ Set.Ioc 0 1 := by
-      intro x hx
-      simp only [Set.mem_Ioc] at hx ⊢
-      exact ⟨hx.1, by linarith [hx.2]⟩
-    rw [hset, uniformMeasure_apply measurableSet_Ioc, Set.inter_eq_self_of_subset_left hsub,
-      Real.volume_Ioc]
-    simp only [sub_zero, ENNReal.ofReal_one, inv_one, one_mul]
-    exact ENNReal.ofReal_ne_zero_iff.mpr (by norm_num)
+    have hsub : Set.Ioc (0 : ℝ) (3 / 4) ⊆ {x : ℝ | (0 : ℝ) < 2 * x ∧ 2 * x ≤ 3 / 2 * 1} :=
+      fun _ hx => ⟨by linarith [hx.1], by linarith [hx.2]⟩
+    have hpos : 0 < uniformMeasure 0 1 (Set.Ioc (0 : ℝ) (3 / 4)) := by
+      rw [uniformMeasure_Ioc zero_lt_one, ENNReal.ofReal_pos]
+      norm_num
+    exact ne_of_gt (lt_of_lt_of_le hpos (measure_mono hsub))
 
 /-- The accepted law of the bound-that-is-too-small example is a probability measure: the
 clipped target has mass `15 / 16`, positive and finite. The bound failing above `z = 3 / 4`

@@ -21,6 +21,8 @@ examples there integrate continuous targets against the standard uniform law.
 
 * `EpsilonEridani.uniformMeasure_Iic`: the uniform measure of a closed lower tail, the companion
   of `TauCeti.Probability.uniformMeasure_Iio`.
+* `EpsilonEridani.uniformMeasure_Ioc`: the uniform measure of a half-open interval, with no
+  hypothesis on the interval's endpoints.
 * `EpsilonEridani.integrable_uniformMeasure_iff`: integrability against the uniform law is
   integrability on `Set.Ioc a b` for Lebesgue measure, with no hypothesis on the interval.
 * `ContinuousOn.integrable_uniformMeasure`: a function continuous on `Set.Icc a b` is integrable
@@ -74,6 +76,18 @@ theorem uniformMeasure_Iic {a b : ℝ} (hab : a < b) (t : ℝ) :
     simp only [Set.mem_inter_iff, Set.mem_Iic, Set.mem_Ioc, le_min_iff]
     tauto
   rw [uniformMeasure_apply measurableSet_Iic, hset, Real.volume_Ioc,
+    ENNReal.ofReal_div_of_pos (sub_pos.mpr hab), ENNReal.div_eq_inv_mul]
+
+/-- The uniform measure of a half-open interval `Set.Ioc c d`: the length of its overlap with
+`Set.Ioc a b`, divided by the length of `Set.Ioc a b`. No hypothesis on `c` and `d` is needed:
+an interval disjoint from `Set.Ioc a b` has measure `0`. -/
+theorem uniformMeasure_Ioc {a b : ℝ} (hab : a < b) (c d : ℝ) :
+    uniformMeasure a b (Set.Ioc c d) = ENNReal.ofReal ((min d b - max c a) / (b - a)) := by
+  have hset : Set.Ioc c d ∩ Set.Ioc a b = Set.Ioc (max c a) (min d b) := by
+    ext x
+    simp only [Set.mem_inter_iff, Set.mem_Ioc, max_lt_iff, le_min_iff]
+    tauto
+  rw [uniformMeasure_apply measurableSet_Ioc, hset, Real.volume_Ioc,
     ENNReal.ofReal_div_of_pos (sub_pos.mpr hab), ENNReal.div_eq_inv_mul]
 
 /-- The lower integral of any `k : ℝ → ℝ≥0∞` against the uniform law on `Set.Ioc a b` is its
