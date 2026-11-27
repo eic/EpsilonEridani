@@ -28,7 +28,7 @@ on:
   # Opened: add it. Closed: archive it. New head / draft toggles: re-derive.
   pull_request_target:
     types: [opened, reopened, closed, synchronize, converted_to_draft, ready_for_review]
-  # Build finished: "Waiting on CI" may become "No review at head" (or the reverse).
+  # Build finished: "Waiting on CI" may become "Never reviewed" or a Re-review band (or the reverse).
   workflow_run:
     workflows: ["pr-build"]
     types: [completed]

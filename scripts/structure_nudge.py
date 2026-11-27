@@ -37,13 +37,16 @@ right family boundary is left to humans and the placement rubric.
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
 import re
 import subprocess
 import sys
 
+from gh_utils import gh_json, upsert_marked_comment
+
 MARKER = "<!--structure:nudge-->"
+# The fixed marker as a regex, for the shared marker-keyed upsert (scripts/gh_utils.py).
+MARKER_RE = re.compile(re.escape(MARKER))
 TRACKING_ISSUE = "https://github.com/TauCetiProject/TauCeti/issues/987"
 
 _TOKEN_RE = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z0-9]*|[a-z0-9]+")
@@ -131,11 +134,6 @@ def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
     return "\n".join(lines)
 
 
-def _gh_json(args: list[str]):
-    return json.loads(subprocess.run(["gh"] + args, check=True,
-                                     capture_output=True, text=True).stdout)
-
-
 def _local_tree() -> set[str]:
     out = subprocess.run(["git", "ls-files", "EpsilonEridani/**/*.lean", "EpsilonEridani/*.lean"],
                          check=True, capture_output=True, text=True).stdout
@@ -143,10 +141,10 @@ def _local_tree() -> set[str]:
 
 
 def run_pr(repo: str, pr: int, apply: bool) -> int:
-    info = _gh_json(["api", f"repos/{repo}/pulls/{pr}",
-                     "--jq", "{head: .head.sha}"])
-    files = _gh_json(["api", "--paginate", f"repos/{repo}/pulls/{pr}/files?per_page=100",
-                      "--jq", "[.[] | select(.status == \"added\") | .filename]"])
+    info = gh_json(["api", f"repos/{repo}/pulls/{pr}",
+                    "--jq", "{head: .head.sha}"])
+    files = gh_json(["api", "--paginate", f"repos/{repo}/pulls/{pr}/files?per_page=100",
+                     "--jq", "[.[] | select(.status == \"added\") | .filename]"])
     added = [f for f in files if f.endswith(".lean") and f.startswith("EpsilonEridani/")]
     tree = _local_tree() | set(added)
     findings = {}
@@ -163,19 +161,12 @@ def run_pr(repo: str, pr: int, apply: bool) -> int:
     if not apply:
         print(body)
         return 0
-    comments = _gh_json(["api", "--paginate",
-                         f"repos/{repo}/issues/{pr}/comments?per_page=100",
-                         "--jq", "[.[] | {id: .id, body: .body}]"])
-    prev = next((c["id"] for c in comments if MARKER in (c["body"] or "")), None)
-    if prev is not None:
-        subprocess.run(["gh", "api", "-X", "PATCH",
-                        f"repos/{repo}/issues/comments/{prev}", "-f", f"body={body}"],
-                       check=True, capture_output=True, text=True)
-        print(f"structure-nudge: PR #{pr}: updated comment {prev}")
+    # One advisory comment per PR, keyed by MARKER and edited in place: the shared
+    # marker-keyed upsert of scripts/gh_utils.py.
+    action, comment_id = upsert_marked_comment(repo, pr, MARKER_RE, body)
+    if action == "edited":
+        print(f"structure-nudge: PR #{pr}: updated comment {comment_id}")
     else:
-        subprocess.run(["gh", "api", f"repos/{repo}/issues/{pr}/comments",
-                        "-f", f"body={body}"],
-                       check=True, capture_output=True, text=True)
         print(f"structure-nudge: PR #{pr}: posted comment")
     return 0
 
