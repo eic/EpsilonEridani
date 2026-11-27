@@ -27,7 +27,7 @@ power of `A`.
 Physical space is Physlib's `Space`. This file constructs the three spherically symmetric
 profiles of nuclear geometry. The hard-sphere and Woods–Saxon profiles are written as functions
 `ℝ → ℝ` of the radius and evaluated at the distance `‖x‖` from the origin of `Space`; the
-Gaussian profile is the isotropic Gaussian density `Gaussian.gaussianDensity` on `Space`, whose
+Gaussian profile is the isotropic Gaussian density `Gaussian.isotropicDensity` on `Space`, whose
 normalisation and integrability are proved in `EpsilonEridani.Mathematics.Gaussian`. This file
 proves the other two integrable (the Woods–Saxon profile for positive surface diffuseness
 `0 < a`) and normalisable under the stated parameter conditions (`0 < R` for the hard sphere,
@@ -221,7 +221,7 @@ lemma woodsSaxonDensity_nonneg {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ
 
 /-- The Woods–Saxon profile never exceeds its parameter `ρ₀`, the plateau value it approaches
 deep inside the nucleus. -/
-lemma woodsSaxonDensity_le_left {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
+lemma woodsSaxonDensity_le_centralDensity {ρ₀ : ℝ} (hρ₀ : 0 ≤ ρ₀) (R a r : ℝ) :
     woodsSaxonDensity ρ₀ R a r ≤ ρ₀ := by
   rw [woodsSaxonDensity_def]
   exact mul_le_of_le_one_right hρ₀ (Real.sigmoid_le_one _)
@@ -342,9 +342,9 @@ def hardSphere (R : ℝ) (hR : 0 < R) : DensityProfile nuc where
 
 /-- The Gaussian density profile of `nuc` with range `R ≠ 0`. -/
 def gaussian (R : ℝ) (hR : R ≠ 0) : DensityProfile nuc where
-  density := Gaussian.gaussianDensity nuc.massNumber R
-  density_nonneg := Gaussian.gaussianDensity_nonneg (Nat.cast_nonneg _) _
-  integral_density := Gaussian.integral_gaussianDensity _ hR
+  density := Gaussian.isotropicDensity nuc.massNumber R
+  density_nonneg := Gaussian.isotropicDensity_nonneg (Nat.cast_nonneg _) _
+  integral_density := Gaussian.integral_isotropicDensity _ hR
 
 /-- The Woods–Saxon density profile of `nuc` with half-density radius `R` and surface diffuseness
 `a > 0`, with its parameter `ρ₀` fixed by the normalisation. -/
@@ -361,7 +361,7 @@ lemma hardSphere_density_apply (R : ℝ) (hR : 0 < R) (x : Space) :
     (hardSphere nuc R hR).density x = hardSphereDensity nuc.massNumber R ‖x‖ := (rfl)
 
 lemma gaussian_density_apply (R : ℝ) (hR : R ≠ 0) (x : Space) :
-    (gaussian nuc R hR).density x = Gaussian.gaussianDensity nuc.massNumber R x := (rfl)
+    (gaussian nuc R hR).density x = Gaussian.isotropicDensity nuc.massNumber R x := (rfl)
 
 lemma woodsSaxon_density_apply (R a : ℝ) (ha : 0 < a) (x : Space) :
     (woodsSaxon nuc R a ha).density x =
