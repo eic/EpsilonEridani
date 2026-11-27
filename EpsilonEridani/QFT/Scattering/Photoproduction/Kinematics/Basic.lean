@@ -178,14 +178,6 @@ private theorem energy_ne_one_sub_mul_energy (hs : s.energy ≠ 0) {x : ℝ} (hx
   have : x * s.energy = 0 := by linarith
   exact hx ((mul_eq_zero.1 this).resolve_right hs)
 
-/-- **The kinematic minimum of the virtuality is strictly positive for a massive source** whose
-energy before and after emitting the fraction `x ≠ 0` lies above its mass. -/
-theorem photonVirtualityMin_pos (hm : 0 < s.mass) (hE : s.mass ≤ s.energy) {x : ℝ} (hx : x ≠ 0)
-    (hE' : s.mass ≤ (1 - x) * s.energy) : 0 < s.photonVirtualityMin x := by
-  exact (emissionVirtuality_zero_pos_iff ((abs_of_pos hm).trans_le hE)
-    ((abs_of_pos hm).trans_le hE')).2
-    ⟨hm.ne', energy_ne_one_sub_mul_energy (hm.trans_le hE).ne' hx⟩
-
 /-- **The kinematic minimum strictly exceeds `m² x² / (1 - x)`**, the form in which it is usually
 quoted for a high-energy source. -/
 theorem sq_mul_sq_div_one_sub_lt_photonVirtualityMin (hm : 0 < s.mass) (hE : s.mass ≤ s.energy)
@@ -203,6 +195,15 @@ theorem sq_mul_sq_div_one_sub_lt_photonVirtualityMin (hm : 0 < s.mass) (hE : s.m
   convert hlt using 1
   field_simp
   ring
+
+/-- **The kinematic minimum of the virtuality is strictly positive for a massive source** whose
+energy before and after emitting the fraction `x ≠ 0` lies above its mass. -/
+theorem photonVirtualityMin_pos (hm : 0 < s.mass) (hE : s.mass ≤ s.energy) {x : ℝ} (hx : x ≠ 0)
+    (hE' : s.mass ≤ (1 - x) * s.energy) : 0 < s.photonVirtualityMin x := by
+  -- the source keeps a positive share of its positive energy, so `0 < 1 - x`
+  have h1x : 0 < 1 - x := by nlinarith
+  exact (div_pos (by positivity) h1x).trans
+    (sq_mul_sq_div_one_sub_lt_photonVirtualityMin hm hE hx hE')
 
 /-- The photon variables a source `s` can emit at scattering angle at most `θmax`: the photon
 carries energy, the source keeps more energy than its mass (so that it leaves with a non-zero

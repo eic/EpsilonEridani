@@ -38,11 +38,15 @@ controlled by `Q² R²`, and beyond it the squared form factor of a Gaussian sou
   the bound sharper by the factor `d`, `1 - ‖F(q)‖ ≤ ‖q‖² σ² / 2`
   (`ProbabilityTheory.one_sub_norm_charFun_map_smul_stdGaussian_le`), that is
   `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`
-  (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le`).
+  (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le`), or in its mean square radius
+  `R² = d σ²`, `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) R² / (2 d)`
+  (`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le_of_integral_norm_sq_eq`).
 * Beyond the scale the coherent rate is suppressed by the square of the form factor. For the
   isotropic Gaussian charge distribution of width `σ` in `d` dimensions,
-  `‖F(q)‖² ≤ exp (-σ² Q²)` (`norm_sq_charFun_map_smul_stdGaussian_spatialPart_le`); with
-  `R² = d σ²` this is `exp (-Q² R² / d)`, which is `exp (-Q² R² / 3)` in three dimensions.
+  `‖F(q)‖² ≤ exp (-σ² Q²)` (`norm_sq_charFun_map_smul_stdGaussian_spatialPart_le`); in its mean
+  square radius `R² = d σ²` this is `‖F(q)‖² ≤ exp (-Q² R² / d)`
+  (`norm_sq_charFun_map_smul_stdGaussian_spatialPart_le_exp_of_integral_norm_sq_eq`), which is
+  `exp (-Q² R² / 3)` in three dimensions.
   It is composed from the general squared form factor
   `ProbabilityTheory.norm_sq_charFun_map_smul_stdGaussian` of the dilated Gaussian, whose second
   moment `ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian` gives `R² = d σ²`, and from
@@ -100,7 +104,8 @@ theorem one_sub_norm_charFun_spatialPart_sub_le {d : ℕ} {μ : Measure (Euclide
 charge distribution of width `σ` in `d` dimensions, of mean square radius `R² = d σ²`
 (`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), a source of mass `m ≠ 0` at rest
 emitting the photon `q = p - p'` of virtuality `Q² = -⟪q, q⟫ₘ` has form factor
-`1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`, that is `Q² (1 + Q² / (4 m²)) R² / (2 d)`: isotropy
+`1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) σ² / 2`, that is `Q² (1 + Q² / (4 m²)) R² / (2 d)`
+(`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le_of_integral_norm_sq_eq`): isotropy
 improves the bound `one_sub_norm_charFun_spatialPart_sub_le` for a general charge distribution
 by the factor `d`. -/
 theorem one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le {d : ℕ} (σ : ℝ)
@@ -112,15 +117,42 @@ theorem one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le {d : ℕ} (
     hm hp hp0 hp', mul_comm _ (σ ^ 2)]
   exact one_sub_norm_charFun_map_smul_stdGaussian_le σ _
 
+/-- **Below the coherence scale the Gaussian source is not resolved**, in its mean square radius.
+For the isotropic Gaussian charge distribution `ν` of width `σ` in `d` dimensions with mean square
+radius `R² = ∫ ‖r‖² dν`, a source of mass `m ≠ 0` at rest emitting the photon `q = p - p'` of
+virtuality `Q² = -⟪q, q⟫ₘ` has form factor `1 - ‖F(q)‖ ≤ Q² (1 + Q² / (4 m²)) R² / (2 d)`; this is
+`one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le` through `R² = d σ²`
+(`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`). -/
+theorem one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le_of_integral_norm_sq_eq
+    {d : ℕ} {σ R : ℝ}
+    (hR : ∫ r, ‖r‖ ^ 2 ∂((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) = R ^ 2)
+    {p p' : Lorentz.Vector d} {m : ℝ} (hm : m ≠ 0) (hp : p.spatialPart = 0)
+    (hp0 : p.timeComponent = m) (hp' : ⟪p', p'⟫ₘ = m ^ 2) :
+    1 - ‖charFun ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) (p - p').spatialPart‖ ≤
+      -⟪p - p', p - p'⟫ₘ * (1 + -⟪p - p', p - p'⟫ₘ / (4 * m ^ 2)) * R ^ 2 / (2 * d) := by
+  -- the mean square radius is `R² = σ² d`
+  rw [integral_norm_sq_map_smul_stdGaussian, finrank_euclideanSpace_fin] at hR
+  rcases eq_or_ne d 0 with rfl | hd
+  · -- in no dimensions space is a point, where the form factor is one and the bound is zero
+    rw [Nat.cast_zero, mul_zero, div_zero, Subsingleton.elim (p - p').spatialPart 0, charFun_zero]
+    simp
+  · have hrhs : -⟪p - p', p - p'⟫ₘ * (1 + -⟪p - p', p - p'⟫ₘ / (4 * m ^ 2)) * R ^ 2 / (2 * d) =
+        -⟪p - p', p - p'⟫ₘ * (1 + -⟪p - p', p - p'⟫ₘ / (4 * m ^ 2)) * σ ^ 2 / 2 := by
+      rw [← hR]
+      field_simp
+    rw [hrhs]
+    exact one_sub_norm_charFun_map_smul_stdGaussian_spatialPart_sub_le σ hm hp hp0 hp'
+
 /-- **Beyond the coherence scale the coherent rate of a Gaussian source is exponentially
 suppressed.** For the isotropic Gaussian charge distribution of width `σ` in `d` dimensions, the
 squared form factor at the spatial part of a four-momentum transfer `q` of virtuality
 `Q² = -⟪q, q⟫ₘ` is at most `exp (-σ² Q²)`. Since the mean square radius is `R² = d σ²`
-(`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), this is `exp (-Q² R² / d)` for
-`d ≠ 0`. As a mathematical statement the bound is frame-agnostic: it holds for the spatial part
-of `q` in every frame. It is the suppression factor of the coherent rate when `q.spatialPart` is
-the momentum transfer in the rest frame of the source, the frame in which the dilated Gaussian
-is its charge distribution. -/
+(`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), this is `exp (-Q² R² / d)`
+(`norm_sq_charFun_map_smul_stdGaussian_spatialPart_le_exp_of_integral_norm_sq_eq`). As a
+mathematical statement the bound is frame-agnostic: it holds for the spatial part of `q` in every
+frame. It is the suppression factor of the coherent rate when `q.spatialPart` is the momentum
+transfer in the rest frame of the source, the frame in which the dilated Gaussian is its charge
+distribution. -/
 theorem norm_sq_charFun_map_smul_stdGaussian_spatialPart_le {d : ℕ} (σ : ℝ)
     (q : Lorentz.Vector d) :
     ‖charFun ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) q.spatialPart‖ ^ 2 ≤
@@ -131,6 +163,31 @@ theorem norm_sq_charFun_map_smul_stdGaussian_spatialPart_le {d : ℕ} (σ : ℝ)
   have hQ : -⟪q, q⟫ₘ ≤ ‖q.spatialPart‖ ^ 2 :=
     Lorentz.Vector.neg_minkowskiProduct_self_le_norm_spatialPart_sq q
   exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_left hQ (sq_nonneg σ)))
+
+/-- **Beyond the coherence scale the coherent rate of a Gaussian source is exponentially
+suppressed**, in its mean square radius. For the isotropic Gaussian charge distribution `ν` of
+width `σ` in `d` dimensions with mean square radius `R² = ∫ ‖r‖² dν`, the squared form factor at the
+spatial part of a four-momentum transfer `q` of virtuality `Q² = -⟪q, q⟫ₘ` is at most
+`exp (-Q² R² / d)`, which is `exp (-Q² R² / 3)` in three dimensions; this is
+`norm_sq_charFun_map_smul_stdGaussian_spatialPart_le` through `R² = d σ²`
+(`ProbabilityTheory.integral_norm_sq_map_smul_stdGaussian`), frame-agnostic in the same sense. -/
+theorem norm_sq_charFun_map_smul_stdGaussian_spatialPart_le_exp_of_integral_norm_sq_eq {d : ℕ}
+    {σ R : ℝ}
+    (hR : ∫ r, ‖r‖ ^ 2 ∂((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) = R ^ 2)
+    (q : Lorentz.Vector d) :
+    ‖charFun ((stdGaussian (EuclideanSpace ℝ (Fin d))).map (σ • ·)) q.spatialPart‖ ^ 2 ≤
+      Real.exp (-(-⟪q, q⟫ₘ * R ^ 2 / d)) := by
+  -- the mean square radius is `R² = σ² d`
+  rw [integral_norm_sq_map_smul_stdGaussian, finrank_euclideanSpace_fin] at hR
+  rcases eq_or_ne d 0 with rfl | hd
+  · -- in no dimensions the exponent vanishes, and the form factor has modulus at most one
+    rw [Nat.cast_zero, div_zero, neg_zero, Real.exp_zero]
+    exact pow_le_one₀ (norm_nonneg _) (norm_charFun_le_one _)
+  · have hexp : -⟪q, q⟫ₘ * R ^ 2 / d = σ ^ 2 * -⟪q, q⟫ₘ := by
+      rw [← hR]
+      field_simp
+    rw [hexp]
+    exact norm_sq_charFun_map_smul_stdGaussian_spatialPart_le σ q
 
 end Photoproduction
 end Scattering
