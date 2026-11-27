@@ -27,6 +27,11 @@ acceptance event is a mass, not necessarily a probability. It is the acceptance 
 exactly when the proposal law `μ.withDensity g` is a probability measure, in which case the
 trial law is one too.
 
+Every density is read through `ENNReal.ofReal`, so negative values of the target `f`, of the
+proposal `g` and of the clipped target `min f (c * g)` all count as `0`. Accordingly "`f`
+normalised" means the positive part of `f` normalised, and likewise for `min f (c * g)`; this is
+what lets the results below carry no sign hypothesis on `f` or `g`.
+
 ## Main results
 
 * `AcceptReject.map_fst_restrict_trialLaw_acceptSet`: the accepted part of the trial law,
@@ -47,7 +52,7 @@ trial law is one too.
 * `AcceptReject.measureReal_trialLaw_acceptSet_of_ae_le`: for an integrable, almost everywhere
   non-negative target with `f ≤ c * g` almost everywhere, the trial law's measure of the
   acceptance event is `(∫ f) / c`.
-* `AcceptReject.acceptedLaw_ne_of_measure_setOf_lt_ne_zero`: the silent bias. For a target of
+* `AcceptReject.acceptedLaw_ne_smul_withDensity_of_lt_of_le`: the silent bias. For a target of
   finite mass, when the bound fails on a set of positive measure where `f` is positive and holds
   on a set of positive measure where `f` is positive, the accepted law is not `f` normalised; no
   sign hypothesis on the proposal is needed. The second set hypothesis cannot be dropped: for
@@ -56,16 +61,16 @@ trial law is one too.
 * `AcceptReject.isProbabilityMeasure_trialLaw_one`: the trial law of a proposal of constant
   density `1` drawn from a probability measure is a probability measure; in particular the
   trial law of the worked examples, whose proposal is uniform on `[0, 1]`, is one.
-* `AcceptReject.acceptedLaw_one_add_sq_div_two` and
+* `AcceptReject.acceptedLaw_one_add_sq_div_two_eq_smul_withDensity` and
   `AcceptReject.measureReal_trialLaw_acceptSet_one_add_sq_div_two`: a uniform proposal on
   `[0, 1]` with bound `1` accepts the target `(1 + z ^ 2) / 2` with probability `2 / 3`, and the
   accepted law is the target normalised, a probability measure by
   `AcceptReject.isProbabilityMeasure_acceptedLaw_one_add_sq_div_two`.
-* `AcceptReject.acceptedLaw_two_mul_three_div_two_eq_smul_withDensity_min` and
-  `AcceptReject.measureReal_trialLaw_acceptSet_two_mul_three_div_two`: a bound that is too small.
-  Sampling `2 * z` on `[0, 1]` against the bound `3 / 2` accepts with probability `5 / 8` and
+* `AcceptReject.acceptedLaw_two_mul_bound_three_div_two_eq_smul_withDensity_min` and
+  `AcceptReject.measureReal_trialLaw_acceptSet_two_mul_bound_three_div_two`: a bound that is too
+  small. Sampling `2 * z` on `[0, 1]` against the bound `3 / 2` accepts with probability `5 / 8` and
   yields `min (2 * z) (3 / 2)` normalised, of mass `15 / 16`, a probability measure by
-  `AcceptReject.isProbabilityMeasure_acceptedLaw_two_mul_three_div_two`.
+  `AcceptReject.isProbabilityMeasure_acceptedLaw_two_mul_bound_three_div_two`.
 * `AcceptReject.lintegral_one_add_sq_div_two_uniformMeasure_zero_one` and
   `AcceptReject.lintegral_min_two_mul_three_div_two_uniformMeasure_zero_one`: the integrals of
   the two example targets against the standard uniform law, with
@@ -97,7 +102,8 @@ namespace AcceptReject
 
 /-- The joint law of one acceptance–rejection trial: a proposal `x` with density `g` against
 `μ`, and an independent uniform variate `u` on `[0, 1]`. Negative values of `g` are read
-as `0`. When `μ.withDensity g` is a probability measure, so is the trial law. -/
+as `0`, as are negative values of the target `f` in every law built from the trial below. When
+`μ.withDensity g` is a probability measure, so is the trial law. -/
 def trialLaw (μ : Measure α) (g : α → ℝ) : Measure (α × ℝ) :=
   (μ.withDensity fun x => ENNReal.ofReal (g x)).prod (uniformMeasure 0 1)
 
@@ -171,8 +177,8 @@ theorem isProbabilityMeasure_acceptedLaw {μ : Measure α} {f g : α → ℝ} {c
 variable {μ : Measure α} {f g : α → ℝ} {c : ℝ}
 
 /-- **The accepted part of a trial.** The trials that are accepted, projected to their proposal,
-form the measure `μ` with density `min f (c * g) / c`. No bound and no sign hypothesis on `f`
-or `g` is needed. -/
+form the measure `μ` with density `min f (c * g) / c`, read as `0` where it is negative. No bound
+and no sign hypothesis on `f` or `g` is needed. -/
 theorem map_fst_restrict_trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f)
     (hg : Measurable g) :
     ((trialLaw μ g).restrict (acceptSet f g c)).map Prod.fst =
@@ -208,8 +214,9 @@ theorem trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measurable g) 
   refine lintegral_congr fun x => ?_
   rw [ENNReal.ofReal_div_of_pos hc, ENNReal.div_eq_inv_mul]
 
-/-- **The law of acceptance–rejection.** The accepted variate has the law `min f (c * g)`
-normalised against `μ`, whatever the relation between `f` and `c * g`. -/
+/-- **The law of acceptance–rejection.** The accepted variate has the law `min f (c * g)`, read as
+`0` where it is negative, normalised against `μ`, whatever the relation between `f` and `c * g`.
+-/
 theorem acceptedLaw_eq_smul_withDensity_min (hc : 0 < c) (hf : Measurable f) (hg : Measurable g) :
     acceptedLaw μ f g c = (∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ)⁻¹ •
       μ.withDensity fun x => ENNReal.ofReal (min (f x) (c * g x)) := by
@@ -234,7 +241,7 @@ theorem ofReal_min_ae_eq_of_ae_le (hle : ∀ᵐ x ∂μ, f x ≤ c * g x) :
   hle.mono fun x hx => by simp only [min_eq_left hx]
 
 /-- **Acceptance–rejection has the right law.** When `f ≤ c * g` almost everywhere, the accepted
-variate has the law `f` normalised against `μ`. -/
+variate has the law `f` normalised against `μ`, with negative values of `f` read as `0`. -/
 theorem acceptedLaw_eq_smul_withDensity_of_ae_le (hc : 0 < c) (hf : Measurable f)
     (hg : Measurable g) (hle : ∀ᵐ x ∂μ, f x ≤ c * g x) :
     acceptedLaw μ f g c = (∫⁻ x, ENNReal.ofReal (f x) ∂μ)⁻¹ •
@@ -292,15 +299,15 @@ theorem measureReal_trialLaw_acceptSet_of_ae_le (hc : 0 < c) (hf : Measurable f)
 
 /-- **The silent bias.** Let the target `f` have finite mass `∫⁻ f`. Suppose the bound
 `f ≤ c * g` fails on a set of positive measure where `f` is positive, and holds on a set of
-positive measure where `f` is positive. Then the accepted law is not `f` normalised. No sign
-hypothesis on the proposal `g` is needed.
+positive measure where `f` is positive. Then the accepted law is not `f` normalised (negative
+values of `f` read as `0`). No sign hypothesis on the proposal `g` is needed.
 
 Both set hypotheses are needed. Without the first, `ENNReal.ofReal (min (f x) (c * g x))` and
 `ENNReal.ofReal (f x)` agree almost everywhere: where `f` is positive the bound holds almost
 everywhere, and elsewhere both are `0`. The two laws then coincide. Without the second, take
 `f = 2 * g` and `c = 1`: the bound fails wherever `g` is positive, yet every proposal is accepted
 and the accepted law is `g` normalised, which is `f` normalised. -/
-theorem acceptedLaw_ne_of_measure_setOf_lt_ne_zero (hc : 0 < c) (hf : Measurable f)
+theorem acceptedLaw_ne_smul_withDensity_of_lt_of_le (hc : 0 < c) (hf : Measurable f)
     (hg : Measurable g) (hfi : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≠ ∞)
     (hviol : μ {x | c * g x < f x ∧ 0 < f x} ≠ 0) (hresp : μ {x | 0 < f x ∧ f x ≤ c * g x} ≠ 0) :
     acceptedLaw μ f g c ≠ (∫⁻ x, ENNReal.ofReal (f x) ∂μ)⁻¹ •
@@ -399,7 +406,7 @@ theorem measureReal_trialLaw_acceptSet_one_add_sq_div_two :
 
 /-- A uniform proposal on `[0, 1]` with the constant bound `1` produces the target
 `(1 + z ^ 2) / 2` normalised by its integral `2 / 3`. -/
-theorem acceptedLaw_one_add_sq_div_two :
+theorem acceptedLaw_one_add_sq_div_two_eq_smul_withDensity :
     acceptedLaw (uniformMeasure 0 1) (fun z => (1 + z ^ 2) / 2) (fun _ => 1) 1 =
       (ENNReal.ofReal (2 / 3))⁻¹ •
         (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal ((1 + z ^ 2) / 2) := by
@@ -420,7 +427,7 @@ instance isProbabilityMeasure_acceptedLaw_one_add_sq_div_two :
 /-- **A bound that is too small.** Sampling the target `2 * z` on `[0, 1]` from a uniform
 proposal against the bound `3 / 2`, which `2 * z` exceeds above `z = 3 / 4`, produces the
 clipped target `min (2 * z) (3 / 2)` normalised by its integral `15 / 16`. -/
-theorem acceptedLaw_two_mul_three_div_two_eq_smul_withDensity_min :
+theorem acceptedLaw_two_mul_bound_three_div_two_eq_smul_withDensity_min :
     acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1) (3 / 2) =
       (ENNReal.ofReal (15 / 16))⁻¹ •
         (uniformMeasure 0 1).withDensity fun z => ENNReal.ofReal (min (2 * z) (3 / 2)) := by
@@ -431,7 +438,7 @@ theorem acceptedLaw_two_mul_three_div_two_eq_smul_withDensity_min :
 /-- Sampling the target `2 * z` on `[0, 1]` from a uniform proposal against the bound `3 / 2`
 accepts with probability `5 / 8`: the clipped target's integral `15 / 16` divided by the bound.
 -/
-theorem measureReal_trialLaw_acceptSet_two_mul_three_div_two :
+theorem measureReal_trialLaw_acceptSet_two_mul_bound_three_div_two :
     (trialLaw (uniformMeasure 0 1) fun _ => 1).real
       (acceptSet (fun z => 2 * z) (fun _ => 1) (3 / 2)) = 5 / 8 := by
   rw [measureReal_trialLaw_acceptSet (by norm_num) (by fun_prop) measurable_const]
@@ -443,7 +450,7 @@ theorem measureReal_trialLaw_acceptSet_two_mul_three_div_two :
 /-- The accepted law of the bound-that-is-too-small example is a probability measure: the
 clipped target has mass `15 / 16`, positive and finite. The bound failing above `z = 3 / 4`
 changes the law, not the fact that it is a probability measure. -/
-instance isProbabilityMeasure_acceptedLaw_two_mul_three_div_two :
+instance isProbabilityMeasure_acceptedLaw_two_mul_bound_three_div_two :
     IsProbabilityMeasure (acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1)
       (3 / 2)) :=
   isProbabilityMeasure_acceptedLaw_of_lintegral_min (by norm_num) (by fun_prop) measurable_const
