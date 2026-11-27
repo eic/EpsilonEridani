@@ -22,7 +22,8 @@ This file relates `ξ` to the plus momenta, `1 - ξ = P'⁺/P⁺` (`one_sub_xiLC
 `ξ < 1` for positive plus momenta (`xiLC_lt_one`) and `0 ≤ ξ` when the target does not gain plus
 momentum, `P'⁺ ≤ P⁺` with `0 < P⁺` (`xiLC_nonneg`). It also defines the transverse momentum
 transfer relative to the target direction, `Δ_T - ξ P_T` (`deltaLostRelativeTransverse`), which is
-`Δ_T` for a target with no transverse momentum.
+`Δ_T` for a target with no transverse momentum, and whose square is that of `Δ - ξ P`
+(`bilinForm_deltaLostRelativeTransverse_self_eq_sub_smul`).
 
 -/
 
@@ -106,6 +107,19 @@ theorem deltaLostRelativeTransverse_eq_transverseProj_sub_smul (L : LightConeBas
     (K : DisKinematics V) :
     deltaLostRelativeTransverse L K = L.transverseProj (deltaLost K - xiLC L K • K.p) := by
   rw [deltaLostRelativeTransverse_def, map_sub, map_smul]
+
+/-- The square of the relative transverse momentum transfer is the square of `Δ - ξ P`, for a
+reflexive form and non-vanishing plus momentum `P⁺`: at `ξ = Δ⁺/P⁺` the vector `Δ - ξ P` has no
+plus component, so its square is that of its transverse part `Δ_T - ξ P_T`. This turns the
+basis-free relation `tMom_eq_tMin_add` into its light-cone form. -/
+theorem bilinForm_deltaLostRelativeTransverse_self_eq_sub_smul (hg : g.IsRefl)
+    (L : LightConeBasis g) (K : DisKinematics V) (hp : L.plus K.p ≠ 0) :
+    g (deltaLostRelativeTransverse L K) (deltaLostRelativeTransverse L K) =
+      g (deltaLost K - xiLC L K • K.p) (deltaLost K - xiLC L K • K.p) := by
+  have h : L.plus (deltaLost K - xiLC L K • K.p) = 0 := by
+    rw [map_sub, map_smul, smul_eq_mul, xiLC_def, div_mul_cancel₀ _ hp, sub_self]
+  rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hg (deltaLost K - xiLC L K • K.p), h,
+    mul_zero, zero_mul, zero_add, deltaLostRelativeTransverse_eq_transverseProj_sub_smul]
 
 /-- The relative transverse momentum transfer is a transverse vector. -/
 theorem deltaLostRelativeTransverse_mem_transverse (L : LightConeBasis g) (K : DisKinematics V) :

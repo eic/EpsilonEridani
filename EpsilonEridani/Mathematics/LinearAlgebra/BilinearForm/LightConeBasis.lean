@@ -321,9 +321,9 @@ components on the mass shell `v · v = m`. -/
 theorem exists_plus_eq_transverseProj_eq_bilinForm_self_eq [NeZero (2 : K)] (hB : B.IsRefl)
     {a : K} (ha : a ≠ 0) {w : V} (hw : w ∈ L.transverse) (m : K) :
     ∃ v, L.plus v = a ∧ L.transverseProj v = w ∧ B v v = m := by
-  obtain ⟨hp, hm, hT⟩ := (L.smul_add_smul_add_eq_iff hw).1
-    (rfl : a • L.nPlus + ((m - B w w) / (2 * a)) • L.nMinus + w = _)
-  refine ⟨_, hp.symm, hT.symm, ?_⟩
+  set v := a • L.nPlus + ((m - B w w) / (2 * a)) • L.nMinus + w with hv
+  obtain ⟨hp, hm, hT⟩ := (L.smul_add_smul_add_eq_iff hw).1 hv.symm
+  refine ⟨v, hp.symm, hT.symm, ?_⟩
   rw [L.bilinForm_self_eq_two_mul_plus_mul_minus_add hB, ← hp, ← hm, ← hT]
   field_simp
   ring

@@ -49,9 +49,10 @@ mass `M` that emerges as a system of mass `M_Y`:
 `tMin M M_Y ξ = -ξ (M_Y² - (1 - ξ) M²) / (1 - ξ)`.
 
 The argument `xiLC` is the light-cone fraction `ξ = Δ⁺/P⁺`, not the
-invariant `Invariants.xi`. For a reflexive form, non-vanishing plus momentum and `ξ ≠ 1`, the
-on-shell conditions `P² = M²`, `P'² = M_Y²` give `t = tMin M M_Y ξ + w²/(1-ξ)`
-(`Kinematics.tMom_eq_tMin_add`), where `w = Δ_T - ξ P_T` is the transverse momentum transfer
+invariant `Invariants.xi`. For any `ξ ≠ 1` the on-shell conditions `P² = M²`, `P'² = M_Y²`
+give `t = tMin M M_Y ξ + (Δ - ξ P)²/(1-ξ)` (`Kinematics.tMom_eq_tMin_add`). For a reflexive form,
+non-vanishing plus momentum and the light-cone `ξ ≠ 1` this reads `t = tMin M M_Y ξ + w²/(1-ξ)`
+(`Kinematics.tMom_eq_tMin_xiLC_add`), where `w = Δ_T - ξ P_T` is the transverse momentum transfer
 relative to the target direction (`w = Δ_T` for a target with no transverse momentum), so that
 `t ≤ tMin M M_Y ξ` for `ξ < 1` when `w² ≤ 0`, the boundary being attained when `w² = 0`. For a
 metric that is negative semidefinite on transverse vectors and admits a space-like transverse
@@ -118,8 +119,8 @@ light-cone fraction `ξ < 1` and the target-side constraints `P² = M²`, `P'² 
 momentum transfer with `Δ_T² ≤ 0` gives `t ≤ tMinElastic M ξ` (for a target with transverse
 momentum `P_T`, `Δ_T` is replaced by `Δ_T - ξ P_T`), equivalently
 `|t| ≥ ξ²M²/(1-ξ)` (`le_tMinElastic_iff`), by
-`Kinematics.tMom_le_tMin` with `tMin_self`; the bound is saturated exactly when `Δ_T² = 0`
-(`Kinematics.tMom_eq_tMin_iff`), i.e. in the forward configuration `Δ_T = 0` for a metric
+`Kinematics.tMom_le_tMin_xiLC` with `tMin_self`; the bound is saturated exactly when `Δ_T² = 0`
+(`Kinematics.tMom_eq_tMin_xiLC_iff`), i.e. in the forward configuration `Δ_T = 0` for a metric
 definite on transverse vectors. If moreover the metric is
 negative semidefinite on transverse vectors and admits a space-like transverse vector, these
 momentum transfers are exactly `t ≤ tMinElastic M ξ` (`Kinematics.setOf_tMom_eq_Iic_tMin`).
