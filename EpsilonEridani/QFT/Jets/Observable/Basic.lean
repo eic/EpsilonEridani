@@ -49,9 +49,11 @@ for continuous operations), and so is their conjunction (`IsIRCSafe.add`, `IsIRC
 `IsIRCSafe.sub`, `IsIRCSafe.mul`). The safe observables with values in a topological ring therefore
 form a subring (`ircSafeSubring`).
 
-The basic positive examples are the total momentum (`isIRCSafe_multisetSum`) and the invariant
-mass squared `invariantMassSq g s = g P P` of the total momentum `P` of the whole final state, for
-a continuous bilinear form `g` (`isIRCSafe_invariantMassSq`).
+The basic positive examples are the total momentum (`isIRCSafe_multisetSum`), the sum `∑ E p`
+over the particles of a continuous linear function `E` of the momenta, such as the total energy
+(`isIRCSafe_sum_map`), and the invariant mass squared `invariantMassSq g s = g P P` of the total
+momentum `P` of the whole final state, for a continuous bilinear form `g`
+(`isIRCSafe_invariantMassSq`).
 
 ## References
 
