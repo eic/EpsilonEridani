@@ -384,7 +384,8 @@ lemma parityOddAssumptions_aOfAlt (g : Bilin V) (ε : V [⋀^Fin 4]→ₗ[ℝ] �
 /-!
 ## A four-dimensional witness
 
-On Minkowski space `ℝ⁴` with `p = (1, 0, 0, -4/5)` and `q = (0, 0, 0, 1)`, the contraction
+On Minkowski space `ℝ⁴`, with the form `Kinematics.Witness.gFour`, `p = (1, 0, 0, -4/5)`
+and `q = (0, 0, 0, 1)`, the contraction
 `ε(·, ·, p, q)` of the determinant is a non-zero parity-odd tensor, and the two remaining
 coordinate directions form a `SpectatorPlane`. The kinematics are non-degenerate —
 `p·q = 4/5`, `Q² = 1` and `x_Bj = 5/8` — so the DIS invariants are defined there. The
@@ -400,20 +401,7 @@ section are stated about it directly.
 
 namespace Witness
 
-/-- The `+---` Minkowski form on `ℝ⁴`: `g v w = v₀w₀ - v₁w₁ - v₂w₂ - v₃w₃`. -/
-def gFour : Bilin (Fin 4 → ℝ) :=
-  Matrix.toBilin' (Matrix.diagonal ![1, -1, -1, -1])
-
-@[simp] lemma gFour_apply (v w : Fin 4 → ℝ) :
-    gFour v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := by
-  simp only [gFour, Matrix.toBilin'_apply', dotProduct, Matrix.mulVec_diagonal,
-    Fin.sum_univ_four, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, one_mul,
-    neg_mul, mul_neg]
-  ring
-
-/-- `gFour` is symmetric. -/
-lemma gFour_isSymm : gFour.IsSymm :=
-  Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal _)
+open Kinematics.Witness (gFour gFour_apply gFour_isSymm)
 
 /-- Witness kinematics on `ℝ⁴`: timelike `p = (1, 0, 0, -4/5)` and spacelike
 `q = (0, 0, 0, 1)`. The invariants are non-degenerate: `Q² = 1`, `p·q = 4/5` and `x_Bj = 5/8`,

@@ -38,6 +38,10 @@ Each satisfies both normalisation conditions (`PolarizedKinematics.longitudinal`
 the longitudinal one is not (`apply_transverseSpin_k_eq_zero`, `apply_longitudinalSpin_k`), and
 the two are mutually orthogonal (`apply_longitudinalSpin_transverseSpin_eq_zero`).
 
+`Witness.longitudinalPol` and `Witness.transversePol` realise both configurations in
+three-dimensional Minkowski space; `Witness.kWit4` is polarised kinematics on `ℝ⁴` with the
+Minkowski metric `Kinematics.Witness.gFour`.
+
 ## References
 
 * M. Anselmino, A. Efremov and E. Leader, *The theory and phenomenology of polarized deep
@@ -284,7 +288,7 @@ end PolarizedKinematics
 
 namespace Witness
 
-open Kinematics.Witness (gWit gWit_apply gWit_isSymm)
+open Kinematics.Witness (gWit gWit_apply gWit_isSymm gFour gFour_apply gFour_isSymm)
 
 /-- Witness kinematics in `ℝ¹'²` with the metric `gWit`: a target of unit mass at rest,
 `p = (1, 0, 0)`, struck by a massless lepton moving along the first spatial axis,
@@ -340,6 +344,38 @@ def longitudinalPol : PolarizedKinematics gWit :=
 def transversePol : PolarizedKinematics gWit :=
   .transverse kPol (0, 0, 1) gWit_isSymm (by rw [kPol_p_k]; exact one_ne_zero)
     (by simp [transverseComponent_kPol])
+
+/-! ### A witness in four-dimensional Minkowski space -/
+
+/-- Witness kinematics on `ℝ⁴` with the metric `gFour`: a target of unit mass at rest,
+`p = (1, 0, 0, 0)`, momentum transfer `q = (1, 0, 1, 1)` (so `p·q = 1`, `Q² = 1`) and spin
+`S = (0, 0, 0, 1)`, which has `S·q = -1 ≠ 0`. The lepton line is the placeholder `k = q`,
+`k' = 0` (and `p' = 0`), so this is an algebraic non-degeneracy witness, not a physical
+event. -/
+def kWit4 : PolarizedKinematics gFour where
+  p := ![1, 0, 0, 0]
+  pPrime := 0
+  k := ![1, 0, 1, 1]
+  kPrime := 0
+  q := ![1, 0, 1, 1]
+  hq := (sub_zero _).symm
+  S := ![0, 0, 0, 1]
+  spin_orthogonal := by simp
+  spin_normalized := by simp
+
+@[simp] lemma kWit4_p : kWit4.p = ![1, 0, 0, 0] := (rfl)
+
+@[simp] lemma kWit4_q : kWit4.q = ![1, 0, 1, 1] := (rfl)
+
+@[simp] lemma kWit4_S : kWit4.S = ![0, 0, 0, 1] := (rfl)
+
+@[simp] lemma kWit4_M2 : kWit4.M2 gFour = 1 := by simp [DisKinematics.M2_def]
+
+@[simp] lemma kWit4_Q2 : kWit4.Q2 gFour = 1 := by simp [DisKinematics.Q2]
+
+@[simp] lemma kWit4_xBj : kWit4.xBj gFour = 1 / 2 := by simp [DisKinematics.xBj]
+
+lemma kWit4_p_q : gFour kWit4.p kWit4.q = 1 := by simp
 
 end Witness
 

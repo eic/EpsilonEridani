@@ -8,11 +8,12 @@ module
 public import EpsilonEridani.QFT.Scattering.DIS.Kinematics.Basic
 
 /-!
-# A concrete Minkowski form for witnesses
+# Concrete Minkowski forms for witnesses
 
 `Kinematics.Witness.gWit` is the `+--` Minkowski form on `ℝ × ℝ × ℝ`, one time and two space
-directions, in the `Kinematics` sign convention. It is the concrete form on which the DIS tensor,
-polarized-kinematics and jet-frame witnesses are evaluated.
+directions, and `Kinematics.Witness.gFour` is the `+---` Minkowski form on `ℝ⁴`, one time and
+three space directions, both in the `Kinematics` sign convention. They are the concrete forms
+on which the DIS tensor, polarized-kinematics and jet-frame witnesses are evaluated.
 -/
 
 public section
@@ -45,6 +46,23 @@ lemma gWit_isSymm : gWit.IsSymm := by
   intro v w
   simp only [gWit_apply]
   ring
+
+/-- The `+---` Minkowski form on `ℝ⁴`: `g v w = v₀w₀ - v₁w₁ - v₂w₂ - v₃w₃`, in the `Kinematics`
+sign convention. It is the four-dimensional counterpart of `gWit`, the form on which the
+parity-odd and polarized-kinematics witnesses are evaluated. -/
+def gFour : Bilin (Fin 4 → ℝ) :=
+  Matrix.toBilin' (Matrix.diagonal ![1, -1, -1, -1])
+
+@[simp] lemma gFour_apply (v w : Fin 4 → ℝ) :
+    gFour v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := by
+  simp only [gFour, Matrix.toBilin'_apply', dotProduct, Matrix.mulVec_diagonal,
+    Fin.sum_univ_four, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, one_mul,
+    neg_mul, mul_neg]
+  ring
+
+/-- `gFour` is symmetric, as a metric must be. -/
+lemma gFour_isSymm : gFour.IsSymm :=
+  Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal _)
 
 end Witness
 
