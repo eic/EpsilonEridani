@@ -52,7 +52,7 @@ theorem leadingParticles_def (E : V → ℝ) (k : ℕ) (s : Multiset V) :
 /-- The leading particles of a final state are a sub-multiset of it. -/
 theorem leadingParticles_le (E : V → ℝ) (k : ℕ) (s : Multiset V) :
     leadingParticles E k s ≤ s := by
-  conv_rhs => rw [← Multiset.coe_sortOn (fun p => OrderDual.toDual (E p)) s]
+  conv_rhs => rw [← Multiset.sortOn_eq (fun p => OrderDual.toDual (E p)) s]
   exact Multiset.coe_le.2 (List.take_sublist k _).subperm
 
 /-- There are `k` leading particles, or all of them if the final state has fewer than `k`. -/
@@ -86,7 +86,7 @@ private theorem sub_leadingParticles (E : V → ℝ) (k : ℕ) (s : Multiset V) 
     s - leadingParticles E k s = ((s.sortOn fun p => OrderDual.toDual (E p)).drop k : List V) := by
   have h := congrArg ((↑) : List V → Multiset V)
     (List.take_append_drop k (s.sortOn fun p => OrderDual.toDual (E p)))
-  rw [← Multiset.coe_add, Multiset.coe_sortOn] at h
+  rw [← Multiset.coe_add, Multiset.sortOn_eq] at h
   rw [leadingParticles_def]
   conv_lhs => arg 1; rw [← h]
   exact add_tsub_cancel_left _ _
@@ -111,8 +111,8 @@ theorem leadingParticles_eq_of_lt {E : V → ℝ} {k : ℕ} {s t : Multiset V} (
     rw [hu, card_leadingParticles, ← hk, min_eq_left (Multiset.card_le_card ht)]
   by_contra hne
   -- Each of `u` and `t` has a member the other lacks.
-  obtain ⟨a, ha⟩ := Multiset.exists_mem_sub_of_card_eq hcard hne
-  obtain ⟨b, hb⟩ := Multiset.exists_mem_sub_of_card_eq hcard.symm (Ne.symm hne)
+  obtain ⟨a, ha⟩ := Multiset.exists_mem_sub_of_card_eq_of_ne hcard hne
+  obtain ⟨b, hb⟩ := Multiset.exists_mem_sub_of_card_eq_of_ne hcard.symm (Ne.symm hne)
   -- `a` is leading and `b` is not, so `E b ≤ E a`; `b ∈ t` and `a ∉ t`, so `E a < E b`.
   have hba : E b ≤ E a :=
     le_of_mem_leadingParticles (Multiset.mem_of_le (Multiset.sub_le_self _ _) ha)

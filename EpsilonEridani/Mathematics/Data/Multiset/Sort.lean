@@ -21,7 +21,7 @@ by a decreasing key by taking `f` with values in an order dual.
 ## Main declarations
 
 * `Multiset.sortOn f s`: the elements of `s` as a list sorted by increasing `f`.
-* `Multiset.coe_sortOn`: the list `Multiset.sortOn f s` represents `s`.
+* `Multiset.sortOn_eq`: the list `Multiset.sortOn f s` represents `s`.
 * `Multiset.pairwise_sortOn`: the keys increase along `Multiset.sortOn f s`.
 -/
 
@@ -38,16 +38,16 @@ noncomputable def sortOn (f : α → β) (s : Multiset α) : List α :=
 
 /-- The list `Multiset.sortOn f s` represents the multiset `s`. -/
 @[simp]
-theorem coe_sortOn (f : α → β) (s : Multiset α) : (s.sortOn f : Multiset α) = s := by
+theorem sortOn_eq (f : α → β) (s : Multiset α) : (s.sortOn f : Multiset α) = s := by
   rw [sortOn, coe_eq_coe.2 (List.mergeSort_perm _ _), coe_toList]
 
 @[simp]
 theorem length_sortOn (f : α → β) (s : Multiset α) : (s.sortOn f).length = card s := by
-  rw [← coe_card, coe_sortOn]
+  rw [← coe_card, sortOn_eq]
 
 @[simp]
 theorem mem_sortOn {f : α → β} {s : Multiset α} {a : α} : a ∈ s.sortOn f ↔ a ∈ s := by
-  rw [← mem_coe, coe_sortOn]
+  rw [← mem_coe, sortOn_eq]
 
 @[simp]
 theorem sortOn_zero (f : α → β) : (0 : Multiset α).sortOn f = [] := by

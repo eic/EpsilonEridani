@@ -50,7 +50,8 @@ for continuous operations), and so is their conjunction (`IsIRCSafe.add`, `IsIRC
 form a subring (`ircSafeSubring`).
 
 The basic positive examples are the total momentum (`isIRCSafe_multisetSum`), the sum `∑ E p`
-over the particles of a continuous linear function `E` of the momenta, such as the total energy
+over the particles of a linear function `E` of the momenta, such as the total energy, which is
+collinear safe (`isCollinearSafe_sum_map`) and, for a continuous `E`, infrared and collinear safe
 (`isIRCSafe_sum_map`), and the invariant mass squared `invariantMassSq g s = g P P` of the total
 momentum `P` of the whole final state, for a continuous bilinear form `g`
 (`isIRCSafe_invariantMassSq`).
@@ -413,13 +414,23 @@ theorem isIRCSafe_multisetSum [TopologicalSpace V] [ContinuousAdd V] :
     IsIRCSafe (Multiset.sum : Multiset V → V) :=
   ⟨isCollinearSafe_multisetSum, isInfraredSafe_multisetSum⟩
 
+/-- The sum `∑ E p` over the particles of a final state of a linear function `E` of the momenta,
+such as the total energy, is collinear safe: it is `E` of the total momentum. -/
+theorem isCollinearSafe_sum_map [AddCommGroup X] [Module ℝ X] (E : V →ₗ[ℝ] X) :
+    IsCollinearSafe fun s : Multiset V => (s.map E).sum := by
+  simp_rw [← map_multiset_sum]
+  exact isCollinearSafe_multisetSum.map E
+
 /-- The sum `∑ E p` over the particles of a final state of a continuous linear function `E` of
 the momenta, such as the total energy, is infrared and collinear safe: it is `E` of the total
 momentum. -/
 theorem isIRCSafe_sum_map [TopologicalSpace V] [ContinuousAdd V] [AddCommGroup X] [Module ℝ X]
     [TopologicalSpace X] (E : V →L[ℝ] X) : IsIRCSafe fun s : Multiset V => (s.map E).sum := by
-  simp_rw [← map_multiset_sum]
-  exact isIRCSafe_multisetSum.map (f := E) E.continuous
+  refine ⟨?_, ?_⟩
+  · simp only [← ContinuousLinearMap.coe_coe]
+    exact isCollinearSafe_sum_map (E : V →ₗ[ℝ] X)
+  · simp_rw [← map_multiset_sum]
+    exact isInfraredSafe_multisetSum.map E.continuous
 
 /-- The invariant mass squared is infrared and collinear safe for any jointly continuous bilinear
 form `g`. -/

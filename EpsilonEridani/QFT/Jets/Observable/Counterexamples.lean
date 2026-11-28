@@ -34,8 +34,9 @@ with observables that fail them. This file records the standard ones.
   is infrared safe exactly when the threshold is positive (`isInfraredSafe_thresholdCount_iff`):
   at a threshold `E₀ ≤ 0` arbitrarily soft particles of positive energy are counted
   (`not_isInfraredSafe_thresholdCount`). Weighting each particle by its energy instead of counting
-  the particles above a threshold gives the energy sum `∑ E p`, which for a continuous linear `E`
-  is infrared and collinear safe (`isIRCSafe_sum_map`).
+  the particles above a threshold gives the energy sum `∑ E p`, which for a linear `E` is collinear
+  safe (`isCollinearSafe_sum_map`), and for a continuous linear `E` infrared and collinear safe
+  (`isIRCSafe_sum_map`).
 * The invariant mass squared `leadingPairMassSq g E s` of the two most energetic particles
   `leadingParticles E 2 s` of a final state (`EpsilonEridani.QFT.Jets.Observable.Leading`) is,
   for a nonzero linear energy functional `E`, collinear safe if and only if the bilinear form `g`
@@ -275,8 +276,10 @@ theorem not_isInfraredSafe_thresholdCount [TopologicalSpace V] [ContinuousSMul �
 theorem isInfraredSafe_thresholdCount_iff [TopologicalSpace V] [ContinuousSMul ℝ V]
     {E : V →L[ℝ] ℝ} (hE : E ≠ 0) {E₀ : ℝ} :
     IsInfraredSafe (thresholdCount E E₀) ↔ 0 < E₀ := by
-  refine ⟨fun h => not_le.1 fun hE₀ => not_isInfraredSafe_thresholdCount (E := (E : V →ₗ[ℝ] ℝ))
-    ?_ hE₀ h, isInfraredSafe_thresholdCount (E.continuous.tendsto' 0 0 (map_zero E))⟩
+  refine ⟨fun h => not_le.1 fun hE₀ => ?_,
+    isInfraredSafe_thresholdCount (E.continuous.tendsto' 0 0 (map_zero E))⟩
+  rw [← ContinuousLinearMap.coe_coe] at h
+  refine not_isInfraredSafe_thresholdCount (E := (E : V →ₗ[ℝ] ℝ)) ?_ hE₀ h
   exact fun h0 => hE (ContinuousLinearMap.coe_injective (by simpa using h0))
 
 end Linear
@@ -302,6 +305,21 @@ theorem leadingPairMassSq_zero (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) :
     leadingPairMassSq g E 0 = 0 := by
   simp [leadingPairMassSq_def, invariantMassSq_def]
 
+/-- A single particle is its own leading pair, so its leading-pair mass squared is `g p p`. -/
+@[simp]
+theorem leadingPairMassSq_singleton (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) (p : V) :
+    leadingPairMassSq g E {p} = g p p := by
+  rw [leadingPairMassSq_def, leadingParticles_of_card_le (by simp), invariantMassSq_def,
+    Multiset.sum_singleton]
+
+/-- A two-particle state is its own leading pair, so its leading-pair mass squared is the invariant
+mass squared `g (p + q) (p + q)` of the pair. -/
+@[simp]
+theorem leadingPairMassSq_pair (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) (p q : V) :
+    leadingPairMassSq g E (p ::ₘ q ::ₘ 0) = g (p + q) (p + q) := by
+  rw [leadingPairMassSq_def, leadingParticles_of_card_le (by simp), invariantMassSq_def]
+  simp
+
 /-- The invariant mass squared of the two most energetic particles is not collinear safe whenever
 a two-particle state `{p, q}` with `2 E q < E p` has an invariant mass squared different from
 `g p p`: splitting `p` with `z = 1 / 2` makes the two halves of `p` the leading pair, whose total
@@ -312,9 +330,7 @@ theorem not_isCollinearSafe_leadingPairMassSq {g : LinearMap.BilinForm ℝ V}
   classical
   intro h
   have key := isCollinearSafe_def.1 h (q ::ₘ 0) p (1 / 2) ⟨by norm_num, by norm_num⟩
-  -- Before the splitting, the state `{p, q}` is its own leading pair.
-  have h₁ : leadingParticles E 2 (p ::ₘ q ::ₘ 0) = p ::ₘ q ::ₘ 0 :=
-    leadingParticles_of_card_le (by simp)
+  -- Before the splitting, the state `{p, q}` is its own leading pair (`leadingPairMassSq_pair`).
   -- After it, the two halves of `p` are strictly more energetic than `q`.
   have hhalf : (1 / 2 : ℝ) • p ::ₘ (1 - 1 / 2 : ℝ) • p ::ₘ q ::ₘ 0 =
       ((1 / 2 : ℝ) • p ::ₘ (1 - 1 / 2 : ℝ) • p ::ₘ 0) + q ::ₘ 0 := by
@@ -327,7 +343,7 @@ theorem not_isCollinearSafe_leadingPairMassSq {g : LinearMap.BilinForm ℝ V}
     simp only [Multiset.mem_cons, Multiset.notMem_zero, or_false] at ha hb
     subst hb
     rcases ha with rfl | rfl <;> simp <;> linarith
-  rw [leadingPairMassSq_def, leadingPairMassSq_def, h₁, h₂] at key
+  rw [leadingPairMassSq_pair, leadingPairMassSq_def, h₂] at key
   simp only [invariantMassSq_def, Multiset.sum_cons, Multiset.sum_zero, add_zero,
     smul_add_one_sub_smul] at key
   exact hg key.symm
