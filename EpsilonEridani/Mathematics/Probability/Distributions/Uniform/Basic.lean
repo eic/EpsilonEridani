@@ -33,7 +33,7 @@ examples there integrate continuous targets against the standard uniform law.
 * `EpsilonEridani.lintegral_ofReal_uniformMeasure`: the lower integral of an integrable,
   almost everywhere nonnegative function against the uniform law, as an interval integral
   divided by the interval length.
-* `MeasureTheory.Measure.map_fst_restrict_setOf_le_prod_uniformMeasure_zero_one`: thinning by a
+* `MeasureTheory.Measure.fst_restrict_setOf_le_prod_uniformMeasure_zero_one`: thinning by a
   uniform variate. Keeping a proposal `x` when an independent standard uniform variate lies
   below `a x` multiplies its law by the density `min (a x) 1`, clipped at `0`.
 -/
@@ -119,13 +119,13 @@ variable {α : Type*} [MeasurableSpace α]
 /-- **Thinning by a uniform variate.** Draw `x` from `ν` and an independent standard uniform
 variate `u`, and keep `x` when `u ≤ a x`. The kept part of the law of `x` is `ν` with density
 `min (a x) 1`, read as `0` where `a x` is negative. -/
-theorem map_fst_restrict_setOf_le_prod_uniformMeasure_zero_one (ν : Measure α) {a : α → ℝ}
+theorem fst_restrict_setOf_le_prod_uniformMeasure_zero_one (ν : Measure α) {a : α → ℝ}
     (ha : Measurable a) :
-    ((ν.prod (uniformMeasure 0 1)).restrict {p | p.2 ≤ a p.1}).map Prod.fst =
+    ((ν.prod (uniformMeasure 0 1)).restrict {p | p.2 ≤ a p.1}).fst =
       ν.withDensity fun x => ENNReal.ofReal (min (a x) 1) := by
   have hs : MeasurableSet {p : α × ℝ | p.2 ≤ a p.1} :=
     measurableSet_le measurable_snd (ha.comp measurable_fst)
-  rw [ν.map_fst_restrict_prod _ hs]
+  rw [ν.fst_restrict_prod _ hs]
   congr 1
   funext x
   have hslice : Prod.mk x ⁻¹' {p : α × ℝ | p.2 ≤ a p.1} = Set.Iic (a x) := by

@@ -34,7 +34,7 @@ what lets the results below carry no sign hypothesis on `f` or `g`.
 
 ## Main results
 
-* `AcceptReject.map_fst_restrict_trialLaw_acceptSet`: the accepted part of the trial law,
+* `AcceptReject.fst_restrict_trialLaw_acceptSet`: the accepted part of the trial law,
   projected to the proposal, is `μ.withDensity (min f (c * g) / c)`, with no bound and no sign
   hypothesis.
 * `AcceptReject.trialLaw_acceptSet`: the trial law's measure of the acceptance event is
@@ -140,8 +140,8 @@ instance isProbabilityMeasure_trialLaw_one (μ : Measure α) [IsProbabilityMeasu
 
 /-- The proposal is the first marginal of the trial law. -/
 @[simp]
-theorem map_fst_trialLaw (μ : Measure α) (g : α → ℝ) :
-    (trialLaw μ g).map Prod.fst = μ.withDensity fun x => ENNReal.ofReal (g x) := by
+theorem fst_trialLaw (μ : Measure α) (g : α → ℝ) :
+    (trialLaw μ g).fst = μ.withDensity fun x => ENNReal.ofReal (g x) := by
   simp [trialLaw_def]
 
 /-- The acceptance event of a trial with target `f`, proposal `g` and bound constant `c`: the
@@ -169,10 +169,10 @@ theorem measurableSet_acceptSet {f g : α → ℝ} (c : ℝ) (hf : Measurable f)
 /-- The law of the accepted variate: the proposal marginal of the trial law conditioned on the
 acceptance event. -/
 def acceptedLaw (μ : Measure α) (f g : α → ℝ) (c : ℝ) : Measure α :=
-  ((trialLaw μ g)[|acceptSet f g c]).map Prod.fst
+  ((trialLaw μ g)[|acceptSet f g c]).fst
 
 theorem acceptedLaw_def (μ : Measure α) (f g : α → ℝ) (c : ℝ) :
-    acceptedLaw μ f g c = ((trialLaw μ g)[|acceptSet f g c]).map Prod.fst :=
+    acceptedLaw μ f g c = ((trialLaw μ g)[|acceptSet f g c]).fst :=
   (rfl)
 
 /-- The accepted law is a probability measure as soon as the trial law gives the acceptance
@@ -189,13 +189,13 @@ variable {μ : Measure α} {f g : α → ℝ} {c : ℝ}
 /-- **The accepted part of a trial.** The trials that are accepted, projected to their proposal,
 form the measure `μ` with density `min f (c * g) / c`, read as `0` where it is negative. No bound
 and no sign hypothesis on `f` or `g` is needed. -/
-theorem map_fst_restrict_trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f)
+theorem fst_restrict_trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f)
     (hg : Measurable g) :
-    ((trialLaw μ g).restrict (acceptSet f g c)).map Prod.fst =
+    ((trialLaw μ g).restrict (acceptSet f g c)).fst =
       μ.withDensity fun x => ENNReal.ofReal (min (f x) (c * g x) / c) := by
   have hratio : Measurable fun x => f x / (c * g x) := hf.div (hg.const_mul c)
   rw [trialLaw_def, acceptSet_def,
-    Measure.map_fst_restrict_setOf_le_prod_uniformMeasure_zero_one
+    Measure.fst_restrict_setOf_le_prod_uniformMeasure_zero_one
       (a := fun x => f x / (c * g x)) _ hratio,
     ← withDensity_mul _ (by fun_prop) (by fun_prop)]
   congr 1
@@ -216,9 +216,8 @@ theorem map_fst_restrict_trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f)
 theorem trialLaw_acceptSet (hc : 0 < c) (hf : Measurable f) (hg : Measurable g) :
     trialLaw μ g (acceptSet f g c) =
       (∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ) / ENNReal.ofReal c := by
-  have h := congrArg (· Set.univ) (map_fst_restrict_trialLaw_acceptSet (μ := μ) hc hf hg)
-  simp only [Measure.map_apply measurable_fst MeasurableSet.univ, Set.preimage_univ,
-    Measure.restrict_apply_univ, withDensity_apply _ MeasurableSet.univ,
+  have h := congrArg (· Set.univ) (fst_restrict_trialLaw_acceptSet (μ := μ) hc hf hg)
+  simp only [Measure.fst_univ, Measure.restrict_apply_univ, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ] at h
   rw [h, ENNReal.div_eq_inv_mul, ← lintegral_const_mul' _ _ (by simpa using hc)]
   refine lintegral_congr fun x => ?_
@@ -240,8 +239,11 @@ theorem acceptedLaw_eq_smul_withDensity_min (hc : 0 < c) (hf : Measurable f) (hg
       (ENNReal.ofReal c)⁻¹ = (∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ)⁻¹ := by
     rw [ENNReal.inv_div (Or.inl ENNReal.ofReal_ne_top) (Or.inl hC₀), div_eq_mul_inv, mul_comm,
       ← mul_assoc, ENNReal.inv_mul_cancel hC₀ ENNReal.ofReal_ne_top, one_mul]
-  rw [acceptedLaw_def, ProbabilityTheory.cond, Measure.map_smul _ measurable_fst.aemeasurable,
-    map_fst_restrict_trialLaw_acceptSet hc hf hg, trialLaw_acceptSet hc hf hg, hden,
+  -- Mathlib has no `Measure.fst` lemma for scalar multiples, so the marginal is opened to its
+  -- definition `map Prod.fst` to pull the conditioning constant out, then closed again.
+  rw [acceptedLaw_def, ProbabilityTheory.cond, Measure.fst,
+    Measure.map_smul _ measurable_fst.aemeasurable, ← Measure.fst,
+    fst_restrict_trialLaw_acceptSet hc hf hg, trialLaw_acceptSet hc hf hg, hden,
     withDensity_smul _ (by fun_prop), smul_smul, hscalar]
 
 /-- Where the bound `f ≤ c * g` holds almost everywhere, clipping the target at `c * g` changes
