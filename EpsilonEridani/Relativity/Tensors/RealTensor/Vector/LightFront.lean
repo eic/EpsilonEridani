@@ -403,6 +403,26 @@ lemma ofLightFront_smul (c a b : ℝ) (kT : E²) :
 lemma ofLightFront_zero : ofLightFront 0 0 (0 : E²) = 0 :=
   map_zero lightFrontEquiv.symm
 
+/-- The Minkowski product with the four-vector of light-front components `(a, b, kT)`:
+`⟪ofLightFront a b kT, q⟫ₘ = a q⁻ + b q⁺ - kT · q_T`. In particular the light-like vector
+`ofLightFront 0 c 0` pairs to `c q⁺`. -/
+@[simp]
+lemma minkowskiProduct_ofLightFront (a b : ℝ) (kT : E²) (q : Lorentz.Vector 3) :
+    ⟪ofLightFront a b kT, q⟫ₘ =
+      a * minusComponent q + b * plusComponent q - inner ℝ kT (transversePart q) := by
+  rw [minkowskiProduct_eq_lightFront, plusComponent_ofLightFront, minusComponent_ofLightFront,
+    transversePart_ofLightFront]
+
+/-- The Minkowski square of the four-vector with light-front components `(a, b, kT)` is
+`2 a b - ‖kT‖²`. On such a square this takes precedence over `minkowskiProduct_ofLightFront`,
+so that the square is normalised as in `minkowskiProduct_self_eq_lightFront`. -/
+@[simp 1100]
+lemma minkowskiProduct_ofLightFront_self (a b : ℝ) (kT : E²) :
+    ⟪ofLightFront a b kT, ofLightFront a b kT⟫ₘ = 2 * a * b - ‖kT‖ ^ 2 := by
+  rw [minkowskiProduct_ofLightFront, plusComponent_ofLightFront, minusComponent_ofLightFront,
+    transversePart_ofLightFront, real_inner_self_eq_norm_sq]
+  ring
+
 /-! ### Transverse boosts -/
 
 /-- The light-front transverse boost with parameter `v`: it fixes `p⁺`, shifts the transverse
