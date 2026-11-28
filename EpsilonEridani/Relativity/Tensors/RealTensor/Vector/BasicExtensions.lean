@@ -17,6 +17,11 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
 
+* Component lemmas for `Physlib`'s constructor `Lorentz.Vector.ofSpatialComponent`: a purely
+  spatial vector has vanishing time component (`timeComponent_ofSpatialComponent`) and spatial
+  part `s` (`spatialPart_ofSpatialComponent`). Physlib's continuous linear map `spatialCLM`
+  evaluates to `spatialPart` (`spatialCLM_apply`).
+
 * The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
   (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from
   Physlib's `ofTemporalComponent` and `ofSpatialComponent`, and every vector arises this way from
@@ -46,6 +51,25 @@ lemma spatialPart_ofTemporalComponent {d : ℕ} (t : ℝ) :
     (ofTemporalComponent t : Vector d).spatialPart = 0 := by
   ext i
   simp [ofTemporalComponent, basis_apply]
+
+/-- The purely spatial vector `ofSpatialComponent s` has vanishing time component. -/
+@[simp]
+lemma timeComponent_ofSpatialComponent {d : ℕ} (s : EuclideanSpace ℝ (Fin d)) :
+    (ofSpatialComponent s : Vector d).timeComponent = 0 := by
+  simp [ofSpatialComponent, apply_sum, basis_apply]
+
+/-- The purely spatial vector `ofSpatialComponent s` has spatial part `s`. -/
+@[simp]
+lemma spatialPart_ofSpatialComponent {d : ℕ} (s : EuclideanSpace ℝ (Fin d)) :
+    (ofSpatialComponent s : Vector d).spatialPart = s := by
+  ext i
+  simp [ofSpatialComponent, apply_sum, basis_apply]
+
+/-- Physlib's continuous linear map `spatialCLM` is the spatial part. -/
+@[simp]
+lemma spatialCLM_apply {d : ℕ} (v : Vector d) : spatialCLM d v = v.spatialPart := by
+  ext i
+  exact spatialCLM_apply_eq_spatialPart v i
 
 /-- The spatial part of a difference is the difference of the spatial parts.
 
