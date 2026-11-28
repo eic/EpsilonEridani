@@ -65,7 +65,9 @@ from eliminating the bad components through the constraint equation.
   the good and the bad spinors each form a two-dimensional space.
 * `LightConeBasis.commute_goodProjector_of_anticomm`: an endomorphism anticommuting with `γ⁻` and
   `γ⁺` commutes with `P₊`; in particular (`LightConeBasis.commute_goodProjector_gamma5`) the
-  good/bad split commutes with chirality.
+  good/bad split commutes with chirality; `γ⁵` and transverse Clifford multiplication preserve the
+  good and the bad spinors (`LightConeBasis.gamma5_apply_mem_range_goodProjector`,
+  `LightConeBasis.gammaMatrix_apply_mem_range_goodProjector_of_mem_transverse`, and duals).
 * `LightConeBasis.gammaMatrix_sub_smul_one_apply_eq_zero_iff`: the Dirac equation is equivalent
   to the constraint equation together with the dynamical equation.
 * `LightConeBasis.badProjector_apply_eq_of_gammaMatrix_sub_smul_one_apply_eq_zero`: the
@@ -74,10 +76,8 @@ from eliminating the bad components through the constraint equation.
   `LightConeBasis.coe_goodProjectorEquiv_symm_apply`: conversely, on the mass shell with
   `p⁺ ≠ 0` every good spinor `χ` is the good component of the solution
   `χ + (2p⁺)⁻¹ (/p_T + m) γ⁺ χ`.
-* `LightConeBasis.finrank_ker_gammaMatrix_sub_smul_one_eq_two`: on the mass shell with `p⁺ ≠ 0`
-  the solutions of the Dirac equation form a two-dimensional space;
-  `Fermion.Dirac.finrank_ker_gammaMatrix_sub_smul_one_eq_two` is the frame-free form, for any
-  `p ≠ 0` on the mass shell.
+* `Fermion.Dirac.finrank_ker_gammaMatrix_sub_smul_one_eq_two`: on the mass shell with `p ≠ 0`
+  the solutions of the Dirac equation form a two-dimensional space.
 
 ## References
 
@@ -521,6 +521,82 @@ theorem commute_badProjector_gammaMatrix_of_mem_transverse {t : Lorentz.Vector}
   rw [← goodProjector_swap]
   exact L.swap.commute_goodProjector_gammaMatrix_of_mem_transverse (by rwa [transverse_swap])
 
+/-- The good projector commutes with the left chiral projector `(1 - γ⁵) / 2`. -/
+theorem commute_goodProjector_leftChiralProjector :
+    Commute L.goodProjector leftChiralProjector := by
+  rw [leftChiralProjector]
+  exact ((Commute.one_right _).sub_right L.commute_goodProjector_gamma5).smul_right _
+
+/-- The good projector commutes with the right chiral projector `(1 + γ⁵) / 2`. -/
+theorem commute_goodProjector_rightChiralProjector :
+    Commute L.goodProjector rightChiralProjector := by
+  rw [rightChiralProjector]
+  exact ((Commute.one_right _).add_right L.commute_goodProjector_gamma5).smul_right _
+
+/-- The bad projector commutes with the left chiral projector `(1 - γ⁵) / 2`. -/
+theorem commute_badProjector_leftChiralProjector :
+    Commute L.badProjector leftChiralProjector := by
+  rw [← goodProjector_swap]
+  exact L.swap.commute_goodProjector_leftChiralProjector
+
+/-- The bad projector commutes with the right chiral projector `(1 + γ⁵) / 2`. -/
+theorem commute_badProjector_rightChiralProjector :
+    Commute L.badProjector rightChiralProjector := by
+  rw [← goodProjector_swap]
+  exact L.swap.commute_goodProjector_rightChiralProjector
+
+/-- `P₊ γ⁵ ψ = γ⁵ P₊ ψ`. -/
+theorem goodProjector_gamma5_apply (ψ : Dirac) :
+    L.goodProjector (gamma5 ψ) = gamma5 (L.goodProjector ψ) := by
+  simpa only [Module.End.mul_apply] using LinearMap.congr_fun L.commute_goodProjector_gamma5.eq ψ
+
+/-- `P₋ γ⁵ ψ = γ⁵ P₋ ψ`. -/
+theorem badProjector_gamma5_apply (ψ : Dirac) :
+    L.badProjector (gamma5 ψ) = gamma5 (L.badProjector ψ) := by
+  simpa only [Module.End.mul_apply] using LinearMap.congr_fun L.commute_badProjector_gamma5.eq ψ
+
+/-- `P₊ /t ψ = /t P₊ ψ` for a transverse vector `t`. -/
+theorem goodProjector_gammaMatrix_apply_of_mem_transverse {t : Lorentz.Vector}
+    (ht : t ∈ L.transverse) (ψ : Dirac) :
+    L.goodProjector (gammaMatrix t ψ) = gammaMatrix t (L.goodProjector ψ) := by
+  simpa only [Module.End.mul_apply] using
+    LinearMap.congr_fun (L.commute_goodProjector_gammaMatrix_of_mem_transverse ht).eq ψ
+
+/-- `P₋ /t ψ = /t P₋ ψ` for a transverse vector `t`. -/
+theorem badProjector_gammaMatrix_apply_of_mem_transverse {t : Lorentz.Vector}
+    (ht : t ∈ L.transverse) (ψ : Dirac) :
+    L.badProjector (gammaMatrix t ψ) = gammaMatrix t (L.badProjector ψ) := by
+  simpa only [Module.End.mul_apply] using
+    LinearMap.congr_fun (L.commute_badProjector_gammaMatrix_of_mem_transverse ht).eq ψ
+
+/- An endomorphism commuting with a projector preserves its range. -/
+private theorem apply_mem_range_of_commute {P a : Module.End ℂ Dirac} (h : Commute P a)
+    {χ : Dirac} (hχ : χ ∈ range P) : a χ ∈ range P := by
+  obtain ⟨φ, rfl⟩ := hχ
+  exact ⟨a φ, by simpa only [Module.End.mul_apply] using LinearMap.congr_fun h.eq φ⟩
+
+/-- Chirality preserves the good spinors. -/
+theorem gamma5_apply_mem_range_goodProjector {χ : Dirac} (hχ : χ ∈ range L.goodProjector) :
+    gamma5 χ ∈ range L.goodProjector :=
+  apply_mem_range_of_commute L.commute_goodProjector_gamma5 hχ
+
+/-- Chirality preserves the bad spinors. -/
+theorem gamma5_apply_mem_range_badProjector {χ : Dirac} (hχ : χ ∈ range L.badProjector) :
+    gamma5 χ ∈ range L.badProjector :=
+  apply_mem_range_of_commute L.commute_badProjector_gamma5 hχ
+
+/-- Clifford multiplication by a transverse vector preserves the good spinors. -/
+theorem gammaMatrix_apply_mem_range_goodProjector_of_mem_transverse {t : Lorentz.Vector}
+    (ht : t ∈ L.transverse) {χ : Dirac} (hχ : χ ∈ range L.goodProjector) :
+    gammaMatrix t χ ∈ range L.goodProjector :=
+  apply_mem_range_of_commute (L.commute_goodProjector_gammaMatrix_of_mem_transverse ht) hχ
+
+/-- Clifford multiplication by a transverse vector preserves the bad spinors. -/
+theorem gammaMatrix_apply_mem_range_badProjector_of_mem_transverse {t : Lorentz.Vector}
+    (ht : t ∈ L.transverse) {χ : Dirac} (hχ : χ ∈ range L.badProjector) :
+    gammaMatrix t χ ∈ range L.badProjector :=
+  apply_mem_range_of_commute (L.commute_badProjector_gammaMatrix_of_mem_transverse ht) hχ
+
 /-! ### The Dirac equation in light-cone components -/
 
 section DiracEquation
@@ -611,9 +687,8 @@ private theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus_eq_smul_goodPro
       L.gammaMatrix_nPlus_mul_gammaMatrix_eq_neg_mul_of_minus_eq_zero ht]
     abel
   have hTT : (gammaMatrix t + m • 1) * (m • 1 - gammaMatrix t) = (m ^ 2 - ⟪t, t⟫ₘ) • 1 := by
-    simp only [add_mul, mul_sub, smul_mul_assoc, mul_smul_comm, one_mul, mul_one,
-      gammaMatrix_mul_self]
-    module
+    rw [← neg_sub (gammaMatrix t), mul_neg, gammaMatrix_add_smul_one_mul_gammaMatrix_sub_smul_one,
+      ← neg_smul, neg_sub]
   calc (gammaMatrix t + m • 1) * gammaMatrix L.nPlus *
         ((gammaMatrix t + m • 1) * gammaMatrix L.nMinus)
       = (gammaMatrix t + m • 1) * (gammaMatrix L.nPlus * (gammaMatrix t + m • 1)) *
@@ -709,7 +784,7 @@ theorem coe_goodProjectorEquiv_symm_apply (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp :
 
 /-- On the mass shell `p² = m²` with `p⁺ ≠ 0`, the solutions of the Dirac equation
 `(/p - m) ψ = 0` form a two-dimensional space. -/
-theorem finrank_ker_gammaMatrix_sub_smul_one_eq_two (hshell : ⟪p, p⟫ₘ = m ^ 2)
+private theorem finrank_ker_gammaMatrix_sub_smul_one_eq_two (hshell : ⟪p, p⟫ₘ = m ^ 2)
     (hp : L.plus p ≠ 0) :
     finrank ℂ (ker (gammaMatrix p - m • 1)) = 2 := by
   rw [(L.goodProjectorEquiv hshell hp).finrank_eq, finrank_range_goodProjector_eq_two]
