@@ -6,12 +6,15 @@ Authors: Wouter Deconinck
 module
 
 public import EpsilonEridani.QFT.Jets.Observable.Basic
+public import EpsilonEridani.QFT.Jets.Observable.Leading
+public import Mathlib.Algebra.Module.LinearMap.DivisionRing
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 
 /-!
 # Unsafe observables
 
 The safety conditions of `EpsilonEridani.QFT.Jets.Observable.Basic` are only meaningful together
-with observables that fail them. This file records the two standard ones.
+with observables that fail them. This file records the standard ones.
 
 * The particle multiplicity `particleMultiplicity s = (Multiset.card s : ℝ)` is neither collinear
   safe (`not_isCollinearSafe_particleMultiplicity`) nor infrared safe
@@ -24,6 +27,28 @@ with observables that fail them. This file records the two standard ones.
   with fraction `z` replaces its contribution `E p` by `max z (1 - z) * E p`
   (`leadingEnergy_splitCollinear`), which for `z ∈ [0, 1]` is at most `E p`, so already
   `z = 1 / 2` on a single particle of positive energy witnesses the failure.
+* The number `thresholdCount E E₀ s` of particles whose energy exceeds a threshold `E₀` is, for a
+  nonzero linear energy functional `E`, not collinear safe for any threshold
+  (`not_isCollinearSafe_thresholdCount`): a particle of energy `2 (|E₀| + 1)` splits into two
+  halves that are both above the threshold. For a nonzero continuous linear energy functional it
+  is infrared safe exactly when the threshold is positive (`isInfraredSafe_thresholdCount_iff`):
+  at a threshold `E₀ ≤ 0` arbitrarily soft particles of positive energy are counted
+  (`not_isInfraredSafe_thresholdCount`). Weighting each particle by its energy instead of counting
+  the particles above a threshold gives the energy sum `∑ E p`, which for a linear `E` is collinear
+  safe (`isCollinearSafe_sum_map`), and for a continuous linear `E` infrared and collinear safe
+  (`isIRCSafe_sum_map`).
+* The invariant mass squared `leadingPairMassSq g E s` of the two most energetic particles
+  `leadingParticles E 2 s` of a final state (`EpsilonEridani.QFT.Jets.Observable.Leading`;
+  between particles of equal energy the choice of pair is unspecified) is, for a nonzero linear
+  energy functional `E`, collinear safe if and only if the bilinear form `g` is alternating,
+  `g q q = 0` for every `q`, so that every invariant mass vanishes
+  (`isCollinearSafe_leadingPairMassSq_iff`). For the Minkowski metric it is therefore not
+  collinear safe. The explicit witness (`not_isCollinearSafe_leadingPairMassSq`) is a
+  two-particle state `{p, q}` with `2 E q < E p` and `g (p + q) (p + q) ≠ g p p`: splitting `p`
+  with `z = 1 / 2` makes the two halves of `p` the leading pair
+  (`leadingPairMassSq_cons_cons_of_lt`), and changes the invariant mass squared of the leading
+  pair from `g (p + q) (p + q)` to `g p p`. The leading-particle energy is the energy of the
+  single leading particle (`leadingEnergy_eq_of_mem_leadingParticles`).
 
 ## References
 
@@ -118,6 +143,27 @@ theorem le_leadingEnergy {E : V → ℝ} {s : Multiset V} {p : V} (hp : p ∈ s)
     E p ≤ leadingEnergy E s :=
   (leadingEnergy_le_iff.1 le_rfl).2 p hp
 
+/-- The leading-particle energy is the energy of the leading particle, or `0` if that energy is
+negative. -/
+theorem leadingEnergy_eq_of_mem_leadingParticles {E : V → ℝ} {s : Multiset V} {a : V}
+    (ha : a ∈ leadingParticles E 1 s) : leadingEnergy E s = max (E a) 0 := by
+  classical
+  have has : a ∈ s := Multiset.mem_of_le (leadingParticles_le E 1 s) ha
+  -- The leading set of a nonempty final state is a single particle, hence `{a}`.
+  have hL : leadingParticles E 1 s = {a} := by
+    have hpos := Multiset.card_pos_iff_exists_mem.2 ⟨a, has⟩
+    obtain ⟨x, hx⟩ : ∃ x, leadingParticles E 1 s = {x} :=
+      Multiset.card_eq_one.1 (by rw [card_leadingParticles]; omega)
+    rw [hx] at ha ⊢
+    rw [Multiset.mem_singleton.1 ha]
+  refine le_antisymm (leadingEnergy_le_iff.2 ⟨le_max_right _ _, fun p hp => ?_⟩)
+    (max_le (le_leadingEnergy has) (leadingEnergy_nonneg E s))
+  rcases Multiset.mem_add.1 (Multiset.mem_of_le Multiset.le_sub_add hp) with hp | hp
+  · exact (le_of_mem_leadingParticles ha hp).trans (le_max_left _ _)
+  · rw [hL, Multiset.mem_singleton] at hp
+    rw [hp]
+    exact le_max_left _ _
+
 /-- The leading-particle energy of the union of two final states is the larger of the two. -/
 @[simp]
 theorem leadingEnergy_add (E : V → ℝ) (s t : Multiset V) :
@@ -167,6 +213,199 @@ theorem not_isCollinearSafe_leadingEnergy {E : V →ₗ[ℝ] ℝ} (hE : E ≠ 0)
     leadingEnergy_singleton, max_eq_left hp.le] at this
   norm_num [max_eq_left (by positivity : (0 : ℝ) ≤ 1 / 2 * E p)] at this
   linarith
+
+end Linear
+
+/-! ### The number of particles above an energy threshold -/
+
+/-- The number of particles of a final state whose energy `E p` exceeds the threshold `E₀`, as a
+real number. -/
+noncomputable def thresholdCount (E : V → ℝ) (E₀ : ℝ) : Observable V :=
+  fun s => (s.countP fun p => E₀ < E p : ℕ)
+
+theorem thresholdCount_def (E : V → ℝ) (E₀ : ℝ) (s : Multiset V) :
+    thresholdCount E E₀ s = (s.countP fun p => E₀ < E p : ℕ) :=
+  (rfl)
+
+@[simp]
+theorem thresholdCount_zero (E : V → ℝ) (E₀ : ℝ) : thresholdCount E E₀ 0 = 0 := by
+  simp [thresholdCount_def]
+
+@[simp]
+theorem thresholdCount_cons (E : V → ℝ) (E₀ : ℝ) (p : V) (s : Multiset V) :
+    thresholdCount E E₀ (p ::ₘ s) = thresholdCount E E₀ s + if E₀ < E p then 1 else 0 := by
+  by_cases h : E₀ < E p <;> simp [thresholdCount_def, h]
+
+@[simp]
+theorem thresholdCount_singleton (E : V → ℝ) (E₀ : ℝ) (p : V) :
+    thresholdCount E E₀ {p} = if E₀ < E p then 1 else 0 := by
+  rw [← Multiset.cons_zero, thresholdCount_cons, thresholdCount_zero, zero_add]
+
+/-- The number of particles above a threshold in the union of two final states is the sum of the
+two numbers. -/
+@[simp]
+theorem thresholdCount_add (E : V → ℝ) (E₀ : ℝ) (s t : Multiset V) :
+    thresholdCount E E₀ (s + t) = thresholdCount E E₀ s + thresholdCount E E₀ t := by
+  simp [thresholdCount_def]
+
+/-- Above a positive threshold, the number of particles above it is infrared safe for an energy
+function that vanishes in the limit of vanishing momentum: a soft enough added particle stays
+below the threshold. -/
+theorem isInfraredSafe_thresholdCount [Zero V] [TopologicalSpace V] {E : V → ℝ}
+    (hE : Tendsto E (𝓝 0) (𝓝 0)) {E₀ : ℝ} (hE₀ : 0 < E₀) :
+    IsInfraredSafe (thresholdCount E E₀) := by
+  refine isInfraredSafe_def.2 fun s => tendsto_const_nhds.congr' ?_
+  filter_upwards [hE.eventually (eventually_lt_nhds hE₀)] with p hp
+  simp [not_lt.2 hp.le]
+
+section Linear
+
+variable [AddCommGroup V] [Module ℝ V]
+
+/-- The number of particles above an energy threshold is not collinear safe, whatever the
+threshold, for a nonzero linear energy functional: a single particle of energy `2 (|E₀| + 1)`
+splits into two halves of energy `|E₀| + 1`, both above the threshold. -/
+theorem not_isCollinearSafe_thresholdCount {E : V →ₗ[ℝ] ℝ} (hE : E ≠ 0) (E₀ : ℝ) :
+    ¬ IsCollinearSafe (thresholdCount E E₀) := by
+  intro h
+  obtain ⟨p, hp⟩ := LinearMap.surjective hE (2 * (|E₀| + 1))
+  have := isCollinearSafe_def.1 h 0 p (1 / 2) ⟨by norm_num, by norm_num⟩
+  have h₁ : E₀ < 1 / 2 * (2 * (|E₀| + 1)) := by linarith [le_abs_self E₀]
+  have h₂ : E₀ < (1 - 1 / 2) * (2 * (|E₀| + 1)) := by linarith [le_abs_self E₀]
+  have h₃ : E₀ < 2 * (|E₀| + 1) := by linarith [le_abs_self E₀, abs_nonneg E₀]
+  simp only [thresholdCount_cons, thresholdCount_zero, map_smul, smul_eq_mul, hp, h₁, h₂, h₃,
+    ↓reduceIte] at this
+  norm_num at this
+
+/-- At a threshold `E₀ ≤ 0`, the number of particles above it is not infrared safe for a nonzero
+linear energy functional: the particles `t • p` with `E p = 1` and `t > 0` are arbitrarily soft and
+are all counted. -/
+theorem not_isInfraredSafe_thresholdCount [TopologicalSpace V] [ContinuousSMul ℝ V]
+    {E : V →ₗ[ℝ] ℝ} (hE : E ≠ 0) {E₀ : ℝ} (hE₀ : E₀ ≤ 0) :
+    ¬ IsInfraredSafe (thresholdCount E E₀) := by
+  intro h
+  obtain ⟨p, hp⟩ := LinearMap.surjective hE 1
+  have hsoft : Tendsto (fun t : ℝ => t • p) (𝓝[>] 0) (𝓝 0) := by
+    have hcont : Continuous fun t : ℝ => t • p := continuous_id.smul continuous_const
+    simpa using (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
+  have hcount : Tendsto (fun t : ℝ => thresholdCount E E₀ (t • p ::ₘ 0)) (𝓝[>] 0) (𝓝 1) := by
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+    simp [hp, hE₀.trans_lt ht]
+  have := tendsto_nhds_unique ((isInfraredSafe_def.1 h 0).comp hsoft) hcount
+  simp at this
+
+/-- For a nonzero continuous linear energy functional, the number of particles above a threshold
+`E₀` is infrared safe if and only if the threshold is positive. -/
+theorem isInfraredSafe_thresholdCount_iff [TopologicalSpace V] [ContinuousSMul ℝ V]
+    {E : V →L[ℝ] ℝ} (hE : E ≠ 0) {E₀ : ℝ} :
+    IsInfraredSafe (thresholdCount E E₀) ↔ 0 < E₀ := by
+  refine ⟨fun h => not_le.1 fun hE₀ => ?_,
+    isInfraredSafe_thresholdCount (E.continuous.tendsto' 0 0 (map_zero E))⟩
+  rw [← ContinuousLinearMap.coe_coe] at h
+  refine not_isInfraredSafe_thresholdCount (E := (E : V →ₗ[ℝ] ℝ)) ?_ hE₀ h
+  exact fun h0 => hE (ContinuousLinearMap.coe_injective (by simpa using h0))
+
+end Linear
+
+/-! ### The invariant mass of the two most energetic particles -/
+
+section Linear
+
+variable [AddCommGroup V] [Module ℝ V]
+
+/-- The invariant mass squared `g P P` of the total momentum `P` of the two most energetic
+particles of a final state, as measured by an energy function `E`. A final state of at most two
+particles is its own leading pair (`leadingParticles_of_card_le`); between particles of equal
+energy the choice of pair is unspecified (`leadingParticles`), and it is determined when two
+particles are strictly more energetic than the rest (`leadingPairMassSq_cons_cons_of_lt`). -/
+noncomputable def leadingPairMassSq (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) : Observable V :=
+  fun s => invariantMassSq g (leadingParticles E 2 s)
+
+theorem leadingPairMassSq_def (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) (s : Multiset V) :
+    leadingPairMassSq g E s = invariantMassSq g (leadingParticles E 2 s) :=
+  (rfl)
+
+@[simp]
+theorem leadingPairMassSq_zero (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) :
+    leadingPairMassSq g E 0 = 0 := by
+  simp [leadingPairMassSq_def, invariantMassSq_def]
+
+/-- A single particle is its own leading pair, so its leading-pair mass squared is `g p p`. -/
+@[simp]
+theorem leadingPairMassSq_singleton (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) (p : V) :
+    leadingPairMassSq g E {p} = g p p := by
+  rw [leadingPairMassSq_def, leadingParticles_of_card_le (by simp), invariantMassSq_def,
+    Multiset.sum_singleton]
+
+/-- A two-particle state is its own leading pair, so its leading-pair mass squared is the invariant
+mass squared `g (p + q) (p + q)` of the pair. -/
+@[simp]
+theorem leadingPairMassSq_pair (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) (p q : V) :
+    leadingPairMassSq g E (p ::ₘ {q}) = g (p + q) (p + q) := by
+  rw [leadingPairMassSq_def, leadingParticles_of_card_le (by simp), invariantMassSq_def]
+  simp
+
+/-- When two particles `p` and `q` are each strictly more energetic than every particle of `s`,
+they are the leading pair of `p ::ₘ q ::ₘ s`, whose invariant mass squared is
+`g (p + q) (p + q)`. -/
+theorem leadingPairMassSq_cons_cons_of_lt (g : LinearMap.BilinForm ℝ V) {E : V → ℝ} {p q : V}
+    {s : Multiset V} (hp : ∀ b ∈ s, E b < E p) (hq : ∀ b ∈ s, E b < E q) :
+    leadingPairMassSq g E (p ::ₘ q ::ₘ s) = g (p + q) (p + q) := by
+  have hs : p ::ₘ q ::ₘ s = (p ::ₘ {q}) + s := by simp
+  have hlt : ∀ a ∈ p ::ₘ {q}, ∀ b ∈ s, E b < E a := by
+    intro a ha
+    rcases Multiset.mem_cons.1 ha with rfl | ha
+    · exact hp
+    · rw [Multiset.mem_singleton.1 ha]
+      exact hq
+  rw [leadingPairMassSq_def, hs, leadingParticles_eq_of_lt (by simp) hlt, invariantMassSq_def]
+  simp
+
+/-- The invariant mass squared of the two most energetic particles is not collinear safe whenever
+a two-particle state `{p, q}` with `2 E q < E p` has an invariant mass squared different from
+`g p p`: splitting `p` with `z = 1 / 2` makes the two halves of `p` the leading pair, whose total
+momentum is `p`. -/
+theorem not_isCollinearSafe_leadingPairMassSq {g : LinearMap.BilinForm ℝ V}
+    {E : V →ₗ[ℝ] ℝ} {p q : V} (hpq : 2 * E q < E p) (hg : g (p + q) (p + q) ≠ g p p) :
+    ¬ IsCollinearSafe (leadingPairMassSq g E) := by
+  intro h
+  have key := isCollinearSafe_def.1 h {q} p (1 / 2) ⟨by norm_num, by norm_num⟩
+  -- Before the splitting, the state `{p, q}` is its own leading pair; after it, the two halves of
+  -- `p` are strictly more energetic than `q`, and they are the leading pair.
+  have h₁ : ∀ b ∈ ({q} : Multiset V), E b < E ((1 / 2 : ℝ) • p) := fun b hb => by
+    rw [Multiset.mem_singleton.1 hb, map_smul, smul_eq_mul]
+    linarith
+  have h₂ : ∀ b ∈ ({q} : Multiset V), E b < E ((1 - 1 / 2 : ℝ) • p) := fun b hb => by
+    rw [Multiset.mem_singleton.1 hb, map_smul, smul_eq_mul]
+    linarith
+  rw [leadingPairMassSq_pair, leadingPairMassSq_cons_cons_of_lt g h₁ h₂,
+    smul_add_one_sub_smul] at key
+  exact hg key.symm
+
+/-- For a nonzero linear energy functional, the invariant mass squared of the two most energetic
+particles is collinear safe if and only if the bilinear form `g` is alternating, that is, every
+invariant mass squared `g q q` vanishes. In particular it is not collinear safe for the Minkowski
+metric. -/
+theorem isCollinearSafe_leadingPairMassSq_iff {g : LinearMap.BilinForm ℝ V}
+    {E : V →ₗ[ℝ] ℝ} (hE : E ≠ 0) : IsCollinearSafe (leadingPairMassSq g E) ↔ g.IsAlt := by
+  refine ⟨fun h => ?_, fun hg => isCollinearSafe_def.2 fun s p z _ => by
+    simp [leadingPairMassSq_def, invariantMassSq_def, hg.self_eq_zero]⟩
+  by_contra hg
+  obtain ⟨q, hq⟩ : ∃ q, g q q ≠ 0 := by
+    by_contra! H
+    exact hg H
+  -- A particle `p` more energetic than twice `q` and twice `2 • q`.
+  obtain ⟨p₀, hp₀⟩ := LinearMap.surjective hE (4 * |E q| + 1)
+  have hE₁ : 2 * E q < E p₀ := by rw [hp₀]; linarith [le_abs_self (E q), abs_nonneg (E q)]
+  have hE₂ : 2 * E ((2 : ℝ) • q) < E p₀ := by
+    rw [hp₀, map_smul, smul_eq_mul]; linarith [le_abs_self (E q), abs_nonneg (E q)]
+  -- One of the two witnesses `{p₀, q}` and `{p₀, 2 • q}` changes the leading-pair mass.
+  by_cases h₁ : g (p₀ + q) (p₀ + q) = g p₀ p₀
+  · refine not_isCollinearSafe_leadingPairMassSq hE₂ (fun h₂ => hq ?_) h
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul] at h₁ h₂
+    linarith
+  · exact not_isCollinearSafe_leadingPairMassSq hE₁ h₁ h
 
 end Linear
 
