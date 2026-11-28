@@ -39,6 +39,8 @@ unique.
   `one_sub_X_sq_mul_derivative_legendre_succ`: the ladder relations for the derivatives;
 * `derivative_one_sub_X_sq_mul_derivative_legendre`: Legendre's differential equation
   `((1 - X²) Pₙ')' = -n (n + 1) Pₙ`;
+* `add_two_smul_integral_legendre_add_two_smul`: Bonnet's recurrence integrated over `[-1, 1]`
+  against a weight integrable on `[-1, 1]`, with values in a real normed space;
 * `integral_legendre_mul_legendre`, `setIntegral_Icc_legendre_mul_legendre`: the orthogonality
   relation `∫₋₁¹ Pₘ Pₙ = if m = n then 2 / (2n + 1) else 0`, as an interval integral and as a set
   integral over `Set.Icc (-1) 1`.
@@ -299,16 +301,26 @@ theorem integral_legendre_mul_legendre_of_ne {m n : ℕ} (h : m ≠ n) :
     ∫ x in (-1 : ℝ)..1, (legendre m).eval x * (legendre n).eval x = 0)).resolve_left
     (sub_ne_zero.mpr hmn.symm)
 
-/-- Bonnet's recurrence for `Pₙ₊₂`, paired with a polynomial `q` on `[-1, 1]`. -/
-private theorem add_two_mul_integral_legendre_add_two_mul (n : ℕ) (q : ℝ[X]) :
-    (n + 2) * ∫ x in (-1 : ℝ)..1, (legendre (n + 2)).eval x * q.eval x =
-      (2 * n + 3) * (∫ x in (-1 : ℝ)..1, x * (legendre (n + 1)).eval x * q.eval x) -
-        (n + 1) * ∫ x in (-1 : ℝ)..1, (legendre n).eval x * q.eval x := by
-  simp_rw [← intervalIntegral.integral_const_mul]
-  rw [← integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
-    (Continuous.intervalIntegrable (by fun_prop) _ _)]
-  exact integral_congr fun x _ => by
-    linear_combination q.eval x * add_two_mul_legendre_add_two_eval n x
+/-- **Bonnet's recurrence against a weight**: for `w : ℝ → E` with values in a real normed space
+and integrable on `[-1, 1]`, Bonnet's recurrence `(n + 2) Pₙ₊₂ = (2n + 3) X Pₙ₊₁ - (n + 1) Pₙ`
+integrated against `w` over `[-1, 1]`. With `w` a Legendre polynomial it computes the Legendre
+normalisation; with `w = e^{i x t}` it relates the Fourier transforms of consecutive Legendre
+polynomials. -/
+theorem add_two_smul_integral_legendre_add_two_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (n : ℕ) {w : ℝ → E}
+    (hw : IntervalIntegrable w volume (-1) 1) :
+    ((n : ℝ) + 2) • ∫ x in (-1 : ℝ)..1, (legendre (n + 2)).eval x • w x =
+      (2 * n + 3 : ℝ) • (∫ x in (-1 : ℝ)..1, (x * (legendre (n + 1)).eval x) • w x) -
+        ((n : ℝ) + 1) • ∫ x in (-1 : ℝ)..1, (legendre n).eval x • w x := by
+  -- a continuous scalar function times `w` is integrable on `[-1, 1]`
+  have hi : ∀ g : ℝ → ℝ, Continuous g → IntervalIntegrable (fun x => g x • w x) volume (-1) 1 :=
+    fun g hg => hw.continuousOn_smul hg.continuousOn
+  simp_rw [← intervalIntegral.integral_smul, smul_smul]
+  rw [← integral_sub (hi _ (by fun_prop)) (hi _ (by fun_prop))]
+  refine integral_congr fun x _ => ?_
+  rw [← sub_smul]
+  congr 1
+  linear_combination add_two_mul_legendre_add_two_eval n x
 
 /-- **Normalisation of the Legendre polynomials**: `∫₋₁¹ Pₙ² = 2 / (2n + 1)`. -/
 theorem integral_legendre_mul_self (n : ℕ) :
@@ -322,8 +334,11 @@ theorem integral_legendre_mul_self (n : ℕ) :
   | more n _ h₁ =>
     -- pair the recurrence for `Pₙ₊₂` with `Pₙ₊₂`, and the one for `Pₙ₊₃` with `Pₙ₊₁`;
     -- both produce the mixed integral `K = ∫ x Pₙ₊₁ Pₙ₊₂`
-    have hA := add_two_mul_integral_legendre_add_two_mul n (legendre (n + 2))
-    have hB := add_two_mul_integral_legendre_add_two_mul (n + 1) (legendre (n + 1))
+    have hA := add_two_smul_integral_legendre_add_two_smul n
+      ((legendre (n + 2)).continuous.intervalIntegrable _ _)
+    have hB := add_two_smul_integral_legendre_add_two_smul (n + 1)
+      ((legendre (n + 1)).continuous.intervalIntegrable _ _)
+    simp only [smul_eq_mul] at hA hB
     rw [integral_legendre_mul_legendre_of_ne (by omega : n ≠ n + 2), mul_zero, sub_zero] at hA
     rw [integral_legendre_mul_legendre_of_ne (by omega : n + 1 + 2 ≠ n + 1), h₁, mul_zero] at hB
     have hK : ∫ x in (-1 : ℝ)..1, x * (legendre (n + 1 + 1)).eval x * (legendre (n + 1)).eval x =
