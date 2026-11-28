@@ -125,17 +125,6 @@ at `ξ = 0`. -/
 def gpdOfDTerm (dt : DTerm Flavor) : Gpd Flavor :=
   gpdOfDoubleDistribution (DoubleDistribution.zero Flavor) dt
 
-/-- The induced GPD at nonzero skewness, with the skewness branch already resolved.
-
-The companion of `gpdOfDoubleDistribution_zero_skewness`; both exist so that downstream
-proofs never have to rewrite inside the `if`. -/
-lemma gpdOfDoubleDistribution_ne_zero_skewness (dd : DoubleDistribution Flavor)
-    (dt : DTerm Flavor) (i : Flavor) (x xi t : ℝ) (hxi : xi ≠ 0) :
-    gpdOfDoubleDistribution dd dt i x xi t
-      = (|xi|)⁻¹ * (∫ β : ℝ, dd.F i β ((x - β) / xi) t)
-        + (xi / |xi|) * dt.D i (x / xi) t := by
-  simp [gpdOfDoubleDistribution, hxi]
-
 /-- A pure D-term has vanishing forward limit, so it is invisible to collinear PDF data
 and, more generally, to any determination made at zero skewness. -/
 lemma gpdOfDTerm_zero_skewness (dt : DTerm Flavor) (i : Flavor) (x t : ℝ) :

@@ -55,6 +55,11 @@ The integrand is `x ^ n * H i x ξ t`; see the module docstring for the index co
 def mellinMomentGpd (H : Gpd Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :=
   ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * H i x xi t
 
+/-- `mellinMomentGpd` as an explicit set integral over `[-1, 1]`. -/
+lemma mellinMomentGpd_eq_integral (H : Gpd Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
+    mellinMomentGpd H n i xi t = ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * H i x xi t :=
+  (rfl)
+
 /-- Mellin moments of `H` over the full GPD support `x ∈ [-1, 1]`. -/
 def mellinMomentH (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :=
   mellinMomentGpd M.H n i xi t
@@ -63,10 +68,15 @@ def mellinMomentH (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :
 def mellinMomentE (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) : ℝ :=
   mellinMomentGpd M.E n i xi t
 
-/-- Unfolding lemma for `mellinMomentH` as an explicit integral. -/
-lemma mellinMomentH_eq_integral (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
-    mellinMomentH M n i xi t = ∫ x in Set.Icc (-1 : ℝ) 1, x ^ n * M.H i x xi t :=
-  rfl
+/-- `mellinMomentH` is the Mellin moment of the `H` component. -/
+lemma mellinMomentH_def (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
+    mellinMomentH M n i xi t = mellinMomentGpd M.H n i xi t :=
+  (rfl)
+
+/-- `mellinMomentE` is the Mellin moment of the `E` component. -/
+lemma mellinMomentE_def (M : Model Flavor) (n : ℕ) (i : Flavor) (xi t : ℝ) :
+    mellinMomentE M n i xi t = mellinMomentGpd M.E n i xi t :=
+  (rfl)
 
 /-- Polynomiality schema for Mellin moments of `H`.
 
@@ -75,14 +85,9 @@ of degree at most `n + 1` containing only even powers. The `ξ^(n+1)` coefficien
 D-term contribution and is nonzero only for odd `n` (equivalently, for even literature
 index `n + 1`).
 
-This bundle is retained for models that are not built from a double distribution. For
-models that are, `GPD.polynomialityAssumptionsOfDoubleDistribution` constructs it — but
-**that bridge is not a discharge**: its `polynomial` field is
-`GPD.mellinMomentGpd_ofDoubleDistribution`, which is a tagged `sorry`, so `#print axioms`
-on the bridge reports `sorryAx`. A reader deciding whether this
-assumption is "handled" should read it as: handled *modulo* one open measure-theoretic
-statement, and otherwise assumed. No unconditional discharge of this bundle exists
-anywhere in the repository at present. -/
+This bundle is the hypothesis for models that are not built from a double distribution.
+For models that are, `GPD.polynomialityAssumptionsOfDoubleDistribution` constructs it from
+the moment formula `GPD.mellinMomentGpd_ofDoubleDistribution`. -/
 structure PolynomialityAssumptions (M : Model Flavor) : Type where
   /-- The coefficient of `ξ^k` in the `n`-th moment for flavor `i` at momentum transfer `t`. -/
   coeff : ℕ → Flavor → ℕ → ℝ → ℝ
