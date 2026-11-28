@@ -1,0 +1,43 @@
+/-
+Copyright (c) 2026 Wouter Deconinck. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wouter Deconinck
+-/
+module
+
+public import Mathlib.Data.Matrix.Diagonal
+public import Mathlib.Analysis.Normed.Ring.Basic
+
+/-!
+# Row and column norms of the identity matrix
+
+Every row and every column of the identity matrix `1 : Matrix n n α` over a seminormed
+additive group with a one of norm one has unit squared norm,
+`∑ j, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1`. These discharge, for
+the identity, the unit-norm row and column conditions implied by unitarity (the diagonal entries
+of `V * Vᴴ = 1` and `Vᴴ * V = 1`).
+
+## Main results
+
+- `Matrix.sum_norm_sq_one_row_eq_one`: each row of `1` has unit squared norm.
+- `Matrix.sum_norm_sq_one_col_eq_one`: each column of `1` has unit squared norm.
+-/
+
+public section
+
+namespace Matrix
+
+variable {n α : Type*} [Fintype n] [DecidableEq n] [SeminormedAddCommGroup α] [One α]
+  [NormOneClass α]
+
+/-- Each row of the identity matrix has unit squared norm. -/
+@[simp]
+theorem sum_norm_sq_one_row_eq_one (i : n) : ∑ j, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1 := by
+  simp [one_apply, apply_ite (fun z : α => ‖z‖ ^ 2)]
+
+/-- Each column of the identity matrix has unit squared norm. -/
+@[simp]
+theorem sum_norm_sq_one_col_eq_one (j : n) : ∑ i, ‖(1 : Matrix n n α) i j‖ ^ 2 = 1 := by
+  simp [one_apply, apply_ite (fun z : α => ‖z‖ ^ 2)]
+
+end Matrix
