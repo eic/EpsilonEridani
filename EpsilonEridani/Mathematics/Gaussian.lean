@@ -6,20 +6,27 @@ Authors: Wouter Deconinck
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+public import TauCeti.Analysis.PDE.HeatKernel.Basic
 
 /-!
-# The Gaussian profile on the plane
+# Normalised isotropic Gaussians
 
-The centred isotropic Gaussian on the Euclidean plane,
-`gaussianProfile w y = exp (-‖y‖ ^ 2 / (2 * w ^ 2)) / (2 * π * w ^ 2)`, with the width `w` as its
-only parameter, normalised to unit integral against Lebesgue measure when `w ≠ 0` (for `w = 0`
-the profile is identically zero). `integral_exp_neg_mul_sq_norm_plane` computes the Gaussian
-integral `∫ exp (-b ‖y‖²) = π / b` on the plane; from it `integral_gaussianProfile_eq_one` proves
-the normalisation and `integral_gaussianProfile_mul_gaussianProfile` the overlap of two profiles.
+The centred isotropic Gaussian density on a finite-dimensional real inner product space `V`,
+`isotropicDensity m R x = m (π R²)^{-n/2} exp(-‖x‖²/R²)` with `n = finrank ℝ V`, normalised to
+integral `m` against Lebesgue measure when `R ≠ 0` (`integral_isotropicDensity`) and integrable
+for every range `R` (`integrable_isotropicDensity`). It is `m` times TauCeti's heat kernel
+`TauCeti.heatKernel` at time `R² / 4`, whose normalisation it inherits.
 
-Gaussians of this shape are the standard model of a smooth localised profile on the plane; in
-parton physics they model transverse profiles, from the transverse separation of two partons in
-a hadron to the transverse-momentum dependence of TMDs.
+On the Euclidean plane, `gaussianProfile w y = exp (-‖y‖ ^ 2 / (2 * w ^ 2)) / (2 * π * w ^ 2)`
+is the unit-mass Gaussian parametrised by its width `w`, normalised to unit integral when
+`w ≠ 0` (for `w = 0` the profile is identically zero); it is `isotropicDensity 1 (√2 * w)`
+(`gaussianProfile_eq_isotropicDensity`). `integral_exp_neg_mul_sq_norm_plane` computes the
+Gaussian integral `∫ exp (-b ‖y‖²) = π / b` on the plane, from which
+`integral_gaussianProfile_mul_gaussianProfile` computes the overlap of two profiles.
+
+Gaussians of this shape are the standard model of a smooth localised profile: in parton physics
+they model transverse profiles, from the transverse separation of two partons in a hadron to the
+transverse-momentum dependence of TMDs, and in nuclear physics the Gaussian nuclear density.
 -/
 
 public section
@@ -30,6 +37,50 @@ open MeasureTheory Real
 
 namespace EpsilonEridani
 namespace Gaussian
+
+section Density
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The centred isotropic Gaussian of range `R` and mass `m` on `V`,
+`m (π R²)^{-n/2} exp(-‖x‖²/R²)` with `n = finrank ℝ V`: `m` times the heat kernel at time
+`R² / 4`. For `R ≠ 0` it integrates to `m` (`integral_isotropicDensity`). -/
+def isotropicDensity (m R : ℝ) (x : V) : ℝ :=
+  m * TauCeti.heatKernel (R ^ 2 / 4) x
+
+theorem isotropicDensity_def (m R : ℝ) (x : V) :
+    isotropicDensity m R x = m * TauCeti.heatKernel (R ^ 2 / 4) x :=
+  (rfl)
+
+theorem isotropicDensity_nonneg {m : ℝ} (hm : 0 ≤ m) (R : ℝ) (x : V) :
+    0 ≤ isotropicDensity m R x := by
+  rw [isotropicDensity_def, TauCeti.heatKernel_apply]
+  positivity
+
+variable [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
+
+/-- The Gaussian density of range `R ≠ 0` integrates to its mass `m`. -/
+@[simp]
+theorem integral_isotropicDensity (m : ℝ) {R : ℝ} (hR : R ≠ 0) :
+    ∫ x : V, isotropicDensity m R x = m := by
+  simp only [isotropicDensity_def, integral_const_mul,
+    TauCeti.integral_heatKernel (by positivity : 0 < R ^ 2 / 4), mul_one]
+
+/-- The Gaussian density is integrable, for every range `R`. -/
+theorem integrable_isotropicDensity (m R : ℝ) : Integrable (isotropicDensity (V := V) m R) := by
+  rcases eq_or_ne R 0 with rfl | hR
+  · rcases eq_or_ne (Module.finrank ℝ V) 0 with hV | hV
+    · -- On the zero space every function is integrable: the space is a point of finite volume.
+      have : Subsingleton V := Module.finrank_zero_iff.1 hV
+      exact Integrable.of_subsingleton
+    · -- In positive dimension the heat kernel at time `0` vanishes: `0 ^ (-n / 2) = 0`.
+      have hV' : (-(Module.finrank ℝ V : ℝ) / 2) ≠ 0 := by
+        simp [hV]
+      refine (integrable_zero V ℝ volume).congr (.of_forall fun x => ?_)
+      simp [isotropicDensity_def, TauCeti.heatKernel_apply, zero_rpow hV']
+  · exact (TauCeti.integrable_heatKernel (by positivity : 0 < R ^ 2 / 4)).const_mul m
+
+end Density
 
 /-- The Gaussian of width `w` on the Euclidean plane,
 `G(y) = exp(-‖y‖ ^ 2 / (2 * w ^ 2)) / (2 * π * w ^ 2)`, normalised to unit integral when `w ≠ 0`
@@ -58,25 +109,25 @@ theorem integral_exp_neg_mul_sq_norm_plane {b : ℝ} (hb : 0 < b) :
   rw [GaussianFourier.integral_rexp_neg_mul_sq_norm hb]
   norm_num [finrank_euclideanSpace_fin]
 
+/-- The Gaussian profile of width `w` is the unit-mass Gaussian density of range `√2 * w`. -/
+theorem gaussianProfile_eq_isotropicDensity (w : ℝ) :
+    gaussianProfile w = isotropicDensity 1 (√2 * w) := by
+  ext y
+  rw [gaussianProfile_def, isotropicDensity_def, TauCeti.heatKernel_apply,
+    finrank_euclideanSpace_fin, mul_pow, sq_sqrt zero_le_two]
+  norm_num [rpow_neg_one]
+  ring_nf
+
 /-- The Gaussian profile is normalised. -/
 @[simp]
 theorem integral_gaussianProfile_eq_one {w : ℝ} (hw : w ≠ 0) :
     ∫ y, gaussianProfile w y = 1 := by
-  have : (fun y => gaussianProfile w y) = fun y : EuclideanSpace ℝ (Fin 2) =>
-      (2 * π * w ^ 2)⁻¹ * exp (-(2 * w ^ 2)⁻¹ * ‖y‖ ^ 2) := by
-    ext y
-    rw [gaussianProfile]
-    congr 2
-    ring
-  rw [this, integral_const_mul, integral_exp_neg_mul_sq_norm_plane (by positivity)]
-  field_simp
+  rw [gaussianProfile_eq_isotropicDensity, integral_isotropicDensity _ (by positivity)]
 
 /-- The Gaussian profile is integrable. -/
 theorem integrable_gaussianProfile (w : ℝ) : Integrable (gaussianProfile w) := by
-  rcases eq_or_ne w 0 with rfl | hw
-  · simp
-  · refine Integrable.of_integral_ne_zero ?_
-    simp [hw]
+  rw [gaussianProfile_eq_isotropicDensity]
+  exact integrable_isotropicDensity _ _
 
 /-- The overlap of two Gaussian profiles of widths `w` and `w'` is the Gaussian density of width
 `√(w² + w'²)` at the origin, `∫ G_w G_w' = (2π (w² + w'²))⁻¹`. -/
