@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import EpsilonEridani.Mathematics.CauchySchwarz
 public import EpsilonEridani.Mathematics.Gaussian
+public import EpsilonEridani.Mathematics.MeasureTheory.MemLp
 public import EpsilonEridani.Particles.Parton.CrossSection
 
 /-!
@@ -250,11 +251,8 @@ theorem effectiveCrossSection_self_pos {G : T → ℝ} (hG2 : MemLp G 2 μ)
   rw [effectiveCrossSection, inv_pos]
   refine (integral_nonneg fun y => mul_self_nonneg (G y)).lt_of_ne fun h => ?_
   -- `∫ G² = 0` forces `G = 0` almost everywhere, contradicting `∫ G ≠ 0`.
-  have hint : Integrable (fun y => G y * G y) μ := by simpa only [sq] using hG2.integrable_sq
-  have hG0 : G =ᵐ[μ] 0 := by
-    filter_upwards [(integral_eq_zero_iff_of_nonneg (fun y => mul_self_nonneg (G y)) hint).1
-      h.symm] with y hy
-    exact mul_self_eq_zero.1 hy
+  have hG0 : G =ᵐ[μ] 0 :=
+    (integral_sq_eq_zero_iff hG2.integrable_sq).1 (by simpa only [sq] using h.symm)
   rw [integral_congr_ae hG0] at hnorm
   simp at hnorm
 
