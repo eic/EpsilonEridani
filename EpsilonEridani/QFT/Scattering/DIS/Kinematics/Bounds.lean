@@ -67,6 +67,16 @@ lemma BasicAssumptions.p_dot_k_pos {g : Bilin V} {K : DisKinematics V}
     (h : BasicAssumptions g K) : 0 < g K.p K.k :=
   h.p_dot_q_pos.trans_le h.p_dot_q_le_p_dot_k
 
+/-- Under `BasicAssumptions`, the Bjorken variable is positive. -/
+lemma BasicAssumptions.xBj_pos {g : Bilin V} {K : DisKinematics V}
+    (h : BasicAssumptions g K) : 0 < K.xBj g :=
+  DisKinematics.xBj_pos g K h.q2_pos h.p_dot_q_pos
+
+/-- Under `BasicAssumptions`, the Bjorken variable is at most one. -/
+lemma BasicAssumptions.xBj_le_one {g : Bilin V} {K : DisKinematics V}
+    (h : BasicAssumptions g K) : K.xBj g ≤ 1 :=
+  DisKinematics.xBj_le_one g K h.p_dot_q_pos h.q2_le_two_p_dot_q
+
 end DisKinematics
 
 end Kinematics
