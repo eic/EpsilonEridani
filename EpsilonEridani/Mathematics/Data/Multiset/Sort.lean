@@ -23,6 +23,8 @@ by a decreasing key by taking `f` with values in an order dual.
 * `Multiset.sortOn f s`: the elements of `s` as a list sorted by increasing `f`.
 * `Multiset.sortOn_eq`: the list `Multiset.sortOn f s` represents `s`.
 * `Multiset.pairwise_sortOn`: the keys increase along `Multiset.sortOn f s`.
+* `Multiset.sortOn_coe_of_pairwise_lt`: a list along which the keys increase strictly is the
+  sorted list of its own multiset; with strictly increasing keys the choice disappears.
 -/
 
 public section
@@ -53,6 +55,10 @@ theorem mem_sortOn {f : α → β} {s : Multiset α} {a : α} : a ∈ s.sortOn f
 theorem sortOn_zero (f : α → β) : (0 : Multiset α).sortOn f = [] := by
   simp [sortOn]
 
+@[simp]
+theorem sortOn_singleton (f : α → β) (a : α) : ({a} : Multiset α).sortOn f = [a] := by
+  simp [sortOn]
+
 /-- The keys increase along `Multiset.sortOn f s`. -/
 theorem pairwise_sortOn (f : α → β) (s : Multiset α) :
     (s.sortOn f).Pairwise fun a b => f a ≤ f b := by
@@ -61,5 +67,15 @@ theorem pairwise_sortOn (f : α → β) (s : Multiset α) :
   · simp only [decide_eq_true_eq] at hab hbc ⊢
     exact hab.trans hbc
   · simpa using le_total (f a) (f b)
+
+/-- A list along which the keys increase strictly is the sorted list of its own multiset: with
+distinct keys the order of `Multiset.sortOn f` is determined. -/
+theorem sortOn_coe_of_pairwise_lt {f : α → β} {l : List α}
+    (hl : l.Pairwise fun a b => f a < f b) : (l : Multiset α).sortOn f = l := by
+  have hperm : ((l : Multiset α).sortOn f).Perm l := coe_eq_coe.1 (sortOn_eq f l)
+  have hinj := List.inj_on_of_nodup_map ((List.pairwise_map.2 hl).imp ne_of_lt)
+  exact hperm.eq_of_pairwise
+    (fun a b ha hb hab hba => hinj (hperm.mem_iff.1 ha) hb (le_antisymm hab hba))
+    (pairwise_sortOn f _) (hl.imp le_of_lt)
 
 end Multiset

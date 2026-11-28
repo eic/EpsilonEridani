@@ -38,14 +38,17 @@ with observables that fail them. This file records the standard ones.
   safe (`isCollinearSafe_sum_map`), and for a continuous linear `E` infrared and collinear safe
   (`isIRCSafe_sum_map`).
 * The invariant mass squared `leadingPairMassSq g E s` of the two most energetic particles
-  `leadingParticles E 2 s` of a final state (`EpsilonEridani.QFT.Jets.Observable.Leading`) is,
-  for a nonzero linear energy functional `E`, collinear safe if and only if the bilinear form `g`
-  is alternating, `g q q = 0` for every `q`, so that every invariant mass vanishes
+  `leadingParticles E 2 s` of a final state (`EpsilonEridani.QFT.Jets.Observable.Leading`;
+  between particles of equal energy the choice of pair is unspecified) is, for a nonzero linear
+  energy functional `E`, collinear safe if and only if the bilinear form `g` is alternating,
+  `g q q = 0` for every `q`, so that every invariant mass vanishes
   (`isCollinearSafe_leadingPairMassSq_iff`). For the Minkowski metric it is therefore not
   collinear safe. The explicit witness (`not_isCollinearSafe_leadingPairMassSq`) is a
-  two-particle state `{p, q}` with `2 E q < E p`: splitting `p` with `z = 1 / 2` makes the two
-  halves of `p` the leading pair, and changes the invariant mass squared of the leading pair from
-  `g (p + q) (p + q)` to `g p p`.
+  two-particle state `{p, q}` with `2 E q < E p` and `g (p + q) (p + q) ≠ g p p`: splitting `p`
+  with `z = 1 / 2` makes the two halves of `p` the leading pair
+  (`leadingPairMassSq_cons_cons_of_lt`), and changes the invariant mass squared of the leading
+  pair from `g (p + q) (p + q)` to `g p p`. The leading-particle energy is the energy of the
+  single leading particle (`leadingEnergy_eq_of_mem_leadingParticles`).
 
 ## References
 
@@ -139,6 +142,27 @@ theorem leadingEnergy_nonneg (E : V → ℝ) (s : Multiset V) : 0 ≤ leadingEne
 theorem le_leadingEnergy {E : V → ℝ} {s : Multiset V} {p : V} (hp : p ∈ s) :
     E p ≤ leadingEnergy E s :=
   (leadingEnergy_le_iff.1 le_rfl).2 p hp
+
+/-- The leading-particle energy is the energy of the leading particle, or `0` if that energy is
+negative. -/
+theorem leadingEnergy_eq_of_mem_leadingParticles {E : V → ℝ} {s : Multiset V} {a : V}
+    (ha : a ∈ leadingParticles E 1 s) : leadingEnergy E s = max (E a) 0 := by
+  classical
+  have has : a ∈ s := Multiset.mem_of_le (leadingParticles_le E 1 s) ha
+  -- The leading set of a nonempty final state is a single particle, hence `{a}`.
+  have hL : leadingParticles E 1 s = {a} := by
+    have hpos := Multiset.card_pos_iff_exists_mem.2 ⟨a, has⟩
+    obtain ⟨x, hx⟩ : ∃ x, leadingParticles E 1 s = {x} :=
+      Multiset.card_eq_one.1 (by rw [card_leadingParticles]; omega)
+    rw [hx] at ha ⊢
+    rw [Multiset.mem_singleton.1 ha]
+  refine le_antisymm (leadingEnergy_le_iff.2 ⟨le_max_right _ _, fun p hp => ?_⟩)
+    (max_le (le_leadingEnergy has) (leadingEnergy_nonneg E s))
+  rcases Multiset.mem_add.1 (Multiset.mem_of_le Multiset.le_sub_add hp) with hp | hp
+  · exact (le_of_mem_leadingParticles ha hp).trans (le_max_left _ _)
+  · rw [hL, Multiset.mem_singleton] at hp
+    rw [hp]
+    exact le_max_left _ _
 
 /-- The leading-particle energy of the union of two final states is the larger of the two. -/
 @[simp]
@@ -292,7 +316,9 @@ variable [AddCommGroup V] [Module ℝ V]
 
 /-- The invariant mass squared `g P P` of the total momentum `P` of the two most energetic
 particles of a final state, as measured by an energy function `E`. A final state of at most two
-particles is its own leading pair (`leadingParticles_of_card_le`). -/
+particles is its own leading pair (`leadingParticles_of_card_le`); between particles of equal
+energy the choice of pair is unspecified (`leadingParticles`), and it is determined when two
+particles are strictly more energetic than the rest (`leadingPairMassSq_cons_cons_of_lt`). -/
 noncomputable def leadingPairMassSq (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) : Observable V :=
   fun s => invariantMassSq g (leadingParticles E 2 s)
 
@@ -316,8 +342,24 @@ theorem leadingPairMassSq_singleton (g : LinearMap.BilinForm ℝ V) (E : V → �
 mass squared `g (p + q) (p + q)` of the pair. -/
 @[simp]
 theorem leadingPairMassSq_pair (g : LinearMap.BilinForm ℝ V) (E : V → ℝ) (p q : V) :
-    leadingPairMassSq g E (p ::ₘ q ::ₘ 0) = g (p + q) (p + q) := by
+    leadingPairMassSq g E (p ::ₘ {q}) = g (p + q) (p + q) := by
   rw [leadingPairMassSq_def, leadingParticles_of_card_le (by simp), invariantMassSq_def]
+  simp
+
+/-- When two particles `p` and `q` are each strictly more energetic than every particle of `s`,
+they are the leading pair of `p ::ₘ q ::ₘ s`, whose invariant mass squared is
+`g (p + q) (p + q)`. -/
+theorem leadingPairMassSq_cons_cons_of_lt (g : LinearMap.BilinForm ℝ V) {E : V → ℝ} {p q : V}
+    {s : Multiset V} (hp : ∀ b ∈ s, E b < E p) (hq : ∀ b ∈ s, E b < E q) :
+    leadingPairMassSq g E (p ::ₘ q ::ₘ s) = g (p + q) (p + q) := by
+  have hs : p ::ₘ q ::ₘ s = (p ::ₘ {q}) + s := by simp
+  have hlt : ∀ a ∈ p ::ₘ {q}, ∀ b ∈ s, E b < E a := by
+    intro a ha
+    rcases Multiset.mem_cons.1 ha with rfl | ha
+    · exact hp
+    · rw [Multiset.mem_singleton.1 ha]
+      exact hq
+  rw [leadingPairMassSq_def, hs, leadingParticles_eq_of_lt (by simp) hlt, invariantMassSq_def]
   simp
 
 /-- The invariant mass squared of the two most energetic particles is not collinear safe whenever
@@ -327,24 +369,17 @@ momentum is `p`. -/
 theorem not_isCollinearSafe_leadingPairMassSq {g : LinearMap.BilinForm ℝ V}
     {E : V →ₗ[ℝ] ℝ} {p q : V} (hpq : 2 * E q < E p) (hg : g (p + q) (p + q) ≠ g p p) :
     ¬ IsCollinearSafe (leadingPairMassSq g E) := by
-  classical
   intro h
-  have key := isCollinearSafe_def.1 h (q ::ₘ 0) p (1 / 2) ⟨by norm_num, by norm_num⟩
-  -- Before the splitting, the state `{p, q}` is its own leading pair (`leadingPairMassSq_pair`).
-  -- After it, the two halves of `p` are strictly more energetic than `q`.
-  have hhalf : (1 / 2 : ℝ) • p ::ₘ (1 - 1 / 2 : ℝ) • p ::ₘ q ::ₘ 0 =
-      ((1 / 2 : ℝ) • p ::ₘ (1 - 1 / 2 : ℝ) • p ::ₘ 0) + q ::ₘ 0 := by
-    simp
-  have h₂ : leadingParticles E 2 ((1 / 2 : ℝ) • p ::ₘ (1 - 1 / 2 : ℝ) • p ::ₘ q ::ₘ 0) =
-      (1 / 2 : ℝ) • p ::ₘ (1 - 1 / 2 : ℝ) • p ::ₘ 0 := by
-    refine leadingParticles_eq_of_lt (by rw [hhalf]; exact le_add_right le_rfl) (by simp) ?_
-    rw [hhalf, add_tsub_cancel_left]
-    intro a ha b hb
-    simp only [Multiset.mem_cons, Multiset.notMem_zero, or_false] at ha hb
-    subst hb
-    rcases ha with rfl | rfl <;> simp <;> linarith
-  rw [leadingPairMassSq_pair, leadingPairMassSq_def, h₂] at key
-  simp only [invariantMassSq_def, Multiset.sum_cons, Multiset.sum_zero, add_zero,
+  have key := isCollinearSafe_def.1 h {q} p (1 / 2) ⟨by norm_num, by norm_num⟩
+  -- Before the splitting, the state `{p, q}` is its own leading pair; after it, the two halves of
+  -- `p` are strictly more energetic than `q`, and they are the leading pair.
+  have h₁ : ∀ b ∈ ({q} : Multiset V), E b < E ((1 / 2 : ℝ) • p) := fun b hb => by
+    rw [Multiset.mem_singleton.1 hb, map_smul, smul_eq_mul]
+    linarith
+  have h₂ : ∀ b ∈ ({q} : Multiset V), E b < E ((1 - 1 / 2 : ℝ) • p) := fun b hb => by
+    rw [Multiset.mem_singleton.1 hb, map_smul, smul_eq_mul]
+    linarith
+  rw [leadingPairMassSq_pair, leadingPairMassSq_cons_cons_of_lt g h₁ h₂,
     smul_add_one_sub_smul] at key
   exact hg key.symm
 

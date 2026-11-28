@@ -7,7 +7,7 @@ module
 
 public import EpsilonEridani.Mathematics.Data.Multiset.AddSub
 public import EpsilonEridani.Mathematics.Data.Multiset.Sort
-public import Mathlib.Algebra.Order.Group.Multiset
+public import Mathlib.Algebra.Order.Monoid.Multiset
 public import Mathlib.Basic.Real.Basic
 
 /-!
@@ -21,11 +21,13 @@ only up to such ties:
 
 * it is a sub-multiset of `s` (`leadingParticles_le`) of `min k (card s)` particles
   (`card_leadingParticles`), so a final state of at most `k` particles is its own leading set
-  (`leadingParticles_of_card_le`);
+  (`leadingParticles_of_card_le`), and it is empty for `k = 0` or `s = 0`
+  (`leadingParticles_zero_left`, `leadingParticles_zero_right`);
 * every leading particle is at least as energetic as every particle outside it
   (`le_of_mem_leadingParticles`);
-* it is determined uniquely when the energies separate it strictly from the rest
-  (`leadingParticles_eq_of_lt`).
+* it is determined uniquely when the energies separate it strictly from the rest: the leading
+  set of `t + u` is `t` when the particles of `t` are each strictly more energetic than every
+  particle of `u` (`leadingParticles_eq_of_lt`).
 
 Observables built from the leading particles, such as the invariant mass of the two leading
 particles, are the subject of `EpsilonEridani.QFT.Jets.Observable.Counterexamples`.
@@ -100,27 +102,29 @@ theorem le_of_mem_leadingParticles {E : V → ℝ} {k : ℕ} {s : Multiset V} {a
   rw [← List.take_append_drop k (s.sortOn _), List.pairwise_append] at this
   exact OrderDual.toDual_le_toDual.1 (this.2.2 a ha b hb)
 
-/-- The leading particles are determined when the energies separate them strictly: a sub-multiset
-`t` of `k` particles of `s`, each strictly more energetic than every particle of `s - t`, is the
-set of `k` leading particles of `s`. -/
-theorem leadingParticles_eq_of_lt {E : V → ℝ} {k : ℕ} {s t : Multiset V} (ht : t ≤ s)
-    (hk : Multiset.card t = k) (hlt : ∀ a ∈ t, ∀ b ∈ s - t, E b < E a) :
-    leadingParticles E k s = t := by
-  set u := leadingParticles E k s with hu
-  have hcard : Multiset.card u = Multiset.card t := by
-    rw [hu, card_leadingParticles, ← hk, min_eq_left (Multiset.card_le_card ht)]
+end DecidableEq
+
+/-- The leading particles are determined when the energies separate them strictly: in a final state
+`t + u` in which the `k` particles of `t` are each strictly more energetic than every particle of
+`u`, the `k` leading particles are those of `t`. -/
+theorem leadingParticles_eq_of_lt {E : V → ℝ} {k : ℕ} {t u : Multiset V}
+    (hk : Multiset.card t = k) (hlt : ∀ a ∈ t, ∀ b ∈ u, E b < E a) :
+    leadingParticles E k (t + u) = t := by
+  classical
+  set L := leadingParticles E k (t + u) with hL
+  have hcard : Multiset.card L = Multiset.card t := by
+    rw [hL, card_leadingParticles, ← hk, min_eq_left (by simp)]
   by_contra hne
-  -- Each of `u` and `t` has a member the other lacks.
-  obtain ⟨a, ha⟩ := Multiset.exists_mem_sub_of_card_eq_of_ne hcard hne
-  obtain ⟨b, hb⟩ := Multiset.exists_mem_sub_of_card_eq_of_ne hcard.symm (Ne.symm hne)
-  -- `a` is leading and `b` is not, so `E b ≤ E a`; `b ∈ t` and `a ∉ t`, so `E a < E b`.
+  -- Each of `L` and `t` has a member the other lacks.
+  obtain ⟨a, ha⟩ := Multiset.exists_mem_sub_of_card_le_of_ne hcard.ge hne
+  obtain ⟨b, hb⟩ := Multiset.exists_mem_sub_of_card_le_of_ne hcard.le (Ne.symm hne)
+  -- `a` is leading and `b` is not, so `E b ≤ E a`; `b ∈ t` and `a ∈ u`, so `E a < E b`.
   have hba : E b ≤ E a :=
     le_of_mem_leadingParticles (Multiset.mem_of_le (Multiset.sub_le_self _ _) ha)
-    (Multiset.mem_of_le (tsub_le_tsub_right ht u) hb)
-  have hab : E a < E b := hlt b (Multiset.mem_of_le (Multiset.sub_le_self _ _) hb) a
-    (Multiset.mem_of_le (tsub_le_tsub_right (leadingParticles_le E k s) t) ha)
-  exact hab.not_ge hba
-
-end DecidableEq
+      (Multiset.mem_of_le (tsub_le_tsub_right (le_add_right le_rfl) L) hb)
+  have hau : a ∈ u := by
+    have := Multiset.mem_of_le (tsub_le_tsub_right (leadingParticles_le E k (t + u)) t) ha
+    rwa [add_tsub_cancel_left] at this
+  exact (hlt b (Multiset.mem_of_le (Multiset.sub_le_self _ _) hb) a hau).not_ge hba
 
 end EpsilonEridani.QFT.Jets
