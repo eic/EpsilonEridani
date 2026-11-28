@@ -48,7 +48,8 @@ The variance results additionally assume a normalised proposal (`∫⁻ g dμ = 
   `variance_weight_mul_optimalProposal` and
   `variance_weight_mul_optimalProposal_le_variance_weight_mul`: the same for an observable `O`,
   whose weighted value `weight f g * O` has variance `∫ (f O)² / g dμ - (∫ f O dμ)²`, at least
-  `(∫ |f O| dμ)² - (∫ f O dμ)²`, with equality for the proposal `|f O| / ∫ |f O| dμ`.
+  `(∫ |f O| dμ)² - (∫ f O dμ)²`, with equality for the proposal `|f O| / ∫ |f O| dμ`, which has
+  zero variance when `f O ≥ 0` (`variance_weight_mul_optimalProposal_eq_zero_of_nonneg`).
 
 For the estimator built from draws `X i`:
 
@@ -327,7 +328,7 @@ theorem optimalProposal_eq_zero_iff (hf0 : ∫ x, |f x| ∂μ ≠ 0) {x : α} :
 (`abs_weight_optimalProposal`). It takes priority over `weight_mul_apply`, so that
 `weight (f * O) (optimalProposal (f * O) μ) x` simplifies to its value. -/
 @[simp high]
-theorem weight_optimalProposal (f : α → ℝ) (μ : Measure α) (x : α) :
+theorem weight_optimalProposal_apply (f : α → ℝ) (μ : Measure α) (x : α) :
     weight f (optimalProposal f μ) x = (∫ y, |f y| ∂μ) * Real.sign (f x) := by
   rw [weight_apply, toReal_optimalProposal]
   rcases eq_or_ne (∫ y, |f y| ∂μ) 0 with hc | hc
@@ -339,11 +340,19 @@ theorem weight_optimalProposal (f : α → ℝ) (μ : Measure α) (x : α) :
   · rw [abs_of_pos h, Real.sign_of_pos h]
     field_simp [h.ne']
 
+/-- Against the optimal proposal the weight is `(∫ |f| dμ) · sign f`, as functions. It takes
+priority over `weight_mul`, so that `weight (f * O) (optimalProposal (f * O) μ)` simplifies to its
+value. -/
+@[simp high]
+theorem weight_optimalProposal (f : α → ℝ) (μ : Measure α) :
+    weight f (optimalProposal f μ) = fun x => (∫ y, |f y| ∂μ) * Real.sign (f x) :=
+  funext (weight_optimalProposal_apply f μ)
+
 /-- Against the optimal proposal, every point where `f` does not vanish has weight of magnitude
 `∫ |f| dμ`. -/
 theorem abs_weight_optimalProposal {x : α} (hx : f x ≠ 0) :
     |weight f (optimalProposal f μ) x| = ∫ y, |f y| ∂μ := by
-  rw [weight_optimalProposal, abs_mul, abs_of_nonneg (integral_nonneg fun _ => abs_nonneg _)]
+  rw [weight_optimalProposal_apply, abs_mul, abs_of_nonneg (integral_nonneg fun _ => abs_nonneg _)]
   rcases Real.sign_apply_eq_of_ne_zero _ hx with h | h <;> simp [h]
 
 /-- Against the optimal proposal, `f² / g` is `(∫ |f| dμ) |f|`. -/
@@ -397,6 +406,15 @@ theorem variance_weight_optimalProposal_eq_zero_of_nonneg (hf : Integrable f μ)
     variance (weight f (optimalProposal f μ)) (μ.withDensity (optimalProposal f μ)) = 0 := by
   rw [variance_weight_optimalProposal hf hf0,
     integral_congr_ae (hpos.mono fun x hx => abs_of_nonneg hx), sub_self]
+
+/-- For an observable with `f O ≥ 0`, the optimal proposal `|f O| / ∫ |f O| dμ` gives the
+weighted value `weight f g * O` zero variance. -/
+theorem variance_weight_mul_optimalProposal_eq_zero_of_nonneg {O : α → ℝ}
+    (hf : Integrable (f * O) μ) (hf0 : ∫ x, |f x * O x| ∂μ ≠ 0) (hpos : 0 ≤ᵐ[μ] f * O) :
+    variance (weight f (optimalProposal (f * O) μ) * O)
+      (μ.withDensity (optimalProposal (f * O) μ)) = 0 := by
+  rw [← weight_mul]
+  exact variance_weight_optimalProposal_eq_zero_of_nonneg hf hf0 hpos
 
 /-- **The optimal proposal for an observable.** With the proposal `|f O| / ∫ |f O| dμ`, the
 variance of the weight against that proposal, times `O`, is exactly
