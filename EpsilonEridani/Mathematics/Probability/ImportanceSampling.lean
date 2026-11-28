@@ -9,8 +9,6 @@ public import EpsilonEridani.Mathematics.MeasureTheory.WithDensity
 public import EpsilonEridani.Mathematics.Probability.MonteCarloAverage
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.MeasureTheory.Order.Group.Lattice
-public import Mathlib.MeasureTheory.VectorMeasure.WithDensity
-public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Variance
 
 /-!
@@ -91,16 +89,27 @@ def weight (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) : ℝ := f x / (g x
 theorem weight_apply (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) : weight f g x = f x / (g x).toReal :=
   (rfl)
 
+/-- The weight vanishes where the proposal density vanishes. -/
+@[simp]
+theorem weight_of_eq_zero {x : α} (h : g x = 0) : weight f g x = 0 := by
+  simp [weight_apply, h]
+
+/-- The weight vanishes where the proposal density is infinite. -/
+@[simp]
+theorem weight_of_eq_top {x : α} (h : g x = ∞) : weight f g x = 0 := by
+  simp [weight_apply, h]
+
 /-- The weight for the integrand `f * O` is the weight for `f` times the observable `O`. -/
 @[simp]
-theorem weight_mul (f O : α → ℝ) (g : α → ℝ≥0∞) (x : α) :
+theorem weight_mul_apply (f O : α → ℝ) (g : α → ℝ≥0∞) (x : α) :
     weight (f * O) g x = weight f g x * O x := by
   simp only [weight_apply, Pi.mul_apply, mul_div_right_comm]
 
 /-- The weight for the integrand `f * O` is the weight for `f` times the observable `O`, as
 functions. -/
-theorem weight_mul' (f O : α → ℝ) (g : α → ℝ≥0∞) : weight (f * O) g = weight f g * O :=
-  funext (weight_mul f O g)
+@[simp]
+theorem weight_mul (f O : α → ℝ) (g : α → ℝ≥0∞) : weight (f * O) g = weight f g * O :=
+  funext (weight_mul_apply f O g)
 
 /-- The weight for `|f|` is the absolute value of the weight for `f`. -/
 @[simp]
@@ -109,6 +118,7 @@ theorem weight_abs_apply (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) :
   simp only [weight_apply, Pi.abs_apply, abs_div, ENNReal.abs_toReal]
 
 /-- The weight for `|f|` is the absolute value of the weight for `f`, as functions. -/
+@[simp]
 theorem weight_abs (f : α → ℝ) (g : α → ℝ≥0∞) : weight |f| g = |weight f g| :=
   funext (weight_abs_apply f g)
 
@@ -117,7 +127,7 @@ weight recovers the target. -/
 theorem toReal_mul_weight {x : α} (hx : g x ≠ ∞) (hfg : g x = 0 → f x = 0) :
     (g x).toReal * weight f g x = f x := by
   rcases eq_or_ne (g x) 0 with h | h
-  · simp [weight_apply, h, hfg h]
+  · simp [h, hfg h]
   · rw [weight_apply, mul_div_cancel₀ _ (ENNReal.toReal_ne_zero.2 ⟨h, hx⟩)]
 
 theorem toReal_mul_weight_sq (f : α → ℝ) (g : α → ℝ≥0∞) (x : α) :
@@ -155,7 +165,7 @@ is `∫ f O dμ`. -/
 theorem integral_weight_mul (hg : AEMeasurable g μ) (hg_top : ∀ᵐ x ∂μ, g x < ∞)
     (O : α → ℝ) (hfg : ∀ᵐ x ∂μ, g x = 0 → f x * O x = 0) :
     ∫ x, weight f g x * O x ∂μ.withDensity g = ∫ x, f x * O x ∂μ := by
-  simp_rw [← weight_mul]
+  simp_rw [← weight_mul_apply]
   exact integral_weight hg hg_top (by simpa only [Pi.mul_apply] using hfg)
 
 /-- The weight is integrable under the proposal law exactly when the target density is
@@ -165,6 +175,14 @@ theorem integrable_weight_iff (hg : AEMeasurable g μ) (hg_top : ∀ᵐ x ∂μ,
     Integrable (weight f g) (μ.withDensity g) ↔ Integrable f μ := by
   rw [integrable_withDensity_iff_integrable_smul₀' hg hg_top]
   exact integrable_congr (toReal_smul_weight_ae_eq hg_top hfg)
+
+/-- The weighted value `weight f g * O` of an observable is integrable under the proposal law
+exactly when `f O` is integrable. -/
+theorem integrable_weight_mul_iff (hg : AEMeasurable g μ) (hg_top : ∀ᵐ x ∂μ, g x < ∞)
+    (O : α → ℝ) (hfg : ∀ᵐ x ∂μ, g x = 0 → f x * O x = 0) :
+    Integrable (weight f g * O) (μ.withDensity g) ↔ Integrable (f * O) μ := by
+  rw [← weight_mul]
+  exact integrable_weight_iff hg hg_top (by simpa only [Pi.mul_apply] using hfg)
 
 /-- **The weighted sample is a sample of the target.** The proposal law reweighted by the
 importance weight is the signed measure with density `f`. -/
@@ -194,6 +212,15 @@ theorem memLp_weight_two_iff (hf : AEMeasurable f μ) (hg : AEMeasurable g μ)
     integrable_withDensity_iff_integrable_smul₀' hg hg_top]
   simp only [smul_eq_mul, toReal_mul_weight_sq]
 
+/-- The weighted value `weight f g * O` of an observable is square-integrable under the proposal
+law exactly when `(f O)² / g` is integrable against `μ`. -/
+theorem memLp_weight_mul_two_iff (O : α → ℝ) (hf : AEMeasurable (f * O) μ) (hg : AEMeasurable g μ)
+    (hg_top : ∀ᵐ x ∂μ, g x < ∞) :
+    MemLp (weight f g * O) 2 (μ.withDensity g) ↔
+      Integrable (fun x => (f x * O x) ^ 2 / (g x).toReal) μ := by
+  rw [← weight_mul]
+  simpa only [Pi.mul_apply] using memLp_weight_two_iff hf hg hg_top
+
 /-- **The variance of the importance weight.** For a normalised proposal density `g` that vanishes
 only where `f` does and whose weight is square-integrable, the variance of the weight is
 `∫ f² / g dμ - (∫ f dμ)²`. -/
@@ -215,7 +242,7 @@ theorem variance_weight_mul (hg : AEMeasurable g μ) (hg1 : ∫⁻ x, g x ∂μ 
     (hw : MemLp (weight f g * O) 2 (μ.withDensity g)) :
     variance (weight f g * O) (μ.withDensity g) =
       ∫ x, (f x * O x) ^ 2 / (g x).toReal ∂μ - (∫ x, f x * O x ∂μ) ^ 2 := by
-  rw [← weight_mul'] at hw ⊢
+  rw [← weight_mul] at hw ⊢
   exact variance_weight hg hg1 (by simpa only [Pi.mul_apply] using hfg) hw
 
 /-- **No proposal beats `|f|`.** For every normalised proposal density that vanishes only where `f`
@@ -242,7 +269,7 @@ theorem sq_integral_abs_sub_sq_integral_le_variance_weight_mul (hg : AEMeasurabl
     (hw : MemLp (weight f g * O) 2 (μ.withDensity g)) :
     (∫ x, |f x * O x| ∂μ) ^ 2 - (∫ x, f x * O x ∂μ) ^ 2 ≤
       variance (weight f g * O) (μ.withDensity g) := by
-  rw [← weight_mul'] at hw ⊢
+  rw [← weight_mul] at hw ⊢
   exact sq_integral_abs_sub_sq_integral_le_variance_weight hg hg1
     (by simpa only [Pi.mul_apply] using hfg) hw
 
@@ -297,8 +324,9 @@ theorem optimalProposal_eq_zero_iff (hf0 : ∫ x, |f x| ∂μ ≠ 0) {x : α} :
 
 /-- **The optimal proposal fixes the weight magnitude.** Against the optimal proposal the weight is
 `(∫ |f| dμ) · sign (f x)`, of constant magnitude wherever `f x ≠ 0`
-(`abs_weight_optimalProposal`). -/
-@[simp]
+(`abs_weight_optimalProposal`). It takes priority over `weight_mul_apply`, so that
+`weight (f * O) (optimalProposal (f * O) μ) x` simplifies to its value. -/
+@[simp high]
 theorem weight_optimalProposal (f : α → ℝ) (μ : Measure α) (x : α) :
     weight f (optimalProposal f μ) x = (∫ y, |f y| ∂μ) * Real.sign (f x) := by
   rw [weight_apply, toReal_optimalProposal]
@@ -372,7 +400,7 @@ theorem variance_weight_mul_optimalProposal {O : α → ℝ} (hf : Integrable (f
     variance (weight f (optimalProposal (f * O) μ) * O)
         (μ.withDensity (optimalProposal (f * O) μ)) =
       (∫ x, |f x * O x| ∂μ) ^ 2 - (∫ x, f x * O x ∂μ) ^ 2 := by
-  rw [← weight_mul']
+  rw [← weight_mul]
   exact variance_weight_optimalProposal hf hf0
 
 /-- **The optimal proposal for an observable minimises its variance.** With the proposal
