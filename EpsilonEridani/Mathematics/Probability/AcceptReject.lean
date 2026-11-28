@@ -73,9 +73,10 @@ what lets the results below carry no sign hypothesis on `f` or `g`.
   yields `min (2 * z) (3 / 2)` normalised, of mass `15 / 16`, a probability measure by
   `AcceptReject.isProbabilityMeasure_acceptedLaw_two_mul_bound_three_div_two` — and the accepted
   law is not the target `2 * z` normalised, the silent bias realised.
-* `AcceptReject.lintegral_ofReal_one_add_sq_div_two_uniformMeasure_zero_one` and
-  `AcceptReject.lintegral_ofReal_min_two_mul_three_div_two_uniformMeasure_zero_one`: the integrals
-  of the two example targets against the standard uniform law, with
+* `AcceptReject.lintegral_ofReal_one_add_sq_div_two_uniformMeasure_zero_one`,
+  `AcceptReject.lintegral_ofReal_min_two_mul_three_div_two_uniformMeasure_zero_one` and
+  `AcceptReject.lintegral_ofReal_two_mul_uniformMeasure_zero_one`: the integrals of the example
+  targets, the clipped one and the unclipped `2 * z`, against the standard uniform law, with
   `AcceptReject.ae_one_add_sq_div_two_le_one_uniformMeasure_zero_one`, the bound of the first.
 
 The bound hypothesis is taken almost everywhere. A bound checked at every point, which is what
@@ -116,7 +117,6 @@ theorem trialLaw_def (μ : Measure α) (g : α → ℝ) :
 /-- The trial law of a proposal of constant density `1` is the proposal measure itself times the
 standard uniform law: a density-`1` proposal leaves the proposal measure unchanged. This is the
 trial law of the worked examples below. -/
-@[simp]
 theorem trialLaw_one (μ : Measure α) :
     trialLaw μ (fun _ => 1) = μ.prod (uniformMeasure 0 1) := by
   rw [trialLaw_def]
@@ -404,6 +404,19 @@ theorem lintegral_ofReal_min_two_mul_three_div_two_uniformMeasure_zero_one :
     intervalIntegral.integral_const_mul, integral_id, intervalIntegral.integral_const]
   norm_num
 
+/-- The function `2 * z` has integral `1` over `[0, 1]`. It is the target of the
+acceptance–rejection example below whose bound is too small, and its integral is the
+normalising constant of the law that example fails to produce. -/
+theorem lintegral_ofReal_two_mul_uniformMeasure_zero_one :
+    ∫⁻ z, ENNReal.ofReal (2 * z) ∂uniformMeasure 0 1 = 1 := by
+  have hcont : Continuous fun z : ℝ => 2 * z := by fun_prop
+  rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn.integrable_uniformMeasure
+    (by
+      filter_upwards [ae_mem_Ioc_uniformMeasure] with x hx
+      rw [Pi.zero_apply]
+      linarith [hx.1]), sub_zero, div_one, intervalIntegral.integral_const_mul, integral_id]
+  norm_num
+
 /-- A uniform proposal on `[0, 1]` with the constant bound `1` accepts the target
 `(1 + z ^ 2) / 2` with probability `2 / 3`, its integral over the interval. The target is the
 ratio of the quark splitting kernel `(1 + z ^ 2) / (1 - z)` to its overestimate `2 / (1 - z)`. -/
@@ -465,7 +478,8 @@ above `z = 3 / 4`, so the accepted law is the clipped target `min (2 * z) (3 / 2
 instance of the silent bias
 `acceptedLaw_ne_smul_withDensity_of_measure_lt_ne_zero_of_measure_le_ne_zero`: the bound
 fails on `Set.Ioi (3 / 4)` and holds on `Set.Ioc 0 (3 / 4)`, with the target positive on
-both. -/
+both. The normalising constant on the right is `1`, by
+`lintegral_ofReal_two_mul_uniformMeasure_zero_one`. -/
 theorem acceptedLaw_two_mul_bound_three_div_two_ne_smul_withDensity :
     acceptedLaw (uniformMeasure 0 1) (fun z => 2 * z) (fun _ => 1) (3 / 2) ≠
       (∫⁻ z, ENNReal.ofReal (2 * z) ∂uniformMeasure 0 1)⁻¹ •
@@ -476,13 +490,8 @@ theorem acceptedLaw_two_mul_bound_three_div_two_ne_smul_withDensity :
     (by norm_num) (by fun_prop) measurable_const ?_ ?_ ?_
   · -- The target has finite mass against the standard uniform law.
     show ∫⁻ z, ENNReal.ofReal (2 * z) ∂uniformMeasure 0 1 ≠ ∞
-    have hcont : Continuous fun z : ℝ => 2 * z := by fun_prop
-    rw [lintegral_ofReal_uniformMeasure zero_lt_one hcont.continuousOn.integrable_uniformMeasure
-      (by
-        filter_upwards [ae_mem_Ioc_uniformMeasure] with x hx
-        rw [Pi.zero_apply]
-        linarith [hx.1])]
-    exact ENNReal.ofReal_ne_top
+    rw [lintegral_ofReal_two_mul_uniformMeasure_zero_one]
+    exact ENNReal.one_ne_top
   · -- The bound fails on `Set.Ioc (3 / 4) 1`, of uniform measure `1 / 4`: that interval lies in
     -- the violation set, where the target `2 * z` is positive.
     show uniformMeasure 0 1 {x | (3 / 2 : ℝ) * 1 < 2 * x ∧ 0 < 2 * x} ≠ 0
