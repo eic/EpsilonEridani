@@ -58,7 +58,8 @@ from eliminating the bad components through the constraint equation.
   orthogonal idempotents.
 * `LightConeBasis.ker_gammaMatrix_nPlus_eq_range_goodProjector`,
   `LightConeBasis.ker_gammaMatrix_nMinus_eq_range_badProjector`: the good spinors are the kernel
-  of `γ⁻`, the bad spinors the kernel of `γ⁺`.
+  of `γ⁻`, the bad spinors the kernel of `γ⁺`; pointwise,
+  `LightConeBasis.mem_range_goodProjector_iff` and `LightConeBasis.mem_range_badProjector_iff`.
 * `LightConeBasis.finrank_range_goodProjector_eq_two`,
   `LightConeBasis.finrank_range_badProjector_eq_two`:
   the good and the bad spinors each form a two-dimensional space.
@@ -69,8 +70,14 @@ from eliminating the bad components through the constraint equation.
   to the constraint equation together with the dynamical equation.
 * `LightConeBasis.badProjector_apply_eq_of_gammaMatrix_sub_smul_one_apply_eq_zero`: the
   constraint equation solved for the bad component, `ψ₋ = (2p⁺)⁻¹ (/p_T + m) γ⁺ ψ₊`.
+* `LightConeBasis.gammaMatrix_sub_smul_one_apply_add_inv_smul_eq_zero`,
+  `LightConeBasis.coe_goodProjectorEquiv_symm_apply`: conversely, on the mass shell with
+  `p⁺ ≠ 0` every good spinor `χ` is the good component of the solution
+  `χ + (2p⁺)⁻¹ (/p_T + m) γ⁺ χ`.
 * `LightConeBasis.finrank_ker_gammaMatrix_sub_smul_one_eq_two`: on the mass shell with `p⁺ ≠ 0`
-  the solutions of the Dirac equation form a two-dimensional space.
+  the solutions of the Dirac equation form a two-dimensional space;
+  `Fermion.Dirac.finrank_ker_gammaMatrix_sub_smul_one_eq_two` is the frame-free form, for any
+  `p ≠ 0` on the mass shell.
 
 ## References
 
@@ -402,6 +409,28 @@ theorem ker_gammaMatrix_nMinus_eq_range_badProjector :
   simpa only [goodProjector_swap, badProjector_swap, nPlus_swap, nMinus_swap] using
     L.swap.ker_gammaMatrix_nPlus_eq_range_goodProjector
 
+/-- A spinor is good iff it is annihilated by `γ⁻ = /n₊`. -/
+theorem mem_range_goodProjector_iff {ψ : Dirac} :
+    ψ ∈ range L.goodProjector ↔ gammaMatrix L.nPlus ψ = 0 := by
+  rw [← ker_gammaMatrix_nPlus_eq_range_goodProjector, mem_ker]
+
+/-- A spinor is bad iff it is annihilated by `γ⁺ = /n₋`. -/
+theorem mem_range_badProjector_iff {ψ : Dirac} :
+    ψ ∈ range L.badProjector ↔ gammaMatrix L.nMinus ψ = 0 := by
+  rw [← ker_gammaMatrix_nMinus_eq_range_badProjector, mem_ker]
+
+/-- A spinor is fixed by the good projector iff it is good. -/
+@[simp]
+theorem goodProjector_apply_eq_self_iff {ψ : Dirac} :
+    L.goodProjector ψ = ψ ↔ ψ ∈ range L.goodProjector :=
+  L.isIdempotentElem_goodProjector.mem_range_iff.symm
+
+/-- A spinor is fixed by the bad projector iff it is bad. -/
+@[simp]
+theorem badProjector_apply_eq_self_iff {ψ : Dirac} :
+    L.badProjector ψ = ψ ↔ ψ ∈ range L.badProjector :=
+  L.isIdempotentElem_badProjector.mem_range_iff.symm
+
 /-- The kernel of the good projector is the space of bad spinors. -/
 theorem ker_goodProjector_eq_range_badProjector : ker L.goodProjector = range L.badProjector := by
   rw [L.isIdempotentElem_goodProjector.ker_eq_range_one_sub, badProjector_eq_one_sub]
@@ -571,7 +600,7 @@ theorem injOn_goodProjector (hp : L.plus p ≠ 0) :
     goodProjector_apply_add_badProjector_apply]
 
 /-- `(/t + m) γ⁻ (/t + m) γ⁺ = 2 (m² - t²) P₊` for a vector `t` with `t⁻ = 0`. -/
-theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus_eq_smul_goodProjector
+private theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus_eq_smul_goodProjector
     {t : Lorentz.Vector} (ht : L.minus t = 0) (m : ℝ) :
     (gammaMatrix t + m • 1) * gammaMatrix L.nPlus *
         ((gammaMatrix t + m • 1) * gammaMatrix L.nMinus) =
@@ -596,32 +625,35 @@ theorem mul_gammaMatrix_nPlus_mul_mul_gammaMatrix_nMinus_eq_smul_goodProjector
         one_mul]
       module
 
-/-- On the mass shell `p² = m²` with `p⁺ ≠ 0`, every good spinor is the good component of a
-solution of the Dirac equation. -/
-theorem exists_gammaMatrix_sub_smul_one_apply_eq_zero_and_goodProjector_apply_eq
-    (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp : L.plus p ≠ 0) {χ : Dirac}
-    (hχ : χ ∈ range L.goodProjector) :
-    ∃ ψ, (gammaMatrix p - m • 1) ψ = 0 ∧ L.goodProjector ψ = χ := by
-  have ht := L.isProj_transverseProj.map_mem p
-  have hχ' : L.goodProjector χ = χ := by
-    obtain ⟨φ, rfl⟩ := hχ
-    exact L.goodProjector_goodProjector_apply φ
+/-- For a good spinor `χ`, the spinor `χ + (2 p⁺)⁻¹ (/p_T + m) γ⁺ χ` has good component `χ`:
+the added term is bad. -/
+theorem goodProjector_apply_add_inv_smul_eq {χ : Dirac} (hχ : χ ∈ range L.goodProjector) :
+    L.goodProjector (χ + (2 * L.plus p)⁻¹ •
+      (gammaMatrix (L.transverseProj p) + m • 1) (gammaMatrix L.nMinus χ)) = χ := by
+  have hc : Commute L.goodProjector (gammaMatrix (L.transverseProj p) + m • 1) :=
+    (L.commute_goodProjector_gammaMatrix_of_mem_transverse
+      (L.isProj_transverseProj.map_mem p)).add_right ((Commute.one_right _).smul_right m)
+  have h0 := LinearMap.congr_fun hc.eq (gammaMatrix L.nMinus χ)
+  simp only [Module.End.mul_apply, goodProjector_gammaMatrix_nMinus_apply_eq_zero,
+    map_zero] at h0
+  rw [map_add, LinearMap.map_smul_of_tower, h0, smul_zero, add_zero,
+    L.goodProjector_apply_eq_self_iff.2 hχ]
+
+/-- On the mass shell `p² = m²` with `p⁺ ≠ 0`, a good spinor `χ` is the good component of the
+solution `ψ = χ + (2 p⁺)⁻¹ (/p_T + m) γ⁺ χ` of the Dirac equation `(/p - m) ψ = 0`: the bad
+component prescribed by the constraint equation also satisfies the dynamical equation. -/
+theorem gammaMatrix_sub_smul_one_apply_add_inv_smul_eq_zero (hshell : ⟪p, p⟫ₘ = m ^ 2)
+    (hp : L.plus p ≠ 0) {χ : Dirac} (hχ : χ ∈ range L.goodProjector) :
+    (gammaMatrix p - m • 1) (χ + (2 * L.plus p)⁻¹ •
+      (gammaMatrix (L.transverseProj p) + m • 1) (gammaMatrix L.nMinus χ)) = 0 := by
+  have hχ' : L.goodProjector χ = χ := L.goodProjector_apply_eq_self_iff.2 hχ
   let T := gammaMatrix (L.transverseProj p) + m • 1
   -- the bad component prescribed by the constraint equation
   let η := (2 * L.plus p)⁻¹ • T (gammaMatrix L.nMinus χ)
-  have hη : L.goodProjector η = 0 := by
-    have hc : Commute L.goodProjector T :=
-      (L.commute_goodProjector_gammaMatrix_of_mem_transverse ht).add_right
-        ((Commute.one_right _).smul_right m)
-    have h0 := LinearMap.congr_fun hc.eq (gammaMatrix L.nMinus χ)
-    simp only [Module.End.mul_apply, goodProjector_gammaMatrix_nMinus_apply_eq_zero,
-      map_zero] at h0
-    rw [LinearMap.map_smul_of_tower, h0, smul_zero]
-  have hg : L.goodProjector (χ + η) = χ := by rw [map_add, hχ', hη, add_zero]
+  have hg : L.goodProjector (χ + η) = χ := L.goodProjector_apply_add_inv_smul_eq hχ
   have hb : L.badProjector (χ + η) = η := by
     rw [badProjector_eq_one_sub, LinearMap.sub_apply, Module.End.one_apply, hg,
       add_sub_cancel_left]
-  refine ⟨χ + η, ?_, hg⟩
   rw [L.gammaMatrix_sub_smul_one_apply_eq_zero_iff, hg, hb]
   refine ⟨by rw [smul_inv_smul₀ (mul_ne_zero two_ne_zero hp)], ?_⟩
   -- the dynamical equation holds because `m² - p_T² = 2 p⁺ p⁻` on the mass shell
@@ -647,9 +679,10 @@ def goodProjectorEquiv (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp : L.plus p ≠ 0) :
     refine ⟨fun ψ₁ ψ₂ h => Subtype.ext (L.injOn_goodProjector hp ψ₁.2 ψ₂.2 ?_), ?_⟩
     · simpa only [coe_restrict_apply] using congr_arg Subtype.val h
     · rintro ⟨χ, hχ⟩
-      obtain ⟨ψ, hψ, rfl⟩ :=
-        L.exists_gammaMatrix_sub_smul_one_apply_eq_zero_and_goodProjector_apply_eq hshell hp hχ
-      exact ⟨⟨ψ, mem_ker.2 hψ⟩, Subtype.ext (coe_restrict_apply _ _)⟩
+      refine ⟨⟨_, mem_ker.2 (L.gammaMatrix_sub_smul_one_apply_add_inv_smul_eq_zero hshell hp hχ)⟩,
+        Subtype.ext ?_⟩
+      rw [coe_restrict_apply]
+      exact L.goodProjector_apply_add_inv_smul_eq hχ
 
 /-- The equivalence `goodProjectorEquiv` sends a solution `ψ` to its good component `P₊ ψ`. -/
 @[simp]
@@ -658,6 +691,21 @@ theorem coe_goodProjectorEquiv_apply (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp : L.pl
     (L.goodProjectorEquiv hshell hp ψ : Dirac) = L.goodProjector ψ := by
   rw [goodProjectorEquiv]
   exact (congrArg Subtype.val (LinearEquiv.ofBijective_apply _ ψ)).trans (coe_restrict_apply _ _)
+
+/-- The inverse of `goodProjectorEquiv` reconstructs the solution of the Dirac equation from its
+good component `χ` through the constraint equation, `ψ = χ + (2 p⁺)⁻¹ (/p_T + m) γ⁺ χ`. -/
+@[simp]
+theorem coe_goodProjectorEquiv_symm_apply (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp : L.plus p ≠ 0)
+    (χ : range L.goodProjector) :
+    ((L.goodProjectorEquiv hshell hp).symm χ : Dirac) = χ + (2 * L.plus p)⁻¹ •
+      (gammaMatrix (L.transverseProj p) + m • 1) (gammaMatrix L.nMinus χ) := by
+  let ψ : ker (gammaMatrix p - m • 1) :=
+    ⟨_, mem_ker.2 (L.gammaMatrix_sub_smul_one_apply_add_inv_smul_eq_zero hshell hp χ.2)⟩
+  have h : χ = L.goodProjectorEquiv hshell hp ψ := by
+    refine Subtype.ext ?_
+    rw [coe_goodProjectorEquiv_apply]
+    exact (L.goodProjector_apply_add_inv_smul_eq χ.2).symm
+  exact congrArg Subtype.val ((LinearEquiv.symm_apply_eq _).2 h)
 
 /-- On the mass shell `p² = m²` with `p⁺ ≠ 0`, the solutions of the Dirac equation
 `(/p - m) ψ = 0` form a two-dimensional space. -/
@@ -671,3 +719,31 @@ end DiracEquation
 end LightConeBasis
 
 end LinearMap.BilinForm
+
+namespace Fermion.Dirac
+
+open LinearMap.BilinForm Module LinearMap
+open Lorentz.Vector (minkowskiProduct)
+open scoped Lorentz.Vector
+
+/-- On the mass shell `p² = m²` with `p ≠ 0`, the solutions of the Dirac equation
+`(/p - m) ψ = 0` form a two-dimensional space. -/
+theorem finrank_ker_gammaMatrix_sub_smul_one_eq_two {p : Lorentz.Vector} {m : ℝ}
+    (hshell : ⟪p, p⟫ₘ = m ^ 2) (hp : p ≠ 0) :
+    finrank ℂ (ker (gammaMatrix p - m • 1)) = 2 := by
+  -- some standard light-cone basis has `p` outside its transverse space
+  obtain ⟨i, hi⟩ : ∃ i : Fin 3, p ∉ (LightConeBasis.minkowskiAxis i).transverse := by
+    by_contra! h
+    refine hp (Lorentz.Vector.ext_of_apply fun μ => ?_)
+    rcases μ with μ | i
+    · rw [Fin.fin_one_eq_zero μ]
+      exact ((LightConeBasis.mem_transverse_minkowskiAxis_iff 0 p).1 (h 0)).1
+    · exact ((LightConeBasis.mem_transverse_minkowskiAxis_iff i p).1 (h i)).2
+  -- so `p⁺ ≠ 0` in that basis or in its swap
+  rw [LightConeBasis.mem_transverse_iff, not_and_or] at hi
+  rcases hi with hplus | hminus
+  · exact (LightConeBasis.minkowskiAxis i).finrank_ker_gammaMatrix_sub_smul_one_eq_two hshell hplus
+  · exact (LightConeBasis.minkowskiAxis i).swap.finrank_ker_gammaMatrix_sub_smul_one_eq_two hshell
+      (by rwa [LightConeBasis.plus_swap])
+
+end Fermion.Dirac
