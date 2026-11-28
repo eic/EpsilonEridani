@@ -6,6 +6,7 @@ Authors: The EpsilonEridani contributors
 module
 
 public import EpsilonEridani.Mathematics.LieAlgebra.Casimir
+public import EpsilonEridani.Mathematics.LinearAlgebra.Matrix.MetricTrace
 public import EpsilonEridani.QFT.QCD.SUNStructureConstants
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.Idempotents
@@ -23,9 +24,11 @@ multiplication by `-Tᵃ`, and the generator `Tᵃ` of the pair acts by the comm
 This module decomposes `N ⊗ N* = 1 ⊕ (N² - 1)` into the colour-singlet and colour-octet channels
 (the octet being the adjoint representation, of dimension `8` at `N = 3`). The octet projector is
 built from the generalized Gell-Mann generators `Tᵃ = SUNGen.genM N a` of `su(N)` and the singlet
-projector directly from the trace; that the two are complementary (`colorOctetProj_eq`) is what
+projector directly from the trace, as the trace part `Matrix.tracePart 1` of the wave function
+with respect to the metric `1`; that the two are complementary (`colorOctetProj_eq`) is what
 the completeness relation of the generators supplies. Every property below is proved from the
-trace and completeness identities of
+projector algebra of `EpsilonEridani.Mathematics.LinearAlgebra.Matrix.MetricTrace` and the trace
+and completeness identities of
 `EpsilonEridani.QFT.QCD.SUNGenerators` and `EpsilonEridani.QFT.QCD.SUNStructureConstants`, never
 entered as a numeral:
 
@@ -84,15 +87,18 @@ variable {N : ℕ}
 /-! ### The two projectors -/
 
 /-- The projector onto the colour-singlet channel of a quark-antiquark pair,
-`ψ ↦ (Tr ψ / N) · 1`. -/
+`ψ ↦ (Tr ψ / N) · 1`: the trace part of `ψ` with respect to the metric `1`. -/
 def colorSingletProj (N : ℕ) : Module.End ℂ (Matrix (Fin N) (Fin N) ℂ) :=
-  ((N : ℂ)⁻¹ • traceLinearMap (Fin N) ℂ ℂ).smulRight 1
+  tracePart 1
+
+/-- The singlet projector is the trace part with respect to the metric `1`. -/
+theorem colorSingletProj_eq_tracePart : colorSingletProj N = tracePart 1 := (rfl)
 
 @[simp]
 theorem colorSingletProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
     colorSingletProj N ψ = ((N : ℂ)⁻¹ * ψ.trace) • 1 := by
-  rw [colorSingletProj, LinearMap.smulRight_apply, LinearMap.smul_apply, traceLinearMap_apply,
-    smul_eq_mul]
+  rw [colorSingletProj_eq_tracePart, tracePart_apply, inv_one, one_mul, Fintype.card_fin,
+    div_eq_inv_mul]
 
 /-- The projector onto the colour-octet channel of a quark-antiquark pair, built from the
 generators of `su(N)`: `ψ ↦ 2 Σₐ Tr(ψ Tᵃ) Tᵃ`. The factor `2` is `1 / T_F`. -/
@@ -116,6 +122,10 @@ theorem colorOctetProj_eq : colorOctetProj N = 1 - colorSingletProj N := by
   rw [sum_genM_proj, smul_smul, mul_one_div_cancel two_ne_zero, one_smul, LinearMap.sub_apply,
     one_apply_eq_self, colorSingletProj_apply]
 
+/-- The octet projector is the traceless part with respect to the metric `1`. -/
+theorem colorOctetProj_eq_tracelessPart : colorOctetProj N = tracelessPart 1 := by
+  rw [colorOctetProj_eq, tracelessPart_eq_one_sub, colorSingletProj_eq_tracePart]
+
 /-- The octet projector in closed form: `P₈ ψ = ψ - (Tr ψ / N) · 1`. -/
 @[simp]
 theorem colorOctetProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
@@ -125,7 +135,7 @@ theorem colorOctetProj_apply (ψ : Matrix (Fin N) (Fin N) ℂ) :
 /-- The two colour channels exhaust the pair's colour space. -/
 @[simp]
 theorem colorSingletProj_add_colorOctetProj : colorSingletProj N + colorOctetProj N = 1 := by
-  rw [colorOctetProj_eq, add_sub_cancel]
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart, tracePart_add_tracelessPart]
 
 /-- The two colour channels exhaust the pair's colour space, in the reversed addition order. -/
 @[simp]
@@ -134,65 +144,58 @@ theorem colorOctetProj_add_colorSingletProj : colorOctetProj N + colorSingletPro
 
 /-- The singlet projector is idempotent. -/
 theorem isIdempotentElem_colorSingletProj : IsIdempotentElem (colorSingletProj N) := by
-  refine LinearMap.ext fun ψ ↦ ?_
-  rcases eq_or_ne (N : ℂ) 0 with hN | hN
-  · simp [hN]
-  · simp only [mul_apply_eq_comp, colorSingletProj_apply, trace_smul, trace_one,
-      Fintype.card_fin, smul_eq_mul]
-    field_simp
+  rw [colorSingletProj_eq_tracePart]
+  exact isIdempotentElem_tracePart
 
 /-- The octet projector is idempotent. -/
 theorem isIdempotentElem_colorOctetProj : IsIdempotentElem (colorOctetProj N) := by
-  rw [colorOctetProj_eq]
-  exact isIdempotentElem_colorSingletProj.one_sub
+  rw [colorOctetProj_eq_tracelessPart]
+  exact isIdempotentElem_tracelessPart
 
 /-- The singlet projector squares to itself: `P₁ P₁ = P₁`. -/
 @[simp]
 theorem colorSingletProj_mul_self :
-    colorSingletProj N * colorSingletProj N = colorSingletProj N :=
-  isIdempotentElem_colorSingletProj.eq
+    colorSingletProj N * colorSingletProj N = colorSingletProj N := by
+  rw [colorSingletProj_eq_tracePart, tracePart_mul_self]
 
 /-- The octet projector squares to itself: `P₈ P₈ = P₈`. -/
 @[simp]
 theorem colorOctetProj_mul_self :
-    colorOctetProj N * colorOctetProj N = colorOctetProj N :=
-  isIdempotentElem_colorOctetProj.eq
+    colorOctetProj N * colorOctetProj N = colorOctetProj N := by
+  rw [colorOctetProj_eq_tracelessPart, tracelessPart_mul_self]
 
 /-- The singlet and octet channels are orthogonal. -/
 @[simp]
 theorem colorSingletProj_mul_colorOctetProj : colorSingletProj N * colorOctetProj N = 0 := by
-  rw [colorOctetProj_eq, isIdempotentElem_colorSingletProj.mul_one_sub_self]
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart, tracePart_mul_tracelessPart]
 
 /-- The octet and singlet channels are orthogonal. -/
 @[simp]
 theorem colorOctetProj_mul_colorSingletProj : colorOctetProj N * colorSingletProj N = 0 := by
-  rw [colorOctetProj_eq, isIdempotentElem_colorSingletProj.one_sub_mul_self]
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart, tracelessPart_mul_tracePart]
 
 /-- The singlet and octet projectors are complete orthogonal idempotents: the colour space of a
 quark-antiquark pair is the direct sum of the two channels. -/
 theorem completeOrthogonalIdempotents_colorSingletProj_colorOctetProj :
     CompleteOrthogonalIdempotents ![colorSingletProj N, colorOctetProj N] := by
-  rw [colorOctetProj_eq]
-  exact .of_isIdempotentElem isIdempotentElem_colorSingletProj
+  rw [colorSingletProj_eq_tracePart, colorOctetProj_eq_tracelessPart]
+  exact completeOrthogonalIdempotents_tracePart_tracelessPart
 
 /-- A wave function lies in the singlet channel exactly when it is a multiple of `1`. -/
 theorem colorSingletProj_apply_eq_self_iff (ψ : Matrix (Fin N) (Fin N) ℂ) :
     colorSingletProj N ψ = ψ ↔ ∃ c : ℂ, ψ = c • 1 := by
-  refine ⟨fun h ↦ ⟨_, h.symm.trans (colorSingletProj_apply ψ)⟩, ?_⟩
-  rintro ⟨c, rfl⟩
-  rcases eq_or_ne (N : ℂ) 0 with hN | hN
-  · obtain rfl : N = 0 := Nat.cast_eq_zero.1 hN
-    exact Subsingleton.elim _ _
-  · rw [colorSingletProj_apply, trace_smul, trace_one, Fintype.card_fin, smul_eq_mul,
-      mul_left_comm, inv_mul_cancel₀ hN, mul_one]
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · exact iff_of_true (Subsingleton.elim _ _) ⟨0, Subsingleton.elim _ _⟩
+  · rw [colorSingletProj_eq_tracePart, tracePart_eq_self_iff (by simp) (by simp [hN.ne'])]
+    exact exists_congr fun _ ↦ eq_comm
 
 /-- A wave function lies in the octet channel exactly when it is traceless. -/
 theorem colorOctetProj_apply_eq_self_iff (ψ : Matrix (Fin N) (Fin N) ℂ) :
     colorOctetProj N ψ = ψ ↔ ψ.trace = 0 := by
   rcases Nat.eq_zero_or_pos N with rfl | hN
   · simp [Subsingleton.elim (colorOctetProj 0 ψ) ψ]
-  · have : NeZero N := ⟨hN.ne'⟩
-    simp [sub_eq_self, Nat.pos_iff_ne_zero.1 hN]
+  · rw [colorOctetProj_eq_tracelessPart, tracelessPart_eq_self_iff (by simp [hN.ne']), inv_one,
+      one_mul]
 
 /-! ### The normalised singlet state -/
 
@@ -242,17 +245,15 @@ theorem colorSingletProj_apply_eq_smul_colorSingletState (ψ : Matrix (Fin N) (F
 @[simp]
 theorem trace_colorSingletProj [NeZero N] :
     LinearMap.trace ℂ (Matrix (Fin N) (Fin N) ℂ) (colorSingletProj N) = 1 := by
-  rw [colorSingletProj, LinearMap.trace_smulRight, LinearMap.smul_apply, traceLinearMap_apply,
-    trace_one, Fintype.card_fin, smul_eq_mul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 (NeZero.ne N))]
+  rw [colorSingletProj_eq_tracePart,
+    LinearMap.trace_tracePart (by simp) (by simp [NeZero.ne N])]
 
 /-- The octet channel has dimension `N² - 1`: its projector has trace `N² - 1`. -/
 @[simp]
 theorem trace_colorOctetProj [NeZero N] :
     LinearMap.trace ℂ (Matrix (Fin N) (Fin N) ℂ) (colorOctetProj N) = (N : ℂ) ^ 2 - 1 := by
-  rw [colorOctetProj_eq, map_sub, trace_colorSingletProj, LinearMap.trace_one,
-    Module.finrank_matrix, Module.finrank_self, Fintype.card_fin]
-  push_cast
-  ring
+  rw [colorOctetProj_eq_tracelessPart,
+    LinearMap.trace_tracelessPart (by simp) (by simp [NeZero.ne N]), Fintype.card_fin]
 
 /-! ### The colour action on the pair -/
 
