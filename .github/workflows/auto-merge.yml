@@ -90,7 +90,7 @@ jobs:
     if: ${{ needs.resolve.outputs.pr != '' }}
     # Pinned to a EpsilonEridaniReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
-    uses: eic/EpsilonEridaniReview/.github/workflows/merge-only.yml@638255e870e4ec1d38ff83224e17e7bccc9deab9
+    uses: eic/EpsilonEridaniReview/.github/workflows/merge-only.yml@64c033894d50fe5b9ec82ca5a227b98a5ba004d3
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       review_ref: ${{ needs.resolve.outputs.review_ref }}
