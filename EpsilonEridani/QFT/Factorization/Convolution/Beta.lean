@@ -25,9 +25,10 @@ Its Mellin transform is Euler's beta integral at `(N + a, b + 1)`, a ratio of Ga
   `Complex.betaIntegral (N + a) (b + 1)`, at every `N`;
   `mellinDis_rpow_mul_one_sub_rpow`: on the half plane of convergence it is
   `Γ(N + a) Γ(b + 1) / Γ(N + a + b + 1)`.
-* `mellinDisConvergent_one_sub_rpow_iff`, `mellinDis_one_sub_rpow_eq_betaIntegral`: at `a = 0`,
-  the transform of `(1 - x) ^ b` converges exactly when `0 < Re N` and `-1 < b`, and is
-  `B(N, b + 1)`.
+* `mellinDisConvergent_one_sub_rpow_iff`, `mellinDis_one_sub_rpow_eq_betaIntegral`,
+  `mellinDis_one_sub_rpow`: at `a = 0`, the transform of `(1 - x) ^ b` converges exactly when
+  `0 < Re N` and `-1 < b`, is `B(N, b + 1)`, and on the half plane is
+  `Γ(N) Γ(b + 1) / Γ(N + b + 1)`.
 
 The convergence criterion reduces to TauCeti's `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff`,
 and the values are the complex-index versions of TauCeti's real Euler beta integral
@@ -97,6 +98,14 @@ finite combinations. -/
 theorem mellinDis_one_sub_rpow_eq_betaIntegral (b : ℝ) (N : ℂ) :
     mellinDis (fun x => (1 - x) ^ b) N = Complex.betaIntegral N (b + 1) := by
   simpa using mellinDis_rpow_mul_one_sub_rpow_eq_betaIntegral 0 b N
+
+/-- **Mellin moments of `(1 - x) ^ b`.** On the half plane `0 < Re N`, for `-1 < b`,
+`∫_{(0,1]} x ^ (N - 1) (1 - x) ^ b dx = Γ(N) Γ(b + 1) / Γ(N + b + 1)`: the Beta kernel with
+`a = 0`. -/
+theorem mellinDis_one_sub_rpow {b : ℝ} (hb : -1 < b) {N : ℂ} (hN : 0 < N.re) :
+    mellinDis (fun x => (1 - x) ^ b) N =
+      Complex.Gamma N * Complex.Gamma (b + 1) / Complex.Gamma (N + b + 1) := by
+  simpa using mellinDis_rpow_mul_one_sub_rpow (a := 0) hb (by simpa using hN)
 
 end Convolution
 end Factorization
