@@ -17,6 +17,11 @@ public import Physlib.Relativity.Tensors.RealTensor.Vector.Basic
   (`timeComponent_sub_ofTemporalComponent_timeComponent`) and the spatial part of `v`
   (`spatialPart_sub_ofTemporalComponent`).
 
+* The spatial part is `ℝ`-linear (`spatialPart_add`, `spatialPart_smul`, with `spatialPart_sub`
+  above), and so is the time component (`timeComponent_add`, `timeComponent_sub`,
+  `timeComponent_smul`), so the spatial part and the time component
+  of a combination such as `(p + p') / 2` are the same combination of those of `p` and `p'`.
+
 * The vector `ofTimeAndSpatial x s` has time component `x` and spatial part `s`
   (`timeComponent_ofTimeAndSpatial_eq`, `spatialPart_ofTimeAndSpatial_eq`). It is assembled from
   Physlib's `ofTemporalComponent` and `ofSpatialComponent`, and every vector arises this way from
@@ -54,6 +59,44 @@ expression, which `apply_sub` already rewrites, so the simp-normal-form linter r
 lemma spatialPart_sub {d : ℕ} (v w : Vector d) :
     (v - w).spatialPart = v.spatialPart - w.spatialPart := by
   ext i
+  simp
+
+/-- The spatial part of a sum is the sum of the spatial parts.
+
+This is not a `@[simp]` lemma, for the same reason as `spatialPart_sub`. -/
+lemma spatialPart_add {d : ℕ} (v w : Vector d) :
+    (v + w).spatialPart = v.spatialPart + w.spatialPart := by
+  ext i
+  simp
+
+/-- The spatial part of a scalar multiple is the multiple of the spatial part.
+
+This is not a `@[simp]` lemma, for the same reason as `spatialPart_sub`. -/
+lemma spatialPart_smul {d : ℕ} (c : ℝ) (v : Vector d) :
+    (c • v).spatialPart = c • v.spatialPart := by
+  ext i
+  simp
+
+/-- The time component of a sum is the sum of the time components.
+
+This is not a `@[simp]` lemma: the reducible `timeComponent` head unfolds to evaluation at
+`Sum.inl 0`, which `apply_add` already rewrites. -/
+lemma timeComponent_add {d : ℕ} (v w : Vector d) :
+    (v + w).timeComponent = v.timeComponent + w.timeComponent := by
+  simp
+
+/-- The time component of a difference is the difference of the time components.
+
+This is not a `@[simp]` lemma, for the same reason as `timeComponent_add`. -/
+lemma timeComponent_sub {d : ℕ} (v w : Vector d) :
+    (v - w).timeComponent = v.timeComponent - w.timeComponent := by
+  simp
+
+/-- The time component of a scalar multiple is the multiple of the time component.
+
+This is not a `@[simp]` lemma, for the same reason as `timeComponent_add`. -/
+lemma timeComponent_smul {d : ℕ} (c : ℝ) (v : Vector d) :
+    (c • v).timeComponent = c * v.timeComponent := by
   simp
 
 /-- The equal-time projection `v - v⁰ e₀` has vanishing time component.
