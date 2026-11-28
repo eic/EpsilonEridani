@@ -68,7 +68,7 @@ dipole amplitude and its unitarity bound.
 
 - `SmallX.mem_Icc_zero_two_of_posSemidef_one_sub`: colour transparency and a positive-semidefinite
   S-matrix give `N x y ∈ [0, 2]`, for a kernel on an arbitrary index type.
-- `SmallX.apply_comm_of_posSemidef_one_sub`: a positive-semidefinite S-matrix `1 - N` forces the
+- `SmallX.apply_comm_of_isHermitian_one_sub`: a Hermitian S-matrix `1 - N` forces the
   kernel `N` to be symmetric, for a kernel on an arbitrary index type.
 - `SmallX.IsAdmissible.apply_comm`: an admissible amplitude is symmetric in its endpoints.
 - `SmallX.IsAdmissible.mem_Icc`: the unitarity bound `N x y ∈ [0, 1]`, whose lower half is
@@ -111,12 +111,12 @@ theorem mem_Icc_zero_two_of_posSemidef_one_sub {α : Type*} {N : α → α → �
   rw [of_apply, Real.norm_eq_abs, abs_le] at h
   constructor <;> linarith [h.1, h.2]
 
-/-- A positive-semidefinite S-matrix `1 - N` forces the kernel `N` to be symmetric: `1 - N` is
-Hermitian, hence symmetric over `ℝ`. The kernel may live on an arbitrary index type; no
-structure of the transverse plane enters. -/
-theorem apply_comm_of_posSemidef_one_sub {α : Type*} {N : α → α → ℝ}
-    (hS : (Matrix.of fun x y => 1 - N x y).PosSemidef) (x y : α) : N x y = N y x := by
-  have h := hS.isHermitian.apply x y
+/-- A Hermitian S-matrix `1 - N` forces the kernel `N` to be symmetric: over `ℝ` a Hermitian
+matrix is symmetric. The kernel may live on an arbitrary index type; no structure of the
+transverse plane enters. -/
+theorem apply_comm_of_isHermitian_one_sub {α : Type*} {N : α → α → ℝ}
+    (hS : (Matrix.of fun x y => 1 - N x y).IsHermitian) (x y : α) : N x y = N y x := by
+  have h := hS.apply x y
   simp only [of_apply, star_trivial] at h
   linarith
 
@@ -125,10 +125,10 @@ variable {N : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) → ℝ}
 namespace IsAdmissible
 
 /-- An admissible amplitude is symmetric under exchange of the quark and antiquark positions.
-This needs only the positive semidefiniteness of the S-matrix, not the other admissibility
-conditions (`apply_comm_of_posSemidef_one_sub`). -/
+This needs only that the S-matrix is Hermitian, which its positive semidefiniteness provides;
+the other admissibility conditions do not enter (`apply_comm_of_isHermitian_one_sub`). -/
 theorem apply_comm (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : N x y = N y x :=
-  apply_comm_of_posSemidef_one_sub hN.posSemidef_one_sub x y
+  apply_comm_of_isHermitian_one_sub hN.posSemidef_one_sub.isHermitian x y
 
 /-- An admissible amplitude is non-negative. -/
 theorem nonneg (hN : IsAdmissible N) (x y : EuclideanSpace ℝ (Fin 2)) : 0 ≤ N x y :=
