@@ -307,6 +307,47 @@ lemma Assumptions.weight {f : Pdf ι} (h : Assumptions f) {w : ι → ℝ} (hw :
 
 end Weight
 
+/-! ### Sums of densities
+
+Densities add parton by parton, `(f + g) i x Q2 = f i x Q2 + g i x Q2`, in the pointwise
+additive structure of the function type `Pdf ι`. Both halves of the density assumptions survive
+a sum, and the moments of a sum are the sums of the moments when the moment integrands are
+integrable. -/
+
+section Add
+
+variable {ι : Type} {f g : Pdf ι}
+
+/-- The sum of two parton densities is a parton density. -/
+lemma IsPartonDensity.add (hf : IsPartonDensity f) (hg : IsPartonDensity g) :
+    IsPartonDensity (f + g) where
+  support i x Q2 hx := by
+    simp only [Pi.add_apply, hf.support i x Q2 hx, hg.support i x Q2 hx, add_zero]
+  nonneg i x Q2 hx₀ hx₁ := add_nonneg (hf.nonneg i x Q2 hx₀ hx₁) (hg.nonneg i x Q2 hx₀ hx₁)
+
+/-- The sum of two regular densities is regular. -/
+lemma Regularity.add (hf : Regularity f) (hg : Regularity g) : Regularity (f + g) where
+  measurable i Q2 := by
+    simpa only [Pi.add_def] using (hf.measurable i Q2).add (hg.measurable i Q2)
+  momentIntegrable n i Q2 := by
+    simpa only [Pi.add_def, mul_add] using
+      (hf.momentIntegrable n i Q2).add (hg.momentIntegrable n i Q2)
+
+/-- The sum of two densities satisfying the density assumptions satisfies them. -/
+lemma Assumptions.add (hf : Assumptions f) (hg : Assumptions g) : Assumptions (f + g) :=
+  assumptions_iff.2 ⟨hf.isPartonDensity.add hg.isPartonDensity, hf.regularity.add hg.regularity⟩
+
+/-- A moment of a sum of two densities is the sum of their moments, when both moment integrands
+are integrable on the unit interval. -/
+lemma mellinMoment_add {n : ℕ} {i : ι} {Q2 : ℝ}
+    (hf : MeasureTheory.IntegrableOn (fun x : ℝ => x ^ n * f i x Q2) (Set.Icc 0 1))
+    (hg : MeasureTheory.IntegrableOn (fun x : ℝ => x ^ n * g i x Q2) (Set.Icc 0 1)) :
+    mellinMoment (f + g) n i Q2 = mellinMoment f n i Q2 + mellinMoment g n i Q2 := by
+  rw [mellinMoment, mellinMoment, mellinMoment, ← MeasureTheory.integral_add hf hg]
+  simp only [Pi.add_apply, mul_add]
+
+end Add
+
 end PDF
 end Parton
 end Particles
