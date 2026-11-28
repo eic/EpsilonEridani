@@ -5,9 +5,9 @@ Authors: Joseph Tooby-Smith
 -/
 module
 
-public import Mathlib
 public import Physlib.Relativity.MinkowskiMatrix
 public import Physlib.Mathematics.KroneckerDelta.Basic
+public import Physlib.Mathematics.LeviCivita.Basic
 
 /-!
 # The Levi-Civita symbol
@@ -16,6 +16,10 @@ The rank-4 Levi-Civita symbol in 3+1 dimensions, defined as a generalized Kronec
 delta so that its contraction identities follow from the determinant formula in
 `Physlib.Mathematics.KroneckerDelta.Basic` rather than from case analysis on
 permutations.
+
+The covariant symbol `leviCivita4Int` is Physlib's `leviCivitaSymbol` on `Fin 4`
+(`leviCivita4Int_eq_leviCivitaSymbol`); its relation to the volume form of Minkowski space is in
+`EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita.VolumeForm`.
 -/
 
 @[expose] public section
@@ -37,19 +41,38 @@ generalized Kronecker delta are equivalent abstractions for capturing permutatio
 abbrev leviCivita4Int (μ ν ρ σ : Fin 4) : ℤ :=
   generalizedKroneckerDelta ![μ, ν, ρ, σ] id
 
-/-- The Minkowski index corresponding to `i : Fin 4`: `0` is the time index and
-`1, 2, 3` are the spatial indices. -/
-def fin4ToMinkowskiIdx : Fin 4 → Fin 1 ⊕ Fin 3
-  | ⟨0, _⟩ => Sum.inl 0
-  | ⟨n + 1, hn⟩ => Sum.inr ⟨n, by omega⟩
+/-- The covariant symbol is Physlib's Levi-Civita symbol on `Fin 4`: both are, by definition,
+`generalizedKroneckerDelta ![μ, ν, ρ, σ] id`. -/
+lemma leviCivita4Int_eq_leviCivitaSymbol (μ ν ρ σ : Fin 4) :
+    leviCivita4Int μ ν ρ σ = leviCivitaSymbol ![μ, ν, ρ, σ] :=
+  rfl
 
-/-- The diagonal Minkowski metric entry `η i i` as an integer (`1` for `i = 0`, else `-1`). -/
+/-- The diagonal Minkowski metric entry `η i i` as an integer (`1` for `i = 0`, else `-1`), with
+`i : Fin 4` read as the Minkowski index `finSumFinEquiv.symm i : Fin 1 ⊕ Fin 3`: `0` is the time
+index and `1, 2, 3` are the spatial indices. -/
 def metricDiagSignInt (i : Fin 4) : ℤ :=
-  if minkowskiMatrix (fin4ToMinkowskiIdx i) (fin4ToMinkowskiIdx i) = (1 : ℝ) then 1 else -1
+  if minkowskiMatrix ((finSumFinEquiv (m := 1) (n := 3)).symm i)
+      ((finSumFinEquiv (m := 1) (n := 3)).symm i) = (1 : ℝ) then 1 else -1
 
 lemma metricDiagSignInt_eq_if_zero (i : Fin 4) :
     metricDiagSignInt i = if i.1 = 0 then 1 else -1 := by
-  fin_cases i <;> simp [metricDiagSignInt, fin4ToMinkowskiIdx] <;> norm_num
+  unfold metricDiagSignInt
+  rcases h : (finSumFinEquiv (m := 1) (n := 3)).symm i with j | j
+  · -- The time index: `finSumFinEquiv.symm i = Sum.inl 0`, so `i = 0` and `η 00 = 1`.
+    have hj : j = 0 := Fin.fin_one_eq_zero j
+    have hi : i.1 = 0 := by
+      have h' := (Equiv.symm_apply_eq (e := finSumFinEquiv (m := 1) (n := 3))).mp h
+      rw [h', hj, finSumFinEquiv_apply_left, Fin.val_castAdd, Fin.val_zero]
+    rw [hj, minkowskiMatrix.inl_0_inl_0, hi]
+    norm_num
+  · -- A spatial index: `finSumFinEquiv.symm i = Sum.inr j`, so `i ≠ 0` and `η jj = -1`.
+    have hi : i.1 = 1 + j.1 := by
+      have h' := (Equiv.symm_apply_eq (e := finSumFinEquiv (m := 1) (n := 3))).mp h
+      rw [h', finSumFinEquiv_apply_right, Fin.val_natAdd]
+    rw [minkowskiMatrix.inr_i_inr_i]
+    have hinz : i.1 ≠ 0 := by omega
+    have hm1 : (-1 : ℝ) ≠ 1 := by norm_num
+    simp [hinz, hm1]
 
 /-- The rank-4 contravariant Levi-Civita symbol in 3+1 dimensions.
 With signature `(+, -, -, -)`, each index raise contributes a diagonal metric factor,

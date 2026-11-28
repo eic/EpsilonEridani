@@ -5,6 +5,7 @@ Authors: Wouter Deconinck
 -/
 module
 
+public import EpsilonEridani.Mathematics.LinearAlgebra.Alternating.BilinMap
 public import EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
@@ -37,10 +38,15 @@ declaration order, the file contains:
 * in at least two spatial dimensions, the existence of two vectors on the mass shell with
   prescribed energies above the mass and a prescribed angle between their spatial parts
   (`exists_massShell_pair_angle_eq`);
-* the symmetry of the Minkowski product as a bilinear form
-  (`isSymm_toBilinForm_minkowskiProduct`), the witness that supplies the `IsRefl` hypothesis of
-  the reflexive-form results about light-cone bases in
-  `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`.
+* the symmetry (`isSymm_toBilinForm_minkowskiProduct`) and nondegeneracy
+  (`nondegenerate_toBilinForm_minkowskiProduct`) of the Minkowski product as a bilinear form, the
+  witnesses that supply the `IsRefl` and `Nondegenerate` hypotheses of the results about
+  light-cone bases in `EpsilonEridani.Mathematics.LinearAlgebra.BilinearForm.LightConeBasis`;
+* the components `(E u)^μ = η^{μμ} F(u, e_μ)` of a bilinear form `F` with its second index raised
+  by the Minkowski metric (`LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply`),
+  and in particular of an alternating map with all but two arguments fixed
+  (`AlternatingMap.bilinMapRaise_minkowskiProduct_apply`,
+  `AlternatingMap.minkowskiProduct_bilinMapRaise`).
 -/
 
 public section
@@ -156,4 +162,55 @@ theorem isSymm_toBilinForm_minkowskiProduct {d : ℕ} :
     (minkowskiProduct (d := d)).toBilinForm.IsSymm :=
   ⟨minkowskiProduct_symm⟩
 
+/-- The Minkowski product is a nondegenerate bilinear form: a vector orthogonal to every vector
+is zero. -/
+theorem nondegenerate_toBilinForm_minkowskiProduct {d : ℕ} :
+    (minkowskiProduct (d := d)).toBilinForm.Nondegenerate :=
+  (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+    isSymm_toBilinForm_minkowskiProduct.isRefl).2 fun p hp =>
+      (minkowskiProduct_eq_zero_forall_iff p).1 hp
+
 end EpsilonEridani
+
+namespace LinearMap.BilinForm
+
+open Lorentz.Vector EpsilonEridani
+open scoped Lorentz.Vector
+
+/-- A bilinear form `F` with its second index raised by the Minkowski metric, in components: the
+endomorphism `E` with `⟪E u, v⟫ₘ = F u v` has `(E u)^μ = η^{μμ} F(u, e_μ)`. -/
+theorem symmCompOfNondegenerate_minkowskiProduct_apply {d : ℕ}
+    (F : LinearMap.BilinForm ℝ (Lorentz.Vector d)) (u : Lorentz.Vector d) (μ : Fin 1 ⊕ Fin d) :
+    F.symmCompOfNondegenerate (minkowskiProduct (d := d)).toBilinForm
+        nondegenerate_toBilinForm_minkowskiProduct u μ =
+      minkowskiMatrix μ μ * F u (basis μ) := by
+  have h := symmCompOfNondegenerate_left_apply F
+    nondegenerate_toBilinForm_minkowskiProduct (basis μ) u
+  rw [ContinuousLinearMap.toBilinForm_apply, minkowskiProduct_basis_right] at h
+  rw [← h, ← _root_.mul_assoc, minkowskiMatrix.η_apply_mul_η_apply_diag, one_mul]
+
+end LinearMap.BilinForm
+
+namespace AlternatingMap
+
+open Lorentz.Vector EpsilonEridani
+open scoped Lorentz.Vector
+
+/-- The characteristic property of `f.bilinMapRaise m` raised by the Minkowski metric, stated with
+the Minkowski product: `⟪E u, v⟫ₘ = f.bilinMap m u v`. -/
+theorem minkowskiProduct_bilinMapRaise {d n : ℕ} (f : Lorentz.Vector d [⋀^Fin (n + 2)]→ₗ[ℝ] ℝ)
+    (m : Fin n → Lorentz.Vector d) (u v : Lorentz.Vector d) :
+    ⟪f.bilinMapRaise m nondegenerate_toBilinForm_minkowskiProduct u, v⟫ₘ = f.bilinMap m u v := by
+  rw [← ContinuousLinearMap.toBilinForm_apply, bilinForm_bilinMapRaise_apply]
+
+/-- The components of `f.bilinMapRaise m` raised by the Minkowski metric:
+`(E u)^μ = η^{μμ} f(u, e_μ, m 0, …, m (n - 1))`. -/
+theorem bilinMapRaise_minkowskiProduct_apply {d n : ℕ}
+    (f : Lorentz.Vector d [⋀^Fin (n + 2)]→ₗ[ℝ] ℝ) (m : Fin n → Lorentz.Vector d)
+    (u : Lorentz.Vector d) (μ : Fin 1 ⊕ Fin d) :
+    f.bilinMapRaise m nondegenerate_toBilinForm_minkowskiProduct u μ =
+      minkowskiMatrix μ μ * f (Matrix.vecCons u (Matrix.vecCons (basis μ) m)) := by
+  rw [bilinMapRaise_def, LinearMap.BilinForm.symmCompOfNondegenerate_minkowskiProduct_apply,
+    bilinMap_apply]
+
+end AlternatingMap

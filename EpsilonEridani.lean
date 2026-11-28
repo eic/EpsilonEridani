@@ -136,4 +136,4 @@ import EpsilonEridani.Relativity.LorentzGroup.Restricted.FromBoostRotationExtens
 import EpsilonEridani.Relativity.SL2C.BasicExtensions
 import EpsilonEridani.Relativity.Tensors.LeviCivita.ContractionsExtensions
 import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.BasicExtensions
-import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita
+import EpsilonEridani.Relativity.Tensors.RealTensor.Metrics.LeviCivita.Basic
