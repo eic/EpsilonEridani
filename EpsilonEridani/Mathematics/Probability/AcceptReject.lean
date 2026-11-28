@@ -58,6 +58,8 @@ what lets the results below carry no sign hypothesis on `f` or `g`.
   law is not `f` normalised; no sign hypothesis on the proposal is needed. The second set
   hypothesis cannot be dropped: for `f = 2 * g` and `c = 1` the bound fails wherever `g` is
   positive, every proposal is accepted, and the accepted law is nevertheless `f` normalised.
+* `AcceptReject.isProbabilityMeasure_trialLaw_of_lintegral_eq_one`: a proposal density
+  normalised against `μ` gives a probability trial law.
 * `AcceptReject.isProbabilityMeasure_trialLaw_one`: the trial law of a proposal of constant
   density `1` drawn from a probability measure is a probability measure; in particular the
   trial law of the worked examples, whose proposal is uniform on `[0, 1]`, is one.
@@ -128,6 +130,13 @@ instance isProbabilityMeasure_trialLaw (μ : Measure α) (g : α → ℝ)
     IsProbabilityMeasure (trialLaw μ g) := by
   rw [trialLaw_def]
   infer_instance
+
+/-- A proposal density `g` normalised against `μ` gives a probability trial law. -/
+theorem isProbabilityMeasure_trialLaw_of_lintegral_eq_one {μ : Measure α} {g : α → ℝ}
+    (hg : ∫⁻ x, ENNReal.ofReal (g x) ∂μ = 1) : IsProbabilityMeasure (trialLaw μ g) :=
+  have : IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (g x)) :=
+    ⟨by rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, hg]⟩
+  inferInstance
 
 /-- The trial law of a proposal of constant density `1` drawn from a probability measure is a
 probability measure: the proposal law is the measure itself. In particular the trial law of the
@@ -239,10 +248,7 @@ theorem acceptedLaw_eq_smul_withDensity_min (hc : 0 < c) (hf : Measurable f) (hg
       (ENNReal.ofReal c)⁻¹ = (∫⁻ x, ENNReal.ofReal (min (f x) (c * g x)) ∂μ)⁻¹ := by
     rw [ENNReal.inv_div (Or.inl ENNReal.ofReal_ne_top) (Or.inl hC₀), div_eq_mul_inv, mul_comm,
       ← mul_assoc, ENNReal.inv_mul_cancel hC₀ ENNReal.ofReal_ne_top, one_mul]
-  -- Mathlib has no `Measure.fst` lemma for scalar multiples, so the marginal is opened to its
-  -- definition `map Prod.fst` to pull the conditioning constant out, then closed again.
-  rw [acceptedLaw_def, ProbabilityTheory.cond, Measure.fst,
-    Measure.map_smul _ measurable_fst.aemeasurable, ← Measure.fst,
+  rw [acceptedLaw_def, ProbabilityTheory.cond, Measure.fst_smul,
     fst_restrict_trialLaw_acceptSet hc hf hg, trialLaw_acceptSet hc hf hg, hden,
     withDensity_smul _ (by fun_prop), smul_smul, hscalar]
 
