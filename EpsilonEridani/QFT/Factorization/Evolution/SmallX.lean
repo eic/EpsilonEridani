@@ -331,10 +331,10 @@ lemma bk_exists_local [CompleteSpace E] (S : SmallXSystem E) (N₀ : E) (Y₀ : 
 
 For the linear system the solution can be written down: the coefficient operator is
 independent of rapidity, so the solution is the operator exponential of `Y - Y₀` times the
-kernel. This is the statement whose DGLAP analogue is left open in
-`EpsilonEridani.QFT.Factorization.Evolution.MomentSpace` (`momentSolution_exists`); it is available
-here because the kernel is a single bounded operator rather than a rapidity-dependent
-multiple of a matrix. -/
+kernel. The DGLAP analogue is `momentEvolution` in
+`EpsilonEridani.QFT.Factorization.Evolution.MomentSpace`, where the coefficient is a
+scale-dependent multiple of a single matrix and the exponent is the integrated coupling times
+that matrix. -/
 
 /-- The BFKL evolution operator from rapidity `Y₀` to rapidity `Y`: the exponential of the
 kernel. -/
