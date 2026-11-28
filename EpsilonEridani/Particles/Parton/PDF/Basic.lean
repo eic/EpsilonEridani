@@ -35,6 +35,13 @@ abbrev Pdf (Flavor : Type) : Type := Flavor → ℝ → ℝ → ℝ
 def mellinMoment (f : Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) : ℝ :=
   ∫ x in Set.Icc (0 : ℝ) 1, x ^ n * f i x Q2
 
+/-- The zeroth Mellin moment is the integral of the density over the physical support. Not a
+`simp` lemma: `mellinMoment` stays folded under `simp`, as in `mellinMoment_comap` and
+`mellinMoment_weight`. -/
+lemma mellinMoment_zero_eq_integral (f : Pdf Flavor) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment f 0 i Q2 = ∫ x in Set.Icc (0 : ℝ) 1, f i x Q2 := by
+  simp only [mellinMoment, pow_zero, one_mul]
+
 /-- Structural assumptions for a collinear PDF object.
 
 The `nonneg` field is derivable, not fundamental. Positivity of a leading-twist parton density
@@ -142,6 +149,19 @@ lemma assumptions_iff {f : Pdf Flavor} :
       nonneg := h.1.nonneg
       measurable := h.2.measurable
       momentIntegrable := h.2.momentIntegrable }⟩
+
+/-- A density of a regular family is integrable: its `n = 0` Mellin-moment integrand is the
+density itself. -/
+lemma Regularity.integrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ) :
+    MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
+  simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
+
+/-- A density of a regular family is integrable on every set, in particular on the physical
+support `[0, 1]`, which is the form in which the regularity of a density feeds the
+integrability statements of the structure-function layer. -/
+lemma Regularity.integrableOn {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ)
+    {s : Set ℝ} : MeasureTheory.IntegrableOn (fun x : ℝ => f i x Q2) s :=
+  (h.integrable i Q2).integrableOn
 
 /-- Sum-rule assumptions used by the PDF interfaces. -/
 structure SumRuleAssumptions [Fintype Flavor] (f : Pdf Flavor) : Type where
@@ -306,6 +326,26 @@ lemma Assumptions.weight {f : Pdf ι} (h : Assumptions f) {w : ι → ℝ} (hw :
   assumptions_iff.2 ⟨h.isPartonDensity.weight hw, h.regularity.weight w⟩
 
 end Weight
+
+/-! ### Domination by a regular density
+
+A polarized distribution such as a helicity or a transversity density is not a `Pdf` in the
+probabilistic sense, but positivity bounds it in absolute value by the unpolarized density. Such a
+bound transfers the analytic half of the assumptions from the unpolarized density to the
+polarized one, leaving only measurability to supply. -/
+
+/-- A measurable distribution bounded in absolute value by a regular density is regular: every
+Mellin-moment integrand is dominated by the corresponding integrand of the density. -/
+lemma Regularity.of_abs_le {f g : Pdf Flavor} (hf : Regularity f)
+    (hm : ∀ i Q2, MeasureTheory.AEStronglyMeasurable (fun x : ℝ => g i x Q2))
+    (hle : ∀ i x Q2, |g i x Q2| ≤ f i x Q2) : Regularity g where
+  measurable := hm
+  momentIntegrable n i Q2 := by
+    refine (hf.momentIntegrable n i Q2).mono
+      ((continuous_pow n).aestronglyMeasurable.mul (hm i Q2)) (Filter.Eventually.of_forall
+        fun x => ?_)
+    simp only [norm_mul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_left ((hle i x Q2).trans (le_abs_self _)) (abs_nonneg _)
 
 end PDF
 end Parton

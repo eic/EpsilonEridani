@@ -77,10 +77,13 @@ time-reversal-invariant specialisation.
 
 - `EpsilonEridani.Particles.Parton.PDF.f1_nonneg`
 - `EpsilonEridani.Particles.Parton.PDF.abs_g1_le_f1`
+- `EpsilonEridani.Particles.Parton.PDF.g1_eq_zero_of_f1_eq_zero`
 - `EpsilonEridani.Particles.Parton.PDF.soffer_bound`
 - `EpsilonEridani.Particles.Parton.PDF.pdfOfSpinDensity_nonneg`
 - `EpsilonEridani.Particles.Parton.PDF.assumptions_pdfOfSpinDensity`
+- `EpsilonEridani.Particles.Parton.PDF.SpinDensityAssumptions.comap`
 - `EpsilonEridani.Particles.Parton.PDF.spinDensityAssumptions_iff_assumptions`
+- `EpsilonEridani.Particles.Parton.PDF.regularity_helicityPdfOfSpinDensity`
 
 -/
 
@@ -189,6 +192,13 @@ theorem abs_g1_le_f1 (ρ : SpinDensity) : |g1 ρ| ≤ f1 ρ := by
   rw [abs_le]
   exact ⟨by linarith, by linarith⟩
 
+/-- The helicity distribution vanishes wherever the unpolarized one does: helicity dominance
+`|g₁| ≤ f₁` squeezes it to zero, at fixed `(x, Q²)`. -/
+theorem g1_eq_zero_of_f1_eq_zero (ρ : SpinDensity) (h : f1 ρ = 0) : g1 ρ = 0 := by
+  have hle := abs_g1_le_f1 ρ
+  rw [h] at hle
+  exact abs_nonpos_iff.mp hle
+
 /-- The positive-semidefiniteness content of the Soffer bound, before any discrete symmetry is
 used: twice the double-helicity-flip entry is bounded by the sum of the two aligned diagonal
 entries. This is `Matrix.PosSemidef.two_mul_abs_apply_le` at the indices `idxPP`, `idxMM`. -/
@@ -250,16 +260,55 @@ remaining, purely structural, fields.
 def pdfOfSpinDensity (ρ : Flavor → ℝ → ℝ → SpinDensity) : Pdf Flavor :=
   fun i x Q2 => f1 (ρ i x Q2)
 
+@[simp]
+lemma pdfOfSpinDensity_apply (ρ : Flavor → ℝ → ℝ → SpinDensity) (i : Flavor) (x Q2 : ℝ) :
+    pdfOfSpinDensity ρ i x Q2 = f1 (ρ i x Q2) :=
+  rfl
+
+/-- Restricting the unpolarized density of a spin-density family along a map of parton indices
+gives the unpolarized density of the restricted family; compare `SpinDensityAssumptions.comap`. -/
+@[simp]
+lemma comap_pdfOfSpinDensity {κ : Type} (σ : κ → Flavor) (ρ : Flavor → ℝ → ℝ → SpinDensity) :
+    comap σ (pdfOfSpinDensity ρ) = pdfOfSpinDensity fun k => ρ (σ k) :=
+  rfl
+
 /-- The helicity distribution `g₁` induced by a family of spin-density matrices, as a
 collinear distribution with the same index conventions as `Pdf`. It is not itself a `Pdf`
 in the probabilistic sense: it is not nonnegative. -/
 def helicityPdfOfSpinDensity (ρ : Flavor → ℝ → ℝ → SpinDensity) : Pdf Flavor :=
   fun i x Q2 => g1 (ρ i x Q2)
 
+@[simp]
+lemma helicityPdfOfSpinDensity_apply (ρ : Flavor → ℝ → ℝ → SpinDensity) (i : Flavor) (x Q2 : ℝ) :
+    helicityPdfOfSpinDensity ρ i x Q2 = g1 (ρ i x Q2) :=
+  rfl
+
+/-- Restricting the helicity distribution of a spin-density family along a map of parton indices
+gives the helicity distribution of the restricted family; compare
+`SpinDensityAssumptions.comap`. -/
+@[simp]
+lemma comap_helicityPdfOfSpinDensity {κ : Type} (σ : κ → Flavor)
+    (ρ : Flavor → ℝ → ℝ → SpinDensity) :
+    comap σ (helicityPdfOfSpinDensity ρ) = helicityPdfOfSpinDensity fun k => ρ (σ k) :=
+  rfl
+
 /-- The transversity distribution `h₁` induced by a family of spin-density matrices, as a
 collinear distribution with the same index conventions as `Pdf`. -/
 def transversityPdfOfSpinDensity (ρ : Flavor → ℝ → ℝ → SpinDensity) : Pdf Flavor :=
   fun i x Q2 => h1 (ρ i x Q2)
+
+@[simp]
+lemma transversityPdfOfSpinDensity_apply (ρ : Flavor → ℝ → ℝ → SpinDensity) (i : Flavor)
+    (x Q2 : ℝ) : transversityPdfOfSpinDensity ρ i x Q2 = h1 (ρ i x Q2) :=
+  rfl
+
+/-- Restricting the transversity distribution of a spin-density family along a map of parton
+indices gives the transversity distribution of the restricted family. -/
+@[simp]
+lemma comap_transversityPdfOfSpinDensity {κ : Type} (σ : κ → Flavor)
+    (ρ : Flavor → ℝ → ℝ → SpinDensity) :
+    comap σ (transversityPdfOfSpinDensity ρ) = transversityPdfOfSpinDensity fun k => ρ (σ k) :=
+  rfl
 
 /-- **Positivity of an induced PDF is a theorem, not an assumption.** Compare the `nonneg`
 field of `PDF.Assumptions`, which posits it. Note that no restriction to `x ∈ [0, 1]` is
@@ -291,6 +340,15 @@ structure SpinDensityAssumptions (ρ : Flavor → ℝ → ℝ → SpinDensity) :
   momentIntegrable : ∀ n i Q2,
     MeasureTheory.Integrable (fun x : ℝ => x ^ n * f1 (ρ i x Q2))
 
+/-- Restricting a spin-density family along a map of parton indices preserves the structural
+assumptions; compare `PDF.Assumptions.comap`. -/
+lemma SpinDensityAssumptions.comap {κ : Type} {ρ : Flavor → ℝ → ℝ → SpinDensity}
+    (h : SpinDensityAssumptions ρ) (σ : κ → Flavor) :
+    SpinDensityAssumptions fun k => ρ (σ k) where
+  support k x Q2 hx := h.support (σ k) x Q2 hx
+  measurable k Q2 := h.measurable (σ k) Q2
+  momentIntegrable n k Q2 := h.momentIntegrable n (σ k) Q2
+
 /-- A family of spin-density matrices satisfying the structural assumptions induces a
 collinear PDF satisfying the full `PDF.Assumptions` bundle, with the `nonneg` field
 **discharged** by `pdfOfSpinDensity_nonneg` rather than assumed. -/
@@ -315,6 +373,18 @@ lemma spinDensityAssumptions_iff_assumptions (ρ : Flavor → ℝ → ℝ → Sp
   exact { support := fun i x Q2 hx => h.support i x Q2 hx
           measurable := fun i Q2 => h.measurable i Q2
           momentIntegrable := fun n i Q2 => h.momentIntegrable n i Q2 }
+
+/-- The helicity distribution of a spin-density family inherits the analytic half of
+`PDF.Assumptions` from a regular unpolarized density, through helicity dominance `|g₁| ≤ f₁`;
+only its measurability in `x` has to be supplied. For a family satisfying the structural
+assumptions the regularity hypothesis is available as the analytic half of
+`SpinDensityAssumptions` (`spinDensityAssumptions_iff`). -/
+theorem regularity_helicityPdfOfSpinDensity {ρ : Flavor → ℝ → ℝ → SpinDensity}
+    (h : Regularity (pdfOfSpinDensity ρ))
+    (hm : ∀ i Q2, MeasureTheory.AEStronglyMeasurable
+      (fun x : ℝ => helicityPdfOfSpinDensity ρ i x Q2)) :
+    Regularity (helicityPdfOfSpinDensity ρ) :=
+  h.of_abs_le hm (abs_helicityPdf_le_pdf ρ)
 
 /-- The analytic/physical split for a spin-density family. The physical half is the support
 postulate on the induced density — its nonnegativity is a theorem here, not a hypothesis —
