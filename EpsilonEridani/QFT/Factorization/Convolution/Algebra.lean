@@ -36,6 +36,8 @@ The value at `x = 0` is set to zero rather than to the integral: at `x = 0` the 
 - `mellinConv_apply_of_mem`: the defining integral on `(0,1]`.
 - `support_mellinConv_subset`: the convolution is supported in `(0,1]`.
 - `mellinConv_comm`: commutativity, with no hypothesis on `f` or `g`.
+- `IsCollinearKernel.convolveAt_eq_mellinConv_of_mem`: a collinear kernel convolves as `mellinConv`.
+- `mellinConv_congr_of_eqOn`: only the values on `(0,1]` enter the convolution.
 - `mellinConv_smul_left`, `mellinConv_neg_left`, `mellinConv_add_left_apply`,
   `mellinConv_sub_left_apply` and their right-hand versions: bilinearity, additivity requiring
   integrability at the point.
@@ -120,6 +122,24 @@ theorem mellinConv_comm (f g : ℝ → ℝ) : mellinConv f g = mellinConv g f :=
         (setIntegral_congr_fun measurableSet_Icc fun y _ => ?_)) <;>
     simp only [smul_eq_mul, div_div_cancel₀ hx.1.ne'] <;> ring
   · simp only [mellinConv_apply_eq_zero_of_notMem _ _ hx]
+
+/-- A collinear kernel with coefficient function `b` convolves as the Mellin convolution with
+`b` on `(0,1]`. -/
+theorem IsCollinearKernel.convolveAt_eq_mellinConv_of_mem {K : Kernel} {b : ℝ → ℝ}
+    (h : IsCollinearKernel K b) (g : ℝ → ℝ) {x : ℝ} (hx : x ∈ Ioc (0 : ℝ) 1) :
+    convolveAt K g x = mellinConv b g x := by
+  rw [h.convolveAt_eq, ← mellinConv_apply_eq_convolveAt_of_mem _ _ hx, mellinConv_comm]
+
+/-- The Mellin convolution depends only on the values of its arguments on `(0,1]`. -/
+theorem mellinConv_congr_of_eqOn {f f' g g' : ℝ → ℝ} (hf : EqOn f f' (Ioc (0 : ℝ) 1))
+    (hg : EqOn g g' (Ioc (0 : ℝ) 1)) : mellinConv f g = mellinConv f' g' := by
+  funext x
+  by_cases hx : x ∈ Ioc (0 : ℝ) 1
+  · rw [mellinConv_apply_of_mem _ _ hx, mellinConv_apply_of_mem _ _ hx]
+    refine setIntegral_congr_fun measurableSet_Icc fun y hy => ?_
+    have hy0 : 0 < y := hx.1.trans_le hy.1
+    rw [hf ⟨hy0, hy.2⟩, hg ⟨div_pos hx.1 hy0, (div_le_one hy0).mpr hy.1⟩]
+  · rw [mellinConv_apply_eq_zero_of_notMem _ _ hx, mellinConv_apply_eq_zero_of_notMem _ _ hx]
 
 /-- The Mellin convolution is homogeneous in its left argument. No integrability hypothesis is
 needed. -/
@@ -232,6 +252,17 @@ theorem mellinConv_indicator_one_apply_of_mem (e : ℝ → ℝ) {x : ℝ} (hx : 
   have hy0 : 0 < y := hx.1.trans_le hy.1
   have hxy : x / y ∈ Ioc (0 : ℝ) 1 := ⟨div_pos hx.1 hy0, (div_le_one hy0).mpr hy.1⟩
   simp only [indicator_of_mem hxy, Pi.one_apply, mul_one]
+
+/-- The Mellin convolution of the monomial `y ^ (n + 1)` with the density `1` on `(0,1]`:
+`∫_x^1 y ^ n dy = (1 - x ^ (n + 1)) / (n + 1)` for `x ∈ (0,1]`. -/
+theorem mellinConv_pow_succ_indicator_one_apply_of_mem (n : ℕ) {x : ℝ}
+    (hx : x ∈ Ioc (0 : ℝ) 1) :
+    mellinConv (fun y => y ^ (n + 1)) ((Ioc (0 : ℝ) 1).indicator 1) x =
+      (1 - x ^ (n + 1)) / (n + 1) := by
+  have hy : ∀ y ∈ Icc x 1, y ^ (n + 1) / y = y ^ n := fun y hy => by
+    rw [pow_succ, mul_div_cancel_right₀ _ (hx.1.trans_le hy.1).ne']
+  rw [mellinConv_indicator_one_apply_of_mem _ hx, setIntegral_congr_fun measurableSet_Icc hy,
+    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hx.2, integral_pow, one_pow]
 
 /-- **No function is a unit for the Mellin convolution**, not even almost everywhere on `(0,1]`
 and not even against the single density `1` on `(0,1]`: for every `e : ℝ → ℝ`,
