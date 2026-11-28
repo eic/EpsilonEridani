@@ -47,6 +47,11 @@ what makes the second momentum identity hold.
 
 * `pairing_pqq`: `P_qq` is the plus distribution `C_F [(1 + z²)/(1 - z)]₊`.
 * `pairing_pgg`: `P_gg` is `2 C_A [z [1/(1-z)]₊ + (1-z)/z + z (1-z)]` plus its delta term.
+* `intervalIntegrable_of_one_div_z_integrand`: a test function whose `φ z / z` integrand is
+  integrable on `[0, 1]` is integrable there itself.
+* `intervalIntegrable_pqq_regular_mul`, `intervalIntegrable_pgq_regular_mul`,
+  `intervalIntegrable_pqgSinglet_regular_mul`, `intervalIntegrable_pgg_regular_mul`: the test
+  functions against which each regular part is integrable.
 * `moment_pgq`, `moment_pqg`, `moment_pqgSinglet`: the moments in closed form at every real
   index `N` for which the integral converges, as rational functions of `N`.
 * `moment_pqq`, `moment_pgg`: the moments in closed form at natural indices `N ≥ 1` for `P_qq`
@@ -200,6 +205,49 @@ theorem pgg_deltaCoeff_eq_beta0_div_two : (pgg c).deltaCoeff = beta0 c / 2 := by
 
 /-! ### The unregularised forms -/
 
+/-- The regular part `-C_F (1 + z)` of `P_qq` is continuous, hence bounded on `[0, 1]`, so it is
+integrable against every function integrable on `[0, 1]`. -/
+theorem intervalIntegrable_pqq_regular_mul {φ : ℝ → ℝ} (hφ : IntervalIntegrable φ volume 0 1) :
+    IntervalIntegrable (fun z => (pqq c).regular z * φ z) volume 0 1 := by
+  simpa only [pqq_regular] using hφ.continuousOn_mul (g := fun z => -c.cF * (1 + z)) (by fun_prop)
+
+/-- The regular part `C_F (1 + (1 - z)²) / z` of `P_gq` is integrable against every `φ` for which
+`φ z / z` is integrable on `[0, 1]`. -/
+theorem intervalIntegrable_pgq_regular_mul {φ : ℝ → ℝ}
+    (hφ : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
+    IntervalIntegrable (fun z => (pgq c).regular z * φ z) volume 0 1 :=
+  (hφ.continuousOn_mul (g := fun z => c.cF * (1 + (1 - z) ^ 2)) (by fun_prop)).congr
+    fun z _ => by simp only [pgq_regular]; ring
+
+/-- The regular part `2 n_f T_F (z² + (1 - z)²)` of `2 n_f P_qg` is continuous, hence bounded on
+`[0, 1]`, so it is integrable against every function integrable on `[0, 1]`. -/
+theorem intervalIntegrable_pqgSinglet_regular_mul {φ : ℝ → ℝ}
+    (hφ : IntervalIntegrable φ volume 0 1) :
+    IntervalIntegrable (fun z => (pqgSinglet c).regular z * φ z) volume 0 1 := by
+  simpa only [pqgSinglet_regular] using
+    hφ.continuousOn_mul (g := fun z => 2 * c.nF * c.tF * (z ^ 2 + (1 - z) ^ 2)) (by fun_prop)
+
+/-- A test function whose integrand `φ z / z` against the `1 / z` weight is integrable on
+`[0, 1]` is itself integrable there: `φ z` is that integrand times the bounded factor `z`,
+which is nonzero on `(0, 1]`. The kernels with a `1 / z` singularity therefore need no
+separate integrability hypothesis on the test function. -/
+theorem intervalIntegrable_of_one_div_z_integrand {φ : ℝ → ℝ}
+    (hφz : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
+    IntervalIntegrable φ volume 0 1 :=
+  (hφz.continuousOn_mul (g := fun z => z) (continuousOn_id' _)).congr_ae <| by
+    filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (0 : ℝ))] with z hz
+    field_simp [hz]
+
+/-- The regular part `2 C_A (-1 + (1 - z) / z + z (1 - z))` of `P_gg` is integrable against every
+`φ` for which `φ z / z` is integrable on `[0, 1]`. -/
+theorem intervalIntegrable_pgg_regular_mul {φ : ℝ → ℝ}
+    (hφz : IntervalIntegrable (fun z => φ z / z) volume 0 1) :
+    IntervalIntegrable (fun z => (pgg c).regular z * φ z) volume 0 1 :=
+  have hφ : IntervalIntegrable φ volume 0 1 := intervalIntegrable_of_one_div_z_integrand hφz
+  ((hφ.continuousOn_mul (g := fun z => 2 * c.cA * (-1 + z * (1 - z))) (by fun_prop)).add
+    (hφz.continuousOn_mul (g := fun z => 2 * c.cA * (1 - z)) (by fun_prop))).congr
+    fun z _ => by simp only [pgg_regular]; ring
+
 /-- **`P_qq` is `C_F [(1 + z²)/(1 - z)]₊`.** The normal form of `P_qq` pairs with a test
 function `φ` as the plus functional of `C_F (1 + z²)/(1 - z)`, for every `φ` whose pairing with
 `[1/(1-z)]₊` converges; such a `φ` is integrable on `[0, 1]` by
@@ -208,8 +256,7 @@ theorem pairing_pqq {φ : ℝ → ℝ}
     (hφ₁ : IntervalIntegrable (fun z => (1 - z)⁻¹ * (φ z - φ 1)) volume 0 1) :
     (pqq c).pairing φ = c.cF * plusFunctional (fun z => (1 + z ^ 2) / (1 - z)) φ := by
   have hφ := intervalIntegrable_of_plusOneMinus_integrand hφ₁
-  have hrφ : IntervalIntegrable (fun z => (pqq c).regular z * φ z) volume 0 1 := by
-    simpa only [pqq_regular] using hφ.continuousOn_mul (g := fun z => -c.cF * (1 + z)) (by fun_prop)
+  have hrφ := intervalIntegrable_pqq_regular_mul c hφ
   have hr : IntervalIntegrable (pqq c).regular volume 0 1 :=
     (by fun_prop : Continuous fun z : ℝ => -c.cF * (1 + z)).intervalIntegrable 0 1
   -- Off `z = 1`, `2 C_F / (1 - z) - C_F (1 + z) = C_F (1 + z²)/(1 - z)`.

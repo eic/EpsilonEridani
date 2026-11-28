@@ -193,6 +193,14 @@ theorem pairing_pow (P : KernelForm) (n : ℕ) :
   simp only [pairing_def, plusOneMinus_pow, one_pow, mul_one]
   ring
 
+/-- **The natural moments of the regular part.** `∫₀¹ r z z ^ n dz` is the moment of the kernel
+at `n + 1` with the plus part `-p H_n` and the delta part `d` removed. -/
+theorem integral_regular_mul_pow (P : KernelForm) (n : ℕ) :
+    ∫ z in (0 : ℝ)..1, P.regular z * z ^ n =
+      P.moment (n + 1) + P.plusCoeff * harmonic n - P.deltaCoeff := by
+  rw [moment_natCast_add_one, pairing_pow]
+  ring
+
 /-- **A kernel with an integrable regular part is a plus distribution plus a delta term.** If the
 regular part `r` and `r φ` are integrable on `[0, 1]` and the pairing of `φ` with
 `[1 / (1 - z)]₊` converges, then
