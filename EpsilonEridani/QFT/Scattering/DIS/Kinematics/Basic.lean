@@ -11,8 +11,8 @@ public import Mathlib
 # Deep Inelastic Scattering Kinematics
 
 This module introduces the abstract bilinear form `Bilin` used to evaluate Lorentz-invariant
-scalar products, with its symmetric square expansions, and a minimal kinematic record with the
-canonical DIS invariants.
+scalar products, with its symmetric square expansions, its rescaling and flip identities, and a
+minimal kinematic record with the canonical DIS invariants.
 
 Since `Bilin V` is an abbreviation for `LinearMap.BilinForm ℝ V`, the `LinearMap.BilinForm` API
 applies to it by dot notation; for instance, rank-one forms `(v, w) ↦ g a v * g b w` are
@@ -56,6 +56,34 @@ lemma apply_eq_zero_of_apply_eq_self_of_apply_eq_neg {W : Bilin V} {f : V →ₗ
     W v u = 0 := by
   rw [hfv, hfu, map_neg] at hf
   linarith
+
+/-- Rescaling `v` by `√(g u u / g v v)` gives it the norm of `u`, when that ratio is
+non-negative. -/
+lemma apply_smul_sqrt_div_self (g : Bilin V) {u v : V} (hv : g v v ≠ 0)
+    (h : 0 ≤ g u u / g v v) :
+    g (√(g u u / g v v) • v) (√(g u u / g v v) • v) = g u u := by
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [← mul_assoc, Real.mul_self_sqrt h, div_mul_cancel₀ _ hv]
+
+/-- Exchanging the slots of a symmetric form plus a multiple of an alternating form reverses
+only the alternating term. -/
+lemma flip_add_smul_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt) (c : ℝ) :
+    (S + c • A).flip = S - c • A :=
+  LinearMap.ext₂ fun v w => by simp [hS.eq w v, ← hA.neg_eq v w, sub_eq_add_neg]
+
+/-- The symmetric part of a symmetric form plus a multiple of an alternating form is the
+symmetric form. -/
+lemma inv_two_smul_add_flip_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt)
+    (c : ℝ) : (2 : ℝ)⁻¹ • (S + c • A + (S + c • A).flip) = S := by
+  rw [flip_add_smul_of_isSymm_of_isAlt hS hA]
+  module
+
+/-- The antisymmetric part of a symmetric form plus a multiple of an alternating form is the
+alternating term. -/
+lemma inv_two_smul_sub_flip_of_isSymm_of_isAlt {S A : Bilin V} (hS : S.IsSymm) (hA : A.IsAlt)
+    (c : ℝ) : (2 : ℝ)⁻¹ • (S + c • A - (S + c • A).flip) = c • A := by
+  rw [flip_add_smul_of_isSymm_of_isAlt hS hA]
+  module
 
 end Bilin
 

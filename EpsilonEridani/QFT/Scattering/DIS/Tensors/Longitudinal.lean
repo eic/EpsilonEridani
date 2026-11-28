@@ -224,18 +224,6 @@ The results below contract a decomposed hadronic tensor into that direction.
 
 -/
 
-/-- The transverse projector `-g + q ⊗ q / q²` acts as minus the identity on the transverse
-hadron momentum, because `p_T` is orthogonal to `q`. -/
-lemma transverseMetric_pTransverse_self (g : Bilin V) (K : DisKinematics V)
-    (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) :
-    transverseMetric g K (pTransverse g K) (pTransverse g K)
-      = - g (pTransverse g K) (pTransverse g K) := by
-  have hqpT : g K.q (pTransverse g K) = 0 := by
-    rw [hSymm.eq K.q (pTransverse g K)]
-    exact pTransverse_orthogonal_q g K hQ2
-  rw [transverseMetric_apply, hqpT]
-  ring
-
 /-- The `g`-norm of the transverse hadron momentum, in division-free form:
 `q² (p_T · p_T) = q² M² - (p·q)²`. -/
 lemma q_sq_mul_pTransverse_self (g : Bilin V) (K : DisKinematics V)
@@ -264,17 +252,6 @@ lemma two_xBj_mul_pq (g : Bilin V) (K : DisKinematics V) (hpq : g K.p K.q ≠ 0)
     rw [div_eq_mul_inv, mul_assoc, inv_mul_cancel₀ h2P, mul_one]
   unfold Kinematics.DisKinematics.xBj
   linear_combination hcancel
-
-/-- Value of a decomposed hadronic tensor on the longitudinal direction. -/
-lemma apply_pTransverse_self (g : Bilin V) (K : DisKinematics V) (W : Bilin V)
-    (hSymm : g.IsSymm) (hQ2 : g K.q K.q ≠ 0) (F1 F2c : ℝ)
-    (hW : IsF1F2Decomposition g K W F1 F2c) :
-    W (pTransverse g K) (pTransverse g K)
-      = g (pTransverse g K) (pTransverse g K)
-        * (F2c * g (pTransverse g K) (pTransverse g K) - F1) := by
-  rw [hW (pTransverse g K) (pTransverse g K),
-    transverseMetric_pTransverse_self g K hSymm hQ2]
-  ring
 
 /-- **The longitudinal projection, exactly.** Contracting a decomposed hadronic tensor into
 the longitudinal polarization direction `p_T` gives the longitudinal structure function
