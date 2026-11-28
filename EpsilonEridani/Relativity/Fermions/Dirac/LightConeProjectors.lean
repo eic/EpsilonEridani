@@ -67,7 +67,9 @@ from eliminating the bad components through the constraint equation.
   `γ⁺` commutes with `P₊`; in particular (`LightConeBasis.commute_goodProjector_gamma5`) the
   good/bad split commutes with chirality; `γ⁵` and transverse Clifford multiplication preserve the
   good and the bad spinors (`LightConeBasis.gamma5_apply_mem_range_goodProjector`,
-  `LightConeBasis.gammaMatrix_apply_mem_range_goodProjector_of_mem_transverse`, and duals).
+  `LightConeBasis.gammaMatrix_apply_mem_range_goodProjector_of_mem_transverse`, and duals), as
+  do the chiral projectors (`LightConeBasis.leftChiralProjector_apply_mem_range_goodProjector`,
+  and duals).
 * `LightConeBasis.gammaMatrix_sub_smul_one_apply_eq_zero_iff`: the Dirac equation is equivalent
   to the constraint equation together with the dynamical equation.
 * `LightConeBasis.badProjector_apply_eq_of_gammaMatrix_sub_smul_one_apply_eq_zero`: the
@@ -410,11 +412,13 @@ theorem ker_gammaMatrix_nMinus_eq_range_badProjector :
     L.swap.ker_gammaMatrix_nPlus_eq_range_goodProjector
 
 /-- A spinor is good iff it is annihilated by `γ⁻ = /n₊`. -/
+@[simp high]
 theorem mem_range_goodProjector_iff {ψ : Dirac} :
     ψ ∈ range L.goodProjector ↔ gammaMatrix L.nPlus ψ = 0 := by
   rw [← ker_gammaMatrix_nPlus_eq_range_goodProjector, mem_ker]
 
 /-- A spinor is bad iff it is annihilated by `γ⁺ = /n₋`. -/
+@[simp high]
 theorem mem_range_badProjector_iff {ψ : Dirac} :
     ψ ∈ range L.badProjector ↔ gammaMatrix L.nMinus ψ = 0 := by
   rw [← ker_gammaMatrix_nMinus_eq_range_badProjector, mem_ker]
@@ -569,33 +573,61 @@ theorem badProjector_gammaMatrix_apply_of_mem_transverse {t : Lorentz.Vector}
   simpa only [Module.End.mul_apply] using
     LinearMap.congr_fun (L.commute_badProjector_gammaMatrix_of_mem_transverse ht).eq ψ
 
-/- An endomorphism commuting with a projector preserves its range. -/
-private theorem apply_mem_range_of_commute {P a : Module.End ℂ Dirac} (h : Commute P a)
-    {χ : Dirac} (hχ : χ ∈ range P) : a χ ∈ range P := by
-  obtain ⟨φ, rfl⟩ := hχ
-  exact ⟨a φ, by simpa only [Module.End.mul_apply] using LinearMap.congr_fun h.eq φ⟩
-
 /-- Chirality preserves the good spinors. -/
 theorem gamma5_apply_mem_range_goodProjector {χ : Dirac} (hχ : χ ∈ range L.goodProjector) :
     gamma5 χ ∈ range L.goodProjector :=
-  apply_mem_range_of_commute L.commute_goodProjector_gamma5 hχ
+  L.goodProjector_apply_eq_self_iff.1 <| by
+    rw [goodProjector_gamma5_apply, L.goodProjector_apply_eq_self_iff.2 hχ]
 
 /-- Chirality preserves the bad spinors. -/
 theorem gamma5_apply_mem_range_badProjector {χ : Dirac} (hχ : χ ∈ range L.badProjector) :
     gamma5 χ ∈ range L.badProjector :=
-  apply_mem_range_of_commute L.commute_badProjector_gamma5 hχ
+  L.badProjector_apply_eq_self_iff.1 <| by
+    rw [badProjector_gamma5_apply, L.badProjector_apply_eq_self_iff.2 hχ]
 
 /-- Clifford multiplication by a transverse vector preserves the good spinors. -/
 theorem gammaMatrix_apply_mem_range_goodProjector_of_mem_transverse {t : Lorentz.Vector}
     (ht : t ∈ L.transverse) {χ : Dirac} (hχ : χ ∈ range L.goodProjector) :
     gammaMatrix t χ ∈ range L.goodProjector :=
-  apply_mem_range_of_commute (L.commute_goodProjector_gammaMatrix_of_mem_transverse ht) hχ
+  L.goodProjector_apply_eq_self_iff.1 <| by
+    rw [L.goodProjector_gammaMatrix_apply_of_mem_transverse ht,
+      L.goodProjector_apply_eq_self_iff.2 hχ]
 
 /-- Clifford multiplication by a transverse vector preserves the bad spinors. -/
 theorem gammaMatrix_apply_mem_range_badProjector_of_mem_transverse {t : Lorentz.Vector}
     (ht : t ∈ L.transverse) {χ : Dirac} (hχ : χ ∈ range L.badProjector) :
     gammaMatrix t χ ∈ range L.badProjector :=
-  apply_mem_range_of_commute (L.commute_badProjector_gammaMatrix_of_mem_transverse ht) hχ
+  L.badProjector_apply_eq_self_iff.1 <| by
+    rw [L.badProjector_gammaMatrix_apply_of_mem_transverse ht,
+      L.badProjector_apply_eq_self_iff.2 hχ]
+
+/-- The left chiral projector preserves the good spinors. -/
+theorem leftChiralProjector_apply_mem_range_goodProjector {χ : Dirac}
+    (hχ : χ ∈ range L.goodProjector) : leftChiralProjector χ ∈ range L.goodProjector :=
+  L.goodProjector_apply_eq_self_iff.1 <| by
+    rw [← Module.End.mul_apply, L.commute_goodProjector_leftChiralProjector.eq,
+      Module.End.mul_apply, L.goodProjector_apply_eq_self_iff.2 hχ]
+
+/-- The right chiral projector preserves the good spinors. -/
+theorem rightChiralProjector_apply_mem_range_goodProjector {χ : Dirac}
+    (hχ : χ ∈ range L.goodProjector) : rightChiralProjector χ ∈ range L.goodProjector :=
+  L.goodProjector_apply_eq_self_iff.1 <| by
+    rw [← Module.End.mul_apply, L.commute_goodProjector_rightChiralProjector.eq,
+      Module.End.mul_apply, L.goodProjector_apply_eq_self_iff.2 hχ]
+
+/-- The left chiral projector preserves the bad spinors. -/
+theorem leftChiralProjector_apply_mem_range_badProjector {χ : Dirac}
+    (hχ : χ ∈ range L.badProjector) : leftChiralProjector χ ∈ range L.badProjector :=
+  L.badProjector_apply_eq_self_iff.1 <| by
+    rw [← Module.End.mul_apply, L.commute_badProjector_leftChiralProjector.eq,
+      Module.End.mul_apply, L.badProjector_apply_eq_self_iff.2 hχ]
+
+/-- The right chiral projector preserves the bad spinors. -/
+theorem rightChiralProjector_apply_mem_range_badProjector {χ : Dirac}
+    (hχ : χ ∈ range L.badProjector) : rightChiralProjector χ ∈ range L.badProjector :=
+  L.badProjector_apply_eq_self_iff.1 <| by
+    rw [← Module.End.mul_apply, L.commute_badProjector_rightChiralProjector.eq,
+      Module.End.mul_apply, L.badProjector_apply_eq_self_iff.2 hχ]
 
 /-! ### The Dirac equation in light-cone components -/
 
