@@ -229,6 +229,16 @@ weaker `|re h₁| ≤ f₁`. -/
 theorem norm_transversity_le_f1 : ‖ρ.transversity‖ ≤ ρ.f1 := by
   linarith [ρ.soffer_bound, ρ.abs_deltaQ_le_f1, le_abs_self ρ.deltaQ]
 
+/-- A helicity-amplitude matrix with vanishing unpolarized density has vanishing helicity
+density, by helicity dominance. -/
+lemma deltaQ_eq_zero_of_f1_eq_zero (h : ρ.f1 = 0) : ρ.deltaQ = 0 :=
+  abs_nonpos_iff.mp (h ▸ ρ.abs_deltaQ_le_f1)
+
+/-- A helicity-amplitude matrix with vanishing unpolarized density has vanishing transversity,
+by `norm_transversity_le_f1`. -/
+lemma transversity_eq_zero_of_f1_eq_zero (h : ρ.f1 = 0) : ρ.transversity = 0 :=
+  norm_le_zero_iff.mp (h ▸ ρ.norm_transversity_le_f1)
+
 /-! ### Parity -/
 
 /-- Parity invariance of the helicity-amplitude matrix on the entries that angular-momentum
