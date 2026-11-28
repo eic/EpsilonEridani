@@ -29,15 +29,6 @@ namespace Interference
 
 open Electroweak
 
-/-- Helicity sign convention for right/left polarized beam labels. -/
-def helicitySign (h : Bool) : ℝ :=
-  if h then 1 else -1
-
-lemma helicitySign_sq (h : Bool) : helicitySign h ^ 2 = 1 := by
-  by_cases hh : h
-  · simp [helicitySign, hh]
-  · simp [helicitySign, hh]
-
 /-- Helicity-resolved matrix-element decomposition with EM, weak, and
 `gamma-Z` interference pieces. -/
 structure HelicitySquaredDecomposition where
@@ -112,14 +103,14 @@ lemma canonicalPlus_eq_total
     (x y : ℝ) :
     helicityResolvedTotal (canonicalHelicityModel D) true x y
       = D.photon x y + D.zBoson x y + D.gammaZInterference x y := by
-  simp [helicityResolvedTotal, canonicalHelicityModel, helicitySign]
+  simp [helicityResolvedTotal, canonicalHelicityModel]
 
 lemma canonicalMinus_eq_total
     (D : NeutralCurrentDecomposition)
     (x y : ℝ) :
     helicityResolvedTotal (canonicalHelicityModel D) false x y
       = D.photon x y + D.zBoson x y - D.gammaZInterference x y := by
-  simp [helicityResolvedTotal, canonicalHelicityModel, helicitySign, sub_eq_add_neg]
+  simp [helicityResolvedTotal, canonicalHelicityModel, sub_eq_add_neg]
 
 lemma canonicalIsolationAssumptions
     (D : NeutralCurrentDecomposition) :

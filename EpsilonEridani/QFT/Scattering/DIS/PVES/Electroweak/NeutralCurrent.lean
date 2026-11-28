@@ -92,7 +92,15 @@ def mediatorMassSq (rules : NeutralCurrentFeynmanRules) (m : NeutralMediator) : 
 Every component is `ℝ`-valued.  This is the reason the separate "gamma-Z interference is
 real-valued" contract that `NeutralCurrentFeynmanRules` used to carry is unnecessary: at this
 level of abstraction reality of the interference term is not an assumption but a consequence
-of the target type. -/
+of the target type.
+
+The field names presuppose that the interference term is the whole helicity-odd part and that
+the photon and `Z` terms are helicity-even. For the electroweak neutral-current cross section
+this fails: the interference term at fixed helicity has a helicity-even part and the pure-`Z`
+term a helicity-odd one (`CrossSection.gammaZTerm_true_eq_neg_false_iff` in
+`PVES.CrossSection.NeutralCurrent`). Its instance `CrossSection.neutralCurrentDecomposition`
+therefore reads the fields by helicity parity: `gammaZInterference` is the whole helicity-odd
+part `(σ_R - σ_L) / 2`, not the fixed-helicity interference term `CrossSection.gammaZTerm`. -/
 structure NeutralCurrentDecomposition where
   /-- Pure photon contribution. -/
   photon : ℝ → ℝ → ℝ

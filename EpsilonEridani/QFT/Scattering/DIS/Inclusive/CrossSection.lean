@@ -25,7 +25,11 @@ pure photon exchange) and
 This file defines the bracket (`crossSectionBracket`), the cross section built from it
 (`dSigmaDxDQ2`) and the reduced cross section `σ_r := bracket / Y₊` (`reducedCrossSection`),
 and proves the algebraic facts about the inelasticity dependence on which the extraction of
-structure functions from measured cross sections rests.
+structure functions from measured cross sections rests. The bracket and the cross section are
+linear in the structure functions (`crossSectionBracket_add`, `crossSectionBracket_const_mul`),
+and depend on the sign `s` only through the parity-odd term
+(`crossSectionBracket_eq_sign_zero_sub`), so not at all when `F₃ = 0`
+(`crossSectionBracket_F3_zero`, `dSigmaDxDQ2_F3_zero`).
 
 ## Main results
 
@@ -60,10 +64,11 @@ structure functions from measured cross sections rests.
 `x`, `y`, `Q²` are the invariants of `Kinematics.DisKinematics` and the structure functions are
 the dimensionless ones, with `F₂` in the physical normalisation of `Tensors.Longitudinal`. The
 real parameter `s` is the sign of the parity-odd term: `s = 1` for a positron or antineutrino
-beam and `s = -1` for an electron or neutrino beam. Nothing here constrains `s` to `±1`; most
-results need only `s ≠ 0`, and the domination bound `abs_mul_Yminus_mul_sqrt_le` needs
-`|s| ≤ 1`. The flux factor `K` is an argument, since its propagator content depends on the
-exchanged boson.
+beam and `s = -1` for an electron or neutrino beam; a consumer may put another sign in this
+slot, as `PVES.CrossSection.neutralCurrent` puts the beam helicity there. Nothing here
+constrains `s` to `±1`; most results need only `s ≠ 0`, and the domination bound
+`abs_mul_Yminus_mul_sqrt_le` needs `|s| ≤ 1`. The flux factor `K` is an argument, since its
+propagator content depends on the exchanged boson.
 
 ## References
 
@@ -197,7 +202,8 @@ lemma abs_mul_Yminus_mul_sqrt_le {s : ℝ} (hs : |s| ≤ 1) (y : ℝ) {G : ℝ} 
 /-- The bracket of the inclusive cross section `d²σ/dx dQ²`,
 `2 x y² F₁ + 2 (1 - y - M² x² y² / Q²) F₂ - s Y₋ x F₃`, exact in the target mass `M`, at Bjorken
 variable `x`, virtuality `Q²` and inelasticity `y`. The sign `s` of the parity-odd term is `1`
-for a positron or antineutrino beam and `-1` for an electron or neutrino beam. -/
+for a positron or antineutrino beam and `-1` for an electron or neutrino beam; a consumer may put
+another sign here, as `PVES.CrossSection.neutralCurrent` puts the beam helicity in this slot. -/
 def crossSectionBracket (M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
   2 * x * y ^ 2 * F1 + 2 * (1 - y - M ^ 2 * x ^ 2 * y ^ 2 / Q2) * F2 - s * Yminus y * (x * F3)
 
@@ -210,6 +216,35 @@ lemma crossSectionBracket_def (M s x Q2 y F1 F2 F3 : ℝ) :
 @[simp] lemma crossSectionBracket_zero_inelasticity (M s x Q2 F1 F2 F3 : ℝ) :
     crossSectionBracket M s x Q2 0 F1 F2 F3 = 2 * F2 := by
   simp [crossSectionBracket_def]
+
+/-- The bracket depends on the sign `s` only through its parity-odd term: it is the parity-even
+bracket, at `s = 0` and `F₃ = 0`, minus `s Y₋ x F₃`. -/
+lemma crossSectionBracket_eq_sign_zero_sub (M s x Q2 y F1 F2 F3 : ℝ) :
+    crossSectionBracket M s x Q2 y F1 F2 F3 =
+      crossSectionBracket M 0 x Q2 y F1 F2 0 - s * Yminus y * (x * F3) := by
+  simp only [crossSectionBracket_def]
+  ring
+
+/-- Without a parity-odd structure function the bracket does not depend on the sign `s`: it is
+the parity-even bracket at `s = 0`. -/
+lemma crossSectionBracket_F3_zero (M s x Q2 y F1 F2 : ℝ) :
+    crossSectionBracket M s x Q2 y F1 F2 0 = crossSectionBracket M 0 x Q2 y F1 F2 0 := by
+  rw [crossSectionBracket_eq_sign_zero_sub M s]
+  simp
+
+/-- The bracket is additive in the structure functions. -/
+lemma crossSectionBracket_add (M s x Q2 y F1 F2 F3 G1 G2 G3 : ℝ) :
+    crossSectionBracket M s x Q2 y (F1 + G1) (F2 + G2) (F3 + G3) =
+      crossSectionBracket M s x Q2 y F1 F2 F3 + crossSectionBracket M s x Q2 y G1 G2 G3 := by
+  simp only [crossSectionBracket_def]
+  ring
+
+/-- The bracket is homogeneous in the structure functions. -/
+lemma crossSectionBracket_const_mul (M s x Q2 y c F1 F2 F3 : ℝ) :
+    crossSectionBracket M s x Q2 y (c * F1) (c * F2) (c * F3) =
+      c * crossSectionBracket M s x Q2 y F1 F2 F3 := by
+  simp only [crossSectionBracket_def]
+  ring
 
 /-- **The bracket in terms of `F_L`.** Trading `F₁` for the longitudinal structure function
 `F_L = F₂ - 2 x F₁` gives the familiar `Y₊ F₂ ∓ Y₋ x F₃ - y² F_L` plus the target-mass term
@@ -231,6 +266,24 @@ def dSigmaDxDQ2 (K M s x Q2 y F1 F2 F3 : ℝ) : ℝ :=
 lemma dSigmaDxDQ2_def (K M s x Q2 y F1 F2 F3 : ℝ) :
     dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 = K / (x * Q2) * crossSectionBracket M s x Q2 y F1 F2 F3 :=
   (rfl)
+
+/-- The inclusive cross section is additive in the structure functions. -/
+lemma dSigmaDxDQ2_add (K M s x Q2 y F1 F2 F3 G1 G2 G3 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 y (F1 + G1) (F2 + G2) (F3 + G3) =
+      dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 + dSigmaDxDQ2 K M s x Q2 y G1 G2 G3 := by
+  rw [dSigmaDxDQ2_def, dSigmaDxDQ2_def, dSigmaDxDQ2_def, crossSectionBracket_add, mul_add]
+
+/-- The inclusive cross section is homogeneous in the structure functions. -/
+lemma dSigmaDxDQ2_const_mul (K M s x Q2 y c F1 F2 F3 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 y (c * F1) (c * F2) (c * F3) =
+      c * dSigmaDxDQ2 K M s x Q2 y F1 F2 F3 := by
+  rw [dSigmaDxDQ2_def, dSigmaDxDQ2_def, crossSectionBracket_const_mul, mul_left_comm]
+
+/-- Without a parity-odd structure function the inclusive cross section does not depend on the
+sign `s`: it is the cross section at `s = 0`. -/
+lemma dSigmaDxDQ2_F3_zero (K M s x Q2 y F1 F2 : ℝ) :
+    dSigmaDxDQ2 K M s x Q2 y F1 F2 0 = dSigmaDxDQ2 K M 0 x Q2 y F1 F2 0 := by
+  rw [dSigmaDxDQ2_def, dSigmaDxDQ2_def, crossSectionBracket_F3_zero M s]
 
 /-- **The inclusive cross section in terms of `F_L`.** The bracket's `F_L` form
 (`crossSectionBracket_eq_FL`) scaled by the flux factor, exactly in the target mass. -/
