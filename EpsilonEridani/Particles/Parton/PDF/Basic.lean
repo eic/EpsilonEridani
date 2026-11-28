@@ -35,6 +35,14 @@ abbrev Pdf (Flavor : Type) : Type := Flavor → ℝ → ℝ → ℝ
 def mellinMoment (f : Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) : ℝ :=
   ∫ x in Set.Icc (0 : ℝ) 1, x ^ n * f i x Q2
 
+/-- A Mellin moment is the interval integral of its integrand from `0` to `1`: the closed
+interval of the definition and the half-open one of the interval integral differ by the null set
+`{0}`. -/
+lemma mellinMoment_eq_intervalIntegral (f : Pdf Flavor) (n : ℕ) (i : Flavor) (Q2 : ℝ) :
+    mellinMoment f n i Q2 = ∫ x in (0 : ℝ)..1, x ^ n * f i x Q2 := by
+  rw [mellinMoment, intervalIntegral.integral_of_le zero_le_one,
+    MeasureTheory.integral_Icc_eq_integral_Ioc]
+
 /-- Structural assumptions for a collinear PDF object.
 
 The `nonneg` field is derivable, not fundamental. Positivity of a leading-twist parton density
@@ -132,6 +140,18 @@ integrand. -/
 lemma Regularity.integrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 : ℝ) :
     MeasureTheory.Integrable (fun x : ℝ => f i x Q2) := by
   simpa only [pow_zero, one_mul] using h.momentIntegrable 0 i Q2
+
+/-- Under the analytic half of the assumptions, every Mellin-moment integrand is interval
+integrable, on any interval: the interval form of `Regularity.momentIntegrable`. -/
+lemma Regularity.momentIntervalIntegrable {f : Pdf Flavor} (h : Regularity f) (n : ℕ) (i : Flavor)
+    (Q2 a b : ℝ) : IntervalIntegrable (fun x => x ^ n * f i x Q2) MeasureTheory.volume a b :=
+  (h.momentIntegrable n i Q2).intervalIntegrable
+
+/-- Under the analytic half of the assumptions, every density is interval integrable, on any
+interval: the zeroth case of `Regularity.momentIntervalIntegrable`. -/
+lemma Regularity.intervalIntegrable {f : Pdf Flavor} (h : Regularity f) (i : Flavor) (Q2 a b : ℝ) :
+    IntervalIntegrable (fun x => f i x Q2) MeasureTheory.volume a b := by
+  simpa only [pow_zero, one_mul] using h.momentIntervalIntegrable 0 i Q2 a b
 
 /-- The split is exact: `Assumptions` is the conjunction of the physical and the analytic
 half, with no residue. -/
@@ -306,6 +326,48 @@ lemma Assumptions.weight {f : Pdf ι} (h : Assumptions f) {w : ι → ℝ} (hw :
   assumptions_iff.2 ⟨h.isPartonDensity.weight hw, h.regularity.weight w⟩
 
 end Weight
+
+/-! ### Adding densities
+
+Two densities over the same partons add parton by parton, `(f + g) i x Q2 = f i x Q2 + g i x Q2`.
+Both halves of the density assumptions survive addition, and a moment of the sum is the sum of
+the moments whenever both moment integrands are integrable. A combination of partons such as
+`q_i + qbar_i` is built as a sum of pullbacks. -/
+
+section Add
+
+variable {ι : Type}
+
+/-- When both moment integrands are integrable on the unit interval, the moment of the sum is the
+sum of the moments. -/
+lemma mellinMoment_add {f g : Pdf ι} {n : ℕ} {i : ι} {Q2 : ℝ}
+    (hf : MeasureTheory.IntegrableOn (fun x => x ^ n * f i x Q2) (Set.Icc 0 1))
+    (hg : MeasureTheory.IntegrableOn (fun x => x ^ n * g i x Q2) (Set.Icc 0 1)) :
+    mellinMoment (f + g) n i Q2 = mellinMoment f n i Q2 + mellinMoment g n i Q2 := by
+  simp only [mellinMoment, Pi.add_apply, mul_add]
+  exact MeasureTheory.integral_add hf hg
+
+/-- The sum of two densities satisfying the physical half of the assumptions satisfies it. -/
+lemma IsPartonDensity.add {f g : Pdf ι} (hf : IsPartonDensity f) (hg : IsPartonDensity g) :
+    IsPartonDensity (f + g) where
+  support i x Q2 hx := by
+    simp only [Pi.add_apply, hf.support i x Q2 hx, hg.support i x Q2 hx, add_zero]
+  nonneg i x Q2 hx₀ hx₁ := add_nonneg (hf.nonneg i x Q2 hx₀ hx₁) (hg.nonneg i x Q2 hx₀ hx₁)
+
+/-- The sum of two regular densities is regular. -/
+lemma Regularity.add {f g : Pdf ι} (hf : Regularity f) (hg : Regularity g) :
+    Regularity (f + g) where
+  measurable i Q2 := (hf.measurable i Q2).add (hg.measurable i Q2)
+  momentIntegrable n i Q2 := by
+    simp only [Pi.add_apply, mul_add]
+    exact (hf.momentIntegrable n i Q2).add (hg.momentIntegrable n i Q2)
+
+/-- The sum of two densities satisfying the density assumptions satisfies them. -/
+lemma Assumptions.add {f g : Pdf ι} (hf : Assumptions f) (hg : Assumptions g) :
+    Assumptions (f + g) :=
+  assumptions_iff.2 ⟨hf.isPartonDensity.add hg.isPartonDensity, hf.regularity.add hg.regularity⟩
+
+end Add
 
 end PDF
 end Parton

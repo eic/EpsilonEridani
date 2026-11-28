@@ -39,6 +39,8 @@ only one scale.
 
 * `EpsilonEridani.Particles.Parton.PDF.chargeConj`: the charge-conjugate density.
 * `EpsilonEridani.Particles.Parton.PDF.valenceNumber`: `∫₀¹ (q_i - qbar_i)`.
+* `EpsilonEridani.Particles.Parton.PDF.quarkAddAntiquark`: the charge-conjugation even
+  combination `q_i + qbar_i`, as a density over the flavours.
 
 ## Main statements
 
@@ -57,6 +59,12 @@ only one scale.
   densities on the unit interval at a scale has vanishing valence number there;
   `PDF.valenceNumber_eq_zero_of_chargeConj_eq` is the case of a charge-conjugation invariant
   density.
+* `PDF.valenceNumber_eq_intervalIntegral`: for separately integrable quark and antiquark densities,
+  the valence number is the interval integral of their difference.
+* `PDF.quarkAddAntiquark_chargeConj`: `q_i + qbar_i` is invariant under charge conjugation;
+  `PDF.mellinMoment_quarkAddAntiquark`: its moments are the sums of the quark and antiquark
+  moments, when those integrands are integrable; and `PDF.Assumptions.quarkAddAntiquark` and its
+  companions: it inherits the density assumptions.
 
 ## References
 
@@ -197,6 +205,76 @@ theorem valenceNumber_eq_zero_of_chargeConj_eq {f : Pdf (Species Flavor)} (h : c
     (i : Flavor) (Q2 : ℝ) : valenceNumber f i Q2 = 0 :=
   valenceNumber_eq_zero_of_quark_eq_antiquark fun x _ => by
     simpa using congr_fun₃ h (.antiquark i) x Q2
+
+/-- **The valence number as one integral.** When the quark and the antiquark densities of a
+flavour are separately integrable on the unit interval, its valence number is the interval integral
+of their difference, `∫₀¹ (q_i - qbar_i)`. -/
+theorem valenceNumber_eq_intervalIntegral {f : Pdf (Species Flavor)} {i : Flavor} {Q2 : ℝ}
+    (hq : IntervalIntegrable (fun x => f (.quark i) x Q2) MeasureTheory.volume 0 1)
+    (hqbar : IntervalIntegrable (fun x => f (.antiquark i) x Q2) MeasureTheory.volume 0 1) :
+    valenceNumber f i Q2 = ∫ x in (0 : ℝ)..1, (f (.quark i) x Q2 - f (.antiquark i) x Q2) := by
+  simp only [valenceNumber_def, mellinMoment_eq_intervalIntegral, pow_zero, one_mul]
+  exact (intervalIntegral.integral_sub hq hqbar).symm
+
+/-! ### The quark plus antiquark density
+
+The charge-conjugation even combination `q_i + qbar_i` of a flavour is what a vector current that
+couples to quarks and antiquarks with the same squared charge sees, for instance the leading-order
+`F₂ = x Σᵢ eᵢ² (qᵢ + qbarᵢ)`; the odd combination `q_i - qbar_i` is the valence density.
+-/
+
+/-- The quark plus antiquark density of each flavour, `q_i + qbar_i`, as a density over the
+flavours: the sum of the pullbacks of the quark and of the antiquark densities. -/
+def quarkAddAntiquark (f : Pdf (Species Flavor)) : Pdf Flavor :=
+  comap Species.quark f + comap Species.antiquark f
+
+/-- The quark plus antiquark density is the sum of the pullbacks of the quark and of the
+antiquark densities. -/
+theorem quarkAddAntiquark_eq_comap_add_comap (f : Pdf (Species Flavor)) :
+    quarkAddAntiquark f = comap Species.quark f + comap Species.antiquark f :=
+  (rfl)
+
+@[simp]
+theorem quarkAddAntiquark_apply (f : Pdf (Species Flavor)) (i : Flavor) (x Q2 : ℝ) :
+    quarkAddAntiquark f i x Q2 = f (.quark i) x Q2 + f (.antiquark i) x Q2 :=
+  (rfl)
+
+/-- The quark plus antiquark density is invariant under charge conjugation: a hadron and its
+antiparticle have the same `q_i + qbar_i`. -/
+@[simp]
+theorem quarkAddAntiquark_chargeConj (f : Pdf (Species Flavor)) :
+    quarkAddAntiquark (chargeConj f) = quarkAddAntiquark f := by
+  ext i x Q2
+  simp [add_comm]
+
+/-- When the quark and the antiquark moment integrands are integrable on the unit interval, the
+moment of `q_i + qbar_i` is the sum of the moments of the quark and of the antiquark density. -/
+theorem mellinMoment_quarkAddAntiquark {f : Pdf (Species Flavor)} {n : ℕ} {i : Flavor} {Q2 : ℝ}
+    (hq : MeasureTheory.IntegrableOn (fun x => x ^ n * f (.quark i) x Q2) (Set.Icc 0 1))
+    (hqbar : MeasureTheory.IntegrableOn (fun x => x ^ n * f (.antiquark i) x Q2) (Set.Icc 0 1)) :
+    mellinMoment (quarkAddAntiquark f) n i Q2
+      = mellinMoment f n (.quark i) Q2 + mellinMoment f n (.antiquark i) Q2 := by
+  rw [quarkAddAntiquark_eq_comap_add_comap,
+    mellinMoment_add (f := comap Species.quark f) (g := comap Species.antiquark f) hq hqbar,
+    mellinMoment_comap, mellinMoment_comap]
+
+/-- The quark plus antiquark density of a parton density is a parton density. -/
+theorem IsPartonDensity.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : IsPartonDensity f) :
+    IsPartonDensity (quarkAddAntiquark f) := by
+  rw [quarkAddAntiquark_eq_comap_add_comap]
+  exact (h.comap _).add (h.comap _)
+
+/-- The quark plus antiquark density of a regular density is regular. -/
+theorem Regularity.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Regularity f) :
+    Regularity (quarkAddAntiquark f) := by
+  rw [quarkAddAntiquark_eq_comap_add_comap]
+  exact (h.comap _).add (h.comap _)
+
+/-- The quark plus antiquark density preserves the density assumptions. -/
+theorem Assumptions.quarkAddAntiquark {f : Pdf (Species Flavor)} (h : Assumptions f) :
+    Assumptions (quarkAddAntiquark f) := by
+  rw [quarkAddAntiquark_eq_comap_add_comap]
+  exact (h.comap _).add (h.comap _)
 
 end PDF
 
