@@ -328,20 +328,14 @@ def IsG1G2Decomposition (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinema
     (G : StructureFunctions) (W : Bilin V) : Prop :=
   W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g))
 
-/-- Characteristic property of `IsG1G2Decomposition`: `W` is `fromG1G2` at the values of `G` at
-the kinematic point. -/
-theorem isG1G2Decomposition_iff {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g}
-    {G : StructureFunctions} {W : Bilin V} :
-    IsG1G2Decomposition ε K G W ↔
-      W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) :=
-  Iff.rfl
-
 /-- `fromG1G2` at the values of `g₁`, `g₂` at the kinematic point decomposes with those
 structure functions. -/
 theorem fromG1G2_isDecomposition (ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ) (K : PolarizedKinematics g)
     (G : StructureFunctions) :
     IsG1G2Decomposition ε K G (fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g))) :=
-  isG1G2Decomposition_iff.mpr rfl
+  -- `IsG1G2Decomposition` is by definition this equation, so it holds by reflexivity; the
+  -- bare `rfl` term does not unfold the definition to expose the equation.
+  Eq.refl _
 
 namespace IsG1G2Decomposition
 
@@ -350,8 +344,7 @@ variable {ε : V [⋀^Fin 4]→ₗ[ℝ] ℝ} {K : PolarizedKinematics g} {G : St
 
 /-- A tensor decomposing on `E₁`, `E₂` is `fromG1G2` at the values of `G`. -/
 theorem eq (h : IsG1G2Decomposition ε K G W) :
-    W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) :=
-  isG1G2Decomposition_iff.mp h
+    W = fromG1G2 ε K (G.g1 (K.xBj g) (K.Q2 g)) (G.g2 (K.xBj g) (K.Q2 g)) := h
 
 /-- Pointwise value of a tensor decomposing on `E₁`, `E₂`. -/
 theorem apply (h : IsG1G2Decomposition ε K G W) (v w : V) :

@@ -40,7 +40,7 @@ the two are mutually orthogonal (`apply_longitudinalSpin_transverseSpin_eq_zero`
 
 `Witness.longitudinalPol` and `Witness.transversePol` realise both configurations in
 three-dimensional Minkowski space; `Witness.kWit4` is polarised kinematics on `ℝ⁴` with the
-Minkowski metric `Witness.gWit4`.
+Minkowski metric `Kinematics.Witness.gFour`.
 
 ## References
 
@@ -288,7 +288,7 @@ end PolarizedKinematics
 
 namespace Witness
 
-open Kinematics.Witness (gWit gWit_apply gWit_isSymm)
+open Kinematics.Witness (gWit gWit_apply gWit_isSymm gFour gFour_apply gFour_isSymm)
 
 /-- Witness kinematics in `ℝ¹'²` with the metric `gWit`: a target of unit mass at rest,
 `p = (1, 0, 0)`, struck by a massless lepton moving along the first spatial axis,
@@ -347,27 +347,12 @@ def transversePol : PolarizedKinematics gWit :=
 
 /-! ### A witness in four-dimensional Minkowski space -/
 
-/-- The Minkowski metric `diag(1, -1, -1, -1)` on `ℝ⁴`. -/
-def gWit4 : Bilin (Fin 4 → ℝ) :=
-  Matrix.toBilin' (Matrix.diagonal ![1, -1, -1, -1])
-
-@[simp] lemma gWit4_apply (v w : Fin 4 → ℝ) :
-    gWit4 v w = v 0 * w 0 - v 1 * w 1 - v 2 * w 2 - v 3 * w 3 := by
-  simp only [gWit4, Matrix.toBilin'_apply', dotProduct, Matrix.mulVec_diagonal, Fin.sum_univ_four,
-    Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, one_mul, neg_mul,
-    mul_neg]
-  ring
-
-/-- `gWit4` is symmetric, as a metric must be. -/
-lemma gWit4_isSymm : gWit4.IsSymm :=
-  Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal _)
-
-/-- Witness kinematics on `ℝ⁴` with the metric `gWit4`: a target of unit mass at rest,
+/-- Witness kinematics on `ℝ⁴` with the metric `gFour`: a target of unit mass at rest,
 `p = (1, 0, 0, 0)`, momentum transfer `q = (1, 0, 1, 1)` (so `p·q = 1`, `Q² = 1`) and spin
 `S = (0, 0, 0, 1)`, which has `S·q = -1 ≠ 0`. The lepton line is the placeholder `k = q`,
 `k' = 0` (and `p' = 0`), so this is an algebraic non-degeneracy witness, not a physical
 event. -/
-def kWit4 : PolarizedKinematics gWit4 where
+def kWit4 : PolarizedKinematics gFour where
   p := ![1, 0, 0, 0]
   pPrime := 0
   k := ![1, 0, 1, 1]
@@ -384,13 +369,13 @@ def kWit4 : PolarizedKinematics gWit4 where
 
 @[simp] lemma kWit4_S : kWit4.S = ![0, 0, 0, 1] := (rfl)
 
-@[simp] lemma kWit4_M2 : kWit4.M2 gWit4 = 1 := by simp [DisKinematics.M2_def]
+@[simp] lemma kWit4_M2 : kWit4.M2 gFour = 1 := by simp [DisKinematics.M2_def]
 
-@[simp] lemma kWit4_Q2 : kWit4.Q2 gWit4 = 1 := by simp [DisKinematics.Q2]
+@[simp] lemma kWit4_Q2 : kWit4.Q2 gFour = 1 := by simp [DisKinematics.Q2]
 
-@[simp] lemma kWit4_xBj : kWit4.xBj gWit4 = 1 / 2 := by simp [DisKinematics.xBj]
+@[simp] lemma kWit4_xBj : kWit4.xBj gFour = 1 / 2 := by simp [DisKinematics.xBj]
 
-lemma kWit4_p_q : gWit4 kWit4.p kWit4.q = 1 := by simp
+lemma kWit4_p_q : gFour kWit4.p kWit4.q = 1 := by simp
 
 end Witness
 
