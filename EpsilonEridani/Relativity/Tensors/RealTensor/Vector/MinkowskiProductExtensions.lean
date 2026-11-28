@@ -22,6 +22,13 @@ declaration order, the file contains:
   (`minkowskiProduct_sub_self`), companion to `Lorentz.Vector.minkowskiProduct_add_self`;
 * the length of the spatial part of a vector, `√((p⁰)² - ⟪p, p⟫ₘ)`, which is `√((p⁰)² - m²)` on
   the mass shell `⟪p, p⟫ₘ = m²` (`norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self`);
+* the bound of the virtuality of a vector by the square of its spatial momentum,
+  `-⟪q, q⟫ₘ ≤ ‖q.spatialPart‖²`, which holds in every frame
+  (`neg_minkowskiProduct_self_le_norm_spatialPart_sq`);
+* the momentum transfer in the rest frame of the initial particle: if `p` is at rest with mass
+  `m ≠ 0` and `p'` lies on the same mass shell, the transfer `q = p - p'` of virtuality
+  `Q² = -⟪q, q⟫ₘ` has spatial momentum `‖q.spatialPart‖² = Q² (1 + Q² / (4 m²))`, at least `Q²`
+  (`norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_massShell`);
 * the Minkowski product of the vector `ofTimeAndSpatial x s` with time component `x` and spatial
   part `s` (defined in `EpsilonEridani.Relativity.Tensors.RealTensor.Vector.BasicExtensions`),
   `⟪ofTimeAndSpatial x s, ofTimeAndSpatial x' s'⟫ₘ = x x' - ⟪s, s'⟫`
@@ -65,6 +72,41 @@ this is `√((p⁰)² - m²)`. -/
 lemma norm_spatialPart_eq_sqrt_sq_sub_minkowskiProduct_self {d : ℕ} (p : Vector d) :
     ‖p.spatialPart‖ = √(p.timeComponent ^ 2 - ⟪p, p⟫ₘ) := by
   rw [minkowskiProduct_self_eq_sq_sub, sub_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
+
+/-- The virtuality of a vector is at most the square of its spatial momentum:
+`-⟪q, q⟫ₘ = ‖q.spatialPart‖² - (q⁰)² ≤ ‖q.spatialPart‖²`, in every frame. -/
+lemma neg_minkowskiProduct_self_le_norm_spatialPart_sq {d : ℕ} (q : Vector d) :
+    -⟪q, q⟫ₘ ≤ ‖q.spatialPart‖ ^ 2 := by
+  rw [minkowskiProduct_self_eq_sq_sub]
+  nlinarith [sq_nonneg q.timeComponent]
+
+/-- **The momentum transfer in the rest frame.** If `p` is at rest (`p.spatialPart = 0`) with
+time component `m ≠ 0`, and `p'` lies on the mass shell `⟪p', p'⟫ₘ = m²`, the transfer
+`q = p - p'` of virtuality `Q² = -⟪q, q⟫ₘ` carries the spatial momentum
+`‖q.spatialPart‖² = Q² (1 + Q² / (4 m²))`. -/
+lemma norm_spatialPart_sub_sq_of_spatialPart_eq_zero_of_massShell {d : ℕ}
+    {p p' : Vector d} {m : ℝ} (hm : m ≠ 0) (hp : p.spatialPart = 0) (hp0 : p.timeComponent = m)
+    (hp' : ⟪p', p'⟫ₘ = m ^ 2) :
+    ‖(p - p').spatialPart‖ ^ 2 =
+      -⟪p - p', p - p'⟫ₘ * (1 + -⟪p - p', p - p'⟫ₘ / (4 * m ^ 2)) := by
+  have hpp : ⟪p, p⟫ₘ = m ^ 2 := by
+    simp [minkowskiProduct_self_eq_sq_sub, hp, hp0]
+  have hpp' : ⟪p, p'⟫ₘ = m * p'.timeComponent := by
+    simp [minkowskiProduct_eq_timeComponent_spatialPart, hp, hp0]
+  have hs := minkowskiProduct_self_eq_sq_sub (p - p')
+  have ht : (p - p').timeComponent = m - p'.timeComponent := by
+    simp [hp0]
+  rw [ht] at hs
+  -- the virtuality fixes the energy transfer: `Q² = 2 m (p'⁰ - m)`
+  have hQ : -⟪p - p', p - p'⟫ₘ = 2 * m * (p'.timeComponent - m) := by
+    rw [minkowskiProduct_sub_self, hpp, hpp', hp']
+    ring
+  have h2 : 2 * m * (p'.timeComponent - m) * (2 * m * (p'.timeComponent - m) / (4 * m ^ 2)) =
+      (p'.timeComponent - m) ^ 2 := by
+    field_simp
+    ring
+  rw [hQ, mul_add, mul_one, h2]
+  linear_combination hs + hQ
 
 /-- The Minkowski product of two vectors given by their time components and spatial parts is
 `x x' - ⟪s, s'⟫`. -/
