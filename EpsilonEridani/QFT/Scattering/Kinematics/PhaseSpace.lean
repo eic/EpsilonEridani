@@ -40,10 +40,10 @@ preserve `d^d p`, but its Jacobian `E(Λp) / E(p)` is cancelled exactly by the d
   (`measurePreserving_massShellMap_of_timeComponent_eq_one`), in particular every element of
   Physlib's subgroup `LorentzGroup.Rotations d` (`measurePreserving_massShellMap_rotation`).
 
-This file proves invariance only for these two generating cases. Both keep the energy
-non-negative, so for a finite product of them `massShellMap_mul` writes the map as the
-composite of their maps, and `MeasurePreserving.comp` then gives invariance of the product;
-that consequence is not stated here.
+This file proves invariance only for these two generating cases. Both are orthochronous, so for a
+finite product of them `massShellMap_mul_of_isOrthochronous` writes the map as the composite of
+their maps, and `MeasurePreserving.comp` then gives invariance of the product; that consequence
+is not stated here.
 
 ## References
 
@@ -137,6 +137,28 @@ private theorem boost_neg_boost {a β : ℝ} (q : ℝ) (ha : 0 ≤ a) (hβ : |β
   simp only [massShellMap_boost_single ha] at h
   simpa using h
 
+/-- On the line of transverse mass `√a`, a positive energy strictly exceeds `β q`: the case
+`d = 1`, `m = √a` of `abs_mul_apply_lt_onShellEnergy`. -/
+private theorem mul_lt_sqrt_add_sq {a β : ℝ} (q : ℝ) (ha : 0 ≤ a) (hβ : |β| < 1)
+    (hE : 0 < √(a + q ^ 2)) : β * q < √(a + q ^ 2) := by
+  have h := abs_mul_apply_lt_onShellEnergy hβ √a
+    (p := (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1)))
+    (by rw [onShellEnergy_sqrt_single ha]; exact hE) 0
+  rw [onShellEnergy_sqrt_single ha] at h
+  exact (le_abs_self _).trans_lt (by simpa using h)
+
+/-- Away from `q = 0`, where `√(a + q²)` may fail to be differentiable when `a = 0`, the
+one-dimensional boost `q ↦ γ (q - β √(a + q²))` has derivative `γ (1 - β q / √(a + q²))`. -/
+private theorem hasDerivAt_boost_single {a q : ℝ} (β : ℝ) (ha : 0 ≤ a) (hq : q ≠ 0) :
+    HasDerivAt (fun q => γ β * (q - β * √(a + q ^ 2))) (γ β * (1 - β * (q / √(a + q ^ 2))))
+      q := by
+  have hpos : a + q ^ 2 ≠ 0 := by positivity
+  have hs : HasDerivAt (fun q => √(a + q ^ 2)) (q / √(a + q ^ 2)) q := by
+    convert ((hasDerivAt_pow 2 q).const_add a).sqrt hpos using 1
+    field_simp
+    ring
+  exact ((hasDerivAt_id' q).sub (hs.const_mul β)).const_mul (γ β)
+
 /-- The one-dimensional core of boost invariance: on the line of transverse mass `√a`, the
 measure `dq / (2 √(a + q²))` is invariant under the boost `q ↦ γ (q - β √(a + q²))`. -/
 private theorem map_withDensity_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 1) :
@@ -153,18 +175,9 @@ private theorem map_withDensity_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 
     intro y
     simpa only [neg_neg, hg] using boost_neg_boost y ha hβ'
   have hbij : Function.Bijective g := ⟨hinv.injective, hinv'.surjective⟩
-  -- away from `q = 0`, where `√(a + q²)` may fail to be differentiable when `a = 0`
   have hderiv : ∀ q ∈ ({0}ᶜ : Set ℝ),
-      HasDerivWithinAt g (γ β * (1 - β * (q / √(a + q ^ 2)))) {0}ᶜ q := by
-    intro q hq
-    have hpos : a + q ^ 2 ≠ 0 := by
-      have : q ≠ 0 := Set.mem_compl_singleton_iff.mp hq
-      positivity
-    have hs : HasDerivAt (fun q => √(a + q ^ 2)) (q / √(a + q ^ 2)) q := by
-      convert ((hasDerivAt_pow 2 q).const_add a).sqrt hpos using 1
-      field_simp
-      ring
-    exact (((hasDerivAt_id' q).sub (hs.const_mul β)).const_mul (γ β)).hasDerivWithinAt
+      HasDerivWithinAt g (γ β * (1 - β * (q / √(a + q ^ 2)))) {0}ᶜ q := fun q hq =>
+    (hasDerivAt_boost_single β ha (Set.mem_compl_singleton_iff.mp hq)).hasDerivWithinAt
   have key := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul (f := w)
     (measurableSet_singleton 0).compl (by fun_prop) hderiv hbij.injective.injOn
   rw [Set.image_compl_eq hbij, Set.image_singleton, restrict_compl_singleton,
@@ -175,12 +188,7 @@ private theorem map_withDensity_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 
   filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : ℝ))] with q hq
   have hq : q ≠ 0 := Set.mem_compl_singleton_iff.mp hq
   have hE : 0 < √(a + q ^ 2) := Real.sqrt_pos.2 (by positivity)
-  have hE' : 0 < √(a + q ^ 2) - β * q := by
-    have h := abs_mul_apply_lt_onShellEnergy hβ √a
-      (p := (WithLp.toLp 2 ![q] : EuclideanSpace ℝ (Fin 1)))
-      (by rw [onShellEnergy_sqrt_single ha]; exact hE) 0
-    rw [onShellEnergy_sqrt_single ha] at h
-    exact sub_pos.2 ((le_abs_self _).trans_lt (by simpa using h))
+  have hE' : 0 < √(a + q ^ 2) - β * q := sub_pos.2 (mul_lt_sqrt_add_sq q ha hβ hE)
   have hγ := γ_pos hβ
   have hd : γ β * (1 - β * (q / √(a + q ^ 2))) =
       γ β * (√(a + q ^ 2) - β * q) / √(a + q ^ 2) := by
@@ -188,9 +196,10 @@ private theorem map_withDensity_boost {a β : ℝ} (ha : 0 ≤ a) (hβ : |β| < 
   -- with `E = √(a + q²)` and `E' = γ (E - β q)`: `(E' / E) / (2 E') = 1 / (2 E)`
   have hJ : γ β * (√(a + q ^ 2) - β * q) / √(a + q ^ 2) *
       (2 * (γ β * (√(a + q ^ 2) - β * q)))⁻¹ = (2 * √(a + q ^ 2))⁻¹ := by
-    have key : ∀ {E y g : ℝ}, E ≠ 0 → y ≠ 0 → g ≠ 0 → g * y / E * (2 * (g * y))⁻¹ = (2 * E)⁻¹ :=
-      fun hE hy hg => by field_simp
-    exact key hE.ne' hE'.ne' hγ.ne'
+    have cancel : ∀ {E y c : ℝ}, E ≠ 0 → y ≠ 0 → c ≠ 0 →
+        c * y / E * (2 * (c * y))⁻¹ = (2 * E)⁻¹ :=
+      fun h₁ h₂ h₃ => by field_simp
+    exact cancel hE.ne' hE'.ne' hγ.ne'
   simp only [hg, hw]
   rw [sqrt_add_sq_boost q ha hβ, ← ENNReal.ofReal_mul (abs_nonneg _), hd,
     abs_of_pos (by positivity), hJ]
@@ -287,7 +296,7 @@ preserves the one-body measure. -/
 theorem measurePreserving_massShellMap_of_timeComponent_eq_one {Λ : LorentzGroup d}
     (hΛ : Λ.1 (Sum.inl 0) (Sum.inl 0) = 1) (m : ℝ) :
     MeasurePreserving (massShellMap Λ m) (oneBodyMeasure m) (oneBodyMeasure m) := by
-  rw [massShellMap_of_timeComponent_eq_one hΛ m]
+  rw [massShellMap_eq_spatialLinearIsometryEquiv hΛ m]
   exact measurePreserving_oneBodyMeasure_linearIsometryEquiv _ m
 
 /-- **Rotation invariance.** An element of Physlib's rotation subgroup preserves the one-body
