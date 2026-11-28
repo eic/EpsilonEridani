@@ -6,7 +6,9 @@ Authors: Wouter Deconinck
 module
 
 public import Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct
+public import EpsilonEridani.Relativity.LorentzGroup.Boosts.ApplyExtensions
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
+import EpsilonEridani.Mathematics.InnerProductSpace.PiL2
 
 /-!
 # Light-front components and transverse boosts
@@ -44,6 +46,12 @@ orientation-preserving isometries of the transverse plane, acting on four-vector
 transverse position and transverse momentum as phase-space variables of parton Wigner distributions,
 and behind `ω(b_T, k_T)` as the weight of parton orbital angular momentum.
 
+The boosts along the longitudinal axis are Physlib's `LorentzGroup.boost 2 β`. In light-front
+components the boost with speed `β` multiplies `p⁺` by `γ (1 - β)` and `p⁻` by `γ (1 + β)`, both
+positive, and leaves `p_T` unchanged. Such a boost never reverses the direction of a four-vector
+whose longitudinal part is spacelike or lightlike, `p⁺ p⁻ ≤ 0`, such as the virtual-photon
+momentum in a frame where it has no transverse part.
+
 ## Main definitions
 
 * `Lorentz.Vector.plusComponent`, `Lorentz.Vector.minusComponent`,
@@ -73,6 +81,14 @@ and behind `ω(b_T, k_T)` as the weight of parton orbital angular momentum.
   between two relative transverse momenta is invariant under transverse boosts; in particular
   (`EpsilonEridani.LightFront.areaForm_transversePart_relativeTransverse_transverseBoost`) so is
   the area between a light-front position and a relative transverse momentum.
+* `Lorentz.Vector.transversePart_boost_two`, `Lorentz.Vector.plusComponent_boost_two`,
+  `Lorentz.Vector.minusComponent_boost_two`: a boost along the `z`-axis in light-front components.
+* `Lorentz.Vector.boost_two_inr_two_pos_iff_of_plusComponent_mul_minusComponent_nonpos`: a boost
+  along the `z`-axis does not reverse the direction of a four-vector whose longitudinal part is
+  spacelike or lightlike.
+* `Lorentz.Vector.plusComponent_mul_minusComponent_nonpos_iff_of_transversePart_eq_zero`: a
+  four-vector with no transverse part has a spacelike or lightlike longitudinal part,
+  `p⁺ p⁻ ≤ 0`, exactly when it is spacelike or lightlike, `p · p ≤ 0`.
 * `EpsilonEridani.LightFront.areaForm_relativeTransverse_transverseIsometry`,
   `EpsilonEridani.LightFront.areaForm_transversePart_relativeTransverse_transverseIsometry`: the
   same two areas are invariant under orientation-preserving isometries of the transverse plane.
@@ -113,6 +129,30 @@ lemma plusComponent_def (p : Vector 3) :
 
 lemma minusComponent_def (p : Vector 3) :
     minusComponent p = (p (Sum.inl 0) - p (Sum.inr 2)) / √2 := (rfl)
+
+private lemma add_div_sqrt_two_add_sub_div_sqrt_two (x y : ℝ) :
+    ((x + y) / √2 + (x - y) / √2) / √2 = x := by
+  field_simp
+  rw [Real.sq_sqrt zero_le_two]
+  ring
+
+private lemma add_div_sqrt_two_sub_sub_div_sqrt_two (x y : ℝ) :
+    ((x + y) / √2 - (x - y) / √2) / √2 = y := by
+  field_simp
+  rw [Real.sq_sqrt zero_le_two]
+  ring
+
+/-- The `z`-component of a four-vector in light-front components: `p³ = (p⁺ - p⁻) / √2`. -/
+lemma apply_inr_two_eq_plusComponent_sub_minusComponent_div_sqrt_two (p : Vector 3) :
+    p (Sum.inr 2) = (plusComponent p - minusComponent p) / √2 := by
+  rw [plusComponent_def, minusComponent_def, add_div_sqrt_two_sub_sub_div_sqrt_two]
+
+/-- The product of the light-front components is half the longitudinal Minkowski square:
+`p⁺ p⁻ = ((p⁰)² - (p³)²) / 2`. -/
+lemma plusComponent_mul_minusComponent (p : Vector 3) :
+    plusComponent p * minusComponent p = (p (Sum.inl 0) ^ 2 - p (Sum.inr 2) ^ 2) / 2 := by
+  rw [plusComponent_def, minusComponent_def, div_mul_div_comm, Real.mul_self_sqrt zero_le_two]
+  ring
 
 lemma transversePart_def (p : Vector 3) :
     transversePart p = !₂[p (Sum.inr 0), p (Sum.inr 1)] := (rfl)
@@ -231,18 +271,6 @@ lemma ofLightFront_inr_two (a b : ℝ) (kT : E²) :
 
 /-! ### Light-front components as coordinates -/
 
-private lemma add_div_sqrt_two_add_sub_div_sqrt_two (x y : ℝ) :
-    ((x + y) / √2 + (x - y) / √2) / √2 = x := by
-  field_simp
-  rw [Real.sq_sqrt zero_le_two]
-  ring
-
-private lemma add_div_sqrt_two_sub_sub_div_sqrt_two (x y : ℝ) :
-    ((x + y) / √2 - (x - y) / √2) / √2 = y := by
-  field_simp
-  rw [Real.sq_sqrt zero_le_two]
-  ring
-
 @[simp]
 lemma plusComponent_ofLightFront (a b : ℝ) (kT : E²) : plusComponent (ofLightFront a b kT) = a := by
   rw [plusComponent_def, ofLightFront_inl, ofLightFront_inr_two,
@@ -280,8 +308,8 @@ lemma ofLightFront_plusComponent_minusComponent_transversePart (p : Vector 3) :
   · fin_cases i
     · simp
     · simp
-    · simp only [Fin.reduceFinMk, ofLightFront_inr_two, plusComponent_def, minusComponent_def,
-        add_div_sqrt_two_sub_sub_div_sqrt_two]
+    · simp only [Fin.reduceFinMk, ofLightFront_inr_two]
+      exact (apply_inr_two_eq_plusComponent_sub_minusComponent_div_sqrt_two p).symm
 
 /-- A four-vector is determined by its light-front components. -/
 lemma ext_lightFront {p q : Vector 3} (hplus : plusComponent p = plusComponent q)
@@ -299,9 +327,9 @@ lemma ext_lightFront_iff {p q : Vector 3} :
 lemma minkowskiProduct_eq_lightFront (p q : Vector 3) :
     ⟪p, q⟫ₘ = plusComponent p * minusComponent q + minusComponent p * plusComponent q -
       inner ℝ (transversePart p) (transversePart q) := by
-  simp only [minkowskiProduct_toCoord, plusComponent_def, minusComponent_def, PiLp.inner_apply,
-    Fin.sum_univ_two, Fin.sum_univ_three, transversePart_apply_zero, transversePart_apply_one,
-    RCLike.inner_apply, conj_trivial]
+  simp only [minkowskiProduct_toCoord, plusComponent_def, minusComponent_def,
+    EuclideanSpace.real_inner_eq_sum, Fin.sum_univ_two, Fin.sum_univ_three,
+    transversePart_apply_zero, transversePart_apply_one]
   field_simp
   rw [Real.sq_sqrt zero_le_two]
   ring
@@ -365,6 +393,54 @@ lemma relativeTransverse_of_plusComponent_eq_zero {b : Vector 3} (hb : plusCompo
 lemma relativeTransverse_self {P : Vector 3} (hP : plusComponent P ≠ 0) :
     relativeTransverse P P = 0 := by
   simp [relativeTransverse_def, div_self hP]
+
+/-! ### Longitudinal boosts -/
+
+section LongitudinalBoost
+
+open LorentzGroup
+
+/-- A boost along the `z`-axis does not change the transverse part of a four-vector. -/
+@[simp]
+lemma transversePart_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
+    transversePart (boost (2 : Fin 3) β hβ • p) = transversePart p := by
+  ext i
+  fin_cases i <;> simp [boost_inr_other_eq]
+
+/-- A boost along the `z`-axis with speed `β` rescales the plus component by `γ (1 - β)`. -/
+@[simp]
+lemma plusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
+    plusComponent (boost (2 : Fin 3) β hβ • p) = γ β * (1 - β) * plusComponent p := by
+  simp only [plusComponent_def, boost_time_eq, boost_inr_self_eq]
+  ring
+
+/-- A boost along the `z`-axis with speed `β` rescales the minus component by `γ (1 + β)`. -/
+@[simp]
+lemma minusComponent_boost_two (β : ℝ) (hβ : |β| < 1) (p : Vector 3) :
+    minusComponent (boost (2 : Fin 3) β hβ • p) = γ β * (1 + β) * minusComponent p := by
+  simp only [minusComponent_def, boost_time_eq, boost_inr_self_eq]
+  ring
+
+/-- A boost along the `z`-axis does not reverse the direction of a four-vector whose longitudinal
+part is spacelike or lightlike. -/
+lemma boost_two_inr_two_pos_iff_of_plusComponent_mul_minusComponent_nonpos {q : Vector 3}
+    (hq : plusComponent q * minusComponent q ≤ 0) (β : ℝ) (hβ : |β| < 1) :
+    0 < (boost (2 : Fin 3) β hβ • q) (Sum.inr 2) ↔ 0 < q (Sum.inr 2) := by
+  refine boost_inr_self_pos_iff_of_abs_le_abs 2 hβ (sq_le_sq.1 ?_)
+  rw [plusComponent_mul_minusComponent] at hq
+  linarith
+
+/-- For a four-vector with no transverse part, the longitudinal part is spacelike or lightlike,
+`p⁺ p⁻ ≤ 0`, exactly when the four-vector is: `p · p ≤ 0`. This discharges the hypothesis of
+`boost_two_inr_two_pos_iff_of_plusComponent_mul_minusComponent_nonpos` for a spacelike or
+lightlike vector along the `z`-axis. -/
+lemma plusComponent_mul_minusComponent_nonpos_iff_of_transversePart_eq_zero {p : Vector 3}
+    (hT : transversePart p = 0) :
+    plusComponent p * minusComponent p ≤ 0 ↔ ⟪p, p⟫ₘ ≤ 0 := by
+  rw [minkowskiProduct_self_eq_lightFront, hT, norm_zero]
+  constructor <;> intro h <;> linarith
+
+end LongitudinalBoost
 
 end Lorentz.Vector
 

@@ -35,6 +35,22 @@ def sinPhiDiff (phiH phiS : ℝ) : ℝ :=
 def sinPhiSum (phiH phiS : ℝ) : ℝ :=
   Real.sin (phiH + phiS)
 
+/-- On angles valued in `Real.Angle`, such as the azimuths
+`EpsilonEridani.QFT.Scattering.DIS.SIDIS.AzimuthalFrame.azimuth`, the Sivers harmonic of their real
+representatives is the sine of their difference. -/
+lemma sinPhiDiff_toReal (phiH phiS : Real.Angle) :
+    sinPhiDiff phiH.toReal phiS.toReal = Real.Angle.sin (phiH - phiS) := by
+  rw [sinPhiDiff, ← Real.Angle.sin_coe, Real.Angle.coe_sub, Real.Angle.coe_toReal,
+    Real.Angle.coe_toReal]
+
+/-- On angles valued in `Real.Angle`, such as the azimuths
+`EpsilonEridani.QFT.Scattering.DIS.SIDIS.AzimuthalFrame.azimuth`, the Collins harmonic of their
+real representatives is the sine of their sum. -/
+lemma sinPhiSum_toReal (phiH phiS : Real.Angle) :
+    sinPhiSum phiH.toReal phiS.toReal = Real.Angle.sin (phiH + phiS) := by
+  rw [sinPhiSum, ← Real.Angle.sin_coe, Real.Angle.coe_add, Real.Angle.coe_toReal,
+    Real.Angle.coe_toReal]
+
 /-- Unit harmonic weight. -/
 def oneWeight (_phiH _phiS : ℝ) : ℝ :=
   1
